@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
-import { AppFooter } from '../../AppFooter';
 import { AppTopBar } from '../../AppTopBar';
+import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
 import { useAppStore, useSessions } from '../../../../store';
-import { shellArrangement } from '../../../shellArrangement';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
 import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';
+import { shellArrangement } from '../../../shellArrangement';
+import { SceneFooter } from './SceneFooter';
+import { sceneShellMode } from './sceneShell';
+import { useSceneShell } from './useSceneShell';
 
 const noop = () => undefined;
 
@@ -54,38 +57,65 @@ const BoardShellSceneContent = () => {
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: false,
-    isSidebarCollapsed: false,
+    isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
+    mode: sceneShellMode(),
   });
+  const shell = useSceneShell({ arrangement });
 
   return (
-    <AppShell
-      topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
-      leftHidden={arrangement.leftHidden}
-      leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-      leftSidebar={undefined}
-      footer={
-        <AppFooter
-          scope={arrangement.footer}
-          target={{ place: null, tool: null }}
-          connected={{
-            github: true,
-            linear: true,
-            jira: true,
-            sentry: true,
-            gitlab: false,
-            bitbucket: false,
-            slack: false,
-          }}
-          onOpenIntegration={noop}
-          onOpenInbox={noop}
-          onOpenWorkflows={noop}
-          onOpenImpact={noop}
-          onOpenSettings={noop}
-          onOpenShortcuts={noop}
-          onOpenChangelog={noop}
-        />
-      }
-      main={<StageBoard workspaceId={WORKSPACE_ID} sessions={sessions} />}
-    />
+    <>
+      <AppShell
+        studio={shell.studio}
+        studioCoversLeft={arrangement.studioCoversLeft}
+        topBar={
+          <AppTopBar
+            mode={arrangement.mode}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+            onOpenImpact={noop}
+          />
+        }
+        leftHidden={arrangement.leftHidden}
+        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+        leftSidebar={
+          arrangement.leftSlot === 'none' ? undefined : (
+            <ShellLeft
+              arrangement={arrangement}
+              workspaceId={WORKSPACE_ID}
+              currentSessionId={null}
+              isDraftShown={false}
+              actions={shell.actions}
+              onToggle={noop}
+              settingsSlotRef={shell.settingsSlotRef}
+              {...(shell.isStudioOpen ? {} : { placeOverride: 'board' as const })}
+            />
+          )
+        }
+        footer={
+          arrangement.footer === null ? undefined : (
+            <SceneFooter
+              scope={arrangement.footer}
+              connected={{
+                github: true,
+                linear: true,
+                jira: true,
+                sentry: true,
+                gitlab: false,
+                bitbucket: false,
+                slack: false,
+              }}
+            />
+          )
+        }
+        main={
+          <StageBoard
+            workspaceId={WORKSPACE_ID}
+            sessions={sessions}
+            hasNewSession={arrangement.mode === 'classic'}
+          />
+        }
+      />
+      {shell.layers}
+    </>
   );
 };

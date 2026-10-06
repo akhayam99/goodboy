@@ -105,10 +105,19 @@ const SPEND_LABEL = 'Spent today, counted by Goodboy. Open spend';
 
 type BarOverrides = {
   readonly onOpenSpend?: () => void;
+  readonly onOpenImpact?: () => void;
+  readonly mode?: 'column' | 'classic';
 };
 
 const renderBar = (overrides: BarOverrides = {}) =>
-  render(<AppTopBar onOpenSpend={overrides.onOpenSpend ?? vi.fn()} onOpenScript={vi.fn()} />);
+  render(
+    <AppTopBar
+      mode={overrides.mode ?? 'column'}
+      onOpenSpend={overrides.onOpenSpend ?? vi.fn()}
+      onOpenImpact={overrides.onOpenImpact ?? vi.fn()}
+      onOpenScript={vi.fn()}
+    />,
+  );
 
 const zones = (container: HTMLElement) =>
   Array.from(container.querySelector('[data-tauri-drag-region]')?.children ?? []);
@@ -150,7 +159,7 @@ describe('AppTopBar', () => {
     expect(center.querySelector('kbd')?.className).not.toContain('hidden');
   });
 
-  it('clusters Back, Forward and Board by the search, and leaves the sidebar toggle out', () => {
+  it('clusters Back and Forward by the search and holds no destination, the column does', () => {
     const { container } = renderBar();
     const center = zones(container)[1] as HTMLElement;
 
@@ -160,8 +169,42 @@ describe('AppTopBar', () => {
       cluster.compareDocumentPosition(screen.getByRole('button', { name: /^Search/ })) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Board' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Chat' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /sidebar \(/ })).toBeNull();
+  });
+
+  it('keeps Board and Chat by the search under the classic bars, with no Impact button', () => {
+    renderBar({ mode: 'classic' });
+
     expect(screen.getByRole('button', { name: 'Board' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /sessions \(/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Chat' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Impact' })).toBeNull();
+  });
+
+  it('seats Impact as an icon door right before the bell', () => {
+    const onOpenImpact = vi.fn();
+    const { container } = renderBar({ onOpenImpact });
+    const right = zones(container)[2] as HTMLElement;
+    const impact = screen.getByRole('button', { name: 'Impact' });
+
+    expect(impact.nextElementSibling).toBe(screen.getByTestId('notification-center'));
+    expect(right.contains(impact)).toBe(true);
+    expect(impact.getAttribute('aria-current')).toBeNull();
+    fireEvent.click(impact);
+    expect(onOpenImpact).toHaveBeenCalledOnce();
+  });
+
+  it('marks Impact current while its studio is open and does nothing on a second press', () => {
+    Object.assign(store, { appStudio: { kind: 'impact', scope: null } });
+    const onOpenImpact = vi.fn();
+    renderBar({ onOpenImpact });
+    const impact = screen.getByRole('button', { name: 'Impact' });
+
+    expect(impact.getAttribute('aria-current')).toBe('page');
+    fireEvent.click(impact);
+    expect(onOpenImpact).not.toHaveBeenCalled();
+    Object.assign(store, { appStudio: null });
   });
 
   it('keeps the brand and a workspace gear out of the bar', () => {

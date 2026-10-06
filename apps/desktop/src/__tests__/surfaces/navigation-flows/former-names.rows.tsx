@@ -26,6 +26,12 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     lands: both(lens('workflows'), () => heading('Runs')),
   },
   {
+    name: 'searching Workflow runs finds Open Runs in a session',
+    covers: ['palette:Open Runs'],
+    open: () => openPalette(/^Open Runs/, 'Workflow runs'),
+    lands: both(lens('workflows'), () => heading('Runs')),
+  },
+  {
     name: "searching Changelog finds What's new",
     covers: ['studio:changelog'],
     open: () => openPalette(/^What's new/, 'Changelog'),

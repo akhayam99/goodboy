@@ -928,7 +928,7 @@ export const WorkflowBuilderView = (props: Props) => {
       await (props.session !== undefined ? runOn(props.session) : props.kickoff.start(runOn));
       handleClose();
     } catch (err) {
-      setError({ title: "Couldn't start the workflow", message: formatError(err) });
+      setError({ title: "Couldn't start the run", message: formatError(err) });
     } finally {
       setBusy(false);
     }
@@ -1391,7 +1391,7 @@ export const WorkflowBuilderView = (props: Props) => {
   return (
     <StudioShell
       icon={CONCEPT_ICONS.workflows}
-      title="Start a workflow"
+      title="Start a run"
       closeLabel="cancel workflow builder"
       onClose={handleClose}
       variant="slot"

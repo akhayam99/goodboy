@@ -58,10 +58,10 @@ describe('usePlanRun', () => {
     await runWith({
       kind: 'startedOutside',
       agentId: 'agent-impl' as AgentId,
-      note: 'Started outside the workflow, its run was discarded',
+      note: 'Started outside the run, it was discarded',
     });
 
-    screen.getByText('Started outside the workflow, its run was discarded');
+    screen.getByText('Started outside the run, it was discarded');
   });
 
   it('keeps the failure on the hook when the store throws', async () => {

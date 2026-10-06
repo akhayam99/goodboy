@@ -1,4 +1,4 @@
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from './mockSceneIpc';
 import type {
   AgentId,
   MountId,
@@ -204,7 +204,7 @@ const statusFor = ({ state }: { readonly state: WorktreeSceneState }): WorktreeS
 };
 
 const installGitIpc = ({ status }: { readonly status: WorktreeStatus }): void => {
-  mockIPC((cmd) => {
+  mockSceneIpc((cmd) => {
     if (cmd === 'worktree_status') {
       return status;
     }

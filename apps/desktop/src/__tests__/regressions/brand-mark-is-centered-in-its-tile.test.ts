@@ -12,7 +12,6 @@ const CHROME_MARK = join(
   '..',
   'app',
   'components',
-  'AppFooter',
   'GoodboyChip',
   'GoodboyChipLabel.tsx',
 );

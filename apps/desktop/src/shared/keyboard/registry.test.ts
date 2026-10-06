@@ -175,7 +175,7 @@ describe('shortcut registry', () => {
     for (const [id, entry] of entries) {
       const key = entry.combo.split('+').at(-1) ?? '';
       expect(
-        /^(Key[A-Z]|Digit[0-9]|F[0-9]{1,2}|Comma|Period|Slash|Minus|Equal|BracketLeft|BracketRight|Backspace|Delete|Escape|Enter)$/.test(
+        /^(Key[A-Z]|Digit[0-9]|F[0-9]{1,2}|Comma|Period|Slash|Minus|Equal|BracketLeft|BracketRight|Backspace|Delete|Escape|Enter|Tab|Arrow(Up|Down|Left|Right))$/.test(
           key,
         ),
         `${id} uses ${key}, which is a character rather than a key code`,
@@ -248,6 +248,33 @@ describe('shortcut registry', () => {
 
     platform.current = 'linux';
     expect(shortcutRangeGlyphs({ first: 'workspace.1', last: 'workspace.9' })).toBe('Ctrl+1-9');
+  });
+
+  it('gives the session switcher and the next session that needs you chords nobody else binds', () => {
+    for (const id of ['session.switcher', 'session.switcherBack', 'session.nextNeedsYou']) {
+      const combo = SHORTCUTS[id as keyof typeof SHORTCUTS].combo;
+      const sharing = entries.filter(([, entry]) => entry.combo === combo).map(([other]) => other);
+      expect(sharing, `${combo} is bound by more than ${id}`).toEqual([id]);
+    }
+  });
+
+  it('keeps the new chords off every combo macOS and the text field own', () => {
+    for (const id of ['session.switcher', 'session.switcherBack', 'session.nextNeedsYou']) {
+      const combo = SHORTCUTS[id as keyof typeof SHORTCUTS].combo;
+      expect(RESERVED_COMBOS).not.toContain(combo);
+    }
+  });
+
+  it('spells the new chords the way a person reads them', () => {
+    platform.current = 'darwin';
+    expect(shortcutGlyphs('session.switcher')).toBe('⌃Tab');
+    expect(shortcutGlyphs('session.switcherBack')).toBe('⌃⇧Tab');
+    expect(shortcutGlyphs('session.nextNeedsYou')).toBe('⌘⌥↓');
+
+    platform.current = 'linux';
+    expect(shortcutGlyphs('session.switcher')).toBe('Ctrl+Tab');
+    expect(shortcutGlyphs('session.switcherBack')).toBe('Ctrl+Shift+Tab');
+    expect(shortcutGlyphs('session.nextNeedsYou')).toBe('Ctrl+Alt+Down');
   });
 
   it('hangs the chord off the control that triggers it', () => {

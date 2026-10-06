@@ -1,6 +1,6 @@
 import { PaneShell } from '@goodboy/ui';
 import { useEffect, useRef, useState } from 'react';
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from '../mockSceneIpc';
 import type {
   GithubIssue,
   IntegrationBinding,
@@ -387,7 +387,7 @@ const SENTRY_BINDING: IntegrationBinding = {
 };
 
 const installIpc = (): void => {
-  mockIPC((cmd) => {
+  mockSceneIpc((cmd) => {
     if (cmd === 'linear_fetch_issue_comments') {
       return COMMENTS;
     }
@@ -443,7 +443,6 @@ export const BrandLookupScene = () => {
         >
           {() => (
             <InboxStudioLayout
-              rail={facets}
               list={
                 <PaneShell
                   scroll="body"
@@ -458,7 +457,6 @@ export const BrandLookupScene = () => {
                       onClearSession={noop}
                       isRefreshing={false}
                       onRefresh={noop}
-                      isFacetFolded={false}
                       activeFilterCount={0}
                       facets={facets}
                     />

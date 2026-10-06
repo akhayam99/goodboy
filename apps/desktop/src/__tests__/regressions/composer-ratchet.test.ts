@@ -14,6 +14,7 @@ const ANY_PROMPT_FIELD = /<PromptField\b/g;
 const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/chat/components/ChatInput/index.tsx': ['message'],
   'features/workspace-chat/components/ChatComposer/index.tsx': ['message'],
+  'features/session/ask/components/AskDrawer/AskComposer.tsx': ['message'],
   'features/workflows/components/OrchestratorStrip/OrchestratorHintComposer.tsx': ['message'],
   'features/session/components/SessionKickoff/AgentStart.tsx': ['message'],
   'features/session/components/SessionKickoff/HowToWorkOnIt.tsx': ['message'],
@@ -34,6 +35,7 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/wireframes/components/WireframeViewer/ChangeComposer.tsx': ['document'],
   'features/workspace-chat/components/TurnIntoWorkPanel/index.tsx': ['document'],
   'features/session/components/AgentInstructionsField.tsx': ['document'],
+  'features/chat/components/AgentTranscriptDrawer/index.tsx': ['message'],
   'features/explore/components/ExplorePane/ExploreSpawnPopover.tsx': ['document'],
   'features/permissions/components/PermissionRequestCard/index.tsx': ['document'],
   'features/integrations/components/LaunchSessionPanel/index.tsx': ['document'],

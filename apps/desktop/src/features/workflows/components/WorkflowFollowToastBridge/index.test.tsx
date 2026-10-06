@@ -64,7 +64,7 @@ describe('WorkflowFollowToastBridge', () => {
       sessionId: SESSION_ID,
       agentId: AGENT_ID,
       title: 'Implement started',
-      message: 'The workflow moved on to the next step.',
+      message: 'The run moved on to the next step.',
       actionLabel: 'Follow',
     });
   });

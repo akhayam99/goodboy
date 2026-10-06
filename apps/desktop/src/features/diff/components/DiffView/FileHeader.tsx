@@ -105,6 +105,7 @@ export const FileHeader = ({
             type="button"
             onClick={onCommentOnFile}
             aria-label="Comment on file"
+            data-file-comment-trigger=""
             className="inline-flex size-6 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
             <MessageSquarePlus size={ICON_SIZE.row} aria-hidden />

@@ -106,7 +106,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'When a provider is out',
-        desc: 'Models has a row for what happens when a provider is out. It lists the providers of the workspace in order, each On, Backup only or Off. New work starts on the first On provider, Backup only runs only if no On provider can, and Off is never offered. Drag a row, or press Alt and an arrow, to move it. The footer Providers button opens your limits and the same list.',
+        desc: 'Models has a row for what happens when a provider is out. It lists the providers of the workspace in order, each On, Backup only or Off. New work starts on the first On provider, Backup only runs only if no On provider can, and Off is never offered. Drag a row, or press Alt and an arrow, to move it. The Limits chips in the top bar open your limits and the same list.',
       },
       {
         term: 'Usage limits',
@@ -146,7 +146,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run a workflow',
-        desc: 'The same workflow builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, then Start workflow creates the session and starts the run.',
+        desc: 'The same workflow builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, then Start run creates the session and starts the run.',
       },
       {
         term: 'Ask an agent',
@@ -154,7 +154,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
+        desc: 'Chat, a door in the left column, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
       },
       {
         term: 'Start blank',
@@ -198,6 +198,18 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         term: 'Now chip',
         desc: 'The top bar counts sessions that need you and running ones, from any screen.',
       },
+      {
+        term: 'Left column',
+        desc: 'New session, Board, Inbox, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Classic bars in Settings, App, General brings back the top bar buttons and the footer.',
+      },
+      {
+        term: 'Session rows',
+        desc: 'One line each: a sign and the title. Rest on a row for its card. The Sessions menu sorts, groups, filters by project and shows archived. Control Tab flips between recent sessions, and Option Command Down jumps to the next one that needs you.',
+      },
+      {
+        term: 'Ask in a session',
+        desc: 'Ask, in the page bar or on ⌘L, opens a panel that reads the session: what needs you now, and answers with buttons for what you can do. Nothing runs in one click.',
+      },
     ],
     links: [{ label: 'Go to the board', target: { kind: 'board' } }],
     extra: 'stages',
@@ -215,11 +227,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Talking to an agent',
-        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a workflow run.',
+        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a run.',
       },
       {
         term: 'Activity',
-        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the workflow runs of a session, and a run page reads in execution order.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session, and a run page reads in execution order.',
       },
       {
         term: 'Agent suggests',
@@ -342,7 +354,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Fix run',
-        desc: "A fix run is one agent in one copy of the branch. A line under the tabs says what it is doing and counts the comments by word, each a filter. The agent asks only when a comment reads two ways, and the question shows in the comment's thread and on the Fix run page. Open the Fix run for its transcript and the commits it made.",
+        desc: "A fix run is one agent in one copy of the branch. A line under the tabs says what it is doing and counts the comments by word, each a filter. The agent asks only when a comment reads two ways, and the question shows in the comment's thread and in its transcript. Open fix run shows the transcript in a drawer beside Comments, with the commits it made.",
       },
       {
         term: 'Files',
@@ -598,7 +610,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Command palette',
-        desc: 'Opens on what you are looking at, with its actions first. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row. Any search starts with Ask in Chat. Copy worktree path copies where a session works.',
+        desc: 'Opens on what you are looking at. In a session it lists Next steps first, then its actions in the order its state calls for, then Runs and recent places; on the Board, the sessions that need you come first. Start a run confirms before it starts. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row. Any search starts with Ask in Chat. Copy worktree path copies where a session works.',
       },
       {
         term: 'Search',

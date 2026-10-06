@@ -60,6 +60,15 @@ const CLAUDE_NO_SETTINGS: &str = "";
 const CLAUDE_NO_HOOKS: &str = "{\"disableAllHooks\":true}";
 const CLAUDE_NO_MCP: &str = "{\"mcpServers\":{}}";
 const CODEX_NO_MCP: &str = "mcp_servers={}";
+const CODEX_PROFILE_SETTING: &str = "default_permissions=\"goodboy-ask\"";
+const CODEX_FILESYSTEM_KEY: &str = "permissions.goodboy-ask.filesystem=";
+const CODEX_PROFILE_SINCE: (u64, u64, u64) = (0, 160, 0);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CodexSandbox {
+    ReadOnly,
+    Profile,
+}
 
 const READ_ONLY_REFUSAL: &str = "Chat needs a provider that can run read-only: Claude or Codex";
 
@@ -103,6 +112,8 @@ pub enum ChatError {
     NotFound(String),
     #[error(transparent)]
     Images(#[from] ChatImageError),
+    #[error("the session files for Ask are not valid: {0}")]
+    InvalidDossier(String),
 }
 
 crate::util::impl_error_serialize!(ChatError);
@@ -121,6 +132,7 @@ impl ChatError {
             ChatError::WriteArgument(_) => "write_argument",
             ChatError::NotFound(_) => "not_found",
             ChatError::Images(_) => "images",
+            ChatError::InvalidDossier(_) => "invalid_dossier",
         }
     }
 }
@@ -176,6 +188,66 @@ struct ChatRoots {
 struct ChatScope {
     provider: String,
     roots: Vec<String>,
+    codex: CodexSandbox,
+}
+
+fn parse_cli_version(raw: &str) -> Option<(u64, u64, u64)> {
+    raw.split_whitespace().find_map(|token| {
+        let core = token.trim_start_matches('v').split(['-', '+']).next()?;
+        let mut parts = core.split('.').map(|part| part.parse::<u64>().ok());
+        let major = parts.next()??;
+        let minor = parts.next()??;
+        let patch = parts.next().unwrap_or(Some(0))?;
+        Some((major, minor, patch))
+    })
+}
+
+fn codex_sandbox_for(version: Option<&str>) -> CodexSandbox {
+    match version.and_then(parse_cli_version) {
+        Some(found) if found >= CODEX_PROFILE_SINCE => CodexSandbox::Profile,
+        _ => CodexSandbox::ReadOnly,
+    }
+}
+
+fn detect_codex_sandbox(provider: &str) -> CodexSandbox {
+    if provider != "codex" {
+        return CodexSandbox::ReadOnly;
+    }
+    codex_sandbox_for(crate::providers::detect_codex().version.as_deref())
+}
+
+fn toml_string(value: &str) -> String {
+    let mut quoted = String::with_capacity(value.len() + 2);
+    quoted.push('"');
+    for ch in value.chars() {
+        match ch {
+            '\\' => quoted.push_str("\\\\"),
+            '"' => quoted.push_str("\\\""),
+            ch if ch.is_control() => quoted.push_str(&format!("\\u{:04X}", ch as u32)),
+            ch => quoted.push(ch),
+        }
+    }
+    quoted.push('"');
+    quoted
+}
+
+fn canonical_root(root: &str) -> String {
+    std::fs::canonicalize(root)
+        .map(|path| path.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| root.to_string())
+}
+
+fn codex_filesystem(roots: &[String]) -> String {
+    let mut grants = vec![format!("{}=\"read\"", toml_string(":minimal"))];
+    let mut seen: Vec<String> = Vec::with_capacity(roots.len());
+    for root in roots.iter().map(|root| canonical_root(root)) {
+        if seen.contains(&root) {
+            continue;
+        }
+        grants.push(format!("{}=\"read\"", toml_string(&root)));
+        seen.push(root);
+    }
+    format!("{CODEX_FILESYSTEM_KEY}{{{}}}", grants.join(","))
 }
 
 fn cli_shape_for(provider: &str) -> Result<&'static str, ChatError> {
@@ -276,7 +348,11 @@ fn load_chat_scope(conn: &Connection, chat_id: &str) -> Result<ChatScope, ChatEr
     let roots = stmt
         .query_map([chat_id], |row| row.get::<_, String>(0))?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(ChatScope { provider, roots })
+    Ok(ChatScope {
+        provider,
+        roots,
+        codex: CodexSandbox::ReadOnly,
+    })
 }
 
 const IMAGE_BLOCK_HEADER: &str =
@@ -304,6 +380,7 @@ fn build_chat_cli_args(
     args: &ChatTurnArgs,
     roots: &ChatRoots,
     images: Option<&TurnImages>,
+    codex: CodexSandbox,
 ) -> Vec<String> {
     let allowed_tools: Vec<String> = CLAUDE_READ_TOOLS
         .iter()
@@ -341,13 +418,45 @@ fn build_chat_cli_args(
     };
     let cli = turn_args(shape, &spawn);
     if shape == "codex" {
-        return harden_codex(cli, images);
+        let readable: Vec<String> = std::iter::once(roots.working_dir.clone())
+            .chain(roots.read_roots.iter().cloned())
+            .chain(images.map(|images| images.root.clone()))
+            .collect();
+        return harden_codex(cli, images, codex, &readable);
     }
     let image_root = images.map(|images| images.root.as_str());
     harden_claude(cli, &prompt, &roots.read_roots, image_root)
 }
 
-fn harden_codex(mut cli: Vec<String>, images: Option<&TurnImages>) -> Vec<String> {
+fn without_sandbox_flag(cli: Vec<String>) -> Vec<String> {
+    let mut kept: Vec<String> = Vec::with_capacity(cli.len());
+    let mut skip_next = false;
+    let mut is_prompt = false;
+    for arg in cli {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        if !is_prompt && arg == "-s" {
+            skip_next = true;
+            continue;
+        }
+        is_prompt = is_prompt || arg == "--";
+        kept.push(arg);
+    }
+    kept
+}
+
+fn harden_codex(
+    cli: Vec<String>,
+    images: Option<&TurnImages>,
+    codex: CodexSandbox,
+    readable: &[String],
+) -> Vec<String> {
+    let mut cli = match codex {
+        CodexSandbox::ReadOnly => cli,
+        CodexSandbox::Profile => without_sandbox_flag(cli),
+    };
     let at = cli.iter().position(|arg| arg == "--").unwrap_or(cli.len());
     let mut extra: Vec<String> = [
         "--ignore-user-config",
@@ -359,6 +468,12 @@ fn harden_codex(mut cli: Vec<String>, images: Option<&TurnImages>) -> Vec<String
     .iter()
     .map(|arg| arg.to_string())
     .collect();
+    if codex == CodexSandbox::Profile {
+        extra.push("-c".to_string());
+        extra.push(CODEX_PROFILE_SETTING.to_string());
+        extra.push("-c".to_string());
+        extra.push(codex_filesystem(readable));
+    }
     for image in images
         .map(|images| images.images.as_slice())
         .unwrap_or_default()
@@ -432,7 +547,29 @@ fn has_pair(cli: &[String], flag: &str, value: &str) -> bool {
         .any(|pair| pair[0] == flag && pair[1] == value)
 }
 
-fn assert_read_only(shape: &str, cli: &[String]) -> Result<(), ChatError> {
+fn assert_codex_profile(flags: &[String]) -> Result<(), ChatError> {
+    if flags.iter().any(|arg| arg == "-s" || arg == "--sandbox") {
+        return Err(ChatError::WriteArgument(
+            "a sandbox flag would override the read profile".to_string(),
+        ));
+    }
+    let filesystem: Vec<&String> = flags
+        .windows(2)
+        .filter(|pair| pair[0] == "-c" && pair[1].starts_with(CODEX_FILESYSTEM_KEY))
+        .map(|pair| &pair[1])
+        .collect();
+    let [grants] = filesystem.as_slice() else {
+        return Err(ChatError::WriteArgument(
+            "the read profile needs one filesystem table".to_string(),
+        ));
+    };
+    if grants.contains("=\"write\"") {
+        return Err(ChatError::WriteArgument(grants.to_string()));
+    }
+    Ok(())
+}
+
+fn assert_read_only(shape: &str, cli: &[String], codex: CodexSandbox) -> Result<(), ChatError> {
     let prompt_at = cli.len().saturating_sub(1);
     let separators = cli.iter().filter(|arg| arg.as_str() == "--").count();
     if cli.len() < 2 || cli[prompt_at - 1] != "--" || separators != 1 {
@@ -454,6 +591,9 @@ fn assert_read_only(shape: &str, cli: &[String]) -> Result<(), ChatError> {
             ("--settings", CLAUDE_NO_HOOKS),
             ("--mcp-config", CLAUDE_NO_MCP),
         ],
+        "codex" if codex == CodexSandbox::Profile => {
+            &[("-c", CODEX_NO_MCP), ("-c", CODEX_PROFILE_SETTING)]
+        }
         "codex" => &[("-s", "read-only"), ("-c", CODEX_NO_MCP)],
         _ => return Err(ChatError::NotReadOnly(shape.to_string())),
     };
@@ -475,14 +615,19 @@ fn assert_read_only(shape: &str, cli: &[String]) -> Result<(), ChatError> {
             return Err(ChatError::WriteArgument(format!("{switch} is missing")));
         }
     }
+    let is_profile = shape == "codex" && codex == CodexSandbox::Profile;
+    if is_profile {
+        assert_codex_profile(&cli[..prompt_at])?;
+    }
     let policy_cli = if shape == "claude" {
         Cli::Claude
     } else {
         Cli::Codex
     };
+    let sandbox_pair = "-s must be \"read-only\"";
     match read_only_violations(policy_cli, Job::Turn, cli)
         .into_iter()
-        .next()
+        .find(|violation| !(is_profile && violation == sandbox_pair))
     {
         Some(violation) => Err(ChatError::WriteArgument(violation)),
         None => Ok(()),
@@ -520,8 +665,8 @@ fn prepare_chat_turn(
                 .iter()
                 .any(|root| is_inside(&images.root, &trim_root(root)))
     });
-    let cli = build_chat_cli_args(shape, args, &roots, images);
-    assert_read_only(shape, &cli)?;
+    let cli = build_chat_cli_args(shape, args, &roots, images, scope.codex);
+    assert_read_only(shape, &cli, scope.codex)?;
     Ok(PreparedChatTurn {
         binary: shape,
         cli,
@@ -581,9 +726,10 @@ fn forward_lines(sink: &ChatSink, live: &LiveChild, stdout: ChildStdout) {
 fn spawn_chat_turn(
     app: &AppHandle,
     registry: &LiveChildRegistry,
-    args: &ChatTurnArgs,
+    run_id: &str,
+    chat_id: &str,
     prepared: PreparedChatTurn,
-    image_root: Option<PathBuf>,
+    cleanup_root: Option<PathBuf>,
 ) -> Result<String, ChatError> {
     let mut command = crate::path_env::command(prepared.binary);
     command.current_dir(&prepared.working_dir);
@@ -609,12 +755,12 @@ fn spawn_chat_turn(
     registry
         .lock()
         .map_err(|_| ChatError::Poisoned)?
-        .insert(args.run_id.clone(), live.clone());
+        .insert(run_id.to_string(), live.clone());
 
     let sink = ChatSink {
         app: app.clone(),
-        run_id: args.run_id.clone(),
-        chat_id: args.chat_id.clone(),
+        run_id: run_id.to_string(),
+        chat_id: chat_id.to_string(),
         seq: AtomicU64::new(0),
     };
     let registry_clone = Arc::clone(registry);
@@ -623,15 +769,15 @@ fn spawn_chat_turn(
         forward_lines(&sink, &live, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&live, &registry_clone, &sink.run_id);
-        if let Some(root) = image_root.as_deref() {
-            crate::chat_images::remove_turn_root(root);
+        if let Some(root) = cleanup_root.as_deref() {
+            remove_staged_root(root);
         }
         sink.send(TurnEventPayload::End {
             exit_code,
             stderr: stderr_buf,
         });
     });
-    Ok(args.run_id.clone())
+    Ok(run_id.to_string())
 }
 
 #[tauri::command]
@@ -652,6 +798,7 @@ pub async fn chat_turn(
         (scope, images)
     };
     let scope = ChatScope {
+        codex: detect_codex_sandbox(&scope.provider),
         provider: scope.provider,
         roots: existing_roots(scope.roots),
     };
@@ -665,8 +812,18 @@ pub async fn chat_turn(
     let image_root = turn_images
         .as_ref()
         .map(|images| PathBuf::from(&images.root));
-    let spawned = prepare_chat_turn(&args, &scope, home.as_deref(), turn_images.as_ref())
-        .and_then(|prepared| spawn_chat_turn(&app, &state.0, &args, prepared, image_root.clone()));
+    let spawned = prepare_chat_turn(&args, &scope, home.as_deref(), turn_images.as_ref()).and_then(
+        |prepared| {
+            spawn_chat_turn(
+                &app,
+                &state.0,
+                &args.run_id,
+                &args.chat_id,
+                prepared,
+                image_root.clone(),
+            )
+        },
+    );
     if spawned.is_err() {
         if let Some(root) = image_root.as_deref() {
             crate::chat_images::remove_turn_root(root);
@@ -681,6 +838,273 @@ pub async fn chat_cancel(state: State<'_, ChatRegistry>, run_id: String) -> Resu
         return Ok(());
     }
     Err(ChatError::NotFound(run_id))
+}
+
+const ASK_DIR: &str = "goodboy-ask";
+const ASK_MAX_FILES: usize = 40;
+const ASK_MAX_BYTES: usize = 512 * 1024;
+const ASK_FILES_HEADER: &str =
+    "Session files staged for this question. Read the ones the question needs:";
+const ASK_WORKTREES_HEADER: &str =
+    "Session worktrees (the branch code). Read them, never change them:";
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AskDossierFile {
+    pub name: String,
+    pub content: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AskTurnArgs {
+    pub run_id: String,
+    pub thread_id: String,
+    pub session_id: String,
+    pub provider: String,
+    pub model: String,
+    pub prompt: String,
+    #[serde(default)]
+    pub system_prompt: Option<String>,
+    #[serde(default)]
+    pub effort: Option<String>,
+    #[serde(default)]
+    pub dossier: Vec<AskDossierFile>,
+}
+
+struct AskScope {
+    provider: String,
+    worktrees: Vec<String>,
+    codex: CodexSandbox,
+}
+
+fn load_ask_scope(
+    conn: &Connection,
+    thread_id: &str,
+    session_id: &str,
+) -> Result<AskScope, ChatError> {
+    let provider: Option<String> = conn
+        .query_row(
+            "SELECT provider FROM chats WHERE id = ?1 AND session_id = ?2",
+            [thread_id, session_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    let Some(provider) = provider else {
+        return Err(ChatError::NotFound(thread_id.to_string()));
+    };
+    let mut stmt = conn.prepare(
+        "SELECT worktree_path FROM session_worktrees
+         WHERE session_id = ?1 AND worktree_path IS NOT NULL AND is_attached = 1
+         ORDER BY parallel_index, created_at, id",
+    )?;
+    let worktrees = stmt
+        .query_map([session_id], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(AskScope {
+        provider,
+        worktrees,
+        codex: CodexSandbox::ReadOnly,
+    })
+}
+
+fn is_safe_dossier_segment(segment: &str) -> bool {
+    !segment.is_empty()
+        && segment.len() <= 80
+        && !segment.starts_with('.')
+        && !segment.starts_with('-')
+        && segment
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))
+}
+
+fn is_safe_dossier_name(name: &str) -> bool {
+    let segments: Vec<&str> = name.split('/').collect();
+    segments.len() <= 2
+        && segments
+            .iter()
+            .all(|segment| is_safe_dossier_segment(segment))
+        && name.ends_with(".md")
+}
+
+fn check_dossier(files: &[AskDossierFile]) -> Result<(), ChatError> {
+    if files.len() > ASK_MAX_FILES {
+        return Err(ChatError::InvalidDossier(format!(
+            "{} files, at most {ASK_MAX_FILES}",
+            files.len()
+        )));
+    }
+    let total: usize = files.iter().map(|file| file.content.len()).sum();
+    if total > ASK_MAX_BYTES {
+        return Err(ChatError::InvalidDossier(format!(
+            "{total} bytes, at most {ASK_MAX_BYTES}"
+        )));
+    }
+    let mut seen: Vec<&str> = Vec::with_capacity(files.len());
+    for file in files {
+        if !is_safe_dossier_name(&file.name) || seen.contains(&file.name.as_str()) {
+            return Err(ChatError::InvalidDossier(file.name.clone()));
+        }
+        seen.push(file.name.as_str());
+    }
+    Ok(())
+}
+
+fn stage_ask_dossier_in(
+    temp: &Path,
+    run_id: &str,
+    files: &[AskDossierFile],
+) -> Result<PathBuf, ChatError> {
+    if !crate::chat_images::is_safe_id(run_id) {
+        return Err(ChatError::InvalidValue {
+            field: "run id",
+            value: run_id.to_string(),
+        });
+    }
+    check_dossier(files)?;
+    let root = temp.join(ASK_DIR).join(run_id);
+    remove_staged_root(&root);
+    std::fs::create_dir_all(&root)?;
+    for file in files {
+        let target = root.join(&file.name);
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&target, file.content.as_bytes())?;
+        crate::chat_images::set_mode(&target, 0o444)?;
+    }
+    for entry in std::fs::read_dir(&root)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            crate::chat_images::set_mode(&path, 0o555)?;
+        }
+    }
+    crate::chat_images::set_mode(&root, 0o555)?;
+    Ok(std::fs::canonicalize(&root)?)
+}
+
+fn remove_staged_root(root: &Path) {
+    if !root.exists() {
+        return;
+    }
+    let _ = crate::chat_images::set_mode(root, 0o755);
+    if let Ok(entries) = std::fs::read_dir(root) {
+        for path in entries.flatten().map(|entry| entry.path()) {
+            if path.is_dir() {
+                let _ = crate::chat_images::set_mode(&path, 0o755);
+            }
+        }
+    }
+    crate::chat_images::remove_turn_root(root);
+}
+
+fn ask_prompt(args: &AskTurnArgs, dossier_root: &str, worktrees: &[String]) -> String {
+    let mut parts = vec![args.prompt.clone()];
+    if !args.dossier.is_empty() {
+        let mut lines = vec![ASK_FILES_HEADER.to_string()];
+        for file in &args.dossier {
+            lines.push(format!("- {dossier_root}/{}", file.name));
+        }
+        parts.push(lines.join("\n"));
+    }
+    if !worktrees.is_empty() {
+        let mut lines = vec![ASK_WORKTREES_HEADER.to_string()];
+        for worktree in worktrees {
+            lines.push(format!("- {worktree}"));
+        }
+        parts.push(lines.join("\n"));
+    }
+    parts.join("\n\n")
+}
+
+fn prepare_ask_turn(
+    args: &AskTurnArgs,
+    scope: &AskScope,
+    home: Option<&Path>,
+    dossier_root: &str,
+) -> Result<PreparedChatTurn, ChatError> {
+    if scope.provider != args.provider {
+        return Err(ChatError::ProviderMismatch {
+            stored: scope.provider.clone(),
+            requested: args.provider.clone(),
+        });
+    }
+    let shape = cli_shape_for(&args.provider)?;
+    require_safe_value("model", &args.model)?;
+    if let Some(effort) = args.effort.as_deref() {
+        require_safe_value("effort", effort)?;
+    }
+    let worktrees: Vec<String> = scope
+        .worktrees
+        .iter()
+        .map(|root| trim_root(root))
+        .filter(|root| {
+            let path = Path::new(root);
+            path.is_absolute() && !is_too_wide(path, home) && !is_inside(dossier_root, root)
+        })
+        .collect();
+    let candidates: Vec<String> = match (shape, scope.codex) {
+        ("codex", CodexSandbox::ReadOnly) => vec![dossier_root.to_string()],
+        _ => worktrees
+            .iter()
+            .cloned()
+            .chain(std::iter::once(dossier_root.to_string()))
+            .collect(),
+    };
+    let roots = select_chat_roots(&candidates, home)?;
+    let turn = ChatTurnArgs {
+        run_id: args.run_id.clone(),
+        chat_id: args.thread_id.clone(),
+        provider: args.provider.clone(),
+        model: args.model.clone(),
+        prompt: ask_prompt(args, dossier_root, &worktrees),
+        system_prompt: args.system_prompt.clone(),
+        effort: args.effort.clone(),
+        images: false,
+        message_id: None,
+    };
+    let cli = build_chat_cli_args(shape, &turn, &roots, None, scope.codex);
+    assert_read_only(shape, &cli, scope.codex)?;
+    Ok(PreparedChatTurn {
+        binary: shape,
+        cli,
+        working_dir: roots.working_dir,
+    })
+}
+
+#[tauri::command]
+pub async fn ask_turn(
+    app: AppHandle,
+    state: State<'_, ChatRegistry>,
+    db: State<'_, Db>,
+    args: AskTurnArgs,
+) -> Result<String, ChatError> {
+    let scope = {
+        let conn = db.0.lock().map_err(|_| ChatError::Poisoned)?;
+        load_ask_scope(&conn, &args.thread_id, &args.session_id)?
+    };
+    let scope = AskScope {
+        codex: detect_codex_sandbox(&scope.provider),
+        provider: scope.provider,
+        worktrees: existing_roots(scope.worktrees),
+    };
+    let home: Option<PathBuf> = dirs::home_dir();
+    let dossier_root = stage_ask_dossier_in(&std::env::temp_dir(), &args.run_id, &args.dossier)?;
+    let dossier = dossier_root.to_string_lossy().into_owned();
+    let spawned = prepare_ask_turn(&args, &scope, home.as_deref(), &dossier).and_then(|prepared| {
+        spawn_chat_turn(
+            &app,
+            &state.0,
+            &args.run_id,
+            &args.thread_id,
+            prepared,
+            Some(dossier_root.clone()),
+        )
+    });
+    if spawned.is_err() {
+        remove_staged_root(&dossier_root);
+    }
+    spawned
 }
 
 #[cfg(test)]
@@ -718,6 +1142,7 @@ mod tests {
                 "/Users/mara/code/harborline/payments-api".to_string(),
                 "/Users/mara/code/harborline/ledger-core/".to_string(),
             ],
+            codex: CodexSandbox::ReadOnly,
         }
     }
 
@@ -978,7 +1403,7 @@ mod tests {
         assert!(prompt.contains(&format!(
             "- acme_trace.png (this message): {IMAGE_ROOT}/1-acme-trace.png"
         )));
-        assert!(assert_read_only("claude", cli).is_ok());
+        assert!(assert_read_only("claude", cli, CodexSandbox::ReadOnly).is_ok());
     }
 
     #[test]
@@ -994,7 +1419,7 @@ mod tests {
         assert_eq!(attached, vec![format!("{IMAGE_ROOT}/1-acme-trace.png")]);
         assert!(!cli.contains(&"--add-dir".to_string()));
         assert!(!cli.last().unwrap().contains(IMAGE_ROOT));
-        assert!(assert_read_only("codex", cli).is_ok());
+        assert!(assert_read_only("codex", cli, CodexSandbox::ReadOnly).is_ok());
     }
 
     #[test]
@@ -1012,6 +1437,7 @@ mod tests {
         let scope = ChatScope {
             provider: "anthropic".to_string(),
             roots: vec![],
+            codex: CodexSandbox::ReadOnly,
         };
         assert!(matches!(
             prepare_chat_turn(
@@ -1143,5 +1569,398 @@ mod tests {
         assert_eq!(value["chatId"], "chat-1");
         assert_eq!(value["runId"], "run-1");
         assert_eq!(value["type"], "line");
+    }
+
+    const DOSSIER: &str = "/private/tmp/goodboy-ask/run-1";
+
+    fn ask_args_for(provider: &str) -> AskTurnArgs {
+        AskTurnArgs {
+            run_id: "run-1".to_string(),
+            thread_id: "ask-1".to_string(),
+            session_id: "session-1".to_string(),
+            provider: provider.to_string(),
+            model: "claude-sonnet-5-5".to_string(),
+            prompt: "What needs me?".to_string(),
+            system_prompt: Some("Answer about the Fix webhook retries session.".to_string()),
+            effort: Some("low".to_string()),
+            dossier: vec![AskDossierFile {
+                name: "agents/A2.md".to_string(),
+                content: "Implementer transcript tail".to_string(),
+            }],
+        }
+    }
+
+    fn ask_scope_for(provider: &str, worktrees: &[&str]) -> AskScope {
+        AskScope {
+            provider: provider.to_string(),
+            worktrees: worktrees.iter().map(|root| root.to_string()).collect(),
+            codex: CodexSandbox::ReadOnly,
+        }
+    }
+
+    const WORKTREES: [&str; 2] = [
+        "/Users/mara/code/notify-relay/.goodboy/worktrees/webhook-retries",
+        "/Users/mara/code/payments-api/.goodboy/worktrees/webhook-retries/",
+    ];
+
+    fn prepare_ask(provider: &str, worktrees: &[&str]) -> PreparedChatTurn {
+        prepare_ask_turn(
+            &ask_args_for(provider),
+            &ask_scope_for(provider, worktrees),
+            Some(Path::new(HOME)),
+            DOSSIER,
+        )
+        .expect("read-only ask")
+    }
+
+    #[test]
+    fn claude_asks_from_the_session_worktrees_and_reads_the_dossier_as_an_extra_root() {
+        let prepared = prepare_ask("anthropic", &WORKTREES);
+        assert_eq!(prepared.working_dir, WORKTREES[0]);
+        let roots: Vec<&str> = prepared
+            .cli
+            .windows(2)
+            .filter(|pair| pair[0] == "--add-dir")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(
+            roots,
+            vec![
+                "/Users/mara/code/payments-api/.goodboy/worktrees/webhook-retries",
+                DOSSIER
+            ]
+        );
+        assert_eq!(flag_value(&prepared.cli, "--permission-mode"), Some("plan"));
+        assert_eq!(flag_value(&prepared.cli, "--tools"), Some("Read,Grep,Glob"));
+        assert!(prepared.cli.contains(&"--restricted".to_string()));
+        assert!(assert_read_only("claude", &prepared.cli, CodexSandbox::ReadOnly).is_ok());
+    }
+
+    #[test]
+    fn codex_before_0_160_asks_inside_the_dossier_with_the_read_only_sandbox() {
+        let prepared = prepare_ask("codex", &WORKTREES);
+        assert_eq!(prepared.working_dir, DOSSIER);
+        assert_eq!(flag_value(&prepared.cli, "--cd"), Some(DOSSIER));
+        assert_eq!(flag_value(&prepared.cli, "-s"), Some("read-only"));
+        assert!(!prepared.cli.contains(&"--add-dir".to_string()));
+        for switch in ["--ignore-user-config", "--ignore-rules", "--ephemeral"] {
+            assert!(
+                prepared.cli.contains(&switch.to_string()),
+                "{switch} missing"
+            );
+        }
+        let prompt = prepared.cli.last().unwrap();
+        assert!(prompt.starts_with("Answer about the Fix webhook retries session.\n\n"));
+        assert!(prompt.contains(&format!("- {DOSSIER}/agents/A2.md")));
+        assert!(prompt.contains(&format!("- {}", WORKTREES[0])));
+        assert!(assert_read_only("codex", &prepared.cli, CodexSandbox::ReadOnly).is_ok());
+    }
+
+    fn grants(roots: &[&str]) -> String {
+        let listed: Vec<String> = roots
+            .iter()
+            .map(|root| format!("\"{root}\"=\"read\""))
+            .collect();
+        format!(
+            "permissions.goodboy-ask.filesystem={{\":minimal\"=\"read\",{}}}",
+            listed.join(",")
+        )
+    }
+
+    fn assert_read_profile(cli: &[String], roots: &[&str]) {
+        assert_eq!(flag_value(cli, "-s"), None, "{cli:?}");
+        assert!(has_pair(cli, "-c", "default_permissions=\"goodboy-ask\""));
+        assert!(has_pair(cli, "-c", &grants(roots)), "{cli:?}");
+        assert!(has_pair(cli, "-c", "mcp_servers={}"));
+        for switch in ["--ignore-user-config", "--ignore-rules", "--ephemeral"] {
+            assert!(cli.contains(&switch.to_string()), "{switch} missing");
+        }
+        assert!(assert_read_only("codex", cli, CodexSandbox::Profile).is_ok());
+        assert!(assert_read_only("codex", cli, CodexSandbox::ReadOnly).is_err());
+    }
+
+    #[test]
+    fn the_codex_sandbox_follows_the_cli_version() {
+        for version in [
+            "codex-cli 0.160.0",
+            "codex-cli 0.161.2",
+            "codex-cli 1.0.0",
+            "codex-cli 0.160.0-alpha.3",
+            "v0.172",
+        ] {
+            assert_eq!(
+                codex_sandbox_for(Some(version)),
+                CodexSandbox::Profile,
+                "{version}"
+            );
+        }
+        for version in ["codex-cli 0.159.9", "codex-cli 0.98.0", "codex-cli", ""] {
+            assert_eq!(
+                codex_sandbox_for(Some(version)),
+                CodexSandbox::ReadOnly,
+                "{version}"
+            );
+        }
+        assert_eq!(codex_sandbox_for(None), CodexSandbox::ReadOnly);
+        assert_eq!(detect_codex_sandbox("anthropic"), CodexSandbox::ReadOnly);
+    }
+
+    #[test]
+    fn codex_from_0_160_asks_from_the_worktrees_and_reads_only_them_and_the_dossier() {
+        let mut scope = ask_scope_for("codex", &WORKTREES);
+        scope.codex = CodexSandbox::Profile;
+        let prepared = prepare_ask_turn(
+            &ask_args_for("codex"),
+            &scope,
+            Some(Path::new(HOME)),
+            DOSSIER,
+        )
+        .expect("read profile ask");
+        assert_eq!(prepared.working_dir, WORKTREES[0]);
+        assert_eq!(flag_value(&prepared.cli, "--cd"), Some(WORKTREES[0]));
+        assert_read_profile(
+            &prepared.cli,
+            &[
+                WORKTREES[0],
+                "/Users/mara/code/payments-api/.goodboy/worktrees/webhook-retries",
+                DOSSIER,
+            ],
+        );
+        let prompt = prepared.cli.last().unwrap();
+        assert!(prompt.contains(&format!("- {DOSSIER}/agents/A2.md")));
+    }
+
+    #[test]
+    fn codex_from_0_160_chats_over_the_workspace_projects_and_its_images_only() {
+        let mut scope = scope_for("codex");
+        scope.codex = CodexSandbox::Profile;
+        let args = args_for("codex");
+        let prepared = prepare_chat_turn(&args, &scope, Some(Path::new(HOME)), None)
+            .expect("read profile chat");
+        assert_eq!(
+            prepared.working_dir,
+            "/Users/mara/code/harborline/payments-api"
+        );
+        assert_read_profile(
+            &prepared.cli,
+            &[
+                "/Users/mara/code/harborline/payments-api",
+                "/Users/mara/code/harborline/ledger-core",
+            ],
+        );
+        let mut with_images = args_for("codex");
+        with_images.images = true;
+        let prepared = prepare_chat_turn(
+            &with_images,
+            &scope,
+            Some(Path::new(HOME)),
+            Some(&turn_images(IMAGE_ROOT)),
+        )
+        .expect("read profile chat with images");
+        assert_read_profile(
+            &prepared.cli,
+            &[
+                "/Users/mara/code/harborline/payments-api",
+                "/Users/mara/code/harborline/ledger-core",
+                IMAGE_ROOT,
+            ],
+        );
+        assert_eq!(
+            flag_value(&prepared.cli, "--image"),
+            Some(format!("{IMAGE_ROOT}/1-acme-trace.png").as_str())
+        );
+    }
+
+    #[test]
+    fn a_sandbox_flag_or_a_write_grant_breaks_the_read_profile() {
+        let mut scope = scope_for("codex");
+        scope.codex = CodexSandbox::Profile;
+        let cli = prepare_chat_turn(&args_for("codex"), &scope, Some(Path::new(HOME)), None)
+            .expect("read profile chat")
+            .cli;
+        let separator = cli.iter().position(|arg| arg == "--").unwrap();
+        let mut sandboxed = cli.clone();
+        sandboxed.insert(separator, "read-only".to_string());
+        sandboxed.insert(separator, "-s".to_string());
+        assert!(assert_read_only("codex", &sandboxed, CodexSandbox::Profile).is_err());
+        let writing: Vec<String> = cli
+            .iter()
+            .map(|arg| arg.replace("ledger-core\"=\"read\"", "ledger-core\"=\"write\""))
+            .collect();
+        assert!(assert_read_only("codex", &writing, CodexSandbox::Profile).is_err());
+        let at = cli
+            .iter()
+            .position(|arg| arg.starts_with("permissions.goodboy-ask.filesystem="))
+            .unwrap();
+        let mut bare = cli.clone();
+        bare.drain(at - 1..=at);
+        assert!(assert_read_only("codex", &bare, CodexSandbox::Profile).is_err());
+    }
+
+    #[test]
+    fn read_roots_are_quoted_as_toml_strings() {
+        assert_eq!(
+            codex_filesystem(&[
+                "/code/acme \"edge\"\\api".to_string(),
+                "/code/acme \"edge\"\\api".to_string(),
+            ]),
+            "permissions.goodboy-ask.filesystem={\":minimal\"=\"read\",\"/code/acme \\\"edge\\\"\\\\api\"=\"read\"}"
+        );
+    }
+
+    #[test]
+    fn a_session_without_a_worktree_asks_from_the_dossier_alone() {
+        for provider in PROVIDERS {
+            let prepared = prepare_ask(provider, &[]);
+            assert_eq!(prepared.working_dir, DOSSIER, "{provider}");
+            assert!(
+                !prepared.cli.contains(&"--add-dir".to_string()),
+                "{provider}"
+            );
+            let prompt = prepared.cli.last().unwrap();
+            assert!(!prompt.contains(ASK_WORKTREES_HEADER), "{provider}");
+        }
+    }
+
+    #[test]
+    fn ask_refuses_providers_that_cannot_run_read_only_and_a_provider_the_thread_does_not_use() {
+        for provider in ["cursor", "gemini", "opencode"] {
+            let result = prepare_ask_turn(
+                &ask_args_for(provider),
+                &ask_scope_for(provider, &WORKTREES),
+                Some(Path::new(HOME)),
+                DOSSIER,
+            );
+            assert!(matches!(result, Err(ChatError::NotReadOnly(_))));
+        }
+        let mismatch = prepare_ask_turn(
+            &ask_args_for("codex"),
+            &ask_scope_for("anthropic", &WORKTREES),
+            Some(Path::new(HOME)),
+            DOSSIER,
+        );
+        assert!(matches!(mismatch, Err(ChatError::ProviderMismatch { .. })));
+    }
+
+    #[test]
+    fn ask_never_reads_the_home_folder_or_a_parent_of_it() {
+        let prepared = prepare_ask("anthropic", &["/Users", HOME, "relative/path"]);
+        assert_eq!(prepared.working_dir, DOSSIER);
+        assert!(!prepared.cli.contains(&"--add-dir".to_string()));
+    }
+
+    #[test]
+    fn dossier_names_stay_inside_the_staged_root() {
+        for name in ["session.md", "agents/A2.md", "runs/R1.md"] {
+            assert!(is_safe_dossier_name(name), "{name}");
+        }
+        for name in [
+            "../escape.md",
+            "/etc/passwd.md",
+            "agents/../../x.md",
+            ".hidden.md",
+            "a/b/c.md",
+            "agents/A2.txt",
+            "-flag.md",
+            "",
+        ] {
+            assert!(!is_safe_dossier_name(name), "{name}");
+        }
+    }
+
+    #[test]
+    fn the_dossier_is_capped_in_files_and_bytes() {
+        let many: Vec<AskDossierFile> = (0..=ASK_MAX_FILES)
+            .map(|index| AskDossierFile {
+                name: format!("f{index}.md"),
+                content: String::new(),
+            })
+            .collect();
+        assert!(matches!(
+            check_dossier(&many),
+            Err(ChatError::InvalidDossier(_))
+        ));
+        let big = vec![AskDossierFile {
+            name: "session.md".to_string(),
+            content: "x".repeat(ASK_MAX_BYTES + 1),
+        }];
+        assert!(matches!(
+            check_dossier(&big),
+            Err(ChatError::InvalidDossier(_))
+        ));
+        let twice = vec![
+            AskDossierFile {
+                name: "session.md".to_string(),
+                content: String::new(),
+            },
+            AskDossierFile {
+                name: "session.md".to_string(),
+                content: String::new(),
+            },
+        ];
+        assert!(matches!(
+            check_dossier(&twice),
+            Err(ChatError::InvalidDossier(_))
+        ));
+    }
+
+    #[test]
+    fn the_dossier_is_staged_read_only_and_removed_after_the_turn() {
+        let temp = std::env::temp_dir().join(format!("goodboy-ask-test-{}", std::process::id()));
+        let files = vec![
+            AskDossierFile {
+                name: "session.md".to_string(),
+                content: "Fix webhook retries".to_string(),
+            },
+            AskDossierFile {
+                name: "agents/A2.md".to_string(),
+                content: "Implementer".to_string(),
+            },
+        ];
+        let root = stage_ask_dossier_in(&temp, "run-7", &files).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(root.join("agents/A2.md")).unwrap(),
+            "Implementer"
+        );
+        assert!(std::fs::write(root.join("new.md"), "x").is_err());
+        remove_staged_root(&root);
+        assert!(!root.exists());
+        let _ = std::fs::remove_dir_all(&temp);
+        assert!(matches!(
+            stage_ask_dossier_in(&temp, "../run", &files),
+            Err(ChatError::InvalidValue { .. })
+        ));
+    }
+
+    #[test]
+    fn the_ask_scope_is_the_thread_of_this_session_and_its_attached_worktrees() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE chats (id TEXT PRIMARY KEY, provider TEXT, session_id TEXT);
+             CREATE TABLE session_worktrees (id TEXT PRIMARY KEY, session_id TEXT,
+               worktree_path TEXT, is_attached INTEGER, parallel_index INTEGER, created_at INTEGER);
+             INSERT INTO chats VALUES ('ask-1', 'anthropic', 'session-1');
+             INSERT INTO chats VALUES ('chat-1', 'anthropic', NULL);
+             INSERT INTO session_worktrees VALUES ('w2', 'session-1', '/code/payments-api/wt', 1, 1, 1);
+             INSERT INTO session_worktrees VALUES ('w1', 'session-1', '/code/notify-relay/wt', 1, 0, 2);
+             INSERT INTO session_worktrees VALUES ('w3', 'session-1', '/code/old/wt', 0, 2, 0);
+             INSERT INTO session_worktrees VALUES ('w4', 'session-1', NULL, 1, 3, 0);
+             INSERT INTO session_worktrees VALUES ('w5', 'session-2', '/code/other/wt', 1, 0, 0);",
+        )
+        .unwrap();
+        let scope = load_ask_scope(&conn, "ask-1", "session-1").unwrap();
+        assert_eq!(scope.provider, "anthropic");
+        assert_eq!(
+            scope.worktrees,
+            vec!["/code/notify-relay/wt", "/code/payments-api/wt"]
+        );
+        assert!(matches!(
+            load_ask_scope(&conn, "ask-1", "session-2"),
+            Err(ChatError::NotFound(_))
+        ));
+        assert!(matches!(
+            load_ask_scope(&conn, "chat-1", "session-1"),
+            Err(ChatError::NotFound(_))
+        ));
     }
 }

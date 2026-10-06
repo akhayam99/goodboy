@@ -1,13 +1,18 @@
 import './SessionMock.css';
 import { MockStage } from './MockStage';
-import { MessageCircle, SquareKanban, Waypoints } from './icons';
+import { Inbox, MessageCircle, Plus, SquareKanban, Waypoints } from './icons';
 import {
+  AppButton,
+  AppRow,
   AppTopBar,
+  GroupLabel,
   NeedsYouChip,
   RunTree,
   StartsInChip,
+  WorkNode,
   type RailGroupInput,
   type RunTreeRowData,
+  type WorkNodeState,
   useIsCoarse,
 } from './kit';
 
@@ -130,6 +135,49 @@ const ROWS: ReadonlyArray<RunTreeRowData> = [
   },
 ];
 
+type SessionRowData = {
+  readonly id: string;
+  readonly title: string;
+  readonly state: WorkNodeState;
+  readonly stateLabel: string;
+  readonly isSelected?: boolean;
+};
+
+const DOORS = [
+  { label: 'Board', Icon: SquareKanban },
+  { label: 'Inbox', Icon: Inbox },
+  { label: 'Chat', Icon: MessageCircle },
+  { label: 'Workflows', Icon: Waypoints },
+] as const;
+
+const SESSIONS: ReadonlyArray<SessionRowData> = [
+  {
+    id: 'duplicate-credit',
+    title: 'Duplicate credit fix',
+    state: 'question',
+    stateLabel: 'Needs you',
+    isSelected: true,
+  },
+  {
+    id: 'payout-export',
+    title: 'Speed up the payout export',
+    state: 'running',
+    stateLabel: 'Running',
+  },
+  {
+    id: 'retried-webhooks',
+    title: 'Stop retried webhooks posting a second credit',
+    state: 'done',
+    stateLabel: 'Done',
+  },
+  {
+    id: 'signing-secret',
+    title: 'Rotate the processor signing secret',
+    state: 'queued',
+    stateLabel: 'Idle',
+  },
+];
+
 const PHONE_ROW_IDS: ReadonlySet<string> = new Set([
   'step-5',
   'step-4-2',
@@ -164,25 +212,13 @@ export const SessionMock = () => {
   return (
     <MockStage
       className="sessionMock"
-      label="A workflow named Duplicate credit fix with five steps. Steps one to three are done, step four is running, one of its subagents failed and another waits on your answer, and step five is queued."
+      label="The session Duplicate credit fix open beside the left column of places and sessions, with a run of five steps. Steps one to three are done, step four is running, one of its subagents failed and another waits on your answer, and step five is queued."
       isHero
     >
       <div className="smApp">
         <AppTopBar
           workspace="Harborline"
           search="Search or ask"
-          nav={
-            <>
-              <span className="gkTopNavItem smNavItem">
-                <SquareKanban size={14} />
-                Board
-              </span>
-              <span className="gkTopNavItem smNavItem">
-                <MessageCircle size={14} />
-                Chat
-              </span>
-            </>
-          }
           end={
             <>
               <NeedsYouChip count={1} className="smNeeds" />
@@ -196,32 +232,62 @@ export const SessionMock = () => {
             </>
           }
         />
-        <div className="smBody">
-          <div className="smHead">
-            <span className="smIcon" aria-hidden="true">
-              <Waypoints size={20} />
-            </span>
-            <div className="smHeadText">
-              <h3 className="smTitle">Duplicate credit fix</h3>
-              <p className="smMeta">
-                <span>5 steps</span>
-                <span>10 agents</span>
-                <span>$2.74</span>
-                <span>Spend cap $12.00</span>
-              </p>
+        <div className="smShell">
+          <nav className="smCol" aria-label="Places and sessions">
+            <AppButton className="smNew">
+              <Plus size={14} />
+              New session
+            </AppButton>
+            <div className="smDoors">
+              {DOORS.map(({ label, Icon }) => (
+                <span key={label} className="smDoor">
+                  <Icon size={14} />
+                  {label}
+                </span>
+              ))}
             </div>
+            <GroupLabel label="Sessions" muted className="smColLabel" />
+            <div className="smSessions">
+              {SESSIONS.map((session) => (
+                <AppRow
+                  key={session.id}
+                  isSelected={session.isSelected}
+                  height={28}
+                  className="smSession"
+                >
+                  <WorkNode state={session.state} label={session.stateLabel} size="sm" />
+                  <span className="smSessionTitle">{session.title}</span>
+                </AppRow>
+              ))}
+            </div>
+          </nav>
+          <div className="smBody">
+            <div className="smHead">
+              <span className="smIcon" aria-hidden="true">
+                <Waypoints size={20} />
+              </span>
+              <div className="smHeadText">
+                <h3 className="smTitle">Duplicate credit fix</h3>
+                <p className="smMeta">
+                  <span>5 steps</span>
+                  <span>10 agents</span>
+                  <span>$2.74</span>
+                  <span>Spend cap $12.00</span>
+                </p>
+              </div>
+            </div>
+            <div className="smStarts">
+              <StartsInChip target="payments-api / hl/fix-duplicate-credit" />
+            </div>
+            <RunTree
+              className="smTree"
+              rows={isCoarse ? PHONE_ROWS : ROWS}
+              groups={GROUPS}
+              hasSpine
+              heading={HEADING}
+              label="Steps"
+            />
           </div>
-          <div className="smStarts">
-            <StartsInChip target="payments-api / hl/fix-duplicate-credit" />
-          </div>
-          <RunTree
-            className="smTree"
-            rows={isCoarse ? PHONE_ROWS : ROWS}
-            groups={GROUPS}
-            hasSpine
-            heading={HEADING}
-            label="Steps"
-          />
         </div>
       </div>
     </MockStage>

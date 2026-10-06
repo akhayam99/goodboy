@@ -7,7 +7,7 @@ export const STORAGE_KEYS = {
   diffWrap: `${PREFIX}diff-wrap`,
   diffTreeWidth: `${PREFIX}diff-tree-width`,
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
-  leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
+  leftSidebarWidth: `${PREFIX}left-sidebar-width:v3`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
   paletteFrecency: `${PREFIX}palette-frecency:v1`,
   chatUnread: `${PREFIX}chat-unread:v1`,

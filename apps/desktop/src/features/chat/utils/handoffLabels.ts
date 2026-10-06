@@ -27,7 +27,7 @@ export const handoffSenderLabel = ({ sender, names }: SenderLabelParams): string
     case 'orchestrator':
       return `Orchestrator · step ${sender.stepOrdinal}`;
     case 'workflowStep':
-      return `Workflow step ${sender.stepOrdinal} of ${sender.stepCount}`;
+      return `Run step ${sender.stepOrdinal} of ${sender.stepCount}`;
     case 'resolve': {
       const count = pluralize(sender.threadIds.length, 'comment');
       return sender.prNumber === null

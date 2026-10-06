@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from './mockSceneIpc';
 import type { SessionExternalTask } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
@@ -22,7 +22,7 @@ export const TaskLinksScene = ({ state = 'idle' }: Props) => {
       telemetryAt: SESSION.updatedAt,
       lens: null,
     });
-    mockIPC((command, args) => {
+    mockSceneIpc((command, args) => {
       if (command === 'db_transaction') {
         const statements: unknown =
           args !== undefined && 'statements' in args ? args.statements : null;

@@ -28,23 +28,23 @@ describe('verbEntries', () => {
   it('lets the former name of a renamed verb find the new one', () => {
     const [entry] = verbEntries({
       target,
-      actions: [action(NAMES.stopWorkflow)],
+      actions: [action(NAMES.stopRun)],
       isScope: false,
-      noun: 'workflow',
+      noun: 'run',
       select: () => undefined,
     });
-    expect(entry?.label).toBe('Stop workflow');
-    expect(entry?.secondary).toEqual(['workflow', 'Close workflow']);
+    expect(entry?.label).toBe('Stop run');
+    expect(entry?.secondary).toEqual(['run', 'Stop workflow', 'Close workflow']);
   });
 
   it('adds nothing for a verb that kept its name', () => {
     const [entry] = verbEntries({
       target,
-      actions: [action('Delete workflow run')],
+      actions: [action('Copy run summary')],
       isScope: false,
-      noun: 'workflow',
+      noun: 'run',
       select: () => undefined,
     });
-    expect(entry?.secondary).toEqual(['workflow']);
+    expect(entry?.secondary).toEqual(['run']);
   });
 });

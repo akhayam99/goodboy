@@ -246,7 +246,7 @@ describe('TimelinePane, row renders', () => {
     render(pane({ actions: null }));
     const [hit] = screen.getAllByTestId('timeline-lane-hit');
 
-    expect(hit?.getAttribute('aria-label')).toBe('Open workflow: Ship the checkout fix');
+    expect(hit?.getAttribute('aria-label')).toBe('Open run: Ship the checkout fix');
   });
 
   it('re-renders no row when the parent re-renders with the same data', () => {

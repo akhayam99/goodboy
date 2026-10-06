@@ -25,7 +25,7 @@ between them instead of mixing one surface through opacity.
 
 | step | role     | class           | holds                                                 |
 | ---- | -------- | --------------- | ----------------------------------------------------- |
-| 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer, studio rails |
+| 0    | chrome   | `bg-chrome`     | the app frame: top bar, left column and its rail      |
 | 1    | sheet    | `bg-background` | the content sheet, a studio's detail, viewer dialogs  |
 | 2    | panel    | `bg-subtle`     | a drawer that pushes the column                       |
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
@@ -163,7 +163,8 @@ hairline. `half-step-spacing` in `forbidden-patterns.test.ts` allows none, and
 no baseline lists it. `spacing-grid.test.ts`
 reads `paneRhythm.ts`, `timelineRhythm.ts` and `workMetaSpec.ts` and fails on a
 half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
-row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px).
+row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px). A session
+row in the left column is 28px, and so are the pages nested under it.
 
 The `html` root stays 15px while any `rem` remains. `body` and `#root` are
 14/20, so text with no class lands on the body role instead of 15/23.25.
@@ -206,14 +207,14 @@ Bare `rounded` comes out at 3.75px on the 15px root, so it is always written
 Five levels plus the tooltip. A level sets surface, shadow, border and radius
 together, and there is no arbitrary shadow.
 
-| level      | surface                          | shadow      | border                        | radius                     | holds                                 |
-| ---------- | -------------------------------- | ----------- | ----------------------------- | -------------------------- | ------------------------------------- |
-| 0 frame    | `chrome`                         | none        | none                          | n/a                        | top bar, sidebar, footer, studio rail |
-| 1 sheet    | `background`                     | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail                |
-| 2 band     | `fill` (band), `subtle` (drawer) | none        | none                          | `lg` band, `frame` drawer  | groups, a drawer that pushes          |
-| 3 card     | `elevated`                       | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`               |
-| 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs      |
-| 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                              |
+| level      | surface                          | shadow      | border                        | radius                     | holds                            |
+| ---------- | -------------------------------- | ----------- | ----------------------------- | -------------------------- | -------------------------------- |
+| 0 frame    | `chrome`                         | none        | none                          | n/a                        | top bar, left column, rail       |
+| 1 sheet    | `background`                     | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
+| 2 band     | `fill` (band), `subtle` (drawer) | none        | none                          | `lg` band, `frame` drawer  | groups, a drawer that pushes     |
+| 3 card     | `elevated`                       | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`          |
+| 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
+| 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                         |
 
 A drawer in overlay adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
@@ -682,6 +683,45 @@ counts them in comments ("3 ready · 1 needs you"), never as agents. A comment
 that needs you, has a ready fix or could not be fixed sets the `reviewComment`
 ask, so Needs you carries it and the row itself is not tinted.
 
+### Session row, hover card and switcher
+
+A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
+and the title, with a `gap-2` between them and `px-2` inside the pill. It has
+no second line, no `ToneBar`, no marks, no age and no cost. The node is one of
+five signs, picked by `sessionNodeOf` from the session's stage, first match
+wins:
+
+| sign      | node                                         | when                                                 |
+| --------- | -------------------------------------------- | ---------------------------------------------------- |
+| needs you | `question`, `approval` or `failed`, no glyph | the stage is attention (`failed` in the danger tone) |
+| running   | `running` with the centre dot                | an agent turn runs                                   |
+| done      | `closed`, the muted check                    | the pull request is merged or all the work is closed |
+| idle      | `marker`, a 1px ring with no glyph           | anything else                                        |
+| archived  | `queued`, a dashed faint ring with no glyph  | only under Show archived                             |
+
+The title is `text-row`. Needs you and running read in `foreground`, idle, done
+and archived in `muted-foreground`. The open session is medium weight, and its
+row has no fill while its pages are nested under it. The pages are five 28px
+child rows in a `SelectableRow`, indented by `PANE_RHYTHM.navRail.nest`: the
+page icon in its concept tone, its word, and its count word in
+`faint-foreground`. The current page takes `bg-selected` and `aria-current="page"`,
+and the session row then carries `aria-current="true"`.
+
+The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
+at `z-popover`, 8px to the right of the column and aligned to its row, with a
+`gap-3` between its blocks: the title in `text-heading`, the node with the stage
+word and its reason in `text-meta`, the run progress, the chips (`Chip` `xs`:
+the pull request in its presentation tone, linked tasks as the compact task
+chip, projects with the folder glyph), a `text-meta` line of agents, spend and
+age in `faint-foreground`, and one `GhostActionButton` when the session needs
+you. It opens after a 500ms rest or keyboard focus, swaps at once between rows,
+and enters with `popover-in` once, never on a swap.
+
+The switcher is the palette frame (`z-command-palette`, a scrim, `bg-floating`
+on a `rounded-lg border` with `shadow-lg`) at `max-w-105`. Its rows are 36px
+`SelectableRow` options: node, title and age. It stays hidden for the first
+120ms of a hold, so a quick tap flips sessions without drawing it.
+
 ### Work meta
 
 The right end of a work row is `WorkMeta` in
@@ -699,7 +739,7 @@ running or done, and so does every surface that reads `formatActiveTime`.
 | model      | 152px | Activity only: the provider glyphs and the models that ran, in run order                                  | glyphs only under 640px                        |
 | stack      | 72px  | Activity only: duration on top (meta size, muted), cost under it (chip size, faint)                       | cost leaves under 620px, all of it under 500px |
 | action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                                    |
-| menu       | 24px  | the row menu, like Stop workflow on a run row                                                             | never drops                                    |
+| menu       | 24px  | the row menu, like Stop run on a run row                                                                  | never drops                                    |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
@@ -964,7 +1004,7 @@ props and reads no store, so it also renders inside `ErrorBoundary` after the
 app below it has crashed.
 
 - **Variants**: `floating` is level 4 (`floating`, `shadow-lg`, `border`,
-  `rounded-lg`), placed by the host above the footer chip with no overlay.
+  `rounded-lg`), placed by the host at the bottom of the window with no overlay.
   `inline` drops the shadow onto `subtle`, for the crash and startup screens.
 - **Head**: the bug glyph, a `text-heading` title, an optional type control (a
   `chip` Listbox) and an Esc `KbdPill` when the sheet can close.
@@ -985,6 +1025,36 @@ app below it has crashed.
   primary button whose label names the destination, with its shortcut in an
   on-tone pill.
 
+## The left column
+
+`AppShell` lays out one left column on the chrome, a resize handle and the
+content sheet. The column is 240px by default, resizable from 200 to 400
+(`LEFT_SIDEBAR_*`), and its one reduced state is a 44px rail
+(`COLLAPSED_RAIL_WIDTH`). The desktop fills it with `SideColumn`; the rules for
+what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surfaces.
+
+| part        | shape                                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| toggle      | a size-8 icon button centred in a 44px box, on the same axis as the workspace tile and the rail        |
+| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary |
+| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover      |
+| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame               |
+| foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                       |
+| rail button | a size-8 icon button with the word and shortcut in a right-side `Tooltip`                              |
+
+Rows sit 2px apart (`gap-0.5`); the doors start 4px under New session. The
+column swaps its content only for Settings, as two layers in place that
+cross-fade (opacity and a 6px slide, 160ms, `motion-safe` only); the hidden
+layer is `inert`. A studio never covers it: `studioCoversLeft={false}` puts the
+studio slot in the `main` area as its own wrapped sheet (`bg-background`, the
+`wrapped` sheet edge), and `StudioFrame` with `placement="content"` draws its
+band on that sheet instead of on the chrome.
+
+A list that belongs to a studio's page (Chat's chats, Changelog's releases)
+uses `StudioRailLayout` with `placement="page"`: the list sits on the page
+background and the resize handle draws the only line between it and the
+detail.
+
 ## Pane anatomy
 
 The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`
@@ -995,7 +1065,7 @@ header and body share one `PageColumn` with the session trail band above it. It 
 row wraps, so actions drop under the title instead of squeezing it. The pane
 owns the gap below the header, and children add no top margins. The root is
 `@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
-`StudioShell` it fills the pane and the column centres in the full width.
+`StudioShell` it fills the pane and the column starts at its left edge.
 
 **One title grade, one header height.** Every lens pane and studio detail gets
 its title from `PaneShell`: an `h1` at `text-lg` with `meta` inline and
@@ -1025,24 +1095,54 @@ body. Studio
 chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
 the only `h1` on the surface.
 
-**The content column is 960px and centres.** `PANE_RHYTHM.column` caps at
-`--column-max` (960px of content, gutters excluded) and `PageColumn` adds the
-24px gutter, 16px when the pane is under 720px wide. No view picks its own
+**One left edge.** Every page's content starts at the same x next to the
+column: Overview, the Branch tabs, Runs, Agents, Artifacts, plans, reports,
+settings pages and studios. `PageColumn` and `PANE_RHYTHM.column` never centre.
+Three tiers share that edge: **measure** (`--measure`, 720px, `PageColumn
+width="measure"` or `PANE_RHYTHM.prose`) for prose, **column** (`--column-max`,
+960px) for the page column, and **full** for work surfaces. `PageColumn` adds
+the 24px gutter, 16px when the pane is under 720px wide. No view picks its own
 width: the column changes only when the window changes or the right drawer
 opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
 
+**The drawer opens in the space on the right.** A drawer (context, plan or
+artifact, file diff, script output, a fix run transcript, an agent
+conversation) never moves the main content: the main area keeps its start and
+only gives up space on its right, and when that would leave it under 560px
+plus gutters the drawer lies over the page.
+
+**A form opens where you clicked.** One placement rule for every inline form:
+
+| The form acts on             | It opens                                                                   |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| a line or a block            | inline under it, across the whole code width (both halves in a split diff) |
+| a row                        | inside the row                                                             |
+| a section                    | in the section body, under its header                                      |
+| the page                     | in the header's action zone, or an anchored panel under the primary        |
+| a selection                  | a bar at the bottom of the collection; the panel in the detail column      |
+| an object of another surface | the right drawer, never a navigation                                       |
+
+Every opening form scrolls itself into view (`block: 'nearest'`), takes focus,
+and gives focus back to its trigger when it closes, saved or cancelled: a diff
+line composer returns to its gutter number, a file composer to Comment on
+file, a plan block composer to its comment button. Ask agent on a diff line
+opens that agent's conversation in the `transcript` drawer with the quote in
+its field; the diff stays. A split diff needs 880px for its code: under that it
+draws unified and the toolbar says `Split needs a wider window`, and the
+choice comes back with room.
+
 **Work panes use the full width.** A pane whose body is a working surface (a
-list beside a thread, a file tree beside a diff) passes `width="full"` to
-`PaneShell`, and to the `PageColumn` of its tabs. It keeps the 24px gutter
-(16px under 720px) and drops the 960px cap and the centring, so the header and
-the body share one left edge on any pane. The Branch page is the one user.
+list beside a thread, a file tree beside a diff, a terminal) passes
+`width="full"` to `PaneShell`, and to the `PageColumn` of its tabs. It keeps
+the 24px gutter (16px under 720px) and drops the 960px cap, so the header and
+the body share one left edge on any pane. The Branch page is the main user.
 Its Comments tab reads the width of its own pane, not the window's
 (`branchLayoutOf`): under 900px one column, the list, then the thread with a
 `‹ Comments` back that keeps the selected row; from 900px a 300px list and the
-thread, with the properties inside the thread; from 1040px a 232px properties
-rail on the right. A drawer or a wide sidebar narrows the pane, so the layout
-follows them.
+thread, wide, with the properties inline under it; from 1280px a 288px
+properties margin rail (`--margin-rail`) on the right. A drawer or a wide
+sidebar narrows the pane, so the layout follows them.
 
 **Trail separator.** Each segment except the last ends with one 24px chevron
 slot in `faint-foreground`: a button that opens the segment's menu, or a static
@@ -1406,7 +1506,7 @@ conversation is the wrapped sheet, and "Turn into work" is the
   heading, and its Undo line takes the group's place.
 - **The conversation** sits on `PageColumn`, the same 960px column as every
   other page: the header, the thread and the composer share one left and one
-  right edge. Prose (paragraphs, lists, quotes, headings) stops at a `72ch`
+  right edge. Prose (paragraphs, lists, quotes, headings) stops at the 720px
   measure, left aligned; tables and code blocks take the whole column. The
   question is a `bg-subtle` bubble on the right in `text-prose`; the answer is
   `Markdown` in `text-prose` with no bubble. Under it, in order: `Read N files`
@@ -1473,9 +1573,10 @@ toggle icon) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 
 - `spin-border`: working, on an element whose own edge carries the signal
-  (a `WorkNode`'s ring). A session card or row carries its tone in a
+  (a `WorkNode`'s ring). A session card carries its tone in a
   `ToneBar` instead, a bar inside the surface rather than a border around it,
-  breathing through `soft-pulse` while running.
+  breathing through `soft-pulse` while running. A session row in the column has
+  no bar: its `WorkNode` is the sign.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
   a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s

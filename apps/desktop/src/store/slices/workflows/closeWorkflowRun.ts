@@ -106,7 +106,7 @@ export const closeWorkflowRun = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: "Couldn't close this workflow",
+        title: "Couldn't stop this run",
         body: formatError(error),
         sessionId,
       });

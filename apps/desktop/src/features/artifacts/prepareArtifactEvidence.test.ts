@@ -121,7 +121,7 @@ describe('prepareArtifactEvidence', () => {
     });
     expect(prepared.provenance.evidence).toEqual([
       { kind: 'session', id: SESSION_ID, label: session.goal },
-      { kind: 'workflow-run', id: RUN_ID, label: 'workflow run' },
+      { kind: 'workflow-run', id: RUN_ID, label: 'run' },
       { kind: 'agent', id: AGENT_ID, label: 'scout' },
     ]);
     expect(prepared.provenance.omissions).toContain('agent agent-1: final message truncated');

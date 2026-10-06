@@ -5,7 +5,7 @@ import { clearMocks } from '@tauri-apps/api/mocks';
 import { ErrorBoundary } from '@goodboy/ui';
 import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
+import type { SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
 import { agentPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
@@ -13,6 +13,7 @@ import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
 import { pressShortcut } from '../../helpers/pressKey';
+import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
 import {
   type BridgeArgs,
@@ -241,7 +242,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'column.toggle',
-    lands: () => visible('button', /^Show sessions/),
+    lands: () => visible('button', /^Show sidebar/),
   }),
   pressRow({
     id: 'session.board',
@@ -266,10 +267,64 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'session.next',
-    open: async () => {
+    open: async (ctx) => {
+      useAppStore.getState().markSessionOpened({ sessionId: ctx.sessionId });
       await press('session.next')();
     },
     lands: async (ctx) => expect(useAppStore.getState().currentSessionId).not.toBe(ctx.sessionId),
+  }),
+  keyRow({
+    id: 'session.switcher',
+    note: 'Tab with Control held lists the recent sessions, releasing Control opens the chosen one',
+    open: async (ctx) => {
+      useAppStore.getState().markSessionOpened({ sessionId: ctx.sessionId });
+      await press('session.switcher')();
+      await visible('listbox', 'Recent sessions');
+      fireEvent.keyUp(window, { key: 'Control', code: 'ControlLeft' });
+      await settle();
+    },
+    lands: async (ctx) => {
+      expect(useAppStore.getState().currentSessionId).not.toBe(ctx.sessionId);
+      expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
+    },
+  }),
+  keyRow({
+    id: 'session.switcherBack',
+    note: 'Shift Tab starts at the session opened longest ago',
+    open: async (ctx) => {
+      useAppStore.getState().markSessionOpened({ sessionId: ctx.sessionId });
+      await press('session.switcherBack')();
+      await visible('listbox', 'Recent sessions');
+      fireEvent.keyUp(window, { key: 'Control', code: 'ControlLeft' });
+      await settle();
+    },
+    lands: async (ctx) => {
+      expect(useAppStore.getState().currentSessionId).not.toBe(ctx.sessionId);
+      expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
+    },
+  }),
+  keyRow({
+    id: 'session.nextNeedsYou',
+    note: 'lands on the questions of the session that is waiting',
+    open: async (ctx) => {
+      const waiting = useAppStore
+        .getState()
+        .sessions.find((session) => session.id !== ctx.sessionId);
+      if (waiting === undefined) {
+        throw new Error('the board seed has no second session');
+      }
+      useAppStore.setState({
+        sessionOpenQuestions: {
+          [waiting.id]: [openQuestionFor({ sessionId: waiting.id as SessionId })],
+        },
+      });
+      await press('session.nextNeedsYou')();
+    },
+    lands: async (ctx) => {
+      const state = useAppStore.getState();
+      expect(state.currentSessionId).not.toBe(ctx.sessionId);
+      expect(state.activeLens[state.currentSessionId as SessionId]).toBe('questions');
+    },
   }),
   keyRow({
     id: 'session.prev',
@@ -306,6 +361,16 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({ id: 'lens.goal', lands: drawerIs('goal') }),
   pressRow({ id: 'lens.decisions', lands: drawerIs('decisions') }),
   pressRow({ id: 'lens.summary', lands: drawerIs('summary') }),
+  pressRow({
+    id: 'ask.open',
+    lands: async (ctx) => {
+      await waitFor(() => {
+        const drawer = selectOpenDrawer(useAppStore.getState());
+        expect(drawer?.kind).toBe('ask');
+        expect(drawer?.sessionId).toBe(ctx.sessionId);
+      }, WAIT);
+    },
+  }),
 ];
 
 const STARRED_TITLES = [

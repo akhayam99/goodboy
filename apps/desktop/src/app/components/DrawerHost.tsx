@@ -7,6 +7,11 @@ import { ArtifactDocumentDrawer } from '../../features/artifacts/components/Arti
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
+import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
+import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
+import { FixRunLead } from '../../features/resolve/components/FixRunSummary/FixRunLead';
+import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
+import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
@@ -14,6 +19,17 @@ const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 export const DrawerHost = () => {
   const drawer = useAppStore(selectDrawerPanel);
   const closeDrawer = useAppStore((s) => s.closeDrawer);
+  const isReading = useAppStore((s) => {
+    const open = selectDrawerPanel(s);
+    return (
+      open?.kind === 'artifact-document' &&
+      readingArtifactOf({
+        state: s,
+        sessionId: open.sessionId,
+        artifactId: open.payload.artifactId,
+      }) !== null
+    );
+  });
 
   if (drawer === null) {
     return null;
@@ -48,7 +64,14 @@ export const DrawerHost = () => {
         />
       );
     case 'artifact-document':
-      return (
+      return isReading ? (
+        <ArtifactReadingDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          artifactId={drawer.payload.artifactId}
+          onClose={closeDrawer}
+        />
+      ) : (
         <ArtifactDocumentDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
@@ -73,6 +96,18 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           scriptKey={drawer.payload.scriptKey}
           mountId={drawer.payload.mountId}
+          onClose={closeDrawer}
+        />
+      );
+    case 'ask':
+      return <AskDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
+    case 'transcript':
+      return (
+        <AgentTranscriptDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          agentId={drawer.payload.agentId}
+          lead={<FixRunLead sessionId={drawer.sessionId} agentId={drawer.payload.agentId} />}
           onClose={closeDrawer}
         />
       );

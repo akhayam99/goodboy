@@ -13,7 +13,7 @@ type Props = {
 export const WorkflowRunStartButton = ({ variant, blockReason, onStart }: Props) => {
   const start = useStartAnywayConfirm({
     blockReason,
-    title: 'Start this workflow anyway?',
+    title: 'Start this run anyway?',
     onStart,
   });
   const isBlocked = blockReason != null;
@@ -43,7 +43,7 @@ export const WorkflowRunStartButton = ({ variant, blockReason, onStart }: Props)
         ) : (
           <CardAction
             icon={isBlocked ? AlertTriangle : Play}
-            label="Start workflow now"
+            label="Start run now"
             tone={isBlocked ? 'warning' : 'success'}
             disabled={start.isBusy}
             onClick={start.onTrigger}

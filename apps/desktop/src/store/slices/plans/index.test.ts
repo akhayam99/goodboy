@@ -292,7 +292,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
         focus: 'none',
       });
       expect(state.emitNotification).toHaveBeenCalledTimes(1);
-      expect(state.emitNotification.mock.calls[0]![0].title).toBe('Workflow step held back');
+      expect(state.emitNotification.mock.calls[0]![0].title).toBe('Run step held back');
       expect(state.spawnAgent).not.toHaveBeenCalled();
     });
   });
@@ -427,7 +427,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(result).toEqual({
         kind: 'startedOutside',
         agentId: 'spawned',
-        note: 'Started outside the workflow, its run was discarded',
+        note: 'Started outside the run, it was discarded',
       });
       expect(state.spawnAgent.mock.calls[0]![1]).toEqual(FREE_SPAWN);
       expect(state.activateWorkflowAgent).not.toHaveBeenCalled();
@@ -444,7 +444,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
       expect(result).toEqual({
         kind: 'startedOutside',
         agentId: 'spawned',
-        note: 'Started outside the workflow, its workflow is no longer available',
+        note: 'Started outside the run, its workflow is no longer available',
       });
       expect(state.spawnAgent.mock.calls[0]![1]).toEqual(FREE_SPAWN);
     });
@@ -467,7 +467,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
     it('has no step left when every step is completed', async () => {
       await expectRefused({
-        reason: 'The workflow has no step left for this plan',
+        reason: 'The run has no step left for this plan',
         state: defaultState({
           sessionPhaseRuns: {
             [SESSION_ID]: [

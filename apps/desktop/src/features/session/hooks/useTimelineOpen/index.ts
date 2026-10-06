@@ -28,11 +28,11 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   pr_approved: { lens: 'pr', label: 'Open PR' },
   pr_merged: { lens: 'pr', label: 'Open PR' },
   pr_closed: { lens: 'pr', label: 'Open PR' },
-  workflow_started: { lens: 'workflows', label: 'Open workflows' },
-  workflow_discarded: { lens: 'workflows', label: 'Open workflows' },
-  workflow_restored: { lens: 'workflows', label: 'Open workflows' },
-  workflow_closed: { lens: 'workflows', label: 'Open workflows' },
-  workflow_deleted: { lens: 'workflows', label: 'Open workflows' },
+  workflow_started: { lens: 'workflows', label: 'Open runs' },
+  workflow_discarded: { lens: 'workflows', label: 'Open runs' },
+  workflow_restored: { lens: 'workflows', label: 'Open runs' },
+  workflow_closed: { lens: 'workflows', label: 'Open runs' },
+  workflow_deleted: { lens: 'workflows', label: 'Open runs' },
   decisions_changed: { lens: 'decisions', label: 'Open decisions' },
   project_materialized: { lens: 'files', label: 'Open files' },
   project_materialization_refused: { lens: null, label: 'Open overview' },
@@ -94,13 +94,7 @@ export const useTimelineOpen = ({
         return {
           label: isResolver ? 'Open fix run' : 'Open chat',
           open: () => {
-            store.navigate({
-              to: agentPlace({
-                sessionId,
-                agentId: entry.agent.id,
-                pane: isResolver ? 'brief' : null,
-              }),
-            });
+            store.navigate({ to: agentPlace({ sessionId, agentId: entry.agent.id }) });
           },
         };
       }
@@ -121,12 +115,10 @@ export const useTimelineOpen = ({
         return {
           label: artifact.kind === 'report' ? 'Open report' : 'Open wireframe',
           open: () => {
-            store.navigate({
-              to: sessionPlace({
-                sessionId,
-                lens: 'plans',
-                target: { kind: 'artifact', artifactId: artifact.id },
-              }),
+            store.openDrawer({
+              kind: 'artifact-document',
+              sessionId,
+              payload: { artifactId: artifact.id, revision: null },
             });
           },
         };

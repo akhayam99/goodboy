@@ -175,7 +175,7 @@ export const SHORTCUTS = {
   },
   'column.toggle': {
     combo: 'cmd+KeyB',
-    label: 'Show or hide the session sidebar',
+    label: 'Show or hide the sidebar',
     plane: 'app',
     group: 'navigate',
   },
@@ -196,6 +196,27 @@ export const SHORTCUTS = {
     label: 'Next session',
     plane: 'session',
     group: 'navigate',
+  },
+  'session.switcher': {
+    combo: 'ctrl+Tab',
+    label: 'Switch between recent sessions',
+    plane: 'app',
+    group: 'navigate',
+    scope: 'workspace',
+  },
+  'session.switcherBack': {
+    combo: 'ctrl+shift+Tab',
+    label: 'Switch back through recent sessions',
+    plane: 'session',
+    group: 'navigate',
+    scope: 'workspace',
+  },
+  'session.nextNeedsYou': {
+    combo: 'cmd+alt+ArrowDown',
+    label: 'Next session that needs you',
+    plane: 'lens',
+    group: 'navigate',
+    scope: 'workspace',
   },
 
   'session.model': {
@@ -241,7 +262,7 @@ export const SHORTCUTS = {
   },
   'activity.openRun': {
     combo: 'shift+Enter',
-    label: 'Open the workflow of an activity row',
+    label: 'Open the run of an activity row',
     plane: 'session',
     group: 'session',
     scope: 'activityRow',
@@ -277,6 +298,13 @@ export const SHORTCUTS = {
     combo: 'cmd+shift+KeyR',
     label: 'Refresh session',
     plane: 'session',
+    group: 'session',
+  },
+  'ask.open': {
+    combo: 'cmd+KeyL',
+    offMacCombo: 'ctrl+shift+KeyL',
+    label: 'Ask about this session',
+    plane: 'app',
     group: 'session',
   },
 
@@ -589,6 +617,7 @@ const MAC_GLYPH: Record<string, string> = {
   Enter: '↵',
   Space: '␣',
   Backquote: '`',
+  ArrowDown: '↓',
 };
 
 const KEY_LABEL: Record<string, string> = {
@@ -609,6 +638,7 @@ const KEY_LABEL: Record<string, string> = {
   Enter: 'Enter',
   Space: 'Space',
   Backquote: '`',
+  ArrowDown: 'Down',
 };
 
 const codeGlyph = ({ code, glyphs }: { code: string; glyphs: Record<string, string> }): string => {

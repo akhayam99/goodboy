@@ -12,6 +12,7 @@ type Props = {
   readonly nestedSlot: Readonly<Record<NestedScope, (element: HTMLDivElement | null) => void>>;
   readonly onNestedClosed: (params: { readonly scope: NestedScope }) => void;
   readonly onSelect: (params: SettingsScopeChange) => void;
+  readonly isInColumn?: boolean;
 };
 
 export const SettingsRail = ({
@@ -21,8 +22,12 @@ export const SettingsRail = ({
   nestedSlot,
   onNestedClosed,
   onSelect,
+  isInColumn = false,
 }: Props) => (
-  <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
+  <nav
+    aria-label="Settings scopes"
+    className={cn('flex flex-col gap-3', isInColumn ? 'py-1' : PANE_RHYTHM.navRail.body)}
+  >
     {groups
       .filter((group) => !isNestedScope(group.scope))
       .map((group) => (

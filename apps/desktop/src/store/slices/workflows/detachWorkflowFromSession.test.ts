@@ -316,7 +316,7 @@ describe('detachWorkflowFromSession', () => {
     await detach(SESSION_ID, RUN_ID);
 
     expect(emitSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Deleted workflow agent is still running' }),
+      expect.objectContaining({ title: 'Deleted run agent is still running' }),
     );
   });
 

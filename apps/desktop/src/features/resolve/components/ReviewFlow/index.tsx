@@ -24,7 +24,7 @@ import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { branchLayoutOf } from '../../../branch/branchLayout';
-import { branchPlace, resolverPagePlace } from '../../../../store/slices/navigation/place';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
@@ -163,6 +163,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const { source } = useActiveReviewSource({ sessionId });
   const addressThreadId = useAppStore((s) => s.branchThreadId[sessionId] ?? null);
   const navigate = useAppStore((s) => s.navigate);
+  const openDrawer = useAppStore((s) => s.openDrawer);
   const up = useAppStore((s) => s.up);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const refreshReviewSource = useAppStore((s) => s.refreshReviewSource);
@@ -555,7 +556,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
     }
     if (isLoading) {
       return (
-        <div className="flex max-w-[300px] flex-col gap-3">
+        <div className="flex w-full flex-col gap-3">
           {SKELETON_ROWS.map((key) => (
             <div key={key} className="flex flex-col gap-2 px-3 py-2">
               <Skeleton className="h-3.5 w-40" />
@@ -687,7 +688,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                   )}
                 </div>
                 {layout === 'three' && (
-                  <aside aria-label="Thread details" className="w-[232px] shrink-0">
+                  <aside aria-label="Thread details" className="w-[var(--margin-rail)] shrink-0">
                     <ThreadProperties sessionId={sessionId} entry={focused} layout="rail" />
                   </aside>
                 )}
@@ -743,14 +744,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
             filter={activeFilter}
             onFilter={setFilter}
             onOpenTranscript={() =>
-              navigate({
-                to: resolverPagePlace({
-                  sessionId,
-                  agentId: run.agentId,
-                  threadId: run.threadIds[0] ?? focusedThreadId ?? '',
-                  pane: 'transcript',
-                }),
-              })
+              openDrawer({ kind: 'transcript', sessionId, payload: { agentId: run.agentId } })
             }
             onStop={() => void forceCloseResolver(sessionId, run.agentId)}
             actions={

@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import type {
   Agent,
-  PrReviewDraft,
   PullRequestStateKind,
   Session,
   SessionAttentionReason,
@@ -23,7 +22,6 @@ import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { workflowProgress, type WorkflowProgress } from './workflowProgress';
-import { summaryMeta, type SummaryActionable, type SummaryMetaItem } from './summaryMeta';
 import { useNow } from '../../../../shared/hooks/useNow';
 
 export type SessionSummary = {
@@ -35,9 +33,7 @@ export type SessionSummary = {
   readonly description: string;
   readonly prState: PullRequestStateKind | null;
   readonly progress: WorkflowProgress | null;
-  readonly actionable: SummaryActionable | null;
   readonly tasks: ReadonlyArray<SessionExternalTask>;
-  readonly meta: ReadonlyArray<SummaryMetaItem>;
   readonly agentCount: number;
   readonly isAutorun: boolean;
   readonly cost: number;
@@ -56,15 +52,6 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
     (s) => s.sessionPhaseRuns[id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const runs = useAttachedWorkflowRuns({ session });
-  const openQuestionCount = useAppStore(
-    (s) => (s.sessionOpenQuestions[id] ?? EMPTY_ARRAY).filter((q) => q.status === 'open').length,
-  );
-  const draftCount = useAppStore(
-    (s) =>
-      (s.reviewDrafts[id] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>)).filter(
-        (draft) => draft.status === 'draft',
-      ).length,
-  );
   const linkedTasks = useAppStore(
     (s) => s.sessionExternalTasks[id] ?? (EMPTY_ARRAY as ReadonlyArray<SessionExternalTask>),
   );
@@ -76,19 +63,6 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
   const cost = useSessionCost(id);
 
   const progress = useMemo(() => workflowProgress({ runs, agents: phaseRuns }), [runs, phaseRuns]);
-  const actionable = useMemo((): SummaryActionable | null => {
-    if (openQuestionCount > 0) {
-      return { kind: 'questions', count: openQuestionCount };
-    }
-    if (draftCount > 0) {
-      return { kind: 'drafts', count: draftCount };
-    }
-    return null;
-  }, [openQuestionCount, draftCount]);
-  const meta = useMemo(
-    () => summaryMeta({ actionable, tasks, agentCount }),
-    [actionable, tasks, agentCount],
-  );
 
   const presentation = describeSessionStage(stageInfo);
   const isAutorun =
@@ -104,9 +78,7 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
     description: stateDescription({ presentation }),
     prState: stageInfo.prState,
     progress,
-    actionable,
     tasks,
-    meta,
     agentCount,
     isAutorun,
     cost,

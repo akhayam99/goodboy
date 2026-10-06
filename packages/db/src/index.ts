@@ -138,6 +138,7 @@ export {
   purgeSessionForDelete,
   archiveSession,
   unarchiveSession,
+  markSessionOpened,
   updateSessionConfig,
   type SessionConfigUpdate,
   type ArchivedSessionRef,
@@ -628,5 +629,6 @@ export {
   setChatsArchived,
   settleStreamingChatMessages,
 } from './queries/chat';
+export { insertAskThread, listAskThreads } from './queries/ask-thread';
 
 export { replaceSessionTaskLinks } from './queries/replaceSessionTaskLinks';

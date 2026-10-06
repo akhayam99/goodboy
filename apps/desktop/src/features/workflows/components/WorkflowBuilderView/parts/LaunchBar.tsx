@@ -46,7 +46,7 @@ export const LaunchBar = ({
       className="shrink-0"
     >
       <span className={cn(isStarting && 'text-shimmer')}>
-        {isStarting ? 'Starting…' : 'Start workflow'}
+        {isStarting ? 'Starting…' : 'Start run'}
       </span>
     </Button>
   </FormActions>

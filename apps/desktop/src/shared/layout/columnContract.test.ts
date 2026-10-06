@@ -22,8 +22,22 @@ type Forbidden = {
 
 const NO_EXCEPTION: ReadonlySet<string> = new Set();
 
+const FIXED_PX_ALLOWLIST: ReadonlySet<string> = new Set([
+  'features/palette/paletteModes.ts',
+  'features/onboarding/OnboardingWizard/WizardFrame.tsx',
+]);
+
+const CENTRED_ALLOWLIST: ReadonlySet<string> = new Set([
+  'features/workspace/components/StageBoard/index.tsx',
+  'features/companion/components/CompanionStudio/index.tsx',
+  'features/onboarding/OnboardingWizard/steps/ProjectsStep.tsx',
+]);
+
 const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
-  { pattern: /\bmax-w-\[(?!72ch\])\d+ch\]/, allowed: NO_EXCEPTION },
+  { pattern: /\bmax-w-\[\d+ch\]/, allowed: NO_EXCEPTION },
+  { pattern: /\bmax-w-\[\d+px\]/, allowed: FIXED_PX_ALLOWLIST },
+  { pattern: /\bmax-w-\[(2[4-9]|[3-9]\d|\d{3,})rem\]/, allowed: NO_EXCEPTION },
+  { pattern: /\bmx-auto\b/, allowed: CENTRED_ALLOWLIST },
   { pattern: /PANE_RHYTHM\.measure/, allowed: NO_EXCEPTION },
   { pattern: /DIFF_CAPPED_COLUMN_CLASS/, allowed: NO_EXCEPTION },
   { pattern: /\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/, allowed: NO_EXCEPTION },
@@ -110,6 +124,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   },
   PaneShell: { kind: 'helper', files: [] },
   TrailBar: { kind: 'helper', files: [] },
+  AskTrailButton: { kind: 'helper', files: [] },
   FirstLapBanner: { kind: 'helper', files: [] },
   SessionCrumbs: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
@@ -156,6 +171,24 @@ describe('content column contract', () => {
     const stale = [...NARROW_ALLOWLIST].filter((key) => !/\bmax-w-(2xl|xl)\b/.test(read(key)));
 
     expect(stale).toEqual([]);
+  });
+
+  it('keeps every exception list to files that still need it', () => {
+    const stalePx = [...FIXED_PX_ALLOWLIST].filter((key) => !/\bmax-w-\[\d+px\]/.test(read(key)));
+    const staleCentred = [...CENTRED_ALLOWLIST].filter((key) => !/\bmx-auto\b/.test(read(key)));
+
+    expect([...stalePx, ...staleCentred]).toEqual([]);
+  });
+
+  it('reads prose at one measure and anchors every column on the left edge', () => {
+    const styles = read('styles.css');
+
+    expect(styles).toMatch(/--measure:\s*720px;/);
+    expect(styles).toMatch(/--measure-frame:\s*calc\(var\(--measure\) \+ 48px\);/);
+    const prose = walk(FEATURES)
+      .map(toKey)
+      .filter((key) => /max-w-\[var\(--measure\)\]/.test(read(key)));
+    expect(prose.length).toBeGreaterThan(0);
   });
 
   it('puts the workspace chat header, thread and composer on the page column', () => {

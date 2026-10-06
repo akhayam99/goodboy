@@ -1,7 +1,7 @@
 # Navigation and information architecture
 
 > **Read this when** deciding what surface exists and where it lives: pane,
-> sidebar, strip, footer, breadcrumb. **Not for** spacing/scroll/overlay
+> column, strip, breadcrumb. **Not for** spacing/scroll/overlay
 > mechanics (`docs/styling.md`) or design intent and tone (`DESIGN.md`).
 
 ## The model
@@ -30,19 +30,24 @@
   Archived chip with an inline Restore. The composer, new agents, workflows and
   project mounts stay disabled with "Restore this session to continue". Nothing
   restores on its own, so a shelved session never spends by itself.
-- **Four surfaces, four jobs, no competition.** The top bar is chrome ("where am I
-  and what is it costing"). The footer is access ("where do I go"). The sidebar is
-  presence ("what else is going on"). The ⌘K palette is transit ("where do I
-  want to be").
+- **Three surfaces, three jobs, no competition.** The top bar is now ("what is
+  happening, where am I and what is it costing"). The left column is access and
+  presence ("where do I go, what else is going on"): its doors and the sessions
+  list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
-  Forward, Board, Chat and Search, clustered in the centre. Destinations (studios)
-  stay in the footer, and the bar never edits a record in place. The spend
-  chip is the one exception: it is state that opens the studio that owns that
-  number, on Impact's Spend tab. Board is not a destination like Inbox: it is
-  home, and home sits with the arrows.
+  Forward and Search, clustered in the centre. It never holds a destination
+  again, with one exception: Impact is an icon door beside the bell, because it
+  reads like a figure, not a place you work in. The spend chip is state that
+  opens the studio that owns that number, on Impact's Spend tab, and the Limits
+  chips open the Providers menu. The bar never edits a record in place.
+- **The column holds every door.** Board, Inbox, Chat and Workflows sit under
+  New session, the Sessions list follows, Settings and the Goodboy row sit at
+  the foot. Board is home and the first door (⌘⇧H). The column is on every
+  screen with a workspace: the board, a session, the draft and every studio but
+  Settings, which swaps the column's content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
-  is always pinned at the left of the top bar. Neither the sidebar nor a studio
+  is always pinned at the left of the top bar. Neither the column nor a studio
   header shows the workspace name again. A studio subtitle is a one-line
   purpose or the installed version, never the workspace.
 - **Pin the structure, flex the density.** A control keeps a fixed position so
@@ -54,15 +59,16 @@
   their exact position. The update control comes and goes with a pending update,
   because an update is an event, not a count.
 - **Hidden is not gone.** Anything the user can put away must come back without
-  a hunt. A hidden sessions column peeks back when the pointer rests at the
-  window edge. Peek floats the one sidebar over the page instead of laying it
-  out.
+  a hunt. ⌘B folds the column into its rail of doors, which keeps every
+  destination; the full column, sessions included, peeks back when the pointer
+  rests at the window edge. Peek floats the one column over the page instead of
+  laying it out.
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
-  is the only emphasised sidebar control. Navigation rows, Board included, are
-  neutral at rest, and so is the footer's Goodboy chip, with one exception: a
-  downloaded update tints the chip into a pill until you act on it. A ready
-  update is an event, not a rest state.
+  is the only emphasised column control. Doors, Board included, are neutral at
+  rest, and so is the column's Goodboy row, with one exception: a downloaded
+  update tints the row into a pill until you act on it. A ready update is an
+  event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
@@ -71,8 +77,8 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a footer button, the Chat button, a ⌘K Go to row, the limits chip and the
-  spend chip. Pressing a door while a studio is open replaces that studio in
+  a column door (Inbox, Chat, Workflows, Settings), the Impact icon, a ⌘K Go to
+  row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
   that opens Settings, a card that opens Impact) stacks (`openStudio`), so Back
@@ -82,13 +88,16 @@
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself.
-- **One selected sign.** The open studio's door, or Board on the board, takes
-  `bg-overlay-selected` with `cursor-default` and `aria-current="page"`, in the
-  top bar and the footer alike. At most one of Board, Chat and the footer doors
-  carries it. A popover trigger (Providers) is never selected: it only reports
+- **One selected sign.** The open studio's door, New session while the draft is
+  open, or Board on the board, takes `bg-selected` with `cursor-default` and
+  `aria-current="page"`, in the column, on the rail and on the Impact icon
+  alike. Every door reads it from one place (`columnPlaceOf`, through
+  `useColumnPlace`), so at most one door carries it; inside a session no door
+  does, because the open session's row is the sign. A popover trigger (the
+  Limits chips, the Goodboy row) is never selected: it only reports
   `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
-  (`Workflows`, `Chat`); the tooltip adds only the shortcut or a count. A narrow
-  window hides the label and keeps the tooltip.
+  (`Workflows`, `Chat`); the hover hint adds only the shortcut.
+  `__tests__/navigation/oneDoor.test.ts` pins the rule.
 
 A second entry point reuses the existing mount and never builds a parallel one.
 The palette dispatches an event that the owning component listens for. The
@@ -104,17 +113,54 @@ closes it. It has a mode slot (`PALETTE_MODES` in
 moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode.
 
-- **Scope first.** It opens on a scope chip that names what you are on: the
-  focused commit row on the Commits tab, else the agent in view, else the
-  session, else the workspace on the board (`resolvePaletteScope`). A row
-  offers itself with `useHeldPaletteScope`, and the palette reads it only while
-  focus is inside that row (`heldPaletteScope.ts`), so its verbs come first in
-  the same order as the row's `⋯`. Backspace in an empty input removes the chip.
-- **Empty input.** The verbs of the scope under For this session (or agent, or commit),
-  then Recent, then Go to, Actions and Help. Go to reaches studios by name:
-  Back to board inside a session, Inbox, Workflows, Impact, Changelog,
-  Notifications and Workspace settings inside a workspace, and Start a new
-  project and Open a folder everywhere.
+- **Scope first.** It opens on a scope chip that names the surface you can see:
+  the focused commit row on the Commits tab, else the agent when the agent page
+  is on screen (a stored selection under a studio or an artifact conversation
+  does not count), else the run on the Runs page, else the pull request on the
+  Branch page, else the session, else the workspace on the board and under any
+  open app studio (`resolvePaletteScope`, which reads
+  `resolveSessionSurfaceLayer`). A row offers itself with `useHeldPaletteScope`,
+  and the palette reads it only while focus is inside that row
+  (`heldPaletteScope.ts`). Backspace in an empty input removes the chip. The
+  placeholder and the top bar pill say the same words: **Search or ask**.
+- **Empty input in a session is ranked by state, not by registry order.** One
+  fixed list of sections, empty ones hidden:
+  1. **Next**: up to three rows from `deriveNextSteps`, the same model, handlers
+     and outcome log as the session's next-step slot (`useSessionPalette` calls
+     `useSessionSuggestions` and `useSuggestionActions`). Needs-you rows first.
+     A step the slot confirms (Merge, Close worktree) confirms here too. Mount
+     proposals stay in the slot. Push, Create pull request and Rebase live here:
+     a mount target needs live git status, so the palette takes them from the
+     model that already reads it.
+  2. **For this session** (above it **For this agent**, **For this run** or
+     **For this pull request** when that is the scope): up to eight verbs ranked
+     by the session state (`paletteTiers.ts`), then **All actions for this
+     session**, which opens the grouped level (Open, Act, Copy and export,
+     Danger). The state is the one the column row, the board card and the Now
+     chip show (`useSessionStageInfo`): archived, needs you, live, ready to ship
+     (an open pull request, or a push, pull request, ready or merge step),
+     finished, idle. Each state has a recipe of verb ids; a verb the recipe does
+     not name follows in registry order, a Danger verb is never in the eight, and
+     an archived session shows only restore and copy verbs. While an agent runs,
+     **Message {agent}** and **Interrupt {agent}** join the list.
+  3. **Runs**: only when the session has a run or a workflow exists. The run on
+     screen, else the one that needs you, is live, or is queued, as a row with its
+     state; its verbs in state order (Answer, Start run, Continue step, Start next
+     step, Restart step, Stop run); **Start a run**, which opens a level of
+     workflows ("from a workflow"); and **Open Runs**. Picking a workflow, here or
+     from a typed `Start a run: Ship a fix` row, opens a confirm that names the
+     session, the project, the model and the steps, and nothing starts until you
+     confirm.
+  4. **Recent**, agents of this session first; then **Go to** (Board inside a
+     session, Inbox, Chat, Workflows, Impact, Notifications, What's new), **App**
+     (New session, Settings, Switch theme, Connect a provider, Pair your iPhone,
+     Report a bug) and **Help**.
+     On the Board the first section is **Needs you**: the sessions the Now chip
+     lists, each opening its `attentionPlace`. The session pages (Open Session,
+     Questions, Artifacts and the rest), Run defaults, Impact: Spend, Start a new
+     project and Open a folder stay out of the empty list and answer to typing.
+     The order of the list is the one place the palette differs from a `⋯` menu:
+     both list the same verbs (`menuParity.test.tsx`), `⋯` keeps its stable order.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
   with bonuses for word starts, camel boundaries and runs, so `pay export`
   finds "Speed up the payout export" (`score.ts`); then frecency, uses halved
@@ -124,6 +170,10 @@ opens it on a mode. Commands is the first mode.
 - **Every workspace.** Sessions of every workspace are listed
   (`listSessionTitlesAcrossWorkspaces`); one from another workspace names it
   and opens that workspace first.
+- **Typing still finds everything.** The Next rows, the run verbs, the verbs of
+  the session's pull request and the old names (`Stop workflow`, `Run workflow`,
+  `Back to board`, `Open settings`) answer to a query wherever the state ranked
+  them. A lone `Ask in Chat` row stays first for free text.
 - **Verbs come from the action registry** (`features/actions/`) and follow its
   state rules. A verb whose `when` is false never shows. A blocked verb shows
   only when searched by name (every word a word prefix of its label), dimmed
@@ -138,10 +188,10 @@ opens it on a mode. Commands is the first mode.
   worktree; with several it opens them as a level (name, branch and path), and
   ⌘↵ copies every path, one per line. A preview pane describes the highlighted
   row.
-- **An agent in scope keeps its session's verbs.** They follow the agent's
-  verbs under "For this session", so Copy worktree path stays one search
-  away. A session verb with the same label as an agent verb steps
-  aside.
+- **An agent, a run or a pull request in scope keeps its session's verbs.** They
+  follow under "For this session", ranked by the session state, so Copy
+  worktree path stays one search away. A session verb with the same label as a
+  scope verb steps aside.
 - **Prefixes stay**: `@` agents, `#` sessions, `:` workspaces, `$` scripts,
   `>` actions, `?` help.
 
@@ -175,7 +225,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
-  `s/{session}/review/t/{thread}/agent/brief` (the Fix run, a child of its thread on the Branch).
+  `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
   `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
@@ -198,7 +248,9 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **Back restores the entry as it was; a forward move arrives clean.** Before a
   push, the live view is captured into the current entry, so Back finds the
   same run, artifact or diff focus. A forward move (crumb, sidebar, palette,
-  notification, Board) starts with an empty focus.
+  notification, Board) starts with an empty focus. A page row in the column
+  navigates first and clears the run and artifact focus after, so the clear
+  never reaches the entry it leaves (`SessionPages`).
 - **Up goes to the parent.** When the previous entry is the parent, Up is Back.
   Otherwise it pushes the parent. Closing an app studio is Back to the entry
   below it, so Up from a studio and Close land in the same place.
@@ -261,8 +313,8 @@ never exists on one surface only.
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
   Change model (one submenu); copy the last reply and the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
-  step, Start the next step, Restore; Copy run summary; Stop workflow, Archive
-  workflow and Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
+  step, Start the next step, Restore; Copy run summary; Stop run, Archive
+  run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already
   deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, an inbox record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
@@ -330,19 +382,36 @@ never exists on one surface only.
 
 ## Surfaces
 
-**Shell layout.** One strip of chrome sits above, one footer below, and between
-them one sidebar plus main. **There is one app layout and every surface fills its
-slots.** The board, the session and the studios do not define their own frames.
-A surface that needs a different frame changes the shared one instead of forking
-a second. **Two navigation columns at once is not the IA. The right drawer is
-context, never navigation.** A session draws one full-width pane, and its
-navigation lives in that single left sidebar. The right drawer holds reference
-material beside the page and closes with the pane that opened it. The
-sidebar carries presence. It appears when something else is going on. Inside a
-session it follows a saved preference, toggled from the first button of the
-sidebar (or of the collapsed rail, on the same axis) or ⌘B. ⌘B does nothing on
-the board or under a studio, where the sidebar is not there to see. Peek never
-touches that preference.
+**Shell layout.** One strip of chrome sits above, and under it one left column
+plus main. There is no footer. **There is one app layout and every surface fills
+its slots.** The board, the session and the studios do not define their own
+frames. A surface that needs a different frame changes the shared one instead of
+forking a second (`app/shellArrangement`, which every shell mount, the app and
+the mock scenes alike, reads). **Two navigation columns at once is not the IA.
+The right drawer is context, never navigation.** A session draws one full-width
+pane, and its navigation lives in the left column. The right drawer holds
+reference material beside the page and closes with the pane that opened it.
+
+**The column** (`app/components/SideColumn/`) is on every screen with a
+workspace, in the same shape everywhere: the toggle on the traffic-light axis,
+New session (⌘N, the only emphasised control, selected while the draft is open,
+a primary dot and `Draft in progress` while a draft waits), the doors Board
+(⌘⇧H), Inbox, Chat and Workflows as one 28px row each (icon and word, the
+shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
+belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
+and a bug icon that opens the report sheet. Chat's door carries a running dot
+or a new-reply dot. Before any workspace exists the column keeps only its app
+half: Settings, the Goodboy row and the bug. The column is 240px by default and
+resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
+width resets once). Its first button or ⌘B folds it, on every screen, into the
+rail; the choice is saved and peek never touches it.
+
+**Classic bars.** Settings > App > General > Classic bars (setting
+`shell.classicBars`, off by default) brings back the 0.20.0 frame: Board and
+Chat in the top bar, the footer with its doors and integration glyphs, the
+sessions sidebar only inside a session, studios covering it. It ships with
+0.21.0 and leaves in a later release; the tests of exits, doors and restore run
+on both arrangements while it exists.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
@@ -353,18 +422,21 @@ hide animation or overlay can move it.
 **The columns** are one grid at saved widths, clamped when read.
 
 - **A column has one reduced state, and it is never a narrower copy of
-  itself.** Hiding a column sets it and its handle to zero width and marks the
-  aside `inert`. A zero-width column that still takes focus is a keyboard
-  trap. Narrowing to a rail is allowed only where the content still works at
-  rail width. Where peek already answers "let me glance at it", a rail would be
-  a second copy of the same list, so it is not added. The shell primitive can
-  lay out more reduced states than the product uses. Which one a column gets is
-  decided here, not by what the primitive offers.
+  itself.** The left column's one reduced state is the 44px rail of doors
+  (`ColumnRail`): the toggle, New, Board, Inbox, Chat and Workflows as icons
+  with their names and shortcuts in tooltips, then Settings, the bug and the
+  Goodboy mark at the bottom. It works at rail width because it holds doors,
+  not the list; the sessions list comes back through the peek. Hiding a column
+  outright sets it and its handle to zero width and marks the aside `inert`: a
+  zero-width column that still takes focus is a keyboard trap. The shell
+  primitive can lay out more reduced states than the product uses. Which one a
+  column gets is decided here, not by what the primitive offers.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
   work row, so it can hover over main without taking layout space. The studio
-  slot spans the same row, sidebar included, and sits above the peek. A studio
-  covers the columns between the bars, never the bars, and reaches the bottom
-  edge when the footer is hidden.
+  slot covers the content area only (`studioCoversLeft={false}`), as its own
+  sheet, so the column stays live beside every studio; the peek is drawn after
+  it, so a peeked column floats over a studio too. A studio never covers the
+  top bar.
 
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
@@ -379,34 +451,74 @@ is where a session's footprint grows. The session header has no second mount
 control.
 
 **Inside a session the sidebar stays the sessions list.** There is no second
-mode. The sidebar lists the workspace's sessions grouped by stage, and the open
-session tells its own story in the main pane. Lens surfaces still exist. You
-reach them from rows and chips inside the overview (they expand in place or
-open a side panel) and from the trail's destination switcher, never from the
-sidebar. Board → session is the full depth of navigation.
+mode. The sidebar lists the workspace's sessions in one list, and the open
+session tells its own story in the main pane. Its five work pages nest under
+its row: Overview, Branch, Runs, Agents and Artifacts. They are the same pages
+as the first five rows of the trail's page menu, with the same count words from
+one selector (`usePageSummaries`), so the two doors never disagree. The
+nesting is not a mode: the list stays the list, the nested rows fold away when
+another session opens, and `←` and `→` on the open row fold and open them. The
+tools (Scripts, Terminal, Explore) and the linked records (Linear, GitLab,
+Jira, Slack, GitHub issue) stay in the page menu and the palette. Rows and
+chips inside the overview still route to the other surfaces. Board → session
+is the full depth of navigation.
 
-**A sidebar row and a board card read the same summary.** Both take
-`useSessionSummary`, so they say the same things in the same words. The row has
-two lines. The first is the goal, with the age on the right; on hover the age
-gives its column to the cost, and the column keeps its width. The second is the
-workflow progress when a run is active (one segment per step, then
-`Implement · 3 of 5`, counted from the steps that started, never estimated),
-otherwise the stage reason. At most two marks follow it, in this order: what
-waits on you (open questions, then review drafts), the first linked task with a
-`+n` for the rest, the agent count. When open questions are the stage reason,
-the row says it once, as the "1 to answer" mark, and leaves the reason blank.
-The row starts with a 20px node: the pull
-request glyph in its state colour when there is a request, otherwise the stage
-icon, a ring while an agent runs, and `?` or `!` when the session needs you.
-Every row carries a `ToneBar`, the same tone primitive as its card
-(`sessionTone`), never only running and needs-you rows. Nothing the row knows
-hides in a tooltip.
+**A sidebar row says the name and the state, and the hover card and the board
+card say the rest.** A row is one line of 28px: a 14px `WorkNode` and the
+title, nothing else. It has no second line, no `ToneBar`, no marks, no age and
+no cost. The node shows one of five signs, the first that matches
+(`sessionNodeOf`, from `useSessionSummary`): needs you (`?`, the approval shield
+or `!`, in the warning or danger tone, when the stage is attention), running
+(the ring), done (the muted check, when the pull request is merged or all the
+work is closed), idle (a 1px hollow ring, everything else) and archived (a
+dashed ring, only under Show archived). Colour is never the only sign. The open
+session is set in medium weight, and its pages nest under it. The row's
+accessible description carries the stage word and its reason, so nothing is
+mouse-only.
 
-**Peek is a way of showing the sidebar, not a second sidebar.** The overlay
-renders the same sidebar component, and the codebase has one sessions list.
-Peek is wider than the pinned column. The extra width applies at read time, so
-widening the peek never moves the column. It opens after a short rest at the
-screen edge, so a graze does not open it.
+The rest is one rest away. After a 500ms rest on a row, or on keyboard focus
+after the same delay, the hover card opens beside the column: the full title,
+the stage word with its reason when the reason adds a fact, the run progress
+(`Implement · 3 of 5`, counted from the steps that started, never estimated),
+the pull request with its checks, the linked task chips, the project chips, the
+agent count, the spend and the age, and one ghost action, **Open what needs
+you**, when the session needs you. That action lands where the Now chip lands
+(`attentionPlace`). Moving to another row swaps the card at once, with no second
+wait. Esc and opening a session close it, and the pointer may move onto the
+card. The row, the card and the board card all read `useSessionSummary`, so they
+say the same things in the same words. The board card keeps the whole summary
+and the session header keeps its chips.
+
+**The user chooses the order of the list.** The Sessions header holds one `⋯`
+menu: Sort (Needs you first then the session you opened last [default],
+Alphabetical, Last activity, Created), Group (None [default], PR state, Stage,
+Project), Filter by project (the same selection as the board's project filter)
+and Show archived. The choices persist per workspace in the browser storage
+(`goodboy:session-view:<workspace id>`, version 2); nothing goes to the
+database. By default the sessions that need you sit on top, the one that has
+waited longest first, and the rest follow `sessions.last_opened_at`, written
+when a session opens (a session never opened falls back to its last activity).
+A running session does not move, and a row moves only when you open a session
+or a session starts needing you. With no grouping the first eight rows show and
+the rest sit under **Show N more**, remembered per workspace. A session that
+needs you and the open session are never folded. A grouped list shows every
+group, finished groups start collapsed, and nothing folds. `⌘⇧[` and `⌘⇧]` walk
+this same order and skip folded rows, so they match what you see.
+
+**Two keys switch sessions without the list.** `⌃Tab` opens a list of the
+recent sessions in last-opened order, the open one first. `Tab` and `⇧Tab`
+move while `⌃` is held, releasing `⌃` opens the chosen session and Esc cancels.
+A quick tap flips to the previous session and never draws the list. `⌥⌘↓`
+lands on the next session that needs you, in the Now chip's order, on its
+`attentionPlace`. A focused terminal and an open dialog keep both keys.
+
+**Peek is a way of showing the column, not a second column.** The overlay
+renders the same `SideColumn` (through `ShellLeft`), and the codebase has one
+sessions list. Only the pinned column's Goodboy row opens its menu by itself
+and reports updates; the peeked copy is quiet. Peek is wider than the pinned
+column. The extra width applies at read time, so widening the peek never moves
+the column. It opens after a short rest at the screen edge, so a graze does not
+open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
@@ -424,10 +536,10 @@ surface itself shows urgency, never a badge parked beside it.
 
 **New session is a draft, not a session.** New, ⌘N, the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
-address `new`). Nothing is written: no row in the database, the sidebar or
+address `new`). Nothing is written: no row in the database, the column or
 the board. The trail and the title say `New session`, the title is faint and
 cannot be renamed, and there is no `⋯`, no chip and no projects section. The
-sidebar's New button stays selected while the draft is open. Each workspace
+column's New session row stays selected while the draft is open. Each workspace
 keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
 leaving it keeps it intact, New brings it back, and the button shows a primary
 dot with `Draft in progress` while a written draft waits. `Discard draft` in
@@ -454,7 +566,7 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   maps to a project (`launchMountFor`, the Inbox rule: a GitHub or GitLab repo
   path, or a Sentry project linked or code-mapped to a project) a
   `LaunchMountRow` above the choice says which project the session works in
-  and why, and lets you pick another or none. Start workflow, or Start on the
+  and why, and lets you pick another or none. Start run, or Start on the
   agent side, links the issue, mounts that project, creates the session and
   starts the run or agent in one gesture (`startSessionFromDraft`, kind
   `task` with a `mount` and a `then`). Without a tracker
@@ -501,11 +613,11 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   with a `kickoff` target), the same one Session > Workflows > Create opens:
   title, goal card with Add files and Polish, the Orchestrated / Describe steps /
   Pick a workflow switch, Can use, the plan preview with the orchestrator row or the
-  editable steps, guidance, Starts, when to ask, Spend cap and Start workflow with
+  editable steps, guidance, Starts, when to ask, Spend cap and Start run with
   its reason. Its goal field is the kickoff goal (`workflowGoal` in the
   draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
   in `workflowDrafts`, so it survives leaving the kickoff, and Discard draft
-  clears it with the rest. Start workflow runs `startSessionFromDraft` with
+  clears it with the rest. Start run runs `startSessionFromDraft` with
   kind `workflow-run`: the session is created first, then the builder saves
   the workflow and attaches the run to it in the same action, and the view
   lands on the run. A failure removes the half-created session and keeps the
@@ -553,6 +665,14 @@ activity yet show the plain overview with its actions.
   optional tabs, 16 below, no crumb row of their own. A session studio (builder,
   merge request, Bitbucket) has no second title bar: its title is the crumb,
   and Esc or the parent crumb is Up.
+- **The band has one right slot, and Ask holds it.** `TrailBar` takes an `end`
+  node outside the `PageColumn`, at the right end of the band.
+  `SessionWorkspace` puts `AskTrailButton` there: the question-bubble glyph
+  (`CONCEPT_ICONS.ask`, never Chat's `MessageCircle`), the word **Ask** and a
+  ⌘L key cap, pressed while the Ask drawer is open for that session. Its
+  tooltip reads `Ask what is happening in this session ⌘L`. It toggles the
+  drawer; ⌘L (`ask.open`, app plane) opens it or, when it is open, focuses its
+  box. Only the visible session's button binds ⌘L.
 - **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
@@ -628,7 +748,7 @@ checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
   lists every step of its run in order, the ones not started switched off; an
   agent lists the agents of the same home grouped Needs you, Running, Done,
   newest first; an artifact lists the session's artifacts by kind. Actions
-  exist only where a real action backs them: `Start agent`, `Start a workflow`
+  exist only where a real action backs them: `Start agent`, `Start a run`
   and `New artifact` (opens the kind picker) on their pages, `Stop this step`
   while a step runs and `Retry step` when it failed or is blocked
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
@@ -648,15 +768,15 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   (a squash merge), in the menu and in the Branch header alike
   (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
-- **A resolver run reads Session, Branch, Fix run.** The `Branch ▾` segment
-  leads back to the Comments tab; `Fix run` is the open page and has no menu.
+- **A fix run has no segment of its own.** Its transcript is a drawer on the
+  Comments tab, so the trail reads Session, Branch, Comments.
 - **Settings claims its studio band** with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.
   The first segment of a studio has no menu because studios change from the
-  footer. It is a button only when that studio has a start to return to.
+  column. It is a button only when that studio has a start to return to.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
   `isAgentFinished` makes), and a check on the current row, which is there even
@@ -673,14 +793,14 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   Escape cancels the confirm first, then closes. Shortcuts live in the segment
   tooltip and the palette, never in the rows.
 - **The workflow case extends the same control**:
-  `Session > Workflows > {Run} > {Step}`. A delegated child names its root and
+  `Session > Runs > {Run} > {Step}`. A delegated child names its root and
   parent agents between the run and itself, and an open question it answers
   adds one last crumb. There is no separate step strip and no "Part of
   {Workflow}" line.
 
 ## Top bar
 
-The top bar says what is happening now. The footer takes you to places.
+The top bar says what is happening now. The column takes you to places.
 Preferences live in Settings. Each item has one home; anything else that shows
 it is a signal that links there.
 
@@ -696,24 +816,25 @@ outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
 - Left: workspace identity. It has a 200px limit and truncates, with the full
-  name in its tooltip. The sidebar toggle lives in the sidebar, not here.
+  name in its tooltip. The sidebar toggle lives in the column, not here.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the tooltip (`Back to Review ·
 {session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
-  empty, and open the last 12 entries on right click or a 400ms hold. `Board`
-  is `SquareKanban` plus the word, 24px high like the search: on the board it
-  is pressed (`aria-current="page"`, `You're on the board`) and does nothing;
-  over a studio on the board it closes the studio and is not pressed; in a
-  session it navigates to the board as a history entry. ⌘⇧H does the same.
-  `Chat` sits right of `Board` in the same shape (`MessageCircle` plus the
-  word) and is a door to the `chat` studio on a new chat; while that studio is
-  open it is pressed and does nothing. Its name is always `Chat`, and the
-  tooltip adds the running count or `New reply`. It only shows when a workspace is open. The command center opens
-  the palette and shows ⌘K; it never takes typing itself. In the palette,
+  empty, and open the last 12 entries on right click or a 400ms hold. Board and
+  Chat left the bar for the column (under Classic bars they come back here, in
+  their old shape). Board, the column's first door, is pressed
+  (`aria-current="page"`) on the board and does nothing; over a studio on the
+  board it closes the studio; in a session it navigates to the board as a
+  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on a
+  new chat; its row carries a running dot or a new-reply dot. The command
+  center opens the palette and shows ⌘K; it never takes typing itself. In the palette,
   every search with text and no prefix starts with `Ask in Chat`, which opens
-  a new chat with the query as its first message; a query that reads like a
-  question (ends with `?` or has four words or more) has it picked, a shorter
-  one keeps the best match picked so Enter still jumps.
+  a new chat with the query as its first message. Inside a session (the
+  session or one of its agents in scope) `Ask about this session` comes first
+  and `Ask in Chat` second (`askEntries`): it opens the Ask drawer and sends the
+  query. A query that reads like a question (ends with `?` or has four words
+  or more) has the first Ask row picked, a shorter one keeps the best match
+  picked so Enter still jumps.
   Start session in a chat's Turn into work panel creates the session and
   navigates to `sessionPlace({ sessionId })`, the overview, as a new history
   entry after the chat's own; Back returns to the same chat because
@@ -735,12 +856,19 @@ covered.
   the provider's most used window; the number shows from 80%, `Out` with the
   reset day at 100%, a clock marks data older than 30 minutes or a window that
   reset since, and a dashed track means no data. The card tooltip always
-  carries every window, its percentage and its reset. A click opens Settings >
-  Providers & models on that provider, scrolled to Usage, and the chip stays
-  pressed while that page is open. The strip is a toolbar: arrow keys move
-  between chips. With no provider connected the strip is one `Connect a
-provider` chip. A bar in the chrome is always a provider window; money is
-  always a figure. The bell opens the notification popover.
+  carries every window, its percentage and its reset. A click on any chip, or
+  on a provider under `+N`, opens the Providers menu anchored under the strip
+  (`LimitsProvidersMenu`, the same `ProvidersMenuPanel` the classic footer
+  opens): the policy list, Connect for each CLI provider that is missing, and
+  Manage providers. Usage stays in the chip tooltip and in Settings >
+  Providers & models. Without a workspace a chip still opens that usage page.
+  The strip is a toolbar: arrow keys move between chips. With no provider
+  connected the strip is one `Connect a provider` chip that pulses and opens
+  the same menu, and nothing shows while providers are still being detected.
+  A bar in the chrome is always a provider window; money is always a figure.
+  Then the theme toggle, the Impact icon (a door to the Impact studio on its
+  Overview tab, pressed while it is open, tooltip `Impact`) and the bell, which
+  opens the notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
@@ -753,9 +881,9 @@ ask` (wide it adds `in {workspace}`), and
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
-The traffic lights, identity, the movement cluster (Board and Chat keep their words),
-the command center, the needs-you count, the
-spend figure, the first Limits chip and the bell never hide. A Limits chip is
+The traffic lights, identity, the movement cluster, the command center, the
+needs-you count, the spend figure, the first Limits chip, Impact and the bell
+never hide. A Limits chip is
 the provider glyph and two bars, with no card, label or number around it; the
 percentage lives in its tooltip and its accessible name. A provider with no
 figures yet draws no chip. The Limits chips past the ones that fit, and the
@@ -790,29 +918,22 @@ only drop under zoom.
   in the never-hide list. The three-way choice (dark, light, Match system)
   stays in Settings > App > General and in the palette.
 - The top bar never edits. Reporting a bug, the setup checklist, the update
-  and the version are about Goodboy itself, so they live in the Goodboy chip in
-  the footer.
+  and the version are about Goodboy itself, so they live at the foot of the
+  column: the Goodboy row and the bug icon beside it.
 
-## Footer
+## The column foot
 
-Left: the integrations connected to this workspace, then one **Link
-integration** action. Each connected integration is a named glyph that opens
-its studio. The action lists every available integration and whether it is
-connected, so connected and disconnected tools are both reachable through one
-flow.
+Settings (⌘,) sits above the Goodboy row; the bug icon sits right of the row
+and opens the report sheet (⌘I), nothing else. On the rail the three keep their
+place at the bottom: the Settings icon, the bug and the Goodboy mark, which
+carries a dot while an update or setup waits.
 
-- With nothing connected, the action invites the first connection.
-- The glyph strip scrolls sideways inside its region. The link action stays
-  fixed, so many connections never push the rest of the footer aside.
-- The footer does not depend on having a repository. Turning a folder-only
-  workspace into one backed by a git repository happens in the workspace link
-  and convert flow, not in the footer.
-
-Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
-the Apple menu or Linear's help menu does. Its label says one thing, in this
-order: an update is ready, setup is unfinished (with its progress), or
-"Goodboy | BETA v<version>" with the installed version. Below the
-`chrome-labels` width it keeps only the mark and the version. The version is
+The Goodboy row (`app/components/GoodboyChip`, variants `column`, `rail` and
+the classic `footer`) holds everything about Goodboy itself, the way the Apple
+menu or Linear's help menu does. Its label says one thing, in this order: an
+update is ready, setup is unfinished (with its progress), or
+"Goodboy | BETA v<version>" with the installed version. The classic footer
+chip keeps only the mark and the version below the `chrome-labels` width. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
 and shows in mock scenes too. The update pill is soft, enters once and holds
@@ -822,14 +943,16 @@ checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
 addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
-checklist has no floating card.
+checklist has no floating card. Only the pinned row does that (and reports the
+update arrival); the copy inside a peeked column is quiet.
 
 ## Report sheet
 
 One sheet files every report. `ReportSheetHost`
-(`features/bug-report/components/ReportSheetHost`) floats it above the footer
-chip, centred, with no overlay: the page under it stays live. Every door lands
-there: ⌘I from anywhere, Report a bug in the Goodboy chip, Report a bug in the
+(`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
+the window, centred, with no overlay: the page under it stays live. Every door
+lands there: ⌘I from anywhere, the bug icon at the column foot, Report a bug in
+the Goodboy menu, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a bug** in the macOS menu bar (`help_menu.rs`
 emits `goodboy://report-open` to the focused window), and Report this on a
@@ -887,49 +1010,41 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows, Impact, Providers and Settings. Settings (and ⌘,)
-always opens the last settings page (General at first), with or without a workspace; Workspace settings
-opens only from the
-gear on the current-workspace row of the workspace popover. Impact is a
-destination, so it has a launcher; the launcher opens its Overview tab, while
-the spend figure in the top bar and the `Impact: Spend` palette entry open its
-Spend tab. **Providers** is not a door to the Providers & models page: it opens
-a menu that changes things in place (`AppFooter/ProvidersMenu`). Settings >
-Providers & models is the one home for providers and usage; the menu holds
-no usage figure and sends there with **Manage providers** (a door). It lists
-the same `ProviderPolicyList` as the Models row When a provider is out, writing through
-the same `setProviderPolicy`, then Connect for each CLI provider that is not
-connected, then Manage providers. The top bar's limits chip opens the same
-home on Usage. It reads the cached providers and never refreshes them on
-open. With no provider connected the button pulses; that pulse
-replaced the top bar's old Connect a provider chip, so the limits strip shows
-nothing until a provider is connected. Changelog opens from the Goodboy chip and
-the palette, so it earns no footer entry.
+## Column doors
 
-The footer is an `@container/footer` on the same `chrome-labels` step as the
-top bar. Below it, every launcher label and the **Connect an integration** label
-drop together and the glyphs stay, with the name in the tooltip. The first
-link action keeps its label, since it is the only thing on the left. The
-Goodboy chip never hides. Past that the glyph strip scrolls.
+Settings (the foot door and ⌘,) always opens the last settings page (General
+at first), with or without a workspace; Workspace settings opens only from the
+gear on the current-workspace row of the workspace popover. Impact is a
+destination, so it has a door, the icon beside the bell; it opens its Overview
+tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
+open its Spend tab. The **Providers menu** is not a door to the Providers &
+models page: it changes things in place (`app/components/ProvidersMenu`, opened
+from the Limits strip). Settings > Providers & models is the one home for
+providers and usage; the menu holds no usage figure and sends there with
+**Manage providers** (a door). It lists the same `ProviderPolicyList` as the
+Models row When a provider is out, writing through the same
+`setProviderPolicy`, then Connect for each CLI provider that is not connected,
+then Manage providers. It reads the cached providers and never refreshes them
+on open. Changelog opens from the Goodboy menu and the palette, so it earns no
+door. The connected tools have no glyph strip any more: the Inbox's Source
+filter is the tool door, and Connect a tool lives in Settings > Integrations.
 
 - **The release notice answers "have you read the notes for what you're
   running"**, not "has a new release been published". After an update, one
   notice names the installed version and opens its notes. It works offline. A
   fresh install shows none, and dismissing it marks that version as read.
-- The footer target is a pair, the place and the tool (`FooterTarget`). The
-  place has the active fill: Inbox while the Inbox studio is open, whatever
-  source it filters, or the link action when a disconnected tool form is open.
-  The tool glyph of a connected source that is scoped takes the same selected
-  fill, and Inbox then stays unlit so exactly one control is current. Every
-  lit control carries `aria-current="page"`, and tests read that instead of
-  classes. The source filter can change inside the Inbox and the ring follows.
-  Opening any studio closes the others.
-- **Before any workspace exists, the footer keeps its app half**: Settings and
-  the Goodboy chip. The integration strip, Inbox and Workflows belong to a
-  workspace and wait for one. Settings then opens its home with only the App and
-  Providers & models groups, and Providers opens on an account instead of on the
-  workspace defaults. Precedent: VS Code keeps its status bar and Manage gear
-  with no folder open.
+- Opening any studio closes the others. A door that is current does nothing.
+- **Before any workspace exists, the column keeps its app half**: Settings,
+  the Goodboy row and the bug. New session, the doors and the sessions belong
+  to a workspace and wait for one. Settings then opens its home with only the
+  App and Providers & models groups, and Providers opens on an account instead
+  of on the workspace defaults. Precedent: VS Code keeps its status bar and
+  Manage gear with no folder open.
+- **Under Classic bars the 0.20.0 footer comes back** (`AppFooter`): the
+  connected integration glyphs and Link integration on the left, the Goodboy
+  chip in the centre, Inbox, Workflows, Impact, Providers and Settings on the
+  right. Its target is a pair, the place and the tool (`FooterTarget`), so a
+  scoped tool glyph and Inbox never light together.
 
 ## Shortcuts
 
@@ -944,7 +1059,8 @@ too. An entry carries its own combo for other systems where the plain mapping
 would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
 elsewhere, where Ctrl+T belongs to the shell. Report a bug (`report.open`) is
 ⌘I on macOS and Ctrl+Shift+I elsewhere, because Ctrl+I is Tab in a terminal;
-it fires from anywhere, the terminal included. Refresh session
+it fires from anywhere, the terminal included. Ask (`ask.open`) is ⌘L on
+macOS and Ctrl+Shift+L elsewhere, where Ctrl+L clears a terminal. Refresh session
 (`session.refresh`, ⌘⇧R) sits on the session plane beside Archive (⌘⇧A) and
 Delete (⌘⇧⌫), because it acts on the open session; ⌘R stays the app reload.
 The plane is for the dispatcher.
@@ -971,7 +1087,7 @@ A few entries are keys a focused control answers, not global chords: Submit
 (⌘↵, `composer.submit`, the one id behind every composer, editor and the
 workspace switcher; `isSubmitChord` reads it and keeps the lenient match that
 accepts Ctrl as well as ⌘), the two message keys `PromptField` reads (↵
-`composer.send` and ⇧↵ `composer.newLine`, see docs/turns.md → One composer) and Open the workflow of an activity row (⇧↵, the only combo
+`composer.send` and ⇧↵ `composer.newLine`, see docs/turns.md → One composer) and Open the run of an activity row (⇧↵, the only combo
 without ⌘). The list keys (`list.next`, `list.previous`, `list.open`,
 `list.openInTool`, `list.reply`, `list.star`, `list.dismiss`, `list.search`) are
 the same kind: `useListKeys` matches them against the registry, so the rail
@@ -1003,11 +1119,21 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
 
-Utility studios render in the shell's studio slot, between the top bar and the
-footer, so both bars stay visible and usable. The one exception is the
-workspace launcher, which has no shell. There, Add workspace takes the whole
-window, and so do the app studios: Settings (its corner gear, ⌘, or ⌘/ for
-shortcuts) and the guide. The palette opens there too.
+Utility studios (Inbox, Chat, Workflows, Impact, Notifications, Changelog,
+the guide, pairing, Add workspace) render in the shell's studio slot, which
+covers the content area only, beside the column, as its own sheet with the
+studio band on top. The column stays live, so another door or a session row is
+one click away. **Settings is the one studio that swaps the column**: the
+column's content cross-fades (160ms) to `‹ Back to app` (with its Esc hint),
+`Search settings` and the settings groups, and the page fills the content area.
+The band reads `Settings › App › General` and has no Close: Back to app, Esc
+and Back land alike. On close, `StudioFrame` gives focus back to what opened
+the studio, or to the studio's door when that is gone (the palette), unless
+focus already sits outside the studio (`restoreStudioOpener`). With the column folded into the rail, Settings shows its
+groups beside the page instead. The one exception is the workspace launcher,
+which has no shell. There, Add workspace takes the whole window, and so do the
+app studios: Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide.
+The palette opens there too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
@@ -1025,7 +1151,8 @@ one is open at a time.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Inbox to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle and accessory, Close), the Esc layer and the motion: `studio-in` when
+  subtitle and accessory, Close, which Settings drops while it holds the
+  column), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
@@ -1048,9 +1175,9 @@ one is open at a time.
   (`__tests__/regressions/escape-and-keys-use-the-stack.test.ts`) counts
   `'Escape'` literals and window key listeners per file and fails on growth.
 
-- **Not every studio earns a footer entry.** Notifications opens from the bell
+- **Not every studio earns a door.** Notifications opens from the bell
   popover (its footer's Open all notifications) and from the palette's Go to
-  group, never from the footer, since the bell already shows the unread count.
+  group, never from the column, since the bell already shows the unread count.
   The popover never deletes history. That lives in the studio, behind its
   confirm. Reporting a bug is not a studio: it is the report sheet above.
 - **Notifications have one row and one scope.** `NotificationRow` draws a
@@ -1060,8 +1187,9 @@ one is open at a time.
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
   studio the time owns a fixed last column and Mark read and Dismiss swap in
-  over it on hover, so the row never changes width. The studio rail filters by
-  view, severity and source with counts that come from SQL
+  over it on hover, so the row never changes width. A **Filters** button in the
+  list header opens the facets (`NotificationFiltersButton`, with the count of
+  active filters) by view, severity and source, with counts that come from SQL
   (`countNotifications`), so they stay true past the loaded page; Load older
   pages with a cursor. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
@@ -1070,9 +1198,11 @@ one is open at a time.
   J and K or the arrow keys move, Enter runs the row's action and E dismisses.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
-  are shared primitives. The inbox uses all three: its rail filters by view,
+  are shared primitives. The inbox uses all three: its facets filter by view,
   type and source (one pick per section, a tool that did not load says so in
-  its row), its one-line rows are grouped by the same days in time order, and
+  its row) behind the same Filters button in the list header, so the inbox is
+  the list and the record beside the column, never a third column; its
+  one-line rows are grouped by the same days in time order, and
   J and K move the selection while the record follows beside the list. The
   inbox opens with its first row chosen, so those keys act at once; Enter opens
   the launch popover on that row (⌘↵ in the panel launches) or the session once
@@ -1080,36 +1210,44 @@ one is open at a time.
   the record has one (a Sentry issue has none: the rail drops Reply and R does
   nothing there, `recordCanReply`), S stars or unstars, / focuses the search, and Escape in
   the search leaves the field. Escape closes a record you picked before the
-  studio, and closes the studio when the first row was only chosen for you. Below a 720px list column the rail folds into a Filters button in
-  the list header.
-- **Every studio rail resizes.** `StudioRailLayout` (Settings, Guide, Chat,
-  Notifications, Changelog, Bitbucket) and the Inbox filters rail drag from
-  their right edge between 220 and 420px, step 8px (32 with Shift) with the
-  arrow keys, and go back to their default (256 narrow, 288 standard) on a
-  double click. Each studio keeps its own width
+  studio, and closes the studio when the first row was only chosen for you.
+- **A list that belongs to the page sits in the page.** Chat's list of chats,
+  Changelog's releases and the guide's chapters are content beside their
+  detail, not a second navigation column: `StudioRailLayout` with
+  `placement="page"` draws the list on the page background with the resize
+  edge as the only line. Chat's list opens at 288px.
+- **Every studio list resizes.** `StudioRailLayout` (Settings when the column
+  is folded, Guide, Chat, Changelog, Bitbucket) drags from its right edge
+  between 220 and 420px, step 8px (32 with Shift) with the arrow keys, and goes
+  back to its default (256 narrow, 288 standard) on a double click. Each studio
+  keeps its own width
   (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
   that width. `useResizableWidth` (`@goodboy/ui`) owns read, clamp and save
   for these rails, the session sidebar and the drawer: while the pointer
   moves the width lives in a CSS variable (the drawer writes its own style),
   so nothing renders and nothing is saved until the drag ends. Precedent: VS
   Code, Zed and Linear sidebars.
-- **Settings opens on a page, never on a grid.** The footer, ⌘, and the
-  palette's Open settings land on the page opened last, held in memory only
+- **Settings opens on a page, never on a grid.** The Settings door, ⌘, and the
+  palette's Settings land on the page opened last, held in memory only
   (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
   app starts lands on General, and a remembered page that no longer exists
   (a workspace page with no workspace, a provider that was removed) falls
   back to General (`resolveSettingsFocus`). A link that names a page (a scope,
   a section, a provider or a tool) opens that page. `scope: 'home'` stays as
   the alias for "the last page" and `SettingsStudio` resolves it once, then
-  amends the history entry to the concrete page. The rail is the only index:
-  its four groups (App, Workspace, Providers & models, Integrations) come
-  from `settingsDirectory`, with the status line of a row shown only when
+  amends the history entry to the concrete page. The rail is the only index,
+  portaled into the swapped column (`SettingsColumnNav`) or drawn beside the
+  page when the column is folded: its four groups (App, Workspace, Providers &
+  models, Integrations) come from `settingsDirectory`, with the status line of a row shown only when
   something needs doing (no quiet hints). A provider row says only what is
   wrong (Update needed, Not signed in, Error) or Not connected, never an
   identity or usage; the closed Providers & models group says how many
   providers it holds ("2 providers") unless one of them needs attention. Every page is also a palette entry
   (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`), built from
-  the same list, so ⌘K and the rail cannot disagree. The status lines are read
+  the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
+  column filters those same entries by name and former name, lists them in
+  place of the groups, and opens the one picked on the same history entry; with
+  no match it says `No settings match`. The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
   opening Settings starts no loading of its own (no storage scan, no branch
   scan, no provider refresh). Without a workspace the Workspace and
@@ -1385,35 +1523,37 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   action row at the end); the mode lives in the store per session and drops
   back when the page closes.
 - **The resolver stays on its comment.** A resolver exists for one comment, so its
-  home is that comment, never the Agents lens. The comment shows its agent in
-  one line from the first paint (model, age, the state word, and while it
-  drafts the last thing it said). `…` → Agent transcript opens the resolver as
-  a Fix run, a child page of its Branch (the address keeps the thread of its
-  attempt, `s/{session}/review/t/{thread}/agent`), and so do a notification, the
-  agent-started toast and the palette (`canonicalLocation` maps the resolver to
-  the first thread of its attempt). The trail reads `Session › Branch ▾ › Fix
-run` and Up goes to the Comments tab. The page is read only (`FixRun`) and has
-  three parts in one 960 column: what the run did (its outcome, from the last
-  reply when it left no summary), its commits (`ResolverCommitLine`, with a note
-  when a later rewrite folded the commit into another or dropped it from the
-  branch), and the comments it touched, each a link to that comment on the
-  Comments tab. A run that belongs to a batch also says how many comments were
-  fixed together and opens them filtered in Comments. `Open transcript` and the
-  Transcript tab show the conversation. Accepting, replying, editing and Push
-  live in Comments, never here. In Activity a fix run is one row, `Fix run ·
-#318 · 9 comments`, that opens this page; the Needs you row for the pull
-  request calls `openReview` with the destination `{ kind: 'threads', mountId,
-threadIds: [first comment that waits on you] }`. A question the run waits on
-  shows at the top of this page as well as in its thread.
-  The agent pane tab is part of the address: the thread
-  target carries `pane: 'brief' | 'transcript'` (`brief` is the Fix run tab),
-  `agentPlace({ sessionId, agentId, pane })` asks for either, and the address
-  prints it as a last segment (`.../agent/brief`). Without a `pane` the pane
-  picks its own tab (`agentOpenTab`: an open question or a resolver opens on
-  Brief (a resolver: its Fix run), any other agent on Transcript). The key `agentPane` is written only by
-  the navigation slice, follows the page like the other targets, and comes back
-  with Back and a window restore. Tab clicks inside the pane stay local and do
-  not rewrite the address. The `threads` destination needs no
+  home is that comment, never the Agents lens, and it has no page of its own.
+  The comment shows its agent in one line from the first paint (model, age, the
+  state word, and while it drafts the last thing it said). Its transcript opens
+  as a drawer of kind `transcript` on the Comments tab of its Branch, in the
+  space on the right, so the list and the thread stay where they are: from the
+  run status line (**Open transcript** opens the drawer in place), from `…` →
+  Agent transcript on a thread, from the thread crumb menu, from a fix run row
+  in Activity, from a notification, the agent-started toast and the palette.
+  `fixRunTranscript({ sessionId, agentId, threadId })` builds the move (the
+  Branch Comments place with that thread, and the drawer), and
+  `canonicalLocation` rewrites every older address to it: an `agentPlace` for a
+  resolver, and the former Fix run address (`lens: 'review'` with the resolver
+  and a `thread` target, `.../review/t/{thread}/agent`), on a move and on a
+  restore from history, which reopens the drawer. The thread is the one the
+  address named, or the first thread of the attempt. The drawer takes the
+  saved drawer width, like Ask, and reads, top to bottom: the fix run summary (`FixRunSummary`: a
+  question the run waits on, what it did, its commits with a note when a later
+  rewrite folded one, the comments it touched, each a link that keeps the
+  drawer open, and the comments fixed together, opened filtered in Comments),
+  the transcript, and a field to write to that agent. The question card also
+  stays in its thread. Accepting, replying, editing and Push live in Comments,
+  never in the drawer. In Activity a fix run is one row, `Fix run · #318 · 9
+comments`; the Needs you row for the pull request calls `openReview` with the
+  destination `{ kind: 'threads', mountId, threadIds: [first comment that waits
+on you] }`. Any other agent keeps its page, and its pane tab is part of the
+  address: `agentPlace({ sessionId, agentId, pane })` asks for `brief` or
+  `transcript`. Without a `pane` the pane picks its own tab (`agentOpenTab`: an
+  open question opens on Brief, otherwise Transcript). The key `agentPane` is
+  written only by the navigation slice, follows the page like the other
+  targets, and comes back with Back and a window restore. Tab clicks inside
+  the pane stay local and do not rewrite the address. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
@@ -1421,7 +1561,7 @@ threadIds: [first comment that waits on you] }`. A question the run waits on
   pull request open. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
-  no return pills: the Diff and the resolver page come back through Back.
+  no return pills: the Diff and a fix run transcript come back through Back.
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
@@ -1438,8 +1578,9 @@ threadIds: [first comment that waits on you] }`. A question the run waits on
   destination lists. Every surface that routes to the same destination shows
   the same number from the same selector. A group of items with no home at the
   destination gets no badge pointing there.
-- **The activity bar shows ALL sessions grouped by stage**, never filtered to
-  running only.
+- **The session list shows ALL sessions**, never filtered to running only. The
+  user's own filter by project and the fold after eight rows hide nothing the
+  user did not ask for: a session that needs you is never folded.
 - **A blocked action is re-routed, never hidden.** A blocked workflow advance
   gives the reason on the CTA and opens an inline confirm before anything
   starts. With auto-run off, nothing advances without a click.
@@ -1488,10 +1629,13 @@ studio body puts one beside its list. It opens at 400px, resizes from 340 to
 (`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
 ends) for every drawer. It is a
 floating card: 8px from the top, right and bottom edges and from the column,
-radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. When the main
-area minus the drawer and the two gutters would leave the content column
-under 560px, the card lies over the right of the main area with a shadow and
-no scrim, and the main stays interactive; pushing, it has no shadow. Closed,
+radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. The drawer opens
+in the space on the right of the content: every page is anchored on one left
+edge, so opening a drawer never moves the main content to the left, it only
+takes the room on the right. When the main area minus the drawer's track
+(insets counted) and the two gutters would leave it under 560px, the card lies
+over the right of the main area with a shadow and no scrim, and the main stays
+interactive; pushing, it has no shadow. Closed,
 its track is 0px wide and `inert`. Opening pushes the track open in 220ms while
 the card slides 12px in; over the page it slides 16px in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never touches the sidebar
@@ -1502,7 +1646,11 @@ One drawer at a time, per window. The `drawer` store slice holds
 (pressing the trigger again closes it). **The open drawer is part of the
 history entry's focus.** A forward move (crumb, sidebar, palette, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
-Escape and its X close it in place. Focus then returns to the trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
+Escape and its X close it in place. The one exception is the `ask` drawer: a
+forward move that stays in its session keeps it open (`keepAskDrawer` in
+`navigate`), so a chip in an answer changes the page beside it; leaving the
+session closes it, and Back brings it back like any drawer. Another drawer
+opened from the page replaces it. Focus then returns to the trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
 one action, close), one divider, a `ScrollFade` body and an optional dock. A
 body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
@@ -1513,18 +1661,54 @@ host.
 only by an explicit command.** A plan read from the planner that wrote it (the
 row in its chat, in its Brief, or a plan row in Activity) stays on the agent
 page: the address does not change, the page keeps its scroll, and the drawer
-sits beside it. The same goes for a report read from the agent that wrote it.
-Going to the Artifacts page is a command of its own, **Open in Artifacts** in
-the drawer header, and it is the only page change. The `artifact-document` kind
+sits beside it. The same goes for every artifact kind read from its work: a
+report or a wireframe row in Activity, and a report or wireframe chip in a
+transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
+report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
+the wireframe stage, with Open in Artifacts and Expand). The palette and the
+object menu's **Open** are transit and keep navigating; the Artifacts page
+stays the library. Going to the Artifacts page from a drawer is a command of
+its own, **Open in Artifacts** in the drawer header, and it is the only page
+change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
-drawer with its own size: it opens at half the window (`sizing="half"` on
-`DrawerColumn`, with no resize handle), **Expand** takes the whole column and
+drawer that can expand: it opens at half the window (`sizing="half"` on
+`DrawerColumn`, with no resize handle, capped so the page keeps 560px and the
+drawer still pushes), **Expand** takes the whole column and
 lies over the page (`sizing="full"`), and Expand toggles back. The choice is
 kept per session in `documentDrawerExpanded` and is forgotten when the session
 is archived. The header holds the title, `vN`, the state chip, **Run plan**,
 Open in Artifacts, Expand and Close; Escape closes it. While the planner
 revises the plan the body is dimmed and Run plan waits.
+
+The `ask` kind carries no payload: the thread on screen lives in the `ask`
+slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
+(`features/session/ask/components/AskDrawer/`) uses `scroll="self"`: a
+`ScrollFade` thread with the composer below it, never a dock. Its header is
+**Ask**, the session title as the count, and **New**. The body starts with
+**Right now** (no model call: `askRightNow` over `askDigestOf`, the five
+comment words, running agents, open questions and the session cost) and three
+suggested questions; once a thread has turns it folds to one row. Then
+**Earlier** threads on a fresh thread, then the turns. An answer chip that
+targets a page navigates (the drawer stays, see above); a chip that targets a
+plan or another artifact opens it inside the drawer under **Back to answer**,
+and Escape goes back before it closes. Buttons come only from verbs the action
+registry offers right now (`askVerb`, `useAskActions`): **Answer question N**
+prefills and focuses the answer field, **Review N ready** runs
+`session.review`, **Tell {agent}…** prefills the agent's box and runs
+`agent.message`. A verb with a confirm shows an `InlineConfirm` first. Nothing
+runs in one click.
+
+The `transcript` kind carries `{ agentId }` and shows one agent's conversation
+beside the page, at the saved drawer width with its resize handle (sizing
+`default`, like Ask, so it never resizes after it opens), without selecting
+that agent: the page
+under it keeps its address and its trail (`loadAgentTranscript` with
+`isSelecting: false`). It reads, top to bottom, a lead (the fix run summary
+for a resolver), the transcript, and a field to write to that agent, which
+sends with `sendTurn` to that agent and keeps its draft in `agentDraft`. A
+resolver's transcript always opens here, on the Comments tab of its Branch
+(see The resolver stays on its comment).
 
 The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
 `summary`, in that order, and `view` is `current` or `versions` (the old
@@ -1684,8 +1868,8 @@ properties (State, Origin with the code host link and Copy link, Attempts with
 the transcript, Fix commit, Author) sit in a rail only when the pane is wide.
 Every Branch tab uses the full pane width (`PaneShell width="full"`), and the
 Comments tab reads the width of its own pane (`branchLayoutOf`, so a wide
-sidebar or an open drawer narrows it): from 1040px a 300px list, the thread and
-a 232px rail; from 900px the list and the thread, with the properties inside
+sidebar or an open drawer narrows it): from 1280px a 300px list, the thread and
+a 288px margin rail; from 900px the list and a wide thread, with the properties inline under
 the thread; under 900px the list, then the thread with `‹ Comments` (Up). The
 selected row stays selected on the way back. `branchLayout.test.ts` pins the
 widths a 1024px window gets with a wide sidebar and an open drawer. Fix, Resolve without a reply and Stop live on the thread and its
@@ -1854,7 +2038,7 @@ viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
 wrapping to the first; `F` puts focus on the tree; `/` and `T` are one action
 (`diff.focusFilter`, `T` is its alias) and focus the filter field, the one input
 in the tree column that carries `data-diff-filter` (it opens the tree first when
-it is folded); `⌘⇧B` shows or hides the tree (`⌘B` stays the session sidebar).
+it is folded); `⌘⇧B` shows or hides the tree (`⌘B` stays the column).
 A line under the tree lists them once, from the registry (`keyHelp.ts`).
 
 Big and narrow cases (`useNarrowPane`, `useTreePanel`, `lib/windowRows.ts`).

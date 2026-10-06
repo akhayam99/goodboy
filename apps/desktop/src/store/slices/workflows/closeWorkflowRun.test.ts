@@ -252,7 +252,7 @@ describe('closeWorkflowRun', () => {
     await closeWorkflowRun(set, get)(SESSION_ID, RUN_ID);
 
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Couldn't close this workflow" }),
+      expect.objectContaining({ title: "Couldn't stop this run" }),
     );
   });
 });

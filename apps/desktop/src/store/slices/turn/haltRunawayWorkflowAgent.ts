@@ -27,7 +27,7 @@ export const haltRunawayWorkflowAgent = async ({ set, get, sessionId, agentId }:
     kind: 'error',
     severity: 'warning',
     title: `Run halted: ${name}`,
-    body: `the workflow sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you stepping in, so goodboy stopped it to protect your usage. open the agent and continue manually.`,
+    body: `the run sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you stepping in, so goodboy stopped it to protect your usage. open the agent and continue manually.`,
     sessionId,
     action: { kind: 'open-agent', sessionId, agentId },
   });

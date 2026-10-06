@@ -1,4 +1,5 @@
 .sessionMock .smApp {
+  container: smapp / inline-size;
   min-width: 0;
   overflow: hidden;
   border-radius: 10px;
@@ -27,7 +28,65 @@
   background: var(--g-info);
 }
 
+.sessionMock .smShell {
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+}
+
+.sessionMock .smCol {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 8px;
+  background: var(--raise);
+}
+
+.sessionMock .smNew {
+  justify-content: flex-start;
+}
+
+.sessionMock .smDoors,
+.sessionMock .smSessions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sessionMock .smDoor {
+  display: flex;
+  height: 28px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font: 400 12px / 16px var(--sans);
+  color: var(--g-muted-foreground);
+}
+
+.sessionMock .smDoor svg {
+  flex: none;
+  color: var(--g-faint-foreground);
+}
+
+.sessionMock .smColLabel {
+  padding: 0 8px;
+}
+
+.sessionMock .smSession {
+  flex: none;
+  font: 400 12px / 16px var(--sans);
+}
+
+.sessionMock .smSessionTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sessionMock .smBody {
+  min-width: 0;
   padding: 20px 20px 16px;
 }
 
@@ -77,9 +136,27 @@
   margin-left: 6px;
 }
 
+@container smapp (width < 700px) {
+  .sessionMock .smShell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sessionMock .smCol {
+    display: none;
+  }
+}
+
 @media (hover: none) and (pointer: coarse) {
   .sessionMock .smMeta {
     font-size: 13px;
+  }
+
+  .sessionMock .smShell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sessionMock .smCol {
+    display: none;
   }
 
   .sessionMock .smBody {

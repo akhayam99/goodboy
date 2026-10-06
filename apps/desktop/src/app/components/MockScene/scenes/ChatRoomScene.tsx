@@ -14,6 +14,7 @@ import { installChatWorkStubs } from './chatWorkSceneStubs';
 import { driveChatWork, isChatWorkStage } from './driveChatWork';
 import { ShellFrame, seedStudioChrome } from './shellChrome';
 import { StudioFrame } from './StudioFrame';
+import { sceneShellMode } from './sceneShell';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const noop = () => undefined;
@@ -131,8 +132,13 @@ export const ChatRoomScene = () => {
         <div data-scene-view="chat" className="contents">
           <StudioFrame
             target={{ place: null, tool: null }}
+            columnPlace="chat"
             main={
-              <AppStudioFrame kind="chat" onClose={noop}>
+              <AppStudioFrame
+                kind="chat"
+                onClose={noop}
+                placement={sceneShellMode() === 'column' ? 'content' : 'cover'}
+              >
                 <ChatStudio workspaceId={WORKSPACE_ID} chatId={chatId} onClose={noop} />
               </AppStudioFrame>
             }

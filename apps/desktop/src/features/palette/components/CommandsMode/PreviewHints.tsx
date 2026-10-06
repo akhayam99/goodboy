@@ -12,7 +12,16 @@ const enterLabel = (entry: PaletteEntry): string => {
   if (entry.isBlocked === true) {
     return 'Unavailable';
   }
-  if (entry.kind === 'verb' || entry.kind === 'action' || entry.kind === 'goto') {
+  if (entry.level !== undefined) {
+    return entry.level.kind === 'confirm-run' ? 'Review' : 'Open';
+  }
+  if (
+    entry.kind === 'verb' ||
+    entry.kind === 'action' ||
+    entry.kind === 'goto' ||
+    entry.kind === 'page' ||
+    entry.kind === 'next'
+  ) {
     return entry.label;
   }
   return 'Open';

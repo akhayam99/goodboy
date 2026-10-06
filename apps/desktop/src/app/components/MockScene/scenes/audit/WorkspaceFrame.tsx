@@ -1,11 +1,17 @@
 import type { ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { AppFooter } from '../../../AppFooter';
 import { AppTopBar } from '../../../AppTopBar';
-import { SessionNavSidebar } from '../../../../../features/session/components/SessionNavSidebar';
+import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
+import { useAppStore } from '../../../../../store';
+import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
+import { SceneFooter } from '../SceneFooter';
+import { sceneShellMode } from '../sceneShell';
+import { useSceneShell } from '../useSceneShell';
 import { FRAME_CONNECTED } from './frameSeed';
 import { sceneParam } from './sceneParams';
 
@@ -17,42 +23,57 @@ type Props = {
 };
 
 export const WorkspaceFrame = ({ session, main }: Props) => {
+  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const drawerSizing = useAppStore(selectDrawerSizing);
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: true,
     isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
+    mode: sceneShellMode(),
   });
+  const shell = useSceneShell({ arrangement });
   return (
-    <AppShell
-      topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
-      leftHidden={arrangement.leftHidden}
-      leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-      leftSidebar={
-        arrangement.leftSlot === 'sessions' ? (
-          <SessionNavSidebar currentSessionId={session.id} />
-        ) : undefined
-      }
-      footer={
-        <AppFooter
-          scope="workspace"
-          target={{ place: null, tool: null }}
-          connected={FRAME_CONNECTED}
-          onOpenIntegration={noop}
-          onOpenInbox={noop}
-          onOpenWorkflows={noop}
-          onOpenImpact={noop}
-          onOpenSettings={noop}
-          onOpenShortcuts={noop}
-          onOpenChangelog={noop}
-        />
-      }
-      main={
-        main ?? (
-          <div className="relative h-full w-full">
-            <SessionWorkspace session={session} isActive />
-          </div>
-        )
-      }
-    />
+    <>
+      <AppShell
+        drawer={isDrawerOpen ? <DrawerHost /> : null}
+        drawerSizing={drawerSizing}
+        studio={shell.studio}
+        studioCoversLeft={arrangement.studioCoversLeft}
+        topBar={
+          <AppTopBar
+            mode={arrangement.mode}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+            onOpenImpact={noop}
+          />
+        }
+        leftHidden={arrangement.leftHidden}
+        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+        leftSidebar={
+          <ShellLeft
+            arrangement={arrangement}
+            workspaceId={session.workspaceId}
+            currentSessionId={session.id}
+            isDraftShown={false}
+            actions={shell.actions}
+            onToggle={noop}
+            settingsSlotRef={shell.settingsSlotRef}
+          />
+        }
+        footer={
+          arrangement.footer === null ? undefined : (
+            <SceneFooter scope={arrangement.footer} connected={FRAME_CONNECTED} />
+          )
+        }
+        main={
+          main ?? (
+            <div className="relative h-full w-full">
+              <SessionWorkspace session={session} isActive />
+            </div>
+          )
+        }
+      />
+      {shell.layers}
+    </>
   );
 };

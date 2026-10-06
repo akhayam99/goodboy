@@ -13,7 +13,6 @@ type Props = {
   readonly onClearSession: () => void;
   readonly isRefreshing: boolean;
   readonly onRefresh: () => void;
-  readonly isFacetFolded: boolean;
   readonly activeFilterCount: number;
   readonly facets: ReactNode;
 };
@@ -26,7 +25,6 @@ export const InboxListHeader = ({
   onClearSession,
   isRefreshing,
   onRefresh,
-  isFacetFolded,
   activeFilterCount,
   facets,
 }: Props) => {
@@ -72,31 +70,29 @@ export const InboxListHeader = ({
         />
         <KbdPill>{shortcutGlyphs('list.search')}</KbdPill>
       </div>
-      {isFacetFolded ? (
-        <AnchoredPopover
-          dropdown={filters}
-          role="dialog"
-          ariaLabel="Inbox filters"
-          className="max-h-[70vh] py-1"
-          trigger={
-            <button
-              type="button"
-              onClick={filters.toggle}
-              aria-expanded={filters.open}
-              className={cn(
-                'flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
-                filters.open && 'bg-selected text-foreground',
-              )}
-            >
-              <ListFilter size={ICON_SIZE.row} aria-hidden />
-              Filters
-              {activeFilterCount > 0 ? <KbdPill>{activeFilterCount}</KbdPill> : null}
-            </button>
-          }
-        >
-          {facets}
-        </AnchoredPopover>
-      ) : null}
+      <AnchoredPopover
+        dropdown={filters}
+        role="dialog"
+        ariaLabel="Inbox filters"
+        className="max-h-[70vh] py-1"
+        trigger={
+          <button
+            type="button"
+            onClick={filters.toggle}
+            aria-expanded={filters.open}
+            className={cn(
+              'flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
+              filters.open && 'bg-selected text-foreground',
+            )}
+          >
+            <ListFilter size={ICON_SIZE.row} aria-hidden />
+            Filters
+            {activeFilterCount > 0 ? <KbdPill>{activeFilterCount}</KbdPill> : null}
+          </button>
+        }
+      >
+        {facets}
+      </AnchoredPopover>
       <IconButton
         icon={RefreshCw}
         label="Refresh inbox"

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const DESKTOP_SRC = join(__dirname, '..', '..');
 const UI_SRC = join(DESKTOP_SRC, '..', '..', '..', 'packages', 'ui', 'src');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules', 'dist']);
-const ALLOWED = ['app', 'components', 'AppFooter', 'GoodboyChip', ''].join(sep);
+const ALLOWED = ['app', 'components', 'GoodboyChip', ''].join(sep);
 
 const BETA_LABEL = /label=(?:"Beta"|\{'Beta'\}|\{"Beta"\})/i;
 const BETA_TEXT = />\s*Beta\s*</i;
@@ -27,7 +27,7 @@ const listSourceFiles = (dir: string, acc: string[] = []): string[] => {
 };
 
 describe('beta chip', () => {
-  it('renders in the footer pill and nowhere else in the app', () => {
+  it('renders in the Goodboy chip and nowhere else in the app', () => {
     const offenders: string[] = [];
     for (const root of [DESKTOP_SRC, UI_SRC]) {
       for (const file of listSourceFiles(root)) {
@@ -44,7 +44,7 @@ describe('beta chip', () => {
     }
     expect(
       offenders,
-      `A Beta chip may only live in the footer Goodboy chip (app/components/AppFooter/GoodboyChip). Remove these:\n${offenders.join('\n')}`,
+      `A Beta chip may only live in the Goodboy chip (app/components/GoodboyChip). Remove these:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 });

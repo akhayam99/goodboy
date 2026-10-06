@@ -190,8 +190,8 @@
           "also": "file versions"
         },
         {
-          "title": "Activity bar",
-          "text": "A bar on the left lists the sessions of the workspace by where they stand. Each row says what it is waiting on.",
+          "title": "Session list",
+          "text": "The left column lists the sessions of the workspace, one line each. The ones that need you sit on top, and a card shows where any of them stands.",
           "group": "Switch between tasks",
           "main": true
         },
@@ -214,6 +214,12 @@
           "group": "Switch between tasks",
           "also": "new windows",
           "shown": true
+        },
+        {
+          "title": "Sidebar",
+          "text": "One column on the left holds Board, Inbox, Chat, Workflows and your sessions, on every screen. Fold it with ⌘B and the icons stay.",
+          "group": "Search and navigation",
+          "also": "sidebar"
         },
         {
           "title": "Go anywhere",
@@ -1050,6 +1056,12 @@
           "text": "Ask about your repos without starting a session. The answer reads every project and never changes a file, and you can turn it into work later.",
           "group": "Agents",
           "main": true
+        },
+        {
+          "title": "Ask in a session",
+          "text": "Ask what is going on in a session with ⌘L. A panel reads it for you and offers a button for each thing you can do now.",
+          "group": "Agents",
+          "also": "ask in a session"
         },
         {
           "title": "Images in chat",

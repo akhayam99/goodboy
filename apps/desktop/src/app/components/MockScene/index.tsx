@@ -11,6 +11,7 @@ import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { ChatShellScene } from './scenes/ChatShellScene';
 import { ChatRoomScene } from './scenes/ChatRoomScene';
+import { SessionAskScene } from './scenes/SessionAskScene';
 import { InboxScene } from './scenes/InboxScene';
 import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
@@ -39,6 +40,8 @@ import { ResolveRunAnsweredScene } from './scenes/ResolveRunAnsweredScene';
 import { ResolveRunQuestionScene } from './scenes/ResolveRunQuestionScene';
 import { ResolveRunWorkingScene } from './scenes/ResolveRunWorkingScene';
 import { FixRunQuestionScene } from './scenes/FixRunQuestionScene';
+import { SpaceDiffCommentScene } from './scenes/SpaceDiffCommentScene';
+import { SpaceDiffSplitScene } from './scenes/SpaceDiffSplitScene';
 import { BoardScene } from './scenes/BoardScene';
 import { BoardOngoingScene } from './scenes/BoardOngoingScene';
 import { BoardSelectedScene } from './scenes/BoardSelectedScene';
@@ -102,6 +105,9 @@ import { FirstLapMovingScene } from './scenes/audit/FirstLapMovingScene';
 import { FirstLapReportScene } from './scenes/audit/FirstLapReportScene';
 import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
 import { SessionStatesScene } from './scenes/audit/SessionStatesScene';
+import { SessionHoverScene } from './scenes/sessions/SessionHoverScene';
+import { SessionSwitcherScene } from './scenes/sessions/SessionSwitcherScene';
+import { SessionsMenuScene } from './scenes/sessions/SessionsMenuScene';
 import { FeaturesStartTabsScene } from './scenes/features/StartTabsScene';
 import { FeaturesReviewPushConfirmScene } from './scenes/features/ReviewPushConfirmScene';
 import { FeaturesWriteReviewScene } from './scenes/features/WriteReviewScene';
@@ -136,6 +142,7 @@ import { FeaturesImpactOverviewScene } from './scenes/features/ImpactOverviewSce
 import { FeaturesNewerDataScene } from './scenes/features/NewerDataScene';
 import { RepoStatusScene } from './scenes/features/RepoStatusScene';
 import { PaletteQueryScene } from './scenes/features/PaletteQueryScene';
+import { PaletteStateScene } from './scenes/features/PaletteStateScene';
 import { FeaturesReportSheetScene } from './scenes/features/ReportSheetScene';
 import { FeaturesScriptDrawerScene } from './scenes/features/ScriptDrawerScene';
 import { FeaturesComposerMenuScene } from './scenes/features/ComposerMenuScene';
@@ -182,6 +189,7 @@ export const MOCK_SCENES = {
   workspace: WorkspaceScene,
   workflow: WorkflowScene,
   shell: ShellScene,
+  'column-rail': () => <ShellScene isRail />,
   'chat-shell': ChatShellScene,
   'chat-room': ChatRoomScene,
   inbox: InboxScene,
@@ -242,6 +250,7 @@ export const MOCK_SCENES = {
   'activity-one-signal': ActivityOneSignalScene,
   'activity-groups': ActivityGroupsScene,
   'context-drawer': ContextDrawerScene,
+  'session-ask': SessionAskScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,
@@ -274,6 +283,9 @@ export const MOCK_SCENES = {
   'first-lap-report': FirstLapReportScene,
   'board-states': BoardStatesScene,
   'session-states': SessionStatesScene,
+  'sessions-menu': SessionsMenuScene,
+  'session-hover': SessionHoverScene,
+  'session-switcher': SessionSwitcherScene,
   'session-start': SessionStartScene,
   'workspace-states': WorkspaceStatesScene,
   'settings-app': SettingsAppScene,
@@ -308,6 +320,7 @@ export const MOCK_SCENES = {
   'features-newer-data': FeaturesNewerDataScene,
   'repo-status': RepoStatusScene,
   'palette-query': PaletteQueryScene,
+  'palette-state': PaletteStateScene,
   'features-report-sheet': FeaturesReportSheetScene,
   'features-script-drawer': FeaturesScriptDrawerScene,
   'features-composer-menu': FeaturesComposerMenuScene,
@@ -349,6 +362,9 @@ export const MOCK_SCENES = {
   'scribe-proposal-transcript': ScribeProposalTranscriptScene,
   'fix-run': FixRunScene,
   'fix-run-question': FixRunQuestionScene,
+  'resolve-transcript-drawer': FixRunQuestionScene,
+  'space-diff-split': SpaceDiffSplitScene,
+  'space-diff-comment': SpaceDiffCommentScene,
   'crash-report': CrashReportScene,
 };
 

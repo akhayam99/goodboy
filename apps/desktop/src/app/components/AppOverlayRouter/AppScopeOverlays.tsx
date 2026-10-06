@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { PaletteOverlay } from '../../../features/palette/components/PaletteOverlay';
 import type { PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { FindInViewController } from '../../../features/search/findInView/FindInViewController';
+import { SessionSwitcher } from '../../../features/workspace/components/SessionSwitcher';
 
 type Props = {
   readonly studio: ReactElement | null;
@@ -18,5 +19,6 @@ export const AppScopeOverlays = ({ studio, palette, closePalette }: Props) => (
       <PaletteOverlay mode={palette.mode} initialQuery={palette.query} onClose={closePalette} />
     )}
     <FindInViewController />
+    <SessionSwitcher />
   </>
 );

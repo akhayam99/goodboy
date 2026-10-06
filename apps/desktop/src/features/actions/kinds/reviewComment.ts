@@ -19,7 +19,7 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import {
   branchPlace,
-  resolverPagePlace,
+  fixRunTranscript,
   sessionPlace,
 } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
@@ -225,14 +225,13 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         if (facts.agentId === null) {
           return;
         }
-        env.getState().navigate({
-          to: resolverPagePlace({
+        env.getState().navigate(
+          fixRunTranscript({
             sessionId: facts.sessionId,
             agentId: facts.agentId,
             threadId: facts.threadId,
-            pane: 'transcript',
           }),
-        });
+        );
       },
     },
     {

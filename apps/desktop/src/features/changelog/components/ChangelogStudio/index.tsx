@@ -162,6 +162,7 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
           railLabel="Releases"
           railWidth="standard"
           surface="changelog"
+          placement="page"
           rail={
             <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
               <ChangelogRail

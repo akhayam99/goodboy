@@ -97,3 +97,16 @@ export type ChatSessionLink = Readonly<{
   kind: ChatSessionLinkKind;
   createdAt: IsoDateTime;
 }>;
+
+export type AskThread = Readonly<{
+  id: ChatId;
+  workspaceId: WorkspaceId;
+  sessionId: SessionId;
+  title: string;
+  provider: ProviderId;
+  model: string;
+  effort: EffortLevel | null;
+  lastActivityAt: IsoDateTime;
+  createdAt: IsoDateTime;
+  messageCount: number;
+}>;

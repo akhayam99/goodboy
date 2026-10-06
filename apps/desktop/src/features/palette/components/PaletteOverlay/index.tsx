@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PopoverPortalProvider, cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PALETTE_MODES } from '../../paletteModes';
 import type { PaletteModeId } from '../../paletteModeTypes';
@@ -18,11 +18,18 @@ type Props = {
 const scopeNow = (): PaletteScope | null => {
   const state = useAppStore.getState();
   const sessionId = state.currentSessionId as SessionId | null;
+  const runId = sessionId === null ? null : (state.focusedWorkflowRunId[sessionId] ?? null);
   return resolvePaletteScope({
     currentWorkspaceId: state.currentWorkspaceId,
     currentSessionId: sessionId,
     selectedAgentId: sessionId === null ? null : (state.selectedAgentId[sessionId] ?? null),
+    artifactConversationAgentId:
+      sessionId === null ? null : (state.artifactConversationAgentId[sessionId] ?? null),
+    lens: sessionId === null ? null : (state.activeLens[sessionId] ?? null),
     hasStudio: sessionId !== null && (state.sessionStudio[sessionId] ?? null) !== null,
+    hasAppStudio: state.appStudio !== null,
+    focusedRunId: runId as WorkflowRunId | null,
+    prNumber: sessionId === null ? null : (state.sessionGithub[sessionId]?.pr?.number ?? null),
     heldScope: focusedPaletteScope(),
   });
 };

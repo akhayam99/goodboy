@@ -2,9 +2,14 @@ import type { ReactNode } from 'react';
 import { cn } from '../cn';
 
 const GUTTER_CLASS = 'w-full px-6 @max-[720px]:px-4';
-const COLUMN_CLASS = `mx-auto max-w-[var(--column-frame)] ${GUTTER_CLASS}`;
 
-export type PageColumnWidth = 'column' | 'full';
+export type PageColumnWidth = 'column' | 'measure' | 'full';
+
+const WIDTH_CLASS: Readonly<Record<PageColumnWidth, string>> = {
+  column: `max-w-[var(--column-frame)] ${GUTTER_CLASS}`,
+  measure: `max-w-[var(--measure-frame)] ${GUTTER_CLASS}`,
+  full: GUTTER_CLASS,
+};
 
 type Props = {
   readonly width?: PageColumnWidth;
@@ -13,11 +18,7 @@ type Props = {
 };
 
 export const PageColumn = ({ width = 'column', className, children }: Props) => (
-  <div
-    data-page-column=""
-    data-width={width}
-    className={cn(width === 'full' ? GUTTER_CLASS : COLUMN_CLASS, className)}
-  >
+  <div data-page-column="" data-width={width} className={cn(WIDTH_CLASS[width], className)}>
     {children}
   </div>
 );

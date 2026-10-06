@@ -15,6 +15,7 @@ import {
 import type { MountGithubState } from '../../../store/types';
 import { seedSessionWithMounts } from '../../helpers/seedSessionWithMounts';
 import { App } from '../../../App';
+import { SETTING_SHELL_CLASSIC_BARS } from '../../../features/settings/settings';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
   {
@@ -74,15 +75,52 @@ const BRIDGE: Readonly<Record<string, unknown>> = {
   },
 };
 
-const SELECTS: ReadonlyArray<readonly [RegExp, unknown]> = [[/FROM history_plans /, []]];
+const SELECTS: ReadonlyArray<readonly [RegExp, unknown]> = [
+  [/FROM history_plans /, []],
+  [/SELECT MAX\(ordinal\) as max_ordinal FROM session_workflows/, [{ max_ordinal: null }]],
+];
 
-const answerSelect = (sql: string): Promise<unknown> => {
+const INSERTED_AGENT = /^\s*INSERT INTO agents\s*\(([^)]+)\)\s*VALUES/;
+
+const AGENT_BY_ID = /^SELECT \* FROM agents WHERE id = \?$/;
+
+const insertedAgents = new Map<unknown, Readonly<Record<string, unknown>>>();
+
+const rememberAgent = ({
+  sql,
+  params,
+}: {
+  readonly sql: string;
+  readonly params: ReadonlyArray<unknown>;
+}): void => {
+  const columns = INSERTED_AGENT.exec(sql)?.[1];
+  if (columns === undefined) {
+    return;
+  }
+  const row = Object.fromEntries(
+    columns.split(',').map((column, index) => [column.trim(), params[index] ?? null]),
+  );
+  insertedAgents.set(row.id, row);
+};
+
+const answerSelect = ({
+  sql,
+  params,
+}: {
+  readonly sql: string;
+  readonly params: ReadonlyArray<unknown>;
+}): Promise<unknown> => {
+  if (AGENT_BY_ID.test(sql)) {
+    const row = insertedAgents.get(params[0]);
+    return Promise.resolve(row === undefined ? [] : [row]);
+  }
   const known = SELECTS.find(([pattern]) => pattern.test(sql));
   return known === undefined ? new Promise<never>(() => undefined) : Promise.resolve(known[1]);
 };
 
 export type BridgeArgs = {
   readonly sql?: string;
+  readonly params?: ReadonlyArray<unknown>;
   readonly worktreePath?: string;
 };
 
@@ -93,9 +131,10 @@ const branchAt = (worktreePath: string | undefined): string | null =>
 
 export const bridge = (command: string, args?: BridgeArgs): Promise<unknown> => {
   if (command === 'db_select') {
-    return answerSelect(args?.sql ?? '');
+    return answerSelect({ sql: args?.sql ?? '', params: args?.params ?? [] });
   }
   if (command === 'db_execute') {
+    rememberAgent({ sql: args?.sql ?? '', params: args?.params ?? [] });
     return Promise.resolve({ rowsAffected: 1 });
   }
   if (command === 'worktree_status') {
@@ -108,6 +147,8 @@ const LOOP_MARKERS = ['Maximum update depth', '#185', 'getSnapshot should be cac
 
 type Seed = 'pr' | 'issue';
 
+export type Bars = 'column' | 'classic';
+
 export type Ctx = {
   readonly sessionId: SessionId;
 };
@@ -116,6 +157,7 @@ export type Row = {
   readonly name: string;
   readonly covers: ReadonlyArray<string>;
   readonly seed?: Seed;
+  readonly bars?: Bars;
   readonly open: (ctx: Ctx) => Promise<void>;
   readonly lands: (ctx: Ctx) => Promise<void>;
 };
@@ -179,7 +221,13 @@ const traceActions = (): void => {
   useAppStore.setState(traced);
 };
 
-export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
+export const boot = async ({
+  seed,
+  bars = 'column',
+}: {
+  readonly seed: Seed;
+  readonly bars?: Bars;
+}): Promise<Ctx> => {
   const sessionId = seedSessionWithMounts({ useAppStore, hasPr: seed === 'pr' });
   const seeded = useAppStore.getState();
   const mount = seeded.sessionProjectMounts[sessionId]?.[0] ?? null;
@@ -224,6 +272,10 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
     checkForUpdates: async () => undefined,
     hydrated: true,
     bootPhase: 'ready',
+    settings: {
+      ...seeded.settings,
+      [SETTING_SHELL_CLASSIC_BARS]: bars === 'classic' ? 'true' : 'false',
+    },
   });
   traceActions();
   render(
@@ -403,6 +455,7 @@ export const installNavigationHooks = (): void => {
   beforeEach(async () => {
     await resetStoryStore();
     consoleErrors = [];
+    insertedAgents.clear();
     calls = new Set();
     const logError = console.error;
     vi.spyOn(console, 'error').mockImplementation((...args: ReadonlyArray<unknown>) => {
@@ -425,7 +478,7 @@ export const runNavigationRows = ({ rows }: RunParams): void => {
     it.each(rows.map((row) => [row.name, row] as const))(
       '%s',
       async (_name, row) => {
-        const ctx = await boot({ seed: row.seed ?? 'pr' });
+        const ctx = await boot({ seed: row.seed ?? 'pr', bars: row.bars ?? 'column' });
 
         await row.open(ctx);
         await row.lands(ctx);

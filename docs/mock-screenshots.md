@@ -196,6 +196,17 @@ README images always show the app around the feature. Two frames wrap them:
 - `StudioFrame` in `scenes/StudioFrame.tsx` (top bar and footer) is for studios
   such as Settings, Impact and the Inbox. Fill it with `seedStudioChrome`.
 
+Every frame (these two, `audit/WorkspaceFrame` and the board shell) takes its
+column actions, studio and overlay layers from `scenes/useSceneShell`, which
+runs the app's own `useAppOverlays`: Board, Inbox, Chat, Workflows and Settings
+in the column work as in the app, Settings swaps the column and **Back to app**
+returns. A scene that installs its own IPC answers goes through
+`scenes/mockSceneIpc.ts`, which answers editor and browser detection with an
+empty list when the scene has nothing, so Settings opens there too. The `shell`
+scene mounts the real `SessionWorkspace` (trail band, **Ask**, page rows that
+move), and a scene that opens a session seeds its agents and plans so the
+overview never stays on its loading skeleton.
+
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.
 
@@ -275,6 +286,7 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
   `--themes dark`, and look at every file before keeping it.
 - Put `%20` for spaces inside `--scene`, or Chrome never loads the page.
 - `--click "Commits,Sort"` clicks, in order, the buttons, tabs or links whose text starts with each name, after the scene loads and before the capture. It shoots a state a scene does not open by itself, such as a second tab or an open picker. A name that matches nothing stops the run.
+- `--hover "<css selector>"` moves the pointer to the center of the first match, after the clicks and before the capture. It shoots a tooltip or a hover card the scene does not open by itself, such as the limits card of a provider chip in the top bar (`--hover '[aria-label^="Claude limits"]'`).
 
 Each feature-area guide points at each file with its raw URL,
 `https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/<name>-dark.webp`.

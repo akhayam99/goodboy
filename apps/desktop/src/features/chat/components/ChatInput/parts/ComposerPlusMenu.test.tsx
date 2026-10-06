@@ -12,7 +12,7 @@ describe('ComposerPlusMenu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
     screen.getByText('Run a script');
     screen.getByText('$');
-    screen.getByText('Start a workflow');
+    screen.getByText('Start a run');
     screen.getByText('~');
     screen.getByText('Ask another agent');
     screen.getByText('@');
@@ -32,7 +32,7 @@ describe('ComposerPlusMenu', () => {
     const onInsertPrefix = vi.fn();
     render(<ComposerPlusMenu onAttachFiles={vi.fn()} onInsertPrefix={onInsertPrefix} />);
     fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
-    fireEvent.click(screen.getByText('Start a workflow'));
+    fireEvent.click(screen.getByText('Start a run'));
     expect(onInsertPrefix).toHaveBeenCalledWith('~');
   });
 

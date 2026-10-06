@@ -29,7 +29,7 @@ type Allowance = {
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 1, reason: 'chrome' },
-  'apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx': {
+  'apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx': {
     count: 2,
     reason: 'chrome',
   },
@@ -49,7 +49,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'debt',
   },
   'packages/ui/src/components/Listbox/index.tsx': { count: 1, reason: 'chrome' },
-  'apps/desktop/src/features/palette/components/CommandsMode/index.tsx': {
+  'apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx': {
     count: 2,
     reason: 'chrome',
   },
@@ -60,10 +60,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/features/integrations/github/components/PullRequest/ThreadReplies.tsx': {
     count: 1,
     reason: 'debt',
-  },
-  'apps/desktop/src/features/inbox/components/InboxStudio/InboxStudioLayout.tsx': {
-    count: 1,
-    reason: 'chrome',
   },
   'apps/desktop/src/features/integrations/jira/AssigneePicker.tsx': { count: 3, reason: 'debt' },
   'apps/desktop/src/features/integrations/jira/TransitionMenu.tsx': { count: 1, reason: 'debt' },
@@ -96,10 +92,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx': {
     count: 2,
     reason: 'chrome',
-  },
-  'apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx': {
-    count: 1,
-    reason: 'debt',
   },
   'apps/desktop/src/features/workspace/components/WorkspaceSwitcher/index.tsx': {
     count: 2,

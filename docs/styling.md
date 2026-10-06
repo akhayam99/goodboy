@@ -103,19 +103,20 @@ and the contrast floors are in
 class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
 
 `bg-chrome` is the app frame and nothing else: `AppShell` paints it on the
-window and the sidebar column, and `AppTopBar` and `AppFooter` paint their
-bars with it. The main pane stays on `bg-background`, one step in front.
+window and the left column, and `AppTopBar` (and `AppFooter` under Classic
+bars) paint their bars with it. The main pane stays on `bg-background`, one step in front.
 `no-token-bypass.test.ts` fails a `bg-chrome` anywhere else.
 
 ## The window grid
 
-Columns, resize handles and the footer are areas of **one** CSS grid. Their
+Columns, resize handles, the studio slot and (under Classic bars) the footer
+are areas of **one** CSS grid. Their
 widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and
 nothing inside it needs to know. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
 
-Top bar, sidebar and footer are one chrome field, and `main` is a **sheet** on
+Top bar and left column are one chrome field, and `main` is a **sheet** on
 it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`). A sheet corner rounds only
 where the chrome wraps it on two sides: with the sidebar, the top-left and
 bottom-left corners take `rounded-frame` (10px) and one uniform 1px
@@ -134,12 +135,22 @@ size.
 
 The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
 area beside the page, 0px wide while closed and the saved width plus two 8px
-insets while open. Its width transition moves the page in 220ms, so the content
-column slides and stays centred. When pushing would leave the column under
-560px, the drawer lies over the page instead. `sizing` on `DrawerColumn` is
-`default` (the saved width, with the resize handle), `half` (half of the column,
-no handle) or `full` (the whole column, always over the page); only the plan
-document drawer uses the last two.
+insets while open. It opens in the space on the right of the content: the page
+is anchored left, so opening a drawer never moves the content, it only takes
+space from the right. When pushing would leave the main area under 560px plus
+its 48px of gutters (the drawer's track, insets included, is counted), the
+drawer lies over the page instead. `sizing` on `DrawerColumn` is `default` (the
+saved width, with the resize handle), `half` (half of the column, capped so the
+main area keeps its 560px and the drawer still pushes, no handle) or `full`
+(the whole column, always over the page). The pure geometry lives in
+`packages/ui/src/drawerGeometry.ts` (`drawerWidthOf`, `drawerModeOf`,
+`mainWidthOf`) and `drawerGeometry.test.ts` runs it over a width matrix:
+1024, 1440 and 1920 windows at zoom 0.8, 1 and 1.25, default and widest
+sidebar. `selectDrawerSizing.test.ts` takes every drawer kind at 1280 and
+1440 and checks the card ends 8px inside the aside, also while it slides in:
+`drawer-card-in` and `drawer-overlay-in` slide at most the 8px inset, never
+past the window edge. `DrawerColumn.test.tsx` pins the classes that math
+assumes (an 8px `w-2` handle, the card's `mr-2`, the track's min width).
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's
@@ -158,22 +169,35 @@ the right of it, never the session sidebar.
 ## The content column
 
 Every main pane renders through `PaneShell`, and its crumb, header and body
-sit in one `PageColumn`. The column is `min(960px, pane - 2 * gutter)`:
-`--column-max` is 960px of content, the gutter is 24px a side, 16px once the
-pane is under 720px wide. The gutter switch is a container query on the pane
-(`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
-media query on the window, because the space that counts is the pane's.
+sit in one `PageColumn`. Every page starts at the same x: the column is
+anchored left next to the session column, never centred, so moving from
+Overview to Branch to Runs to Artifacts to a settings page never shifts the
+first letter. The gutter is 24px a side, 16px once the pane is under 720px
+wide. The gutter switch is a container query on the pane (`@container` on the
+`PaneShell` root, `@max-[720px]:` on the column), never a media query on the
+window, because the space that counts is the pane's.
+
+Three width tiers, one rule each, all on that one left edge:
+
+| Tier    | Width                 | Used by                                                                                                                                          |
+| ------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| measure | `--measure`, 720px    | prose: transcript assistant text, plan prose, comment and note bodies, a Brief, Chat answers (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
+| column  | `--column-max`, 960px | the page column: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `PANE_RHYTHM.column`)               |
+| full    | the pane, fluid       | work surfaces: every Branch tab, the diff, File versions, the terminal, Inbox lists (`PageColumn width="full"`)                                  |
+
+A margin rail (`--margin-rail`, 288px) sits on the right of a work surface
+from 1280px of pane: Branch thread properties.
 
 No view picks its own width. The column changes only when the window changes
 or the right drawer opens, never because you moved from Overview to Review to a
-chat. Anything that centres content uses `PageColumn` or `PANE_RHYTHM.column`;
-no other `max-w-*` layout width lives under `features/`.
-`shared/layout/columnContract.test.ts` fails on `PANE_RHYTHM.measure`,
-`DIFF_CAPPED_COLUMN_CLASS` and `max-w-xl` to `max-w-7xl` there (with an
-explicit allowlist, such as the image lightbox, and a narrow list for cards and
-empty states that still use `max-w-xl`), and on a lens the session
-workspace mounts without `PaneShell`, or a root that draws a crumb of its own.
-The session trail lives only in `TrailBar`, a 40px band above every layer; the
+chat. `shared/layout/columnContract.test.ts` fails under `features/` on any
+`max-w-[Nch]`, any `max-w-[Npx]` (the palette and the onboarding wizard are the
+listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
+the Board frame and two centred empty states, `PANE_RHYTHM.measure`,
+`DIFF_CAPPED_COLUMN_CLASS` and `max-w-xl` to `max-w-7xl` (with a narrow list
+for cards that still use `max-w-xl`), and on a lens the session workspace
+mounts without `PaneShell`, or a root that draws a crumb of its own. The
+session trail lives only in `TrailBar`, a 40px band above every layer; the
 panes under it start with their title.
 
 Detail views (an agent, a pull request, an issue from any tracker, a Review
@@ -184,18 +208,14 @@ action) is the first block of the body. A body that owns its scroll, such as a
 transcript or a diff, asks for `scroll="self"`.
 
 A Session or Agent page reads as one column: every child, banner, card and
-footer sits on the same edges. Only prose keeps a 72ch measure (long markdown
-and the text of a review comment), aligned left inside the column. Tables, code
-and cards take the whole column. `columnContract.test.ts` fails on any
-`max-w-[Nch]` other than `72ch`.
+footer sits on the same edges. Only prose keeps the 720px measure, aligned
+left inside the column. Tables, code and cards take the whole column.
 
-There are two layouts, one rule each. **Reading** pages (the Session, an Agent,
-a Fix run) are one 960 column from `PaneShell`; every child starts at the same
-left edge, and only prose (an outcome, a summary) takes `max-w-[72ch]`. **Work**
-pages (the tabs of the Branch) take the whole width of the pane: Files puts its
-file tree on the left from 900px of pane up and the diff beside it (under 900px
-the tree is a 44px strip that opens over the diff), Comments puts the
-list and the thread side by side, and under `@4xl` they take turns.
+**Work** pages (the tabs of the Branch) take the whole width of the pane: Files
+puts its file tree on the left from 900px of pane up and the diff beside it
+(under 900px the tree is a 44px strip that opens over the diff), Comments puts
+the list and the thread side by side from 900px, the thread's properties
+inline under it until 1280px and in the margin rail from there.
 
 ## Layout: fixed-height shell, scroll on content
 
@@ -246,12 +266,15 @@ position, painted above the viewport. So a `sticky` header inside the scroller
 is covered as soon as the region scrolls. An opaque `bg-*` does not save it,
 because the overlay paints over the header, not under it. The fix is in the
 structure. Titles, breadcrumbs, toolbars and error banners live in a
-`shrink-0` zone outside. Only the body is wrapped.
+`shrink-0` zone outside. Only the body is wrapped. A scroller whose sticky
+headers belong to its body, such as the file headers of a diff, passes
+`fadeEdges="end"`: only its bottom edge fades, so the header on top stays
+sharp.
 
 ## Dividers separate chrome from content, never content from content
 
 Chrome and content separate with the edge of the content sheet, not with a
-line: the top bar, the footer and a studio rail draw no horizontal `Divider`
+line: the top bar, the left column and a studio rail draw no horizontal `Divider`
 against the content, and the board header sits `gap-6` above its columns. A
 `Divider` marks what is left of the boundary between chrome and a pane's
 content, never a boundary inside content. Allowed: a vertical divider inside
@@ -321,11 +344,12 @@ token and a row in the table.
 That order is a precedence chain, not taste. Each step must sit above the one
 under it, because it can be opened while that one is still open. **A control
 earns a name here only when its trigger stays clickable under a fullscreen
-studio**, so it can be opened while that studio is up. The footer's popovers
-qualify, because the studio leaves the bars clickable. Anything narrower keeps
-the nearest local `z-10`..`z-40`. That value is scoped to one card, toolbar or
-pane, and never compared against a full-page studio. This is why the footer
-builds its own popover instead of raising the shared one. Many pane menus use
+studio**, so it can be opened while that studio is up. The popovers of the
+top bar and the left column qualify, because a studio leaves both clickable.
+Anything narrower keeps the nearest local `z-10`..`z-40`. That value is scoped
+to one card, toolbar or pane, and never compared against a full-page studio.
+This is why the chrome builds its own popovers instead of raising the shared
+one. Many pane menus use
 the shared popover, and raising it would raise all of them at once.
 
 ## Focus rings

@@ -170,6 +170,9 @@
 
   --column-max: 960px;
   --column-frame: calc(var(--column-max) + 48px);
+  --measure: 720px;
+  --measure-frame: calc(var(--measure) + 48px);
+  --margin-rail: 288px;
 
   --container-chrome-wide: 1280px;
   --container-chrome-labels: 960px;
@@ -378,7 +381,7 @@
   @keyframes drawer-card-in {
     from {
       opacity: 0;
-      transform: translateX(12px);
+      transform: translateX(8px);
     }
     to {
       opacity: 1;
@@ -389,7 +392,7 @@
   @keyframes drawer-overlay-in {
     from {
       opacity: 0;
-      transform: translateX(16px);
+      transform: translateX(8px);
     }
     to {
       opacity: 1;

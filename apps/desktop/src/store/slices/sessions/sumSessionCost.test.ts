@@ -20,4 +20,14 @@ describe('sumSessionCost', () => {
 
     expect(sumSessionCost(records)).toBe(1.75);
   });
+
+  it('counts Ask answers in the session cost', () => {
+    const records = [
+      createRecord({ kind: 'turn', estimatedCostUsd: 3.38 }),
+      createRecord({ kind: 'ask', estimatedCostUsd: 0.04 }),
+      createRecord({ kind: 'summarizer', estimatedCostUsd: 2 }),
+    ];
+
+    expect(sumSessionCost(records)).toBeCloseTo(3.42);
+  });
 });

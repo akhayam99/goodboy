@@ -4,7 +4,7 @@
   "apps/desktop/src/__tests__/regressions/collapsed-rail-width.test.tsx": 2,
   "apps/desktop/src/__tests__/regressions/sidebar-toggle-axis.test.tsx": 2,
   "apps/desktop/src/__tests__/surfaces/theme-switch.test.tsx": 1,
-  "apps/desktop/src/app/components/AppFooter/GoodboyChip/index.test.tsx": 3,
+  "apps/desktop/src/app/components/GoodboyChip/index.test.tsx": 3,
   "apps/desktop/src/app/components/AppFooter/index.test.tsx": 6,
   "apps/desktop/src/app/components/AppTopBar/index.test.tsx": 6,
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": 5,

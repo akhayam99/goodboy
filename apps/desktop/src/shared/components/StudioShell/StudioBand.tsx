@@ -11,6 +11,7 @@ type Props = {
   readonly title: string;
   readonly subtitle?: string;
   readonly closeLabel: string;
+  readonly isClosable?: boolean;
   readonly accessory?: ReactNode;
   readonly isTrailClaimed?: boolean;
   readonly trailSlotRef?: (node: HTMLDivElement | null) => void;
@@ -25,6 +26,7 @@ export const StudioBand = ({
   title,
   subtitle,
   closeLabel,
+  isClosable = true,
   accessory,
   isTrailClaimed = false,
   trailSlotRef,
@@ -62,9 +64,11 @@ export const StudioBand = ({
         )}
       </div>
       {accessory}
-      <Button variant="ghost" size="sm" onClick={onClose} aria-label={closeLabel}>
-        <X size={13} aria-hidden /> Close
-      </Button>
+      {isClosable ? (
+        <Button variant="ghost" size="sm" onClick={onClose} aria-label={closeLabel}>
+          <X size={13} aria-hidden /> Close
+        </Button>
+      ) : null}
     </header>
   </>
 );

@@ -246,7 +246,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
               <span className="text-heading text-foreground">No questions</span>
             </div>
           ) : (
-            <div className="mx-auto w-full max-w-[40rem] px-10 py-6 @max-[56rem]:px-6">
+            <div className="w-full max-w-[var(--measure-frame)] px-6 py-6">
               <LiveQuestionCard
                 key={question.id}
                 question={question}

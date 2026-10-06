@@ -28,7 +28,7 @@ export const workflowStartGate = ({
   isSpendLimitValid,
 }: Params): WorkflowStartGate => {
   if (isStarting) {
-    return { isDisabled: true, reason: 'This workflow is already starting' };
+    return { isDisabled: true, reason: 'This run is already starting' };
   }
   if (isPlanning) {
     return { isDisabled: true, reason: 'Wait for the plan to come back to start' };

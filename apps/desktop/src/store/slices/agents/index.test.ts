@@ -199,6 +199,30 @@ describe('store contract', () => {
       expect(store.getState().agentDraft[AGENT_ID]).toBeUndefined();
     });
 
+    it('loads a cached transcript for a drawer without changing which agent the page shows', async () => {
+      const store = useAppStore;
+      const other = 'agent-in-drawer' as AgentId;
+      store.setState({
+        selectedAgentId: { [SESSION_ID]: null },
+        activeLens: { [SESSION_ID]: 'branch' },
+        transcripts: { [other]: [] },
+      });
+
+      await store.getState().loadAgentTranscript(SESSION_ID, other, { isSelecting: false });
+
+      expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
+      expect(store.getState().activeLens[SESSION_ID]).toBe('branch');
+    });
+
+    it('selects the agent when a page loads its transcript', async () => {
+      const store = useAppStore;
+      store.setState({ selectedAgentId: { [SESSION_ID]: null }, transcripts: { [AGENT_ID]: [] } });
+
+      await store.getState().loadAgentTranscript(SESSION_ID, AGENT_ID);
+
+      expect(store.getState().selectedAgentId[SESSION_ID]).toBe(AGENT_ID);
+    });
+
     it('setAgentEffortOverride pins the per-agent effort', async () => {
       const store = useAppStore;
       store.getState().setAgentEffortOverride(AGENT_ID, 'xhigh');

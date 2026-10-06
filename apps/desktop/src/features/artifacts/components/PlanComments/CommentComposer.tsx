@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button, useEscapeLayer } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
+import { useFocusReturn } from '../../../../shared/hooks/useFocusReturn';
 
 type Props = {
   readonly quote: string | null;
@@ -20,7 +21,9 @@ export const CommentComposer = ({
   const [body, setBody] = useState(initialBody);
   const [isBusy, setIsBusy] = useState(false);
   const isBlank = body.trim().length === 0;
+  const rootRef = useRef<HTMLDivElement | null>(null);
   useEscapeLayer(onCancel);
+  useFocusReturn({ rootRef });
 
   const submit = () => {
     if (isBlank || isBusy) {
@@ -31,7 +34,7 @@ export const CommentComposer = ({
   };
 
   return (
-    <div data-testid="plan-comment-composer" className="flex min-w-0 flex-col gap-2">
+    <div ref={rootRef} data-testid="plan-comment-composer" className="flex min-w-0 flex-col gap-2">
       {quote === null ? null : (
         <q className="block text-meta italic text-muted-foreground">{quote}</q>
       )}

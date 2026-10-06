@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { AppShell } from '@goodboy/ui';
 import type {
   ChatId,
   ChatMessageId,
@@ -12,21 +11,17 @@ import type {
   SessionId,
   TelemetryRecordId,
 } from '@goodboy/types';
-import { AppFooter } from '../../AppFooter';
-import { AppTopBar } from '../../AppTopBar';
-import { ToastProvider } from '../../../../shared/components/Toast';
-import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
-import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
+import { SessionWorkspace } from '../../../../features/session/components/SessionWorkspace';
 import { useAppStore } from '../../../../store';
-import { shellArrangement } from '../../../shellArrangement';
+import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import { NOW, SESSION, WORKSPACE_ID, seedWorkflowScene } from './workflowSeed';
 import { sceneClock } from '../sceneClock';
 import { sceneParam } from './audit/sceneParams';
 import { seedPolicyScene } from './providerPolicySeed';
+import { ShellFrame } from './shellChrome';
 
 const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
-const noop = () => undefined;
 const TAX_SESSION_ID = 'mock-shell-session-tax-question' as SessionId;
 const HOMEPAGE_SESSION_ID = 'mock-shell-session-homepage' as SessionId;
 const WEBHOOKS_SESSION_ID = 'mock-shell-session-webhooks' as SessionId;
@@ -181,7 +176,7 @@ const seedShellChrome = () => {
       },
     },
     archivedSessions: { [WORKSPACE_ID]: [] },
-    sessionViewPrefs: { [WORKSPACE_ID]: { sort: 'updatedAt', group: 'stage' } },
+    sessionViewPrefs: { [WORKSPACE_ID]: DEFAULT_PREFS },
     sessionTelemetry: {
       [SESSION.id]: [
         ...(useAppStore.getState().sessionTelemetry[SESSION.id] ?? []),
@@ -226,7 +221,6 @@ const seedShellChrome = () => {
     scriptRuns: {},
     projectScripts: {},
     loadArchivedSessions: async () => undefined,
-    navigate: () => undefined,
   });
 };
 
@@ -273,7 +267,11 @@ const seedChatOrigin = (): void => {
   });
 };
 
-export const ShellScene = () => {
+type Props = {
+  readonly isRail?: boolean;
+};
+
+export const ShellScene = ({ isRail = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -286,51 +284,20 @@ export const ShellScene = () => {
     setIsReady(true);
   }, []);
 
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    hasActiveSession: true,
-    isSidebarCollapsed: false,
-  });
-
   if (!isReady) {
     return null;
   }
 
   return (
-    <ToastProvider>
-      <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
-        leftHidden={arrangement.leftHidden}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={
-          arrangement.leftSlot === 'sessions' ? (
-            <SessionNavSidebar currentSessionId={SESSION.id} />
-          ) : undefined
-        }
-        footer={
-          <AppFooter
-            scope={arrangement.footer}
-            target={{ place: null, tool: null }}
-            connected={{
-              github: true,
-              linear: true,
-              jira: false,
-              sentry: false,
-              gitlab: false,
-              bitbucket: false,
-              slack: false,
-            }}
-            onOpenIntegration={noop}
-            onOpenInbox={noop}
-            onOpenWorkflows={noop}
-            onOpenImpact={noop}
-            onOpenSettings={noop}
-            onOpenShortcuts={noop}
-            onOpenChangelog={noop}
-          />
-        }
-        main={<SessionOverviewPane session={SESSION} onSelectLens={noop} />}
-      />
-    </ToastProvider>
+    <ShellFrame
+      session={SESSION}
+      sidebar={isRail ? 'collapsed' : 'expanded'}
+      hasOwnTrail
+      main={
+        <div className="relative h-full w-full">
+          <SessionWorkspace session={SESSION} isActive />
+        </div>
+      }
+    />
   );
 };

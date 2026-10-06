@@ -1,7 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { tintClasses } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { openLens } from '../../../session/openLens';
 import { resolveArtifactForBlock } from '../../../artifacts/resolveArtifactForBlock';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
@@ -45,7 +44,7 @@ export const ArtifactBlockCard = ({ item, sessionId, agentId, planVersion = null
   const artifacts = useAppStore((s) =>
     sessionId === null ? EMPTY_ARRAY : (s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY),
   );
-  const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
+  const openDrawer = useAppStore((s) => s.openDrawer);
 
   if (item.artifactKind === 'plan' && sessionId !== null) {
     return (
@@ -65,8 +64,11 @@ export const ArtifactBlockCard = ({ item, sessionId, agentId, planVersion = null
 
   if (resolved !== null && sessionId !== null) {
     const onClick = () => {
-      setFocusedArtifactId(sessionId, resolved.id);
-      openLens({ sessionId, lens: 'plans' });
+      openDrawer({
+        kind: 'artifact-document',
+        sessionId,
+        payload: { artifactId: resolved.id, revision: null },
+      });
     };
 
     return (

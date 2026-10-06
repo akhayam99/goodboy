@@ -132,7 +132,7 @@ describe('ArtifactBuiltFrom', () => {
       sourceWorkflowRunId: RUN_ID,
       executingWorkflowRunId: null,
     });
-    screen.getByText(/^Workflow run run-1\. Agents and artifacts were scoped/);
+    screen.getByText(/^Run run-1\. Agents and artifacts were scoped/);
     screen.getByText('No workflow step, this agent ran on its own');
   });
 
@@ -147,8 +147,8 @@ describe('ArtifactBuiltFrom', () => {
       },
       wireframe,
     );
-    screen.getByText('Workflow run run-1. Agents were scoped to that run, session plans were not');
-    screen.getByText('Workflow run run-1');
+    screen.getByText('Run run-1. Agents were scoped to that run, session plans were not');
+    screen.getByText('Run run-1');
     expect(screen.queryByTestId('built-from-design-profile')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'design profile' }));
     expect(screen.getByTestId('built-from-design-profile').textContent).toBe(

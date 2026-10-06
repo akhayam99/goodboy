@@ -14,6 +14,7 @@ import {
   type StudioPlace,
 } from '../../../store';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
+import type { StudioPlacement } from '../../components/StudioFrame/studioPlacement';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import { footerTarget, type ConnectedIntegrations } from './overlayState';
 import type { OpenPaletteParams, PaletteRequest } from '../../../features/palette/paletteModeTypes';
@@ -29,6 +30,8 @@ type Params = {
   readonly isSessionSidebarCollapsed: boolean;
   readonly isWorkspaceLauncherBranch: boolean;
   readonly pinSessionSidebar: () => void;
+  readonly studioPlacement?: StudioPlacement;
+  readonly settingsColumnSlot?: HTMLElement | null;
 };
 
 type OpenParams = {
@@ -47,6 +50,8 @@ export const useAppOverlays = ({
   isSessionSidebarCollapsed,
   isWorkspaceLauncherBranch,
   pinSessionSidebar,
+  studioPlacement = 'cover',
+  settingsColumnSlot = null,
 }: Params) => {
   const overlay = useAppStore((state) => state.appStudio);
   const openStudio = useAppStore((state) => state.openStudio);
@@ -118,6 +123,8 @@ export const useAppOverlays = ({
   );
 
   const openInbox = useCallback(() => goTo({ overlay: { kind: 'inbox', focus: null } }), [goTo]);
+
+  const openChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
 
   const openShortcutHelp = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),
@@ -207,6 +214,8 @@ export const useAppOverlays = ({
           currentWorkspace,
           workspaceProjectRoot,
           offerWorkspaceRepo,
+          placement: studioPlacement,
+          settingsColumnSlot,
         });
 
   const layers: ReactNode = createElement(AppOverlayRouter, {
@@ -235,6 +244,7 @@ export const useAppOverlays = ({
     armDeleteConfirm,
     openAddWorkspace,
     openChangelog,
+    openChat,
     openImpact,
     openInbox,
     openIntegration,

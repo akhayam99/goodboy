@@ -28,7 +28,7 @@ const STAGE = {
 const USAGE = `usage: node scripts/feature-shots.mjs --scene <key&params> --out <name>
   [--selector <css>] [--clip x,y,w,h] [--window 1280x800] [--pad 24]
   [--scale 3] [--wait 5000] [--frame-pad 40] [--themes dark,light]
-  [--click "Text one,Text two"]
+  [--click "Text one,Text two"] [--hover <css>]
   [--base http://localhost:5230]
        node scripts/feature-shots.mjs --scene <key&params> --probe <css> [--window 1280x800]`;
 
@@ -58,6 +58,7 @@ const parseArgs = (argv) => {
     wait: Number(args.wait ?? 5000),
     framePad: Number(args['frame-pad'] ?? 40),
     click: args.click ? args.click.split(',') : [],
+    hover: args.hover ?? null,
     themes: (args.themes ?? THEMES.join(',')).split(','),
     base: args.base ?? process.env.GOODBOY_SHOT_URL ?? 'http://localhost:5230',
   };
@@ -153,6 +154,15 @@ function boxOf(selector) {
   return [rect.x, rect.y, rect.width, rect.height];
 }
 
+function centerOf(selector) {
+  const element = this.querySelector(selector);
+  if (!element) {
+    return null;
+  }
+  const rect = element.getBoundingClientRect();
+  return [rect.x + rect.width / 2, rect.y + rect.height / 2];
+}
+
 function clickText(text) {
   const targets = [...this.querySelectorAll('button, [role="tab"], [role="menuitem"], a')];
   const target = targets.find((element) => (element.textContent ?? '').trim().startsWith(text));
@@ -193,6 +203,18 @@ const captureScene = async ({ send, options, theme }) => {
       throw new Error(`no button or tab reads "${text}" in ${url}`);
     }
     await sleep(600);
+  }
+  if (options.hover) {
+    const center = await callInPage({
+      send,
+      pageFunction: centerOf,
+      argument: options.hover,
+    });
+    if (!center) {
+      throw new Error(`hover ${options.hover} not found in ${url}`);
+    }
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: center[0], y: center[1] });
+    await sleep(1200);
   }
   let box;
   if (options.selector) {

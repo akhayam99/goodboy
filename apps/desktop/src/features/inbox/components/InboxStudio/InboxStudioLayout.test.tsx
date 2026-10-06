@@ -10,19 +10,19 @@ afterEach(() => {
 });
 
 describe('InboxStudioLayout', () => {
-  it('keeps the drawer column closed while nothing is open', () => {
-    render(<InboxStudioLayout rail={<nav>facets</nav>} list={<p>rows</p>} drawer={null} />);
+  it('keeps the drawer column closed while nothing is open, with no filters column beside the list', () => {
+    render(<InboxStudioLayout list={<p>rows</p>} drawer={null} />);
 
     const drawer = screen.getByRole('complementary', { name: 'Inbox item' });
     expect(drawer.getAttribute('data-drawer-mode')).toBe('closed');
     expect(drawer.style.width).toBe('0px');
-    expect(screen.getByRole('complementary', { name: 'Inbox filters' })).toBeDefined();
+    expect(screen.queryByRole('complementary', { name: 'Inbox filters' })).toBeNull();
   });
 
   it('opens the record in a drawer at the one saved width, clamped', () => {
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '900');
 
-    render(<InboxStudioLayout rail={null} list={<p>rows</p>} drawer={<p>record</p>} />);
+    render(<InboxStudioLayout list={<p>rows</p>} drawer={<p>record</p>} />);
 
     const drawer = screen.getByRole('complementary', { name: 'Inbox item' });
     expect(drawer.style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_INSET * 2}px`);
@@ -30,7 +30,7 @@ describe('InboxStudioLayout', () => {
   });
 
   it('saves the width the drawer is resized to', () => {
-    render(<InboxStudioLayout rail={null} list={<p>rows</p>} drawer={<p>record</p>} />);
+    render(<InboxStudioLayout list={<p>rows</p>} drawer={<p>record</p>} />);
 
     fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize the item panel' }), {
       key: 'ArrowLeft',

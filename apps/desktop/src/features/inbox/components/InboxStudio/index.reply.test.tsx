@@ -19,7 +19,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IsoDateTime, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { aWorkspace } from '@goodboy/types/testing';
 import {
@@ -109,8 +109,13 @@ afterEach(() => {
   cleanup();
 });
 
-const keyHints = (): string =>
-  screen.getByRole('navigation', { name: 'Filter the inbox' }).textContent ?? '';
+const keyHints = (): string => {
+  const filters = screen.getByRole('button', { name: /^Filters/ });
+  fireEvent.click(filters);
+  const hints = screen.getByRole('navigation', { name: 'Filter the inbox' }).textContent ?? '';
+  fireEvent.click(filters);
+  return hints;
+};
 
 const selectedKeys = (): ReadonlyArray<string> =>
   Array.from(document.querySelectorAll('[data-inbox-key][data-selected="true"]')).map(

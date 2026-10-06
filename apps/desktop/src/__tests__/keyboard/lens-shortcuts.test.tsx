@@ -36,6 +36,8 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
       sessionProjectMounts: {},
       sessionActiveProject: {},
       sessionBranches: { 'session-1': 'feature/branch' } as Record<string, string>,
+      settings: { 'shell.classicBars': 'true' } as Record<string, string | undefined>,
+      loadSetting: vi.fn(async () => null),
       navigate: vi.fn(),
       back: vi.fn(),
       forward: vi.fn(),
@@ -134,14 +136,13 @@ vi.mock('../../store', async () => {
     useSessionById: (sessionId: string | null) =>
       sessionList.current.find((s) => s.id === sessionId) ?? null,
     useSessions: () => sessionList.current,
-    useSessionViewPrefs: () => ({ group: 'none' }),
-    useSortedGroupedSessions: () => {
+    useSessionColumn: () => {
       const order = sidebarOrder.current;
       const sessions =
         order === null
           ? sessionList.current
           : order.flatMap((id) => sessionList.current.filter((s) => s.id === id));
-      return [{ key: 'none', sessions }];
+      return { order: sessions.map((session) => session.id) };
     },
     useWorkspaces: () => state.workspaces,
   };

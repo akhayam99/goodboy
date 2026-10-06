@@ -83,7 +83,7 @@
     "session -> integrations": 19,
     "session -> providers": 5,
     "session -> reports": 1,
-    "session -> resolve": 12,
+    "session -> resolve": 8,
     "session -> suggestions": 1,
     "session -> terminal": 1,
     "session -> wireframes": 1,
@@ -111,7 +111,7 @@
     "workflows -> workTreeModel": 2,
     "workspace -> actions": 1,
     "workspace -> integrations": 3,
-    "workspace -> providers": 2,
+    "workspace -> providers": 1,
     "workspace -> session": 6,
     "workspace -> updater": 1,
     "workspace-chat -> actions": 1

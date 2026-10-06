@@ -1,5 +1,6 @@
 import {
   memo,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -94,6 +95,25 @@ const DiffFileView = ({
   }, [viewedState]);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [composer, setComposer] = useState<Composer | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const setSection = useCallback(
+    (node: HTMLElement | null) => {
+      sectionRef.current = node;
+      registerRef(node);
+    },
+    [registerRef],
+  );
+  const focusIn = (selector: string): void => {
+    sectionRef.current?.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
+  };
+  const closeLine = (anchor: DiffCommentAnchor): void => {
+    setComposer(null);
+    focusIn(`[data-gutter="${anchor.side}:${anchor.lineNumber}"]`);
+  };
+  const closeFile = (): void => {
+    setComposer(null);
+    focusIn('[data-file-comment-trigger]');
+  };
   useEffect(() => {
     if (!wantsFileComment) {
       return;
@@ -218,9 +238,9 @@ const DiffFileView = ({
             submitLabel={comments.submitLabel}
             onSubmit={(body) => {
               comments.onSubmit(file.path, composer.anchor, body);
-              setComposer(null);
+              closeLine(composer.anchor);
             }}
-            onCancel={() => setComposer(null)}
+            onCancel={() => closeLine(composer.anchor)}
             onAskAgent={
               comments.onAskAgent
                 ? (note) => {
@@ -248,7 +268,7 @@ const DiffFileView = ({
 
   return (
     <section
-      ref={registerRef}
+      ref={setSection}
       data-file-path={file.path}
       aria-label={file.path}
       className="flex min-w-0 flex-col"
@@ -297,9 +317,9 @@ const DiffFileView = ({
                   submitLabel={comments.fileComposer?.submitLabel ?? comments.submitLabel}
                   onSubmit={(body) => {
                     comments.onSubmit(file.path, null, body);
-                    setComposer(null);
+                    closeFile();
                   }}
-                  onCancel={() => setComposer(null)}
+                  onCancel={closeFile}
                 />
               ) : null}
             </div>

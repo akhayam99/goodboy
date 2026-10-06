@@ -1,3 +1,4 @@
+import { keepAskDrawer } from '../drawer/keepAskDrawer';
 import { applyLocation } from './applyLocation';
 import { placeWithThread } from './branchThread';
 import { canonicalLocation } from './canonicalLocation';
@@ -11,7 +12,7 @@ export const navigate = (set: SetFn, get: GetFn) => {
     const canonical = canonicalLocation({ state, request: to });
     const landing = placeWithThread({
       place: canonical.place,
-      drawer: canonical.drawer ?? drawer,
+      drawer: canonical.drawer ?? drawer ?? keepAskDrawer({ state, place: canonical.place }),
     });
     const stack = currentStack(state);
     const next: Location = {

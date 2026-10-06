@@ -34,6 +34,8 @@ const { state } = vi.hoisted(() => {
       closeStudio: vi.fn(),
       sessionWorktrees: {},
       providers: [] as ReadonlyArray<{ connection: string }>,
+      settings: { 'shell.classicBars': 'true' } as Record<string, string | undefined>,
+      loadSetting: vi.fn(async () => null),
     },
   };
 });
@@ -143,8 +145,7 @@ vi.mock('../store', () => {
     useSessionById: (sessionId: string | null) =>
       state.sessions.find((session) => session.id === sessionId) ?? null,
     useSessions: () => state.sessions,
-    useSessionViewPrefs: () => ({ group: 'none' }),
-    useSortedGroupedSessions: () => [{ key: 'none', sessions: state.sessions }],
+    useSessionColumn: () => ({ order: state.sessions.map((session) => session.id) }),
     useWorkspaces: () => state.workspaces,
   };
 });

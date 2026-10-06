@@ -1,9 +1,11 @@
-import { expect } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import { expect, vi } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import type { SessionId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import { STORY_NOW } from '../../../store/storyHarness';
 import {
   type Row,
   WAIT,
+  settle,
   band,
   branchTab,
   both,
@@ -17,6 +19,37 @@ import {
   useAppStore,
   visible,
 } from './harness';
+
+const SHIP_ID = 'flow-workflow-ship-a-fix' as WorkflowId;
+
+let pushed = vi.fn(async () => ({ ok: true }));
+let opened = vi.fn(async () => undefined);
+let spawned = vi.fn(async () => undefined);
+let attached = vi.fn(async () => undefined);
+
+const seedWorkflow = (): void => {
+  const state = useAppStore.getState();
+  const workspaceId = state.currentWorkspaceId as WorkspaceId;
+  const workflow: Workflow = {
+    id: SHIP_ID,
+    workspaceId,
+    name: 'Ship a fix',
+    description: '',
+    steps: ['Plan', 'Implement'].map((name, ordinal) => ({
+      id: `${SHIP_ID}-step-${ordinal}` as StepId,
+      workflowId: SHIP_ID,
+      ordinal,
+      name,
+      promptPrefix: '',
+    })),
+    createdAt: STORY_NOW,
+    updatedAt: STORY_NOW,
+  };
+  useAppStore.setState({
+    attachWorkflowToSession: attached,
+    phaseTemplates: { ...state.phaseTemplates, [workspaceId]: [workflow] },
+  } as never);
+};
 
 const openDiffHistory = async (): Promise<void> => {
   await clickFirstButton(/ on .+ actions$/);
@@ -55,22 +88,122 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Context'),
   },
   {
+    name: 'Ask drawer from the trail band',
+    covers: ['openAsk', 'drawer:ask'],
+    open: async () => click(await screen.findByTestId('ask-trail-button')),
+    lands: () => visible('region', 'Ask'),
+  },
+  {
     name: 'palette: Show context',
     covers: ['toggleContextDrawer', 'palette:Show context'],
-    open: () => openPalette(/^Show context/),
+    open: () => openPalette(/^Show context/, 'show context'),
     lands: () => visible('region', 'Context'),
   },
   {
     name: 'palette: Refresh session',
     covers: ['resyncSession', 'palette:Refresh session'],
-    open: () => openPalette(/^Refresh session/),
+    open: () => openPalette(/^Refresh session/, 'refresh session'),
     lands: () => visible('button', /^Refresh(ing)?$/),
   },
   {
-    name: 'palette: Back to board',
-    covers: ['navigate', 'palette:Back to board'],
-    open: () => openPalette(/^Back to board/),
+    name: 'palette: Board',
+    covers: ['navigate', 'palette:Board'],
+    open: () => openPalette(/^Board$/),
     lands: () => heading('Board'),
+  },
+  {
+    name: 'palette: Chat',
+    covers: ['openStudio', 'studio:chat', 'palette:Chat'],
+    open: () => openPalette(/^Chat$/),
+    lands: () => band('Chat'),
+  },
+  {
+    name: 'palette: All actions for this session',
+    covers: ['palette:All actions for this session'],
+    seed: 'pr',
+    open: () => openPalette(/^All actions for this session/),
+    lands: async () => {
+      expect(await screen.findByText('Copy and export', {}, WAIT)).toBeDefined();
+      expect(screen.getByText('Danger')).toBeDefined();
+      expect(screen.getByPlaceholderText('Filter actions…')).toBeDefined();
+    },
+  },
+  {
+    name: 'palette next step: Push the branch',
+    covers: ['pushSessionBranch', 'palette:Push the branch'],
+    seed: 'pr',
+    open: async () => {
+      pushed = vi.fn(async () => ({ ok: true }));
+      useAppStore.setState({ pushSessionBranch: pushed } as never);
+      await openPalette(/^Push the branch/);
+    },
+    lands: () => waitFor(() => expect(pushed).toHaveBeenCalledTimes(1), WAIT),
+  },
+  {
+    name: 'palette next step: Open a pull request',
+    covers: ['createPrForSession', 'palette:Open a pull request for ledger-core'],
+    seed: 'pr',
+    open: async () => {
+      opened = vi.fn(async () => undefined);
+      useAppStore.setState({ createPrForSession: opened } as never);
+      await openPalette(/^Open a pull request for ledger-core/);
+    },
+    lands: () => waitFor(() => expect(opened).toHaveBeenCalledTimes(1), WAIT),
+  },
+  {
+    name: 'palette next step: Review the changes',
+    covers: ['spawnAgent', 'palette:Review the changes'],
+    seed: 'pr',
+    open: async () => {
+      spawned = vi.fn(async () => undefined);
+      useAppStore.setState({ spawnAgent: spawned } as never);
+      await openPalette(/^Review the changes/);
+    },
+    lands: () =>
+      waitFor(
+        () =>
+          expect(spawned).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ kindOverride: 'reviewer' }),
+          ),
+        WAIT,
+      ),
+  },
+  {
+    name: 'palette: Start a run lists the workflows and asks before it starts anything',
+    covers: ['palette:Start a run'],
+    open: async () => {
+      attached = vi.fn(async () => undefined);
+      seedWorkflow();
+      await openPalette(/^Start a run$/, 'start a run');
+      fireEvent.mouseDown(await screen.findByRole('option', { name: /^Ship a fix/ }));
+      await settle();
+    },
+    lands: async () => {
+      expect(await screen.findByText('Start a run: Ship a fix', {}, WAIT)).toBeDefined();
+      expect(screen.getByText('Plan · Implement')).toBeDefined();
+      expect(attached).not.toHaveBeenCalled();
+    },
+  },
+  {
+    name: 'palette: confirming Start a run attaches the workflow to this session',
+    covers: ['attachWorkflowToSession', 'palette:Start a run: Ship a fix'],
+    open: async () => {
+      attached = vi.fn(async () => undefined);
+      seedWorkflow();
+      await openPalette(/^Start a run: Ship a fix/, 'ship a fix');
+      await clickButton('Start run');
+    },
+    lands: ({ sessionId }) =>
+      waitFor(
+        () =>
+          expect(attached).toHaveBeenCalledWith(
+            sessionId,
+            SHIP_ID,
+            expect.objectContaining({ navigate: true }),
+          ),
+        WAIT,
+      ),
   },
   {
     name: 'palette: Inbox',
@@ -93,7 +226,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Run defaults',
     covers: ['studio:workflow', 'palette:Run defaults'],
-    open: () => openPalette(/^Run defaults/),
+    open: () => openPalette(/^Run defaults/, 'run defaults'),
     lands: both(
       () => band('Workflows'),
       () => heading('Run defaults'),
@@ -108,7 +241,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Impact: Spend',
     covers: ['openStudio', 'studio:impact', 'palette:Impact: Spend'],
-    open: () => openPalette(/^Impact: Spend/),
+    open: () => openPalette(/^Impact: Spend/, 'impact spend'),
     lands: both(
       () => band('Impact'),
       () => heading('Spend'),
@@ -142,9 +275,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Open settings',
-    covers: ['openStudio', 'studio:settings', 'scope:home', 'palette:Open settings'],
-    open: () => openPalette(/^Open settings/),
+    name: 'palette: Settings',
+    covers: ['openStudio', 'studio:settings', 'scope:home', 'palette:Settings'],
+    open: () => openPalette(/^Settings$/),
     lands: both(
       () => band('Settings'),
       () => visible('navigation', 'Settings scopes'),
@@ -159,7 +292,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'sidebar: New opens the kickoff',
     covers: ['openSessionDraft', 'button:New'],
-    open: () => clickButton(/^Create new session/),
+    open: () => clickButton(/^New session$/),
     lands: both(
       () => heading('New session'),
       () => visible('tab', /Pick up a task/),
@@ -202,7 +335,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
           return { session };
         },
       } as never);
-      await clickButton(/^Create new session/);
+      await clickButton(/^New session$/);
       await clickButton(/Start blank/);
     },
     lands: both(

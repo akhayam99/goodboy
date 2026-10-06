@@ -257,7 +257,7 @@ It includes:
 - The container and branches being created
 - Issues linked and unlinked
 - One pull request per project, from opened to merged or closed
-- Workflow runs started, closed and discarded
+- Runs started, stopped and archived
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
 - Tasks created in other tools from Goodboy
@@ -717,6 +717,16 @@ work on one goal without mixing up their chats.
 
 A **turn** is one message from you and one answer from the agent, with
 everything that streams in between.
+
+**Ask** is a question about the whole session, asked from its trail band. It
+is not an agent: it never lands on the board, in the agent count or in an
+agent's chat, and it never changes the work. It reads the session record, the
+agents' reports, questions, runs, review comments, branch, pull request and
+the session worktrees, read only, and answers with chips that open what it
+names. Three conversational surfaces stay apart: **Chat** asks about the
+workspace code, **Ask** asks about one session, and an agent's chat gives that
+agent work. Ask keeps one thread per session (`chats.session_id`, m227), and
+the Chat list never shows it.
 
 ## Pull request review
 
@@ -1277,6 +1287,11 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
 - **Budgets**: a monthly budget per provider, counted across all workspaces on a
   UTC calendar month, and a spend cap per session that pauses workflows or
   only warns, with an alert before you reach them
+- **Ask**: every answer is recorded as telemetry kind `ask` on its session
+  (m227). It counts in the session cost, today's spend, provider budgets and
+  the session cap alert, and shows as its own **Ask** row in the session
+  spend. It never counts toward a run's cap, which sums only that
+  run's agents
 
 Caps steer where work goes. They never lock you out. When every provider is
 over its cap, the message box tells you. You can still send the turn on the
@@ -1348,8 +1363,13 @@ task up again in Goodboy.
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
 - **Stop** is the one name for ending a running turn.
-- **Runs** is the tab of a session that lists its workflow runs. **Workflows**
-  is the library page. **Run defaults** is the tab of Workflows that sets what
+- **Runs** is the tab of a session that lists its runs. A run is one execution
+  inside a session. A workflow is the definition you set up in Workflow Studio,
+  and it spawns runs. **Workflows** is the studio and the library, and the word
+  stays for definitions you pick ("Run a workflow", "from a workflow"). A verb
+  on one execution says run: **Start a run**, **Stop run**, **Archive run**,
+  **Delete run**. The ⌘K section that lists them is **Runs**. **Run defaults**
+  is the tab of Workflows that sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - **Models** is the Providers page that sets what each role runs on (it was
@@ -1359,7 +1379,8 @@ task up again in Goodboy.
   notes page. The old words are ⌘K aliases or retired names.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
-  request. **Connect an integration** is the footer button that adds a tool.
+  request. **Connect an integration** is the Classic bars footer button that
+  adds a tool; with the column, tools connect from Settings > Integrations.
 - **When to ask** is the setting that decides how often a run stops for you.
   Its top choice is **Run on its own** (it was Autorun and Autonomy).
 - **Needs you** is the one name for anything that waits on you: the top bar
@@ -1371,17 +1392,17 @@ task up again in Goodboy.
 - One verb per intention. A button or menu entry takes its verb from this
   table, and the old verb stays a ⌘K alias:
 
-  | Verb           | Means                                             | Retired                                              |
-  | -------------- | ------------------------------------------------- | ---------------------------------------------------- |
-  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)                       |
-  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**)                 |
-  | **Unlink**     | Removes a task link, keeps the task in its tool   | Remove link on a task                                |
-  | **Archive**    | Hidden, restorable                                | Discard on a workflow run (now **Archive workflow**) |
-  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                                      |
-  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop workflow**)               |
-  | **Dismiss**    | Hides a notification or a suggestion              |                                                      |
-  | **Clear**      | Resets filters or a selection                     |                                                      |
-  | **Retry**      | Runs a failed action again                        | Try again                                            |
+  | Verb           | Means                                             | Retired                                |
+  | -------------- | ------------------------------------------------- | -------------------------------------- |
+  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)         |
+  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**)   |
+  | **Unlink**     | Removes a task link, keeps the task in its tool   | Remove link on a task                  |
+  | **Archive**    | Hidden, restorable                                | Discard on a run (now **Archive run**) |
+  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                        |
+  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop run**)      |
+  | **Dismiss**    | Hides a notification or a suggestion              |                                        |
+  | **Clear**      | Resets filters or a selection                     |                                        |
+  | **Retry**      | Runs a failed action again                        | Try again                              |
 
   **Discard** stays for a draft you abandon. **Close** stays for a panel and
   for sending an agent away without deleting it. **Check again** only

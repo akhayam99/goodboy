@@ -43,6 +43,8 @@ const { state, workspace, storeListeners } = vi.hoisted(() => {
       selectedAgentId: {} as Record<string, string | null>,
       sessionWorktrees: {},
       providers: [] as ReadonlyArray<{ connection: string }>,
+      settings: { 'shell.classicBars': 'true' } as Record<string, string | undefined>,
+      loadSetting: vi.fn(async () => undefined),
       get appStudio() {
         return studioState.appStudio;
       },
@@ -276,8 +278,7 @@ vi.mock('../store', async () => {
     useCurrentWorkspace: () => (state.currentWorkspaceId === null ? null : workspace),
     useSessionById: () => null,
     useSessions: () => state.sessions,
-    useSessionViewPrefs: () => ({ group: 'none' }),
-    useSortedGroupedSessions: () => [{ key: 'none', sessions: state.sessions }],
+    useSessionColumn: () => ({ order: state.sessions.map((session) => session.id) }),
     useWorkspaces: () => state.workspaces,
   };
 });
@@ -291,6 +292,7 @@ import { App } from '../App';
 
 beforeEach(() => {
   state.appStudio = null;
+  state.settings = { 'shell.classicBars': 'true' };
   state.workspaceIntegrations = {};
   state.workspaces = [workspace];
   state.currentWorkspaceId = 'workspace-1';
@@ -382,6 +384,22 @@ describe('No workspace yet', () => {
     render(<App />);
 
     expect(screen.getByTestId('footer').getAttribute('data-scope')).toBe('app');
+  });
+});
+
+describe('The classic bars switch', () => {
+  it('draws no footer at all while the switch is off', () => {
+    state.settings = { 'shell.classicBars': 'false' };
+    render(<App />);
+
+    expect(screen.queryByTestId('footer')).toBeNull();
+  });
+
+  it('reads the switch once and draws the footer when it is on', () => {
+    render(<App />);
+
+    expect(screen.getByTestId('footer').getAttribute('data-scope')).toBe('workspace');
+    expect(state.loadSetting).not.toHaveBeenCalledWith('shell.classicBars');
   });
 });
 

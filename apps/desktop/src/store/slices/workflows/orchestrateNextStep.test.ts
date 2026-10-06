@@ -1282,7 +1282,7 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Dynamic workflow blocked',
+        title: 'Orchestrated run blocked',
         body: 'A product choice is required.',
         sessionId: SESSION_ID,
       }),

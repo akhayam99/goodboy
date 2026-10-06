@@ -9,18 +9,21 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { AppFooter } from '../../AppFooter';
 import { DrawerHost } from '../../DrawerHost';
 import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { AppTopBar } from '../../AppTopBar';
+import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
-import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
+import { AskTrailButton } from '../../../../features/session/ask/components/AskTrailButton';
 import { useAppStore, type LensKind } from '../../../../store';
+import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
-import { shellArrangement } from '../../../shellArrangement';
 import { sceneClock } from '../sceneClock';
+import { shellArrangement } from '../../../shellArrangement';
+import { SceneFooter } from './SceneFooter';
+import { sceneShellMode } from './sceneShell';
+import { useSceneShell } from './useSceneShell';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
 
@@ -66,7 +69,7 @@ export const seedShellChrome = ({
     sessions: [session, ...siblings],
     sessionBranches: { ...state.sessionBranches, ...branches },
     archivedSessions: { [workspaceId]: [] },
-    sessionViewPrefs: { [workspaceId]: { sort: 'updatedAt', group: 'stage' } },
+    sessionViewPrefs: { [workspaceId]: DEFAULT_PREFS },
     sessionTelemetry: {
       ...state.sessionTelemetry,
       [session.id]: state.sessionTelemetry[session.id] ?? [
@@ -101,6 +104,7 @@ type ShellFrameProps = {
   readonly main: ReactNode;
   readonly sidebar?: 'collapsed' | 'expanded';
   readonly trailWidth?: 'column' | 'full';
+  readonly hasOwnTrail?: boolean;
 };
 
 export const ShellFrame = ({
@@ -108,59 +112,65 @@ export const ShellFrame = ({
   main,
   sidebar = 'collapsed',
   trailWidth = 'column',
+  hasOwnTrail = false,
 }: ShellFrameProps) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: true,
     isSidebarCollapsed: sidebar === 'collapsed',
+    mode: sceneShellMode(),
   });
+  const shell = useSceneShell({ arrangement });
 
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        studio={shell.studio}
+        studioCoversLeft={arrangement.studioCoversLeft}
+        topBar={
+          <AppTopBar
+            mode={arrangement.mode}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+            onOpenImpact={noop}
+          />
+        }
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
-          arrangement.leftSlot === 'sessions' ? (
-            <SessionNavSidebar currentSessionId={session.id} />
-          ) : (
-            <CollapsedRail />
-          )
-        }
-        footer={
-          <AppFooter
-            scope={arrangement.footer}
-            target={{ place: null, tool: null }}
-            connected={{
-              github: true,
-              linear: true,
-              jira: true,
-              sentry: true,
-              gitlab: false,
-              bitbucket: false,
-              slack: true,
-            }}
-            onOpenIntegration={noop}
-            onOpenInbox={noop}
-            onOpenWorkflows={noop}
-            onOpenImpact={noop}
-            onOpenSettings={noop}
-            onOpenShortcuts={noop}
-            onOpenChangelog={noop}
+          <ShellLeft
+            arrangement={arrangement}
+            workspaceId={session.workspaceId}
+            currentSessionId={session.id}
+            isDraftShown={false}
+            actions={shell.actions}
+            onToggle={noop}
+            settingsSlotRef={shell.settingsSlotRef}
           />
         }
+        footer={
+          arrangement.footer === null ? undefined : <SceneFooter scope={arrangement.footer} />
+        }
         main={
-          <div className="@container flex h-full w-full min-w-0 flex-col">
-            <TrailBar session={session} width={trailWidth} />
-            <UnderTrailContext.Provider value>
-              <div className="min-h-0 flex-1">{main}</div>
-            </UnderTrailContext.Provider>
-          </div>
+          hasOwnTrail ? (
+            main
+          ) : (
+            <div className="@container flex h-full w-full min-w-0 flex-col">
+              <TrailBar
+                session={session}
+                width={trailWidth}
+                end={<AskTrailButton sessionId={session.id} />}
+              />
+              <UnderTrailContext.Provider value>
+                <div className="min-h-0 flex-1">{main}</div>
+              </UnderTrailContext.Provider>
+            </div>
+          )
         }
       />
+      {shell.layers}
     </ToastProvider>
   );
 };

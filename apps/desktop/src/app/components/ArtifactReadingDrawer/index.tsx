@@ -1,0 +1,75 @@
+import { ArrowUpRight, Maximize2, Minimize2 } from 'lucide-react';
+import { DrawerFrame, IconButton } from '@goodboy/ui';
+import type { ArtifactId, SessionId } from '@goodboy/types';
+import { sessionPlace, useAppStore } from '../../../store';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { ReportStudio } from '../../../features/reports/components/ReportStudio';
+import { WireframeViewer } from '../../../features/wireframes/components/WireframeViewer';
+import { readingArtifactOf } from './readingArtifact';
+
+type Props = {
+  readonly sessionId: SessionId;
+  readonly artifactId: ArtifactId;
+  readonly onClose: () => void;
+};
+
+export const ArtifactReadingDrawer = ({ sessionId, artifactId, onClose }: Props) => {
+  const artifact = useAppStore((s) => readingArtifactOf({ state: s, sessionId, artifactId }));
+  const isExpanded = useAppStore((s) => s.documentDrawerExpanded[sessionId] === true);
+  const setDocumentDrawerExpanded = useAppStore((s) => s.setDocumentDrawerExpanded);
+  const navigate = useAppStore((s) => s.navigate);
+
+  if (artifact === null) {
+    return null;
+  }
+  const kindWord = artifact.kind === 'report' ? 'report' : 'wireframe';
+
+  return (
+    <DrawerFrame
+      title={artifact.title}
+      icon={CONCEPT_ICONS.artifacts}
+      iconClassName="text-muted-foreground"
+      count={`v${artifact.revision}`}
+      closeLabel={`Close the ${kindWord}`}
+      onClose={onClose}
+      action={
+        <span className="flex min-w-0 items-center gap-2">
+          <IconButton
+            icon={ArrowUpRight}
+            iconSize={ICON_SIZE.row}
+            label="Open in Artifacts"
+            variant="ghost"
+            onClick={() =>
+              navigate({
+                to: sessionPlace({
+                  sessionId,
+                  lens: 'plans',
+                  target: { kind: 'artifact', artifactId: artifact.id },
+                }),
+              })
+            }
+          />
+          <IconButton
+            icon={isExpanded ? Minimize2 : Maximize2}
+            iconSize={ICON_SIZE.row}
+            label={isExpanded ? 'Collapse' : 'Expand'}
+            variant="ghost"
+            onClick={() => setDocumentDrawerExpanded(sessionId, !isExpanded)}
+          />
+        </span>
+      }
+    >
+      <div
+        data-testid="artifact-reading-drawer"
+        data-artifact-kind={artifact.kind}
+        className="@container flex min-w-0 flex-col gap-4"
+      >
+        {artifact.kind === 'report' ? (
+          <ReportStudio sessionId={sessionId} artifact={artifact} />
+        ) : (
+          <WireframeViewer sessionId={sessionId} artifact={artifact} />
+        )}
+      </div>
+    </DrawerFrame>
+  );
+};
