@@ -908,6 +908,7 @@ type SeedParams = {
   readonly failure?: ResolveFailure;
   readonly selectable?: boolean;
   readonly deliveredReplyBody?: string | null;
+  readonly replyOnly?: ReplyOnlyVariant;
 };
 
 const CONNECTED_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
@@ -1042,14 +1043,71 @@ const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
   };
 };
 
+export type ReplyOnlyVariant = 'bundled' | 'alone' | 'posted';
+
+const REPLY_ONLY_DRAFT =
+  'The constant is already capped one layer up in retryPolicy.ts, so the loop cannot run past six attempts. Nothing to change here.';
+
+const HAND_REPLY: PrComment = {
+  id: 'mock-resolve-comment-reply-retry-constant',
+  author: 'noor-b',
+  authorAvatarUrl: null,
+  body: REPLY_ONLY_DRAFT,
+  createdAt: isoAgo({ minutes: 3 }),
+  url: `${PR.url}#discussion_reply_retry_constant`,
+  source: 'review',
+  path: 'src/webhooks/retryPolicy.ts',
+  line: 12,
+  resolved: false,
+  outdated: false,
+  threadId: T9,
+  inReplyToId: `mock-resolve-comment-${T9}`,
+};
+
+const replyOnlySeed = ({ variant }: { readonly variant: ReplyOnlyVariant }) => {
+  const isPosted = variant === 'posted';
+  const thread: ResolveThread = {
+    ...THREAD_RETRY_CONSTANT,
+    state: isPosted ? 'closed' : 'answered',
+    stage: isPosted ? 'resolved' : 'approved',
+    disposition: 'no_change',
+    replyDraft: REPLY_ONLY_DRAFT,
+    replyPostedAt: isPosted ? msAgo({ minutes: 3 }) : null,
+    replyId: isPosted ? HAND_REPLY.id : null,
+    closedAt: isPosted ? msAgo({ minutes: 3 }) : null,
+    closedSource: isPosted ? 'goodboy' : null,
+  };
+  const item: ResolveQueueItem = {
+    ...ITEM_RETRY_CONSTANT,
+    approvalState: 'accepted',
+    approvedRevision: 1,
+    deliveredAt: isPosted ? msAgo({ minutes: 3 }) : null,
+  };
+  const queue = QUEUE_ITEMS.map((entry) => {
+    if (entry.thread.threadId === T9) {
+      return { item, thread };
+    }
+    if (variant === 'alone' && entry.thread.threadId === T5) {
+      return {
+        item: { ...entry.item, deliveredAt: msAgo({ minutes: 30 }) },
+        thread: { ...entry.thread, state: 'closed' as const, stage: 'resolved' as const },
+      };
+    }
+    return entry;
+  });
+  return { queue, reply: isPosted ? HAND_REPLY : null };
+};
+
 export const seedResolveScene = ({
   expandedThreadId,
   failure,
   selectable = false,
   deliveredReplyBody = null,
+  replyOnly,
 }: SeedParams): void => {
   installResolveMockIpc({ deliveredReplyBody });
   const failed = failure === undefined ? null : failureSeed({ failure });
+  const replied = replyOnly === undefined ? null : replyOnlySeed({ variant: replyOnly });
 
   const candidatesWithItems: ReadonlyArray<ResolveCandidateWithItems> = [
     { candidate: CANDIDATE_RETRY, items: CANDIDATE_ITEMS },
@@ -1063,7 +1121,9 @@ export const seedResolveScene = ({
     currentSessionId: SESSION_ID,
     sessionResolveQueueItems: {
       [SESSION_ID]:
-        failed?.queue ?? (selectable ? [...QUEUE_ITEMS, ...EXTRA_QUEUE_ITEMS] : QUEUE_ITEMS),
+        failed?.queue ??
+        replied?.queue ??
+        (selectable ? [...QUEUE_ITEMS, ...EXTRA_QUEUE_ITEMS] : QUEUE_ITEMS),
     },
     sessionResolveAttempts: {
       [SESSION_ID]: failed?.attempts ?? [ATTEMPT_RETRY, ATTEMPT_IDEMPOTENCY],
@@ -1090,9 +1150,12 @@ export const seedResolveScene = ({
         pr: PR,
         detail: {
           prNumber: PR.number,
-          comments: selectable
-            ? [...COMMENTS, ...EXTRA_COMMENTS, METRICS_REPLY]
-            : [...COMMENTS, METRICS_REPLY],
+          comments: [
+            ...COMMENTS,
+            ...(selectable ? EXTRA_COMMENTS : []),
+            METRICS_REPLY,
+            ...(replied?.reply == null ? [] : [replied.reply]),
+          ],
           reviews: [],
           reviewRequests: [],
           checks: [],
