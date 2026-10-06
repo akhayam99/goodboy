@@ -92,9 +92,11 @@ export const ReviewComment = ({
   entries,
   compose,
   isEditingReply,
+  isModelOpen,
   isSubmitting,
   pendingActionId,
   error,
+  onToggleModel,
   onRun,
   onComposeChange,
   onComposeSubmit,
@@ -410,10 +412,11 @@ export const ReviewComment = ({
           rowState={row.rowState}
           actions={actions}
           isHintOpen={compose !== null && compose.mode === 'redraft'}
+          isModelOpen={isModelOpen}
+          onToggleModel={onToggleModel}
           isBusy={isSubmitting || pendingActionId !== null}
           onTryAgain={onTryAgain}
           onStartOver={onStartOver}
-          onAddHint={() => onRun('reviewComment.edit')}
           onRun={onRun}
         />
       )}

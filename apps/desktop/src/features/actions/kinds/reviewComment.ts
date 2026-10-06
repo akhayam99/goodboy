@@ -2,6 +2,7 @@ import {
   Check,
   CircleCheck,
   CornerDownRight,
+  Cpu,
   ExternalLink,
   FileCode,
   Link,
@@ -23,6 +24,7 @@ import {
 } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
+import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
 import { verdictReply } from '../../resolve/commentVerdict';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
@@ -450,6 +452,20 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         (DRAFTED.has(facts.state) || facts.state === 'failed') && !hasOverlay({ facts }),
       slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'menu'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
+    },
+    {
+      id: 'reviewComment.anotherModel',
+      label: FAILED_RUN_COPY.anotherModel,
+      icon: Cpu,
+      group: 'act',
+      when: ({ facts }) => facts.state === 'failed' && !hasOverlay({ facts }),
+      slot: () => 'menu',
+      run: ({ facts, env }) =>
+        requestReview({
+          getState: env.getState,
+          sessionId: facts.sessionId,
+          request: { kind: 'model', threadId: facts.threadId },
+        }),
     },
     {
       id: 'reviewComment.editReply',

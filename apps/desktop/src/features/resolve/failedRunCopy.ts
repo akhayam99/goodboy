@@ -4,7 +4,6 @@ import type { ResolveRowAction } from './resolveRowState';
 export const FAILED_RUN_COPY = {
   retry: NAMES.retry,
   anotherModel: 'Try another model',
-  addHint: 'Add a hint',
   hintLabel: 'What should the agent do differently?',
   hintKeys: '↵ sends, ⇧↵ new line, Esc cancels',
   replyYourself: 'Reply yourself',

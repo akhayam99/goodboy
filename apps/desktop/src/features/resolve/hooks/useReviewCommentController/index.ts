@@ -24,6 +24,8 @@ export type ReviewCompose = {
 export type ReviewCommentBinding = {
   readonly compose: ReviewCompose | null;
   readonly isEditingReply: boolean;
+  readonly isModelOpen: boolean;
+  readonly onToggleModel: () => void;
   readonly isSubmitting: boolean;
   readonly pendingActionId: string | null;
   readonly error: string | null;
@@ -102,6 +104,7 @@ export const useReviewCommentController = ({
   });
   const [compose, setCompose] = useState<ReviewCompose | null>(null);
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [modelOpenId, setModelOpenId] = useState<string | null>(null);
   const [pending, setPending] = useState<{ threadId: string; actionId: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
@@ -298,7 +301,7 @@ export const useReviewCommentController = ({
         return;
       }
       const { request } = event.detail;
-      if (request.kind !== 'compose' && request.kind !== 'edit_reply') {
+      if (request.kind !== 'compose' && request.kind !== 'edit_reply' && request.kind !== 'model') {
         return;
       }
       if (owned !== null && !owned.has(request.threadId)) {
@@ -306,6 +309,10 @@ export const useReviewCommentController = ({
       }
       event.preventDefault();
       onFocusRef.current?.(request.threadId);
+      if (request.kind === 'model') {
+        setModelOpenId(request.threadId);
+        return;
+      }
       if (request.kind === 'compose') {
         setCompose({ threadId: request.threadId, mode: request.mode, text: '' });
         return;
@@ -319,6 +326,8 @@ export const useReviewCommentController = ({
   const bind = (threadId: string): ReviewCommentBinding => ({
     compose: compose?.threadId === threadId ? compose : null,
     isEditingReply: editingReplyId === threadId,
+    isModelOpen: modelOpenId === threadId,
+    onToggleModel: () => setModelOpenId((current) => (current === threadId ? null : threadId)),
     isSubmitting,
     pendingActionId: pending?.threadId === threadId ? pending.actionId : null,
     error: errors[threadId] ?? null,

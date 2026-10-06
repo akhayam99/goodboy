@@ -769,8 +769,9 @@ describe('Review of a failed run', () => {
     expect(failed.getByText('The model provider stopped the run')).toBeDefined();
     expect(failed.getByText(/pnpm test src\/webhooks · 2 failing/)).toBeDefined();
     expect(failed.getByRole('button', { name: /^Retry/ })).toBeDefined();
-    expect(failed.getByRole('button', { name: 'Try another model' })).toBeDefined();
-    expect(failed.getByRole('button', { name: 'Add a hint' })).toBeDefined();
+    expect(failed.getByRole('button', { name: 'Start over with a new agent' })).toBeDefined();
+    expect(failed.queryByRole('button', { name: 'Try another model' })).toBeNull();
+    expect(failed.queryByRole('button', { name: 'Add a hint' })).toBeNull();
     expect(failed.queryByRole('button', { name: /Redraft/ })).toBeNull();
     expect(failed.getByText(/^Attempt 1/)).toBeDefined();
   });
@@ -816,7 +817,8 @@ describe('Review of a failed run', () => {
     });
     await mountFailed({ failure: 'run' });
 
-    fireEvent.click(within(comment()).getByRole('button', { name: 'Add a hint' }));
+    fireEvent.click(within(comment()).getByRole('button', { name: 'More actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Add a hint/ }));
     const field = await screen.findByRole('textbox', {
       name: 'What should the agent do differently?',
     });
@@ -851,10 +853,21 @@ describe('Review of a failed run', () => {
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('puts Reply yourself, Skip and Open transcript in the menu', async () => {
+  it('opens the model list from Try another model in the menu', async () => {
     await mountFailed({ failure: 'run' });
 
     fireEvent.click(within(comment()).getByRole('button', { name: 'More actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Try another model/ }));
+
+    expect(await screen.findByRole('region', { name: 'Model for a new agent' })).toBeDefined();
+  });
+
+  it('puts Try another model, Add a hint, Reply yourself, Skip and Open transcript in the menu', async () => {
+    await mountFailed({ failure: 'run' });
+
+    fireEvent.click(within(comment()).getByRole('button', { name: 'More actions' }));
+    expect(await screen.findByRole('menuitem', { name: /Try another model/ })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: /Add a hint/ })).toBeDefined();
     expect(await screen.findByRole('menuitem', { name: /Reply yourself/ })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /Skip/ })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /Open transcript/ })).toBeDefined();
