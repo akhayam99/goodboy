@@ -906,3 +906,34 @@ stream reader) with a session scope: `ask_turn` in
   runs inside the staged folder with either provider, so Ask works without a
   connected project. Both pass the same argument check as Chat
   (`assert_read_only`), and the Rust tests pin each provider's arguments.
+- **The pack.** `features/session/ask/buildAskPack.ts` is a pure builder over
+  what `collectAskPackInput` reads from the store: Right now, goal, agents,
+  open and the last 3 answered questions, runs (running plus the last 2
+  finished), review comments by word with every Needs you and Couldn't fix
+  item, branch and pull request, artifacts, the last 20 events that are not
+  decision changes, decisions and summary. Every object gets a handle (`A1`,
+  `R1`, `Q1`, `C1`, `PR`, `D1`). Live agents keep up to 2,000 characters of
+  their summary, settled ones 280, and only the 15 newest settled agents are
+  listed; the whole pack stops at 48,000 characters, about 12 thousand
+  tokens. Agent transcript tails (6,000 characters, at most 8 agents) go to
+  `agents/<handle>.md` as staged files, never inline. Free text passes
+  `redactSecrets`. The prompt is the pack, then the thread's last 12 messages
+  (at most 24 thousand characters, as Chat), then the question.
+- **The answer.** `buildAskSystemPrompt` asks for one bold sentence, handles
+  in double brackets (`[[A2]]`, `[[webhook.ts:88]]`), the app's state words and
+  at most one `<<suggest target="Q1">>…<</suggest>>` line for a question or an
+  agent. `parseAskAnswer` turns known handles into chips, shows an unknown one
+  as plain text and hides a marker still streaming. When the answer ends,
+  `stabilizeAskAnswer` rewrites handles as stable references
+  (`[[agent:<id>|Implementer]]`) before the message is saved, so chips work
+  after a restart without the pack.
+- **Spend.** A usage event from the stream inserts a `provider_runs` row and a
+  telemetry record of kind `ask` on the session (`recordAskUsage` through
+  `recordUsageTelemetry`), which emits the budget alerts like a turn. The
+  answer's cost stays in memory for its footer.
+- **Storage and mock.** Threads are `chats` rows with `session_id` set,
+  messages are `chat_messages` (`insertAskThread`, `listAskThreads`); a
+  model change updates the thread row. With `VITE_GOODBOY_MOCK=1` the slice
+  runs on an in-memory backend with a scripted responder, and
+  `?scene=session-ask&state=closed|rightnow|streaming|answer|followup|plan`
+  shows each state.

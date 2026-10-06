@@ -1,4 +1,4 @@
-export const m227AskTelemetryThreads = /* sql */ `
+export const m227AskTelemetryThreads = `
 PRAGMA foreign_keys = OFF;
 
 DROP TABLE IF EXISTS telemetry_records_new;

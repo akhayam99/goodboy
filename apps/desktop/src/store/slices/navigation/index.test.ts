@@ -682,6 +682,48 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toBeNull();
   });
 
+  it('keeps Ask open across every page of its session', () => {
+    const store = makeStore();
+    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().openDrawer(ask);
+
+    store.getState().navigate({ to: branchPlace({ sessionId: S1, tab: 'files' }) });
+    expect(store.getState().drawer).toEqual(ask);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
+    expect(store.getState().drawer).toEqual(ask);
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+    expect(store.getState().drawer).toEqual(ask);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'questions' }) });
+    expect(store.getState().drawer).toEqual(ask);
+  });
+
+  it('closes Ask when you leave its session, and Back brings it back', () => {
+    const store = makeStore();
+    const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().openDrawer(ask);
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S2 }) });
+    expect(store.getState().drawer).toBeNull();
+    store.getState().back();
+    expect(store.getState().drawer).toEqual(ask);
+
+    store.getState().navigate({ to: BOARD_PLACE });
+    expect(store.getState().drawer).toBeNull();
+    store.getState().back();
+    expect(store.getState().drawer).toEqual(ask);
+  });
+
+  it('lets another drawer replace Ask, then still closes it on a forward move', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    store.getState().openDrawer({ kind: 'ask', sessionId: S1, payload: null });
+    store.getState().openDrawer(DRAFTS);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    expect(store.getState().drawer).toBeNull();
+  });
+
   it('closes the drawer when an agent opens and restores it on back', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });

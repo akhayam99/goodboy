@@ -41,6 +41,10 @@ export type DrawerContent =
       readonly payload: { readonly threadId: string };
     }
   | {
+      readonly kind: 'ask';
+      readonly payload: null;
+    }
+  | {
       readonly kind: 'file-diff';
       readonly payload: { readonly source: FileDiffSource; readonly path: string | null };
     };

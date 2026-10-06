@@ -17,6 +17,7 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
+import { AskTrailButton } from '../../../../features/session/ask/components/AskTrailButton';
 import { useAppStore, type LensKind } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
@@ -154,7 +155,11 @@ export const ShellFrame = ({
         }
         main={
           <div className="@container flex h-full w-full min-w-0 flex-col">
-            <TrailBar session={session} width={trailWidth} />
+            <TrailBar
+              session={session}
+              width={trailWidth}
+              end={<AskTrailButton sessionId={session.id} />}
+            />
             <UnderTrailContext.Provider value>
               <div className="min-h-0 flex-1">{main}</div>
             </UnderTrailContext.Provider>

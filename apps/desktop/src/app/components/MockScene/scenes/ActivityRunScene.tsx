@@ -84,6 +84,7 @@ const SIBLINGS: ReadonlyArray<Session> = [
 type Props = {
   readonly contextTab?: ContextDrawerTab;
   readonly isFinished?: boolean;
+  readonly onSeeded?: () => void;
 };
 
 const IDLE_SESSION: Session = {
@@ -91,7 +92,7 @@ const IDLE_SESSION: Session = {
   state: { kind: 'idle', lastActivityAt: SESSION.updatedAt },
 };
 
-export const ActivityRunScene = ({ contextTab, isFinished = false }: Props) => {
+export const ActivityRunScene = ({ contextTab, isFinished = false, onSeeded }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -121,8 +122,9 @@ export const ActivityRunScene = ({ contextTab, isFinished = false }: Props) => {
     if (contextTab !== undefined) {
       useAppStore.getState().openContextDrawer({ sessionId: SESSION.id, tab: contextTab });
     }
+    onSeeded?.();
     setIsReady(true);
-  }, [contextTab, isFinished]);
+  }, [contextTab, isFinished, onSeeded]);
 
   useShowCompletedMounts({ isReady });
   useHoveredMountRow({ isReady, rowLabel: 'nw/backfill-processed-events' });

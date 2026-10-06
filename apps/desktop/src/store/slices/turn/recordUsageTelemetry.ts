@@ -11,6 +11,7 @@ import type {
   ProviderId,
   ProviderRunId,
   SessionId,
+  TelemetryKind,
   TelemetryRecord,
   TelemetryRecordId,
   TurnEvent,
@@ -29,12 +30,13 @@ type Params = {
   runId: ProviderRunId;
   sessionId: SessionId;
   now: () => IsoDateTime;
+  kind?: Extract<TelemetryKind, 'turn' | 'ask'>;
 };
 
 export const recordUsageTelemetry = async (
   set: SetFn,
   get: GetFn,
-  { event, provider, model, runId, sessionId, now }: Params,
+  { event, provider, model, runId, sessionId, now, kind = 'turn' }: Params,
 ): Promise<void> => {
   const cost = computeProviderCostUsd({
     providerId: provider,
@@ -45,7 +47,7 @@ export const recordUsageTelemetry = async (
     id: crypto.randomUUID() as TelemetryRecordId,
     runId,
     sessionId,
-    kind: 'turn',
+    kind,
     provider,
     model,
     inputTokens: event.usage.inputTokens,

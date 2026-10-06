@@ -553,6 +553,14 @@ activity yet show the plain overview with its actions.
   optional tabs, 16 below, no crumb row of their own. A session studio (builder,
   merge request, Bitbucket) has no second title bar: its title is the crumb,
   and Esc or the parent crumb is Up.
+- **The band has one right slot, and Ask holds it.** `TrailBar` takes an `end`
+  node outside the `PageColumn`, at the right end of the band.
+  `SessionWorkspace` puts `AskTrailButton` there: the question-bubble glyph
+  (`CONCEPT_ICONS.ask`, never Chat's `MessageCircle`), the word **Ask** and a
+  ⌘L key cap, pressed while the Ask drawer is open for that session. Its
+  tooltip reads `Ask what is happening in this session ⌘L`. It toggles the
+  drawer; ⌘L (`ask.open`, app plane) opens it or, when it is open, focuses its
+  box. Only the visible session's button binds ⌘L.
 - **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
@@ -711,9 +719,12 @@ covered.
   tooltip adds the running count or `New reply`. It only shows when a workspace is open. The command center opens
   the palette and shows ⌘K; it never takes typing itself. In the palette,
   every search with text and no prefix starts with `Ask in Chat`, which opens
-  a new chat with the query as its first message; a query that reads like a
-  question (ends with `?` or has four words or more) has it picked, a shorter
-  one keeps the best match picked so Enter still jumps.
+  a new chat with the query as its first message. Inside a session (the
+  session or one of its agents in scope) `Ask about this session` comes first
+  and `Ask in Chat` second (`askEntries`): it opens the Ask drawer and sends the
+  query. A query that reads like a question (ends with `?` or has four words
+  or more) has the first Ask row picked, a shorter one keeps the best match
+  picked so Enter still jumps.
   Start session in a chat's Turn into work panel creates the session and
   navigates to `sessionPlace({ sessionId })`, the overview, as a new history
   entry after the chat's own; Back returns to the same chat because
@@ -944,7 +955,8 @@ too. An entry carries its own combo for other systems where the plain mapping
 would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
 elsewhere, where Ctrl+T belongs to the shell. Report a bug (`report.open`) is
 ⌘I on macOS and Ctrl+Shift+I elsewhere, because Ctrl+I is Tab in a terminal;
-it fires from anywhere, the terminal included. Refresh session
+it fires from anywhere, the terminal included. Ask (`ask.open`) is ⌘L on
+macOS and Ctrl+Shift+L elsewhere, where Ctrl+L clears a terminal. Refresh session
 (`session.refresh`, ⌘⇧R) sits on the session plane beside Archive (⌘⇧A) and
 Delete (⌘⇧⌫), because it acts on the open session; ⌘R stays the app reload.
 The plane is for the dispatcher.
@@ -1500,7 +1512,11 @@ One drawer at a time, per window. The `drawer` store slice holds
 (pressing the trigger again closes it). **The open drawer is part of the
 history entry's focus.** A forward move (crumb, sidebar, palette, a child such
 as an agent) arrives with it closed; Back and Forward bring it back as it was;
-Escape and its X close it in place. Focus then returns to the trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
+Escape and its X close it in place. The one exception is the `ask` drawer: a
+forward move that stays in its session keeps it open (`keepAskDrawer` in
+`navigate`), so a chip in an answer changes the page beside it; leaving the
+session closes it, and Back brings it back like any drawer. Another drawer
+opened from the page replaces it. Focus then returns to the trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
 one action, close), one divider, a `ScrollFade` body and an optional dock. A
 body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
@@ -1523,6 +1539,24 @@ kept per session in `documentDrawerExpanded` and is forgotten when the session
 is archived. The header holds the title, `vN`, the state chip, **Run plan**,
 Open in Artifacts, Expand and Close; Escape closes it. While the planner
 revises the plan the body is dimmed and Run plan waits.
+
+The `ask` kind carries no payload: the thread on screen lives in the `ask`
+slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
+(`features/session/ask/components/AskDrawer/`) uses `scroll="self"`: a
+`ScrollFade` thread with the composer below it, never a dock. Its header is
+**Ask**, the session title as the count, and **New**. The body starts with
+**Right now** (no model call: `askRightNow` over `askDigestOf`, the five
+comment words, running agents, open questions and the session cost) and three
+suggested questions; once a thread has turns it folds to one row. Then
+**Earlier** threads on a fresh thread, then the turns. An answer chip that
+targets a page navigates (the drawer stays, see above); a chip that targets a
+plan or another artifact opens it inside the drawer under **Back to answer**,
+and Escape goes back before it closes. Buttons come only from verbs the action
+registry offers right now (`askVerb`, `useAskActions`): **Answer question N**
+prefills and focuses the answer field, **Review N ready** runs
+`session.review`, **Tell {agent}…** prefills the agent's box and runs
+`agent.message`. A verb with a confirm shows an `InlineConfirm` first. Nothing
+runs in one click.
 
 The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
 `summary`, in that order, and `view` is `current` or `versions` (the old

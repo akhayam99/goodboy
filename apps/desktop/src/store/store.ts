@@ -104,6 +104,7 @@ import { createStarredIssuesSlice } from './slices/starred-issues';
 import { createWorkspaceTasksSlice } from './slices/workspace-tasks';
 import { createSearchIndexSlice } from './slices/search-index';
 import { createChatsSlice } from './slices/chats';
+import { createAskSlice } from './slices/ask';
 import { handoffsInitialState } from './slices/handoffs/state';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
@@ -217,6 +218,7 @@ export type AppStore = AppState &
   ReturnType<typeof createWorkspaceTasksSlice> &
   ReturnType<typeof createSearchIndexSlice> &
   ReturnType<typeof createChatsSlice> &
+  ReturnType<typeof createAskSlice> &
   ReturnType<typeof createUpdaterSlice> &
   ReturnType<typeof createChangelogSlice> &
   ReturnType<typeof createBugReportDraftSlice> &
@@ -436,6 +438,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createWorkspaceTasksSlice({ set, get }),
   ...createSearchIndexSlice({ set, get }),
   ...createChatsSlice({ set, get }),
+  ...createAskSlice({ set, get }),
   ...createPresenceSlice({ set, get }),
   ...createTurnSlice({ set, get }),
   ...createWorktreesSlice({ set, get }),
