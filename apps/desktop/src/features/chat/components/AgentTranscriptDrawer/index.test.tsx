@@ -102,7 +102,7 @@ describe('AgentTranscriptDrawer', () => {
   });
 
   it('opens with the quoted draft in its reply field, focused, and sends it to that agent', async () => {
-    const sendTurn = vi.fn<StoreState['sendTurn']>(async () => undefined);
+    const sendTurn = vi.fn<StoreState['sendTurn']>(async () => ({ blockedOverBudget: false }));
     stub({ sendTurn });
     useAppStore.getState().setAgentDraft(PLANNER, 'About `src/retry.ts:12`');
 

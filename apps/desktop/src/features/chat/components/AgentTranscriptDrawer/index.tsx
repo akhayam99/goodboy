@@ -41,8 +41,10 @@ export const AgentTranscriptDrawer = ({ sessionId, agentId, lead = null, onClose
     }
     setIsSending(true);
     try {
-      await sendTurn({ sessionId, agentId, content });
-      setAgentDraft(agentId, '');
+      const result = await sendTurn({ sessionId, agentId, content });
+      if (!result.blockedOverBudget) {
+        setAgentDraft(agentId, '');
+      }
     } catch (error) {
       if (!isReportedError(error)) {
         void reportError({ title: TRANSCRIPT_DRAWER_COPY.sendFailed, error, sessionId });
