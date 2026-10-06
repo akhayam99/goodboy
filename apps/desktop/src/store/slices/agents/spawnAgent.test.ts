@@ -583,7 +583,7 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     const request = recordResolveAttempt.mock.calls[0]?.[0];
     expect(request?.phase).toBe('queued');
-    expect(request?.instructions).toContain('Judge the thread above on the merits in one pass.');
+    expect(request?.instructions).toContain('Judge the thread above on the merits.');
     expect(request?.instructions).toContain('Operator notes\nAvoid schema changes.');
     expect(sendTurn).not.toHaveBeenCalled();
     expect(drainResolveQueue).toHaveBeenCalledWith({ sessionId: SESSION_ID });

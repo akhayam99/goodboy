@@ -1,5 +1,11 @@
 import { useMemo } from 'react';
-import type { AgentId, PrComment, ResolveSourceSnapshot, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  PrComment,
+  ResolveCheckRun,
+  ResolveSourceSnapshot,
+  SessionId,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { ResolveItemDraft } from '../../../resolveItemDraft';
 import type { ResolveQueueRow } from '../../../buildResolveQueueRows';
@@ -17,18 +23,23 @@ import type {
 import { newRepliesOf, sourceChangeOf, type ReviewSourceChange } from '../../../sourceChangeOf';
 import {
   REVIEW_COMMENT_GROUPS,
+  projectReviewComment,
   reviewCommentGroup,
   reviewCommentStateOf,
-  reviewCommentWord,
   type ReviewCommentGroup,
   type ReviewCommentState,
 } from '../../../reviewCommentState';
+import type { ResolveWord } from '../../../commentProjection';
+import { checksFailedItemIds } from '../../../checksFailedItemIds';
+import type { ResolveCandidateWithItems } from '../../../../../store/slices/resolve/state';
 
 export type ReviewEntry = {
   readonly row: ResolveQueueRow;
   readonly threadId: string;
   readonly state: ReviewCommentState;
+  readonly resolveWord: ResolveWord;
   readonly word: string;
+  readonly chips: ReadonlyArray<string>;
   readonly change: ReviewSourceChange | null;
   readonly newReplies: ReadonlyArray<PrComment>;
   readonly group: ReviewCommentGroup;
@@ -49,6 +60,8 @@ const EMPTY_DRAFTS: Readonly<Record<string, ResolveItemDraft>> = {};
 const EMPTY_GIT: Readonly<Record<string, ThreadGitFacts>> = {};
 const EMPTY_CHANGES: Readonly<Record<string, ResolveSourceSnapshot>> = {};
 const EMPTY_RECHECKS: Readonly<Record<string, ThreadRecheck>> = {};
+const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
+const EMPTY_CHECK_RUNS: ReadonlyArray<ResolveCheckRun> = [];
 
 export const useReviewEntries = ({
   sessionId,
@@ -67,7 +80,10 @@ export const useReviewEntries = ({
   const drafts = useAppStore((s) => s.resolveItemDrafts[sessionId] ?? EMPTY_DRAFTS);
   const threadGit = useAppStore((s) => s.sessionThreadGit[sessionId] ?? EMPTY_GIT);
   const rechecks = useAppStore((s) => s.sessionThreadRechecks[sessionId] ?? EMPTY_RECHECKS);
+  const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? EMPTY_CANDIDATES);
+  const checkRuns = useAppStore((s) => s.sessionResolveCheckRuns[sessionId] ?? EMPTY_CHECK_RUNS);
   return useMemo(() => {
+    const failedChecks = checksFailedItemIds({ candidates, checkRuns });
     const shown = isSourceScoped
       ? rows.filter(
           (row) =>
@@ -90,11 +106,19 @@ export const useReviewEntries = ({
         remote === null
           ? null
           : remoteViewOf({ remote, verdict: facts?.verdict ?? null, isChecking });
+      const projection = projectReviewComment({
+        state,
+        row,
+        gitChip: view,
+        hasFailedChecks: failedChecks.has(row.item.id),
+      });
       return {
         row,
         threadId: row.thread.threadId,
         state,
-        word: view === null ? reviewCommentWord({ state, row }) : view.word,
+        resolveWord: projection.word,
+        word: projection.label,
+        chips: projection.chips,
         change: sourceChangeOf({ snapshot: changes[row.thread.threadId] }),
         newReplies:
           row.thread.stage === 'new'
@@ -117,5 +141,17 @@ export const useReviewEntries = ({
       entries: entries.filter((entry) => entry.group === group),
     })).filter((group) => group.entries.length > 0);
     return { entries: groups.flatMap((group) => group.entries), groups };
-  }, [changes, drafts, isSourceScoped, kind, number, projectId, rechecks, rows, threadGit]);
+  }, [
+    candidates,
+    changes,
+    checkRuns,
+    drafts,
+    isSourceScoped,
+    kind,
+    number,
+    projectId,
+    rechecks,
+    rows,
+    threadGit,
+  ]);
 };

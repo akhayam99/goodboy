@@ -1,7 +1,12 @@
-use super::{worktree_integrate_candidate_blocking, worktree_quarantine_candidate_blocking};
+use super::{
+    worktree_integrate_candidate_blocking, worktree_quarantine_candidate_blocking,
+    worktree_split_candidates_blocking,
+};
 use crate::worktree::error::WorktreeError;
 use crate::worktree::git::git;
-use crate::worktree::types::{IntegrateCandidateArgs, QuarantineCandidateArgs};
+use crate::worktree::types::{
+    IntegrateCandidateArgs, QuarantineCandidateArgs, SplitCandidatePick, SplitCandidatesArgs,
+};
 use std::path::{Path, PathBuf};
 
 fn temp_root(name: &str) -> PathBuf {
@@ -380,6 +385,130 @@ fn a_colliding_fix_is_refused_at_accept_and_the_branch_rolls_back() {
     );
     crate::history::discard_copy(&first.to_string_lossy());
     crate::history::discard_copy(&second.to_string_lossy());
+}
+
+fn split(root: &Path, base: &str, picks: &[(&str, &str)]) -> Vec<(String, Option<String>)> {
+    worktree_split_candidates_blocking(SplitCandidatesArgs {
+        worktree_path: root.to_string_lossy().into_owned(),
+        base_sha: base.to_string(),
+        picks: picks
+            .iter()
+            .map(|(id, sha)| SplitCandidatePick {
+                candidate_id: (*id).to_string(),
+                commit_sha: (*sha).to_string(),
+            })
+            .collect(),
+    })
+    .unwrap()
+    .into_iter()
+    .map(|done| (done.candidate_id, done.sha))
+    .collect()
+}
+
+#[test]
+fn a_chain_of_fixes_splits_into_one_candidate_per_commit_on_the_same_base() {
+    let root = init_repo("candidate-split");
+    let base = commit(&root, "base.txt", "base", "base");
+    let first = commit(&root, "a.txt", "a", "fix a");
+    let second = commit(&root, "b.txt", "b", "fix b");
+    quarantine(&root, "run-1", &base).unwrap();
+
+    let done = split(&root, &base, &[("run-1-a", &first), ("run-1-b", &second)]);
+
+    assert_eq!(done.len(), 2);
+    assert_eq!(head(&root), base, "the copy did not go back to its base");
+    assert_eq!(git_ok(&root, &["status", "--porcelain=v1"]), "");
+    for (id, sha) in &done {
+        let sha = sha.as_deref().expect("an independent fix splits");
+        assert_eq!(git_ok(&root, &["rev-parse", &format!("{sha}^")]), base);
+        assert_eq!(
+            git_ok(
+                &root,
+                &["rev-parse", &format!("refs/goodboy/candidates/{id}")]
+            ),
+            sha
+        );
+    }
+    let a = done[0].1.clone().unwrap();
+    let b = done[1].1.clone().unwrap();
+    assert_eq!(
+        git_ok(&root, &["diff", "--name-only", &base, &a]),
+        "a.txt",
+        "the first candidate holds more than its own fix"
+    );
+    assert_eq!(git_ok(&root, &["diff", "--name-only", &base, &b]), "b.txt");
+}
+
+#[test]
+fn each_split_candidate_lands_alone_without_the_others() {
+    let root = init_repo("candidate-split-alone");
+    let base = commit(&root, "base.txt", "base", "base");
+    let first = commit(&root, "a.txt", "a", "fix a");
+    let second = commit(&root, "b.txt", "b", "fix b");
+    quarantine(&root, "run-1", &base).unwrap();
+    let done = split(&root, &base, &[("run-1-a", &first), ("run-1-b", &second)]);
+    let second_candidate = done[1].1.clone().unwrap();
+
+    integrate(&root, "run-1-b", &second_candidate, &base).unwrap();
+
+    assert!(root.join("b.txt").exists(), "the picked fix did not land");
+    assert!(
+        !root.join("a.txt").exists(),
+        "a fix that was not picked landed"
+    );
+}
+
+#[test]
+fn a_fix_that_builds_on_an_earlier_one_cannot_be_split_off() {
+    let root = init_repo("candidate-split-dependent");
+    let base = commit(&root, "shared.txt", "base\n", "base");
+    let first = commit(&root, "shared.txt", "first\n", "fix a");
+    let second = commit(&root, "shared.txt", "second\n", "fix b");
+    quarantine(&root, "run-1", &base).unwrap();
+
+    let done = split(&root, &base, &[("run-1-a", &first), ("run-1-b", &second)]);
+
+    assert!(
+        done[0].1.is_some(),
+        "the first fix has nothing to depend on"
+    );
+    assert_eq!(done[1].1, None, "a dependent fix was split anyway");
+    assert_eq!(head(&root), base);
+    assert_eq!(git_ok(&root, &["status", "--porcelain=v1"]), "");
+}
+
+#[test]
+fn a_commit_the_copy_does_not_know_is_reported_as_not_split() {
+    let root = init_repo("candidate-split-unknown");
+    let base = commit(&root, "base.txt", "base", "base");
+    commit(&root, "a.txt", "a", "fix a");
+    quarantine(&root, "run-1", &base).unwrap();
+
+    let done = split(
+        &root,
+        &base,
+        &[("run-1-a", "0000000000000000000000000000000000000000")],
+    );
+
+    assert_eq!(done, vec![("run-1-a".to_string(), None)]);
+}
+
+#[test]
+fn splitting_refuses_a_copy_that_is_not_at_the_base() {
+    let root = init_repo("candidate-split-moved");
+    let base = commit(&root, "base.txt", "base", "base");
+    let first = commit(&root, "a.txt", "a", "fix a");
+
+    let outcome = worktree_split_candidates_blocking(SplitCandidatesArgs {
+        worktree_path: root.to_string_lossy().into_owned(),
+        base_sha: base,
+        picks: vec![SplitCandidatePick {
+            candidate_id: "run-1-a".to_string(),
+            commit_sha: first,
+        }],
+    });
+
+    assert!(outcome.is_err(), "{outcome:?}");
 }
 
 #[test]

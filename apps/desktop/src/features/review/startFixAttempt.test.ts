@@ -45,115 +45,63 @@ const harness = () => {
 };
 
 describe('startFixAttempt', () => {
-  it('spawns one agent per chunk and hands each the thread ids it owns', async () => {
+  it('starts one agent for sixteen comments and hands it every thread id', async () => {
     const { spawnAgent, setAgentConfig } = harness();
-    const threads = [
-      ...Array.from({ length: 7 }, (_, index) => threadOn({ id: `a${index}`, path: 'a.ts' })),
-      ...Array.from({ length: 6 }, (_, index) => threadOn({ id: `b${index}`, path: 'b.ts' })),
-    ];
+    const threads = Array.from({ length: 16 }, (_, index) =>
+      threadOn({ id: `t${index}`, path: index < 8 ? 'a.ts' : 'b.ts' }),
+    );
 
-    const agentIds = await startFixAttempt({
+    const started = await startFixAttempt({
       sessionId: SESSION_ID,
       threads,
       pr,
-      mode: 'shared',
       spawnAgent,
       setAgentConfig,
     });
 
-    expect(agentIds).toHaveLength(2);
-    expect(spawnAgent).toHaveBeenCalledTimes(2);
-    const owned = spawnAgent.mock.calls.map((call) => call[1].sourceThreadIds ?? []);
-    expect(owned[0]).toHaveLength(7);
-    expect(owned[1]).toHaveLength(6);
-    expect(spawnAgent.mock.calls.every((call) => call[1].focus === 'none')).toBe(true);
-    expect(setAgentConfig).toHaveBeenCalledTimes(2);
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    expect(setAgentConfig).toHaveBeenCalledTimes(1);
+    expect(started.agentId).toBe('agent-1');
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.sourceThreadIds).toEqual(threads.map((thread) => thread.head.threadId));
+    expect(args?.focus).toBe('none');
+    expect(args?.kindOverride).toBe('resolver');
+    expect(args?.name).toBe('Resolve: 16 review comments');
   });
 
-  it('writes one launch id on every agent of one user action and a new one on the next', async () => {
+  it('writes one launch id on the agent and a new one on the next user action', async () => {
     const { spawnAgent, setAgentConfig } = harness();
     const threads = [threadOn({ id: 't1', path: 'a.ts' }), threadOn({ id: 't2', path: 'b.ts' })];
 
-    await startFixAttempt({
+    const first = await startFixAttempt({
       sessionId: SESSION_ID,
       threads,
       pr,
-      mode: 'separate',
       spawnAgent,
       setAgentConfig,
     });
-    await startFixAttempt({
+    const second = await startFixAttempt({
       sessionId: SESSION_ID,
       threads: [threads[0] ?? threadOn({ id: 't1', path: 'a.ts' })],
       pr,
-      mode: 'separate',
       spawnAgent,
       setAgentConfig,
     });
 
     const launches = spawnAgent.mock.calls.map((call) => call[1].resolveLaunch);
-    expect(launches[0]?.launchId).toBe(launches[1]?.launchId);
-    expect(launches[2]?.launchId).not.toBe(launches[0]?.launchId);
-    expect(launches.every((launch) => launch?.retryOfLaunchId === null)).toBe(true);
+    expect(launches[0]?.launchId).toBe(first.launchId);
+    expect(launches[1]?.launchId).toBe(second.launchId);
+    expect(second.launchId).not.toBe(first.launchId);
+    expect(launches[0]).toEqual({ launchId: first.launchId });
   });
 
-  it('records the launch a retry descends from', async () => {
+  it('quotes the previous reply and commit into the kickoff, scoped to the owning thread', async () => {
     const { spawnAgent, setAgentConfig } = harness();
 
     await startFixAttempt({
       sessionId: SESSION_ID,
       threads: [threadOn({ id: 't1', path: 'a.ts' })],
       pr,
-      mode: 'retry',
-      retryOfLaunchId: 'launch-origin',
-      spawnAgent,
-      setAgentConfig,
-    });
-
-    const launch = spawnAgent.mock.calls[0]?.[1].resolveLaunch;
-    expect(launch?.retryOfLaunchId).toBe('launch-origin');
-    expect(launch?.launchId).not.toBe('launch-origin');
-  });
-
-  it('leaves a recheck scout without a launch id', async () => {
-    const { spawnAgent, setAgentConfig } = harness();
-
-    await startFixAttempt({
-      sessionId: SESSION_ID,
-      threads: [threadOn({ id: 't1', path: 'a.ts' })],
-      pr,
-      mode: 'recheck',
-      spawnAgent,
-      setAgentConfig,
-    });
-
-    expect(spawnAgent.mock.calls[0]?.[1].resolveLaunch).toBeUndefined();
-  });
-
-  it('gives every conversation its own agent in separate mode', async () => {
-    const { spawnAgent, setAgentConfig } = harness();
-
-    await startFixAttempt({
-      sessionId: SESSION_ID,
-      threads: [threadOn({ id: 't1', path: 'a.ts' }), threadOn({ id: 't2', path: 'a.ts' })],
-      pr,
-      mode: 'separate',
-      spawnAgent,
-      setAgentConfig,
-    });
-
-    expect(spawnAgent).toHaveBeenCalledTimes(2);
-    expect(spawnAgent.mock.calls.map((call) => call[1].sourceThreadIds)).toEqual([['t1'], ['t2']]);
-  });
-
-  it('quotes the previous reply and commit into a retry kickoff, scoped to the owning thread', async () => {
-    const { spawnAgent, setAgentConfig } = harness();
-
-    await startFixAttempt({
-      sessionId: SESSION_ID,
-      threads: [threadOn({ id: 't1', path: 'a.ts' })],
-      pr,
-      mode: 'retry',
       instructions: 'prefer a guard clause',
       priorContext: [
         {
@@ -175,60 +123,6 @@ describe('startFixAttempt', () => {
     expect(prompt).not.toContain('not mine');
   });
 
-  it('spawns a recheck as a read-only scout that answers with a verdict marker', async () => {
-    const { spawnAgent, setAgentConfig } = harness();
-
-    await startFixAttempt({
-      sessionId: SESSION_ID,
-      threads: [threadOn({ id: 't1', path: 'a.ts' })],
-      pr,
-      mode: 'recheck',
-      priorContext: [{ threadId: 't1', commitShas: ['a1b2c3d'], intent: 'recheck' }],
-      spawnAgent,
-      setAgentConfig,
-    });
-
-    const args = spawnAgent.mock.calls[0]?.[1];
-    expect(args?.kindOverride).toBe('scout');
-    expect(args?.sourceKind).toBe('comment_recheck');
-    expect(args?.initialPrompt).toContain('no longer reachable');
-    expect(args?.initialPrompt).toContain('read-only check');
-    expect(args?.initialPrompt).toContain('<<comment-verdict');
-    expect(args?.initialPrompt).not.toContain('git commit --amend');
-    expect(args?.initialPrompt).not.toContain('<<comment-resolved');
-  });
-
-  it('nests the recheck under the agent it checks', async () => {
-    const { spawnAgent, setAgentConfig } = harness();
-
-    await startFixAttempt({
-      sessionId: SESSION_ID,
-      threads: [threadOn({ id: 't1', path: 'a.ts' })],
-      pr,
-      mode: 'recheck',
-      parentAgentId: 'resolver-1' as AgentId,
-      spawnAgent,
-      setAgentConfig,
-    });
-
-    expect(spawnAgent.mock.calls[0]?.[1].parentAgentId).toBe('resolver-1');
-  });
-
-  it('starts one recheck per thread', async () => {
-    const { spawnAgent, setAgentConfig } = harness();
-
-    await startFixAttempt({
-      sessionId: SESSION_ID,
-      threads: [threadOn({ id: 't1', path: 'a.ts' }), threadOn({ id: 't2', path: 'b.ts' })],
-      pr,
-      mode: 'recheck',
-      spawnAgent,
-      setAgentConfig,
-    });
-
-    expect(spawnAgent).toHaveBeenCalledTimes(2);
-  });
-
   it('carries the model choice onto both the spawn and the agent config', async () => {
     const { spawnAgent, setAgentConfig } = harness();
 
@@ -237,7 +131,6 @@ describe('startFixAttempt', () => {
       threads: [threadOn({ id: 't1', path: 'a.ts' })],
       pr,
       choice: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
-      mode: 'shared',
       spawnAgent,
       setAgentConfig,
     });
@@ -255,23 +148,16 @@ describe('startFixAttempt', () => {
     });
   });
 
-  it('spawns nothing when there is no conversation to fix', async () => {
+  it('refuses to start an agent when there is no comment to fix', async () => {
     const { spawnAgent, setAgentConfig } = harness();
 
-    const agentIds = await startFixAttempt({
-      sessionId: SESSION_ID,
-      threads: [],
-      pr,
-      mode: 'shared',
-      spawnAgent,
-      setAgentConfig,
-    });
-
-    expect(agentIds).toEqual([]);
+    await expect(
+      startFixAttempt({ sessionId: SESSION_ID, threads: [], pr, spawnAgent, setAgentConfig }),
+    ).rejects.toThrow('A fix run needs at least one comment');
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('rereads the saved launch choice of the batch on a retry', async () => {
+  it('rereads the saved launch choice of the batch', async () => {
     const { spawnAgent, setAgentConfig } = harness();
 
     await startFixAttempt({
@@ -280,7 +166,6 @@ describe('startFixAttempt', () => {
       pr,
       choice: { provider: 'anthropic', model: 'claude-opus-5' },
       instructions: 'Use the ledger helper',
-      mode: 'retry',
       batch: {
         batchId: 'batch-1',
         launchChoice: {

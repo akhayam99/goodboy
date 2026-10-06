@@ -171,11 +171,12 @@ const reportingSection = ({
     count === 1 ? 'the thread id listed above' : `each of the ${count} thread ids listed above`;
   return [
     RESOLVER_KICKOFF_LABELS.reporting,
-    `Report every thread at the end of the same turn: exactly one outcome marker and exactly one reply block for ${subject}, each on its own line.`,
+    `Report every thread as soon as you finish it: exactly one outcome marker for ${subject}, and one reply block for each thread you fixed or left unchanged, each on its own line.`,
     'Never emit two outcome markers for one thread id, never leave a thread id without one, and never reuse a reply on another thread id.',
     'Pick one outcome marker per thread:',
     '<<comment-resolved threadId="the id above" commitSha="the sha you committed">> after a commit.',
     '<<comment-wontfix threadId="the id above" reason="one plain-text line">> without a change.',
+    '<<needs-input id="the thread id" options="first option|second option" recommended="the option you recommend, copied from the list">>one sentence naming the choice<</needs-input>> when the comment reads two ways that lead to different code. Give two or three options. A thread reported this way has no reply block yet.',
     'The reply block carries the answer the reviewer reads, and it posts only on the thread whose id it names:',
     '<<comment-reply id="the id above">>the answer for that thread<</comment-reply>>',
     `A complete report for the ${count} ${noun} of this run reads exactly like this:`,
@@ -187,28 +188,34 @@ const instructionsSection = ({ count }: { readonly count: number }): ReadonlyArr
   const target = count === 1 ? 'the thread above' : `all ${count} threads above`;
   return [
     RESOLVER_KICKOFF_LABELS.instructions,
-    `Judge ${target} on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.`,
+    `Judge ${target} on the merits${count === 1 ? '' : ', one thread at a time, in the order given'}. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.`,
+    ...(count === 1
+      ? []
+      : [
+          'Finish a thread before you start the next: commit its fix and write its outcome marker and reply, then move on.',
+        ]),
+    'You work alone in your own copy of the branch and nobody answers while you work, so never ask for permission to edit, to commit or to carry on. The owner reviews, accepts and pushes later.',
+    'When a comment is unclear, take the most reasonable reading, act on it and name the assumption in the reply. Stop on a thread only when it reads two ways that lead to different code and the code cannot settle which one the reviewer means: report that thread with the needs-input marker and go on.',
   ];
 };
 
-const PROCEED_RESOLVER_PROMPT =
-  'Proceed with the fix you proposed in your analysis. When done, commit and emit the <<comment-resolved>> marker as instructed.';
-
-type PriorContextIntent = 'retry' | 'recheck' | 'proceed';
+type PriorContextIntent = 'retry' | 'recheck' | 'answer';
 
 export type PriorContext = {
   readonly threadId: string;
   readonly reply?: string | null;
   readonly commitShas?: ReadonlyArray<string>;
+  readonly question?: string | null;
+  readonly answer?: string | null;
   readonly intent: PriorContextIntent;
 };
 
 const INTENT_SENTENCE: Record<PriorContextIntent, string> = {
-  retry:
-    'The reviewer asked for another pass on this thread. Read it again and decide from scratch.',
+  retry: 'An earlier try on this thread did not finish. Read it again and decide from scratch.',
   recheck:
     'The commit recorded for this thread is no longer reachable on the branch. Find out whether the change it made is on the branch under another commit, was removed on purpose, or still has to be made.',
-  proceed: PROCEED_RESOLVER_PROMPT,
+  answer:
+    'The owner answered the question you asked on this thread. Finish it the way the answer says.',
 };
 
 const amendInstruction = ({ sha }: { readonly sha: string }): string =>
@@ -225,6 +232,14 @@ const priorContextBlock = ({
     const reply = entry.reply?.trim() ?? '';
     if (reply !== '') {
       lines.push('- the reply drafted last time:', ...quotedBody({ body: reply }));
+    }
+    const question = entry.question?.trim() ?? '';
+    if (question !== '') {
+      lines.push('- the question you asked:', ...quotedBody({ body: question }));
+    }
+    const answer = entry.answer?.trim() ?? '';
+    if (answer !== '') {
+      lines.push('- the answer:', ...quotedBody({ body: answer }));
     }
     const shas = entry.commitShas ?? [];
     if (shas.length > 0) {

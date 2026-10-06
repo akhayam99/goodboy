@@ -217,6 +217,7 @@ export const settleTurn = async ({ set, get, ctx }: Params) => {
       attemptId: resolveAttemptId,
       phase: turnWasCancelled ? 'cancelled' : 'failed',
       error: lastError === null ? null : formatError(lastError),
+      failureCause: 'provider_error',
     });
   }
   if (lastError) {

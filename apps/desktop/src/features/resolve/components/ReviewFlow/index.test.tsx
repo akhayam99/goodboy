@@ -155,8 +155,8 @@ describe('Review as one flow', () => {
       .map((button) => button.textContent ?? '');
     expect(words.some((text) => text.includes('Ready'))).toBe(true);
     expect(words.some((text) => text.includes('Needs you'))).toBe(true);
-    expect(words.some((text) => text.includes('Drafting'))).toBe(true);
-    expect(words.some((text) => text.includes('Not started'))).toBe(true);
+    expect(words.some((text) => text.includes('Working'))).toBe(true);
+    expect(words.some((text) => text.includes('Open'))).toBe(true);
     expect(words.some((text) => text.includes('Skipped'))).toBe(true);
     expect(words.some((text) => text.includes('Pushed'))).toBe(true);
     const labels = screen.getAllByRole('button').map((button) => button.textContent ?? '');
@@ -303,7 +303,7 @@ describe('Review as one flow', () => {
     });
 
     it('is bound to the selection: unchecking drops a comment and checking in the list adds one', async () => {
-      const { createResolveBatch } = stubBatch();
+      const { createResolveBatch, spawnAgent } = stubBatch();
       await mount({ threadId: null, selectable: true });
 
       row(/config\.ts/).focus();
@@ -316,6 +316,7 @@ describe('Review as one flow', () => {
 
       const opened = await screen.findByRole('region', { name: 'Fix launch' });
       expect(within(opened).getByText(`Fix ${selected.length} comments`)).toBeDefined();
+      expect(within(opened).getByText(/^One agent works through them in order/)).toBeDefined();
       expect(within(opened).getAllByRole('checkbox')).toHaveLength(selected.length);
 
       const [dropped] = within(opened).getAllByRole('checkbox');
@@ -330,6 +331,8 @@ describe('Review as one flow', () => {
       const sent = [...(call?.threadIds ?? [])];
       expect(sent).toHaveLength(selected.length - 1);
       expect(sent.every((id) => selected.includes(id))).toBe(true);
+      await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+      expect(spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toHaveLength(sent.length);
       await waitFor(() =>
         expect(useAppStore.getState().reviewSelection[SESSION.id] ?? []).toEqual([]),
       );
@@ -550,7 +553,7 @@ describe('Review as one flow', () => {
 
   it('keeps Stop and the transcript on the properties of a drafting comment, not in a menu', async () => {
     await mount({ threadId: null });
-    fireEvent.click(row(/Drafting/));
+    fireEvent.click(row(/Working/));
     await settle();
 
     expect(within(comment()).queryAllByRole('button', { name: /^Accept|^Edit|^Reply/ })).toEqual(
@@ -727,7 +730,7 @@ describe('Review of a failed run', () => {
     await mountFailed({ failure: 'run' });
 
     const failed = within(comment());
-    expect(failed.getByText('The run ended before the resolver reported a result')).toBeDefined();
+    expect(failed.getByText('The model provider stopped the run')).toBeDefined();
     expect(failed.getByText(/pnpm test src\/webhooks · 2 failing/)).toBeDefined();
     expect(failed.getByRole('button', { name: /^Retry/ })).toBeDefined();
     expect(failed.getByRole('button', { name: 'Try another model' })).toBeDefined();
@@ -739,9 +742,11 @@ describe('Review of a failed run', () => {
   it('retries on the model the reviewer picked and keeps the earlier attempt in one line', async () => {
     const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
     const setAgentConfig = vi.fn<StoreState['setAgentConfig']>(async () => undefined);
+    const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
     stub({
       spawnAgent: spawnAgent,
       setAgentConfig: setAgentConfig,
+      createResolveBatch: createResolveBatch,
     });
     await mountFailed({ failure: 'history' });
     act(() => {
@@ -764,10 +769,14 @@ describe('Review of a failed run', () => {
     expect(args?.effort).toBe('high');
   });
 
-  it('opens the hint field and sends it with the retry', async () => {
+  it('opens the hint field and sends it with the retry to the same run', async () => {
     const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
+    const continueResolveThreads = vi.fn<StoreState['continueResolveThreads']>(
+      async () => undefined,
+    );
     stub({
       spawnAgent: spawnAgent,
+      continueResolveThreads: continueResolveThreads,
       setAgentConfig: vi.fn<StoreState['setAgentConfig']>(async () => undefined),
     });
     await mountFailed({ failure: 'run' });
@@ -779,9 +788,30 @@ describe('Review of a failed run', () => {
     fireEvent.change(field, { target: { value: 'Use ON CONFLICT' } });
     fireEvent.click(within(comment()).getByRole('button', { name: 'Retry with the hint' }));
 
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-    const args = spawnAgent.mock.calls[0]?.[1];
-    expect(args?.initialPrompt).toContain('Use ON CONFLICT');
+    await waitFor(() => expect(continueResolveThreads).toHaveBeenCalledOnce());
+    expect(continueResolveThreads.mock.calls[0]?.[0]).toMatchObject({
+      threadIds: [FAILED_THREAD_ID],
+      hint: 'Use ON CONFLICT',
+    });
+    expect(spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('retries a failed comment in the same run when no other model was picked', async () => {
+    const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
+    const continueResolveThreads = vi.fn<StoreState['continueResolveThreads']>(
+      async () => undefined,
+    );
+    stub({
+      spawnAgent: spawnAgent,
+      continueResolveThreads: continueResolveThreads,
+      setAgentConfig: vi.fn<StoreState['setAgentConfig']>(async () => undefined),
+    });
+    await mountFailed({ failure: 'run' });
+
+    fireEvent.click(within(comment()).getByRole('button', { name: /^Retry/ }));
+
+    await waitFor(() => expect(continueResolveThreads).toHaveBeenCalledOnce());
+    expect(spawnAgent).not.toHaveBeenCalled();
   });
 
   it('puts Reply yourself, Skip and Open transcript in the menu', async () => {

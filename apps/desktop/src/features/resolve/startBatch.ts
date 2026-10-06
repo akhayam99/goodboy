@@ -16,7 +16,8 @@ type Params = {
 
 export type StartedBatch = {
   readonly batchId: string;
-  readonly agentIds: ReadonlyArray<AgentId>;
+  readonly launchId: string;
+  readonly agentId: AgentId;
 };
 
 const NOTHING_TO_DRAFT: Record<LaunchNoun, string> = {
@@ -32,10 +33,11 @@ export const startBatch = async ({
   noun = 'comment',
 }: Params): Promise<StartedBatch> => {
   const state = getState();
-  const wanted = new Set(threadIds);
-  const threads = launchRowsOf({ state, sessionId }).flatMap((row): ReadonlyArray<CommentThread> =>
-    wanted.has(row.thread.threadId) && row.commentThread !== null ? [row.commentThread] : [],
-  );
+  const rows = launchRowsOf({ state, sessionId });
+  const threads = threadIds.flatMap((threadId): ReadonlyArray<CommentThread> => {
+    const commentThread = rows.find((row) => row.thread.threadId === threadId)?.commentThread;
+    return commentThread == null ? [] : [commentThread];
+  });
   if (threads.length === 0) {
     throw new Error(NOTHING_TO_DRAFT[noun]);
   }
@@ -46,7 +48,7 @@ export const startBatch = async ({
     ),
     launchChoice,
   });
-  const agentIds = await startResolve({
+  const { launchId, agentId } = await startResolve({
     sessionId,
     threads,
     pr: state.sessionGithub[sessionId]?.pr ?? null,
@@ -55,5 +57,5 @@ export const startBatch = async ({
     spawnAgent: state.spawnAgent,
     setAgentConfig: state.setAgentConfig,
   });
-  return { batchId: batch.id, agentIds };
+  return { batchId: batch.id, launchId, agentId };
 };

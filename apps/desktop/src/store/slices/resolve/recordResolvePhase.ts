@@ -1,6 +1,6 @@
 import { listResolveAttempts, listResolveThreads, setResolveAttemptPhase } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
-import type { ResolveThread } from '@goodboy/types';
+import type { ResolveFailureCause, ResolveThread } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { createResolveThread } from './createResolveThread';
@@ -12,6 +12,16 @@ import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 
 type Params = SliceParams & PhaseParams;
 
+const causeOf = ({
+  phase,
+  failureCause,
+}: Pick<PhaseParams, 'phase' | 'failureCause'>): ResolveFailureCause | null => {
+  if (phase === 'cancelled') {
+    return 'stopped';
+  }
+  return phase === 'failed' ? (failureCause ?? null) : null;
+};
+
 export const recordResolvePhase = async ({
   set,
   get,
@@ -20,6 +30,7 @@ export const recordResolvePhase = async ({
   attemptId,
   phase,
   error = null,
+  failureCause,
   isCleanExit = false,
 }: Params): Promise<void> => {
   const db = tauriDatabase;
@@ -29,7 +40,13 @@ export const recordResolvePhase = async ({
     return;
   }
   if (attempt !== undefined) {
-    await setResolveAttemptPhase({ db, id: attempt.id, phase, error });
+    await setResolveAttemptPhase({
+      db,
+      id: attempt.id,
+      phase,
+      error,
+      failureCause: causeOf({ phase, failureCause }),
+    });
   }
   if (phase === 'failed' || phase === 'cancelled') {
     const rows = await listResolveThreads({ db, sessionId });
@@ -53,12 +70,7 @@ export const recordResolvePhase = async ({
           ? threadOutcome({ row, shouldIncludeCandidate: true })
           : null;
       const patch: Partial<ResolveThread> =
-        candidate === null
-          ? {
-              state: 'failed',
-              stateReason: `${phase === 'cancelled' ? 'stopped' : 'failed'}:${row.disposition !== null && row.stateReason !== null ? row.stateReason : 'interrupted'}`,
-            }
-          : outcomePatch({ outcome: candidate });
+        candidate === null ? { state: 'failed' } : outcomePatch({ outcome: candidate });
       await saveResolveThread({
         db,
         row: { ...row, ...patch, updatedAt: Date.now() },

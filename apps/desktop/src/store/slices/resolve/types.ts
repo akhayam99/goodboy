@@ -5,6 +5,7 @@ import type {
   PrComment,
   ProjectId,
   ResolveAttemptPhase,
+  ResolveFailureCause,
   ResolveBatch,
   ResolveCheckBreadth,
   ResolveLaunchChoice,
@@ -48,10 +49,10 @@ export type AttemptParams = SessionParams & {
   readonly candidateMode?: ResolveCandidateMode;
   readonly batch?: ResolveAttemptBatch;
   readonly launch?: ResolveAttemptLaunch;
+  readonly copyPath?: string | null;
 };
 export type ResolveAttemptLaunch = {
   readonly launchId: string;
-  readonly retryOfLaunchId: string | null;
 };
 export type ResolveAttemptBatch = {
   readonly batchId: string;
@@ -78,6 +79,7 @@ export type PhaseParams = SessionParams & {
   readonly attemptId?: string;
   readonly phase: ResolveAttemptPhase;
   readonly error?: string | null;
+  readonly failureCause?: ResolveFailureCause;
   readonly isCleanExit?: boolean;
 };
 export type DrainParams = SessionParams & {
@@ -178,6 +180,9 @@ export type ResolveActions = {
   readonly recoverUncapturedResolveWork: (
     params: SessionParams,
   ) => Promise<ResolveUncapturedWork | null>;
+  readonly retryCouldntFix: (params: RetryCouldntFixParams) => Promise<void>;
+  readonly answerQuestions: (params: AnswerQuestionsParams) => Promise<void>;
+  readonly continueResolveThreads: (params: ContinueThreadsParams) => Promise<void>;
   readonly drainResolveQueue: (params: DrainParams) => Promise<void>;
   readonly drainResolveWorktree: (params: WorktreeDrainParams) => Promise<void>;
   readonly reconcileResolveDrains: () => Promise<void>;
@@ -192,6 +197,23 @@ export type ResolveActions = {
   readonly setResolveParallelLimit: (params: ParallelLimitParams) => Promise<void>;
   readonly syncSourceSnapshots: (params: SourceSnapshotsParams) => Promise<void>;
   readonly settleResolveSourceChange: (params: SettleSourceChangeParams) => Promise<void>;
+};
+export type RetryCouldntFixParams = SessionParams & {
+  readonly launchId: string;
+  readonly threadIds?: ReadonlyArray<string>;
+  readonly hint?: string;
+};
+type ResolveAnswer = {
+  readonly threadId: string;
+  readonly answer: string;
+};
+export type AnswerQuestionsParams = SessionParams & {
+  readonly launchId: string;
+  readonly answers: ReadonlyArray<ResolveAnswer>;
+};
+export type ContinueThreadsParams = SessionParams & {
+  readonly threadIds: ReadonlyArray<string>;
+  readonly hint: string;
 };
 export type CreateBatchParams = SessionParams & {
   readonly threadIds: ReadonlyArray<string>;

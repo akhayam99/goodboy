@@ -1,5 +1,6 @@
 import {
   extractAllCommentAnalysis,
+  extractAllCommentNeedsInput,
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
@@ -10,6 +11,12 @@ export type ResolverThreadOutcome =
   | { readonly kind: 'wontfix'; readonly reason: string; readonly reply?: string }
   | { readonly kind: 'analyzed'; readonly reply?: string; readonly verdict?: 'fix' | 'wontfix' };
 
+export type ResolverThreadQuestion = {
+  readonly question: string;
+  readonly options: ReadonlyArray<string>;
+  readonly recommended: string | null;
+};
+
 type Params = {
   readonly assistantText: string;
   readonly previousOutcomes: Readonly<Record<string, ResolverThreadOutcome>>;
@@ -18,6 +25,7 @@ type Params = {
 export type ResolverTurnOutcomes = {
   readonly outcomes: Readonly<Record<string, ResolverThreadOutcome>>;
   readonly turnOutcomes: Readonly<Record<string, ResolverThreadOutcome>>;
+  readonly questions: Readonly<Record<string, ResolverThreadQuestion>>;
   readonly markerCount: number;
   readonly analysisVerdicts: Readonly<Record<string, 'fix' | 'wontfix'>>;
 };
@@ -49,8 +57,22 @@ export const resolverTurnOutcomes = ({
       ...(marker.verdict === 'fix' && { verdict: 'fix' }),
     };
   }
+  const questions: Record<string, ResolverThreadQuestion> = {};
+  const askedMarkers = extractAllCommentNeedsInput(assistantText).filter(
+    (marker) => turnOutcomes[marker.threadId] === undefined,
+  );
+  for (const marker of askedMarkers) {
+    questions[marker.threadId] = {
+      question: marker.question,
+      options: marker.options,
+      recommended: marker.recommended,
+    };
+  }
   let reworkedReplies = 0;
   for (const marker of extractAllCommentReplies(assistantText)) {
+    if (questions[marker.threadId] !== undefined) {
+      continue;
+    }
     const outcome = turnOutcomes[marker.threadId] ?? previousOutcomes[marker.threadId];
     if (outcome === undefined) {
       continue;
@@ -61,10 +83,15 @@ export const resolverTurnOutcomes = ({
     turnOutcomes[marker.threadId] = { ...outcome, reply: marker.body };
   }
   const markerCount =
-    resolvedMarkers.length + wontfixMarkers.length + analysisMarkers.length + reworkedReplies;
+    resolvedMarkers.length +
+    wontfixMarkers.length +
+    analysisMarkers.length +
+    askedMarkers.length +
+    reworkedReplies;
   return {
     outcomes: markerCount === 0 ? previousOutcomes : { ...previousOutcomes, ...turnOutcomes },
     turnOutcomes,
+    questions,
     markerCount,
     analysisVerdicts: Object.fromEntries(
       analysisMarkers.map((marker) => [marker.threadId, marker.verdict]),

@@ -18,6 +18,17 @@ export type ResolveStage =
   | 'resolved';
 export type ResolveAttemptPhase =
   'queued' | 'running' | 'waiting' | 'finished' | 'failed' | 'cancelled';
+export const RESOLVE_FAILURE_CAUSES = [
+  'start_failed',
+  'provider_error',
+  'spend_cap',
+  'stopped',
+  'app_closed',
+  'accept_conflict',
+  'worktree_missing',
+  'capture_failed',
+] as const;
+export type ResolveFailureCause = (typeof RESOLVE_FAILURE_CAUSES)[number];
 export type ResolveThread = Readonly<{
   id: string;
   sessionId: SessionId;
@@ -66,6 +77,7 @@ export type ResolveAttempt = Readonly<{
   startedAt: number | null;
   endedAt: number | null;
   error: string | null;
+  failureCause?: ResolveFailureCause | null;
   createdAt: number;
   batchId: string | null;
   launchId?: string | null;

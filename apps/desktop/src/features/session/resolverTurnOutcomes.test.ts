@@ -77,6 +77,65 @@ describe('resolverTurnOutcomes', () => {
     expect(markerCount).toBeGreaterThan(0);
   });
 
+  it('turns a needs-input marker into a structured question', () => {
+    const { questions, turnOutcomes, markerCount } = resolverTurnOutcomes({
+      assistantText: `<<needs-input id="${THREAD_ID}" options="Rename it|Alias it" recommended="Alias it">>Rename the export or alias it?<</needs-input>>`,
+      previousOutcomes: {},
+    });
+
+    expect(questions[THREAD_ID]).toEqual({
+      question: 'Rename the export or alias it?',
+      options: ['Rename it', 'Alias it'],
+      recommended: 'Alias it',
+    });
+    expect(turnOutcomes[THREAD_ID]).toBeUndefined();
+    expect(markerCount).toBe(1);
+  });
+
+  it('reports one thread asking while another is fixed in the same turn', () => {
+    const other = 'PRRT_kwDO456';
+    const { questions, turnOutcomes, markerCount } = resolverTurnOutcomes({
+      assistantText: [
+        `<<comment-resolved threadId="${other}" commitSha="abc1234">>`,
+        `<<needs-input id="${THREAD_ID}" options="a|b">>Which one?<</needs-input>>`,
+      ].join('\n'),
+      previousOutcomes: {},
+    });
+
+    expect(turnOutcomes[other]).toMatchObject({ kind: 'resolved' });
+    expect(questions[THREAD_ID]).toMatchObject({ question: 'Which one?' });
+    expect(questions[other]).toBeUndefined();
+    expect(markerCount).toBe(2);
+  });
+
+  it('keeps a commit when the same thread also asks', () => {
+    const { questions, turnOutcomes } = resolverTurnOutcomes({
+      assistantText: [
+        `<<comment-resolved threadId="${THREAD_ID}" commitSha="abc1234">>`,
+        `<<needs-input id="${THREAD_ID}" options="a|b">>Which one?<</needs-input>>`,
+      ].join('\n'),
+      previousOutcomes: {},
+    });
+
+    expect(turnOutcomes[THREAD_ID]).toMatchObject({ kind: 'resolved', commitSha: 'abc1234' });
+    expect(questions[THREAD_ID]).toBeUndefined();
+  });
+
+  it('does not attach a reply to a thread that is asking', () => {
+    const { questions, turnOutcomes } = resolverTurnOutcomes({
+      assistantText: [
+        `<<needs-input id="${THREAD_ID}" options="a|b">>Which one?<</needs-input>>`,
+        `<<comment-reply id="${THREAD_ID}">>a premature reply<</comment-reply>>`,
+      ].join('\n'),
+      previousOutcomes: {
+        [THREAD_ID]: { kind: 'resolved', commitSha: 'abc1234', reply: 'older' },
+      },
+    });
+
+    expect(questions[THREAD_ID]).toMatchObject({ question: 'Which one?' });
+    expect(turnOutcomes[THREAD_ID]).toBeUndefined();
+  });
+
   it('leaves untouched threads alone on a reply-only turn', () => {
     const other = 'PRRT_kwDO456';
     const { outcomes } = resolverTurnOutcomes({

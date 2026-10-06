@@ -1186,7 +1186,7 @@ describe('resolve queue scheduler', () => {
 
     const attempts = harness.get().sessionResolveAttempts[SESSION_B] ?? [];
     expect(attempts[0]?.phase).toBe('failed');
-    expect(attempts[0]?.error).toBe('interrupted');
+    expect(attempts[0]?.failureCause).toBe('app_closed');
   });
 
   it('picks the queue back up on reconciliation when no lease event arrived', async () => {
@@ -1245,9 +1245,9 @@ describe('resolve queue scheduler', () => {
 
     const attempts = harness.get().sessionResolveAttempts[SESSION_A] ?? [];
     expect(attempts[0]?.phase).toBe('failed');
-    expect(attempts[0]?.error).toBe('target_unresolved');
+    expect(attempts[0]?.failureCause).toBe('worktree_missing');
     const rows = harness.get().sessionResolveThreads[SESSION_A] ?? [];
-    expect(rows.map((row) => row.stateReason)).toEqual(['target_unresolved']);
+    expect(rows.map((row) => row.state)).toEqual(['failed']);
   });
   it('hands the turn the target the attempt froze, not the current selection', async () => {
     const SIBLING_PATH = '/repo/sibling';

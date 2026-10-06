@@ -22,7 +22,7 @@ import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './ag
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import type { ResolveActivityFacts } from './resolveActivity';
-import type { ResolveBatchOrigin, ResolveBatchSummary } from './resolveBatchSummary';
+import type { ResolveBatchSummary } from './resolveBatchSummary';
 
 type TimelineChain = {
   readonly identity: RunIdentity;
@@ -50,8 +50,6 @@ export type TimelineResolveBatchEntry = {
   readonly id: string;
   readonly at: string | null;
   readonly batchId: string;
-  readonly origin: ResolveBatchOrigin;
-  readonly retryCount: number;
   readonly prNumber: number | null;
   readonly children: ReadonlyArray<TimelineAgentEntry>;
   readonly facts: ReadonlyArray<ResolveActivityFacts>;

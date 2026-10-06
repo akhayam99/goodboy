@@ -1638,7 +1638,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
     expect(
       (useAppStore.getState().sessionResolveThreads[SESSION_ID] ?? []).map((row) => row.state),
-    ).toContain('failed');
+    ).toContain('needs_answer');
     await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2));
     expect(runTurnSpy.mock.calls[1]?.[0]?.prompt).toContain('kick B');
   });

@@ -1,6 +1,7 @@
 export {
   assessPlanReadiness,
   extractAllCommentAnalysis,
+  extractAllCommentNeedsInput,
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,

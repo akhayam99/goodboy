@@ -53,7 +53,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           )}
         >
           <WorkNode
-            state={entry.view === null ? REVIEW_COMMENT_NODE[entry.state] : entry.view.node}
+            state={REVIEW_COMMENT_NODE[entry.state]}
             label={entry.word}
             mark={{ kind: 'dot' }}
           />
@@ -70,14 +70,23 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
             <span
               className={cn(
                 'ml-auto shrink-0 motion-safe:transition-opacity',
-                entry.view === null
-                  ? STATE_WORD_TONE[entry.state]
-                  : REMOTE_TONE_CLASS[entry.view.tone],
+                STATE_WORD_TONE[entry.state],
                 onFix !== null &&
                   'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',
               )}
             >
               {entry.word}
+              {entry.view !== null && (
+                <span className={REMOTE_TONE_CLASS[entry.view.tone]}> · {entry.view.word}</span>
+              )}
+              {entry.chips
+                .filter((chip) => chip !== entry.view?.word)
+                .map((chip) => (
+                  <span key={chip} className="text-muted-foreground">
+                    {' '}
+                    · {chip}
+                  </span>
+                ))}
             </span>
           </span>
           <span className="min-w-0 truncate text-body text-foreground" title={body ?? undefined}>

@@ -12,7 +12,7 @@ describe('PROFILE_ACCESS', () => {
       tester: ['roles', 'workingRules'],
       docs: ['roles', 'workingRules'],
       reviewer: ['roles', 'workingRules', 'explainMore'],
-      resolver: ['roles', 'workingRules', 'explainMore'],
+      resolver: ['roles', 'explainMore'],
       rewriter: ['roles', 'workingRules'],
       scribe: ['roles', 'aboutWork', 'explainMore'],
       report: ['roles', 'aboutWork', 'explainMore'],
