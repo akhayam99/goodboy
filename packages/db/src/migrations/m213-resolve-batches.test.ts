@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ResolveAttempt, ResolveLaunchChoice, SessionId } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import {
-  getResolveParallelLimit,
-  insertResolveBatch,
-  listResolveBatches,
-  setResolveParallelLimit,
-} from '../queries/resolve-batch';
+import { insertResolveBatch, listResolveBatches } from '../queries/resolve-batch';
 import {
   insertResolveAttempt,
   listResolveAttempts,
@@ -114,14 +109,6 @@ describe('m213 resolve batches', () => {
         phase: 'running',
       }),
     );
-  });
-
-  it('keeps the per session parallel limit at 4 until it is changed, clamped to 1..16', async () => {
-    const db = await seed();
-    expect(await getResolveParallelLimit({ db, sessionId: SESSION })).toBe(4);
-    expect(await setResolveParallelLimit({ db, sessionId: SESSION, limit: 40 })).toBe(16);
-    await setResolveParallelLimit({ db, sessionId: SESSION, limit: 2 });
-    expect(await getResolveParallelLimit({ db, sessionId: SESSION })).toBe(2);
   });
 
   it('writes git state and verdict without bumping the thread revision', async () => {

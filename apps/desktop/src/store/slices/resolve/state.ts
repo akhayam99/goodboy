@@ -23,13 +23,13 @@ export type ResolveCandidateWithItems = Readonly<{
 export type ThreadRecheck = Readonly<{
   agentId: AgentId | null;
   error: string | null;
+  isQueued?: boolean;
 }>;
 
 export type ResolveState = {
   readonly sessionResolveThreads: Readonly<Record<SessionId, ReadonlyArray<ResolveThread>>>;
   readonly sessionResolveAttempts: Readonly<Record<SessionId, ReadonlyArray<ResolveAttempt>>>;
   readonly sessionResolveBatches: Readonly<Record<SessionId, ReadonlyArray<ResolveBatch>>>;
-  readonly sessionResolveParallelLimit: Readonly<Record<SessionId, number>>;
   readonly sessionResolveCandidates: Readonly<
     Record<SessionId, ReadonlyArray<ResolveCandidateWithItems>>
   >;
@@ -59,7 +59,6 @@ export const resolveInitialState: ResolveState = {
   sessionResolveThreads: {},
   sessionResolveAttempts: {},
   sessionResolveBatches: {},
-  sessionResolveParallelLimit: {},
   sessionResolveCandidates: {},
   sessionResolveCheckRuns: {},
   sessionResolveQueueItems: {},

@@ -321,18 +321,13 @@ fn split_stacked(
     for (_, commit, candidate_id) in &placed {
         git(path, &["update-ref", &candidate_ref(candidate_id), commit])?;
     }
-    let mut done = Vec::with_capacity(picks.len());
-    for pick in picks {
-        let sha = placed
-            .iter()
-            .find(|item| item.2 == pick.candidate_id)
-            .map(|item| item.1.clone());
-        done.push(SplitCandidate {
-            candidate_id: pick.candidate_id,
-            sha,
-        });
-    }
-    Ok(done)
+    Ok(placed
+        .into_iter()
+        .map(|(_, commit, candidate_id)| SplitCandidate {
+            candidate_id,
+            sha: Some(commit),
+        })
+        .collect())
 }
 
 fn split_one(
