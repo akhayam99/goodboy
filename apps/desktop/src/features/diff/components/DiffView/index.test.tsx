@@ -100,6 +100,8 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+type WidthCallback = (entries: ReadonlyArray<{ readonly contentRect: { width: number } }>) => void;
+
 const codeCells = () =>
   screen
     .getAllByRole('row')
@@ -260,6 +262,96 @@ describe('DiffView comments', () => {
     });
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
     expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('opens the composer under its line with focus in it, scrolled into view, and Esc gives focus back to the gutter', () => {
+    render(<DiffView files={[LEDGER]} comments={commentsWith([])} />);
+    const gutter = screen.getByRole('button', { name: 'Comment on new line 39' });
+    const scrolled = vi.mocked(Element.prototype.scrollIntoView);
+    scrolled.mockClear();
+
+    fireEvent.keyDown(gutter, { key: 'Enter' });
+
+    const box = screen.getByRole('textbox', { name: 'Note on line 39' });
+    expect(document.activeElement).toBe(box);
+    expect(scrolled).toHaveBeenCalledWith({ block: 'nearest' });
+    const lineRow = gutter.closest('[role="row"]') as HTMLElement;
+    expect(lineRow.nextElementSibling?.contains(box)).toBe(true);
+
+    fireEvent.keyDown(box, { key: 'Escape' });
+
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Comment on new line 39' }),
+    );
+  });
+
+  it('gives focus back to the gutter after the comment is saved', () => {
+    render(<DiffView files={[LEDGER]} comments={commentsWith([])} />);
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 40' }), {
+      key: 'Enter',
+    });
+    const box = screen.getByRole('textbox', { name: 'Note on line 40' });
+    fireEvent.change(box, { target: { value: 'Guard a zero weight' } });
+    fireEvent.keyDown(box, { key: 'Enter', metaKey: true });
+
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Comment on new line 40' }),
+    );
+  });
+
+  it('gives focus back to Comment on file when the file composer closes', () => {
+    render(<DiffView files={[LEDGER]} comments={commentsWith([])} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Comment on file' }));
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Comment on file' }));
+  });
+
+  it.each([
+    [700, true],
+    [1000, false],
+  ] as const)(
+    'with %ipx for the code, a split choice falls back to unified and says so: %s',
+    (width, isTooNarrow) => {
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          private readonly callback: WidthCallback;
+          constructor(callback: WidthCallback) {
+            this.callback = callback;
+          }
+          observe() {
+            this.callback([{ contentRect: { width } }]);
+          }
+          unobserve() {}
+          disconnect() {}
+        },
+      );
+      render(<DiffView files={[LEDGER]} />);
+      fireEvent.click(screen.getByRole('button', { name: /Display/ }));
+      fireEvent.click(screen.getByRole('tab', { name: 'Split' }));
+
+      const grid = screen.getByRole('grid');
+      expect(grid.innerHTML.includes('grid-cols-[44px_minmax(0,1fr)_44px_minmax(0,1fr)]')).toBe(
+        !isTooNarrow,
+      );
+      expect(screen.queryByText('Split needs a wider window') !== null).toBe(isTooNarrow);
+      expect(screen.getByRole('tab', { name: 'Split' }).getAttribute('aria-selected')).toBe('true');
+      vi.unstubAllGlobals();
+    },
+  );
+
+  it('spans both halves with the composer in split view', () => {
+    render(<DiffView files={[LEDGER]} comments={commentsWith([])} />);
+    fireEvent.click(screen.getByRole('button', { name: /Display/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Split' }));
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on old line 39' }), {
+      key: 'Enter',
+    });
+
+    const cell = screen.getByRole('textbox').closest('[data-slot="diff-line-block"]');
+    expect(cell?.getAttribute('data-span')).toBe('both');
   });
 
   it('asks the agent with the selected lines', () => {

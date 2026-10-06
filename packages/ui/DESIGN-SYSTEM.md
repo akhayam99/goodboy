@@ -1042,6 +1042,26 @@ conversation) never moves the main content: the main area keeps its start and
 only gives up space on its right, and when that would leave it under 560px
 plus gutters the drawer lies over the page.
 
+**A form opens where you clicked.** One placement rule for every inline form:
+
+| The form acts on             | It opens                                                                   |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| a line or a block            | inline under it, across the whole code width (both halves in a split diff) |
+| a row                        | inside the row                                                             |
+| a section                    | in the section body, under its header                                      |
+| the page                     | in the header's action zone, or an anchored panel under the primary        |
+| a selection                  | a bar at the bottom of the collection; the panel in the detail column      |
+| an object of another surface | the right drawer, never a navigation                                       |
+
+Every opening form scrolls itself into view (`block: 'nearest'`), takes focus,
+and gives focus back to its trigger when it closes, saved or cancelled: a diff
+line composer returns to its gutter number, a file composer to Comment on
+file, a plan block composer to its comment button. Ask agent on a diff line
+opens that agent's conversation in the `transcript` drawer with the quote in
+its field; the diff stays. A split diff needs 880px for its code: under that it
+draws unified and the toolbar says `Split needs a wider window`, and the
+choice comes back with room.
+
 **Work panes use the full width.** A pane whose body is a working surface (a
 list beside a thread, a file tree beside a diff, a terminal) passes
 `width="full"` to `PaneShell`, and to the `PageColumn` of its tabs. It keeps
