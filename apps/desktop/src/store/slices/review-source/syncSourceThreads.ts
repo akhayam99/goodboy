@@ -79,11 +79,6 @@ export const syncSourceThreads = async ({
     }
   }
   try {
-    await get().reconcileHandReplies({ sessionId, prNumber, comments });
-  } catch (error) {
-    console.warn(`[review-replies] ${sessionId}: ${formatError(error)}`);
-  }
-  try {
     await get().syncSourceSnapshots({ sessionId, prNumber, comments });
   } catch (error) {
     console.warn(`[review-source] ${sessionId}: ${formatError(error)}`);
