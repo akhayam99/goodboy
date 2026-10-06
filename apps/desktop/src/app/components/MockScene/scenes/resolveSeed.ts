@@ -1,4 +1,4 @@
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from './mockSceneIpc';
 import type { InvokeArgs } from '@tauri-apps/api/core';
 import type {
   PrComment,
@@ -873,7 +873,7 @@ const installResolveMockIpc = ({
 }: {
   readonly deliveredReplyBody: string | null;
 }): void => {
-  mockIPC((cmd, payload) => {
+  mockSceneIpc((cmd, payload) => {
     if (cmd === 'worktree_diff_range') {
       return FAKE_RETRY_DIFF;
     }

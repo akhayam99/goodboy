@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from './mockSceneIpc';
 import { PaneShell } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -123,7 +123,7 @@ const SELECTED_COMMENTS: ReadonlyArray<LinearIssueComment> = [
 
 const installIpc = (): void => {
   let created = 0;
-  mockIPC((cmd, payload) => {
+  mockSceneIpc((cmd, payload) => {
     if (cmd === 'linear_fetch_issue_comments') {
       return SELECTED_COMMENTS;
     }

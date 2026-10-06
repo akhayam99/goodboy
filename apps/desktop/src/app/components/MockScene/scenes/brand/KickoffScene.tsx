@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from '../mockSceneIpc';
 import type {
   IntegrationBinding,
   IntegrationBindingId,
@@ -104,7 +104,7 @@ const BRIEF = isSentryPick() ? SENTRY_BRIEF : LINEAR_BRIEF;
 const STARRED_RECORD = linearRecordOf(HBL_377);
 
 const installIpc = (): void => {
-  mockIPC((cmd) => {
+  mockSceneIpc((cmd) => {
     if (cmd === 'linear_fetch_assigned_issues') {
       return KICKOFF_ASSIGNED;
     }
