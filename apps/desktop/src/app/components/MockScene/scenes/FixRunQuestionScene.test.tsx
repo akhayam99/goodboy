@@ -54,7 +54,7 @@ describe('the fix run transcript drawer scene', () => {
 
     const lead = await screen.findByTestId('fix-run-lead');
 
-    expect(within(lead).queryByText('This run left no commit.')).toBeNull();
+    expect(within(lead).queryByText('No commits yet')).toBeNull();
     expect(await within(lead).findByText('c81e5aa')).toBeDefined();
     expect(within(lead).getByText('3b7d10e')).toBeDefined();
   });
