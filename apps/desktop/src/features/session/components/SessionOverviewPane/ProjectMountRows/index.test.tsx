@@ -107,8 +107,10 @@ const githubOf = (
   mountId: string,
   number: number,
   state: PullRequestStateKind,
+  headSha: string | null = null,
 ): MountGithubState => {
   const pr: PullRequestState = {
+    headSha,
     number,
     title: `Fix ${number}`,
     url: `https://example.invalid/pull/${number}`,
@@ -265,6 +267,61 @@ describe('ProjectMountRows', () => {
       'payments-api on hl/retry-state-copy',
       'payments-api on hl/fix-webhook-idempotency',
     ]);
+  });
+
+  describe('a worktree on the base while its branch has an open pull request', () => {
+    const onBase = {
+      ...status.clean,
+      branch: 'hl/cta-for-the-slot',
+      head: 'aaaaaaa1',
+      upstream: 'origin/hl/cta-for-the-slot',
+      mainDistance: { kind: 'known', ahead: 0, behind: 0 },
+    } satisfies WorktreeStatus;
+
+    const original = status.clean;
+
+    afterEach(() => {
+      status.clean = original;
+    });
+
+    it('reads Merged when no pull request is linked and ancestry says so', async () => {
+      status.clean = onBase;
+      seed({ mounts: [mountView({ id: 'base-1', branch: 'hl/cta-for-the-slot' })] });
+      renderRows();
+
+      await screen.findByRole('button', { name: /Completed/ });
+      expect(screen.queryAllByTestId('project-mount-row')).toHaveLength(0);
+    });
+
+    it('never moves under Completed and says it is not on the pull request commits', async () => {
+      status.clean = onBase;
+      seed({
+        mounts: [mountView({ id: 'base-2', branch: 'hl/cta-for-the-slot' })],
+        github: { 'base-2': githubOf('base-2', 9900, 'open', 'bbbbbbb2') },
+      });
+      renderRows();
+
+      const row = await screen.findByTestId('project-mount-row');
+      await within(row).findByText("Not on the PR's commits");
+      expect(within(row).queryByText('Merged')).toBeNull();
+      expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
+    });
+
+    it('reads as a normal row once the worktree is on the pull request head', async () => {
+      status.clean = { ...onBase, head: 'bbbbbbb2' };
+      seed({
+        mounts: [mountView({ id: 'base-3', branch: 'hl/cta-for-the-slot' })],
+        github: { 'base-3': githubOf('base-3', 9900, 'open', 'bbbbbbb2') },
+      });
+      renderRows();
+
+      const row = await screen.findByTestId('project-mount-row');
+      await within(row).findByText('PR #9900');
+      await screen.findByText('Up to date');
+      expect(within(row).queryByText("Not on the PR's commits")).toBeNull();
+      expect(within(row).queryByText('Merged')).toBeNull();
+      expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
+    });
   });
 
   it('folds each project into one summary line past four open worktrees', () => {

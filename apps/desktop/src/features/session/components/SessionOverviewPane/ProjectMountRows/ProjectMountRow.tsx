@@ -136,6 +136,7 @@ export const ProjectMountRow = ({
               isMerged={isMerged}
               isRebasing={controls.pendingId === 'mount.rebase'}
               commitsAfterMerge={commitsAfterMerge}
+              request={row.request}
             />
           )}
           {isRepo && row.branch !== '' ? (

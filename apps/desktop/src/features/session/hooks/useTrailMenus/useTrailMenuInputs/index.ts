@@ -5,7 +5,10 @@ import { useCopyLink } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../../store';
 import { resolveDiffMount } from '../../../components/SessionWorkspace/parts/resolveDiffMount';
 import { resolveSessionRepo } from '../../../../../store/slices/worktrees/resolveSessionRepo';
-import { isMountRequestMerged } from '../../../../../store/slices/project-mounts/mountRowModel';
+import {
+  isMountRequestMerged,
+  mountOpenRequestHead,
+} from '../../../../../store/slices/project-mounts/mountRowModel';
 import { selectActiveProjectPrs } from '../../../../../store/slices/github/activeProjectPrs';
 import { resolverThread } from '../../../../../store/slices/navigation/resolverThread';
 import { useResolveQueueRows } from '../../../../resolve/hooks/useResolveQueueRows';
@@ -67,6 +70,16 @@ export const useTrailMenuInputs = ({ session }: Params): TrailMenuInputs => {
       ),
     ),
   );
+  const openRequestHeads = useAppStore(
+    useShallow((s) =>
+      Object.fromEntries(
+        (s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY).flatMap((mount) => {
+          const head = mountOpenRequestHead({ state: s, mountId: mount.mountId });
+          return head === null ? [] : [[mount.mountId, head] as const];
+        }),
+      ),
+    ),
+  );
   const diffStats = useMountDiffStats(sessionId);
   const projects = useAppStore((s) => s.projects);
   const branchTargets = useMemo(
@@ -123,6 +136,7 @@ export const useTrailMenuInputs = ({ session }: Params): TrailMenuInputs => {
       diffStats,
       branchStatuses,
       mergedMountIds,
+      openRequestHeads,
       queueRows,
       resolveAgain,
       prNumber,
@@ -160,6 +174,7 @@ export const useTrailMenuInputs = ({ session }: Params): TrailMenuInputs => {
       diffStats,
       branchStatuses,
       mergedMountIds,
+      openRequestHeads,
       queueRows,
       resolveAgain,
       prNumber,

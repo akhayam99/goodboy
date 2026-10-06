@@ -4,7 +4,13 @@ import { branchPushStateOf } from './branchPushState';
 import { mergedThenLabel } from './mergedThen';
 
 type BranchPresenceKind =
-  'on-origin' | 'diverged' | 'local-only' | 'gone-on-origin' | 'merged' | 'merged-then';
+  | 'on-origin'
+  | 'diverged'
+  | 'local-only'
+  | 'gone-on-origin'
+  | 'merged'
+  | 'merged-then'
+  | 'not-on-pr';
 
 export type BranchPresence = {
   readonly kind: BranchPresenceKind;
@@ -12,22 +18,50 @@ export type BranchPresence = {
   readonly toPush: number | null;
 };
 
+export type OpenRequestHead = {
+  readonly headSha: string | null;
+};
+
 type PresenceParams = {
   readonly status: WorktreeStatus;
   readonly isMerged: boolean;
   readonly commitsAfterMerge?: number | null;
+  readonly openRequest?: OpenRequestHead | null;
+};
+
+const sameCommit = ({ left, right }: { readonly left: string; readonly right: string }): boolean =>
+  left.startsWith(right) || right.startsWith(left);
+
+const isOffPrCommits = ({
+  status,
+  openRequest,
+}: {
+  readonly status: WorktreeStatus;
+  readonly openRequest: OpenRequestHead | null;
+}): boolean => {
+  if (openRequest === null || openRequest.headSha === null || status.head === null) {
+    return false;
+  }
+  if (status.mainDistance.kind !== 'known' || status.mainDistance.ahead > 0) {
+    return false;
+  }
+  return !sameCommit({ left: status.head, right: openRequest.headSha });
 };
 
 export const branchPresenceOf = ({
   status,
   isMerged,
   commitsAfterMerge = null,
+  openRequest = null,
 }: PresenceParams): BranchPresence => {
   if (commitsAfterMerge !== null && commitsAfterMerge > 0) {
     return { kind: 'merged-then', label: mergedThenLabel(commitsAfterMerge), toPush: null };
   }
   if (isMerged) {
     return { kind: 'merged', label: 'Merged', toPush: null };
+  }
+  if (isOffPrCommits({ status, openRequest })) {
+    return { kind: 'not-on-pr', label: "Not on the PR's commits", toPush: null };
   }
   const push = branchPushStateOf({ status });
   if (push.kind === 'not-pushed') {
@@ -51,6 +85,7 @@ type MergedParams = {
   readonly baseBranch: string | null;
   readonly isMainCheckout: boolean;
   readonly isRequestMerged: boolean;
+  readonly hasOpenRequest?: boolean;
   readonly commitsAfterMerge?: number | null;
 };
 
@@ -67,6 +102,7 @@ export const isBranchMergedOf = ({
   baseBranch,
   isMainCheckout,
   isRequestMerged,
+  hasOpenRequest = false,
   commitsAfterMerge = null,
 }: MergedParams): boolean => {
   if (commitsAfterMerge !== null && commitsAfterMerge > 0) {
@@ -74,6 +110,9 @@ export const isBranchMergedOf = ({
   }
   if (isRequestMerged) {
     return true;
+  }
+  if (hasOpenRequest) {
+    return false;
   }
   if (status === null || isMainCheckout || status.inProgress !== null) {
     return false;
