@@ -17,10 +17,10 @@ export { useSessionPrFetchState } from './slices/github/selectors';
 export { useMountDiffStats, type MountDiffStat } from './slices/project-mounts/useMountDiffStats';
 export { useProjectMountsForSessions } from './slices/project-mounts/useProjectMountsForSessions';
 export {
+  useSessionColumn,
   useSessionStageInfo,
   useSessionStages,
   useSessionViewPrefs,
-  useSortedGroupedSessions,
   useStageGroupedSessions,
   useWorkspaceRollup,
 } from './slices/session-view/selectors';

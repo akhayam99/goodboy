@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
 import {
@@ -111,7 +111,12 @@ describe('SessionActivityBar selection bar', () => {
     );
     mount({ active: [], archived });
     useAppStore.setState({ bulkUnarchiveTask });
-    fireEvent.click(screen.getByRole('button', { name: /^Show archived/ }));
+    act(() => {
+      useAppStore.getState().setSessionViewPrefs({
+        workspaceId: workspace.id,
+        patch: { isArchivedShown: true },
+      });
+    });
     tick('Old payouts spike');
 
     const bar = screen.getByRole('toolbar');

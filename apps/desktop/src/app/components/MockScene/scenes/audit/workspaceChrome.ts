@@ -1,6 +1,6 @@
 import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../../store';
-import { LENS_KINDS } from '../../../../../store/slices/session-view/types';
+import { DEFAULT_PREFS, LENS_KINDS } from '../../../../../store/slices/session-view/types';
 import { SESSION } from '../workflowSeed';
 import { sceneParam } from './sceneParams';
 import { sceneClock } from '../../sceneClock';
@@ -65,7 +65,7 @@ export const seedWorkspaceChrome = ({ session, siblings }: ChromeParams): void =
     activeLens: { [session.id]: lensOf({ value: sceneParam({ key: 'lens' }) }) },
     selectedAgentId: agent === null ? {} : { [session.id]: agent as AgentId },
     archivedSessions: { [session.workspaceId]: [] },
-    sessionViewPrefs: { [session.workspaceId]: { sort: 'updatedAt', group: 'stage' } },
+    sessionViewPrefs: { [session.workspaceId]: DEFAULT_PREFS },
     providers: [
       {
         id: 'anthropic',

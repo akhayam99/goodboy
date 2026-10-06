@@ -8,45 +8,52 @@ import type {
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
 import { DEFAULT_PREFS, VALID_GROUPS, VALID_SORTS } from './types';
 
-function storageKey(workspaceId: WorkspaceId): string {
-  return `${STORAGE_PREFIXES.sessionView}${workspaceId}`;
-}
+const PREFS_VERSION = 2;
+
+const storageKey = (workspaceId: WorkspaceId): string =>
+  `${STORAGE_PREFIXES.sessionView}${workspaceId}`;
 
 export const writeToStorage = (workspaceId: WorkspaceId, prefs: SessionViewPrefs): void => {
   try {
-    const persisted: PersistedSessionViewPrefs = { v: 1, ...prefs };
+    const persisted: PersistedSessionViewPrefs = { v: PREFS_VERSION, ...prefs };
     localStorage.setItem(storageKey(workspaceId), JSON.stringify(persisted));
   } catch {
-    // Swallow quota errors, prefs are non-critical.
+    return;
   }
 };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const sortOf = (value: unknown): SessionSortKey =>
+  VALID_SORTS.find((key) => key === value) ?? DEFAULT_PREFS.sort;
+
+const groupOf = (value: unknown): SessionGroupKey =>
+  VALID_GROUPS.find((key) => key === value) ?? DEFAULT_PREFS.group;
+
+const flagOf = ({ value, fallback }: { readonly value: unknown; readonly fallback: boolean }) =>
+  typeof value === 'boolean' ? value : fallback;
 
 export const readFromStorage = (workspaceId: WorkspaceId): SessionViewPrefs => {
   try {
     const raw = localStorage.getItem(storageKey(workspaceId));
-    if (!raw) {
+    if (raw === null || raw === '') {
       return DEFAULT_PREFS;
     }
     const parsed: unknown = JSON.parse(raw);
-    if (
-      typeof parsed !== 'object' ||
-      parsed === null ||
-      (parsed as Record<string, unknown>)['v'] !== 1
-    ) {
+    if (!isRecord(parsed) || parsed['v'] !== PREFS_VERSION) {
       writeToStorage(workspaceId, DEFAULT_PREFS);
       return DEFAULT_PREFS;
     }
-    const obj = parsed as Record<string, unknown>;
-    const sort = VALID_SORTS.has(obj['sort'] as SessionSortKey)
-      ? (obj['sort'] as SessionSortKey)
-      : DEFAULT_PREFS.sort;
-    const group = VALID_GROUPS.has(obj['group'] as SessionGroupKey)
-      ? (obj['group'] as SessionGroupKey)
-      : DEFAULT_PREFS.group;
-    const prefs: SessionViewPrefs = { sort, group };
-    if (sort !== obj['sort'] || group !== obj['group']) {
-      writeToStorage(workspaceId, prefs);
-    }
+    const prefs: SessionViewPrefs = {
+      sort: sortOf(parsed['sort']),
+      group: groupOf(parsed['group']),
+      isArchivedShown: flagOf({
+        value: parsed['isArchivedShown'],
+        fallback: DEFAULT_PREFS.isArchivedShown,
+      }),
+      isFoldOpen: flagOf({ value: parsed['isFoldOpen'], fallback: DEFAULT_PREFS.isFoldOpen }),
+    };
     return prefs;
   } catch {
     return DEFAULT_PREFS;
