@@ -1,8 +1,8 @@
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { LensKind } from '../session-view/types';
 import { agentHomeFor } from './agentHomeFor';
-import { branchPlace, resolverPagePlace, sessionPlace } from './place';
+import { branchPlace, fixRunTranscript, sessionPlace } from './place';
 import { resolverThread } from './resolverThread';
 import { resolveActiveMountPath } from '../worktrees/resolveActiveMountPath';
 import { CONTEXT_LENS_TAB } from './contextLensTab';
@@ -23,7 +23,7 @@ const canonicalAgent = ({
   readonly state: AppState;
   readonly request: Extract<PlaceRequest, { readonly at: 'agent' }>;
 }): CanonicalPlace => {
-  const { sessionId, agentId, pane = null } = request;
+  const { sessionId, agentId } = request;
   const home = agentHomeFor({ state, sessionId, agentId });
   if (home !== 'review') {
     return {
@@ -31,11 +31,43 @@ const canonicalAgent = ({
       drawer: null,
     };
   }
-  const threadId = resolverThread({ state, sessionId, agentId });
-  if (threadId === null) {
-    return { place: sessionPlace({ sessionId, lens: 'review', agentId }), drawer: null };
+  return fixRunLocation({ state, sessionId, agentId, threadId: null });
+};
+
+const fixRunLocation = ({
+  state,
+  sessionId,
+  agentId,
+  threadId,
+}: {
+  readonly state: AppState;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly threadId: string | null;
+}): CanonicalPlace => {
+  const { to, drawer } = fixRunTranscript({
+    sessionId,
+    agentId,
+    threadId: threadId ?? resolverThread({ state, sessionId, agentId }),
+    mountPath: state.diffMountPath?.[sessionId] ?? null,
+  });
+  return { place: canonicalPlace({ state, request: to }), drawer };
+};
+
+const formerFixRunPage = ({ state, request }: PlaceParams): CanonicalPlace | null => {
+  if (request.at !== 'session') {
+    return null;
   }
-  return { place: resolverPagePlace({ sessionId, agentId, threadId, pane }), drawer: null };
+  const { view, sessionId } = request;
+  if (view.lens !== 'review' || view.agentId === null || view.studio !== null) {
+    return null;
+  }
+  return fixRunLocation({
+    state,
+    sessionId,
+    agentId: view.agentId,
+    threadId: view.target?.kind === 'thread' ? view.target.threadId : null,
+  });
 };
 
 type PlaceParams = {
@@ -136,12 +168,6 @@ const canonicalPlace = ({ state, request }: PlaceParams): Place => {
   if (view.studio !== null && view.agentId !== null) {
     return { ...request, view: { ...view, agentId: null } };
   }
-  if (view.lens === 'review' && view.agentId !== null && view.target === null) {
-    const threadId = resolverThread({ state, sessionId, agentId: view.agentId });
-    return threadId === null
-      ? request
-      : resolverPagePlace({ sessionId, agentId: view.agentId, threadId });
-  }
   return request;
 };
 
@@ -172,6 +198,7 @@ export const canonicalLocation = ({ state, request }: Params): CanonicalPlace =>
     return canonicalAgent({ state, request });
   }
   return (
+    formerFixRunPage({ state, request }) ??
     canonicalContext({ state, request }) ?? {
       place: canonicalPlace({ state, request }),
       drawer: null,

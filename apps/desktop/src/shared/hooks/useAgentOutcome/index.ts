@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { fallbackStepOutputSummary, stripControlMarkers } from '@goodboy/core';
 import type { Agent } from '@goodboy/types';
-import { useTranscript } from '../../../../store/slices/transcripts/selectors';
-import { reduceTranscript } from '../../../chat/utils/transcript-items';
+import { useTranscript } from '../../../store/slices/transcripts/selectors';
+import { reduceTranscript } from '../../../features/chat/utils/transcript-items';
 
 export type AgentOutcome = {
   readonly text: string;

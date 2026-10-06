@@ -13,7 +13,7 @@ import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
-import { useAgentOutcome } from '../../hooks/useAgentOutcome';
+import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
 import { classifyAgent } from '../../agent-kind';
 import { AgentUsageFooter } from './AgentUsageFooter';
 import { AgentAnsweringFor } from './AgentAnsweringFor';

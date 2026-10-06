@@ -7,6 +7,8 @@ import { ArtifactDocumentDrawer } from '../../features/artifacts/components/Arti
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDrawer';
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
+import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
+import { FixRunLead } from '../../features/resolve/components/FixRunSummary/FixRunLead';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
@@ -73,6 +75,16 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           scriptKey={drawer.payload.scriptKey}
           mountId={drawer.payload.mountId}
+          onClose={closeDrawer}
+        />
+      );
+    case 'transcript':
+      return (
+        <AgentTranscriptDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          agentId={drawer.payload.agentId}
+          lead={<FixRunLead sessionId={drawer.sessionId} agentId={drawer.payload.agentId} />}
           onClose={closeDrawer}
         />
       );

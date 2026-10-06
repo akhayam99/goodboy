@@ -60,7 +60,7 @@ export const FixRunQuestionScene = () => {
       },
       agentRunHistory: { [AGENT_ID]: [AGENT.runId as ProviderRunId] },
     });
-    navigate({ to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID, pane: 'brief' }) });
+    navigate({ to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID }) });
     setIsReady(true);
   }, []);
 

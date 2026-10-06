@@ -22,7 +22,7 @@ import {
   SESSION_DRAFT_PLACE,
   agentPlace,
   branchPlace,
-  resolverPagePlace,
+  fixRunTranscript,
   sessionPlace,
 } from './place';
 import { HISTORY_LIMIT } from './types';
@@ -367,128 +367,111 @@ describe('navigation slice', () => {
     expect(store.getState().activeLens[S1]).toBe('pr');
   });
 
-  it('opens an agent under its home lens', () => {
+  const transcriptOf = (agentId: AgentId) => ({
+    kind: 'transcript' as const,
+    sessionId: S1,
+    payload: { agentId },
+  });
+
+  const withAttempt = (store: ReturnType<typeof makeStore>): void => {
+    store.setState({
+      sessionResolveAttempts: {
+        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
+      },
+    });
+  };
+
+  it('opens a resolver with no attempt on Branch Comments, its transcript in the drawer', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
-    expect(store.getState().activeLens[S1]).toBe('review');
-    expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
+
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
+    expect(store.getState().selectedAgentId[S1]).toBeNull();
+    expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
   });
 
-  it('opens a resolver as a Fix run under its Branch', () => {
+  it('opens a resolver on the Comments of its Branch at its thread, never on a page of its own', () => {
     const store = makeStore();
-    store.setState({
-      sessionResolveAttempts: {
-        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
-      },
-    });
+    withAttempt(store);
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
 
-    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent`);
-    expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
-    store.getState().up();
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
-    expect(store.getState().drawer).toBeNull();
-  });
-
-  it('carries the requested agent tab in the address of a resolver page', () => {
-    const store = makeStore();
-    store.setState({
-      sessionResolveAttempts: {
-        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
-      },
-    });
-    store.getState().navigate({
-      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'brief' }),
-    });
-
-    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent/brief`);
-    expect(store.getState().agentPane[S1]).toBe('brief');
-    expect(captureWindowLocation({ state: store.getState() })?.place).toEqual(
-      resolverPagePlace({
-        sessionId: S1,
-        agentId: RESOLVER,
-        threadId: 'gh:PRRT_42',
-        pane: 'brief',
-      }),
-    );
-  });
-
-  it('asks for the transcript and clears the tab when the page changes', () => {
-    const store = makeStore();
-    store.setState({
-      sessionResolveAttempts: {
-        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
-      },
-    });
-    store.getState().navigate({
-      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'transcript' }),
-    });
-    expect(store.getState().agentPane[S1]).toBe('transcript');
-
-    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
+    expect(store.getState().selectedAgentId[S1]).toBeNull();
+    expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
     expect(store.getState().agentPane[S1]).toBeNull();
   });
 
-  it('restores the requested tab on Back', () => {
+  it('lands an old agent tab request for a resolver on the same Comments and drawer', () => {
+    for (const pane of ['brief', 'transcript'] as const) {
+      const store = makeStore();
+      withAttempt(store);
+      store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane }) });
+
+      expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
+      expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
+    }
+  });
+
+  it('rewrites an old fix run address to Branch Comments with the transcript drawer', () => {
     const store = makeStore();
-    store.setState({
-      sessionResolveAttempts: {
-        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
+    withAttempt(store);
+    store.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'review',
+        agentId: RESOLVER,
+        target: { kind: 'thread', threadId: 'gh:PRRT_7', pane: 'transcript' },
+      }),
+    });
+
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_7`);
+    expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
+  });
+
+  it('restores an old fix run address from history onto Comments with the drawer open', () => {
+    const store = makeStore();
+    withAttempt(store);
+    store.getState().restoreLocation({
+      location: {
+        workspaceId: WS,
+        place: sessionPlace({
+          sessionId: S1,
+          lens: 'review',
+          agentId: RESOLVER,
+          target: { kind: 'thread', threadId: 'gh:PRRT_42' },
+        }),
+        studio: null,
+        focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
       },
     });
-    store.getState().navigate({
-      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'brief' }),
-    });
+
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
+    expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
+  });
+
+  it('closes the transcript drawer on the next page and brings it back on Back', () => {
+    const store = makeStore();
+    withAttempt(store);
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    expect(store.getState().drawer).toBeNull();
+
     store.getState().back();
 
-    expect(store.getState().agentPane[S1]).toBe('brief');
-    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent/brief`);
-  });
-
-  it('addresses the Fix run under its Branch and goes up to its Comments', () => {
-    const store = makeStore();
-    const conversation = {
-      kind: 'conversation' as const,
-      sessionId: S1,
-      payload: { threadId: 'gh:PRRT_42' },
-    };
-    store.setState({
-      sessionResolveAttempts: {
-        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
-      },
-    });
-    store.getState().navigate({
-      to: sessionPlace({ sessionId: S1, lens: 'review' }),
-      drawer: conversation,
-    });
     expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
-    store.getState().navigate({
-      to: resolverPagePlace({ sessionId: S1, agentId: RESOLVER, threadId: 'gh:PRRT_42' }),
-    });
-    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent`);
-    expect(store.getState().drawer).toBeNull();
-
-    store.getState().up();
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
-    expect(store.getState().selectedAgentId[S1]).toBeNull();
+    expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
   });
 
-  it('goes up from a Fix run reached from elsewhere to the Comments of its Branch', () => {
+  it('keeps a thread link with the transcript drawer on the Comments of the Branch', () => {
     const store = makeStore();
-    store.setState({
-      sessionResolveAttempts: {
-        [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] })],
-      },
-    });
-    store.getState().navigate({
-      to: resolverPagePlace({ sessionId: S1, agentId: RESOLVER, threadId: 'gh:PRRT_42' }),
-    });
-    store.getState().up();
+    withAttempt(store);
+    store
+      .getState()
+      .navigate(fixRunTranscript({ sessionId: S1, agentId: RESOLVER, threadId: 'gh:PRRT_42' }));
 
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
-    expect(store.getState().drawer).toBeNull();
+    expect(keyOf(store)).toBe(`s/${S1}/branch/comments/t/gh:PRRT_42`);
+    expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
   });
 
   it('goes up with a back when the previous voice is the parent', () => {

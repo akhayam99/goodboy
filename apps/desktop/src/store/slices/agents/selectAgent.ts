@@ -8,12 +8,20 @@ import { flushTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 import { stampAgentSubtreeViewed } from './stampAgentSubtreeViewed';
 
+type SelectOptions = {
+  readonly isSelecting?: boolean;
+};
+
 export const selectAgent = (set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, agentId: AgentId) => {
+  return async (sessionId: SessionId, agentId: AgentId, options: SelectOptions = {}) => {
+    const isSelecting = options.isSelecting ?? true;
     const stampedAt = new Date().toISOString() as IsoDateTime;
     const prevAgentId = get().selectedAgentId[sessionId] ?? null;
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
-    const additionalAgentIds = prevAgentId != null && prevAgentId !== agentId ? [prevAgentId] : [];
+    const additionalAgentIds =
+      isSelecting && prevAgentId != null && prevAgentId !== agentId ? [prevAgentId] : [];
+    const selection = (state: ReturnType<GetFn>) =>
+      isSelecting ? { selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } } : {};
     const stamp = stampAgentSubtreeViewed({
       runs,
       rootAgentId: agentId,
@@ -36,15 +44,17 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
         additionalAgentIds,
       }).runs;
 
-    set((state) =>
-      workSurfaceFocus({
-        sessionId,
-        focus: { kind: 'agent', agentId },
-        activeLens: state.activeLens,
-        sessionStudio: state.sessionStudio,
-        selectedAgentId: state.selectedAgentId,
-      }),
-    );
+    if (isSelecting) {
+      set((state) =>
+        workSurfaceFocus({
+          sessionId,
+          focus: { kind: 'agent', agentId },
+          activeLens: state.activeLens,
+          sessionStudio: state.sessionStudio,
+          selectedAgentId: state.selectedAgentId,
+        }),
+      );
+    }
 
     const cached = get().transcripts[agentId];
     if (cached) {
@@ -54,7 +64,7 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
       set((state) => {
         const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
         return {
-          selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId },
+          ...selection(state),
           sessionLoading: {
             ...state.sessionLoading,
             [sessionId]: { ...current, transcript: false },
@@ -72,7 +82,7 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
     set((state) => {
       const current = state.sessionLoading[sessionId] ?? EMPTY_LOADING;
       return {
-        selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId },
+        ...selection(state),
         sessionLoading: {
           ...state.sessionLoading,
           [sessionId]: { ...current, transcript: true },
@@ -99,7 +109,7 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
           (state.transcripts[agentId]?.length ?? null) !== liveLengthAtInitialRead;
         return {
           ...(hasLiveAppend ? {} : { transcripts: { ...state.transcripts, [agentId]: events } }),
-          messages: { ...state.messages, [sessionId]: messages },
+          ...(isSelecting ? { messages: { ...state.messages, [sessionId]: messages } } : {}),
           sessionLoading: {
             ...state.sessionLoading,
             [sessionId]: { ...current, transcript: false },
@@ -136,7 +146,9 @@ export const selectAgent = (set: SetFn, get: GetFn) => {
               }
               return {
                 transcripts: { ...state.transcripts, [agentId]: fullEvents },
-                messages: { ...state.messages, [sessionId]: fullMessages },
+                ...(isSelecting
+                  ? { messages: { ...state.messages, [sessionId]: fullMessages } }
+                  : {}),
               };
             });
           })

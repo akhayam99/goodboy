@@ -175,7 +175,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
-  `s/{session}/review/t/{thread}/agent/brief` (the Fix run, a child of its thread on the Branch).
+  `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
   `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
@@ -648,8 +648,8 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   (a squash merge), in the menu and in the Branch header alike
   (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
-- **A resolver run reads Session, Branch, Fix run.** The `Branch ▾` segment
-  leads back to the Comments tab; `Fix run` is the open page and has no menu.
+- **A fix run has no segment of its own.** Its transcript is a drawer on the
+  Comments tab, so the trail reads Session, Branch, Comments.
 - **Settings claims its studio band** with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
@@ -1383,35 +1383,37 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   action row at the end); the mode lives in the store per session and drops
   back when the page closes.
 - **The resolver stays on its comment.** A resolver exists for one comment, so its
-  home is that comment, never the Agents lens. The comment shows its agent in
-  one line from the first paint (model, age, the state word, and while it
-  drafts the last thing it said). `…` → Agent transcript opens the resolver as
-  a Fix run, a child page of its Branch (the address keeps the thread of its
-  attempt, `s/{session}/review/t/{thread}/agent`), and so do a notification, the
-  agent-started toast and the palette (`canonicalLocation` maps the resolver to
-  the first thread of its attempt). The trail reads `Session › Branch ▾ › Fix
-run` and Up goes to the Comments tab. The page is read only (`FixRun`) and has
-  three parts in one 960 column: what the run did (its outcome, from the last
-  reply when it left no summary), its commits (`ResolverCommitLine`, with a note
-  when a later rewrite folded the commit into another or dropped it from the
-  branch), and the comments it touched, each a link to that comment on the
-  Comments tab. A run that belongs to a batch also says how many comments were
-  fixed together and opens them filtered in Comments. `Open transcript` and the
-  Transcript tab show the conversation. Accepting, replying, editing and Push
-  live in Comments, never here. In Activity a fix run is one row, `Fix run ·
-#318 · 9 comments`, that opens this page; the Needs you row for the pull
-  request calls `openReview` with the destination `{ kind: 'threads', mountId,
-threadIds: [first comment that waits on you] }`. A question the run waits on
-  shows at the top of this page as well as in its thread.
-  The agent pane tab is part of the address: the thread
-  target carries `pane: 'brief' | 'transcript'` (`brief` is the Fix run tab),
-  `agentPlace({ sessionId, agentId, pane })` asks for either, and the address
-  prints it as a last segment (`.../agent/brief`). Without a `pane` the pane
-  picks its own tab (`agentOpenTab`: an open question or a resolver opens on
-  Brief (a resolver: its Fix run), any other agent on Transcript). The key `agentPane` is written only by
-  the navigation slice, follows the page like the other targets, and comes back
-  with Back and a window restore. Tab clicks inside the pane stay local and do
-  not rewrite the address. The `threads` destination needs no
+  home is that comment, never the Agents lens, and it has no page of its own.
+  The comment shows its agent in one line from the first paint (model, age, the
+  state word, and while it drafts the last thing it said). Its transcript opens
+  as a drawer of kind `transcript` on the Comments tab of its Branch, in the
+  space on the right, so the list and the thread stay where they are: from the
+  run status line (**Open transcript** opens the drawer in place), from `…` →
+  Agent transcript on a thread, from the thread crumb menu, from a fix run row
+  in Activity, from a notification, the agent-started toast and the palette.
+  `fixRunTranscript({ sessionId, agentId, threadId })` builds the move (the
+  Branch Comments place with that thread, and the drawer), and
+  `canonicalLocation` rewrites every older address to it: an `agentPlace` for a
+  resolver, and the former Fix run address (`lens: 'review'` with the resolver
+  and a `thread` target, `.../review/t/{thread}/agent`), on a move and on a
+  restore from history, which reopens the drawer. The thread is the one the
+  address named, or the first thread of the attempt. The drawer is half the
+  pane and reads, top to bottom: the fix run summary (`FixRunSummary`: a
+  question the run waits on, what it did, its commits with a note when a later
+  rewrite folded one, the comments it touched, each a link that keeps the
+  drawer open, and the comments fixed together, opened filtered in Comments),
+  the transcript, and a field to write to that agent. The question card also
+  stays in its thread. Accepting, replying, editing and Push live in Comments,
+  never in the drawer. In Activity a fix run is one row, `Fix run · #318 · 9
+comments`; the Needs you row for the pull request calls `openReview` with the
+  destination `{ kind: 'threads', mountId, threadIds: [first comment that waits
+on you] }`. Any other agent keeps its page, and its pane tab is part of the
+  address: `agentPlace({ sessionId, agentId, pane })` asks for `brief` or
+  `transcript`. Without a `pane` the pane picks its own tab (`agentOpenTab`: an
+  open question opens on Brief, otherwise Transcript). The key `agentPane` is
+  written only by the navigation slice, follows the page like the other
+  targets, and comes back with Back and a window restore. Tab clicks inside
+  the pane stay local and do not rewrite the address. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
@@ -1419,7 +1421,7 @@ threadIds: [first comment that waits on you] }`. A question the run waits on
   pull request open. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
-  no return pills: the Diff and the resolver page come back through Back.
+  no return pills: the Diff and a fix run transcript come back through Back.
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
@@ -1486,10 +1488,13 @@ studio body puts one beside its list. It opens at 400px, resizes from 340 to
 (`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
 ends) for every drawer. It is a
 floating card: 8px from the top, right and bottom edges and from the column,
-radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. When the main
-area minus the drawer and the two gutters would leave the content column
-under 560px, the card lies over the right of the main area with a shadow and
-no scrim, and the main stays interactive; pushing, it has no shadow. Closed,
+radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. The drawer opens
+in the space on the right of the content: every page is anchored on one left
+edge, so opening a drawer never moves the main content to the left, it only
+takes the room on the right. When the main area minus the drawer's track
+(insets counted) and the two gutters would leave it under 560px, the card lies
+over the right of the main area with a shadow and no scrim, and the main stays
+interactive; pushing, it has no shadow. Closed,
 its track is 0px wide and `inert`. Opening pushes the track open in 220ms while
 the card slides 12px in; over the page it slides 16px in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never touches the sidebar
@@ -1516,13 +1521,23 @@ Going to the Artifacts page is a command of its own, **Open in Artifacts** in
 the drawer header, and it is the only page change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
-drawer with its own size: it opens at half the window (`sizing="half"` on
-`DrawerColumn`, with no resize handle), **Expand** takes the whole column and
+drawer that can expand: it opens at half the window (`sizing="half"` on
+`DrawerColumn`, with no resize handle, capped so the page keeps 560px and the
+drawer still pushes), **Expand** takes the whole column and
 lies over the page (`sizing="full"`), and Expand toggles back. The choice is
 kept per session in `documentDrawerExpanded` and is forgotten when the session
 is archived. The header holds the title, `vN`, the state chip, **Run plan**,
 Open in Artifacts, Expand and Close; Escape closes it. While the planner
 revises the plan the body is dimmed and Run plan waits.
+
+The `transcript` kind carries `{ agentId }` and shows one agent's conversation
+beside the page, at half the window, without selecting that agent: the page
+under it keeps its address and its trail (`loadAgentTranscript` with
+`isSelecting: false`). It reads, top to bottom, a lead (the fix run summary
+for a resolver), the transcript, and a field to write to that agent, which
+sends with `sendTurn` to that agent and keeps its draft in `agentDraft`. A
+resolver's transcript always opens here, on the Comments tab of its Branch
+(see The resolver stays on its comment).
 
 The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
 `summary`, in that order, and `view` is `current` or `versions` (the old

@@ -6,6 +6,10 @@ import { AppTopBar } from '../../../AppTopBar';
 import { SessionNavSidebar } from '../../../../../features/session/components/SessionNavSidebar';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { shellArrangement } from '../../../../shellArrangement';
+import { useAppStore } from '../../../../../store';
+import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { DrawerHost } from '../../../DrawerHost';
 import { FRAME_CONNECTED } from './frameSeed';
 import { sceneParam } from './sceneParams';
 
@@ -17,6 +21,8 @@ type Props = {
 };
 
 export const WorkspaceFrame = ({ session, main }: Props) => {
+  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const drawerSizing = useAppStore(selectDrawerSizing);
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: true,
@@ -25,6 +31,8 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
   return (
     <AppShell
       topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+      drawer={isDrawerOpen ? <DrawerHost /> : null}
+      drawerSizing={drawerSizing}
       leftHidden={arrangement.leftHidden}
       leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
       leftSidebar={
