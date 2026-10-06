@@ -55,6 +55,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Context'),
   },
   {
+    name: 'Ask drawer from the trail band',
+    covers: ['openAsk', 'drawer:ask'],
+    open: async () => click(await screen.findByTestId('ask-trail-button')),
+    lands: () => visible('region', 'Ask'),
+  },
+  {
     name: 'palette: Show context',
     covers: ['toggleContextDrawer', 'palette:Show context'],
     open: () => openPalette(/^Show context/),

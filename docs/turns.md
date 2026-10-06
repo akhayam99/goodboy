@@ -890,3 +890,62 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   chat into work. `?scene=chat-room` takes `work=drawer|project|add|session`
   (opens the panel, then the popover or mode), `chat=<key>` (`retry` drafts two
   projects) and `activity=running|unread` for the top bar and the list.
+
+## Session Ask turns
+
+Ask answers a question about one session from its trail band. It reuses the
+workspace chat pipeline (same hardening, same `chat_event` channel, same
+stream reader) with a session scope: `ask_turn` in
+`apps/desktop/src-tauri/src/chat.rs`.
+
+- **Scope comes from the database.** The frontend sends the thread id, the
+  session id, provider, model, effort, the prompt and the session files.
+  Rust reads the provider from the thread row (`chats.session_id` must be
+  that session, m227) and the session's attached worktrees from
+  `session_worktrees` (oldest parallel index first). Missing folders, `/`,
+  the home folder and its parents are dropped, as for Chat.
+- **The session files.** The frontend stages at most 40 Markdown files and
+  512 KiB (agent transcript tails). Names are one or two plain segments
+  ending in `.md`, never hidden, never `..`. Rust writes them read-only into
+  `goodboy-ask/<run id>/` in the system temp folder and removes the folder
+  when the turn ends or fails to start. The prompt ends with the list of
+  staged files and the worktree paths.
+- **Per provider.** Claude runs in the first worktree with the other
+  worktrees and the staged folder as `--add-dir` roots. Codex takes no extra
+  read root, so it runs inside the staged folder and reads the worktrees by
+  the absolute paths in the prompt; its read-only sandbox already lets it
+  read them (the known limit described for Chat). A session with no worktree
+  runs inside the staged folder with either provider, so Ask works without a
+  connected project. Both pass the same argument check as Chat
+  (`assert_read_only`), and the Rust tests pin each provider's arguments.
+- **The pack.** `features/session/ask/buildAskPack.ts` is a pure builder over
+  what `collectAskPackInput` reads from the store: Right now, goal, agents,
+  open and the last 3 answered questions, runs (running plus the last 2
+  finished), review comments by word with every Needs you and Couldn't fix
+  item, branch and pull request, artifacts, the last 20 events that are not
+  decision changes, decisions and summary. Every object gets a handle (`A1`,
+  `R1`, `Q1`, `C1`, `PR`, `D1`). Live agents keep up to 2,000 characters of
+  their summary, settled ones 280, and only the 15 newest settled agents are
+  listed; the whole pack stops at 48,000 characters, about 12 thousand
+  tokens. Agent transcript tails (6,000 characters, at most 8 agents) go to
+  `agents/<handle>.md` as staged files, never inline. Free text passes
+  `redactSecrets`. The prompt is the pack, then the thread's last 12 messages
+  (at most 24 thousand characters, as Chat), then the question.
+- **The answer.** `buildAskSystemPrompt` asks for one bold sentence, handles
+  in double brackets (`[[A2]]`, `[[webhook.ts:88]]`), the app's state words and
+  at most one `<<suggest target="Q1">>…<</suggest>>` line for a question or an
+  agent. `parseAskAnswer` turns known handles into chips, shows an unknown one
+  as plain text and hides a marker still streaming. When the answer ends,
+  `stabilizeAskAnswer` rewrites handles as stable references
+  (`[[agent:<id>|Implementer]]`) before the message is saved, so chips work
+  after a restart without the pack.
+- **Spend.** A usage event from the stream inserts a `provider_runs` row and a
+  telemetry record of kind `ask` on the session (`recordAskUsage` through
+  `recordUsageTelemetry`), which emits the budget alerts like a turn. The
+  answer's cost stays in memory for its footer.
+- **Storage and mock.** Threads are `chats` rows with `session_id` set,
+  messages are `chat_messages` (`insertAskThread`, `listAskThreads`); a
+  model change updates the thread row. With `VITE_GOODBOY_MOCK=1` the slice
+  runs on an in-memory backend with a scripted responder, and
+  `?scene=session-ask&state=closed|rightnow|streaming|answer|followup|plan`
+  shows each state.

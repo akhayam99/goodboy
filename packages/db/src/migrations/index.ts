@@ -82,6 +82,7 @@ import { m223DiffCommentTarget } from './m223-diff-comment-target';
 import { m224ArtifactComments } from './m224-artifact-comments';
 import { m225ResolveAttemptFailureCause } from './m225-resolve-attempt-failure-cause';
 import { m226SessionLastOpened } from './m226-session-last-opened';
+import { m227AskTelemetryThreads } from './m227-ask-telemetry-threads';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -457,4 +458,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 224, sql: m224ArtifactComments },
   { version: 225, sql: m225ResolveAttemptFailureCause },
   { version: 226, sql: m226SessionLastOpened },
+  { version: 227, sql: m227AskTelemetryThreads },
 ];

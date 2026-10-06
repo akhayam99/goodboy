@@ -11,6 +11,7 @@ import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
 import { TrailBar } from './parts/TrailBar';
+import { AskTrailButton } from '../../ask/components/AskTrailButton';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
@@ -144,7 +145,11 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
-      <TrailBar session={session} width={showLens && lens === 'branch' ? 'full' : 'column'} />
+      <TrailBar
+        session={session}
+        width={showLens && lens === 'branch' ? 'full' : 'column'}
+        end={<AskTrailButton sessionId={sessionId} />}
+      />
       <FirstLapBanner sessionId={sessionId} />
       <UnderTrailContext.Provider value>
         <div className="relative min-h-0 flex-1">

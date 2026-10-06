@@ -60,6 +60,12 @@ const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> =
   resolved: 'done',
 };
 
+export const resolveWordOfState = ({
+  state,
+}: {
+  readonly state: ReviewCommentState;
+}): ResolveWord => RESOLVE_WORD_OF_STATE[state];
+
 export const resolveLabelOfState = ({ state }: { readonly state: ReviewCommentState }): string =>
   RESOLVE_WORD_LABEL[RESOLVE_WORD_OF_STATE[state]];
 

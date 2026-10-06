@@ -14,6 +14,7 @@ const ANY_PROMPT_FIELD = /<PromptField\b/g;
 const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/chat/components/ChatInput/index.tsx': ['message'],
   'features/workspace-chat/components/ChatComposer/index.tsx': ['message'],
+  'features/session/ask/components/AskDrawer/AskComposer.tsx': ['message'],
   'features/workflows/components/OrchestratorStrip/OrchestratorHintComposer.tsx': ['message'],
   'features/session/components/SessionKickoff/AgentStart.tsx': ['message'],
   'features/session/components/SessionKickoff/HowToWorkOnIt.tsx': ['message'],

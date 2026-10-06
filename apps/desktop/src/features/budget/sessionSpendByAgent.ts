@@ -24,6 +24,7 @@ type Params = {
 };
 
 const OTHER_KEY = 'other';
+const ASK_KEY = 'ask';
 
 type Bucket = {
   agentId: AgentId | null;
@@ -59,12 +60,13 @@ export const sessionSpendByAgent = ({
       continue;
     }
     const agent = agentByRun.get(record.runId) ?? null;
-    const key = agent === null ? OTHER_KEY : agent.id;
+    const isAsk = record.kind === 'ask';
+    const key = isAsk ? ASK_KEY : agent === null ? OTHER_KEY : agent.id;
     const bucket = buckets.get(key) ?? {
-      agentId: agent === null ? null : agent.id,
-      name: agent === null ? 'Other work' : agent.name,
+      agentId: agent === null || isAsk ? null : agent.id,
+      name: isAsk ? 'Ask' : agent === null ? 'Other work' : agent.name,
       kind:
-        agent === null
+        agent === null || isAsk
           ? 'generic'
           : classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }),
       model: record.model,

@@ -718,6 +718,16 @@ work on one goal without mixing up their chats.
 A **turn** is one message from you and one answer from the agent, with
 everything that streams in between.
 
+**Ask** is a question about the whole session, asked from its trail band. It
+is not an agent: it never lands on the board, in the agent count or in an
+agent's chat, and it never changes the work. It reads the session record, the
+agents' reports, questions, runs, review comments, branch, pull request and
+the session worktrees, read only, and answers with chips that open what it
+names. Three conversational surfaces stay apart: **Chat** asks about the
+workspace code, **Ask** asks about one session, and an agent's chat gives that
+agent work. Ask keeps one thread per session (`chats.session_id`, m227), and
+the Chat list never shows it.
+
 ## Pull request review
 
 A **note** is a comment on a line of the diff that stays in Goodboy: yours, or
@@ -1277,6 +1287,11 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
 - **Budgets**: a monthly budget per provider, counted across all workspaces on a
   UTC calendar month, and a spend cap per session that pauses workflows or
   only warns, with an alert before you reach them
+- **Ask**: every answer is recorded as telemetry kind `ask` on its session
+  (m227). It counts in the session cost, today's spend, provider budgets and
+  the session cap alert, and shows as its own **Ask** row in the session
+  spend. It never counts toward a workflow run's cap, which sums only that
+  run's agents
 
 Caps steer where work goes. They never lock you out. When every provider is
 over its cap, the message box tells you. You can still send the turn on the

@@ -300,6 +300,13 @@ export const SHORTCUTS = {
     plane: 'session',
     group: 'session',
   },
+  'ask.open': {
+    combo: 'cmd+KeyL',
+    offMacCombo: 'ctrl+shift+KeyL',
+    label: 'Ask about this session',
+    plane: 'app',
+    group: 'session',
+  },
 
   'lens.overview': { combo: 'cmd+alt+KeyO', label: 'Session', plane: 'lens', group: 'views' },
   'lens.context': { combo: 'cmd+alt+KeyC', label: 'Show context', plane: 'lens', group: 'views' },
