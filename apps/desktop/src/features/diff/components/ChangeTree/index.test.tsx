@@ -115,22 +115,19 @@ describe('ChangeTree', () => {
     expect(within(folder).queryByText('2')).toBeNull();
     expect(within(folder).queryByText('+6')).toBeNull();
     const file = screen.getByRole('button', { name: /page\.tsx/ });
-    expect(within(file).getByText('+3').className).toContain('text-success');
-    expect(within(file).getByText('−1').className).toContain('text-danger');
+    expect(within(file).getByText('+3').closest('[data-tone]')?.getAttribute('data-tone')).toBe(
+      'diff',
+    );
   });
 
   it('shows a collapsed folder count and +/- in one muted tone', () => {
     renderTree({ collapsed: new Set(['dir:src/ledger/export']) });
 
     const folder = screen.getByRole('button', { name: /\bexport\b/ });
-    const count = within(folder).getByText('2');
-    const additions = within(folder).getByText('+6');
-    const deletions = within(folder).getByText('−2');
-    [count, additions, deletions].forEach((node) => {
-      expect(node.className).toContain('text-faint-foreground');
-      expect(node.className).not.toContain('text-success');
-      expect(node.className).not.toContain('text-danger');
-    });
+    const tones = ['2', '+6', '−2'].map((text) =>
+      within(folder).getByText(text).closest('[data-tone]')?.getAttribute('data-tone'),
+    );
+    expect(tones).toEqual(['muted', 'muted', 'muted']);
   });
 
   it('shows files with their status letter and rename source', () => {
