@@ -9,6 +9,8 @@ import {
 import { STUDIO_EXIT_MS } from '../../../shared/hooks/useStudioOverlay';
 import type { StudioKind } from '../../../store';
 import { STUDIO_META } from './studioMeta';
+import { captureStudioOpener } from './captureStudioOpener';
+import { restoreStudioOpener } from './restoreStudioOpener';
 import { StudioSkeleton } from './StudioSkeleton';
 import type { StudioPlacement } from './studioPlacement';
 
@@ -29,6 +31,7 @@ export const StudioFrame = ({
 }: Props) => {
   const [chrome, setChrome] = useState<StudioChrome | null>(null);
   const [closingKind, setClosingKind] = useState<StudioKind | null>(null);
+  const [opener] = useState(captureStudioOpener);
   const kindRef = useRef(kind);
   kindRef.current = kind;
   const onCloseRef = useRef(onClose);
@@ -42,6 +45,8 @@ export const StudioFrame = ({
     setTrailClaims((count) => count + 1);
     return () => setTrailClaims((count) => count - 1);
   }, []);
+
+  useEffect(() => () => restoreStudioOpener({ opener, kind: kindRef.current }), [opener]);
 
   useEffect(() => {
     if (!isClosing) {

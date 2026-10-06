@@ -439,12 +439,31 @@ describe('moving across every place keeps one frame', () => {
       await boot({ seed: 'pr' });
       await openCrumb(/^Agents/);
 
-      const exits: ReadonlyArray<() => Promise<void>> = [
-        backToApp,
-        escape,
-        () => click(historyButton('Back')),
+      const exits: ReadonlyArray<readonly [() => Promise<void>, () => HTMLElement]> = [
+        [
+          async () => {
+            screen.getByRole('button', { name: /^Back to app/ }).focus();
+            await backToApp();
+          },
+          () => door('settings'),
+        ],
+        [
+          async () => {
+            screen.getByRole('searchbox', { name: 'Search settings' }).focus();
+            await escape();
+          },
+          () => door('settings'),
+        ],
+        [
+          async () => {
+            historyButton('Back').focus();
+            await click(historyButton('Back'));
+          },
+          () => historyButton('Back'),
+        ],
       ];
-      for (const exit of exits) {
+      for (const [exit, expectedFocus] of exits) {
+        door('settings').focus();
         await click(door('settings'));
         expect(studio()).toBe('settings');
         expect(screen.getByRole('navigation', { name: 'Settings scopes' })).toBeDefined();
@@ -459,7 +478,14 @@ describe('moving across every place keeps one frame', () => {
         expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
           false,
         );
+        expect(document.activeElement).toBe(expectedFocus());
       }
+
+      await openPalette(/^Settings$/, 'Settings');
+      expect(studio()).toBe('settings');
+      screen.getByRole('button', { name: /^Back to app/ }).focus();
+      await backToApp();
+      expect(document.activeElement, 'falls back to the Settings door').toBe(door('settings'));
       expectHealthy();
     },
     JOURNEY_MS,
@@ -646,12 +672,15 @@ describe('moving across every place keeps one frame', () => {
       expectColumn('column');
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
 
+      door('settings').focus();
       await click(door('settings'));
       expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
       expectColumn('settings');
+      screen.getByRole('button', { name: /^Back to app/ }).focus();
       await backToApp();
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       expectColumn('column');
+      expect(document.activeElement).toBe(door('settings'));
       expect(useAppStore.getState().branchTab[sessionId]).toBe('comments');
 
       for (const [id, kind] of STUDIO_DOORS) {

@@ -1127,7 +1127,9 @@ one click away. **Settings is the one studio that swaps the column**: the
 column's content cross-fades (160ms) to `‹ Back to app` (with its Esc hint),
 `Search settings` and the settings groups, and the page fills the content area.
 The band reads `Settings › App › General` and has no Close: Back to app, Esc
-and Back land alike. With the column folded into the rail, Settings shows its
+and Back land alike. On close, `StudioFrame` gives focus back to what opened
+the studio, or to the studio's door when that is gone (the palette), unless
+focus already sits outside the studio (`restoreStudioOpener`). With the column folded into the rail, Settings shows its
 groups beside the page instead. The one exception is the workspace launcher,
 which has no shell. There, Add workspace takes the whole window, and so do the
 app studios: Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide.
