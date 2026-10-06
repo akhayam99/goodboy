@@ -224,9 +224,6 @@ export const mountOpenRequestHead = ({ state, mountId }: RequestParams): string 
   return isOpenRequest({ request }) ? (request?.headSha ?? '') : null;
 };
 
-export const isMountRequestOpen = ({ state, mountId }: RequestParams): boolean =>
-  isOpenRequest({ request: mountRequestOf({ state, mountId }) });
-
 const seriesPositionOf = ({
   series,
   mountId,

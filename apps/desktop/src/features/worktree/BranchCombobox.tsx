@@ -3,7 +3,7 @@ import { Listbox, type ListboxOption } from '@goodboy/ui';
 import { branchChoiceGroup, branchChoiceOrigin, type BranchChoice } from './branchChoices';
 import type { LocalBranchInfo } from './worktree';
 
-export type PickableBranch = LocalBranchInfo & Partial<Omit<BranchChoice, keyof LocalBranchInfo>>;
+type PickableBranch = LocalBranchInfo & Partial<Omit<BranchChoice, keyof LocalBranchInfo>>;
 
 type Props = {
   readonly branches: ReadonlyArray<PickableBranch>;
