@@ -47,7 +47,7 @@ const h = vi.hoisted(() => ({
   updateSessionMountBranch: vi.fn(async () => true),
   getMountOperation: vi.fn(async () => null),
   upsertMountOperation: vi.fn(async () => undefined),
-  changeWorktreeBranch: vi.fn(async () => undefined),
+  changeWorktreeBranch: vi.fn(async () => ({ adopted: false })),
   emitNotification: vi.fn(async () => undefined),
 }));
 

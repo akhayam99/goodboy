@@ -17,6 +17,8 @@ export const A11Y_BASELINE = {
   'scene shell': [],
   'scene mounts': [],
   'scene mount-mismatch': [],
+  'scene foreign-stranded': [],
+  'scene foreign-picker': [],
   'scene resolve': [],
   'scene board': [],
   'scene board-shell': [],

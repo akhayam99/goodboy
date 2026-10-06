@@ -207,6 +207,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                       isRepo: true,
                       adopted: usedExistingBranch,
                       reused: created.reused,
+                      trackedRemote: created.trackedRemote === true,
                     }),
                     createdAt: timestamp,
                     updatedAt: timestamp,

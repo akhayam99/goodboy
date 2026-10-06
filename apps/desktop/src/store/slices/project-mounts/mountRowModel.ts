@@ -41,6 +41,7 @@ export type MountRequestView = Readonly<{
   title: string;
   label: string;
   mergedHeadSha?: string | null;
+  headSha?: string | null;
 }>;
 
 type MountSeriesPosition = Readonly<{
@@ -147,6 +148,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       title: githubPr.title,
       label: `PR #${githubPr.number}`,
       mergedHeadSha: mergedHeadOf({ state: githubPr.state, sha: githubPr.headSha }),
+      headSha: githubPr.headSha ?? null,
     };
   }
   const gitlab = (state.mountGitlabMr ?? {})[mountId];
@@ -172,6 +174,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       title: mapped.title,
       label: `MR !${mapped.number}`,
       mergedHeadSha: mergedHeadOf({ state: mapped.state, sha: gitlab?.mr?.sha }),
+      headSha: gitlab?.mr?.sha ?? null,
     };
   }
   const bitbucket = (state.mountBitbucketPr ?? {})[mountId];
@@ -200,6 +203,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
     title: bitbucketPr.title,
     label: `PR #${bitbucketPr.id}`,
     mergedHeadSha: mergedHeadOf({ state: bitbucketState, sha: bitbucketPr.sourceCommit }),
+    headSha: bitbucketPr.sourceCommit ?? null,
   };
 };
 
@@ -211,6 +215,14 @@ export const isMountCompleted = ({ state, mountId }: RequestParams): boolean =>
 
 export const isMountRequestMerged = ({ state, mountId }: RequestParams): boolean =>
   mountRequestOf({ state, mountId })?.state === 'merged';
+
+export const isOpenRequest = ({ request }: CompletedParams): boolean =>
+  request !== null && !isTerminal({ state: request.state });
+
+export const mountOpenRequestHead = ({ state, mountId }: RequestParams): string | null => {
+  const request = mountRequestOf({ state, mountId });
+  return isOpenRequest({ request }) ? (request?.headSha ?? '') : null;
+};
 
 const seriesPositionOf = ({
   series,

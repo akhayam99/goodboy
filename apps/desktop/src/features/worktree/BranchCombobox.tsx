@@ -1,36 +1,60 @@
 import { useMemo } from 'react';
 import { Listbox, type ListboxOption } from '@goodboy/ui';
+import { branchChoiceGroup, branchChoiceOrigin, type BranchChoice } from './branchChoices';
 import type { LocalBranchInfo } from './worktree';
 
+type PickableBranch = LocalBranchInfo & Partial<Omit<BranchChoice, keyof LocalBranchInfo>>;
+
 type Props = {
-  readonly branches: ReadonlyArray<LocalBranchInfo>;
+  readonly branches: ReadonlyArray<PickableBranch>;
   readonly value: string;
   readonly onChange: (v: string) => void;
   readonly disabled: boolean;
   readonly loading: boolean;
   readonly excludeNames?: ReadonlyArray<string>;
+  readonly emptyLabel?: string;
 };
 
 type PlaceholderParams = {
   readonly loading: boolean;
   readonly isEmpty: boolean;
+  readonly emptyLabel: string;
 };
 
-const placeholderOf = ({ loading, isEmpty }: PlaceholderParams): string => {
+const placeholderOf = ({ loading, isEmpty, emptyLabel }: PlaceholderParams): string => {
   if (loading) {
     return 'Loading branches';
   }
   if (isEmpty) {
-    return 'No local branches';
+    return emptyLabel;
   }
   return 'Choose a branch';
 };
 
-const branchMeta = ({ branch }: { branch: LocalBranchInfo }): string | undefined => {
-  const notes = [branch.inUse ? 'in use' : null, branch.hasUncommitted ? 'dirty' : null].filter(
-    (note): note is string => note !== null,
-  );
+const branchMeta = ({ branch }: { branch: PickableBranch }): string | undefined => {
+  const notes = [
+    branchChoiceOrigin({
+      choice: {
+        author: branch.author ?? null,
+        prNumber: branch.prNumber ?? null,
+        isDraft: branch.isDraft ?? false,
+      },
+    }),
+    branch.inUse ? 'in use' : null,
+    branch.hasUncommitted ? 'dirty' : null,
+  ].filter((note): note is string => note !== null);
   return notes.length === 0 ? undefined : notes.join(' · ');
+};
+
+const branchKeywords = ({ branch }: { branch: PickableBranch }): string | undefined => {
+  const prNumber = branch.prNumber ?? null;
+  const words = [
+    branch.author ?? '',
+    prNumber === null ? '' : `#${prNumber}`,
+    prNumber === null ? '' : `${prNumber}`,
+    branch.title ?? '',
+  ].filter((word) => word !== '');
+  return words.length === 0 ? undefined : words.join(' ');
 };
 
 export const BranchCombobox = ({
@@ -40,17 +64,25 @@ export const BranchCombobox = ({
   disabled,
   loading,
   excludeNames,
+  emptyLabel = 'No local branches',
 }: Props) => {
   const options = useMemo<ReadonlyArray<ListboxOption<string>>>(() => {
     const excluded = new Set(excludeNames ?? []);
     return branches
       .filter((branch) => !excluded.has(branch.name))
-      .map((branch) => ({
-        value: branch.name,
-        label: branch.name,
-        isCode: true,
-        meta: branchMeta({ branch }),
-      }));
+      .map((branch) => {
+        const keywords = branchKeywords({ branch });
+        return {
+          value: branch.name,
+          label: branch.name,
+          isCode: true,
+          meta: branchMeta({ branch }),
+          ...(branch.source === undefined
+            ? {}
+            : { group: branchChoiceGroup({ source: branch.source }) }),
+          ...(keywords === undefined ? {} : { keywords }),
+        };
+      });
   }, [branches, excludeNames]);
 
   return (
@@ -61,7 +93,7 @@ export const BranchCombobox = ({
       searchLabel="Search branches"
       searchPlaceholder="Search branches"
       noun="branch"
-      placeholder={placeholderOf({ loading, isEmpty: branches.length === 0 })}
+      placeholder={placeholderOf({ loading, isEmpty: branches.length === 0, emptyLabel })}
       disabled={disabled || branches.length === 0}
       value={value === '' ? null : value}
       options={options}

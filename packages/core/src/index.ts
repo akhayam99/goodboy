@@ -593,6 +593,8 @@ export {
   listInboxPullRequests,
   listIssueComments,
   listMyReviewReplies,
+  listOpenPrBranches,
+  type OpenPrBranch,
   listOwnedRepos,
   parseStyleNote,
   type ReplyStyleDeps,

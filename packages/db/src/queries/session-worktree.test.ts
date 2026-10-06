@@ -176,6 +176,48 @@ describe('updateSessionMountBranch', () => {
   });
 });
 
+describe('updateSessionMountBranch origin', () => {
+  it('records how the new branch came to be and keeps the origin when none is given', async () => {
+    const db = await seed();
+    await insertSessionWorktree(db, {
+      id: 'mount-origin',
+      sessionId,
+      worktreePath: '/tmp/wt/origin',
+      branch: 'ak/own',
+      parallelIndex: 0,
+      createdAt: Date.now(),
+    });
+    await db.execute("UPDATE session_worktrees SET branch_origin = 'created' WHERE id = ?", [
+      'mount-origin',
+    ]);
+    const mountId = 'mount-origin' as MountId;
+
+    await updateSessionMountBranch({
+      db,
+      sessionId,
+      mountId,
+      branch: 'ak/next',
+      expectedRevision: 0,
+      updatedAt: new Date().toISOString() as IsoDateTime,
+    });
+    const kept = (await listSessionMounts({ db, sessionId }))[0];
+    await updateSessionMountBranch({
+      db,
+      sessionId,
+      mountId,
+      branch: 'grw-1348-cta-for-the-slot',
+      branchOrigin: 'adopted',
+      expectedRevision: 1,
+      updatedAt: new Date().toISOString() as IsoDateTime,
+    });
+    const adopted = (await listSessionMounts({ db, sessionId }))[0];
+
+    expect(kept?.branchOrigin).toBe('created');
+    expect(adopted?.branchOrigin).toBe('adopted');
+    expect(adopted?.branch).toBe('grw-1348-cta-for-the-slot');
+  });
+});
+
 describe('deleteWorktreesForSession', () => {
   it('releases physical paths without deleting logical mount history', async () => {
     const db = await seed();

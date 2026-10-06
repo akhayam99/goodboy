@@ -3,9 +3,10 @@ import { ChevronRight } from 'lucide-react';
 import { Button, Collapsible, EmptyLine, Skeleton, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
-import type {
-  MountProjectGroup,
-  MountRowView,
+import {
+  isOpenRequest,
+  type MountProjectGroup,
+  type MountRowView,
 } from '../../../../../store/slices/project-mounts/mountRowModel';
 import {
   CONCEPT_ICONS,
@@ -60,6 +61,7 @@ export const ProjectMountGroup = ({
       baseBranch: row.baseBranch,
       isMainCheckout: row.isMainCheckout,
       isRequestMerged: row.request?.state === 'merged',
+      hasOpenRequest: isOpenRequest({ request: row.request }),
       commitsAfterMerge: commitsAfterMergeOf(row),
     });
   const isMovedPastMerge = (row: MountRowView): boolean => commitsAfterMergeOf(row) !== null;

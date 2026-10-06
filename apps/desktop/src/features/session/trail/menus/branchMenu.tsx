@@ -23,6 +23,7 @@ import {
   isBranchMergedOf,
   mainPresenceOf,
   type BranchPriorityKind,
+  type OpenRequestHead,
 } from '../../../../shared/lib/branchPresence';
 import { DiffStat } from '../../components/DiffStat';
 
@@ -37,6 +38,7 @@ type Params = {
   readonly statOf: (mount: SessionProjectMount) => BranchStat | null;
   readonly statusOf: (mount: SessionProjectMount) => WorktreeStatus | null;
   readonly isRequestMergedOf: (mount: SessionProjectMount) => boolean;
+  readonly openRequestOf?: (mount: SessionProjectMount) => OpenRequestHead | null;
   readonly actions: ReadonlyArray<CrumbMenuAction>;
   readonly onSelect: (mount: SessionProjectMount) => void;
 };
@@ -49,6 +51,7 @@ const PRIORITY_LOOK = {
   'gone-on-origin': { tone: 'danger', glyph: CloudOff },
   diverged: { tone: 'warning', glyph: GitCompare },
   'local-only': { tone: 'warning', glyph: Laptop },
+  'not-on-pr': { tone: 'warning', glyph: TriangleAlert },
   'behind-main': { tone: 'warning', glyph: ArrowDown },
   'rebase-stopped': { tone: 'warning', glyph: TriangleAlert },
   'rebasing-on-main': { tone: 'info', glyph: RefreshCw },
@@ -61,12 +64,14 @@ type BranchStateParams = {
   readonly status: WorktreeStatus | null;
   readonly mount: BranchPlace | null;
   readonly isRequestMerged: boolean;
+  readonly openRequest: OpenRequestHead | null;
 };
 
 const branchStateOf = ({
   status,
   mount,
   isRequestMerged,
+  openRequest,
 }: BranchStateParams): CrumbState | null => {
   if (status === null) {
     return null;
@@ -79,9 +84,10 @@ const branchStateOf = ({
         baseBranch: mount.baseBranch,
         isMainCheckout: mount.worktreePath === mount.repoRoot,
         isRequestMerged: false,
+        hasOpenRequest: openRequest !== null,
       }));
   const priority = branchPriorityOf({
-    presence: branchPresenceOf({ status, isMerged }),
+    presence: branchPresenceOf({ status, isMerged, openRequest }),
     main: mainPresenceOf({ status, isRebasingAgent: false }),
   });
   return { word: priority.word, ...PRIORITY_LOOK[priority.kind] };
@@ -93,6 +99,7 @@ export const branchMenu = ({
   statOf,
   statusOf,
   isRequestMergedOf,
+  openRequestOf = () => null,
   actions,
   onSelect,
 }: Params): CrumbMenuModel => {
@@ -114,6 +121,7 @@ export const branchMenu = ({
         status: statusOf(mount),
         mount,
         isRequestMerged: isRequestMergedOf(mount),
+        openRequest: openRequestOf(mount),
       }),
       isCurrent: mount.worktreePath === currentPath,
       isDisabled: false,

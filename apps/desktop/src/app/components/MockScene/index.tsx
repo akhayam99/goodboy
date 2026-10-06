@@ -23,6 +23,7 @@ import { OverviewUnassignedNotesScene } from './scenes/OverviewUnassignedNotesSc
 import { LinkScopeScene } from './scenes/LinkScopeScene';
 import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
+import { ForeignBranchScene } from './scenes/ForeignBranchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveLaunchScene } from './scenes/ResolveLaunchScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
@@ -209,6 +210,8 @@ export const MOCK_SCENES = {
   'task-links-undo': TaskLinksUndoScene,
   'overview-refreshing': OverviewRefreshingScene,
   'mount-mismatch': MountMismatchScene,
+  'foreign-stranded': () => <ForeignBranchScene state="stranded" />,
+  'foreign-picker': () => <ForeignBranchScene state="picker" />,
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
   'resolve-launch': ResolveLaunchScene,

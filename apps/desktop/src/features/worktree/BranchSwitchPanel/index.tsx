@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Check, Copy, GitBranch } from 'lucide-react';
 import {
   Button,
@@ -14,7 +14,8 @@ import { useToast } from '../../../shared/components/Toast';
 import { useAppStore, useSessionById } from '../../../store';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { BranchCombobox } from '../BranchCombobox';
-import { getCachedLocalBranches, listLocalBranches, type LocalBranchInfo } from '../worktree';
+import { branchChoiceOrigin } from '../branchChoices';
+import { useBranchChoices } from '../useBranchChoices';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { selectMountById } from '../../../store/slices/project-mounts/selectors';
 
@@ -39,47 +40,21 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
   const repoRoot = useAppStore(
     (state) => resolveSessionRepo({ state, sessionId, mountId })?.repoRoot ?? null,
   );
+  const projectId = useAppStore(
+    (state) => resolveSessionRepo({ state, sessionId, mountId })?.projectId ?? null,
+  );
   const { showToast } = useToast();
   const { copiedKey, failedKey, copy } = useCopyLink();
   const [branchMode, setBranchMode] = useState<'existing' | 'new'>('new');
   const [branchTarget, setBranchTarget] = useState('');
-  const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>(() =>
-    repoRoot != null ? (getCachedLocalBranches(repoRoot) ?? []) : [],
-  );
-  const [isBranchesLoading, setIsBranchesLoading] = useState(() => repoRoot != null);
+  const { choices: branches, isLoading: isBranchesLoading } = useBranchChoices({
+    repoRoot,
+    ...(session == null ? {} : { workspaceId: session.workspaceId }),
+    ...(projectId === null ? {} : { projectId }),
+  });
   const [isBusy, setIsBusy] = useState(false);
   const [isReuseConfirmed, setIsReuseConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (repoRoot == null) {
-      return;
-    }
-    const rootPath = repoRoot;
-    const cached = getCachedLocalBranches(rootPath);
-    setBranches(cached ?? []);
-    setIsBranchesLoading(true);
-    let cancelled = false;
-    listLocalBranches(rootPath)
-      .then((result) => {
-        if (!cancelled) {
-          setBranches(result);
-        }
-      })
-      .catch(() => {
-        if (!cancelled && cached == null) {
-          setBranches([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsBranchesLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [repoRoot]);
 
   if (session == null || workspace == null || isBranchlessSession({ branch })) {
     return null;
@@ -90,6 +65,10 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
   const isOwnedByOtherSession = Object.entries(sessionBranches).some(
     ([otherSessionId, otherBranch]) => otherSessionId !== sessionId && otherBranch === target,
   );
+  const typedRemote =
+    branchMode === 'new' && targetInfo !== null && targetInfo.source !== 'local'
+      ? targetInfo
+      : null;
   const isInUseElsewhere = targetInfo?.inUse === true;
   const isDirty = targetInfo?.hasUncommitted === true;
   const needsConfirmation =
@@ -190,6 +169,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           }}
           disabled={isBusy}
           loading={isBranchesLoading}
+          emptyLabel="No branches"
           excludeNames={branch == null ? undefined : [branch]}
         />
       ) : (
@@ -205,6 +185,15 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           aria-label="New branch"
           disabled={isBusy}
           className="font-mono"
+        />
+      )}
+
+      {typedRemote === null ? null : (
+        <Notice
+          tone="info"
+          placement="inline"
+          title="That branch is already on origin"
+          body={`${branchChoiceOrigin({ choice: typedRemote }) ?? 'Pushed by someone else'}. Switching continues it.`}
         />
       )}
 
