@@ -102,8 +102,116 @@ beforeEach(async () => {
   await insertResolveQueueItem({ db, item });
 });
 
+const CHANGED_SINCE_OPENED = 'This answer changed since you opened it. Review it again.';
+
+const viewRevisionOf = ({
+  live,
+}: {
+  readonly live: ReturnType<typeof createHarness>;
+}): number | undefined =>
+  live.store.getState().sessionResolveThreads[sessionId]?.find((row) => row.threadId === 'thread')
+    ?.revision;
+
+describe('accepting after the thread moved under an open item', () => {
+  it('accepts after a stage write moved the revision without touching the answer', async () => {
+    const live = createHarness();
+    await live.actions.updateResolveThread({
+      sessionId,
+      threadId: 'thread',
+      patch: { stage: 'approved', githubResolved: false },
+    });
+    const revision = viewRevisionOf({ live });
+    expect(revision).toBe(3);
+    await live.actions.acceptResolveQueueItem({
+      sessionId,
+      itemId: item.id,
+      revision: revision ?? -1,
+      reply: 'Reply',
+    });
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item).toMatchObject({
+      approvalState: 'accepted',
+      approvedRevision: 3,
+    });
+  });
+
+  it('refuses after a stage write moved the revision without touching the answer', async () => {
+    const live = createHarness();
+    await live.actions.updateResolveThread({
+      sessionId,
+      threadId: 'thread',
+      patch: { stage: 'approved' },
+    });
+    await live.actions.refuseResolveQueueItem({
+      sessionId,
+      itemId: item.id,
+      revision: viewRevisionOf({ live }) ?? -1,
+      reply: 'Reply',
+    });
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe(
+      'wont_fix',
+    );
+  });
+
+  it('retries once with the fresh revision when the answer the owner saw is unchanged', async () => {
+    const live = createHarness();
+    await db.execute('UPDATE resolve_threads SET revision = 5');
+    live.store.setState({
+      sessionResolveThreads: { [sessionId]: [{ ...thread, revision: 5 }] },
+    });
+    await live.actions.acceptResolveQueueItem({
+      sessionId,
+      itemId: item.id,
+      revision: 5,
+      reply: 'Reply',
+    });
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item).toMatchObject({
+      approvalState: 'accepted',
+      candidateRevision: 5,
+      approvedRevision: 5,
+    });
+  });
+
+  it('refreshes the view and writes nothing when the answer changed after the owner looked', async () => {
+    const live = createHarness();
+    await live.actions.updateResolveThread({
+      sessionId,
+      threadId: 'thread',
+      patch: { replyDraft: 'A different reply' },
+    });
+    live.store.setState({
+      sessionResolveThreads: { [sessionId]: [thread] },
+    });
+    await expect(
+      live.actions.acceptResolveQueueItem({
+        sessionId,
+        itemId: item.id,
+        revision: 2,
+        reply: 'Reply',
+      }),
+    ).rejects.toThrow(CHANGED_SINCE_OPENED);
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
+    expect(viewRevisionOf({ live })).toBe(3);
+    expect(live.store.getState().sessionResolveThreads[sessionId]?.[0]?.replyDraft).toBe(
+      'A different reply',
+    );
+    expect(live.store.getState().sessionResolveQueueItems[sessionId]).toHaveLength(1);
+  });
+
+  it('says the answer changed when a refusal misses, never the raw revision error', async () => {
+    const live = createHarness();
+    await expect(
+      live.actions.refuseResolveQueueItem({
+        sessionId,
+        itemId: item.id,
+        revision: 1,
+        reply: 'Reply',
+      }),
+    ).rejects.toThrow(CHANGED_SINCE_OPENED);
+  });
+});
+
 describe('resolve queue actions', () => {
-  it('accepts the observed revision and fails loudly for a stale revision', async () => {
+  it('accepts the observed revision and asks for a new review when the view is behind', async () => {
     const live = createHarness();
     await expect(
       live.actions.acceptResolveQueueItem({
@@ -112,7 +220,8 @@ describe('resolve queue actions', () => {
         revision: 1,
         reply: 'Old',
       }),
-    ).rejects.toThrow('stale');
+    ).rejects.toThrow(CHANGED_SINCE_OPENED);
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
     await live.actions.acceptResolveQueueItem({
       sessionId,
       itemId: item.id,

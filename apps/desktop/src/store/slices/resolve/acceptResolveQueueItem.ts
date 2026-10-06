@@ -21,6 +21,7 @@ import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
 import { projectResolveRows } from './projectResolveRows';
 import { remapIntegratedCommits } from './remapIntegratedCommits';
 import { saveResolveThread } from './saveResolveThread';
+import { STALE_APPROVAL, withStaleRecovery } from './staleApproval';
 import { withSavedReplyDraft } from './saveResolveReplyDraft';
 import {
   UNCAPTURED_WORK_ON_BRANCH,
@@ -37,7 +38,6 @@ type Covered = {
 
 export const PARTIAL_ACCEPTANCE =
   'This change also answers comments you left for later. Resolve them together, or take those back up first';
-export const STALE_APPROVAL = 'Approval revision is stale';
 const ACCEPT_CONFLICT =
   'This fix collides with one accepted before it. Redo it on top of the branch';
 const NO_LONGER_APPLIES = 'the fix no longer applies on the branch';
@@ -91,6 +91,24 @@ export const PARTIAL_REFUSAL =
   'This change also answers comments you said you will not fix. Take those back up first';
 
 export const acceptResolveQueueItem = async ({
+  set,
+  get,
+  sessionId,
+  itemId,
+  revision,
+  reply,
+}: Params): Promise<void> =>
+  withStaleRecovery({
+    set,
+    get,
+    sessionId,
+    itemId,
+    revision,
+    run: ({ revision: current }) =>
+      acceptAtRevision({ set, get, sessionId, itemId, revision: current, reply }),
+  });
+
+const acceptAtRevision = async ({
   set,
   get,
   sessionId,
