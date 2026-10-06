@@ -77,7 +77,7 @@ afterEach(() => {
 
 describe('NavCluster', () => {
   it('opens a new chat from the Chat button right of Board', () => {
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     const buttons = screen.getAllByRole('button').map((button) => button.textContent);
     expect(buttons.indexOf('Chat')).toBe(buttons.indexOf('Board') + 1);
@@ -88,7 +88,7 @@ describe('NavCluster', () => {
   it('shows a pulsing dot and counts running chats on the Chat button', () => {
     store.chatStreams = { 'chat-1': {}, 'chat-2': {} };
     store.unreadChatIds = ['chat-3'];
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.getAttribute('data-chat-activity')).toBe('running');
@@ -101,7 +101,7 @@ describe('NavCluster', () => {
 
   it('names a single running chat', () => {
     store.chatStreams = { 'chat-1': {} };
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('1 chat running');
@@ -109,7 +109,7 @@ describe('NavCluster', () => {
 
   it('shows a still dot for a new reply once nothing is running', () => {
     store.unreadChatIds = ['chat-3'];
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.getAttribute('data-chat-activity')).toBe('unread');
@@ -122,7 +122,7 @@ describe('NavCluster', () => {
   });
 
   it('shows no dot when the chats are quiet', () => {
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.getAttribute('data-chat-activity')).toBeNull();
@@ -131,7 +131,7 @@ describe('NavCluster', () => {
 
   it('marks Chat current while the chat studio is open', () => {
     store.appStudio = { kind: 'chat' };
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     const chat = screen.getByRole('button', { name: 'Chat' });
     expect(chat.getAttribute('aria-current')).toBe('page');
@@ -140,7 +140,7 @@ describe('NavCluster', () => {
   });
 
   it('shows Board with its word, current and inert on the board', () => {
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     const board = screen.getByRole('button', { name: 'Board' });
     expect(board.textContent).toContain('Board');
@@ -153,7 +153,7 @@ describe('NavCluster', () => {
 
   it('closes a studio over the board and keeps the same word in the tooltip', () => {
     store.appStudio = { kind: 'settings' };
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     const board = screen.getByRole('button', { name: 'Board' });
     expect(board.getAttribute('aria-current')).toBeNull();
@@ -164,14 +164,14 @@ describe('NavCluster', () => {
 
   it('goes to the board from a session as a history move', () => {
     store.currentSessionId = SESSION_ID;
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Board' }));
     expect(store.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
   });
 
   it('disables Back with nothing behind, and names the destination when there is one', () => {
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
     const back = screen.getByRole('button', { name: 'Back' });
     expect(back.getAttribute('aria-disabled')).toBe('true');
     expect(back.parentElement?.getAttribute('data-tooltip')).toBe('Nothing to go back to');
@@ -180,7 +180,7 @@ describe('NavCluster', () => {
 
     cleanup();
     store.navigation = { 'ws-1': { entries: [sessionView('review'), BOARD_ENTRY], index: 1 } };
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
     const live = screen.getByRole('button', { name: 'Back to Review' });
     expect(live.parentElement?.getAttribute('data-tooltip')).toContain(
       'Back to Review · Retry failed webhook deliveries',
@@ -193,7 +193,7 @@ describe('NavCluster', () => {
     store.navigation = {
       'ws-1': { entries: [sessionView(null), sessionView('review'), BOARD_ENTRY], index: 2 },
     };
-    render(<NavCluster />);
+    render(<NavCluster hasDoors />);
 
     fireEvent.contextMenu(screen.getByRole('button', { name: 'Back to Review' }));
     const items = screen.getAllByRole('menuitemradio');

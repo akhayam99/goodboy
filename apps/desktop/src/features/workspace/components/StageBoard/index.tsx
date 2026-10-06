@@ -90,9 +90,10 @@ type FocusRequest = {
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessions: ReadonlyArray<Session>;
+  readonly hasNewSession?: boolean;
 };
 
-export const StageBoard = ({ workspaceId, sessions }: Props) => {
+export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Props) => {
   const [ongoingFilter, setOngoingFilter] = useState<string | null>(null);
   const ongoingSessionIds = useAppStore(
     useShallow((s) =>
@@ -315,7 +316,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             <span className="flex shrink-0 items-center gap-2">
               <ProjectGitPills entries={projectGitStatuses} />
               <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
-              {hasUsableProject ? (
+              {!hasNewSession ? null : hasUsableProject ? (
                 newSessionButton
               ) : (
                 <Tooltip content={blockedReason} side="bottom">

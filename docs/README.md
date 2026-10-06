@@ -90,8 +90,8 @@ Below is the full index. Other docs and agents use it to find their way.
 - [file-system.md](file-system.md): when you decide where a new file or
   folder goes inside `apps/desktop/src/`.
 - [navigation.md](navigation.md): when you decide which parts of the screen
-  exist and where they sit, like a pane, the sidebar, a strip, the footer
-  or the breadcrumb.
+  exist and where they sit, like a pane, the left column, a strip or the
+  breadcrumb.
 - [tone-of-voice.md](tone-of-voice.md): when you write any text a user
   reads, like the README, the website, release notes, in-app copy or error
   messages.

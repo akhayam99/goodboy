@@ -7,13 +7,13 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { OnboardingStepId } from '../../../../features/onboarding/onboarding-store';
+import type { OnboardingStepId } from '../../../features/onboarding/onboarding-store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../store/storyHarness';
+} from '../../../store/storyHarness';
 
 const { mocks } = vi.hoisted(() => ({
   mocks: {
@@ -34,37 +34,37 @@ const { mocks } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../features/onboarding/onboarding-store', async (importOriginal) => ({
+vi.mock('../../../features/onboarding/onboarding-store', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   collapse: mocks.collapse,
   finish: mocks.finish,
 }));
 
-vi.mock('../../../../features/onboarding/hooks/useOnboardingProgress', () => ({
+vi.mock('../../../features/onboarding/hooks/useOnboardingProgress', () => ({
   useOnboardingProgress: () => mocks.progress,
 }));
 
-vi.mock('../../../../features/onboarding/SetupChecklist/ChecklistBody', () => ({
+vi.mock('../../../features/onboarding/SetupChecklist/ChecklistBody', () => ({
   ChecklistBody: () => <div data-testid="checklist" />,
 }));
 
-vi.mock('../../../../features/settings/hooks/useHasBugReportDraft', () => ({
+vi.mock('../../../features/settings/hooks/useHasBugReportDraft', () => ({
   useHasBugReportDraft: () => mocks.hasDraft,
 }));
 
-vi.mock('../../../../features/updater/hooks/useRunningAgentCount', () => ({
+vi.mock('../../../features/updater/hooks/useRunningAgentCount', () => ({
   useRunningAgentCount: () => 0,
 }));
 
-vi.mock('../../../../shared/lib/editor', () => ({
+vi.mock('../../../shared/lib/editor', () => ({
   openUrl: mocks.openUrl,
 }));
 
-import { applyDocumentTheme } from '../../../../shared/lib/theme';
-import { APP_VERSION } from '../../../../shared/lib/appVersion';
-import { SOCIAL_LINKS, SPONSOR_URL } from '../../../../shared/lib/productLinks';
+import { applyDocumentTheme } from '../../../shared/lib/theme';
+import { APP_VERSION } from '../../../shared/lib/appVersion';
+import { SOCIAL_LINKS, SPONSOR_URL } from '../../../shared/lib/productLinks';
 import { GoodboyChip } from './index';
-import { OPEN_REPORT_SHEET_EVENT } from '../../../../features/bug-report/openReportSheet';
+import { OPEN_REPORT_SHEET_EVENT } from '../../../features/bug-report/openReportSheet';
 
 const REST_LABEL = 'Goodboy beta: version, help and sponsor';
 
@@ -253,5 +253,44 @@ describe('GoodboyChip', () => {
 
     expect(mocks.collapse).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+  });
+});
+
+describe('GoodboyChip in the column and on the rail', () => {
+  it('spells Goodboy, beta and the version in the column row at every width', () => {
+    mocks.progress.finished = true;
+    render(<GoodboyChip variant="column" onOpenChangelog={vi.fn()} onOpenShortcuts={vi.fn()} />);
+
+    const chip = screen.getByRole('button', { name: REST_LABEL });
+    expect(chip.textContent).toBe(`GoodboyBetav${APP_VERSION}`);
+    expect(chip.getAttribute('data-goodboy-chip')).toBe('column');
+  });
+
+  it('keeps only the mark on the rail, with the state in its name', () => {
+    render(<GoodboyChip variant="rail" onOpenChangelog={vi.fn()} onOpenShortcuts={vi.fn()} />);
+
+    const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
+    expect(chip.textContent).toBe('');
+    fireEvent.click(chip);
+    expect(screen.getByRole('dialog', { name: 'Goodboy' })).toBeDefined();
+  });
+
+  it('opens itself only from the primary chip, so a peeked column never opens a second menu', async () => {
+    mocks.progress.collapsed = false;
+    mocks.progress.completed = new Set<OnboardingStepId>(['provider', 'project', 'firstSession']);
+    await act(async () => {
+      render(
+        <GoodboyChip
+          variant="column"
+          isPrimary={false}
+          onOpenChangelog={vi.fn()}
+          onOpenShortcuts={vi.fn()}
+        />,
+      );
+    });
+
+    expect(mocks.collapse).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    expect(screen.queryByTestId('goodboy-chip')).toBeNull();
   });
 });

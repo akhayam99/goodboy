@@ -23,7 +23,6 @@ import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { sessionGroupPresentation } from './groupPresentation';
-import { NewSessionButton } from './NewSessionButton';
 import { SessionViewMenu } from './SessionViewMenu';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionPages } from './SessionPages';
@@ -249,9 +248,6 @@ export const SessionActivityBar = ({
 
   return (
     <div ref={barRef} className="relative flex h-full min-h-0 w-full shrink-0 flex-col gap-1">
-      <div className="flex shrink-0 items-center px-2 pt-2">
-        <NewSessionButton workspaceId={workspaceId} />
-      </div>
       <div className="flex h-7 shrink-0 items-center justify-between pl-3 pr-2">
         <Eyebrow label="Sessions" muted />
         <SessionViewMenu

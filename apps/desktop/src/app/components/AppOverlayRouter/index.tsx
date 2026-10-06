@@ -8,6 +8,7 @@ import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard'
 import type { InboxStudioFocus, StudioPlace } from '../../../store';
 import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import { StudioFrame } from '../StudioFrame';
+import type { StudioPlacement } from '../StudioFrame/studioPlacement';
 import { isAppScopeOverlay } from '../../hooks/useAppOverlays/overlayState';
 import type { PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { AppScopeOverlays } from './AppScopeOverlays';
@@ -90,6 +91,8 @@ type StudioParams = {
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly offerWorkspaceRepo: () => void;
+  readonly placement?: StudioPlacement;
+  readonly settingsColumnSlot?: HTMLElement | null;
 };
 
 const renderStudio = ({
@@ -102,6 +105,7 @@ const renderStudio = ({
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
+  settingsColumnSlot = null,
 }: StudioParams): ReactNode => {
   switch (overlay.kind) {
     case 'settings':
@@ -111,6 +115,7 @@ const renderStudio = ({
           focus={overlay.focus}
           onScopeChange={onSettingsScopeChange}
           onClose={close}
+          columnSlot={settingsColumnSlot}
         />
       );
     case 'guide':
@@ -179,12 +184,19 @@ export const AppStudio = ({
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
+  placement = 'cover',
+  settingsColumnSlot = null,
 }: Omit<StudioParams, 'overlay'> & { readonly overlay: StudioPlace | null }) => {
   if (overlay === null) {
     return null;
   }
   return (
-    <StudioFrame kind={overlay.kind} onClose={close}>
+    <StudioFrame
+      kind={overlay.kind}
+      onClose={close}
+      placement={placement}
+      isClosable={overlay.kind !== 'settings' || settingsColumnSlot === null}
+    >
       {renderStudio({
         overlay,
         close,
@@ -195,6 +207,7 @@ export const AppStudio = ({
         currentWorkspace,
         workspaceProjectRoot,
         offerWorkspaceRepo,
+        settingsColumnSlot,
       })}
     </StudioFrame>
   );

@@ -148,14 +148,15 @@ export const ProvidersScene = () => {
   return (
     <StudioFrame
       target={{ place: 'settings', tool: null }}
-      main={
+      main={(columnSlot) => (
         <SettingsStudio
           currentWorkspace={WORKSPACE}
           focus={{ scope: 'providers' }}
           onScopeChange={() => undefined}
           onClose={() => undefined}
+          columnSlot={columnSlot}
         />
-      }
+      )}
     />
   );
 };

@@ -1,0 +1,3 @@
+export const PROVIDERS_PANEL_WIDTH = 500;
+
+export const PROVIDERS_PANEL_HEIGHT = 520;

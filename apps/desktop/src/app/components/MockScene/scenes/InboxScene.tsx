@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
-import { IconButton, PaneShell } from '@goodboy/ui';
-import { RefreshCw } from 'lucide-react';
+import { PaneShell } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { InboxDetail } from '../../../../features/inbox/components/InboxStudio/InboxDetail';
 import { InboxFacetRail } from '../../../../features/inbox/components/InboxStudio/InboxFacetRail';
 import { InboxList } from '../../../../features/inbox/components/InboxStudio/InboxList';
+import { InboxListHeader } from '../../../../features/inbox/components/InboxStudio/InboxListHeader';
 import { InboxStudioLayout } from '../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
 import { NO_INBOX_FILTERS, inboxFacetCounts } from '../../../../features/inbox/kindFilter';
 import { orderInboxRecords } from '../../../../features/inbox/orderInboxRecords';
@@ -279,6 +279,7 @@ const CONNECTED: ReadonlyArray<InboxProvider> = ['github', 'linear', 'jira', 'se
 export const InboxScene = () => {
   const [isReady, setIsReady] = useState(false);
   const projects = useAppStore((state) => state.projects);
+  const searchRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     installIpc();
@@ -304,28 +305,39 @@ export const InboxScene = () => {
         >
           {() => (
             <InboxStudioLayout
-              rail={
-                <InboxFacetRail
-                  filters={NO_INBOX_FILTERS}
-                  counts={inboxFacetCounts({
-                    records: RECORDS,
-                    query: '',
-                    filters: NO_INBOX_FILTERS,
-                  })}
-                  connected={CONNECTED}
-                  loading={NOT_LOADING}
-                  errors={NO_ERRORS}
-                  projects={projects}
-                  onFiltersChange={noop}
-                  onClearFilters={noop}
-                />
-              }
               list={
                 <PaneShell
                   scroll="body"
                   title="All items"
                   meta={`${RECORDS.length} items`}
-                  actions={<IconButton icon={RefreshCw} label="Refresh inbox" onClick={noop} />}
+                  actions={
+                    <InboxListHeader
+                      query=""
+                      onQueryChange={noop}
+                      searchRef={searchRef}
+                      sessionLabel={null}
+                      onClearSession={noop}
+                      isRefreshing={false}
+                      onRefresh={noop}
+                      activeFilterCount={0}
+                      facets={
+                        <InboxFacetRail
+                          filters={NO_INBOX_FILTERS}
+                          counts={inboxFacetCounts({
+                            records: RECORDS,
+                            query: '',
+                            filters: NO_INBOX_FILTERS,
+                          })}
+                          connected={CONNECTED}
+                          loading={NOT_LOADING}
+                          errors={NO_ERRORS}
+                          projects={projects}
+                          onFiltersChange={noop}
+                          onClearFilters={noop}
+                        />
+                      }
+                    />
+                  }
                 >
                   <InboxList
                     days={groupByDay({

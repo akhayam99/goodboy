@@ -79,6 +79,15 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
 
 const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
 
+const openFilterRail = (): HTMLElement => {
+  const shown = screen.queryByRole('navigation', { name: 'Filter notifications' });
+  if (shown !== null) {
+    return shown;
+  }
+  fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+  return screen.getByRole('navigation', { name: 'Filter notifications' });
+};
+
 beforeEach(() => {
   state.notifications = [];
   state.notificationCounts = [];
@@ -145,7 +154,7 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    const rail = screen.getByRole('navigation', { name: 'Filter notifications' });
+    const rail = openFilterRail();
     expect(within(rail).getByRole('button', { name: /errors 1/i })).toBeDefined();
     fireEvent.click(within(rail).getByRole('button', { name: /warnings/i }));
 
@@ -171,7 +180,7 @@ describe('NotificationsStudio', () => {
       ],
     });
     renderStudio();
-    const rail = screen.getByRole('navigation', { name: 'Filter notifications' });
+    const rail = openFilterRail();
 
     fireEvent.click(within(rail).getByRole('button', { name: /^unread/i }));
     expect(screen.getByText('Unread row')).toBeDefined();
@@ -185,6 +194,7 @@ describe('NotificationsStudio', () => {
   it('defaults to this workspace and switches to every workspace', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
+    openFilterRail();
 
     expect(screen.getByRole('tab', { name: /harborline/i }).getAttribute('aria-selected')).toBe(
       'true',
@@ -330,8 +340,9 @@ describe('NotificationsStudio', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /warnings/i }));
+    fireEvent.click(within(openFilterRail()).getByRole('button', { name: /warnings/i }));
     expect(screen.getByRole('heading', { name: 'No notifications match' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Filters/ }).textContent).toContain('1');
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(screen.getByText('Summarizer failed')).toBeDefined();

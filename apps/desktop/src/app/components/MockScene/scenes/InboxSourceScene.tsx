@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
-import { IconButton, PaneShell } from '@goodboy/ui';
-import { RefreshCw } from 'lucide-react';
+import { PaneShell } from '@goodboy/ui';
 import type { ProjectId, ProjectSentryLink } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -14,9 +13,11 @@ import { InboxDetail } from '../../../../features/inbox/components/InboxStudio/I
 import { InboxFacetRail } from '../../../../features/inbox/components/InboxStudio/InboxFacetRail';
 import { recordCanReply } from '../../../../features/inbox/recordCanReply';
 import { InboxList } from '../../../../features/inbox/components/InboxStudio/InboxList';
+import { InboxListHeader } from '../../../../features/inbox/components/InboxStudio/InboxListHeader';
 import { InboxStudioLayout } from '../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
 import {
   NO_INBOX_FILTERS,
+  activeFilterCount,
   filterInboxRecords,
   inboxFacetCounts,
   type InboxFilters,
@@ -278,6 +279,7 @@ export const InboxSourceScene = () => {
     return () => clearTimeout(timer);
   }, [isReady, variant.isLaunching]);
 
+  const searchRef = useRef<HTMLInputElement | null>(null);
   const records = useMemo(
     () =>
       attachInboxProjects({
@@ -313,19 +315,6 @@ export const InboxSourceScene = () => {
         >
           {() => (
             <InboxStudioLayout
-              rail={
-                <InboxFacetRail
-                  filters={filters}
-                  counts={inboxFacetCounts({ records, query: '', filters })}
-                  connected={variant.connected}
-                  loading={NOT_LOADING}
-                  errors={NO_ERRORS}
-                  projects={projects}
-                  canReply={recordCanReply({ record: selected })}
-                  onFiltersChange={setFilters}
-                  onClearFilters={() => setFilters(NO_INBOX_FILTERS)}
-                />
-              }
               list={
                 <PaneShell
                   scroll="body"
@@ -335,7 +324,31 @@ export const InboxSourceScene = () => {
                       : 'Inbox'
                   }
                   meta={`${visible.length} items`}
-                  actions={<IconButton icon={RefreshCw} label="Refresh inbox" onClick={noop} />}
+                  actions={
+                    <InboxListHeader
+                      query=""
+                      onQueryChange={noop}
+                      searchRef={searchRef}
+                      sessionLabel={null}
+                      onClearSession={noop}
+                      isRefreshing={false}
+                      onRefresh={noop}
+                      activeFilterCount={activeFilterCount({ filters })}
+                      facets={
+                        <InboxFacetRail
+                          filters={filters}
+                          counts={inboxFacetCounts({ records, query: '', filters })}
+                          connected={variant.connected}
+                          loading={NOT_LOADING}
+                          errors={NO_ERRORS}
+                          projects={projects}
+                          canReply={recordCanReply({ record: selected })}
+                          onFiltersChange={setFilters}
+                          onClearFilters={() => setFilters(NO_INBOX_FILTERS)}
+                        />
+                      }
+                    />
+                  }
                 >
                   <InboxList
                     days={groupByDay({

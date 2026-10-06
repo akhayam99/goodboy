@@ -5,6 +5,7 @@ import {
   WAIT,
   band,
   both,
+  click,
   clickButton,
   heading,
   openPalette,
@@ -15,7 +16,15 @@ import {
 
 let clipboardWrites: Array<string> = [];
 
-export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
+const doorIn = (name: string): HTMLElement => {
+  const door = document.querySelector<HTMLElement>(
+    `[data-side-column] [data-column-door="${name}"]`,
+  );
+  expect(door).not.toBeNull();
+  return door as HTMLElement;
+};
+
+export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette verb: Copy worktree path',
     covers: ['palette:Copy worktree path'],
@@ -79,37 +88,63 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
     lands: () => band('Start a new project'),
   },
   {
-    name: 'footer: inbox',
+    name: 'column: inbox',
     covers: ['openInbox', 'studio:inbox'],
-    open: () => clickButton('Inbox'),
-    lands: () => heading('All items'),
+    open: () => click(doorIn('inbox')),
+    lands: both(
+      () => heading('All items'),
+      async () => expect(doorIn('inbox').getAttribute('aria-current')).toBe('page'),
+    ),
   },
   {
-    name: 'footer: workflow library',
+    name: 'column: workflow library',
     covers: ['openWorkflows', 'studio:workflow'],
-    open: () => clickButton('Workflows'),
+    open: () => click(doorIn('workflows')),
     lands: () => visible('button', 'New workflow'),
   },
   {
-    name: 'footer: impact',
-    covers: ['openImpact', 'studio:impact'],
-    open: () => clickButton('Impact'),
-    lands: () => band('Impact'),
+    name: 'column: chat',
+    covers: ['openChat', 'studio:chat'],
+    open: () => click(doorIn('chat')),
+    lands: both(
+      () => band('Chat'),
+      () => heading('New chat'),
+      () => visible('complementary', 'Chat list'),
+    ),
   },
   {
-    name: 'footer: settings',
+    name: 'column: settings swaps the column',
     covers: ['openSettings', 'studio:settings', 'scope:home'],
-    open: () => clickButton('Settings'),
-    lands: () => visible('navigation', 'Settings scopes'),
+    open: () => click(doorIn('settings')),
+    lands: both(
+      () => visible('navigation', 'Settings scopes'),
+      () => visible('button', /^Back to app/),
+      () => visible('searchbox', 'Search settings'),
+      async () =>
+        expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
+          true,
+        ),
+    ),
   },
   {
-    name: 'footer: integrations',
-    covers: ['openIntegration', 'integrations'],
-    open: () => clickButton(/^Connect your first integration/),
-    lands: () => visible('dialog', 'Integrations'),
+    name: 'column: board from a session',
+    covers: ['navigate'],
+    open: () => click(doorIn('board')),
+    lands: both(
+      () => heading('Board'),
+      async () => expect(useAppStore.getState().currentSessionId).toBeNull(),
+    ),
   },
   {
-    name: 'footer: goodboy chip to the changelog',
+    name: 'column: new session opens the draft',
+    covers: ['column:new'],
+    open: () => click(doorIn('new')),
+    lands: async () => {
+      await waitFor(() => expect(doorIn('new').getAttribute('aria-current')).toBe('page'), WAIT);
+    },
+  },
+  {
+    name: 'column: goodboy chip to the changelog',
     covers: ['openChangelog', 'studio:changelog'],
     open: async () => {
       await clickButton(/^Goodboy: setup/);
@@ -118,14 +153,41 @@ export const FOOTER_AND_VERB_ROWS: ReadonlyArray<Row> = [
     lands: () => heading(/^Goodboy \d/),
   },
   {
+    name: 'column: report a bug opens the sheet',
+    covers: ['column:report'],
+    open: () => clickButton('Report a bug'),
+    lands: () => visible('dialog', 'Report a bug'),
+  },
+  {
+    name: 'top bar: impact',
+    covers: ['openImpact', 'studio:impact'],
+    open: () => clickButton('Impact'),
+    lands: () => band('Impact'),
+  },
+  {
     name: 'top bar: spend',
     covers: ['openSpend', 'studio:impact'],
     open: () => clickButton(/^Spent today/),
     lands: () => heading('Spend'),
   },
   {
-    name: 'top bar: chat',
+    name: 'classic footer: inbox',
+    covers: ['studio:inbox'],
+    bars: 'classic',
+    open: () => clickButton('Inbox'),
+    lands: () => heading('All items'),
+  },
+  {
+    name: 'classic footer: integrations',
+    covers: ['openIntegration', 'integrations'],
+    bars: 'classic',
+    open: () => clickButton(/^Connect your first integration/),
+    lands: () => visible('dialog', 'Integrations'),
+  },
+  {
+    name: 'classic top bar: chat',
     covers: ['openStudio', 'studio:chat'],
+    bars: 'classic',
     open: () => clickButton(/^Chat$/),
     lands: both(
       () => band('Chat'),

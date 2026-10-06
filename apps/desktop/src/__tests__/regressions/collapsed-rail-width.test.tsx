@@ -19,6 +19,10 @@ const IDENTITY_ROW = readFileSync(
   'utf8',
 );
 const STYLES = readFileSync(join(SOURCE_ROOT, 'styles.css'), 'utf8');
+const COLUMN_RAIL = readFileSync(
+  join(SOURCE_ROOT, 'app', 'components', 'SideColumn', 'ColumnRail.tsx'),
+  'utf8',
+);
 afterEach(cleanup);
 
 const classNameContaining = ({ source, marker }: { source: string; marker: string }): string => {
@@ -61,7 +65,7 @@ describe('workspace tile and collapsed rail axis', () => {
     expect(STYLES).toContain(`--titlebar-inset: ${PLAIN_INSET};`);
   });
 
-  it('sizes the rail from the shell constant and centers its buttons', () => {
+  it('sizes the classic rail from the shell constant and centers its buttons', () => {
     const { container } = render(<CollapsedRail />);
     const rail = container.firstElementChild as HTMLElement;
 
@@ -69,5 +73,12 @@ describe('workspace tile and collapsed rail axis', () => {
     expect(rail.style.width).toBe(`${COLLAPSED_RAIL_WIDTH}px`);
     expect(rail.className).not.toMatch(/\bw-11\b/);
     expect(rail.className).not.toMatch(/\bp[xl]-/);
+  });
+
+  it('sizes the rail of doors from the same constant and centers its buttons', () => {
+    expect(COLUMN_RAIL).toContain('style={{ width: COLLAPSED_RAIL_WIDTH }}');
+    expect(COLUMN_RAIL).toMatch(/className="flex h-full min-w-0 shrink-0 flex-col items-center/);
+    expect(COLUMN_RAIL).not.toMatch(/\bw-11\b/);
+    expect(COLUMN_RAIL).not.toMatch(/className="[^"]*\bp[xl]-/);
   });
 });

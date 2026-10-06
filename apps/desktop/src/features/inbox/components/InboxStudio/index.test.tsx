@@ -295,12 +295,21 @@ const rowOrder = (): ReadonlyArray<string> =>
     .getAllByRole('option')
     .map((option) => option.textContent ?? '');
 
-const facet = (section: string, name: RegExp) =>
-  within(
+const openFilters = (): void => {
+  if (screen.queryByRole('navigation', { name: 'Filter the inbox' }) !== null) {
+    return;
+  }
+  fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
+};
+
+const facet = (section: string, name: RegExp) => {
+  openFilters();
+  return within(
     within(screen.getByRole('navigation', { name: 'Filter the inbox' })).getByRole('group', {
       name: section,
     }),
   ).getByRole('button', { name });
+};
 
 const press = (id: ShortcutId, target?: Element) =>
   pressShortcut({ id, target: target ?? document.body });
@@ -372,6 +381,7 @@ describe('InboxStudio', () => {
     h.connected = ['github'];
 
     renderStudio();
+    openFilters();
 
     expect(screen.queryByRole('group', { name: 'Type' })).not.toBeNull();
     expect(() => facet('Type', /Threads/)).toThrow();

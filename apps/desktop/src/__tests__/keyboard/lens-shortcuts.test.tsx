@@ -36,6 +36,8 @@ const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
       sessionProjectMounts: {},
       sessionActiveProject: {},
       sessionBranches: { 'session-1': 'feature/branch' } as Record<string, string>,
+      settings: { 'shell.classicBars': 'true' } as Record<string, string | undefined>,
+      loadSetting: vi.fn(async () => null),
       navigate: vi.fn(),
       back: vi.fn(),
       forward: vi.fn(),

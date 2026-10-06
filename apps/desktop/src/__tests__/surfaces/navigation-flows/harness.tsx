@@ -15,6 +15,7 @@ import {
 import type { MountGithubState } from '../../../store/types';
 import { seedSessionWithMounts } from '../../helpers/seedSessionWithMounts';
 import { App } from '../../../App';
+import { SETTING_SHELL_CLASSIC_BARS } from '../../../features/settings/settings';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
   {
@@ -108,6 +109,8 @@ const LOOP_MARKERS = ['Maximum update depth', '#185', 'getSnapshot should be cac
 
 type Seed = 'pr' | 'issue';
 
+export type Bars = 'column' | 'classic';
+
 export type Ctx = {
   readonly sessionId: SessionId;
 };
@@ -116,6 +119,7 @@ export type Row = {
   readonly name: string;
   readonly covers: ReadonlyArray<string>;
   readonly seed?: Seed;
+  readonly bars?: Bars;
   readonly open: (ctx: Ctx) => Promise<void>;
   readonly lands: (ctx: Ctx) => Promise<void>;
 };
@@ -179,7 +183,13 @@ const traceActions = (): void => {
   useAppStore.setState(traced);
 };
 
-export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
+export const boot = async ({
+  seed,
+  bars = 'column',
+}: {
+  readonly seed: Seed;
+  readonly bars?: Bars;
+}): Promise<Ctx> => {
   const sessionId = seedSessionWithMounts({ useAppStore, hasPr: seed === 'pr' });
   const seeded = useAppStore.getState();
   const mount = seeded.sessionProjectMounts[sessionId]?.[0] ?? null;
@@ -224,6 +234,10 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
     checkForUpdates: async () => undefined,
     hydrated: true,
     bootPhase: 'ready',
+    settings: {
+      ...seeded.settings,
+      [SETTING_SHELL_CLASSIC_BARS]: bars === 'classic' ? 'true' : 'false',
+    },
   });
   traceActions();
   render(
@@ -425,7 +439,7 @@ export const runNavigationRows = ({ rows }: RunParams): void => {
     it.each(rows.map((row) => [row.name, row] as const))(
       '%s',
       async (_name, row) => {
-        const ctx = await boot({ seed: row.seed ?? 'pr' });
+        const ctx = await boot({ seed: row.seed ?? 'pr', bars: row.bars ?? 'column' });
 
         await row.open(ctx);
         await row.lands(ctx);

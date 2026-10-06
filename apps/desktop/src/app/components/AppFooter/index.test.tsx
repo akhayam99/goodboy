@@ -32,7 +32,7 @@ import { FOOTER_INTEGRATIONS } from './categories';
 import { footerTarget, type ConnectedIntegrations } from '../../hooks/useAppOverlays/overlayState';
 import type { StudioPlace } from '../../../store';
 
-vi.mock('./GoodboyChip', () => ({
+vi.mock('../GoodboyChip', () => ({
   GoodboyChip: ({
     onOpenChangelog,
     onOpenShortcuts,

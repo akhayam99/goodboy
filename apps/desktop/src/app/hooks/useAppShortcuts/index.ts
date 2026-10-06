@@ -21,6 +21,7 @@ type AppShortcutsParams = {
   readonly openSettings: () => void;
   readonly openShortcutHelp: () => void;
   readonly toggleSidebar: () => void;
+  readonly sidebarToggleScope?: 'everywhere' | 'session';
 };
 
 type IndexParams = {
@@ -41,6 +42,7 @@ export const useAppShortcuts = ({
   openSettings,
   openShortcutHelp,
   toggleSidebar,
+  sidebarToggleScope = 'session',
 }: AppShortcutsParams): void => {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
@@ -135,11 +137,14 @@ export const useAppShortcuts = ({
   );
   const toggleVisibleSidebar = useCallback(() => {
     const state = useAppStore.getState();
-    if (state.currentSessionId === null || state.appStudio !== null) {
+    if (
+      sidebarToggleScope === 'session' &&
+      (state.currentSessionId === null || state.appStudio !== null)
+    ) {
       return;
     }
     toggleSidebar();
-  }, [toggleSidebar]);
+  }, [toggleSidebar, sidebarToggleScope]);
   const goToBoard = useGoToBoard();
 
   useShortcut('column.toggle', toggleVisibleSidebar);

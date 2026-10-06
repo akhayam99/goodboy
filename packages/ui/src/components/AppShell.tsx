@@ -17,13 +17,14 @@ export type AppShellProps = {
   readonly drawer?: ReactNode;
   readonly drawerSizing?: DrawerSizing;
   readonly studio?: ReactNode;
+  readonly studioCoversLeft?: boolean;
   readonly className?: string;
 };
 
-export const LEFT_SIDEBAR_MIN = 260;
-export const LEFT_SIDEBAR_MAX = 640;
-export const LEFT_SIDEBAR_DEFAULT = 340;
-export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
+export const LEFT_SIDEBAR_MIN = 200;
+export const LEFT_SIDEBAR_MAX = 400;
+export const LEFT_SIDEBAR_DEFAULT = 240;
+export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v3';
 
 export const COLLAPSED_RAIL_WIDTH = 44;
 
@@ -91,6 +92,7 @@ export const AppShell = ({
   drawer,
   drawerSizing,
   studio,
+  studioCoversLeft = true,
   className,
 }: AppShellProps) => {
   const hasFooter = footer != null;
@@ -173,7 +175,7 @@ export const AppShell = ({
             resizeLabel="Resize side panel"
           />
         </main>
-        {leftOverlay != null ? (
+        {leftOverlay != null && studioCoversLeft ? (
           <div
             className="pointer-events-none relative z-20 flex min-h-0 min-w-0"
             style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}
@@ -183,10 +185,25 @@ export const AppShell = ({
         ) : null}
         {studio != null ? (
           <div
-            className="relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden empty:hidden"
-            style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}
+            data-studio-slot={studioCoversLeft ? 'cover' : 'content'}
+            className={cn(
+              'relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden empty:hidden',
+              !studioCoversLeft && 'bg-background',
+              !studioCoversLeft && SHEET_CLASSES.wrapped,
+            )}
+            style={
+              studioCoversLeft ? { gridColumn: '1 / -1', gridRow: '1 / 2' } : { gridArea: 'main' }
+            }
           >
             {studio}
+          </div>
+        ) : null}
+        {leftOverlay != null && !studioCoversLeft ? (
+          <div
+            className="pointer-events-none relative z-studio flex min-h-0 min-w-0"
+            style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}
+          >
+            {leftOverlay}
           </div>
         ) : null}
         {hasFooter ? (

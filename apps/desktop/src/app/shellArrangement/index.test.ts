@@ -24,48 +24,103 @@ const shellMounts = (): ReadonlyArray<{ readonly path: string; readonly source: 
     .map((path) => ({ path, source: readFileSync(path, 'utf8') }))
     .filter(({ source }) => source.includes('<AppShell'));
 
-describe('shellArrangement', () => {
-  it('hides the column on the board, where there is no sessions list to show', () => {
+describe('shellArrangement, the column', () => {
+  it('lays out the one column on the board, with no footer and studios beside it', () => {
     expect(
       shellArrangement({ hasWorkspace: true, hasActiveSession: false, isSidebarCollapsed: false }),
     ).toEqual({
+      mode: 'column',
+      footer: null,
+      columnScope: 'workspace',
+      leftHidden: false,
+      leftSidebarCollapsed: false,
+      leftSlot: 'column',
+      leftOverlaySlot: 'none',
+      studioCoversLeft: false,
+    });
+  });
+
+  it('keeps the same column inside a session, so the frame never changes shape', () => {
+    expect(
+      shellArrangement({ hasWorkspace: true, hasActiveSession: true, isSidebarCollapsed: false }),
+    ).toEqual(
+      shellArrangement({ hasWorkspace: true, hasActiveSession: false, isSidebarCollapsed: false }),
+    );
+  });
+
+  it('collapses to the rail of doors on every screen and arms the peek', () => {
+    for (const hasActiveSession of [true, false]) {
+      expect(
+        shellArrangement({ hasWorkspace: true, hasActiveSession, isSidebarCollapsed: true }),
+      ).toMatchObject({
+        leftHidden: false,
+        leftSidebarCollapsed: true,
+        leftSlot: 'rail',
+        leftOverlaySlot: 'peek',
+        footer: null,
+      });
+    }
+  });
+
+  it('keeps only the app half of the column before any workspace exists', () => {
+    expect(
+      shellArrangement({ hasWorkspace: false, hasActiveSession: false, isSidebarCollapsed: false }),
+    ).toMatchObject({
+      columnScope: 'app',
+      leftSlot: 'column',
+      footer: null,
+    });
+    expect(
+      shellArrangement({ hasWorkspace: false, hasActiveSession: false, isSidebarCollapsed: true }),
+    ).toMatchObject({ leftSlot: 'rail', leftOverlaySlot: 'none' });
+  });
+});
+
+describe('shellArrangement, the classic bars', () => {
+  const classic = (params: {
+    readonly hasWorkspace: boolean;
+    readonly hasActiveSession: boolean;
+    readonly isSidebarCollapsed: boolean;
+  }) => shellArrangement({ ...params, mode: 'classic' });
+
+  it('hides the column on the board, where there is no sessions list to show', () => {
+    expect(
+      classic({ hasWorkspace: true, hasActiveSession: false, isSidebarCollapsed: false }),
+    ).toEqual({
+      mode: 'classic',
       footer: 'workspace',
+      columnScope: 'workspace',
       leftHidden: true,
       leftSidebarCollapsed: false,
       leftSlot: 'none',
       leftOverlaySlot: 'none',
+      studioCoversLeft: true,
     });
   });
 
   it('ignores a stale collapse preference while no session is open', () => {
     expect(
-      shellArrangement({ hasWorkspace: true, hasActiveSession: false, isSidebarCollapsed: true }),
-    ).toEqual({
-      footer: 'workspace',
-      leftHidden: true,
-      leftSidebarCollapsed: false,
-      leftSlot: 'none',
-      leftOverlaySlot: 'none',
-    });
+      classic({ hasWorkspace: true, hasActiveSession: false, isSidebarCollapsed: true }),
+    ).toMatchObject({ leftHidden: true, leftSlot: 'none', leftOverlaySlot: 'none' });
   });
 
   it('lays out the sessions column inside a session', () => {
     expect(
-      shellArrangement({ hasWorkspace: true, hasActiveSession: true, isSidebarCollapsed: false }),
-    ).toEqual({
+      classic({ hasWorkspace: true, hasActiveSession: true, isSidebarCollapsed: false }),
+    ).toMatchObject({
       footer: 'workspace',
       leftHidden: false,
       leftSidebarCollapsed: false,
       leftSlot: 'sessions',
       leftOverlaySlot: 'none',
+      studioCoversLeft: true,
     });
   });
 
   it('swaps the column for the rail and arms peek once collapsed', () => {
     expect(
-      shellArrangement({ hasWorkspace: true, hasActiveSession: true, isSidebarCollapsed: true }),
-    ).toEqual({
-      footer: 'workspace',
+      classic({ hasWorkspace: true, hasActiveSession: true, isSidebarCollapsed: true }),
+    ).toMatchObject({
       leftHidden: false,
       leftSidebarCollapsed: true,
       leftSlot: 'rail',
@@ -75,14 +130,8 @@ describe('shellArrangement', () => {
 
   it('keeps an app footer with no workspace, which no session can outlive', () => {
     expect(
-      shellArrangement({ hasWorkspace: false, hasActiveSession: true, isSidebarCollapsed: false }),
-    ).toEqual({
-      footer: 'app',
-      leftHidden: true,
-      leftSidebarCollapsed: false,
-      leftSlot: 'none',
-      leftOverlaySlot: 'none',
-    });
+      classic({ hasWorkspace: false, hasActiveSession: true, isSidebarCollapsed: false }),
+    ).toMatchObject({ footer: 'app', leftHidden: true, leftSlot: 'none' });
   });
 });
 
