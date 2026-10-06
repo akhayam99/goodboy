@@ -4,18 +4,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   insertResolveCandidate,
   insertResolveCandidateItem,
+  insertResolvePublication,
   insertResolveQueueItem,
   listResolveBatches,
   listResolvePublicationThreads,
   listResolvePublicationsForSession,
   listResolveQueueItems,
   listResolveThreads,
+  upsertResolvePublicationThread,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type {
   AgentId,
+  IsoDateTime,
   MountId,
   PrComment,
   ProjectId,
@@ -470,6 +473,167 @@ describe('a reply-only answer on the Comments page', () => {
     await runOn({ store, threadId: REPLY_THREAD, actionId: 'reviewComment.postReplyNow' });
 
     expect((await rowOf({ threadId: REPLY_THREAD }))?.replyId).toBe('IC_posted');
+  });
+
+  it('Retry sends the newly approved reply and retires the failed publication', async () => {
+    await seed({ rows: [replyOnlyRow()] });
+    const store = await makeStore({ comments: [headOf({ threadId: REPLY_THREAD })] });
+    h.run.mockImplementation(async () => ({ stdout: '', stderr: 'GitHub is down', exitCode: 1 }));
+    await expect(
+      runOn({ store, threadId: REPLY_THREAD, actionId: 'reviewComment.accept' }),
+    ).rejects.toThrow();
+    const [failed] = await listResolvePublicationsForSession({ db, sessionId: SESSION_ID });
+    const first = await itemOfThread({ threadId: REPLY_THREAD });
+    await store.getState().reopenResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: first?.item.id ?? '',
+      revision: first?.thread.revision ?? 0,
+    });
+    const reopened = await itemOfThread({ threadId: REPLY_THREAD });
+    await store.getState().acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: reopened?.item.id ?? '',
+      revision: reopened?.thread.revision ?? 0,
+      reply: 'A different answer, after thinking again.',
+    });
+    h.run.mockImplementation(async (args) => ({
+      stdout: args.join(' ').includes('addPullRequestReviewThreadReply') ? replyOk : resolveOk,
+      stderr: '',
+      exitCode: 0,
+    }));
+
+    await store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: REPLY_THREAD });
+
+    expect(replyCalls().at(-1)).toContain('A different answer, after thinking again.');
+    const publications = await listResolvePublicationsForSession({ db, sessionId: SESSION_ID });
+    expect(publications.find((publication) => publication.id === failed?.id)?.phase).toBe(
+      'cancelled',
+    );
+  });
+
+  it('Retry does not send an uncertain reply again while GitHub cannot confirm it', async () => {
+    await seed({ rows: [replyOnlyRow()] });
+    const store = await makeStore({ comments: [headOf({ threadId: REPLY_THREAD })] });
+    h.run.mockImplementation(async () => {
+      throw new Error('request timed out');
+    });
+    await expect(
+      runOn({ store, threadId: REPLY_THREAD, actionId: 'reviewComment.accept' }),
+    ).rejects.toThrow();
+    expect(replyCalls()).toHaveLength(1);
+
+    await expect(
+      store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: REPLY_THREAD }),
+    ).rejects.toThrow('may already be on this conversation');
+
+    expect(replyCalls()).toHaveLength(1);
+  });
+
+  it('Retry settles an uncertain reply that GitHub shows as posted instead of sending it again', async () => {
+    await seed({ rows: [replyOnlyRow()] });
+    const store = await makeStore({ comments: [headOf({ threadId: REPLY_THREAD })] });
+    h.run.mockImplementation(async () => {
+      throw new Error('request timed out');
+    });
+    await expect(
+      runOn({ store, threadId: REPLY_THREAD, actionId: 'reviewComment.accept' }),
+    ).rejects.toThrow();
+    const [publication] = await listResolvePublicationsForSession({ db, sessionId: SESSION_ID });
+    const [receipt] = await listResolvePublicationThreads({
+      db,
+      publicationId: publication?.id ?? '',
+    });
+    useAppStore.setState({
+      sessionGithub: {
+        [SESSION_ID]: {
+          ...githubOf({
+            comments: [
+              headOf({ threadId: REPLY_THREAD }),
+              commentOf({
+                id: 'IC_landed',
+                threadId: REPLY_THREAD,
+                author: VIEWER,
+                body: receipt?.replyBody ?? '',
+                createdAt: '2026-10-06T10:00:00.000Z',
+              }),
+            ],
+          }),
+          detailFetchedAt: new Date(Date.now() + 60_000).toISOString() as IsoDateTime,
+        },
+      },
+    });
+    h.run.mockImplementation(async (args) => ({
+      stdout: args.join(' ').includes('addPullRequestReviewThreadReply') ? replyOk : resolveOk,
+      stderr: '',
+      exitCode: 0,
+    }));
+
+    await store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: REPLY_THREAD });
+
+    expect(replyCalls()).toHaveLength(1);
+  });
+
+  it('Retry points a reply that failed inside a bundled push to the pull request bar', async () => {
+    await seed({ rows: [replyOnlyRow()] });
+    const store = await makeStore({ comments: [headOf({ threadId: REPLY_THREAD })] });
+    const item = await itemOfThread({ threadId: REPLY_THREAD });
+    await db.execute(
+      "UPDATE resolve_queue_items SET approval_state = 'wont_fix', approved_revision = ?, candidate_revision = ? WHERE id = ?",
+      [item?.thread.revision, item?.thread.revision, item?.item.id],
+    );
+    await insertResolvePublication({
+      db,
+      publication: {
+        id: 'bundled',
+        sessionId: SESSION_ID,
+        repo: 'harborline/payments-api',
+        prNumber: 318,
+        branch: 'feature/retry',
+        targetRef: 'refs/heads/feature/retry',
+        localHead: 'head-sha',
+        remoteHead: null,
+        commitShas: [],
+        candidateIds: [],
+        approvedItemIds: [item?.item.id ?? ''],
+        requiresPush: false,
+        mountTarget: null,
+        phase: 'failed',
+        pushedHead: null,
+        confirmedAt: null,
+        completedAt: null,
+        holder: null,
+        heartbeatAt: null,
+        error: 'boom',
+        createdAt: Date.now() + 1000,
+      },
+    });
+    for (const threadId of [REPLY_THREAD, FIX_THREAD]) {
+      await upsertResolvePublicationThread({
+        db,
+        thread: {
+          publicationId: 'bundled',
+          threadId,
+          revision: item?.thread.revision ?? 0,
+          priorState: 'answered',
+          sourceFingerprint: null,
+          operationId: `op-${threadId}`,
+          replyBody: DRAFT,
+          replyPhase: 'pending',
+          replyId: null,
+          replyAttemptedAt: null,
+          replyPostedAt: null,
+          resolvePhase: 'pending',
+          resolvedAt: null,
+          error: 'boom',
+        },
+      });
+    }
+
+    await expect(
+      store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: REPLY_THREAD }),
+    ).rejects.toThrow('pull request bar');
+
+    expect(replyCalls()).toEqual([]);
   });
 
   it('marks a hand-posted reply as posted on refresh and never posts it twice', async () => {
