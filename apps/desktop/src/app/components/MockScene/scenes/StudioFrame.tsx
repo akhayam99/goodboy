@@ -6,8 +6,9 @@ import { ShellLeft } from '../../SideColumn/ShellLeft';
 import type { ColumnPlace } from '../../SideColumn/columnPlace';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
+import { shellArrangement } from '../../../shellArrangement';
 import { SceneFooter } from './SceneFooter';
-import { sceneColumnPlace } from './sceneShell';
+import { sceneColumnPlace, sceneShellMode } from './sceneShell';
 import { useSceneShell } from './useSceneShell';
 
 const noop = () => undefined;
@@ -21,8 +22,13 @@ type StudioFrameProps = {
 export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => {
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
-  const shell = useSceneShell({ hasActiveSession: false, isSidebarCollapsed: false });
-  const { arrangement } = shell;
+  const arrangement = shellArrangement({
+    hasWorkspace: true,
+    hasActiveSession: false,
+    isSidebarCollapsed: false,
+    mode: sceneShellMode(),
+  });
+  const shell = useSceneShell({ arrangement });
   const slot = arrangement.leftSlot === 'column' ? shell.settingsSlot : null;
   const place = columnPlace === undefined ? sceneColumnPlace({ target }) : columnPlace;
 

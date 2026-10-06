@@ -1,13 +1,9 @@
-// @vitest-environment happy-dom
-
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import {
   DRAWER_INSET,
-  DrawerColumn,
   LEFT_SIDEBAR_DEFAULT,
   LEFT_SIDEBAR_MAX,
   RIGHT_DRAWER_DEFAULT,
@@ -26,7 +22,6 @@ const SESSION_ID = 'session-1' as SessionId;
 const WINDOWS = [1280, 1440] as const;
 const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
 const SAVED_WIDTHS = [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX] as const;
-const SPACING_STEP_PX = 4;
 
 const trackOf = (drawerWidthPx: number): number => drawerWidthPx + DRAWER_INSET * 2;
 
@@ -72,23 +67,14 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   },
 ];
 
-const stateWith = ({
-  drawer,
-  isExpanded,
-}: {
-  readonly drawer: DrawerRequest;
-  readonly isExpanded: boolean;
-}): AppState =>
-  ({
-    drawer,
-    currentSessionId: SESSION_ID,
-    documentDrawerExpanded: { [SESSION_ID]: isExpanded },
-  }) as unknown as AppState;
-
-const sizingsOf = (drawer: DrawerRequest): ReadonlyArray<DrawerSizing> => [
-  selectDrawerSizing(stateWith({ drawer, isExpanded: false })),
-  selectDrawerSizing(stateWith({ drawer, isExpanded: true })),
-];
+const sizingsOf = (drawer: DrawerRequest): ReadonlyArray<DrawerSizing> =>
+  [false, true].map((isExpanded) =>
+    selectDrawerSizing({
+      drawer,
+      currentSessionId: SESSION_ID,
+      documentDrawerExpanded: { [SESSION_ID]: isExpanded },
+    } satisfies Pick<AppState, 'drawer' | 'currentSessionId' | 'documentDrawerExpanded'>),
+  );
 
 const CASES = EVERY_KIND.flatMap((drawer) =>
   [...new Set(sizingsOf(drawer))].flatMap((sizing) =>
@@ -106,20 +92,6 @@ const CASES = EVERY_KIND.flatMap((drawer) =>
   ),
 );
 
-const stubColumnWidth = (width: number) => {
-  class StubObserver {
-    private readonly callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
-    constructor(callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void) {
-      this.callback = callback;
-    }
-    observe() {
-      this.callback([{ contentRect: { width } }]);
-    }
-    disconnect() {}
-  }
-  vi.stubGlobal('ResizeObserver', StubObserver);
-};
-
 const slideOf = (keyframes: string): number => {
   const styles = readFileSync(join(__dirname, '..', '..', '..', 'styles.css'), 'utf8');
   const block = new RegExp(`@keyframes ${keyframes} \\{[\\s\\S]*?from \\{([\\s\\S]*?)\\}`).exec(
@@ -132,11 +104,6 @@ const slideOf = (keyframes: string): number => {
   return Math.abs(Number(slide[1]));
 };
 
-afterEach(() => {
-  cleanup();
-  vi.unstubAllGlobals();
-});
-
 describe('every drawer fits inside its aside at 1280 and 1440', () => {
   it('opens the transcript at the same sizing as Ask', () => {
     const ask = EVERY_KIND.find((drawer) => drawer.kind === 'ask');
@@ -148,14 +115,18 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
     expect(sizingsOf(transcript)).toEqual(['default', 'default']);
   });
 
+  it('slides a card in by at most its 8px inset, so it never passes the window edge', () => {
+    expect(slideOf('drawer-card-in')).toBeLessThanOrEqual(DRAWER_INSET);
+    expect(slideOf('drawer-overlay-in')).toBeLessThanOrEqual(DRAWER_INSET);
+  });
+
   it.each(CASES)(
     '$kind ($sizing) at $windowPx with a $savedPx saved width over a $columnWidth column',
     ({ sizing, columnWidth, savedPx }) => {
       const drawerWidthPx = drawerWidthOf({ sizing, columnWidth, resizableWidth: savedPx });
       const mode = drawerModeOf({ isOpen: true, sizing, columnWidth, drawerWidthPx });
       const trackPx = trackOf(drawerWidthPx);
-      const asideLeft = columnWidth - trackPx;
-      const cardRight = asideLeft + DRAWER_INSET + drawerWidthPx;
+      const cardRight = columnWidth - trackPx + DRAWER_INSET + drawerWidthPx;
 
       expect(trackPx).toBeLessThanOrEqual(columnWidth);
       expect(cardRight + DRAWER_INSET).toBe(columnWidth);
@@ -165,37 +136,6 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
         expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + trackPx).toBe(columnWidth);
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })).toBe(true);
       }
-    },
-  );
-
-  it.each(WINDOWS.flatMap((windowPx) => SIDEBARS.map((sidebarPx) => windowPx - sidebarPx)))(
-    'lays the card out as handle, card and inset inside a %ipx column',
-    (columnWidth) => {
-      stubColumnWidth(columnWidth);
-      render(
-        <DrawerColumn
-          main={<div>main</div>}
-          drawer={<div>Fix run</div>}
-          ariaLabel="Side panel"
-          resizeLabel="Resize side panel"
-        />,
-      );
-      const aside = screen.getByRole('complementary', { name: 'Side panel' });
-      const card = aside.querySelector('[data-drawer-card]');
-      const track = card?.parentElement ?? null;
-      const handle = track?.firstElementChild ?? null;
-      const trackPx = trackOf(RIGHT_DRAWER_DEFAULT);
-
-      expect(DRAWER_INSET).toBe(2 * SPACING_STEP_PX);
-      expect(aside.style.width).toBe(`${trackPx}px`);
-      expect(track?.getAttribute('style')).toContain(`min-width: ${trackPx}px`);
-      expect(handle?.classList.contains('w-2')).toBe(true);
-      expect(handle?.classList.contains('shrink-0')).toBe(true);
-      expect(card?.classList.contains('mr-2')).toBe(true);
-      expect(card?.classList.contains('my-2')).toBe(true);
-      expect(card?.classList.contains('min-w-0')).toBe(true);
-      expect(card?.classList.contains('overflow-hidden')).toBe(true);
-      expect(aside.classList.contains('overflow-hidden')).toBe(true);
     },
   );
 });

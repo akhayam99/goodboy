@@ -8,7 +8,9 @@ import { useAppStore, useSessions } from '../../../../store';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
 import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';
+import { shellArrangement } from '../../../shellArrangement';
 import { SceneFooter } from './SceneFooter';
+import { sceneShellMode } from './sceneShell';
 import { useSceneShell } from './useSceneShell';
 
 const noop = () => undefined;
@@ -52,11 +54,13 @@ export const BoardShellScene = () => {
 
 const BoardShellSceneContent = () => {
   const sessions = useSessions();
-  const shell = useSceneShell({
+  const arrangement = shellArrangement({
+    hasWorkspace: true,
     hasActiveSession: false,
     isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
+    mode: sceneShellMode(),
   });
-  const { arrangement } = shell;
+  const shell = useSceneShell({ arrangement });
 
   return (
     <>

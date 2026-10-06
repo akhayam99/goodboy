@@ -8,7 +8,9 @@ import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
+import { shellArrangement } from '../../../../shellArrangement';
 import { SceneFooter } from '../SceneFooter';
+import { sceneShellMode } from '../sceneShell';
 import { useSceneShell } from '../useSceneShell';
 import { FRAME_CONNECTED } from './frameSeed';
 import { sceneParam } from './sceneParams';
@@ -23,11 +25,13 @@ type Props = {
 export const WorkspaceFrame = ({ session, main }: Props) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
-  const shell = useSceneShell({
+  const arrangement = shellArrangement({
+    hasWorkspace: true,
     hasActiveSession: true,
     isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
+    mode: sceneShellMode(),
   });
-  const { arrangement } = shell;
+  const shell = useSceneShell({ arrangement });
   return (
     <>
       <AppShell

@@ -20,7 +20,9 @@ import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { sceneClock } from '../sceneClock';
+import { shellArrangement } from '../../../shellArrangement';
 import { SceneFooter } from './SceneFooter';
+import { sceneShellMode } from './sceneShell';
 import { useSceneShell } from './useSceneShell';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
@@ -113,11 +115,13 @@ export const ShellFrame = ({
   hasOwnTrail = false,
 }: ShellFrameProps) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
-  const shell = useSceneShell({
+  const arrangement = shellArrangement({
+    hasWorkspace: true,
     hasActiveSession: true,
     isSidebarCollapsed: sidebar === 'collapsed',
+    mode: sceneShellMode(),
   });
-  const { arrangement } = shell;
+  const shell = useSceneShell({ arrangement });
 
   return (
     <ToastProvider>

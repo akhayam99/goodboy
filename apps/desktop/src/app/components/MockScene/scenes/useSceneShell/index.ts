@@ -2,19 +2,17 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
-import { shellArrangement, type ShellArrangement } from '../../../../shellArrangement';
+import type { ShellArrangement } from '../../../../shellArrangement';
 import { useAppStore, useCurrentSession, useCurrentWorkspace } from '../../../../../store';
-import { SCENE_CONNECTED, sceneShellMode } from '../sceneShell';
+import { SCENE_CONNECTED } from '../sceneShell';
 
 const noop = () => undefined;
 
 type Params = {
-  readonly hasActiveSession: boolean;
-  readonly isSidebarCollapsed: boolean;
+  readonly arrangement: ShellArrangement;
 };
 
 type SceneShell = {
-  readonly arrangement: ShellArrangement;
   readonly actions: ColumnActions;
   readonly isStudioOpen: boolean;
   readonly studio: ReactNode;
@@ -23,24 +21,18 @@ type SceneShell = {
   readonly settingsSlotRef: (node: HTMLDivElement | null) => void;
 };
 
-export const useSceneShell = ({ hasActiveSession, isSidebarCollapsed }: Params): SceneShell => {
+export const useSceneShell = ({ arrangement }: Params): SceneShell => {
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const isStudioOpen = useAppStore((state) => state.appStudio !== null);
   const goToBoard = useGoToBoard();
   const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    hasActiveSession,
-    isSidebarCollapsed,
-    mode: sceneShellMode(),
-  });
   const overlays = useAppOverlays({
     connected: SCENE_CONNECTED,
     currentSession,
     currentWorkspace,
     workspaceProjectRoot: null,
-    isSessionSidebarCollapsed: isSidebarCollapsed,
+    isSessionSidebarCollapsed: arrangement.leftSidebarCollapsed,
     isWorkspaceLauncherBranch: false,
     pinSessionSidebar: noop,
     studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
@@ -59,7 +51,6 @@ export const useSceneShell = ({ hasActiveSession, isSidebarCollapsed }: Params):
     [goToBoard, overlays],
   );
   return {
-    arrangement,
     actions,
     isStudioOpen,
     studio: overlays.studio,

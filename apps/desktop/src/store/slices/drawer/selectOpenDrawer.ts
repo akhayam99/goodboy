@@ -1,7 +1,9 @@
 import type { AppState } from '../../types';
 import type { OpenDrawer } from './state';
 
-export const selectOpenDrawer = (state: AppState): OpenDrawer | null => {
+export const selectOpenDrawer = (
+  state: Pick<AppState, 'drawer' | 'currentSessionId'>,
+): OpenDrawer | null => {
   const drawer = state.drawer ?? null;
   if (drawer === null) {
     return null;
