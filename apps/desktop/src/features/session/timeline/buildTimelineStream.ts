@@ -1754,7 +1754,7 @@ type DayBreakParams = {
 
 const withDayBreaks = ({ drafts, dayLabelFor }: DayBreakParams): ReadonlyArray<Draft> => {
   const dated: Draft[] = [];
-  let previousDayKey: string | null = null;
+  const seenDayKeys = new Set<string>();
 
   for (const draft of drafts) {
     const at = draft.kind === 'row' ? draft.at : null;
@@ -1764,14 +1764,14 @@ const withDayBreaks = ({ drafts, dayLabelFor }: DayBreakParams): ReadonlyArray<D
     }
     const dayKey = dayKeyOf({ at });
     const label = dayLabelFor({ at });
-    if (dayKey !== previousDayKey && label != null) {
+    if (!seenDayKeys.has(dayKey) && label != null) {
       let ruleIndex = dated.length;
       while (ruleIndex > 0 && dated[ruleIndex - 1]?.kind === 'count') {
         ruleIndex -= 1;
       }
       dated.splice(ruleIndex, 0, { kind: 'day', id: `day:${dayKey}`, label });
+      seenDayKeys.add(dayKey);
     }
-    previousDayKey = dayKey;
     dated.push(draft);
   }
 
