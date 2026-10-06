@@ -8,7 +8,9 @@ import {
   Link,
   MessageCircleQuestion,
   OctagonX,
+  PenLine,
   RefreshCw,
+  Send,
   SkipForward,
   TextCursorInput,
   Undo2,
@@ -26,6 +28,7 @@ import { activeReviewSourceOf } from '../../../store/slices/review-source/active
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
 import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
 import { verdictReply } from '../../resolve/commentVerdict';
+import { postReplyWhenNothingWaits } from '../../resolve/replyDelivery';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { REMOTE_LABEL, commitUrlOf, remoteActionLabel, remoteOf } from '../../resolve/reviewRemote';
@@ -33,7 +36,7 @@ import type {
   ThreadGitFacts,
   ThreadRemoteKind,
 } from '../../../store/slices/resolve/threadGitState';
-import { requestReview } from '../../review/reviewRequest';
+import { requestReview, type ReviewComposeMode } from '../../review/reviewRequest';
 import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
 
@@ -59,6 +62,8 @@ export type ReviewCommentFacts = {
   readonly isChecking: boolean;
   readonly isPushedMissing: boolean;
   readonly remoteReply: string | null;
+  readonly isReplyOnly: boolean;
+  readonly isReplyFailure: boolean;
 };
 
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
@@ -97,6 +102,11 @@ const remoteReplyOf = ({
   return verdict === null || verdict.kind === 'refix' ? null : verdictReply({ verdict });
 };
 
+const REWRITABLE: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited']);
+
+const isPostableReplyOnly = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
+  facts.state === 'replied' && facts.isReplyOnly && facts.hasPr && !facts.isNote;
+
 const isRedraft = ({ state }: { readonly state: ReviewCommentState }): boolean =>
   state === 'outdated' || state === 'failed';
 
@@ -112,15 +122,15 @@ type RunParams = {
   readonly env: ActionEnv;
 };
 
-const compose = ({ facts, env }: RunParams, mode: 'edit' | 'redraft' | 'answer' | 'reply') =>
+const compose = ({ facts, env }: RunParams, mode: ReviewComposeMode) =>
   requestReview({
     getState: env.getState,
     sessionId: facts.sessionId,
     request: { kind: 'compose', threadId: facts.threadId, mode },
   });
 
-const accept = ({ facts, env }: RunParams): Promise<void> =>
-  acceptReviewItem({
+const accept = async ({ facts, env }: RunParams): Promise<void> => {
+  await acceptReviewItem({
     state: env.getState(),
     sessionId: facts.sessionId,
     threadId: facts.threadId,
@@ -130,6 +140,12 @@ const accept = ({ facts, env }: RunParams): Promise<void> =>
     isNote: facts.isNote,
     hasPr: facts.hasPr,
   });
+  await postReplyWhenNothingWaits({
+    getState: env.getState,
+    sessionId: facts.sessionId,
+    threadId: facts.threadId,
+  });
+};
 
 const undo = async ({ facts, env }: RunParams): Promise<void> => {
   const state = env.getState();
@@ -195,6 +211,10 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       isChecking: isRechecking({ state, sessionId: target.sessionId, threadId: target.threadId }),
       isPushedMissing: gitFacts?.missing?.wasPushed === true,
       remoteReply: remoteReplyOf({ gitFacts, draftReply: draft?.reply ?? null }),
+      isReplyOnly:
+        row.item.approvalState === 'wont_fix' ||
+        (row.proposalKind !== 'fix' && row.thread.disposition !== 'fix'),
+      isReplyFailure: row.thread.stateReason?.startsWith('publication_failed:') === true,
     };
   },
   actions: [
@@ -473,16 +493,82 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       when: ({ facts }) =>
         ((facts.state === 'ready' || facts.state === 'edited') && !hasOverlay({ facts })) ||
+        isPostableReplyOnly({ facts }) ||
         (canRepostVerdict({ facts }) &&
           (facts.verdict?.kind === 'fixed_elsewhere' || facts.verdict?.kind === 'obsolete')),
       slot: ({ facts }) =>
         facts.state === 'ready' || facts.state === 'edited' ? 'secondary' : 'hover',
-      run: ({ facts, env }) =>
+      run: async ({ facts, env }) => {
+        if (facts.state === 'replied') {
+          await undo({ facts, env });
+        }
         requestReview({
           getState: env.getState,
           sessionId: facts.sessionId,
           request: { kind: 'edit_reply', threadId: facts.threadId },
-        }),
+        });
+      },
+    },
+    {
+      id: 'reviewComment.rewriteReply',
+      label: 'Rewrite reply',
+      icon: PenLine,
+      group: 'act',
+      when: ({ facts }) =>
+        (REWRITABLE.has(facts.state) || isPostableReplyOnly({ facts })) &&
+        !facts.isNote &&
+        !hasOverlay({ facts }),
+      slot: () => 'menu',
+      run: (params) => compose(params, 'rewrite'),
+    },
+    {
+      id: 'reviewComment.fixItAnyway',
+      label: 'Fix it anyway',
+      icon: CONCEPT_ICONS.agents,
+      group: 'act',
+      when: ({ facts }) =>
+        facts.isReplyOnly &&
+        (facts.state === 'ready' || facts.state === 'edited' || facts.state === 'replied') &&
+        !facts.isNote &&
+        !hasOverlay({ facts }),
+      slot: () => 'menu',
+      run: (params) => compose(params, 'fixAnyway'),
+    },
+    {
+      id: 'reviewComment.replyOnly',
+      label: 'Reply only',
+      icon: CornerDownRight,
+      group: 'act',
+      when: ({ facts }) =>
+        !facts.isReplyOnly &&
+        (facts.state === 'ready' || facts.state === 'edited') &&
+        !facts.isNote &&
+        !hasOverlay({ facts }),
+      slot: () => 'menu',
+      run: async ({ facts, env }) => {
+        await env
+          .getState()
+          .switchToReplyOnly({ sessionId: facts.sessionId, threadId: facts.threadId });
+        env.showToast({
+          kind: 'success',
+          message: 'Change dropped. This comment gets a reply only.',
+        });
+      },
+    },
+    {
+      id: 'reviewComment.postReplyNow',
+      label: ({ facts }) => (facts.state === 'failed' ? 'Retry' : 'Post reply now'),
+      icon: Send,
+      group: 'act',
+      when: ({ facts }) =>
+        !facts.isNote &&
+        facts.hasPr &&
+        facts.isReplyOnly &&
+        !hasOverlay({ facts }) &&
+        (facts.state === 'replied' || (facts.state === 'failed' && facts.isReplyFailure)),
+      slot: () => 'menu',
+      run: ({ facts, env }) =>
+        env.getState().publishThreadNow({ sessionId: facts.sessionId, threadId: facts.threadId }),
     },
     {
       id: 'reviewComment.reply',
