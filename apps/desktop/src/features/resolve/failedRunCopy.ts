@@ -11,8 +11,8 @@ export const FAILED_RUN_COPY = {
   skip: 'Skip',
   openTranscript: 'Open transcript',
   moreActions: 'More actions',
-  modelList: 'Model for the next attempt',
-  usedAndFailed: 'failed on this',
+  modelList: 'Model for a new agent',
+  usedAndFailed: 'could not fix it',
   attemptsRegion: 'Previous attempts',
 } as const;
 

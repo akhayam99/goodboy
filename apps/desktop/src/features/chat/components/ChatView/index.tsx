@@ -419,13 +419,23 @@ export const ChatView = ({ session, isActive = true, agentId, topInset = 'roomy'
     [openQuestions, selectedAgentId],
   );
 
+  const resolveAttempts = useAppStore((s) => s.sessionResolveAttempts?.[session.id] ?? EMPTY_ARRAY);
+  const resolverAgentIds = useMemo(
+    () => new Set<string>(resolveAttempts.map((attempt) => attempt.agentId)),
+    [resolveAttempts],
+  );
+  const isResolverChat = selectedAgentId != null && resolverAgentIds.has(selectedAgentId);
   const otherAgentQuestion = useMemo(
     () =>
-      openQuestions.find(
-        (question) =>
-          question.createdByAgentId != null && question.createdByAgentId !== selectedAgentId,
-      ) ?? null,
-    [openQuestions, selectedAgentId],
+      isResolverChat
+        ? null
+        : (openQuestions.find(
+            (question) =>
+              question.createdByAgentId != null &&
+              question.createdByAgentId !== selectedAgentId &&
+              !resolverAgentIds.has(question.createdByAgentId),
+          ) ?? null),
+    [isResolverChat, openQuestions, resolverAgentIds, selectedAgentId],
   );
   const otherAgentQuestionCount = useMemo(() => {
     if (otherAgentQuestion?.createdByAgentId == null) {

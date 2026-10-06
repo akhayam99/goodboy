@@ -129,8 +129,10 @@ describe('Review as one flow', () => {
   it('shows the list and the focused comment side by side, with no drawer', async () => {
     await mount({ threadId: EXPANDED_THREAD_ID });
 
+    expect(within(list()).getByRole('region', { name: 'Needs you' })).toBeDefined();
+    expect(within(list()).getByRole('region', { name: 'Working' })).toBeDefined();
+    expect(within(list()).getByRole('region', { name: 'Ready' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Open' })).toBeDefined();
-    expect(within(list()).getByRole('region', { name: 'Ready to push' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
     expect(focusedThread()).toBe(EXPANDED_THREAD_ID);
     expect(screen.queryByRole('complementary', { name: 'Conversation' })).toBeNull();
@@ -147,8 +149,33 @@ describe('Review as one flow', () => {
     expect(screen.queryByRole('button', { name: 'Filter comments' })).toBeNull();
   });
 
+  it('keeps Done closed until it is opened', async () => {
+    await mount({ threadId: null });
+
+    const toggle = within(list()).getByRole('button', { name: /^Done \d+/ });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(within(list()).queryByText('Pushed')).toBeNull();
+
+    fireEvent.click(toggle);
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(within(list()).getAllByText(/Pushed|Skipped/).length).toBeGreaterThan(0);
+  });
+
+  it("orders the groups Needs you, Working, Ready, Couldn't fix, Open, Done", async () => {
+    await mount({ threadId: null });
+
+    const titles = within(list())
+      .getAllByRole('region')
+      .map((region) => region.getAttribute('aria-label'));
+    const wanted = ['Needs you', 'Working', 'Ready', "Couldn't fix", 'Open', 'Done'];
+    expect(titles).toEqual(wanted.filter((title) => titles.includes(title)));
+    expect(titles[0]).toBe('Needs you');
+  });
+
   it('names every state with its own word and never says Resolve on a control', async () => {
     await mount({ threadId: null });
+    fireEvent.click(within(list()).getByRole('button', { name: /^Done \d+/ }));
 
     const words = within(list())
       .getAllByRole('button')
@@ -420,7 +447,9 @@ describe('Review as one flow', () => {
     await settle();
 
     expect(row(/idempotency\.ts/).textContent).toContain('Waiting');
-    expect(within(comment()).getByText('Waiting for a free slot')).toBeDefined();
+    expect(
+      within(comment()).getByText('Next in line. Starts when the current comment is done.'),
+    ).toBeDefined();
   });
 
   it('accepts with A: marks it, publishes nothing, and moves to the next open comment', async () => {
@@ -529,6 +558,7 @@ describe('Review as one flow', () => {
     press('s', 'KeyS');
     await waitFor(() => expect(defer).toHaveBeenCalledOnce());
 
+    fireEvent.click(within(list()).getByRole('button', { name: /^Done \d+/ }));
     fireEvent.click(row(/Skipped/));
     await settle();
     fireEvent.click(within(comment()).getByRole('button', { name: /^Resume/ }));
@@ -739,7 +769,7 @@ describe('Review of a failed run', () => {
     expect(failed.getByText(/^Attempt 1/)).toBeDefined();
   });
 
-  it('retries on the model the reviewer picked and keeps the earlier attempt in one line', async () => {
+  it('starts over with a new agent on the model the reviewer picked and keeps the earlier attempt in one line', async () => {
     const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
     const setAgentConfig = vi.fn<StoreState['setAgentConfig']>(async () => undefined);
     const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => BATCH);
@@ -759,9 +789,8 @@ describe('Review of a failed run', () => {
     });
 
     const failed = within(comment());
-    expect(failed.getByRole('button', { name: /^Retry on Opus 5/ })).toBeDefined();
     expect(failed.getByRole('button', { name: /Attempt 1 · Sonnet 5/ })).toBeDefined();
-    fireEvent.click(failed.getByRole('button', { name: /^Retry on Opus 5/ }));
+    fireEvent.click(failed.getByRole('button', { name: 'Start over with a new agent' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     const args = spawnAgent.mock.calls[0]?.[1];
@@ -796,21 +825,23 @@ describe('Review of a failed run', () => {
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('retries a failed comment in the same run when no other model was picked', async () => {
+  it('retries one failed comment inside the same run', async () => {
     const spawnAgent = vi.fn<StoreState['spawnAgent']>(async () => 'agent-retry' as AgentId);
-    const continueResolveThreads = vi.fn<StoreState['continueResolveThreads']>(
-      async () => undefined,
-    );
+    const retryCouldntFix = vi.fn<StoreState['retryCouldntFix']>(async () => undefined);
     stub({
       spawnAgent: spawnAgent,
-      continueResolveThreads: continueResolveThreads,
+      retryCouldntFix: retryCouldntFix,
       setAgentConfig: vi.fn<StoreState['setAgentConfig']>(async () => undefined),
     });
     await mountFailed({ failure: 'run' });
 
-    fireEvent.click(within(comment()).getByRole('button', { name: /^Retry/ }));
+    fireEvent.click(within(comment()).getByRole('button', { name: /^Retry in this run/ }));
 
-    await waitFor(() => expect(continueResolveThreads).toHaveBeenCalledOnce());
+    await waitFor(() => expect(retryCouldntFix).toHaveBeenCalledOnce());
+    expect(retryCouldntFix.mock.calls[0]?.[0]).toMatchObject({
+      sessionId: SESSION.id,
+      threadIds: [FAILED_THREAD_ID],
+    });
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 

@@ -448,19 +448,20 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       shortcut: 'review.edit',
       when: ({ facts }) =>
         (DRAFTED.has(facts.state) || facts.state === 'failed') && !hasOverlay({ facts }),
-      slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'secondary'),
+      slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'menu'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
     },
     {
       id: 'reviewComment.editReply',
-      label: 'Edit the reply',
+      label: 'Edit reply',
       icon: TextCursorInput,
       group: 'act',
       when: ({ facts }) =>
         ((facts.state === 'ready' || facts.state === 'edited') && !hasOverlay({ facts })) ||
         (canRepostVerdict({ facts }) &&
           (facts.verdict?.kind === 'fixed_elsewhere' || facts.verdict?.kind === 'obsolete')),
-      slot: () => 'hover',
+      slot: ({ facts }) =>
+        facts.state === 'ready' || facts.state === 'edited' ? 'secondary' : 'hover',
       run: ({ facts, env }) =>
         requestReview({
           getState: env.getState,

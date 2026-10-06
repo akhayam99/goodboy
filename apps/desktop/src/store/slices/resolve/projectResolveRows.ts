@@ -4,6 +4,7 @@ import type {
   ResolveThread,
   SessionId,
 } from '@goodboy/types';
+import { resolveAttentionNotices, resolveAttentionOf } from './resolveAttention';
 import type { SliceParams } from './types';
 
 type Params = SliceParams & {
@@ -31,7 +32,15 @@ const withFreshThreads = ({
   });
 };
 
-export const projectResolveRows = ({ set, sessionId, rows, attempts }: Params): void => {
+export const projectResolveRows = ({ set, get, sessionId, rows, attempts }: Params): void => {
+  const known = get().sessionResolveThreads[sessionId];
+  const before =
+    known === undefined
+      ? null
+      : resolveAttentionOf({
+          threads: known,
+          attempts: get().sessionResolveAttempts[sessionId] ?? [],
+        });
   set((state) => {
     const queueItems = withFreshThreads({
       entries: state.sessionResolveQueueItems[sessionId],
@@ -45,4 +54,11 @@ export const projectResolveRows = ({ set, sessionId, rows, attempts }: Params): 
       }),
     };
   });
+  if (before === null) {
+    return;
+  }
+  const after = resolveAttentionOf({ threads: rows, attempts });
+  for (const notice of resolveAttentionNotices({ before, after, sessionId })) {
+    void get().emitNotification(notice);
+  }
 };

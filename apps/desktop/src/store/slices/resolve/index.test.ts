@@ -87,6 +87,7 @@ const createHarness = () => {
       ],
     },
     sessionGithub: {},
+    emitNotification: vi.fn(async () => undefined),
   };
   const store = createStore(() => initial);
   const set = store.setState as unknown as SetFn;

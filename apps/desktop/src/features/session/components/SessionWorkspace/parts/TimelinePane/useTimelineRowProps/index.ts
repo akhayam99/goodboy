@@ -25,6 +25,7 @@ import type { TimelineLaneControl, TimelineLaneTarget } from '../TimelineRail';
 import type { TimelineRowProps } from '../TimelineRow';
 import type { TimelineRowAction } from '../TimelineStreamRow';
 import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
+import { openReview } from '../../../../../../review/openReview';
 import type { TimelineRows } from '../useTimelineRows';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -267,8 +268,20 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
 
   const openNeedsYou = useCallback(
     ({ owner }: { readonly owner: NeedsYouOwner }) => {
-      if (owner.kind === 'batch') {
-        navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+      if (owner.kind === 'fixRun') {
+        const target = owner.owed?.target ?? null;
+        if (target === null) {
+          navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+          return;
+        }
+        void openReview({
+          sessionId,
+          destination: {
+            kind: 'threads',
+            mountId: target.mountId,
+            threadIds: [target.threadId],
+          },
+        });
         return;
       }
       if (owner.kind === 'question') {
@@ -332,7 +345,7 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
       };
     }
     const { entry } = item;
-    const action = entry.kind === 'resolveBatch' ? null : actionFor({ item });
+    const action = actionFor({ item });
     const agentId = entry.kind === 'agent' ? entry.agent.id : null;
     const stepId = entry.kind === 'agent' ? entry.agent.stepId : null;
     return {
@@ -355,10 +368,7 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
           ? (rows.spendByAgentId.get(entry.agent.id) ?? 0)
           : entry.kind === 'run'
             ? (rows.spendByRunId.get(entry.run.id) ?? 0)
-            : entry.kind === 'resolveFile'
-              ? entry.agentIds.reduce((total, id) => total + (rows.spendByAgentId.get(id) ?? 0), 0)
-              : 0,
-      groupTotals: rows.groupTotals.get(item.id) ?? null,
+            : 0,
       isExpanded: rows.expandedRows.has(item.id),
       isBranchExpanded:
         item.branches?.some((branch) => isGroupExpanded({ id: branch.expandId })) === true,

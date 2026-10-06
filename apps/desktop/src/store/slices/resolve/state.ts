@@ -52,6 +52,7 @@ export type ResolveState = {
   readonly threadFixDismissals: Readonly<
     Record<SessionId, Readonly<Record<string, ReadonlyArray<string>>>>
   >;
+  readonly sessionResolveAnswers: Readonly<Record<SessionId, Readonly<Record<string, string>>>>;
 };
 
 export const resolveInitialState: ResolveState = {
@@ -69,4 +70,5 @@ export const resolveInitialState: ResolveState = {
   sessionThreadGit: {},
   sessionThreadRechecks: {},
   threadFixDismissals: {},
+  sessionResolveAnswers: {},
 };

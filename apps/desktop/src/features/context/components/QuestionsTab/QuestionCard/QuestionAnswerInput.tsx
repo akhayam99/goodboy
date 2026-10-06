@@ -1,7 +1,7 @@
 import { cn } from '@goodboy/ui';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
-import { AnswerOptionRow } from '../AnswerOptionRow';
+import { AnswerOptionRow } from '../../../../../shared/components/AnswerOptionRow';
 import type { AnswerInputMode } from '../AnswerSubmitButton/answerInputMode';
 import { CustomAnswerField } from '../CustomAnswerField';
 

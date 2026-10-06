@@ -16,6 +16,8 @@ type Params = {
   pr: StagePullRequest | null;
   hasUnread: boolean;
   openQuestionCount: number;
+  fixNeedsYouCount?: number;
+  fixCouldntFixCount?: number;
   hasRunningAgent?: boolean;
   hasBlockedAgent?: boolean;
   isDecidingWorkflow?: boolean;
@@ -40,6 +42,8 @@ const deriveStage = ({
   pr,
   hasUnread,
   openQuestionCount,
+  fixNeedsYouCount = 0,
+  fixCouldntFixCount = 0,
   hasRunningAgent = false,
   hasBlockedAgent = false,
   isDecidingWorkflow = false,
@@ -94,6 +98,14 @@ const deriveStage = ({
       attention: 'changes-requested',
     };
   }
+  if (fixNeedsYouCount > 0) {
+    return {
+      stage: 'attention',
+      reason:
+        fixNeedsYouCount === 1 ? '1 comment needs you' : `${fixNeedsYouCount} comments need you`,
+      attention: 'fix-needs-you',
+    };
+  }
   if (openQuestionCount === 1) {
     return { stage: 'attention', reason: '1 open question', attention: 'open-question' };
   }
@@ -102,6 +114,16 @@ const deriveStage = ({
       stage: 'attention',
       reason: `${openQuestionCount} open questions`,
       attention: 'open-question',
+    };
+  }
+  if (fixCouldntFixCount > 0) {
+    return {
+      stage: 'attention',
+      reason:
+        fixCouldntFixCount === 1
+          ? "1 comment couldn't be fixed"
+          : `${fixCouldntFixCount} comments couldn't be fixed`,
+      attention: 'fix-couldnt-fix',
     };
   }
   if (isPrLive(pr) && isPullRequestApproved({ pr })) {
