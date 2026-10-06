@@ -40,6 +40,8 @@ import { ResolveRunAnsweredScene } from './scenes/ResolveRunAnsweredScene';
 import { ResolveRunQuestionScene } from './scenes/ResolveRunQuestionScene';
 import { ResolveRunWorkingScene } from './scenes/ResolveRunWorkingScene';
 import { FixRunQuestionScene } from './scenes/FixRunQuestionScene';
+import { FixRunMultiScene } from './scenes/FixRunMultiScene';
+import { FixRunMultiDoneScene } from './scenes/FixRunMultiDoneScene';
 import { SpaceDiffCommentScene } from './scenes/SpaceDiffCommentScene';
 import { SpaceDiffSplitScene } from './scenes/SpaceDiffSplitScene';
 import { BoardScene } from './scenes/BoardScene';
@@ -363,6 +365,8 @@ export const MOCK_SCENES = {
   'fix-run': FixRunScene,
   'fix-run-question': FixRunQuestionScene,
   'resolve-transcript-drawer': FixRunQuestionScene,
+  'resolve-transcript-drawer-multi': FixRunMultiScene,
+  'resolve-transcript-drawer-multi-done': FixRunMultiDoneScene,
   'space-diff-split': SpaceDiffSplitScene,
   'space-diff-comment': SpaceDiffCommentScene,
   'crash-report': CrashReportScene,

@@ -31,13 +31,20 @@ export const resolverBriefOf = ({
     attempt.batchId === null
       ? [attempt]
       : attempts.filter((candidate) => candidate.batchId === attempt.batchId);
+  const ownThreadIds = [
+    ...new Set(
+      attempts
+        .filter((candidate) => candidate.agentId === agentId)
+        .flatMap((candidate) => candidate.threadIds),
+    ),
+  ];
   const batchThreadIds = [
-    ...new Set([...attempt.threadIds, ...siblings.flatMap((sibling) => sibling.threadIds)]),
+    ...new Set([...ownThreadIds, ...siblings.flatMap((sibling) => sibling.threadIds)]),
   ];
   return {
     attempt,
     threadId,
-    ownThreadIds: attempt.threadIds,
+    ownThreadIds,
     batchThreadIds,
     isBatch: batchThreadIds.length > 1,
   };

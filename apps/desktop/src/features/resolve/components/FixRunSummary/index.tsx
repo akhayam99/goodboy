@@ -1,18 +1,19 @@
 import { useEffect } from 'react';
-import { Band, Button, Chip, Markdown } from '@goodboy/ui';
-import type { Agent, Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { Band, Markdown } from '@goodboy/ui';
+import type { Agent, ResolveAttempt, Session, SessionId } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { fixRunTranscript } from '../../../../store/slices/navigation/place';
 import { ResolverQuestionCard } from '../../ResolverQuestionCard';
-import { STATE_CHIP_TONE } from '../ReviewFlow/stateTone';
 import { useReviewEntries, type ReviewEntry } from '../ReviewFlow/useReviewEntries';
 import type { ResolverBrief } from '../../hooks/useResolverBrief';
-import { ResolverCommitLine } from '../../ResolverCommitLine';
+import { fixRunCommitsViewOf, fixRunStatusOf } from '../../fixRunStatus';
 import { FIX_RUN_COPY } from '../../reviewFlowCopy';
 import { threadFixSha } from '../../threadFixSha';
 import { threadLocationOf } from '../../threadLocationOf';
-import { openReview } from '../../../review/openReview';
 import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
+import { FixRunCommits } from './FixRunCommits';
+import { FixRunStatusLine } from './FixRunStatusLine';
+import { FixRunThreads } from './FixRunThreads';
 
 type Props = {
   readonly session: Session;
@@ -36,8 +37,14 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
   const loadResolveSession = useAppStore((state) => state.loadResolveSession);
   const isLoaded = useAppStore((state) => state.sessionResolveQueueItems[sessionId] !== undefined);
+  const attempts = useAppStore(
+    (state) =>
+      state.sessionResolveAttempts?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<ResolveAttempt>),
+  );
+  const turnKind = useAppStore((state) => state.agentTurnState[agent.id]?.kind ?? null);
   const { entries } = useReviewEntries({ sessionId, isSourceScoped: false });
   const outcome = useAgentOutcome({ agent });
+  const status = fixRunStatusOf({ attempts, agentId: agent.id, turnKind });
   const mountId = brief.attempt.mountTarget?.mountId ?? null;
   const touched = brief.ownThreadIds.map((threadId) => ({
     threadId,
@@ -48,12 +55,11 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
       return [];
     }
     const commit = commitOf({ entry });
-    return commit.sha === null ? [] : [{ ...commit, sha: commit.sha, threadId: entry.threadId }];
+    return commit.sha === null ? [] : [{ ...commit, sha: commit.sha }];
   });
   const uniqueCommits = commits.filter(
     (commit, index) => commits.findIndex((other) => other.sha === commit.sha) === index,
   );
-  const batchTotal = brief.batchThreadIds.length;
 
   useEffect(() => {
     void loadResolveSession({ sessionId });
@@ -67,7 +73,8 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-3">
+      {status === 'ended' ? null : <FixRunStatusLine attempt={brief.attempt} status={status} />}
       {asking.map((entry) => (
         <div key={entry.threadId} className="flex min-w-0 flex-col gap-2">
           <button type="button" className={ROW_CLASS} onClick={() => openThread(entry.threadId)}>
@@ -83,7 +90,14 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
           <ResolverQuestionCard sessionId={sessionId} row={entry.row} />
         </div>
       ))}
-      {outcome.text !== '' && (
+      <FixRunThreads
+        sessionId={sessionId}
+        mountId={mountId}
+        threads={touched}
+        batchThreadIds={brief.batchThreadIds}
+        onOpen={openThread}
+      />
+      {status === 'ended' && outcome.text !== '' && (
         <Band inset="content" label={FIX_RUN_COPY.didHeading} headingLevel={2}>
           <div className="max-w-[var(--measure)] text-body text-foreground">
             <Markdown text={outcome.text} />
@@ -93,75 +107,12 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
           )}
         </Band>
       )}
-      <Band inset="content" label={FIX_RUN_COPY.commitsHeading} headingLevel={2}>
-        {uniqueCommits.length === 0 ? (
-          <p className="text-body text-muted-foreground">
-            {isLoaded ? FIX_RUN_COPY.noCommit : FIX_RUN_COPY.loading}
-          </p>
-        ) : (
-          uniqueCommits.map((commit) => (
-            <div key={commit.sha} className="flex min-w-0 flex-col gap-0.5">
-              <ResolverCommitLine
-                sessionId={sessionId}
-                mountId={mountId}
-                sha={commit.sha}
-                isFolded={commit.landedAs !== null}
-              />
-              {commit.landedAs !== null && (
-                <p className="text-meta text-muted-foreground">
-                  {FIX_RUN_COPY.foldedInto({ sha: commit.landedAs })}
-                </p>
-              )}
-            </div>
-          ))
-        )}
-      </Band>
-      <Band inset="content" label={FIX_RUN_COPY.threadsHeading} headingLevel={2}>
-        <ul className="flex min-w-0 flex-col">
-          {touched.map(({ threadId, entry }) => (
-            <li key={threadId} className="list-none">
-              {entry === null ? (
-                <p className="py-1 text-body text-muted-foreground">{FIX_RUN_COPY.gone}</p>
-              ) : (
-                <button type="button" className={ROW_CLASS} onClick={() => openThread(threadId)}>
-                  <Chip
-                    tone={STATE_CHIP_TONE[entry.state]}
-                    size="3xs"
-                    bordered={false}
-                    label={entry.word}
-                    className="shrink-0"
-                  />
-                  <span className="min-w-0 truncate text-foreground">
-                    {threadLocationOf({ row: entry.row })?.label ?? FIX_RUN_COPY.comment}
-                  </span>
-                  {entry.row.reviewerNote?.author != null && (
-                    <span className="shrink-0 text-meta text-muted-foreground">
-                      {entry.row.reviewerNote.author}
-                    </span>
-                  )}
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-        {batchTotal > touched.length && (
-          <div className="flex min-w-0 flex-wrap items-center gap-2 text-meta text-muted-foreground">
-            <span>{FIX_RUN_COPY.batch({ others: batchTotal - touched.length })}</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() =>
-                void openReview({
-                  sessionId,
-                  destination: { kind: 'threads', mountId, threadIds: brief.batchThreadIds },
-                })
-              }
-            >
-              {FIX_RUN_COPY.openBatch}
-            </Button>
-          </div>
-        )}
-      </Band>
+      <FixRunCommits
+        sessionId={sessionId}
+        mountId={mountId}
+        view={fixRunCommitsViewOf({ commitCount: uniqueCommits.length, status, isLoaded })}
+        commits={uniqueCommits}
+      />
     </div>
   );
 };
