@@ -54,6 +54,18 @@ fn quarantine(root: &Path, id: &str, base: &str) -> Option<String> {
         worktree_path: root.to_string_lossy().into_owned(),
         candidate_id: id.to_string(),
         base_sha: base.to_string(),
+        stack: false,
+    })
+    .unwrap()
+    .sha
+}
+
+fn quarantine_stacked(root: &Path, id: &str, base: &str) -> Option<String> {
+    worktree_quarantine_candidate_blocking(QuarantineCandidateArgs {
+        worktree_path: root.to_string_lossy().into_owned(),
+        candidate_id: id.to_string(),
+        base_sha: base.to_string(),
+        stack: true,
     })
     .unwrap()
     .sha
@@ -79,7 +91,7 @@ fn quarantine_moves_the_branch_back_and_keeps_the_work_alive() {
     let root = init_repo("candidate-quarantine");
     let base = commit(&root, "base.txt", "base", "base");
     commit(&root, "fix.txt", "fix", "fix");
-    std::fs::write(root.join("loose.txt"), "loose").unwrap();
+    std::fs::write(root.join("base.txt"), "base edited").unwrap();
 
     let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
 
@@ -96,9 +108,216 @@ fn quarantine_moves_the_branch_back_and_keeps_the_work_alive() {
         "the candidate ref does not hold the work"
     );
     assert!(
-        git_ok(&root, &["show", &format!("{candidate}:loose.txt")]).contains("loose"),
-        "uncommitted work was not captured into the candidate"
+        git_ok(&root, &["show", &format!("{candidate}:base.txt")]).contains("base edited"),
+        "an uncommitted edit to a tracked file was not captured into the candidate"
     );
+}
+
+#[test]
+fn an_untracked_file_never_enters_a_candidate() {
+    let root = init_repo("candidate-untracked");
+    let base = commit(&root, "base.txt", "base", "base");
+    std::fs::write(root.join("base.txt"), "base edited").unwrap();
+    std::fs::write(root.join("loose.txt"), "loose").unwrap();
+
+    let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
+
+    let files = git_ok(&root, &["ls-tree", "-r", "--name-only", &candidate]);
+    assert!(!files.contains("loose.txt"), "{files}");
+}
+
+#[test]
+fn a_candidate_made_only_of_untracked_files_is_empty() {
+    let root = init_repo("candidate-only-untracked");
+    let base = commit(&root, "base.txt", "base", "base");
+    std::fs::write(root.join("loose.txt"), "loose").unwrap();
+
+    assert_eq!(quarantine(&root, "cand-1", &base), None);
+    assert_eq!(head(&root), base);
+}
+
+#[test]
+fn a_staged_new_file_enters_a_candidate() {
+    let root = init_repo("candidate-staged");
+    let base = commit(&root, "base.txt", "base", "base");
+    std::fs::write(root.join("added.txt"), "added").unwrap();
+    git_ok(&root, &["add", "added.txt"]);
+
+    let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
+
+    assert!(git_ok(&root, &["ls-tree", "-r", "--name-only", &candidate]).contains("added.txt"));
+}
+
+#[cfg(unix)]
+fn link_dist(root: &Path, library: &str, target: &Path) {
+    let dist = root.join("libraries").join(library).join("dist");
+    std::fs::create_dir_all(dist.parent().unwrap()).unwrap();
+    std::os::unix::fs::symlink(target, dist).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn symlinks_into_the_main_checkout_never_enter_a_candidate() {
+    let root = init_repo("candidate-dist-symlinks");
+    let main = temp_root("candidate-dist-main");
+    std::fs::create_dir_all(main.join("libraries/ledger-core/dist")).unwrap();
+    let base = commit(&root, "base.txt", "base", "base");
+    std::fs::write(root.join("base.txt"), "base edited").unwrap();
+    link_dist(&root, "ledger-core", &main.join("libraries/ledger-core/dist"));
+    link_dist(&root, "notify-relay", &main.join("libraries/notify-relay/dist"));
+
+    let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
+
+    let files = git_ok(&root, &["ls-tree", "-r", "--name-only", &candidate]);
+    assert!(!files.contains("dist"), "{files}");
+}
+
+#[cfg(unix)]
+#[test]
+fn symlinks_the_agent_committed_itself_are_stripped_from_the_candidate() {
+    let root = init_repo("candidate-committed-symlinks");
+    let main = temp_root("candidate-committed-main");
+    let base = commit(&root, "base.txt", "base", "base");
+    commit(&root, "fix.txt", "fix", "fix the rounding");
+    link_dist(&root, "ledger-core", &main.join("libraries/ledger-core/dist"));
+    git_ok(&root, &["add", "--all"]);
+    git_ok(&root, &["commit", "--no-verify", "-m", "oops, add built output"]);
+    commit(&root, "second.txt", "second", "second fix");
+
+    let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
+
+    let files = git_ok(&root, &["ls-tree", "-r", "--name-only", &candidate]);
+    assert!(!files.contains("dist"), "{files}");
+    assert!(files.contains("fix.txt") && files.contains("second.txt"), "{files}");
+    assert_eq!(
+        git_ok(&root, &["log", "--format=%s", &format!("{base}..{candidate}")]),
+        "second fix\nfix the rounding",
+        "the agent's own commits were not kept as they were"
+    );
+}
+
+#[test]
+fn ignored_build_output_never_enters_a_candidate() {
+    let root = init_repo("candidate-ignored");
+    std::fs::write(root.join(".gitignore"), "dist/\n").unwrap();
+    git_ok(&root, &["add", ".gitignore"]);
+    let base = commit(&root, "base.txt", "base", "base");
+    commit(&root, "fix.txt", "fix", "fix");
+    std::fs::create_dir_all(root.join("dist")).unwrap();
+    std::fs::write(root.join("dist/out.js"), "built").unwrap();
+    git_ok(&root, &["add", "--force", "dist/out.js"]);
+    git_ok(&root, &["commit", "--no-verify", "-m", "built output"]);
+
+    let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
+
+    let files = git_ok(&root, &["ls-tree", "-r", "--name-only", &candidate]);
+    assert!(!files.contains("dist/out.js"), "{files}");
+    assert!(files.contains("fix.txt"), "{files}");
+}
+
+#[cfg(unix)]
+#[test]
+fn a_relative_link_inside_the_repository_is_kept() {
+    let root = init_repo("candidate-inner-link");
+    let base = commit(&root, "base.txt", "base", "base");
+    std::os::unix::fs::symlink("base.txt", root.join("alias.txt")).unwrap();
+    git_ok(&root, &["add", "alias.txt"]);
+    git_ok(&root, &["commit", "--no-verify", "-m", "alias"]);
+
+    let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
+
+    assert!(git_ok(&root, &["ls-tree", "-r", "--name-only", &candidate]).contains("alias.txt"));
+}
+
+#[test]
+fn a_stacked_quarantine_leaves_the_copy_on_the_candidate_tip() {
+    let root = init_repo("candidate-stacked");
+    let base = commit(&root, "base.txt", "base", "base");
+    commit(&root, "fix.txt", "fix", "fix");
+
+    let candidate = quarantine_stacked(&root, "cand-1", &base).expect("a candidate");
+
+    assert_eq!(head(&root), candidate, "the copy did not stay on the tip");
+    assert_eq!(
+        git_ok(&root, &["rev-parse", "refs/goodboy/candidates/cand-1"]),
+        candidate
+    );
+    assert!(root.join("fix.txt").exists());
+}
+
+#[test]
+fn a_second_stacked_quarantine_builds_on_the_first() {
+    let root = init_repo("candidate-stacked-twice");
+    let base = commit(&root, "base.txt", "base", "base");
+    commit(&root, "a.txt", "a", "fix a");
+    let first = quarantine_stacked(&root, "turn-1", &base).unwrap();
+    commit(&root, "b.txt", "b", "fix b");
+
+    let second = quarantine_stacked(&root, "turn-2", &first).unwrap();
+
+    assert_eq!(
+        git_ok(&root, &["rev-parse", &format!("{second}~1")]),
+        first,
+        "the second candidate is not stacked on the first"
+    );
+}
+
+#[test]
+fn stacked_splitting_gives_each_commit_its_own_candidate_in_commit_order() {
+    let root = init_repo("candidate-split-stacked");
+    let base = commit(&root, "base.txt", "base", "base");
+    let first = commit(&root, "a.txt", "a", "fix a");
+    let second = commit(&root, "b.txt", "b", "fix b");
+    let third = commit(&root, "c.txt", "c", "fix c");
+    quarantine_stacked(&root, "run-1", &base).unwrap();
+
+    let done = split_stacked(
+        &root,
+        &base,
+        &[("run-1-c", &third), ("run-1-a", &first), ("run-1-b", &second)],
+    );
+
+    let sha_of = |id: &str| {
+        done.iter()
+            .find(|(candidate, _)| candidate == id)
+            .and_then(|(_, sha)| sha.clone())
+            .unwrap()
+    };
+    assert_eq!(sha_of("run-1-a"), first);
+    assert_eq!(sha_of("run-1-b"), second);
+    assert_eq!(sha_of("run-1-c"), third);
+    assert_eq!(head(&root), third, "the copy left its stacked tip");
+    assert_eq!(
+        git_ok(&root, &["rev-parse", "refs/goodboy/candidates/run-1-b"]),
+        second
+    );
+}
+
+#[test]
+fn stacked_splitting_refuses_when_a_commit_belongs_to_no_comment() {
+    let root = init_repo("candidate-split-stacked-leftover");
+    let base = commit(&root, "base.txt", "base", "base");
+    let first = commit(&root, "a.txt", "a", "fix a");
+    commit(&root, "lint.txt", "lint", "lint pass");
+    let third = commit(&root, "c.txt", "c", "fix c");
+    quarantine_stacked(&root, "run-1", &base).unwrap();
+
+    let done = split_stacked(&root, &base, &[("run-1-a", &first), ("run-1-c", &third)]);
+
+    assert!(done.iter().all(|(_, sha)| sha.is_none()), "{done:?}");
+    assert_eq!(head(&root), third, "the copy moved off its tip");
+}
+
+#[test]
+fn stacked_splitting_refuses_two_comments_on_one_commit() {
+    let root = init_repo("candidate-split-stacked-shared");
+    let base = commit(&root, "base.txt", "base", "base");
+    let only = commit(&root, "a.txt", "a", "fix both");
+    quarantine_stacked(&root, "run-1", &base).unwrap();
+
+    let done = split_stacked(&root, &base, &[("run-1-a", &only), ("run-1-b", &only)]);
+
+    assert!(done.iter().all(|(_, sha)| sha.is_none()), "{done:?}");
 }
 
 #[test]
@@ -324,7 +543,7 @@ fn resolve_copy(root: &Path, scratch: &Path, attempt: &str) -> PathBuf {
     let copy = scratch
         .join(format!("goodboy-history-resolve-{attempt}"))
         .join("copy");
-    let made = crate::history::prepare_resolve_copy_at(root, &copy).unwrap();
+    let made = crate::history::prepare_resolve_copy_at(root, &copy, None).unwrap();
     assert_eq!(made.head, head(root), "the copy is not at the branch head");
     copy
 }
@@ -345,6 +564,7 @@ fn fixes_in_separate_copies_become_candidates_and_all_land_on_accept() {
     let second = resolve_copy(&root, &scratch, "two");
     commit(&first, "rounding.ts", "half even", "round half even");
     std::fs::write(second.join("refunds.ts"), "refunds").unwrap();
+    git_ok(&second, &["add", "refunds.ts"]);
 
     let one = quarantine(&first, "attempt-one", &base).unwrap();
     let two = quarantine(&second, "attempt-two", &base).unwrap();
@@ -398,6 +618,26 @@ fn split(root: &Path, base: &str, picks: &[(&str, &str)]) -> Vec<(String, Option
                 commit_sha: (*sha).to_string(),
             })
             .collect(),
+        stack: false,
+    })
+    .unwrap()
+    .into_iter()
+    .map(|done| (done.candidate_id, done.sha))
+    .collect()
+}
+
+fn split_stacked(root: &Path, base: &str, picks: &[(&str, &str)]) -> Vec<(String, Option<String>)> {
+    worktree_split_candidates_blocking(SplitCandidatesArgs {
+        worktree_path: root.to_string_lossy().into_owned(),
+        base_sha: base.to_string(),
+        picks: picks
+            .iter()
+            .map(|(id, sha)| SplitCandidatePick {
+                candidate_id: (*id).to_string(),
+                commit_sha: (*sha).to_string(),
+            })
+            .collect(),
+        stack: true,
     })
     .unwrap()
     .into_iter()
@@ -506,6 +746,7 @@ fn splitting_refuses_a_copy_that_is_not_at_the_base() {
             candidate_id: "run-1-a".to_string(),
             commit_sha: first,
         }],
+        stack: false,
     });
 
     assert!(outcome.is_err(), "{outcome:?}");
