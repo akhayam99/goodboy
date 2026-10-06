@@ -18,6 +18,7 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
+import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import { shellArrangement } from '../../../shellArrangement';
 import { NOW, SESSION, WORKSPACE_ID, seedWorkflowScene } from './workflowSeed';
 import { sceneClock } from '../sceneClock';
@@ -181,7 +182,7 @@ const seedShellChrome = () => {
       },
     },
     archivedSessions: { [WORKSPACE_ID]: [] },
-    sessionViewPrefs: { [WORKSPACE_ID]: { sort: 'updatedAt', group: 'stage' } },
+    sessionViewPrefs: { [WORKSPACE_ID]: DEFAULT_PREFS },
     sessionTelemetry: {
       [SESSION.id]: [
         ...(useAppStore.getState().sessionTelemetry[SESSION.id] ?? []),

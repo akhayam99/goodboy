@@ -3,8 +3,8 @@ import { createInitialSessionViewState } from './createInitialSessionViewState';
 import { setArtifactFilter } from './artifactFilter';
 import { closeArtifactConversation, openArtifactConversation } from './artifactConversation';
 import { closeArtifactCreation, openArtifactCreation } from './artifactCreation';
-import { setSessionGroup } from './setSessionGroup';
-import { setSessionSort } from './setSessionSort';
+import { markSessionOpened } from './markSessionOpened';
+import { setSessionViewPrefs } from './setSessionViewPrefs';
 import { toggleSessionGroup } from './toggleSessionGroup';
 import {
   openDiffLens,
@@ -42,8 +42,8 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     ...createInitialSessionViewState({}),
     setScriptsLensScope: ({ scope }) => set({ scriptsLensScope: scope }),
     getSessionViewPrefs: getSessionViewPrefs(set, get),
-    setSessionSort: setSessionSort(set, get),
-    setSessionGroup: setSessionGroup(set, get),
+    setSessionViewPrefs: setSessionViewPrefs(set, get),
+    markSessionOpened: markSessionOpened(set),
     toggleSessionGroup: toggleSessionGroup(set),
     setActiveLens: setActiveLens(set),
     toggleWorkflowExpand: toggleWorkflowExpand(set),

@@ -18,6 +18,7 @@ import { SessionNavSidebar } from '../../../../features/session/components/Sessi
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
 import { useAppStore, type LensKind } from '../../../../store';
+import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
 import { sceneClock } from '../sceneClock';
@@ -66,7 +67,7 @@ export const seedShellChrome = ({
     sessions: [session, ...siblings],
     sessionBranches: { ...state.sessionBranches, ...branches },
     archivedSessions: { [workspaceId]: [] },
-    sessionViewPrefs: { [workspaceId]: { sort: 'updatedAt', group: 'stage' } },
+    sessionViewPrefs: { [workspaceId]: DEFAULT_PREFS },
     sessionTelemetry: {
       ...state.sessionTelemetry,
       [session.id]: state.sessionTelemetry[session.id] ?? [

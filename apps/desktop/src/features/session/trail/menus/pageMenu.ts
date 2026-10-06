@@ -6,6 +6,14 @@ import { LENS_ICON, lensIconClass, lensLabelFor } from '../../lens-labels';
 
 export type PageSummaries = Partial<Record<LensKind, string>>;
 
+type SummaryParams = {
+  readonly summaries: PageSummaries;
+  readonly lens: LensKind | null;
+};
+
+export const pageSummaryOf = ({ summaries, lens }: SummaryParams): string | null =>
+  lens === null ? null : (summaries[lens] ?? null);
+
 type Params = {
   readonly destinations: ReadonlyArray<LensDestination>;
   readonly activeLens: LensKind | null;
@@ -57,7 +65,7 @@ export const pageMenu = ({
           },
     label: lens === null ? 'Session' : lensLabelFor({ lens, isBranchless }),
     secondary: null,
-    metaA: lens === null ? null : (summaries[lens] ?? null),
+    metaA: pageSummaryOf({ summaries, lens }),
     state: null,
     isCurrent: isCurrentLens({ lens, activeLens }),
     isDisabled: false,

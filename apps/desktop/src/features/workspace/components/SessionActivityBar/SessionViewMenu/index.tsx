@@ -1,51 +1,65 @@
 import { useEffect } from 'react';
-import { Check, SlidersHorizontal } from 'lucide-react';
-import { AnchoredPopover, cn, Divider, Eyebrow, Tooltip, useDropdown } from '@goodboy/ui';
-import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
-import { useAppStore, useSessionViewPrefs } from '../../../../../store';
+import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import type { Session, SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
+import { useAppStore, useSelectedProjectIds, useSessionViewPrefs } from '../../../../../store';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { useProjectFilterOptions } from '../../../hooks/useProjectFilterOptions';
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
+import { MenuChoice } from './MenuChoice';
+import { MenuSection } from './MenuSection';
 
 type SortOption = {
   readonly key: SessionSortKey;
   readonly label: string;
-  readonly hint: string;
 };
 
 type GroupOption = {
   readonly key: SessionGroupKey;
   readonly label: string;
-  readonly hint: string;
 };
 
 const SORT_OPTIONS: ReadonlyArray<SortOption> = [
-  { key: 'updatedAt', label: 'Recent', hint: 'Last active first' },
-  { key: 'createdAt', label: 'Oldest', hint: 'First created first' },
-  { key: 'goal', label: 'A–Z', hint: 'By session goal' },
+  { key: 'needsYou', label: 'Needs you first' },
+  { key: 'goal', label: 'Alphabetical' },
+  { key: 'updatedAt', label: 'Last activity' },
+  { key: 'createdAt', label: 'Created' },
 ];
 
 const GROUP_OPTIONS: ReadonlyArray<GroupOption> = [
-  { key: 'stage', label: 'Stage', hint: 'Needs you, running, review…' },
-  { key: 'pr', label: 'Pull request', hint: 'Draft, review, merged…' },
-  { key: 'none', label: 'None', hint: 'Flat list' },
+  { key: 'none', label: 'None' },
+  { key: 'pr', label: 'PR state' },
+  { key: 'stage', label: 'Stage' },
+  { key: 'project', label: 'Project' },
 ];
 
-const MENU_WIDTH = 200;
+const MENU_WIDTH = 224;
+const MoreIcon = CONCEPT_ICONS.more;
 
-type SessionViewMenuProps = {
+type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly sessions: ReadonlyArray<Session>;
+  readonly archivedCount: number;
+  readonly onArchivedShownChange: (isShown: boolean) => void;
 };
 
-export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
+export const SessionViewMenu = ({
+  workspaceId,
+  sessions,
+  archivedCount,
+  onArchivedShownChange,
+}: Props) => {
   const prefs = useSessionViewPrefs(workspaceId);
-  const setSessionSort = useAppStore((s) => s.setSessionSort);
-  const setSessionGroup = useAppStore((s) => s.setSessionGroup);
+  const setSessionViewPrefs = useAppStore((state) => state.setSessionViewPrefs);
+  const setSelectedProjectIds = useAppStore((state) => state.setSelectedProjectIds);
+  const selectedProjectIds = useSelectedProjectIds({ workspaceId });
+  const projectOptions = useProjectFilterOptions({ workspaceId, sessions });
 
   const { hold, release } = useSidebarPeekHold();
   const dropdown = useDropdown({
-    align: 'start',
-    width: 'w-[200px]',
+    align: 'end',
+    width: 'w-56',
     expectedWidth: MENU_WIDTH,
-    expectedHeight: 220,
+    expectedHeight: 360,
   });
   const { open, toggle } = dropdown;
 
@@ -57,104 +71,88 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
     return () => release();
   }, [hold, open, release]);
 
+  const toggleProject = (projectId: string) => {
+    const next = selectedProjectIds.includes(projectId)
+      ? selectedProjectIds.filter((id) => id !== projectId)
+      : [...selectedProjectIds, projectId];
+    setSelectedProjectIds({ workspaceId, selectedProjectIds: next });
+  };
+
   return (
     <AnchoredPopover
       dropdown={dropdown}
       role="menu"
-      ariaLabel="Session display options"
-      className="py-1"
+      ariaLabel="Options for sessions"
+      className="max-h-96 py-1"
       hasBackdrop
       trigger={
-        <Tooltip content="Display options" side="bottom">
+        <Tooltip content="Options for sessions" side="bottom">
           <button
             type="button"
             onClick={toggle}
             aria-haspopup="menu"
             aria-expanded={open}
-            aria-label="Display options"
+            aria-label="Options for sessions"
             className={cn(
-              'inline-flex shrink-0 items-center justify-center rounded-sm p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'inline-flex size-5 shrink-0 items-center justify-center rounded-sm motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               open
                 ? 'bg-selected text-foreground'
                 : 'text-faint-foreground hover:bg-hover hover:text-foreground',
             )}
           >
-            <SlidersHorizontal size={11} aria-hidden />
+            <MoreIcon size={ICON_SIZE.control} aria-hidden />
           </button>
         </Tooltip>
       }
     >
-      <MenuSection title="Sort by">
-        {SORT_OPTIONS.map((opt) => (
-          <MenuItem
-            key={opt.key}
-            label={opt.label}
-            hint={opt.hint}
-            selected={prefs.sort === opt.key}
-            onClick={() => {
-              setSessionSort(workspaceId, opt.key);
-            }}
+      <MenuSection title="Sort">
+        {SORT_OPTIONS.map((option) => (
+          <MenuChoice
+            key={option.key}
+            role="menuitemradio"
+            label={option.label}
+            isChecked={prefs.sort === option.key}
+            onSelect={() => setSessionViewPrefs({ workspaceId, patch: { sort: option.key } })}
           />
         ))}
       </MenuSection>
-      <Divider />
-      <MenuSection title="Group by">
-        {GROUP_OPTIONS.map((opt) => (
-          <MenuItem
-            key={opt.key}
-            label={opt.label}
-            hint={opt.hint}
-            selected={prefs.group === opt.key}
-            onClick={() => {
-              setSessionGroup(workspaceId, opt.key);
-            }}
+      <MenuSection title="Group">
+        {GROUP_OPTIONS.map((option) => (
+          <MenuChoice
+            key={option.key}
+            role="menuitemradio"
+            label={option.label}
+            isChecked={prefs.group === option.key}
+            onSelect={() => setSessionViewPrefs({ workspaceId, patch: { group: option.key } })}
           />
         ))}
+      </MenuSection>
+      {projectOptions.length > 0 ? (
+        <MenuSection title="Filter by project">
+          {projectOptions.map((option) => (
+            <MenuChoice
+              key={option.id}
+              role="menuitemcheckbox"
+              label={option.label}
+              isChecked={selectedProjectIds.includes(option.id)}
+              onSelect={() => toggleProject(option.id)}
+              trailing={
+                <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
+                  {option.count}
+                </span>
+              }
+            />
+          ))}
+        </MenuSection>
+      ) : null}
+      <MenuSection title="View">
+        <MenuChoice
+          role="menuitemcheckbox"
+          label={`Show archived (${archivedCount})`}
+          isChecked={prefs.isArchivedShown}
+          onSelect={() => onArchivedShownChange(!prefs.isArchivedShown)}
+        />
       </MenuSection>
     </AnchoredPopover>
   );
 };
-
-type MenuSectionProps = {
-  readonly title: string;
-  readonly children: React.ReactNode;
-};
-
-function MenuSection({ title, children }: MenuSectionProps) {
-  return (
-    <div className="px-1 py-1">
-      <Eyebrow label={title} muted className="px-2 pb-1 pt-0.5" />
-      <div className="flex flex-col">{children}</div>
-    </div>
-  );
-}
-
-type MenuItemProps = {
-  readonly label: string;
-  readonly hint: string;
-  readonly selected: boolean;
-  readonly onClick: () => void;
-};
-
-function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
-  return (
-    <button
-      type="button"
-      role="menuitemradio"
-      aria-checked={selected}
-      onClick={onClick}
-      className={cn(
-        'flex items-center gap-2 rounded-sm px-2 py-2 text-left text-label motion-safe:transition-colors',
-        selected ? 'text-foreground' : 'text-muted-foreground hover:bg-hover hover:text-foreground',
-      )}
-    >
-      <span className="flex w-3 shrink-0 items-center justify-center text-primary">
-        {selected ? <Check size={11} aria-hidden /> : null}
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-medium">{label}</span>
-        <span className="truncate text-meta text-faint-foreground">{hint}</span>
-      </span>
-    </button>
-  );
-}

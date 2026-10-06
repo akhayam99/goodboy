@@ -1,15 +1,13 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import {
   sessionPlace,
   useAppStore,
   useCurrentSession,
   useCurrentWorkspace,
-  useSessionViewPrefs,
+  useSessionColumn,
   useSessions,
-  useSortedGroupedSessions,
 } from '../../../store';
-import { isSessionGroupCollapsed } from '../../../store/slices/session-view/isSessionGroupCollapsed';
 
 type DeltaParams = {
   readonly delta: number;
@@ -20,20 +18,7 @@ export const useSessionNavigation = () => {
   const currentSession = useCurrentSession();
   const sessions = useSessions();
   const navigate = useAppStore((state) => state.navigate);
-  const workspaceId = currentWorkspace?.id ?? null;
-  const groups = useSortedGroupedSessions(workspaceId, sessions);
-  const isGrouped = useSessionViewPrefs(workspaceId).group !== 'none';
-  const groupExpanded = useAppStore((state) => state.sessionGroupExpanded);
-  const order = useMemo(
-    () =>
-      groups
-        .filter(
-          (group) =>
-            !isGrouped || !isSessionGroupCollapsed({ key: group.key, overrides: groupExpanded }),
-        )
-        .flatMap((group) => group.sessions.map((session) => session.id as SessionId)),
-    [groups, isGrouped, groupExpanded],
-  );
+  const { order } = useSessionColumn(currentWorkspace?.id ?? null, sessions);
 
   return useCallback(
     ({ delta }: DeltaParams) => {

@@ -41,11 +41,8 @@ vi.mock('../../store', async () => {
   };
 });
 
-import {
-  useSessionStageInfo,
-  useSortedGroupedSessions,
-  useStageGroupedSessions,
-} from './selectors';
+import { useSessionColumn, useSessionStageInfo, useStageGroupedSessions } from './selectors';
+import { DEFAULT_PREFS } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -106,6 +103,7 @@ beforeEach(() => {
     sessionGitlabMr: {},
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
+    sessionGroupExpanded: {},
     getSessionViewPrefs: vi.fn(),
     selectedProjectIds: {},
     getSelectedProjectIds: vi.fn(),
@@ -291,37 +289,68 @@ describe('useSessionStageInfo settled request state', () => {
   });
 });
 
-describe('useSortedGroupedSessions', () => {
-  it('derives stages with the default stage grouping', () => {
+describe('useSessionColumn', () => {
+  it('derives stages when the list is grouped by stage', () => {
+    store.state.workspaces = [createWorkspace()];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionViewPrefs = { [WORKSPACE_ID]: { ...DEFAULT_PREFS, group: 'stage' } };
+    const sessions = [createSession(SESSION_ID)];
+
+    const { result } = renderHook(() => useSessionColumn(WORKSPACE_ID, sessions));
+
+    expect(result.current.groups.map((group) => [group.key, group.sessions])).toEqual([
+      ['building', sessions],
+    ]);
+    expect(result.current.stageBySession).toEqual({ [SESSION_ID]: 'building' });
+  });
+
+  it('shows one flat list by default', () => {
     store.state.workspaces = [createWorkspace()];
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     const sessions = [createSession(SESSION_ID)];
 
-    const { result } = renderHook(() => useSortedGroupedSessions(WORKSPACE_ID, sessions));
+    const { result } = renderHook(() => useSessionColumn(WORKSPACE_ID, sessions));
 
-    expect(result.current).toEqual([{ key: 'building', sessions }]);
+    expect(result.current.groups.map((group) => [group.key, group.sessions])).toEqual([
+      ['all', sessions],
+    ]);
+    expect(result.current.order).toEqual([SESSION_ID]);
   });
 
   it.each(['pr', 'none'] as const)(
-    'keeps the same array reference across store updates while grouping by %s',
+    'keeps the same column across unrelated store updates while grouping by %s',
     (group) => {
       store.state.workspaces = [createWorkspace()];
       store.state.projects = [createProject()];
       store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
-      store.state.sessionViewPrefs = { [WORKSPACE_ID]: { sort: 'updatedAt', group } };
+      store.state.sessionViewPrefs = {
+        [WORKSPACE_ID]: { ...DEFAULT_PREFS, sort: 'updatedAt', group },
+      };
       const sessions = [createSession(SESSION_ID)];
 
-      const { result, rerender } = renderHook(() =>
-        useSortedGroupedSessions(WORKSPACE_ID, sessions),
-      );
+      const { result, rerender } = renderHook(() => useSessionColumn(WORKSPACE_ID, sessions));
       const first = result.current;
 
-      store.state.currentSessionId = 'unrelated-session' as SessionId;
+      store.state.terminalTabs = { unrelated: [] };
       rerender();
 
       expect(result.current).toBe(first);
     },
   );
+
+  it('keeps the same stage map when the open session changes but no stage does', () => {
+    store.state.workspaces = [createWorkspace()];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    const sessions = [createSession(SESSION_ID)];
+
+    const { result, rerender } = renderHook(() => useSessionColumn(WORKSPACE_ID, sessions));
+    const first = result.current.stageBySession;
+
+    store.state.currentSessionId = 'unrelated-session' as SessionId;
+    rerender();
+
+    expect(result.current.stageBySession).toBe(first);
+  });
 });
 
 describe('useStageGroupedSessions', () => {
@@ -449,8 +478,8 @@ describe('fix runs and the grouped sessions', () => {
 
   it.each([
     ['useStageGroupedSessions', useStageGroupedSessions],
-    ['useSortedGroupedSessions', useSortedGroupedSessions],
-  ])(
+    ['useSessionColumn', useSessionColumn],
+  ] as const)(
     '%s renders nothing again when a fix run changes in a session it does not show',
     (_name, useGrouped) => {
       const sessions = [createSession(SESSION_ID)];
@@ -473,25 +502,33 @@ describe('fix runs and the grouped sessions', () => {
     },
   );
 
-  it.each([
-    ['useStageGroupedSessions', useStageGroupedSessions],
-    ['useSortedGroupedSessions', useSortedGroupedSessions],
-  ])(
-    '%s groups the session again when a fix run changes in a session it shows',
-    (_name, useGrouped) => {
-      const sessions = [createSession(SESSION_ID)];
-      withFixRunOf({ sessionId: SESSION_ID, state: 'working' });
-      const { result } = renderHook(() => useGrouped(WORKSPACE_ID, sessions));
-      expect(result.current.map((group) => group.key)).not.toContain('attention');
+  it('useStageGroupedSessions groups the session again when a fix run changes in a session it shows', () => {
+    const sessions = [createSession(SESSION_ID)];
+    withFixRunOf({ sessionId: SESSION_ID, state: 'working' });
+    const { result } = renderHook(() => useStageGroupedSessions(WORKSPACE_ID, sessions));
+    expect(result.current.map((group) => group.key)).not.toContain('attention');
 
-      act(() => {
-        withFixRunOf({ sessionId: SESSION_ID, state: 'needs_answer' });
-        store.notify();
-      });
+    act(() => {
+      withFixRunOf({ sessionId: SESSION_ID, state: 'needs_answer' });
+      store.notify();
+    });
 
-      expect(result.current.map((group) => group.key)).toContain('attention');
-    },
-  );
+    expect(result.current.map((group) => group.key)).toContain('attention');
+  });
+
+  it('useSessionColumn restages the session when a fix run changes in a session it shows', () => {
+    const sessions = [createSession(SESSION_ID)];
+    withFixRunOf({ sessionId: SESSION_ID, state: 'working' });
+    const { result } = renderHook(() => useSessionColumn(WORKSPACE_ID, sessions));
+    const before = result.current.stageBySession[SESSION_ID];
+
+    act(() => {
+      withFixRunOf({ sessionId: SESSION_ID, state: 'needs_answer' });
+      store.notify();
+    });
+
+    expect(result.current.stageBySession[SESSION_ID]).not.toBe(before);
+  });
 });
 
 describe('shared project filtering', () => {
@@ -513,12 +550,10 @@ describe('shared project filtering', () => {
       [unmounted.id]: [],
     };
     const { result } = renderHook(() => ({
-      sidebar: useSortedGroupedSessions(WORKSPACE_ID, [mounted, unmounted]),
+      sidebar: useSessionColumn(WORKSPACE_ID, [mounted, unmounted]),
       board: useStageGroupedSessions(WORKSPACE_ID, [mounted, unmounted]),
     }));
-    const sidebarIds = result.current.sidebar.flatMap((group) =>
-      group.sessions.map((session) => session.id),
-    );
+    const sidebarIds = result.current.sidebar.order;
     const boardIds = result.current.board.flatMap((group) =>
       group.sessions.map((session) => session.id),
     );

@@ -138,6 +138,7 @@ export {
   purgeSessionForDelete,
   archiveSession,
   unarchiveSession,
+  markSessionOpened,
   updateSessionConfig,
   type SessionConfigUpdate,
   type ArchivedSessionRef,

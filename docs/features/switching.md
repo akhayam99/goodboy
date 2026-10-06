@@ -9,14 +9,18 @@ Move between the tasks of a workspace, and see from any screen which one needs y
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="420" alt="The activity bar of the Harborline workspace: sessions grouped under Building 2, Running 2, Needs you 1 and In review 1, with Stop retried webhooks posting selected, 1 to answer and HBL-412">
 </picture>
 
-Move between tasks without losing your place. The bar on the left of every session lists all the sessions of the workspace, grouped by where they stand: **Building**, **Running**, **Needs you** and **In review**, with done work folded away. Each row says what it is waiting on, like **1 to answer** or **draft PR #90**, so you open the one that needs you, and its Overview shows what ran, what was decided and what comes next.
+Move between tasks without losing your place. The bar on the left lists the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, a **?** or **!** means the session needs you, a check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
+
+Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open shows its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Display options menu of the activity bar, open over the Harborline sessions, with Sort by Recent, Oldest and A-Z, and Group by Stage, Pull request and None">
 </picture>
 
-The **Display options** button at the top of the bar sorts sessions by **Recent**, **Oldest** or **A-Z**, and groups them by **Stage**, **Pull request** or **None**. The filter button next to it narrows the bar to one project.
+The options button in the **Sessions** header sorts the list by **Needs you first**, **Alphabetical**, **Last activity** or **Created**, groups it by **None**, **PR state**, **Stage** or **Project**, narrows it to a project and shows archived sessions. Goodboy keeps your choice for each workspace. The first eight rows show, and **Show more** opens the rest.
+
+To switch without looking at the list, hold **Control** and press **Tab** to flip through your recent sessions, then let go to open one. **Option Command Down** jumps to the next session that needs you.
 
 ### Now chip
 

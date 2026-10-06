@@ -1,6 +1,6 @@
-import type { AgentId, Session, SessionId } from '@goodboy/types';
+import type { AgentId, ProviderRunId, Session, SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../../store';
-import { LENS_KINDS } from '../../../../../store/slices/session-view/types';
+import { DEFAULT_PREFS, LENS_KINDS } from '../../../../../store/slices/session-view/types';
 import { SESSION } from '../workflowSeed';
 import { sceneParam } from './sceneParams';
 import { sceneClock } from '../../sceneClock';
@@ -42,6 +42,24 @@ export const WORKSPACE_SIBLINGS: ReadonlyArray<Session> = [
     goal: 'Add monthly ledger exports for finance',
     state: { kind: 'ended', endedAt: clock.iso({ at: '2026-08-25T15:51:00.000Z' }) },
   }),
+  sibling({
+    id: 'mock-states-sibling-webhook',
+    goal: 'Stop notify-relay posting a webhook twice',
+    state: {
+      kind: 'running',
+      runId: 'mock-states-run-webhook' as ProviderRunId,
+      startedAt: clock.iso({ at: '2026-08-25T17:55:00.000Z' }),
+    },
+  }),
+  sibling({
+    id: 'mock-states-sibling-retry',
+    goal: 'Retry policy for 429s on payments-api',
+    state: {
+      kind: 'error',
+      message: 'The agent stopped with an error',
+      failedAt: clock.iso({ at: '2026-08-25T17:30:00.000Z' }),
+    },
+  }),
 ];
 
 type LensParams = {
@@ -65,7 +83,7 @@ export const seedWorkspaceChrome = ({ session, siblings }: ChromeParams): void =
     activeLens: { [session.id]: lensOf({ value: sceneParam({ key: 'lens' }) }) },
     selectedAgentId: agent === null ? {} : { [session.id]: agent as AgentId },
     archivedSessions: { [session.workspaceId]: [] },
-    sessionViewPrefs: { [session.workspaceId]: { sort: 'updatedAt', group: 'stage' } },
+    sessionViewPrefs: { [session.workspaceId]: DEFAULT_PREFS },
     providers: [
       {
         id: 'anthropic',
