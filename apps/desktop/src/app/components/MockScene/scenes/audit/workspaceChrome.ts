@@ -1,4 +1,4 @@
-import type { AgentId, Session, SessionId } from '@goodboy/types';
+import type { AgentId, ProviderRunId, Session, SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../../store';
 import { DEFAULT_PREFS, LENS_KINDS } from '../../../../../store/slices/session-view/types';
 import { SESSION } from '../workflowSeed';
@@ -41,6 +41,24 @@ export const WORKSPACE_SIBLINGS: ReadonlyArray<Session> = [
     id: 'mock-states-sibling-ledger',
     goal: 'Add monthly ledger exports for finance',
     state: { kind: 'ended', endedAt: clock.iso({ at: '2026-08-25T15:51:00.000Z' }) },
+  }),
+  sibling({
+    id: 'mock-states-sibling-webhook',
+    goal: 'Stop notify-relay posting a webhook twice',
+    state: {
+      kind: 'running',
+      runId: 'mock-states-run-webhook' as ProviderRunId,
+      startedAt: clock.iso({ at: '2026-08-25T17:55:00.000Z' }),
+    },
+  }),
+  sibling({
+    id: 'mock-states-sibling-retry',
+    goal: 'Retry policy for 429s on payments-api',
+    state: {
+      kind: 'error',
+      message: 'The agent stopped with an error',
+      failedAt: clock.iso({ at: '2026-08-25T17:30:00.000Z' }),
+    },
   }),
 ];
 
