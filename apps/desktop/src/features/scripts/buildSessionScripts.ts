@@ -8,6 +8,7 @@ import type {
 } from '@goodboy/types';
 import { classifyScript, type ScriptCategory } from './classifyScript';
 import { extractPreviewLine } from './extractPreviewLine';
+import { scriptPinId } from './scriptPinId';
 import { discoveredScriptId, type ScriptGroup, type ScriptSource } from './scripts';
 import { projectById } from '../../store/slices/projects/projectIndex';
 
@@ -106,11 +107,13 @@ const savedScriptsOf = ({ saved, projectId }: SavedParams): ReadonlyArray<Runnab
 type ManifestParams = {
   readonly groups: ReadonlyArray<ScriptGroup>;
   readonly worktreePath: string;
+  readonly pins: ReadonlyArray<string>;
 };
 
 const manifestScriptsOf = ({
   groups,
   worktreePath,
+  pins,
 }: ManifestParams): ReadonlyArray<RunnableScript> =>
   groups
     .flatMap((group) =>
@@ -133,6 +136,7 @@ const manifestScriptsOf = ({
         savedId: null,
       })),
     )
+    .filter((script) => pins.includes(scriptPinId(script)))
     .sort(compareManifest);
 
 type Params = {
@@ -140,6 +144,7 @@ type Params = {
   readonly projects: ReadonlyArray<Project>;
   readonly saved: ReadonlyArray<ProjectScript>;
   readonly discovered: Readonly<Record<string, ReadonlyArray<ScriptGroup>>> | undefined;
+  readonly pins: Readonly<Record<ProjectId, ReadonlyArray<string>>>;
 };
 
 export const buildSessionScripts = ({
@@ -147,10 +152,16 @@ export const buildSessionScripts = ({
   projects,
   saved,
   discovered,
+  pins,
 }: Params): ReadonlyArray<SessionScriptGroup> =>
   mounts.map((mount) => {
     const isReady = mount.worktreePath !== '';
     const manifest = isReady ? (discovered?.[mount.worktreePath] ?? []) : [];
+    const pinned = manifestScriptsOf({
+      groups: manifest,
+      worktreePath: mount.worktreePath,
+      pins: pins[mount.projectId] ?? [],
+    });
     return {
       mountId: mount.mountId,
       projectId: mount.projectId,
@@ -158,10 +169,7 @@ export const buildSessionScripts = ({
       branch: mount.branch,
       worktreePath: mount.worktreePath,
       isReady,
-      packageCount: manifest.filter((group) => group.scripts.length > 0).length,
-      scripts: [
-        ...savedScriptsOf({ saved, projectId: mount.projectId }),
-        ...manifestScriptsOf({ groups: manifest, worktreePath: mount.worktreePath }),
-      ],
+      packageCount: new Set(pinned.map((script) => `${script.source}:${script.relDir}`)).size,
+      scripts: [...savedScriptsOf({ saved, projectId: mount.projectId }), ...pinned],
     };
   });

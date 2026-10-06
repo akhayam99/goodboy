@@ -1,7 +1,9 @@
 import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../store';
 import { buildSessionScripts } from './buildSessionScripts';
+import { parseScriptPins } from './parseScriptPins';
 import { scriptPinId } from './scriptPinId';
+import { scriptPinsKey } from './scriptPinsKey';
 import type { ScriptRunResult } from './scripts';
 import { startRunnableScript } from './startRunnableScript';
 
@@ -22,6 +24,7 @@ const findPinned = ({ sessionId, workspaceId, projectId, pinId }: Params) => {
     projects: state.projects,
     saved: state.projectScripts[workspaceId] ?? EMPTY_ARRAY,
     discovered: state.discoveredScripts[sessionId],
+    pins: { [projectId]: parseScriptPins({ raw: state.settings[scriptPinsKey({ projectId })] }) },
   });
   const group = groups.find((candidate) => candidate.projectId === projectId && candidate.isReady);
   const script = group?.scripts.find((candidate) => scriptPinId(candidate) === pinId);
