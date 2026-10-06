@@ -19,6 +19,7 @@ import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
 import { MountPresence } from './MountPresence';
 import { MountRequestLink } from './MountRequestLink';
+import { ForeignCommitsNotice } from './ForeignCommitsNotice';
 import { MountResolveLink } from './MountResolveLink';
 import { MountStatusPhrase } from './MountStatusPhrase';
 import { ProjectBranchChip } from './ProjectBranchChip';
@@ -210,6 +211,11 @@ export const ProjectMountRow = ({
             status={worktreeStatus}
             onOpenTerminal={() => controls.trigger({ actionId: 'mount.openTerminal' })}
           />
+        </div>
+      ) : null}
+      {isRepo && hasTools ? (
+        <div className="col-span-full flex flex-col px-2 empty:hidden">
+          <ForeignCommitsNotice sessionId={sessionId} row={row} status={worktreeStatus} />
         </div>
       ) : null}
       {observation === null ? null : (

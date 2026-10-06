@@ -119,7 +119,9 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                       : {}),
                     ...(input.taskTitle !== undefined ? { taskTitle: input.taskTitle } : {}),
                   })
-                : resolveRequestedBranchName({ get, session, project, requested });
+                : adopt
+                  ? requested
+                  : resolveRequestedBranchName({ get, session, project, requested });
             if (!adopt && requested !== '' && taken.includes(branchName)) {
               await failMountOperation({ operation, errorCode: 'branch-taken' });
               throw mountError({

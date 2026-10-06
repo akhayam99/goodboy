@@ -310,6 +310,28 @@ describe('mount operations against a real database', () => {
     expect(row?.branchOrigin).toBe('adopted');
   });
 
+  it('continues a teammate branch by its own name, with no workspace prefix, as adopted', async () => {
+    const { slice } = makeSlice();
+
+    const mount = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'grw-1348-cta-for-the-slot',
+      adoptExistingBranch: true,
+    });
+
+    expect(h.createWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({
+        existingBranch: 'grw-1348-cta-for-the-slot',
+        branchName: 'grw-1348-cta-for-the-slot',
+      }),
+    );
+    expect(mount.branch).toBe('grw-1348-cta-for-the-slot');
+    const [row] = await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID });
+    expect(row?.branch).toBe('grw-1348-cta-for-the-slot');
+    expect(row?.branchOrigin).toBe('adopted');
+  });
+
   it('records a new worktree that tracked the remote as adopted', async () => {
     h.createWorktree.mockImplementationOnce(
       async (args: { branchName: string; parentDir: string; dirName: string }) => ({

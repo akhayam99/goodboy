@@ -215,6 +215,40 @@ export const storySpies = {
   invokeAgentSetDone: vi.fn(async () => undefined),
   invokeWorkspacesWithUnread: vi.fn<WorkflowsModule['invokeWorkspacesWithUnread']>(async () => []),
   changeWorktreeBranch: vi.fn(async () => ({ adopted: false })),
+  listLocalBranches: vi.fn(
+    async () => [] as ReadonlyArray<{ name: string; inUse: boolean; hasUncommitted: boolean }>,
+  ),
+  listRemoteBranches: vi.fn(
+    async () =>
+      [] as ReadonlyArray<{
+        name: string;
+        author: string;
+        sha: string;
+        timestamp: number;
+        hasLocal: boolean;
+      }>,
+  ),
+  remoteBranchState: vi.fn(
+    async () =>
+      null as {
+        remoteAhead: number;
+        localOwn: number;
+        remoteContainsLocal: boolean;
+        remoteSha: string;
+        localSha: string;
+      } | null,
+  ),
+  moveToRemoteCommits: vi.fn(async () => undefined),
+  ghOpenPrBranches: vi.fn(
+    async () =>
+      [] as ReadonlyArray<{
+        number: number;
+        title: string;
+        headBranch: string;
+        isDraft: boolean;
+        author: string | null;
+      }>,
+  ),
   scanOrphanWorktrees: vi.fn(
     async () =>
       [] as ReadonlyArray<{
@@ -778,6 +812,12 @@ export const worktreeModuleMock = () => ({
     storySpies.abandonWorktreeWriter(args),
   holdsWorktreeWriter: vi.fn(() => false),
   changeWorktreeBranch: storySpies.changeWorktreeBranch,
+  listLocalBranches: storySpies.listLocalBranches,
+  getCachedLocalBranches: vi.fn(() => undefined),
+  listRemoteBranches: storySpies.listRemoteBranches,
+  fetchRemoteBranches: vi.fn(async () => undefined),
+  remoteBranchState: storySpies.remoteBranchState,
+  moveToRemoteCommits: storySpies.moveToRemoteCommits,
   inspectWorktree: (args: { readonly worktreePath: string }) => storySpies.inspectWorktree(args),
   invalidateLocalBranchesCache: vi.fn(),
   scanOrphanWorktrees: storySpies.scanOrphanWorktrees,
@@ -832,6 +872,7 @@ export const githubModuleMock = () => ({
   ghSetToken: storySpies.ghSetToken,
   ghClearToken: storySpies.ghClearToken,
   gitPush: storySpies.gitPush,
+  ghOpenPrBranches: storySpies.ghOpenPrBranches,
   tauriGhRunner: { run: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })) },
   createTauriPrCacheStore: () => ({ get: vi.fn(), upsert: vi.fn(), delete: vi.fn() }),
 });

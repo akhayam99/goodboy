@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../../store/storyHarness')).dbModuleMock(),
 );
-const status = vi.hoisted(() => ({
+const status = vi.hoisted((): { clean: WorktreeStatus } => ({
   clean: {
     branch: 'hl/branch',
     head: 'abc',
@@ -19,7 +19,7 @@ const status = vi.hoisted(() => ({
     mainDistance: { kind: 'known', ahead: 1, behind: 0 },
     workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
     inProgress: null,
-  } satisfies WorktreeStatus,
+  },
 }));
 vi.mock('../../../../worktree/worktree', async () => ({
   ...(await import('../../../../../store/storyHarness')).worktreeModuleMock(),
@@ -49,6 +49,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../../../../store/storyHarness';
 
@@ -321,6 +322,99 @@ describe('ProjectMountRows', () => {
       expect(within(row).queryByText("Not on the PR's commits")).toBeNull();
       expect(within(row).queryByText('Merged')).toBeNull();
       expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
+    });
+  });
+
+  describe('a worktree stranded on the base while origin has the pull request commits', () => {
+    const stranded = {
+      ...status.clean,
+      branch: 'hl/cta-for-the-slot',
+      head: 'aaaaaaa1',
+      upstream: 'origin/hl/cta-for-the-slot',
+      upstreamDistance: { kind: 'known', ahead: 0, behind: 2 },
+      mainDistance: { kind: 'known', ahead: 0, behind: 0 },
+    } satisfies WorktreeStatus;
+    const original = status.clean;
+    const remoteState = {
+      remoteAhead: 2,
+      localOwn: 0,
+      remoteContainsLocal: true,
+      remoteSha: 'bbbbbbb2',
+      localSha: 'aaaaaaa1',
+    };
+
+    afterEach(() => {
+      status.clean = original;
+    });
+
+    it('offers one inline action to use the remote commits', async () => {
+      status.clean = stranded;
+      storySpies.remoteBranchState.mockResolvedValue(remoteState);
+      seed({
+        mounts: [mountView({ id: 'fix-1', branch: 'hl/cta-for-the-slot' })],
+        github: { 'fix-1': githubOf('fix-1', 9900, 'open', 'bbbbbbb2') },
+      });
+      renderRows();
+
+      await screen.findByText("This worktree is not on the PR's commits");
+      screen.getByText('origin/hl/cta-for-the-slot has 2 commits this worktree does not have.');
+      const action = screen.getByRole('button', { name: "Use the PR's commits" });
+      expect((action as HTMLButtonElement).disabled).toBe(false);
+      expect(storySpies.remoteBranchState).toHaveBeenCalledWith(
+        expect.objectContaining({ repoPath: '/repo/payments-api', branch: 'hl/cta-for-the-slot' }),
+      );
+    });
+
+    it('explains instead of acting while the worktree has local changes', async () => {
+      status.clean = {
+        ...stranded,
+        workingTree: {
+          kind: 'known',
+          staged: 0,
+          unstaged: 1,
+          untracked: 0,
+          unmerged: 0,
+          changed: 1,
+        },
+      };
+      storySpies.remoteBranchState.mockResolvedValue(remoteState);
+      seed({
+        mounts: [mountView({ id: 'fix-2', branch: 'hl/cta-for-the-slot' })],
+        github: { 'fix-2': githubOf('fix-2', 9900, 'open', 'bbbbbbb2') },
+      });
+      renderRows();
+
+      await screen.findByText(/Commit or discard the local changes first\./);
+      const action = screen.getByRole('button', { name: "Use the PR's commits" });
+      expect((action as HTMLButtonElement).disabled).toBe(true);
+      fireEvent.click(action);
+      expect(storySpies.moveToRemoteCommits).not.toHaveBeenCalled();
+    });
+
+    it('stays quiet when origin has no commits of its own on the branch', async () => {
+      status.clean = stranded;
+      storySpies.remoteBranchState.mockResolvedValue(null);
+      seed({
+        mounts: [mountView({ id: 'fix-3', branch: 'hl/cta-for-the-slot' })],
+        github: { 'fix-3': githubOf('fix-3', 9900, 'open', 'bbbbbbb2') },
+      });
+      renderRows();
+
+      await waitFor(() => expect(storySpies.remoteBranchState).toHaveBeenCalled());
+      expect(screen.queryByText("This worktree is not on the PR's commits")).toBeNull();
+    });
+
+    it('never asks origin about a fresh worktree with no pull request', async () => {
+      status.clean = {
+        ...stranded,
+        upstream: null,
+        upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+      };
+      seed({ mounts: [mountView({ id: 'fix-4', branch: 'hl/cta-for-the-slot' })] });
+      renderRows();
+
+      await screen.findByTestId('project-mount-row');
+      expect(storySpies.remoteBranchState).not.toHaveBeenCalled();
     });
   });
 

@@ -7,9 +7,10 @@ import {
   listAssignedIssues,
   listInboxPullRequests,
   listIssueComments,
+  listOpenPrBranches,
   updateIssueBody,
 } from '@goodboy/core';
-import type { GhRunner, GhResult, GhRunOptions } from '@goodboy/core';
+import type { GhRunner, GhResult, GhRunOptions, OpenPrBranch } from '@goodboy/core';
 import type {
   GhTokenStatus,
   GithubInboxPullRequest,
@@ -130,6 +131,32 @@ export const ghInboxPullRequests = async (
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<GithubInboxPullRequest>> =>
   listInboxPullRequests({ runner: tauriGhRunner, repoSlug: slug, now: new Date(), opts });
+
+type OpenPrBranchesParams = {
+  readonly cwd: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+};
+
+export const ghOpenPrBranches = async ({
+  cwd,
+  workspaceId,
+  projectId,
+}: OpenPrBranchesParams): Promise<ReadonlyArray<OpenPrBranch>> => {
+  const repoSlug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId, projectId);
+  if (repoSlug === null) {
+    return [];
+  }
+  return listOpenPrBranches({
+    runner: tauriGhRunner,
+    repoSlug,
+    opts: {
+      cwd,
+      ...(workspaceId === undefined ? {} : { workspaceId }),
+      ...(projectId === undefined ? {} : { projectId }),
+    },
+  });
+};
 
 const ISSUE_VIEW_FIELDS = 'number,title,body,url,state,labels,author,updatedAt';
 

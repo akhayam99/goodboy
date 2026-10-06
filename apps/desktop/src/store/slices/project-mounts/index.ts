@@ -5,6 +5,7 @@ import { forgetMount } from './forgetMount';
 import { forkMount } from './forkMount';
 import { inspectMount } from './inspectMount';
 import { loadSessionMounts } from './loadSessionMounts';
+import { moveMountToRemoteCommits } from './moveMountToRemoteCommits';
 import { openMountRequest } from './openMountRequest';
 import { removeMountWorktree } from './removeMountWorktree';
 import { resolveMountBranchMismatch } from './resolveMountBranchMismatch';
@@ -22,6 +23,7 @@ export const createProjectMountsSlice = ({ set, get }: SliceDeps) => {
     forkMount: forkMount(set, get),
     forgetMount: forgetMount(set, get),
     switchMount: switchMount(set, get),
+    moveMountToRemoteCommits: moveMountToRemoteCommits(set, get),
     attachMount: attachMount(set, get),
     unmountMount: unmountMount(set, get),
     removeMountWorktree: removeMountWorktree({ set, get }),
