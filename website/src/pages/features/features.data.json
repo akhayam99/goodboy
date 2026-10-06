@@ -191,7 +191,7 @@
         },
         {
           "title": "Activity bar",
-          "text": "A bar on the left lists the sessions of the workspace by where they stand. Each row says what it is waiting on.",
+          "text": "A bar on the left lists the sessions of the workspace, one line each. The ones that need you sit on top, and a card shows where any of them stands.",
           "group": "Switch between tasks",
           "main": true
         },

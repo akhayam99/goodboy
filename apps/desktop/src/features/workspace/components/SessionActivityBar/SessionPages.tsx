@@ -73,7 +73,7 @@ export const SessionPages = ({ session }: Props) => {
               ariaCurrent={isCurrent ? 'page' : undefined}
               onClick={() => openPage(page)}
               className={cn(
-                'h-6.5 items-center gap-2 pr-2 text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                'h-7 items-center gap-2 pr-2 text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 PANE_RHYTHM.navRail.nest,
               )}
             >

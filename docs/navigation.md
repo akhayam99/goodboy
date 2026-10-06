@@ -379,28 +379,66 @@ is where a session's footprint grows. The session header has no second mount
 control.
 
 **Inside a session the sidebar stays the sessions list.** There is no second
-mode. The sidebar lists the workspace's sessions grouped by stage, and the open
-session tells its own story in the main pane. Lens surfaces still exist. You
-reach them from rows and chips inside the overview (they expand in place or
-open a side panel) and from the trail's destination switcher, never from the
-sidebar. Board → session is the full depth of navigation.
+mode. The sidebar lists the workspace's sessions in one list, and the open
+session tells its own story in the main pane. Its five work pages nest under
+its row: Overview, Branch, Runs, Agents and Artifacts. They are the same pages
+as the first five rows of the trail's page menu, with the same count words from
+one selector (`usePageSummaries`), so the two doors never disagree. The
+nesting is not a mode: the list stays the list, the nested rows fold away when
+another session opens, and `←` and `→` on the open row fold and open them. The
+tools (Scripts, Terminal, Explore) and the linked records (Linear, GitLab,
+Jira, Slack, GitHub issue) stay in the page menu and the palette. Rows and
+chips inside the overview still route to the other surfaces. Board → session
+is the full depth of navigation.
 
-**A sidebar row and a board card read the same summary.** Both take
-`useSessionSummary`, so they say the same things in the same words. The row has
-two lines. The first is the goal, with the age on the right; on hover the age
-gives its column to the cost, and the column keeps its width. The second is the
-workflow progress when a run is active (one segment per step, then
-`Implement · 3 of 5`, counted from the steps that started, never estimated),
-otherwise the stage reason. At most two marks follow it, in this order: what
-waits on you (open questions, then review drafts), the first linked task with a
-`+n` for the rest, the agent count. When open questions are the stage reason,
-the row says it once, as the "1 to answer" mark, and leaves the reason blank.
-The row starts with a 20px node: the pull
-request glyph in its state colour when there is a request, otherwise the stage
-icon, a ring while an agent runs, and `?` or `!` when the session needs you.
-Every row carries a `ToneBar`, the same tone primitive as its card
-(`sessionTone`), never only running and needs-you rows. Nothing the row knows
-hides in a tooltip.
+**A sidebar row says the name and the state, and the hover card and the board
+card say the rest.** A row is one line of 28px: a 14px `WorkNode` and the
+title, nothing else. It has no second line, no `ToneBar`, no marks, no age and
+no cost. The node shows one of five signs, the first that matches
+(`sessionNodeOf`, from `useSessionSummary`): needs you (`?`, the approval shield
+or `!`, in the warning or danger tone, when the stage is attention), running
+(the ring), done (the muted check, when the pull request is merged or all the
+work is closed), idle (a 1px hollow ring, everything else) and archived (a
+dashed ring, only under Show archived). Colour is never the only sign. The open
+session is set in medium weight, and its pages nest under it. The row's
+accessible description carries the stage word and its reason, so nothing is
+mouse-only.
+
+The rest is one rest away. After a 500ms rest on a row, or on keyboard focus
+after the same delay, the hover card opens beside the column: the full title,
+the stage word with its reason when the reason adds a fact, the run progress
+(`Implement · 3 of 5`, counted from the steps that started, never estimated),
+the pull request with its checks, the linked task chips, the project chips, the
+agent count, the spend and the age, and one ghost action, **Open what needs
+you**, when the session needs you. That action lands where the Now chip lands
+(`attentionPlace`). Moving to another row swaps the card at once, with no second
+wait. Esc and opening a session close it, and the pointer may move onto the
+card. The row, the card and the board card all read `useSessionSummary`, so they
+say the same things in the same words. The board card keeps the whole summary
+and the session header keeps its chips.
+
+**The user chooses the order of the list.** The Sessions header holds one `⋯`
+menu: Sort (Needs you first then the session you opened last [default],
+Alphabetical, Last activity, Created), Group (None [default], PR state, Stage,
+Project), Filter by project (the same selection as the board's project filter)
+and Show archived. The choices persist per workspace in the browser storage
+(`goodboy:session-view:<workspace id>`, version 2); nothing goes to the
+database. By default the sessions that need you sit on top, the one that has
+waited longest first, and the rest follow `sessions.last_opened_at`, written
+when a session opens (a session never opened falls back to its last activity).
+A running session does not move, and a row moves only when you open a session
+or a session starts needing you. With no grouping the first eight rows show and
+the rest sit under **Show N more**, remembered per workspace. A session that
+needs you and the open session are never folded. A grouped list shows every
+group, finished groups start collapsed, and nothing folds. `⌘⇧[` and `⌘⇧]` walk
+this same order and skip folded rows, so they match what you see.
+
+**Two keys switch sessions without the list.** `⌃Tab` opens a list of the
+recent sessions in last-opened order, the open one first. `Tab` and `⇧Tab`
+move while `⌃` is held, releasing `⌃` opens the chosen session and Esc cancels.
+A quick tap flips to the previous session and never draws the list. `⌥⌘↓`
+lands on the next session that needs you, in the Now chip's order, on its
+`attentionPlace`. A focused terminal and an open dialog keep both keys.
 
 **Peek is a way of showing the sidebar, not a second sidebar.** The overlay
 renders the same sidebar component, and the codebase has one sessions list.
@@ -1436,8 +1474,9 @@ threadIds: [first comment that waits on you] }`. A question the run waits on
   destination lists. Every surface that routes to the same destination shows
   the same number from the same selector. A group of items with no home at the
   destination gets no badge pointing there.
-- **The activity bar shows ALL sessions grouped by stage**, never filtered to
-  running only.
+- **The activity bar shows ALL sessions**, never filtered to running only. The
+  user's own filter by project and the fold after eight rows hide nothing the
+  user did not ask for: a session that needs you is never folded.
 - **A blocked action is re-routed, never hidden.** A blocked workflow advance
   gives the reason on the CTA and opens an inline confirm before anything
   starts. With auto-run off, nothing advances without a click.
