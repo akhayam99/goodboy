@@ -6,36 +6,11 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { Database, PlainStatement } from '../client';
-import { keepResolveDraftCurrentStatements } from './resolve-draft-current';
+import {
+  bookkeepingRebaseStatements,
+  keepResolveDraftCurrentStatements,
+} from './resolve-draft-current';
 import { resolveStringArray } from './resolve-json';
-
-type BeforeRow = {
-  readonly revision: number;
-  readonly state: ResolveThreadState;
-  readonly disposition: ResolveThread['disposition'];
-  readonly replyDraft: string | null;
-  readonly commitShas: string | null;
-  readonly fixupOfSha: string | null;
-  readonly replacesSha: string | null;
-  readonly question: string | null;
-};
-type BookkeepingParams = {
-  readonly before: BeforeRow;
-  readonly row: ResolveThread;
-};
-
-const shaList = ({ json }: { readonly json: string | null }): string | null =>
-  json === null ? null : JSON.stringify(resolveStringArray({ json }));
-
-const isBookkeepingWrite = ({ before, row }: BookkeepingParams): boolean =>
-  (row.state === before.state || row.state === 'closed') &&
-  row.disposition === before.disposition &&
-  row.replyDraft === before.replyDraft &&
-  row.fixupOfSha === before.fixupOfSha &&
-  row.replacesSha === before.replacesSha &&
-  row.question === before.question &&
-  (row.commitShas === null ? null : JSON.stringify(row.commitShas)) ===
-    shaList({ json: before.commitShas });
 
 type Row = Omit<ResolveThread, 'commitShas' | 'githubResolved' | 'sourceKind'> & {
   readonly commitShas: string | null;
@@ -151,33 +126,19 @@ const upsertStatement = ({ row, expectedRevision }: UpsertStatementParams): Plai
   ],
 });
 
-const BEFORE_COLUMNS = `revision, state, disposition, reply_draft AS replyDraft, commit_shas_json AS commitShas,
-  fixup_of_sha AS fixupOfSha, replaces_sha AS replacesSha, question`;
-
 export const upsertResolveThread = async ({
   db,
   row,
   expectedRevision,
 }: UpsertParams): Promise<boolean> => {
-  const statement = upsertStatement({ row, expectedRevision });
-  const before = (
-    await db.select<BeforeRow>(
-      `SELECT ${BEFORE_COLUMNS} FROM resolve_threads WHERE session_id = ? AND thread_id = ?`,
-      [row.sessionId, row.threadId],
-    )
-  )[0];
-  if (before === undefined || !isBookkeepingWrite({ before, row })) {
-    const result = await db.execute(statement.sql, statement.params);
-    return result.rowsAffected > 0;
-  }
   const outcome = await db.transaction({
     statements: [
-      { ...statement, abortWhen: 'noChanges', abortCode: 'THREAD_CHANGED' },
-      ...keepResolveDraftCurrentStatements({
-        sessionId: row.sessionId,
-        threadId: row.threadId,
-        fromRevision: before.revision,
-      }),
+      ...bookkeepingRebaseStatements({ row, expectedRevision }),
+      {
+        ...upsertStatement({ row, expectedRevision }),
+        abortWhen: 'noChanges',
+        abortCode: 'THREAD_CHANGED',
+      },
     ],
   });
   return outcome.status === 'committed';
