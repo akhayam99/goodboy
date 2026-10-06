@@ -12,6 +12,85 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.21.0
+
+One column on the left holds every place and every session, pages share one left edge with panels on the right, and ⌘K ranks what to do by what a session needs.
+
+This version updates your data in one direction. To go back to 0.20, restore the backup Goodboy made before updating.
+
+### New
+
+#### One left column for every place
+<!-- gb area=app -->
+
+Under New session sit Board, Inbox, Chat and Workflows, then your sessions. Settings, the Goodboy row and the bug report button sit at the bottom. The column stays beside every screen, so another place is always one click away.
+
+Press ⌘B to fold it into a slim bar of icons. Rest the pointer on the window edge and the full column comes back over the page.
+
+#### Where Board, Chat, Settings and Impact went
+<!-- gb area=app -->
+
+The top bar keeps Back, Forward, search, your spend and the limits of each provider. Impact is the icon beside the bell. The footer is gone: Board and Chat moved into the column, and the Limits chips open the Providers menu.
+
+Settings swaps the column for its own list of pages, and Back to app returns to your sessions.
+
+#### Session rows that show state
+<!-- gb area=sessions -->
+
+A session is one line: a sign and its title. The sign says needs you, running, done, idle or archived. Rest on a row for a card with the full title, the pull request and its checks, the agents, the spend and the age.
+
+The Sessions menu sorts, groups by pull request state, stage or project, filters by project and shows archived. Needs you comes first by default, and your choice is kept per workspace.
+
+#### Ask in a session
+<!-- gb area=sessions -->
+
+The Ask button at the right end of a session's page bar, or ⌘L, opens a panel that reads the session for you. Right now lists comments by word, running agents, open questions and cost, with no model call, and three questions to start from.
+
+Answers carry buttons for what you can do now, like Answer question 2 or Review 3 ready. Nothing runs in one click, and a link in an answer moves the page beside the panel.
+
+#### One left edge, panels on the right
+<!-- gb area=app -->
+
+Every page starts at the same left edge. Context, Ask, transcripts, plans and reports open in the space on the right, so the page you were reading does not shift. In a narrow window the panel lies over the page.
+
+Plans, transcripts and chats read in a comfortable line width.
+
+#### Diff split and comments in place
+<!-- gb area=review -->
+
+Split in the Display menu shows old and new side by side. A narrow window falls back to Unified and says so. A comment box spans both halves, opens where you clicked and gives focus back to the line when you close it.
+
+Write review opens as a panel from the diff toolbar.
+
+#### The fix run transcript beside comments
+<!-- gb area=review -->
+
+A fix run's agent opens beside the Comments tab, with the run summary on top and a field to write to the agent. There is no separate Fix run page: opening it from Activity, Needs you or ⌘K lands on Comments with the transcript open.
+
+### Improved
+
+#### ⌘K ranks by what a session needs
+<!-- gb area=app -->
+
+In a session an empty ⌘K lists Next steps first, then the verbs for this session in the order its state calls for, then Runs, then recent places. On the Board it starts with the sessions that need you.
+
+Start a run asks you to confirm the session, the project, the model and the steps before anything starts.
+
+#### Runs are called runs
+<!-- gb area=workflows -->
+
+A workflow you start is a run in menus, in ⌘K, in the Runs page and in the Guide: Start a run, Stop run, Open Runs. Workflow stays the name of the saved recipe.
+
+#### Reports and wireframes open beside your work
+<!-- gb area=artifacts -->
+
+A report or wireframe row in Activity, or a chip in a transcript, opens in a panel on the right. Open in Artifacts and Expand are in its header.
+
+#### Classic bars bring back the old frame
+<!-- gb area=settings screen=settings/app -->
+
+Settings, App, General, Classic bars puts Board and Chat back in the top bar, the footer with its doors, and the sessions list only inside a session, as in 0.20.
+
 ## Goodboy v0.20.0
 
 One agent works through a pull request's comments, every comment in a fix run has one of five words, and Fix, answer and accept work on many comments at once.

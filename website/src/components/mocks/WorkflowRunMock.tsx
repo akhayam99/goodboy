@@ -113,7 +113,7 @@ const GROUPS: readonly RailGroupInput[] = [
 
 export const WorkflowRunMock = ({ className }: Props) => (
   <MockStage
-    label="Workflow run Duplicate credit fix, five steps. Step 5 is queued. Step 4 runs, with 4.1 failed and 4.2 waiting on your answer. Step 3.1 is skipped. Steps 1 to 3 are done."
+    label="Run of Duplicate credit fix, five steps. Step 5 is queued. Step 4 runs, with 4.1 failed and 4.2 waiting on your answer. Step 3.1 is skipped. Steps 1 to 3 are done."
     className={className}
   >
     <div className="wfrWin">
@@ -135,7 +135,7 @@ export const WorkflowRunMock = ({ className }: Props) => (
           groups={GROUPS}
           hasSpine
           heading="Now"
-          label="Workflow steps, newest first"
+          label="Run steps, newest first"
         />
       </div>
     </div>
