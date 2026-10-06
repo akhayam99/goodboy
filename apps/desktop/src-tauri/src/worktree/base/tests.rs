@@ -1,4 +1,6 @@
-use super::{branch_integration, default_base_name, resolve_base, resolve_base_ref};
+use super::{
+    branch_integration, default_base_name, resolve_base, resolve_base_ref, resolve_branch_range,
+};
 use crate::worktree::changed_files::worktree_changed_files_blocking;
 use crate::worktree::create::worktree_create_blocking;
 use crate::worktree::diff::worktree_diff_blocking;
@@ -248,5 +250,57 @@ fn a_checkout_on_its_own_branch_does_not_become_its_own_base() {
 
     assert_eq!(resolve_base(&root, None), None);
     assert_eq!(resolve_base_ref(&root, None), None);
+    cleanup(root);
+}
+
+#[test]
+fn an_adopted_branch_whose_upstream_equals_head_still_counts_its_work_against_origin_main() {
+    let root = repo_on("adopted", "main");
+    let remote = root.join("remote.git");
+    git_ok(&root, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        &root,
+        &["remote", "add", "origin", remote.to_str().unwrap()],
+    );
+    git_ok(&root, &["push", "-u", "origin", "main"]);
+    git_ok(&root, &["remote", "set-head", "origin", "main"]);
+    git_ok(&root, &["checkout", "-b", "feat/sensitive-paths"]);
+    commit(&root, "paths.txt", "a\nb\nc\n", "paths");
+    commit(&root, "base.txt", "changed\n", "tweak base");
+    git_ok(&root, &["push", "-u", "origin", "feat/sensitive-paths"]);
+    git_ok(&root, &["checkout", "main"]);
+    commit(&root, "local-only.txt", "x\n", "local only");
+    let parent = root.join(".goodboy").join("worktrees");
+    let created = worktree_create_blocking(CreateArgs {
+        repo_path: root.to_string_lossy().into_owned(),
+        branch_name: "feat/sensitive-paths".to_string(),
+        parent_dir: Some(parent.to_string_lossy().into_owned()),
+        existing_branch: Some("feat/sensitive-paths".to_string()),
+        fallback_ref: None,
+        base_branch: None,
+        dir_name: Some("adopted".to_string()),
+    })
+    .unwrap();
+    let path = PathBuf::from(created.worktree_path);
+
+    let changed =
+        worktree_changed_files_blocking(path.to_string_lossy().into_owned(), None).unwrap();
+    let diff = worktree_diff_blocking(path.to_string_lossy().into_owned(), None).unwrap();
+
+    assert_eq!(
+        git_ok(&path, &["rev-parse", "HEAD"]),
+        git_ok(&path, &["rev-parse", "origin/feat/sensitive-paths"])
+    );
+    assert_eq!((changed.additions, changed.deletions), (4, 1));
+    assert_eq!(changed.paths, vec!["base.txt", "paths.txt"]);
+    assert!(diff.contains("paths.txt") && diff.contains("base.txt"));
+    assert!(!diff.contains("local-only.txt"));
+    assert_eq!(
+        git_ok(
+            &path,
+            &["rev-list", "--count", &resolve_branch_range(&path)]
+        ),
+        "2"
+    );
     cleanup(root);
 }

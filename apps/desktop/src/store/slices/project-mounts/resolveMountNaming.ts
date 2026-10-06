@@ -43,21 +43,30 @@ export const resolveSessionSlug = ({ get, session, project }: NamingParams): str
   return slugify({ input: named, fallback: `session-${session.id.slice(0, 8)}` });
 };
 
+type PrefixedParams = {
+  readonly requested: string;
+  readonly prefix: string;
+};
+
+const prefixedBranchName = ({ requested, prefix }: PrefixedParams): string => {
+  if (requested.startsWith(`${prefix}/`)) {
+    return requested;
+  }
+  return `${prefix}/${requested.replace(/\/+/g, '-')}`;
+};
+
 export const resolveRequestedBranchName = ({
   get,
   session,
   project,
   requested,
 }: NamingParams & { readonly requested: string }): string => {
-  if (requested.includes('/')) {
-    return requested;
-  }
   const { prefix } = branchNamingSettings({
     state: get(),
     workspaceId: session.workspaceId,
     project,
   });
-  return `${prefix}/${requested}`;
+  return prefixedBranchName({ requested, prefix });
 };
 
 type ForkParams = NamingParams & {
