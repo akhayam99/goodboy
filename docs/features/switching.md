@@ -6,7 +6,7 @@ Move between the tasks of a workspace, and see from any screen which one needs y
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="420" alt="The activity bar of the Harborline workspace: sessions grouped under Building 2, Running 2, Needs you 1 and In review 1, with Stop retried webhooks posting selected, 1 to answer and HBL-412">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" alt="The left column of the Northwind workspace: New session, the doors Board, Inbox, Chat and Workflows, and the Sessions list of one-line rows with a state sign and a title. The open session Fix webhook retries shows its pages Overview, Branch, Runs, Agents and Artifacts, and a card beside its row reads Running, pull request 318, HBL-212, payments-api, notify-relay and 2 agents">
 </picture>
 
 Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, a **?** or **!** means the session needs you, a check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
@@ -15,7 +15,7 @@ Rest the pointer on a row for half a second, or move the keyboard focus to it, a
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Display options menu of the activity bar, open over the Harborline sessions, with Sort by Recent, Oldest and A-Z, and Group by Stage, Pull request and None">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Sessions options menu open in the left column of the Northwind workspace, with Sort set to Needs you first, Alphabetical, Last activity and Created, Group set to None, PR state, Stage and Project, Filter by project and a View section with Show archived">
 </picture>
 
 The options button in the **Sessions** header sorts the list by **Needs you first**, **Alphabetical**, **Last activity** or **Created**, groups it by **None**, **PR state**, **Stage** or **Project**, narrows it to a project and shows archived sessions. Goodboy keeps your choice for each workspace. The first eight rows show, and **Show more** opens the rest.
@@ -26,7 +26,7 @@ To switch without looking at the list, hold **Control** and press **Tab** to fli
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-light.webp" alt="The top bar chip 1 need you, 2 running opened into the panel Now in Harborline: NEEDS YOU 1 with Fix the rounding drift in the settlement export, and RUNNING 2 with Speed up the payout export for large merchants and Stop retried webhooks posting a second credit">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-light.webp" alt="The top bar chip 2 needs you, 2 running opened into the panel Now in Harborline over the Board: NEEDS YOU 2 with Warn merchants before a payout hold and Fix the rounding drift in the settlement export, and RUNNING 2 with Speed up the payout export for large merchants and Nightly reconciliation before the Monday close">
 </picture>
 
 Know what needs you from any screen. The chip in the top bar counts sessions that need you, running sessions and running scripts. Click it to open **Now in Harborline**, which lists each one, and click a row to jump to that session.

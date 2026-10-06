@@ -286,6 +286,7 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
   `--themes dark`, and look at every file before keeping it.
 - Put `%20` for spaces inside `--scene`, or Chrome never loads the page.
 - `--click "Commits,Sort"` clicks, in order, the buttons, tabs or links whose text starts with each name, after the scene loads and before the capture. It shoots a state a scene does not open by itself, such as a second tab or an open picker. A name that matches nothing stops the run.
+- `--hover "<css selector>"` moves the pointer to the center of the first match, after the clicks and before the capture. It shoots a tooltip or a hover card the scene does not open by itself, such as the limits card of a provider chip in the top bar (`--hover '[aria-label^="Claude limits"]'`).
 
 Each feature-area guide points at each file with its raw URL,
 `https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/<name>-dark.webp`.
