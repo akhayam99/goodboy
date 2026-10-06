@@ -27,6 +27,7 @@ import type {
 } from '@goodboy/types';
 import { acceptResolveQueueItem } from './acceptResolveQueueItem';
 import { integrateWorktreeCandidate } from '../../../features/worktree/worktree';
+import { LANE_REBUILD_HINT } from '../../../features/resolve/laneCopy';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
 import {
@@ -45,9 +46,16 @@ const h = vi.hoisted(() => ({
   transaction: vi.fn(),
   leases: new Map<string, string>(),
   failFinalizeOnce: false,
+  startBatch: vi.fn(async (_params: unknown) => ({})),
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
+
+vi.mock('../../../features/resolve/startBatch', () => ({ startBatch: h.startBatch }));
+
+vi.mock('../../../features/resolve/draftRouting', () => ({
+  draftRoutingOf: () => ({ provider: 'anthropic', model: 'claude-sonnet-5', effort: null }),
+}));
 
 vi.mock('@goodboy/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/db')>();
@@ -402,6 +410,7 @@ beforeEach(async () => {
   h.transaction.mockReset().mockImplementation(db.transaction);
   h.leases.clear();
   h.failFinalizeOnce = false;
+  h.startBatch.mockClear();
   agentCwd = '';
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('ws-1', 'Workspace', 'workspace', 1, 1)",
@@ -1225,5 +1234,129 @@ describe('resolve candidates keep the branch tip approved', () => {
 
     expect(preview.blocker).toBe('uncaptured_work');
     expect(preview.publicationId).toBeNull();
+  });
+});
+
+const seedChain = async ({
+  live,
+  ids,
+}: {
+  readonly live: ReturnType<typeof makeHarness>;
+  readonly ids: ReadonlyArray<string>;
+}): Promise<ReadonlyArray<string>> => {
+  await startRun({ harness: live, attemptId: 'run-1', threadIds: [...ids] });
+  const shas = ids.map((threadId) =>
+    commitFile({ name: `${threadId}.txt`, body: `${threadId}\n` }),
+  );
+  for (const [index, threadId] of ids.entries()) {
+    await seedItem({ threadId, thread: { disposition: 'fix', commitShas: [shas[index] ?? ''] } });
+  }
+  await live.actions.captureResolveCandidate({
+    sessionId: SESSION_ID,
+    attemptId: 'run-1',
+    threadIds: [...ids],
+  });
+  return shas;
+};
+
+const readyCandidateIds = async (): Promise<ReadonlyArray<string>> =>
+  (await listResolveCandidates({ db, sessionId: SESSION_ID }))
+    .filter((candidate) => candidate.state === 'ready')
+    .map((candidate) => candidate.id);
+
+describe('a lane keeps one chain of fixes on a branch', () => {
+  it('drops a refused middle fix and has the lane rebuild the ones after it', async () => {
+    const live = makeHarness();
+    const ids = ['thread-a', 'thread-b', 'thread-c', 'thread-d'];
+    await seedChain({ live, ids });
+    const revision =
+      (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
+        (entry) => entry.item.id === 'item-thread-b',
+      )?.item.candidateRevision ?? 0;
+
+    await live.actions.refuseResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: 'item-thread-b',
+      revision,
+      reply: 'No, this stays as it is',
+    });
+
+    expect(await readyCandidateIds()).toEqual(['run-1-1']);
+    expect(h.startBatch).toHaveBeenCalledTimes(1);
+    expect(h.startBatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        threadIds: ['thread-c', 'thread-d'],
+        launchChoice: expect.objectContaining({
+          hint: expect.stringContaining(LANE_REBUILD_HINT),
+        }),
+      }),
+    );
+    const states = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+    expect(states.map((entry) => [entry.item.id, entry.item.approvalState])).toEqual([
+      ['item-thread-a', 'none'],
+      ['item-thread-b', 'wont_fix'],
+      ['item-thread-c', 'none'],
+      ['item-thread-d', 'none'],
+    ]);
+  });
+
+  it('keeps the first of fixes built side by side and queues the others to be rebuilt', async () => {
+    const live = makeHarness();
+    const ids = ['thread-a', 'thread-b', 'thread-c', 'thread-d'];
+    for (const [index, threadId] of ids.entries()) {
+      await seedItem({ threadId, thread: { disposition: 'fix', commitShas: [`sha-${index}`] } });
+      await db.execute(
+        `INSERT INTO resolve_candidates (id, session_id, revision, base_sha, candidate_sha, worktree_path, state, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'ready', 1, 1)`,
+        [`sibling-${index}`, SESSION_ID, index + 1, rootSha, `sha-${index}`, worktreePath],
+      );
+      await db.execute(
+        'INSERT INTO resolve_candidate_items (candidate_id, queue_item_id, item_revision) VALUES (?, ?, 0)',
+        [`sibling-${index}`, `item-${threadId}`],
+      );
+    }
+
+    await live.actions.reconcileResolveLane({ sessionId: SESSION_ID });
+
+    expect(await readyCandidateIds()).toEqual(['sibling-0']);
+    expect(h.startBatch).toHaveBeenCalledTimes(1);
+    expect(h.startBatch).toHaveBeenCalledWith(
+      expect.objectContaining({ threadIds: ['thread-b', 'thread-c', 'thread-d'] }),
+    );
+    const states = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+    expect(states.every((entry) => entry.item.approvalState === 'none')).toBe(true);
+  });
+
+  it('leaves a lane that is already one chain alone', async () => {
+    const live = makeHarness();
+    await seedChain({ live, ids: ['thread-a', 'thread-b'] });
+
+    await live.actions.reconcileResolveLane({ sessionId: SESSION_ID });
+
+    expect(await readyCandidateIds()).toEqual(['run-1-1', 'run-1-2']);
+    expect(h.startBatch).not.toHaveBeenCalled();
+  });
+
+  it('refuses to accept a fix whose earlier fix was set aside, and leaves the branch alone', async () => {
+    const live = makeHarness();
+    const ids = ['thread-a', 'thread-b'];
+    await seedChain({ live, ids });
+    await live.actions.deferResolveQueueItem({ sessionId: SESSION_ID, itemId: 'item-thread-a' });
+    const revision =
+      (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
+        (entry) => entry.item.id === 'item-thread-b',
+      )?.item.candidateRevision ?? 0;
+
+    await expect(
+      live.actions.acceptResolveQueueItem({
+        sessionId: SESSION_ID,
+        itemId: 'item-thread-b',
+        revision,
+        reply: 'Reply for thread-b',
+      }),
+    ).rejects.toThrow();
+
+    expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(rootSha);
   });
 });
