@@ -346,7 +346,7 @@ describe('spawnReportAgent', () => {
     expect(recorded['designProfileSummary']).toBeNull();
     expect(recorded['evidence']).toEqual([
       { kind: 'session', id: SESSION_ID, label: 'ship the report role' },
-      { kind: 'workflow-run', id: RUN_ID, label: 'workflow run' },
+      { kind: 'workflow-run', id: RUN_ID, label: 'run' },
     ]);
   });
 
