@@ -20,6 +20,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
 vi.mock('@tauri-apps/api/event', () => ({ listen: listenMock }));
 
+import { resolveChatModel } from '../../workspace-chat/resolveChatModel';
 import { runAskTurn } from './runAskTurn';
 
 const RUN = 'run-ask' as ProviderRunId;
@@ -64,7 +65,7 @@ describe('runAskTurn', () => {
         threadId: 'ask-1' as ChatId,
         sessionId: 'session-webhooks' as SessionId,
         provider: 'anthropic',
-        model: 'claude-sonnet-5-5',
+        model: 'sonnet-5.5',
         effort: 'low',
         workingDir: '/code/notify-relay/.goodboy/worktrees/webhook-retries',
         prompt: '# Session: Fix webhook retries\n\nNew question:\nWhat needs me?',
@@ -92,5 +93,38 @@ describe('runAskTurn', () => {
         dossier: [{ name: 'agents/A1.md', content: 'Implementer tail' }],
       },
     });
+  });
+
+  it.each([
+    { provider: 'anthropic', model: 'sonnet-5.5', sent: 'claude-sonnet-5-5' },
+    { provider: 'anthropic', model: 'opus-5.5', sent: 'claude-opus-5-5' },
+    { provider: 'codex', model: 'gpt-5.6-sol', sent: 'gpt-5.6-sol' },
+  ] as const)('sends the cli model for $provider $model', async ({ provider, model, sent }) => {
+    invokeMock.mockImplementation(async () => {
+      emit({ runId: RUN, type: 'end', exit_code: 0, stderr: '' });
+      return RUN;
+    });
+
+    await runAskTurn({
+      request: {
+        runId: RUN,
+        threadId: 'ask-1' as ChatId,
+        sessionId: 'session-webhooks' as SessionId,
+        provider,
+        model,
+        effort: null,
+        workingDir: '/code/notify-relay',
+        prompt: 'question',
+        systemPrompt: 'system',
+        dossier: [],
+      },
+      onText: () => undefined,
+      onRead: () => undefined,
+      onUsage: () => undefined,
+    });
+
+    const { args } = invokeMock.mock.calls[0]?.[1] as { args: { model: string; effort?: string } };
+    expect(args.model).toBe(sent);
+    expect(args.effort).toBe(resolveChatModel({ provider, modelKey: model }).effort);
   });
 });
