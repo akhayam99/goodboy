@@ -2,6 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  insertResolveCandidate,
+  insertResolveCandidateItem,
   insertResolveQueueItem,
   listResolveBatches,
   listResolvePublicationThreads,
@@ -17,6 +19,7 @@ import type {
   MountId,
   PrComment,
   ProjectId,
+  ResolveCandidate,
   ResolveQueueItem,
   ResolveThread,
   SessionId,
@@ -215,6 +218,39 @@ const seed = async ({ rows }: { readonly rows: ReadonlyArray<ResolveThread> }): 
     await upsertResolveThread({ db, row, expectedRevision: null });
     await insertResolveQueueItem({ db, item: itemOf({ threadId: row.threadId }) });
   }
+};
+
+const stageCandidate = async ({
+  threadId,
+  state,
+}: {
+  readonly threadId: string;
+  readonly state: ResolveCandidate['state'];
+}): Promise<void> => {
+  await insertResolveCandidate({
+    db,
+    candidate: {
+      id: `candidate-${threadId}`,
+      sessionId: SESSION_ID,
+      revision: 1,
+      baseSha: 'base-sha',
+      candidateSha: 'fix-sha',
+      worktreePath: '/repo/work',
+      mountTarget: null,
+      state,
+      integratedSha: state === 'integrated' ? 'fix-sha' : null,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  });
+  await insertResolveCandidateItem({
+    db,
+    item: {
+      candidateId: `candidate-${threadId}`,
+      queueItemId: `item-${threadId}`,
+      itemRevision: 2,
+    },
+  });
 };
 
 const spawnedPrompts: Array<string> = [];
@@ -606,6 +642,31 @@ describe('steering an answer from the thread', () => {
     expect(batch?.launchChoice.hint).not.toContain('The owner adds');
   });
 
+  it('Reply only refuses a fix that is already on the branch and keeps the thread as it was', async () => {
+    await seed({
+      rows: [
+        threadOf({
+          threadId: FIX_THREAD,
+          state: 'fixed',
+          disposition: 'fix',
+          reply: 'Capped at 6',
+          shas: ['fix-sha'],
+        }),
+      ],
+    });
+    await stageCandidate({ threadId: FIX_THREAD, state: 'integrated' });
+    const store = await makeStore({ comments: [headOf({ threadId: FIX_THREAD })] });
+
+    await expect(
+      store.getState().switchToReplyOnly({ sessionId: SESSION_ID, threadId: FIX_THREAD }),
+    ).rejects.toThrow('already on the branch');
+
+    expect(await rowOf({ threadId: FIX_THREAD })).toMatchObject({
+      disposition: 'fix',
+      commitShas: ['fix-sha'],
+    });
+  });
+
   it('Reply only drops the staged change for the thread', async () => {
     await seed({
       rows: [
@@ -618,6 +679,7 @@ describe('steering an answer from the thread', () => {
         }),
       ],
     });
+    await stageCandidate({ threadId: FIX_THREAD, state: 'ready' });
     const store = await makeStore({ comments: [headOf({ threadId: FIX_THREAD })] });
 
     await runOn({ store, threadId: FIX_THREAD, actionId: 'reviewComment.replyOnly' });

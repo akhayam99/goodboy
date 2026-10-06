@@ -28,6 +28,7 @@ const BASE: ReviewCommentFacts = {
   remoteReply: null,
   isReplyOnly: false,
   isReplyFailure: false,
+  hasFixOnBranch: false,
 };
 
 const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict => ({
@@ -92,7 +93,6 @@ const MATRIX: ReadonlyArray<Row> = [
       'reviewComment.accept primary Accept',
       'reviewComment.edit menu Edit',
       'reviewComment.editReply secondary Edit reply',
-      'reviewComment.rewriteReply menu Rewrite reply',
       'reviewComment.replyOnly menu Reply only',
       ...DECIDE,
       ...COPY,
@@ -108,8 +108,21 @@ const MATRIX: ReadonlyArray<Row> = [
       'reviewComment.accept primary Accept',
       'reviewComment.edit menu Edit',
       'reviewComment.editReply secondary Edit reply',
-      'reviewComment.rewriteReply menu Rewrite reply',
       'reviewComment.replyOnly menu Reply only',
+      ...DECIDE,
+      ...COPY,
+    ],
+  },
+  {
+    name: 'draft ready, the fix is already on the branch',
+    facts: { state: 'ready', hasFixOnBranch: true },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.accept primary Accept',
+      'reviewComment.edit menu Edit',
+      'reviewComment.editReply secondary Edit reply',
       ...DECIDE,
       ...COPY,
     ],
