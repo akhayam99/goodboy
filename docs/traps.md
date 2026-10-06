@@ -242,6 +242,13 @@ fails silently at runtime.
   `project_relocate` touches every one of those tables by prefix in one
   transaction; missing one of them from that list reintroduces the exact bug
   it fixes.
+- A failed publication advances the thread revision, so the approval is no
+  longer current and a fresh `preparePublication` for that thread answers
+  `not_ready`. Retrying one reply goes through `publishThreadNow`, which
+  resumes the failed single-thread publication instead of preparing a new one.
+  A reply the viewer posted by hand is marked posted with
+  `setResolveThreadReplyPosted`, a write that leaves the revision alone: going
+  through `updateResolveThread` would bump it and strand an approved reply.
 
 ## Traps in the toolchain
 

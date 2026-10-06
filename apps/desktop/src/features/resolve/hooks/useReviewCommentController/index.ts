@@ -11,6 +11,8 @@ import type { ReviewEntry } from '../../components/ReviewFlow/useReviewEntries';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { launchKeyOf } from '../../../../store/slices/resolve/resolveLaunch';
 import { draftRoutingOf } from '../../draftRouting';
+import { postReplyWhenNothingWaits } from '../../replyDelivery';
+import { startSteeredAttempt } from '../../steerAttempt';
 import { launchChoiceOf } from '../../launchChoice';
 import { startBatch } from '../../startBatch';
 import { useResolveAgain } from '../useResolveAgain';
@@ -238,12 +240,28 @@ export const useReviewCommentController = ({
           revision: entry.row.thread.revision,
           reply: text,
         });
+        await postReplyWhenNothingWaits({
+          getState: useAppStore.getState,
+          sessionId,
+          threadId: entry.threadId,
+        });
         const next =
           onAdvanceRef.current === undefined
             ? null
             : nextOpenAfter({ entries, threadId: entry.threadId });
         setCompose(null);
         advance(next);
+        return;
+      }
+      if (compose.mode === 'fixAnyway' || compose.mode === 'rewrite') {
+        await startSteeredAttempt({
+          getState: useAppStore.getState,
+          sessionId,
+          threadId: entry.threadId,
+          mode: compose.mode,
+          hint: text,
+        });
+        setCompose(null);
         return;
       }
       const attempt = entry.row.attempt;

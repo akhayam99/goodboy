@@ -192,6 +192,27 @@ export const setResolveThreadCommitShas = async ({
   );
 };
 
+type ReplyPostedParams = ListParams & {
+  readonly threadId: string;
+  readonly replyId: string;
+  readonly postedAt: number;
+};
+
+export const setResolveThreadReplyPosted = async ({
+  db,
+  sessionId,
+  threadId,
+  replyId,
+  postedAt,
+}: ReplyPostedParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE resolve_threads SET reply_posted_at = ?, reply_id = ?, updated_at = ?
+     WHERE session_id = ? AND thread_id = ? AND reply_posted_at IS NULL`,
+    [postedAt, replyId, Date.now(), sessionId, threadId],
+  );
+  return result.rowsAffected > 0;
+};
+
 export const setResolveThreadReplyDraft = async ({
   db,
   sessionId,

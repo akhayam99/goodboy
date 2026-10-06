@@ -61,6 +61,16 @@ export const COMPOSE_COPY: Record<
     submit: 'Send answer',
     placeholder: 'Answer the agent, it drafts again with it',
   },
+  fixAnyway: {
+    label: 'What the fix should do',
+    submit: 'Fix it anyway',
+    placeholder: 'Optional. Say what the change should be',
+  },
+  rewrite: {
+    label: 'How the reply should change',
+    submit: 'Rewrite the reply',
+    placeholder: 'Optional. Say what the reply should say instead',
+  },
   reply: {
     label: 'Your reply',
     submit: 'Reply without a change',
@@ -105,6 +115,15 @@ export const decidedNote = ({
     }
   }
 };
+
+export const REPLY_NOTE_COPY = {
+  alone: 'Reply only. Nothing else is waiting to push, so it can go out now.',
+  posting: 'Posting the reply',
+  posted: ({ provider }: { readonly provider: string }): string => `Replied on ${provider}.`,
+  viewComment: 'View comment',
+  postNow: 'Post reply now',
+  retry: 'Retry',
+} as const;
 
 export const sharedFixLine = ({ count }: { readonly count: number }): string =>
   count === 1
