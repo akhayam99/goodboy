@@ -503,6 +503,30 @@ describe('a reply-only answer on the Comments page', () => {
     expect(reconciled).toEqual([{ sessionId: SESSION_ID, prNumber: 318, comments }]);
   });
 
+  it('leaves hand-posted reply reconciliation to GitHub threads', async () => {
+    const calls: Array<string> = [];
+    useAppStore.setState(useAppStore.getInitialState(), true);
+    useAppStore.setState({
+      updateResolveThreads: async () => undefined,
+      materializeReviewThreads: async () => 0,
+      reconcileHandReplies: async () => {
+        calls.push('reconcile');
+        return 0;
+      },
+      syncSourceSnapshots: async () => undefined,
+    });
+    await syncSourceThreads({
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      kind: 'gitlab',
+      prNumber: 318,
+      projectId: PROJECT_ID,
+      comments: [headOf({ threadId: REPLY_THREAD })],
+    });
+
+    expect(calls).toEqual([]);
+  });
+
   it('does not take a reply from someone else, or with other words, for its own', async () => {
     await seed({ rows: [replyOnlyRow()] });
     const store = await makeStore({

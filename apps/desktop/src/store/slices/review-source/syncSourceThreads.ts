@@ -71,10 +71,12 @@ export const syncSourceThreads = async ({
   } catch (error) {
     console.warn(`[review-threads] ${sessionId}: ${formatError(error)}`);
   }
-  try {
-    await get().reconcileHandReplies({ sessionId, prNumber, comments });
-  } catch (error) {
-    console.warn(`[review-replies] ${sessionId}: ${formatError(error)}`);
+  if (kind === 'github') {
+    try {
+      await get().reconcileHandReplies({ sessionId, prNumber, comments });
+    } catch (error) {
+      console.warn(`[review-replies] ${sessionId}: ${formatError(error)}`);
+    }
   }
   try {
     await get().syncSourceSnapshots({ sessionId, prNumber, comments });
