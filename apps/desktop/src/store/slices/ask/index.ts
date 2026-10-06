@@ -7,7 +7,6 @@ import { setAskRouting } from './setAskRouting';
 import { showAskThread } from './showAskThread';
 import { askInitialState } from './state';
 import { stopAskReply } from './stopAskReply';
-import { toggleAsk } from './toggleAsk';
 import type { AskSlice } from './types';
 
 export const createAskSlice = ({ set, get }: SliceDeps): AskSlice => ({
@@ -19,5 +18,4 @@ export const createAskSlice = ({ set, get }: SliceDeps): AskSlice => ({
   stopAskReply: stopAskReply(set, get),
   setAskRouting: setAskRouting(set, get),
   openAsk: openAsk(get),
-  toggleAsk: toggleAsk(get),
 });

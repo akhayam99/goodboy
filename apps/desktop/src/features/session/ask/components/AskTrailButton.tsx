@@ -21,7 +21,7 @@ export const AskTrailButton = ({ sessionId }: Props) => {
   const isCurrent = useAppStore(
     (state) => state.currentSessionId === sessionId && state.appStudio === null,
   );
-  const toggleAsk = useAppStore((state) => state.toggleAsk);
+  const closeDrawer = useAppStore((state) => state.closeDrawer);
   const openAsk = useAppStore((state) => state.openAsk);
   const glyphs = shortcutGlyphs('ask.open');
 
@@ -43,7 +43,7 @@ export const AskTrailButton = ({ sessionId }: Props) => {
         type="button"
         data-testid="ask-trail-button"
         aria-pressed={isOpen}
-        onClick={() => toggleAsk({ sessionId })}
+        onClick={() => (isOpen ? closeDrawer() : openAsk({ sessionId }))}
         className={cn(
           'flex h-6 shrink-0 items-center gap-1 rounded-md pl-2 pr-1 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           isOpen && 'bg-fill text-foreground',

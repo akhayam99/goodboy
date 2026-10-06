@@ -28,5 +28,4 @@ export type AskSlice = AskState & {
   readonly stopAskReply: (params: AskSessionParams) => Promise<void>;
   readonly setAskRouting: (params: SetAskRoutingParams) => void;
   readonly openAsk: (params: AskSessionParams) => void;
-  readonly toggleAsk: (params: AskSessionParams) => void;
 };
