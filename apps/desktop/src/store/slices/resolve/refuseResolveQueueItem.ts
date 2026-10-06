@@ -1,6 +1,6 @@
 import { listResolveQueueItems, refuseResolveQueueItem as refuseItem } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { STALE_APPROVAL } from './acceptResolveQueueItem';
+import { STALE_APPROVAL, withStaleRecovery } from './staleApproval';
 import { advanceResolveStage } from './advanceResolveStage';
 import { hashResolveReply } from './hashResolveReply';
 import { withSavedReplyDraft } from './saveResolveReplyDraft';
@@ -14,15 +14,34 @@ export const EMPTY_REFUSAL_REPLY = 'Write the reply the reviewer will read befor
 
 export const refuseResolveQueueItem = async ({
   set,
+  get,
+  sessionId,
+  itemId,
+  revision,
+  reply,
+}: Params): Promise<void> => {
+  if (reply.trim() === '') {
+    throw new Error(EMPTY_REFUSAL_REPLY);
+  }
+  await withStaleRecovery({
+    set,
+    get,
+    sessionId,
+    itemId,
+    revision,
+    run: ({ revision: current }) =>
+      refuseAtRevision({ set, get, sessionId, itemId, revision: current, reply }),
+  });
+};
+
+const refuseAtRevision = async ({
+  set,
   sessionId,
   itemId,
   revision,
   reply,
 }: Params): Promise<void> => {
   const db = tauriDatabase;
-  if (reply.trim() === '') {
-    throw new Error(EMPTY_REFUSAL_REPLY);
-  }
   const entries = await listResolveQueueItems({ db, sessionId });
   const target = entries.find((entry) => entry.item.id === itemId);
   if (target !== undefined && target.item.integratedSha !== null) {

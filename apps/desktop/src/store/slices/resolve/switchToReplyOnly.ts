@@ -12,7 +12,7 @@ import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
 import { projectResolveRows } from './projectResolveRows';
 import { saveResolveThread } from './saveResolveThread';
-import { STALE_APPROVAL } from './acceptResolveQueueItem';
+import { STALE_APPROVAL } from './staleApproval';
 import type { SliceParams, ThreadParams } from './types';
 
 type Params = SliceParams & ThreadParams;

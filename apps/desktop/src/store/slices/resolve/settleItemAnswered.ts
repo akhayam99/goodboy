@@ -5,7 +5,7 @@ import {
   setResolveQueueItemApproval,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { STALE_APPROVAL } from './acceptResolveQueueItem';
+import { STALE_APPROVAL } from './staleApproval';
 import { advanceResolveStage } from './advanceResolveStage';
 import { hashResolveReply } from './hashResolveReply';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';

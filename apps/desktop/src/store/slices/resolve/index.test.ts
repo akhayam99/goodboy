@@ -1607,7 +1607,7 @@ describe('accepting a comment the pull request read listed before the resolver r
     ).toMatchObject({ approvalState: 'accepted', approvedRevision: seen.thread.revision });
   });
 
-  it('still reports stale when the thread changes after the user looked', async () => {
+  it('asks for a new review when the thread changes after the user looked', async () => {
     const live = createHarness();
     const seen = await listThenResolve({ live });
     await live.actions.updateResolveThread({
@@ -1623,12 +1623,37 @@ describe('accepting a comment the pull request read listed before the resolver r
         revision: seen.thread.revision,
         reply: seen.thread.replyDraft ?? '',
       }),
-    ).rejects.toThrow('Approval revision is stale');
+    ).rejects.toThrow('This answer changed since you opened it. Review it again.');
     expect(
       (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
         ({ thread }) => thread.threadId === 'PRRT_1',
       )?.item.approvalState,
     ).toBe('none');
+  });
+});
+
+describe('opening a session whose open item lags its thread', () => {
+  it('repairs the item so the stuck Accept lands', async () => {
+    const live = createHarness();
+    const seen = await listThenResolve({ live });
+    await db.execute('UPDATE resolve_threads SET revision = revision + 4');
+    const rebooted = createHarness();
+    await rebooted.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const entry = (rebooted.get().sessionResolveQueueItems[SESSION_ID] ?? []).find(
+      ({ item }) => item.id === seen.item.id,
+    );
+    expect(entry?.item.candidateRevision).toBe(seen.thread.revision + 4);
+    await rebooted.actions.acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: seen.item.id,
+      revision: entry?.thread.revision ?? -1,
+      reply: seen.thread.replyDraft ?? '',
+    });
+    expect(
+      (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
+        ({ item }) => item.id === seen.item.id,
+      )?.item.approvalState,
+    ).toBe('accepted');
   });
 });
 
