@@ -752,18 +752,26 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
     `~/.config`, `~/.goodboy`, `~/.claude`, `~/.codex`, keychains and `.env`
     files. The question goes after `--`, so a question that looks like a flag
     stays text.
-  - Codex runs with the read-only sandbox (`-s read-only`),
-    `--ignore-user-config`, `--ignore-rules`, `--ephemeral` and
-    `-c mcp_servers={}`. This is a known limit, kept on purpose: the sandbox
-    lets Codex read any file your user can read, not only the project
-    folders. It blocks writes and network access for every command Codex
-    runs, so no command can change a file or send one anywhere. What Codex
-    reads goes only to its own model, as in any Codex session. Only Claude is
-    confined to the project folders; pick Claude for a chat that must not
-    look outside them. Newer Codex builds carry permission profiles
-    (`default_permissions`) that can narrow reads, but a profile cannot be
-    set together with `-s` and no probe pins its syntax yet, so Chat and Ask
-    keep `-s read-only` with network off until one does.
+  - Codex runs with `--ignore-user-config`, `--ignore-rules`, `--ephemeral`
+    and `-c mcp_servers={}`, and Rust picks the sandbox from
+    `codex --version` on every turn:
+    - 0.160.0 and newer: no `-s` flag, a permission profile instead,
+      `-c default_permissions="goodboy-ask"` and one inline table
+      `-c permissions.goodboy-ask.filesystem={":minimal"="read","<root>"="read",...}`
+      listing every read root (Chat: the workspace projects and the staged
+      image folder; Ask: the session worktrees and the staged session files).
+      Codex reads only those roots, writes nothing and has no network.
+      `-s read-only` would override the profile and let Codex read the whole
+      disk, so the argument check refuses any `-s` next to the profile and any
+      `"write"` grant. The table must be one value (a dotted key per path keeps
+      the quotes and fails with "must be absolute"), paths are canonical
+      (symlinks resolved) and quoted as TOML strings, and `":minimal"` is
+      required or the shell cannot start (it also allows the system temp
+      folders, so temp is never private).
+    - Older or unknown versions: the read-only sandbox (`-s read-only`). This
+      is a known limit: Codex can read any file your user can read. It
+      blocks writes and network for every command. Upgrade Codex, or pick
+      Claude, for a chat that must not look outside its folders.
   - Cursor, Gemini, opencode, OpenRouter and Moonshot are refused with "Chat
     needs a provider that can run read-only: Claude or Codex". m212 keeps
     `chats.provider` to `anthropic` and `codex`, and `CHAT_PROVIDER_IDS` in
@@ -773,7 +781,8 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
     all of this.
 - **Where it reads.** Rust reads the chat's connected projects from the
   database by chat id. The CLI runs in the first project (oldest first) and the
-  other projects are extra read roots for Claude. It never widens to a shared
+  other projects are extra read roots for Claude and for Codex 0.160.0 and
+  newer. It never widens to a shared
   parent folder, and never uses `/`, the home folder or a parent of it.
 - **Images.** The composer takes up to 10 PNG, JPEG, GIF or WebP images per
   message, at most 10 MB each, by paste, drop or the paperclip. Before the
@@ -914,10 +923,12 @@ stream reader) with a session scope: `ask_turn` in
   when the turn ends or fails to start. The prompt ends with the list of
   staged files and the worktree paths.
 - **Per provider.** Claude runs in the first worktree with the other
-  worktrees and the staged folder as `--add-dir` roots. Codex takes no extra
-  read root, so it runs inside the staged folder and reads the worktrees by
-  the absolute paths in the prompt; its read-only sandbox already lets it
-  read them (the known limit described for Chat). A session with no worktree
+  worktrees and the staged folder as `--add-dir` roots. Codex 0.160.0 and
+  newer runs in the first worktree too, with the worktrees and the staged
+  folder as the read roots of its permission profile (see Chat). Older Codex
+  runs inside the staged folder with `-s read-only` and reads the worktrees by
+  the absolute paths in the prompt (the known limit described for Chat). A
+  session with no worktree
   runs inside the staged folder with either provider, so Ask works without a
   connected project. Both pass the same argument check as Chat
   (`assert_read_only`), and the Rust tests pin each provider's arguments.
