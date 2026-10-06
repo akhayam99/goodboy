@@ -7,6 +7,7 @@ import {
   rebaseResolveQueueItem,
   setResolveCandidateState,
 } from '@goodboy/db';
+import type { ResolveThread } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
@@ -19,6 +20,12 @@ type Params = SliceParams & ThreadParams;
 
 const SHARED_CHANGE_BLOCKS_REPLY_ONLY =
   'This change also answers other comments. Answer those first, or keep the change';
+
+const FIX_ALREADY_ON_BRANCH =
+  'This fix is already on the branch, so it cannot be dropped here. Keep it, or revert it on the branch first';
+
+const hasCommittedFix = ({ thread }: { readonly thread: ResolveThread }): boolean =>
+  thread.disposition === 'fix' && (thread.commitShas?.length ?? 0) > 0;
 
 export const switchToReplyOnly = async ({
   set,
@@ -37,18 +44,21 @@ export const switchToReplyOnly = async ({
     throw new Error('Undo the decision on this comment first');
   }
   const candidate = await getReadyResolveCandidateForItem({ db, queueItemId: target.item.id });
+  const previous = (await listResolveThreads({ db, sessionId })).find(
+    (row) => row.threadId === threadId,
+  );
+  if (previous === undefined) {
+    throw new Error(STALE_APPROVAL);
+  }
+  if (candidate === null && hasCommittedFix({ thread: previous })) {
+    throw new Error(FIX_ALREADY_ON_BRANCH);
+  }
   if (candidate !== null) {
     const members = await listResolveCandidateItems({ db, candidateId: candidate.id });
     if (members.some((member) => member.queueItemId !== target.item.id)) {
       throw new Error(SHARED_CHANGE_BLOCKS_REPLY_ONLY);
     }
     await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
-  }
-  const previous = (await listResolveThreads({ db, sessionId })).find(
-    (row) => row.threadId === threadId,
-  );
-  if (previous === undefined) {
-    throw new Error(STALE_APPROVAL);
   }
   const saved = await saveResolveThread({
     db,

@@ -12,7 +12,7 @@ type Props = {
 };
 
 export const CreatePrMode = ({ sessionId, defaultTitle, closedPr, onCreated, onCancel }: Props) => (
-  <section aria-label="New pull request" className="flex flex-col gap-6">
+  <section aria-label="New pull request" className="flex min-h-0 flex-1 flex-col gap-6">
     <CreatePrPanel
       sessionId={sessionId}
       defaultTitle={defaultTitle}

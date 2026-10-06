@@ -64,6 +64,7 @@ export type ReviewCommentFacts = {
   readonly remoteReply: string | null;
   readonly isReplyOnly: boolean;
   readonly isReplyFailure: boolean;
+  readonly hasFixOnBranch: boolean;
 };
 
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
@@ -215,6 +216,14 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         row.item.approvalState === 'wont_fix' ||
         (row.proposalKind !== 'fix' && row.thread.disposition !== 'fix'),
       isReplyFailure: row.thread.stateReason?.startsWith('publication_failed:') === true,
+      hasFixOnBranch:
+        row.thread.disposition === 'fix' &&
+        (row.thread.commitShas?.length ?? 0) > 0 &&
+        !(state.sessionResolveCandidates[target.sessionId] ?? []).some(
+          (entry) =>
+            entry.candidate.state === 'ready' &&
+            entry.items.some((member) => member.queueItemId === row.item.id),
+        ),
     };
   },
   actions: [
@@ -515,6 +524,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: PenLine,
       group: 'act',
       when: ({ facts }) =>
+        facts.isReplyOnly &&
         (REWRITABLE.has(facts.state) || isPostableReplyOnly({ facts })) &&
         !facts.isNote &&
         !hasOverlay({ facts }),
@@ -541,6 +551,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       group: 'act',
       when: ({ facts }) =>
         !facts.isReplyOnly &&
+        !facts.hasFixOnBranch &&
         (facts.state === 'ready' || facts.state === 'edited') &&
         !facts.isNote &&
         !hasOverlay({ facts }),

@@ -70,7 +70,12 @@ export const toProjectMounts = (
 
 const toWorktreeRecord = (view: SessionMountView): SessionWorktree | null => {
   const worktreePath = view.worktreePath;
-  if (worktreePath === null || view.diskState === 'missing' || view.diskState === 'removed') {
+  if (
+    worktreePath === null ||
+    !view.isAttached ||
+    view.diskState === 'missing' ||
+    view.diskState === 'removed'
+  ) {
     return null;
   }
   return {

@@ -2,21 +2,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  insertResolveCandidate,
+  insertResolveCandidateItem,
+  insertResolvePublication,
   insertResolveQueueItem,
   listResolveBatches,
   listResolvePublicationThreads,
   listResolvePublicationsForSession,
   listResolveQueueItems,
   listResolveThreads,
+  upsertResolvePublicationThread,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type {
   AgentId,
+  IsoDateTime,
   MountId,
   PrComment,
   ProjectId,
+  ResolveCandidate,
   ResolveQueueItem,
   ResolveThread,
   SessionId,
@@ -215,6 +221,39 @@ const seed = async ({ rows }: { readonly rows: ReadonlyArray<ResolveThread> }): 
     await upsertResolveThread({ db, row, expectedRevision: null });
     await insertResolveQueueItem({ db, item: itemOf({ threadId: row.threadId }) });
   }
+};
+
+const stageCandidate = async ({
+  threadId,
+  state,
+}: {
+  readonly threadId: string;
+  readonly state: ResolveCandidate['state'];
+}): Promise<void> => {
+  await insertResolveCandidate({
+    db,
+    candidate: {
+      id: `candidate-${threadId}`,
+      sessionId: SESSION_ID,
+      revision: 1,
+      baseSha: 'base-sha',
+      candidateSha: 'fix-sha',
+      worktreePath: '/repo/work',
+      mountTarget: null,
+      state,
+      integratedSha: state === 'integrated' ? 'fix-sha' : null,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  });
+  await insertResolveCandidateItem({
+    db,
+    item: {
+      candidateId: `candidate-${threadId}`,
+      queueItemId: `item-${threadId}`,
+      itemRevision: 2,
+    },
+  });
 };
 
 const spawnedPrompts: Array<string> = [];
@@ -436,6 +475,167 @@ describe('a reply-only answer on the Comments page', () => {
     expect((await rowOf({ threadId: REPLY_THREAD }))?.replyId).toBe('IC_posted');
   });
 
+  it('Retry sends the newly approved reply and retires the failed publication', async () => {
+    await seed({ rows: [replyOnlyRow()] });
+    const store = await makeStore({ comments: [headOf({ threadId: REPLY_THREAD })] });
+    h.run.mockImplementation(async () => ({ stdout: '', stderr: 'GitHub is down', exitCode: 1 }));
+    await expect(
+      runOn({ store, threadId: REPLY_THREAD, actionId: 'reviewComment.accept' }),
+    ).rejects.toThrow();
+    const [failed] = await listResolvePublicationsForSession({ db, sessionId: SESSION_ID });
+    const first = await itemOfThread({ threadId: REPLY_THREAD });
+    await store.getState().reopenResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: first?.item.id ?? '',
+      revision: first?.thread.revision ?? 0,
+    });
+    const reopened = await itemOfThread({ threadId: REPLY_THREAD });
+    await store.getState().acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: reopened?.item.id ?? '',
+      revision: reopened?.thread.revision ?? 0,
+      reply: 'A different answer, after thinking again.',
+    });
+    h.run.mockImplementation(async (args) => ({
+      stdout: args.join(' ').includes('addPullRequestReviewThreadReply') ? replyOk : resolveOk,
+      stderr: '',
+      exitCode: 0,
+    }));
+
+    await store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: REPLY_THREAD });
+
+    expect(replyCalls().at(-1)).toContain('A different answer, after thinking again.');
+    const publications = await listResolvePublicationsForSession({ db, sessionId: SESSION_ID });
+    expect(publications.find((publication) => publication.id === failed?.id)?.phase).toBe(
+      'cancelled',
+    );
+  });
+
+  it('Retry does not send an uncertain reply again while GitHub cannot confirm it', async () => {
+    await seed({ rows: [replyOnlyRow()] });
+    const store = await makeStore({ comments: [headOf({ threadId: REPLY_THREAD })] });
+    h.run.mockImplementation(async () => {
+      throw new Error('request timed out');
+    });
+    await expect(
+      runOn({ store, threadId: REPLY_THREAD, actionId: 'reviewComment.accept' }),
+    ).rejects.toThrow();
+    expect(replyCalls()).toHaveLength(1);
+
+    await expect(
+      store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: REPLY_THREAD }),
+    ).rejects.toThrow('may already be on this conversation');
+
+    expect(replyCalls()).toHaveLength(1);
+  });
+
+  it('Retry settles an uncertain reply that GitHub shows as posted instead of sending it again', async () => {
+    await seed({ rows: [replyOnlyRow()] });
+    const store = await makeStore({ comments: [headOf({ threadId: REPLY_THREAD })] });
+    h.run.mockImplementation(async () => {
+      throw new Error('request timed out');
+    });
+    await expect(
+      runOn({ store, threadId: REPLY_THREAD, actionId: 'reviewComment.accept' }),
+    ).rejects.toThrow();
+    const [publication] = await listResolvePublicationsForSession({ db, sessionId: SESSION_ID });
+    const [receipt] = await listResolvePublicationThreads({
+      db,
+      publicationId: publication?.id ?? '',
+    });
+    useAppStore.setState({
+      sessionGithub: {
+        [SESSION_ID]: {
+          ...githubOf({
+            comments: [
+              headOf({ threadId: REPLY_THREAD }),
+              commentOf({
+                id: 'IC_landed',
+                threadId: REPLY_THREAD,
+                author: VIEWER,
+                body: receipt?.replyBody ?? '',
+                createdAt: '2026-10-06T10:00:00.000Z',
+              }),
+            ],
+          }),
+          detailFetchedAt: new Date(Date.now() + 60_000).toISOString() as IsoDateTime,
+        },
+      },
+    });
+    h.run.mockImplementation(async (args) => ({
+      stdout: args.join(' ').includes('addPullRequestReviewThreadReply') ? replyOk : resolveOk,
+      stderr: '',
+      exitCode: 0,
+    }));
+
+    await store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: REPLY_THREAD });
+
+    expect(replyCalls()).toHaveLength(1);
+  });
+
+  it('Retry points a reply that failed inside a bundled push to the pull request bar', async () => {
+    await seed({ rows: [replyOnlyRow()] });
+    const store = await makeStore({ comments: [headOf({ threadId: REPLY_THREAD })] });
+    const item = await itemOfThread({ threadId: REPLY_THREAD });
+    await db.execute(
+      "UPDATE resolve_queue_items SET approval_state = 'wont_fix', approved_revision = ?, candidate_revision = ? WHERE id = ?",
+      [item?.thread.revision, item?.thread.revision, item?.item.id],
+    );
+    await insertResolvePublication({
+      db,
+      publication: {
+        id: 'bundled',
+        sessionId: SESSION_ID,
+        repo: 'harborline/payments-api',
+        prNumber: 318,
+        branch: 'feature/retry',
+        targetRef: 'refs/heads/feature/retry',
+        localHead: 'head-sha',
+        remoteHead: null,
+        commitShas: [],
+        candidateIds: [],
+        approvedItemIds: [item?.item.id ?? ''],
+        requiresPush: false,
+        mountTarget: null,
+        phase: 'failed',
+        pushedHead: null,
+        confirmedAt: null,
+        completedAt: null,
+        holder: null,
+        heartbeatAt: null,
+        error: 'boom',
+        createdAt: Date.now() + 1000,
+      },
+    });
+    for (const threadId of [REPLY_THREAD, FIX_THREAD]) {
+      await upsertResolvePublicationThread({
+        db,
+        thread: {
+          publicationId: 'bundled',
+          threadId,
+          revision: item?.thread.revision ?? 0,
+          priorState: 'answered',
+          sourceFingerprint: null,
+          operationId: `op-${threadId}`,
+          replyBody: DRAFT,
+          replyPhase: 'pending',
+          replyId: null,
+          replyAttemptedAt: null,
+          replyPostedAt: null,
+          resolvePhase: 'pending',
+          resolvedAt: null,
+          error: 'boom',
+        },
+      });
+    }
+
+    await expect(
+      store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: REPLY_THREAD }),
+    ).rejects.toThrow('pull request bar');
+
+    expect(replyCalls()).toEqual([]);
+  });
+
   it('marks a hand-posted reply as posted on refresh and never posts it twice', async () => {
     await seed({ rows: [replyOnlyRow()] });
     const store = await makeStore({
@@ -501,6 +701,30 @@ describe('a reply-only answer on the Comments page', () => {
 
     expect(calls).toEqual(['threads', 'materialize', 'reconcile', 'snapshots']);
     expect(reconciled).toEqual([{ sessionId: SESSION_ID, prNumber: 318, comments }]);
+  });
+
+  it('leaves hand-posted reply reconciliation to GitHub threads', async () => {
+    const calls: Array<string> = [];
+    useAppStore.setState(useAppStore.getInitialState(), true);
+    useAppStore.setState({
+      updateResolveThreads: async () => undefined,
+      materializeReviewThreads: async () => 0,
+      reconcileHandReplies: async () => {
+        calls.push('reconcile');
+        return 0;
+      },
+      syncSourceSnapshots: async () => undefined,
+    });
+    await syncSourceThreads({
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      kind: 'gitlab',
+      prNumber: 318,
+      projectId: PROJECT_ID,
+      comments: [headOf({ threadId: REPLY_THREAD })],
+    });
+
+    expect(calls).toEqual([]);
   });
 
   it('does not take a reply from someone else, or with other words, for its own', async () => {
@@ -582,6 +806,31 @@ describe('steering an answer from the thread', () => {
     expect(batch?.launchChoice.hint).not.toContain('The owner adds');
   });
 
+  it('Reply only refuses a fix that is already on the branch and keeps the thread as it was', async () => {
+    await seed({
+      rows: [
+        threadOf({
+          threadId: FIX_THREAD,
+          state: 'fixed',
+          disposition: 'fix',
+          reply: 'Capped at 6',
+          shas: ['fix-sha'],
+        }),
+      ],
+    });
+    await stageCandidate({ threadId: FIX_THREAD, state: 'integrated' });
+    const store = await makeStore({ comments: [headOf({ threadId: FIX_THREAD })] });
+
+    await expect(
+      store.getState().switchToReplyOnly({ sessionId: SESSION_ID, threadId: FIX_THREAD }),
+    ).rejects.toThrow('already on the branch');
+
+    expect(await rowOf({ threadId: FIX_THREAD })).toMatchObject({
+      disposition: 'fix',
+      commitShas: ['fix-sha'],
+    });
+  });
+
   it('Reply only drops the staged change for the thread', async () => {
     await seed({
       rows: [
@@ -594,6 +843,7 @@ describe('steering an answer from the thread', () => {
         }),
       ],
     });
+    await stageCandidate({ threadId: FIX_THREAD, state: 'ready' });
     const store = await makeStore({ comments: [headOf({ threadId: FIX_THREAD })] });
 
     await runOn({ store, threadId: FIX_THREAD, actionId: 'reviewComment.replyOnly' });
