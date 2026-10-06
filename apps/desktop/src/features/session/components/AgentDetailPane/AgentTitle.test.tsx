@@ -6,6 +6,7 @@ import type { Agent, AgentId, SessionId } from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
   renameAgent: vi.fn(async () => undefined),
+  sessionResolveAttempts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -28,6 +29,7 @@ afterEach(cleanup);
 
 beforeEach(() => {
   state.renameAgent.mockClear();
+  state.sessionResolveAttempts = {};
 });
 
 describe('AgentTitle', () => {
@@ -36,6 +38,38 @@ describe('AgentTitle', () => {
 
     expect(screen.getByText('Implement chat')).toBeDefined();
     expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('names an automatic fix run title by its pull request and comments, as the Activity row does', () => {
+    state.sessionResolveAttempts = {
+      [sessionId]: [
+        { agentId: 'agent-1', prNumber: 318, threadIds: ['t1', 't2'], createdAt: 1 },
+        { agentId: 'agent-1', prNumber: 318, threadIds: ['t3'], createdAt: 2 },
+      ],
+    };
+    render(
+      <AgentTitle
+        agent={{ ...agent, kind: 'resolver', name: 'Resolve: 3 review comments' } as Agent}
+        sessionId={sessionId}
+      />,
+    );
+
+    expect(screen.getByText('Fix run · #318 · 3 comments')).toBeDefined();
+    expect(screen.queryByText(/^Resolve:/)).toBeNull();
+  });
+
+  it('keeps a title the owner gave to a fix run', () => {
+    state.sessionResolveAttempts = {
+      [sessionId]: [{ agentId: 'agent-1', prNumber: 318, threadIds: ['t1'], createdAt: 1 }],
+    };
+    render(
+      <AgentTitle
+        agent={{ ...agent, kind: 'resolver', name: 'Webhook retry pass' } as Agent}
+        sessionId={sessionId}
+      />,
+    );
+
+    expect(screen.getByText('Webhook retry pass')).toBeDefined();
   });
 
   it('opens the field from the rename affordance', () => {

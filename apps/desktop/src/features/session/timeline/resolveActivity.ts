@@ -4,6 +4,7 @@ import {
   resolveTallyOf,
   resolveTallyParts,
 } from '../../resolve/commentProjection';
+import { fixRunLabel } from '../../resolve/fixRun';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import type { RowState, RowStateReason } from '../../workTreeModel/rowState';
 
@@ -21,17 +22,6 @@ export type ResolveActivityFacts = {
   readonly prNumber?: number | null;
   readonly mountId?: MountId | null;
   readonly runTitle?: string;
-};
-
-const fixRunActivityTitle = ({
-  total,
-  prNumber,
-}: {
-  readonly total: number;
-  readonly prNumber: number | null;
-}): string => {
-  const comments = total === 1 ? '1 comment' : `${total} comments`;
-  return prNumber === null ? `Fix run · ${comments}` : `Fix run · #${prNumber} · ${comments}`;
 };
 
 const ATTENTION_STATES: ReadonlySet<ReviewCommentState> = new Set([
@@ -152,7 +142,7 @@ const factsOfAttempt = ({
     })),
     prNumber: attempt.prNumber,
     mountId: attempt.mountTarget?.mountId ?? null,
-    runTitle: fixRunActivityTitle({ total: reviews.length, prNumber: attempt.prNumber }),
+    runTitle: fixRunLabel({ total: reviews.length, prNumber: attempt.prNumber }),
   };
 };
 
