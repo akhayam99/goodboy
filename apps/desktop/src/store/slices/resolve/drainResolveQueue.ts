@@ -12,6 +12,7 @@ import type {
   Agent,
   MountTargetSnapshot,
   ResolveAttempt,
+  ResolveFailureCause,
   ResolveThread,
   WorktreeStatus,
 } from '@goodboy/types';
@@ -27,8 +28,10 @@ import {
   worktreeWriterStatus,
 } from '../../../features/worktree/worktree';
 import { beginResolveCandidate } from './beginResolveCandidate';
+import { feedLaunchTurns } from './feedLaunchTurns';
 import { projectResolveRows } from './projectResolveRows';
 import { recordResolvePhase } from './recordResolvePhase';
+import { failureCauseOfError } from './resolveFailure';
 import { releaseEndedResolveCopies, releaseResolveCopy } from './releaseResolveCopy';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import {
@@ -235,6 +238,7 @@ type FailParams = SliceParams &
   SessionParams & {
     readonly attempt: ResolveAttempt;
     readonly error: string;
+    readonly failureCause: ResolveFailureCause;
     readonly isCleanExit?: boolean;
   };
 
@@ -244,6 +248,7 @@ const failStart = async ({
   sessionId,
   attempt,
   error,
+  failureCause,
   isCleanExit = false,
   isInsideDrain = false,
 }: FailParams & { readonly isInsideDrain?: boolean }) => {
@@ -253,6 +258,7 @@ const failStart = async ({
     attemptId: attempt.id,
     phase: 'failed' as const,
     error,
+    failureCause,
     isCleanExit,
   };
   await (isInsideDrain
@@ -305,24 +311,40 @@ const startResolverTurn = async ({
         sessionId,
         attempt,
         isCleanExit: hasStarted,
+        failureCause: hasStarted
+          ? 'provider_error'
+          : result?.blockedOverBudget === true
+            ? 'spend_cap'
+            : 'start_failed',
         error: hasStarted
-          ? 'interrupted'
+          ? 'the run ended before the resolver reported a result'
           : result?.blockedOverBudget === true
             ? 'every provider is over its spend cap'
             : 'the turn ended before the fix attempt started',
       });
     }
   } catch (error) {
-    await failStart({ set, get, sessionId, attempt, error: formatError(error) });
+    await failStart({
+      set,
+      get,
+      sessionId,
+      attempt,
+      error: formatError(error),
+      failureCause: failureCauseOfError({ error }),
+    });
   } finally {
     if (copyPath === null) {
       await releaseWorktreeWriter({ path: worktreePath, holder: attempt.agentId });
     }
     if (copyPath !== null) {
-      await releaseResolveCopy({ attempt: { ...attempt, copyPath } });
+      await releaseEndedResolveCopies({
+        attempts: await listResolveAttempts({ db: tauriDatabase, sessionId }),
+        rows: await listResolveThreads({ db: tauriDatabase, sessionId }),
+      });
     }
     if (!isWriterLeaseDenied) {
       await get().drainResolveQueue({ sessionId, endedAttemptId: attempt.id });
+      await feedLaunchTurns({ get, sessionId, attempt });
     }
   }
 };
@@ -368,20 +390,35 @@ const startCopyAttempt = async ({
       sessionId,
       attempt,
       error: `couldn't make a copy of the branch: ${copy}`,
+      failureCause: 'start_failed',
       isInsideDrain: true,
     });
     return false;
   }
   await setResolveAttemptCopyPath({ db, id: attempt.id, copyPath: copy.copyPath });
   await setResolveAttemptPhase({ db, id: attempt.id, phase: 'running' });
-  await beginResolveCandidate({
-    set,
-    get,
-    sessionId,
-    attemptId: attempt.id,
-    mountTarget,
-    baseSha: copy.head,
-  }).catch(() => undefined);
+  try {
+    await beginResolveCandidate({
+      set,
+      get,
+      sessionId,
+      attemptId: attempt.id,
+      mountTarget,
+      baseSha: copy.head,
+    });
+  } catch (error) {
+    await failStart({
+      set,
+      get,
+      sessionId,
+      attempt: { ...attempt, copyPath: copy.copyPath },
+      error: formatError(error),
+      failureCause: 'capture_failed',
+      isInsideDrain: true,
+    });
+    await releaseResolveCopy({ attempt: { ...attempt, copyPath: copy.copyPath } });
+    return false;
+  }
   projectResolveRows({
     set,
     get,
@@ -431,7 +468,7 @@ export const drainResolveQueue = async ({
     pathOf,
     ...(endedAttemptId !== undefined && { endedAttemptId }),
   });
-  const hasReleased = await releaseEndedResolveCopies({ attempts });
+  const hasReleased = await releaseEndedResolveCopies({ attempts, rows });
   if (dirty.hasWritten || hasReleased) {
     attempts = await listResolveAttempts({ db, sessionId });
     rows = await listResolveThreads({ db, sessionId });
@@ -460,7 +497,8 @@ export const drainResolveQueue = async ({
         db,
         id: attempt.id,
         phase: 'cancelled',
-        error: 'interrupted',
+        error: 'the agent for this run is gone',
+        failureCause: 'start_failed',
       });
       await releaseAttemptWaiter({ attempt, worktreePath });
       hasCancelled = true;

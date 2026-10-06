@@ -6,6 +6,7 @@ import { isSessionPrFetchable } from '../github/resolveSessionPrFetch';
 import { sessionPrFetchState } from '../github/sessionPrFetchState';
 import { liveWorkOfSession } from '../live-work/selectLiveWork';
 import { summarizeMountWork } from '../project-mounts/mountCompletion';
+import { resolveAttentionOf } from '../resolve/resolveAttention';
 import { deriveSessionStage } from './deriveSessionStage';
 import { isPrReviewSession } from './isPrReviewSession';
 import { resolveSessionRequest } from './resolveSessionRequest';
@@ -35,7 +36,8 @@ export type StageInfoState = Pick<
   | 'currentSessionId'
   | 'githubStatus'
   | 'agentTurnState'
->;
+> &
+  Partial<Pick<AppState, 'sessionResolveThreads' | 'sessionResolveAttempts'>>;
 
 function countOpenQuestions(state: StageInfoState, sessionId: SessionId): number {
   const questions = state.sessionOpenQuestions[sessionId];
@@ -73,6 +75,10 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     });
   const live = liveWorkOfSession({ state, session });
   const work = summarizeMountWork({ state, sessionId });
+  const attention = resolveAttentionOf({
+    threads: state.sessionResolveThreads?.[sessionId] ?? [],
+    attempts: state.sessionResolveAttempts?.[sessionId] ?? [],
+  });
   return deriveSessionStage({
     session,
     pr: request.pr,
@@ -87,6 +93,8 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     }),
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
+    fixNeedsYouCount: attention.needsYou,
+    fixCouldntFixCount: attention.couldntFix,
     hasRunningAgent: live.isRunning,
     hasBlockedAgent: live.isBlocked,
     isDecidingWorkflow: live.isDeciding,

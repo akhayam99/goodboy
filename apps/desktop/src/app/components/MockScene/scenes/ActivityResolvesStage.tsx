@@ -3,22 +3,12 @@ import { SessionOverviewPane } from '../../../../features/session/components/Ses
 import { ACTIVITY_RESOLVES_SESSION, seedActivityResolvesScene } from './activityResolvesSeed';
 import { ShellFrame } from './shellChrome';
 
-export type ActivityResolvesStep = 'none' | 'burst' | 'log';
+export type ActivityResolvesStep = 'none' | 'log';
 
-const targetOf = ({
-  step,
-}: {
-  readonly step: Exclude<ActivityResolvesStep, 'none'>;
-}): HTMLElement | null => {
-  if (step === 'log') {
-    const tabs = Array.from(window.document.querySelectorAll<HTMLElement>('[role="tab"]'));
-    return tabs.find((tab) => tab.textContent === 'Log') ?? null;
-  }
-  const toggles = Array.from(
-    window.document.querySelectorAll<HTMLElement>('button[aria-expanded="false"]'),
-  );
-  return toggles.find((toggle) => /^\d+ files/.test(toggle.textContent ?? '')) ?? null;
-};
+const logTab = (): HTMLElement | null =>
+  Array.from(window.document.querySelectorAll<HTMLElement>('[role="tab"]')).find(
+    (tab) => tab.textContent === 'Log',
+  ) ?? null;
 
 export const ActivityResolvesStage = ({ step }: { readonly step: ActivityResolvesStep }) => {
   const [isReady, setIsReady] = useState(false);
@@ -33,7 +23,7 @@ export const ActivityResolvesStage = ({ step }: { readonly step: ActivityResolve
       return;
     }
     const interval = window.setInterval(() => {
-      const target = targetOf({ step });
+      const target = logTab();
       if (target === null) {
         return;
       }

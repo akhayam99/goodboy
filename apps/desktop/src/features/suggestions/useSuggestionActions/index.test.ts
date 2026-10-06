@@ -34,13 +34,7 @@ const { storeState, spies } = vi.hoisted(() => {
       return 'agent-resolver';
     },
   );
-  const setAgentConfig = vi.fn(async (sessionId: string, agentId: string, fields: unknown) => {
-    void sessionId;
-    void agentId;
-    void fields;
-  });
   const navigate = vi.fn();
-  const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
   const rebaseRun = vi.fn(async () => undefined);
   const runPlan = vi.fn(async (): Promise<RunPlanResult> => ({
     kind: 'started',
@@ -56,9 +50,10 @@ const { storeState, spies } = vi.hoisted(() => {
   const resolveMountCleanup = vi.fn(async () => undefined);
   const attachWorkflowToSession = vi.fn(async () => undefined);
   const resumeStoppedAgents = vi.fn(async (_params: unknown) => 2);
-  const announceAgentStarted = vi.fn();
+  const requestReviewLaunch = vi.fn();
   return {
     spies: {
+      requestReviewLaunch,
       ensureProjectMounted,
       recordSessionEvent,
       setSessionActiveProject,
@@ -66,8 +61,6 @@ const { storeState, spies } = vi.hoisted(() => {
       reportError,
       advanceAgent: vi.fn(async () => undefined),
       spawnAgent,
-      setAgentConfig,
-      createResolveBatch,
       navigate,
       rebaseRun,
       runPlan,
@@ -79,7 +72,6 @@ const { storeState, spies } = vi.hoisted(() => {
       resolveMountCleanup,
       attachWorkflowToSession,
       resumeStoppedAgents,
-      announceAgentStarted,
       showToast,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
       useRebaseBranch: vi.fn((_params: unknown) => ({
@@ -103,8 +95,6 @@ const { storeState, spies } = vi.hoisted(() => {
       emitNotification,
       reportError,
       spawnAgent,
-      setAgentConfig,
-      createResolveBatch,
       runPlan,
       navigate,
       pushSessionBranch,
@@ -116,12 +106,20 @@ const { storeState, spies } = vi.hoisted(() => {
       attachWorkflowToSession,
       resumeStoppedAgents,
       requestOpenQuestionScroll: vi.fn(),
+      requestReviewLaunch,
+      currentSessionId: 'session-elsewhere' as string,
+      activeLens: {} as Record<string, string>,
+      branchTab: {} as Record<string, string>,
+      branchThreadId: {} as Record<string, string | null>,
     },
   };
 });
 
 vi.mock('../../../store', async () => {
-  const useAppStore = <T>(selector: (state: typeof storeState) => T) => selector(storeState);
+  const useAppStore = Object.assign(
+    <T>(selector: (state: typeof storeState) => T) => selector(storeState),
+    { getState: () => storeState },
+  );
   return {
     ...(await import('../../../store/slices/navigation/place')),
     EMPTY_ARRAY: Object.freeze([]),
@@ -133,9 +131,6 @@ vi.mock('../../../shared/hooks/useKindRouting', () => ({
 }));
 vi.mock('../../../shared/components/Toast/useShowToast', () => ({
   useShowToast: () => spies.showToast,
-}));
-vi.mock('../../../shared/hooks/useAgentStartedToast', () => ({
-  useAgentStartedToast: () => spies.announceAgentStarted,
 }));
 vi.mock('../../session/hooks/useWorktreeStatuses', () => ({
   useWorktreeStatuses: spies.worktreeStatuses,
@@ -223,95 +218,27 @@ describe('useSuggestionActions', () => {
     expect(spies.advanceAgent).toHaveBeenCalledWith({ agent: PENDING_AGENT });
   });
 
-  it('spawns a resolver per eligible thread', async () => {
+  const reviewThread = ({ id, path }: { readonly id: string; readonly path: string }) => ({
+    id,
+    source: 'review',
+    resolved: false,
+    threadId: `thread-${id}`,
+    url: 'u',
+    body: 'rename it',
+    author: 'harbor-reviewer',
+    createdAt: '2026-01-01T00:00:00Z',
+    path,
+  });
+
+  it('opens the fix panel with every eligible thread and starts no agent', async () => {
     storeState.sessionGithub = {
       [SESSION_ID]: {
         pr: { number: 12, headBranch: 'feature/retry' },
         detail: {
           comments: [
-            {
-              id: '1',
-              source: 'review',
-              resolved: false,
-              threadId: 'thread-1',
-              url: 'u',
-              body: 'rename it',
-              author: 'harbor-reviewer',
-              createdAt: '2026-01-01T00:00:00Z',
-              path: 'a.ts',
-            },
-          ],
-        },
-      },
-    };
-
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'resolve-threads:session-1',
-        kind: 'resolve-threads',
-        payload: { eligibleThreadCount: 1 },
-      },
-    });
-
-    expect(actions.primary?.label).toBe('Draft a fix');
-    actions.primary?.run();
-    await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(1));
-    expect(spies.spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual(['thread-1']);
-    expect(spies.spawnAgent.mock.calls[0]?.[1].kindOverride).toBe('resolver');
-    await vi.waitFor(() => expect(spies.announceAgentStarted).toHaveBeenCalledOnce());
-    const [toast] = spies.announceAgentStarted.mock.calls[0] ?? [];
-    expect(toast).toMatchObject({
-      sessionId: SESSION_ID,
-      actionLabel: 'Open summary',
-      message: '1 agent started on Claude',
-    });
-    expect(spies.navigate).not.toHaveBeenCalled();
-    toast.open();
-    expect(spies.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
-    });
-  });
-
-  it('gives every eligible conversation its own agent inside one batch', async () => {
-    storeState.sessionGithub = {
-      [SESSION_ID]: {
-        pr: { number: 12, headBranch: 'feature/retry', title: 't', url: 'u' },
-        detail: {
-          comments: [
-            {
-              source: 'review',
-              resolved: false,
-              threadId: 'thread-1',
-              url: 'u',
-              body: 'a',
-              path: 'a.ts',
-              author: 'harbor-reviewer',
-              createdAt: '2026-01-01T00:00:00Z',
-              id: '1',
-            },
-            {
-              source: 'review',
-              resolved: false,
-              threadId: 'thread-2',
-              url: 'u',
-              body: 'b',
-              path: 'a.ts',
-              author: 'harbor-reviewer',
-              createdAt: '2026-01-01T00:00:00Z',
-              id: '2',
-            },
-            {
-              source: 'review',
-              resolved: false,
-              threadId: 'thread-3',
-              url: 'u',
-              body: 'c',
-              path: 'b.ts',
-              author: 'harbor-reviewer',
-              createdAt: '2026-01-01T00:00:00Z',
-              id: '3',
-            },
+            reviewThread({ id: '1', path: 'a.ts' }),
+            reviewThread({ id: '2', path: 'a.ts' }),
+            reviewThread({ id: '3', path: 'b.ts' }),
           ],
         },
       },
@@ -325,15 +252,56 @@ describe('useSuggestionActions', () => {
         payload: { eligibleThreadCount: 3 },
       },
     });
-    actions.primary?.run();
 
-    await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(3));
-    expect(spies.spawnAgent.mock.calls.map((call) => call[1].sourceThreadIds)).toEqual([
-      ['thread-1'],
-      ['thread-2'],
-      ['thread-3'],
-    ]);
-    expect(spies.createResolveBatch).toHaveBeenCalledOnce();
+    expect(actions.primary?.label).toBe('Draft fixes for 3');
+    expect(actions.primary?.runsOn).toBeUndefined();
+    await actions.primary?.run();
+
+    expect(spies.requestReviewLaunch).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      threadIds: ['thread-1', 'thread-2', 'thread-3'],
+    });
+    expect(spies.navigate).toHaveBeenCalledWith({
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments', threadId: null }),
+    });
+    expect(spies.spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('leaves out a comment that needs an answer or is already worked', async () => {
+    storeState.sessionGithub = {
+      [SESSION_ID]: {
+        pr: { number: 12, headBranch: 'feature/retry' },
+        detail: {
+          comments: [
+            reviewThread({ id: '1', path: 'a.ts' }),
+            reviewThread({ id: '2', path: 'a.ts' }),
+            reviewThread({ id: '3', path: 'b.ts' }),
+          ],
+        },
+      },
+    };
+    storeState.sessionResolveThreads = {
+      [SESSION_ID]: [
+        { threadId: 'thread-2', state: 'needs_answer', stage: 'asking' },
+        { threadId: 'thread-3', state: 'failed', stage: 'failed', stateReason: 'provider_error' },
+      ],
+    };
+
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'resolve-threads:session-1',
+        kind: 'resolve-threads',
+        payload: { eligibleThreadCount: 2 },
+      },
+    });
+    await actions.primary?.run();
+
+    expect(actions.primary?.label).toBe('Draft fixes for 2');
+    expect(spies.requestReviewLaunch).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      threadIds: ['thread-1', 'thread-3'],
+    });
   });
 
   it('rebases the mount the suggestion names without moving the write destination', async () => {

@@ -1,8 +1,11 @@
 import type { AgentId } from '@goodboy/types';
 import { cancelPublication } from './cancelPublication';
+import { answerQuestions } from './answerQuestions';
+import { continueResolveThreads } from './continueResolveThreads';
 import { drainResolveQueue } from './drainResolveQueue';
 import { preparePublication } from './preparePublication';
 import { publishConversations } from './publishConversations';
+import { retryCouldntFix } from './retryCouldntFix';
 import { retryPublication } from './retryPublication';
 import { drainResolveWorktree } from './drainResolveWorktree';
 import { loadResolveSession } from './loadResolveSession';
@@ -37,7 +40,10 @@ import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type {
   ResolveActions,
   BatchUpdateParams,
+  AnswerQuestionsParams,
   AttemptParams,
+  ContinueThreadsParams,
+  RetryCouldntFixParams,
   DrainParams,
   PhaseParams,
   PreparePublicationParams,
@@ -161,6 +167,25 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         sessionId: params.sessionId,
         run: () => recoverUncapturedResolveWork({ set, get, ...params }),
       }),
+    retryCouldntFix: (params: RetryCouldntFixParams) => retryCouldntFix({ get, ...params }),
+    answerQuestions: async (params: AnswerQuestionsParams) => {
+      await answerQuestions({ get, ...params });
+      set((current) => ({
+        sessionResolveAnswers: {
+          ...current.sessionResolveAnswers,
+          [params.sessionId]: {
+            ...current.sessionResolveAnswers[params.sessionId],
+            ...Object.fromEntries(
+              params.answers
+                .filter((item) => item.answer.trim() !== '')
+                .map((item) => [item.threadId, item.answer.trim()]),
+            ),
+          },
+        },
+      }));
+    },
+    continueResolveThreads: (params: ContinueThreadsParams) =>
+      continueResolveThreads({ get, ...params }),
     drainResolveQueue: (params: DrainParams) =>
       serialize({
         sessionId: params.sessionId,

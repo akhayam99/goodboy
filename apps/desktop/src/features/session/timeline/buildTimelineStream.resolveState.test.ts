@@ -125,7 +125,7 @@ describe('resolveFactsByAgentId', () => {
     readonly createdAt: number;
   }) => ({ agentId, batchId: null, prNumber: 318, threadIds, phase, createdAt });
 
-  it('maps the Review state of the thread and says Ready for you for a ready fix', () => {
+  it('maps the Review state of the thread and says Ready for a ready fix', () => {
     const facts = resolveFactsByAgentId({
       attempts: [
         attempt({ agentId: 'a1', threadIds: ['t1'], phase: 'finished', createdAt: 1 }),
@@ -137,8 +137,35 @@ describe('resolveFactsByAgentId', () => {
       ],
     });
 
-    expect(facts.get('a1')).toMatchObject({ state: 'ready', word: 'Ready for you' });
+    expect(facts.get('a1')).toMatchObject({ state: 'ready', word: 'Ready' });
     expect(facts.get('a3')).toMatchObject({ state: 'pushed', word: 'Pushed' });
+  });
+
+  it('counts the comments of one agent, not the agent, in five words', () => {
+    const facts = resolveFactsByAgentId({
+      attempts: [
+        attempt({
+          agentId: 'a1',
+          threadIds: ['t1', 't2', 't3', 't4', 't5', 't6'],
+          phase: 'running',
+          createdAt: 1,
+        }),
+      ],
+      reviews: [
+        { threadId: 't1', state: 'ready', word: 'Ready' },
+        { threadId: 't2', state: 'ready', word: 'Ready' },
+        { threadId: 't3', state: 'edited', word: 'Ready' },
+        { threadId: 't4', state: 'needs', word: 'Needs you' },
+        { threadId: 't5', state: 'drafting', word: 'Working' },
+        { threadId: 't6', state: 'failed', word: "Couldn't fix" },
+      ],
+    });
+
+    expect(facts.get('a1')).toMatchObject({
+      state: 'ready',
+      word: "3 ready · 1 needs you · 1 working · 1 couldn't fix",
+    });
+    expect(facts.get('a1')?.threads).toHaveLength(6);
   });
 
   it('falls back to the attempt phase when Review has no row for the thread', () => {
@@ -147,7 +174,7 @@ describe('resolveFactsByAgentId', () => {
       reviews: [],
     });
 
-    expect(facts.get('a2')).toEqual({ state: 'drafting', word: 'Drafting' });
+    expect(facts.get('a2')).toEqual({ state: 'drafting', word: 'Working' });
   });
 
   it('uses the newest attempt of an agent and the comment that needs you first', () => {
@@ -162,6 +189,6 @@ describe('resolveFactsByAgentId', () => {
       ],
     });
 
-    expect(facts.get('a1')).toMatchObject({ state: 'needs', word: 'Needs you' });
+    expect(facts.get('a1')).toMatchObject({ state: 'needs', word: '1 needs you' });
   });
 });

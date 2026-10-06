@@ -20,6 +20,8 @@ export type SessionStage = 'attention' | 'running' | 'review' | 'building' | 'do
 export type SessionAttentionReason =
   | 'agent-error'
   | 'open-question'
+  | 'fix-needs-you'
+  | 'fix-couldnt-fix'
   | 'unread-reply'
   | 'ci-failed'
   | 'changes-requested'

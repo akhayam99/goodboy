@@ -5,6 +5,9 @@ import { DONE_ROW_STATE, type RowState } from '../../workTreeModel/rowState';
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
 import type { TimelineStreamItem } from './buildTimelineStream';
 import { needsYouOwners } from './needsYou';
+import type { ResolveActivityFacts } from './resolveActivity';
+
+type ResolveThreadFact = NonNullable<ResolveActivityFacts['threads']>[number];
 
 const ASKING: RowState = {
   phase: 'waiting',
@@ -221,60 +224,140 @@ describe('needsYouOwners', () => {
     expect(owners.map((owner) => owner.id)).toEqual(['agent:late', 'agent:early']);
   });
 
-  it('merges resolve batches of one pull request into one row with summed counts', () => {
-    const part = (state: string, count: number) => ({ state, count });
-    const batch = ({
+  describe('fix runs', () => {
+    const thread = (threadId: string, state: ResolveThreadFact['state']): ResolveThreadFact => ({
+      threadId,
+      state,
+      path: null,
+      line: null,
+    });
+
+    const run = ({
       id,
       prNumber,
-      parts,
+      threads,
       at,
     }: {
       readonly id: string;
       readonly prNumber: number;
-      readonly parts: ReadonlyArray<{ readonly state: string; readonly count: number }>;
+      readonly threads: ReadonlyArray<ResolveThreadFact>;
       readonly at: string;
-    }) =>
-      row({
-        id,
-        familyId: id,
+    }) => ({
+      item: row({
+        id: `agent:${id}`,
+        familyId: `agent:${id}`,
         rowState: ASKING,
         at,
-        entry: {
-          kind: 'resolveBatch',
-          id,
-          prNumber,
-          summary: { total: 0, parts, attentionCount: 1, failedCount: 0 },
-        },
-      });
-    const owners = needsYouOwners({
-      items: [
-        batch({
-          id: 'batch:2',
-          prNumber: 318,
-          parts: [part('failed', 1)],
-          at: '2026-10-03T12:00:00.000Z',
-        }),
-        batch({
-          id: 'batch:1',
-          prNumber: 318,
-          parts: [part('ready', 4), part('failed', 1)],
-          at: '2026-10-03T09:00:00.000Z',
-        }),
-        batch({
-          id: 'batch:3',
-          prNumber: 402,
-          parts: [part('failed', 2)],
-          at: '2026-10-03T08:00:00.000Z',
-        }),
-      ],
-      entries: [],
-      events: [],
+        entry: agentEntry({ id }),
+      }),
+      facts: [
+        id,
+        { state: 'needs', word: '', prNumber, mountId: null, threads },
+      ] as const satisfies readonly [string, ResolveActivityFacts],
     });
 
-    expect(owners.map((owner) => owner.text)).toEqual([
-      'Resolve #318 · 4 replies ready · 2 failed',
-      'Resolve #402 · 2 failed',
-    ]);
-    expect(owners[0]?.id).toBe('batch:2');
+    it('asks once for a run with the actions you owe, not once per comment', () => {
+      const one = run({
+        id: 'r1',
+        prNumber: 318,
+        at: '2026-10-03T09:00:00.000Z',
+        threads: [
+          thread('t1', 'ready'),
+          thread('t2', 'ready'),
+          thread('t3', 'ready'),
+          thread('t4', 'ready'),
+          thread('t5', 'ready'),
+          thread('t6', 'needs'),
+          thread('t7', 'drafting'),
+          thread('t8', 'pushed'),
+        ],
+      });
+
+      const owners = needsYouOwners({
+        items: [one.item],
+        entries: [],
+        events: [],
+        resolveFactsByAgentId: new Map([one.facts]),
+      });
+
+      expect(owners.map((owner) => owner.text)).toEqual(['#318 · 1 question · 5 to review']);
+      expect(owners[0]?.kind).toBe('fixRun');
+    });
+
+    it('opens the first comment that waits on you: the question before the reviews', () => {
+      const one = run({
+        id: 'r1',
+        prNumber: 318,
+        at: '2026-10-03T09:00:00.000Z',
+        threads: [thread('t1', 'ready'), thread('t2', 'failed'), thread('t3', 'needs')],
+      });
+
+      const owners = needsYouOwners({
+        items: [one.item],
+        entries: [],
+        events: [],
+        resolveFactsByAgentId: new Map([one.facts]),
+      });
+
+      expect(owners[0]?.owed?.target?.threadId).toBe('t3');
+    });
+
+    it('says nothing while the run only works or has nothing left to decide', () => {
+      const working = run({
+        id: 'r1',
+        prNumber: 318,
+        at: '2026-10-03T09:00:00.000Z',
+        threads: [thread('t1', 'drafting'), thread('t2', 'pushed')],
+      });
+
+      const owners = needsYouOwners({
+        items: [working.item],
+        entries: [],
+        events: [],
+        resolveFactsByAgentId: new Map([working.facts]),
+      });
+
+      expect(owners).toEqual([]);
+    });
+
+    it('merges the runs of one pull request into one row with summed counts', () => {
+      const newer = run({
+        id: 'r2',
+        prNumber: 318,
+        at: '2026-10-03T12:00:00.000Z',
+        threads: [thread('t9', 'failed')],
+      });
+      const older = run({
+        id: 'r1',
+        prNumber: 318,
+        at: '2026-10-03T09:00:00.000Z',
+        threads: [
+          thread('t1', 'ready'),
+          thread('t2', 'ready'),
+          thread('t3', 'ready'),
+          thread('t4', 'ready'),
+          thread('t5', 'failed'),
+        ],
+      });
+      const other = run({
+        id: 'r3',
+        prNumber: 402,
+        at: '2026-10-03T08:00:00.000Z',
+        threads: [thread('t6', 'failed'), thread('t7', 'failed')],
+      });
+
+      const owners = needsYouOwners({
+        items: [newer.item, older.item, other.item],
+        entries: [],
+        events: [],
+        resolveFactsByAgentId: new Map([newer.facts, older.facts, other.facts]),
+      });
+
+      expect(owners.map((owner) => owner.text)).toEqual([
+        "#318 · 4 to review · 2 couldn't fix",
+        "#402 · 2 couldn't fix",
+      ]);
+      expect(owners[0]?.owed?.target?.threadId).toBe('t1');
+    });
   });
 });

@@ -18,7 +18,7 @@ describe('previousAttemptsOf', () => {
   it('lists earlier attempts for the thread in order and skips the active one', () => {
     const attempts = [
       attempt({ id: 'a2', createdAt: 20, phase: 'running' }),
-      attempt({ id: 'a1', createdAt: 10, phase: 'failed', error: 'interrupted' }),
+      attempt({ id: 'a1', createdAt: 10, phase: 'failed', failureCause: 'provider_error' }),
       attempt({ id: 'other', createdAt: 15, threadIds: ['PRRT_2'] }),
     ];
 
@@ -29,8 +29,19 @@ describe('previousAttemptsOf', () => {
       id: 'a1',
       number: 1,
       outcome: 'failed',
-      reason: 'The run ended before the resolver reported a result',
+      reason: 'The model provider stopped the run',
     });
+  });
+
+  it('says the cause is not recorded for an attempt written before causes existed', () => {
+    const attempts = [
+      attempt({ id: 'a1', createdAt: 10, phase: 'failed', error: 'interrupted' }),
+      attempt({ id: 'a2', createdAt: 20, phase: 'running' }),
+    ];
+
+    const previous = previousAttemptsOf({ attempts, threadId: 'PRRT_1', activeAttemptId: 'a2' });
+
+    expect(previous[0]).toMatchObject({ outcome: 'failed', reason: 'Cause not recorded' });
   });
 
   it('marks a stopped attempt and a finished one', () => {
@@ -43,7 +54,7 @@ describe('previousAttemptsOf', () => {
     const previous = previousAttemptsOf({ attempts, threadId: 'PRRT_1', activeAttemptId: 'a3' });
 
     expect(previous.map((entry) => [entry.number, entry.outcome, entry.reason])).toEqual([
-      [1, 'stopped', 'The run was stopped'],
+      [1, 'stopped', 'You stopped it'],
       [2, 'finished', null],
     ]);
   });

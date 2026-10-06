@@ -53,31 +53,48 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           )}
         >
           <WorkNode
-            state={entry.view === null ? REVIEW_COMMENT_NODE[entry.state] : entry.view.node}
+            state={REVIEW_COMMENT_NODE[entry.state]}
             label={entry.word}
             mark={{ kind: 'dot' }}
           />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex min-w-0 items-baseline gap-2 text-meta">
-            {note !== null && <span className="shrink-0 text-muted-foreground">{note.author}</span>}
+          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-meta">
+            {note !== null && (
+              <span data-row-author className="shrink-0 whitespace-nowrap text-muted-foreground">
+                {note.author}
+              </span>
+            )}
             {file !== null && (
-              <span className="min-w-0 truncate font-mono text-faint-foreground">
+              <span
+                data-row-file
+                className="min-w-0 flex-1 basis-[8ch] truncate font-mono text-faint-foreground"
+              >
                 {file}
                 {note?.line == null ? '' : `:${note.line}`}
               </span>
             )}
             <span
+              data-row-state
               className={cn(
-                'ml-auto shrink-0 motion-safe:transition-opacity',
-                entry.view === null
-                  ? STATE_WORD_TONE[entry.state]
-                  : REMOTE_TONE_CLASS[entry.view.tone],
+                'ml-auto shrink-0 whitespace-nowrap motion-safe:transition-opacity',
+                STATE_WORD_TONE[entry.state],
                 onFix !== null &&
                   'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',
               )}
             >
               {entry.word}
+              {entry.view !== null && (
+                <span className={REMOTE_TONE_CLASS[entry.view.tone]}> · {entry.view.word}</span>
+              )}
+              {entry.chips
+                .filter((chip) => chip !== entry.view?.word)
+                .map((chip) => (
+                  <span key={chip} className="text-muted-foreground">
+                    {' '}
+                    · {chip}
+                  </span>
+                ))}
             </span>
           </span>
           <span className="min-w-0 truncate text-body text-foreground" title={body ?? undefined}>

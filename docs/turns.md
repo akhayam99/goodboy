@@ -196,14 +196,57 @@ record a live turn already wrote wins.
   and falls back to the whole message as the Ask when they do not line up.
   `spawn-from-comment.golden.test.ts` pins the string sent to the provider for
   the resolver, the re-check, the scribe and the follow-up byte for byte.
-- One user action that starts resolvers writes one `resolve_attempts.launch_id`
-  (m222, nullable, no backfill) on every attempt it spawns, whatever the batch:
-  `startFixAttempt` mints it once per call. A retry gets its own launch id and
-  `retry_of_launch_id` pointing at the root of its origin (the origin's launch
-  id, else its batch id). Rows older than m222 stay NULL, and the Activity
-  groups them at read time only when session, repo, provider and PR match and
-  each started within 10 minutes of the first member (`related`); notes without
-  a PR stay single. A re-check scout writes no attempt, so it has no launch id.
+- A resolver works unattended in its own copy of the branch and never asks to
+  commit: the owner reviews, accepts and pushes. Each thread ends with one of
+  three markers, `comment-resolved`, `comment-wontfix` or
+  `<<needs-input id="..." options="a|b" recommended="a">>question<</needs-input>>`.
+  `needs-input` is allowed only when a comment reads two ways that lead to
+  different code. It carries two or three options and the recommended one, lands
+  on its thread as `needs_answer` with the question, and rides the open question
+  rows (blocking, one choice), so Needs you and the answer composer handle it
+  like any other question. The workspace working rules never reach a resolver
+  turn (`PROFILE_ACCESS.resolver` reads roles and topics only), because they are
+  written for chat.
+- One fix run per launch. Fixing N comments starts ONE resolver, in ONE copy of
+  the branch, that works through the comments in the order given and reports
+  each one with its outcome marker as it finishes: 16 comments are 1 agent.
+  Each turn is bounded, the agent is not: `startFixAttempt` splits the comments
+  by file with `chunkConversations` (at most 12 per turn and half of the model's
+  context window), starts the agent on the first chunk and holds the rest
+  (`launchTurns`). When a turn ends, `feedLaunchTurns` sends the next chunk as
+  another turn of the same agent in the same copy, and stops when the run
+  failed, the owner stopped it or a turn was refused. A comment in a chunk not
+  yet fed reads Open. Held chunks live in memory, so a restart leaves the unfed
+  comments Open to start again.
+  `startFixAttempt` mints the `resolve_attempts.launch_id` (m222) once per call
+  and `startBatch` returns the run (`batchId`, `launchId`) and the single
+  `agentId`. Every later turn of that agent is another attempt row that inherits
+  the launch, the batch, the launch choice and the copy (`recordResolveAttempt`
+  reads them from the agent's latest attempt):
+  - Answering a Needs you (`answerQuestions({ sessionId, launchId, answers })`),
+    retrying what could not be fixed (`retryCouldntFix({ sessionId, launchId,
+threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
+    message typed in the transcript all send a turn to the same agent. Several
+    answers or retries make one turn. An answer counts as delivered only when its
+    turn has started (`onStarted` on `sendTurn`, after the attempt is recorded):
+    the question is marked answered and delivered then, never before. If the turn
+    does not start, the error shows on that comment's card and the question stays
+    open under Needs you. `prepareTurn` hands any turn of a resolver
+    with a batch the copy of its run (`resolverLaunchCopy`: the copy it already
+    works in, else a fresh one on the same mount), so a typed message never lands
+    on the live branch. The turn names the comments it claims
+    (`resolveThreadIds`); a comment it does not claim is not touched.
+  - A copy is kept while the agent waits for an answer or works, and released
+    when every comment of the run is settled (`keepsResolveCopy`).
+  - A new agent starts only with an explicit start over: `startBatch` on the
+    comments again, or Retry after the owner picked another model.
+  - A turn's candidate covers only the comments that turn claimed. The commits
+    of a turn are split into one candidate per fixed comment, each cherry-picked
+    on the same base (`worktree_split_candidates`, ids `<attempt>-<n>`), so
+    accept, refuse and retry act on one comment. A fix that builds on an earlier
+    one stays in the attempt's candidate. Reply-only comments tie to no code.
+    Rows older than m222 stay NULL and are grouped by batch id only. A re-check
+    scout writes no attempt, so it has no launch id.
 - The transcript draws that first message as one handoff block
   (`features/chat/components/HandoffBlock`), the same for every provider: who
   sent it, the ask in one line and the why. Closed, that is all it shows.

@@ -1,7 +1,7 @@
 import type { ResolveStage } from '@goodboy/types';
 import type { WorkNodeState } from '@goodboy/ui';
-import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProposalKind';
 import { isRemoteMovedError } from '../../store/slices/resolve/remoteMovedError';
+import { RESOLVE_WORD_LABEL } from './commentProjection';
 import { SYNC_COPY } from './failedRunCopy';
 import { shortSha } from './resolveItemCopy';
 
@@ -24,7 +24,6 @@ export type ResolveRowState = {
 
 type Params = {
   readonly stage: ResolveStage;
-  readonly proposalKind: ResolveProposalKind;
   readonly failedStep: ResolveFailedStep | null;
   readonly isLeftOpen: boolean;
   readonly pushedSha: string | null;
@@ -54,25 +53,6 @@ const uiStateOf = ({ stage }: { readonly stage: ResolveStage }): ResolveUiState 
       return 'later';
     default: {
       const exhaustive: never = stage;
-      return exhaustive;
-    }
-  }
-};
-
-const readySentence = ({
-  proposalKind,
-}: {
-  readonly proposalKind: ResolveProposalKind;
-}): string => {
-  switch (proposalKind) {
-    case 'fix':
-      return 'Fix ready';
-    case 'reply_only':
-      return 'Reply ready';
-    case 'none':
-      return 'No change proposed';
-    default: {
-      const exhaustive: never = proposalKind;
       return exhaustive;
     }
   }
@@ -135,7 +115,6 @@ const failedAction = ({ step }: { readonly step: ResolveFailedStep }): ResolveRo
 
 export const resolveRowState = ({
   stage,
-  proposalKind,
   failedStep,
   isLeftOpen,
   pushedSha,
@@ -158,7 +137,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'running',
-        sentence: 'Working',
+        sentence: RESOLVE_WORD_LABEL.working,
         action: null,
         failedStep: null,
         isRemoteMoved: false,
@@ -167,7 +146,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'question',
-        sentence: 'Needs you',
+        sentence: RESOLVE_WORD_LABEL.needs_you,
         action: 'answer',
         failedStep: null,
         isRemoteMoved: false,
@@ -176,7 +155,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'ready',
-        sentence: readySentence({ proposalKind }),
+        sentence: RESOLVE_WORD_LABEL.ready,
         action: 'review',
         failedStep: null,
         isRemoteMoved: false,
@@ -185,7 +164,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'queued',
-        sentence: 'Approved',
+        sentence: 'Accepted',
         action: null,
         failedStep: null,
         isRemoteMoved: false,
@@ -214,7 +193,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'skipped',
-        sentence: 'Later',
+        sentence: 'Skipped',
         action: 'resume',
         failedStep: null,
         isRemoteMoved: false,

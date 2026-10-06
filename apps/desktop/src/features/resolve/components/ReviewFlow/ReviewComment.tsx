@@ -1,7 +1,8 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check, CircleCheck } from 'lucide-react';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Tooltip, cn } from '@goodboy/ui';
+import { useThreadQuestion } from '../../hooks/useThreadQuestion';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -27,6 +28,7 @@ import { isResolveOnly } from '../../reviewCommentState';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import {
   COMPOSE_COPY,
+  FIX_RUN_QUESTION_COPY,
   REVIEW_FLOW_LABEL,
   composePlaceholder,
   decidedNote,
@@ -39,6 +41,8 @@ import { handledByLine } from '../../../../store/slices/resolve/threadGitState';
 import { foldedReply, verdictReply } from '../../commentVerdict';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
+import { ResolverQuestionCard } from '../../ResolverQuestionCard';
+import { WorkingRun } from './WorkingRun';
 import { AgentLine } from './AgentLine';
 import { FailedRun } from './FailedRun';
 import { PreviousAttempts } from './PreviousAttempts';
@@ -56,6 +60,7 @@ type Props = ReviewCommentBinding & {
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly onSelect: (threadId: string) => void;
   readonly onTryAgain: () => void;
+  readonly onStartOver: () => void;
   readonly hunk?: ReactNode;
 };
 
@@ -87,9 +92,11 @@ export const ReviewComment = ({
   entries,
   compose,
   isEditingReply,
+  isModelOpen,
   isSubmitting,
   pendingActionId,
   error,
+  onToggleModel,
   onRun,
   onComposeChange,
   onComposeSubmit,
@@ -98,9 +105,15 @@ export const ReviewComment = ({
   onReplyDone,
   onSelect,
   onTryAgain,
+  onStartOver,
   hunk = null,
 }: Props) => {
   const { row, state, word, threadId } = entry;
+  const { answer: answered } = useThreadQuestion({
+    sessionId,
+    threadId,
+    question: row.thread.question ?? null,
+  });
   const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
   const originLabel = row.thread.sourceKind === 'local' ? 'Local' : provider;
   const canResolve = REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve;
@@ -160,7 +173,9 @@ export const ReviewComment = ({
   const [replyText, setReplyText] = useState(reply);
   const note = row.reviewerNote;
   const author = note?.author ?? null;
-  const verbs = verbsOf(actions);
+  const verbs = verbsOf(actions).filter(
+    (action) => !(state === 'needs' && action.id === 'reviewComment.answer'),
+  );
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
   const isOwnFixGone = remote === 'looks_fixed' || remote === 'missing' || remote === 'folded';
   const hasChange = candidate !== null && !isOwnFixGone;
@@ -266,20 +281,27 @@ export const ReviewComment = ({
         </p>
       )}
 
-      {row.attempt !== null && !isOwnFixGone && (state === 'drafting' || isFailed) && (
+      {row.attempt !== null && !isOwnFixGone && isFailed && (
         <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
       )}
 
-      {state === 'needs' && row.thread.question != null && row.thread.question !== '' && (
-        <div className="flex min-w-0 flex-col gap-2">
-          <SectionHeader label={REVIEW_FLOW_LABEL.agentAsks} headingLevel={2} />
-          <Markdown
-            text={row.thread.question}
-            variant="preview"
-            className="text-body text-foreground"
-          />
-        </div>
+      {answered !== null && state !== 'needs' && (
+        <p
+          data-testid="resolver-answered"
+          className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta text-muted-foreground"
+        >
+          <CircleCheck size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
+          <span className="min-w-0">
+            {FIX_RUN_QUESTION_COPY.answered} <span className="text-foreground">{answered}</span>
+          </span>
+        </p>
       )}
+
+      {state === 'drafting' && row.attempt !== null && !isOwnFixGone && (
+        <WorkingRun attempt={row.attempt} />
+      )}
+
+      {state === 'needs' && <ResolverQuestionCard sessionId={sessionId} row={row} />}
 
       {hasChange && state !== 'drafting' && (
         <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
@@ -390,9 +412,11 @@ export const ReviewComment = ({
           rowState={row.rowState}
           actions={actions}
           isHintOpen={compose !== null && compose.mode === 'redraft'}
+          isModelOpen={isModelOpen}
+          onToggleModel={onToggleModel}
           isBusy={isSubmitting || pendingActionId !== null}
           onTryAgain={onTryAgain}
-          onAddHint={() => onRun('reviewComment.edit')}
+          onStartOver={onStartOver}
           onRun={onRun}
         />
       )}

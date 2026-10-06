@@ -4,15 +4,19 @@ import { buildTimelineGroups } from '../../../../features/session/timeline/build
 import { buildTimelineStream } from '../../../../features/session/timeline/buildTimelineStream';
 import { entriesOfView } from '../../../../features/session/timeline/activityView';
 import { needsYouOwners } from '../../../../features/session/timeline/needsYou';
-import { resolveBatchByAgentId } from '../../../../features/session/timeline/resolveBatchSummary';
 import { resolveFactsByAgentId } from '../../../../features/session/timeline/resolveActivity';
+import { buildResolveQueueRows } from '../../../../features/resolve/buildResolveQueueRows';
+import {
+  reviewCommentStateOf,
+  reviewCommentWord,
+} from '../../../../features/resolve/reviewCommentState';
 import { ACTIVITY_RESOLVES_SESSION, seedActivityResolvesScene } from './activityResolvesSeed';
 
-const refsOfScene = () => {
+const launchesOfScene = (): ReadonlyMap<string, string | null> => {
   seedActivityResolvesScene();
   const attempts =
     useAppStore.getState().sessionResolveAttempts[ACTIVITY_RESOLVES_SESSION.id] ?? [];
-  return resolveBatchByAgentId({ attempts });
+  return new Map(attempts.map((attempt) => [attempt.agentId, attempt.launchId ?? null] as const));
 };
 
 const modelOfScene = () => {
@@ -35,22 +39,44 @@ const modelOfScene = () => {
   return { entries: model.entries, events };
 };
 
+const reviewsOfScene = () => {
+  const state = useAppStore.getState();
+  const sessionId = ACTIVITY_RESOLVES_SESSION.id;
+  return buildResolveQueueRows({
+    entries: state.sessionResolveQueueItems[sessionId] ?? [],
+    attempts: state.sessionResolveAttempts[sessionId] ?? [],
+    deliveryReceipts: [],
+    comments: [],
+  }).map((row) => {
+    const reviewState = reviewCommentStateOf({ row });
+    return {
+      threadId: row.thread.threadId,
+      state: reviewState,
+      word: reviewCommentWord({ state: reviewState, row }),
+    };
+  });
+};
+
 describe('activity resolves scene', () => {
-  it('folds the NULL batch rows into one related group apart from the launched burst', () => {
-    const refs = refsOfScene();
-    const related = [...refs.values()].filter((ref) => ref.origin === 'related');
-    expect(related).toHaveLength(4);
-    expect(new Set(related.map((ref) => ref.batchId)).size).toBe(1);
-    const burst = refs.get('mock-resolves-agent-0');
-    expect(burst?.origin).toBe('launch');
-    expect(burst?.batchId).not.toBe(related[0]?.batchId);
+  it('runs the ten comments of PR 318 as one agent under one launch', () => {
+    const launches = launchesOfScene();
+    const agents = (useAppStore.getState().sessionPhaseRuns[ACTIVITY_RESOLVES_SESSION.id] ?? [])
+      .filter((agent) => agent.kind === 'resolver')
+      .filter((agent) => launches.get(agent.id) != null);
+    expect(agents.map((agent) => agent.id)).toEqual(['mock-resolves-agent-0']);
+    expect(agents[0]?.sourceThreadIds).toHaveLength(10);
+    expect(launches.get('mock-resolves-agent-0')).toBe('mock-launch-pr-318');
   });
 
-  it('keeps the retry inside the burst of its origin and labels it', () => {
-    const refs = refsOfScene();
-    const retry = refs.get('mock-resolves-agent-10');
-    expect(retry?.isRetry).toBe(true);
-    expect(retry?.batchId).toBe(refs.get('mock-resolves-agent-0')?.batchId);
+  it('counts the comments of the run in five words, not the agents', () => {
+    seedActivityResolvesScene();
+    const attempts =
+      useAppStore.getState().sessionResolveAttempts[ACTIVITY_RESOLVES_SESSION.id] ?? [];
+    const facts = resolveFactsByAgentId({ attempts, reviews: reviewsOfScene() }).get(
+      'mock-resolves-agent-0',
+    );
+    expect(facts?.threads).toHaveLength(10);
+    expect(facts?.word).toBe("3 ready · 4 working · 1 couldn't fix");
   });
 
   it('holds an output without a launch in the Log and none in Activity', () => {
@@ -66,10 +92,11 @@ describe('activity resolves scene', () => {
     );
   });
 
-  it('asks for the burst of PR 318 as one row in Needs you', () => {
+  const streamOfScene = () => {
     const { entries, events } = modelOfScene();
     const state = useAppStore.getState();
     const attempts = state.sessionResolveAttempts[ACTIVITY_RESOLVES_SESSION.id] ?? [];
+    const factsByAgentId = resolveFactsByAgentId({ attempts, reviews: reviewsOfScene() });
     const items = buildTimelineStream({
       entries,
       unreadAgentIds: new Set(),
@@ -77,14 +104,36 @@ describe('activity resolves scene', () => {
       decidingRunIds: new Set(),
       dayLabelFor: () => null,
       showQuestions: false,
-      resolveBatchByAgentId: resolveBatchByAgentId({ attempts }),
-      resolveFactsByAgentId: resolveFactsByAgentId({ attempts, reviews: [] }),
+      resolveFactsByAgentId: factsByAgentId,
     }).items;
-    const batches = needsYouOwners({ items, entries, events }).filter(
-      (owner) => owner.kind === 'batch',
+    return { items, entries, events, factsByAgentId };
+  };
+
+  it('names the run of PR 318 as one Fix run row with its tally', () => {
+    const { items } = streamOfScene();
+    const rows = items.filter(
+      (item) => item.kind === 'row' && item.id.includes('mock-resolves-agent-0'),
     );
 
-    expect(batches).toHaveLength(1);
-    expect(batches[0]?.text).toBe('Resolve #318 · 9 replies ready · 2 failed');
+    expect(rows).toHaveLength(1);
+    const reason = rows[0]?.kind === 'row' ? rows[0].rowState.reason : null;
+    expect(reason?.kind === 'review' ? reason.runTitle : null).toBe('Fix run · #318 · 10 comments');
+    expect(reason?.kind === 'review' ? reason.word : null).toBe(
+      "3 ready · 4 working · 1 couldn't fix",
+    );
+  });
+
+  it('asks for the run of PR 318 as one row in Needs you, with what you owe', () => {
+    const { items, entries, events, factsByAgentId } = streamOfScene();
+    const owners = needsYouOwners({
+      items,
+      entries,
+      events,
+      resolveFactsByAgentId: factsByAgentId,
+    }).filter((owner) => owner.kind === 'fixRun');
+
+    expect(owners).toHaveLength(1);
+    expect(owners[0]?.text).toBe("#318 · 3 to review · 2 couldn't fix");
+    expect(owners[0]?.owed?.target?.rank).toBe(1);
   });
 });

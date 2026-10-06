@@ -20,14 +20,18 @@ Thread 2 of 2
 > rename this to settleBatch
 
 What to do
-Judge all 2 threads above on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.
+Judge all 2 threads above on the merits, one thread at a time, in the order given. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.
+Finish a thread before you start the next: commit its fix and write its outcome marker and reply, then move on.
+You work alone in your own copy of the branch and nobody answers while you work, so never ask for permission to edit, to commit or to carry on. The owner reviews, accepts and pushes later.
+When a comment is unclear, take the most reasonable reading, act on it and name the assumption in the reply. Stop on a thread only when it reads two ways that lead to different code and the code cannot settle which one the reviewer means: report that thread with the needs-input marker and go on.
 
 How to report each thread
-Report every thread at the end of the same turn: exactly one outcome marker and exactly one reply block for each of the 2 thread ids listed above, each on its own line.
+Report every thread as soon as you finish it: exactly one outcome marker for each of the 2 thread ids listed above, and one reply block for each thread you fixed or left unchanged, each on its own line.
 Never emit two outcome markers for one thread id, never leave a thread id without one, and never reuse a reply on another thread id.
 Pick one outcome marker per thread:
 <<comment-resolved threadId="the id above" commitSha="the sha you committed">> after a commit.
 <<comment-wontfix threadId="the id above" reason="one plain-text line">> without a change.
+<<needs-input id="the thread id" options="first option|second option" recommended="the option you recommend, copied from the list">>one sentence naming the choice<</needs-input>> when the comment reads two ways that lead to different code. Give two or three options. A thread reported this way has no reply block yet.
 The reply block carries the answer the reviewer reads, and it posts only on the thread whose id it names:
 <<comment-reply id="the id above">>the answer for that thread<</comment-reply>>
 A complete report for the 2 threads of this run reads exactly like this:

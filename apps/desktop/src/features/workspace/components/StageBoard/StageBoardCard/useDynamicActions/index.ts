@@ -19,7 +19,8 @@ import {
   type WorkflowAdvanceView,
 } from '../../../../../workflows/workflowAdvanceView';
 import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestionsGate';
-import { eligibleReviewThreadCount } from '../../../../../suggestions/eligibleThreads';
+import { eligibleReviewThreads } from '../../../../../suggestions/eligibleThreads';
+import { requestReview } from '../../../../../review/reviewRequest';
 import { pendingMountProposals } from '../../../../../../store/slices/project-mounts/materializationProposals';
 import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
@@ -67,10 +68,14 @@ export const useDynamicActions = (
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId: id });
 
   const mountProposals = useMemo(() => pendingMountProposals({ events }), [events]);
-  const eligibleThreads = useMemo(
-    () => eligibleReviewThreadCount({ github, rows: resolveRows }),
+  const eligibleThreadIds = useMemo(
+    () =>
+      eligibleReviewThreads({ github, rows: resolveRows }).flatMap((thread) =>
+        thread.head.threadId == null ? [] : [thread.head.threadId],
+      ),
     [github, resolveRows],
   );
+  const eligibleThreads = eligibleThreadIds.length;
 
   const advances = useMemo(() => {
     const out: Array<RunAdvance> = [];
@@ -194,7 +199,12 @@ export const useDynamicActions = (
         icon: SUGGESTION_ICONS['resolve-threads'],
         tone: 'primary',
         label: `Resolve ${eligibleThreads} ${eligibleThreads === 1 ? 'comment' : 'comments'}`,
-        onClick: () => nav.openReview(session),
+        onClick: () =>
+          requestReview({
+            getState: useAppStore.getState,
+            sessionId: id,
+            request: { kind: 'fix', threadIds: eligibleThreadIds },
+          }),
       });
     }
     if (nextStepReady) {
@@ -240,6 +250,7 @@ export const useDynamicActions = (
     emitNotification,
     github,
     eligibleThreads,
+    eligibleThreadIds,
     id,
   ]);
 };

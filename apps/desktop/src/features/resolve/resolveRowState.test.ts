@@ -4,12 +4,11 @@ import type { ResolveStage } from '@goodboy/types';
 import { resolveRowState, type ResolveUiState } from './resolveRowState';
 
 const base = {
-  proposalKind: 'fix',
   failedStep: null,
   isLeftOpen: false,
   pushedSha: null,
   pushError: null,
-  runFailure: 'The run failed and no reason was recorded',
+  runFailure: 'Cause not recorded',
 } as const;
 
 const EXPECTED: Record<ResolveStage, ResolveUiState> = {
@@ -33,14 +32,15 @@ describe('resolveRowState', () => {
     });
   }
 
-  it('names the kind of proposal waiting for review', () => {
-    expect(resolveRowState({ ...base, stage: 'proposed' }).sentence).toBe('Fix ready');
-    expect(
-      resolveRowState({ ...base, stage: 'proposed', proposalKind: 'reply_only' }).sentence,
-    ).toBe('Reply ready');
-    expect(resolveRowState({ ...base, stage: 'proposed', proposalKind: 'none' }).sentence).toBe(
-      'No change proposed',
-    );
+  it('says Ready for whatever kind of proposal waits for review', () => {
+    expect(resolveRowState({ ...base, stage: 'proposed' }).sentence).toBe('Ready');
+  });
+
+  it('uses the five words for the stages that are not finished or failed', () => {
+    expect(resolveRowState({ ...base, stage: 'working' }).sentence).toBe('Working');
+    expect(resolveRowState({ ...base, stage: 'asking' }).sentence).toBe('Needs you');
+    expect(resolveRowState({ ...base, stage: 'approved' }).sentence).toBe('Accepted');
+    expect(resolveRowState({ ...base, stage: 'parked' }).sentence).toBe('Skipped');
   });
 
   it('says what already happened when a delivery step failed', () => {
@@ -85,15 +85,15 @@ describe('resolveRowState', () => {
     ).toBe(false);
   });
 
-  it('names the specific reason a run failed', () => {
+  it('names the recorded reason a run failed', () => {
     expect(
       resolveRowState({
         ...base,
         stage: 'failed',
         failedStep: 'run',
-        runFailure: 'The run failed: every provider is over its spend cap',
+        runFailure: 'Every provider is over its spend cap',
       }).sentence,
-    ).toBe('The run failed: every provider is over its spend cap');
+    ).toBe('Every provider is over its spend cap');
   });
 
   it('tells a thread left for the reviewer from one resolved on GitHub', () => {

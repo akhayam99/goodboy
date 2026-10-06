@@ -219,7 +219,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Activity',
-        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a resolver launch with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the workflow runs of a session, and a run page reads in execution order.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the workflow runs of a session, and a run page reads in execution order.',
       },
       {
         term: 'Agent suggests',
@@ -338,11 +338,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: 'The review threads of the branch, grouped as Open, Ready to push and Done, and the open thread beside them. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N separately starts one agent for each, up to four at a time.',
+        desc: "The review threads of the branch and the open thread beside them. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N opens a panel beside the list to pick the model; one agent then works through them in order, in its own copy of the branch. Fix 9 open comments, Use the recommended answers, Retry and Accept 5 act on many comments at once, and Accept has Undo.",
       },
       {
         term: 'Fix run',
-        desc: 'A resolver run opens as a read-only Fix run: its transcript and the commit it made.',
+        desc: "A fix run is one agent in one copy of the branch. A line under the tabs says what it is doing and counts the comments by word, each a filter. The agent asks only when a comment reads two ways, and the question shows in the comment's thread and on the Fix run page. Open the Fix run for its transcript and the commits it made.",
       },
       {
         term: 'Files',

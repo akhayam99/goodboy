@@ -2,17 +2,7 @@ import { ValueToken, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayName';
-import type {
-  TimelineResolveBatchEntry,
-  TimelineResolveFileEntry,
-  TimelineResolveOpenEntry,
-  TimelineRunEntry,
-} from '../../../../timeline/buildTimelineGroups';
-import {
-  resolveFileLinesText,
-  resolveFileName,
-  resolveOpenLabel,
-} from '../../../../timeline/resolveBatchFiles';
+import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
 import {
   decisionCountsText,
@@ -31,8 +21,6 @@ import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhyt
 import { TimelineRoleGlyph } from './TimelineRoleGlyph';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
-import { resolveBatchTag, resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
-import { TimelineGroupLabel } from './TimelineGroupLabel';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -87,10 +75,7 @@ const detailOf = ({ entry, grade }: FactParams): string | null => {
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
 
-type LabelEntry = Exclude<
-  TimelineStreamEntry,
-  TimelineRunEntry | TimelineResolveBatchEntry | TimelineResolveFileEntry | TimelineResolveOpenEntry
->;
+type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry>;
 
 type EntryParams = {
   readonly entry: LabelEntry;
@@ -217,47 +202,22 @@ export const TimelineRowLabel = ({
   if (entry.kind === 'run') {
     return <TimelineRunLabel entry={entry} identity={identity} isCardOpen={isCardOpen} />;
   }
-  if (entry.kind === 'resolveBatch') {
-    return (
-      <TimelineGroupLabel
-        title={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
-        summary={entry.summary}
-        tag={resolveBatchTag({ origin: entry.origin, retryCount: entry.retryCount })}
-      />
-    );
-  }
-  if (entry.kind === 'resolveFile') {
-    return (
-      <span
-        title={entry.path ?? 'Comments without a file'}
-        className={cn('flex min-w-0 flex-1 items-center gap-2 overflow-hidden', WORK_ROW.title)}
-      >
-        <span className="min-w-0 truncate font-mono text-meta text-foreground">
-          {resolveFileName({ path: entry.path })}
-        </span>
-        <span className="shrink-0 text-meta text-faint-foreground">
-          {resolveFileLinesText({ lines: entry.lines })}
-        </span>
-      </span>
-    );
-  }
-  if (entry.kind === 'resolveOpen') {
-    return (
-      <span className={cn('flex min-w-0 flex-1 items-center overflow-hidden', WORK_ROW.title)}>
-        <span className={cn('truncate text-label', tintClasses('info').text)}>
-          {resolveOpenLabel({ prNumber: entry.prNumber })}
-        </span>
-      </span>
-    );
-  }
   const isStep = grade !== 'entry';
   const isQueued = item.rowState.phase === 'queued';
   const emphasis =
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
   const head = factHeadOf({ entry, grade });
   const detail = detailOf({ entry, grade });
+  const runTitle =
+    entry.kind === 'agent' && item.rowState.reason?.kind === 'review'
+      ? (item.rowState.reason.runTitle ?? null)
+      : null;
   const segments: ReadonlyArray<TimelineLabelSegment> =
-    head === null ? segmentsOf({ entry }) : [{ kind: 'text', text: head }];
+    runTitle !== null
+      ? [{ kind: 'text', text: runTitle }]
+      : head === null
+        ? segmentsOf({ entry })
+        : [{ kind: 'text', text: head }];
   const title = titleOf({ entry, segments });
   const isAgent = entry.kind === 'agent';
   const titleNode = (

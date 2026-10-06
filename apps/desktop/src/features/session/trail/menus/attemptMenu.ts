@@ -1,15 +1,36 @@
 import type { ResolveAttempt } from '@goodboy/types';
 import type { CrumbMenuAction, CrumbMenuModel, CrumbMenuRow, CrumbState } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { RESOLVE_WORD_LABEL } from '../../../resolve/commentProjection';
+import { attemptFailureSentence } from '../../../resolve/failureSentence';
 
 const ATTEMPT_STATE = {
   queued: { word: 'Waiting', tone: 'neutral' },
-  running: { word: 'Working', tone: 'info' },
-  waiting: { word: 'Needs you', tone: 'warning' },
-  finished: { word: 'Reply ready', tone: 'success' },
-  failed: { word: 'Failed', tone: 'danger' },
+  running: { word: RESOLVE_WORD_LABEL.working, tone: 'info' },
+  waiting: { word: RESOLVE_WORD_LABEL.needs_you, tone: 'warning' },
+  finished: { word: RESOLVE_WORD_LABEL.ready, tone: 'success' },
+  failed: { word: RESOLVE_WORD_LABEL.couldnt_fix, tone: 'danger' },
   cancelled: { word: 'Stopped', tone: 'neutral' },
 } satisfies Record<ResolveAttempt['phase'], CrumbState>;
+
+const stateOfAttempt = ({ attempt }: { readonly attempt: ResolveAttempt }): CrumbState =>
+  attempt.phase === 'finished' && attempt.failureCause != null
+    ? ATTEMPT_STATE.failed
+    : ATTEMPT_STATE[attempt.phase];
+
+const secondaryOfAttempt = ({
+  attempt,
+  age,
+}: {
+  readonly attempt: ResolveAttempt;
+  readonly age: string;
+}): string => {
+  const isCouldntFix =
+    attempt.phase === 'failed' ||
+    attempt.phase === 'cancelled' ||
+    (attempt.phase === 'finished' && attempt.failureCause != null);
+  return isCouldntFix ? `${attemptFailureSentence({ attempt })} · ${age}` : `Resolver · ${age}`;
+};
 
 type AttemptParams = {
   readonly attempts: ReadonlyArray<ResolveAttempt>;
@@ -33,9 +54,9 @@ export const attemptMenu = ({
     id: attempt.id,
     lead: { kind: 'icon', icon: CONCEPT_ICONS.resolve },
     label: `Attempt ${ordered.length - index}`,
-    secondary: `Resolver · ${ageOf(attempt.createdAt)}`,
+    secondary: secondaryOfAttempt({ attempt, age: ageOf(attempt.createdAt) }),
     metaA: attempt.model,
-    state: ATTEMPT_STATE[attempt.phase],
+    state: stateOfAttempt({ attempt }),
     isCurrent: attempt.agentId === currentAgentId,
     isDisabled: false,
     indent: 0,

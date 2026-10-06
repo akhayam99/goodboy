@@ -22,6 +22,7 @@ export {
 } from './gitlabReviewSource';
 export { groupReviewComments } from './groupReviewComments';
 export { LOCAL_NOTE_NO_REPLY, localReviewSource } from './localReviewSource';
+export { NOTE_THREAD_PREFIX } from './noteThreadPrefix';
 export {
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,

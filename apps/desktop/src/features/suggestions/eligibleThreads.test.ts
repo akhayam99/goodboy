@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { PrComment, ResolveThread, ResolveThreadState } from '@goodboy/types';
+import type { PrComment, ResolveStage, ResolveThread, ResolveThreadState } from '@goodboy/types';
 import type { SessionGithubState } from '../../store/types';
 import { eligibleReviewThreadCount, eligibleReviewThreads } from './eligibleThreads';
 
@@ -34,11 +34,15 @@ const githubWith = ({
 
 const row = ({
   threadId,
-  state,
+  stage,
+  state = 'open',
+  stateReason = null,
 }: {
   readonly threadId: string;
-  readonly state: ResolveThreadState;
-}): ResolveThread => ({ threadId, state }) as unknown as ResolveThread;
+  readonly stage: ResolveStage;
+  readonly state?: ResolveThreadState;
+  readonly stateReason?: string | null;
+}): ResolveThread => ({ threadId, stage, state, stateReason }) as unknown as ResolveThread;
 
 describe('eligibleReviewThreads', () => {
   it('keeps an unresolved review thread that has no durable row yet', () => {
@@ -59,7 +63,7 @@ describe('eligibleReviewThreads', () => {
           comment({ id: '3', threadId: 't3' }),
         ],
       }),
-      rows: [row({ threadId: 't3', state: 'working' })],
+      rows: [row({ threadId: 't3', stage: 'working', state: 'working' })],
     });
 
     expect(count).toBe(0);
@@ -70,10 +74,32 @@ describe('eligibleReviewThreads', () => {
       github: githubWith({
         comments: [comment({ id: '1', threadId: 't1' }), comment({ id: '2', threadId: 't2' })],
       }),
-      rows: [row({ threadId: 't1', state: 'fixed' }), row({ threadId: 't2', state: 'failed' })],
+      rows: [
+        row({ threadId: 't1', stage: 'proposed', state: 'fixed' }),
+        row({ threadId: 't2', stage: 'failed', state: 'failed' }),
+      ],
     });
 
     expect(count).toBe(1);
+  });
+
+  it('excludes a comment waiting on an answer and a push that failed', () => {
+    const count = eligibleReviewThreadCount({
+      github: githubWith({
+        comments: [comment({ id: '1', threadId: 't1' }), comment({ id: '2', threadId: 't2' })],
+      }),
+      rows: [
+        row({ threadId: 't1', stage: 'asking', state: 'needs_answer' }),
+        row({
+          threadId: 't2',
+          stage: 'failed',
+          state: 'failed',
+          stateReason: 'publication_failed:push',
+        }),
+      ],
+    });
+
+    expect(count).toBe(0);
   });
 
   it('counts nothing without github detail', () => {

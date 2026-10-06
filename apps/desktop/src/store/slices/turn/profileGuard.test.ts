@@ -58,6 +58,14 @@ describe('buildProfileGuard', () => {
     expect(guard).not.toContain('Ask before touching migrations.');
   });
 
+  it('keeps the working rules out of a resolver turn', () => {
+    const guard = buildProfileGuard({ profile: FULL, audience: 'resolver' });
+    expect(guard).toContain('Their roles: Tech Lead, Backend Engineer');
+    expect(guard).toContain('Explain more when the work touches: Rust, Kubernetes');
+    expect(guard).not.toContain('How they want agents to work with them');
+    expect(guard).not.toContain('Ask before touching migrations.');
+  });
+
   it('gives the orchestrator, the planner and a question delegate no topics', () => {
     for (const audience of ['orchestrator', 'planner', 'questionDelegate'] as const) {
       const guard = buildProfileGuard({ profile: FULL, audience });

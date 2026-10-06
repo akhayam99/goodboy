@@ -35,6 +35,7 @@ export type SelectionBarProps = {
   readonly clearHint?: string;
   readonly selectAllHint?: string;
   readonly onFocusReturn?: () => void;
+  readonly onHeightChange?: (height: number) => void;
   readonly placement?: SelectionBarPlacement;
   readonly ariaLabel?: string;
   readonly className?: string;
@@ -63,6 +64,7 @@ export const SelectionBar = ({
   clearHint,
   selectAllHint,
   onFocusReturn,
+  onHeightChange,
   placement = 'overlay',
   ariaLabel,
   className,
@@ -73,6 +75,8 @@ export const SelectionBar = ({
   const wasShownRef = useRef(false);
   const returnRef = useRef(onFocusReturn);
   returnRef.current = onFocusReturn;
+  const heightRef = useRef(onHeightChange);
+  heightRef.current = onHeightChange;
   const isConfirming = confirm !== null;
   const hasBar = count > 0;
   const isShown = hasBar || isConfirming || note !== null;
@@ -121,6 +125,24 @@ export const SelectionBar = ({
       }
     }
     wasShownRef.current = isShown;
+  }, [isShown]);
+
+  useEffect(() => {
+    const dock = dockRef.current;
+    if (!isShown || dock === null || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry !== undefined) {
+        heightRef.current?.(entry.contentRect.height);
+      }
+    });
+    observer.observe(dock);
+    return () => {
+      observer.disconnect();
+      heightRef.current?.(0);
+    };
   }, [isShown]);
 
   if (!isShown) {

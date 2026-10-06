@@ -526,6 +526,7 @@ export type {
   ResolveStage,
   ResolveAttempt,
   ResolveAttemptPhase,
+  ResolveFailureCause,
   ResolveBatch,
   ResolveLaunchChoice,
   ResolveThreadGitState,
@@ -557,7 +558,11 @@ export type {
   ResolvePublicationThread,
   PublicationBlocker,
 } from './resolve';
-export { RESOLVE_PARALLEL_LIMIT_DEFAULT, RESOLVE_PARALLEL_LIMIT_MAX } from './resolve';
+export {
+  RESOLVE_FAILURE_CAUSES,
+  RESOLVE_PARALLEL_LIMIT_DEFAULT,
+  RESOLVE_PARALLEL_LIMIT_MAX,
+} from './resolve';
 export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './security-finding';
 export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';
 export type { DeletedBranch } from './deleted-branch';

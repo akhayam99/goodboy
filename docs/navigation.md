@@ -1358,13 +1358,20 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   [The right drawer](#the-right-drawer).
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](#the-branch-page).
-  Comments is one flow: the list in three groups (Open, Ready to push, Done)
-  and the focused comment beside it in the page itself, never in a drawer; a
-  thread in the address is `s/{session}/branch/comments/t/{thread}`. A comment
-  nobody started shows `Fix` on hover (and `F`), which opens the launch strip
-  under the list; a checkbox on hover picks comments (`X` on the focused row,
-  Cmd+A for every comment nobody started, Esc clears) and the bar `N selected ·
-Fix N separately` opens the same strip. Cmd+A is not in the shortcut table:
+  Comments is one flow: the list grouped by word (Needs you, Working, Ready,
+  Couldn't fix, Open, and Done closed) under the run status line, and the
+  focused comment beside it in the page itself, never in a drawer. A comment
+  in a fix run reads one of five words (Working, Needs you, Ready, Couldn't
+  fix, Done); a comment not yet in a fix run reads Open, a group of the list and
+  not a sixth word. A thread in the address is
+  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the launch panel
+  in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
+  Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
+Fix N` opens the same panel, or `Accept N` for ready comments. With no fix run
+  the line under the tabs says `Fix N open comments`; the Overview card and
+  the board card open that same panel pre-filled. Bulk answers, Retry N and
+  `N accepted · Undo` (Cmd+Z) are described in
+  [Concepts](./concepts.md). Cmd+A is not in the shortcut table:
   the system reserves it. "Resolve" names the area, never a button. The page
   exists with or without a pull request: without one the primary is `Create PR`
   (the creation form replaces the tab body, trail `Session › Branch ▾ › New
@@ -1393,9 +1400,11 @@ run` and Up goes to the Comments tab. The page is read only (`FixRun`) and has
   Comments tab. A run that belongs to a batch also says how many comments were
   fixed together and opens them filtered in Comments. `Open transcript` and the
   Transcript tab show the conversation. Accepting, replying, editing and Push
-  live in Comments, never here. In Activity a resolver row says **Open fix
-  run**, and a burst row of several resolvers has an **Open comments** button
-  that calls `openReview` with the destination `{ kind: 'threads', threadIds }`.
+  live in Comments, never here. In Activity a fix run is one row, `Fix run ·
+#318 · 9 comments`, that opens this page; the Needs you row for the pull
+  request calls `openReview` with the destination `{ kind: 'threads', mountId,
+threadIds: [first comment that waits on you] }`. A question the run waits on
+  shows at the top of this page as well as in its thread.
   The agent pane tab is part of the address: the thread
   target carries `pane: 'brief' | 'transcript'` (`brief` is the Fix run tab),
   `agentPlace({ sessionId, agentId, pane })` asks for either, and the address

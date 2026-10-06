@@ -1,5 +1,5 @@
 export const RESOLVE_ITEM_LABEL = {
-  rereadInstruction: 'Read this comment again and propose a fix.',
+  rereadInstruction: 'Read this comment again and fix it.',
 } as const;
 
 export const changeSummaryLine = ({

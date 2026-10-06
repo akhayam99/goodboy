@@ -35,7 +35,6 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
     attachedRuns: { list: [] as ReadonlyArray<unknown> },
     resolveActivity: {
       current: {
-        batchByAgentId: new Map<string, unknown>(),
         factsByAgentId: new Map<string, unknown>(),
       },
     },
@@ -186,7 +185,7 @@ beforeEach(() => {
   questions.dismissed = [];
   agentsLoaded.current = true;
   attachedRuns.list = [];
-  resolveActivity.current = { batchByAgentId: new Map(), factsByAgentId: new Map() };
+  resolveActivity.current = { factsByAgentId: new Map() };
   useOpenQuestions.setState({ focusedQuestionId: null });
   localStorage.clear();
 });
@@ -997,7 +996,6 @@ describe('TimelinePane log rows and the state slot', () => {
       ],
     };
     resolveActivity.current = {
-      batchByAgentId: new Map(),
       factsByAgentId: new Map([['resolver-1', { state: 'pushed', word: 'Pushed' }]]),
     };
   };
@@ -1601,268 +1599,60 @@ describe('TimelinePane row meta', () => {
   });
 });
 
-describe('TimelinePane resolve batch', () => {
-  const STATES = ['ready', 'drafting', 'pushed', 'failed'] as const;
-  const WORD = {
-    ready: 'Ready for you',
-    drafting: 'Drafting',
-    pushed: 'Pushed',
-    failed: 'Draft failed',
-  } as const;
-
-  const seedBatch = () => {
-    const agents = STATES.map((state, index) => ({
-      id: `resolver-${state}`,
-      sessionId: 'session-1',
-      ordinal: index + 1,
-      name: `resolve: tvarga on file${index}.ts:${index + 1}`,
-      kind: 'resolver',
-      status: 'completed',
-      startedAt: `2026-08-20T10:0${index}:00.000Z`,
-      completedAt: `2026-08-20T10:0${index}:30.000Z`,
-    }));
-    storeState.sessionPhaseRuns = { 'session-1': agents };
+describe('TimelinePane fix run', () => {
+  const seedRun = () => {
+    storeState.sessionPhaseRuns = {
+      'session-1': [
+        {
+          id: 'resolver-1',
+          sessionId: 'session-1',
+          ordinal: 1,
+          name: 'resolve: tvarga on file0.ts:1',
+          kind: 'resolver',
+          status: 'completed',
+          startedAt: '2026-08-20T10:00:00.000Z',
+          completedAt: '2026-08-20T10:00:30.000Z',
+        },
+      ],
+    };
     resolveActivity.current = {
-      batchByAgentId: new Map(
-        agents.map((agent) => [agent.id, { batchId: 'batch-1', prNumber: 318 }] as const),
-      ),
-      factsByAgentId: new Map(
-        STATES.map(
-          (state, index) =>
-            [
-              `resolver-${state}`,
-              {
-                state,
-                word: WORD[state],
-                threads: [{ state, path: `src/file${index}.ts`, line: index + 1 }],
-              },
-            ] as const,
-        ),
-      ),
+      factsByAgentId: new Map([
+        [
+          'resolver-1',
+          {
+            state: 'needs',
+            word: '1 ready · 1 needs you · 1 working',
+            runTitle: 'Fix run · #318 · 3 comments',
+            prNumber: 318,
+            mountId: null,
+            threads: [
+              { threadId: 't1', state: 'ready', path: 'src/a.ts', line: 1 },
+              { threadId: 't2', state: 'needs', path: 'src/b.ts', line: 2 },
+              { threadId: 't3', state: 'drafting', path: 'src/c.ts', line: 3 },
+            ],
+          },
+        ],
+      ]),
     };
   };
 
-  const toggle = () => screen.getByRole('button', { name: /4 files/ });
-
-  const header = (): HTMLElement => {
-    const row = document.querySelector<HTMLElement>('[data-row-id="batch:batch-1"]');
-    if (row === null) {
-      throw new Error('batch header row missing');
-    }
-    return row;
-  };
-
-  const seedWideBatch = ({ count }: { readonly count: number }) => {
-    const agents = Array.from({ length: count }, (_, index) => ({
-      id: `resolver-${index}`,
-      sessionId: 'session-1',
-      ordinal: index + 1,
-      name: `resolve: tvarga on wide${index}.ts:${index + 1}`,
-      kind: 'resolver',
-      status: 'completed',
-      startedAt: `2026-08-20T10:${String(index).padStart(2, '0')}:00.000Z`,
-      completedAt: `2026-08-20T10:${String(index).padStart(2, '0')}:30.000Z`,
-    }));
-    storeState.sessionPhaseRuns = { 'session-1': agents };
-    resolveActivity.current = {
-      batchByAgentId: new Map(
-        agents.map((agent) => [agent.id, { batchId: 'batch-1', prNumber: 318 }] as const),
-      ),
-      factsByAgentId: new Map(
-        agents.map(
-          (agent, index) =>
-            [
-              agent.id,
-              {
-                state: 'pushed',
-                word: 'Pushed',
-                threads: [{ state: 'pushed', path: `src/wide${index}.ts`, line: index + 1 }],
-              },
-            ] as const,
-        ),
-      ),
-    };
-  };
-
-  it('mounts eight files, a Show 12 more row and the Open row for a group of twenty', () => {
-    seedWideBatch({ count: 20 });
+  it('draws one row for the run, named by the pull request and the comment count', () => {
+    seedRun();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /20 files/ }));
-
-    expect(revealFrames()).toHaveLength(10);
-    screen.getByRole('button', { name: 'Show 12 more' });
-    screen.getByText('wide0.ts');
-    expect(screen.queryByText('wide19.ts')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Show 12 more' }));
-
-    expect(revealFrames()).toHaveLength(21);
-    expect(screen.queryByRole('button', { name: /more$/ })).toBeNull();
-    screen.getByText('wide19.ts');
+    expect(screen.getAllByText('Fix run · #318 · 3 comments').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /\d+ files/ })).toBeNull();
+    expect(screen.queryByText('resolve: tvarga on file0.ts:1')).toBeNull();
+    expect(document.querySelectorAll('[data-row-id]').length).toBe(1);
   });
 
-  it('opens into the files with their lines and an Open #318 row that opens the review', () => {
-    seedBatch();
+  it('asks once in Needs you with the actions you owe', () => {
+    seedRun();
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    fireEvent.click(toggle());
-
-    screen.getByText('file0.ts');
-    screen.getByText(':1');
-    fireEvent.click(screen.getByRole('button', { name: /Open #318/ }));
-
-    expect(storeState.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'comments' }),
-    });
-  });
-
-  it('draws one folded group with the state summary, a count row and no file rows', () => {
-    seedBatch();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(within(toggle()).getByTestId('fold-summary').textContent).toBe('4 files');
-    expect(screen.getByTestId('resolve-batch-summary').textContent).toBe(
-      '1 ready for you · 1 drafting · 1 pushed · 1 failed',
-    );
-    expect(screen.queryByText('file0.ts')).toBeNull();
-  });
-
-  it('draws a mixed node with one arc per state and no count in the middle', () => {
-    seedBatch();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    const mixed = header().querySelector('[data-node-state="mixed"]');
-    expect(mixed?.textContent).toBe('');
-    expect(mixed?.querySelectorAll('[data-arc-tone]')).toHaveLength(4);
-  });
-
-  it('opens the comments from a click on the header row, which no longer folds anything', () => {
-    seedBatch();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    const headerButton = header().querySelector('button');
-    if (headerButton === null) {
-      throw new Error('batch header has no button');
-    }
-
-    expect(headerButton.getAttribute('aria-expanded')).toBeNull();
-    expect(headerButton.getAttribute('aria-description')).toBe('Open comments, Enter');
-    fireEvent.click(headerButton);
-    expect(openReview).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionId: 'session-1',
-        destination: expect.objectContaining({ kind: 'threads' }),
-      }),
-    );
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
-  });
-
-  it('explodes on click and folds back once the children have closed', () => {
-    const transitions = withRevealTransitions();
-    seedBatch();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    fireEvent.click(toggle());
-
-    expect(toggle().getAttribute('aria-expanded')).toBe('true');
-    screen.getByText('file0.ts');
-    expect(screen.getAllByText('Ready for you').length).toBeGreaterThan(0);
-    screen.getByText('Draft failed');
-    const rowIds = Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
-      element.getAttribute('data-row-id'),
-    );
-    const batchRows = rowIds.filter((id) => id?.startsWith('batch:batch-1') === true);
-    expect(rowIds.indexOf('count:batch:batch-1')).toBeLessThan(rowIds.indexOf(batchRows[0] ?? ''));
-    expect(batchRows[0]).toContain('batch:batch-1:file:');
-    expect(batchRows.at(-2)).toBe('batch:batch-1:open');
-    expect(batchRows.at(-1)).toBe('batch:batch-1');
-    expect(batchRows).toHaveLength(6);
-    expect(revealFrames().map((frame) => frame.dataset.state)).toEqual([
-      'open',
-      'open',
-      'open',
-      'open',
-      'open',
-    ]);
-
-    fireEvent.click(toggle());
-
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    screen.getByText('file0.ts');
-    const leaving = Array.from(document.querySelectorAll<HTMLElement>('[data-leaving="true"]'));
-    expect(leaving).toHaveLength(5);
-    expect(leaving.every((row) => row.inert)).toBe(true);
-    expect(revealFrames().every((frame) => frame.dataset.state === 'closed')).toBe(true);
-
-    for (const frame of revealFrames()) {
-      fireEvent.transitionEnd(frame);
-    }
-
-    expect(screen.queryByText('file0.ts')).toBeNull();
-    expect(document.querySelectorAll('[data-reveal-group]')).toHaveLength(0);
-    transitions.mockRestore();
-  });
-
-  it('opens again from the middle of a fold without losing a child', () => {
-    const transitions = withRevealTransitions();
-    seedBatch();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    fireEvent.click(toggle());
-    fireEvent.click(toggle());
-    fireEvent.click(toggle());
-
-    expect(toggle().getAttribute('aria-expanded')).toBe('true');
-    expect(document.querySelectorAll('[data-leaving="true"]')).toHaveLength(0);
-    expect(revealFrames()).toHaveLength(5);
-    expect(revealFrames().every((frame) => frame.dataset.state === 'open')).toBe(true);
-    transitions.mockRestore();
-  });
-
-  it('collapses at once when motion is reduced', () => {
-    const original = window.matchMedia;
-    window.matchMedia = ((query: string) => ({
-      matches: query.includes('reduce'),
-      media: query,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-    })) as unknown as typeof window.matchMedia;
-    seedBatch();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    fireEvent.click(toggle());
-    fireEvent.click(toggle());
-
-    expect(document.querySelectorAll('[data-reveal-group]')).toHaveLength(0);
-    expect(screen.queryByText('file0.ts')).toBeNull();
-    window.matchMedia = original;
-  });
-
-  it('opens and closes with the arrow keys, on the count row and on the header row', () => {
-    seedBatch();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    fireEvent.keyDown(toggle(), { key: 'ArrowRight' });
-    expect(toggle().getAttribute('aria-expanded')).toBe('true');
-    fireEvent.keyDown(toggle(), { key: 'ArrowLeft' });
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
-
-    const headerButton = header().querySelector('button');
-    if (headerButton === null) {
-      throw new Error('batch header has no button');
-    }
-    fireEvent.keyDown(headerButton, { key: 'ArrowRight' });
-    expect(toggle().getAttribute('aria-expanded')).toBe('true');
-  });
-
-  it('keeps a failed child from opening the group and counts it as needing you', () => {
-    seedBatch();
-    render(<TimelinePane session={SESSION} actions={null} />);
-
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(screen.getByTestId('resolve-batch-summary').textContent).toContain('1 failed');
+    const owners = screen.getAllByTestId('needs-you-owner');
+    expect(owners).toHaveLength(1);
+    expect(owners[0]?.textContent).toContain('#318 · 1 question · 1 to review');
   });
 });
 
@@ -1901,7 +1691,7 @@ describe('TimelinePane subagents on a step', () => {
       };
     });
     storeState.sessionPhaseRuns = { 'session-1': [lead, ...children] };
-    resolveActivity.current = { batchByAgentId: new Map(), factsByAgentId: new Map() };
+    resolveActivity.current = { factsByAgentId: new Map() };
   };
 
   const countRow = (name: RegExp = /subagents/) => screen.getByRole('button', { name });

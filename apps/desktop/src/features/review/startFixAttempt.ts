@@ -1,6 +1,5 @@
 import type { AgentId, PullRequestState, SessionId, EffortLevel } from '@goodboy/types';
 import {
-  buildRecheckAgentArgs,
   buildResolverAgentArgs,
   buildResolverKickoff,
   type PriorContext,
@@ -8,11 +7,10 @@ import {
   type ResolverStyle,
 } from '../chat/spawn-from-comment';
 import type { CommentThread } from '../integrations/github/comment-threads';
-import { chunkConversations } from './chunkConversations';
 import { modelChoiceOfLaunch } from '../resolve/launchChoice';
+import { dropLaunchTurns, queueLaunchTurns } from '../../store/slices/resolve/launchTurns';
 import type { ResolveAttemptBatch, ResolveAttemptLaunch } from '../../store/slices/resolve/types';
-
-export type FixMode = 'shared' | 'separate' | 'retry' | 'recheck' | 'proceed';
+import { chunkConversations } from './chunkConversations';
 
 type SpawnAgentArgs = {
   readonly name: string;
@@ -49,39 +47,17 @@ type Params = {
   readonly pr: PullRequestState | null;
   readonly choice?: ResolveModelChoice;
   readonly instructions?: string | null;
-  readonly mode: FixMode;
   readonly priorContext?: ReadonlyArray<PriorContext>;
   readonly style?: ResolverStyle;
   readonly contextWindow?: number | null;
   readonly batch?: ResolveAttemptBatch | null;
-  readonly parentAgentId?: AgentId | null;
-  readonly retryOfLaunchId?: string | null;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
 };
 
-const fixAttemptChunks = ({
-  threads,
-  mode,
-  pr,
-  hint,
-  contextWindow,
-}: {
-  readonly threads: ReadonlyArray<CommentThread>;
-  readonly mode: FixMode;
-  readonly pr: PullRequestState | null;
-  readonly hint: string;
-  readonly contextWindow: number | null;
-}): ReadonlyArray<ReadonlyArray<CommentThread>> => {
-  if (mode === 'separate' || mode === 'recheck') {
-    return threads.map((thread) => [thread]);
-  }
-  return chunkConversations({
-    threads,
-    contextWindow,
-    measurePrompt: ({ threads: candidate }) =>
-      buildResolverKickoff({ threads: candidate, pr, hint }).length,
-  });
+export type StartedFix = {
+  readonly launchId: string;
+  readonly agentId: AgentId;
 };
 
 const joinHints = ({ hints }: { readonly hints: ReadonlyArray<string | null | undefined> }) =>
@@ -96,16 +72,16 @@ export const startFixAttempt = async ({
   pr,
   choice: requested = {},
   instructions,
-  mode,
   priorContext,
   style: requestedStyle,
   contextWindow = null,
   batch = null,
-  parentAgentId = null,
-  retryOfLaunchId = null,
   spawnAgent,
   setAgentConfig,
-}: Params): Promise<ReadonlyArray<AgentId>> => {
+}: Params): Promise<StartedFix> => {
+  if (threads.length === 0) {
+    throw new Error('A fix run needs at least one comment');
+  }
   const launched =
     batch === null ? null : modelChoiceOfLaunch({ launchChoice: batch.launchChoice });
   const choice = launched ?? requested;
@@ -115,52 +91,70 @@ export const startFixAttempt = async ({
     launched === null
       ? (instructions ?? choice.hint ?? '').trim()
       : joinHints({ hints: [launched.hint, instructions] });
-  const chunks = fixAttemptChunks({ threads, mode, pr, hint, contextWindow });
-  const agentIds: Array<AgentId> = [];
-  const resolveLaunch: ResolveAttemptLaunch = { launchId: crypto.randomUUID(), retryOfLaunchId };
-  for (const chunk of chunks) {
+  const resolveLaunch: ResolveAttemptLaunch = { launchId: crypto.randomUUID() };
+  const chunks = chunkConversations({
+    threads,
+    contextWindow,
+    measurePrompt: ({ threads: candidate }) =>
+      buildResolverKickoff({ threads: candidate, pr, hint }).length,
+  });
+  const [first = threads, ...later] = chunks;
+  const scopedTo = ({ chunk }: { readonly chunk: ReadonlyArray<CommentThread> }) => {
     const owned = new Set(
       chunk.flatMap((thread) => (thread.head.threadId == null ? [] : [thread.head.threadId])),
     );
-    const scoped = priorContext?.filter((entry) => owned.has(entry.threadId)) ?? [];
-    const first = chunk[0];
-    const args =
-      mode === 'recheck' && first !== undefined
-        ? buildRecheckAgentArgs({
-            thread: first,
-            pr,
-            hint,
-            ...(scoped.length > 0 && { priorContext: scoped }),
-          })
-        : buildResolverAgentArgs({
-            threads: chunk,
-            pr,
-            hint,
-            ...(scoped.length > 0 && { priorContext: scoped }),
-            ...(style !== undefined && { style }),
-          });
+    return priorContext?.filter((entry) => owned.has(entry.threadId)) ?? [];
+  };
+  const scoped = scopedTo({ chunk: first });
+  const args = buildResolverAgentArgs({
+    threads: first,
+    pr,
+    hint,
+    ...(scoped.length > 0 && { priorContext: scoped }),
+    ...(style !== undefined && { style }),
+  });
+  queueLaunchTurns({
+    launchId: resolveLaunch.launchId,
+    turns: later.map((chunk) => {
+      const turnScoped = scopedTo({ chunk });
+      return {
+        threadIds: chunk.flatMap((thread) =>
+          thread.head.threadId == null ? [] : [thread.head.threadId],
+        ),
+        content: buildResolverKickoff({
+          threads: chunk,
+          pr,
+          hint,
+          ...(turnScoped.length > 0 && { priorContext: turnScoped }),
+          ...(style !== undefined && { style }),
+        }),
+      };
+    }),
+  });
+  try {
     const agentId = await spawnAgent(sessionId, {
-      name: args.name,
+      name: threads.length > 1 ? `Resolve: ${threads.length} review comments` : args.name,
       ...(choice.model !== undefined && { model: choice.model }),
       ...(choice.provider !== undefined && { provider: choice.provider }),
       ...(choice.effort !== undefined && { effort: choice.effort }),
       initialPrompt: args.initialPrompt,
       humanPrompt: args.humanPrompt,
-      kindOverride: mode === 'recheck' ? 'scout' : 'resolver',
+      kindOverride: 'resolver',
       ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
       sourceCommentUrl: args.sourceCommentUrl,
-      sourceKind: args.sourceKind === 'comment_recheck' ? 'comment_recheck' : 'review_comment',
+      sourceKind: 'review_comment',
       focus: 'none',
-      ...(parentAgentId !== null && { parentAgentId }),
       ...(batch !== null && { resolveBatch: batch }),
-      ...(mode === 'recheck' ? {} : { resolveLaunch }),
+      resolveLaunch,
     });
     await setAgentConfig(sessionId, agentId, {
       ...(choice.provider !== undefined && { providerOverride: choice.provider }),
       ...(choice.model !== undefined && { modelOverride: choice.model }),
       ...(choice.effort !== undefined && { effort: choice.effort }),
     });
-    agentIds.push(agentId);
+    return { launchId: resolveLaunch.launchId, agentId };
+  } catch (error) {
+    dropLaunchTurns({ launchId: resolveLaunch.launchId });
+    throw error;
   }
-  return agentIds;
 };

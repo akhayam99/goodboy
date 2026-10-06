@@ -362,7 +362,7 @@ tag that says a row was shown because you started it. Every kind of row has
 exactly one home (`activityView.ts`, `entriesOfView`):
 
 - **Activity** holds what you launched, one row per launch: an agent, a
-  workflow run, a burst of resolvers. The right side of a row says its state or
+  workflow run, a fix run. The right side of a row says its state or
   its one action, then time, then cost, and never reserves an empty slot. A
   launch folds what happens inside it into its own row: steps and subagents
   (a chip, "4 subagents"), answered questions (the tally), and its plans,
@@ -381,23 +381,23 @@ exactly one home (`activityView.ts`, `entriesOfView`):
 - **Needs you** is a block on top of Activity, drawn only while it is not
   empty: a card on `bg-subtle` with a `warning` eyebrow and one row per owner,
   never one per child. A row is an icon in the warning tone, one line of text
-  (`Resolve #318 · 2 replies ready · 1 failed`, `Retry policy · 1 question`,
+  (`#318 · 1 question · 5 to review`, `Retry policy · 1 question`,
   `Rebase of feat/export stopped ×2`) and a ghost **Open** that goes to
-  whoever owns the action: the review, the exact question, the branch. It never
+  whoever owns the action: the first comment that waits on you (the question
+  before the reviews, the reviews before the failures), the exact question, the
+  branch. A pull request is one row however many fix runs it had. It never
   offers Push or Answer, because the verb stays with its owner. The owners come
   from the same row states as the rows themselves (`needsYouOwners`), so a
   question is counted once however many rows could show it.
 
-A burst of resolvers is one row, `Resolve #318 · 7 agents`, with a mixed node,
-the tally of its states (`5 pushed · 1 failed · 1 needs you`), the real time
-span and the summed cost. Open, it shows one row per file (the file name in
-the code face, its lines as `:12 ×4 · :22`, its state and its cost) and a last
-row `Open #318`; a burst of more than eight files opens on the first eight
-under **Show N more**. Its agents come from the launch id every resolver
-writes, a retry stays inside the burst of its origin and the row says "1
-retry". Resolves from before launch ids are grouped at read time only on a full
-key (same session, repo, provider and pull request, each started within ten
-minutes of the first one) and the row carries a `related` chip.
+A fix run is one row, `Fix run · #318 · 9 comments`: the resolver agent's own
+row, with the tally of its comments in the five words (`5 ready · 1 needs you
+· 2 working · 1 couldn't fix`) as its state line, the model cell, and the time
+over the cost. It has no per-agent burst, no files below it, no `related` tag
+and no retry count: a fix run is one agent, and a follow-up or a retry is
+another turn of that agent. The row opens the run's page, and the comments
+stay in the Comments tab, one click away. The title and the tally count
+comments, never agents.
 
 ### Rail vocabulary
 
@@ -448,12 +448,11 @@ ends on its newest member.
 
 Folding. A branch folds only when it is finished. A live branch (a run that is
 not finished or asks you something, a step with a running, queued or failed
-subagent, a launch still working, a burst with a resolver still working) shows
+subagent, a launch still working) shows
 all its members and has no control to fold it. A finished branch folds by
 default, whatever its size, into one count row that sits on its lane exactly
 where its children would be, above the parent: `6 steps · 1 question answered`
-over a run, `3 subagents` over a step, `2 outputs` over a launch, `7 files` over
-a burst. A tally follows the total only when not everything is done (`3
+over a run, `3 subagents` over a step, `2 outputs` over a launch. A tally follows the total only when not everything is done (`3
 subagents · 1 closed`). A click on the count row, or Right on it, opens the
 branch; the count row stays as the top cap of the lane and a second click, or
 Left, folds it again. There is no chevron and no chip at the right of a row.
@@ -465,8 +464,8 @@ open until you fold it.
 The lane is a control: a click on it opens the run page, with the tooltip `Open
 workflow: <title>` and its shortcut, Shift+Enter on a focused row does the same
 (`activity.openRun` in the shortcut registry), and the lane gets no hover tint.
-A row click opens its own leaf: a step its chat, a run its page, a burst its
-comments. A count row never navigates; it only folds and opens.
+A row click opens its own leaf: a step its chat, a run its page, a fix run its
+page. A count row never navigates; it only folds and opens.
 
 The recipe is the run page: `layoutTimelineRail` runs there with `hasSpine:
 false`, the run lane takes column 0 and starts on the run's first step, steps
@@ -495,7 +494,7 @@ gap instead of 12px and a 12px muted label, so a log row weighs the same as a
 step and never as an agent.
 
 The direction of time is one rule: the feed is newest first at every level. A
-run, an agent or a burst sits where its origin started and its members stand
+run or an agent sits where its origin started and its members stand
 above it, each at its own time, so a step number only ever falls down the list
 (8, 7, 6 above the run row; 8.4, 8.3 above step 8). Day rules sit between any
 two rows of different days.
@@ -625,8 +624,8 @@ single visible action from the ask. The state slot is a fixed 112px space
 row says its state at the same x and the title takes the rest and truncates.
 Quiet final states (Pushed, Accepted, Resolved, Reply only, Skipped, Closed)
 show as an icon in their tone, with the word in the tooltip and for screen
-readers; states that ask you or report trouble (Needs you, Ready for you,
-Draft failed, Longer than usual, Step 3 ready) stay a word, in their short form,
+readers; states that ask you or report trouble (Needs you, Ready,
+Couldn't fix, Longer than usual, Step 3 ready) stay a word, in their short form,
 with the full sentence in the tooltip. A new state is a row in the
 `statePresentation` tables, never a branch in the component.
 When several conditions hold, failed wins, then waiting (an answer, then the
@@ -636,25 +635,9 @@ working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
 
-A group row (a burst of resolves) draws the `mixed` node. Its click opens the
-comments, like the Open comments action it replaces, and it folds nothing: its
-files hang above it on the burst's lane behind a count row, `7 files`. A burst
-with a resolver still working is open and has no count row; a settled one is
-folded. Open, the files stand above the group row, one column in: one row per
-file, then a last row `Open #318` right above the group row, and the count row
-tops the lane. Each row grows from zero height with `Reveal` (200ms, all at
-once, no stagger), and while they grow the scroller moves by the same amount
-every frame, so the count row you clicked stays under the pointer; folding runs
-the same transition backwards and removes the rows when it settles. A burst of
-more than eight files opens on the first eight, under a compact "Show 12 more"
-row above the Open row that brings the rest. The count row opens with a click,
-Enter, Space or the right arrow and closes with a second click or the left
-arrow; the group row answers the right and left arrows the same way. Reduced
-motion skips the transition and swaps the rows at once. The rail already
-reserves the lane's column through the count row, so opening never moves the
-list sideways. A failed comment never opens the group: its arc is `danger`, the
-summary says "1 failed" in `danger` text and the Needs you block carries the
-burst.
+A fix run is a plain agent row. Its state line is the tally of its comments in
+the five words, and its row never opens or folds anything: the comments live in
+the Comments tab and the Needs you block carries the run when one waits on you.
 
 Subagents have no group row and no chip. A finished step or agent that has
 subagents has a count row above it on its own lane: `3 subagents`, with a tally
@@ -692,10 +675,12 @@ already on screen never grows again: when a run finishes under the pointer its
 rows join the group already open.
 
 A resolver takes its row state from the comment it fixes, not from the agent:
-the `review` reason carries the Review state and its word (Ready for you,
-Drafting, Pushed, Draft failed), with Review's tone and node. A comment that
-needs you, has a ready fix or a failed draft sets the `reviewComment` ask, so
-Needs you carries it and the row itself is not tinted.
+the `review` reason carries the Review state and its word, one of five (Working,
+Needs you, Ready, Couldn't fix, Done) or the quiet sub-word of a Done comment
+(Pushed), with Review's tone and node. An agent that fixes several comments
+counts them in comments ("3 ready · 1 needs you"), never as agents. A comment
+that needs you, has a ready fix or could not be fixed sets the `reviewComment`
+ask, so Needs you carries it and the row itself is not tinted.
 
 ### Work meta
 
@@ -1113,7 +1098,7 @@ A verb blocked for a moment stays visible with its reason in the tooltip; a verb
 A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
 When confirmation fails, `InlineConfirm` stays open and shows the formatted reason with `role="alert"`. The same controls become available for a retry. An automatic disarm pauses until the error is cancelled or a retry succeeds.
 
-**Selection bar.** `SelectionBar` is the one bar of every list that can pick rows (Board, session list, Review, Branches, Storage). It is a `floating` surface (level 4) of `rounded-lg` that sits at the bottom centre of the surface that owns the selection: `placement="overlay"` inside a `relative` region, `"sticky"` inside a scrolling page, `"flow"` where neither fits. Left to right it holds the X (Clear, tooltip with Esc), the count, `Select all N` while some rows are left, and the verbs as ghost buttons. A verb that undoes runs at once; a verb that does not passes a `confirm` node, which renders above the bar, takes focus on Cancel and gives it back to the verb when it closes. Escape closes the confirmation first, then clears the selection, through the escape stack. Rows carry `SelectionCheckbox`: a 16px box in a 20px target, revealed by `group/select-row` hover or focus and on every row once the list carries `group/select-list` with `data-selecting`, never a tab stop (the keys are X, Cmd+A, Esc and Delete, in the `selection` group of the shortcut registry). On a Board card the box sits out of the title row (`absolute`) in a 28px left gutter (`pl-7`), 6px from the card edge and from the title, and the tone rail starts below it (`top-9`) whenever the box shows, so the title lines up with the meta line and nothing moves when the box appears. The row element carries `data-select-id` so the lasso and the keys find it, and the scroller takes `pb-24` while something is selected, so the bar never covers the last row. A surface fed by the action registry renders `ObjectSelectionBar`, so the bar's words are the menu's words.
+**Selection bar.** `SelectionBar` is the one bar of every list that can pick rows (Board, session list, Review, Branches, Storage). It is a `floating` surface (level 4) of `rounded-lg` that sits at the bottom centre of the surface that owns the selection: `placement="overlay"` inside a `relative` region, `"sticky"` inside a scrolling page, `"flow"` where neither fits. Left to right it holds the X (Clear, tooltip with Esc), the count, `Select all N` while some rows are left, and the verbs as ghost buttons. A verb that undoes runs at once; a verb that does not passes a `confirm` node, which renders above the bar, takes focus on Cancel and gives it back to the verb when it closes. Escape closes the confirmation first, then clears the selection, through the escape stack. Rows carry `SelectionCheckbox`: a 16px box in a 20px target, revealed by `group/select-row` hover or focus and on every row once the list carries `group/select-list` with `data-selecting`, never a tab stop (the keys are X, Cmd+A, Esc and Delete, in the `selection` group of the shortcut registry). On a Board card the box sits out of the title row (`absolute`) in a 28px left gutter (`pl-7`), 6px from the card edge and from the title, and the tone rail starts below it (`top-9`) whenever the box shows, so the title lines up with the meta line and nothing moves when the box appears. The row element carries `data-select-id` so the lasso and the keys find it, and the scroller takes `pb-24` while something is selected, so the bar never covers the last row. A list whose bar can grow taller than that (a narrow column wraps it, a note stacks above it) passes `onHeightChange` and ends its scroll content with a spacer of that height plus 24px, so the last row always scrolls clear. A surface fed by the action registry renders `ObjectSelectionBar`, so the bar's words are the menu's words.
 
 **Copy feedback lives on the control.** `useCopyLink().copy({ text, key })` keys the copied state, so in a list only the row whose `key` matches flips to "Copied". A successful copy never toasts; a failure shows inline while the control stays mounted, and only a menu item, which unmounts on click, reports a failure through a toast. `CopyButton` reads "Copy", "Copied", "Copy failed".
 

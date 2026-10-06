@@ -51,6 +51,49 @@ describe('SelectionBar', () => {
     expect(onSelectAll).toHaveBeenCalledTimes(1);
   });
 
+  it('reports the height of the dock while it shows and zero once it goes', () => {
+    const observers: Array<(entries: ReadonlyArray<{ contentRect: { height: number } }>) => void> =
+      [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(
+          callback: (entries: ReadonlyArray<{ contentRect: { height: number } }>) => void,
+        ) {
+          observers.push(callback);
+        }
+        observe = (): void => undefined;
+        disconnect = (): void => undefined;
+      },
+    );
+    const onHeightChange = vi.fn();
+    const { rerender } = render(
+      <SelectionBar
+        count={3}
+        total={11}
+        verbs={[]}
+        onClear={vi.fn()}
+        onSelectAll={vi.fn()}
+        onHeightChange={onHeightChange}
+      />,
+    );
+
+    observers[0]?.([{ contentRect: { height: 132 } }]);
+    expect(onHeightChange).toHaveBeenLastCalledWith(132);
+    rerender(
+      <SelectionBar
+        count={0}
+        total={11}
+        verbs={[]}
+        onClear={vi.fn()}
+        onSelectAll={vi.fn()}
+        onHeightChange={onHeightChange}
+      />,
+    );
+    expect(onHeightChange).toHaveBeenLastCalledWith(0);
+    vi.unstubAllGlobals();
+  });
+
   it('drops Select all once every row is selected', () => {
     render(
       <SelectionBar

@@ -1,5 +1,5 @@
 import type { ResolveAttempt } from '@goodboy/types';
-import { attemptFailureReason } from './runFailureReason';
+import { attemptFailureSentence } from './failureSentence';
 
 export type PreviousAttempt = {
   readonly id: string;
@@ -25,7 +25,9 @@ const outcomeOf = ({
   if (attempt.phase === 'cancelled') {
     return 'stopped';
   }
-  return attempt.phase === 'failed' || attempt.error !== null ? 'failed' : 'finished';
+  return attempt.phase === 'failed' || attempt.error !== null || attempt.failureCause != null
+    ? 'failed'
+    : 'finished';
 };
 
 const threadAttempts = ({
@@ -58,7 +60,7 @@ export const previousAttemptsOf = ({
           model: attempt.model,
           effort: attempt.effort,
           outcome,
-          reason: outcome === 'finished' ? null : attemptFailureReason({ attempt }),
+          reason: outcome === 'finished' ? null : attemptFailureSentence({ attempt }),
         },
       ];
     },

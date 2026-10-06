@@ -31,7 +31,7 @@ const idsOf = (chunks: ReadonlyArray<ReadonlyArray<CommentThread>>) =>
   chunks.map((chunk) => chunk.map((thread) => thread.head.threadId));
 
 describe('chunkConversations', () => {
-  it('sends everything to one agent while it fits the cap', () => {
+  it('keeps one turn while everything fits the cap', () => {
     const threads = Array.from({ length: 5 }, (_, index) =>
       threadOn({ id: `t${index}`, path: 'a.ts' }),
     );

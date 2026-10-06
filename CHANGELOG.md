@@ -12,6 +12,64 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.20.0
+
+One agent works through a pull request's comments, every comment in a fix run has one of five words, and Fix, answer and accept work on many comments at once.
+
+This version updates your data in one direction. To go back to 0.19, restore the backup Goodboy made before updating.
+
+### New
+
+#### One fix run for the comments you pick
+<!-- gb area=review -->
+
+Fix on one comment or on many starts one fix run: one agent in one copy of your branch, working through the comments in order and reporting each as it finishes. You can accept the first fix while the others are still going.
+
+A line under the tabs says what the run is doing, counts its comments by word, each count a filter for the list, and shows the model with Open transcript and Stop. A run starts on the model set for resolving, never on the one you used last. A model you pick in the panel holds for the session, and the panel says so.
+
+#### Five words for comments in a fix run
+<!-- gb area=review -->
+
+A comment in a fix run reads Working, Needs you, Ready, Couldn't fix or Done, in the list, on the Branch page, in Activity and in Needs you. A comment that is not in a fix run reads Open. Done keeps a quiet word after it: Pushed, Resolved on GitHub, Skipped or Answered. The list groups by the words, Needs you on top and Done closed.
+
+Activity shows one row per fix run, and Needs you shows one row per pull request. A comment that needs you or could not be fixed also marks the session as needing you and sends one notification.
+
+#### The agent asks only when it must
+<!-- gb area=review -->
+
+The agent no longer asks permission to commit. It asks only when a comment reads two ways that lead to different code. The question shows in that comment's thread with its options, the one it recommends marked, a field for your own words and one Continue the fix run. The same question shows on the Fix run page.
+
+#### Launch panel where you clicked
+<!-- gb area=review -->
+
+Fix opens its panel in the right column, in place of the thread: the comments it covers with a check to drop any, the model it runs on and an optional note. Start fixing begins, and Esc closes it. The Overview and the Board open this same panel and start nothing by themselves.
+
+#### Fix, answer, retry and accept in bulk
+<!-- gb area=review -->
+
+With no run going, Fix 9 open comments checks every comment you can fix and opens the panel, and Cmd+A checks the same set. While a run waits on two or more questions, Use the recommended answers opens them all with the recommended option chosen, and Continue sends them to the same run. Retry 1 that couldn't fix puts every failed comment back in the same run.
+
+The Ready group has Accept 5, and checked Ready comments make the bar say Accept 3. A bar with Undo follows, and Cmd+Z does the same. Nothing leaves your machine until Push.
+
+### Improved
+
+#### Couldn't fix says why
+<!-- gb area=review -->
+
+A comment that could not be fixed says why in one sentence: the fix did not start, the provider stopped it, every provider is over its spend cap, you stopped it, the app closed, or it conflicts with a fix you accepted. Retry in this run continues in the same copy of the branch, and Start over with a new agent begins a new run.
+
+#### Failed checks stay beside Ready
+<!-- gb area=review -->
+
+When the checks fail after a fix, the comment stays Ready with a Checks failed note beside it, and you decide whether to accept.
+
+### Fixed
+
+- A fix agent's replies are read for comments from GitLab, Bitbucket and notes on your machine, as they are for GitHub. <!-- gb area=review -->
+- A reason with an arrow or angle brackets no longer cuts the fix agent's reply short. <!-- gb area=review -->
+- The copy of your branch for a fix run finds your installed packages, so the checks the agent runs work. <!-- gb area=review -->
+- Activity names each day once when the feed crosses midnight. <!-- gb area=sessions -->
+
 ## Goodboy v0.19.0
 
 Activity reads newest first and says who did the work, plans open beside the planner and take comments, and the Files tab keeps its place.

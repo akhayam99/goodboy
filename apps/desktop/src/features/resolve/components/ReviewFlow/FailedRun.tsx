@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
-import { AlertCircle, Cpu, Ellipsis, Lightbulb, RefreshCw, SquareTerminal } from 'lucide-react';
+import { useMemo } from 'react';
+import { AlertCircle, Ellipsis, RefreshCw, SquareTerminal } from 'lucide-react';
 import { Button, KbdPill } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -10,7 +9,8 @@ import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import type { ResolvedAction, ReviewCommentActionTarget } from '../../../actions/types';
-import { FAILED_RUN_COPY, failedVerbOf, tryAgainLabel } from '../../failedRunCopy';
+import { FAILED_RUN_COPY, failedVerbOf } from '../../failedRunCopy';
+import { FIX_RUN_THREAD_COPY } from '../../reviewFlowCopy';
 import { lastRunStep } from '../../lastRunStep';
 import type { ResolveRowState } from '../../resolveRowState';
 import { DraftRoutingBody } from './DraftRoutingBody';
@@ -22,9 +22,11 @@ type Props = {
   readonly rowState: ResolveRowState;
   readonly actions: ReadonlyArray<ResolvedAction>;
   readonly isHintOpen: boolean;
+  readonly isModelOpen: boolean;
   readonly isBusy: boolean;
   readonly onTryAgain: () => void;
-  readonly onAddHint: () => void;
+  readonly onStartOver: () => void;
+  readonly onToggleModel: () => void;
   readonly onRun: (actionId: string) => void;
 };
 
@@ -34,6 +36,11 @@ const KEPT_IN_MENU: ReadonlyArray<string> = [
   'reviewComment.transcript',
 ];
 
+const RUN_ONLY_IN_MENU: ReadonlyArray<string> = [
+  'reviewComment.anotherModel',
+  'reviewComment.edit',
+];
+
 export const FailedRun = ({
   sessionId,
   target,
@@ -41,14 +48,14 @@ export const FailedRun = ({
   rowState,
   actions,
   isHintOpen,
+  isModelOpen,
   isBusy,
   onTryAgain,
-  onAddHint,
+  onStartOver,
+  onToggleModel,
   onRun,
 }: Props) => {
-  const [isModelOpen, setIsModelOpen] = useState(false);
   const transcript = useTranscript(attempt?.agentId ?? null);
-  const pickedModel = useAppStore((s) => s.resolveQueueView[sessionId]?.lastRouting?.model ?? null);
   const step = useMemo(() => lastRunStep({ items: reduceTranscript(transcript) }), [transcript]);
   const isRun = rowState.failedStep === 'run' || rowState.failedStep === null;
   const canOpenTranscript = actions.some((action) => action.id === 'reviewComment.transcript');
@@ -56,7 +63,10 @@ export const FailedRun = ({
   const failedOn = attempt === null ? null : modelLabel(attempt.model);
 
   const omitted = actions
-    .filter((action) => !KEPT_IN_MENU.includes(action.id))
+    .filter(
+      (action) =>
+        !KEPT_IN_MENU.includes(action.id) && !(isRun && RUN_ONLY_IN_MENU.includes(action.id)),
+    )
     .map((action) => action.id);
   const menu = (
     <ObjectOverflowMenu
@@ -103,10 +113,7 @@ export const FailedRun = ({
             {!isHintOpen && (
               <Button size="sm" variant="primary" isBusy={isBusy} onClick={onTryAgain}>
                 <RefreshCw size={ICON_SIZE.control} aria-hidden />
-                {tryAgainLabel({
-                  modelName: pickedModel === null ? null : modelLabel(pickedModel),
-                  hasHint: false,
-                })}
+                {FIX_RUN_THREAD_COPY.retry}
                 <KbdPill
                   aria-hidden
                   className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
@@ -115,18 +122,8 @@ export const FailedRun = ({
                 </KbdPill>
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-expanded={isModelOpen}
-              onClick={() => setIsModelOpen((current) => !current)}
-            >
-              <Cpu size={ICON_SIZE.control} aria-hidden />
-              {FAILED_RUN_COPY.anotherModel}
-            </Button>
-            <Button size="sm" variant="ghost" aria-expanded={isHintOpen} onClick={onAddHint}>
-              <Lightbulb size={ICON_SIZE.control} aria-hidden />
-              {FAILED_RUN_COPY.addHint}
+            <Button size="sm" variant="ghost" isBusy={isBusy} onClick={onStartOver}>
+              {FIX_RUN_THREAD_COPY.startOver}
             </Button>
           </>
         ) : (
@@ -145,6 +142,8 @@ export const FailedRun = ({
         {menu}
       </div>
 
+      {isRun && <p className="text-meta text-faint-foreground">{FIX_RUN_THREAD_COPY.retryHint}</p>}
+
       {isRun && isModelOpen && (
         <section
           aria-label={FAILED_RUN_COPY.modelList}
@@ -155,7 +154,7 @@ export const FailedRun = ({
               ? FAILED_RUN_COPY.modelList
               : `${failedOn} ${FAILED_RUN_COPY.usedAndFailed}`}
           </p>
-          <DraftRoutingBody sessionId={sessionId} onClose={() => setIsModelOpen(false)} />
+          <DraftRoutingBody sessionId={sessionId} onClose={onToggleModel} />
         </section>
       )}
     </div>

@@ -23,6 +23,8 @@ import type {
   IsoDateTime,
   MountId,
   MountTargetSnapshot,
+  OpenQuestion,
+  OpenQuestionId,
   Session,
   SessionId,
   Workspace,
@@ -122,6 +124,8 @@ const T9 = 'PRRT_thread_retry_constant';
 
 export const EXPANDED_THREAD_ID = T1;
 export const THREAD_IDS = {
+  errorShape: T3,
+  idempotency: T4,
   metrics: T2,
   logRedact: T5,
   timeoutConfig: T6,
@@ -140,6 +144,7 @@ const ITEM7_ID = 'mock-resolve-item-flaky-test';
 const ITEM8_ID = 'mock-resolve-item-typo';
 const ITEM9_ID = 'mock-resolve-item-retry-constant';
 
+const RESOLVE_LAUNCH_ID = 'mock-resolve-launch-318';
 const ATTEMPT_RETRY_ID = 'mock-resolve-attempt-retry';
 const ATTEMPT_IDEMPOTENCY_ID = 'mock-resolve-attempt-idempotency';
 const CANDIDATE_RETRY_ID = 'mock-resolve-candidate-retry';
@@ -247,7 +252,7 @@ const THREAD_ERROR_SHAPE = buildThread({
   state: 'needs_answer',
   stage: 'asking',
   revision: 1,
-  activeAttemptId: null,
+  activeAttemptId: ATTEMPT_RETRY_ID,
   disposition: null,
   replyDraft: null,
   question: 'Should exhausted retries return a 200 with a warning, or fail hard?',
@@ -447,6 +452,11 @@ const EXTRA_NEW: ReadonlyArray<{
     minutesAgo: 60,
     body: 'Should we also record the response time of each attempt?',
   },
+];
+
+export const SELECTION_THREAD_IDS: ReadonlyArray<string> = [
+  T9,
+  ...EXTRA_NEW.slice(0, 2).map((extra) => extra.threadId),
 ];
 
 const EXTRA_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = EXTRA_NEW.map((extra) => ({
@@ -650,10 +660,11 @@ const ATTEMPT_RETRY: ResolveAttempt = {
   sessionId: SESSION_ID,
   agentId: 'mock-resolve-agent-retry' as AgentId,
   prNumber: PR.number,
-  threadIds: [T1, T2],
+  threadIds: [T1, T2, T3],
+  launchId: RESOLVE_LAUNCH_ID,
   provider: 'anthropic',
   model: 'claude-sonnet-5',
-  effort: null,
+  effort: 'medium',
   instructions: null,
   phase: 'finished',
   mountTarget: MOUNT_TARGET,
@@ -672,9 +683,10 @@ const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
   agentId: 'mock-resolve-agent-idempotency' as AgentId,
   prNumber: PR.number,
   threadIds: [T4],
-  provider: 'codex',
-  model: 'gpt-5.6-sol',
-  effort: 'high',
+  launchId: RESOLVE_LAUNCH_ID,
+  provider: 'anthropic',
+  model: 'claude-sonnet-5',
+  effort: 'medium',
   instructions: null,
   phase: 'running',
   mountTarget: MOUNT_TARGET,
@@ -685,6 +697,24 @@ const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
   batchId: null,
   copyPath: null,
   launchChoice: null,
+};
+
+export const QUESTION_OPTIONS: ReadonlyArray<string> = [
+  'Fail hard with a 503 and a Retry-After header',
+  'Return a 200 with a warning in the body',
+];
+
+const QUESTION_ERROR_SHAPE: OpenQuestion = {
+  id: 'mock-resolve-question-error-shape' as OpenQuestionId,
+  sessionId: SESSION_ID,
+  createdByAgentId: ATTEMPT_RETRY.agentId,
+  text: 'Should exhausted retries return a 200 with a warning, or fail hard?',
+  suggestedAnswers: QUESTION_OPTIONS,
+  recommendedAnswer: QUESTION_OPTIONS[0],
+  isBlocking: true,
+  userAnswer: null,
+  status: 'open',
+  createdAt: isoAgo({ minutes: 40 }) as IsoDateTime,
 };
 
 const CANDIDATE_RETRY: ResolveCandidate = {
@@ -928,7 +958,8 @@ const failedAttempt = ({
   phase: 'failed',
   startedAt: msAgo({ minutes: startedMinutesAgo }),
   endedAt: msAgo({ minutes: endedMinutesAgo }),
-  error: 'interrupted',
+  error: 'The provider returned an overloaded error',
+  failureCause: 'provider_error',
   createdAt: msAgo({ minutes: startedMinutesAgo }),
 });
 
@@ -987,7 +1018,7 @@ const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
     ...THREAD_IDEMPOTENCY,
     state: 'failed',
     stage: 'failed',
-    stateReason: 'failed:interrupted',
+    stateReason: null,
     activeAttemptId: FAILED_ATTEMPT_ID,
   };
   const pushThread: ResolveThread = {
@@ -1038,6 +1069,7 @@ export const seedResolveScene = ({
       [SESSION_ID]: failed?.attempts ?? [ATTEMPT_RETRY, ATTEMPT_IDEMPOTENCY],
     },
     transcripts: failed?.transcripts ?? {},
+    sessionOpenQuestions: { [SESSION_ID]: [QUESTION_ERROR_SHAPE] },
     ...(failed !== null && { providers: CONNECTED_PROVIDERS }),
     sessionResolveCandidates: { [SESSION_ID]: candidatesWithItems },
     sessionResolveCheckRuns: { [SESSION_ID]: CHECK_RUNS },

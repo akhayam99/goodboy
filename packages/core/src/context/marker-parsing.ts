@@ -1,6 +1,9 @@
 import type { ProviderId, TurnEvent, WorkflowRoutingProposal } from '@goodboy/types';
 import type { AgentKindLabel } from '../first-turn-classifier';
 import { parseWorkflowRoutingProposal } from '../orchestrator/parseWorkflowRoutingProposal';
+import { BITBUCKET_THREAD_PREFIX } from '../review-source/bitbucketReviewSource';
+import { GITLAB_THREAD_PREFIX } from '../review-source/gitlabReviewSource';
+import { NOTE_THREAD_PREFIX } from '../review-source/noteThreadPrefix';
 import { readClusterChecks } from './clusterChecks';
 
 export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
@@ -52,6 +55,35 @@ const REVIEW_COMMENT_OPEN = '<<review-comment';
 const MATERIALIZE_OPEN = '<<materialize:';
 const SCOUT_DOMAIN_RE = /^[a-z0-9][a-z0-9_-]*$/;
 
+const closeOfRun = ({ text, pair }: { readonly text: string; readonly pair: number }): number => {
+  let runEnd = pair + 2;
+  while (text[runEnd] === '>') {
+    runEnd += 1;
+  }
+  return runEnd - 2;
+};
+
+const findMarkerClose = ({
+  text,
+  from,
+}: {
+  readonly text: string;
+  readonly from: number;
+}): number => {
+  let quoted = false;
+  for (let i = from; i < text.length - 1; i += 1) {
+    if (text[i] === '"') {
+      quoted = !quoted;
+      continue;
+    }
+    if (!quoted && text[i] === '>' && text[i + 1] === '>') {
+      return closeOfRun({ text, pair: i });
+    }
+  }
+  const pair = text.indexOf('>>', from);
+  return pair === -1 ? -1 : closeOfRun({ text, pair });
+};
+
 const extractSelfClosingInner = (text: string, open: string): ReadonlyArray<string> => {
   const out: string[] = [];
   let i = 0;
@@ -61,20 +93,16 @@ const extractSelfClosingInner = (text: string, open: string): ReadonlyArray<stri
       break;
     }
     const afterOpen = start + open.length;
-    const gt = text.indexOf('>', afterOpen);
-    if (gt === -1) {
+    const closeStart = findMarkerClose({ text, from: afterOpen });
+    if (closeStart === -1) {
       break;
     }
-    if (text[gt + 1] !== '>') {
-      i = afterOpen;
-      continue;
-    }
-    const inner = text.slice(afterOpen, gt);
+    const inner = text.slice(afterOpen, closeStart);
     const capture = inner.replace(/^\s+/, '');
     if (inner.length > capture.length && capture.length > 0) {
       out.push(capture);
     }
-    i = gt + 2;
+    i = closeStart + 2;
   }
   return out;
 };
@@ -264,6 +292,15 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
       recommendedAnswer: recommended.length > 0 ? recommended : null,
       selectMode,
       isBlocking: attrs.blocking === 'true',
+    });
+  }
+  for (const needsInput of extractAllCommentNeedsInput(text)) {
+    out.push({
+      text: needsInput.question,
+      suggestedAnswers: needsInput.options,
+      recommendedAnswer: needsInput.recommended,
+      selectMode: 'one',
+      isBlocking: true,
     });
   }
   return out;
@@ -550,11 +587,17 @@ export const extractScribeText = (assistantText: string): ExtractedScribeText =>
   };
 };
 
-const REVIEW_THREAD_ID_RE = /^PRRT_/;
+const REVIEW_THREAD_ID_PREFIXES = [
+  'PRRT_',
+  GITLAB_THREAD_PREFIX,
+  BITBUCKET_THREAD_PREFIX,
+  NOTE_THREAD_PREFIX,
+] as const;
 
-export const isReviewThreadId = (threadId: string): boolean => {
-  return REVIEW_THREAD_ID_RE.test(threadId);
-};
+export const isReviewThreadId = (threadId: string): boolean =>
+  REVIEW_THREAD_ID_PREFIXES.some(
+    (prefix) => threadId.startsWith(prefix) && threadId.length > prefix.length,
+  );
 
 export type ExtractedCommentAnalysis = {
   readonly threadId: string;
@@ -724,6 +767,65 @@ export const extractAllCommentWontfix = (
     markers.push({ threadId, reason });
   }
   return markers;
+};
+
+const NEEDS_INPUT_OPEN_RE = /<<needs-input((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
+const NEEDS_INPUT_CLOSE = '<</needs-input>>';
+const NEEDS_INPUT_MAX_OPTIONS = 3;
+
+export type ExtractedCommentNeedsInput = {
+  readonly threadId: string;
+  readonly question: string;
+  readonly options: ReadonlyArray<string>;
+  readonly recommended: string | null;
+};
+
+const recommendedOf = ({
+  raw,
+  options,
+}: {
+  readonly raw: string;
+  readonly options: ReadonlyArray<string>;
+}): string | null => {
+  const wanted = raw.trim().toLowerCase();
+  if (wanted === '') {
+    return null;
+  }
+  return options.find((option) => option.toLowerCase() === wanted) ?? null;
+};
+
+export const extractAllCommentNeedsInput = (
+  assistantText: string,
+): ReadonlyArray<ExtractedCommentNeedsInput> => {
+  const byThreadId = new Map<string, ExtractedCommentNeedsInput>();
+  NEEDS_INPUT_OPEN_RE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = NEEDS_INPUT_OPEN_RE.exec(assistantText)) !== null) {
+    const bodyStart = NEEDS_INPUT_OPEN_RE.lastIndex;
+    const closeIndex = assistantText.indexOf(NEEDS_INPUT_CLOSE, bodyStart);
+    if (closeIndex === -1) {
+      continue;
+    }
+    NEEDS_INPUT_OPEN_RE.lastIndex = closeIndex + NEEDS_INPUT_CLOSE.length;
+    const attrs = parseQuestionAttrs(match[1] ?? '');
+    const threadId = (attrs.id ?? attrs.threadId ?? attrs.threadid ?? '').trim();
+    const question = assistantText.slice(bodyStart, closeIndex).trim();
+    if (threadId.length === 0 || question.length === 0) {
+      continue;
+    }
+    const options = (attrs.options ?? '')
+      .split('|')
+      .map((option) => option.trim())
+      .filter((option) => option.length > 0)
+      .slice(0, NEEDS_INPUT_MAX_OPTIONS);
+    byThreadId.set(threadId, {
+      threadId,
+      question,
+      options,
+      recommended: recommendedOf({ raw: attrs.recommended ?? '', options }),
+    });
+  }
+  return [...byThreadId.values()];
 };
 
 export type CommentVerdictKind = 'fixed-here' | 'not-relevant' | 'still-needed';
@@ -947,7 +1049,7 @@ export const extractMaterializeRequests = (
     const separatorIndex = inner.indexOf('|');
     const projectName = (separatorIndex === -1 ? inner : inner.slice(0, separatorIndex)).trim();
     const reason = separatorIndex === -1 ? '' : inner.slice(separatorIndex + 1).trim();
-    if (projectName.length === 0) {
+    if (projectName.length === 0 || /[<>]/.test(projectName)) {
       continue;
     }
     byName.set(projectName.toLowerCase(), {
@@ -1162,7 +1264,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|pr-title|pr-body|commit-message|changelog-entry';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|needs-input|oq-answer|pr-title|pr-body|commit-message|changelog-entry';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-verdict|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
 
@@ -1170,18 +1272,32 @@ const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,
   'g',
 );
-const CONTROL_SELF_STRIP_RE = new RegExp(`<<(?:${SELF_MARKER_ALT})\\s[^>]*?>>`, 'g');
+const CONTROL_SELF_OPEN_RE = new RegExp(`<<(?:${SELF_MARKER_ALT})\\s`, 'g');
 const CONTROL_OPEN_TAIL_RE = new RegExp(`<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*$`);
 const CONTROL_PARTIAL_TAIL_RE = /<<?\/?[a-z-]*:?(?:\s[^>]*)?$/;
 const UNSUMMARIZED_STEP_OUTPUT_RE = /\[unsummarized step output(?:, [a-z ]+)?\][ \t]*\n?/g;
 
+const stripSelfMarkers = (text: string): string => {
+  CONTROL_SELF_OPEN_RE.lastIndex = 0;
+  let out = '';
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  while ((match = CONTROL_SELF_OPEN_RE.exec(text)) !== null) {
+    const closeStart = findMarkerClose({ text, from: match.index + match[0].length });
+    if (closeStart === -1) {
+      break;
+    }
+    out += text.slice(cursor, match.index);
+    cursor = closeStart + 2;
+    CONTROL_SELF_OPEN_RE.lastIndex = cursor;
+  }
+  return out + text.slice(cursor);
+};
+
 export const stripControlMarkers = (text: string): string => {
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
-  CONTROL_SELF_STRIP_RE.lastIndex = 0;
   UNSUMMARIZED_STEP_OUTPUT_RE.lastIndex = 0;
-  return text
-    .replace(CONTROL_BLOCK_STRIP_RE, '')
-    .replace(CONTROL_SELF_STRIP_RE, '')
+  return stripSelfMarkers(text.replace(CONTROL_BLOCK_STRIP_RE, ''))
     .replace(UNSUMMARIZED_STEP_OUTPUT_RE, '')
     .replace(CONTROL_OPEN_TAIL_RE, '')
     .replace(CONTROL_PARTIAL_TAIL_RE, '')

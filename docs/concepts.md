@@ -278,7 +278,7 @@ refuses it instead of saving a blank entry.
 
 The feed has two views under one segmented header, **Activity | Log**, and
 every kind of row has exactly one home. Activity holds what you launched: an
-agent, a workflow run, a burst of resolvers, each as one row with its role,
+agent, a workflow run, a fix run, each as one row with its role,
 state or action, the model that ran, time and cost. It reads newest first like
 a git graph, with the lanes of a run drawn beside it. What happens inside a
 finished launch folds into a count row on its lane: the steps and subagents of
@@ -291,10 +291,13 @@ top and no categories. A history row that has a recovery stays in Activity and
 opens the Commits tab, which owns it; no Activity row has a `⋯`.
 
 A **Needs you** block sits on top of Activity, and only while something waits
-on you: one row per owner, never per child. A burst reads "Resolve #318 · 2
-replies ready · 1 failed", a run "Retry policy · 1 question", a stopped rebase
+on you: one row per owner, never per child. A pull request's fix runs read
+"#318 · 1 question · 5 to review" (the actions you owe, counted in comments), a
+run "Retry policy · 1 question", a stopped rebase
 "Rebase of feat/export stopped ×2". Each row has **Open**, which goes to
-whoever owns the action (the review, the exact question, the branch). Push is
+whoever owns the action (the first comment that waits on you, the exact
+question, the branch). A fix run's Activity row reads "Fix run · #318 · 9
+comments" with its tally, and there is one row per run, no per-agent burst. Push is
 never offered there. The block disappears when nothing waits, and there is no
 filter to switch on first. **Start agent** is the one primary, and its menu
 starts a workflow, a report or a wireframe. Suggestions live in **Next steps**,
@@ -395,10 +398,11 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   started", with an "Open the agent" action) - the toast the standalone
   PlanReadySuggestion component used to show before the unified resolver
   replaced it in E7-5, restored here.
-- The resolve-threads card ("Draft fixes for N") starts its fixers with the
-  Runs on row and stays where you are. The same toast says how many agents
-  started and on which model, and its action is "Open summary", which opens
-  Review on those comments instead of the agent.
+- The resolve-threads card ("Draft fixes for N") never starts an agent: it
+  sends a `fix` request (`requestReview`) with the fixable comments and opens
+  the launch panel on the Comments tab, pre-filled. The board card "Resolve N
+  comments" does the same. N and the comments come from `eligibleReviewThreads`,
+  which reads the one fixable predicate (`isFixableThread`).
 
 ## Agents
 
@@ -745,25 +749,46 @@ reads every page of threads GitHub returns. If the read fails, Review
 shows the error from `gh` instead of an empty list.
 
 Review is one flow: the list on the left, the focused comment on the right.
-Every comment shows one state word, grouped in three:
+Every comment in a fix run shows one of five words, the same word in the list,
+the thread, Activity, Needs you, the transcript card and the breadcrumb menus.
+A comment not yet in a fix run reads Open, which is not a sixth word. One pure
+projection (`features/resolve/commentProjection.ts`) owns the words, and every
+count is a count of comments, never of agents:
 
-- **Open**: Not started, Drafting (one live line says what the agent does),
-  Needs you (the agent asked), Ready (the fix and the reply under the comment,
-  with an Edited tag once you changed the reply), Comment changed (the reviewer
-  edited the original comment since the draft), Draft failed or Push failed (the box under the comment
-  names the reason, such as the run ended before a result or the provider
-  error, never a generic error. A failed run also shows the last command it
-  ran with its result, such as `pnpm test src/webhooks · 2 failing`, and a
-  link to the transcript)
-- **Ready to push**: Accepted, Reply only (with a Resolve only tag when
-  nothing is posted)
-- **Done**: Skipped (it never blocks the push), Pushed, and Resolved on GitHub
-  when someone else closed it
+- **Working**: the resolver is on it (Waiting while a launch queues behind
+  another, Pushing while a push is in flight)
+- **Needs you**: the agent asked. A question comes from a `needs-input` outcome,
+  or from the agent's own last message when a turn ended without any outcome. A
+  turn that ends without an outcome is never a failure
+- **Ready**: the fix and the reply under the comment, with an Edited tag once
+  you changed the reply
+- **Couldn't fix**: the box under the comment says why in one sentence, from the
+  cause recorded on the attempt (`resolve_attempts.failure_cause`, m225): the fix
+  didn't start, the provider stopped the run, every provider is over its spend
+  cap, you stopped it (shown as Stopped), the app closed while it was working, it
+  conflicts with a fix you accepted before, the worktree is gone, or the fix
+  couldn't be saved from its copy of the branch. A comment written before m225
+  reads "Cause not recorded". A failed run also shows the last command it ran
+  with its result, such as `pnpm test src/webhooks · 2 failing`, and a link to
+  the transcript. A push that failed stays here as Push failed
+- **Done**: a quiet sub-word says how: Accepted (waiting for the push), Answered
+  (a reply only), Skipped (it never blocks the push), Pushed, and Resolved on
+  GitHub when someone else closed it
+
+A comment not yet in a fix run reads Open; starting a fix moves it into the run
+and under one of the five words. What git says (Already on origin, Looks
+fixed, Still needed, Fix went missing), Comment changed (the reviewer edited the
+original comment since the draft) and Checks failed (the change stays Ready) are
+chips next to the word, never in place of it. The list groups by the word:
+Needs you, Working, Ready, Couldn't fix, Open, then Done (closed until you open
+it). While a fix run exists one status line under the tabs shows `Fixing N
+comments`, the tally of those words (each count filters the list), the model and
+Open transcript and Stop; a component with an `actions` slot, so bulk buttons
+sit on the same line.
 
 The state word carries the tone: Needs you is the only warning, Ready is neutral
-(the Accept button is the signal), Edited and Comment changed have their own tones,
-and the header shows one summary line instead of a chip per state. The `…`
-above the list filters the list by state.
+(the Accept button is the signal), Couldn't fix is the danger tone, except a stop
+by you.
 
 Review reads git after a fetch when it opens and again before every push, and
 keeps one git state per thread in `resolve_threads.git_state` (`local`,
@@ -801,10 +826,11 @@ Each comment has four verbs, with single keys while the list has focus:
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply` (R, a reply
 without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the launch strip. J and K move. A checkbox appears on hover on comments nobody
-started (X toggles the focused row, Cmd+A picks every one of them, Esc clears):
-the bar `3 selected · Fix 3 separately` opens the strip for the pick, and a
-batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
+the launch panel. J and K move. A checkbox appears on hover on the comments you
+can fix (open, or couldn't fix) and on ready comments (X toggles the focused
+row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
+opens the panel for the fixable pick and `Accept 3` accepts the ready pick, and
+a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
@@ -848,36 +874,78 @@ with a local commit and never pushes.
   before it checks the branch
 
 - Every start goes through one path (`startBatch`): `Fix` on the row of a
-  comment nobody started (hover) or in its detail, `F` on the focused row, or
-  the Activity suggestion. The header has no "Draft fixes" button: a batch is
+  comment nobody started (hover) or in its detail, `F` on the focused row, the
+  `Fix N open comments` line (no run going), the Overview card or the board
+  card. Every door shares one set, the fixable comments: open plus couldn't fix
+  (`isFixableThread`, `features/resolve/fixableComments.ts`); a comment that
+  needs you is answered, never relaunched, and a failed push is retried from
+  the push. The header has no "Draft fixes" button: a batch is
   born from the comments you pick. Opening Review never starts an agent.
-  `Fix` opens the **launch strip**, inline under the header (never a dialog):
-  the model and effort pill (the shared picker with every connected provider
-  and a **Suggested** row), the commit style (`New commit` or `Fixup of the
-original`, prefilled from the settings or the last batch), an optional hint
-  that lands in Operator notes, a plain count line (`3 agents · up to 4 run at
-once · each works on its own copy of the branch`, no price: nothing
-  estimates the cost of a run), and `Start` on Cmd+Enter (Esc closes). The
-  choice is saved on the batch and on every attempt (`launch_choice_json`). Each start carries the thread ids and the
+  `Fix` opens the **launch panel** in the right column of the Comments tab, in
+  place of the thread (never above the columns, never a dialog): the page does
+  not move and the comment you had open stays selected. It is bound to the
+  selection: the included comments are checked rows (uncheck one to drop it,
+  check another in the list to add it), `Runs on <model> · <effort> · Change`
+  (the shared picker with every connected provider and a **Suggested** row), an
+  optional note that lands in Operator notes (no autofocus), and `Start fixing
+N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
+  the panel: it comes from the settings or the last batch. Clicking another
+  comment closes the panel. The palette and the object menu do not raise a
+  window event: `requestReview` with a `fix` request writes a pending launch
+  request into the `review-launch` slice (`reviewLaunchRequests`) and the
+  Comments tab consumes it when it mounts, so a request raised from another
+  page lands. The choice is saved on the batch and on every attempt
+  (`launch_choice_json`). Each start carries the thread ids and the
   marker contract
-- A retry reads the same choices again. Redraft, Answer and Retry use the
-  launch choice of the comment's last batch attempt (model, effort, commit
-  style, hint), then the model picked for the session (`Model for drafts…`) and
+- Bulk actions on the Comments tab, each one a single store action. With no run
+  (`fixRunOf` finds no launch with a live comment) the line under the
+  tabs is `N open comments · Fix N open comments ⌘A`, which opens the panel on
+  the fixable set. With a run, `RunStatusBulkActions` sits in the `actions`
+  slot of the run status line (`ResolveRunStatus`, before the model) and
+  `bulkRunOf` hands it the entries of that run:
+  `Use the recommended answers (N)` (two or more open questions that carry a
+  recommended answer) opens the `Answer N questions` panel in the right column,
+  where each question has its recommended option chosen, `Drop` leaves one in
+  Needs you, and `Continue with N answers` calls `answerQuestions` once for the
+  launch (the same agent, no new one); `Retry N that couldn't fix` calls
+  `retryCouldntFix` with every could-not-fix comment of the launch. `Accept N`
+  on the group header of the ready comments and in the selection bar calls
+  `acceptReviewComments` (`review-bulk` slice): it walks the comments in order
+  through the same accept as the single `Accept` (`acceptReviewItem`), skips
+  one that is no longer ready, keeps going when one throws and names the ones
+  it could not accept. It registers one operation on the app undo stack, so
+  the bar `N accepted · Undo` and Cmd+Z (`app.undo`) revert the whole batch
+  while the comments are still approved and not pushed. Push stays the only
+  push
+- A fix run starts on the resolver role default (Sonnet 5.5 · Medium out of
+  the box), never on the model of the last launch. A model picked in the launch
+  panel is kept for that session only and the panel says so (`Your pick, kept
+for this session`, else `Resolver default`); launching does not turn the
+  default into a pick. A retry (Redraft, Answer, Retry) continues the same fix
+  run on the model it started with and keeps its commit style and hint (and
   the commit style set in Review replies, so with fixup set the second round is
-  a fixup too. The
-  hint you type before a retry lands in the prompt's operator notes
-- A failed run offers **Retry** (`Retry on Opus 5` once you picked a
-  model, `Retry with the hint` with a hint), **Try another model** (the
-  picker opens inline under the buttons) and **Add a hint** (F is Retry).
-  `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
+  a fixup too). Only a model picked for the session that differs from the one
+  the run used starts the comment over as a new fix run on that model. The hint
+  you type before a retry lands in the prompt's operator notes
+- A failed run offers **Retry in this run** (`retryCouldntFix` for that one
+  comment, in the same run and copy; `Retry with the hint` with a hint),
+  **Start over with a new agent** (a new launch for that comment on the
+  session pick or the role default); F is Retry in this run.
+  `…` holds **Try another model** (the picker opens inline under the buttons,
+  it sets the model of a new agent; the `reviewComment.anotherModel` verb, so
+  right click and the palette have it too), **Add a hint**, Reply yourself, Skip
+  and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no
   button on the comment: the Branch header reads `Retry N`, and the push
   result there offers `Sync and try again`. The comment keeps `Open on GitHub`
   when Goodboy could not confirm the reply landed
-- A batch fix runs in its own copy of the branch, up to four at a time (the
-  session limit), so two fixes never fight over the same branch. The rest wait
-  with `Waiting for a free slot`
+- A fix run is one agent in its own copy of the branch, so it never fights the
+  branch you are on. Separate runs go up to four at a time (the session limit)
+  and the rest wait with `Waiting for a free slot`. Answering a question,
+  retrying a comment that could not be fixed and typing in the transcript all
+  continue the same agent in the same copy; Start over is the one way to a new
+  agent
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 
@@ -1009,7 +1077,9 @@ shows it under "See who reads what".
 - Planner, orchestrator and the question delegate read roles, work and rules
 - Scout, investigator, report and wireframe read roles, work and topics
 - Implementer, tester and docs read roles and rules
-- Reviewer and resolver read roles, rules and topics
+- Reviewer reads roles, rules and topics
+- Resolver reads roles and topics, never the rules: it works unattended in its
+  own copy, so a rule written for chat ("ask before changing") would stop it
 - A custom role reads every field
 - Task models read nothing, except **Learnings**, which reads the topics, and the
   profile never goes into text Goodboy posts
@@ -1331,7 +1401,12 @@ task up again in Goodboy.
 ### Identifiers
 
 Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
-`review` (**in review**), `building`, `done`.
+`review` (**in review**), `building`, `done`. A fix run raises `attention` too:
+a comment that **Needs you** gives the reason `fix-needs-you` (before open
+questions, it opens the Comments tab) and a comment that **Couldn't fix** (not
+one you stopped, not a failed push) gives `fix-couldnt-fix`. Both also send one
+notification when the count rises (`projectResolveRows`), with an action that
+opens Activity, where the Needs you row waits.
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 

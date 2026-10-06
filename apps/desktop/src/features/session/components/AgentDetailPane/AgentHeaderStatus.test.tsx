@@ -17,6 +17,7 @@ import {
 import {
   EXPANDED_THREAD_ID,
   SESSION,
+  THREAD_IDS,
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { AgentHeaderStatus } from './AgentHeaderStatus';
@@ -85,11 +86,33 @@ describe('the header status of an agent', () => {
   it('shows the Review state word of a resolver instead of Done', async () => {
     await show({ isResolver: true });
 
-    expect(screen.getByText('Ready for you')).toBeDefined();
+    expect(screen.getByText('Ready')).toBeDefined();
     expect(screen.queryByText('Done')).toBeNull();
   });
 
-  it('follows the comment once it is accepted', async () => {
+  it('says Needs you while one comment of the run needs an answer, then Working, then Ready', async () => {
+    useAppStore.setState({
+      sessionResolveAttempts: {
+        [SESSION.id]: [{ ...ATTEMPT, threadIds: [EXPANDED_THREAD_ID, THREAD_IDS.errorShape] }],
+      },
+    });
+    await show({ isResolver: true });
+
+    expect(screen.getByText('Needs you')).toBeDefined();
+    expect(screen.queryByText('Ready')).toBeNull();
+    cleanup();
+
+    useAppStore.setState({
+      sessionResolveAttempts: {
+        [SESSION.id]: [{ ...ATTEMPT, threadIds: [EXPANDED_THREAD_ID, THREAD_IDS.idempotency] }],
+      },
+    });
+    await show({ isResolver: true });
+
+    expect(screen.getByText('Working')).toBeDefined();
+  });
+
+  it('keeps an accepted comment Ready until it is pushed', async () => {
     const items = useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? [];
     useAppStore.setState({
       sessionResolveQueueItems: {
@@ -106,7 +129,8 @@ describe('the header status of an agent', () => {
 
     await show({ isResolver: true });
 
-    expect(screen.getByText('Accepted')).toBeDefined();
+    expect(screen.getByText('Ready')).toBeDefined();
+    expect(screen.queryByText('Done')).toBeNull();
   });
 
   it('keeps the agent state for an agent that is not a resolver', async () => {

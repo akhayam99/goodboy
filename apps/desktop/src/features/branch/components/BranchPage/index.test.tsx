@@ -150,9 +150,9 @@ describe('Branch page Comments', () => {
     await mountAt({ width: 384 });
 
     fireEvent.click(
-      within(screen.getByRole('navigation', { name: 'Comments' })).getAllByRole(
-        'button',
-      )[0] as HTMLElement,
+      screen
+        .getByRole('navigation', { name: 'Comments' })
+        .querySelector('[data-thread-id]') as HTMLElement,
     );
     await settle();
     expect(useAppStore.getState().branchThreadId[SESSION.id]).not.toBeNull();
@@ -164,9 +164,9 @@ describe('Branch page Comments', () => {
 
   it('keeps the selected thread on the list after Comments leads back', async () => {
     await mountAt({ width: 384 });
-    const rows = within(screen.getByRole('navigation', { name: 'Comments' })).getAllByRole(
-      'button',
-    );
+    const rows = within(screen.getByRole('navigation', { name: 'Comments' }))
+      .getAllByRole('button')
+      .filter((button) => button.hasAttribute('data-thread-id'));
     const picked = rows[rows.length - 1] as HTMLElement;
     const threadId = picked.closest('[data-thread-id]')?.getAttribute('data-thread-id') ?? null;
     fireEvent.click(picked);

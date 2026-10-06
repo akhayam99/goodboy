@@ -4,7 +4,7 @@ import { selectResolvedSettings } from '../../store/slices/overrides/selectResol
 import { autoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
-import { startFixAttempt } from '../review/startFixAttempt';
+import { buildRecheckAgentArgs } from '../chat/spawn-from-comment';
 import { recheckParentOf } from './recheckParentOf';
 import { reviewRowsOf } from './reviewRows';
 
@@ -47,16 +47,13 @@ export const startRecheck = async ({
   }
   const taskModel = recheckModelOf({ state, sessionId });
   const shas = row.thread.commitShas ?? [];
-  return startFixAttempt({
-    sessionId,
-    threads: [row.commentThread],
+  const parentAgentId = recheckParentOf({
+    agents: state.sessionPhaseRuns[sessionId] ?? [],
+    threadId,
+  });
+  const args = buildRecheckAgentArgs({
+    thread: row.commentThread,
     pr: state.sessionGithub[sessionId]?.pr ?? null,
-    choice: {
-      provider: taskModel.providerId,
-      model: taskModel.model,
-      ...(taskModel.effort != null && { effort: taskModel.effort }),
-    },
-    mode: 'recheck',
     priorContext: [
       {
         threadId,
@@ -64,8 +61,25 @@ export const startRecheck = async ({
         intent: 'recheck',
       },
     ],
-    parentAgentId: recheckParentOf({ agents: state.sessionPhaseRuns[sessionId] ?? [], threadId }),
-    spawnAgent: state.spawnAgent,
-    setAgentConfig: state.setAgentConfig,
   });
+  const agentId = await state.spawnAgent(sessionId, {
+    name: args.name,
+    model: taskModel.model,
+    provider: taskModel.providerId,
+    ...(taskModel.effort != null && { effort: taskModel.effort }),
+    initialPrompt: args.initialPrompt,
+    humanPrompt: args.humanPrompt,
+    kindOverride: 'scout',
+    ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
+    sourceCommentUrl: args.sourceCommentUrl,
+    sourceKind: 'comment_recheck',
+    focus: 'none',
+    ...(parentAgentId !== null && { parentAgentId }),
+  });
+  await state.setAgentConfig(sessionId, agentId, {
+    providerOverride: taskModel.providerId,
+    modelOverride: taskModel.model,
+    ...(taskModel.effort != null && { effort: taskModel.effort }),
+  });
+  return [agentId];
 };

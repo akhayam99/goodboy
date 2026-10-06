@@ -617,7 +617,20 @@ const openReview = async (): Promise<void> => {
   await visible('tab', /^Comments/);
 };
 
+const neighbourOf = (threadId: string, step: 1 | -1): string | null => {
+  const ids = Array.from(document.querySelectorAll('[data-thread-id]')).map(
+    (row) => row.getAttribute('data-thread-id') ?? '',
+  );
+  return ids[ids.indexOf(threadId) + step] ?? null;
+};
+
 const focusThread = async (threadId: string): Promise<HTMLElement> => {
+  if (document.querySelector(`[data-thread-id="${threadId}"]`) === null) {
+    document
+      .querySelector<HTMLElement>('nav[aria-label="Comments"] button[aria-expanded="false"]')
+      ?.click();
+    await settle();
+  }
   const row = threadRow(threadId);
   fireEvent.click(row);
   await settle();
@@ -661,6 +674,7 @@ const resolveWrites = (threadId: string): number => {
 };
 
 let writesBefore = 0;
+let neighbour: string | null = null;
 
 const writesAfter = (threadId: string) => async (): Promise<void> =>
   waitFor(() => expect(resolveWrites(threadId)).toBeGreaterThan(writesBefore), WAIT);
@@ -678,8 +692,12 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
   worldRow({
     id: 'review.next',
     world: 'resolve',
-    open: reviewKey('review.next', THREADS.metrics),
-    lands: async () => waitFor(() => expect(currentThread()).toBe(THREADS.constant), WAIT),
+    open: async () => {
+      await openReview();
+      neighbour = neighbourOf(THREADS.metrics, 1);
+      await pressed('review.next', await focusThread(THREADS.metrics));
+    },
+    lands: async () => waitFor(() => expect(currentThread()).toBe(neighbour), WAIT),
   }),
   worldRow({
     id: 'review.previous',

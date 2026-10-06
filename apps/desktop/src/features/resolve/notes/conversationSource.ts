@@ -1,5 +1,5 @@
 import type { ResolveThread } from '@goodboy/types';
-import type { ResolveConversationSource, ResolveQueueRow } from '../buildResolveQueueRows';
+import type { ResolveConversationSource } from '../buildResolveQueueRows';
 
 export const conversationSourceOfThread = ({
   thread,
@@ -12,9 +12,3 @@ export const conversationSourceOfThread = ({
   const kind = thread.sourceKind ?? 'github';
   return kind === 'local' ? 'note' : kind;
 };
-
-export const conversationSourceOf = ({
-  row,
-}: {
-  readonly row: ResolveQueueRow;
-}): ResolveConversationSource => conversationSourceOfThread({ thread: row.thread });

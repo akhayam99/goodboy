@@ -1,6 +1,6 @@
 import type { CommentThread } from '../integrations/github/comment-threads';
 
-const MAX_THREADS_PER_ATTEMPT = 12;
+const MAX_THREADS_PER_TURN = 12;
 
 const CHARS_PER_TOKEN = 4;
 const THREAD_OVERHEAD_CHARS = 320;
@@ -11,7 +11,7 @@ type MeasureParams = { readonly threads: ReadonlyArray<CommentThread> };
 type Params = {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly contextWindow?: number | null;
-  readonly maxPerAttempt?: number;
+  readonly maxPerTurn?: number;
   readonly measurePrompt?: (params: MeasureParams) => number;
 };
 
@@ -48,7 +48,7 @@ const groupByPath = ({
 export const chunkConversations = ({
   threads,
   contextWindow = null,
-  maxPerAttempt = MAX_THREADS_PER_ATTEMPT,
+  maxPerTurn = MAX_THREADS_PER_TURN,
   measurePrompt = defaultMeasure,
 }: Params): ReadonlyArray<ReadonlyArray<CommentThread>> => {
   if (threads.length === 0) {
@@ -56,7 +56,7 @@ export const chunkConversations = ({
   }
   const budget = contextWindow === null ? null : contextWindow / 2;
   const fits = ({ candidate }: { readonly candidate: ReadonlyArray<CommentThread> }): boolean => {
-    if (candidate.length > maxPerAttempt) {
+    if (candidate.length > maxPerTurn) {
       return false;
     }
     if (budget === null) {

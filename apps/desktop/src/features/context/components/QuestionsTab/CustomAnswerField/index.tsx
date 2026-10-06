@@ -2,7 +2,7 @@ import type { KeyboardEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
-import { AnswerOptionRow } from '../AnswerOptionRow';
+import { AnswerOptionRow } from '../../../../../shared/components/AnswerOptionRow';
 
 type Props = {
   readonly value: string;

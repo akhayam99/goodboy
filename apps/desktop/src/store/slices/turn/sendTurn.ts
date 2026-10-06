@@ -49,6 +49,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const spawnCtx = { ...promptCtx, ...prompt };
     const spawn = await buildTurnSpawn({ set, get, lease, ctx: spawnCtx });
     const ctx = { ...spawnCtx, ...spawn };
+    input.onStarted?.();
     try {
       await readTurnStream({ set, get, ctx });
       await finalizeTurnStream({ set, get, ctx });
@@ -92,8 +93,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         closeTurnStartWindow({ agentId: input.agentId });
       }
       const { path, holder, attemptId } = lease;
-      if (path !== null && holder !== null) {
+      const heldWriter = path !== null && holder !== null;
+      if (heldWriter) {
         await releaseWorktreeWriter({ path, holder });
+      }
+      if (heldWriter || attemptId !== undefined) {
         void get().drainResolveQueue({
           sessionId: input.sessionId,
           ...(attemptId !== undefined && { endedAttemptId: attemptId }),

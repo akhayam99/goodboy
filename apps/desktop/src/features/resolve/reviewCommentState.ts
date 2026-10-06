@@ -1,6 +1,12 @@
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { Tone, WorkNodeState } from '@goodboy/ui';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
+import {
+  projectResolveComment,
+  type ResolveCommentFacts,
+  type ResolveCommentProjection,
+} from './commentProjection';
+import type { RemoteView } from './reviewRemote';
 
 export type ReviewCommentState =
   | 'new'
@@ -15,39 +21,6 @@ export type ReviewCommentState =
   | 'skipped'
   | 'pushed'
   | 'resolved';
-
-export type ReviewCommentGroup = 'open' | 'push' | 'done';
-
-export const REVIEW_COMMENT_GROUPS: ReadonlyArray<ReviewCommentGroup> = ['open', 'push', 'done'];
-
-export const REVIEW_COMMENT_GROUP_LABEL: Record<ReviewCommentGroup, string> = {
-  open: 'Open',
-  push: 'Ready to push',
-  done: 'Done',
-};
-
-const OPEN_STATES: ReadonlySet<ReviewCommentState> = new Set([
-  'new',
-  'drafting',
-  'needs',
-  'ready',
-  'edited',
-  'outdated',
-  'failed',
-]);
-
-const PUSH_STATES: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied']);
-
-export const reviewCommentGroup = ({
-  state,
-}: {
-  readonly state: ReviewCommentState;
-}): ReviewCommentGroup => {
-  if (OPEN_STATES.has(state)) {
-    return 'open';
-  }
-  return PUSH_STATES.has(state) ? 'push' : 'done';
-};
 
 const isReplyOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.item.approvalState === 'wont_fix' || row.proposalKind !== 'fix';
@@ -98,46 +71,48 @@ const isWaitingForSlot = ({ row }: { readonly row: ResolveQueueRow }): boolean =
 export const isResolveOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   (row.thread.replyDraft ?? '').trim() === '' && row.proposalKind !== 'fix';
 
+type ProjectionExtras = {
+  readonly gitChip?: RemoteView | null;
+  readonly hasFailedChecks?: boolean;
+};
+
+const resolveFactsOfRow = ({
+  state,
+  row,
+  gitChip = null,
+  hasFailedChecks = false,
+}: ProjectionExtras & {
+  readonly state: ReviewCommentState;
+  readonly row: ResolveQueueRow;
+}): ResolveCommentFacts => ({
+  state,
+  isPublishing: row.thread.stage === 'publishing',
+  isWaitingForSlot: isWaitingForSlot({ row }),
+  isPushFailure: isPushFailure({ row }),
+  sourceLabel: REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'],
+  attempt: row.attempt,
+  gitChip,
+  hasFailedChecks,
+});
+
+export const projectReviewComment = ({
+  state,
+  row,
+  gitChip,
+  hasFailedChecks,
+}: ProjectionExtras & {
+  readonly state: ReviewCommentState;
+  readonly row: ResolveQueueRow;
+}): ResolveCommentProjection =>
+  projectResolveComment(resolveFactsOfRow({ state, row, gitChip, hasFailedChecks }));
+
 export const reviewCommentWord = ({
   state,
   row,
 }: {
   readonly state: ReviewCommentState;
   readonly row: ResolveQueueRow;
-}): string => {
-  if (row.thread.stage === 'publishing') {
-    return 'Pushing';
-  }
-  switch (state) {
-    case 'new':
-      return 'Not started';
-    case 'drafting':
-      return isWaitingForSlot({ row }) ? 'Waiting' : 'Drafting';
-    case 'needs':
-      return 'Needs you';
-    case 'ready':
-    case 'edited':
-      return 'Ready';
-    case 'outdated':
-      return 'Comment changed';
-    case 'failed':
-      return isPushFailure({ row }) ? 'Push failed' : 'Draft failed';
-    case 'accepted':
-      return 'Accepted';
-    case 'replied':
-      return 'Reply only';
-    case 'skipped':
-      return 'Skipped';
-    case 'pushed':
-      return 'Pushed';
-    case 'resolved':
-      return `Resolved on ${REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github']}`;
-    default: {
-      const exhaustive: never = state;
-      return exhaustive;
-    }
-  }
-};
+}): string => projectReviewComment({ state, row }).label;
 
 export const REVIEW_COMMENT_NODE: Record<
   ReviewCommentState,

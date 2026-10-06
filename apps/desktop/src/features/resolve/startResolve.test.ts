@@ -4,6 +4,7 @@ import type { AgentId, BranchCommit, PrComment, PullRequestState, SessionId } fr
 import type { CommentThread } from '../integrations/github/comment-threads';
 import type { SpawnAgentFn } from '../review/startFixAttempt';
 import type { BlameLineParams } from '../worktree/worktree';
+import { takeLaunchTurn } from '../../store/slices/resolve/launchTurns';
 import { startResolve } from './startResolve';
 
 const { listBranchCommits, worktreeBlameLine } = vi.hoisted(() => ({
@@ -61,9 +62,9 @@ const spawnSpy = () => {
 };
 
 describe('startResolve', () => {
-  it('starts one resolver per comment, all in the same batch, with the launch choice', async () => {
+  it('starts one resolver for every comment, in the batch, with the launch choice', async () => {
     const { spawnAgent, setAgentConfig } = spawnSpy();
-    await startResolve({
+    const started = await startResolve({
       sessionId: SESSION_ID,
       threads: [threadOf('PRRT_1'), threadOf('PRRT_2'), threadOf('PRRT_3', 'src/client.ts')],
       pr: PR,
@@ -72,17 +73,11 @@ describe('startResolve', () => {
       setAgentConfig,
     });
 
-    expect(spawnAgent).toHaveBeenCalledTimes(3);
-    expect(spawnAgent.mock.calls.map(([, call]) => call.sourceThreadIds)).toEqual([
-      ['PRRT_1'],
-      ['PRRT_2'],
-      ['PRRT_3'],
-    ]);
-    expect(spawnAgent.mock.calls.map(([, call]) => call.resolveBatch?.batchId)).toEqual([
-      'batch-1',
-      'batch-1',
-      'batch-1',
-    ]);
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    expect(started.agentId).toBe('agent-1');
+    expect(spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual(['PRRT_1', 'PRRT_2', 'PRRT_3']);
+    expect(spawnAgent.mock.calls[0]?.[1].resolveBatch?.batchId).toBe('batch-1');
+    expect(spawnAgent.mock.calls[0]?.[1].resolveLaunch?.launchId).toBe(started.launchId);
     const args = spawnAgent.mock.calls[0]?.[1];
     expect(args?.kindOverride).toBe('resolver');
     expect(args?.initialPrompt).toContain('<<comment-resolved');
@@ -129,14 +124,70 @@ describe('startResolve', () => {
       path: 'src/retry.ts',
       line: 84,
     });
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
     expect(prompt).toContain(
       '- PRRT_1: `git commit --fixup=3a1f9c2full`, so the subject reads `fixup! Add retry policy`',
     );
-    expect(spawnAgent.mock.calls[1]?.[1].initialPrompt).not.toContain('--fixup=3a1f9c2full');
+    expect(prompt).not.toContain('PRRT_2: `git commit --fixup');
     expect(prompt).toContain('Voice: friendly.');
   });
 
-  it('keeps the fixup style and the prior work when a thread is retried', async () => {
+  it('feeds a large pull request to one agent as successive turns, never as new agents', async () => {
+    const { spawnAgent, setAgentConfig } = spawnSpy();
+    const ids = Array.from({ length: 30 }, (_, index) => `PRRT_${index + 1}`);
+
+    const started = await startResolve({
+      sessionId: SESSION_ID,
+      threads: ids.map((id) => threadOf(id)),
+      pr: PR,
+      batch: batchOf(),
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.name).toBe('Resolve: 30 review comments');
+    expect(args?.sourceThreadIds).toEqual(ids.slice(0, 12));
+    expect(args?.initialPrompt).toContain('Resolve 12 threads');
+    const turns = [];
+    for (
+      let turn = takeLaunchTurn({ launchId: started.launchId });
+      turn !== null;
+      turn = takeLaunchTurn({ launchId: started.launchId })
+    ) {
+      turns.push(turn);
+    }
+    expect(turns.map((turn) => turn.threadIds)).toEqual([ids.slice(12, 24), ids.slice(24)]);
+    expect(turns[1]?.content).toContain('Resolve 6 threads');
+    expect(turns[1]?.content).toContain('each of the 6 thread ids listed above');
+  });
+
+  it('lists every comment of a turn, with its id, in the order the owner picked them', async () => {
+    const { spawnAgent, setAgentConfig } = spawnSpy();
+    const ids = Array.from({ length: 12 }, (_, index) => `PRRT_${index + 1}`);
+
+    await startResolve({
+      sessionId: SESSION_ID,
+      threads: ids.map((id) => threadOf(id)),
+      pr: PR,
+      batch: batchOf(),
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.sourceThreadIds).toEqual(ids);
+    const prompt = args?.initialPrompt ?? '';
+    expect(prompt).toContain('Resolve 12 threads');
+    const positions = ids.map((id) => prompt.indexOf(`- thread id: ${id}\n`));
+    expect(positions.every((position) => position > -1)).toBe(true);
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+    expect(prompt).toContain('each of the 12 thread ids listed above');
+  });
+
+  it('keeps the fixup style and the prior work when a run is given earlier context', async () => {
     const { spawnAgent, setAgentConfig } = spawnSpy();
     listBranchCommits.mockResolvedValue([
       { sha: '3a1f9c2full', subject: 'Add retry policy' } as BranchCommit,
@@ -147,9 +198,6 @@ describe('startResolve', () => {
       sessionId: SESSION_ID,
       threads: [threadOf('PRRT_1')],
       pr: PR,
-      routing: { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' },
-      note: 'The race is in the insert',
-      mode: 'retry',
       priorContext: [
         { threadId: 'PRRT_1', reply: 'Tried a lock', commitShas: ['aa11bb22'], intent: 'retry' },
       ],
@@ -164,12 +212,9 @@ describe('startResolve', () => {
     });
 
     const args = spawnAgent.mock.calls[0]?.[1];
-    expect(args?.model).toBe('claude-opus-5');
-    expect(args?.effort).toBe('high');
     expect(args?.initialPrompt).toContain('git commit --fixup=3a1f9c2full');
-    expect(args?.initialPrompt).toContain('another pass on this thread');
+    expect(args?.initialPrompt).toContain('Read it again and decide from scratch');
     expect(args?.initialPrompt).toContain('Tried a lock');
-    expect(args?.initialPrompt).toContain('The race is in the insert');
   });
 
   it('never reads git for the default new commit style', async () => {
