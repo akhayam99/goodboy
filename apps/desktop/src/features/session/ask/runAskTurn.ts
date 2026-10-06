@@ -29,6 +29,7 @@ export type RunAskTurnParams = {
   readonly onText: (delta: string) => void;
   readonly onRead: (path: string) => void;
   readonly onUsage: (usage: ProviderUsage) => void;
+  readonly onStarted?: () => void;
   readonly now?: () => IsoDateTime;
 };
 
@@ -37,6 +38,7 @@ export const runAskTurn = async ({
   onText,
   onRead,
   onUsage,
+  onStarted,
   now,
 }: RunAskTurnParams): Promise<ChatTurnOutcome> =>
   streamChatTurn({
@@ -46,6 +48,7 @@ export const runAskTurn = async ({
     onText,
     onRead,
     onUsage,
+    ...(onStarted !== undefined && { onStarted }),
     ...(now !== undefined && { now }),
     start: () =>
       invokeCommand<string>('ask_turn', {

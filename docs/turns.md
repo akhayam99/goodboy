@@ -940,6 +940,10 @@ stream reader) with a session scope: `ask_turn` in
   `stabilizeAskAnswer` rewrites handles as stable references
   (`[[agent:<id>|Implementer]]`) before the message is saved, so chips work
   after a restart without the pack.
+- **Stop.** Stop is latched from the moment the reply shows as streaming:
+  `sendAskQuestion` checks it after saving the two messages and never launches
+  the CLI, and a Stop that lands while `ask_turn` is spawning cancels again
+  once the spawn returns (`onStarted`), so the reply ends stopped either way.
 - **Spend.** A usage event from the stream inserts a `provider_runs` row and a
   telemetry record of kind `ask` on the session (`recordAskUsage` through
   `recordUsageTelemetry`), which emits the budget alerts like a turn. The
