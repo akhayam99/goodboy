@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
@@ -149,6 +150,49 @@ describe('PartCommentFrame', () => {
     await waitFor(() => expect(value.add).toHaveBeenCalledTimes(2));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(value.cancelComposing).toHaveBeenCalled();
+  });
+
+  it('opens the composer under the part with focus in it, and gives focus back to its Comment button on close', () => {
+    const Harness = () => {
+      const [composing, setComposing] = useState<PlanCommentsApi['composing']>(null);
+      const value = api({
+        composing,
+        startComposing: ({ anchor }) => setComposing({ anchor }),
+        cancelComposing: () => setComposing(null),
+      });
+      return withApi({ value, children: <Framed>row</Framed> });
+    };
+    render(<Harness />);
+    const trigger = screen.getByRole('button', { name: 'Comment on part 3' });
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    trigger.focus();
+    fireEvent.click(trigger);
+
+    const box = screen.getByLabelText('Comment for the planner');
+    expect(document.activeElement).toBe(box);
+    expect(scrolled).toHaveBeenCalledWith({ block: 'nearest' });
+    const frame = screen.getByTestId('plan-part-comments');
+    expect(frame.contains(box)).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByLabelText('Comment for the planner')).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Comment on part 3' }));
+  });
+
+  it('falls back to the part itself when the trigger is gone', () => {
+    const Harness = () => {
+      const [composing, setComposing] = useState<PlanCommentsApi['composing']>({
+        anchor: { kind: 'part', index: 2, title: ROW.title },
+      });
+      const value = api({ composing, cancelComposing: () => setComposing(null) });
+      return withApi({ value, children: <Framed>row</Framed> });
+    };
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(document.activeElement).toBe(screen.getByTestId('plan-part-comments'));
   });
 
   it('hides the Comment button when comments are closed', () => {

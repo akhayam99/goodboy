@@ -21,7 +21,12 @@ export const PartCommentFrame = ({ index, title, children }: Props) => {
     composing !== null && composing.anchor.kind === 'part' && composing.anchor.index === index;
 
   return (
-    <div data-testid="plan-part-comments" className="group/part flex min-w-0 flex-col gap-2">
+    <div
+      data-testid="plan-part-comments"
+      data-focus-return=""
+      tabIndex={-1}
+      className="group/part flex min-w-0 flex-col gap-2 focus-visible:outline-none"
+    >
       <div className="relative min-w-0">
         {children}
         {api.canComment ? (
