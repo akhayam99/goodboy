@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({ listQueue: vi.fn() }));
 vi.mock('@goodboy/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/db')>()),
   listResolveQueueItems: h.listQueue,
+  listResolvePublicationsForSession: async () => [],
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

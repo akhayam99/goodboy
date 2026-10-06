@@ -533,6 +533,7 @@ export {
 export {
   listResolveThreads,
   setResolveThreadReplyDraft,
+  setResolveThreadReplyPosted,
   setResolveThreadStage,
   setResolveThreadCommitLinks,
   setResolveThreadCommitShas,

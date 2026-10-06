@@ -1,5 +1,6 @@
 import { listResolveQueueItems } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { publishThreadNow } from './publishThreadNow';
 import { handledByLine } from './threadGitState';
 import type { SliceParams, ThreadParams } from './types';
 
@@ -9,8 +10,6 @@ type Params = SliceParams &
   ThreadParams & { readonly mode: RemoteResolveMode; readonly reply?: string };
 
 const SETTLED = new Set(['fixed', 'answered']);
-
-const NOTHING_TO_PUBLISH = 'Nothing is waiting to go out for this comment';
 
 export const resolveThreadOnRemote = async ({
   get,
@@ -38,26 +37,5 @@ export const resolveThreadOnRemote = async ({
       ...(isStale && { allowIntegrated: true }),
     });
   }
-  const preview = await get().preparePublication({ sessionId, threadIds: [threadId] });
-  if (preview.publicationId === null) {
-    throw new Error(preview.blocker === null ? NOTHING_TO_PUBLISH : `Blocked: ${preview.blocker}`);
-  }
-  const result = await get().publishConversations({
-    sessionId,
-    publicationId: preview.publicationId,
-  });
-  if (result.kind === 'done') {
-    if (result.failed > 0) {
-      throw new Error(result.error ?? 'The reply could not be posted');
-    }
-    return;
-  }
-  if (result.kind === 'push_failed') {
-    throw new Error(result.error);
-  }
-  throw new Error(
-    result.kind === 'busy'
-      ? 'Another push is already running for this pull request'
-      : NOTHING_TO_PUBLISH,
-  );
+  await publishThreadNow({ get, sessionId, threadId });
 };

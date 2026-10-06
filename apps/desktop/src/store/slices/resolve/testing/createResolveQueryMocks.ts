@@ -122,6 +122,24 @@ export const createResolveQueryMocks = () => {
         gitStates.set(threadId, gitState);
       },
     ),
+    setResolveThreadReplyPosted: vi.fn(
+      async ({
+        threadId,
+        replyId,
+        postedAt,
+      }: SessionParams & {
+        readonly threadId: string;
+        readonly replyId: string;
+        readonly postedAt: number;
+      }) => {
+        const row = threads.get(threadId);
+        if (row === undefined || row.replyPostedAt !== null) {
+          return false;
+        }
+        threads.set(threadId, { ...row, replyPostedAt: postedAt, replyId });
+        return true;
+      },
+    ),
     listResolveThreads: vi.fn(async ({ sessionId }: SessionParams) =>
       [...threads.values()].filter((row) => row.sessionId === sessionId),
     ),

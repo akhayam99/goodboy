@@ -5,7 +5,7 @@ import { dispatchAfterNavigation } from '../actions/dispatchAfterNavigation';
 
 export const REVIEW_REQUEST_EVENT = 'goodboy:review-request';
 
-export type ReviewComposeMode = 'edit' | 'redraft' | 'answer' | 'reply';
+export type ReviewComposeMode = 'edit' | 'redraft' | 'answer' | 'reply' | 'fixAnyway' | 'rewrite';
 
 type ReviewRequest =
   | { readonly kind: 'compose'; readonly threadId: string; readonly mode: ReviewComposeMode }

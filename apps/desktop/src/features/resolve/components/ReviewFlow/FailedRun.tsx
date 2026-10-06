@@ -10,7 +10,7 @@ import { modelLabel } from '../../../chat/utils/chat-constants';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import type { ResolvedAction, ReviewCommentActionTarget } from '../../../actions/types';
 import { FAILED_RUN_COPY, failedVerbOf } from '../../failedRunCopy';
-import { FIX_RUN_THREAD_COPY } from '../../reviewFlowCopy';
+import { FIX_RUN_THREAD_COPY, REPLY_NOTE_COPY } from '../../reviewFlowCopy';
 import { lastRunStep } from '../../lastRunStep';
 import type { ResolveRowState } from '../../resolveRowState';
 import { DraftRoutingBody } from './DraftRoutingBody';
@@ -58,6 +58,7 @@ export const FailedRun = ({
   const transcript = useTranscript(attempt?.agentId ?? null);
   const step = useMemo(() => lastRunStep({ items: reduceTranscript(transcript) }), [transcript]);
   const isRun = rowState.failedStep === 'run' || rowState.failedStep === null;
+  const canRetryReply = actions.some((action) => action.id === 'reviewComment.postReplyNow');
   const canOpenTranscript = actions.some((action) => action.id === 'reviewComment.transcript');
   const sentence = rowState.sentence;
   const failedOn = attempt === null ? null : modelLabel(attempt.model);
@@ -127,17 +128,28 @@ export const FailedRun = ({
             </Button>
           </>
         ) : (
-          rowState.action === 'open_github' &&
-          rowState.failedStep !== null && (
-            <Button
-              size="sm"
-              variant="primary"
-              isBusy={isBusy}
-              onClick={() => onRun('reviewComment.openOnGithub')}
-            >
-              {failedVerbOf({ action: rowState.action })}
-            </Button>
-          )
+          <>
+            {rowState.action === 'open_github' && rowState.failedStep !== null && (
+              <Button
+                size="sm"
+                variant="primary"
+                isBusy={isBusy}
+                onClick={() => onRun('reviewComment.openOnGithub')}
+              >
+                {failedVerbOf({ action: rowState.action })}
+              </Button>
+            )}
+            {canRetryReply && (
+              <Button
+                size="sm"
+                variant="primary"
+                isBusy={isBusy}
+                onClick={() => onRun('reviewComment.postReplyNow')}
+              >
+                {REPLY_NOTE_COPY.retry}
+              </Button>
+            )}
+          </>
         )}
         {menu}
       </div>

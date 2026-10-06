@@ -30,6 +30,7 @@ import { ResolveBulkScene } from './scenes/ResolveBulkScene';
 import { BranchCommentsScene } from './scenes/BranchCommentsScene';
 import { BranchNarrowScene } from './scenes/BranchNarrowScene';
 import { BranchPushScene } from './scenes/BranchPushScene';
+import { BranchReplyOnlyScene } from './scenes/BranchReplyOnlyScene';
 import { ResolveDriftScene } from './scenes/ResolveDriftScene';
 import { ResolveGitlabScene } from './scenes/ResolveGitlabScene';
 import { ResolveBitbucketScene } from './scenes/ResolveBitbucketScene';
@@ -219,6 +220,9 @@ export const MOCK_SCENES = {
   'branch-files': BrandDiffScene,
   'branch-narrow': BranchNarrowScene,
   'branch-push': BranchPushScene,
+  'branch-reply-bundled': () => <BranchReplyOnlyScene variant="bundled" />,
+  'branch-reply-alone': () => <BranchReplyOnlyScene variant="alone" />,
+  'branch-reply-posted': () => <BranchReplyOnlyScene variant="posted" />,
   'resolve-item': ResolveItemScene,
   'resolve-failed': ResolveFailedRunScene,
   'resolve-run-question': ResolveRunQuestionScene,
