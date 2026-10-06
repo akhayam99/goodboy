@@ -80,8 +80,8 @@ const task: SessionExternalTask = {
   sessionId: webhook.id as SessionId,
   provider: 'linear',
   externalId: 'lin-212',
-  identifier: 'HAR-212',
-  url: 'https://linear.app/harborline/issue/HAR-212',
+  identifier: 'HBL-212',
+  url: 'https://linear.app/harborline/issue/HBL-212',
   title: 'Webhook retries post twice',
   createdAt: '2026-10-01T09:00:00.000Z' as IsoDateTime,
 };
@@ -238,7 +238,7 @@ describe('what the hover card says', () => {
     const view = openCard('Fix webhook retries');
     expect(view.getByText('#318 Draft · checks passing')).toBeDefined();
     expect(view.getByText('payments-api')).toBeDefined();
-    expect(view.getByText('HAR-212')).toBeDefined();
+    expect(view.getByText('HBL-212')).toBeDefined();
   });
 
   it('counts the agents and says when the session last moved', () => {

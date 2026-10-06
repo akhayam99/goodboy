@@ -209,8 +209,8 @@ const TASK: SessionExternalTask = {
   sessionId: sessionId(SLUGS.webhook),
   provider: 'linear',
   externalId: 'mock-column-task-212',
-  identifier: 'HAR-212',
-  url: 'https://linear.app/harborline/issue/HAR-212',
+  identifier: 'HBL-212',
+  url: 'https://linear.app/harborline/issue/HBL-212',
   title: 'Webhook retries post twice',
   createdAt: at('2026-10-01T10:00:00.000Z'),
 };
