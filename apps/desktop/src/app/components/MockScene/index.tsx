@@ -39,6 +39,7 @@ import { ResolveRunAnsweredScene } from './scenes/ResolveRunAnsweredScene';
 import { ResolveRunQuestionScene } from './scenes/ResolveRunQuestionScene';
 import { ResolveRunWorkingScene } from './scenes/ResolveRunWorkingScene';
 import { FixRunQuestionScene } from './scenes/FixRunQuestionScene';
+import { SpaceDiffCommentScene, SpaceDiffSplitScene } from './scenes/SpaceDiffScenes';
 import { BoardScene } from './scenes/BoardScene';
 import { BoardOngoingScene } from './scenes/BoardOngoingScene';
 import { BoardSelectedScene } from './scenes/BoardSelectedScene';
@@ -349,6 +350,9 @@ export const MOCK_SCENES = {
   'scribe-proposal-transcript': ScribeProposalTranscriptScene,
   'fix-run': FixRunScene,
   'fix-run-question': FixRunQuestionScene,
+  'resolve-transcript-drawer': FixRunQuestionScene,
+  'space-diff-split': SpaceDiffSplitScene,
+  'space-diff-comment': SpaceDiffCommentScene,
   'crash-report': CrashReportScene,
 };
 
