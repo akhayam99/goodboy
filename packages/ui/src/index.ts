@@ -34,8 +34,9 @@ export {
   drawerModeOf,
   drawerWidthOf,
   mainWidthOf,
+  pageBoxOf,
 } from './drawerGeometry';
-export type { DrawerMode, DrawerSizing } from './drawerGeometry';
+export type { DrawerMode, DrawerSizing, PageTier } from './drawerGeometry';
 export { DrawerFrame } from './components/DrawerFrame';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';

@@ -162,6 +162,8 @@ Start by reading the mounts:
 
 Fork when both lines of work need to stay. The new branch starts from the base you name. The source mount, its directory, its branch and its request links stay as they are.
 
+`mount fork` is also the one way to make a branch or worktree for the session. Name it `<type>/<kebab-desc>`: Goodboy puts it under the workspace prefix (`feat/sensitive-paths` becomes `<prefix>/feat-sensitive-paths`, a name already starting with `<prefix>/` stays), cuts the worktree where it keeps them and attaches it. A branch or worktree made with `git worktree add` or `git checkout -b` is invisible to the session. If one exists already, `--existing` attaches the branch as it is, without renaming it, and the session then counts and diffs its commits against the project base like any other mount.
+
 ```
 "$GOODBOY_BIN" query mount fork \
   --mount <source-mount-id> \

@@ -32,6 +32,9 @@ import { resolveWithoutReply } from './resolveWithoutReply';
 import { createResolveBatch, setResolveParallelLimit } from './resolveBatches';
 import { settleItemAnswered } from './settleItemAnswered';
 import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState';
+import { publishThreadNow } from './publishThreadNow';
+import { reconcileHandReplies } from './reconcileHandReplies';
+import { switchToReplyOnly } from './switchToReplyOnly';
 import { recheckThread, settleThreadRecheck } from './recheckThread';
 import { resolveThreadOnRemote } from './resolveThreadOnRemote';
 import { settleResolveSourceChange } from './settleResolveSourceChange';
@@ -101,6 +104,17 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       dismissThreadFix({ set, get, ...params }),
     replyAndResolveThread: (params: ThreadParams & { readonly reply?: string }) =>
       resolveThreadOnRemote({ set, get, ...params, mode: 'reply' }),
+    publishThreadNow: (params: ThreadParams) => publishThreadNow({ get, ...params }),
+    reconcileHandReplies: (params: SourceSnapshotsParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => reconcileHandReplies({ set, get, ...params }),
+      }),
+    switchToReplyOnly: (params: ThreadParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => switchToReplyOnly({ set, get, ...params }),
+      }),
     recheckThread: (params: ThreadParams) => recheckThread({ set, get, ...params }),
     settleThreadRecheck: (
       params: SessionParams & {

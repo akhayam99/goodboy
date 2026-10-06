@@ -9,6 +9,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { scriptPinId } from '../../scriptPinId';
+import { scriptPinsKey } from '../../scriptPinsKey';
 import { useSessionScripts } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -60,6 +62,12 @@ beforeEach(() => {
     discoveredScripts: {},
     discoveredScriptScans: {},
     loadDiscoveredScripts,
+    loadScriptPins: vi.fn(async () => undefined),
+    settings: {
+      [scriptPinsKey({ projectId: LEDGER })]: JSON.stringify([
+        scriptPinId({ source: 'package-json', relDir: '', name: 'test', savedId: null }),
+      ]),
+    },
   });
 });
 

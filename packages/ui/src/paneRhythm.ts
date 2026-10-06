@@ -8,7 +8,6 @@ export const PANE_RHYTHM = {
     title: 'pb-4',
     section: 'pb-5',
   },
-  column: 'w-full max-w-[var(--column-max)]',
   prose: 'max-w-[var(--measure)]',
   proseBlocks: [
     '[&>div>p]:max-w-[var(--measure)]',

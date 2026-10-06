@@ -2,6 +2,7 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
+import type { SessionStudio, StudioKind } from '../../store';
 
 const SRC = join(__dirname, '..', '..');
 const FEATURES = join(SRC, 'features');
@@ -38,7 +39,11 @@ const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
   { pattern: /\bmax-w-\[\d+px\]/, allowed: FIXED_PX_ALLOWLIST },
   { pattern: /\bmax-w-\[(2[4-9]|[3-9]\d|\d{3,})rem\]/, allowed: NO_EXCEPTION },
   { pattern: /\bmx-auto\b/, allowed: CENTRED_ALLOWLIST },
-  { pattern: /PANE_RHYTHM\.measure/, allowed: NO_EXCEPTION },
+  { pattern: /PANE_RHYTHM\.(measure|column)\b/, allowed: NO_EXCEPTION },
+  {
+    pattern: /\bmax-w-\[var\(--(column-max|column-frame|measure-frame)\)\]/,
+    allowed: NO_EXCEPTION,
+  },
   { pattern: /DIFF_CAPPED_COLUMN_CLASS/, allowed: NO_EXCEPTION },
   { pattern: /\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/, allowed: NO_EXCEPTION },
   { pattern: /\bmax-w-(2xl|xl)\b/, allowed: NARROW_ALLOWLIST },
@@ -136,6 +141,57 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   LensEmptyState: { kind: 'helper', files: [] },
 };
 
+type PlaceRoots = Readonly<Record<string, ReadonlyArray<string>>>;
+
+const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
+  settings: [
+    'features/settings/components/SettingsStudio/AppScopePanel.tsx',
+    'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx',
+  ],
+  guide: ['features/settings/components/GuideStudio/parts/GuideContent.tsx'],
+  companion: ['features/companion/components/CompanionStudio/index.tsx'],
+  addWorkspace: ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
+  workflow: ['features/workflows/components/WorkflowsPanel/index.tsx'],
+  inbox: ['features/inbox/components/InboxStudio/index.tsx'],
+  impact: [
+    'features/impact/components/ImpactStudio/OverviewPanel.tsx',
+    'features/impact/components/ImpactStudio/FlowPanel.tsx',
+    'features/impact/components/ImpactStudio/SpendPanel.tsx',
+    'features/impact/components/ImpactStudio/ShippedPanel.tsx',
+  ],
+  changelog: [
+    'features/changelog/components/ChangelogStudio/ReleaseReader.tsx',
+    'features/changelog/components/ChangelogStudio/CatchUpReader.tsx',
+  ],
+  notifications: ['features/notifications/components/NotificationsStudio/index.tsx'],
+  chat: ['features/workspace-chat/components/ChatRoom/index.tsx'],
+};
+
+const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray<string>>> = {
+  workflow: ['features/workflows/components/WorkflowBuilderView/index.tsx'],
+  mr: ['features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx'],
+  bitbucket: ['features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/index.tsx'],
+};
+
+const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
+  'Runs > Create': ['features/workflows/components/WorkflowBuilderView/index.tsx'],
+  'Runs > a run': ['features/session/components/AgentTree/WorkflowRow.tsx'],
+  'Questions detail': ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
+  'Branch > create pull request': [
+    'features/integrations/github/components/PullRequest/CreatePrPanel.tsx',
+  ],
+  'Create merge request': [
+    'features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx',
+  ],
+  'Artifacts > create': ['features/artifacts/components/ArtifactCreationPane/index.tsx'],
+  'Session overview loading': [
+    'features/session/components/SessionWorkspace/parts/SessionOverviewSkeleton.tsx',
+  ],
+  'Add workspace': ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
+};
+
+const COLUMN_ROOT = /<(PaneShell|PageColumn|FormPage)\b/;
+
 const walk = (dir: string): ReadonlyArray<string> =>
   readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry);
@@ -224,6 +280,53 @@ describe('content column contract', () => {
 
     expect(files.filter((file) => !/<PageColumn\b/.test(read(file)))).toEqual([]);
     expect(read('features/workspace-chat/components/ChatComposer/index.tsx')).not.toMatch(/max-w-/);
+  });
+
+  it('registers every studio and session studio, so a new place cannot skip the contract', () => {
+    const meta = read('app/components/StudioFrame/studioMeta.ts');
+    const studios = [...meta.matchAll(/^ {2}(\w+): \{$/gm)].map((match) => match[1] ?? '').sort();
+    const types = read('store/slices/session-view/types.ts');
+    const start = types.indexOf('export type SessionStudio =');
+    const declaration = types.slice(start, types.indexOf('\n\n', start));
+    const sessionStudios = [...declaration.matchAll(/kind: '(\w+)'/g)]
+      .map((match) => match[1] ?? '')
+      .sort();
+
+    expect(Object.keys(STUDIO_ROOTS).sort()).toEqual(studios);
+    expect(Object.keys(SESSION_STUDIO_ROOTS).sort()).toEqual(sessionStudios);
+  });
+
+  it('roots every studio, session studio, form and sub-page on a PageColumn, never a left pinned wrapper', () => {
+    const places: PlaceRoots = {
+      ...Object.fromEntries(
+        Object.entries(STUDIO_ROOTS).map(([kind, files]) => [`studio ${kind}`, files]),
+      ),
+      ...Object.fromEntries(
+        Object.entries(SESSION_STUDIO_ROOTS).map(([kind, files]) => [
+          `session studio ${kind}`,
+          files,
+        ]),
+      ),
+      ...FORM_AND_DETAIL_ROOTS,
+    };
+    const unrooted = Object.entries(places).flatMap(([place, files]) =>
+      files.flatMap((file) =>
+        COLUMN_ROOT.test(read(file)) || CENTRED_ALLOWLIST.has(file) ? [] : [`${place}: ${file}`],
+      ),
+    );
+
+    expect(unrooted).toEqual([]);
+  });
+
+  it('centres the form page and the studio skeleton through PageColumn', () => {
+    const formPage = readFileSync(
+      join(SRC, '..', '..', '..', 'packages/ui/src/components/FormPage.tsx'),
+      'utf8',
+    );
+
+    expect(formPage).toMatch(/<PageColumn>/);
+    expect(formPage).not.toMatch(/PANE_RHYTHM|max-w-/);
+    expect(read('app/components/StudioFrame/StudioSkeleton.tsx')).toMatch(/<PageColumn\b/);
   });
 
   it('classifies every component the session workspace mounts', () => {

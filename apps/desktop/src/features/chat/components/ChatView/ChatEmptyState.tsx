@@ -101,41 +101,42 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
   const showWorkflowCta = scenario === 'fresh' || scenario === 'workflow_no_agent';
 
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center gap-5 px-6 py-16 text-center',
-        PANE_RHYTHM.column,
-        PANE_RHYTHM.hero,
-      )}
-    >
-      <div className="flex items-center justify-center">
-        {scenario === 'pick_agent' ? (
-          <span className="text-display tabular-nums text-foreground">{phaseRuns.length}</span>
-        ) : (
-          <ConceptTile icon={CONCEPT_ICONS.chat} tone={CONCEPT_TONE.chat} />
+    <div className="flex w-full justify-center">
+      <div
+        className={cn(
+          'flex w-full flex-col items-center justify-center gap-5 px-6 py-16 text-center',
+          PANE_RHYTHM.hero,
         )}
+      >
+        <div className="flex items-center justify-center">
+          {scenario === 'pick_agent' ? (
+            <span className="text-display tabular-nums text-foreground">{phaseRuns.length}</span>
+          ) : (
+            <ConceptTile icon={CONCEPT_ICONS.chat} tone={CONCEPT_TONE.chat} />
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <Eyebrow label={copy.eyebrow} muted />
+          <h2 className="text-title text-foreground">{copy.title}</h2>
+          <p className="text-prose text-muted-foreground">{copy.body}</p>
+        </div>
+        <ul className="flex flex-wrap items-center justify-center gap-1 text-meta text-faint-foreground">
+          {copy.hints.map((hint, i) => (
+            <li
+              key={i}
+              className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-chip"
+            >
+              {hint}
+            </li>
+          ))}
+        </ul>
+        {showWorkflowCta ? (
+          <Button variant="secondary" size="sm" onClick={openWorkflowBuilder}>
+            <SECTION_ICONS.workflows size={ICON_SIZE.row} aria-hidden />
+            Set up a workflow
+          </Button>
+        ) : null}
       </div>
-      <div className="flex flex-col gap-2">
-        <Eyebrow label={copy.eyebrow} muted />
-        <h2 className="text-title text-foreground">{copy.title}</h2>
-        <p className="text-prose text-muted-foreground">{copy.body}</p>
-      </div>
-      <ul className="flex flex-wrap items-center justify-center gap-1 text-meta text-faint-foreground">
-        {copy.hints.map((hint, i) => (
-          <li
-            key={i}
-            className="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-chip"
-          >
-            {hint}
-          </li>
-        ))}
-      </ul>
-      {showWorkflowCta ? (
-        <Button variant="secondary" size="sm" onClick={openWorkflowBuilder}>
-          <SECTION_ICONS.workflows size={ICON_SIZE.row} aria-hidden />
-          Set up a workflow
-        </Button>
-      ) : null}
     </div>
   );
 };

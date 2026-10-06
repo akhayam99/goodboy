@@ -49,6 +49,9 @@ import { PreviousAttempts } from './PreviousAttempts';
 import { ProposedChange } from './ProposedChange';
 import { ThreadGitEvidence } from './ThreadGitEvidence';
 import { NewReplyNote } from './NewReplyNote';
+import { ReplyNote } from './ReplyNote';
+import { SteerLine } from './SteerLine';
+import { replyNoteKindOf } from './replyNoteKind';
 import { SourceChangeCard } from './SourceChangeCard';
 import { ThreadRecheckLine } from './ThreadRecheckLine';
 import { ThreadVerdictCard } from './ThreadVerdictCard';
@@ -68,13 +71,21 @@ const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const DECIDED_NOTE_STATES = new Set(['accepted', 'replied', 'skipped', 'pushed', 'resolved']);
 
+const POST_NOW_ACTION = 'reviewComment.postReplyNow';
+
 const verbsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<ResolvedAction> => [
   ...actions.filter((action) => action.slot === 'primary'),
   ...actions.filter((action) => action.slot === 'secondary'),
 ];
 
+const HINT_OPTIONAL: ReadonlySet<ReviewCompose['mode']> = new Set([
+  'redraft',
+  'fixAnyway',
+  'rewrite',
+]);
+
 const isComposeBlocked = ({ compose }: { readonly compose: ReviewCompose }): boolean =>
-  compose.mode !== 'redraft' && compose.text.trim() === '';
+  !HINT_OPTIONAL.has(compose.mode) && compose.text.trim() === '';
 
 const onCancelKey =
   ({ onCancel }: { readonly onCancel: () => void }) =>
@@ -211,6 +222,23 @@ export const ReviewComment = ({
             ...COMPOSE_COPY[compose.mode],
             placeholder: composePlaceholder({ mode: compose.mode, provider }),
           };
+
+  const isPostable = row.thread.originKind !== 'diff_comment' && row.thread.sourceKind !== 'local';
+  const isPushWaiting = entries.some(
+    (candidate) => candidate.state === 'accepted' && candidate.remote !== 'on_origin',
+  );
+  const replyNoteKind = replyNoteKindOf({
+    state,
+    remote,
+    isPostable,
+    isPublishing: row.thread.stage === 'publishing',
+    isPushWaiting,
+    isPosted: row.thread.disposition !== 'fix' && row.thread.replyPostedAt !== null,
+  });
+  const replyUrl =
+    row.commentThread?.replies.find((candidate) => candidate.id === row.thread.replyId)?.url ??
+    row.commentThread?.head.url ??
+    null;
 
   const startEdit = (): void => {
     setReplyText(reply);
@@ -393,7 +421,18 @@ export const ReviewComment = ({
         </div>
       )}
 
-      {DECIDED_NOTE_STATES.has(state) && remote === null && (
+      {replyNoteKind !== null && (
+        <ReplyNote
+          kind={replyNoteKind}
+          provider={provider}
+          url={replyUrl}
+          isRetry={error !== null}
+          isBusy={pendingActionId === POST_NOW_ACTION}
+          onPostNow={() => onRun(POST_NOW_ACTION)}
+        />
+      )}
+
+      {replyNoteKind === null && DECIDED_NOTE_STATES.has(state) && remote === null && (
         <p className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta text-muted-foreground">
           <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
           {decidedNote({
@@ -402,6 +441,15 @@ export const ReviewComment = ({
             provider,
           })}
         </p>
+      )}
+
+      {compose === null && !isEditingReply && !isFailed && (
+        <SteerLine
+          actions={actions}
+          state={state}
+          pendingActionId={pendingActionId}
+          onRun={onRun}
+        />
       )}
 
       {isFailed && (

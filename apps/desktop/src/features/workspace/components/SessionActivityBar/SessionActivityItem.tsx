@@ -1,8 +1,9 @@
 import { memo, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { InlineMarkdown, Input, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
+import { Input, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
-import { sessionDisplayTitle } from '../../../session/sessionTitle';
+import { sessionRowTitle } from '../../../session/sessionTitle';
+import { SessionRowTitle } from '../SessionRowTitle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
 import { sessionObjectKey } from '../../../actions/kinds/session';
@@ -65,7 +66,7 @@ const SessionActivityItemView = ({
     attention: summary.attention,
     isArchived,
   });
-  const title = sessionDisplayTitle({ session, tasks: summary.tasks });
+  const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const sessionId = session.id as SessionId;
   const descriptionId = useId();
   const anchorKey = `sidebar:${sessionId}`;
@@ -165,7 +166,7 @@ const SessionActivityItemView = ({
           node={node}
           className="group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
         />
-        <InlineMarkdown text={title} className="min-w-0 flex-1 truncate" />
+        <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       </button>
       <span id={descriptionId} className="sr-only">
         {summary.description}

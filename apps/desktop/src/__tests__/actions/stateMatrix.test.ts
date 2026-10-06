@@ -1669,6 +1669,7 @@ const REVIEW_COMMENT_STATES: ReadonlyArray<readonly [string, string, ReadonlyArr
       'reviewComment.accept',
       'reviewComment.edit',
       'reviewComment.editReply',
+      'reviewComment.replyOnly',
       ...COMMENT_DECIDE,
       'reviewComment.copyLink',
     ],

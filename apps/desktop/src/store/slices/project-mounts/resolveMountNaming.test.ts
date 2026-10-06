@@ -1,13 +1,13 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
-import { aProject, aSession } from '@goodboy/types/testing';
+import { aProject, aSession, EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import {
   importStore,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../storyHarness';
-import { resolveForkBranchName } from './resolveMountNaming';
+import { resolveForkBranchName, resolveRequestedBranchName } from './resolveMountNaming';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -82,5 +82,53 @@ describe('resolveForkBranchName', () => {
 
   it('falls back to the session branch when no task is given', () => {
     expect(forkName({ taken: ['mq/ledger-export'] })).toBe('mq/ledger-export-2');
+  });
+});
+
+describe('resolveRequestedBranchName', () => {
+  const requestedName = ({
+    requested,
+    project = PROJECT,
+  }: {
+    readonly requested: string;
+    readonly project?: typeof PROJECT;
+  }) =>
+    resolveRequestedBranchName({
+      get: useAppStore.getState,
+      session: SESSION,
+      project,
+      requested,
+    });
+
+  beforeEach(() => {
+    useAppStore.setState({
+      workspaceOverrides: {
+        [SESSION.workspaceId]: { ...EMPTY_OVERRIDES, defaultBranchPrefix: 'ak' },
+      },
+    });
+  });
+
+  it('keeps a name that already starts with the prefix', () => {
+    expect(requestedName({ requested: 'ak/feat-sensitive-paths' })).toBe('ak/feat-sensitive-paths');
+  });
+
+  it('moves a typed name under the prefix as one kebab segment', () => {
+    expect(requestedName({ requested: 'feat/sensitive-paths-prefilled-codes' })).toBe(
+      'ak/feat-sensitive-paths-prefilled-codes',
+    );
+    expect(requestedName({ requested: 'fix/auth/refresh' })).toBe('ak/fix-auth-refresh');
+  });
+
+  it('puts a bare name under the prefix', () => {
+    expect(requestedName({ requested: 'sensitive-paths' })).toBe('ak/sensitive-paths');
+  });
+
+  it('prefers the project prefix over the workspace one', () => {
+    const project = aProject({
+      name: 'ledger-core',
+      overrides: { ...EMPTY_OVERRIDES, defaultBranchPrefix: 'mq' },
+    });
+
+    expect(requestedName({ requested: 'feat/x', project })).toBe('mq/feat-x');
   });
 });

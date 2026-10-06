@@ -782,7 +782,7 @@ count is a count of comments, never of agents:
   with its result, such as `pnpm test src/webhooks · 2 failing`, and a link to
   the transcript. A push that failed stays here as Push failed
 - **Done**: a quiet sub-word says how: Accepted (waiting for the push), Answered
-  (a reply only), Skipped (it never blocks the push), Pushed, and Resolved on
+  (a reply only, then Replied on GitHub with a link to the comment), Skipped (it never blocks the push), Pushed, and Resolved on
   GitHub when someone else closed it
 
 A comment not yet in a fix run reads Open; starting a fix moves it into the run
@@ -959,8 +959,11 @@ failed`) that opens to their reasons. A failed delivery after the run has no
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 
-Nothing reaches GitHub until you push. `Push N` in the Review header is the
-one way out, for every accepted comment at once. It
+Nothing reaches GitHub until you push, with one exception: a reply-only answer
+(no code change) is posted the moment you accept it when no accepted fix is
+waiting to push. With a fix waiting it goes out with the push, and `Post reply
+now` beside its note posts it at once. `Push N` in the Review header is the
+way out for every accepted comment at once. It
 confirms inline under the header with exactly what goes out (`Push 2 to
 hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
 resolved on GitHub.`), naming the commit style set in Review replies. A

@@ -1,4 +1,4 @@
-import { cn, PANE_RHYTHM, ScrollFade } from '@goodboy/ui';
+import { PageColumn, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -58,8 +58,8 @@ export const WorkspaceLinkStudio = ({
       onClose={onClose}
     >
       {(requestClose) => (
-        <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-          <div className={cn(PANE_RHYTHM.column, 'flex flex-col gap-6')}>
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+          <PageColumn className="flex flex-col gap-6 py-5">
             {isNewProject ? (
               <NewProjectForm onCreated={requestClose} onCancel={requestClose} />
             ) : (
@@ -67,7 +67,7 @@ export const WorkspaceLinkStudio = ({
                 onComplete={({ mode, workspace }) => onComplete({ mode, workspace, requestClose })}
               />
             )}
-          </div>
+          </PageColumn>
         </ScrollFade>
       )}
     </StudioShell>

@@ -107,7 +107,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
               () => [] as ReadonlyArray<string>,
             );
             const taken = [...remoteBranches, ...views.map((candidate) => candidate.branch)];
-            const branchName =
+            const newBranchName =
               requested === ''
                 ? resolveForkBranchName({
                     get,
@@ -120,6 +120,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                     ...(input.taskTitle !== undefined ? { taskTitle: input.taskTitle } : {}),
                   })
                 : resolveRequestedBranchName({ get, session, project, requested });
+            const branchName = adopt && requested !== '' ? requested : newBranchName;
             if (!adopt && requested !== '' && taken.includes(branchName)) {
               await failMountOperation({ operation, errorCode: 'branch-taken' });
               throw mountError({
@@ -130,7 +131,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
             const baseBranch = input.baseBranch ?? project.baseBranch ?? undefined;
             const request = {
               repoPath: project.rootPath,
-              branchName,
+              branchName: newBranchName,
               parentDir: `${project.rootPath}/.goodboy/worktrees`,
               dirName: mountDirName({ sessionSlug, mountId }),
               ...(baseBranch !== undefined ? { baseBranch } : {}),

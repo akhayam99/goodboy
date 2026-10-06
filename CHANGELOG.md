@@ -12,6 +12,21 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.21.2
+
+Ask works with Claude again, branches an agent adds show up in the session, review replies post right away, and session rows and sub-pages look right again.
+
+### Fixed
+
+- A branch attached after the session opened, for example by an agent splitting work, shows its diff in Overview and Branch. <!-- gb area=sessions -->
+- Agents in a run create branches through Goodboy, so they are attached to the session and named with your branch prefix, like `ak/feat-...`. <!-- gb area=agents -->
+- The session Scripts page lists only the scripts pinned for the workspace and your saved ones, with a link to pin more in Settings. <!-- gb area=scripts -->
+- A reply-only answer to a review comment is posted to GitHub right away, or with Post reply now when a push waits. A reply you posted by hand is recognised. <!-- gb area=review -->
+- On a review thread you can ask to fix anyway, reply only, rewrite the reply with a hint, or edit it. <!-- gb area=review -->
+- Session rows, the switcher and the hover card show the ticket key before the title again. <!-- gb area=sessions -->
+- Ask answers with Claude again. It failed at once with an unrecognised model. <!-- gb area=sessions -->
+- Sub-pages such as new run, a run, workflow studio, create PR and loading states sit in the middle like their pages. <!-- gb area=app -->
+
 ## Goodboy v0.21.1
 
 Session pages, Settings and the doors sit in the middle of the window again, and a panel on the right moves the page aside.

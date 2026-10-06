@@ -55,6 +55,12 @@ vi.mock('../../../../store', () => {
       },
     },
     discoveredScriptScans: {},
+    settings: {
+      'scripts.pinned.project-ledger': JSON.stringify([
+        JSON.stringify(['package-json', '', 'test']),
+      ]),
+    },
+    loadScriptPins: vi.fn(async () => undefined),
     loadDiscoveredScripts: vi.fn(async () => undefined),
     scriptRuns: state.scriptRuns,
     cancelScript: state.cancelScript,

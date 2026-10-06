@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { acceptReviewItem } from '../../../features/resolve/acceptReviewItem';
 import { isBulkAcceptable, isUndoableAccept } from '../../../features/resolve/bulkAccept';
+import { postReplyWhenNothingWaits } from '../../../features/resolve/replyDelivery';
 import { remoteOf } from '../../../features/resolve/reviewRemote';
 import { replyOf, launchRowsOf, rowStateOf } from '../../../features/resolve/reviewRows';
 import { activeReviewSourceOf } from '../review-source/activeReviewSource';
@@ -32,6 +33,7 @@ export const acceptReviewComments = async ({
 }: Params): Promise<ReviewBulkAcceptResult> => {
   const before = acceptedItemIdsOf({ get, sessionId });
   const failures: Array<ReviewBulkFailure> = [];
+  const accepted: Array<string> = [];
   for (const threadId of new Set(threadIds)) {
     const state = get();
     const row = launchRowsOf({ state, sessionId }).find(
@@ -59,6 +61,14 @@ export const acceptReviewComments = async ({
         isNote: row.thread.originKind === 'diff_comment',
         hasPr: activeReviewSourceOf({ state, sessionId }) !== null,
       });
+      accepted.push(threadId);
+    } catch (error) {
+      failures.push({ threadId, message: formatError(error) });
+    }
+  }
+  for (const threadId of accepted) {
+    try {
+      await postReplyWhenNothingWaits({ getState: get, sessionId, threadId });
     } catch (error) {
       failures.push({ threadId, message: formatError(error) });
     }

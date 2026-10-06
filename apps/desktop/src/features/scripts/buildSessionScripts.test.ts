@@ -11,6 +11,7 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import { buildSessionScripts } from './buildSessionScripts';
+import { scriptPinId } from './scriptPinId';
 import { discoveredScriptCwd, type ScriptGroup } from './scripts';
 
 const LEDGER = 'project-ledger' as ProjectId;
@@ -74,6 +75,41 @@ const MANIFEST: ReadonlyArray<ScriptGroup> = [
   },
 ];
 
+const NORTHWIND: ReadonlyArray<ScriptGroup> = [
+  {
+    source: 'package-json',
+    packageName: 'northwind',
+    relDir: '',
+    manager: 'yarn',
+    scripts: [{ name: 'dev', command: 'yarn run dev', body: 'turbo run dev' }],
+  },
+  {
+    source: 'package-json',
+    packageName: '@northwind/web',
+    relDir: 'apps/web',
+    manager: 'yarn',
+    scripts: [
+      { name: 'test', command: 'yarn run test', body: 'vitest run' },
+      { name: 'dev', command: 'yarn run dev', body: 'vite --port 3000' },
+    ],
+  },
+  {
+    source: 'package-json',
+    packageName: '@acme/api',
+    relDir: 'apps/api',
+    manager: 'yarn',
+    scripts: [{ name: 'dev', command: 'yarn run dev', body: 'tsx watch src/server.ts' }],
+  },
+];
+
+const pinAll = (projectId: ProjectId, groups: ReadonlyArray<ScriptGroup>) => ({
+  [projectId]: groups.flatMap((group) =>
+    group.scripts.map((script) =>
+      scriptPinId({ source: group.source, relDir: group.relDir, name: script.name, savedId: null }),
+    ),
+  ),
+});
+
 describe('buildSessionScripts', () => {
   it('lists saved scripts first, then each manifest by category', () => {
     const [group] = buildSessionScripts({
@@ -81,6 +117,7 @@ describe('buildSessionScripts', () => {
       projects: PROJECTS,
       saved: [saved('b', LEDGER, 2), saved('a', LEDGER, 1), saved('c', RELAY, 0)],
       discovered: { '/wt/ledger': MANIFEST },
+      pins: pinAll(LEDGER, MANIFEST),
     });
 
     expect(group?.projectName).toBe('ledger-core');
@@ -106,34 +143,8 @@ describe('buildSessionScripts', () => {
       mounts: [mount('m1', LEDGER, '/wt/northwind/')],
       projects: PROJECTS,
       saved: [],
-      discovered: {
-        '/wt/northwind/': [
-          {
-            source: 'package-json',
-            packageName: 'northwind',
-            relDir: '',
-            manager: 'yarn',
-            scripts: [{ name: 'dev', command: 'yarn run dev', body: 'turbo run dev' }],
-          },
-          {
-            source: 'package-json',
-            packageName: '@northwind/web',
-            relDir: 'apps/web',
-            manager: 'yarn',
-            scripts: [
-              { name: 'test', command: 'yarn run test', body: 'vitest run' },
-              { name: 'dev', command: 'yarn run dev', body: 'vite --port 3000' },
-            ],
-          },
-          {
-            source: 'package-json',
-            packageName: '@acme/api',
-            relDir: 'apps/api',
-            manager: 'yarn',
-            scripts: [{ name: 'dev', command: 'yarn run dev', body: 'tsx watch src/server.ts' }],
-          },
-        ],
-      },
+      discovered: { '/wt/northwind/': NORTHWIND },
+      pins: pinAll(LEDGER, NORTHWIND),
     });
 
     const scripts = group?.scripts ?? [];
@@ -162,6 +173,7 @@ describe('buildSessionScripts', () => {
       projects: PROJECTS,
       saved: [saved('a', LEDGER, 0)],
       discovered: { '/wt/ledger-a': MANIFEST },
+      pins: pinAll(LEDGER, MANIFEST),
     });
 
     expect(groups.map((group) => [group.branch, group.scripts.length])).toEqual([
@@ -174,6 +186,7 @@ describe('buildSessionScripts', () => {
         projects: PROJECTS,
         saved: [],
         discovered: { '/wt/ledger-b': MANIFEST },
+        pins: pinAll(LEDGER, MANIFEST),
       })[0]?.scripts[0]?.key,
     );
   });
@@ -184,10 +197,67 @@ describe('buildSessionScripts', () => {
       projects: PROJECTS,
       saved: [saved('c', RELAY, 0)],
       discovered: undefined,
+      pins: {},
     });
 
     expect(groups).toEqual([
       expect.objectContaining({ projectId: LEDGER, isReady: false, scripts: [] }),
     ]);
+  });
+
+  it('lists only the pinned manifest scripts, keeping every saved script', () => {
+    const pinned = scriptPinId({
+      source: 'package-json',
+      relDir: '',
+      name: 'dev',
+      savedId: null,
+    });
+    const alsoPinned = scriptPinId({
+      source: 'package-json',
+      relDir: '',
+      name: 'lint',
+      savedId: null,
+    });
+    const [group] = buildSessionScripts({
+      mounts: [mount('m1', LEDGER, '/wt/ledger')],
+      projects: PROJECTS,
+      saved: [saved('a', LEDGER, 0)],
+      discovered: { '/wt/ledger': MANIFEST },
+      pins: { [LEDGER]: [pinned, alsoPinned] },
+    });
+
+    expect(group?.scripts.map((script) => script.name)).toEqual(['Replay a', 'dev', 'lint']);
+    expect(group?.packageCount).toBe(1);
+  });
+
+  it('lists no manifest script when nothing is pinned', () => {
+    const [group] = buildSessionScripts({
+      mounts: [mount('m1', LEDGER, '/wt/ledger')],
+      projects: PROJECTS,
+      saved: [],
+      discovered: { '/wt/ledger': MANIFEST },
+      pins: {},
+    });
+
+    expect(group?.scripts).toEqual([]);
+    expect(group?.packageCount).toBe(0);
+  });
+
+  it('ignores pins of another project', () => {
+    const relayPin = scriptPinId({
+      source: 'package-json',
+      relDir: '',
+      name: 'dev',
+      savedId: null,
+    });
+    const [group] = buildSessionScripts({
+      mounts: [mount('m1', LEDGER, '/wt/ledger')],
+      projects: PROJECTS,
+      saved: [],
+      discovered: { '/wt/ledger': MANIFEST },
+      pins: { [RELAY]: [relayPin] },
+    });
+
+    expect(group?.scripts).toEqual([]);
   });
 });

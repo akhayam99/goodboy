@@ -1,7 +1,8 @@
-import { InlineMarkdown, SelectableRow } from '@goodboy/ui';
+import { SelectableRow } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
-import { sessionDisplayTitle } from '../../../session/sessionTitle';
+import { sessionRowTitle } from '../../../session/sessionTitle';
+import { SessionRowTitle } from '../SessionRowTitle';
 import { sessionNodeOf } from '../SessionActivityBar/sessionNode';
 import { SessionStateNode } from '../SessionActivityBar/SessionStateNode';
 
@@ -18,7 +19,7 @@ export const SwitcherRow = ({ session, isSelected, onChoose }: Props) => {
     attention: summary.attention,
     isArchived: false,
   });
-  const title = sessionDisplayTitle({ session, tasks: summary.tasks });
+  const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   return (
     <SelectableRow
       role="option"
@@ -29,7 +30,7 @@ export const SwitcherRow = ({ session, isSelected, onChoose }: Props) => {
       className="h-9 items-center gap-3 px-3 text-label"
     >
       <SessionStateNode node={node} />
-      <InlineMarkdown text={title} className="min-w-0 flex-1 truncate" />
+      <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       <span className="shrink-0 text-meta text-faint-foreground">{summary.age}</span>
     </SelectableRow>
   );

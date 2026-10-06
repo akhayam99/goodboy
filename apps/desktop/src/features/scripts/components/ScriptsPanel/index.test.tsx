@@ -92,6 +92,9 @@ const manifest = (
   },
 ];
 
+const pinIdOf = ({ relDir, name }: { readonly relDir: string; readonly name: string }) =>
+  JSON.stringify(['package-json', relDir, name]);
+
 const { state } = vi.hoisted(() => ({
   state: {
     mounts: [] as ReadonlyArray<Mount>,
@@ -99,6 +102,7 @@ const { state } = vi.hoisted(() => ({
     discovered: {} as Record<string, unknown>,
     runs: {} as Record<string, RunRecord>,
     drawer: null as Drawer | null,
+    pins: null as Record<string, ReadonlyArray<string>> | null,
     saveScript: vi.fn(async () => undefined),
     deleteScript: vi.fn(async () => undefined),
     cancelScript: vi.fn(async () => undefined),
@@ -117,7 +121,29 @@ vi.mock(
 );
 
 vi.mock('../../../../store', () => {
-  const NO_SETTINGS = {};
+  const settingsOf = () => {
+    const byProject: Record<string, Array<string>> = {};
+    for (const mount of state.mounts) {
+      const groups = (state.discovered[mount.worktreePath] ?? []) as ReadonlyArray<{
+        readonly source: string;
+        readonly relDir: string;
+        readonly scripts: ReadonlyArray<{ readonly name: string }>;
+      }>;
+      const all = groups.flatMap((entry) =>
+        entry.scripts.map((script) => JSON.stringify([entry.source, entry.relDir, script.name])),
+      );
+      byProject[mount.projectId] = [
+        ...(byProject[mount.projectId] ?? []),
+        ...(state.pins === null ? all : (state.pins[mount.projectId] ?? [])),
+      ];
+    }
+    return Object.fromEntries(
+      Object.entries(byProject).map(([projectId, ids]) => [
+        `scripts.pinned.${projectId}`,
+        JSON.stringify(ids),
+      ]),
+    );
+  };
   const noPins = async () => undefined;
   const getStoreState = () => ({
     sessions: [{ id: SESSION, workspaceId: WORKSPACE, activeProjectId: LEDGER.id }],
@@ -143,7 +169,7 @@ vi.mock('../../../../store', () => {
     runDiscoveredScript: state.runDiscoveredScript,
     openDrawer: state.openDrawer,
     toggleDrawer: state.toggleDrawer,
-    settings: NO_SETTINGS,
+    settings: settingsOf(),
     loadScriptPins: noPins,
     toggleScriptPin: noPins,
     reportError: noPins,
@@ -176,6 +202,7 @@ beforeEach(() => {
   };
   state.runs = {};
   state.drawer = null;
+  state.pins = null;
   for (const fn of [
     state.saveScript,
     state.deleteScript,
@@ -356,7 +383,7 @@ describe('ScriptsPanel', () => {
 
     expect(
       within(group('notify-relay · nw/retry-backoff')).getByText(
-        'No package.json or composer.json in notify-relay.',
+        'No pinned scripts in notify-relay.',
       ),
     ).toBeDefined();
     cleanup();
@@ -511,6 +538,82 @@ describe('ScriptsPanel', () => {
     expect(
       within(group('notify-relay · nw/retry-backoff')).getByRole('button', { expanded: false }),
     ).toBeDefined();
-    expect(screen.queryByText('No package.json or composer.json in notify-relay.')).toBeNull();
+    expect(screen.queryByText('No pinned scripts in notify-relay.')).toBeNull();
+  });
+
+  it('lists only the scripts pinned for the project when it has more discovered ones', () => {
+    state.mounts = [SETTLEMENT];
+    state.saved = [];
+    state.discovered = {
+      [SETTLEMENT_PATH]: manifest([
+        { name: 'dev', command: 'pnpm run dev' },
+        { name: 'lint', command: 'pnpm run lint' },
+        { name: 'test', command: 'pnpm run test' },
+        { name: 'knip', command: 'pnpm run knip' },
+        { name: 'env:login', command: 'pnpm run env:login' },
+      ]),
+    };
+    state.pins = {
+      [LEDGER.id]: [pinIdOf({ relDir: '', name: 'dev' }), pinIdOf({ relDir: '', name: 'lint' })],
+    };
+    renderPanel();
+
+    const names = within(group('ledger-core · nw/settlement'))
+      .getAllByRole('button', { name: /^Show .* output$/ })
+      .map((button) => button.getAttribute('aria-label'));
+    expect(names).toEqual(['Show dev output', 'Show lint output']);
+    expect(screen.queryByRole('button', { name: 'Show knip output' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pin knip' })).toBeNull();
+  });
+
+  it('keeps run, stop and the output drawer working for a pinned script', () => {
+    state.mounts = [SETTLEMENT];
+    state.saved = [];
+    state.pins = { [LEDGER.id]: [pinIdOf({ relDir: '', name: 'test' })] };
+    state.runs = {
+      [manifestKey({ path: SETTLEMENT_PATH, name: 'test' })]: {
+        status: 'pending',
+        result: null,
+        runId: 'run-1',
+        startedAt: Date.now(),
+        mountId: SETTLEMENT.mountId,
+      },
+    };
+    renderPanel();
+
+    fireEvent.click(
+      within(group('ledger-core · nw/settlement')).getByRole('button', { name: 'Stop test' }),
+    );
+
+    expect(state.cancelScript).toHaveBeenCalledWith(
+      SESSION,
+      manifestKey({ path: SETTLEMENT_PATH, name: 'test' }),
+    );
+  });
+
+  it('shows one quiet line and a Settings link when no script is pinned', () => {
+    state.mounts = [RELAY_MOUNT];
+    state.saved = [];
+    state.discovered = {
+      [RELAY_PATH]: manifest([
+        { name: 'dev', command: 'pnpm run dev' },
+        { name: 'test', command: 'pnpm run test' },
+      ]),
+    };
+    state.pins = {};
+    const opened: Array<unknown> = [];
+    const listener = (event: Event) => opened.push((event as CustomEvent).detail);
+    window.addEventListener('goodboy:open-settings', listener);
+    renderPanel();
+
+    const relay = group('notify-relay · nw/retry-backoff');
+    expect(within(relay).getByText('No pinned scripts in notify-relay.')).toBeDefined();
+    expect(within(relay).queryByRole('button', { name: /^Show .* output$/ })).toBeNull();
+    fireEvent.click(
+      within(relay).getByRole('button', { name: 'Pin scripts of notify-relay in Settings' }),
+    );
+    window.removeEventListener('goodboy:open-settings', listener);
+
+    expect(opened).toEqual([{ scope: 'workspace', section: 'projects' }]);
   });
 });

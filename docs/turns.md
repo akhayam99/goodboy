@@ -116,6 +116,15 @@ record a live turn already wrote wins.
   integrations, workspace profile) followed by the agent kind's own prompt.
   Claude receives it as an appended system prompt; every other CLI receives it
   at the top of the prompt, with the kind prompt fenced as a role boundary.
+- The write-scope guard (`buildScopeGuard`) is where every agent, in a chat or
+  in a workflow step, learns how to get a branch. `mount fork` is the one way
+  to make a new branch or worktree for a session, and `git worktree add`,
+  `git checkout -b`, `git switch -c` and `git branch <name>` are forbidden for
+  session work because Goodboy never sees what they make. A writing turn gets
+  the rule once the bridge serves and a mount exists. A read-only role such as
+  the planner gets the planning half: it names each new branch
+  `<type>/<kebab-desc>` and leaves the creation to the step that writes.
+  `scopeGuard.test.ts` pins the text.
 - A workflow step's first turn carries its predecessors' handoff summaries and
   the step prompt, and emits a `step_transition` event flagged `degraded` when
   the handoff it inherited was a fallback summary. A fallback rerun of that

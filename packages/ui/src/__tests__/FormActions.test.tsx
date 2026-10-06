@@ -92,16 +92,19 @@ describe('FormActions', () => {
 });
 
 describe('FormPage', () => {
-  it('stacks the form on the pane column', () => {
+  it('stacks the form on the centred page column', () => {
     const { container } = render(
       <FormPage>
         <input aria-label="Goal" />
       </FormPage>,
     );
 
-    const column = container.querySelector('[data-slot="form-page"]');
-    expect(column?.className).toContain('max-w-[var(--column-max)]');
-    expect(column?.className).toContain('gap-8');
+    const page = container.querySelector('[data-slot="form-page"]');
+    const column = page?.closest('[data-page-column]');
+    expect(column?.getAttribute('data-width')).toBe('column');
+    expect(column?.className).toContain('mx-auto');
+    expect(column?.className).toContain('max-w-[var(--column-frame)]');
+    expect(page?.className).toContain('gap-8');
     expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
   });
 });

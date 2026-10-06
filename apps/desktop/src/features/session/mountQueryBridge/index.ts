@@ -202,7 +202,11 @@ const satisfiesBranch = ({
 }: {
   readonly requested: string;
   readonly branch: string;
-}): boolean => requested === '' || branch === requested || branch.endsWith(`/${requested}`);
+}): boolean =>
+  requested === '' ||
+  branch === requested ||
+  branch.endsWith(`/${requested}`) ||
+  branch.endsWith(`/${requested.replace(/\/+/g, '-')}`);
 
 const forkFrom = async ({ request }: InspectParams): Promise<MountBridgeOutcome> => {
   const get = useAppStore.getState;

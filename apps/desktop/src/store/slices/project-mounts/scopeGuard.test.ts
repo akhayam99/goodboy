@@ -421,6 +421,64 @@ describe('buildScopeGuard', () => {
     expect(guard).toContain('NEVER use a raw `git checkout -b` as a way of declaring a fork.');
   });
 
+  it('makes mount fork the one way to cut a branch and forbids making one by hand', () => {
+    const guard = buildScopeGuard({
+      ...base,
+      projects: [app],
+      mounts: [appMount],
+      isBridgeServing: true,
+    });
+
+    expect(guard).toContain('`mount fork` is the ONE way to make a new branch or worktree');
+    expect(guard).toContain('`--branch feat/sensitive-paths-prefilled-codes`');
+    expect(guard).toContain('becomes `<prefix>/feat-sensitive-paths-prefilled-codes`');
+    expect(guard).toContain('Pass `--existing` to attach a branch that already exists as it is');
+    expect(guard).toContain(
+      'NEVER run `git worktree add`, `git checkout -b`, `git switch -c` or `git branch <name>`',
+    );
+  });
+
+  it('teaches a planner to name branches for mount fork without giving it the bridge', () => {
+    const guard = buildScopeGuard({
+      ...base,
+      canWrite: false,
+      projects: [app],
+      mounts: [appMount],
+      isBridgeServing: true,
+    });
+
+    expect(guard).toContain('names each one `<type>/<kebab-desc>`');
+    expect(guard).toContain('makes it with `mount fork`');
+    expect(guard).toContain('NEVER plan or run `git worktree add` or `git checkout -b`');
+    expect(guard).not.toContain('GOODBOY_BIN');
+  });
+
+  it('leaves the branch rules out while the bridge is silent for a writer', () => {
+    const guard = buildScopeGuard({ ...base, projects: [app], mounts: [appMount] });
+
+    expect(guard).not.toContain('`mount fork` is the ONE way');
+    expect(guard).not.toContain('NEVER run `git worktree add`');
+  });
+
+  it('leaves the planning rule out for a planner that has no mount or no bridge', () => {
+    const silent = buildScopeGuard({
+      ...base,
+      canWrite: false,
+      projects: [app],
+      mounts: [appMount],
+    });
+    const mountless = buildScopeGuard({
+      ...base,
+      canWrite: false,
+      projects: [app],
+      mounts: [],
+      isBridgeServing: true,
+    });
+
+    expect(silent).not.toContain('<kebab-desc>');
+    expect(mountless).not.toContain('<kebab-desc>');
+  });
+
   it('frames a mountless turn as projects-scope with every project unmounted', () => {
     const guard = buildScopeGuard({
       ...base,

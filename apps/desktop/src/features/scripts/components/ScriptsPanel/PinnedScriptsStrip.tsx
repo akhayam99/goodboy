@@ -25,7 +25,8 @@ export const PinnedScriptsStrip = ({ entries }: Props) => (
       </span>
       {entries.length === 0 ? (
         <p className="text-meta text-faint-foreground">
-          Pin a script with the pin icon. Pinned scripts show here and in the palette under $.
+          Pin scripts in Settings, under Projects. Pinned scripts show here and in the palette under
+          $.
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">

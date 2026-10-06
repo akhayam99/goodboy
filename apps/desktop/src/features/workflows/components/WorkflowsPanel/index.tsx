@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ProviderId, Workflow, WorkspaceId } from '@goodboy/types';
-import { PANE_RHYTHM, ScrollFade, cn } from '@goodboy/ui';
+import { PageColumn, ScrollFade } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import { WorkflowEditor } from '../WorkflowStudio/WorkflowEditor';
@@ -100,7 +100,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
 
   return (
     <ScrollFade className="min-h-0 w-full flex-1">
-      <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'flex flex-col')}>
+      <PageColumn className="flex flex-col py-5">
         {editor.editing !== null ? null : view === 'rules' ? (
           <div className="flex min-w-0 flex-col gap-4">
             {tabs}
@@ -133,7 +133,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
             editor={editor}
           />
         )}
-      </div>
+      </PageColumn>
     </ScrollFade>
   );
 };

@@ -195,15 +195,17 @@ opens it on a mode. Commands is the first mode.
 - **Prefixes stay**: `@` agents, `#` sessions, `:` workspaces, `$` scripts,
   `>` actions, `?` help.
 
-In the composer, `$` lists every script of the session's mounted projects
-(`useSessionScripts`): saved scripts first, then `package.json` and
-`composer.json` scripts by category. A row's sublabel names its package (the
+In the composer, `$` lists the scripts of the session's mounted projects
+(`useSessionScripts`): saved scripts first, then the `package.json` and
+`composer.json` scripts pinned for the project, by category. The Scripts lens
+lists the same set. Scripts that are not pinned stay on the workspace Projects
+page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
 `package.json`) so twenty `dev` rows in a monorepo read apart. Manifests are
 read from each mount the first time `$` is typed. With more than one mount a
 row also names its project. An empty list says why: no project in the
-session, no script in the project, or no match for the filter. Enter runs the
+session, no pinned script in the project, or no match for the filter. Enter runs the
 row and opens its output in the right drawer; the composer text is cleared.
 
 ⌘F opens search, the palette's second mode: a local index over sessions,
@@ -465,7 +467,11 @@ is the full depth of navigation.
 
 **A sidebar row says the name and the state, and the hover card and the board
 card say the rest.** A row is one line of 28px: a 14px `WorkNode` and the
-title, nothing else. It has no second line, no `ToneBar`, no marks, no age and
+title, with the ticket key of a linked task in front of it when the goal starts
+with `[KEY]` (`sessionRowTitle` strips the key from the title and returns it;
+`SessionRowTitle` draws it in muted mono, the title truncates and the key never
+does; the switcher row and the hover card title do the same, the board card
+keeps its chip). It has no second line, no `ToneBar`, no marks, no age and
 no cost. The node shows one of five signs, the first that matches
 (`sessionNodeOf`, from `useSessionSummary`): needs you (`?`, the approval shield
 or `!`, in the warning or danger tone, when the stage is attention), running

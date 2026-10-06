@@ -1,4 +1,4 @@
-import { Skeleton } from '@goodboy/ui';
+import { PageColumn, Skeleton } from '@goodboy/ui';
 import type { StudioSkeletonLayout } from './studioMeta';
 
 const ROWS = [0, 1, 2, 3, 4, 5];
@@ -6,16 +6,18 @@ const CARDS = [0, 1, 2, 3, 4, 5];
 const RAIL_ITEMS = [0, 1, 2, 3, 4];
 
 const LIST_ROWS = (
-  <div className="flex min-w-0 flex-1 flex-col gap-4 px-6 py-6">
-    {ROWS.map((row) => (
-      <div key={row} className="flex items-start gap-3">
-        <Skeleton className="size-5 shrink-0 rounded-full" />
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <Skeleton className="h-3 w-2/3" />
-          <Skeleton className="h-3 w-1/3" />
+  <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <PageColumn className="flex flex-col gap-4 py-6">
+      {ROWS.map((row) => (
+        <div key={row} className="flex items-start gap-3">
+          <Skeleton className="size-5 shrink-0 rounded-full" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Skeleton className="h-3 w-2/3" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
         </div>
-      </div>
-    ))}
+      ))}
+    </PageColumn>
   </div>
 );
 
@@ -32,14 +34,16 @@ const railSkeleton = ({ widthPx }: { readonly widthPx: number }) => (
 );
 
 const GRID = (
-  <div className="grid min-w-0 flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4 px-6 py-6">
-    {CARDS.map((card) => (
-      <div key={card} className="flex flex-col gap-3 rounded-lg border border-border p-4">
-        <Skeleton className="h-3 w-1/2" />
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-2/3" />
-      </div>
-    ))}
+  <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <PageColumn className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4 py-6">
+      {CARDS.map((card) => (
+        <div key={card} className="flex flex-col gap-3 rounded-lg border border-border p-4">
+          <Skeleton className="h-3 w-1/2" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-2/3" />
+        </div>
+      ))}
+    </PageColumn>
   </div>
 );
 

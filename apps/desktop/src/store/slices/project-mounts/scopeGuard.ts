@@ -61,6 +61,15 @@ const materializeLine = ({ isBridgeServing }: MaterializeLineParams): string => 
   return `${marker} For an immediate mount, run \`"$GOODBOY_BIN" query project materialize <name> --reason "<why you need it>"\`; it prints the mount path and branch, or tells you the mount was deferred to the owner.`;
 };
 
+const NEW_BRANCH_RULE_LINE =
+  '`mount fork` is the ONE way to make a new branch or worktree for this session. Name it `<type>/<kebab-desc>`, for example `--branch feat/sensitive-paths-prefilled-codes`: Goodboy cuts the worktree where it keeps them, attaches it to this session, puts the branch under the workspace prefix (`feat/sensitive-paths-prefilled-codes` becomes `<prefix>/feat-sensitive-paths-prefilled-codes`) and answers with the new mount id and path. Pass `--existing` to attach a branch that already exists as it is: it is never renamed. Work in the returned path.';
+
+const NO_HAND_MADE_BRANCH_LINE =
+  'NEVER run `git worktree add`, `git checkout -b`, `git switch -c` or `git branch <name>` to create a branch or worktree for session work. Goodboy cannot see it, so it is not attached to the session, counted, diffed, pushed or cleaned up with it. A worktree you made by hand is attached only by `mount fork --existing`.';
+
+const PLANNED_BRANCH_LINE =
+  'A plan that needs a new branch or worktree names each one `<type>/<kebab-desc>`, for example `feat/sensitive-paths-prefilled-codes`, and leaves its creation to the step that writes, which makes it with `mount fork`. Goodboy puts the name under the workspace prefix. NEVER plan or run `git worktree add` or `git checkout -b` for session work.';
+
 type MountCommandParams = {
   readonly isBridgeServing: boolean;
   readonly mounts: ReadonlyArray<SessionProjectMount>;
@@ -76,11 +85,13 @@ const mountCommandLines = ({
   return [
     'Each mount has an id: `"$GOODBOY_BIN" query mount list` shows them, and `mount inspect|fork|switch|attach|unmount|activate --mount <id> --reason "<why>" --request-id <unique>` acts on one. Cutting a branch to start a second line of work with its own pull request is `mount fork`; moving this mount onto another branch is `mount switch`. Declare which one you mean, Goodboy never infers it from git.',
     'Before you begin an independent pull request line, run `mount fork --mount <id> --branch <name>`. The fork starts from the configured origin base unless you pass `--base <branch>`, and it answers with a new mount id.',
+    NEW_BRANCH_RULE_LINE,
     'A fork or an attach only takes effect on the next turn: this process keeps the directory and the write permissions it was started with. Work in the returned mount on that next turn, then cherry-pick what belongs there and resolve conflicts normally.',
     'Use `mount switch --mount <id> --branch <name>` only when you intend to replace THIS mount current branch. Pull requests stay linked to the mount, so earlier ones become history rather than moving with the branch.',
     'Push and open requests through the mount-scoped commands: `"$GOODBOY_BIN" query github push --mount <id>` and `"$GOODBOY_BIN" query github pr-create --mount <id> --title "<title>"`.',
     'When one change ships as several ordered requests, group them: `"$GOODBOY_BIN" query series create --project <name> --name "<series>" --total <n> --request-id <unique>`, then `series set-member --series <id> --position <n> --mount <id> --request-id <unique>` for each one, and `series list` to read them back. The order is yours to declare, Goodboy never reads it out of git, and members carry `Part of` instead of a closing reference.',
     'NEVER use a raw `git checkout -b` as a way of declaring a fork. Goodboy reads an unexpected HEAD as a mismatch to resolve, never as intent, and refuses to guess whether you meant a switch or a fork.',
+    NO_HAND_MADE_BRANCH_LINE,
   ];
 };
 
@@ -233,7 +244,7 @@ export const buildScopeGuard = ({
   const tag = guardTag({ mounts, isSessionDirScope });
   const boundaryLines = canWrite
     ? [...WRITE_BOUNDARY_LINES, ...MOUNT_RULE_LINES, materializeLine({ isBridgeServing })]
-    : [READ_ONLY_ROLE_LINE];
+    : [READ_ONLY_ROLE_LINE, ...(isBridgeServing && mounts.length > 0 ? [PLANNED_BRANCH_LINE] : [])];
   const mountCommands = canWrite ? mountCommandLines({ isBridgeServing, mounts }) : [];
   return [
     `[${tag}]`,

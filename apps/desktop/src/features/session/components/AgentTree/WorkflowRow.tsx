@@ -4,6 +4,7 @@ import {
   cn,
   formatUsdPrecise,
   Input,
+  PageColumn,
   PANE_RHYTHM,
   ScrollFade,
   TERMINAL_DIM,
@@ -224,8 +225,8 @@ export const WorkflowRow = ({
           isDiscarded && TERMINAL_DIM,
         )}
       >
-        <div className={cn('shrink-0', PANE_RHYTHM.header)}>
-          <div className={cn('flex flex-col gap-4', PANE_RHYTHM.column)}>
+        <PageColumn className="shrink-0 py-5">
+          <div className="flex flex-col gap-4">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">
               <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
                 <span
@@ -406,14 +407,10 @@ export const WorkflowRow = ({
               />
             )}
           </div>
-        </div>
+        </PageColumn>
         {expanded && (
-          <ScrollFade
-            className="min-h-0 min-w-0 flex-1"
-            viewportClassName={cn(PANE_RHYTHM.inset, 'pb-5')}
-            fadeSize={24}
-          >
-            <div className={cn(PANE_RHYTHM.stack, PANE_RHYTHM.column)}>
+          <ScrollFade className="min-h-0 min-w-0 flex-1" fadeSize={24}>
+            <PageColumn className={cn(PANE_RHYTHM.stack, 'pb-5')}>
               {!isDiscarded && !isDynamic && (
                 <WorkflowNextStepCta
                   workflow={workflow}
@@ -524,7 +521,7 @@ export const WorkflowRow = ({
                   />
                 </div>
               )}
-            </div>
+            </PageColumn>
           </ScrollFade>
         )}
       </div>

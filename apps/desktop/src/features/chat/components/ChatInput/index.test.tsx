@@ -79,6 +79,8 @@ const {
     spawnAgent: () => Promise<void>;
     runScript: () => Promise<{ stdout: string; stderr: string; exitCode: number }>;
     loadScripts: () => Promise<void>;
+    settings: Record<string, string>;
+    loadScriptPins: () => Promise<void>;
     selectAgent: () => Promise<void>;
     attachWorkflowToSession: () => Promise<void>;
     loadPhaseTemplates: () => Promise<void>;
@@ -154,6 +156,8 @@ const {
     spawnAgent: async () => undefined,
     runScript: async () => ({ stdout: '', stderr: '', exitCode: 0 }),
     loadScripts: async () => undefined,
+    settings: {},
+    loadScriptPins: async () => undefined,
     selectAgent: async () => undefined,
     attachWorkflowToSession: async () => undefined,
     loadPhaseTemplates: async () => undefined,
