@@ -216,7 +216,7 @@ describe('ChatView', () => {
     transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
     const viewportOf = (root: HTMLElement) => {
       let node = root.querySelector('ul[data-find-root]')?.parentElement ?? null;
-      while (node !== null && !node.className.includes('px-6')) {
+      while (node !== null && !node.className.includes('overflow-y-auto')) {
         node = node.parentElement;
       }
       return node;

@@ -20,8 +20,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
 } from '@goodboy/types';
-import { Button, cn, Divider, ScrollFade, Tooltip, tintClasses } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { Button, cn, Divider, PageColumn, ScrollFade, Tooltip, tintClasses } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   agentPlace,
@@ -499,62 +498,64 @@ export const ChatView = ({
         <ScrollFade
           className="flex-1"
           fadeSize="h-12"
-          viewportClassName={cn('px-6 pb-4', topInset === 'tight' ? 'pt-2' : 'pt-6')}
+          viewportClassName={cn('pb-4', topInset === 'tight' ? 'pt-2' : 'pt-6')}
         >
-          {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
-            <TranscriptSkeleton />
-          ) : deferredItems.length === 0 &&
-            oqByTurnOrdinal.size === 0 &&
-            slackDrafts.length === 0 &&
-            isProviderDisconnected ? (
-            <div className="flex h-full items-center justify-center">
-              <div className={cn(PANE_RHYTHM.column)}>
-                <AuthRequiredCallout
-                  providerId={provider}
-                  identity={providerIdentity}
-                  onRefresh={() => void refreshProviders()}
-                />
+          <PageColumn className="h-full">
+            {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
+              <TranscriptSkeleton />
+            ) : deferredItems.length === 0 &&
+              oqByTurnOrdinal.size === 0 &&
+              slackDrafts.length === 0 &&
+              isProviderDisconnected ? (
+              <div className="flex h-full items-center justify-center">
+                <div>
+                  <AuthRequiredCallout
+                    providerId={provider}
+                    identity={providerIdentity}
+                    onRefresh={() => void refreshProviders()}
+                  />
+                </div>
               </div>
-            </div>
-          ) : deferredItems.length === 0 &&
-            oqByTurnOrdinal.size === 0 &&
-            slackDrafts.length === 0 ? (
-            <div className="flex h-full items-center justify-center">
-              <ChatEmptyState
-                sessionId={session.id}
-                selectedAgentId={selectedAgentId}
-                phaseRuns={phaseRuns}
-                hasWorkflow={session.workflowRuns.length > 0}
-              />
-            </div>
-          ) : (
-            <ul
-              data-find-root
-              className={cn('flex flex-col gap-3', PANE_RHYTHM.column)}
-              aria-live="polite"
-              aria-relevant="additions"
-            >
-              <ChatImageLoaderProvider key={session.id} sessionId={session.id}>
-                <TranscriptRows
-                  rows={rows}
-                  oqByTurnOrdinal={oqByTurnOrdinal}
-                  slackDrafts={slackDrafts}
+            ) : deferredItems.length === 0 &&
+              oqByTurnOrdinal.size === 0 &&
+              slackDrafts.length === 0 ? (
+              <div className="flex h-full items-center justify-center">
+                <ChatEmptyState
                   sessionId={session.id}
                   selectedAgentId={selectedAgentId}
-                  workingDir={worktreePath}
-                  onRefreshAuth={handleRefreshAuth}
-                  onOpenDiff={handleOpenDiff}
-                  isThinking={isThinking}
-                  thinkingContext={thinkingContext}
-                  onRetryRun={(params) => void handleRetryRun(params)}
-                  retryingRunId={retryingRunId}
-                  mountSuggestionsByRun={mountSuggestionsByRun}
-                  activeRunId={activeRunId}
-                  turnFooters={turnFooters}
+                  phaseRuns={phaseRuns}
+                  hasWorkflow={session.workflowRuns.length > 0}
                 />
-              </ChatImageLoaderProvider>
-            </ul>
-          )}
+              </div>
+            ) : (
+              <ul
+                data-find-root
+                className="flex flex-col gap-3"
+                aria-live="polite"
+                aria-relevant="additions"
+              >
+                <ChatImageLoaderProvider key={session.id} sessionId={session.id}>
+                  <TranscriptRows
+                    rows={rows}
+                    oqByTurnOrdinal={oqByTurnOrdinal}
+                    slackDrafts={slackDrafts}
+                    sessionId={session.id}
+                    selectedAgentId={selectedAgentId}
+                    workingDir={worktreePath}
+                    onRefreshAuth={handleRefreshAuth}
+                    onOpenDiff={handleOpenDiff}
+                    isThinking={isThinking}
+                    thinkingContext={thinkingContext}
+                    onRetryRun={(params) => void handleRetryRun(params)}
+                    retryingRunId={retryingRunId}
+                    mountSuggestionsByRun={mountSuggestionsByRun}
+                    activeRunId={activeRunId}
+                    turnFooters={turnFooters}
+                  />
+                </ChatImageLoaderProvider>
+              </ul>
+            )}
+          </PageColumn>
         </ScrollFade>
         {!pinned && waitingHere[0] !== undefined && (
           <QuestionWaitingPill count={waitingHere.length} questionId={waitingHere[0].id} />
@@ -606,9 +607,9 @@ export const ChatView = ({
       {!hasComposer ? null : isEnded ? (
         <>
           <Divider />
-          <div className="px-4 py-3 text-label text-muted-foreground">
+          <PageColumn className="py-3 text-label text-muted-foreground">
             Session ended. No more turns run here, and the branch is kept.
-          </div>
+          </PageColumn>
         </>
       ) : selectedAgentId ? (
         <ChatInput
