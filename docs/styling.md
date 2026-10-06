@@ -182,14 +182,17 @@ pane is under 720px wide. The gutter switch is a container query on the pane
 media query on the window, because the space that counts is the pane's.
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
-on `full`). No view centres itself.
+on `full`). No view centres itself. Sub-pages follow the same tiers as their
+parent: Runs > Create, a run, a form, a studio's detail and its loading state
+all sit on a `PageColumn` (`FormPage` is one), and `columnContract.test.ts`
+walks every studio and session studio so a new place cannot sit on the left.
 
 Three width tiers, one rule each:
 
 | Tier    | Width                 | Used by                                                                                                                                          |
 | ------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | measure | `--measure`, 720px    | prose: transcript assistant text, plan prose, comment and note bodies, a Brief, Chat answers (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
-| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `PANE_RHYTHM.column`)      |
+| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                |
 | full    | the pane, fluid       | work surfaces, from the pane's left edge: every Branch tab, File versions, the terminal, Inbox lists, the Board (`PageColumn width="full"`)      |
 
 A body that owns its scroll (`scroll="self"`: the agent transcript and its

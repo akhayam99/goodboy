@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { CircleCheck } from 'lucide-react';
-import { LensEmptyState, ScrollFade, Skeleton, PaneShell } from '@goodboy/ui';
+import { LensEmptyState, PageColumn, ScrollFade, Skeleton, PaneShell } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -246,7 +246,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
               <span className="text-heading text-foreground">No questions</span>
             </div>
           ) : (
-            <div className="w-full max-w-[var(--measure-frame)] px-6 py-6">
+            <PageColumn width="measure" className="py-6">
               <LiveQuestionCard
                 key={question.id}
                 question={question}
@@ -264,7 +264,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
                 onDismiss={() => void handleDismiss(question)}
                 onUndoDismiss={() => void handleUndoDismiss(question)}
               />
-            </div>
+            </PageColumn>
           )}
         </ScrollFade>
       </div>
