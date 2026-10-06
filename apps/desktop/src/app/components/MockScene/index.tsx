@@ -23,6 +23,7 @@ import { LinkScopeScene } from './scenes/LinkScopeScene';
 import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
+import { ResolveLaunchScene } from './scenes/ResolveLaunchScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
 import { BranchCommentsScene } from './scenes/BranchCommentsScene';
 import { BranchNarrowScene } from './scenes/BranchNarrowScene';
@@ -195,6 +196,7 @@ export const MOCK_SCENES = {
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
+  'resolve-launch': ResolveLaunchScene,
   'branch-comments': BranchCommentsScene,
   'branch-commits': BrandHistoryScene,
   'branch-files': BrandDiffScene,

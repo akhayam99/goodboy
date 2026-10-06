@@ -449,6 +449,11 @@ const EXTRA_NEW: ReadonlyArray<{
   },
 ];
 
+export const SELECTION_THREAD_IDS: ReadonlyArray<string> = [
+  T9,
+  ...EXTRA_NEW.slice(0, 2).map((extra) => extra.threadId),
+];
+
 const EXTRA_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = EXTRA_NEW.map((extra) => ({
   item: buildItem({
     id: `mock-resolve-item-${extra.threadId}`,

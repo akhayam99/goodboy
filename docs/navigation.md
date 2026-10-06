@@ -1361,10 +1361,10 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   Comments is one flow: the list in three groups (Open, Ready to push, Done)
   and the focused comment beside it in the page itself, never in a drawer; a
   thread in the address is `s/{session}/branch/comments/t/{thread}`. A comment
-  nobody started shows `Fix` on hover (and `F`), which opens the launch strip
-  under the list; a checkbox on hover picks comments (`X` on the focused row,
+  nobody started shows `Fix` on hover (and `F`), which opens the launch panel
+  in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every comment nobody started, Esc clears) and the bar `N selected ·
-Fix N separately` opens the same strip. Cmd+A is not in the shortcut table:
+Fix N` opens the same panel. Cmd+A is not in the shortcut table:
   the system reserves it. "Resolve" names the area, never a button. The page
   exists with or without a pull request: without one the primary is `Create PR`
   (the creation form replaces the tab body, trail `Session › Branch ▾ › New

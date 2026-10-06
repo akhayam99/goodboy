@@ -3,14 +3,14 @@ import { BranchPage } from '../../../../features/branch/components/BranchPage';
 import { useAppStore } from '../../../../store';
 import { SELECTION_THREAD_IDS, SESSION, seedResolveScene } from './resolveSeed';
 
-export const ResolveSelectScene = () => {
+export const ResolveLaunchScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     seedResolveScene({ expandedThreadId: null, selectable: true });
-    useAppStore
-      .getState()
-      .setReviewSelection({ sessionId: SESSION.id, threadIds: SELECTION_THREAD_IDS });
+    const state = useAppStore.getState();
+    state.setReviewSelection({ sessionId: SESSION.id, threadIds: SELECTION_THREAD_IDS });
+    state.requestReviewLaunch({ sessionId: SESSION.id, threadIds: SELECTION_THREAD_IDS });
     setIsReady(true);
   }, []);
 
