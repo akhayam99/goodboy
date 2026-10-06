@@ -5,6 +5,7 @@ import type {
   ChatMessageId,
   IsoDateTime,
   ProviderRunId,
+  Session,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { AskHandle } from '../../../../features/session/ask/askHandles';
@@ -69,10 +70,10 @@ const message = ({
   ).toISOString() as IsoDateTime,
 });
 
-const THREAD: AskThread = {
+const threadOf = (session: Session): AskThread => ({
   id: THREAD_ID,
-  workspaceId: SESSION.workspaceId,
-  sessionId: SESSION.id,
+  workspaceId: session.workspaceId,
+  sessionId: session.id,
   title: FIRST_QUESTION,
   provider: 'anthropic',
   model: 'claude-sonnet-5-5',
@@ -80,7 +81,7 @@ const THREAD: AskThread = {
   lastActivityAt: isoAgo({ minutes: 2 }),
   createdAt: isoAgo({ minutes: 3 }),
   messageCount: 1,
-};
+});
 
 type TurnParams = {
   readonly index: number;
@@ -102,20 +103,25 @@ const turn = ({ index, question, answer, status, minutes }: TurnParams) => [
   }),
 ];
 
-export const seedSessionAsk = ({ state }: { readonly state: AskSceneState }): void => {
+type SeedParams = {
+  readonly state: AskSceneState;
+  readonly session?: Session;
+};
+
+export const seedSessionAsk = ({ state, session = SESSION }: SeedParams): void => {
   useAppStore.setState({ navigate: useAppStore.getInitialState().navigate });
   const store = useAppStore.getState();
   if (state === 'closed') {
-    useAppStore.setState({ askThreadId: { [SESSION.id]: null }, drawer: null });
+    useAppStore.setState({ askThreadId: { [session.id]: null }, drawer: null });
     return;
   }
-  store.openAsk({ sessionId: SESSION.id });
+  store.openAsk({ sessionId: session.id });
   if (state === 'rightnow') {
-    useAppStore.setState({ askThreadId: { [SESSION.id]: null } });
+    useAppStore.setState({ askThreadId: { [session.id]: null } });
     return;
   }
   const pack = buildAskPack(
-    collectAskPackInput({ state: store, sessionId: SESSION.id, rightNow: [] }),
+    collectAskPackInput({ state: store, sessionId: session.id, rightNow: [] }),
   );
   const first = mockAskAnswer({ question: FIRST_QUESTION, pack: pack.text });
   const second = mockAskAnswer({ question: FOLLOW_UP, pack: pack.text });
@@ -136,8 +142,8 @@ export const seedSessionAsk = ({ state }: { readonly state: AskSceneState }): vo
     messages.filter((entry) => entry.role === 'assistant').map((entry) => [entry.id, pack.handles]),
   );
   useAppStore.setState({
-    askThreads: { [SESSION.id]: [THREAD] },
-    askThreadId: { [SESSION.id]: THREAD_ID },
+    askThreads: { [session.id]: [threadOf(session)] },
+    askThreadId: { [session.id]: THREAD_ID },
     askMessages: { [THREAD_ID]: messages },
     askHandles: handles,
     askReplyMeta: {

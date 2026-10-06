@@ -30,6 +30,7 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
 
   useEffect(() => {
     const focus = () => fieldRef.current?.querySelector('textarea')?.focus();
+    focus();
     window.addEventListener(ASK_FOCUS_EVENT, focus);
     return () => window.removeEventListener(ASK_FOCUS_EVENT, focus);
   }, []);

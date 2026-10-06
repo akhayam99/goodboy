@@ -22,5 +22,5 @@ export const SessionAskScene = () => {
     return () => window.clearTimeout(timer);
   }, [state]);
 
-  return <ActivityRunScene onSeeded={seed} />;
+  return <ActivityRunScene onSeeded={seed} isPageFollowed />;
 };

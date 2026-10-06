@@ -11,6 +11,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
+import type { SessionId } from '@goodboy/types';
 import {
   bridge,
   boot,
@@ -259,4 +260,83 @@ describe.each(ARRANGEMENTS)('exactly one door in the frame is marked current, %s
 
     expect(currentMarks()).toEqual(['Board']);
   });
+});
+
+const WAY_BACK = /^(Close|Back to )/i;
+
+const waysBack = (): ReadonlyArray<HTMLElement> =>
+  Array.from(document.querySelectorAll<HTMLElement>('button'))
+    .filter((button) => button.closest('[data-nav-cluster], [inert]') === null)
+    .filter((button) =>
+      WAY_BACK.test(button.getAttribute('aria-label') ?? button.textContent?.trim() ?? ''),
+    );
+
+type Route = {
+  readonly name: string;
+  readonly open: () => Promise<void>;
+  readonly isOpen: () => boolean;
+};
+
+const drawerRoute = (kind: 'context' | 'ask'): Route => ({
+  name: `${kind} drawer`,
+  open: async () => {
+    const sessionId = useAppStore.getState().currentSessionId as SessionId;
+    act(() => {
+      useAppStore
+        .getState()
+        .openDrawer(
+          kind === 'ask'
+            ? { kind, sessionId, payload: null }
+            : { kind, sessionId, payload: { tab: 'goal', view: 'current' } },
+        );
+    });
+    await settle();
+  },
+  isOpen: () => useAppStore.getState().drawer?.kind === kind,
+});
+
+const ROUTES: ReadonlyArray<Route> = [
+  ...DOORS.map((door): Route => ({
+    name: door.name,
+    open: () => openDoor({ door, bars: 'column' }),
+    isOpen: () => appStudioKind() === door.kind,
+  })),
+  drawerRoute('context'),
+  drawerRoute('ask'),
+];
+
+describe('every route has exactly one way back', () => {
+  it('shows no way back on a session page but the Back button', async () => {
+    await boot({ seed: 'pr' });
+
+    expect(waysBack()).toEqual([]);
+    expect(
+      Array.from(document.querySelectorAll('[data-nav-cluster] button')).filter((button) =>
+        (button.getAttribute('aria-label') ?? '').startsWith('Back'),
+      ),
+    ).toHaveLength(1);
+  });
+
+  it.each(ROUTES.map((route) => [route.name, route] as const))(
+    '%s shows one way back and it lands where it started',
+    async (_name, route) => {
+      await boot({ seed: 'pr' });
+      const startSession = useAppStore.getState().currentSessionId;
+      const startIndex = stack()?.index ?? 0;
+
+      await route.open();
+      expect(route.isOpen()).toBe(true);
+      const ways = waysBack();
+      expect(ways).toHaveLength(1);
+
+      await click(ways[0] as HTMLElement);
+      await settle(8);
+
+      expect(route.isOpen()).toBe(false);
+      expect(appStudioKind()).toBeNull();
+      expect(useAppStore.getState().currentSessionId).toBe(startSession);
+      expect(stack()?.index ?? 0).toBe(startIndex);
+    },
+    30_000,
+  );
 });

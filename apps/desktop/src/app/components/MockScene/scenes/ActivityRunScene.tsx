@@ -3,6 +3,7 @@ import type { IsoDateTime, ProviderRunId, Session, SessionId } from '@goodboy/ty
 import { useAppStore } from '../../../../store';
 import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
+import { SessionWorkspace } from '../../../../features/session/components/SessionWorkspace';
 import {
   SESSION,
   finishActivityRuns,
@@ -85,6 +86,7 @@ type Props = {
   readonly contextTab?: ContextDrawerTab;
   readonly isFinished?: boolean;
   readonly onSeeded?: () => void;
+  readonly isPageFollowed?: boolean;
 };
 
 const IDLE_SESSION: Session = {
@@ -92,7 +94,12 @@ const IDLE_SESSION: Session = {
   state: { kind: 'idle', lastActivityAt: SESSION.updatedAt },
 };
 
-export const ActivityRunScene = ({ contextTab, isFinished = false, onSeeded }: Props) => {
+export const ActivityRunScene = ({
+  contextTab,
+  isFinished = false,
+  onSeeded,
+  isPageFollowed = false,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -133,15 +140,20 @@ export const ActivityRunScene = ({ contextTab, isFinished = false, onSeeded }: P
     return null;
   }
 
+  const session = isFinished ? IDLE_SESSION : SESSION;
   return (
     <ShellFrame
-      session={isFinished ? IDLE_SESSION : SESSION}
+      session={session}
       sidebar="expanded"
+      hasOwnTrail={isPageFollowed}
       main={
-        <SessionOverviewPane
-          session={isFinished ? IDLE_SESSION : SESSION}
-          onSelectLens={() => undefined}
-        />
+        isPageFollowed ? (
+          <div className="relative h-full w-full">
+            <SessionWorkspace session={session} isActive />
+          </div>
+        ) : (
+          <SessionOverviewPane session={session} onSelectLens={() => undefined} />
+        )
       }
     />
   );
