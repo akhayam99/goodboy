@@ -87,10 +87,10 @@ Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Need
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-light.webp" alt="The message box of a chat with the plus menu open, listing Attach files, Run a script ($), Start a workflow (~) and Ask another agent (@), next to Ask first and the GPT-5.6 Sol model">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-light.webp" alt="The message box of a chat with the plus menu open, listing Attach files, Run a script ($), Start a run (~) and Ask another agent (@), next to Ask first and the GPT-5.6 Sol model">
 </picture>
 
-Do more from the message box. The **+** opens **Attach files**, **Run a script** (`$`), **Start a workflow** (`~`) and **Ask another agent** (`@`). `$` lists your saved scripts and your `package.json` scripts, across pnpm and yarn workspaces. In the command palette, `$` lists the scripts you pinned and your saved scripts, each with its project.
+Do more from the message box. The **+** opens **Attach files**, **Run a script** (`$`), **Start a run** (`~`) and **Ask another agent** (`@`). `$` lists your saved scripts and your `package.json` scripts, across pnpm and yarn workspaces. In the command palette, `$` lists the scripts you pinned and your saved scripts, each with its project.
 
 ### Attach files
 
