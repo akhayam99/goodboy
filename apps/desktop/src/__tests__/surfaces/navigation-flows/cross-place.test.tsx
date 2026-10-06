@@ -8,16 +8,6 @@ vi.mock('@tauri-apps/api/event', () => ({
   emit: vi.fn(async () => undefined),
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
-vi.mock('../../../store/slices/workflows/preSpawnWorkflowAgents', () => ({
-  preSpawnWorkflowAgents: vi.fn(async () => ({
-    agents: [],
-    modelOverrides: {},
-    kindOverrides: {},
-    providerOverrides: {},
-    effortOverrides: {},
-    blocked: [],
-  })),
-}));
 
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -328,8 +318,10 @@ const otherSession = (sessionId: SessionId): SessionId => {
 
 const currentSession = (sessionId: SessionId): Session => {
   const session = useAppStore.getState().sessions.find((candidate) => candidate.id === sessionId);
-  expect(session).toBeDefined();
-  return session as Session;
+  if (session === undefined) {
+    throw new Error(`no session ${sessionId} in the store`);
+  }
+  return session;
 };
 
 const CHIP_LENS: Readonly<Record<string, string>> = {
