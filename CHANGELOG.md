@@ -12,6 +12,15 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.21.1
+
+Session pages, Settings and the doors sit in the middle of the window again, and a panel on the right moves the page aside.
+
+### Fixed
+
+- Session pages, Settings and the doors sit in the middle of the window again, while Branch, the diff and lists still use the full width. <!-- gb area=app -->
+- Opening a panel on the right moves the page left to make room, and the Ask button lines up with the page. <!-- gb area=sessions -->
+
 ## Goodboy v0.21.0
 
 One column on the left holds every place and every session, pages share one left edge with panels on the right, and ⌘K ranks what to do by what a session needs.
