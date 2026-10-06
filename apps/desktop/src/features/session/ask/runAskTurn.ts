@@ -1,12 +1,14 @@
 import type {
   ChatId,
   IsoDateTime,
+  ModelKey,
   ProviderId,
   ProviderRunId,
   ProviderUsage,
   SessionId,
 } from '@goodboy/types';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
+import { resolveChatModel } from '../../workspace-chat/resolveChatModel';
 import type { ChatTurnOutcome } from '../../workspace-chat/runChatTurn';
 import { streamChatTurn } from '../../workspace-chat/streamChatTurn';
 import type { AskDossierFile } from './askHandles';
@@ -16,7 +18,7 @@ type AskTurnRequest = {
   readonly threadId: ChatId;
   readonly sessionId: SessionId;
   readonly provider: ProviderId;
-  readonly model: string;
+  readonly model: ModelKey;
   readonly effort: string | null;
   readonly workingDir: string;
   readonly prompt: string;
@@ -40,8 +42,10 @@ export const runAskTurn = async ({
   onUsage,
   onStarted,
   now,
-}: RunAskTurnParams): Promise<ChatTurnOutcome> =>
-  streamChatTurn({
+}: RunAskTurnParams): Promise<ChatTurnOutcome> => {
+  const resolved = resolveChatModel({ provider: request.provider, modelKey: request.model });
+  const effort = request.effort ?? resolved.effort ?? null;
+  return streamChatTurn({
     runId: request.runId,
     provider: request.provider,
     workingDir: request.workingDir,
@@ -57,11 +61,12 @@ export const runAskTurn = async ({
           threadId: request.threadId,
           sessionId: request.sessionId,
           provider: request.provider,
-          model: request.model,
+          model: resolved.model,
           prompt: request.prompt,
           systemPrompt: request.systemPrompt,
-          ...(request.effort !== null && { effort: request.effort }),
+          ...(effort !== null && { effort }),
           dossier: request.dossier,
         },
       }),
   });
+};
