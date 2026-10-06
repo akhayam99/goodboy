@@ -7,9 +7,6 @@ export const selectDrawerSizing = (state: AppState): DrawerSizing => {
   if (drawer === null) {
     return 'default';
   }
-  if (drawer.kind === 'transcript') {
-    return 'half';
-  }
   if (drawer.kind !== 'artifact-document') {
     return 'default';
   }

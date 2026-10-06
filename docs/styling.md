@@ -146,7 +146,10 @@ main area keeps its 560px and the drawer still pushes, no handle) or `full`
 `packages/ui/src/drawerGeometry.ts` (`drawerWidthOf`, `drawerModeOf`,
 `mainWidthOf`) and `drawerGeometry.test.ts` runs it over a width matrix:
 1024, 1440 and 1920 windows at zoom 0.8, 1 and 1.25, default and widest
-sidebar.
+sidebar. `selectDrawerSizing.test.tsx` opens every drawer kind at 1280 and
+1440 and checks the card ends 8px inside the aside, also while it slides in:
+`drawer-card-in` and `drawer-overlay-in` slide at most the 8px inset, never
+past the window edge.
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's
