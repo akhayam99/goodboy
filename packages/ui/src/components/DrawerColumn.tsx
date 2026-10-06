@@ -114,7 +114,7 @@ export const DrawerColumn = ({
           isOverlay
             ? 'pointer-events-none absolute inset-y-0 right-0 z-20'
             : 'relative motion-safe:transition-[width]',
-          isOpen ? 'duration-220 ease-emphasized' : 'duration-160 ease-in',
+          'duration-180 ease-out',
         )}
       >
         {isOpen ? (

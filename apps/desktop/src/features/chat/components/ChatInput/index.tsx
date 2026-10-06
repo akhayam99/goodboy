@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { cn, tintClasses, PANE_RHYTHM } from '@goodboy/ui';
+import { cn, PageColumn, tintClasses } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
@@ -174,8 +174,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   };
 
   return (
-    <div className="px-6 pb-4 pt-2 [scrollbar-gutter:stable]">
-      <div className={cn('flex flex-col gap-2', PANE_RHYTHM.column)}>
+    <div className="pb-4 pt-2">
+      <PageColumn className="flex flex-col gap-2">
         {!isRunning && !providerDisconnected && (
           <RoutingIndicator
             sessionPreference={session.providerPreference}
@@ -277,7 +277,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           </p>
         ) : null}
         <ComposerDispatchError dispatch={dispatch} providerId={routing.effectiveProvider} />
-      </div>
+      </PageColumn>
     </div>
   );
 };

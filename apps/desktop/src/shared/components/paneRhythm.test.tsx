@@ -83,10 +83,12 @@ describe('pane rhythm', () => {
       nearestClasses({ node: screen.getByText(label), pattern: WIDTH }),
     );
     expect(new Set(widths)).toEqual(new Set(['max-w-[var(--column-frame)]']));
-    expect(nearestClasses({ node: screen.getByText('Panel body'), pattern: /^mx-auto$/ })).toBe('');
+    expect(nearestClasses({ node: screen.getByText('Panel body'), pattern: /^mx-auto$/ })).toBe(
+      'mx-auto',
+    );
   });
 
-  it('starts a reading page, a work page and a measured page at the same left edge', () => {
+  it('centres a reading page and a measured page, and leaves a work page on the pane edge', () => {
     render(
       <>
         <PaneShell title="Overview page" scroll="body">
@@ -107,6 +109,6 @@ describe('pane rhythm', () => {
         nearestClasses({ node: screen.getByText(label), pattern: /^mx-auto$/ }),
       ].join('|'),
     );
-    expect(new Set(edges)).toEqual(new Set(['px-6|']));
+    expect(edges).toEqual(['px-6|mx-auto', 'px-6|', 'px-6|mx-auto']);
   });
 });

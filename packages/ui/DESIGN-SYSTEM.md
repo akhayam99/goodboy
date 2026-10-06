@@ -1065,7 +1065,7 @@ header and body share one `PageColumn` with the session trail band above it. It 
 row wraps, so actions drop under the title instead of squeezing it. The pane
 owns the gap below the header, and children add no top margins. The root is
 `@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
-`StudioShell` it fills the pane and the column starts at its left edge.
+`StudioShell` it fills the pane and `PageColumn` centres the column inside it.
 
 **One title grade, one header height.** Every lens pane and studio detail gets
 its title from `PaneShell`: an `h1` at `text-lg` with `meta` inline and
@@ -1095,22 +1095,27 @@ body. Studio
 chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
 the only `h1` on the surface.
 
-**One left edge.** Every page's content starts at the same x next to the
-column: Overview, the Branch tabs, Runs, Agents, Artifacts, plans, reports,
-settings pages and studios. `PageColumn` and `PANE_RHYTHM.column` never centre.
-Three tiers share that edge: **measure** (`--measure`, 720px, `PageColumn
-width="measure"` or `PANE_RHYTHM.prose`) for prose, **column** (`--column-max`,
-960px) for the page column, and **full** for work surfaces. `PageColumn` adds
-the 24px gutter, 16px when the pane is under 720px wide. No view picks its own
-width: the column changes only when the window changes or the right drawer
-opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
+**One centred column.** Every column and measure page is centred in the pane
+by `PageColumn` (`mx-auto`) and nowhere else: Overview, Runs, Agents,
+Artifacts, plans, reports, Chat, Workflows, settings pages, agent and pull
+request detail. Header, trail band (crumbs and the Ask button, whose right
+edge is the column's), body and footer share its edges. Prose keeps the 720px
+measure aligned left inside it. Three tiers: **measure** (`--measure`, 720px,
+`PageColumn width="measure"` or `PANE_RHYTHM.prose`) for prose, **column**
+(`--column-max`, 960px) for the page column, and **full** for work surfaces,
+which start at the pane's left edge and are the only exception. `PageColumn`
+adds the 24px gutter, 16px when the pane is under 720px wide. No view picks its
+own width or centres itself: the column changes only when the window changes or
+the right drawer opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
 
-**The drawer opens in the space on the right.** A drawer (context, plan or
-artifact, file diff, script output, a fix run transcript, an agent
-conversation) never moves the main content: the main area keeps its start and
-only gives up space on its right, and when that would leave it under 560px
-plus gutters the drawer lies over the page.
+**The drawer slides the column left.** A drawer (context, plan or artifact,
+file diff, script output, a fix run transcript, an agent conversation) takes
+its track from the main area and the centred column re-centres in the space
+left of it, at its full width while that space is wide enough, in one 180ms
+ease-out move (none under reduced motion). A full tier work surface keeps its
+left edge and only gives up its right. When the main area would drop under
+560px plus gutters the drawer lies over the page.
 
 **A form opens where you clicked.** One placement rule for every inline form:
 
@@ -1136,7 +1141,7 @@ choice comes back with room.
 list beside a thread, a file tree beside a diff, a terminal) passes
 `width="full"` to `PaneShell`, and to the `PageColumn` of its tabs. It keeps
 the 24px gutter (16px under 720px) and drops the 960px cap, so the header and
-the body share one left edge on any pane. The Branch page is the main user.
+the body share one left edge on any pane, from the pane's own edge. The Branch page is the main user.
 Its Comments tab reads the width of its own pane, not the window's
 (`branchLayoutOf`): under 900px one column, the list, then the thread with a
 `‹ Comments` back that keeps the selected row; from 900px a 300px list and the

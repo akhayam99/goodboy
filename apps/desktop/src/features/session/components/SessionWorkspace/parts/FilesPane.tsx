@@ -12,7 +12,7 @@ type Props = {
 export const FilesPane = ({ sessionId, sessionDir, onClose }: Props) => {
   if (sessionDir == null) {
     return (
-      <PaneShell title="File versions">
+      <PaneShell title="File versions" width="full">
         <LensEmptyState
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}

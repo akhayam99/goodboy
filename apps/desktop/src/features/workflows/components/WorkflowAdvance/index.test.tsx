@@ -168,7 +168,8 @@ describe('WorkflowAdvance', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
     const { container } = renderAdvance();
 
-    expect(container.innerHTML).toBe('');
+    expect(container.textContent).toBe('');
+    expect(container.querySelector('[data-page-column]')?.children.length ?? 0).toBe(0);
     expect(screen.queryByRole('button', { name: 'Check completion' })).toBeNull();
   });
 

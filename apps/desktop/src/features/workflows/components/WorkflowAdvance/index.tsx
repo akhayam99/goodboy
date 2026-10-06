@@ -1,5 +1,5 @@
 import type { SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
-import { cn, PANE_RHYTHM } from '@goodboy/ui';
+import { PageColumn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { notifyWorkflowGateBlock } from '../../../../store/slices/workflows/notifyWorkflowGateBlock';
@@ -84,18 +84,19 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
   };
 
   return (
-    <WorkflowNextStepCta
-      workflow={workflow}
-      runs={stepAgents}
-      roleModels={roleModels}
-      agentModel={routing.agentModel}
-      agentProvider={routing.agentProvider}
-      agentEffort={routing.agentEffort}
-      sessionProvider={sessionProvider}
-      sessionEffort={sessionEffort}
-      blockReason={state.kind === 'blocked' ? state.reason : null}
-      onAdvance={({ step, isConfirmed }) => void onAdvance({ step, isConfirmed })}
-      className={cn('shrink-0 px-10 pb-1', PANE_RHYTHM.column)}
-    />
+    <PageColumn className="shrink-0 pb-1 empty:hidden">
+      <WorkflowNextStepCta
+        workflow={workflow}
+        runs={stepAgents}
+        roleModels={roleModels}
+        agentModel={routing.agentModel}
+        agentProvider={routing.agentProvider}
+        agentEffort={routing.agentEffort}
+        sessionProvider={sessionProvider}
+        sessionEffort={sessionEffort}
+        blockReason={state.kind === 'blocked' ? state.reason : null}
+        onAdvance={({ step, isConfirmed }) => void onAdvance({ step, isConfirmed })}
+      />
+    </PageColumn>
   );
 };

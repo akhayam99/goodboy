@@ -147,7 +147,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
       <TrailBar
         session={session}
-        width={showLens && lens === 'branch' ? 'full' : 'column'}
+        width={showLens && (lens === 'branch' || lens === 'files') ? 'full' : 'column'}
         end={<AskTrailButton sessionId={sessionId} />}
       />
       <FirstLapBanner sessionId={sessionId} />

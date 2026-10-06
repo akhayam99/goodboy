@@ -25,6 +25,7 @@ import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { STORY_NOW } from '../../../store/storyHarness';
 import type { DrawerRequest } from '../../../store/slices/drawer/state';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
+import { agentPlace, sessionPlace } from '../../../store';
 import { pressShortcut } from '../../helpers/pressKey';
 import {
   WAIT,
@@ -215,19 +216,41 @@ const focusOwner = (): FocusOwner => {
 type LeftEdge = {
   readonly main: Element | null;
   readonly pageColumn: string | null;
+  readonly columns: ReadonlyArray<string>;
 };
+
+const visiblePageColumns = (): ReadonlyArray<HTMLElement> =>
+  [...document.querySelectorAll<HTMLElement>('main [data-drawer-main] [data-page-column]')].filter(
+    (column) => column.closest('[inert]') === null && column.closest('.invisible') === null,
+  );
+
+const columnShape = (column: HTMLElement): string => column.getAttribute('data-width') ?? '';
 
 const leftEdge = (): LeftEdge => {
   const main = document.querySelector('main [data-drawer-main]');
+  const columns = visiblePageColumns();
   return {
     main,
-    pageColumn: main?.querySelector('[data-page-column]')?.className ?? null,
+    pageColumn: columns[0]?.className ?? null,
+    columns: columns.map(columnShape),
   };
 };
 
-const expectLeftAligned = (): void => {
-  const { pageColumn } = leftEdge();
-  expect(pageColumn ?? '').not.toMatch(/\bmx-auto\b/);
+const expectCentredColumns = (): void => {
+  const { columns } = leftEdge();
+  expect(columns.length).toBeGreaterThan(0);
+  for (const shape of columns) {
+    expect(['column', 'measure', 'full']).toContain(shape);
+  }
+};
+
+const expectAskInColumn = (): void => {
+  const end = document.querySelector('main [data-slot="trail-end"]');
+  const column = end?.closest<HTMLElement>('[data-page-column]') ?? null;
+  expect(column, 'the Ask button sits in the trail column').not.toBeNull();
+  expect(column?.querySelector('[data-testid="ask-trail-button"]')).not.toBeNull();
+  expect(end?.parentElement).toBe(column);
+  expect(end?.nextElementSibling).toBeNull();
 };
 
 const expectDrawerBesideContent = ({
@@ -239,7 +262,8 @@ const expectDrawerBesideContent = ({
 }): void => {
   const now = leftEdge();
   expect(now.main, `${kind} keeps the page mounted`).toBe(edge.main);
-  expect(now.pageColumn, `${kind} keeps the left edge`).toBe(edge.pageColumn);
+  expect(now.pageColumn, `${kind} keeps the page column`).toBe(edge.pageColumn);
+  expect(now.columns, `${kind} keeps every column where it was`).toEqual(edge.columns);
   const aside = document.querySelector('main aside[aria-label="Side panel"]');
   expect(aside?.getAttribute('data-drawer-mode'), kind).not.toBe('closed');
   expect(
@@ -362,6 +386,85 @@ const askChipAwayFrom = async ({ lens }: { readonly lens: string }): Promise<Ask
     `the answer names a question, a run or an agent: ${chips.map((chip) => chip.getAttribute('data-ask-kind')).join(', ')}`,
   ).toBeDefined();
   return found as AskChipTarget;
+};
+
+const RAIL_TOKEN = /^(mx-auto|max-w-\[var\(--(column|measure)-frame\)\])$/;
+
+const railOf = (element: Element | null): string => {
+  const column = element?.closest<HTMLElement>('[data-page-column]') ?? null;
+  if (column === null) {
+    return 'none';
+  }
+  const tokens = column.className.split(/\s+/).filter((token) => RAIL_TOKEN.test(token));
+  return `${column.getAttribute('data-width')} ${tokens.join(' ')}`.trim();
+};
+
+const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
+const FULL_RAIL = 'full';
+
+const placeRoot = (): Element => {
+  const root =
+    document.querySelector('[data-studio-slot]') ??
+    document.querySelector('main [data-drawer-main]');
+  expect(root, 'no page root').not.toBeNull();
+  return root as Element;
+};
+
+const isShown = (element: Element): boolean =>
+  element.closest('[inert]') === null && element.closest('.invisible') === null;
+
+const shown = (selector: string): Element | null =>
+  [...placeRoot().querySelectorAll(selector)].find(isShown) ?? null;
+
+const scrollContent = (): Element | null =>
+  shown('[data-slot="pane-body"] .overflow-y-auto')?.firstElementChild ?? null;
+
+type RailLayers = Readonly<Record<string, Element | null>>;
+
+const expectOneRail = ({
+  place,
+  layers,
+  rail,
+}: {
+  readonly place: string;
+  readonly layers: RailLayers;
+  readonly rail: string;
+}): void => {
+  for (const [name, element] of Object.entries(layers)) {
+    expect(element, `${place}: no ${name} layer`).not.toBeNull();
+    expect(railOf(element), `${place}: ${name} sits on the page rail`).toBe(rail);
+  }
+};
+
+const sessionLayers = (extra: RailLayers): RailLayers => ({
+  header: shown('[data-slot="pane-header"]'),
+  trail: document.querySelector('main [data-slot="trail-end"]'),
+  ...extra,
+});
+
+const openContextDrawer = async (sessionId: SessionId): Promise<void> => {
+  act(() =>
+    useAppStore.getState().openDrawer({
+      kind: 'context',
+      sessionId,
+      payload: { tab: 'goal', view: 'current' },
+    }),
+  );
+  await settle();
+  expect(openDrawerKind()).toBe('context');
+};
+
+const openAgentTranscript = async (sessionId: SessionId): Promise<void> => {
+  const state = useAppStore.getState();
+  const agent = (state.sessionPhaseRuns[sessionId] ?? []).find(
+    (candidate) => candidate.workflowRunId == null && candidate.deletedAt == null,
+  );
+  if (agent === undefined) {
+    throw new Error('the seeded session has no standalone agent');
+  }
+  state.navigate({ to: agentPlace({ sessionId, agentId: agent.id }) });
+  await settle();
+  await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT);
 };
 
 const sessionRuns = (sessionId: SessionId): number =>
@@ -581,6 +684,158 @@ describe('moving across every place keeps one frame', () => {
   );
 
   it(
+    'keeps the centred column at the same x across Overview, Runs, Agents, Artifacts and Settings, drawer or not',
+    async () => {
+      const { sessionId } = await boot({ seed: 'pr' });
+      seedShipAFix();
+      await click(sessionRow(sessionId));
+
+      const PAGES = ['Overview', 'Runs', 'Agents', 'Artifacts'] as const;
+      const trailColumn = (): string =>
+        document.querySelector('main [data-slot="trail-bar"] [data-page-column]')?.className ?? '';
+      const columnTiers = (): ReadonlySet<string> =>
+        new Set(
+          visiblePageColumns()
+            .filter((column) => column.getAttribute('data-width') !== 'full')
+            .map((column) => columnShape(column)),
+        );
+
+      const walk = async (withDrawer: boolean): Promise<ReadonlyArray<string>> => {
+        const trails: Array<string> = [];
+        for (const page of PAGES) {
+          await click(pageRow(page));
+          expect(currentPage()).toBe(page);
+          if (withDrawer) {
+            act(() =>
+              useAppStore.getState().openDrawer({
+                kind: 'context',
+                sessionId,
+                payload: { tab: 'goal', view: 'current' },
+              }),
+            );
+            await settle();
+            expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
+          }
+          expectCentredColumns();
+          expectAskInColumn();
+          for (const shape of columnTiers()) {
+            expect(['column', 'measure'], `${page} centres its column`).toContain(shape);
+          }
+          trails.push(trailColumn());
+          if (withDrawer) {
+            await escape();
+          }
+        }
+        return trails;
+      };
+
+      const atRest = await walk(false);
+      expect(new Set(atRest).size, 'the trail column keeps one shape without a drawer').toBe(1);
+      const withDrawer = await walk(true);
+      expect(new Set(withDrawer).size, 'the trail column keeps one shape with a drawer').toBe(1);
+      expect(withDrawer[0], 'a drawer slides the column, it does not reshape it').toBe(atRest[0]);
+
+      door('settings').focus();
+      await click(door('settings'));
+      expect(studio()).toBe('settings');
+      const settingsColumns = [
+        ...document.querySelectorAll<HTMLElement>('[data-studio-slot] [data-page-column]'),
+      ].filter((column) => column.getAttribute('data-width') !== 'full');
+      expect(settingsColumns.length).toBeGreaterThan(0);
+      for (const column of settingsColumns) {
+        expect(['column', 'measure']).toContain(column.getAttribute('data-width'));
+      }
+    },
+    JOURNEY_MS,
+  );
+
+  it(
+    'puts header, Ask, body and composer of every page on one rail, drawer or not',
+    async () => {
+      const { sessionId } = await boot({ seed: 'pr' });
+      seedShipAFix();
+      await click(sessionRow(sessionId));
+
+      const overviewLayers = (): RailLayers =>
+        sessionLayers({ body: shown('[data-slot="pane-body"]') });
+      expect(currentPage()).toBe('Overview');
+      expectOneRail({ place: 'Overview', layers: overviewLayers(), rail: COLUMN_RAIL });
+      await openContextDrawer(sessionId);
+      expectOneRail({
+        place: 'Overview with a drawer',
+        layers: overviewLayers(),
+        rail: COLUMN_RAIL,
+      });
+      await escape();
+
+      await openAgentTranscript(sessionId);
+      const agentLayers = (): RailLayers =>
+        sessionLayers({ transcript: scrollContent(), composer: shown('textarea') });
+      expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: COLUMN_RAIL });
+      await openContextDrawer(sessionId);
+      expectOneRail({
+        place: 'Agent transcript with a drawer',
+        layers: agentLayers(),
+        rail: COLUMN_RAIL,
+      });
+      await escape();
+
+      await click(screen.getByRole('tab', { name: 'Brief' }));
+      const briefLayers = (): RailLayers =>
+        sessionLayers({ body: shown('[data-slot="pane-body"]') });
+      expectOneRail({ place: 'Agent brief', layers: briefLayers(), rail: COLUMN_RAIL });
+      await openContextDrawer(sessionId);
+      expectOneRail({
+        place: 'Agent brief with a drawer',
+        layers: briefLayers(),
+        rail: COLUMN_RAIL,
+      });
+      await escape();
+
+      act(() => {
+        const state = useAppStore.getState();
+        useAppStore.setState({
+          sessionBranches: { ...state.sessionBranches, [sessionId]: '' },
+          sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: [] },
+        });
+        state.navigate({ to: sessionPlace({ sessionId, lens: 'files' }) });
+      });
+      await settle();
+      expect(lensOf()).toBe('files');
+      const versionLayers = (): RailLayers =>
+        sessionLayers({ body: shown('[data-slot="pane-body"]') });
+      expectOneRail({ place: 'File versions', layers: versionLayers(), rail: FULL_RAIL });
+      await openContextDrawer(sessionId);
+      expectOneRail({
+        place: 'File versions with a drawer',
+        layers: versionLayers(),
+        rail: FULL_RAIL,
+      });
+      await escape();
+
+      await click(door('chat'));
+      expect(studio()).toBe('chat');
+      expectOneRail({
+        place: 'Chat',
+        layers: { header: shown('header h2'), composer: shown('textarea') },
+        rail: COLUMN_RAIL,
+      });
+
+      await click(door('settings'));
+      expect(studio()).toBe('settings');
+      expectOneRail({
+        place: 'Settings',
+        layers: {
+          header: shown('[data-slot="pane-header"]'),
+          body: shown('[data-slot="pane-body"]'),
+        },
+        rail: COLUMN_RAIL,
+      });
+    },
+    JOURNEY_MS,
+  );
+
+  it(
     'walks one app instance across the column, every page, drawer, studio and the palette',
     async () => {
       const { sessionId } = await boot({ seed: 'pr' });
@@ -600,7 +855,10 @@ describe('moving across every place keeps one frame', () => {
         await click(pageRow(page));
         expectPlace({ session: sessionId, lens, studio: null, doors: [] });
         expect(currentPage()).toBe(page);
-        expectLeftAligned();
+        expectCentredColumns();
+        expectAskInColumn();
+        const trail = document.querySelector('main [data-slot="trail-bar"] [data-page-column]');
+        expect(trail?.getAttribute('data-width')).toBe(lens === 'branch' ? 'full' : 'column');
       }
 
       await click(pageRow('Branch'));

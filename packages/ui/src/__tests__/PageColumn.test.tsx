@@ -10,7 +10,7 @@ const classesOf = (text: string) =>
   (screen.getByText(text).parentElement as HTMLElement).className.split(' ');
 
 describe('PageColumn', () => {
-  it('anchors the content column left with its gutter and narrows the gutter on a small pane', () => {
+  it('centres the content column with its gutter and narrows the gutter on a small pane', () => {
     render(
       <PageColumn className="flex flex-col">
         <p>Body copy</p>
@@ -21,6 +21,7 @@ describe('PageColumn', () => {
 
     expect(classes).toEqual(
       expect.arrayContaining([
+        'mx-auto',
         'w-full',
         'max-w-[var(--column-frame)]',
         'px-6',
@@ -29,11 +30,10 @@ describe('PageColumn', () => {
         'flex-col',
       ]),
     );
-    expect(classes).not.toContain('mx-auto');
     expect(column.hasAttribute('data-page-column')).toBe(true);
   });
 
-  it('caps a reading page at the measure and keeps it on the same left edge', () => {
+  it('caps a reading page at the measure and centres it', () => {
     render(
       <PageColumn width="measure">
         <p>Plan prose</p>
@@ -42,12 +42,11 @@ describe('PageColumn', () => {
     const classes = classesOf('Plan prose');
 
     expect(classes).toEqual(
-      expect.arrayContaining(['w-full', 'max-w-[var(--measure-frame)]', 'px-6']),
+      expect.arrayContaining(['mx-auto', 'w-full', 'max-w-[var(--measure-frame)]', 'px-6']),
     );
-    expect(classes).not.toContain('mx-auto');
   });
 
-  it('keeps the gutter but drops the cap when it is full width', () => {
+  it('keeps the gutter but drops the cap and the centring when it is full width', () => {
     render(
       <PageColumn width="full">
         <p>Wide copy</p>
@@ -60,7 +59,7 @@ describe('PageColumn', () => {
     expect(classes).not.toContain('max-w-[var(--column-frame)]');
   });
 
-  it('starts every width at the same left edge: one gutter, never centred', () => {
+  it('centres column and measure, leaves full on the pane edges, one gutter everywhere', () => {
     const widths: ReadonlyArray<PageColumnWidth> = ['column', 'measure', 'full'];
     render(
       <>
@@ -71,13 +70,16 @@ describe('PageColumn', () => {
         ))}
       </>,
     );
-    const leading = widths.map((width) =>
+    const gutters = widths.map((width) =>
       classesOf(`edge ${width}`)
-        .filter((name) => /^(px|pl|ml|mx|@max-\[720px\]:px)-/.test(name))
+        .filter((name) => /^(px|pl|ml|@max-\[720px\]:px)-/.test(name))
         .sort()
         .join(' '),
     );
 
-    expect(new Set(leading)).toEqual(new Set(['@max-[720px]:px-4 px-6']));
+    expect(new Set(gutters)).toEqual(new Set(['@max-[720px]:px-4 px-6']));
+    expect(classesOf('edge column')).toContain('mx-auto');
+    expect(classesOf('edge measure')).toContain('mx-auto');
+    expect(classesOf('edge full')).not.toContain('mx-auto');
   });
 });
