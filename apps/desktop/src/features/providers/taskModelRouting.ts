@@ -1,4 +1,4 @@
-import { planTaskModelFallback } from '@goodboy/core';
+import { planTaskModelFallback, type HiddenModels } from '@goodboy/core';
 import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import type { ProviderErrorClassification } from '../chat/classifyProviderError';
 import type { ProviderCooldowns } from './routing';
@@ -36,6 +36,7 @@ type RouteParams = {
   readonly enabledProviders: ReadonlyArray<ProviderId> | null;
   readonly cooldowns: ProviderCooldowns;
   readonly nowMs: number;
+  readonly hidden?: HiddenModels | null;
 };
 
 const activeCooldowns = ({
@@ -101,6 +102,7 @@ export const routeTaskModel = ({
   enabledProviders,
   cooldowns,
   nowMs,
+  hidden,
 }: RouteParams): TaskModelPreference | null => {
   const coolingDown = providersCoolingDown({ cooldowns, nowMs });
   if (!coolingDown.includes(taskModel.providerId)) {
@@ -113,5 +115,6 @@ export const routeTaskModel = ({
     connectedProviders,
     enabledProviders,
     coolingDownProviders: coolingDown,
+    ...(hidden != null && { hidden }),
   });
 };

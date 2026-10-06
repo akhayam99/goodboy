@@ -26,6 +26,7 @@ import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { ArtifactRunMount } from './artifactScoutRun';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const REPORT_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';
 
@@ -63,6 +64,7 @@ const usableProviders = ({ state, sessionId }: UsableParams): ReadonlyArray<Prov
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
     alerts: state.budgetAlerts ?? [],
+    hidden: selectHiddenModels({ state: state }),
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),

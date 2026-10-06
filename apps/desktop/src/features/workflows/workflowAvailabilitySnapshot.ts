@@ -1,5 +1,6 @@
 import {
   PROVIDER_ID_TO_NAME,
+  type HiddenModels,
   providersByHeadroom,
   workingProviders,
   type HeadroomMap,
@@ -20,6 +21,7 @@ type Params = {
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly cooldowns: ProviderCooldowns;
   readonly alerts: ReadonlyArray<BudgetAlert>;
+  readonly hidden: HiddenModels | null;
   readonly sessionId: SessionId | null;
   readonly isRunBudgetBlocked: boolean;
   readonly nowMs: number;
@@ -36,6 +38,7 @@ export const workflowAvailabilitySnapshot = ({
   providers,
   cooldowns,
   alerts,
+  hidden,
   sessionId,
   isRunBudgetBlocked,
   nowMs,
@@ -77,5 +80,6 @@ export const workflowAvailabilitySnapshot = ({
         : live.some((alert) => alert.kind === 'session-exceeded' && alert.sessionId === sessionId),
     isRunBudgetBlocked,
     nowMs,
+    ...(hidden !== null && { hiddenModels: hidden }),
   };
 };

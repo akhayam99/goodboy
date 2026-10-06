@@ -53,6 +53,7 @@ const generationAvailability = ({ state }: MenuParams): WorkflowRoutingAvailabil
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
     alerts: state.budgetAlerts ?? [],
+    hidden: selectHiddenModels({ state: state }),
     sessionId: null,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),

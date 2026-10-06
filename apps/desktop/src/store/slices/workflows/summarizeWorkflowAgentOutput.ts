@@ -15,6 +15,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type Params = {
   readonly set: SetFn;
@@ -112,6 +113,7 @@ export const summarizeWorkflowAgentOutput = async ({
     connectedProviders,
     enabledProviders,
     cooldowns: get().providerCooldowns,
+    hidden: selectHiddenModels({ state: get() }),
     nowMs: Date.now(),
   });
   if (taskModel === null) {
@@ -181,6 +183,7 @@ export const summarizeWorkflowAgentOutput = async ({
       cooldowns: get().providerCooldowns,
       nowMs: Date.now(),
     }),
+    hidden: selectHiddenModels({ state: get() }),
   });
   if (fallback === null) {
     if (isModelUnavailable) {

@@ -26,6 +26,7 @@ import { ChatHeaderDelete } from './ChatHeaderDelete';
 import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
 import { useChatDrafts } from '../../hooks/useChatDrafts';
+import { useHiddenModels } from '../../../providers/hooks/useHiddenModels';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
 type Props = {
@@ -96,15 +97,16 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
   const workspaceDefaultProvider = useAppStore(
     (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderOverride,
   );
+  const hidden = useHiddenModels();
   const model = useMemo<ChatRouting>(() => {
     if (chat !== null) {
       return { provider: chat.provider, model: chat.model, effort: chat.effort };
     }
     return (
       draftRouting ??
-      defaultChatRouting({ connected, saved: savedDefault, workspaceDefaultProvider })
+      defaultChatRouting({ connected, saved: savedDefault, workspaceDefaultProvider, hidden })
     );
-  }, [chat, draftRouting, connected, savedDefault, workspaceDefaultProvider]);
+  }, [chat, draftRouting, connected, savedDefault, workspaceDefaultProvider, hidden]);
 
   const send = async ({ text, images = NO_IMAGES }: SendParams): Promise<boolean> => {
     if (chatId !== null) {
@@ -119,6 +121,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
         connected,
         saved: await readSavedDefault(),
         workspaceDefaultProvider,
+        hidden,
       });
     const created = await createChat({
       workspaceId,
