@@ -38,8 +38,8 @@ const resolver = ({ id }: { readonly id: AgentId }): Agent =>
     name: 'resolver',
     kind: 'resolver',
     status: 'running',
-    doneAt: null,
-  }) as Agent;
+    doneAt: undefined,
+  }) as unknown as Agent;
 
 const attemptOf = ({
   id,

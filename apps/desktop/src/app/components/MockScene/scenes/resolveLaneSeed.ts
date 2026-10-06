@@ -15,7 +15,11 @@ const BATCH_ID = 'mock-resolve-batch-lane';
 const FIRST_THREAD = 'PRRT_thread_retry_backoff';
 const SECOND_THREAD = THREAD_IDS.metrics;
 const THIRD_THREAD = THREAD_IDS.retryConstant;
-const LANE_ATTEMPT_THREADS = [THREAD_IDS.idempotency, THREAD_IDS.typo, THREAD_IDS.retryConstant];
+const LANE_ATTEMPT_THREADS: ReadonlyArray<string> = [
+  THREAD_IDS.idempotency,
+  THREAD_IDS.typo,
+  THREAD_IDS.retryConstant,
+];
 const ATTEMPT_ID_PREFIX = 'mock-resolve-attempt-lane';
 
 const entryOf = ({ threadId }: { readonly threadId: string }): ResolveQueueItemWithThread => {
