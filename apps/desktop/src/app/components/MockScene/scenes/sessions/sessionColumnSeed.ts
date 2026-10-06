@@ -129,8 +129,8 @@ const ARCHIVED: ReadonlyArray<Session> = [
   },
 ];
 
-export const SESSION_COLUMN_OPEN_ID = sessionId(SLUGS.webhook);
-export const SESSION_COLUMN_SESSIONS: ReadonlyArray<Session> = [...HEAD, ...TAIL];
+const SESSION_COLUMN_OPEN_ID = sessionId(SLUGS.webhook);
+const SESSION_COLUMN_SESSIONS: ReadonlyArray<Session> = [...HEAD, ...TAIL];
 
 const OVERRIDES: Project['overrides'] = {
   defaultProviderId: null,
