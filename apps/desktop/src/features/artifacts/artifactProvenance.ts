@@ -68,7 +68,7 @@ export const artifactEvidenceInventory = ({
       continue;
     }
     if (sourceWorkflowRunId !== null && id === sourceWorkflowRunId) {
-      entries.push({ kind: 'workflow-run', id, label: 'workflow run' });
+      entries.push({ kind: 'workflow-run', id, label: 'run' });
       continue;
     }
     entries.push({ kind: 'unknown', id, label: id });

@@ -112,7 +112,7 @@ describe('TimelineRail lane hit area', () => {
     );
     const hit = screen.getByTestId('timeline-lane-hit');
 
-    expect(hit.getAttribute('aria-label')).toBe('Open workflow: Harden the webhook');
+    expect(hit.getAttribute('aria-label')).toBe('Open run: Harden the webhook');
     expect(hit.style.left).toBe('18px');
     expect(hit.style.top).toBe('4px');
     expect(hit.style.height).toBe('24px');

@@ -21,7 +21,7 @@ import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
 import { openLens } from '../../openLens';
-import { resolveSessionSurfaceLayer } from './resolveSessionSurfaceLayer';
+import { resolveSessionSurfaceLayer } from '../../resolveSessionSurfaceLayer';
 import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';

@@ -293,25 +293,25 @@ describe('WorkflowRow detail dashboard', () => {
   it('declares navigation and lifecycle action slots', () => {
     renderDetail();
 
-    const navigationSlot = screen.getByRole('group', { name: 'Workflow navigation actions' });
-    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+    const navigationSlot = screen.getByRole('group', { name: 'Run navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Run lifecycle actions' });
 
     expect(
-      navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
+      navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor run' })),
     ).toBe(true);
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'When Refactor asks' }))).toBe(
       true,
     );
     expect(
-      lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
+      lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor run actions' })),
     ).toBe(true);
   });
 
   it('renames the run from its own header', () => {
     renderDetail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
-    const field = screen.getByRole('textbox', { name: 'Workflow name' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit run name' }));
+    const field = screen.getByRole('textbox', { name: 'Run name' });
     fireEvent.change(field, { target: { value: 'Language id remap' } });
     fireEvent.blur(field);
 
@@ -331,10 +331,10 @@ describe('WorkflowRow detail dashboard', () => {
   it('renames only this run on a shared preset, without touching the preset', () => {
     renderDetail({ workflowOverride: { ...workflow, isPreset: true } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit workflow name' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit run name' }));
 
     expect(screen.queryByText(/This preset is shared/i)).toBeNull();
-    expect(screen.getByRole('textbox', { name: 'Workflow name' })).toHaveProperty(
+    expect(screen.getByRole('textbox', { name: 'Run name' })).toHaveProperty(
       'value',
       workflow.name,
     );
@@ -343,7 +343,7 @@ describe('WorkflowRow detail dashboard', () => {
   it('puts the lifecycle actions in the header, ahead of the run body', () => {
     renderDetail();
 
-    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Run lifecycle actions' });
     const title = screen.getByRole('heading', { name: 'Refactor' });
     const steps = screen.getByTestId('run-tree');
 
@@ -355,7 +355,7 @@ describe('WorkflowRow detail dashboard', () => {
     renderDetail();
 
     const choice = screen.getByRole('button', { name: 'When Refactor asks' });
-    const remove = screen.getByRole('button', { name: 'Refactor workflow actions' });
+    const remove = screen.getByRole('button', { name: 'Refactor run actions' });
 
     expect(choice.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
@@ -384,16 +384,16 @@ describe('WorkflowRow detail dashboard', () => {
     const completedAgents = agents.map((agent) => ({ ...agent, status: 'completed' as const }));
     renderDetail({ agentsOverride: completedAgents });
 
-    const navigationSlot = screen.getByRole('group', { name: 'Workflow navigation actions' });
-    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+    const navigationSlot = screen.getByRole('group', { name: 'Run navigation actions' });
+    const lifecycleSlot = screen.getByRole('group', { name: 'Run lifecycle actions' });
 
     expect(navigationSlot.children).toHaveLength(1);
     expect(
-      navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor workflow' })),
+      navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor run' })),
     ).toBe(true);
     expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
     expect(
-      lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor workflow actions' })),
+      lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor run actions' })),
     ).toBe(true);
   });
 
@@ -584,7 +584,7 @@ describe('WorkflowRow manual start gate', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-    const confirm = screen.getByRole('group', { name: 'Start this workflow anyway?' });
+    const confirm = screen.getByRole('group', { name: 'Start this run anyway?' });
 
     expect(confirm.textContent).toMatch(/open questions are waiting/i);
     expect(startWorkflowRun).not.toHaveBeenCalled();
@@ -718,10 +718,10 @@ describe('WorkflowRow dynamic runs', () => {
     storeMocks.sessionPhaseRuns = { [SESSION_ID]: agents };
     renderDetail();
 
-    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
-    fireEvent.click(within(lifecycleSlot).getByRole('button', { name: 'Stop workflow' }));
-    const panel = screen.getByRole('group', { name: 'Stop this workflow?' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Stop workflow' }));
+    const lifecycleSlot = screen.getByRole('group', { name: 'Run lifecycle actions' });
+    fireEvent.click(within(lifecycleSlot).getByRole('button', { name: 'Stop run' }));
+    const panel = screen.getByRole('group', { name: 'Stop this run?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Stop run' }));
 
     expect(storeMocks.closeWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
@@ -742,7 +742,7 @@ describe('WorkflowRow dynamic runs', () => {
     });
 
     expect(screen.getByTitle('Closed by you').textContent).toBe('Closed');
-    expect(screen.queryByRole('button', { name: 'Stop workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop run' })).toBeNull();
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
   });
 });

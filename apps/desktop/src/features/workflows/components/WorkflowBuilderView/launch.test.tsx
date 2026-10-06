@@ -200,7 +200,7 @@ describe('WorkflowBuilderView on the real store: when to ask', () => {
     expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'When to ask: Ask before each step' }));
     fireEvent.click(screen.getByRole('radio', { name: /^Run on its own/ }));
-    fireEvent.click(screen.getByRole('button', { name: /start workflow/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start run/i }));
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
     expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({

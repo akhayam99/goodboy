@@ -250,7 +250,7 @@ export const WorkflowRow = ({
                         onChange={(event) => rename.setDraft(event.target.value)}
                         onBlur={() => void rename.commit()}
                         onKeyDown={rename.onKeyDown}
-                        aria-label="Workflow name"
+                        aria-label="Run name"
                         className="text-title"
                       />
                     ) : (
@@ -264,11 +264,11 @@ export const WorkflowRow = ({
                         >
                           {name}
                         </h2>
-                        <Tooltip content="Edit workflow name">
+                        <Tooltip content="Edit run name">
                           <button
                             type="button"
                             onClick={rename.start}
-                            aria-label="Edit workflow name"
+                            aria-label="Edit run name"
                             className={cn(
                               'mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground',
                               'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
@@ -339,15 +339,15 @@ export const WorkflowRow = ({
                 </div>
               </div>
               <div className="col-start-2 row-start-1 flex items-start gap-2 self-start">
-                <CardActionSlot label="Workflow navigation actions">
+                <CardActionSlot label="Run navigation actions">
                   <CardAction
                     icon={expanded ? ChevronDown : ChevronRight}
-                    label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
+                    label={`${expanded ? 'Collapse' : 'Expand'} ${name} run`}
                     expanded={expanded}
                     onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
                   />
                 </CardActionSlot>
-                <CardActionSlot label="Workflow lifecycle actions" className="gap-4">
+                <CardActionSlot label="Run lifecycle actions" className="gap-4">
                   <div className="flex items-center gap-2">
                     {isQueuedManual ? (
                       <WorkflowRunStartButton
@@ -386,7 +386,7 @@ export const WorkflowRow = ({
                     ) : null}
                     <ObjectOverflowMenu
                       target={runTarget}
-                      label={`${name} workflow actions`}
+                      label={`${name} run actions`}
                       anchorKey={`workflow-run:${run.id}`}
                       viewing={runViewing}
                     />

@@ -178,7 +178,7 @@ describe('SessionCostChip', () => {
     store.sessionBudgets = { [SID]: limit(10) };
     render(<SessionCostChip sessionId={SID} />);
     fireEvent.click(spendChip());
-    expect(screen.getByRole('dialog').textContent).toContain('$0 of $10.00 · Pauses workflows');
+    expect(screen.getByRole('dialog').textContent).toContain('$0 of $10.00 · Pauses runs');
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
     fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
 

@@ -739,7 +739,7 @@ running or done, and so does every surface that reads `formatActiveTime`.
 | model      | 152px | Activity only: the provider glyphs and the models that ran, in run order                                  | glyphs only under 640px                        |
 | stack      | 72px  | Activity only: duration on top (meta size, muted), cost under it (chip size, faint)                       | cost leaves under 620px, all of it under 500px |
 | action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                                    |
-| menu       | 24px  | the row menu, like Stop workflow on a run row                                                             | never drops                                    |
+| menu       | 24px  | the row menu, like Stop run on a run row                                                                  | never drops                                    |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows

@@ -47,7 +47,7 @@ const sessionTitleFor = ({ alert, get }: TitleParams): string => {
       : (state.sessionBudgets[alert.sessionId]?.onExceed ?? 'pause');
   return onExceed === 'warn'
     ? `${name} passed its ${limit} spend cap.`
-    : `${name} paused its workflows at the ${limit} spend cap.`;
+    : `${name} paused its runs at the ${limit} spend cap.`;
 };
 
 const titleFor = ({ alert, get }: TitleParams): string => {

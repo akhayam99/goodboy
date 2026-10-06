@@ -55,7 +55,7 @@ describe('useAdvanceWorkflowAgent', () => {
 
     expect(state.reportError).not.toHaveBeenCalled();
     expect(state.emitNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ severity: 'warning', title: 'Workflow step held back' }),
+      expect.objectContaining({ severity: 'warning', title: 'Run step held back' }),
     );
   });
 });

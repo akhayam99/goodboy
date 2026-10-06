@@ -16,10 +16,7 @@ describe('handoffSenderLabel', () => {
   it.each<[HandoffSender, string]>([
     [{ kind: 'you' }, 'You'],
     [{ kind: 'orchestrator', workflowRunId: RUN, stepOrdinal: 4 }, 'Orchestrator · step 4'],
-    [
-      { kind: 'workflowStep', workflowRunId: RUN, stepOrdinal: 3, stepCount: 5 },
-      'Workflow step 3 of 5',
-    ],
+    [{ kind: 'workflowStep', workflowRunId: RUN, stepOrdinal: 3, stepCount: 5 }, 'Run step 3 of 5'],
     [
       { kind: 'resolve', threadIds: ['a', 'b', 'c'], prNumber: 412 },
       'Resolve · 3 comments on #412',

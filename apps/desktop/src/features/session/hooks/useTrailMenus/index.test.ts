@@ -402,7 +402,7 @@ describe('useTrailMenus page crumb', () => {
   it('offers the action of the open page and none on overview', () => {
     expect(labelsOf(menuOf(anyPage('agents'), 'x'))).toEqual([['start-agent', 'Start agent']]);
     expect(labelsOf(menuOf(anyPage('workflows'), 'x'))).toEqual([
-      ['start-workflow', 'Start a workflow'],
+      ['start-workflow', 'Start a run'],
     ]);
     expect(labelsOf(menuOf(anyPage('plans'), 'x'))).toEqual([['new-artifact', 'New artifact']]);
     expect(actionIds(menuOf(anyPage(null), 'x'))).toEqual([]);

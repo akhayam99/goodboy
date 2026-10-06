@@ -33,12 +33,21 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   { id: 'with-a-session', pattern: /\bWith a session\b/, use: NAMES.hasASession },
   { id: 'standing-guidance', pattern: /\bStanding guidance\b/, use: NAMES.guidance },
-  { id: 'close-workflow', pattern: /\bClose (?:this )?workflow\b(?!s)/, use: NAMES.stopWorkflow },
+  { id: 'close-workflow', pattern: /\bClose (?:this )?workflow\b(?!s)/, use: NAMES.stopRun },
   {
     id: 'discard-workflow',
     pattern: /\bDiscard workflow\b(?! draft)/,
-    use: NAMES.archiveWorkflow,
+    use: NAMES.archiveRun,
   },
+  { id: 'stop-workflow', pattern: /\bStop (?:this )?workflow\b(?!s)/, use: NAMES.stopRun },
+  { id: 'archive-workflow', pattern: /\bArchive (?:this )?workflow\b(?!s)/, use: NAMES.archiveRun },
+  { id: 'delete-workflow-run', pattern: /\bDelete workflow run\b/, use: NAMES.deleteRun },
+  {
+    id: 'start-workflow-run',
+    pattern: /\b(?:Run workflow|Start workflow|Attach another workflow)\b/,
+    use: NAMES.startRun,
+  },
+  { id: 'workflow-runs', pattern: /\bWorkflow runs\b/, use: NAMES.runs },
   {
     id: 'detach-project',
     pattern: /\bDetach(?:ed)? (?:project|and|a project|details)\b/,

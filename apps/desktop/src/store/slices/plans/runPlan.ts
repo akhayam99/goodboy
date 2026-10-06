@@ -64,13 +64,11 @@ export const runPlan = (get: GetFn) => {
     const templates = state.phaseTemplates[session.workspaceId] ?? [];
     const creatorRun = session.workflowRuns.find((r) => r.id === workflowRunId);
     if (!creatorRun || creatorRun.discardedAt) {
-      return await startOutside('Started outside the workflow, its run was discarded');
+      return await startOutside('Started outside the run, it was discarded');
     }
     const template = templates.find((t) => t.id === creatorRun.workflowId);
     if (!template) {
-      return await startOutside(
-        'Started outside the workflow, its workflow is no longer available',
-      );
+      return await startOutside('Started outside the run, its workflow is no longer available');
     }
 
     const runAgents = runsForWorkflowRun(runs, creatorRun.id);
@@ -85,7 +83,7 @@ export const runPlan = (get: GetFn) => {
     });
     if (!nextStep) {
       return refused({
-        reason: 'The workflow has no step left for this plan',
+        reason: 'The run has no step left for this plan',
         workflowRunId: creatorRun.id,
       });
     }

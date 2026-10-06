@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -20,6 +21,8 @@ const TILED: ReadonlySet<PaletteKind> = new Set<PaletteKind>([
   'workspace',
   'script',
   'workflow',
+  'run',
+  'needs',
 ]);
 
 export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) => {
@@ -27,7 +30,9 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
   const Icon = item.icon;
   const isBlocked = item.isBlocked === true;
   const isDanger = item.action?.group === 'danger' && item.action.confirm !== null;
-  const label = item.action?.confirm != null ? `${item.label}…` : item.label;
+  const label =
+    item.action?.confirm != null || item.confirm != null ? `${item.label}…` : item.label;
+  const hasLevel = item.level !== undefined && item.level.kind !== 'confirm-run';
   return (
     <li
       id={id}
@@ -89,6 +94,13 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
       ) : item.tag !== undefined ? (
         <span className="shrink-0 text-label text-faint-foreground">{item.tag}</span>
       ) : null}
+      {hasLevel && (
+        <ChevronRight
+          size={ICON_SIZE.control}
+          aria-hidden
+          className="shrink-0 text-faint-foreground"
+        />
+      )}
     </li>
   );
 };

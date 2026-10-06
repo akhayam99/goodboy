@@ -53,7 +53,7 @@ vi.mock('../../../workflows/components/WorkflowBuilderView', () => ({
         type="button"
         onClick={() => void kickoff.start(spies.runBuilder).catch(() => undefined)}
       >
-        Start workflow
+        Start run
       </button>
     </div>
   ),
@@ -227,7 +227,7 @@ describe('SessionKickoff', () => {
 
     expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
     expect(screen.getByTestId('workflow-builder')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Start workflow' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Start run' })).toHaveLength(1);
   });
 
   it('preselects Pick up a task when the tracker has candidates', async () => {
@@ -272,7 +272,7 @@ describe('SessionKickoff', () => {
     fireEvent.click(tab('Ask an agent'));
 
     expect(screen.getByRole('button', { name: 'Start Scout on the whole project' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Start workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start run' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Pick up/ })).toBeNull();
   });
 
@@ -310,7 +310,7 @@ describe('SessionKickoff', () => {
       (store().getState().sessionDrafts as Record<string, { workflowGoal: string }>)['ws-1']
         ?.workflowGoal,
     ).toBe('  Round once per batch  ');
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -325,7 +325,7 @@ describe('SessionKickoff', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: 'Round once per batch' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(screen.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
@@ -481,7 +481,7 @@ describe('SessionKickoff', () => {
       '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
     );
     fireEvent.change(goalField, { target: { value: 'Fix the login redirect loop' } });
-    fireEvent.click(within(builder).getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(within(builder).getByRole('button', { name: 'Start run' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -518,7 +518,7 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
 
     expect(screen.getByText('from GitHub repo acme/ledger-core')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -556,7 +556,7 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
 
     expect(screen.getByText('from Sentry project ledger-api')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({

@@ -243,7 +243,7 @@ describe('WorkflowAdvance', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Workflow step held back',
+        title: 'Run step held back',
         body: 'Open questions are waiting for an answer.',
         sessionId: SESSION_ID,
       }),

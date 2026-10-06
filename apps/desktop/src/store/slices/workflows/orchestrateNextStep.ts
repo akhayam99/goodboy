@@ -225,7 +225,7 @@ const announceRunBudget = ({
   void get().emitNotification({
     kind: 'budget-cap',
     severity: 'warning',
-    title: 'Workflow run is over its spend cap',
+    title: 'Run is over its spend cap',
     body: stop.message,
     sessionId,
     action: { kind: 'open-budget', sessionId },
@@ -991,7 +991,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'Dynamic workflow blocked',
+        title: 'Orchestrated run blocked',
         body: decision.reason,
         sessionId,
       });

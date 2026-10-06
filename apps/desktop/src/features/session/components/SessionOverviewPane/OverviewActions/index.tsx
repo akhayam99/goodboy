@@ -46,7 +46,7 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
     {
       kind: 'item',
       key: 'workflow',
-      label: isRunActive ? 'Open run' : 'Run workflow',
+      label: isRunActive ? 'Open run' : 'Start a run',
       icon: CONCEPT_ICONS.workflows,
       onClick: isRunActive ? onOpenRun : onOpenWorkflowBuilder,
     },
