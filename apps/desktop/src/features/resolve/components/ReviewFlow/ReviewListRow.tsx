@@ -59,17 +59,25 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex min-w-0 items-baseline gap-2 text-meta">
-            {note !== null && <span className="shrink-0 text-muted-foreground">{note.author}</span>}
+          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-meta">
+            {note !== null && (
+              <span data-row-author className="shrink-0 whitespace-nowrap text-muted-foreground">
+                {note.author}
+              </span>
+            )}
             {file !== null && (
-              <span className="min-w-0 truncate font-mono text-faint-foreground">
+              <span
+                data-row-file
+                className="min-w-0 flex-1 basis-[8ch] truncate font-mono text-faint-foreground"
+              >
                 {file}
                 {note?.line == null ? '' : `:${note.line}`}
               </span>
             )}
             <span
+              data-row-state
               className={cn(
-                'ml-auto shrink-0 motion-safe:transition-opacity',
+                'ml-auto shrink-0 whitespace-nowrap motion-safe:transition-opacity',
                 STATE_WORD_TONE[entry.state],
                 onFix !== null &&
                   'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',

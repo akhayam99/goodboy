@@ -478,6 +478,25 @@ describe('Review as one flow', () => {
     await waitFor(() => expect(focusedThread()).not.toBe(EXPANDED_THREAD_ID));
   });
 
+  it('keeps the word, its chip and the author at full size and lets the file truncate first', async () => {
+    await mount({ threadId: null });
+
+    const changed = row(/Comment changed/);
+    const state = changed.querySelector('[data-row-state]');
+    const file = changed.querySelector('[data-row-file]');
+    const author = changed.querySelector('[data-row-author]');
+    expect(state?.textContent).toContain('Comment changed');
+    expect(state?.className).toContain('shrink-0');
+    expect(state?.className).toContain('whitespace-nowrap');
+    expect(author?.className).toContain('shrink-0');
+    expect(file?.className).toContain('truncate');
+    expect(file?.className).toContain('min-w-0');
+    expect(file?.className).not.toContain('shrink-0');
+    expect(changed.querySelector('[data-row-state]')?.parentElement?.className).toContain(
+      'flex-wrap',
+    );
+  });
+
   it('names a real edit with the text before and after, who wrote it, and Keep the draft', async () => {
     await mount({ threadId: 'PRRT_thread_typo' });
 
