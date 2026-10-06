@@ -1,65 +1,57 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
-import type { SessionId, SessionMountView } from '@goodboy/types';
-
-vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-
+import { describe, expect, it } from 'vitest';
+import type { IsoDateTime, MountId, ProjectId, SessionId, SessionMountView } from '@goodboy/types';
+import { useAppStore } from '../../store';
 import { applyMountViews } from './mountViews';
-import type { SetFn } from './types';
 
 const SESSION_ID = 'session-views' as SessionId;
+const NOW = '2026-01-01T00:00:00.000Z' as IsoDateTime;
 
-const viewOf = (overrides: Record<string, unknown>): SessionMountView =>
-  ({
-    id: 'mount-api',
-    sessionId: SESSION_ID,
-    projectId: 'project-api',
-    mountName: 'api',
-    repoRoot: '/repos/api',
-    branch: 'ak/feat',
-    baseBranch: null,
-    worktreePath: '/container/api',
-    lastWorktreePath: '/container/api',
-    parallelIndex: 0,
-    isAttached: true,
-    diskState: 'present',
-    revision: 1,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    repoSlug: null,
-    ...overrides,
-  }) as never;
-
-const applied = (views: ReadonlyArray<SessionMountView>) => {
-  let state: Record<string, unknown> = {
-    sessions: [],
-    sessionActiveMount: {},
-    sessionBranches: {},
-    sessionMounts: {},
-    sessionWorktreeRecords: {},
-    sessionProjectMounts: {},
-    sessionWorktrees: {},
-  };
-  const set = ((update: (previous: Record<string, unknown>) => Record<string, unknown>) => {
-    state = { ...state, ...update(state) };
-  }) as unknown as SetFn;
-  applyMountViews({ set, sessionId: SESSION_ID, views });
-  return state as {
-    readonly sessionWorktreeRecords: Record<string, ReadonlyArray<{ readonly id: string }>>;
-    readonly sessionProjectMounts: Record<string, ReadonlyArray<{ readonly mountId: string }>>;
-  };
-};
+const viewOf = ({
+  id,
+  projectId,
+  isAttached,
+}: {
+  readonly id: string;
+  readonly projectId: string;
+  readonly isAttached: boolean;
+}): SessionMountView => ({
+  id: id as MountId,
+  sessionId: SESSION_ID,
+  projectId: projectId as ProjectId,
+  mountName: id,
+  repoRoot: `/repos/${id}`,
+  branch: 'ak/feat',
+  baseBranch: null,
+  worktreePath: `/container/${id}`,
+  lastWorktreePath: `/container/${id}`,
+  parallelIndex: 0,
+  repoSlug: null,
+  isAttached,
+  diskState: 'present',
+  revision: 1,
+  createdAt: NOW,
+  updatedAt: NOW,
+});
 
 describe('applyMountViews', () => {
   it('keeps a detached mount out of the session worktree records and the project mounts', () => {
-    const state = applied([
-      viewOf({}),
-      viewOf({ id: 'mount-web', projectId: 'project-web', isAttached: false }),
-    ]);
+    useAppStore.setState(useAppStore.getInitialState(), true);
 
+    applyMountViews({
+      set: useAppStore.setState,
+      sessionId: SESSION_ID,
+      views: [
+        viewOf({ id: 'mount-api', projectId: 'project-api', isAttached: true }),
+        viewOf({ id: 'mount-web', projectId: 'project-web', isAttached: false }),
+      ],
+    });
+
+    const state = useAppStore.getState();
     expect(state.sessionProjectMounts[SESSION_ID]?.map((mount) => mount.mountId)).toEqual([
       'mount-api',
     ]);
-    expect(state.sessionWorktreeRecords[SESSION_ID]?.map((record) => record.id)).toEqual([
+    expect(state.sessionWorktreeRecords?.[SESSION_ID]?.map((record) => record.id)).toEqual([
       'mount-api',
     ]);
   });
