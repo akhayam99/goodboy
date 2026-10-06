@@ -490,6 +490,30 @@ describe('extractCommentWontfix', () => {
     });
   });
 
+  it('keeps a reason that holds an arrow', () => {
+    const text = '<<comment-wontfix threadId="PRRT_9" reason="the flow is a -> b, not b -> a">>';
+    expect(extractCommentWontfix(text)).toEqual({
+      threadId: 'PRRT_9',
+      reason: 'the flow is a -> b, not b -> a',
+    });
+  });
+
+  it('keeps a reason that ends with a generic type', () => {
+    const single = '<<comment-wontfix threadId="PRRT_9" reason="returns Array<T>">>';
+    const nested = '<<comment-wontfix threadId="PRRT_9" reason="returns Map<string, Array<T>>">>';
+    expect(extractCommentWontfix(single)?.reason).toBe('returns Array<T>');
+    expect(extractCommentWontfix(nested)?.reason).toBe('returns Map<string, Array<T>>');
+  });
+
+  it('keeps reading the markers that follow a reason with an arrow', () => {
+    const text =
+      '<<comment-wontfix threadId="PRRT_1" reason="a -> b">> <<comment-wontfix threadId="PRRT_2" reason="Array<T>">>';
+    expect(extractAllCommentWontfix(text)).toEqual([
+      { threadId: 'PRRT_1', reason: 'a -> b' },
+      { threadId: 'PRRT_2', reason: 'Array<T>' },
+    ]);
+  });
+
   it('requires both threadId and a non-empty reason', () => {
     expect(extractCommentWontfix('<<comment-wontfix threadId="PRRT_1">>')).toBeNull();
     expect(extractCommentWontfix('<<comment-wontfix reason="nope">>')).toBeNull();
@@ -540,6 +564,34 @@ describe('extractAllCommentReplies', () => {
     ]);
   });
 
+  it.each([
+    ['github', 'PRRT_kwDOABC123'],
+    ['gitlab', 'gitlab:3f9a0c7d1e2b4a5c'],
+    ['bitbucket', 'bitbucket:88213'],
+    ['local notes', 'note:rounding'],
+    ['a reopened local note', 'note:rounding:g1'],
+  ])('keeps a reply for a %s thread', (_source, threadId) => {
+    const text = `<<comment-reply id="${threadId}">>Moved the check up.<</comment-reply>>`;
+
+    expect(extractAllCommentReplies(text)).toEqual([{ threadId, body: 'Moved the check up.' }]);
+  });
+
+  it('keeps replies from every source in one turn', () => {
+    const text = [
+      '<<comment-reply id="PRRT_1">>one<</comment-reply>>',
+      '<<comment-reply id="gitlab:abc">>two<</comment-reply>>',
+      '<<comment-reply id="bitbucket:7">>three<</comment-reply>>',
+      '<<comment-reply id="note:n1">>four<</comment-reply>>',
+    ].join('\n');
+
+    expect(extractAllCommentReplies(text).map((reply) => reply.threadId)).toEqual([
+      'PRRT_1',
+      'gitlab:abc',
+      'bitbucket:7',
+      'note:n1',
+    ]);
+  });
+
   it('discards replies that name no review thread, or nothing at all', () => {
     expect(extractAllCommentReplies('<<comment-reply id="th-1">>body<</comment-reply>>')).toEqual(
       [],
@@ -556,6 +608,20 @@ describe('isReviewThreadId', () => {
   it('accepts github review thread node ids', () => {
     expect(isReviewThreadId('PRRT_kwDOABC123')).toBe(true);
     expect(isReviewThreadId('PRRT_1')).toBe(true);
+  });
+
+  it('accepts gitlab, bitbucket and local note thread ids', () => {
+    expect(isReviewThreadId('gitlab:3f9a0c7d1e2b4a5c')).toBe(true);
+    expect(isReviewThreadId('bitbucket:88213')).toBe(true);
+    expect(isReviewThreadId('note:rounding')).toBe(true);
+    expect(isReviewThreadId('note:rounding:g1')).toBe(true);
+  });
+
+  it('rejects a bare prefix with no thread behind it', () => {
+    expect(isReviewThreadId('PRRT_')).toBe(false);
+    expect(isReviewThreadId('gitlab:')).toBe(false);
+    expect(isReviewThreadId('bitbucket:')).toBe(false);
+    expect(isReviewThreadId('note:')).toBe(false);
   });
 
   it('rejects local diff comment uuids and neighbouring node-id prefixes', () => {
@@ -1048,6 +1114,15 @@ describe('stripControlMarkers', () => {
   it('strips ctx-question with attributes', () => {
     const text = 'ask <<ctx-question suggestions="a|b">>body<</ctx-question>> done';
     expect(stripControlMarkers(text)).toBe('ask  done');
+  });
+
+  it('strips a marker whose text holds an arrow or a generic type', () => {
+    expect(stripControlMarkers('ok <<comment-wontfix threadid=T1 reason="a -> b">> done')).toBe(
+      'ok  done',
+    );
+    expect(
+      stripControlMarkers('ok <<comment-wontfix threadid=T1 reason="Map<string, Array<T>>">> done'),
+    ).toBe('ok  done');
   });
 
   it('collapses excessive newlines to double', () => {

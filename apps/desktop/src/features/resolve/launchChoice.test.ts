@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
 import {
+  batchOnRouting,
   launchChoiceOf,
   modelChoiceOfLaunch,
   retryBatchOf,
   retryOriginOf,
-  routingOfLaunch,
 } from './launchChoice';
 
 const CHOICE = launchChoiceOf({
@@ -41,6 +41,28 @@ const attempt = ({
   batchId,
   copyPath: null,
   launchChoice: batchId === null ? null : CHOICE,
+});
+
+describe('batchOnRouting', () => {
+  const OPUS = { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' } as const;
+  const BATCH = { batchId: 'batch-1', launchChoice: CHOICE };
+
+  it('puts the model of the new routing on the old batch and keeps its style and hint', () => {
+    expect(batchOnRouting({ batch: BATCH, routing: OPUS })).toEqual({
+      batchId: 'batch-1',
+      launchChoice: {
+        provider: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+        commitStyle: 'fixup',
+        hint: 'Keep the public API',
+      },
+    });
+  });
+
+  it('has nothing to move when the comment never ran in a batch', () => {
+    expect(batchOnRouting({ batch: null, routing: OPUS })).toBeNull();
+  });
 });
 
 describe('launch choice', () => {
@@ -80,14 +102,5 @@ describe('launch choice', () => {
       launchChoice: CHOICE,
     });
     expect(retryBatchOf({ attempts, threadId: 'PRRT_2' })).toBeNull();
-  });
-
-  it('turns a full launch choice into a routing and refuses a partial one', () => {
-    expect(routingOfLaunch({ launchChoice: CHOICE })).toEqual({
-      provider: 'anthropic',
-      model: 'claude-sonnet-5',
-      effort: 'medium',
-    });
-    expect(routingOfLaunch({ launchChoice: { ...CHOICE, model: null } })).toBeNull();
   });
 });

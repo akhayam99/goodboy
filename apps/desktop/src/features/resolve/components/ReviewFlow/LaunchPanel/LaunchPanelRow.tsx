@@ -23,7 +23,7 @@ export const LaunchPanelRow = ({ entry, isIncluded, onToggle }: Props) => {
       checked={isIncluded}
       onChange={onToggle}
       ariaLabel={`${REVIEW_LAUNCH_LABEL.includeRow} ${note?.author ?? ''}`.trim()}
-      className="w-full gap-3rounded-md px-2 py-1 hover:bg-hover motion-safe:transition-colors"
+      className="w-full gap-3 rounded-md px-2 py-1 hover:bg-hover motion-safe:transition-colors"
       label={
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex min-w-0 items-baseline gap-2 text-meta">
