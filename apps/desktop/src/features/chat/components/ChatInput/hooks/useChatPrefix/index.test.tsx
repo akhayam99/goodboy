@@ -138,6 +138,8 @@ describe('useChatPrefix, script quick action', () => {
       discoveredScriptScans: {},
       scriptRuns: {},
       loadDiscoveredScripts: vi.fn(async () => undefined),
+      loadScriptPins: vi.fn(async () => undefined),
+      settings: {},
       runDiscoveredScript,
     });
   });
@@ -149,18 +151,53 @@ describe('useChatPrefix, script quick action', () => {
     expect(result.current.quickEmptyHint).toBe('Add a project to this session to run its scripts.');
   });
 
-  it('points to the Scripts page when a mounted project has no scripts', () => {
+  it('points to Settings when a mounted project has no pinned scripts', () => {
     useAppStore.setState({
       sessionProjectMounts: { [SESSION_ID]: [LEDGER_MOUNT] },
       discoveredScripts: { [SESSION_ID]: { '/wt/ledger': [] } },
     });
     const { result } = renderScripts('$');
 
-    expect(result.current.quickEmptyHint).toBe('No scripts in ledger-core. Save one in Scripts.');
+    expect(result.current.quickEmptyHint).toBe(
+      'No pinned scripts in ledger-core. Pin some in Settings.',
+    );
   });
 
-  it('lists package.json scripts, runs the picked one in its folder, and names an empty filter', async () => {
+  it('leaves unpinned package.json scripts out of the list', () => {
     useAppStore.setState({
+      sessionProjectMounts: { [SESSION_ID]: [LEDGER_MOUNT] },
+      settings: {
+        [`scripts.pinned.${LEDGER}`]: JSON.stringify([JSON.stringify(['package-json', '', 'dev'])]),
+      },
+      discoveredScripts: {
+        [SESSION_ID]: {
+          '/wt/ledger': [
+            {
+              source: 'package-json',
+              packageName: 'ledger-core',
+              relDir: '',
+              manager: 'pnpm',
+              scripts: [
+                { name: 'dev', command: 'pnpm run dev', body: 'vite' },
+                { name: 'knip', command: 'pnpm run knip', body: 'knip' },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    const { result } = renderScripts('$');
+
+    expect(result.current.filteredQuickItems.map((item) => item.label)).toEqual(['dev']);
+  });
+
+  it('lists pinned package.json scripts, runs the picked one in its folder, and names an empty filter', async () => {
+    useAppStore.setState({
+      settings: {
+        [`scripts.pinned.${LEDGER}`]: JSON.stringify([
+          JSON.stringify(['package-json', 'apps/api', 'test']),
+        ]),
+      },
       sessionProjectMounts: { [SESSION_ID]: [LEDGER_MOUNT] },
       discoveredScripts: {
         [SESSION_ID]: {

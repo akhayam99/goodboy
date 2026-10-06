@@ -15,6 +15,7 @@ import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsed
 import { useScriptPins } from '../../hooks/useScriptPins';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
 import { scriptPinId } from '../../scriptPinId';
+import { openSettings } from '../../../settings/openSettings';
 import { useNow } from '../../../../shared/hooks/useNow';
 import {
   readPackagesCollapsedOverrides,
@@ -356,8 +357,16 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     return (
       <div className="flex items-center gap-2 px-2 py-1">
         <p className="min-w-0 flex-1 text-label text-faint-foreground">
-          No package.json or composer.json in {group.projectName}.
+          No pinned scripts in {group.projectName}.
         </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label={`Pin scripts of ${group.projectName} in Settings`}
+          onClick={() => openSettings({ scope: 'workspace', section: 'projects' })}
+        >
+          Pin in Settings
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -525,7 +534,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           tone={CONCEPT_TONE.scripts}
           icon={CONCEPT_ICONS.scripts}
           title="Scripts run inside a project of this session."
-          description="Goodboy reads package.json and composer.json from each project, and keeps the scripts you save."
+          description="Goodboy lists the scripts you pinned in Settings from each project's package.json and composer.json, and keeps the scripts you save."
           action={
             <MountProjectAction
               sessionId={sessionId}

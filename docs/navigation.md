@@ -195,15 +195,17 @@ opens it on a mode. Commands is the first mode.
 - **Prefixes stay**: `@` agents, `#` sessions, `:` workspaces, `$` scripts,
   `>` actions, `?` help.
 
-In the composer, `$` lists every script of the session's mounted projects
-(`useSessionScripts`): saved scripts first, then `package.json` and
-`composer.json` scripts by category. A row's sublabel names its package (the
+In the composer, `$` lists the scripts of the session's mounted projects
+(`useSessionScripts`): saved scripts first, then the `package.json` and
+`composer.json` scripts pinned for the project, by category. The Scripts lens
+lists the same set. Scripts that are not pinned stay on the workspace Projects
+page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
 `package.json`) so twenty `dev` rows in a monorepo read apart. Manifests are
 read from each mount the first time `$` is typed. With more than one mount a
 row also names its project. An empty list says why: no project in the
-session, no script in the project, or no match for the filter. Enter runs the
+session, no pinned script in the project, or no match for the filter. Enter runs the
 row and opens its output in the right drawer; the composer text is cleared.
 
 ⌘F opens search, the palette's second mode: a local index over sessions,

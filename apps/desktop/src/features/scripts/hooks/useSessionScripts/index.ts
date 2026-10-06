@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { buildSessionScripts, type SessionScriptGroup } from '../../buildSessionScripts';
+import { useScriptPins } from '../useScriptPins';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -27,6 +28,7 @@ export const useSessionScripts = ({
   const discovered = useAppStore((state) => state.discoveredScripts[sessionId]);
   const scans = useAppStore((state) => state.discoveredScriptScans[sessionId]);
   const loadDiscoveredScripts = useAppStore((state) => state.loadDiscoveredScripts);
+  const pins = useScriptPins({ projectIds: mounts.map((mount) => mount.projectId) });
 
   useEffect(() => {
     if (!shouldScan) {
@@ -40,8 +42,8 @@ export const useSessionScripts = ({
   }, [loadDiscoveredScripts, mounts, sessionId, shouldScan]);
 
   const groups = useMemo(
-    () => buildSessionScripts({ mounts, projects, saved, discovered }),
-    [discovered, mounts, projects, saved],
+    () => buildSessionScripts({ mounts, projects, saved, discovered, pins }),
+    [discovered, mounts, pins, projects, saved],
   );
   const isReading = mounts.some(
     (mount) =>
