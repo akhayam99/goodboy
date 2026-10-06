@@ -4,6 +4,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import {
   changeWorktreeBranch,
   invalidateLocalBranchesCache,
+  type ChangedBranch,
 } from '../../../features/worktree/worktree';
 import { deriveBitbucketProjection } from '../bitbucket-pr/mountBitbucketPr';
 import { deriveGithubProjection } from '../github/mountGithub';
@@ -63,8 +64,9 @@ export const switchMount = (set: SetFn, get: GetFn) => {
           input: { branch: target, createNew, worktreePath, repoRoot: view.repoRoot },
         });
         const previousBranch = view.branch;
+        let changed: ChangedBranch;
         try {
-          await changeWorktreeBranch({
+          changed = await changeWorktreeBranch({
             repoPath: view.repoRoot,
             worktreePath,
             branch: target,
@@ -84,6 +86,7 @@ export const switchMount = (set: SetFn, get: GetFn) => {
           sessionId,
           mountId,
           branch: target,
+          branchOrigin: changed.adopted ? 'adopted' : 'created',
           expectedRevision: view.revision,
           updatedAt: new Date().toISOString() as IsoDateTime,
         });

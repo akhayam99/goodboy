@@ -34,7 +34,7 @@ const {
   tauriGhRunner,
 } = vi.hoisted(() => ({
   archiveSession: vi.fn(async () => undefined),
-  changeWorktreeBranch: vi.fn(async () => undefined),
+  changeWorktreeBranch: vi.fn(async () => ({ adopted: false })),
   removeSessionDirectory: vi.fn(async () => undefined),
   removeWorktreeChecked: vi.fn(async ({ worktreePath }: { worktreePath: string }) => ({
     kind: 'removed',

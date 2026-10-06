@@ -156,13 +156,29 @@ fn switching_with_create_new_onto_a_remote_name_tracks_the_remote() {
     let mount = worktree_create_blocking(create_args(&root, "ak/mine", "mine")).unwrap();
     let mount_path = PathBuf::from(&mount.worktree_path);
 
-    change_branch(switch_args(&root, &mount_path, TEAMMATE_BRANCH, true)).unwrap();
+    let changed = change_branch(switch_args(&root, &mount_path, TEAMMATE_BRANCH, true)).unwrap();
 
+    assert!(changed.adopted);
     assert_eq!(git_ok(&mount_path, &["rev-parse", "HEAD"]), tip);
     assert_eq!(
         git_ok(&mount_path, &["rev-parse", "--abbrev-ref", "@{upstream}"]),
         format!("origin/{TEAMMATE_BRANCH}")
     );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn switching_with_create_new_onto_a_fresh_name_is_not_an_adoption() {
+    let root = std::fs::canonicalize(init_repo("foreign-switch-fresh")).unwrap();
+    let base = commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    let mount = worktree_create_blocking(create_args(&root, "ak/mine", "mine")).unwrap();
+    let mount_path = PathBuf::from(&mount.worktree_path);
+
+    let changed = change_branch(switch_args(&root, &mount_path, "ak/next", true)).unwrap();
+
+    assert!(!changed.adopted);
+    assert_eq!(git_ok(&mount_path, &["rev-parse", "HEAD"]), base);
     std::fs::remove_dir_all(root).unwrap();
 }
 

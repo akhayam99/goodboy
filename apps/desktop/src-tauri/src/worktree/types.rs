@@ -188,6 +188,11 @@ pub struct RemoteBranchState {
     pub local_sha: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct ChangedBranch {
+    pub adopted: bool,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ChangeBranchArgs {
     #[serde(rename = "repoPath")]

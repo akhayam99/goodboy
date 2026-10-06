@@ -5,7 +5,7 @@ use super::foreign::{remote_backed_source, switch_to_remote_branch, BranchSource
 use super::git::git;
 use super::inspect::{canonical_path, parse_porcelain};
 use super::merge_state::{branch_merge_state, BranchMergeState};
-use super::types::{BranchInfo, ChangeBranchArgs, WorktreeInfo};
+use super::types::{BranchInfo, ChangeBranchArgs, ChangedBranch, WorktreeInfo};
 use std::path::{Path, PathBuf};
 
 #[tauri::command]
@@ -167,13 +167,17 @@ fn worktree_has_uncommitted(path: &str) -> bool {
 }
 
 #[tauri::command]
-pub async fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+pub async fn worktree_change_branch(
+    args: ChangeBranchArgs,
+) -> Result<ChangedBranch, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || worktree_change_branch_blocking(args))
         .await
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-pub(super) fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+pub(super) fn worktree_change_branch_blocking(
+    args: ChangeBranchArgs,
+) -> Result<ChangedBranch, WorktreeError> {
     let wt = Path::new(&args.worktree_path);
     if !wt.exists() {
         return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
@@ -203,19 +207,23 @@ pub(super) fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<
                         &format!("origin/{trimmed}"),
                     ],
                 )?;
-                Ok(())
+                Ok(ChangedBranch { adopted: true })
             }
             Some(_) => switch_to_existing(&repo_path, wt, trimmed),
             None => {
                 git(wt, &["switch", "-c", trimmed])?;
-                Ok(())
+                Ok(ChangedBranch { adopted: false })
             }
         };
     }
     switch_to_existing(&repo_path, wt, trimmed)
 }
 
-fn switch_to_existing(repo_path: &Path, wt: &Path, trimmed: &str) -> Result<(), WorktreeError> {
+fn switch_to_existing(
+    repo_path: &Path,
+    wt: &Path,
+    trimmed: &str,
+) -> Result<ChangedBranch, WorktreeError> {
     if let Some(holder) =
         branch_checkout_path_with(repo_path, trimmed, &mut |cwd, args| git(cwd, args))
     {
@@ -227,10 +235,10 @@ fn switch_to_existing(repo_path: &Path, wt: &Path, trimmed: &str) -> Result<(), 
         }
     }
     if switch_to_remote_branch(repo_path, wt, trimmed)? {
-        return Ok(());
+        return Ok(ChangedBranch { adopted: true });
     }
     git(wt, &["switch", trimmed])?;
-    Ok(())
+    Ok(ChangedBranch { adopted: true })
 }
 
 fn is_same_directory(left: &Path, right: &Path) -> bool {

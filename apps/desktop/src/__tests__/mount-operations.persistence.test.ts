@@ -7,6 +7,7 @@ const h = vi.hoisted(() => ({
   db: null as unknown as Database,
   branchNames: ['ak/base'] as Array<string>,
   createWorktree: vi.fn(),
+  changeWorktreeBranch: vi.fn(async () => ({ adopted: false })),
   inspectWorktree: vi.fn(async () => ({ kind: 'registered' }) as { kind: string }),
 }));
 
@@ -25,7 +26,7 @@ vi.mock('../shared/lib/db', () => ({
 
 vi.mock('../features/worktree/worktree', () => ({
   createWorktree: h.createWorktree,
-  changeWorktreeBranch: vi.fn(async () => undefined),
+  changeWorktreeBranch: h.changeWorktreeBranch,
   invalidateLocalBranchesCache: vi.fn(),
   listBranchNames: vi.fn(async () => h.branchNames),
   inspectWorktree: h.inspectWorktree,
@@ -96,6 +97,9 @@ const makeSlice = () => {
     sessionSelectedPrNumber: {},
     terminalTabs: {},
     recordSessionEvent: vi.fn(async () => undefined),
+    refreshSessionPr: vi.fn(async () => undefined),
+    refreshSessionMr: vi.fn(async () => undefined),
+    refreshSessionBitbucketPr: vi.fn(async () => undefined),
     reconcileOrphanWorktrees: vi.fn(async () => undefined),
   };
   const set = vi.fn((updater: Partial<State> | ((current: State) => Partial<State>)) => {
@@ -241,6 +245,91 @@ describe('mount operations against a real database', () => {
     expect(operations).toHaveLength(1);
     expect(operations[0]?.mountId).toBe('mount-detached');
     expect(operations[0]?.status).toBe('succeeded');
+  });
+
+  it('records a teammate branch picked from the list as adopted, with the remote commits', async () => {
+    h.changeWorktreeBranch.mockResolvedValueOnce({ adopted: true });
+    const { slice } = makeSlice();
+    const own = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'ak/first',
+    });
+
+    const switched = await slice.switchMount({
+      sessionId: RECOVERY_SESSION_ID,
+      mountId: own.id,
+      branch: 'grw-1348-cta-for-the-slot',
+    });
+
+    expect(h.changeWorktreeBranch).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: 'grw-1348-cta-for-the-slot', createNew: false }),
+    );
+    expect(switched.branch).toBe('grw-1348-cta-for-the-slot');
+    const [row] = await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID });
+    expect(row?.branchOrigin).toBe('adopted');
+  });
+
+  it('keeps a branch the user typed fresh as created', async () => {
+    const { slice } = makeSlice();
+    const own = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'ak/first',
+    });
+
+    await slice.switchMount({
+      sessionId: RECOVERY_SESSION_ID,
+      mountId: own.id,
+      branch: 'ak/second',
+      createNew: true,
+    });
+
+    const [row] = await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID });
+    expect(row?.branch).toBe('ak/second');
+    expect(row?.branchOrigin).toBe('created');
+  });
+
+  it('adopts the branch when a name typed as new turns out to track the remote', async () => {
+    h.changeWorktreeBranch.mockResolvedValueOnce({ adopted: true });
+    const { slice } = makeSlice();
+    const own = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'ak/first',
+    });
+
+    await slice.switchMount({
+      sessionId: RECOVERY_SESSION_ID,
+      mountId: own.id,
+      branch: 'grw-1348-cta-for-the-slot',
+      createNew: true,
+    });
+
+    const [row] = await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID });
+    expect(row?.branchOrigin).toBe('adopted');
+  });
+
+  it('records a new worktree that tracked the remote as adopted', async () => {
+    h.createWorktree.mockImplementationOnce(
+      async (args: { branchName: string; parentDir: string; dirName: string }) => ({
+        worktreePath: `${args.parentDir}/${args.dirName}`,
+        branchName: args.branchName,
+        slug: args.dirName,
+        reused: false,
+        trackedRemote: true,
+      }),
+    );
+    const { slice } = makeSlice();
+
+    await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'grw-1348-cta-for-the-slot',
+    });
+
+    const [row] = await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID });
+    expect(row?.branchOrigin).toBe('adopted');
   });
 
   it('keeps the journal honest when the fork is refused before any mount exists', async () => {

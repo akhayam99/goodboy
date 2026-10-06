@@ -214,7 +214,7 @@ export const storySpies = {
   invokeAgentSetProviderSessionId: vi.fn(async () => undefined),
   invokeAgentSetDone: vi.fn(async () => undefined),
   invokeWorkspacesWithUnread: vi.fn<WorkflowsModule['invokeWorkspacesWithUnread']>(async () => []),
-  changeWorktreeBranch: vi.fn(async () => undefined),
+  changeWorktreeBranch: vi.fn(async () => ({ adopted: false })),
   scanOrphanWorktrees: vi.fn(
     async () =>
       [] as ReadonlyArray<{

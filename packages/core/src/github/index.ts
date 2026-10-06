@@ -41,6 +41,8 @@ export {
 
 export { listInboxPullRequests } from './inboxPrs';
 
+export { listOpenPrBranches, type OpenPrBranch } from './openPrBranches';
+
 export { REVIEW_REPLY_SAMPLE_SIZE, listMyReviewReplies, type ReviewReply } from './reviewReplies';
 
 export { learnReplyStyle, parseStyleNote, type ReplyStyleDeps } from './replyStyle';
