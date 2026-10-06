@@ -8,9 +8,10 @@ import {
 } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { Agent, AgentId, MountId, ResolveAttempt, SessionId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
+import type { AppStore } from '../../store';
 import { isSessionLaneBusy } from './isSessionLaneBusy';
 import { queueTurnInLane } from './queueTurnInLane';
-import type { GetFn } from './types';
 
 const h = vi.hoisted(() => ({
   execute: vi.fn(),
@@ -28,18 +29,10 @@ const HOLDER = 'agent-holder' as AgentId;
 const RETRIER = 'agent-retrier' as AgentId;
 
 let db: Database;
-let recorded: Array<Record<string, unknown>> = [];
+let recorded: Array<Parameters<AppStore['recordResolveAttempt']>[0]> = [];
 
 const resolver = ({ id }: { readonly id: AgentId }): Agent =>
-  ({
-    id,
-    sessionId: SESSION,
-    ordinal: 0,
-    name: 'resolver',
-    kind: 'resolver',
-    status: 'running',
-    doneAt: undefined,
-  }) as unknown as Agent;
+  anAgent({ id, sessionId: SESSION, kind: 'resolver', status: 'running' });
 
 const attemptOf = ({
   id,
@@ -82,15 +75,17 @@ const seed = async (attempts: ReadonlyArray<ResolveAttempt>): Promise<void> => {
   }
 };
 
-const getOf = ({ agents }: { readonly agents: ReadonlyArray<Agent> }): GetFn =>
-  (() => ({
-    sessionPhaseRuns: { [SESSION]: agents },
+const getOf =
+  ({ agents }: { readonly agents: ReadonlyArray<Agent> }) =>
+  () => ({
+    sessionPhaseRuns: { [SESSION]: agents } as AppStore['sessionPhaseRuns'],
     agentKindOverride: {},
     sessionResolveThreads: {},
-    recordResolveAttempt: async (params: Record<string, unknown>) => {
+    recordResolveAttempt: async (params: Parameters<AppStore['recordResolveAttempt']>[0]) => {
       recorded.push(params);
+      return 'attempt-new';
     },
-  })) as unknown as GetFn;
+  });
 
 beforeEach(async () => {
   db = await makeMigratedTestDatabase();

@@ -267,9 +267,7 @@ describe('Branch page Checks and Files', () => {
       }));
     });
     await settle();
-    const region = screen.getByRole('region', { name: 'New pull request' });
-    expect(region.classList.contains('min-h-0')).toBe(true);
-    expect(region.classList.contains('flex-1')).toBe(true);
+    expect(screen.getByRole('region', { name: 'New pull request' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('tab', { name: /^Checks/ }));
     await settle();

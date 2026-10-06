@@ -4,10 +4,15 @@ import { classifyAgent } from '../../../features/session/agent-kind';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { attemptLanePathOf, laneHolderOf } from './resolveLane';
 import { resumableResolveThreadIds } from './resumableResolveThreadIds';
-import type { GetFn } from './types';
+import type { AppStore } from '../../store';
+
+type LaneTurnState = Pick<
+  AppStore,
+  'sessionPhaseRuns' | 'agentKindOverride' | 'sessionResolveThreads' | 'recordResolveAttempt'
+>;
 
 type Params = {
-  readonly get: GetFn;
+  readonly get: () => LaneTurnState;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly content: string;

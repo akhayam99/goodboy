@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { ResolveAttempt, ResolveCandidate, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  MountId,
+  ResolveAttempt,
+  ResolveCandidate,
+  SessionId,
+} from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import { laneChainOf, laneHolderOf, laneQueueOf, laneTipOf, lanePathsOf } from './resolveLane';
 
 const PATH_A = '/repo/ledger-core';
@@ -47,17 +55,35 @@ const attemptOf = ({
   readonly path: string;
   readonly batchId?: string | null;
   readonly createdAt: number;
-}): ResolveAttempt =>
-  ({
-    id,
-    sessionId: 's',
-    agentId: `agent-${id}`,
-    threadIds: [`thread-${id}`],
-    phase,
-    batchId,
-    createdAt,
-    mountTarget: { mountId: 'm', mountRevision: 1, worktreePath: path },
-  }) as unknown as ResolveAttempt;
+}): ResolveAttempt => ({
+  id,
+  sessionId: 's' as SessionId,
+  agentId: `agent-${id}` as AgentId,
+  prNumber: 7,
+  threadIds: [`thread-${id}`],
+  provider: 'anthropic',
+  model: 'claude-sonnet-5',
+  effort: null,
+  instructions: null,
+  phase,
+  mountTarget: { mountId: 'm' as MountId, mountRevision: 1, worktreePath: path },
+  startedAt: null,
+  endedAt: null,
+  error: null,
+  createdAt,
+  batchId,
+  copyPath: null,
+  launchChoice: null,
+});
+
+const agentOf = ({
+  id,
+  doneAt,
+}: {
+  readonly id: string;
+  readonly doneAt?: Agent['doneAt'];
+}): Agent =>
+  anAgent({ id: id as AgentId, status: 'running', ...(doneAt === undefined ? {} : { doneAt }) });
 
 describe('laneChainOf', () => {
   it('chains ready candidates by base and keeps the first of fixes built side by side', () => {
@@ -120,14 +146,16 @@ describe('lane attempts', () => {
       attemptOf({ id: 'done', phase: 'finished', path: PATH_A, createdAt: 1 }),
       attemptOf({ id: 'waits', phase: 'waiting', path: PATH_A, createdAt: 2 }),
     ];
-    const agents = [{ id: 'agent-waits', doneAt: null, status: 'running' }] as never;
+    const agents = [agentOf({ id: 'agent-waits' })];
 
     expect(laneHolderOf({ attempts, agents, worktreePath: PATH_A })?.id).toBe('waits');
     expect(laneHolderOf({ attempts, agents, worktreePath: PATH_B })).toBeNull();
     expect(
       laneHolderOf({
         attempts,
-        agents: [{ id: 'agent-waits', doneAt: '2026-10-06', status: 'completed' }] as never,
+        agents: [
+          agentOf({ id: 'agent-waits', doneAt: '2026-10-06T10:00:00.000Z' as Agent['doneAt'] }),
+        ],
         worktreePath: PATH_A,
       }),
     ).toBeNull();

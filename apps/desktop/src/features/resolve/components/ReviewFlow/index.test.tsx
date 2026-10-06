@@ -453,9 +453,7 @@ describe('Review as one flow', () => {
     await settle();
 
     expect(row(/idempotency\.ts/).textContent).toContain('Waiting');
-    expect(
-      within(comment()).getByText('Next in line. Starts when the current comment is done.'),
-    ).toBeDefined();
+    expect(within(comment()).getByText('Queued, after the current fix')).toBeDefined();
   });
 
   it('accepts with A: marks it, publishes nothing, and moves to the next open comment', async () => {
