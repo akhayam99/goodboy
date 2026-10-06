@@ -40,13 +40,13 @@ Open a session and read everything about the task in one place: its goal, its pr
 
 [More on overview and activity](docs/features/overview.md)
 
-<a id="activity-bar"></a><a id="now-chip"></a><a id="notifications"></a><a id="open-in-new-window"></a>
+<a id="session-list"></a><a id="now-chip"></a><a id="notifications"></a><a id="open-in-new-window"></a>
 
 ## Switch between tasks
 
 Move between the tasks of a workspace, and see from any screen which one needs you.
 
-- Activity bar
+- Session list
 - Now chip
 - Notifications
 

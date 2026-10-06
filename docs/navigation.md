@@ -1578,7 +1578,7 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   destination lists. Every surface that routes to the same destination shows
   the same number from the same selector. A group of items with no home at the
   destination gets no badge pointing there.
-- **The activity bar shows ALL sessions**, never filtered to running only. The
+- **The session list shows ALL sessions**, never filtered to running only. The
   user's own filter by project and the fold after eight rows hide nothing the
   user did not ask for: a session that needs you is never folded.
 - **A blocked action is re-routed, never hidden.** A blocked workflow advance
