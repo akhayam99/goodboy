@@ -135,7 +135,6 @@ export const FIX_RUN_COPY = {
   fromReply: 'from the last reply',
   commitsHeading: 'Commits',
   threadsHeading: 'Comments it touched',
-  openTranscript: 'Open transcript',
   openBatch: 'Open them in Comments',
   loading: 'Loading the commits',
   noCommit: 'This run left no commit.',

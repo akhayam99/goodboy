@@ -21,7 +21,7 @@ A plan that came from a workflow continues that workflow. **Run plan** from the 
 
 ### Plan beside the planner
 
-Read the plan without leaving the planner. In the planner's chat and in its Brief the plan is one row as wide as the page: **Plan · title**, its version, its state and **Run plan**. Press it to open the plan in a drawer on the right, at half the window, with the agent still where you were; a plan row in Activity opens it the same way. **Expand** gives it the whole pane and brings it back, **Open in Artifacts** is the only button that moves you to the Artifacts page, and **Esc** closes it.
+Read the plan without leaving the planner. In the planner's chat and in its Brief the plan is one row as wide as the page: **Plan · title**, its version, its state and **Run plan**. Press it to open the plan in a drawer on the right, at half the window, with the agent still where you were; a plan row in Activity opens it the same way. **Expand** gives it the whole pane and brings it back, **Open in Artifacts** is the only button that moves you to the Artifacts page, and **Esc** closes it. Reports and wireframes read the same way: a report or wireframe row in Activity, or its chip in a transcript, opens it in the drawer beside the work, a wireframe as its stage, and the Artifacts page stays the library of everything the session made.
 
 While the planner reworks the plan the row and the drawer say **Revising to v2**, the plan is dimmed and **Run plan** is off with the reason "Planner is revising this plan". A plan that already ran stays **Ran** and says **Writing a new version**. When the new version lands, the earlier row in the chat turns into a slim line, **Plan v1 · replaced by v2**, and pressing it reads v1 in the drawer.
 

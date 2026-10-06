@@ -145,7 +145,7 @@ export const DiffRows = ({
     return rowIndex;
   };
 
-  const blockRow = (key: string, node: ReactNode, side: DiffCommentSide | null) => {
+  const blockRow = (key: string, node: ReactNode, side: DiffCommentSide) => {
     if (node === null || node === false || node === undefined) {
       return null;
     }
@@ -154,14 +154,14 @@ export const DiffRows = ({
         key={key}
         role="row"
         aria-rowindex={nextIndex()}
+        data-block-side={side}
         className={cn('grid py-2', isSplit ? SPLIT_COLUMNS : UNIFIED_COLUMNS)}
       >
         <div
           role="gridcell"
-          className={cn(
-            'min-w-0 pr-3',
-            isSplit ? (side === 'old' ? 'col-start-2' : 'col-start-4') : 'col-start-4',
-          )}
+          data-slot="diff-line-block"
+          data-span={isSplit ? 'both' : 'code'}
+          className={cn('min-w-0 pr-3', isSplit ? 'col-[2/-1]' : 'col-start-4')}
         >
           {node}
         </div>

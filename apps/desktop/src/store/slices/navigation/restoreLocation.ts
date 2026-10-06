@@ -23,9 +23,11 @@ export const restoreLocation = (set: SetFn, get: GetFn) => {
   return ({ location }: Params): void => {
     const state = get();
     const kept = placeStillThere({ get, location });
+    const canonical = canonicalLocation({ state, request: kept.place });
     const next: Location = {
       ...kept,
-      place: canonicalLocation({ state, request: kept.place }).place,
+      place: canonical.place,
+      focus: { ...kept.focus, drawer: kept.focus.drawer ?? canonical.drawer },
       workspaceId: state.currentWorkspaceId,
     };
     const stack = currentStack(state);

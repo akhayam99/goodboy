@@ -19,6 +19,7 @@ export type ScrollFadeProps = {
   readonly viewportRef?: RefObject<HTMLDivElement | null>;
   readonly onViewportScroll?: () => void;
   readonly scrollbar?: 'overlay' | 'none';
+  readonly fadeEdges?: 'both' | 'end';
 };
 
 const SPACING_CLASS_PATTERN = /^[wh]-(\d+(?:\.\d+)?)$/;
@@ -50,6 +51,7 @@ export const ScrollFade = ({
   viewportRef,
   onViewportScroll,
   scrollbar = 'overlay',
+  fadeEdges = 'both',
 }: ScrollFadeProps) => {
   const ownRef = useRef<HTMLDivElement>(null);
   const ref = viewportRef ?? ownRef;
@@ -66,11 +68,11 @@ export const ScrollFade = ({
     const clientSize = horizontal ? el.clientWidth : el.clientHeight;
     const scrollSize = horizontal ? el.scrollWidth : el.scrollHeight;
     const maxScroll = Math.max(0, scrollSize - clientSize);
-    const top = Math.min(fadePx, scrollPos);
+    const top = fadeEdges === 'end' ? 0 : Math.min(fadePx, scrollPos);
     const bottom = Math.min(fadePx, Math.max(0, maxScroll - scrollPos));
     el.style.setProperty('--fade-top', `${top}px`);
     el.style.setProperty('--fade-bottom', `${bottom}px`);
-  }, [fadePx, horizontal, ref]);
+  }, [fadeEdges, fadePx, horizontal, ref]);
 
   const scheduleFade = useCallback(() => {
     if (frameRef.current !== null) {

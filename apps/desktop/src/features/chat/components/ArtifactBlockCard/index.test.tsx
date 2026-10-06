@@ -1,14 +1,13 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { AgentId, SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
     sessionArtifacts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
-    setFocusedArtifactId: vi.fn(),
+    openDrawer: vi.fn(),
     navigate: vi.fn(),
     setScriptsLensScope: vi.fn(),
   },
@@ -27,6 +26,12 @@ import { ArtifactBlockCard } from './index';
 const SESSION_ID = 'session-1' as SessionId;
 const SCOUT = 'agent-scout' as AgentId;
 
+const DRAWER_OF = (artifactId: string) => ({
+  kind: 'artifact-document',
+  sessionId: SESSION_ID,
+  payload: { artifactId, revision: null },
+});
+
 const artifactOf = (overrides: Record<string, unknown>) => ({
   id: 'artifact-1',
   agentId: SCOUT,
@@ -39,7 +44,7 @@ const artifactOf = (overrides: Record<string, unknown>) => ({
 
 beforeEach(() => {
   state.sessionArtifacts = {};
-  state.setFocusedArtifactId = vi.fn();
+  state.openDrawer = vi.fn();
   state.navigate = vi.fn();
   state.setScriptsLensScope = vi.fn();
 });
@@ -47,7 +52,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ArtifactBlockCard', () => {
-  it('opens the artifact the run that wrote the block produced', () => {
+  it('opens the artifact the run that wrote the block produced in the drawer, the page kept', () => {
     state.sessionArtifacts = { [SESSION_ID]: [artifactOf({})] };
     render(
       <ArtifactBlockCard
@@ -69,10 +74,8 @@ describe('ArtifactBlockCard', () => {
     expect(chip.textContent).toContain('Rounding drift in ledger-core postings');
 
     fireEvent.click(chip);
-    expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'artifact-1');
-    expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }),
-    });
+    expect(state.openDrawer).toHaveBeenCalledWith(DRAWER_OF('artifact-1'));
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('opens the revised artifact from the block the revision wrote', () => {
@@ -93,7 +96,7 @@ describe('ArtifactBlockCard', () => {
     );
 
     fireEvent.click(screen.getByTestId('artifact-block-chip'));
-    expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'artifact-1');
+    expect(state.openDrawer).toHaveBeenCalledWith(DRAWER_OF('artifact-1'));
   });
 
   it('leaves a block still arriving as a row with nothing to press', () => {

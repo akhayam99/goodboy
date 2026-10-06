@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Play } from 'lucide-react';
-import { CopyButton, Markdown, Notice } from '@goodboy/ui';
+import { CopyButton, Markdown, Notice, PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { chatAnswerMeta } from '../../chatAnswerMeta';
@@ -13,17 +13,7 @@ type Props = {
   readonly onStartWork?: (messageId: ChatMessageId) => void;
 };
 
-const PROSE_CLASS = [
-  'text-prose',
-  '[&>div>p]:max-w-[72ch]',
-  '[&>div>ul]:max-w-[72ch]',
-  '[&>div>ol]:max-w-[72ch]',
-  '[&>div>blockquote]:max-w-[72ch]',
-  '[&>div>h1]:max-w-[72ch]',
-  '[&>div>h2]:max-w-[72ch]',
-  '[&>div>h3]:max-w-[72ch]',
-  '[&>div>h4]:max-w-[72ch]',
-].join(' ');
+const PROSE_CLASS = cn('text-prose', PANE_RHYTHM.proseBlocks);
 
 const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props) => {
   const isStreaming = message.status === 'streaming';

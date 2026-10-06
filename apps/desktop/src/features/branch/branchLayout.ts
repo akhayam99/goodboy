@@ -1,5 +1,5 @@
 const BRANCH_TWO_COLUMN_MIN_PX = 900;
-const BRANCH_RAIL_MIN_PX = 1040;
+const BRANCH_RAIL_MIN_PX = 1280;
 
 export type BranchLayout = 'single' | 'two' | 'three';
 

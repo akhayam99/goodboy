@@ -62,6 +62,7 @@ type Props = {
   readonly isActive?: boolean;
   readonly agentId?: AgentId | null;
   readonly topInset?: 'roomy' | 'tight';
+  readonly hasComposer?: boolean;
 };
 
 type RetrySource = {
@@ -113,7 +114,13 @@ const buildRetryOverride = ({
   };
 };
 
-export const ChatView = ({ session, isActive = true, agentId, topInset = 'roomy' }: Props) => {
+export const ChatView = ({
+  session,
+  isActive = true,
+  agentId,
+  topInset = 'roomy',
+  hasComposer = true,
+}: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
   const sendTurn = useAppStore((s) => s.sendTurn);
@@ -155,8 +162,8 @@ export const ChatView = ({ session, isActive = true, agentId, topInset = 'roomy'
     if (!isActive || !selectedAgentId || transcriptCached) {
       return;
     }
-    void loadAgentTranscript(session.id, selectedAgentId);
-  }, [isActive, selectedAgentId, transcriptCached, loadAgentTranscript, session.id]);
+    void loadAgentTranscript(session.id, selectedAgentId, { isSelecting: agentId === undefined });
+  }, [isActive, selectedAgentId, transcriptCached, loadAgentTranscript, session.id, agentId]);
 
   useEffect(() => {
     if (!isActive) {
@@ -568,7 +575,8 @@ export const ChatView = ({ session, isActive = true, agentId, topInset = 'roomy'
           </Tooltip>
         )}
       </div>
-      {selectedAgentId != null &&
+      {hasComposer &&
+      selectedAgentId != null &&
       otherAgentQuestion != null &&
       otherAgentId != null &&
       otherAgentQuestionCount > 0 ? (
@@ -592,8 +600,10 @@ export const ChatView = ({ session, isActive = true, agentId, topInset = 'roomy'
           </Button>
         </div>
       ) : null}
-      {!isEnded && selectedAgentId != null ? <WorkflowAdvanceRow session={session} /> : null}
-      {isEnded ? (
+      {hasComposer && !isEnded && selectedAgentId != null ? (
+        <WorkflowAdvanceRow session={session} />
+      ) : null}
+      {!hasComposer ? null : isEnded ? (
         <>
           <Divider />
           <div className="px-4 py-3 text-label text-muted-foreground">

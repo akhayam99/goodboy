@@ -4,11 +4,10 @@ export type AgentTab = AgentPane;
 
 type Params = {
   readonly hasOpenQuestions: boolean;
-  readonly isResolver: boolean;
 };
 
-export const agentOpenTab = ({ hasOpenQuestions, isResolver }: Params): AgentTab =>
-  hasOpenQuestions || isResolver ? 'brief' : 'transcript';
+export const agentOpenTab = ({ hasOpenQuestions }: Params): AgentTab =>
+  hasOpenQuestions ? 'brief' : 'transcript';
 
 export const OPEN_AGENT_INTENT = 'open-agent';
 

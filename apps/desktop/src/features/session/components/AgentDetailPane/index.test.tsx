@@ -46,8 +46,6 @@ vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div>Transcript body</div>,
 }));
 vi.mock('./AgentBrief', () => ({ AgentBrief: () => <div>Brief body</div> }));
-vi.mock('./FixRun', () => ({ FixRun: () => <div>Fix run body</div> }));
-vi.mock('./AgentBriefHandoffLine', () => ({ AgentBriefHandoffLine: () => null }));
 vi.mock('./AgentHeaderStatus', () => ({
   AgentHeaderStatus: ({ status }: { readonly status: string }) => (
     <span>{status === 'running' ? 'Running' : status}</span>
@@ -240,19 +238,7 @@ describe('AgentDetailPane', () => {
     expect(screen.getByText('Transcript body')).toBeDefined();
   });
 
-  it('opens a resolver on the brief and keeps the transcript one tab away', () => {
-    const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
-
-    render(
-      <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
-    );
-
-    expect(screen.getByText('Brief body')).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
-    expect(screen.getByText('Transcript body')).toBeDefined();
-  });
-
-  it('shows a resolver that has an attempt as a Fix run with the transcript one tab away', () => {
+  it('gives a resolver no Fix run page of its own, only the tabs every agent has', () => {
     const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
     state.sessionResolveAttempts = {
       [session.id]: [{ agentId: resolver.id, threadIds: ['thread-1'], batchId: null }],
@@ -262,31 +248,17 @@ describe('AgentDetailPane', () => {
       <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
     );
 
-    expect(screen.getByText('Fix run body')).toBeDefined();
-    expect(screen.queryByText('Brief body')).toBeNull();
-    expect(screen.getByRole('tab', { name: 'Fix run' })).toBeDefined();
-    expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    expect(screen.queryByRole('tab', { name: 'Fix run' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Brief' })).toBeDefined();
     expect(screen.getByText('Transcript body')).toBeDefined();
   });
 
-  it('keeps a resolver on the brief when an agent open reveals the chat', () => {
-    const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
-
-    render(
-      <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
-    );
-    act(() => window.dispatchEvent(openAgentRevealEvent()));
-
-    expect(screen.getByText('Brief body')).toBeDefined();
-  });
-
   it('opens the tab the address asks for over the default', () => {
-    const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
+    state.sessionOpenQuestions = { [session.id]: [{ createdByAgentId: agent.id }] };
     state.agentPane = { [session.id]: 'transcript' };
 
     render(
-      <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
     expect(screen.getByText('Transcript body')).toBeDefined();

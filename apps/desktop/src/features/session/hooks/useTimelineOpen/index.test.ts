@@ -5,11 +5,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, IsoDateTime, SessionEventId, SessionId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import type { AgentKind } from '../../agent-kind';
-import type { TimelineAgentEntry, TimelineEventEntry } from '../../timeline/buildTimelineGroups';
+import type {
+  TimelineAgentEntry,
+  TimelineArtifactEntry,
+  TimelineEventEntry,
+} from '../../timeline/buildTimelineGroups';
 
 const state = vi.hoisted(() => ({
   setActiveLens: vi.fn(),
   navigate: vi.fn(),
+  openDrawer: vi.fn(),
 }));
 
 vi.mock('../../../../store', async () => {
@@ -65,7 +70,7 @@ describe('useTimelineOpen', () => {
     chain: null,
   });
 
-  it('opens a resolver on its fix run', () => {
+  it('opens a resolver as its fix run, which lands on Comments with the transcript drawer', () => {
     const sessionId = typedString<SessionId>({ value: 'session-1' });
     const { result } = renderHook(() => useTimelineOpen({ sessionId }));
     const target = result.current({ entry: agentEntry({ agentKind: 'resolver' }) });
@@ -73,7 +78,7 @@ describe('useTimelineOpen', () => {
     expect(target?.label).toBe('Open fix run');
     target?.open();
     expect(state.navigate).toHaveBeenCalledWith({
-      to: { at: 'agent', sessionId, agentId: 'agent-1', pane: 'brief' },
+      to: { at: 'agent', sessionId, agentId: 'agent-1' },
     });
   });
 
@@ -88,4 +93,32 @@ describe('useTimelineOpen', () => {
       to: { at: 'agent', sessionId, agentId: 'agent-1' },
     });
   });
+
+  it.each([
+    ['report', 'Open report'],
+    ['wireframe', 'Open wireframe'],
+  ] as const)(
+    'opens a %s row in the drawer beside Activity, never the Artifacts page',
+    (kind, label) => {
+      const sessionId = typedString<SessionId>({ value: 'session-1' });
+      state.navigate.mockClear();
+      const entry: TimelineArtifactEntry = {
+        kind: 'artifact',
+        id: `artifact-${kind}`,
+        at: '2026-08-30T10:00:00Z',
+        artifact: { id: `artifact-${kind}`, kind } as TimelineArtifactEntry['artifact'],
+      };
+      const { result } = renderHook(() => useTimelineOpen({ sessionId }));
+      const target = result.current({ entry });
+
+      expect(target?.label).toBe(label);
+      target?.open();
+      expect(state.openDrawer).toHaveBeenLastCalledWith({
+        kind: 'artifact-document',
+        sessionId,
+        payload: { artifactId: `artifact-${kind}`, revision: null },
+      });
+      expect(state.navigate).not.toHaveBeenCalled();
+    },
+  );
 });

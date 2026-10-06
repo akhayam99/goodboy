@@ -1,5 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { DiffFocus, LensKind, SessionStudio } from '../session-view/types';
+import type { OpenDrawer } from '../drawer/state';
 import type { AgentPane, BranchTab, Place, PlaceRequest, SessionTarget } from './types';
 
 type SessionPlaceParams = {
@@ -56,19 +57,24 @@ export const branchPlace = ({
 export const agentPlace = ({ sessionId, agentId, pane = null }: AgentPlaceParams): PlaceRequest =>
   pane === null ? { at: 'agent', sessionId, agentId } : { at: 'agent', sessionId, agentId, pane };
 
-type ResolverPageParams = AgentPlaceParams & {
-  readonly threadId: string;
+type FixRunParams = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly threadId?: string | null;
+  readonly mountPath?: string | null;
 };
 
-export const resolverPagePlace = ({
+export type FixRunTranscript = {
+  readonly to: Place;
+  readonly drawer: OpenDrawer;
+};
+
+export const fixRunTranscript = ({
   sessionId,
   agentId,
-  threadId,
-  pane = null,
-}: ResolverPageParams): Place =>
-  sessionPlace({
-    sessionId,
-    lens: 'review',
-    agentId,
-    target: pane === null ? { kind: 'thread', threadId } : { kind: 'thread', threadId, pane },
-  });
+  threadId = null,
+  mountPath = null,
+}: FixRunParams): FixRunTranscript => ({
+  to: branchPlace({ sessionId, mountPath, tab: 'comments', threadId }),
+  drawer: { kind: 'transcript', sessionId, payload: { agentId } },
+});

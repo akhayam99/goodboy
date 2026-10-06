@@ -13,7 +13,7 @@ import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
-import { useAgentOutcome } from '../../hooks/useAgentOutcome';
+import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
 import { classifyAgent } from '../../agent-kind';
 import { AgentUsageFooter } from './AgentUsageFooter';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
@@ -127,7 +127,7 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       ) : null}
       {shownSummary !== '' && !isSplitIntoSubagents ? (
         <Band inset="content" label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
-          <div className="max-w-[72ch] text-body text-foreground">
+          <div className="max-w-[var(--measure)] text-body text-foreground">
             <Markdown text={shownSummary} />
           </div>
           {!hasOutputSummary ? (

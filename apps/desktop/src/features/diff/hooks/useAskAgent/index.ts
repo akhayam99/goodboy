@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
 import { classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import type { DiffLineTarget } from '../../components/DiffView/types';
@@ -15,7 +15,7 @@ export const useAskAgent = ({ sessionId, preferKind }: Params) => {
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
   const setAgentDraft = useAppStore((s) => s.setAgentDraft);
-  const navigate = useAppStore((s) => s.navigate);
+  const openDrawer = useAppStore((s) => s.openDrawer);
   const { showToast } = useToast();
 
   return useCallback(
@@ -38,8 +38,8 @@ export const useAskAgent = ({ sessionId, preferKind }: Params) => {
       const prompt = askAgentPrompt(target);
       const existing = useAppStore.getState().agentDraft[agent.id] ?? '';
       setAgentDraft(agent.id, existing === '' ? prompt : `${existing}\n${prompt}`);
-      navigate({ to: agentPlace({ sessionId, agentId: agent.id }) });
+      openDrawer({ kind: 'transcript', sessionId, payload: { agentId: agent.id } });
     },
-    [phaseRuns, preferKind, navigate, selectedAgentId, sessionId, setAgentDraft, showToast],
+    [phaseRuns, preferKind, openDrawer, selectedAgentId, sessionId, setAgentDraft, showToast],
   );
 };

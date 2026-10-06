@@ -1,5 +1,5 @@
 .artifact-prose {
-  --artifact-measure: 680px;
+  --artifact-measure: var(--measure);
   font-size: var(--text-prose);
   line-height: var(--text-prose--line-height);
   color: var(--color-foreground);
@@ -37,7 +37,7 @@
   line-height: 20px;
 }
 .artifact-prose-measure {
-  max-width: 680px;
+  max-width: var(--measure);
 }
 .artifact-prose :where([data-tone='summary'], [data-tone='goal']) [data-block='callout-body'] {
   font-size: var(--text-title);

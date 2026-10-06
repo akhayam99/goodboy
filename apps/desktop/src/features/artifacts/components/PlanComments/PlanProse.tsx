@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { ArtifactComment, ArtifactCommentAnchor } from '@goodboy/types';
 import { ArtifactProse } from '../ArtifactProse';
 import { isInSection, type ProseSection } from '../../../plans/planComments/planCommentAnchors';
@@ -79,7 +80,10 @@ export const PlanProse = ({ text, section, hasLead = true, measure = 'reading' }
     <div
       ref={wrapperRef}
       data-testid="plan-prose-comments"
-      className="relative min-w-0"
+      data-measure={measure}
+      data-focus-return=""
+      tabIndex={-1}
+      className={cn('relative min-w-0', measure === 'reading' && PANE_RHYTHM.prose)}
       onMouseOver={onMouseOver}
       onMouseLeave={onMouseLeave}
       onMouseUp={onMouseUp}

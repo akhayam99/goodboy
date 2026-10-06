@@ -80,6 +80,7 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
       openArtifactCreation: vi.fn(),
       setActiveLens: vi.fn(),
       navigate: vi.fn(),
+      openDrawer: vi.fn(),
       setFocusedArtifactId: vi.fn(),
       openMountDiff: vi.fn(),
       closeWorkflowRun: vi.fn(async () => undefined),
@@ -877,20 +878,21 @@ describe('TimelinePane artifact rows', () => {
     expect(screen.getByText('Settlement review flow')).toBeDefined();
   });
 
-  it('opens the artifact itself where artifacts are read', () => {
+  it('opens the artifact in the drawer beside the feed, the Artifacts page untouched', () => {
     storeState.sessionArtifacts = { 'session-1': [REPORT] };
+    storeState.navigate.mockClear();
+    storeState.openDrawer.mockClear();
 
     render(<TimelinePane session={SESSION} actions={null} />);
     openLog();
     fireEvent.click(screen.getByRole('button', { name: /Rounding drift in ledger-core postings/ }));
 
-    expect(storeState.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({
-        sessionId: 'session-1' as SessionId,
-        lens: 'plans',
-        target: { kind: 'artifact', artifactId: 'artifact-report' as ArtifactId },
-      }),
+    expect(storeState.openDrawer).toHaveBeenCalledWith({
+      kind: 'artifact-document',
+      sessionId: 'session-1' as SessionId,
+      payload: { artifactId: 'artifact-report' as ArtifactId, revision: null },
     });
+    expect(storeState.navigate).not.toHaveBeenCalled();
   });
 });
 
