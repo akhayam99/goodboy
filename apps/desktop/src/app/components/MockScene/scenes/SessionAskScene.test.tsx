@@ -104,10 +104,12 @@ describe('the session Ask scene', () => {
     if (questionChip === null) {
       throw new Error('no question chip');
     }
+    expect(screen.getByTestId('context-chip')).toBeDefined();
     act(() => {
       fireEvent.click(questionChip);
     });
     expect(useAppStore.getState().activeLens[SESSION.id]).toBe('questions');
+    expect(screen.queryByTestId('context-chip')).toBeNull();
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
     expect(askDrawer()).toBeDefined();
   });
@@ -127,7 +129,12 @@ describe('the session Ask scene', () => {
     expect(useOpenQuestions.getState().drafts[questionId ?? '']?.customAnswer).toBe(
       'Stop after 5 attempts, then move the message to the dead-letter queue.',
     );
-    expect(useOpenQuestions.getState().focusedQuestionId).toBe(questionId);
+    expect(useOpenQuestions.getState().focusedQuestionId).toBeNull();
+    expect(
+      await screen.findByDisplayValue(
+        'Stop after 5 attempts, then move the message to the dead-letter queue.',
+      ),
+    ).toBeDefined();
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask' });
   });
 
