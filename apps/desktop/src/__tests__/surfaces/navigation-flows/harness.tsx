@@ -75,7 +75,10 @@ const BRIDGE: Readonly<Record<string, unknown>> = {
   },
 };
 
-const SELECTS: ReadonlyArray<readonly [RegExp, unknown]> = [[/FROM history_plans /, []]];
+const SELECTS: ReadonlyArray<readonly [RegExp, unknown]> = [
+  [/FROM history_plans /, []],
+  [/SELECT MAX\(ordinal\) as max_ordinal FROM session_workflows/, [{ max_ordinal: null }]],
+];
 
 const answerSelect = (sql: string): Promise<unknown> => {
   const known = SELECTS.find(([pattern]) => pattern.test(sql));
