@@ -24,15 +24,18 @@ export {
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
+export { DrawerColumn, RIGHT_DRAWER_STORAGE_KEY } from './components/DrawerColumn';
+export type { DrawerColumnProps } from './components/DrawerColumn';
 export {
   DRAWER_INSET,
-  DrawerColumn,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
-  RIGHT_DRAWER_STORAGE_KEY,
   canDrawerPush,
-} from './components/DrawerColumn';
-export type { DrawerColumnProps, DrawerSizing } from './components/DrawerColumn';
+  drawerModeOf,
+  drawerWidthOf,
+  mainWidthOf,
+} from './drawerGeometry';
+export type { DrawerMode, DrawerSizing } from './drawerGeometry';
 export { DrawerFrame } from './components/DrawerFrame';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';
@@ -214,6 +217,7 @@ export {
 } from './components/PaneShell/paneActionsContext';
 export { UnderTrailContext } from './components/PaneShell/underTrailContext';
 export { PageColumn } from './components/PageColumn';
+export type { PageColumnWidth } from './components/PageColumn';
 export { FormActions } from './components/FormActions';
 export { FormPage } from './components/FormPage';
 export { ScrollFade } from './components/ScrollFade';

@@ -1,7 +1,8 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
-import { DrawerColumn, type DrawerSizing } from './DrawerColumn';
+import { DrawerColumn } from './DrawerColumn';
+import type { DrawerSizing } from '../drawerGeometry';
 import { ResizeHandle } from './ResizeHandle';
 import { useResizableWidth } from '../useResizableWidth';
 

@@ -15,14 +15,14 @@ type Props = {
 
 const PROSE_CLASS = [
   'text-prose',
-  '[&>div>p]:max-w-[72ch]',
-  '[&>div>ul]:max-w-[72ch]',
-  '[&>div>ol]:max-w-[72ch]',
-  '[&>div>blockquote]:max-w-[72ch]',
-  '[&>div>h1]:max-w-[72ch]',
-  '[&>div>h2]:max-w-[72ch]',
-  '[&>div>h3]:max-w-[72ch]',
-  '[&>div>h4]:max-w-[72ch]',
+  '[&>div>p]:max-w-[var(--measure)]',
+  '[&>div>ul]:max-w-[var(--measure)]',
+  '[&>div>ol]:max-w-[var(--measure)]',
+  '[&>div>blockquote]:max-w-[var(--measure)]',
+  '[&>div>h1]:max-w-[var(--measure)]',
+  '[&>div>h2]:max-w-[var(--measure)]',
+  '[&>div>h3]:max-w-[var(--measure)]',
+  '[&>div>h4]:max-w-[var(--measure)]',
 ].join(' ');
 
 const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props) => {

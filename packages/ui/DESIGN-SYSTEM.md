@@ -995,7 +995,7 @@ header and body share one `PageColumn` with the session trail band above it. It 
 row wraps, so actions drop under the title instead of squeezing it. The pane
 owns the gap below the header, and children add no top margins. The root is
 `@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
-`StudioShell` it fills the pane and the column centres in the full width.
+`StudioShell` it fills the pane and the column starts at its left edge.
 
 **One title grade, one header height.** Every lens pane and studio detail gets
 its title from `PaneShell`: an `h1` at `text-lg` with `meta` inline and
@@ -1025,24 +1025,34 @@ body. Studio
 chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
 the only `h1` on the surface.
 
-**The content column is 960px and centres.** `PANE_RHYTHM.column` caps at
-`--column-max` (960px of content, gutters excluded) and `PageColumn` adds the
-24px gutter, 16px when the pane is under 720px wide. No view picks its own
+**One left edge.** Every page's content starts at the same x next to the
+column: Overview, the Branch tabs, Runs, Agents, Artifacts, plans, reports,
+settings pages and studios. `PageColumn` and `PANE_RHYTHM.column` never centre.
+Three tiers share that edge: **measure** (`--measure`, 720px, `PageColumn
+width="measure"` or `PANE_RHYTHM.prose`) for prose, **column** (`--column-max`,
+960px) for the page column, and **full** for work surfaces. `PageColumn` adds
+the 24px gutter, 16px when the pane is under 720px wide. No view picks its own
 width: the column changes only when the window changes or the right drawer
 opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
 
+**The drawer opens in the space on the right.** A drawer (context, plan or
+artifact, file diff, script output, a fix run transcript, an agent
+conversation) never moves the main content: the main area keeps its start and
+only gives up space on its right, and when that would leave it under 560px
+plus gutters the drawer lies over the page.
+
 **Work panes use the full width.** A pane whose body is a working surface (a
-list beside a thread, a file tree beside a diff) passes `width="full"` to
-`PaneShell`, and to the `PageColumn` of its tabs. It keeps the 24px gutter
-(16px under 720px) and drops the 960px cap and the centring, so the header and
-the body share one left edge on any pane. The Branch page is the one user.
+list beside a thread, a file tree beside a diff, a terminal) passes
+`width="full"` to `PaneShell`, and to the `PageColumn` of its tabs. It keeps
+the 24px gutter (16px under 720px) and drops the 960px cap, so the header and
+the body share one left edge on any pane. The Branch page is the main user.
 Its Comments tab reads the width of its own pane, not the window's
 (`branchLayoutOf`): under 900px one column, the list, then the thread with a
 `‹ Comments` back that keeps the selected row; from 900px a 300px list and the
-thread, with the properties inside the thread; from 1040px a 232px properties
-rail on the right. A drawer or a wide sidebar narrows the pane, so the layout
-follows them.
+thread, wide, with the properties inline under it; from 1280px a 288px
+properties margin rail (`--margin-rail`) on the right. A drawer or a wide
+sidebar narrows the pane, so the layout follows them.
 
 **Trail separator.** Each segment except the last ends with one 24px chevron
 slot in `faint-foreground`: a button that opens the segment's menu, or a static
@@ -1406,7 +1416,7 @@ conversation is the wrapped sheet, and "Turn into work" is the
   heading, and its Undo line takes the group's place.
 - **The conversation** sits on `PageColumn`, the same 960px column as every
   other page: the header, the thread and the composer share one left and one
-  right edge. Prose (paragraphs, lists, quotes, headings) stops at a `72ch`
+  right edge. Prose (paragraphs, lists, quotes, headings) stops at the 720px
   measure, left aligned; tables and code blocks take the whole column. The
   question is a `bg-subtle` bubble on the right in `text-prose`; the answer is
   `Markdown` in `text-prose` with no bubble. Under it, in order: `Read N files`

@@ -88,7 +88,7 @@ export const FixRun = ({ session, agent, brief }: Props) => {
       ))}
       {outcome.text !== '' && (
         <Band inset="content" label={FIX_RUN_COPY.didHeading} headingLevel={2}>
-          <div className="max-w-[72ch] text-body text-foreground">
+          <div className="max-w-[var(--measure)] text-body text-foreground">
             <Markdown text={outcome.text} />
           </div>
           {outcome.isFromReply && (

@@ -1682,8 +1682,8 @@ properties (State, Origin with the code host link and Copy link, Attempts with
 the transcript, Fix commit, Author) sit in a rail only when the pane is wide.
 Every Branch tab uses the full pane width (`PaneShell width="full"`), and the
 Comments tab reads the width of its own pane (`branchLayoutOf`, so a wide
-sidebar or an open drawer narrows it): from 1040px a 300px list, the thread and
-a 232px rail; from 900px the list and the thread, with the properties inside
+sidebar or an open drawer narrows it): from 1280px a 300px list, the thread and
+a 288px margin rail; from 900px the list and a wide thread, with the properties inline under
 the thread; under 900px the list, then the thread with `‹ Comments` (Up). The
 selected row stays selected on the way back. `branchLayout.test.ts` pins the
 widths a 1024px window gets with a wide sidebar and an open drawer. Fix, Resolve without a reply and Stop live on the thread and its

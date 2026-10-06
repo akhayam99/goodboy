@@ -32,7 +32,7 @@ export const ScribeProposalView = ({
     <section
       aria-label={hasHeader ? 'Pull request text' : undefined}
       data-testid="scribe-proposal"
-      className="flex max-w-[72ch] flex-col gap-2"
+      className="flex max-w-[var(--measure)] flex-col gap-2"
     >
       {hasHeader ? (
         <header className="flex items-center justify-between gap-3">

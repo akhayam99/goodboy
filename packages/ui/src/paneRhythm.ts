@@ -8,7 +8,8 @@ export const PANE_RHYTHM = {
     title: 'pb-4',
     section: 'pb-5',
   },
-  column: 'mx-auto w-full max-w-[var(--column-max)]',
+  column: 'w-full max-w-[var(--column-max)]',
+  prose: 'max-w-[var(--measure)]',
   hero: 'max-w-[640px]',
   detail: {
     band: 'px-6 py-2',

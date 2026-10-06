@@ -555,7 +555,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
     }
     if (isLoading) {
       return (
-        <div className="flex max-w-[300px] flex-col gap-3">
+        <div className="flex w-full flex-col gap-3">
           {SKELETON_ROWS.map((key) => (
             <div key={key} className="flex flex-col gap-2 px-3 py-2">
               <Skeleton className="h-3.5 w-40" />
@@ -687,7 +687,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                   )}
                 </div>
                 {layout === 'three' && (
-                  <aside aria-label="Thread details" className="w-[232px] shrink-0">
+                  <aside aria-label="Thread details" className="w-[var(--margin-rail)] shrink-0">
                     <ThreadProperties sessionId={sessionId} entry={focused} layout="rail" />
                   </aside>
                 )}

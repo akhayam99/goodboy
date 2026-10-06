@@ -2,22 +2,18 @@ import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref } fr
 import { cn } from '../cn';
 import { ResizeHandle } from './ResizeHandle';
 import { useResizableWidth } from '../useResizableWidth';
+import {
+  DRAWER_INSET,
+  RIGHT_DRAWER_DEFAULT,
+  RIGHT_DRAWER_MAX,
+  RIGHT_DRAWER_MIN,
+  drawerModeOf,
+  drawerTrackOf,
+  drawerWidthOf,
+  type DrawerSizing,
+} from '../drawerGeometry';
 
-const RIGHT_DRAWER_MIN = 340;
-export const RIGHT_DRAWER_MAX = 560;
-export const RIGHT_DRAWER_DEFAULT = 400;
 export const RIGHT_DRAWER_STORAGE_KEY = 'goodboy:right-drawer-width:v1';
-export const COLUMN_MIN_PUSH = 560;
-export const COLUMN_GUTTERS = 48;
-export const DRAWER_INSET = 8;
-
-type PushParams = {
-  readonly mainWidthPx: number;
-  readonly drawerWidthPx: number;
-};
-
-export const canDrawerPush = ({ mainWidthPx, drawerWidthPx }: PushParams): boolean =>
-  mainWidthPx - drawerWidthPx - COLUMN_GUTTERS >= COLUMN_MIN_PUSH;
 
 const useMeasuredWidth = () => {
   const ref = useRef<HTMLDivElement | null>(null);
@@ -37,24 +33,6 @@ const useMeasuredWidth = () => {
     return () => observer.disconnect();
   }, []);
   return { ref, width };
-};
-
-export type DrawerSizing = 'default' | 'half' | 'full';
-
-type SizedParams = {
-  readonly sizing: DrawerSizing;
-  readonly columnWidth: number | null;
-  readonly resizableWidth: number;
-};
-
-const sizedWidth = ({ sizing, columnWidth, resizableWidth }: SizedParams): number => {
-  if (sizing === 'default' || columnWidth === null) {
-    return resizableWidth;
-  }
-  if (sizing === 'full') {
-    return Math.max(RIGHT_DRAWER_MIN, columnWidth - DRAWER_INSET * 2);
-  }
-  return Math.max(RIGHT_DRAWER_MIN, Math.round(columnWidth / 2) - DRAWER_INSET * 2);
 };
 
 export type DrawerColumnProps = {
@@ -93,7 +71,7 @@ export const DrawerColumn = ({
       trackRef.current?.style.setProperty('min-width', track);
     },
   });
-  const width = sizedWidth({
+  const width = drawerWidthOf({
     sizing,
     columnWidth: column.width,
     resizableWidth: resizable.width,
@@ -112,18 +90,18 @@ export const DrawerColumn = ({
     [drawerRef],
   );
   const isOpen = drawer != null;
-  const isOverlay =
-    column.width !== null &&
-    (sizing === 'full' || !canDrawerPush({ mainWidthPx: column.width, drawerWidthPx: width }));
-  const mode = !isOpen ? 'closed' : isOverlay ? 'overlay' : 'push';
-  const trackWidth = width + DRAWER_INSET * 2;
+  const mode = drawerModeOf({ isOpen, sizing, columnWidth: column.width, drawerWidthPx: width });
+  const isOverlay = mode === 'overlay';
+  const trackWidth = drawerTrackOf(width);
 
   return (
     <div
       ref={column.ref}
       className={cn('relative flex min-h-0 min-w-0 flex-1 overflow-hidden', className)}
     >
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{main}</div>
+      <div data-drawer-main="" className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {main}
+      </div>
       <aside
         ref={setAside}
         aria-label={ariaLabel}
