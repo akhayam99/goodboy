@@ -760,7 +760,10 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
     runs, so no command can change a file or send one anywhere. What Codex
     reads goes only to its own model, as in any Codex session. Only Claude is
     confined to the project folders; pick Claude for a chat that must not
-    look outside them.
+    look outside them. Newer Codex builds carry permission profiles
+    (`default_permissions`) that can narrow reads, but a profile cannot be
+    set together with `-s` and no probe pins its syntax yet, so Chat and Ask
+    keep `-s read-only` with network off until one does.
   - Cursor, Gemini, opencode, OpenRouter and Moonshot are refused with "Chat
     needs a provider that can run read-only: Claude or Codex". m212 keeps
     `chats.provider` to `anthropic` and `codex`, and `CHAT_PROVIDER_IDS` in
