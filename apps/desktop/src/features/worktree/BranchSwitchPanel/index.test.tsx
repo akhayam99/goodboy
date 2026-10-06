@@ -92,7 +92,11 @@ vi.mock('../BranchCombobox', () => ({
   ),
 }));
 
+import type { MountId, SessionId } from '@goodboy/types';
 import { BranchSwitchPanel } from '.';
+
+const SESS = 'sess-1' as SessionId;
+const MOUNT = 'mount-1' as MountId;
 
 beforeEach(() => {
   state.sessionProjectMounts = {
@@ -332,13 +336,7 @@ describe('BranchSwitchPanel', () => {
     });
 
     it('is offered in the list and continued, never created again', async () => {
-      render(
-        <BranchSwitchPanel
-          sessionId={'sess-1' as never}
-          mountId={'mount-1' as never}
-          onDone={vi.fn()}
-        />,
-      );
+      render(<BranchSwitchPanel sessionId={SESS} mountId={MOUNT} onDone={vi.fn()} />);
 
       fireEvent.click(screen.getByRole('tab', { name: /pick existing/i }));
       await waitFor(() => screen.getByRole('button', { name: `Select ${TEAMMATE}` }));
@@ -355,13 +353,7 @@ describe('BranchSwitchPanel', () => {
     });
 
     it('is named inline when its name is typed by hand as a new branch', async () => {
-      render(
-        <BranchSwitchPanel
-          sessionId={'sess-1' as never}
-          mountId={'mount-1' as never}
-          onDone={vi.fn()}
-        />,
-      );
+      render(<BranchSwitchPanel sessionId={SESS} mountId={MOUNT} onDone={vi.fn()} />);
 
       await waitFor(() => expect(screen.getByRole('tab', { name: 'Pick existing' })).toBeDefined());
       fireEvent.change(screen.getByRole('textbox', { name: 'New branch' }), {
@@ -369,17 +361,13 @@ describe('BranchSwitchPanel', () => {
       });
 
       screen.getByText('That branch is already on origin');
-      expect(screen.getByText(/PR #9900 · pat-harborline\. Switching continues it/)).toBeDefined();
+      expect(
+        screen.getByText(/PR #9900 · pat-harborline\. Switching continues it\./),
+      ).toBeDefined();
     });
 
     it('says nothing for a fresh name', async () => {
-      render(
-        <BranchSwitchPanel
-          sessionId={'sess-1' as never}
-          mountId={'mount-1' as never}
-          onDone={vi.fn()}
-        />,
-      );
+      render(<BranchSwitchPanel sessionId={SESS} mountId={MOUNT} onDone={vi.fn()} />);
 
       await waitFor(() => expect(screen.getByRole('tab', { name: 'Pick existing' })).toBeDefined());
       fireEvent.change(screen.getByRole('textbox', { name: 'New branch' }), {

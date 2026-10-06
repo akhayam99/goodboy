@@ -149,7 +149,6 @@ beforeEach(async () => {
     loadMountCleanupProposals: async () => [],
   });
   await useAppStore.getState().loadSessionMounts({ sessionId: SESSION_ID });
-  storySpies.inspectWorktree.mockResolvedValue({ kind: 'registered' } as never);
 });
 
 afterEach(cleanup);

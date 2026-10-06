@@ -193,7 +193,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           tone="info"
           placement="inline"
           title="That branch is already on origin"
-          body={`${branchChoiceOrigin({ choice: typedRemote }) ?? 'It was pushed by someone else'}. Switching continues it with its commits, it does not start a new branch.`}
+          body={`${branchChoiceOrigin({ choice: typedRemote }) ?? 'Pushed by someone else'}. Switching continues it.`}
         />
       )}
 

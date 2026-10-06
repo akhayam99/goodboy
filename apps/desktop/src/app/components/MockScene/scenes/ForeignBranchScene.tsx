@@ -378,7 +378,7 @@ export const ForeignBranchScene = ({ state = 'stranded' }: Props) => {
     <main className="h-screen overflow-hidden bg-background text-foreground">
       {state === 'picker' ? (
         <div className="flex h-full items-start justify-center pt-16">
-          <div className="rounded-lg border border-border bg-popover shadow-lg">
+          <div className="rounded-lg border border-border bg-elevated shadow-lg">
             <BranchSwitchPanel
               sessionId={SESSION_ID}
               mountId={OWN_MOUNT}
