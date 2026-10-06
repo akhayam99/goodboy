@@ -1,7 +1,7 @@
 import type { SessionBudgetOnExceed, WorkflowSpendLimitMode } from '@goodboy/types';
 
 export const SPEND_LIMIT_BEHAVIOR_LABEL: Readonly<Record<SessionBudgetOnExceed, string>> = {
-  pause: 'Pauses workflows',
+  pause: 'Pauses runs',
   warn: 'Only warns',
 };
 

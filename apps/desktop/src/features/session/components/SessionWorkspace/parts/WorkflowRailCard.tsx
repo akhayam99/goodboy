@@ -130,7 +130,7 @@ export const WorkflowRailCard = ({
         <button
           type="button"
           onClick={onRestore}
-          title="Restore workflow"
+          title="Restore run"
           className="absolute right-1.5 top-1.5 rounded-md px-2 py-0.5 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Restore

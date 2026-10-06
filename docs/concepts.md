@@ -257,7 +257,7 @@ It includes:
 - The container and branches being created
 - Issues linked and unlinked
 - One pull request per project, from opened to merged or closed
-- Workflow runs started, closed and discarded
+- Runs started, stopped and archived
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
 - Tasks created in other tools from Goodboy
@@ -1346,8 +1346,13 @@ task up again in Goodboy.
   change. **Brief** stays the name of the agent tab and of a text you edit
   before something starts, so the two never share a screen.
 - **Stop** is the one name for ending a running turn.
-- **Runs** is the tab of a session that lists its workflow runs. **Workflows**
-  is the library page. **Run defaults** is the tab of Workflows that sets what
+- **Runs** is the tab of a session that lists its runs. A run is one execution
+  inside a session. A workflow is the definition you set up in Workflow Studio,
+  and it spawns runs. **Workflows** is the studio and the library, and the word
+  stays for definitions you pick ("Run a workflow", "from a workflow"). A verb
+  on one execution says run: **Start a run**, **Stop run**, **Archive run**,
+  **Delete run**. The ⌘K section that lists them is **Runs**. **Run defaults**
+  is the tab of Workflows that sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - **Models** is the Providers page that sets what each role runs on (it was
@@ -1369,17 +1374,17 @@ task up again in Goodboy.
 - One verb per intention. A button or menu entry takes its verb from this
   table, and the old verb stays a ⌘K alias:
 
-  | Verb           | Means                                             | Retired                                              |
-  | -------------- | ------------------------------------------------- | ---------------------------------------------------- |
-  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)                       |
-  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**)                 |
-  | **Unlink**     | Removes a task link, keeps the task in its tool   | Remove link on a task                                |
-  | **Archive**    | Hidden, restorable                                | Discard on a workflow run (now **Archive workflow**) |
-  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                                      |
-  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop workflow**)               |
-  | **Dismiss**    | Hides a notification or a suggestion              |                                                      |
-  | **Clear**      | Resets filters or a selection                     |                                                      |
-  | **Retry**      | Runs a failed action again                        | Try again                                            |
+  | Verb           | Means                                             | Retired                                |
+  | -------------- | ------------------------------------------------- | -------------------------------------- |
+  | **Delete**     | The object is gone (Undo where it can be)         | Wipe (now **Delete all data**)         |
+  | **Remove**     | Taken out of a list, it still exists elsewhere    | Detach (now **Remove from session**)   |
+  | **Unlink**     | Removes a task link, keeps the task in its tool   | Remove link on a task                  |
+  | **Archive**    | Hidden, restorable                                | Discard on a run (now **Archive run**) |
+  | **Disconnect** | Cuts the tie to an account, a tool or a workspace |                                        |
+  | **Stop**       | Ends what is running and keeps what it wrote      | Close workflow (now **Stop run**)      |
+  | **Dismiss**    | Hides a notification or a suggestion              |                                        |
+  | **Clear**      | Resets filters or a selection                     |                                        |
+  | **Retry**      | Runs a failed action again                        | Try again                              |
 
   **Discard** stays for a draft you abandon. **Close** stays for a panel and
   for sending an agent away without deleting it. **Check again** only

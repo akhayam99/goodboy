@@ -263,7 +263,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Workflow blocked',
+        title: 'Run blocked',
         body: 'The run stopped at s0 because the step failed.',
         sessionId: SESSION_ID,
       }),

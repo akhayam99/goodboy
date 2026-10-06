@@ -46,9 +46,9 @@ const ORIGIN_OF: Record<RunWorkflowKind, string> = {
 };
 
 const LABEL_OF: Record<RunWorkflowKind, string> = {
-  preset: 'Preset workflow',
-  custom: 'Custom workflow',
-  orchestrator: 'Orchestrated workflow',
+  preset: 'Preset run',
+  custom: 'Custom run',
+  orchestrator: 'Orchestrated run',
 };
 
 type EntryParams = {
@@ -157,13 +157,13 @@ describe('TimelineRunLabel', () => {
 
     expect(screen.getByText('Fix Safari OAuth login loop').className).toContain('truncate');
     expect(screen.queryByText('Feature')).toBeNull();
-    expect(screen.getByTitle('Feature preset workflow')).toBeDefined();
+    expect(screen.getByTitle('Feature preset run')).toBeDefined();
   });
 
   it('names a preset in the chip tooltip and leaves the row to the title', () => {
     render(<Label entry={entryOf({ name: 'Feature' })} />);
 
-    expect(screen.getByTitle('Feature preset workflow')).toBeDefined();
+    expect(screen.getByTitle('Feature preset run')).toBeDefined();
   });
 
   it('keeps the plain kind in the tooltip of an orchestrated run', () => {

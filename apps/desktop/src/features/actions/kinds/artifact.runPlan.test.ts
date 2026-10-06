@@ -68,14 +68,14 @@ describe('Run plan from the palette and the menu', () => {
   it('says why nothing started and offers the run, never "Implementer started"', async () => {
     await runFromPalette({
       kind: 'refused',
-      reason: 'The workflow has no step left for this plan',
+      reason: 'The run has no step left for this plan',
       workflowRunId: 'run-settlement' as WorkflowRunId,
     });
 
     expect(showToast).toHaveBeenCalledOnce();
     expect(showToast.mock.calls[0]?.[0]).toMatchObject({
       title: 'Plan not started',
-      message: 'The workflow has no step left for this plan',
+      message: 'The run has no step left for this plan',
       action: { label: 'Open the run' },
     });
   });
@@ -84,12 +84,12 @@ describe('Run plan from the palette and the menu', () => {
     await runFromPalette({
       kind: 'startedOutside',
       agentId: 'agent-impl' as AgentId,
-      note: 'Started outside the workflow, its run was discarded',
+      note: 'Started outside the run, it was discarded',
     });
 
     expect(showToast.mock.calls[0]?.[0]).toMatchObject({
       title: 'Implementer started',
-      message: 'Started outside the workflow, its run was discarded',
+      message: 'Started outside the run, it was discarded',
     });
   });
 

@@ -53,7 +53,7 @@ describe('startWorkflowAction', () => {
     const action = startWorkflowAction({ sessionId: SESSION_ID });
     action.onRun();
     window.removeEventListener('goodboy:open-workflow-builder', listener);
-    expect(action.label).toBe('Start a workflow');
+    expect(action.label).toBe('Start a run');
     expect((listener.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ sessionId: SESSION_ID });
   });
 });

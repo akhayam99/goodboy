@@ -8,7 +8,7 @@ type Props = {
   readonly placement: 'header' | 'inline';
 };
 
-const LABEL = 'Attach another workflow';
+const LABEL = 'Start another run';
 
 export const WorkflowAttachButton = ({ sessionId, placement }: Props) => {
   const onClick = () => {

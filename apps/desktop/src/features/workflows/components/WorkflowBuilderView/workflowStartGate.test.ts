@@ -57,7 +57,7 @@ describe('workflowStartGate', () => {
 
   it('puts work in flight ahead of the fields still to fill', () => {
     expect(workflowStartGate({ ...ready, isStarting: true, hasGoal: false }).reason).toBe(
-      'This workflow is already starting',
+      'This run is already starting',
     );
   });
 });

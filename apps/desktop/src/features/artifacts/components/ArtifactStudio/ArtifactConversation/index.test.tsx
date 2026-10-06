@@ -193,7 +193,7 @@ describe('ArtifactConversation', () => {
       />,
     );
     expect(screen.getByTestId('create-report-cta').getAttribute('title')).toBe(
-      'create another from this workflow run',
+      'create another from this run',
     );
     expect(screen.getByText(/this is the step transcript/i)).toBeDefined();
     expect(screen.queryByText(/reopen/i)).toBeNull();

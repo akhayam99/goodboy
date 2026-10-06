@@ -261,8 +261,8 @@ never exists on one surface only.
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
   Change model (one submenu); copy the last reply and the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
-  step, Start the next step, Restore; Copy run summary; Stop workflow, Archive
-  workflow and Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
+  step, Start the next step, Restore; Copy run summary; Stop run, Archive
+  run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already
   deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, an inbox record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
@@ -454,7 +454,7 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   maps to a project (`launchMountFor`, the Inbox rule: a GitHub or GitLab repo
   path, or a Sentry project linked or code-mapped to a project) a
   `LaunchMountRow` above the choice says which project the session works in
-  and why, and lets you pick another or none. Start workflow, or Start on the
+  and why, and lets you pick another or none. Start run, or Start on the
   agent side, links the issue, mounts that project, creates the session and
   starts the run or agent in one gesture (`startSessionFromDraft`, kind
   `task` with a `mount` and a `then`). Without a tracker
@@ -501,11 +501,11 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   with a `kickoff` target), the same one Session > Workflows > Create opens:
   title, goal card with Add files and Polish, the Orchestrated / Describe steps /
   Pick a workflow switch, Can use, the plan preview with the orchestrator row or the
-  editable steps, guidance, Starts, when to ask, Spend cap and Start workflow with
+  editable steps, guidance, Starts, when to ask, Spend cap and Start run with
   its reason. Its goal field is the kickoff goal (`workflowGoal` in the
   draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
   in `workflowDrafts`, so it survives leaving the kickoff, and Discard draft
-  clears it with the rest. Start workflow runs `startSessionFromDraft` with
+  clears it with the rest. Start run runs `startSessionFromDraft` with
   kind `workflow-run`: the session is created first, then the builder saves
   the workflow and attaches the run to it in the same action, and the view
   lands on the run. A failure removes the half-created session and keeps the
@@ -628,7 +628,7 @@ checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
   lists every step of its run in order, the ones not started switched off; an
   agent lists the agents of the same home grouped Needs you, Running, Done,
   newest first; an artifact lists the session's artifacts by kind. Actions
-  exist only where a real action backs them: `Start agent`, `Start a workflow`
+  exist only where a real action backs them: `Start agent`, `Start a run`
   and `New artifact` (opens the kind picker) on their pages, `Stop this step`
   while a step runs and `Retry step` when it failed or is blocked
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
@@ -673,7 +673,7 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   Escape cancels the confirm first, then closes. Shortcuts live in the segment
   tooltip and the palette, never in the rows.
 - **The workflow case extends the same control**:
-  `Session > Workflows > {Run} > {Step}`. A delegated child names its root and
+  `Session > Runs > {Run} > {Step}`. A delegated child names its root and
   parent agents between the run and itself, and an open question it answers
   adds one last crumb. There is no separate step strip and no "Part of
   {Workflow}" line.
@@ -971,7 +971,7 @@ A few entries are keys a focused control answers, not global chords: Submit
 (⌘↵, `composer.submit`, the one id behind every composer, editor and the
 workspace switcher; `isSubmitChord` reads it and keeps the lenient match that
 accepts Ctrl as well as ⌘), the two message keys `PromptField` reads (↵
-`composer.send` and ⇧↵ `composer.newLine`, see docs/turns.md → One composer) and Open the workflow of an activity row (⇧↵, the only combo
+`composer.send` and ⇧↵ `composer.newLine`, see docs/turns.md → One composer) and Open the run of an activity row (⇧↵, the only combo
 without ⌘). The list keys (`list.next`, `list.previous`, `list.open`,
 `list.openInTool`, `list.reply`, `list.star`, `list.dismiss`, `list.search`) are
 the same kind: `useListKeys` matches them against the registry, so the rail

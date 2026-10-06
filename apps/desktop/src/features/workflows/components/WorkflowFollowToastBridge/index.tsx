@@ -69,7 +69,7 @@ export const WorkflowFollowToastBridge = () => {
         sessionId: detail.sessionId,
         agentId: detail.agentId,
         title: `${detail.stepName} started`,
-        message: 'The workflow moved on to the next step.',
+        message: 'The run moved on to the next step.',
         actionLabel: 'Follow',
       });
     };

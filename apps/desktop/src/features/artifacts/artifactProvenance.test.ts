@@ -97,7 +97,7 @@ describe('artifactEvidenceInventory', () => {
       { kind: 'session', id: SESSION_ID, label: 'ship notify-relay' },
       { kind: 'agent', id: AGENT_ID, label: 'Harborline reviewer' },
       { kind: 'artifact', id: artifact.id, label: 'plan: ledger-core rollout' },
-      { kind: 'workflow-run', id: RUN_ID, label: 'workflow run' },
+      { kind: 'workflow-run', id: RUN_ID, label: 'run' },
     ]);
   });
 

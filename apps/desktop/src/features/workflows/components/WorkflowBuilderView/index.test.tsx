@@ -263,7 +263,7 @@ const rememberMode = ({ mode }: RememberModeParams) => {
 const goalField = () =>
   screen.getByPlaceholderText(/what should this workflow accomplish/i) as HTMLTextAreaElement;
 
-const startBtn = () => screen.getByRole('button', { name: /start workflow/i }) as HTMLButtonElement;
+const startBtn = () => screen.getByRole('button', { name: /start run/i }) as HTMLButtonElement;
 
 const setGoal = () => {
   const field = screen.getByPlaceholderText(
@@ -914,12 +914,12 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     openSpendCap();
     expect(screen.queryByLabelText('Spend cap in dollars')).toBeNull();
     expect(screen.queryByRole('tab', { name: /Warn only/ })).toBeNull();
-    expect(screen.queryByRole('tab', { name: /Pause workflows/ })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Pause runs/ })).toBeNull();
 
     fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
     expect(screen.getByLabelText('Spend cap in dollars')).toBeDefined();
     expect(screen.queryByRole('tab', { name: /Warn only/ })).toBeNull();
-    expect(screen.queryByRole('tab', { name: /Pause workflows/ })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Pause runs/ })).toBeNull();
 
     fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
@@ -928,7 +928,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       target: { value: '15' },
     });
     expect(screen.getByRole('tab', { name: /Warn only/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Pause workflows/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Pause runs/ })).toBeDefined();
     fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(startBtn());
 

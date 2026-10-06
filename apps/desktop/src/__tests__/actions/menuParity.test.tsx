@@ -268,7 +268,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       })?.resolve({ viewing: { kind: 'workflowRun', id: RUN } }) ?? []
     ).map((action) => action.label);
     const { fromOverflow, fromContext } = await overflowThenContext({
-      overflow: screen.getByRole('button', { name: /workflow actions$/ }),
+      overflow: screen.getByRole('button', { name: /run actions$/ }),
       context: screen.getByRole('heading', { name: 'Settlement export' }),
     });
 

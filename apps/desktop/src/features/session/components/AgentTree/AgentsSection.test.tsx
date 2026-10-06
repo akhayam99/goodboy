@@ -324,7 +324,7 @@ describe('AgentsSection collapse defaults', () => {
   it('empty session: workflow expanded, agents collapsed with no-agents summary', () => {
     render(<AgentsSection task={buildSession()} />);
 
-    expect(screen.getByTestId('toggle-workflow').textContent).toBe('expanded');
+    expect(screen.getByTestId('toggle-runs').textContent).toBe('expanded');
     expect(screen.queryByTestId('wf-start')).not.toBeNull();
     expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
     expect(screen.getByTestId('collapsed').textContent).toBe('No agents yet');

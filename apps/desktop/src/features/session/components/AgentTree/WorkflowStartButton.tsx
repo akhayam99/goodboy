@@ -18,8 +18,8 @@ export const WorkflowStartButton = ({ sessionId }: Props) => {
     <LensEmptyState
       tone={CONCEPT_TONE.workflows}
       icon={CONCEPT_ICONS.workflows}
-      title="No workflows yet"
-      description="Attach a workflow to run structured multi-step tasks for this session."
+      title="No runs yet"
+      description="Start a run from a workflow to work through structured steps."
       action={
         <button
           type="button"
@@ -27,7 +27,7 @@ export const WorkflowStartButton = ({ sessionId }: Props) => {
           className="inline-flex items-center gap-2 rounded-lg bg-subtle px-3 py-2 text-label font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-hover"
         >
           <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          Start a workflow
+          Start a run
         </button>
       }
     />
