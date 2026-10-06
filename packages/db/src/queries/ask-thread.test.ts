@@ -96,6 +96,24 @@ describe('ask threads', () => {
     expect(await listChatMessages({ db, chatId: 'ask-1' as ChatId })).toHaveLength(1);
   });
 
+  it('reopens the thread with the latest activity first, not the newest created', async () => {
+    const db = await seed();
+    await insertAskThread({
+      db,
+      thread: thread({ lastActivityAt: '2026-09-23T09:00:00.000Z' as IsoDateTime }),
+    });
+    await insertAskThread({
+      db,
+      thread: thread({
+        id: 'ask-2' as ChatId,
+        title: 'Why did the tester fail?',
+        createdAt: TUESDAY,
+      }),
+    });
+    const threads = await listAskThreads({ db, sessionId: SESSION });
+    expect(threads.map((entry) => entry.id)).toEqual(['ask-1', 'ask-2']);
+  });
+
   it('keeps session threads out of the Chat list', async () => {
     const db = await seed();
     await insertChat({ db, chat: workspaceChat });

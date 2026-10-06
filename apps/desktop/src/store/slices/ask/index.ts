@@ -13,7 +13,7 @@ export const createAskSlice = ({ set, get }: SliceDeps): AskSlice => ({
   ...askInitialState,
   loadAskThreads: loadAskThreads(set, get),
   showAskThread: showAskThread(set, get),
-  newAskThread: newAskThread(set),
+  newAskThread: newAskThread(set, get),
   sendAskQuestion: sendAskQuestion(set, get),
   stopAskReply: stopAskReply(set, get),
   setAskRouting: setAskRouting(set, get),

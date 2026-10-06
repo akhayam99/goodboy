@@ -60,7 +60,7 @@ export const listAskThreads = async ({
        c.model, c.effort, c.last_activity_at AS lastActivityAt, c.created_at AS createdAt,
        (SELECT COUNT(*) FROM chat_messages m WHERE m.chat_id = c.id AND m.role = 'user') AS messageCount
      FROM chats c WHERE c.session_id = ?
-     ORDER BY c.created_at DESC, c.rowid DESC`,
+     ORDER BY c.last_activity_at DESC, c.created_at DESC, c.rowid DESC`,
     [sessionId],
   );
   return rows.flatMap((row) => {

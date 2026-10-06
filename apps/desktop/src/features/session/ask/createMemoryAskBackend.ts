@@ -31,7 +31,7 @@ export const createMemoryAskBackend = ({ respond }: Params): AskBackend => {
     listThreads: async ({ sessionId }) =>
       [...threads.values()]
         .filter((thread) => thread.sessionId === sessionId)
-        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+        .sort((left, right) => right.lastActivityAt.localeCompare(left.lastActivityAt)),
     listMessages: async ({ threadId }) => messages.get(threadId) ?? [],
     insertThread: async ({ thread }) => {
       threads.set(thread.id, thread);

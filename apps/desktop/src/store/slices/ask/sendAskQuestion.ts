@@ -19,6 +19,9 @@ import type { ChatTurnOutcome } from '../../../features/workspace-chat/runChatTu
 import { chatTitleFromQuestion } from '../chats/chatTitleFromQuestion';
 import { sessionById } from '../sessions/sessionIndex';
 import { askRoutingOf } from './askRoutingOf';
+import { settleAskRoutingWrite } from './askRoutingWrites';
+import { advanceAskThread } from './askThreadOrder';
+import { isAskStreaming } from './isAskStreaming';
 import { recordAskUsage } from './recordAskUsage';
 import type { AskRouting } from './state';
 import type { GetFn, SendAskQuestionParams, SetFn } from './types';
@@ -163,8 +166,7 @@ export const sendAskQuestion =
   (set: SetFn, get: GetFn) =>
   async ({ sessionId, question, rightNow }: SendAskQuestionParams): Promise<boolean> => {
     const text = question.trim();
-    const currentId = get().askThreadId[sessionId] ?? null;
-    if (text === '' || (currentId !== null && get().askStreams[currentId] !== undefined)) {
+    if (text === '' || isAskStreaming({ state: get(), sessionId })) {
       return false;
     }
     const at = isoNow();
@@ -195,8 +197,18 @@ export const sendAskQuestion =
     const input = collectAskPackInput({ state, sessionId, rightNow });
     const pack = buildAskPack(input);
     const mounts = state.sessionProjectMounts[sessionId] ?? [];
+    const messages = [...history, asked, reply];
     set((latest) => ({
-      askMessages: { ...latest.askMessages, [thread.id]: [...history, asked, reply] },
+      askThreads: {
+        ...latest.askThreads,
+        [sessionId]: advanceAskThread({
+          threads: latest.askThreads[sessionId] ?? [],
+          threadId: thread.id,
+          messages,
+          at,
+        }),
+      },
+      askMessages: { ...latest.askMessages, [thread.id]: messages },
       askHandles: { ...latest.askHandles, [reply.id]: pack.handles },
       askStreams: {
         ...latest.askStreams,
@@ -212,6 +224,9 @@ export const sendAskQuestion =
         await finishReply({ set, get, threadId: thread.id, messageId: reply.id, outcome });
         return true;
       }
+      await settleAskRoutingWrite({ sessionId }).catch((error: unknown) => {
+        throw new Error(`Could not save the model choice. ${formatError(error)}`);
+      });
       outcome = await activeAskBackend.runTurn({
         request: {
           runId,

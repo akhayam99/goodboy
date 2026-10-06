@@ -4,6 +4,7 @@ import { Button, DrawerFrame, ScrollFade } from '@goodboy/ui';
 import type { ArtifactId, ChatMessage, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { isAskStreaming } from '../../../../../store/slices/ask/isAskStreaming';
 import { sessionTitle } from '../../../sessionTitle';
 import { requestAskFocus } from '../../askFocusEvent';
 import { askTurnsOf } from '../../askTurnsOf';
@@ -33,6 +34,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
   const stream = useAppStore((state) =>
     threadId === null ? undefined : state.askStreams[threadId],
   );
+  const isAnyStreaming = useAppStore((state) => isAskStreaming({ state, sessionId }));
   const loadAskThreads = useAppStore((state) => state.loadAskThreads);
   const showAskThread = useAppStore((state) => state.showAskThread);
   const newAskThread = useAppStore((state) => state.newAskThread);
@@ -76,6 +78,7 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
         <Button
           variant="ghost"
           size="sm"
+          disabled={isAnyStreaming}
           onClick={() => {
             setInsideId(null);
             setIsRightNowOpen(false);

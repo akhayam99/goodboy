@@ -1,4 +1,5 @@
 import { activeAskBackend } from '../../../features/session/ask/activeAskBackend';
+import { sortAskThreads } from './askThreadOrder';
 import { showAskThread } from './showAskThread';
 import type { AskSessionParams, GetFn, SetFn } from './types';
 
@@ -7,10 +8,10 @@ export const loadAskThreads =
   async ({ sessionId }: AskSessionParams): Promise<void> => {
     const threads = await activeAskBackend.listThreads({ sessionId });
     const known = get().askThreads[sessionId] ?? [];
-    const merged = [
+    const merged = sortAskThreads([
       ...known.filter((thread) => !threads.some((loaded) => loaded.id === thread.id)),
       ...threads,
-    ];
+    ]);
     set((state) => ({ askThreads: { ...state.askThreads, [sessionId]: merged } }));
     if (get().askThreadId[sessionId] !== undefined) {
       return;

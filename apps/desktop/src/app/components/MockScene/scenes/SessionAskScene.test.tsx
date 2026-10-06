@@ -156,6 +156,16 @@ describe('the session Ask scene', () => {
     expect(within(askDrawer()).getByRole('button', { name: /Right now/ })).toBeDefined();
   });
 
+  it('disables New while a reply streams and enables it once idle', async () => {
+    await renderState('streaming');
+    const newButton = within(askDrawer()).getByRole('button', { name: /New/ });
+    expect((newButton as HTMLButtonElement).disabled).toBe(true);
+    cleanup();
+    await renderState('answer');
+    const idleButton = within(askDrawer()).getByRole('button', { name: /New/ });
+    expect((idleButton as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('streams an answer with the composer offering Stop', async () => {
     await renderState('streaming');
     expect(await screen.findByLabelText('Stop the answer')).toBeDefined();

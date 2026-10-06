@@ -1,5 +1,6 @@
 import type { IsoDateTime } from '@goodboy/types';
 import { activeAskBackend } from '../../../features/session/ask/activeAskBackend';
+import { trackAskRoutingWrite } from './askRoutingWrites';
 import type { GetFn, SetAskRoutingParams, SetFn } from './types';
 
 export const setAskRouting =
@@ -18,7 +19,12 @@ export const setAskRouting =
     if (threadId === null) {
       return;
     }
-    void activeAskBackend
-      .setThreadModel({ threadId, ...routing, now: new Date().toISOString() as IsoDateTime })
-      .catch(() => undefined);
+    trackAskRoutingWrite({
+      sessionId,
+      write: activeAskBackend.setThreadModel({
+        threadId,
+        ...routing,
+        now: new Date().toISOString() as IsoDateTime,
+      }),
+    });
   };
