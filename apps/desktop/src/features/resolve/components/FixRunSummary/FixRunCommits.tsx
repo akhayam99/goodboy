@@ -4,7 +4,7 @@ import { ResolverCommitLine } from '../../ResolverCommitLine';
 import type { FixRunCommitsView } from '../../fixRunStatus';
 import { FIX_RUN_COPY } from '../../reviewFlowCopy';
 
-export type FixRunCommit = {
+type FixRunCommit = {
   readonly sha: string;
   readonly landedAs: string | null;
 };

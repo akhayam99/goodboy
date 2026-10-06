@@ -8,7 +8,7 @@ import { firstSentence } from '../ReviewFlow/firstSentence';
 import { STATE_CHIP_TONE } from '../ReviewFlow/stateTone';
 import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
 
-export type FixRunThread = {
+type FixRunThread = {
   readonly threadId: string;
   readonly entry: ReviewEntry | null;
 };
