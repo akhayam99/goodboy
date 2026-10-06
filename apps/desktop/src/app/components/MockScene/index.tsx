@@ -28,6 +28,7 @@ import { ResolveLaunchScene } from './scenes/ResolveLaunchScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
 import { ResolveBulkScene } from './scenes/ResolveBulkScene';
 import { BranchCommentsScene } from './scenes/BranchCommentsScene';
+import { BranchLaneScene } from './scenes/BranchLaneScene';
 import { BranchNarrowScene } from './scenes/BranchNarrowScene';
 import { BranchPushScene } from './scenes/BranchPushScene';
 import { BranchReplyOnlyScene } from './scenes/BranchReplyOnlyScene';
@@ -218,6 +219,8 @@ export const MOCK_SCENES = {
   'branch-comments': BranchCommentsScene,
   'branch-commits': BrandHistoryScene,
   'branch-files': BrandDiffScene,
+  'branch-lane-working': () => <BranchLaneScene variant="working" />,
+  'branch-lane-chain': () => <BranchLaneScene variant="chain" />,
   'branch-narrow': BranchNarrowScene,
   'branch-push': BranchPushScene,
   'branch-reply-bundled': () => <BranchReplyOnlyScene variant="bundled" />,

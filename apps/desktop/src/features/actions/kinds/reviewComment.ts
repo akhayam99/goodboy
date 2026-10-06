@@ -26,6 +26,8 @@ import {
 } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
+import { laneAcceptCountOf } from '../../resolve/laneAcceptCount';
+import { acceptUpToLabel } from '../../resolve/laneCopy';
 import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
 import { verdictReply } from '../../resolve/commentVerdict';
 import { postReplyWhenNothingWaits } from '../../resolve/replyDelivery';
@@ -65,6 +67,7 @@ export type ReviewCommentFacts = {
   readonly isReplyOnly: boolean;
   readonly isReplyFailure: boolean;
   readonly hasFixOnBranch: boolean;
+  readonly laneAcceptCount: number;
 };
 
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
@@ -224,6 +227,10 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
             entry.candidate.state === 'ready' &&
             entry.items.some((member) => member.queueItemId === row.item.id),
         ),
+      laneAcceptCount: laneAcceptCountOf({
+        candidates: state.sessionResolveCandidates[target.sessionId] ?? [],
+        itemId: row.item.id,
+      }),
     };
   },
   actions: [
@@ -442,7 +449,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.accept',
-      label: 'Accept',
+      label: ({ facts }) => acceptUpToLabel({ count: facts.laneAcceptCount }),
       icon: Check,
       group: 'act',
       shortcut: 'review.accept',
