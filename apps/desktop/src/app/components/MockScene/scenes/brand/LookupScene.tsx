@@ -443,7 +443,6 @@ export const BrandLookupScene = () => {
         >
           {() => (
             <InboxStudioLayout
-              rail={facets}
               list={
                 <PaneShell
                   scroll="body"
@@ -458,7 +457,6 @@ export const BrandLookupScene = () => {
                       onClearSession={noop}
                       isRefreshing={false}
                       onRefresh={noop}
-                      isFacetFolded={false}
                       activeFilterCount={0}
                       facets={facets}
                     />

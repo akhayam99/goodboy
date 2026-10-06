@@ -87,6 +87,17 @@ describe('branchLayoutOf', () => {
     }
   });
 
+  it('keeps the list beside the thread at 1600px with a drawer, one column at the widest column', () => {
+    const atDefault = paneWidthOf({
+      windowPx: 1600,
+      sidebarPx: LEFT_SIDEBAR_DEFAULT,
+      isDrawerOpen: true,
+    });
+    const atMax = paneWidthOf({ windowPx: 1600, sidebarPx: LEFT_SIDEBAR_MAX, isDrawerOpen: true });
+    expect(branchLayoutOf({ widthPx: atDefault })).toBe('two');
+    expect(branchLayoutOf({ widthPx: atMax })).toBe('single');
+  });
+
   it('gives the rail back when a pushed drawer opens beside a 1920px window', () => {
     const widthPx = paneWidthOf({
       windowPx: 1920,

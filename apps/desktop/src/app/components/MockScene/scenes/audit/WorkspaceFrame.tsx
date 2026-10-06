@@ -1,15 +1,16 @@
 import type { ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { AppFooter } from '../../../AppFooter';
 import { AppTopBar } from '../../../AppTopBar';
-import { SessionNavSidebar } from '../../../../../features/session/components/SessionNavSidebar';
+import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { shellArrangement } from '../../../../shellArrangement';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
+import { SceneFooter } from '../SceneFooter';
+import { SCENE_COLUMN_ACTIONS, sceneShellMode } from '../sceneShell';
 import { FRAME_CONNECTED } from './frameSeed';
 import { sceneParam } from './sceneParams';
 
@@ -27,32 +28,36 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
     hasWorkspace: true,
     hasActiveSession: true,
     isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
+    mode: sceneShellMode(),
   });
   return (
     <AppShell
-      topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
       drawer={isDrawerOpen ? <DrawerHost /> : null}
       drawerSizing={drawerSizing}
+      topBar={
+        <AppTopBar
+          mode={arrangement.mode}
+          onOpenSpend={noop}
+          onOpenScript={noop}
+          onOpenImpact={noop}
+        />
+      }
       leftHidden={arrangement.leftHidden}
       leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
       leftSidebar={
-        arrangement.leftSlot === 'sessions' ? (
-          <SessionNavSidebar currentSessionId={session.id} />
-        ) : undefined
+        <ShellLeft
+          arrangement={arrangement}
+          workspaceId={session.workspaceId}
+          currentSessionId={session.id}
+          isDraftShown={false}
+          actions={SCENE_COLUMN_ACTIONS}
+          onToggle={noop}
+        />
       }
       footer={
-        <AppFooter
-          scope="workspace"
-          target={{ place: null, tool: null }}
-          connected={FRAME_CONNECTED}
-          onOpenIntegration={noop}
-          onOpenInbox={noop}
-          onOpenWorkflows={noop}
-          onOpenImpact={noop}
-          onOpenSettings={noop}
-          onOpenShortcuts={noop}
-          onOpenChangelog={noop}
-        />
+        arrangement.footer === null ? undefined : (
+          <SceneFooter scope={arrangement.footer} connected={FRAME_CONNECTED} />
+        )
       }
       main={
         main ?? (

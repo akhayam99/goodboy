@@ -101,6 +101,50 @@ describe('AppShell', () => {
   });
 });
 
+describe('AppShell studio beside the column', () => {
+  it('puts the studio in the main area as its own sheet, leaving the column live', () => {
+    render(
+      <AppShell
+        leftSidebar={<button type="button">doors</button>}
+        main={<div>main</div>}
+        studio={<div>inbox studio</div>}
+        studioCoversLeft={false}
+      />,
+    );
+    const slot = screen.getByText('inbox studio').parentElement;
+
+    expect(slot?.style.gridArea).toBe('main');
+    expect(slot?.style.gridColumn).toBe('');
+    expect(slot?.dataset.studioSlot).toBe('content');
+    expect(
+      screen.getByRole('button', { name: 'doors' }).closest('aside')?.hasAttribute('inert'),
+    ).toBe(false);
+  });
+
+  it('draws the peek after the studio, so the peeked column floats over a studio too', () => {
+    render(
+      <AppShell
+        leftSidebar={<div>rail</div>}
+        leftSidebarCollapsed
+        leftOverlay={<div>peek</div>}
+        main={<div>main</div>}
+        studio={<div>chat studio</div>}
+        studioCoversLeft={false}
+      />,
+    );
+    const studio = screen.getByText('chat studio').parentElement as HTMLElement;
+    const peek = screen.getByText('peek').parentElement as HTMLElement;
+
+    expect(studio.compareDocumentPosition(peek) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(peek.style.gridColumn).toBe('1 / -1');
+  });
+
+  it('opens the column at 240px by default within 200 to 400, on a fresh saved key', () => {
+    expect(LEFT_SIDEBAR_DEFAULT).toBe(240);
+    expect(LEFT_SIDEBAR_STORAGE_KEY).toBe('goodboy:left-sidebar-width:v3');
+  });
+});
+
 describe('AppShell right drawer', () => {
   it('keeps a closed drawer as a zero-width, inert column beside the main area', () => {
     render(<AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />);

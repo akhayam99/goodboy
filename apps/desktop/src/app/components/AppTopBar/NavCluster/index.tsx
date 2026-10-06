@@ -11,7 +11,11 @@ import { historyLabel } from './historyLabel';
 
 const HISTORY_MENU_LIMIT = 12;
 
-export const NavCluster = () => {
+type Props = {
+  readonly hasDoors?: boolean;
+};
+
+export const NavCluster = ({ hasDoors = false }: Props) => {
   const stack = useAppStore((s) => s.navigation[s.currentWorkspaceId ?? ''] ?? null);
   const sessions = useAppStore(
     useShallow((s) => {
@@ -73,8 +77,10 @@ export const NavCluster = () => {
         onGo={forward}
         onJump={(index) => goToHistory({ index })}
       />
-      <BoardButton isOnBoard={isOnBoard} hasStudio={studioKind !== null} onBoard={goToBoard} />
-      {hasWorkspace ? (
+      {hasDoors ? (
+        <BoardButton isOnBoard={isOnBoard} hasStudio={studioKind !== null} onBoard={goToBoard} />
+      ) : null}
+      {hasDoors && hasWorkspace ? (
         <ChatButton
           isOnChat={studioKind === 'chat'}
           runningCount={chatActivity.runningCount}

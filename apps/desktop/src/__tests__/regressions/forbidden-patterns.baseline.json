@@ -297,8 +297,8 @@
     "packages/core/src/summarizer/issue-brief.ts": 1
   },
   "raw-font-weight": {
-    "apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyChipLabel.tsx": 2,
-    "apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx": 1,
+    "apps/desktop/src/app/components/GoodboyChip/GoodboyChipLabel.tsx": 2,
+    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsTooltip.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": 4,
     "apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx": 1,
@@ -427,7 +427,7 @@
     "packages/ui/src/selectedRow.ts": 1
   },
   "raw-leading": {
-    "apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx": 1,
+    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/BootSplash/BootErrorRecovery.tsx": 1,
     "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 2,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactBasedOnField.tsx": 2,
@@ -523,7 +523,7 @@
   },
   "half-step-spacing": {},
   "role-weight-override": {
-    "apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx": 1,
+    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/ModelPickerScenes.tsx": 1,

@@ -53,8 +53,9 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
       {() => (
         <StudioRailLayout
           railLabel="Chat list"
-          railWidth="narrow"
+          railWidth="standard"
           surface="chat"
+          placement="page"
           rail={
             <ChatList
               workspaceId={workspaceId}

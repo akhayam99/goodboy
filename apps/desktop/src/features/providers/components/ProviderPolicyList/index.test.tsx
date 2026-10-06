@@ -29,7 +29,7 @@ import {
   storySpies,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { ProvidersMenu } from '../../../../app/components/AppFooter/ProvidersMenu';
+import { ProvidersMenu } from '../../../../app/components/ProvidersMenu';
 import { ProvidersInOrder } from '../ProviderStudio/DefaultsPanel/ProvidersInOrder';
 import { ProviderPolicyList } from './index';
 

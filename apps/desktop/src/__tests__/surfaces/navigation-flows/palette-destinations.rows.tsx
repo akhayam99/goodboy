@@ -165,7 +165,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'sidebar: New opens the kickoff',
     covers: ['openSessionDraft', 'button:New'],
-    open: () => clickButton(/^Create new session/),
+    open: () => clickButton(/^New session$/),
     lands: both(
       () => heading('New session'),
       () => visible('tab', /Pick up a task/),
@@ -208,7 +208,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
           return { session };
         },
       } as never);
-      await clickButton(/^Create new session/);
+      await clickButton(/^New session$/);
       await clickButton(/Start blank/);
     },
     lands: both(

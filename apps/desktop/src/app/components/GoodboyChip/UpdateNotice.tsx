@@ -1,7 +1,7 @@
 import { Button, Notice } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
-import { activeWorkCopy } from '../../../../features/updater/components/UpdateConfirm';
-import { useRunningAgentCount } from '../../../../features/updater/hooks/useRunningAgentCount';
+import { useAppStore } from '../../../store';
+import { activeWorkCopy } from '../../../features/updater/components/UpdateConfirm';
+import { useRunningAgentCount } from '../../../features/updater/hooks/useRunningAgentCount';
 
 export const UpdateNotice = () => {
   const status = useAppStore((s) => s.updaterStatus);

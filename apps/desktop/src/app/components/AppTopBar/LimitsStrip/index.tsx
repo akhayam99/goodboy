@@ -1,100 +1,30 @@
-import type { KeyboardEvent } from 'react';
-import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { useLimitsChips } from '../../../../features/providers/hooks/useLimitsChips';
 import { openProviderUsage } from '../../../../features/providers/openProviderUsage';
-import { LimitsChip } from './LimitsChip';
-import { LimitsOverflowPopover } from './LimitsOverflowPopover';
+import { LimitsProvidersMenu } from './LimitsProvidersMenu';
+import { LimitsToolbar } from './LimitsToolbar';
 
 type Props = {
   readonly openProviderId?: ProviderId | null;
+  readonly opensProvidersMenu?: boolean;
 };
 
-const CHIP_VISIBILITY: ReadonlyArray<string> = [
-  'flex',
-  'hidden @min-chrome-labels/topbar:flex',
-  'hidden @min-chrome-wide/topbar:flex',
-  'hidden @min-chrome-wide/topbar:flex',
-];
-
-type OverflowStep = {
-  readonly shown: number;
-  readonly className: string;
-};
-
-const OVERFLOW_STEPS: ReadonlyArray<OverflowStep> = [
-  { shown: 1, className: 'flex @min-chrome-labels/topbar:hidden' },
-  { shown: 2, className: 'hidden @min-chrome-labels/topbar:flex @min-chrome-wide/topbar:hidden' },
-  { shown: 4, className: 'hidden @min-chrome-wide/topbar:flex' },
-];
-
-type IndexParams = {
-  readonly index: number;
-};
-
-const chipVisibility = ({ index }: IndexParams): string => CHIP_VISIBILITY[index] ?? 'hidden';
-
-type ChipParams = {
-  readonly chip: LimitsChipModel;
-};
-
-const hasData = ({ chip }: ChipParams): boolean =>
-  chip.state !== 'none' && chip.state !== 'waiting';
-
-const moveFocus = (event: KeyboardEvent<HTMLDivElement>): void => {
-  if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') {
-    return;
-  }
-  const buttons = Array.from(
-    event.currentTarget.querySelectorAll<HTMLButtonElement>('button[data-limits-chip]'),
-  );
-  const visible = buttons.filter((button) => button.getClientRects().length > 0);
-  const targets = visible.length > 0 ? visible : buttons;
-  const current = targets.findIndex((button) => button === document.activeElement);
-  if (current === -1) {
-    return;
-  }
-  event.preventDefault();
-  const step = event.key === 'ArrowRight' ? 1 : -1;
-  targets[(current + step + targets.length) % targets.length]?.focus();
-};
-
-export const LimitsStrip = ({ openProviderId = null }: Props) => {
+export const LimitsStrip = ({ openProviderId = null, opensProvidersMenu = false }: Props) => {
   const { chips, nowMs } = useLimitsChips();
+  const workspaceId = useAppStore((state) => state.currentWorkspaceId);
+  if (opensProvidersMenu && workspaceId !== null) {
+    return <LimitsProvidersMenu workspaceId={workspaceId} chips={chips} nowMs={nowMs} />;
+  }
   if (chips.length === 0) {
     return null;
   }
-  const onOpen = (chip: LimitsChipModel) => openProviderUsage({ providerId: chip.providerId });
-  const withData = chips.filter((chip) => hasData({ chip }));
-  const noData = chips.filter((chip) => !hasData({ chip }));
   return (
-    <div
-      role="toolbar"
-      aria-label="Provider limits"
-      onKeyDown={moveFocus}
-      className="flex shrink-0 items-center gap-1"
-    >
-      {withData.map((chip, index) => (
-        <LimitsChip
-          key={chip.providerId}
-          chip={chip}
-          nowMs={nowMs}
-          isPressed={chip.providerId === openProviderId}
-          className={chipVisibility({ index })}
-          onOpen={onOpen}
-        />
-      ))}
-      {OVERFLOW_STEPS.filter((step) => withData.length > step.shown || noData.length > 0).map(
-        (step) => (
-          <LimitsOverflowPopover
-            key={step.shown}
-            hidden={[...withData.slice(step.shown), ...noData]}
-            nowMs={nowMs}
-            className={step.className}
-            onOpen={onOpen}
-          />
-        ),
-      )}
-    </div>
+    <LimitsToolbar
+      chips={chips}
+      nowMs={nowMs}
+      pressedId={openProviderId}
+      onOpen={(chip) => openProviderUsage({ providerId: chip.providerId })}
+    />
   );
 };

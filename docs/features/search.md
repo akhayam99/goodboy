@@ -2,6 +2,10 @@
 
 Find any session, message, plan or action, and reach it from the keyboard.
 
+### Sidebar
+
+Every place you go sits in one sidebar on the left, on the board, in a session and beside every studio: **New session** on top, then **Board**, **Inbox**, **Chat** and **Workflows**, your sessions, and **Settings** with the Goodboy row and a bug button at the bottom. **⌘B** folds it into a slim rail that keeps every door, and resting the pointer at the left edge brings the full sidebar back over the page. Settings takes over the sidebar with **Back to app**, a search field and its pages, and **Esc** brings the doors back. Impact is the chart icon next to the bell, and a click on a limits bar opens the providers menu. **Classic bars** in Settings > App > General brings back the top bar and footer of 0.20.0 for one more release.
+
 ### Go anywhere
 
 <picture>
