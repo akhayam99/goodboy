@@ -25,6 +25,7 @@ import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { STORY_NOW } from '../../../store/storyHarness';
 import type { DrawerRequest } from '../../../store/slices/drawer/state';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
+import { agentPlace, sessionPlace } from '../../../store';
 import { pressShortcut } from '../../helpers/pressKey';
 import {
   WAIT,
@@ -387,6 +388,83 @@ const askChipAwayFrom = async ({ lens }: { readonly lens: string }): Promise<Ask
   return found as AskChipTarget;
 };
 
+const RAIL_TOKEN = /^(mx-auto|max-w-\[var\(--(column|measure)-frame\)\])$/;
+
+const railOf = (element: Element | null): string => {
+  const column = element?.closest<HTMLElement>('[data-page-column]') ?? null;
+  if (column === null) {
+    return 'none';
+  }
+  const tokens = column.className.split(/\s+/).filter((token) => RAIL_TOKEN.test(token));
+  return `${column.getAttribute('data-width')} ${tokens.join(' ')}`.trim();
+};
+
+const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
+const FULL_RAIL = 'full';
+
+const placeRoot = (): Element => {
+  const root =
+    document.querySelector('[data-studio-slot]') ??
+    document.querySelector('main [data-drawer-main]');
+  expect(root, 'no page root').not.toBeNull();
+  return root as Element;
+};
+
+const isShown = (element: Element): boolean =>
+  element.closest('[inert]') === null && element.closest('.invisible') === null;
+
+const shown = (selector: string): Element | null =>
+  [...placeRoot().querySelectorAll(selector)].find(isShown) ?? null;
+
+const scrollContent = (): Element | null =>
+  shown('[data-slot="pane-body"] .overflow-y-auto')?.firstElementChild ?? null;
+
+type RailLayers = Readonly<Record<string, Element | null>>;
+
+const expectOneRail = ({
+  place,
+  layers,
+  rail,
+}: {
+  readonly place: string;
+  readonly layers: RailLayers;
+  readonly rail: string;
+}): void => {
+  for (const [name, element] of Object.entries(layers)) {
+    expect(element, `${place}: no ${name} layer`).not.toBeNull();
+    expect(railOf(element), `${place}: ${name} sits on the page rail`).toBe(rail);
+  }
+};
+
+const sessionLayers = (extra: RailLayers): RailLayers => ({
+  header: shown('[data-slot="pane-header"]'),
+  trail: document.querySelector('main [data-slot="trail-end"]'),
+  ...extra,
+});
+
+const openContextDrawer = async (sessionId: SessionId): Promise<void> => {
+  act(() =>
+    useAppStore.getState().openDrawer({
+      kind: 'context',
+      sessionId,
+      payload: { tab: 'goal', view: 'current' },
+    }),
+  );
+  await settle();
+  expect(openDrawerKind()).toBe('context');
+};
+
+const openAgentTranscript = async (sessionId: SessionId): Promise<void> => {
+  const state = useAppStore.getState();
+  const agent = (state.sessionPhaseRuns[sessionId] ?? []).find(
+    (candidate) => candidate.workflowRunId == null && candidate.deletedAt == null,
+  );
+  expect(agent, 'the seeded session has a standalone agent').toBeDefined();
+  state.navigate({ to: agentPlace({ sessionId, agentId: agent?.id as never }) });
+  await settle();
+  await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT);
+};
+
 const sessionRuns = (sessionId: SessionId): number =>
   useAppStore.getState().sessions.find((session) => session.id === sessionId)?.workflowRuns
     .length ?? 0;
@@ -665,6 +743,92 @@ describe('moving across every place keeps one frame', () => {
       for (const column of settingsColumns) {
         expect(['column', 'measure']).toContain(column.getAttribute('data-width'));
       }
+    },
+    JOURNEY_MS,
+  );
+
+  it(
+    'puts header, Ask, body and composer of every page on one rail, drawer or not',
+    async () => {
+      const { sessionId } = await boot({ seed: 'pr' });
+      seedShipAFix();
+      await click(sessionRow(sessionId));
+
+      const overviewLayers = (): RailLayers =>
+        sessionLayers({ body: shown('[data-slot="pane-body"]') });
+      expect(currentPage()).toBe('Overview');
+      expectOneRail({ place: 'Overview', layers: overviewLayers(), rail: COLUMN_RAIL });
+      await openContextDrawer(sessionId);
+      expectOneRail({
+        place: 'Overview with a drawer',
+        layers: overviewLayers(),
+        rail: COLUMN_RAIL,
+      });
+      await escape();
+
+      await openAgentTranscript(sessionId);
+      const agentLayers = (): RailLayers =>
+        sessionLayers({ transcript: scrollContent(), composer: shown('textarea') });
+      expectOneRail({ place: 'Agent transcript', layers: agentLayers(), rail: COLUMN_RAIL });
+      await openContextDrawer(sessionId);
+      expectOneRail({
+        place: 'Agent transcript with a drawer',
+        layers: agentLayers(),
+        rail: COLUMN_RAIL,
+      });
+      await escape();
+
+      await click(screen.getByRole('tab', { name: 'Brief' }));
+      const briefLayers = (): RailLayers =>
+        sessionLayers({ body: shown('[data-slot="pane-body"]') });
+      expectOneRail({ place: 'Agent brief', layers: briefLayers(), rail: COLUMN_RAIL });
+      await openContextDrawer(sessionId);
+      expectOneRail({
+        place: 'Agent brief with a drawer',
+        layers: briefLayers(),
+        rail: COLUMN_RAIL,
+      });
+      await escape();
+
+      act(() => {
+        const state = useAppStore.getState();
+        useAppStore.setState({
+          sessionBranches: { ...state.sessionBranches, [sessionId]: '' },
+          sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: [] },
+        });
+        state.navigate({ to: sessionPlace({ sessionId, lens: 'files' }) });
+      });
+      await settle();
+      expect(lensOf()).toBe('files');
+      const versionLayers = (): RailLayers =>
+        sessionLayers({ body: shown('[data-slot="pane-body"]') });
+      expectOneRail({ place: 'File versions', layers: versionLayers(), rail: FULL_RAIL });
+      await openContextDrawer(sessionId);
+      expectOneRail({
+        place: 'File versions with a drawer',
+        layers: versionLayers(),
+        rail: FULL_RAIL,
+      });
+      await escape();
+
+      await click(door('chat'));
+      expect(studio()).toBe('chat');
+      expectOneRail({
+        place: 'Chat',
+        layers: { header: shown('header h2'), composer: shown('textarea') },
+        rail: COLUMN_RAIL,
+      });
+
+      await click(door('settings'));
+      expect(studio()).toBe('settings');
+      expectOneRail({
+        place: 'Settings',
+        layers: {
+          header: shown('[data-slot="pane-header"]'),
+          body: shown('[data-slot="pane-body"]'),
+        },
+        rail: COLUMN_RAIL,
+      });
     },
     JOURNEY_MS,
   );
