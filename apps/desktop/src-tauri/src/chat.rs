@@ -103,6 +103,8 @@ pub enum ChatError {
     NotFound(String),
     #[error(transparent)]
     Images(#[from] ChatImageError),
+    #[error("the session files for Ask are not valid: {0}")]
+    InvalidDossier(String),
 }
 
 crate::util::impl_error_serialize!(ChatError);
@@ -121,6 +123,7 @@ impl ChatError {
             ChatError::WriteArgument(_) => "write_argument",
             ChatError::NotFound(_) => "not_found",
             ChatError::Images(_) => "images",
+            ChatError::InvalidDossier(_) => "invalid_dossier",
         }
     }
 }
@@ -581,9 +584,10 @@ fn forward_lines(sink: &ChatSink, live: &LiveChild, stdout: ChildStdout) {
 fn spawn_chat_turn(
     app: &AppHandle,
     registry: &LiveChildRegistry,
-    args: &ChatTurnArgs,
+    run_id: &str,
+    chat_id: &str,
     prepared: PreparedChatTurn,
-    image_root: Option<PathBuf>,
+    cleanup_root: Option<PathBuf>,
 ) -> Result<String, ChatError> {
     let mut command = crate::path_env::command(prepared.binary);
     command.current_dir(&prepared.working_dir);
@@ -609,12 +613,12 @@ fn spawn_chat_turn(
     registry
         .lock()
         .map_err(|_| ChatError::Poisoned)?
-        .insert(args.run_id.clone(), live.clone());
+        .insert(run_id.to_string(), live.clone());
 
     let sink = ChatSink {
         app: app.clone(),
-        run_id: args.run_id.clone(),
-        chat_id: args.chat_id.clone(),
+        run_id: run_id.to_string(),
+        chat_id: chat_id.to_string(),
         seq: AtomicU64::new(0),
     };
     let registry_clone = Arc::clone(registry);
@@ -623,15 +627,15 @@ fn spawn_chat_turn(
         forward_lines(&sink, &live, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&live, &registry_clone, &sink.run_id);
-        if let Some(root) = image_root.as_deref() {
-            crate::chat_images::remove_turn_root(root);
+        if let Some(root) = cleanup_root.as_deref() {
+            remove_staged_root(root);
         }
         sink.send(TurnEventPayload::End {
             exit_code,
             stderr: stderr_buf,
         });
     });
-    Ok(args.run_id.clone())
+    Ok(run_id.to_string())
 }
 
 #[tauri::command]
@@ -666,7 +670,16 @@ pub async fn chat_turn(
         .as_ref()
         .map(|images| PathBuf::from(&images.root));
     let spawned = prepare_chat_turn(&args, &scope, home.as_deref(), turn_images.as_ref())
-        .and_then(|prepared| spawn_chat_turn(&app, &state.0, &args, prepared, image_root.clone()));
+        .and_then(|prepared| {
+            spawn_chat_turn(
+                &app,
+                &state.0,
+                &args.run_id,
+                &args.chat_id,
+                prepared,
+                image_root.clone(),
+            )
+        });
     if spawned.is_err() {
         if let Some(root) = image_root.as_deref() {
             crate::chat_images::remove_turn_root(root);
@@ -681,6 +694,268 @@ pub async fn chat_cancel(state: State<'_, ChatRegistry>, run_id: String) -> Resu
         return Ok(());
     }
     Err(ChatError::NotFound(run_id))
+}
+
+const ASK_DIR: &str = "goodboy-ask";
+const ASK_MAX_FILES: usize = 40;
+const ASK_MAX_BYTES: usize = 512 * 1024;
+const ASK_FILES_HEADER: &str =
+    "Session files staged for this question. Read the ones the question needs:";
+const ASK_WORKTREES_HEADER: &str =
+    "Session worktrees (the branch code). Read them, never change them:";
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AskDossierFile {
+    pub name: String,
+    pub content: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AskTurnArgs {
+    pub run_id: String,
+    pub thread_id: String,
+    pub session_id: String,
+    pub provider: String,
+    pub model: String,
+    pub prompt: String,
+    #[serde(default)]
+    pub system_prompt: Option<String>,
+    #[serde(default)]
+    pub effort: Option<String>,
+    #[serde(default)]
+    pub dossier: Vec<AskDossierFile>,
+}
+
+struct AskScope {
+    provider: String,
+    worktrees: Vec<String>,
+}
+
+fn load_ask_scope(
+    conn: &Connection,
+    thread_id: &str,
+    session_id: &str,
+) -> Result<AskScope, ChatError> {
+    let provider: Option<String> = conn
+        .query_row(
+            "SELECT provider FROM chats WHERE id = ?1 AND session_id = ?2",
+            [thread_id, session_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    let Some(provider) = provider else {
+        return Err(ChatError::NotFound(thread_id.to_string()));
+    };
+    let mut stmt = conn.prepare(
+        "SELECT worktree_path FROM session_worktrees
+         WHERE session_id = ?1 AND worktree_path IS NOT NULL AND is_attached = 1
+         ORDER BY parallel_index, created_at, id",
+    )?;
+    let worktrees = stmt
+        .query_map([session_id], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(AskScope {
+        provider,
+        worktrees,
+    })
+}
+
+fn is_safe_dossier_segment(segment: &str) -> bool {
+    !segment.is_empty()
+        && segment.len() <= 80
+        && !segment.starts_with('.')
+        && !segment.starts_with('-')
+        && segment
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))
+}
+
+fn is_safe_dossier_name(name: &str) -> bool {
+    let segments: Vec<&str> = name.split('/').collect();
+    segments.len() <= 2
+        && segments.iter().all(|segment| is_safe_dossier_segment(segment))
+        && name.ends_with(".md")
+}
+
+fn check_dossier(files: &[AskDossierFile]) -> Result<(), ChatError> {
+    if files.len() > ASK_MAX_FILES {
+        return Err(ChatError::InvalidDossier(format!(
+            "{} files, at most {ASK_MAX_FILES}",
+            files.len()
+        )));
+    }
+    let total: usize = files.iter().map(|file| file.content.len()).sum();
+    if total > ASK_MAX_BYTES {
+        return Err(ChatError::InvalidDossier(format!(
+            "{total} bytes, at most {ASK_MAX_BYTES}"
+        )));
+    }
+    let mut seen: Vec<&str> = Vec::with_capacity(files.len());
+    for file in files {
+        if !is_safe_dossier_name(&file.name) || seen.contains(&file.name.as_str()) {
+            return Err(ChatError::InvalidDossier(file.name.clone()));
+        }
+        seen.push(file.name.as_str());
+    }
+    Ok(())
+}
+
+fn stage_ask_dossier_in(
+    temp: &Path,
+    run_id: &str,
+    files: &[AskDossierFile],
+) -> Result<PathBuf, ChatError> {
+    if !crate::chat_images::is_safe_id(run_id) {
+        return Err(ChatError::InvalidValue {
+            field: "run id",
+            value: run_id.to_string(),
+        });
+    }
+    check_dossier(files)?;
+    let root = temp.join(ASK_DIR).join(run_id);
+    remove_staged_root(&root);
+    std::fs::create_dir_all(&root)?;
+    for file in files {
+        let target = root.join(&file.name);
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&target, file.content.as_bytes())?;
+        crate::chat_images::set_mode(&target, 0o444)?;
+    }
+    for entry in std::fs::read_dir(&root)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            crate::chat_images::set_mode(&path, 0o555)?;
+        }
+    }
+    crate::chat_images::set_mode(&root, 0o555)?;
+    Ok(std::fs::canonicalize(&root)?)
+}
+
+fn remove_staged_root(root: &Path) {
+    if !root.exists() {
+        return;
+    }
+    let _ = crate::chat_images::set_mode(root, 0o755);
+    if let Ok(entries) = std::fs::read_dir(root) {
+        for path in entries.flatten().map(|entry| entry.path()) {
+            if path.is_dir() {
+                let _ = crate::chat_images::set_mode(&path, 0o755);
+            }
+        }
+    }
+    crate::chat_images::remove_turn_root(root);
+}
+
+fn ask_prompt(args: &AskTurnArgs, dossier_root: &str, worktrees: &[String]) -> String {
+    let mut parts = vec![args.prompt.clone()];
+    if !args.dossier.is_empty() {
+        let mut lines = vec![ASK_FILES_HEADER.to_string()];
+        for file in &args.dossier {
+            lines.push(format!("- {dossier_root}/{}", file.name));
+        }
+        parts.push(lines.join("\n"));
+    }
+    if !worktrees.is_empty() {
+        let mut lines = vec![ASK_WORKTREES_HEADER.to_string()];
+        for worktree in worktrees {
+            lines.push(format!("- {worktree}"));
+        }
+        parts.push(lines.join("\n"));
+    }
+    parts.join("\n\n")
+}
+
+fn prepare_ask_turn(
+    args: &AskTurnArgs,
+    scope: &AskScope,
+    home: Option<&Path>,
+    dossier_root: &str,
+) -> Result<PreparedChatTurn, ChatError> {
+    if scope.provider != args.provider {
+        return Err(ChatError::ProviderMismatch {
+            stored: scope.provider.clone(),
+            requested: args.provider.clone(),
+        });
+    }
+    let shape = cli_shape_for(&args.provider)?;
+    require_safe_value("model", &args.model)?;
+    if let Some(effort) = args.effort.as_deref() {
+        require_safe_value("effort", effort)?;
+    }
+    let worktrees: Vec<String> = scope
+        .worktrees
+        .iter()
+        .map(|root| trim_root(root))
+        .filter(|root| {
+            let path = Path::new(root);
+            path.is_absolute() && !is_too_wide(path, home) && !is_inside(dossier_root, root)
+        })
+        .collect();
+    let candidates: Vec<String> = match shape {
+        "codex" => vec![dossier_root.to_string()],
+        _ => worktrees
+            .iter()
+            .cloned()
+            .chain(std::iter::once(dossier_root.to_string()))
+            .collect(),
+    };
+    let roots = select_chat_roots(&candidates, home)?;
+    let turn = ChatTurnArgs {
+        run_id: args.run_id.clone(),
+        chat_id: args.thread_id.clone(),
+        provider: args.provider.clone(),
+        model: args.model.clone(),
+        prompt: ask_prompt(args, dossier_root, &worktrees),
+        system_prompt: args.system_prompt.clone(),
+        effort: args.effort.clone(),
+        images: false,
+        message_id: None,
+    };
+    let cli = build_chat_cli_args(shape, &turn, &roots, None);
+    assert_read_only(shape, &cli)?;
+    Ok(PreparedChatTurn {
+        binary: shape,
+        cli,
+        working_dir: roots.working_dir,
+    })
+}
+
+#[tauri::command]
+pub async fn ask_turn(
+    app: AppHandle,
+    state: State<'_, ChatRegistry>,
+    db: State<'_, Db>,
+    args: AskTurnArgs,
+) -> Result<String, ChatError> {
+    let scope = {
+        let conn = db.0.lock().map_err(|_| ChatError::Poisoned)?;
+        load_ask_scope(&conn, &args.thread_id, &args.session_id)?
+    };
+    let scope = AskScope {
+        provider: scope.provider,
+        worktrees: existing_roots(scope.worktrees),
+    };
+    let home: Option<PathBuf> = dirs::home_dir();
+    let dossier_root = stage_ask_dossier_in(&std::env::temp_dir(), &args.run_id, &args.dossier)?;
+    let dossier = dossier_root.to_string_lossy().into_owned();
+    let spawned = prepare_ask_turn(&args, &scope, home.as_deref(), &dossier).and_then(|prepared| {
+        spawn_chat_turn(
+            &app,
+            &state.0,
+            &args.run_id,
+            &args.thread_id,
+            prepared,
+            Some(dossier_root.clone()),
+        )
+    });
+    if spawned.is_err() {
+        remove_staged_root(&dossier_root);
+    }
+    spawned
 }
 
 #[cfg(test)]
@@ -1143,5 +1418,233 @@ mod tests {
         assert_eq!(value["chatId"], "chat-1");
         assert_eq!(value["runId"], "run-1");
         assert_eq!(value["type"], "line");
+    }
+
+    const DOSSIER: &str = "/private/tmp/goodboy-ask/run-1";
+
+    fn ask_args_for(provider: &str) -> AskTurnArgs {
+        AskTurnArgs {
+            run_id: "run-1".to_string(),
+            thread_id: "ask-1".to_string(),
+            session_id: "session-1".to_string(),
+            provider: provider.to_string(),
+            model: "claude-sonnet-5-5".to_string(),
+            prompt: "What needs me?".to_string(),
+            system_prompt: Some("Answer about the Fix webhook retries session.".to_string()),
+            effort: Some("low".to_string()),
+            dossier: vec![AskDossierFile {
+                name: "agents/A2.md".to_string(),
+                content: "Implementer transcript tail".to_string(),
+            }],
+        }
+    }
+
+    fn ask_scope_for(provider: &str, worktrees: &[&str]) -> AskScope {
+        AskScope {
+            provider: provider.to_string(),
+            worktrees: worktrees.iter().map(|root| root.to_string()).collect(),
+        }
+    }
+
+    const WORKTREES: [&str; 2] = [
+        "/Users/mara/code/notify-relay/.goodboy/worktrees/webhook-retries",
+        "/Users/mara/code/payments-api/.goodboy/worktrees/webhook-retries/",
+    ];
+
+    fn prepare_ask(provider: &str, worktrees: &[&str]) -> PreparedChatTurn {
+        prepare_ask_turn(
+            &ask_args_for(provider),
+            &ask_scope_for(provider, worktrees),
+            Some(Path::new(HOME)),
+            DOSSIER,
+        )
+        .expect("read-only ask")
+    }
+
+    #[test]
+    fn claude_asks_from_the_session_worktrees_and_reads_the_dossier_as_an_extra_root() {
+        let prepared = prepare_ask("anthropic", &WORKTREES);
+        assert_eq!(prepared.working_dir, WORKTREES[0]);
+        let roots: Vec<&str> = prepared
+            .cli
+            .windows(2)
+            .filter(|pair| pair[0] == "--add-dir")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(
+            roots,
+            vec![
+                "/Users/mara/code/payments-api/.goodboy/worktrees/webhook-retries",
+                DOSSIER
+            ]
+        );
+        assert_eq!(flag_value(&prepared.cli, "--permission-mode"), Some("plan"));
+        assert_eq!(flag_value(&prepared.cli, "--tools"), Some("Read,Grep,Glob"));
+        assert!(prepared.cli.contains(&"--restricted".to_string()));
+        assert!(assert_read_only("claude", &prepared.cli).is_ok());
+    }
+
+    #[test]
+    fn codex_asks_inside_the_dossier_because_its_sandbox_takes_no_extra_roots() {
+        let prepared = prepare_ask("codex", &WORKTREES);
+        assert_eq!(prepared.working_dir, DOSSIER);
+        assert_eq!(flag_value(&prepared.cli, "--cd"), Some(DOSSIER));
+        assert_eq!(flag_value(&prepared.cli, "-s"), Some("read-only"));
+        assert!(!prepared.cli.contains(&"--add-dir".to_string()));
+        for switch in ["--ignore-user-config", "--ignore-rules", "--ephemeral"] {
+            assert!(prepared.cli.contains(&switch.to_string()), "{switch} missing");
+        }
+        let prompt = prepared.cli.last().unwrap();
+        assert!(prompt.starts_with("Answer about the Fix webhook retries session.\n\n"));
+        assert!(prompt.contains(&format!("- {DOSSIER}/agents/A2.md")));
+        assert!(prompt.contains(&format!("- {}", WORKTREES[0])));
+        assert!(assert_read_only("codex", &prepared.cli).is_ok());
+    }
+
+    #[test]
+    fn a_session_without_a_worktree_asks_from_the_dossier_alone() {
+        for provider in PROVIDERS {
+            let prepared = prepare_ask(provider, &[]);
+            assert_eq!(prepared.working_dir, DOSSIER, "{provider}");
+            assert!(!prepared.cli.contains(&"--add-dir".to_string()), "{provider}");
+            let prompt = prepared.cli.last().unwrap();
+            assert!(!prompt.contains(ASK_WORKTREES_HEADER), "{provider}");
+        }
+    }
+
+    #[test]
+    fn ask_refuses_providers_that_cannot_run_read_only_and_a_provider_the_thread_does_not_use() {
+        for provider in ["cursor", "gemini", "opencode"] {
+            let result = prepare_ask_turn(
+                &ask_args_for(provider),
+                &ask_scope_for(provider, &WORKTREES),
+                Some(Path::new(HOME)),
+                DOSSIER,
+            );
+            assert!(matches!(result, Err(ChatError::NotReadOnly(_))));
+        }
+        let mismatch = prepare_ask_turn(
+            &ask_args_for("codex"),
+            &ask_scope_for("anthropic", &WORKTREES),
+            Some(Path::new(HOME)),
+            DOSSIER,
+        );
+        assert!(matches!(mismatch, Err(ChatError::ProviderMismatch { .. })));
+    }
+
+    #[test]
+    fn ask_never_reads_the_home_folder_or_a_parent_of_it() {
+        let prepared = prepare_ask("anthropic", &["/Users", HOME, "relative/path"]);
+        assert_eq!(prepared.working_dir, DOSSIER);
+        assert!(!prepared.cli.contains(&"--add-dir".to_string()));
+    }
+
+    #[test]
+    fn dossier_names_stay_inside_the_staged_root() {
+        for name in ["session.md", "agents/A2.md", "runs/R1.md"] {
+            assert!(is_safe_dossier_name(name), "{name}");
+        }
+        for name in [
+            "../escape.md",
+            "/etc/passwd.md",
+            "agents/../../x.md",
+            ".hidden.md",
+            "a/b/c.md",
+            "agents/A2.txt",
+            "-flag.md",
+            "",
+        ] {
+            assert!(!is_safe_dossier_name(name), "{name}");
+        }
+    }
+
+    #[test]
+    fn the_dossier_is_capped_in_files_and_bytes() {
+        let many: Vec<AskDossierFile> = (0..=ASK_MAX_FILES)
+            .map(|index| AskDossierFile {
+                name: format!("f{index}.md"),
+                content: String::new(),
+            })
+            .collect();
+        assert!(matches!(
+            check_dossier(&many),
+            Err(ChatError::InvalidDossier(_))
+        ));
+        let big = vec![AskDossierFile {
+            name: "session.md".to_string(),
+            content: "x".repeat(ASK_MAX_BYTES + 1),
+        }];
+        assert!(matches!(check_dossier(&big), Err(ChatError::InvalidDossier(_))));
+        let twice = vec![
+            AskDossierFile {
+                name: "session.md".to_string(),
+                content: String::new(),
+            },
+            AskDossierFile {
+                name: "session.md".to_string(),
+                content: String::new(),
+            },
+        ];
+        assert!(matches!(check_dossier(&twice), Err(ChatError::InvalidDossier(_))));
+    }
+
+    #[test]
+    fn the_dossier_is_staged_read_only_and_removed_after_the_turn() {
+        let temp = std::env::temp_dir().join(format!("goodboy-ask-test-{}", std::process::id()));
+        let files = vec![
+            AskDossierFile {
+                name: "session.md".to_string(),
+                content: "Fix webhook retries".to_string(),
+            },
+            AskDossierFile {
+                name: "agents/A2.md".to_string(),
+                content: "Implementer".to_string(),
+            },
+        ];
+        let root = stage_ask_dossier_in(&temp, "run-7", &files).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(root.join("agents/A2.md")).unwrap(),
+            "Implementer"
+        );
+        assert!(std::fs::write(root.join("new.md"), "x").is_err());
+        remove_staged_root(&root);
+        assert!(!root.exists());
+        let _ = std::fs::remove_dir_all(&temp);
+        assert!(matches!(
+            stage_ask_dossier_in(&temp, "../run", &files),
+            Err(ChatError::InvalidValue { .. })
+        ));
+    }
+
+    #[test]
+    fn the_ask_scope_is_the_thread_of_this_session_and_its_attached_worktrees() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE chats (id TEXT PRIMARY KEY, provider TEXT, session_id TEXT);
+             CREATE TABLE session_worktrees (id TEXT PRIMARY KEY, session_id TEXT,
+               worktree_path TEXT, is_attached INTEGER, parallel_index INTEGER, created_at INTEGER);
+             INSERT INTO chats VALUES ('ask-1', 'anthropic', 'session-1');
+             INSERT INTO chats VALUES ('chat-1', 'anthropic', NULL);
+             INSERT INTO session_worktrees VALUES ('w2', 'session-1', '/code/payments-api/wt', 1, 1, 1);
+             INSERT INTO session_worktrees VALUES ('w1', 'session-1', '/code/notify-relay/wt', 1, 0, 2);
+             INSERT INTO session_worktrees VALUES ('w3', 'session-1', '/code/old/wt', 0, 2, 0);
+             INSERT INTO session_worktrees VALUES ('w4', 'session-1', NULL, 1, 3, 0);
+             INSERT INTO session_worktrees VALUES ('w5', 'session-2', '/code/other/wt', 1, 0, 0);",
+        )
+        .unwrap();
+        let scope = load_ask_scope(&conn, "ask-1", "session-1").unwrap();
+        assert_eq!(scope.provider, "anthropic");
+        assert_eq!(
+            scope.worktrees,
+            vec!["/code/notify-relay/wt", "/code/payments-api/wt"]
+        );
+        assert!(matches!(
+            load_ask_scope(&conn, "ask-1", "session-2"),
+            Err(ChatError::NotFound(_))
+        ));
+        assert!(matches!(
+            load_ask_scope(&conn, "chat-1", "session-1"),
+            Err(ChatError::NotFound(_))
+        ));
     }
 }

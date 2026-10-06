@@ -195,7 +195,8 @@ export const listChats = async ({
 }: ListChatsParams): Promise<ReadonlyArray<ChatSummary>> => {
   const archivedFilter = includeArchived ? '' : 'AND c.archived_at IS NULL';
   const rows = await db.select<ChatRow>(
-    `SELECT ${CHAT_COLUMNS} FROM chats c WHERE c.workspace_id = ? ${archivedFilter}
+    `SELECT ${CHAT_COLUMNS} FROM chats c
+     WHERE c.workspace_id = ? AND c.session_id IS NULL ${archivedFilter}
      ORDER BY c.last_activity_at DESC, c.id`,
     [workspaceId],
   );
@@ -203,7 +204,7 @@ export const listChats = async ({
     `SELECT m.chat_id AS chatId, m.provider, m.model, COUNT(*) AS messages,
        SUM(CASE WHEN m.role = 'assistant' THEN 1 ELSE 0 END) AS replies
      FROM chat_messages m JOIN chats c ON c.id = m.chat_id
-     WHERE c.workspace_id = ?
+     WHERE c.workspace_id = ? AND c.session_id IS NULL
      GROUP BY m.chat_id, m.provider, m.model
      ORDER BY MIN(CASE WHEN m.role = 'assistant' THEN m.created_at END),
        MIN(CASE WHEN m.role = 'assistant' THEN m.rowid END)`,

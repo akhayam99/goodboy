@@ -878,3 +878,31 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   chat into work. `?scene=chat-room` takes `work=drawer|project|add|session`
   (opens the panel, then the popover or mode), `chat=<key>` (`retry` drafts two
   projects) and `activity=running|unread` for the top bar and the list.
+
+## Session Ask turns
+
+Ask answers a question about one session from its trail band. It reuses the
+workspace chat pipeline (same hardening, same `chat_event` channel, same
+stream reader) with a session scope: `ask_turn` in
+`apps/desktop/src-tauri/src/chat.rs`.
+
+- **Scope comes from the database.** The frontend sends the thread id, the
+  session id, provider, model, effort, the prompt and the session files.
+  Rust reads the provider from the thread row (`chats.session_id` must be
+  that session, m227) and the session's attached worktrees from
+  `session_worktrees` (oldest parallel index first). Missing folders, `/`,
+  the home folder and its parents are dropped, as for Chat.
+- **The session files.** The frontend stages at most 40 Markdown files and
+  512 KiB (agent transcript tails). Names are one or two plain segments
+  ending in `.md`, never hidden, never `..`. Rust writes them read-only into
+  `goodboy-ask/<run id>/` in the system temp folder and removes the folder
+  when the turn ends or fails to start. The prompt ends with the list of
+  staged files and the worktree paths.
+- **Per provider.** Claude runs in the first worktree with the other
+  worktrees and the staged folder as `--add-dir` roots. Codex takes no extra
+  read root, so it runs inside the staged folder and reads the worktrees by
+  the absolute paths in the prompt; its read-only sandbox already lets it
+  read them (the known limit described for Chat). A session with no worktree
+  runs inside the staged folder with either provider, so Ask works without a
+  connected project. Both pass the same argument check as Chat
+  (`assert_read_only`), and the Rust tests pin each provider's arguments.
