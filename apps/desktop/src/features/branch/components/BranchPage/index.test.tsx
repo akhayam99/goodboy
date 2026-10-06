@@ -150,9 +150,9 @@ describe('Branch page Comments', () => {
     await mountAt({ width: 384 });
 
     fireEvent.click(
-      within(screen.getByRole('navigation', { name: 'Comments' })).getAllByRole(
-        'button',
-      )[0] as HTMLElement,
+      screen
+        .getByRole('navigation', { name: 'Comments' })
+        .querySelector('[data-thread-id]') as HTMLElement,
     );
     await settle();
     expect(useAppStore.getState().branchThreadId[SESSION.id]).not.toBeNull();

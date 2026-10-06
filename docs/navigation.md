@@ -1364,8 +1364,12 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   thread in the address is `s/{session}/branch/comments/t/{thread}`. A comment
   nobody started shows `Fix` on hover (and `F`), which opens the launch panel
   in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
-  Cmd+A for every comment nobody started, Esc clears) and the bar `N selected ·
-Fix N` opens the same panel. Cmd+A is not in the shortcut table:
+  Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
+Fix N` opens the same panel, or `Accept N` for ready comments. With no fix run
+  the line under the tabs says `Fix N open comments`; the Overview card and
+  the board card open that same panel pre-filled. Bulk answers, Retry N and
+  `N accepted · Undo` (Cmd+Z) are described in
+  [Concepts](./concepts.md). Cmd+A is not in the shortcut table:
   the system reserves it. "Resolve" names the area, never a button. The page
   exists with or without a pull request: without one the primary is `Create PR`
   (the creation form replaces the tab body, trail `Session › Branch ▾ › New

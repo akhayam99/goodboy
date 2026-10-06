@@ -61,8 +61,8 @@ export const ResolveRunStatus = ({
         })}
       </ul>
       <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1">
-        <span className="px-2 text-meta text-muted-foreground">{run.model}</span>
         {actions}
+        <span className="px-2 text-meta text-muted-foreground">{run.model}</span>
         <Button size="sm" variant="ghost" onClick={onOpenTranscript}>
           Open transcript
         </Button>

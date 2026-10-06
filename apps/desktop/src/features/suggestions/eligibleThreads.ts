@@ -1,6 +1,7 @@
 import type { ResolveThread } from '@goodboy/types';
 import type { SessionGithubState } from '../../store/types';
 import { groupThreads, type CommentThread } from '../integrations/github/comment-threads';
+import { isFixableThread } from '../resolve/fixableComments';
 
 type Params = {
   readonly github: SessionGithubState | null;
@@ -8,7 +9,7 @@ type Params = {
 };
 
 const isEligible = ({ row }: { readonly row: ResolveThread | undefined }): boolean =>
-  row === undefined || row.state === 'open' || row.state === 'failed';
+  row === undefined || isFixableThread({ thread: row });
 
 export const eligibleReviewThreads = ({ github, rows }: Params): ReadonlyArray<CommentThread> =>
   groupThreads(github?.detail?.comments ?? []).filter((thread) => {

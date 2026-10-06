@@ -1,8 +1,9 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Eyebrow } from '@goodboy/ui';
+import { Button, Eyebrow } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { RESOLVE_WORD_LABEL } from '../../commentProjection';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
+import { acceptCountLabel } from '../../reviewBulkCopy';
 import { ReviewListRow } from './ReviewListRow';
 import type { ReviewGroup } from './useReviewEntries';
 
@@ -13,6 +14,8 @@ type Props = {
   readonly onToggleDone: () => void;
   readonly onSelect: (threadId: string) => void;
   readonly onFix: (threadId: string) => void;
+  readonly onAccept: (threadIds: ReadonlyArray<string>) => void;
+  readonly isAccepting: boolean;
   readonly checked: ReadonlySet<string>;
   readonly onToggle: (threadId: string) => void;
 };
@@ -24,6 +27,8 @@ export const ReviewList = ({
   onToggleDone,
   onSelect,
   onFix,
+  onAccept,
+  isAccepting,
   checked,
   onToggle,
 }: Props) => (
@@ -34,6 +39,8 @@ export const ReviewList = ({
   >
     {groups.map((group) => {
       const label = `${RESOLVE_WORD_LABEL[group.word]} ${group.entries.length}`;
+      const acceptable =
+        group.word === 'ready' ? group.entries.filter((entry) => entry.isAcceptable) : [];
       const isCollapsible = group.word === 'done';
       const isShown = !isCollapsible || isDoneOpen;
       const Chevron = isDoneOpen ? ChevronDown : ChevronRight;
@@ -58,7 +65,19 @@ export const ReviewList = ({
               <Eyebrow label={label} />
             </button>
           ) : (
-            <Eyebrow className="px-3" label={label} />
+            <div className="flex min-w-0 items-center justify-between gap-2 px-3">
+              <Eyebrow label={label} />
+              {acceptable.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  isBusy={isAccepting}
+                  onClick={() => onAccept(acceptable.map((entry) => entry.threadId))}
+                >
+                  {acceptCountLabel({ count: acceptable.length })}
+                </Button>
+              )}
+            </div>
           )}
           {isShown && (
             <ul className="flex min-w-0 flex-col gap-0.5">
@@ -69,12 +88,10 @@ export const ReviewList = ({
                     isSelected={entry.threadId === focusedThreadId}
                     onSelect={() => onSelect(entry.threadId)}
                     onFix={
-                      entry.state === 'new' && checked.size === 0
-                        ? () => onFix(entry.threadId)
-                        : null
+                      entry.isFixable && checked.size === 0 ? () => onFix(entry.threadId) : null
                     }
                     selection={
-                      entry.state === 'new'
+                      entry.isFixable || entry.isAcceptable
                         ? {
                             isChecked: checked.has(entry.threadId),
                             isSelecting: checked.size > 0,

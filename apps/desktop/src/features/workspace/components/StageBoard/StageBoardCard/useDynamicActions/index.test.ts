@@ -18,13 +18,21 @@ const { state } = vi.hoisted(() => ({
     ensureProjectMounted: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
     activateWorkflowAgent: vi.fn(async () => undefined),
+    requestReviewLaunch: vi.fn(),
+    navigate: vi.fn(),
+    currentSessionId: 'other' as string,
+    activeLens: {} as Record<string, string>,
+    branchTab: {} as Record<string, string>,
+    branchThreadId: {} as Record<string, string | null>,
     hasUnread: false,
     runHasOpenQuestions: false,
   },
 }));
 
 vi.mock('../../../../../../store', () => ({
-  useAppStore: (selector: (s: typeof state) => unknown) => selector(state),
+  useAppStore: Object.assign((selector: (s: typeof state) => unknown) => selector(state), {
+    getState: () => state,
+  }),
   useSessionHasUnread: () => state.hasUnread,
 }));
 
@@ -111,6 +119,8 @@ beforeEach(() => {
   state.emitNotification.mockClear();
   (nav.openWorkflows as ReturnType<typeof vi.fn>).mockClear();
   (nav.openQuestions as ReturnType<typeof vi.fn>).mockClear();
+  state.requestReviewLaunch.mockClear();
+  state.navigate.mockClear();
   (nav.openReview as ReturnType<typeof vi.fn>).mockClear();
   (nav.openAgent as ReturnType<typeof vi.fn>).mockClear();
 });
@@ -192,7 +202,7 @@ describe('useDynamicActions', () => {
     expect(result.current.filter((a) => a.key.startsWith('mount:'))).toHaveLength(2);
   });
 
-  it('sends the resolve action to the github lens with the eligible count', () => {
+  it('opens the fix panel with the eligible threads and never launches', () => {
     state.sessionGithub = {
       'sess-1': {
         pr: { number: 12 },
@@ -211,7 +221,12 @@ describe('useDynamicActions', () => {
     expect(action?.icon).toBe(SUGGESTION_ICONS['resolve-threads']);
 
     action?.onClick();
-    expect(nav.openReview).toHaveBeenCalledWith(sessionWith());
+    expect(state.requestReviewLaunch).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      threadIds: ['t1', 't2'],
+    });
+    expect(state.navigate).toHaveBeenCalledOnce();
+    expect(nav.openReview).not.toHaveBeenCalled();
   });
 
   it('leaves a thread a running fix attempt already owns out of the count', () => {
@@ -226,7 +241,9 @@ describe('useDynamicActions', () => {
         },
       },
     };
-    state.sessionResolveThreads = { 'sess-1': [{ threadId: 't2', state: 'working' }] };
+    state.sessionResolveThreads = {
+      'sess-1': [{ threadId: 't2', state: 'working', stage: 'working' }],
+    };
     const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
     expect(result.current.find((a) => a.key === 'resolve')?.label).toBe('Resolve 1 comment');
   });

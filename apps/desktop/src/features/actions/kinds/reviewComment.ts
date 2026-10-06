@@ -22,6 +22,7 @@ import {
   sessionPlace,
 } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
+import { acceptReviewItem } from '../../resolve/acceptReviewItem';
 import { verdictReply } from '../../resolve/commentVerdict';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
@@ -116,18 +117,17 @@ const compose = ({ facts, env }: RunParams, mode: 'edit' | 'redraft' | 'answer' 
     request: { kind: 'compose', threadId: facts.threadId, mode },
   });
 
-const accept = async ({ facts, env }: RunParams): Promise<void> => {
-  const state = env.getState();
-  await state.acceptResolveQueueItem({
+const accept = ({ facts, env }: RunParams): Promise<void> =>
+  acceptReviewItem({
+    state: env.getState(),
     sessionId: facts.sessionId,
+    threadId: facts.threadId,
     itemId: facts.itemId,
     revision: facts.revision,
     reply: facts.reply,
+    isNote: facts.isNote,
+    hasPr: facts.hasPr,
   });
-  if (facts.isNote && !facts.hasPr) {
-    await state.closeResolvedNote({ sessionId: facts.sessionId, threadId: facts.threadId });
-  }
-};
 
 const undo = async ({ facts, env }: RunParams): Promise<void> => {
   const state = env.getState();
