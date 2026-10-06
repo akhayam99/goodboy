@@ -192,6 +192,11 @@ Three width tiers, one rule each:
 | column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `PANE_RHYTHM.column`)      |
 | full    | the pane, fluid       | work surfaces, from the pane's left edge: every Branch tab, File versions, the terminal, Inbox lists, the Board (`PageColumn width="full"`)      |
 
+A body that owns its scroll (`scroll="self"`: the agent transcript and its
+composer) puts its own `PageColumn` around the scrolling content and the
+composer, so it shares the header's edges; the scroll viewport spans the pane
+and carries no gutter. File versions is `full`, trail included.
+
 Prose keeps its 720px measure aligned left inside the column. The `full` tier
 is the only exception to centring and ignores the slide below: its right edge
 follows the drawer exactly as before.

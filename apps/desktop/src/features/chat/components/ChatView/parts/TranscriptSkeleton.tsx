@@ -1,15 +1,10 @@
-import { Skeleton, SkeletonText, cn, tintClasses } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { Skeleton, SkeletonText, tintClasses } from '@goodboy/ui';
 
 const accent = tintClasses('neutral');
 
 export const TranscriptSkeleton = () => {
   return (
-    <div
-      role="status"
-      aria-label="Loading transcript"
-      className={cn('flex flex-col gap-6', PANE_RHYTHM.column)}
-    >
+    <div role="status" aria-label="Loading transcript" className="flex flex-col gap-6">
       {[0, 1].map((i) => (
         <div key={i} className="flex flex-col gap-3">
           <Skeleton className="ml-auto h-9 w-2/5 rounded-md" />
