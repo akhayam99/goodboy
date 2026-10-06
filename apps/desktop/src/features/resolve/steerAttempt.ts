@@ -5,7 +5,7 @@ import { launchChoiceOf } from './launchChoice';
 import { launchRowsOf } from './reviewRows';
 import { startBatch, type StartedBatch } from './startBatch';
 
-export type SteerMode = 'fixAnyway' | 'rewrite';
+type SteerMode = 'fixAnyway' | 'rewrite';
 
 const STEER_BRIEF: Record<SteerMode, string> = {
   fixAnyway:
@@ -13,7 +13,7 @@ const STEER_BRIEF: Record<SteerMode, string> = {
   rewrite: 'Reply only. Change no code and make no commit. Write the reply to the reviewer again.',
 };
 
-export const steerHintOf = ({
+const steerHintOf = ({
   mode,
   hint,
 }: {

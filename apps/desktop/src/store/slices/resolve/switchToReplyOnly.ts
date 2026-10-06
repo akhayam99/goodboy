@@ -17,7 +17,7 @@ import type { SliceParams, ThreadParams } from './types';
 
 type Params = SliceParams & ThreadParams;
 
-export const SHARED_CHANGE_BLOCKS_REPLY_ONLY =
+const SHARED_CHANGE_BLOCKS_REPLY_ONLY =
   'This change also answers other comments. Answer those first, or keep the change';
 
 export const switchToReplyOnly = async ({

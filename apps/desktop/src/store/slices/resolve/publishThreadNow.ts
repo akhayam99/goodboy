@@ -4,7 +4,7 @@ import type { GetFn, ThreadParams } from './types';
 
 type Params = { readonly get: GetFn } & ThreadParams;
 
-export const NOTHING_TO_PUBLISH = 'Nothing is waiting to go out for this comment';
+const NOTHING_TO_PUBLISH = 'Nothing is waiting to go out for this comment';
 
 const failedPublicationOf = async ({
   sessionId,

@@ -14,7 +14,7 @@ const STEER_IDS: ReadonlyArray<string> = [
   'reviewComment.rewriteReply',
 ];
 
-export const steerActionsOf = ({
+const steerActionsOf = ({
   actions,
   state,
 }: Pick<Props, 'actions' | 'state'>): ReadonlyArray<ResolvedAction> => [

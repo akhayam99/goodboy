@@ -12,7 +12,7 @@ type Params = SliceParams &
     readonly comments: ReadonlyArray<PrComment>;
   };
 
-export const normalizedReplyBody = ({ body }: { readonly body: string }): string =>
+const normalizedReplyBody = ({ body }: { readonly body: string }): string =>
   body.replace(/\s+/g, ' ').trim();
 
 type MatchParams = {

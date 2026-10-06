@@ -9,7 +9,7 @@ type SessionParams = {
   readonly sessionId: SessionId;
 };
 
-export const isPushWaiting = ({ state, sessionId }: SessionParams): boolean =>
+const isPushWaiting = ({ state, sessionId }: SessionParams): boolean =>
   launchRowsOf({ state, sessionId }).some((row) => {
     const rowState = rowStateOf({ state, sessionId, row });
     return (
@@ -21,7 +21,7 @@ export const isPushWaiting = ({ state, sessionId }: SessionParams): boolean =>
     );
   });
 
-export const isReplyOnlyAwaiting = ({
+const isReplyOnlyAwaiting = ({
   state,
   sessionId,
   threadId,
@@ -43,7 +43,7 @@ type PostParams = {
   readonly threadId: string;
 };
 
-export const postReplyNow = ({ getState, sessionId, threadId }: PostParams): Promise<void> =>
+const postReplyNow = ({ getState, sessionId, threadId }: PostParams): Promise<void> =>
   getState().publishThreadNow({ sessionId, threadId });
 
 export const postReplyWhenNothingWaits = async ({
