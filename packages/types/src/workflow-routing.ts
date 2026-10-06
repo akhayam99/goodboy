@@ -52,7 +52,13 @@ export type WorkflowRoutingDecision = Readonly<{
     | 'legacy';
   reason: string;
   adjustment:
-    'none' | 'unknown_model' | 'disconnected' | 'cooldown' | 'budget' | 'unsupported_effort';
+    | 'none'
+    | 'unknown_model'
+    | 'disconnected'
+    | 'cooldown'
+    | 'budget'
+    | 'hidden'
+    | 'unsupported_effort';
   executed: WorkflowModelPick | null;
 }>;
 

@@ -49,6 +49,7 @@ const ADJUSTMENTS: ReadonlySet<string> = new Set([
   'disconnected',
   'cooldown',
   'budget',
+  'hidden',
   'unsupported_effort',
 ]);
 

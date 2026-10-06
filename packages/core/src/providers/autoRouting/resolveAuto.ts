@@ -39,7 +39,6 @@ export type AutoPick = {
   readonly effort: EffortLevel | null;
   readonly step: AutoStep;
   readonly skippedAtLimit?: ReadonlyArray<ProviderId>;
-  readonly keptHidden?: true;
 };
 
 type Params = AutoContext & {
@@ -191,13 +190,7 @@ const curatedPick = ({ provider, slot, context }: ProviderPickParams): AutoPick 
   const usable = usableChoices({ provider, slot, context });
   if (slot.kind === 'task') {
     const visible = visibleTaskChoice({ provider, usable, context });
-    if (visible != null) {
-      return pickOf({ provider, picked: visible, context });
-    }
-    const kept = usable[0];
-    return kept == null
-      ? null
-      : { ...pickOf({ provider, picked: kept, context }), keptHidden: true };
+    return visible == null ? null : pickOf({ provider, picked: visible, context });
   }
   const picked = usable.find(({ choice }) => !isChoiceHidden({ provider, choice, context }));
   return picked == null ? null : pickOf({ provider, picked, context });
@@ -233,10 +226,50 @@ const skippedAtLimitBefore = ({ pick, context }: SkippedParams): ReadonlyArray<P
     .filter((provider) => atLimit.includes(provider));
 };
 
-export const resolveAuto = ({ slot, ...context }: Params): AutoPick | null => {
+type HiddenTierParams = ProviderPickParams & {
+  readonly isCeilingKept: boolean;
+};
+
+const hiddenTierPick = ({
+  provider,
+  slot,
+  context,
+  isCeilingKept,
+}: HiddenTierParams): AutoPick | null => {
+  const first = usableChoices({ provider, slot, context })[0];
+  if (context.hidden == null || first == null) {
+    return null;
+  }
+  const model = strongestModelForTier({
+    provider,
+    tier: slotTier(slot),
+    wantsThinker: slot.kind === 'role' && THINKING_ROLES.has(slot.id),
+    hidden: context.hidden,
+  });
+  if (model == null) {
+    return null;
+  }
+  if (
+    slot.kind === 'task' &&
+    isCeilingKept &&
+    MODEL_COST_RANK[model.costTier] > costRankOf({ provider, choice: first.choice })
+  ) {
+    return null;
+  }
+  return { provider, model: model.id, effort: null, step: 'cost-tier' };
+};
+
+type PassParams = {
+  readonly slot: AutoSlot;
+  readonly context: AutoContext;
+  readonly isCeilingKept: boolean;
+};
+
+const resolvePass = ({ slot, context, isCeilingKept }: PassParams): AutoPick | null => {
   for (const provider of providerCandidates(context)) {
     const pick = isCuratedProvider(provider)
-      ? curatedPick({ provider, slot, context })
+      ? (curatedPick({ provider, slot, context }) ??
+        hiddenTierPick({ provider, slot, context, isCeilingKept }))
       : tierPick({ provider, slot, context });
     if (pick != null) {
       const skippedAtLimit = skippedAtLimitBefore({ pick, context });
@@ -245,3 +278,7 @@ export const resolveAuto = ({ slot, ...context }: Params): AutoPick | null => {
   }
   return null;
 };
+
+export const resolveAuto = ({ slot, ...context }: Params): AutoPick | null =>
+  resolvePass({ slot, context, isCeilingKept: true }) ??
+  (slot.kind === 'task' ? resolvePass({ slot, context, isCeilingKept: false }) : null);

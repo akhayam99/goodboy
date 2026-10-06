@@ -77,6 +77,9 @@ export const visibleCatalog = ({
     (model) => model.key === currentKey || !isModelHidden({ provider, hidden, key: model.key }),
   );
 
+export const selectableModels = ({ provider, hidden }: HiddenParams): ReadonlyArray<CatalogModel> =>
+  catalogOf({ provider }).filter((model) => !isModelHidden({ provider, hidden, key: model.key }));
+
 export const visibleModelCount = ({ provider, hidden }: HiddenParams): number =>
   visibleCatalog({ provider, hidden }).length;
 
