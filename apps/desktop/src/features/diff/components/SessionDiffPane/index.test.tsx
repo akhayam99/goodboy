@@ -119,6 +119,7 @@ const diffOf = (files: ReadonlyArray<FileDiff> = []): SessionDiff => ({
   error: null,
   view: { kind: 'branch' },
   setView: vi.fn(),
+  alternate: null,
   commits: [],
   status: null,
   metaError: null,
@@ -187,12 +188,53 @@ describe('SessionDiffPane states', () => {
     expect(within(tree).getByRole('status', { name: 'Loading files' })).toBeDefined();
   });
 
-  it('puts the empty message in the tree column, with the key line under it', () => {
+  it('replaces the tree and diff chrome with one empty state when nothing changed', () => {
     renderPane({});
 
-    const tree = screen.getByRole('navigation', { name: 'Changed files' });
-    expect(within(tree).getByText('0 files')).toBeDefined();
-    expect(within(tree).getByText('Branch matches its base branch')).toBeDefined();
+    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+    expect(screen.queryByText('0 files')).toBeNull();
+    expect(screen.getByText('Branch matches its base branch')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: /Comparing/ })).toHaveLength(1);
+  });
+});
+
+describe('SessionDiffPane empty working tree', () => {
+  const cleanWorking = (alternate: SessionDiff['alternate'] = null): SessionDiff => ({
+    ...diffOf(),
+    view: { kind: 'working', scope: 'all' },
+    alternate,
+  });
+
+  it('says what is empty with the picker inline when the branch has nothing either', () => {
+    renderPane({ diff: cleanWorking() });
+
+    expect(screen.getByText('No changes on this branch yet')).toBeDefined();
+    expect(screen.getByRole('button', { name: /Comparing/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Show branch vs/ })).toBeNull();
+  });
+
+  it('offers the branch scope with its file count when the working tree is clean', () => {
+    h.store = { ...baseStore(), baseBranch: 'main' };
+    const setView = vi.fn();
+    const alternate = { view: { kind: 'branch' } as const, fileCount: 6 };
+    renderPane({ diff: { ...cleanWorking(alternate), setView } });
+
+    expect(screen.getByText('Working tree clean')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Show branch vs main (6 files)' }));
+
+    expect(setView).toHaveBeenCalledWith({ kind: 'branch' });
+  });
+
+  it('offers the working tree when the branch matches its base but has edits', () => {
+    h.store = { ...baseStore(), baseBranch: 'main' };
+    const setView = vi.fn();
+    const alternate = { view: { kind: 'working', scope: 'all' } as const, fileCount: 1 };
+    renderPane({ diff: { ...diffOf(), alternate, setView } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show working tree (1 file)' }));
+
+    expect(setView).toHaveBeenCalledWith({ kind: 'working', scope: 'all' });
   });
 });
 
@@ -301,11 +343,12 @@ describe('SessionDiffPane at a narrow width', () => {
     expect(document.activeElement).toBe(strip);
   });
 
-  it('shows the empty message in the pane when there is no tree column', () => {
+  it('shows the same empty state at a narrow width', () => {
     squeeze(700);
     renderPane({});
 
     expect(screen.getByText('Branch matches its base branch')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Files/ })).toBeNull();
   });
 
   it('docks the tree at a wide width and hides it to a strip with the toggle key', () => {

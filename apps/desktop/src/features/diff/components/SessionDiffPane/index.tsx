@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
-import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -17,9 +17,9 @@ import { TREE_WIDTH_MIN, TREE_WIDTH_SHARE, useTreeWidth } from '../../hooks/useT
 import { TreeResizer } from '../ChangeTree/TreeResizer';
 import { ChangeTree } from '../ChangeTree';
 import { TreeStrip } from '../ChangeTree/TreeStrip';
-import { TreeEmpty } from '../ChangeTree/TreeEmpty';
 import { TreeLoading } from '../ChangeTree/TreeLoading';
 import { DiffView } from '../DiffView';
+import { DiffEmptyState } from './DiffEmptyState';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -28,40 +28,6 @@ type Props = {
   readonly diff: SessionDiff;
   readonly onWriteReview: (() => void) | null;
   readonly toolbarExtra?: ReactNode;
-};
-
-const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
-
-const emptyTitle = (view: DiffViewKind, baseBranch: string | null): string => {
-  if (view.kind === 'working') {
-    if (view.scope === 'staged') {
-      return 'No staged changes';
-    }
-    if (view.scope === 'unstaged') {
-      return 'No unstaged changes';
-    }
-    return 'Working tree clean';
-  }
-  if (view.kind === 'commit') {
-    return 'This commit is empty';
-  }
-  return `Branch matches ${baseWord(baseBranch)}`;
-};
-
-const emptyBlurb = (view: DiffViewKind, baseBranch: string | null): string => {
-  if (view.kind === 'working') {
-    if (view.scope === 'staged') {
-      return 'Nothing has been staged for the next commit yet.';
-    }
-    if (view.scope === 'unstaged') {
-      return 'No uncommitted edits in the working tree.';
-    }
-    return 'No uncommitted edits and nothing staged.';
-  }
-  if (view.kind === 'commit') {
-    return 'No file changes were recorded for this commit.';
-  }
-  return `Every commit on this branch is already reachable from ${baseWord(baseBranch)}, nothing extra to review.`;
 };
 
 export const SessionDiffPane = ({
@@ -207,16 +173,13 @@ export const SessionDiffPane = ({
       <ErrorStrip label="the diff" error={new Error(diff.error)} onRetry={diff.refresh} />
     </PageColumn>
   ) : isEmpty ? (
-    isNarrow ? (
-      <PageColumn>
-        <LensEmptyState
-          tone={CONCEPT_TONE.diff}
-          icon={CONCEPT_ICONS.diff}
-          title={emptyTitle(diff.view, baseBranch)}
-          description={emptyBlurb(diff.view, baseBranch)}
-        />
-      </PageColumn>
-    ) : null
+    <DiffEmptyState
+      view={diff.view}
+      baseBranch={baseBranch}
+      alternate={diff.alternate}
+      onChange={diff.setView}
+      selector={selector}
+    />
   ) : isFilteredOut ? (
     <PageColumn>
       <LensEmptyState
@@ -277,16 +240,7 @@ export const SessionDiffPane = ({
     />
   );
 
-  const treeColumn = diff.loading ? (
-    <TreeLoading />
-  ) : isEmpty ? (
-    <TreeEmpty
-      title={emptyTitle(diff.view, baseBranch)}
-      description={emptyBlurb(diff.view, baseBranch)}
-    />
-  ) : hasTree ? (
-    tree
-  ) : null;
+  const treeColumn = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
 
   const docked = !isNarrow && treeColumn !== null && (panel.isOpen || !hasTree);
   const strip = hasTree && (isNarrow || !panel.isOpen);
@@ -333,7 +287,9 @@ export const SessionDiffPane = ({
         </aside>
       )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {showsDiff ? null : <PageColumn className="flex min-w-0 pb-3">{selector}</PageColumn>}
+        {showsDiff || isEmpty ? null : (
+          <PageColumn className="flex min-w-0 pb-3">{selector}</PageColumn>
+        )}
         {metaNotice}
         {body}
       </div>

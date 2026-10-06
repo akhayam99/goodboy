@@ -1894,7 +1894,9 @@ properties; Fix launches from the list or the thread, never from Files.
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
-viewed`), the path, its file count and its `+N −N`; a file row holds a small
+viewed`), the path and, only while it is collapsed, its file count and its
+`+N −N` in one muted tone (no green or red; an open folder shows none, its files
+carry them); a file row holds a small
 check when viewed (its name goes grey) or an amber dot when it changed after
 it was viewed, the name (a rename shows `from <old path>` under it, a deleted
 file is struck through), its open notes, `+N −N` and the status letter.
@@ -2068,9 +2070,16 @@ fails over 100ms, the point where a worker earns its cost). Under 900px of pane
 the progress ring and `12/46`; click it, or `F`, and the tree opens over the
 diff with no scrim; picking a file or `Esc` closes it. `⌘⇧B` on a wide pane
 folds the tree to the same strip. While the diff loads the tree column shows
-skeleton rows and `Loading files…`; an empty diff puts its message in the tree
-column (the pane itself when it is narrow). The `brand-diff-large` scene is the
-512-file case, `brand-diff-many` the 40-file one.
+skeleton rows and `Loading files…`. An empty scope drops the tree, the strip
+and the toolbar and shows one centred empty state on the page column
+(`DiffEmptyState`): what is empty in plain words, the scope picker inline and,
+when the other scope has files, one button that switches to it (`Show branch vs
+main (6 files)`, `Show working tree (2 files)`; `alternate` on `useSessionDiff`
+counts them). Files opens on the branch against its base when the working tree
+is clean and the branch has commits ahead, unless the scope was picked in the
+picker. The `brand-diff-large` scene is the 512-file case, `brand-diff-many`
+the 40-file one, `brand-diff-empty` the clean branch and `brand-diff-edits-only`
+the one that matches its base but has edits.
 
 A jump is instant, not smooth: file bodies keep
 `content-visibility` with estimated heights, so for a few frames the view
