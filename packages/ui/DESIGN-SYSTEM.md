@@ -163,7 +163,8 @@ hairline. `half-step-spacing` in `forbidden-patterns.test.ts` allows none, and
 no baseline lists it. `spacing-grid.test.ts`
 reads `paneRhythm.ts`, `timelineRhythm.ts` and `workMetaSpec.ts` and fails on a
 half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
-row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px).
+row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px). A session
+row in the left column is 28px, and so are the pages nested under it.
 
 The `html` root stays 15px while any `rem` remains. `body` and `#root` are
 14/20, so text with no class lands on the body role instead of 15/23.25.
@@ -681,6 +682,45 @@ Needs you, Ready, Couldn't fix, Done) or the quiet sub-word of a Done comment
 counts them in comments ("3 ready · 1 needs you"), never as agents. A comment
 that needs you, has a ready fix or could not be fixed sets the `reviewComment`
 ask, so Needs you carries it and the row itself is not tinted.
+
+### Session row, hover card and switcher
+
+A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
+and the title, with a `gap-2` between them and `px-2` inside the pill. It has
+no second line, no `ToneBar`, no marks, no age and no cost. The node is one of
+five signs, picked by `sessionNodeOf` from the session's stage, first match
+wins:
+
+| sign      | node                                         | when                                                 |
+| --------- | -------------------------------------------- | ---------------------------------------------------- |
+| needs you | `question`, `approval` or `failed`, no glyph | the stage is attention (`failed` in the danger tone) |
+| running   | `running` with the centre dot                | an agent turn runs                                   |
+| done      | `closed`, the muted check                    | the pull request is merged or all the work is closed |
+| idle      | `marker`, a 1px ring with no glyph           | anything else                                        |
+| archived  | `queued`, a dashed faint ring with no glyph  | only under Show archived                             |
+
+The title is `text-row`. Needs you and running read in `foreground`, idle, done
+and archived in `muted-foreground`. The open session is medium weight, and its
+row has no fill while its pages are nested under it. The pages are five 28px
+child rows in a `SelectableRow`, indented by `PANE_RHYTHM.navRail.nest`: the
+page icon in its concept tone, its word, and its count word in
+`faint-foreground`. The current page takes `bg-selected` and `aria-current="page"`,
+and the session row then carries `aria-current="true"`.
+
+The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
+at `z-popover`, 8px to the right of the column and aligned to its row, with a
+`gap-3` between its blocks: the title in `text-heading`, the node with the stage
+word and its reason in `text-meta`, the run progress, the chips (`Chip` `xs`:
+the pull request in its presentation tone, linked tasks as the compact task
+chip, projects with the folder glyph), a `text-meta` line of agents, spend and
+age in `faint-foreground`, and one `GhostActionButton` when the session needs
+you. It opens after a 500ms rest or keyboard focus, swaps at once between rows,
+and enters with `popover-in` once, never on a swap.
+
+The switcher is the palette frame (`z-command-palette`, a scrim, `bg-floating`
+on a `rounded-lg border` with `shadow-lg`) at `max-w-105`. Its rows are 36px
+`SelectableRow` options: node, title and age. It stays hidden for the first
+120ms of a hold, so a quick tap flips sessions without drawing it.
 
 ### Work meta
 
@@ -1473,9 +1513,10 @@ toggle icon) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 
 - `spin-border`: working, on an element whose own edge carries the signal
-  (a `WorkNode`'s ring). A session card or row carries its tone in a
+  (a `WorkNode`'s ring). A session card carries its tone in a
   `ToneBar` instead, a bar inside the surface rather than a border around it,
-  breathing through `soft-pulse` while running.
+  breathing through `soft-pulse` while running. A session row in the column has
+  no bar: its `WorkNode` is the sign.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
   a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s

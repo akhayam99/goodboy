@@ -26,7 +26,7 @@ import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/names';
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 import { NowGroup } from './NowGroup';
-import { attentionPlace } from './attentionPlace';
+import { attentionPlace } from '../../../../features/session/attentionPlace';
 
 type Props = {
   readonly onOpenScript: (run: RunningScript) => void;

@@ -102,6 +102,9 @@ import { FirstLapMovingScene } from './scenes/audit/FirstLapMovingScene';
 import { FirstLapReportScene } from './scenes/audit/FirstLapReportScene';
 import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
 import { SessionStatesScene } from './scenes/audit/SessionStatesScene';
+import { SessionHoverScene } from './scenes/sessions/SessionHoverScene';
+import { SessionSwitcherScene } from './scenes/sessions/SessionSwitcherScene';
+import { SessionsMenuScene } from './scenes/sessions/SessionsMenuScene';
 import { FeaturesStartTabsScene } from './scenes/features/StartTabsScene';
 import { FeaturesReviewPushConfirmScene } from './scenes/features/ReviewPushConfirmScene';
 import { FeaturesWriteReviewScene } from './scenes/features/WriteReviewScene';
@@ -274,6 +277,9 @@ export const MOCK_SCENES = {
   'first-lap-report': FirstLapReportScene,
   'board-states': BoardStatesScene,
   'session-states': SessionStatesScene,
+  'sessions-menu': SessionsMenuScene,
+  'session-hover': SessionHoverScene,
+  'session-switcher': SessionSwitcherScene,
   'session-start': SessionStartScene,
   'workspace-states': WorkspaceStatesScene,
   'settings-app': SettingsAppScene,

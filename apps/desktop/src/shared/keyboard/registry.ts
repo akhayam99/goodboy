@@ -197,6 +197,27 @@ export const SHORTCUTS = {
     plane: 'session',
     group: 'navigate',
   },
+  'session.switcher': {
+    combo: 'ctrl+Tab',
+    label: 'Switch between recent sessions',
+    plane: 'app',
+    group: 'navigate',
+    scope: 'workspace',
+  },
+  'session.switcherBack': {
+    combo: 'ctrl+shift+Tab',
+    label: 'Switch back through recent sessions',
+    plane: 'session',
+    group: 'navigate',
+    scope: 'workspace',
+  },
+  'session.nextNeedsYou': {
+    combo: 'cmd+alt+ArrowDown',
+    label: 'Next session that needs you',
+    plane: 'lens',
+    group: 'navigate',
+    scope: 'workspace',
+  },
 
   'session.model': {
     combo: 'cmd+shift+KeyM',
@@ -589,6 +610,7 @@ const MAC_GLYPH: Record<string, string> = {
   Enter: '↵',
   Space: '␣',
   Backquote: '`',
+  ArrowDown: '↓',
 };
 
 const KEY_LABEL: Record<string, string> = {
@@ -609,6 +631,7 @@ const KEY_LABEL: Record<string, string> = {
   Enter: 'Enter',
   Space: 'Space',
   Backquote: '`',
+  ArrowDown: 'Down',
 };
 
 const codeGlyph = ({ code, glyphs }: { code: string; glyphs: Record<string, string> }): string => {

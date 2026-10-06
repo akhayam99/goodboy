@@ -1,7 +1,7 @@
 import type { Agent, SessionAttentionReason, SessionId, TurnState } from '@goodboy/types';
-import { agentPlace, branchPlace, sessionPlace } from '../../../../store';
-import type { PlaceRequest } from '../../../../store/slices/navigation/types';
-import { agentHasUnread } from '../../../../store/slices/agents/agentHasUnread';
+import { agentPlace, branchPlace, sessionPlace } from '../../store';
+import type { PlaceRequest } from '../../store/slices/navigation/types';
+import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 
 type State = {
   readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;

@@ -65,6 +65,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
     if (!id) {
       return;
     }
+    get().markSessionOpened({ sessionId: id });
     void get().loadSessionOverrides(id);
     const perf = (op: string) => {
       const t0 = performance.now();

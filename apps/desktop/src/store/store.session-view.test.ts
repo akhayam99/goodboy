@@ -1,14 +1,22 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import type { SessionGithubState } from './types';
-import { createSessionViewSlice } from './slices/session-view';
 import { deriveSessionStage } from './slices/session-view/deriveSessionStage';
-import { sortAndGroupSessions } from './slices/session-view/sortAndGroupSessions';
+import { sortAndGroupSessions as groupWith } from './slices/session-view/sortAndGroupSessions';
 import type { GroupedSessions } from './slices/session-view/types';
 import type { SessionViewPrefs } from '@goodboy/types';
-import { STORAGE_PREFIXES } from '../shared/lib/storage-keys';
-import { STAGE_ORDER } from './slices/session-view/types';
+import { DEFAULT_PREFS, STAGE_ORDER } from './slices/session-view/types';
+
+type OrderPrefs = Pick<SessionViewPrefs, 'sort' | 'group'>;
+
+const sortAndGroupSessions = (
+  sessions: ReadonlyArray<Session>,
+  prefs: OrderPrefs,
+  githubState: Readonly<Record<SessionId, SessionGithubState>>,
+  stageBySession: Readonly<Record<SessionId, SessionStage>> = {},
+): ReadonlyArray<GroupedSessions> =>
+  groupWith({ sessions, prefs: { ...DEFAULT_PREFS, ...prefs }, githubState, stageBySession });
 
 function sid(n: number): SessionId {
   return `session-${n}` as SessionId;
@@ -105,7 +113,7 @@ describe('sortAndGroupSessions, updatedAt sort', () => {
     updatedAt: '2024-01-01T00:00:00.000Z',
     createdAt: '2024-01-03T00:00:00.000Z',
   });
-  const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'none' };
+  const prefs: OrderPrefs = { sort: 'updatedAt', group: 'none' };
 
   it('orders newest-updated first', () => {
     const result = sortAndGroupSessions([s1, s3, s2], prefs, {});
@@ -138,7 +146,7 @@ describe('sortAndGroupSessions, updatedAt sort', () => {
 });
 
 describe('sortAndGroupSessions, goal sort', () => {
-  const prefs: SessionViewPrefs = { sort: 'goal', group: 'none' };
+  const prefs: OrderPrefs = { sort: 'goal', group: 'none' };
 
   it('orders A→Z case-insensitively', () => {
     const a = makeSession(sid(1), { goal: 'Zebra' });
@@ -157,14 +165,14 @@ describe('sortAndGroupSessions, goal sort', () => {
 });
 
 describe('sortAndGroupSessions, createdAt sort', () => {
-  const prefs: SessionViewPrefs = { sort: 'createdAt', group: 'none' };
+  const prefs: OrderPrefs = { sort: 'createdAt', group: 'none' };
 
-  it('orders oldest first', () => {
+  it('orders newest created first', () => {
     const a = makeSession(sid(1), { createdAt: '2024-01-03T00:00:00.000Z' });
     const b = makeSession(sid(2), { createdAt: '2024-01-01T00:00:00.000Z' });
     const c = makeSession(sid(3), { createdAt: '2024-01-02T00:00:00.000Z' });
     const result = sortAndGroupSessions([a, b, c], prefs, {});
-    expect(flatIds(result)).toEqual([sid(2), sid(3), sid(1)]);
+    expect(flatIds(result)).toEqual([sid(1), sid(3), sid(2)]);
   });
 
   it('tie-breaks by id asc', () => {
@@ -177,9 +185,9 @@ describe('sortAndGroupSessions, createdAt sort', () => {
 });
 
 describe('sortAndGroupSessions, stage grouping', () => {
-  const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'stage' };
+  const prefs: OrderPrefs = { sort: 'updatedAt', group: 'stage' };
 
-  it('produces groups in building→running→attention→review→done order', () => {
+  it('produces groups in attention→running→review→building→done order, needs you first', () => {
     const sessions = [sid(1), sid(2), sid(3), sid(4), sid(5)].map((id) => makeSession(id));
     const result = sortAndGroupSessions(
       sessions,
@@ -193,7 +201,7 @@ describe('sortAndGroupSessions, stage grouping', () => {
         [sid(5)]: 'attention',
       },
     );
-    expect(keys(result)).toEqual(['building', 'running', 'attention', 'review', 'done']);
+    expect(keys(result)).toEqual(['attention', 'running', 'review', 'building', 'done']);
   });
 
   it('omits empty buckets', () => {
@@ -534,7 +542,7 @@ describe('deriveSessionStage', () => {
 });
 
 describe('sortAndGroupSessions, pr grouping', () => {
-  const prefs: SessionViewPrefs = { sort: 'updatedAt', group: 'pr' };
+  const prefs: OrderPrefs = { sort: 'updatedAt', group: 'pr' };
 
   it('no PR → not-open bucket', () => {
     const s = makeSession(sid(1));
@@ -658,245 +666,6 @@ describe('sortAndGroupSessions, pr grouping', () => {
     ]);
     const result = sortAndGroupSessions([a, b], prefs, github);
     expect(result[0]!.sessions.map((s) => s.id)).toEqual([sid(2), sid(1)]);
-  });
-});
-
-function buildLocalStorageMock() {
-  const store: Record<string, string> = {};
-  return {
-    getItem: vi.fn((k: string) => store[k] ?? null),
-    setItem: vi.fn((k: string, v: string) => {
-      store[k] = v;
-    }),
-    removeItem: vi.fn((k: string) => {
-      delete store[k];
-    }),
-    clear: vi.fn(() => {
-      for (const k of Object.keys(store)) delete store[k];
-    }),
-    store,
-  };
-}
-
-function storageKey(workspaceId: WorkspaceId): string {
-  return `${STORAGE_PREFIXES.sessionView}${workspaceId}`;
-}
-
-type SliceState = ReturnType<typeof createSessionViewSlice>;
-
-function buildSlice(): { actions: SliceState; getState: () => SliceState } {
-  let state = {} as SliceState;
-
-  function set(updater: Partial<SliceState> | ((s: SliceState) => Partial<SliceState>)) {
-    const patch = typeof updater === 'function' ? updater(state) : updater;
-    state = { ...state, ...patch };
-  }
-
-  function get(): SliceState {
-    return state;
-  }
-
-  const actions = createSessionViewSlice({
-    set: set as Parameters<typeof createSessionViewSlice>[0]['set'],
-    get: get as Parameters<typeof createSessionViewSlice>[0]['get'],
-  });
-  state = { ...actions };
-
-  return { actions, getState: get };
-}
-
-describe('createSessionViewSlice, getSessionViewPrefs', () => {
-  let ls: ReturnType<typeof buildLocalStorageMock>;
-
-  beforeEach(() => {
-    ls = buildLocalStorageMock();
-    vi.stubGlobal('localStorage', ls);
-  });
-
-  it('returns defaults when localStorage is empty', () => {
-    const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
-  });
-
-  it('reads persisted prefs from localStorage', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'goal', group: 'stage' });
-    const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'goal', group: 'stage' });
-  });
-
-  it('caches result, second call does not re-read localStorage', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'createdAt', group: 'pr' });
-    const { actions } = buildSlice();
-    actions.getSessionViewPrefs(WS);
-    const callCountAfterFirst = ls.getItem.mock.calls.length;
-    actions.getSessionViewPrefs(WS);
-    expect(ls.getItem.mock.calls.length).toBe(callCountAfterFirst);
-  });
-});
-
-describe('createSessionViewSlice, setSessionSort', () => {
-  let ls: ReturnType<typeof buildLocalStorageMock>;
-
-  beforeEach(() => {
-    ls = buildLocalStorageMock();
-    vi.stubGlobal('localStorage', ls);
-  });
-
-  it('updates sessionViewPrefs state', () => {
-    const { actions, getState } = buildSlice();
-    actions.getSessionViewPrefs(WS);
-    actions.setSessionSort(WS, 'goal');
-    expect(getState().sessionViewPrefs[WS]?.sort).toBe('goal');
-  });
-
-  it('persists to localStorage', () => {
-    const { actions } = buildSlice();
-    actions.setSessionSort(WS, 'createdAt');
-    const raw = ls.store[storageKey(WS)]!;
-    expect(raw).toBeDefined();
-    expect(JSON.parse(raw)).toMatchObject({ v: 1, sort: 'createdAt' });
-  });
-
-  it('preserves existing group when changing sort', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'updatedAt', group: 'pr' });
-    const { actions, getState } = buildSlice();
-    actions.getSessionViewPrefs(WS);
-    actions.setSessionSort(WS, 'goal');
-    expect(getState().sessionViewPrefs[WS]).toEqual({ sort: 'goal', group: 'pr' });
-  });
-
-  it('works even if prefs never hydrated (cold write)', () => {
-    const { actions } = buildSlice();
-    actions.setSessionSort(WS, 'goal');
-    expect(JSON.parse(ls.store[storageKey(WS)]!).sort).toBe('goal');
-  });
-});
-
-describe('createSessionViewSlice, setSessionGroup', () => {
-  let ls: ReturnType<typeof buildLocalStorageMock>;
-
-  beforeEach(() => {
-    ls = buildLocalStorageMock();
-    vi.stubGlobal('localStorage', ls);
-  });
-
-  it('updates group in state', () => {
-    const { actions, getState } = buildSlice();
-    actions.setSessionGroup(WS, 'pr');
-    expect(getState().sessionViewPrefs[WS]?.group).toBe('pr');
-  });
-
-  it('persists group to localStorage', () => {
-    const { actions } = buildSlice();
-    actions.setSessionGroup(WS, 'stage');
-    expect(JSON.parse(ls.store[storageKey(WS)]!).group).toBe('stage');
-  });
-
-  it('preserves existing sort when changing group', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'createdAt', group: 'none' });
-    const { actions, getState } = buildSlice();
-    actions.getSessionViewPrefs(WS);
-    actions.setSessionGroup(WS, 'stage');
-    expect(getState().sessionViewPrefs[WS]).toEqual({ sort: 'createdAt', group: 'stage' });
-  });
-});
-
-describe('createSessionViewSlice, localStorage fault tolerance', () => {
-  let ls: ReturnType<typeof buildLocalStorageMock>;
-
-  beforeEach(() => {
-    ls = buildLocalStorageMock();
-    vi.stubGlobal('localStorage', ls);
-  });
-
-  it('corrupted JSON → returns defaults', () => {
-    ls.store[storageKey(WS)] = 'not json!!!';
-    const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
-  });
-
-  it('wrong version number → returns defaults and self-heals', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 99, sort: 'goal', group: 'pr' });
-    const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
-    expect(JSON.parse(ls.store[storageKey(WS)]!)).toMatchObject({
-      v: 1,
-      sort: 'updatedAt',
-      group: 'stage',
-    });
-  });
-
-  it('invalid sort value → falls back to default sort, self-heals', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'invalid', group: 'pr' });
-    const { actions } = buildSlice();
-    const prefs = actions.getSessionViewPrefs(WS);
-    expect(prefs.sort).toBe('updatedAt');
-    expect(prefs.group).toBe('pr');
-    expect(JSON.parse(ls.store[storageKey(WS)]!).sort).toBe('updatedAt');
-  });
-
-  it('invalid group value → falls back to default group, self-heals', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'goal', group: 'invalid' });
-    const { actions } = buildSlice();
-    const prefs = actions.getSessionViewPrefs(WS);
-    expect(prefs.sort).toBe('goal');
-    expect(prefs.group).toBe('stage');
-  });
-
-  it('missing localStorage key → returns defaults', () => {
-    const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
-  });
-
-  it('localStorage.getItem throws → returns defaults', () => {
-    ls.getItem.mockImplementationOnce(() => {
-      throw new Error('storage unavailable');
-    });
-    const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'updatedAt', group: 'stage' });
-  });
-
-  it('localStorage.setItem quota error → swallowed, state still updated', () => {
-    ls.setItem.mockImplementationOnce(() => {
-      throw new DOMException('QuotaExceededError');
-    });
-    const { actions, getState } = buildSlice();
-    expect(() => actions.setSessionSort(WS, 'goal')).not.toThrow();
-    expect(getState().sessionViewPrefs[WS]?.sort).toBe('goal');
-  });
-
-  it('valid prefs with all-default values → no self-heal write', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'updatedAt', group: 'stage' });
-    const { actions } = buildSlice();
-    const countBefore = ls.setItem.mock.calls.length;
-    actions.getSessionViewPrefs(WS);
-    expect(ls.setItem.mock.calls.length).toBe(countBefore);
-  });
-});
-
-describe('createSessionViewSlice, per-workspace isolation', () => {
-  const WS2 = 'ws-2' as WorkspaceId;
-  let ls: ReturnType<typeof buildLocalStorageMock>;
-
-  beforeEach(() => {
-    ls = buildLocalStorageMock();
-    vi.stubGlobal('localStorage', ls);
-    ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'goal', group: 'stage' });
-    ls.store[storageKey(WS2)] = JSON.stringify({ v: 1, sort: 'createdAt', group: 'pr' });
-  });
-
-  it('each workspace has independent prefs', () => {
-    const { actions } = buildSlice();
-    expect(actions.getSessionViewPrefs(WS)).toEqual({ sort: 'goal', group: 'stage' });
-    expect(actions.getSessionViewPrefs(WS2)).toEqual({ sort: 'createdAt', group: 'pr' });
-  });
-
-  it('setSessionSort on ws1 does not affect ws2', () => {
-    const { actions, getState } = buildSlice();
-    actions.getSessionViewPrefs(WS);
-    actions.getSessionViewPrefs(WS2);
-    actions.setSessionSort(WS, 'updatedAt');
-    expect(getState().sessionViewPrefs[WS2]?.sort).toBe('createdAt');
   });
 });
 

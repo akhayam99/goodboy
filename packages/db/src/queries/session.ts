@@ -40,6 +40,7 @@ type SessionRow = {
   active_mount_id: string | null;
   archived_at: number | null;
   deleted_at: number | null;
+  last_opened_at: number | null;
   verbosity: string | null;
   effort: string | null;
   model_override: string | null;
@@ -124,6 +125,9 @@ const toDomain = (
     }),
     ...(row.deleted_at != null && {
       deletedAt: new Date(row.deleted_at).toISOString() as IsoDateTime,
+    }),
+    ...(row.last_opened_at != null && {
+      lastOpenedAt: new Date(row.last_opened_at).toISOString() as IsoDateTime,
     }),
     ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
     ...(row.effort && {
@@ -518,4 +522,21 @@ export const archiveSession = async (db: Database, id: SessionId): Promise<void>
 
 export const unarchiveSession = async (db: Database, id: SessionId): Promise<void> => {
   await db.execute('UPDATE sessions SET archived_at = NULL WHERE id = ?', [id]);
+};
+
+type MarkSessionOpenedParams = {
+  readonly db: Database;
+  readonly id: SessionId;
+  readonly openedAt: IsoDateTime;
+};
+
+export const markSessionOpened = async ({
+  db,
+  id,
+  openedAt,
+}: MarkSessionOpenedParams): Promise<void> => {
+  await db.execute('UPDATE sessions SET last_opened_at = ? WHERE id = ?', [
+    Date.parse(openedAt),
+    id,
+  ]);
 };

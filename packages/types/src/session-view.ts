@@ -1,19 +1,17 @@
 import type { PullRequestStateKind } from './github';
 
-export type SessionSortKey = 'updatedAt' | 'goal' | 'createdAt';
+export type SessionSortKey = 'needsYou' | 'updatedAt' | 'goal' | 'createdAt';
 
-export type SessionGroupKey = 'none' | 'stage' | 'pr';
+export type SessionGroupKey = 'none' | 'pr' | 'stage' | 'project';
 
 export type SessionViewPrefs = Readonly<{
   sort: SessionSortKey;
   group: SessionGroupKey;
+  isArchivedShown: boolean;
+  isFoldOpen: boolean;
 }>;
 
-export type PersistedSessionViewPrefs = Readonly<{
-  v: 1;
-  sort: SessionSortKey;
-  group: SessionGroupKey;
-}>;
+export type PersistedSessionViewPrefs = SessionViewPrefs & Readonly<{ v: 2 }>;
 
 export type SessionStage = 'attention' | 'running' | 'review' | 'building' | 'done';
 

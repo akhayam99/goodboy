@@ -62,7 +62,7 @@ const isPlainKey = (entry: ShortcutEntry): boolean => {
   return !parsed.meta && !parsed.ctrl && !parsed.alt && !parsed.shift;
 };
 
-const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"]';
+export const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"]';
 
 export const plainKeyYields = (event: KeyboardEvent): boolean =>
   event.defaultPrevented ||

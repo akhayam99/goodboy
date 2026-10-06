@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import type { SessionGithubState } from './types';
 import { sortAndGroupSessions } from './slices/session-view/sortAndGroupSessions';
+import { DEFAULT_PREFS } from './slices/session-view/types';
 
 const WS = 'ws-1' as WorkspaceId;
 const SESSION_COUNT = 2000;
@@ -88,9 +89,14 @@ describe('sortAndGroupSessions, performance', () => {
     });
 
     const start = performance.now();
-    for (const sort of ['updatedAt', 'goal', 'createdAt'] as const) {
+    for (const sort of ['needsYou', 'updatedAt', 'goal', 'createdAt'] as const) {
       for (const group of ['none', 'stage', 'pr'] as const) {
-        sortAndGroupSessions(sessions, { sort, group }, github, stages);
+        sortAndGroupSessions({
+          sessions,
+          prefs: { ...DEFAULT_PREFS, sort, group },
+          githubState: github,
+          stageBySession: stages,
+        });
       }
     }
     const elapsed = performance.now() - start;

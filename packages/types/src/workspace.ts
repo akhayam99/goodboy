@@ -179,6 +179,7 @@ export type Session = Readonly<{
   activeMountId?: MountId;
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
+  lastOpenedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';
   effort?: EffortLevel;
   modelOverride?: string;

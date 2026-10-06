@@ -151,6 +151,7 @@ const storyInvokeHandlers = {
 export const storySpies = {
   getSetting,
   setSetting: vi.fn(async () => undefined),
+  markSessionOpened: vi.fn(async (_params: unknown) => undefined),
   updateProjectResolveCommitStyle: vi.fn(async () => undefined),
   listWorkspaces: vi.fn(async () => [] as ReadonlyArray<Workspace>),
   listProviderCredentials: vi.fn(async () => []),
@@ -521,6 +522,7 @@ export const storyDbStubs = () => ({
   purgeSessionForDelete: vi.fn(async () => undefined),
   archiveSession: vi.fn(async () => undefined),
   unarchiveSession: vi.fn(async () => undefined),
+  markSessionOpened: storySpies.markSessionOpened,
   updateSessionConfig: vi.fn(async () => undefined),
   updateAgentConfig: vi.fn(async () => undefined),
   updateSessionPermissionMode: vi.fn(async () => undefined),

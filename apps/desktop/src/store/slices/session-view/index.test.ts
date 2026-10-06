@@ -207,19 +207,22 @@ describe('store contract', () => {
     it('getSessionViewPrefs returns defaults for a workspace with no stored prefs', async () => {
       const store = useAppStore;
       const prefs = store.getState().getSessionViewPrefs(WS_ID);
-      expect(prefs).toEqual({ sort: 'updatedAt', group: 'stage' });
+      expect(prefs).toEqual({
+        sort: 'needsYou',
+        group: 'none',
+        isArchivedShown: false,
+        isFoldOpen: false,
+      });
     });
 
-    it('setSessionSort persists the chosen sort key', async () => {
+    it('setSessionViewPrefs persists the chosen sort and group', async () => {
       const store = useAppStore;
-      store.getState().setSessionSort(WS_ID, 'goal');
-      expect(store.getState().sessionViewPrefs[WS_ID]?.sort).toBe('goal');
-    });
-
-    it('setSessionGroup persists the chosen group key', async () => {
-      const store = useAppStore;
-      store.getState().setSessionGroup(WS_ID, 'pr');
-      expect(store.getState().sessionViewPrefs[WS_ID]?.group).toBe('pr');
+      store.getState().setSessionViewPrefs({ workspaceId: WS_ID, patch: { sort: 'goal' } });
+      store.getState().setSessionViewPrefs({ workspaceId: WS_ID, patch: { group: 'project' } });
+      expect(store.getState().sessionViewPrefs[WS_ID]).toMatchObject({
+        sort: 'goal',
+        group: 'project',
+      });
     });
 
     it('opening artifact creation clears the studio, the selected agent and the focused artifact', async () => {
