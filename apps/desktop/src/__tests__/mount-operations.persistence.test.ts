@@ -261,4 +261,68 @@ describe('mount operations against a real database', () => {
     const rows = await listSessionMounts({ db, sessionId: RECOVERY_SESSION_ID });
     expect(rows).toHaveLength(0);
   });
+
+  it('moves a requested name under the prefix but never renames an adopted branch', async () => {
+    const { slice } = makeSlice();
+
+    const created = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'feat/sensitive-paths',
+    });
+    const adopted = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'feat/sensitive-aliases',
+      adoptExistingBranch: true,
+    });
+
+    expect(created.branch).toBe('ak/feat-sensitive-paths');
+    expect(adopted.branch).toBe('feat/sensitive-aliases');
+    expect(h.createWorktree).toHaveBeenLastCalledWith(
+      expect.objectContaining({ existingBranch: 'feat/sensitive-aliases' }),
+    );
+  });
+
+  it('cuts a prefixed branch when the branch to adopt does not exist', async () => {
+    h.createWorktree.mockRejectedValueOnce({ kind: 'branch_not_found' });
+    const { slice } = makeSlice();
+
+    const mount = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'feat/missing',
+      adoptExistingBranch: true,
+    });
+
+    expect(mount.branch).toBe('ak/feat-missing');
+  });
+
+  it('records a branch adopted after the session loaded where the diff counters read it', async () => {
+    const { slice, state } = makeSlice();
+    state.sessionWorktreeRecords = { [RECOVERY_SESSION_ID]: [] };
+
+    const mount = await slice.forkMount({
+      sessionId: RECOVERY_SESSION_ID,
+      projectId: RECOVERY_PROJECT_ID,
+      branch: 'feat/sensitive-paths',
+      adoptExistingBranch: true,
+    });
+
+    expect(mount.branch).toBe('feat/sensitive-paths');
+    expect(state.sessionWorktreeRecords).toMatchObject({
+      [RECOVERY_SESSION_ID]: [
+        {
+          id: mount.id,
+          worktreePath: mount.worktreePath,
+          branch: 'feat/sensitive-paths',
+          projectId: RECOVERY_PROJECT_ID,
+          branchOrigin: 'adopted',
+        },
+      ],
+    });
+    expect(state.sessionProjectMounts).toMatchObject({
+      [RECOVERY_SESSION_ID]: [{ worktreePath: mount.worktreePath, baseBranch: 'main' }],
+    });
+  });
 });

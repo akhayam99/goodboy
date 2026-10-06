@@ -239,7 +239,7 @@ pub const CATALOG: &[VerbSpec] = &[
         ],
         access: Access::Write,
         summary:
-            "start a second line of work: a new mount and worktree, the source mount untouched",
+            "the one way to make a branch and worktree for this session: it is attached as a new mount under the workspace prefix, the source mount untouched",
     },
     VerbSpec {
         provider: "mount",

@@ -32,6 +32,12 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   gets `<prefix>/<slug>`. The task id only enters when the session starts from a
   task: a task linked later never renames the branch. The prefix may hold `/`
   (`team/ak`); the worktree folder stays flat because `/` becomes `-`.
+- A name an agent or the New worktree form asks for goes through the same
+  prefix (project, then workspace, then the default). A name that already
+  starts with `<prefix>/` stays as it is, `feat/x` becomes `<prefix>/feat-x`
+  and a bare `x` becomes `<prefix>/x` (`prefixedBranchName` in
+  `resolveMountNaming.ts`). A branch adopted with `existing` keeps its name;
+  only when it is not there does the fork cut a new branch, under the prefix.
 - When another live session, or the repository itself, already owns the name,
   the plan takes `-2`, `-3` and so on. An adopted branch is never renamed. The
   frontend sends the full name; `worktree_create` and `bootstrap_prepare` check
@@ -257,6 +263,12 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   changing files, and that removal is safe before asking for it.
 - **Fork keeps both lines of work.** The new branch is cut from the named
   base; the source mount, directory, branch and request links do not change.
+  Fork is also the only way an agent makes a branch or worktree for the
+  session: it cuts the worktree under `<repo>/.goodboy/worktrees`, attaches it
+  and answers with the mount id and path. Agents are told never to run
+  `git worktree add` or `git checkout -b` for session work.
+  `--existing` attaches a branch that already exists, checked out as it is and
+  never renamed.
   The answer asks for a new turn: the current one stops, and Goodboy queues
   one continuation turn bound to the new mount, told that uncommitted source
   files are absent so it cherry-picks what it needs.
@@ -278,7 +290,10 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   rebase is stopped).
 - **A row names its layers.** Each Projects row links the three code host
   layers by name: `PR #318` with its state opens the pull request, the diff
-  stat opens the Diff, and `N to resolve` (only while review comments of
+  stat (`useMountDiffStats`, read from `sessionWorktreeRecords`, which
+  `applyMountViews` rewrites on every mount change, so a branch attached or
+  forked while the session is open counts at once) opens the Diff,
+  and `N to resolve` (only while review comments of
   that pull request wait) opens Review on them. `Rewrite history` sits in the
   row menu.
 - **Merged rows move under `Show completed`.** A row is merged when its

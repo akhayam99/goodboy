@@ -1,4 +1,4 @@
-import { listSessionMounts } from '@goodboy/db';
+import { listSessionMounts, type SessionWorktree } from '@goodboy/db';
 import type { MountId, SessionId, SessionMountView, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { findMountById } from './findMountById';
@@ -68,6 +68,34 @@ export const toProjectMounts = (
     return mount === null ? [] : [mount];
   });
 
+const toWorktreeRecord = (view: SessionMountView): SessionWorktree | null => {
+  const worktreePath = view.worktreePath;
+  if (worktreePath === null || view.diskState === 'missing' || view.diskState === 'removed') {
+    return null;
+  }
+  return {
+    id: view.id,
+    sessionId: view.sessionId,
+    worktreePath,
+    branch: view.branch,
+    parallelIndex: view.parallelIndex,
+    projectId: view.projectId,
+    mountName: view.mountName,
+    ...(view.repoSlug === null ? {} : { repoSlug: view.repoSlug }),
+    revision: view.revision,
+    ...(view.branchOrigin === undefined ? {} : { branchOrigin: view.branchOrigin }),
+    createdAt: Date.parse(view.createdAt),
+  };
+};
+
+const toWorktreeRecords = (
+  views: ReadonlyArray<SessionMountView>,
+): ReadonlyArray<SessionWorktree> =>
+  views.flatMap((view) => {
+    const record = toWorktreeRecord(view);
+    return record === null ? [] : [record];
+  });
+
 type ApplyParams = {
   readonly set: SetFn;
   readonly sessionId: SessionId;
@@ -89,6 +117,10 @@ export const applyMountViews = ({ set, sessionId, views }: ApplyParams): void =>
     }
     return {
       sessionMounts: { ...state.sessionMounts, [sessionId]: views },
+      sessionWorktreeRecords: {
+        ...state.sessionWorktreeRecords,
+        [sessionId]: toWorktreeRecords(views),
+      },
       sessionProjectMounts: { ...state.sessionProjectMounts, [sessionId]: mounts },
       sessionBranches,
       sessionWorktrees: {

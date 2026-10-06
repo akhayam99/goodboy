@@ -175,6 +175,27 @@ describe('executeMountRequest', () => {
     expect(pendingMountContinuations({ sessionId: 'session-1' as SessionId })).toHaveLength(0);
   });
 
+  it('answers a fork with the path of the new worktree and the branch it sits on', async () => {
+    const outcome = await executeMountRequest(
+      request({ verb: 'fork', args: { branch: 'goodboy/two' } }),
+    );
+
+    expect(outcome.data).toMatchObject({
+      mount: { mountId: 'mount-2', mountPath: '/wt/mount-2', branch: 'goodboy/two' },
+    });
+  });
+
+  it('accepts a fork that moved the requested name under the prefix', async () => {
+    state.forkMount.mockResolvedValueOnce({ ...state.views[1], branch: 'goodboy/feat-two' });
+
+    const outcome = await executeMountRequest(
+      request({ verb: 'fork', args: { branch: 'feat/two' } }),
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ mount: { branch: 'goodboy/feat-two' } });
+  });
+
   it('refuses a fork that landed on a branch nobody asked for', async () => {
     const outcome = await executeMountRequest(
       request({ verb: 'fork', args: { branch: 'goodboy/elsewhere' } }),
