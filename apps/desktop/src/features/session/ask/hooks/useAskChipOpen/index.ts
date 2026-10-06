@@ -1,17 +1,37 @@
 import { useCallback } from 'react';
-import type { ArtifactId, SessionId } from '@goodboy/types';
+import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { agentHomeFor } from '../../../../../store/slices/navigation/agentHomeFor';
 import {
   agentPlace,
   branchPlace,
   sessionPlace,
 } from '../../../../../store/slices/navigation/place';
+import { resolverThread } from '../../../../../store/slices/navigation/resolverThread';
+import type { PlaceRequest } from '../../../../../store/slices/navigation/types';
 import { focusQuestionAnswer } from '../../../../context/focusQuestionAnswer';
 import type { AskHandle } from '../../askHandles';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly onOpenInside: (artifactId: ArtifactId) => void;
+};
+
+type AgentChipParams = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+};
+
+const agentChipPlace = ({ sessionId, agentId }: AgentChipParams): PlaceRequest => {
+  const state = useAppStore.getState();
+  if (agentHomeFor({ state, sessionId, agentId }) !== 'review') {
+    return agentPlace({ sessionId, agentId });
+  }
+  return branchPlace({
+    sessionId,
+    tab: 'comments',
+    threadId: resolverThread({ state, sessionId, agentId }),
+  });
 };
 
 export const useAskChipOpen = ({ sessionId, onOpenInside }: Params) =>
@@ -21,7 +41,7 @@ export const useAskChipOpen = ({ sessionId, onOpenInside }: Params) =>
       const { target } = handle;
       switch (target.kind) {
         case 'agent':
-          navigate({ to: agentPlace({ sessionId, agentId: target.agentId }) });
+          navigate({ to: agentChipPlace({ sessionId, agentId: target.agentId }) });
           return;
         case 'run':
           navigate({

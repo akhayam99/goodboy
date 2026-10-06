@@ -248,7 +248,9 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **Back restores the entry as it was; a forward move arrives clean.** Before a
   push, the live view is captured into the current entry, so Back finds the
   same run, artifact or diff focus. A forward move (crumb, sidebar, palette,
-  notification, Board) starts with an empty focus.
+  notification, Board) starts with an empty focus. A page row in the column
+  navigates first and clears the run and artifact focus after, so the clear
+  never reaches the entry it leaves (`SessionPages`).
 - **Up goes to the parent.** When the previous entry is the parent, Up is Back.
   Otherwise it pushes the parent. Closing an app studio is Back to the entry
   below it, so Up from a studio and Close land in the same place.
@@ -1125,7 +1127,9 @@ one click away. **Settings is the one studio that swaps the column**: the
 column's content cross-fades (160ms) to `‹ Back to app` (with its Esc hint),
 `Search settings` and the settings groups, and the page fills the content area.
 The band reads `Settings › App › General` and has no Close: Back to app, Esc
-and Back land alike. With the column folded into the rail, Settings shows its
+and Back land alike. On close, `StudioFrame` gives focus back to what opened
+the studio, or to the studio's door when that is gone (the palette), unless
+focus already sits outside the studio (`restoreStudioOpener`). With the column folded into the rail, Settings shows its
 groups beside the page instead. The one exception is the workspace launcher,
 which has no shell. There, Add workspace takes the whole window, and so do the
 app studios: Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide.
@@ -1533,8 +1537,8 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   resolver, and the former Fix run address (`lens: 'review'` with the resolver
   and a `thread` target, `.../review/t/{thread}/agent`), on a move and on a
   restore from history, which reopens the drawer. The thread is the one the
-  address named, or the first thread of the attempt. The drawer is half the
-  pane and reads, top to bottom: the fix run summary (`FixRunSummary`: a
+  address named, or the first thread of the attempt. The drawer takes the
+  saved drawer width, like Ask, and reads, top to bottom: the fix run summary (`FixRunSummary`: a
   question the run waits on, what it did, its commits with a note when a later
   rewrite folded one, the comments it touched, each a link that keeps the
   drawer open, and the comments fixed together, opened filtered in Comments),
@@ -1696,7 +1700,9 @@ prefills and focuses the answer field, **Review N ready** runs
 runs in one click.
 
 The `transcript` kind carries `{ agentId }` and shows one agent's conversation
-beside the page, at half the window, without selecting that agent: the page
+beside the page, at the saved drawer width with its resize handle (sizing
+`default`, like Ask, so it never resizes after it opens), without selecting
+that agent: the page
 under it keeps its address and its trail (`loadAgentTranscript` with
 `isSelecting: false`). It reads, top to bottom, a lead (the fix run summary
 for a resolver), the transcript, and a field to write to that agent, which

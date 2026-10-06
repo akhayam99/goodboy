@@ -2,12 +2,15 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
 import { DrawerColumn, RIGHT_DRAWER_STORAGE_KEY } from '../components/DrawerColumn';
 import {
   DRAWER_INSET,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   canDrawerPush,
+  drawerTrackOf,
+  drawerWidthOf,
 } from '../drawerGeometry';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
@@ -210,4 +213,49 @@ describe('DrawerColumn', () => {
     expect(setItem).toHaveBeenCalledOnce();
     expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBe(String(RIGHT_DRAWER_DEFAULT + 49));
   });
+
+  const FIT_CASES = [1280, 1440].flatMap((windowPx) =>
+    [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX].flatMap((sidebarPx) =>
+      (['default', 'half', 'full'] as const).map((sizing) => ({
+        sizing,
+        columnWidth: windowPx - sidebarPx,
+      })),
+    ),
+  );
+
+  it.each(FIT_CASES)(
+    'keeps the $sizing card inside its aside over a $columnWidth column',
+    ({ sizing, columnWidth }) => {
+      stubColumnWidth(columnWidth);
+      render(
+        <DrawerColumn
+          main={<div>main</div>}
+          drawer={<div>Fix run</div>}
+          sizing={sizing}
+          ariaLabel="Side panel"
+          resizeLabel="Resize side panel"
+        />,
+      );
+      const width = drawerWidthOf({
+        sizing,
+        columnWidth,
+        resizableWidth: RIGHT_DRAWER_DEFAULT,
+      });
+      const track = drawerTrackOf(width);
+      const card = panel().querySelector<HTMLElement>('[data-drawer-card]');
+      const inner = card?.parentElement ?? null;
+      const handle = inner?.firstElementChild ?? null;
+
+      expect(DRAWER_INSET).toBe(8);
+      expect(track).toBeLessThanOrEqual(columnWidth);
+      expect(panel().style.width).toBe(`${track}px`);
+      expect(panel().className).toContain('overflow-hidden');
+      expect(inner?.style.minWidth).toBe(`${track}px`);
+      expect(handle?.className).toContain('w-2');
+      expect(handle?.className).toContain('shrink-0');
+      expect(card?.className).toContain('mr-2');
+      expect(card?.className).toContain('min-w-0');
+      expect(card?.className).toContain('overflow-hidden');
+    },
+  );
 });

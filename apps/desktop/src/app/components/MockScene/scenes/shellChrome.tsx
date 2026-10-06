@@ -19,10 +19,11 @@ import { AskTrailButton } from '../../../../features/session/ask/components/AskT
 import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
-import { shellArrangement } from '../../../shellArrangement';
 import { sceneClock } from '../sceneClock';
+import { shellArrangement } from '../../../shellArrangement';
 import { SceneFooter } from './SceneFooter';
-import { SCENE_COLUMN_ACTIONS, sceneShellMode } from './sceneShell';
+import { sceneShellMode } from './sceneShell';
+import { useSceneShell } from './useSceneShell';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
 
@@ -120,10 +121,13 @@ export const ShellFrame = ({
     isSidebarCollapsed: sidebar === 'collapsed',
     mode: sceneShellMode(),
   });
+  const shell = useSceneShell({ arrangement });
 
   return (
     <ToastProvider>
       <AppShell
+        studio={shell.studio}
+        studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
             mode={arrangement.mode}
@@ -141,8 +145,9 @@ export const ShellFrame = ({
             workspaceId={session.workspaceId}
             currentSessionId={session.id}
             isDraftShown={false}
-            actions={SCENE_COLUMN_ACTIONS}
+            actions={shell.actions}
             onToggle={noop}
+            settingsSlotRef={shell.settingsSlotRef}
           />
         }
         footer={
@@ -165,6 +170,7 @@ export const ShellFrame = ({
           )
         }
       />
+      {shell.layers}
     </ToastProvider>
   );
 };

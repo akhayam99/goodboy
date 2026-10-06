@@ -4,13 +4,14 @@ import type { Session } from '@goodboy/types';
 import { AppTopBar } from '../../../AppTopBar';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
-import { shellArrangement } from '../../../../shellArrangement';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
+import { shellArrangement } from '../../../../shellArrangement';
 import { SceneFooter } from '../SceneFooter';
-import { SCENE_COLUMN_ACTIONS, sceneShellMode } from '../sceneShell';
+import { sceneShellMode } from '../sceneShell';
+import { useSceneShell } from '../useSceneShell';
 import { FRAME_CONNECTED } from './frameSeed';
 import { sceneParam } from './sceneParams';
 
@@ -30,42 +31,49 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
     isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
     mode: sceneShellMode(),
   });
+  const shell = useSceneShell({ arrangement });
   return (
-    <AppShell
-      drawer={isDrawerOpen ? <DrawerHost /> : null}
-      drawerSizing={drawerSizing}
-      topBar={
-        <AppTopBar
-          mode={arrangement.mode}
-          onOpenSpend={noop}
-          onOpenScript={noop}
-          onOpenImpact={noop}
-        />
-      }
-      leftHidden={arrangement.leftHidden}
-      leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-      leftSidebar={
-        <ShellLeft
-          arrangement={arrangement}
-          workspaceId={session.workspaceId}
-          currentSessionId={session.id}
-          isDraftShown={false}
-          actions={SCENE_COLUMN_ACTIONS}
-          onToggle={noop}
-        />
-      }
-      footer={
-        arrangement.footer === null ? undefined : (
-          <SceneFooter scope={arrangement.footer} connected={FRAME_CONNECTED} />
-        )
-      }
-      main={
-        main ?? (
-          <div className="relative h-full w-full">
-            <SessionWorkspace session={session} isActive />
-          </div>
-        )
-      }
-    />
+    <>
+      <AppShell
+        drawer={isDrawerOpen ? <DrawerHost /> : null}
+        drawerSizing={drawerSizing}
+        studio={shell.studio}
+        studioCoversLeft={arrangement.studioCoversLeft}
+        topBar={
+          <AppTopBar
+            mode={arrangement.mode}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+            onOpenImpact={noop}
+          />
+        }
+        leftHidden={arrangement.leftHidden}
+        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+        leftSidebar={
+          <ShellLeft
+            arrangement={arrangement}
+            workspaceId={session.workspaceId}
+            currentSessionId={session.id}
+            isDraftShown={false}
+            actions={shell.actions}
+            onToggle={noop}
+            settingsSlotRef={shell.settingsSlotRef}
+          />
+        }
+        footer={
+          arrangement.footer === null ? undefined : (
+            <SceneFooter scope={arrangement.footer} connected={FRAME_CONNECTED} />
+          )
+        }
+        main={
+          main ?? (
+            <div className="relative h-full w-full">
+              <SessionWorkspace session={session} isActive />
+            </div>
+          )
+        }
+      />
+      {shell.layers}
+    </>
   );
 };

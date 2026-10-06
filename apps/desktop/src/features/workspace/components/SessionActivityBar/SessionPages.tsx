@@ -50,10 +50,10 @@ export const SessionPages = ({ session }: Props) => {
   const pages = useMemo(() => sessionPages({ isBranchless }), [isBranchless]);
 
   const openPage = (page: SessionPage) => {
+    openLens({ sessionId, lens: page.lens });
     const state = useAppStore.getState();
     state.setFocusedArtifactId(sessionId, null);
     state.setFocusedWorkflowRun(sessionId, null);
-    openLens({ sessionId, lens: page.lens });
   };
 
   return (

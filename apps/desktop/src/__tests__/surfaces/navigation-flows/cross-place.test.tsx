@@ -11,7 +11,15 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import type { Session, SessionId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type {
+  ArtifactId,
+  Session,
+  SessionId,
+  StepId,
+  Workflow,
+  WorkflowId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { seedSessionAsk } from '../../../app/components/MockScene/scenes/sessionAskSeed';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { STORY_NOW } from '../../../store/storyHarness';
@@ -110,6 +118,8 @@ const expectHealthy = (): void => {
 };
 
 const SHIP_ID = 'journey-workflow-ship-a-fix' as WorkflowId;
+
+const JOURNEY_ARTIFACT = 'journey-artifact-plan' as ArtifactId;
 
 const seedShipAFix = (): void => {
   const state = useAppStore.getState();
@@ -429,12 +439,31 @@ describe('moving across every place keeps one frame', () => {
       await boot({ seed: 'pr' });
       await openCrumb(/^Agents/);
 
-      const exits: ReadonlyArray<() => Promise<void>> = [
-        backToApp,
-        escape,
-        () => click(historyButton('Back')),
+      const exits: ReadonlyArray<readonly [() => Promise<void>, () => HTMLElement]> = [
+        [
+          async () => {
+            screen.getByRole('button', { name: /^Back to app/ }).focus();
+            await backToApp();
+          },
+          () => door('settings'),
+        ],
+        [
+          async () => {
+            screen.getByRole('searchbox', { name: 'Search settings' }).focus();
+            await escape();
+          },
+          () => door('settings'),
+        ],
+        [
+          async () => {
+            historyButton('Back').focus();
+            await click(historyButton('Back'));
+          },
+          () => historyButton('Back'),
+        ],
       ];
-      for (const exit of exits) {
+      for (const [exit, expectedFocus] of exits) {
+        door('settings').focus();
         await click(door('settings'));
         expect(studio()).toBe('settings');
         expect(screen.getByRole('navigation', { name: 'Settings scopes' })).toBeDefined();
@@ -449,7 +478,14 @@ describe('moving across every place keeps one frame', () => {
         expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
           false,
         );
+        expect(document.activeElement).toBe(expectedFocus());
       }
+
+      await openPalette(/^Settings$/, 'Settings');
+      expect(studio()).toBe('settings');
+      screen.getByRole('button', { name: /^Back to app/ }).focus();
+      await backToApp();
+      expect(document.activeElement, 'falls back to the Settings door').toBe(door('settings'));
       expectHealthy();
     },
     JOURNEY_MS,
@@ -636,12 +672,15 @@ describe('moving across every place keeps one frame', () => {
       expectColumn('column');
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
 
+      door('settings').focus();
       await click(door('settings'));
       expectPlace({ session: sessionId, lens: 'branch', studio: 'settings', doors: ['settings'] });
       expectColumn('settings');
+      screen.getByRole('button', { name: /^Back to app/ }).focus();
       await backToApp();
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       expectColumn('column');
+      expect(document.activeElement).toBe(door('settings'));
       expect(useAppStore.getState().branchTab[sessionId]).toBe('comments');
 
       for (const [id, kind] of STUDIO_DOORS) {
@@ -666,6 +705,27 @@ describe('moving across every place keeps one frame', () => {
       ).toBeGreaterThan(0);
       expect(pageRow('Runs').textContent).toMatch(/\d/);
       expect(screen.queryByText(/workflow run/i)).toBeNull();
+
+      const startedRun = currentSession(sessionId).workflowRuns.at(-1)?.id ?? null;
+      expect(startedRun).not.toBeNull();
+      act(() => useAppStore.getState().setFocusedWorkflowRun(sessionId, startedRun));
+      await settle();
+      await click(pageRow('Agents'));
+      expectPlace({ session: sessionId, lens: 'agents', studio: null, doors: [] });
+      expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
+      await click(historyButton('Back'));
+      expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
+      expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
+
+      await click(pageRow('Artifacts'));
+      expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
+      act(() => useAppStore.getState().setFocusedArtifactId(sessionId, JOURNEY_ARTIFACT));
+      await settle();
+      await click(pageRow('Agents'));
+      expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
+      await click(historyButton('Back'));
+      expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });
+      expect(useAppStore.getState().focusedArtifactId[sessionId]).toBe(JOURNEY_ARTIFACT);
       expectHealthy();
     },
     JOURNEY_MS,

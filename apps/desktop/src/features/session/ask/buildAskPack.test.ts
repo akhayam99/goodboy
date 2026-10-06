@@ -153,6 +153,82 @@ describe('buildAskPack', () => {
     expect(pack.text).not.toContain('Implementer said Implementer said');
   });
 
+  it('keeps the newest transcript output when it cuts a tail', () => {
+    const tail = `${'older output line\n'.repeat(1_000)}FINAL-SENTINEL-LINE`;
+    const pack = buildAskPack(
+      input({ agents: [agent({ status: 'running', transcriptTail: tail })] }),
+    );
+    const content = pack.files[0]?.content ?? '';
+    expect(content).toContain('FINAL-SENTINEL-LINE');
+    expect(content.length).toBeLessThanOrEqual(LIMITS.transcriptTail + 80);
+  });
+
+  it('redacts a labelled secret in every field of the pack and every staged file', () => {
+    const leak = (field: string): string => `api_key=leak${field}value`;
+    const pack = buildAskPack({
+      title: leak('title'),
+      rightNow: [leak('rightnow')],
+      goal: leak('goal'),
+      decisions: leak('decisions'),
+      summary: leak('summary'),
+      agents: [
+        agent({
+          name: leak('agentname'),
+          status: 'running',
+          summary: leak('agentsummary'),
+          since: leak('since'),
+          transcriptTail: `line\n${leak('transcript')}`,
+        }),
+      ],
+      questions: [
+        {
+          id: 'q-open' as OpenQuestionId,
+          text: leak('questiontext'),
+          from: leak('questionfrom'),
+          isOpen: true,
+          answer: null,
+          suggestions: [leak('suggestion')],
+        },
+        {
+          id: 'q-done' as OpenQuestionId,
+          text: 'Which cap?',
+          from: null,
+          isOpen: false,
+          answer: leak('answer'),
+          suggestions: [],
+        },
+      ],
+      runs: [
+        {
+          id: 'run-1' as WorkflowRunId,
+          title: leak('runtitle'),
+          isRunning: true,
+          detail: leak('rundetail'),
+        },
+      ],
+      comments: [
+        {
+          threadId: 'thread-1',
+          word: 'needs_you',
+          author: leak('author'),
+          location: leak('location'),
+          body: leak('body'),
+        },
+      ],
+      branches: [{ mountName: leak('mount'), branch: leak('branch'), baseBranch: leak('base') }],
+      pullRequest: { number: 7, title: leak('prtitle'), state: leak('prstate') },
+      artifacts: [
+        { id: 'art-1' as ArtifactId, title: leak('artifact'), kind: leak('kind'), isPlan: false },
+      ],
+      events: [leak('event')],
+    });
+    expect(pack.text).not.toMatch(/leak\w+value/);
+    expect(pack.files).toHaveLength(1);
+    for (const file of pack.files) {
+      expect(file.content).not.toMatch(/leak\w+value/);
+    }
+  });
+
   it('caps the staged files at eight agents', () => {
     const agents = Array.from({ length: 12 }, (_, index) =>
       agent({ id: `agent-${index}` as AgentId, status: 'running', transcriptTail: 'tail' }),

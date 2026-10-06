@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from '../mockSceneIpc';
 import type {
   Agent,
   AgentHandoff,
@@ -365,7 +365,7 @@ const BRANCHES: Readonly<Record<string, string>> = Object.fromEntries([
 ]);
 
 const installIpc = (): void => {
-  mockIPC((cmd) => {
+  mockSceneIpc((cmd) => {
     if (cmd === 'slack_get_thread') {
       return SLACK_THREAD;
     }

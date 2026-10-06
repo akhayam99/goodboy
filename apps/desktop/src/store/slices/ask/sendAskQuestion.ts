@@ -25,6 +25,11 @@ import type { GetFn, SendAskQuestionParams, SetFn } from './types';
 
 const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
+const STOPPED_BEFORE_LAUNCH: ChatTurnOutcome = {
+  status: 'failed',
+  error: 'Stopped before the provider started.',
+};
+
 type PatchParams = {
   readonly set: SetFn;
   readonly threadId: ChatId;
@@ -198,10 +203,15 @@ export const sendAskQuestion =
         [thread.id]: { runId, messageId: reply.id, isStopping: false },
       },
     }));
-    let outcome: ChatTurnOutcome;
+    const isStopping = (): boolean => get().askStreams[thread.id]?.isStopping === true;
+    let outcome: ChatTurnOutcome = STOPPED_BEFORE_LAUNCH;
     try {
       await activeAskBackend.insertMessage({ message: asked });
       await activeAskBackend.insertMessage({ message: reply });
+      if (isStopping()) {
+        await finishReply({ set, get, threadId: thread.id, messageId: reply.id, outcome });
+        return true;
+      }
       outcome = await activeAskBackend.runTurn({
         request: {
           runId,
@@ -245,6 +255,12 @@ export const sendAskQuestion =
             model: routing.model,
             usage,
           }).catch(() => undefined);
+        },
+        onStarted: () => {
+          if (!isStopping()) {
+            return;
+          }
+          void activeAskBackend.cancelTurn({ runId });
         },
       });
     } catch (error) {

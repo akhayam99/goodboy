@@ -60,6 +60,15 @@ const CLAUDE_NO_SETTINGS: &str = "";
 const CLAUDE_NO_HOOKS: &str = "{\"disableAllHooks\":true}";
 const CLAUDE_NO_MCP: &str = "{\"mcpServers\":{}}";
 const CODEX_NO_MCP: &str = "mcp_servers={}";
+const CODEX_PROFILE_SETTING: &str = "default_permissions=\"goodboy-ask\"";
+const CODEX_FILESYSTEM_KEY: &str = "permissions.goodboy-ask.filesystem=";
+const CODEX_PROFILE_SINCE: (u64, u64, u64) = (0, 160, 0);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CodexSandbox {
+    ReadOnly,
+    Profile,
+}
 
 const READ_ONLY_REFUSAL: &str = "Chat needs a provider that can run read-only: Claude or Codex";
 
@@ -179,6 +188,66 @@ struct ChatRoots {
 struct ChatScope {
     provider: String,
     roots: Vec<String>,
+    codex: CodexSandbox,
+}
+
+fn parse_cli_version(raw: &str) -> Option<(u64, u64, u64)> {
+    raw.split_whitespace().find_map(|token| {
+        let core = token.trim_start_matches('v').split(['-', '+']).next()?;
+        let mut parts = core.split('.').map(|part| part.parse::<u64>().ok());
+        let major = parts.next()??;
+        let minor = parts.next()??;
+        let patch = parts.next().unwrap_or(Some(0))?;
+        Some((major, minor, patch))
+    })
+}
+
+fn codex_sandbox_for(version: Option<&str>) -> CodexSandbox {
+    match version.and_then(parse_cli_version) {
+        Some(found) if found >= CODEX_PROFILE_SINCE => CodexSandbox::Profile,
+        _ => CodexSandbox::ReadOnly,
+    }
+}
+
+fn detect_codex_sandbox(provider: &str) -> CodexSandbox {
+    if provider != "codex" {
+        return CodexSandbox::ReadOnly;
+    }
+    codex_sandbox_for(crate::providers::detect_codex().version.as_deref())
+}
+
+fn toml_string(value: &str) -> String {
+    let mut quoted = String::with_capacity(value.len() + 2);
+    quoted.push('"');
+    for ch in value.chars() {
+        match ch {
+            '\\' => quoted.push_str("\\\\"),
+            '"' => quoted.push_str("\\\""),
+            ch if ch.is_control() => quoted.push_str(&format!("\\u{:04X}", ch as u32)),
+            ch => quoted.push(ch),
+        }
+    }
+    quoted.push('"');
+    quoted
+}
+
+fn canonical_root(root: &str) -> String {
+    std::fs::canonicalize(root)
+        .map(|path| path.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| root.to_string())
+}
+
+fn codex_filesystem(roots: &[String]) -> String {
+    let mut grants = vec![format!("{}=\"read\"", toml_string(":minimal"))];
+    let mut seen: Vec<String> = Vec::with_capacity(roots.len());
+    for root in roots.iter().map(|root| canonical_root(root)) {
+        if seen.contains(&root) {
+            continue;
+        }
+        grants.push(format!("{}=\"read\"", toml_string(&root)));
+        seen.push(root);
+    }
+    format!("{CODEX_FILESYSTEM_KEY}{{{}}}", grants.join(","))
 }
 
 fn cli_shape_for(provider: &str) -> Result<&'static str, ChatError> {
@@ -279,7 +348,11 @@ fn load_chat_scope(conn: &Connection, chat_id: &str) -> Result<ChatScope, ChatEr
     let roots = stmt
         .query_map([chat_id], |row| row.get::<_, String>(0))?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(ChatScope { provider, roots })
+    Ok(ChatScope {
+        provider,
+        roots,
+        codex: CodexSandbox::ReadOnly,
+    })
 }
 
 const IMAGE_BLOCK_HEADER: &str =
@@ -307,6 +380,7 @@ fn build_chat_cli_args(
     args: &ChatTurnArgs,
     roots: &ChatRoots,
     images: Option<&TurnImages>,
+    codex: CodexSandbox,
 ) -> Vec<String> {
     let allowed_tools: Vec<String> = CLAUDE_READ_TOOLS
         .iter()
@@ -344,13 +418,45 @@ fn build_chat_cli_args(
     };
     let cli = turn_args(shape, &spawn);
     if shape == "codex" {
-        return harden_codex(cli, images);
+        let readable: Vec<String> = std::iter::once(roots.working_dir.clone())
+            .chain(roots.read_roots.iter().cloned())
+            .chain(images.map(|images| images.root.clone()))
+            .collect();
+        return harden_codex(cli, images, codex, &readable);
     }
     let image_root = images.map(|images| images.root.as_str());
     harden_claude(cli, &prompt, &roots.read_roots, image_root)
 }
 
-fn harden_codex(mut cli: Vec<String>, images: Option<&TurnImages>) -> Vec<String> {
+fn without_sandbox_flag(cli: Vec<String>) -> Vec<String> {
+    let mut kept: Vec<String> = Vec::with_capacity(cli.len());
+    let mut skip_next = false;
+    let mut is_prompt = false;
+    for arg in cli {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        if !is_prompt && arg == "-s" {
+            skip_next = true;
+            continue;
+        }
+        is_prompt = is_prompt || arg == "--";
+        kept.push(arg);
+    }
+    kept
+}
+
+fn harden_codex(
+    cli: Vec<String>,
+    images: Option<&TurnImages>,
+    codex: CodexSandbox,
+    readable: &[String],
+) -> Vec<String> {
+    let mut cli = match codex {
+        CodexSandbox::ReadOnly => cli,
+        CodexSandbox::Profile => without_sandbox_flag(cli),
+    };
     let at = cli.iter().position(|arg| arg == "--").unwrap_or(cli.len());
     let mut extra: Vec<String> = [
         "--ignore-user-config",
@@ -362,6 +468,12 @@ fn harden_codex(mut cli: Vec<String>, images: Option<&TurnImages>) -> Vec<String
     .iter()
     .map(|arg| arg.to_string())
     .collect();
+    if codex == CodexSandbox::Profile {
+        extra.push("-c".to_string());
+        extra.push(CODEX_PROFILE_SETTING.to_string());
+        extra.push("-c".to_string());
+        extra.push(codex_filesystem(readable));
+    }
     for image in images
         .map(|images| images.images.as_slice())
         .unwrap_or_default()
@@ -435,7 +547,29 @@ fn has_pair(cli: &[String], flag: &str, value: &str) -> bool {
         .any(|pair| pair[0] == flag && pair[1] == value)
 }
 
-fn assert_read_only(shape: &str, cli: &[String]) -> Result<(), ChatError> {
+fn assert_codex_profile(flags: &[String]) -> Result<(), ChatError> {
+    if flags.iter().any(|arg| arg == "-s" || arg == "--sandbox") {
+        return Err(ChatError::WriteArgument(
+            "a sandbox flag would override the read profile".to_string(),
+        ));
+    }
+    let filesystem: Vec<&String> = flags
+        .windows(2)
+        .filter(|pair| pair[0] == "-c" && pair[1].starts_with(CODEX_FILESYSTEM_KEY))
+        .map(|pair| &pair[1])
+        .collect();
+    let [grants] = filesystem.as_slice() else {
+        return Err(ChatError::WriteArgument(
+            "the read profile needs one filesystem table".to_string(),
+        ));
+    };
+    if grants.contains("=\"write\"") {
+        return Err(ChatError::WriteArgument(grants.to_string()));
+    }
+    Ok(())
+}
+
+fn assert_read_only(shape: &str, cli: &[String], codex: CodexSandbox) -> Result<(), ChatError> {
     let prompt_at = cli.len().saturating_sub(1);
     let separators = cli.iter().filter(|arg| arg.as_str() == "--").count();
     if cli.len() < 2 || cli[prompt_at - 1] != "--" || separators != 1 {
@@ -457,6 +591,9 @@ fn assert_read_only(shape: &str, cli: &[String]) -> Result<(), ChatError> {
             ("--settings", CLAUDE_NO_HOOKS),
             ("--mcp-config", CLAUDE_NO_MCP),
         ],
+        "codex" if codex == CodexSandbox::Profile => {
+            &[("-c", CODEX_NO_MCP), ("-c", CODEX_PROFILE_SETTING)]
+        }
         "codex" => &[("-s", "read-only"), ("-c", CODEX_NO_MCP)],
         _ => return Err(ChatError::NotReadOnly(shape.to_string())),
     };
@@ -478,14 +615,19 @@ fn assert_read_only(shape: &str, cli: &[String]) -> Result<(), ChatError> {
             return Err(ChatError::WriteArgument(format!("{switch} is missing")));
         }
     }
+    let is_profile = shape == "codex" && codex == CodexSandbox::Profile;
+    if is_profile {
+        assert_codex_profile(&cli[..prompt_at])?;
+    }
     let policy_cli = if shape == "claude" {
         Cli::Claude
     } else {
         Cli::Codex
     };
+    let sandbox_pair = "-s must be \"read-only\"";
     match read_only_violations(policy_cli, Job::Turn, cli)
         .into_iter()
-        .next()
+        .find(|violation| !(is_profile && violation == sandbox_pair))
     {
         Some(violation) => Err(ChatError::WriteArgument(violation)),
         None => Ok(()),
@@ -523,8 +665,8 @@ fn prepare_chat_turn(
                 .iter()
                 .any(|root| is_inside(&images.root, &trim_root(root)))
     });
-    let cli = build_chat_cli_args(shape, args, &roots, images);
-    assert_read_only(shape, &cli)?;
+    let cli = build_chat_cli_args(shape, args, &roots, images, scope.codex);
+    assert_read_only(shape, &cli, scope.codex)?;
     Ok(PreparedChatTurn {
         binary: shape,
         cli,
@@ -656,6 +798,7 @@ pub async fn chat_turn(
         (scope, images)
     };
     let scope = ChatScope {
+        codex: detect_codex_sandbox(&scope.provider),
         provider: scope.provider,
         roots: existing_roots(scope.roots),
     };
@@ -669,8 +812,8 @@ pub async fn chat_turn(
     let image_root = turn_images
         .as_ref()
         .map(|images| PathBuf::from(&images.root));
-    let spawned = prepare_chat_turn(&args, &scope, home.as_deref(), turn_images.as_ref())
-        .and_then(|prepared| {
+    let spawned = prepare_chat_turn(&args, &scope, home.as_deref(), turn_images.as_ref()).and_then(
+        |prepared| {
             spawn_chat_turn(
                 &app,
                 &state.0,
@@ -679,7 +822,8 @@ pub async fn chat_turn(
                 prepared,
                 image_root.clone(),
             )
-        });
+        },
+    );
     if spawned.is_err() {
         if let Some(root) = image_root.as_deref() {
             crate::chat_images::remove_turn_root(root);
@@ -731,6 +875,7 @@ pub struct AskTurnArgs {
 struct AskScope {
     provider: String,
     worktrees: Vec<String>,
+    codex: CodexSandbox,
 }
 
 fn load_ask_scope(
@@ -759,6 +904,7 @@ fn load_ask_scope(
     Ok(AskScope {
         provider,
         worktrees,
+        codex: CodexSandbox::ReadOnly,
     })
 }
 
@@ -775,7 +921,9 @@ fn is_safe_dossier_segment(segment: &str) -> bool {
 fn is_safe_dossier_name(name: &str) -> bool {
     let segments: Vec<&str> = name.split('/').collect();
     segments.len() <= 2
-        && segments.iter().all(|segment| is_safe_dossier_segment(segment))
+        && segments
+            .iter()
+            .all(|segment| is_safe_dossier_segment(segment))
         && name.ends_with(".md")
 }
 
@@ -895,8 +1043,8 @@ fn prepare_ask_turn(
             path.is_absolute() && !is_too_wide(path, home) && !is_inside(dossier_root, root)
         })
         .collect();
-    let candidates: Vec<String> = match shape {
-        "codex" => vec![dossier_root.to_string()],
+    let candidates: Vec<String> = match (shape, scope.codex) {
+        ("codex", CodexSandbox::ReadOnly) => vec![dossier_root.to_string()],
         _ => worktrees
             .iter()
             .cloned()
@@ -915,8 +1063,8 @@ fn prepare_ask_turn(
         images: false,
         message_id: None,
     };
-    let cli = build_chat_cli_args(shape, &turn, &roots, None);
-    assert_read_only(shape, &cli)?;
+    let cli = build_chat_cli_args(shape, &turn, &roots, None, scope.codex);
+    assert_read_only(shape, &cli, scope.codex)?;
     Ok(PreparedChatTurn {
         binary: shape,
         cli,
@@ -936,6 +1084,7 @@ pub async fn ask_turn(
         load_ask_scope(&conn, &args.thread_id, &args.session_id)?
     };
     let scope = AskScope {
+        codex: detect_codex_sandbox(&scope.provider),
         provider: scope.provider,
         worktrees: existing_roots(scope.worktrees),
     };
@@ -993,6 +1142,7 @@ mod tests {
                 "/Users/mara/code/harborline/payments-api".to_string(),
                 "/Users/mara/code/harborline/ledger-core/".to_string(),
             ],
+            codex: CodexSandbox::ReadOnly,
         }
     }
 
@@ -1253,7 +1403,7 @@ mod tests {
         assert!(prompt.contains(&format!(
             "- acme_trace.png (this message): {IMAGE_ROOT}/1-acme-trace.png"
         )));
-        assert!(assert_read_only("claude", cli).is_ok());
+        assert!(assert_read_only("claude", cli, CodexSandbox::ReadOnly).is_ok());
     }
 
     #[test]
@@ -1269,7 +1419,7 @@ mod tests {
         assert_eq!(attached, vec![format!("{IMAGE_ROOT}/1-acme-trace.png")]);
         assert!(!cli.contains(&"--add-dir".to_string()));
         assert!(!cli.last().unwrap().contains(IMAGE_ROOT));
-        assert!(assert_read_only("codex", cli).is_ok());
+        assert!(assert_read_only("codex", cli, CodexSandbox::ReadOnly).is_ok());
     }
 
     #[test]
@@ -1287,6 +1437,7 @@ mod tests {
         let scope = ChatScope {
             provider: "anthropic".to_string(),
             roots: vec![],
+            codex: CodexSandbox::ReadOnly,
         };
         assert!(matches!(
             prepare_chat_turn(
@@ -1443,6 +1594,7 @@ mod tests {
         AskScope {
             provider: provider.to_string(),
             worktrees: worktrees.iter().map(|root| root.to_string()).collect(),
+            codex: CodexSandbox::ReadOnly,
         }
     }
 
@@ -1481,24 +1633,179 @@ mod tests {
         assert_eq!(flag_value(&prepared.cli, "--permission-mode"), Some("plan"));
         assert_eq!(flag_value(&prepared.cli, "--tools"), Some("Read,Grep,Glob"));
         assert!(prepared.cli.contains(&"--restricted".to_string()));
-        assert!(assert_read_only("claude", &prepared.cli).is_ok());
+        assert!(assert_read_only("claude", &prepared.cli, CodexSandbox::ReadOnly).is_ok());
     }
 
     #[test]
-    fn codex_asks_inside_the_dossier_because_its_sandbox_takes_no_extra_roots() {
+    fn codex_before_0_160_asks_inside_the_dossier_with_the_read_only_sandbox() {
         let prepared = prepare_ask("codex", &WORKTREES);
         assert_eq!(prepared.working_dir, DOSSIER);
         assert_eq!(flag_value(&prepared.cli, "--cd"), Some(DOSSIER));
         assert_eq!(flag_value(&prepared.cli, "-s"), Some("read-only"));
         assert!(!prepared.cli.contains(&"--add-dir".to_string()));
         for switch in ["--ignore-user-config", "--ignore-rules", "--ephemeral"] {
-            assert!(prepared.cli.contains(&switch.to_string()), "{switch} missing");
+            assert!(
+                prepared.cli.contains(&switch.to_string()),
+                "{switch} missing"
+            );
         }
         let prompt = prepared.cli.last().unwrap();
         assert!(prompt.starts_with("Answer about the Fix webhook retries session.\n\n"));
         assert!(prompt.contains(&format!("- {DOSSIER}/agents/A2.md")));
         assert!(prompt.contains(&format!("- {}", WORKTREES[0])));
-        assert!(assert_read_only("codex", &prepared.cli).is_ok());
+        assert!(assert_read_only("codex", &prepared.cli, CodexSandbox::ReadOnly).is_ok());
+    }
+
+    fn grants(roots: &[&str]) -> String {
+        let listed: Vec<String> = roots
+            .iter()
+            .map(|root| format!("\"{root}\"=\"read\""))
+            .collect();
+        format!(
+            "permissions.goodboy-ask.filesystem={{\":minimal\"=\"read\",{}}}",
+            listed.join(",")
+        )
+    }
+
+    fn assert_read_profile(cli: &[String], roots: &[&str]) {
+        assert_eq!(flag_value(cli, "-s"), None, "{cli:?}");
+        assert!(has_pair(cli, "-c", "default_permissions=\"goodboy-ask\""));
+        assert!(has_pair(cli, "-c", &grants(roots)), "{cli:?}");
+        assert!(has_pair(cli, "-c", "mcp_servers={}"));
+        for switch in ["--ignore-user-config", "--ignore-rules", "--ephemeral"] {
+            assert!(cli.contains(&switch.to_string()), "{switch} missing");
+        }
+        assert!(assert_read_only("codex", cli, CodexSandbox::Profile).is_ok());
+        assert!(assert_read_only("codex", cli, CodexSandbox::ReadOnly).is_err());
+    }
+
+    #[test]
+    fn the_codex_sandbox_follows_the_cli_version() {
+        for version in [
+            "codex-cli 0.160.0",
+            "codex-cli 0.161.2",
+            "codex-cli 1.0.0",
+            "codex-cli 0.160.0-alpha.3",
+            "v0.172",
+        ] {
+            assert_eq!(
+                codex_sandbox_for(Some(version)),
+                CodexSandbox::Profile,
+                "{version}"
+            );
+        }
+        for version in ["codex-cli 0.159.9", "codex-cli 0.98.0", "codex-cli", ""] {
+            assert_eq!(
+                codex_sandbox_for(Some(version)),
+                CodexSandbox::ReadOnly,
+                "{version}"
+            );
+        }
+        assert_eq!(codex_sandbox_for(None), CodexSandbox::ReadOnly);
+        assert_eq!(detect_codex_sandbox("anthropic"), CodexSandbox::ReadOnly);
+    }
+
+    #[test]
+    fn codex_from_0_160_asks_from_the_worktrees_and_reads_only_them_and_the_dossier() {
+        let mut scope = ask_scope_for("codex", &WORKTREES);
+        scope.codex = CodexSandbox::Profile;
+        let prepared = prepare_ask_turn(
+            &ask_args_for("codex"),
+            &scope,
+            Some(Path::new(HOME)),
+            DOSSIER,
+        )
+        .expect("read profile ask");
+        assert_eq!(prepared.working_dir, WORKTREES[0]);
+        assert_eq!(flag_value(&prepared.cli, "--cd"), Some(WORKTREES[0]));
+        assert_read_profile(
+            &prepared.cli,
+            &[
+                WORKTREES[0],
+                "/Users/mara/code/payments-api/.goodboy/worktrees/webhook-retries",
+                DOSSIER,
+            ],
+        );
+        let prompt = prepared.cli.last().unwrap();
+        assert!(prompt.contains(&format!("- {DOSSIER}/agents/A2.md")));
+    }
+
+    #[test]
+    fn codex_from_0_160_chats_over_the_workspace_projects_and_its_images_only() {
+        let mut scope = scope_for("codex");
+        scope.codex = CodexSandbox::Profile;
+        let args = args_for("codex");
+        let prepared = prepare_chat_turn(&args, &scope, Some(Path::new(HOME)), None)
+            .expect("read profile chat");
+        assert_eq!(
+            prepared.working_dir,
+            "/Users/mara/code/harborline/payments-api"
+        );
+        assert_read_profile(
+            &prepared.cli,
+            &[
+                "/Users/mara/code/harborline/payments-api",
+                "/Users/mara/code/harborline/ledger-core",
+            ],
+        );
+        let mut with_images = args_for("codex");
+        with_images.images = true;
+        let prepared = prepare_chat_turn(
+            &with_images,
+            &scope,
+            Some(Path::new(HOME)),
+            Some(&turn_images(IMAGE_ROOT)),
+        )
+        .expect("read profile chat with images");
+        assert_read_profile(
+            &prepared.cli,
+            &[
+                "/Users/mara/code/harborline/payments-api",
+                "/Users/mara/code/harborline/ledger-core",
+                IMAGE_ROOT,
+            ],
+        );
+        assert_eq!(
+            flag_value(&prepared.cli, "--image"),
+            Some(format!("{IMAGE_ROOT}/1-acme-trace.png").as_str())
+        );
+    }
+
+    #[test]
+    fn a_sandbox_flag_or_a_write_grant_breaks_the_read_profile() {
+        let mut scope = scope_for("codex");
+        scope.codex = CodexSandbox::Profile;
+        let cli = prepare_chat_turn(&args_for("codex"), &scope, Some(Path::new(HOME)), None)
+            .expect("read profile chat")
+            .cli;
+        let separator = cli.iter().position(|arg| arg == "--").unwrap();
+        let mut sandboxed = cli.clone();
+        sandboxed.insert(separator, "read-only".to_string());
+        sandboxed.insert(separator, "-s".to_string());
+        assert!(assert_read_only("codex", &sandboxed, CodexSandbox::Profile).is_err());
+        let writing: Vec<String> = cli
+            .iter()
+            .map(|arg| arg.replace("ledger-core\"=\"read\"", "ledger-core\"=\"write\""))
+            .collect();
+        assert!(assert_read_only("codex", &writing, CodexSandbox::Profile).is_err());
+        let at = cli
+            .iter()
+            .position(|arg| arg.starts_with("permissions.goodboy-ask.filesystem="))
+            .unwrap();
+        let mut bare = cli.clone();
+        bare.drain(at - 1..=at);
+        assert!(assert_read_only("codex", &bare, CodexSandbox::Profile).is_err());
+    }
+
+    #[test]
+    fn read_roots_are_quoted_as_toml_strings() {
+        assert_eq!(
+            codex_filesystem(&[
+                "/code/acme \"edge\"\\api".to_string(),
+                "/code/acme \"edge\"\\api".to_string(),
+            ]),
+            "permissions.goodboy-ask.filesystem={\":minimal\"=\"read\",\"/code/acme \\\"edge\\\"\\\\api\"=\"read\"}"
+        );
     }
 
     #[test]
@@ -1506,7 +1813,10 @@ mod tests {
         for provider in PROVIDERS {
             let prepared = prepare_ask(provider, &[]);
             assert_eq!(prepared.working_dir, DOSSIER, "{provider}");
-            assert!(!prepared.cli.contains(&"--add-dir".to_string()), "{provider}");
+            assert!(
+                !prepared.cli.contains(&"--add-dir".to_string()),
+                "{provider}"
+            );
             let prompt = prepared.cli.last().unwrap();
             assert!(!prompt.contains(ASK_WORKTREES_HEADER), "{provider}");
         }
@@ -1574,7 +1884,10 @@ mod tests {
             name: "session.md".to_string(),
             content: "x".repeat(ASK_MAX_BYTES + 1),
         }];
-        assert!(matches!(check_dossier(&big), Err(ChatError::InvalidDossier(_))));
+        assert!(matches!(
+            check_dossier(&big),
+            Err(ChatError::InvalidDossier(_))
+        ));
         let twice = vec![
             AskDossierFile {
                 name: "session.md".to_string(),
@@ -1585,7 +1898,10 @@ mod tests {
                 content: String::new(),
             },
         ];
-        assert!(matches!(check_dossier(&twice), Err(ChatError::InvalidDossier(_))));
+        assert!(matches!(
+            check_dossier(&twice),
+            Err(ChatError::InvalidDossier(_))
+        ));
     }
 
     #[test]

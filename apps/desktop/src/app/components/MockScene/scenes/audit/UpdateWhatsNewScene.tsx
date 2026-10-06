@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from '../mockSceneIpc';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { ChangelogStudio } from '../../../../../features/changelog/components/ChangelogStudio';
 import { parseChangelog } from '../../../../../features/changelog/parseChangelog';
@@ -64,7 +64,7 @@ export const UpdateWhatsNewScene = () => {
   const [isReady, setIsReady] = useState(false);
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
   useEffect(() => {
-    mockIPC((cmd) => {
+    mockSceneIpc((cmd) => {
       if (cmd === 'plugin:app|version') {
         return INSTALLED_VERSION;
       }

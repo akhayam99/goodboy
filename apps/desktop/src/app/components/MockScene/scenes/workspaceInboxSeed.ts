@@ -1,4 +1,4 @@
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from './mockSceneIpc';
 import type {
   IntegrationBinding,
   IntegrationBindingId,
@@ -132,7 +132,7 @@ export const workspaceTrackerBindings = ({
 ];
 
 export const installWorkspaceInboxIpc = (): void => {
-  mockIPC((cmd) => {
+  mockSceneIpc((cmd) => {
     if (cmd === 'linear_fetch_assigned_issues') {
       return LINEAR_ISSUES;
     }

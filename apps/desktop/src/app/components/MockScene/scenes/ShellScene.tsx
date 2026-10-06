@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { AppShell } from '@goodboy/ui';
 import type {
   ChatId,
   ChatMessageId,
@@ -12,23 +11,17 @@ import type {
   SessionId,
   TelemetryRecordId,
 } from '@goodboy/types';
-import { AppTopBar } from '../../AppTopBar';
-import { ShellLeft } from '../../SideColumn/ShellLeft';
-import { ToastProvider } from '../../../../shared/components/Toast';
-import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
+import { SessionWorkspace } from '../../../../features/session/components/SessionWorkspace';
 import { useAppStore } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
-import { shellArrangement } from '../../../shellArrangement';
 import { NOW, SESSION, WORKSPACE_ID, seedWorkflowScene } from './workflowSeed';
 import { sceneClock } from '../sceneClock';
 import { sceneParam } from './audit/sceneParams';
 import { seedPolicyScene } from './providerPolicySeed';
-import { SceneFooter } from './SceneFooter';
-import { SCENE_COLUMN_ACTIONS, sceneShellMode } from './sceneShell';
+import { ShellFrame } from './shellChrome';
 
 const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
-const noop = () => undefined;
 const TAX_SESSION_ID = 'mock-shell-session-tax-question' as SessionId;
 const HOMEPAGE_SESSION_ID = 'mock-shell-session-homepage' as SessionId;
 const WEBHOOKS_SESSION_ID = 'mock-shell-session-webhooks' as SessionId;
@@ -228,7 +221,6 @@ const seedShellChrome = () => {
     scriptRuns: {},
     projectScripts: {},
     loadArchivedSessions: async () => undefined,
-    navigate: () => undefined,
   });
 };
 
@@ -292,58 +284,20 @@ export const ShellScene = ({ isRail = false }: Props) => {
     setIsReady(true);
   }, []);
 
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    hasActiveSession: true,
-    isSidebarCollapsed: isRail,
-    mode: sceneShellMode(),
-  });
-
   if (!isReady) {
     return null;
   }
 
   return (
-    <ToastProvider>
-      <AppShell
-        topBar={
-          <AppTopBar
-            mode={arrangement.mode}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-            onOpenImpact={noop}
-          />
-        }
-        leftHidden={arrangement.leftHidden}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={
-          <ShellLeft
-            arrangement={arrangement}
-            workspaceId={WORKSPACE_ID}
-            currentSessionId={SESSION.id}
-            isDraftShown={false}
-            actions={SCENE_COLUMN_ACTIONS}
-            onToggle={noop}
-          />
-        }
-        footer={
-          arrangement.footer === null ? undefined : (
-            <SceneFooter
-              scope={arrangement.footer}
-              connected={{
-                github: true,
-                linear: true,
-                jira: false,
-                sentry: false,
-                gitlab: false,
-                bitbucket: false,
-                slack: false,
-              }}
-            />
-          )
-        }
-        main={<SessionOverviewPane session={SESSION} onSelectLens={noop} />}
-      />
-    </ToastProvider>
+    <ShellFrame
+      session={SESSION}
+      sidebar={isRail ? 'collapsed' : 'expanded'}
+      hasOwnTrail
+      main={
+        <div className="relative h-full w-full">
+          <SessionWorkspace session={SESSION} isActive />
+        </div>
+      }
+    />
   );
 };

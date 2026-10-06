@@ -5,19 +5,41 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
-const { prompts } = vi.hoisted(() => ({ prompts: new Array<string>() }));
+const { prompts, launch } = vi.hoisted(() => ({
+  prompts: new Array<string>(),
+  launch: {
+    beforeInsert: null as null | (() => Promise<void>),
+    whileStarting: null as null | (() => Promise<void>),
+    isStarted: false,
+    cancels: new Array<boolean>(),
+  },
+}));
 
 vi.mock('../../../features/session/ask/activeAskBackend', async () => {
   const { createMemoryAskBackend } =
     await import('../../../features/session/ask/createMemoryAskBackend');
+  const backend = createMemoryAskBackend({
+    respond: async ({ request, onText, onStarted }) => {
+      await launch.whileStarting?.();
+      launch.isStarted = true;
+      onStarted?.();
+      prompts.push(request.prompt);
+      onText('**Planner waits on [[Q1]].** [[A9]] is not real.');
+      return { status: 'done' };
+    },
+  });
   return {
-    activeAskBackend: createMemoryAskBackend({
-      respond: async ({ request, onText }) => {
-        prompts.push(request.prompt);
-        onText('**Planner waits on [[Q1]].** [[A9]] is not real.');
-        return { status: 'done' };
+    activeAskBackend: {
+      ...backend,
+      insertMessage: async (params: Parameters<typeof backend.insertMessage>[0]) => {
+        await launch.beforeInsert?.();
+        return backend.insertMessage(params);
       },
-    }),
+      cancelTurn: async (params: Parameters<typeof backend.cancelTurn>[0]) => {
+        launch.cancels.push(launch.isStarted);
+        return backend.cancelTurn(params);
+      },
+    },
   };
 });
 
@@ -43,6 +65,10 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   prompts.length = 0;
+  launch.beforeInsert = null;
+  launch.whileStarting = null;
+  launch.isStarted = false;
+  launch.cancels.length = 0;
   useAppStore.setState({
     ...askInitialState,
     sessions: [aSession({ id: SESSION, goal: 'Fix webhook retries' })],
@@ -101,6 +127,42 @@ describe('sendAskQuestion', () => {
       '- [Q1] from Planner: Stop after 5 attempts, or keep backing off?',
     );
     expect(prompts[0]?.endsWith('New question:\nWhat needs me?')).toBe(true);
+  });
+
+  it('never launches the provider when Stop lands while the messages are saved', async () => {
+    let release: () => void = () => undefined;
+    launch.beforeInsert = () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      });
+    const sending = useAppStore.getState().sendAskQuestion({
+      sessionId: SESSION,
+      question: 'What needs me?',
+      rightNow: [],
+    });
+    await vi.waitFor(() => expect(useAppStore.getState().askStreams).not.toEqual({}));
+    await useAppStore.getState().stopAskReply({ sessionId: SESSION });
+    launch.beforeInsert = null;
+    release();
+
+    expect(await sending).toBe(true);
+    expect(prompts).toHaveLength(0);
+    expect(messagesOf()[1]?.status).toBe('stopped');
+    expect(useAppStore.getState().askStreams).toEqual({});
+  });
+
+  it('cancels right after the provider starts when Stop landed while it was starting', async () => {
+    launch.whileStarting = () => useAppStore.getState().stopAskReply({ sessionId: SESSION });
+
+    await useAppStore.getState().sendAskQuestion({
+      sessionId: SESSION,
+      question: 'What needs me?',
+      rightNow: [],
+    });
+
+    expect(launch.cancels).toEqual([false, true]);
+    expect(messagesOf()[1]?.status).toBe('stopped');
+    expect(useAppStore.getState().askStreams).toEqual({});
   });
 
   it('keeps follow-ups in the same thread with the earlier turns in the prompt', async () => {

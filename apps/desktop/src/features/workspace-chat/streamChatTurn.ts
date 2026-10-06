@@ -20,6 +20,7 @@ export type StreamChatTurnParams = {
   readonly onText: (delta: string) => void;
   readonly onRead: (path: string) => void;
   readonly onUsage?: (usage: ProviderUsage) => void;
+  readonly onStarted?: () => void;
   readonly now?: () => IsoDateTime;
 };
 
@@ -59,6 +60,7 @@ export const streamChatTurn = async ({
   onText,
   onRead,
   onUsage,
+  onStarted,
   now = isoNow,
 }: StreamChatTurnParams): Promise<ChatTurnOutcome> => {
   const ctx: ParseContext = { runId, now };
@@ -156,7 +158,7 @@ export const streamChatTurn = async ({
           return;
         }
         stopListening = unlisten;
-        return start();
+        return start().then(() => onStarted?.());
       })
       .catch((error: unknown) =>
         settle({ outcome: { status: 'failed', error: formatError(error) } }),

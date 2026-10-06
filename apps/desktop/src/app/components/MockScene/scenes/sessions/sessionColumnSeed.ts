@@ -286,6 +286,8 @@ export const seedSessionColumn = ({
     sessionProjectMounts: { ...state.sessionProjectMounts, ...MOUNTS },
     sessionOpenQuestions: { ...state.sessionOpenQuestions, [sessionId(SLUGS.retry)]: [QUESTION] },
     sessionExternalTasks: { ...state.sessionExternalTasks, [sessionId(SLUGS.webhook)]: [TASK] },
+    sessionPlans: { ...state.sessionPlans, [SESSION_COLUMN_OPEN_ID]: [] },
+    sessionWorkflows: { ...state.sessionWorkflows, [SESSION_COLUMN_OPEN_ID]: [] },
     sessionPhaseRuns: {
       ...state.sessionPhaseRuns,
       [sessionId(SLUGS.webhook)]: [

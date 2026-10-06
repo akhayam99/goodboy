@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { FooterTarget } from '../../../hooks/useAppOverlays/overlayState';
 import { AppTopBar } from '../../AppTopBar';
@@ -8,7 +8,8 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { shellArrangement } from '../../../shellArrangement';
 import { SceneFooter } from './SceneFooter';
-import { SCENE_COLUMN_ACTIONS, sceneColumnPlace, sceneShellMode } from './sceneShell';
+import { sceneColumnPlace, sceneShellMode } from './sceneShell';
+import { useSceneShell } from './useSceneShell';
 
 const noop = () => undefined;
 
@@ -19,15 +20,17 @@ type StudioFrameProps = {
 };
 
 export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => {
-  const [columnSlot, setColumnSlot] = useState<HTMLDivElement | null>(null);
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);
+  const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: false,
     isSidebarCollapsed: false,
     mode: sceneShellMode(),
   });
-  const slot = arrangement.leftSlot === 'column' ? columnSlot : null;
+  const shell = useSceneShell({ arrangement });
+  const slot = arrangement.leftSlot === 'column' ? shell.settingsSlot : null;
+  const place = columnPlace === undefined ? sceneColumnPlace({ target }) : columnPlace;
 
   return (
     <ToastProvider>
@@ -49,10 +52,10 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
               workspaceId={workspaceId}
               currentSessionId={null}
               isDraftShown={false}
-              actions={SCENE_COLUMN_ACTIONS}
+              actions={shell.actions}
               onToggle={noop}
-              placeOverride={columnPlace === undefined ? sceneColumnPlace({ target }) : columnPlace}
-              settingsSlotRef={setColumnSlot}
+              {...(isSettingsOpen ? {} : { placeOverride: place })}
+              settingsSlotRef={shell.settingsSlotRef}
             />
           )
         }
@@ -62,7 +65,10 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
           )
         }
         main={typeof main === 'function' ? main(slot) : main}
+        {...(isSettingsOpen && { studio: shell.studio })}
+        studioCoversLeft={arrangement.studioCoversLeft}
       />
+      {shell.layers}
     </ToastProvider>
   );
 };
