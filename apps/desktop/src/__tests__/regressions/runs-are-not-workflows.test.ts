@@ -12,6 +12,8 @@ const RUN_CALLED_WORKFLOW: ReadonlyArray<RegExp> = [
   /\bOpen workflows\b(?!\s+Studio)/,
 ];
 
+const PROMPT_ONLY_PATHS: ReadonlySet<string> = new Set(['features/reports/buildReportContext.ts']);
+
 const callsRunAWorkflow = (text: string): boolean =>
   RUN_CALLED_WORKFLOW.some((pattern) => pattern.test(text));
 
@@ -32,6 +34,7 @@ describe('a run is never called a workflow', () => {
 
   it('keeps every visible string on the run vocabulary', () => {
     const offenders = scanCopy()
+      .filter((copy) => !PROMPT_ONLY_PATHS.has(copy.path))
       .filter((copy) => callsRunAWorkflow(copy.text))
       .map((copy) => describeCopy({ copy }));
 

@@ -8,7 +8,7 @@
     "apps/desktop/src/features/history/components/CommitsHistory/RewordEditor.tsx": 1,
     "apps/desktop/src/features/inbox/components/InboxStudio/InboxListHeader.tsx": 1,
     "apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx": 1,
-    "apps/desktop/src/features/palette/components/CommandsMode/index.tsx": 1,
+    "apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx": 1,
     "apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 1,
     "apps/desktop/src/features/review/components/ReviewPane/WriteReview/LineComment.tsx": 1,

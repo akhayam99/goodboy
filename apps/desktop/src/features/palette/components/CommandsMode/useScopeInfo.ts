@@ -30,6 +30,20 @@ export const useScopeInfo = (scope: PaletteScope | null): ScopeInfo | null => {
         )?.name ?? null
       );
     }
+    if (scope.kind === 'workflowRun') {
+      const run =
+        sessionById(s.sessions, scope.sessionId)?.workflowRuns.find(
+          (candidate) => candidate.id === scope.runId,
+        ) ?? null;
+      const workflowName =
+        (s.sessionWorkflows[scope.sessionId] ?? EMPTY_ARRAY).find(
+          (candidate) => candidate.id === run?.workflowId,
+        )?.name ?? null;
+      return run === null ? null : (run.title ?? workflowName ?? 'Run');
+    }
+    if (scope.kind === 'pullRequest') {
+      return scope.prNumber === null ? 'Pull request' : `Pull request #${scope.prNumber}`;
+    }
     const session =
       sessionById(s.sessions, scope.sessionId) ??
       Object.values(s.archivedSessions)
@@ -58,6 +72,15 @@ export const useScopeInfo = (scope: PaletteScope | null): ScopeInfo | null => {
       };
     case 'agent':
       return { title, noun: 'agent', icon: CONCEPT_ICONS.agents, key: `agent:${scope.agentId}` };
+    case 'workflowRun':
+      return { title, noun: 'run', icon: CONCEPT_ICONS.workflows, key: `run:${scope.runId}` };
+    case 'pullRequest':
+      return {
+        title,
+        noun: 'pull request',
+        icon: CONCEPT_ICONS.pr,
+        key: `pr:${scope.sessionId}`,
+      };
     case 'commit':
       return {
         title,

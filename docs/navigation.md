@@ -104,17 +104,54 @@ closes it. It has a mode slot (`PALETTE_MODES` in
 moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode.
 
-- **Scope first.** It opens on a scope chip that names what you are on: the
-  focused commit row on the Commits tab, else the agent in view, else the
-  session, else the workspace on the board (`resolvePaletteScope`). A row
-  offers itself with `useHeldPaletteScope`, and the palette reads it only while
-  focus is inside that row (`heldPaletteScope.ts`), so its verbs come first in
-  the same order as the row's `⋯`. Backspace in an empty input removes the chip.
-- **Empty input.** The verbs of the scope under For this session (or agent, or commit),
-  then Recent, then Go to, Actions and Help. Go to reaches studios by name:
-  Back to board inside a session, Inbox, Workflows, Impact, Changelog,
-  Notifications and Workspace settings inside a workspace, and Start a new
-  project and Open a folder everywhere.
+- **Scope first.** It opens on a scope chip that names the surface you can see:
+  the focused commit row on the Commits tab, else the agent when the agent page
+  is on screen (a stored selection under a studio or an artifact conversation
+  does not count), else the run on the Runs page, else the pull request on the
+  Branch page, else the session, else the workspace on the board and under any
+  open app studio (`resolvePaletteScope`, which reads
+  `resolveSessionSurfaceLayer`). A row offers itself with `useHeldPaletteScope`,
+  and the palette reads it only while focus is inside that row
+  (`heldPaletteScope.ts`). Backspace in an empty input removes the chip. The
+  placeholder and the top bar pill say the same words: **Search or ask**.
+- **Empty input in a session is ranked by state, not by registry order.** One
+  fixed list of sections, empty ones hidden:
+  1. **Next**: up to three rows from `deriveNextSteps`, the same model, handlers
+     and outcome log as the session's next-step slot (`useSessionPalette` calls
+     `useSessionSuggestions` and `useSuggestionActions`). Needs-you rows first.
+     A step the slot confirms (Merge, Close worktree) confirms here too. Mount
+     proposals stay in the slot. Push, Create pull request and Rebase live here:
+     a mount target needs live git status, so the palette takes them from the
+     model that already reads it.
+  2. **For this session** (above it **For this agent**, **For this run** or
+     **For this pull request** when that is the scope): up to eight verbs ranked
+     by the session state (`paletteTiers.ts`), then **All actions for this
+     session**, which opens the grouped level (Open, Act, Copy and export,
+     Danger). The state is the one the column row, the board card and the Now
+     chip show (`useSessionStageInfo`): archived, needs you, live, ready to ship
+     (an open pull request, or a push, pull request, ready or merge step),
+     finished, idle. Each state has a recipe of verb ids; a verb the recipe does
+     not name follows in registry order, a Danger verb is never in the eight, and
+     an archived session shows only restore and copy verbs. While an agent runs,
+     **Message {agent}** and **Interrupt {agent}** join the list.
+  3. **Runs**: only when the session has a run or a workflow exists. The run on
+     screen, else the one that needs you, is live, or is queued, as a row with its
+     state; its verbs in state order (Answer, Start run, Continue step, Start next
+     step, Restart step, Stop run); **Start a run**, which opens a level of
+     workflows ("from a workflow"); and **Open Runs**. Picking a workflow, here or
+     from a typed `Start a run: Ship a fix` row, opens a confirm that names the
+     session, the project, the model and the steps, and nothing starts until you
+     confirm.
+  4. **Recent**, agents of this session first; then **Go to** (Board inside a
+     session, Inbox, Chat, Workflows, Impact, Notifications, What's new), **App**
+     (New session, Settings, Switch theme, Connect a provider, Pair your iPhone,
+     Report a bug) and **Help**.
+     On the Board the first section is **Needs you**: the sessions the Now chip
+     lists, each opening its `attentionPlace`. The session pages (Open Session,
+     Questions, Artifacts and the rest), Run defaults, Impact: Spend, Start a new
+     project and Open a folder stay out of the empty list and answer to typing.
+     The order of the list is the one place the palette differs from a `⋯` menu:
+     both list the same verbs (`menuParity.test.tsx`), `⋯` keeps its stable order.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
   with bonuses for word starts, camel boundaries and runs, so `pay export`
   finds "Speed up the payout export" (`score.ts`); then frecency, uses halved
@@ -124,6 +161,10 @@ opens it on a mode. Commands is the first mode.
 - **Every workspace.** Sessions of every workspace are listed
   (`listSessionTitlesAcrossWorkspaces`); one from another workspace names it
   and opens that workspace first.
+- **Typing still finds everything.** The Next rows, the run verbs, the verbs of
+  the session's pull request and the old names (`Stop workflow`, `Run workflow`,
+  `Back to board`, `Open settings`) answer to a query wherever the state ranked
+  them. A lone `Ask in Chat` row stays first for free text.
 - **Verbs come from the action registry** (`features/actions/`) and follow its
   state rules. A verb whose `when` is false never shows. A blocked verb shows
   only when searched by name (every word a word prefix of its label), dimmed
@@ -138,10 +179,10 @@ opens it on a mode. Commands is the first mode.
   worktree; with several it opens them as a level (name, branch and path), and
   ⌘↵ copies every path, one per line. A preview pane describes the highlighted
   row.
-- **An agent in scope keeps its session's verbs.** They follow the agent's
-  verbs under "For this session", so Copy worktree path stays one search
-  away. A session verb with the same label as an agent verb steps
-  aside.
+- **An agent, a run or a pull request in scope keeps its session's verbs.** They
+  follow under "For this session", ranked by the session state, so Copy
+  worktree path stays one search away. A session verb with the same label as a
+  scope verb steps aside.
 - **Prefixes stay**: `@` agents, `#` sessions, `:` workspaces, `$` scripts,
   `>` actions, `?` help.
 
@@ -1094,7 +1135,7 @@ one is open at a time.
   so nothing renders and nothing is saved until the drag ends. Precedent: VS
   Code, Zed and Linear sidebars.
 - **Settings opens on a page, never on a grid.** The footer, ⌘, and the
-  palette's Open settings land on the page opened last, held in memory only
+  palette's Settings land on the page opened last, held in memory only
   (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
   app starts lands on General, and a remembered page that no longer exists
   (a workspace page with no workspace, a provider that was removed) falls

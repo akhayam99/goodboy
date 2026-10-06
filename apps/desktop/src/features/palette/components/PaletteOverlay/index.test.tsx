@@ -86,8 +86,35 @@ describe('PaletteOverlay, the commands mode', () => {
       'Speed up the payout export for large merchants',
     );
     expect(screen.getByText('For this session')).toBeDefined();
-    expect(optionNames().slice(0, 3)).toEqual(['Open Review', 'Open Diff', 'Open Terminal']);
-    expect(optionNames()).toContain('Delete…');
+    expect(optionNames().slice(0, 3)).toEqual([
+      'Message Stream the export instead of building it in memory',
+      'Open Diff',
+      'Open Terminal',
+    ]);
+    expect(optionNames()).toContain('All actions for this session');
+    expect(optionNames()).not.toContain('Delete…');
+  });
+
+  it('puts the sessions that need you first on the Board', () => {
+    openIn(null);
+
+    const needsYou = screen.getByText('Needs you');
+    const first = screen.getAllByRole('option')[0];
+    expect(
+      needsYou.compareDocumentPosition(first as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(optionNames()[0]).toBe('Fix the rounding drift in the settlement export');
+    expect(screen.queryByText('Next')).toBeNull();
+    expect(screen.queryByText('For this session')).toBeNull();
+  });
+
+  it('opens a session that needs you where the Now chip opens it', () => {
+    const { onClose } = openIn(null);
+
+    fireEvent.mouseDown(screen.getAllByRole('option')[0] as HTMLElement);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().currentSessionId).not.toBeNull();
   });
 
   it('drops the scope on Backspace in an empty input', () => {
@@ -141,9 +168,11 @@ describe('PaletteOverlay, the commands mode', () => {
     );
     openIn(null);
 
-    const recent = screen.getByText('Recent');
-    expect(recent).toBeDefined();
-    expect(optionNames()[0]).toBe('Speed up the payout export for large merchants');
+    expect(screen.getByText('Recent')).toBeDefined();
+    const names = optionNames();
+    const recentAt = names.indexOf('Speed up the payout export for large merchants');
+    expect(recentAt).toBeGreaterThanOrEqual(0);
+    expect(recentAt).toBeLessThan(names.indexOf('Inbox'));
   });
 
   it('opens every verb of a row on the right arrow and goes back on the left', () => {
@@ -158,7 +187,7 @@ describe('PaletteOverlay, the commands mode', () => {
     expect(optionNames()).toContain('Archive');
 
     fireEvent.keyDown(input, { key: 'ArrowLeft' });
-    expect(screen.getByPlaceholderText('Type a command or a name')).toBeDefined();
+    expect(screen.getByPlaceholderText('Search or ask')).toBeDefined();
   });
 
   it('previews the highlighted session with its facts', () => {

@@ -1,6 +1,7 @@
 import { parseQuery } from '../quick-actions/grammar';
 import { ACTION_GROUPS, type ActionGroup } from '../actions/types';
 import { recentKeys, type FrecencyState } from './frecency';
+import { rankSessionVerbs, type PaletteTier } from './paletteTiers';
 import { rankCandidates } from './rank';
 import type { PaletteEntry, PaletteKind } from './types';
 
@@ -25,6 +26,13 @@ type Params = {
   readonly frecency: FrecencyState;
   readonly now: number;
   readonly ask?: PaletteEntry | null;
+  readonly tier?: PaletteTier | null;
+  readonly isScopeSession?: boolean;
+  readonly allActions?: PaletteEntry | null;
+  readonly next?: ReadonlyArray<PaletteEntry>;
+  readonly runs?: ReadonlyArray<PaletteEntry>;
+  readonly needsYou?: ReadonlyArray<PaletteEntry>;
+  readonly extra?: ReadonlyArray<PaletteEntry>;
 };
 
 type ActionsParams = {
@@ -68,9 +76,15 @@ const RECENT_KINDS: ReadonlySet<PaletteKind> = new Set<PaletteKind>([
 
 const EMPTY_SECTION_KINDS: ReadonlyArray<readonly [string, ReadonlySet<PaletteKind>]> = [
   ['Go to', new Set<PaletteKind>(['goto'])],
-  ['Actions', new Set<PaletteKind>(['action'])],
+  ['App', new Set<PaletteKind>(['action'])],
   ['Help', new Set<PaletteKind>(['help'])],
 ];
+
+const NEXT_TITLE = 'Next';
+
+const RUNS_TITLE = 'Runs';
+
+const NEEDS_YOU_TITLE = 'Needs you';
 
 const GROUP_TITLES: Readonly<Record<ActionGroup, string>> = {
   open: 'Open',
@@ -97,9 +111,16 @@ export const buildCommandList = ({
   frecency,
   now,
   ask = null,
+  tier = null,
+  isScopeSession = false,
+  allActions = null,
+  next = [],
+  runs = [],
+  needsYou = [],
+  extra = [],
 }: Params): ReadonlyArray<CommandSection> => {
   const parsed = parseQuery(query);
-  const pool = [...scopeVerbs, ...parentVerbs, ...entries];
+  const pool = [...scopeVerbs, ...parentVerbs, ...extra, ...entries];
   if (parsed.prefix !== null) {
     const group = parsed.prefix.group;
     const inGroup = pool.filter((entry) => entry.group === group);
@@ -128,19 +149,35 @@ export const buildCommandList = ({
       ...(rows.length === 0 ? [] : [{ title: JUMP_TO_TITLE, rows }]),
     ];
   }
-  const verbs = scopeVerbs.filter((entry) => isRunnable(entry) && !isScopeOpen(entry));
-  const parents = parentVerbs.filter((entry) => isRunnable(entry) && !isScopeOpen(entry));
+  const tiered = ({
+    list,
+    isRanked,
+  }: {
+    readonly list: ReadonlyArray<PaletteEntry>;
+    readonly isRanked: boolean;
+  }): ReadonlyArray<PaletteEntry> =>
+    isRanked && tier !== null
+      ? [...rankSessionVerbs({ tier, verbs: list }), ...(allActions === null ? [] : [allActions])]
+      : list.filter((entry) => isRunnable(entry) && !isScopeOpen(entry));
+  const verbs = tiered({ list: scopeVerbs, isRanked: isScopeSession });
+  const parents = tiered({ list: parentVerbs, isRanked: parentVerbs.length > 0 });
   const byKey = new Map(entries.map((entry) => [entry.key, entry] as const));
-  const recents = recentKeys({ state: frecency, now, limit: RECENT_LIMIT * 4 })
+  const recentEntries = recentKeys({ state: frecency, now, limit: RECENT_LIMIT * 4 })
     .filter((key) => key !== scopeKey)
     .flatMap((key) => {
       const entry = byKey.get(key);
       return entry !== undefined && RECENT_KINDS.has(entry.kind) ? [entry] : [];
-    })
-    .slice(0, RECENT_LIMIT);
+    });
+  const recents = [
+    ...recentEntries.filter((entry) => entry.kind === 'agent'),
+    ...recentEntries.filter((entry) => entry.kind !== 'agent'),
+  ].slice(0, RECENT_LIMIT);
   const sections: Array<CommandSection> = [
+    { title: NEEDS_YOU_TITLE, rows: needsYou.map(plain) },
+    { title: NEXT_TITLE, rows: next.map(plain) },
     { title: scopeTitle, rows: verbs.map(plain) },
     { title: parentTitle, rows: parents.map(plain) },
+    { title: RUNS_TITLE, rows: runs.map(plain) },
     { title: 'Recent', rows: recents.map(plain) },
     ...EMPTY_SECTION_KINDS.map(([title, kinds]) => ({
       title,
