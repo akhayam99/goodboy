@@ -1290,7 +1290,7 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
 - **Ask**: every answer is recorded as telemetry kind `ask` on its session
   (m227). It counts in the session cost, today's spend, provider budgets and
   the session cap alert, and shows as its own **Ask** row in the session
-  spend. It never counts toward a workflow run's cap, which sums only that
+  spend. It never counts toward a run's cap, which sums only that
   run's agents
 
 Caps steer where work goes. They never lock you out. When every provider is

@@ -342,7 +342,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Fix run',
-        desc: "A fix run is one agent in one copy of the branch. A line under the tabs says what it is doing and counts the comments by word, each a filter. The agent asks only when a comment reads two ways, and the question shows in the comment's thread and on the Fix run page. Open the Fix run for its transcript and the commits it made.",
+        desc: "A fix run is one agent in one copy of the branch. A line under the tabs says what it is doing and counts the comments by word, each a filter. The agent asks only when a comment reads two ways, and the question shows in the comment's thread and in its transcript. Open fix run shows the transcript in a drawer beside Comments, with the commits it made.",
       },
       {
         term: 'Files',
