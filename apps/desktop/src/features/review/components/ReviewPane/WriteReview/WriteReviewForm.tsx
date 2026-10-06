@@ -21,6 +21,7 @@ import { LineComment } from './LineComment';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly variant?: 'page' | 'panel';
 };
 
 const VERDICTS = [
@@ -30,10 +31,10 @@ const VERDICTS = [
 ] as const;
 
 const WRITE_REVIEW_FORM_LABEL = 'Your review';
-const NO_LINE_COMMENTS = 'No line comments yet. Click a line number in the diff above.';
+const NO_LINE_COMMENTS = 'No line comments yet. Click a line number in the diff.';
 const ONE_REVIEW_HINT = 'GitHub shows it as one review.';
 
-export const WriteReviewForm = ({ sessionId }: Props) => {
+export const WriteReviewForm = ({ sessionId, variant = 'page' }: Props) => {
   const drafts = useAppStore(
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
   );
@@ -90,7 +91,11 @@ export const WriteReviewForm = ({ sessionId }: Props) => {
   return (
     <section
       aria-label={WRITE_REVIEW_FORM_LABEL}
-      className="flex min-w-0 flex-col gap-8 pb-8 pt-10"
+      className={
+        variant === 'panel'
+          ? 'flex min-w-0 flex-col gap-5'
+          : 'flex min-w-0 flex-col gap-8 pb-8 pt-10'
+      }
     >
       <div className="flex min-w-0 flex-col gap-2">
         <SectionHeader

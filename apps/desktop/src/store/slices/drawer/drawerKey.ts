@@ -18,6 +18,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return `conversation:${content.payload.threadId}`;
     case 'ask':
       return 'ask';
+    case 'transcript':
+      return `transcript:${content.payload.agentId}`;
     case 'file-diff':
       return `file-diff:${
         content.payload.source.kind === 'commit'

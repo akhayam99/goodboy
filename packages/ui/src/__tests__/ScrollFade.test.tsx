@@ -110,6 +110,24 @@ describe('ScrollFade', () => {
     vi.unstubAllGlobals();
   });
 
+  it('never fades the top edge when only the end fades, so a sticky header stays sharp', () => {
+    runFrames();
+    const { container } = render(
+      <ScrollFade className="h-40" fadeSize={32} fadeEdges="end">
+        <p>content</p>
+      </ScrollFade>,
+    );
+    const viewport = viewportOf(container);
+    makeOverflow({ viewport });
+    viewport.scrollTop = 150;
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
+    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
+    vi.unstubAllGlobals();
+  });
+
   it('shrinks the bottom fade to 0 and keeps the top fade at the end of the scroll range', () => {
     runFrames();
     const { container } = render(

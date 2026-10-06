@@ -1,21 +1,18 @@
 import { useEffect } from 'react';
 import { Band, Button, Chip, Markdown } from '@goodboy/ui';
 import type { Agent, Session, SessionId } from '@goodboy/types';
-import { agentPlace, useAppStore } from '../../../../../store';
-import { branchPlace } from '../../../../../store/slices/navigation/place';
-import { ResolverQuestionCard } from '../../../../resolve/ResolverQuestionCard';
-import { STATE_CHIP_TONE } from '../../../../resolve/components/ReviewFlow/stateTone';
-import {
-  useReviewEntries,
-  type ReviewEntry,
-} from '../../../../resolve/components/ReviewFlow/useReviewEntries';
-import type { ResolverBrief } from '../../../../resolve/hooks/useResolverBrief';
-import { ResolverCommitLine } from '../../../../resolve/ResolverCommitLine';
-import { FIX_RUN_COPY } from '../../../../resolve/reviewFlowCopy';
-import { threadFixSha } from '../../../../resolve/threadFixSha';
-import { threadLocationOf } from '../../../../resolve/threadLocationOf';
-import { openReview } from '../../../../review/openReview';
-import { useAgentOutcome } from '../../../hooks/useAgentOutcome';
+import { useAppStore } from '../../../../store';
+import { fixRunTranscript } from '../../../../store/slices/navigation/place';
+import { ResolverQuestionCard } from '../../ResolverQuestionCard';
+import { STATE_CHIP_TONE } from '../ReviewFlow/stateTone';
+import { useReviewEntries, type ReviewEntry } from '../ReviewFlow/useReviewEntries';
+import type { ResolverBrief } from '../../hooks/useResolverBrief';
+import { ResolverCommitLine } from '../../ResolverCommitLine';
+import { FIX_RUN_COPY } from '../../reviewFlowCopy';
+import { threadFixSha } from '../../threadFixSha';
+import { threadLocationOf } from '../../threadLocationOf';
+import { openReview } from '../../../review/openReview';
+import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
 
 type Props = {
   readonly session: Session;
@@ -34,7 +31,7 @@ const commitOf = ({ entry }: { readonly entry: ReviewEntry }) => ({
   landedAs: entry.facts?.folded?.landedAs ?? null,
 });
 
-export const FixRun = ({ session, agent, brief }: Props) => {
+export const FixRunSummary = ({ session, agent, brief }: Props) => {
   const sessionId = session.id as SessionId;
   const navigate = useAppStore((state) => state.navigate);
   const loadResolveSession = useAppStore((state) => state.loadResolveSession);
@@ -63,7 +60,7 @@ export const FixRun = ({ session, agent, brief }: Props) => {
   }, [loadResolveSession, sessionId]);
 
   const openThread = (threadId: string): void =>
-    navigate({ to: branchPlace({ sessionId, tab: 'comments', threadId }) });
+    navigate(fixRunTranscript({ sessionId, agentId: agent.id, threadId }));
 
   const asking = entries.filter(
     (entry) => entry.state === 'needs' && brief.batchThreadIds.includes(entry.threadId),
@@ -88,7 +85,7 @@ export const FixRun = ({ session, agent, brief }: Props) => {
       ))}
       {outcome.text !== '' && (
         <Band inset="content" label={FIX_RUN_COPY.didHeading} headingLevel={2}>
-          <div className="max-w-[72ch] text-body text-foreground">
+          <div className="max-w-[var(--measure)] text-body text-foreground">
             <Markdown text={outcome.text} />
           </div>
           {outcome.isFromReply && (
@@ -165,17 +162,6 @@ export const FixRun = ({ session, agent, brief }: Props) => {
           </div>
         )}
       </Band>
-      <div className="flex min-w-0 items-center gap-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() =>
-            navigate({ to: agentPlace({ sessionId, agentId: agent.id, pane: 'transcript' }) })
-          }
-        >
-          {FIX_RUN_COPY.openTranscript}
-        </Button>
-      </div>
     </div>
   );
 };

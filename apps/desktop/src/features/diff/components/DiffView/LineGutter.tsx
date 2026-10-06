@@ -47,6 +47,7 @@ export const LineGutter = ({
       <button
         type="button"
         aria-label={`Comment on ${side} line ${lineNumber}`}
+        data-gutter={`${side}:${lineNumber}`}
         onPointerDown={handlePointerDown}
         onPointerEnter={() => onHover(side, lineNumber)}
         onKeyDown={(event) => {

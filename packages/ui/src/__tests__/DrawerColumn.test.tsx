@@ -2,14 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { DrawerColumn, RIGHT_DRAWER_STORAGE_KEY } from '../components/DrawerColumn';
 import {
   DRAWER_INSET,
-  DrawerColumn,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
-  RIGHT_DRAWER_STORAGE_KEY,
   canDrawerPush,
-} from '../components/DrawerColumn';
+} from '../drawerGeometry';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
 
@@ -88,7 +87,7 @@ describe('DrawerColumn', () => {
     expect(screen.queryByRole('separator', { name: 'Resize side panel' })).toBeNull();
   });
 
-  it('lies over the page at half width when the window is too narrow to push', () => {
+  it('caps a half drawer so it still pushes, the main area keeping its 560px', () => {
     stubColumnWidth(1100);
     render(
       <DrawerColumn
@@ -100,8 +99,45 @@ describe('DrawerColumn', () => {
       />,
     );
 
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+    expect(panel().style.width).toBe('492px');
+  });
+
+  it('lies over the page at half width when even the capped drawer cannot push', () => {
+    stubColumnWidth(900);
+    render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>plan</div>}
+        sizing="half"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel().style.width).toBe('550px');
+    expect(panel().style.width).toBe('450px');
+  });
+
+  it('keeps the main content first and on its left edge, open or closed', () => {
+    stubColumnWidth(1094);
+    const { rerender, container } = renderColumn(null);
+    const mainOf = () => container.querySelector('[data-drawer-main]') as HTMLElement;
+    const closed = mainOf();
+
+    rerender(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>drafts</div>}
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(mainOf()).toBe(closed);
+    expect(mainOf().parentElement?.firstElementChild).toBe(mainOf());
+    expect(mainOf().className).not.toMatch(/\b(mx-auto|justify-center|ml-auto|items-center)\b/);
+    expect(panel().previousElementSibling).toBe(mainOf());
   });
 
   it('fills the whole column when expanded, over the page', () => {
@@ -129,8 +165,10 @@ describe('DrawerColumn', () => {
     expect(panel().hasAttribute('inert')).toBe(true);
   });
 
-  it('pushes only when the main area keeps a 560px column beside the drawer', () => {
+  it('pushes only when the main area keeps a 560px column beside the drawer track', () => {
     expect(canDrawerPush({ mainWidthPx: 1166, drawerWidthPx: 400 })).toBe(true);
+    expect(canDrawerPush({ mainWidthPx: 1024, drawerWidthPx: 400 })).toBe(true);
+    expect(canDrawerPush({ mainWidthPx: 1023, drawerWidthPx: 400 })).toBe(false);
     expect(canDrawerPush({ mainWidthPx: 934, drawerWidthPx: 400 })).toBe(false);
   });
 

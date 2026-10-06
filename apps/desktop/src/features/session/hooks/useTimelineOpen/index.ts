@@ -94,13 +94,7 @@ export const useTimelineOpen = ({
         return {
           label: isResolver ? 'Open fix run' : 'Open chat',
           open: () => {
-            store.navigate({
-              to: agentPlace({
-                sessionId,
-                agentId: entry.agent.id,
-                pane: isResolver ? 'brief' : null,
-              }),
-            });
+            store.navigate({ to: agentPlace({ sessionId, agentId: entry.agent.id }) });
           },
         };
       }
@@ -121,12 +115,10 @@ export const useTimelineOpen = ({
         return {
           label: artifact.kind === 'report' ? 'Open report' : 'Open wireframe',
           open: () => {
-            store.navigate({
-              to: sessionPlace({
-                sessionId,
-                lens: 'plans',
-                target: { kind: 'artifact', artifactId: artifact.id },
-              }),
+            store.openDrawer({
+              kind: 'artifact-document',
+              sessionId,
+              payload: { artifactId: artifact.id, revision: null },
             });
           },
         };

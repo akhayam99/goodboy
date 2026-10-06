@@ -13,15 +13,15 @@ import {
   importStore,
   resetStoryStore,
   type StoryStore,
-} from '../../../../../store/storyHarness';
-import { agentPlace, branchPlace } from '../../../../../store/slices/navigation/place';
+} from '../../../../store/storyHarness';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import {
   EXPANDED_THREAD_ID,
   SESSION,
   seedResolveScene,
-} from '../../../../../app/components/MockScene/scenes/resolveSeed';
-import { resolverBriefOf } from '../../../../resolve/hooks/useResolverBrief';
-import { FixRun } from '.';
+} from '../../../../app/components/MockScene/scenes/resolveSeed';
+import { resolverBriefOf } from '../../hooks/useResolverBrief';
+import { FixRunSummary } from '.';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -136,11 +136,11 @@ const mount = async ({ agentId }: { readonly agentId: AgentId }): Promise<void> 
   if (brief === null) {
     throw new Error('no brief');
   }
-  render(<FixRun session={SESSION} agent={agentOf(agentId)} brief={brief} />);
+  render(<FixRunSummary session={SESSION} agent={agentOf(agentId)} brief={brief} />);
   await settle();
 };
 
-describe('the Fix run', () => {
+describe('the fix run summary', () => {
   it('says what the resolver did and lists the comment it touched', async () => {
     await mount({ agentId: SINGLE });
 
@@ -159,7 +159,7 @@ describe('the Fix run', () => {
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 
-  it('opens a touched comment on the Comments tab of the Branch', async () => {
+  it('opens a touched comment on the Comments tab, the transcript drawer kept open', async () => {
     const navigate = vi.fn<StoreState['navigate']>();
     stub({ navigate });
     await mount({ agentId: SINGLE });
@@ -172,6 +172,7 @@ describe('the Fix run', () => {
 
     expect(navigate).toHaveBeenCalledWith({
       to: branchPlace({ sessionId: SESSION.id, tab: 'comments', threadId: EXPANDED_THREAD_ID }),
+      drawer: { kind: 'transcript', sessionId: SESSION.id, payload: { agentId: SINGLE } },
     });
   });
 
@@ -200,16 +201,10 @@ describe('the Fix run', () => {
     });
   });
 
-  it('links to the transcript of the run', async () => {
-    const navigate = vi.fn<StoreState['navigate']>();
-    stub({ navigate });
+  it('sits above the transcript, so it carries no link to it', async () => {
     await mount({ agentId: SINGLE });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open transcript' }));
-
-    expect(navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION.id, agentId: SINGLE, pane: 'transcript' }),
-    });
+    expect(screen.queryByRole('button', { name: 'Open transcript' })).toBeNull();
   });
 
   it('names the comments fixed together and opens them filtered in Comments', async () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, KbdPill, cn, tintClasses } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
 
@@ -20,6 +20,7 @@ export const CommentComposer = ({
   onAskAgent,
 }: Props) => {
   const [body, setBody] = useState(initialBody);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const trimmed = body.trim();
   const submit = () => {
     if (trimmed.length > 0) {
@@ -27,8 +28,13 @@ export const CommentComposer = ({
     }
   };
 
+  useEffect(() => {
+    rootRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, []);
+
   return (
     <div
+      ref={rootRef}
       data-slot="diff-composer"
       className={cn(
         'flex flex-col gap-2 rounded-md border-l-2 bg-elevated px-3 py-3 font-sans',
@@ -55,7 +61,7 @@ export const CommentComposer = ({
           }
         }}
       />
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="mr-auto flex items-center gap-1 text-meta text-faint-foreground">
           <KbdPill>⌘</KbdPill>
           <KbdPill>↵</KbdPill>

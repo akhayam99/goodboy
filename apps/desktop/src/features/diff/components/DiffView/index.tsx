@@ -10,7 +10,11 @@ import {
 } from 'react';
 import { PageColumn, ScrollFade, Skeleton, type DiffLayoutMode } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
+import { Info } from 'lucide-react';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
+import { effectiveDiffLayout } from '../../../../shared/hooks/useDiffLayoutMode/effectiveDiffLayout';
+import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
 import { DiffFile } from './DiffFile';
 import { DisplayMenu } from './DisplayMenu';
@@ -44,6 +48,8 @@ type Props = {
 
 const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
 
+const SPLIT_TOO_NARROW = 'Split needs a wider window';
+
 const NOOP = () => undefined;
 
 const matchPath = (files: ReadonlyArray<FileDiff>, path: string): string | null =>
@@ -76,7 +82,9 @@ export const DiffView = ({
   const isPeek = presentation === 'peek';
   const [savedLayout, setLayout] = useDiffLayoutMode();
   const [savedWrap, setWrap] = useDiffWrap();
-  const layout: DiffLayoutMode = isPeek ? 'unified' : savedLayout;
+  const inner = useElementWidth();
+  const fit = effectiveDiffLayout({ preference: savedLayout, innerWidthPx: inner.width });
+  const layout: DiffLayoutMode = isPeek ? 'unified' : fit.layout;
   const wrap = isPeek || savedWrap;
   const [mountedCount, setMountedCount] = useState(BATCH_SIZE);
   const [activePath, setActivePath] = useState<string | null>(null);
@@ -374,7 +382,7 @@ export const DiffView = ({
   }, [focusPath, onFocusHandled, pathsKey, scrollToFile]);
 
   const body = (
-    <div className="flex flex-col gap-3 pb-6">
+    <div ref={inner.ref} className="flex flex-col gap-3 pb-6">
       {files.slice(0, mountedCount).map((file) => (
         <DiffFile
           key={file.path}
@@ -418,7 +426,16 @@ export const DiffView = ({
     >
       <div className="flex min-w-0 items-center gap-2">{toolbarStart}</div>
       <div className="flex shrink-0 items-center gap-2">
-        <DisplayMenu layout={layout} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
+        {fit.isSplitTooNarrow ? (
+          <span
+            data-testid="diff-split-too-narrow"
+            className="inline-flex items-center gap-1 text-meta text-muted-foreground"
+          >
+            <Info size={ICON_SIZE.row} aria-hidden />
+            {SPLIT_TOO_NARROW}
+          </span>
+        ) : null}
+        <DisplayMenu layout={savedLayout} onLayout={setLayout} wrap={wrap} onWrap={setWrap} />
         {toolbarEnd}
       </div>
     </div>
@@ -442,7 +459,12 @@ export const DiffView = ({
           {belowToolbar}
         </PageColumn>
       </div>
-      <ScrollFade className="min-h-0 flex-1" viewportRef={viewportRef} fadeSize={24}>
+      <ScrollFade
+        className="min-h-0 flex-1"
+        viewportRef={viewportRef}
+        fadeSize={24}
+        fadeEdges="end"
+      >
         <PageColumn width={columnWidth}>{body}</PageColumn>
       </ScrollFade>
     </div>

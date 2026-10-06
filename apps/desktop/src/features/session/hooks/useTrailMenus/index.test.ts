@@ -591,19 +591,15 @@ describe('useTrailMenus review thread crumb', () => {
     expect(actionIds(menuOf(threadPage, 'review-thread'))).toEqual([]);
   });
 
-  it('opens the resolver page of a thread with an attempt, the Branch otherwise', () => {
+  it('opens a thread with an attempt on Comments with its fix run transcript, the Branch otherwise', () => {
     const menu = menuOf(threadPage, 'review-thread');
     rowById(menu, 'thread-2').onSelect();
     expect(navigate).toHaveBeenLastCalledWith({
-      to: {
-        at: 'session',
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments', threadId: 'thread-2' }),
+      drawer: {
+        kind: 'transcript',
         sessionId: SESSION_ID,
-        view: {
-          lens: 'review',
-          agentId: 'agent-other',
-          studio: null,
-          target: { kind: 'thread', threadId: 'thread-2' },
-        },
+        payload: { agentId: 'agent-other' },
       },
     });
     rowById(menu, 'thread-1').onSelect();
@@ -611,75 +607,6 @@ describe('useTrailMenus review thread crumb', () => {
       to: branchPlace({ sessionId: SESSION_ID, threadId: 'thread-1' }),
       mode: 'replace',
     });
-  });
-});
-
-describe('useTrailMenus resolver attempts', () => {
-  const resolverPage = { crumbs: ['overview', 'lens-page', 'selected-child'] };
-
-  beforeEach(() => {
-    h.state.selectedAgentId = { [SESSION_ID]: resolver.id };
-    h.threadId = 'thread-1';
-    h.queueRows = [queueRow('thread-1')];
-    h.state.sessionResolveAttempts = {
-      [SESSION_ID]: [
-        attempt({ id: 'attempt-1', createdAt: 1_000 }),
-        attempt({ id: 'attempt-2', createdAt: 2_000, agentId: 'agent-other' as AgentId }),
-        attempt({ id: 'attempt-3', threadIds: ['thread-9'] }),
-      ],
-    };
-  });
-
-  it('lists the attempts on the open comment, newest first', () => {
-    const menu = menuOf(resolverPage, 'selected-child');
-    expect(rowIds(menu)).toEqual(['attempt-2', 'attempt-1']);
-    expect(rowById(menu, 'attempt-1').isCurrent).toBe(true);
-    expect(rowById(menu, 'attempt-2').isCurrent).toBe(false);
-    expect(menu.context).toBe('ledger.ts:12');
-  });
-
-  it('offers resolve again with the reread instruction once no attempt is live', () => {
-    const menu = menuOf(resolverPage, 'selected-child');
-    expect(actionIds(menu)).toEqual(['resolve-again']);
-    actionOf(menu, 'resolve-again').onRun();
-    expect(h.resolveAgain).toHaveBeenCalledTimes(1);
-    const call = h.resolveAgain.mock.calls[0]?.[0] as { threadId: string; instruction: string };
-    expect(call.threadId).toBe('thread-1');
-    expect(call.instruction.length).toBeGreaterThan(0);
-  });
-
-  it('hides resolve again while an attempt is running', () => {
-    h.state.sessionResolveAttempts = {
-      [SESSION_ID]: [attempt({ id: 'attempt-1', phase: 'running' })],
-    };
-    expect(actionIds(menuOf(resolverPage, 'selected-child'))).toEqual([]);
-  });
-
-  it('opens the resolver page of the attempt agent on select', () => {
-    const menu = menuOf(resolverPage, 'selected-child');
-    rowById(menu, 'attempt-2').onSelect();
-    expect(navigate).toHaveBeenCalledWith({
-      to: {
-        at: 'session',
-        sessionId: SESSION_ID,
-        view: {
-          lens: 'review',
-          agentId: 'agent-other',
-          studio: null,
-          target: { kind: 'thread', threadId: 'thread-1' },
-        },
-      },
-    });
-  });
-
-  it('falls back to Comment when the thread row is gone', () => {
-    h.queueRows = [];
-    expect(menuOf(resolverPage, 'selected-child').context).toBe('Comment');
-  });
-
-  it('has no menu for a resolver without an open thread', () => {
-    h.threadId = null;
-    expect(menusFor(resolverPage).has('selected-child')).toBe(false);
   });
 });
 

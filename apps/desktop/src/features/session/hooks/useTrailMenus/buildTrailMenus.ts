@@ -6,7 +6,6 @@ import { artifactCrumbMenu } from './artifactCrumbMenu';
 import { diffBranchCrumbMenu } from './diffBranchCrumbMenu';
 import { pageCrumbMenu } from './pageCrumbMenu';
 import { pullRequestCrumbMenu } from './pullRequestCrumbMenu';
-import { resolverAttemptCrumbMenu } from './resolverAttemptCrumbMenu';
 import { reviewThreadCrumbMenu } from './reviewThreadCrumbMenu';
 import type { TrailMenuInputs } from './trailMenuInputs';
 import { createTrailMenuScope, type TrailMenuScope } from './trailMenuScope';
@@ -37,10 +36,7 @@ const menuForCrumb = ({ scope, crumbId }: CrumbParams): CrumbMenuModel | null =>
     case 'artifact':
       return artifactCrumbMenu(scope);
     case 'selected-child':
-      return (
-        resolverAttemptCrumbMenu(scope) ??
-        (scope.selected === null ? null : agentCrumbMenu(scope, scope.selected))
-      );
+      return scope.selected === null ? null : agentCrumbMenu(scope, scope.selected);
     case 'selected-parent':
       return scope.parent === null ? null : agentCrumbMenu(scope, scope.parent);
     case 'selected-root':

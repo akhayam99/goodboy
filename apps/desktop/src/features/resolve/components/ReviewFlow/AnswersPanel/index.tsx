@@ -67,7 +67,7 @@ export const AnswersPanel = ({ sessionId, run, questions, onClose, onContinued }
   return (
     <section
       aria-label={REVIEW_BULK_LABEL.answersPanel}
-      className="flex min-w-0 max-w-[640px] flex-col gap-4"
+      className="flex min-w-0 max-w-[var(--measure)] flex-col gap-4"
     >
       <div className="flex flex-col gap-1">
         <h2 className="text-title text-foreground">{answersTitle({ count: questions.length })}</h2>
