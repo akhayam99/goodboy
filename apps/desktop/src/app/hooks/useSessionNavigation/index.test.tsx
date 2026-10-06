@@ -27,7 +27,7 @@ import {
   runningState,
   seedColumn,
   sessionOf,
-} from '../../../__tests__/helpers/sessionColumn';
+} from '../../../features/workspace/testing/sessionColumn';
 import { useSessionNavigation } from '.';
 
 let useAppStore: StoryStore;
@@ -121,6 +121,13 @@ describe('the rows the list folds', () => {
   const twelve = Array.from({ length: 12 }, (_, index) =>
     opened(23 - index, `Session ${index + 1}`),
   );
+  const twelveAt = (index: number): Session => {
+    const found = twelve[index];
+    if (found === undefined) {
+      throw new Error(`no session at ${index}`);
+    }
+    return found;
+  };
 
   it('never steps into a row the fold hides', () => {
     const { result } = mount({ sessions: twelve, current: twelve[7] ?? null });
@@ -132,7 +139,7 @@ describe('the rows the list folds', () => {
     seedColumn({
       store: useAppStore,
       sessions: twelve,
-      currentSessionId: idOf(twelve[7] as Session),
+      currentSessionId: idOf(twelveAt(7)),
     });
     useAppStore
       .getState()
@@ -140,13 +147,13 @@ describe('the rows the list folds', () => {
     useAppStore.setState({ navigate });
     const { result } = renderHook(() => useSessionNavigation());
     result.current({ delta: 1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(twelve[8] as Session) }) });
+    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(twelveAt(8)) }) });
   });
 
   it('keeps the open session in reach even when it sits below the fold', () => {
     const { result } = mount({ sessions: twelve, current: twelve[10] ?? null });
     result.current({ delta: -1 });
-    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(twelve[7] as Session) }) });
+    expect(lastTarget()).toEqual({ to: sessionPlace({ sessionId: idOf(twelveAt(7)) }) });
   });
 });
 

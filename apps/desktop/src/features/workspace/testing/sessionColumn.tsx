@@ -11,11 +11,11 @@ import type {
   SessionProjectMount,
   TurnState,
 } from '@goodboy/types';
-import { useAppStore } from '../../store';
-import type { SessionGithubState } from '../../store/types';
-import type { StoryStore } from '../../store/storyHarness';
-import { ToastProvider } from '../../shared/components/Toast';
-import { SessionActivityBar } from '../../features/workspace/components/SessionActivityBar';
+import { useAppStore } from '../../../store';
+import type { SessionGithubState } from '../../../store/types';
+import type { StoryStore } from '../../../store/storyHarness';
+import { ToastProvider } from '../../../shared/components/Toast';
+import { SessionActivityBar } from '../components/SessionActivityBar';
 
 export const harborline = aWorkspace({ name: 'Harborline', slug: 'harborline' });
 

@@ -18,7 +18,7 @@ import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { useActionControls } from '../../../actions/useActionControls';
 import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
 import type { ObjectTarget } from '../../../actions/types';
-import { attentionPlace } from '../../../../app/components/AppTopBar/NowChip/attentionPlace';
+import { attentionPlace } from '../../../session/attentionPlace';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
@@ -203,7 +203,7 @@ export const SessionActivityBar = ({
   const moveFocus = (delta: number) => {
     const rows = [
       ...(listRef.current?.querySelectorAll<HTMLElement>(
-        '[data-select-id], [data-page-id], [data-fold]',
+        '[data-select-id], [data-selected], [data-fold]',
       ) ?? []),
     ];
     const index = rows.findIndex((row) => row === document.activeElement);

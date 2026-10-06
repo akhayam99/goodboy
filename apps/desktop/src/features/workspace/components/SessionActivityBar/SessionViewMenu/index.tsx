@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AnchoredPopover, Divider, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { Session, SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useSelectedProjectIds, useSessionViewPrefs } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -116,7 +116,6 @@ export const SessionViewMenu = ({
           />
         ))}
       </MenuSection>
-      <Divider />
       <MenuSection title="Group">
         {GROUP_OPTIONS.map((option) => (
           <MenuChoice
@@ -129,27 +128,23 @@ export const SessionViewMenu = ({
         ))}
       </MenuSection>
       {projectOptions.length > 0 ? (
-        <>
-          <Divider />
-          <MenuSection title="Filter by project">
-            {projectOptions.map((option) => (
-              <MenuChoice
-                key={option.id}
-                role="menuitemcheckbox"
-                label={option.label}
-                isChecked={selectedProjectIds.includes(option.id)}
-                onSelect={() => toggleProject(option.id)}
-                trailing={
-                  <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
-                    {option.count}
-                  </span>
-                }
-              />
-            ))}
-          </MenuSection>
-        </>
+        <MenuSection title="Filter by project">
+          {projectOptions.map((option) => (
+            <MenuChoice
+              key={option.id}
+              role="menuitemcheckbox"
+              label={option.label}
+              isChecked={selectedProjectIds.includes(option.id)}
+              onSelect={() => toggleProject(option.id)}
+              trailing={
+                <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
+                  {option.count}
+                </span>
+              }
+            />
+          ))}
+        </MenuSection>
       ) : null}
-      <Divider />
       <MenuSection title="View">
         <MenuChoice
           role="menuitemcheckbox"

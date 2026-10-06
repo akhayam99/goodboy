@@ -1,4 +1,5 @@
 import type { Project, Session, SessionId, SessionProjectMount } from '@goodboy/types';
+import { projectById } from '../projects/projectIndex';
 import type { SessionProjectRef } from './types';
 
 type Params = {
@@ -8,11 +9,7 @@ type Params = {
 };
 
 const projectOfSession = ({ session, mounts, projects }: Params): SessionProjectRef | null => {
-  const projectId = session.activeProjectId ?? mounts[0]?.projectId ?? null;
-  if (projectId === null) {
-    return null;
-  }
-  const project = projects.find((candidate) => candidate.id === projectId);
+  const project = projectById(projects, session.activeProjectId ?? mounts[0]?.projectId ?? null);
   return project === undefined ? null : { id: project.id, name: project.name };
 };
 

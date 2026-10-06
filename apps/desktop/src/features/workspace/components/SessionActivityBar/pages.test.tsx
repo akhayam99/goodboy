@@ -25,12 +25,7 @@ import { lensDestinations } from '../../../session/lens-destinations';
 import { sessionTitle } from '../../../session/sessionTitle';
 import { usePageSummaries } from '../../../session/hooks/usePageSummaries';
 import { pageMenu } from '../../../session/trail/menus/pageMenu';
-import {
-  harborline,
-  renderBar,
-  seedColumn,
-  sessionOf,
-} from '../../../../__tests__/helpers/sessionColumn';
+import { harborline, renderBar, seedColumn, sessionOf } from '../../testing/sessionColumn';
 
 let useAppStore: StoryStore;
 
@@ -74,11 +69,12 @@ const PAGE_LABEL_OF: Readonly<Record<string, string>> = {
 };
 
 const nestedCount = (pageId: string): string | null => {
-  const text =
-    screen
-      .getAllByRole('button')
-      .find((candidate) => candidate.getAttribute('data-page-id') === pageId)?.textContent ?? '';
-  const count = text.slice((PAGE_LABEL_OF[pageId] ?? '').length);
+  const label = PAGE_LABEL_OF[pageId] ?? '';
+  const text = within(screen.getByRole('list', { name: 'Pages' }))
+    .getAllByRole('button')
+    .map((button) => button.textContent ?? '')
+    .find((candidate) => candidate.startsWith(label));
+  const count = (text ?? '').slice(label.length);
   return count === '' ? null : count;
 };
 

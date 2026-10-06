@@ -29,7 +29,7 @@ import {
   renderBar,
   seedColumn,
   sessionOf,
-} from '../../../../__tests__/helpers/sessionColumn';
+} from '../../testing/sessionColumn';
 
 let useAppStore: StoryStore;
 

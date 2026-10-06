@@ -20,7 +20,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { EMPTY_SESSION_DRAFT } from '../../../../store/slices/sessionDraft/state';
-import { harborline, seedColumn } from '../../../../__tests__/helpers/sessionColumn';
+import { harborline, seedColumn } from '../../testing/sessionColumn';
 import { NewSessionButton } from './NewSessionButton';
 
 let useAppStore: StoryStore;

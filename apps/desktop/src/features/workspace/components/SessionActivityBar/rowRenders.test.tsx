@@ -32,7 +32,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { renderBar, seedColumn, sessionOf } from '../../../../__tests__/helpers/sessionColumn';
+import { renderBar, seedColumn, sessionOf } from '../../testing/sessionColumn';
 
 let useAppStore: StoryStore;
 

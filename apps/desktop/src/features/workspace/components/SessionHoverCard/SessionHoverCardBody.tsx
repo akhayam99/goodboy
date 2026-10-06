@@ -54,7 +54,7 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
 
   return (
     <div className="flex flex-col gap-3">
-      <InlineMarkdown text={title} className="text-heading font-semibold text-foreground" />
+      <InlineMarkdown text={title} className="text-heading text-foreground" />
       <div className="flex items-center gap-2 text-meta text-muted-foreground">
         <SessionStateNode node={node} />
         <span className="min-w-0">{stateText}</span>

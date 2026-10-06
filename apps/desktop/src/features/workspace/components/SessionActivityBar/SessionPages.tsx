@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { PANE_RHYTHM, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, SelectableRow, cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -68,15 +68,13 @@ export const SessionPages = ({ session }: Props) => {
         const count = pageSummaryOf({ summaries, lens: page.lens });
         return (
           <li key={page.id}>
-            <button
-              type="button"
-              data-page-id={page.id}
-              aria-current={isCurrent ? 'page' : undefined}
+            <SelectableRow
+              selected={isCurrent}
+              ariaCurrent={isCurrent ? 'page' : undefined}
               onClick={() => openPage(page)}
               className={cn(
-                'flex h-6.5 w-full items-center gap-2 rounded-md pr-2 text-left text-label motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                'h-6.5 items-center gap-2 pr-2 text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 PANE_RHYTHM.navRail.nest,
-                isCurrent ? 'bg-selected font-medium text-foreground' : 'text-muted-foreground',
               )}
             >
               <Icon
@@ -90,7 +88,7 @@ export const SessionPages = ({ session }: Props) => {
                   {count}
                 </span>
               )}
-            </button>
+            </SelectableRow>
           </li>
         );
       })}
