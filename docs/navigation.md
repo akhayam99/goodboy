@@ -467,7 +467,11 @@ is the full depth of navigation.
 
 **A sidebar row says the name and the state, and the hover card and the board
 card say the rest.** A row is one line of 28px: a 14px `WorkNode` and the
-title, nothing else. It has no second line, no `ToneBar`, no marks, no age and
+title, with the ticket key of a linked task in front of it when the goal starts
+with `[KEY]` (`sessionRowTitle` strips the key from the title and returns it;
+`SessionRowTitle` draws it in muted mono, the title truncates and the key never
+does; the switcher row and the hover card title do the same, the board card
+keeps its chip). It has no second line, no `ToneBar`, no marks, no age and
 no cost. The node shows one of five signs, the first that matches
 (`sessionNodeOf`, from `useSessionSummary`): needs you (`?`, the approval shield
 or `!`, in the warning or danger tone, when the stage is attention), running

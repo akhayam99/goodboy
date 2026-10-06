@@ -1,5 +1,5 @@
 import { ArrowRight, Folder } from 'lucide-react';
-import { Chip, GhostActionButton, InlineMarkdown, formatUsd } from '@goodboy/ui';
+import { Chip, GhostActionButton, formatUsd } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
@@ -8,7 +8,8 @@ import { SessionStateNode } from '../SessionActivityBar/SessionStateNode';
 import { sessionNodeOf } from '../SessionActivityBar/sessionNode';
 import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
-import { sessionDisplayTitle } from '../../../session/sessionTitle';
+import { sessionRowTitle } from '../../../session/sessionTitle';
+import { SessionRowTitle } from '../SessionRowTitle';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import { requestChipLabel } from './requestChipLabel';
@@ -36,7 +37,7 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
     attention: summary.attention,
     isArchived,
   });
-  const title = sessionDisplayTitle({ session, tasks: summary.tasks });
+  const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const linked = getLinkedRequest({ pullRequest, mergeRequest });
   const request = linked.state === 'none' ? null : PULL_REQUEST_PRESENTATION[linked.state];
   const RequestIcon = request?.icon;
@@ -54,7 +55,7 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
 
   return (
     <div className="flex flex-col gap-3">
-      <InlineMarkdown text={title} className="text-heading text-foreground" />
+      <SessionRowTitle keys={keys} title={title} titleClassName="text-heading text-foreground" />
       <div className="flex items-center gap-2 text-meta text-muted-foreground">
         <SessionStateNode node={node} />
         <span className="min-w-0">{stateText}</span>

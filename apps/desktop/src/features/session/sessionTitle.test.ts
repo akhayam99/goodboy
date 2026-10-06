@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '@goodboy/types';
 import { goalFromIssue } from '../integrations/linear/goal-from-issue';
-import { sessionDisplayTitle, sessionTitle } from './sessionTitle';
+import { sessionDisplayTitle, sessionRowTitle, sessionTitle } from './sessionTitle';
 
 const sessionWith = (goal: unknown): Session => ({ goal }) as Session;
 
@@ -60,6 +60,23 @@ describe('sessionDisplayTitle', () => {
       '[HBL-412] Retried webhooks post a second credit\n\nReplays double-post in ledger-core.',
     );
     expect(sessionTitle({ session })).toBe(goal);
+  });
+
+  it('returns the stripped keys beside the title for a row', () => {
+    expect(
+      sessionRowTitle({ session: sessionWith('[HBL-412] [HBL-413] Retried webhooks'), tasks }),
+    ).toEqual({ keys: ['HBL-412', 'HBL-413'], title: 'Retried webhooks' });
+  });
+
+  it('returns no keys when the id is not a linked task or nothing is linked', () => {
+    expect(sessionRowTitle({ session: sessionWith('[HBL-999] Retried'), tasks })).toEqual({
+      keys: [],
+      title: '[HBL-999] Retried',
+    });
+    expect(sessionRowTitle({ session: sessionWith('[HBL-412] Retried'), tasks: [] })).toEqual({
+      keys: [],
+      title: '[HBL-412] Retried',
+    });
   });
 
   it('keeps an id in the middle of the title', () => {
