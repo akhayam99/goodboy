@@ -83,6 +83,7 @@ const Host = ({ initialFocus = null }: HostProps) => {
       error: null,
       view: { kind: 'branch' },
       setView: vi.fn(),
+      alternate: null,
       commits: [],
       status: null,
       metaError: null,
