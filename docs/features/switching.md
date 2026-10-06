@@ -2,14 +2,14 @@
 
 Move between the tasks of a workspace, and see from any screen which one needs you.
 
-### Activity bar
+### Session list
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="420" alt="The activity bar of the Harborline workspace: sessions grouped under Building 2, Running 2, Needs you 1 and In review 1, with Stop retried webhooks posting selected, 1 to answer and HBL-412">
 </picture>
 
-Move between tasks without losing your place. The bar on the left lists the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, a **?** or **!** means the session needs you, a check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
+Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, a **?** or **!** means the session needs you, a check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
 
 Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open shows its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count.
 
