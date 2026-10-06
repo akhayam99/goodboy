@@ -1,5 +1,8 @@
 const LEGACY_RESOLVE_PREFIX = 'resolve: ';
 
+export const isAutoResolverName = ({ name }: { readonly name: string }): boolean =>
+  name.toLowerCase().startsWith(LEGACY_RESOLVE_PREFIX);
+
 type Params = {
   readonly name: string;
   readonly kind: string;

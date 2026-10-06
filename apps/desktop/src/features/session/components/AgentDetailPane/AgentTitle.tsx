@@ -3,7 +3,8 @@ import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { agentDisplayName } from '../../../../shared/utils/agentDisplayName';
+import { agentDisplayName, isAutoResolverName } from '../../../../shared/utils/agentDisplayName';
+import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 import { classifyAgent } from '../../agent-kind';
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 
 export const AgentTitle = ({ agent, sessionId }: Props) => {
   const renameAgent = useAppStore((state) => state.renameAgent);
+  const fixRunName = useFixRunName({ sessionId, agentId: agent.id });
   const rename = useInlineRename({
     value: agent.name,
     onCommit: (next) => renameAgent(sessionId, agent.id, next),
@@ -37,10 +39,10 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
     );
   }
 
-  const displayName = agentDisplayName({
-    name: agent.name,
-    kind: classifyAgent({ agent, override: null }),
-  });
+  const kind = classifyAgent({ agent, override: null });
+  const displayName =
+    (kind === 'resolver' && isAutoResolverName({ name: agent.name }) ? fixRunName : null) ??
+    agentDisplayName({ name: agent.name, kind });
 
   return (
     <span className="group/title flex min-w-0 items-center gap-2">

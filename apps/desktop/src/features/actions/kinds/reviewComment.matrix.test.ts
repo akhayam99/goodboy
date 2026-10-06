@@ -149,6 +149,7 @@ const MATRIX: ReadonlyArray<Row> = [
       'reviewComment.transcript menu Open transcript',
       ...GITHUB,
       'reviewComment.edit primary Add a hint',
+      'reviewComment.anotherModel menu Try another model',
       'reviewComment.reply secondary Reply yourself',
       'reviewComment.skip secondary Skip',
       'reviewComment.resolveNoReply menu Resolve without a reply',

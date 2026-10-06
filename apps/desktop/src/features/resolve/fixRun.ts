@@ -80,6 +80,66 @@ export const fixRunOf = ({
   return latest;
 };
 
+export const fixRunLabel = ({
+  total,
+  prNumber,
+}: {
+  readonly total: number;
+  readonly prNumber: number | null;
+}): string => {
+  const comments = total === 1 ? '1 comment' : `${total} comments`;
+  return prNumber === null ? `Fix run · ${comments}` : `Fix run · #${prNumber} · ${comments}`;
+};
+
+const WORD_PRECEDENCE: ReadonlyArray<ResolveWord> = [
+  'needs_you',
+  'working',
+  'ready',
+  'couldnt_fix',
+  'done',
+  'open',
+];
+
+export const fixRunWordOf = ({ tally }: { readonly tally: ResolveTally }): ResolveWord =>
+  WORD_PRECEDENCE.find((word) => tally[word] > 0) ?? 'done';
+
+export const fixRunThreadIdsOf = ({
+  attempts,
+  agentId,
+}: {
+  readonly attempts: ReadonlyArray<ResolveAttempt>;
+  readonly agentId: AgentId;
+}): ReadonlyArray<string> => [
+  ...new Set(
+    attempts
+      .filter((attempt) => attempt.agentId === agentId)
+      .flatMap((attempt) => attempt.threadIds),
+  ),
+];
+
+export const fixRunNameOf = ({
+  attempts,
+  agentId,
+}: {
+  readonly attempts: ReadonlyArray<ResolveAttempt>;
+  readonly agentId: AgentId;
+}): string | null => {
+  const latest = attempts
+    .filter((attempt) => attempt.agentId === agentId)
+    .reduce<ResolveAttempt | null>(
+      (newest, attempt) =>
+        newest === null || attempt.createdAt >= newest.createdAt ? attempt : newest,
+      null,
+    );
+  if (latest === null) {
+    return null;
+  }
+  return fixRunLabel({
+    total: fixRunThreadIdsOf({ attempts, agentId }).length,
+    prNumber: latest.prNumber,
+  });
+};
+
 export const fixRunTitle = ({ run }: { readonly run: FixRun }): string => {
   const comments = run.total === 1 ? '1 comment' : `${run.total} comments`;
   return run.isLive ? `Fixing ${comments}` : `Fix run · ${comments}`;

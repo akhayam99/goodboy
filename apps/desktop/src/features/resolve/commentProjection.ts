@@ -53,7 +53,7 @@ const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> =
   edited: 'ready',
   outdated: 'ready',
   failed: 'couldnt_fix',
-  accepted: 'done',
+  accepted: 'ready',
   replied: 'done',
   skipped: 'done',
   pushed: 'done',

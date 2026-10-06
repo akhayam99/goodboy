@@ -310,9 +310,48 @@ describe('accept in bulk', () => {
     await mount({ stage: 'accepted' });
 
     expect(screen.getByText('5 accepted')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /^Undo/ }));
+    fireEvent.click(within(screen.getByRole('status')).getByRole('button', { name: /^Undo/ }));
 
     await waitFor(() => expect(undoReviewAccepts).toHaveBeenCalledWith({ sessionId: SESSION.id }));
+  });
+
+  it('keeps accepted comments in Ready with an Accepted sub-word until they are pushed', async () => {
+    await mount({ stage: 'accepted' });
+
+    const ready = within(list()).getByRole('region', { name: 'Ready' });
+    expect(within(ready).getAllByText('Accepted')).toHaveLength(5);
+    expect(within(ready).queryByRole('button', { name: /^Accept \d+$/ })).toBeNull();
+    const done = within(list()).getByRole('region', { name: 'Done' });
+    expect(within(done).queryByText('Accepted')).toBeNull();
+    expect(within(done).getByText('Done 3')).toBeDefined();
+  });
+
+  it('gives the list room under the last row for as tall a selection bar as it shows', async () => {
+    const observers: Array<(entries: ReadonlyArray<{ contentRect: { height: number } }>) => void> =
+      [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(
+          callback: (entries: ReadonlyArray<{ contentRect: { height: number } }>) => void,
+        ) {
+          observers.push(callback);
+        }
+        observe = (): void => undefined;
+        disconnect = (): void => undefined;
+      },
+    );
+    await mount({ stage: 'review' });
+
+    expect(screen.getByTestId('review-list-clearance').style.height).toBe('0px');
+    act(() => {
+      for (const notify of observers) {
+        notify([{ contentRect: { height: 120 } }]);
+      }
+    });
+
+    expect(Number.parseInt(screen.getByTestId('review-list-clearance').style.height, 10)).toBe(144);
+    vi.unstubAllGlobals();
   });
 
   it('shows no undo bar once the accepted comments are no longer undoable', async () => {

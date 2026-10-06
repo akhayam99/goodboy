@@ -84,9 +84,21 @@ describe('Fix run status line', () => {
     expect(status.getByRole('button', { name: '1 needs you' })).toBeDefined();
     expect(status.getByRole('button', { name: '1 working' })).toBeDefined();
     expect(status.queryByRole('button', { name: /couldn't fix/ })).toBeNull();
-    expect(status.getByText(/High/)).toBeDefined();
+    expect(status.getByText('Sonnet 5 · Medium')).toBeDefined();
     expect(status.getByRole('button', { name: 'Open transcript' })).toBeDefined();
     expect(status.getByRole('button', { name: 'Stop' })).toBeDefined();
+  });
+
+  it('runs every comment of the launch on the model the status line names', async () => {
+    await mount({ threadId: null });
+
+    const models = new Set(
+      (useAppStore.getState().sessionResolveAttempts[SESSION.id] ?? [])
+        .filter((attempt) => attempt.launchId === LAUNCH_ID)
+        .map((attempt) => `${attempt.provider}/${attempt.model}/${attempt.effort}`),
+    );
+
+    expect(models.size).toBe(1);
   });
 
   it('filters the list by a tally chip and clears the filter on a second click', async () => {

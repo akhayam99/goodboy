@@ -928,10 +928,11 @@ for this session`, else `Resolver default`); launching does not turn the
 - A failed run offers **Retry in this run** (`retryCouldntFix` for that one
   comment, in the same run and copy; `Retry with the hint` with a hint),
   **Start over with a new agent** (a new launch for that comment on the
-  session pick or the role default), **Try another model** (the picker opens
-  inline under the buttons, it sets the model of a new agent) and **Add a hint**
-  (F is Retry in this run).
-  `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
+  session pick or the role default); F is Retry in this run.
+  `…` holds **Try another model** (the picker opens inline under the buttons,
+  it sets the model of a new agent; the `reviewComment.anotherModel` verb, so
+  right click and the palette have it too), **Add a hint**, Reply yourself, Skip
+  and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no
   button on the comment: the Branch header reads `Retry N`, and the push

@@ -23,6 +23,8 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { isAutoResolverName } from '../../../../shared/utils/agentDisplayName';
+import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 
 type Props = {
   readonly run: Agent;
@@ -76,6 +78,7 @@ export const AgentRow = ({
   onReopen,
 }: Props) => {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const fixRunName = useFixRunName({ sessionId: run.sessionId, agentId: run.id });
 
   useEffect(() => {
     setIsConfirmingDelete(false);
@@ -150,7 +153,11 @@ export const AgentRow = ({
       }
       title={
         <AgentCardTitle
-          name={run.name}
+          name={
+            kind === 'resolver' && isAutoResolverName({ name: run.name })
+              ? (fixRunName ?? run.name)
+              : run.name
+          }
           isEditing={isEditing}
           isSelected={isSelected}
           density={density}
