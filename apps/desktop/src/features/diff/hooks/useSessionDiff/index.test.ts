@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { MountId, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
 import {
@@ -22,6 +22,7 @@ import {
   stubStoryInvoke,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import type { DiffFocus } from '../../../../store';
 import { useSessionDiff } from '.';
 
 const WORKTREE = '/repo/ledger-core';
@@ -65,9 +66,11 @@ beforeAll(async () => {
 const openWith = ({
   mountBase,
   projectBase,
+  diffFocus = null,
 }: {
   readonly mountBase: string | null;
   readonly projectBase: string | null;
+  readonly diffFocus?: DiffFocus | null;
 }) => {
   const project = aProject({ baseBranch: projectBase });
   const mount: SessionProjectMount = {
@@ -90,7 +93,24 @@ const openWith = ({
     sessions: [session],
     sessionProjectMounts: { [SESSION_ID]: [mount] },
   });
-  return renderHook(() => useSessionDiff({ sessionId: SESSION_ID, worktreePath: WORKTREE }));
+  return renderHook(() =>
+    useSessionDiff({ sessionId: SESSION_ID, worktreePath: WORKTREE, diffFocus }),
+  );
+};
+
+const cleanBranchAhead = (): WorktreeStatus => ({
+  ...statusFor(null),
+  mainDistance: { kind: 'known', ahead: 6, behind: 0 },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+});
+
+const stubCleanTreeWithSixCommits = (): void => {
+  stubStoryInvoke({
+    worktree_diff: ({ baseBranch }: BaseArgs) => patchFor(baseBranch),
+    worktree_diff_working: '',
+    worktree_status: cleanBranchAhead(),
+    worktree_commits: [],
+  });
 };
 
 beforeEach(async () => {
@@ -129,5 +149,43 @@ describe('useSessionDiff base branch', () => {
       expect(result.current.files.map((file) => file.path)).toEqual(['against-default.txt']),
     );
     await waitFor(() => expect(result.current.status?.branch).toBe('against-default'));
+  });
+});
+
+describe('useSessionDiff scope', () => {
+  it('opens on the branch scope when the working tree is clean and commits are ahead', async () => {
+    stubCleanTreeWithSixCommits();
+    const { result } = openWith({
+      mountBase: null,
+      projectBase: 'main',
+      diffFocus: { kind: 'working', path: null },
+    });
+
+    await waitFor(() => expect(result.current.view).toEqual({ kind: 'branch' }));
+    await waitFor(() => expect(result.current.files).toHaveLength(1));
+  });
+
+  it('keeps the working tree scope the owner picked', async () => {
+    stubCleanTreeWithSixCommits();
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+    await waitFor(() => expect(result.current.status?.mainDistance.kind).toBe('known'));
+
+    act(() => result.current.setView({ kind: 'working', scope: 'all' }));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.view).toEqual({ kind: 'working', scope: 'all' });
+    expect(result.current.files).toHaveLength(0);
+  });
+
+  it('counts the branch files to offer from a clean working tree', async () => {
+    stubCleanTreeWithSixCommits();
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+    await waitFor(() => expect(result.current.status?.mainDistance.kind).toBe('known'));
+
+    act(() => result.current.setView({ kind: 'working', scope: 'all' }));
+
+    await waitFor(() =>
+      expect(result.current.alternate).toEqual({ view: { kind: 'branch' }, fileCount: 1 }),
+    );
   });
 });
