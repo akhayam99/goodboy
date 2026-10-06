@@ -24,6 +24,7 @@ export type SendTurnInput = Readonly<{
   mountTarget?: MountTargetSnapshot;
   resolveCopyPath?: string;
   resolveThreadIds?: ReadonlyArray<string>;
+  onStarted?: () => void;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   override?: TurnProviderOverride;

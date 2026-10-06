@@ -15,7 +15,10 @@ import type { SessionGithubState } from '../../types';
 
 const h = vi.hoisted(() => ({
   rows: [] as Array<ResolveQueueRow>,
-  sendTurn: vi.fn(async (_input: unknown) => ({ blockedOverBudget: false })),
+  sendTurn: vi.fn(async (input: { readonly onStarted?: () => void }) => {
+    input.onStarted?.();
+    return { blockedOverBudget: false };
+  }),
   spawnAgent: vi.fn(),
   reportError: vi.fn(async (_params: unknown) => undefined),
   answered: vi.fn(async (_db: unknown, _id: unknown, _answer: unknown) => undefined),
@@ -432,6 +435,99 @@ describe('answerQuestions', () => {
           (h.sendTurn.mock.calls[0][0] as { content: string }).content,
       ),
     ).toContain('I changed the guard. Can I commit?');
+  });
+
+  it('marks the question delivered only once the continuation turn has started', async () => {
+    const { get } = stateOf({
+      threads: [
+        threadOf({
+          threadId: 'PRRT_2',
+          state: 'needs_answer',
+          question: 'Alias the export or rename it?',
+        }),
+      ],
+      questions: [question({})],
+    });
+    let startTurn = () => {};
+    h.sendTurn.mockImplementationOnce(async (input) => {
+      await new Promise<void>((resolve) => {
+        startTurn = resolve;
+      });
+      input.onStarted?.();
+      return { blockedOverBudget: false };
+    });
+
+    const pending = answerQuestions({
+      get,
+      sessionId: SESSION_ID,
+      launchId: LAUNCH_ID,
+      answers: [{ threadId: 'PRRT_2', answer: 'Alias it' }],
+    });
+    await vi.waitFor(() => expect(h.sendTurn).toHaveBeenCalledTimes(1));
+
+    expect(h.answered).not.toHaveBeenCalled();
+    expect(h.delivered).not.toHaveBeenCalled();
+
+    startTurn();
+    await pending;
+
+    expect(h.answered).toHaveBeenCalledWith(expect.anything(), 'q-1', 'Alias it');
+    expect(h.delivered).toHaveBeenCalledWith({ db: expect.anything(), ids: ['q-1'] });
+  });
+
+  it('keeps the question open and shows no answer when the turn fails to start', async () => {
+    const { get } = stateOf({
+      threads: [
+        threadOf({
+          threadId: 'PRRT_2',
+          state: 'needs_answer',
+          question: 'Alias the export or rename it?',
+        }),
+      ],
+      questions: [question({})],
+    });
+    h.sendTurn.mockRejectedValueOnce(new Error('the provider could not be started'));
+
+    await expect(
+      get().answerQuestions({
+        sessionId: SESSION_ID,
+        launchId: LAUNCH_ID,
+        answers: [{ threadId: 'PRRT_2', answer: 'Alias it' }],
+      }),
+    ).rejects.toThrow('the provider could not be started');
+
+    expect(h.answered).not.toHaveBeenCalled();
+    expect(h.removeFromSlot).not.toHaveBeenCalled();
+    expect(h.delivered).not.toHaveBeenCalled();
+    expect(get().sessionOpenQuestions[SESSION_ID]?.[0]?.status).toBe('open');
+    expect(get().sessionResolveAnswers[SESSION_ID]?.PRRT_2).toBeUndefined();
+    expect(h.reportError).not.toHaveBeenCalled();
+  });
+
+  it('keeps the question open when the turn is refused before it starts', async () => {
+    const { get } = stateOf({
+      threads: [
+        threadOf({
+          threadId: 'PRRT_2',
+          state: 'needs_answer',
+          question: 'Alias the export or rename it?',
+        }),
+      ],
+      questions: [question({})],
+    });
+    h.sendTurn.mockResolvedValueOnce({ blockedOverBudget: true });
+
+    await expect(
+      answerQuestions({
+        get,
+        sessionId: SESSION_ID,
+        launchId: LAUNCH_ID,
+        answers: [{ threadId: 'PRRT_2', answer: 'Alias it' }],
+      }),
+    ).rejects.toThrow('session budget is reached');
+
+    expect(h.answered).not.toHaveBeenCalled();
+    expect(h.delivered).not.toHaveBeenCalled();
   });
 
   it('ignores an empty answer and refuses a comment that is not part of the run', async () => {

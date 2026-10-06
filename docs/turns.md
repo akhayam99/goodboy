@@ -210,6 +210,14 @@ record a live turn already wrote wins.
 - One fix run per launch. Fixing N comments starts ONE resolver, in ONE copy of
   the branch, that works through the comments in the order given and reports
   each one with its outcome marker as it finishes: 16 comments are 1 agent.
+  Each turn is bounded, the agent is not: `startFixAttempt` splits the comments
+  by file with `chunkConversations` (at most 12 per turn and half of the model's
+  context window), starts the agent on the first chunk and holds the rest
+  (`launchTurns`). When a turn ends, `feedLaunchTurns` sends the next chunk as
+  another turn of the same agent in the same copy, and stops when the run
+  failed, the owner stopped it or a turn was refused. A comment in a chunk not
+  yet fed reads Open. Held chunks live in memory, so a restart leaves the unfed
+  comments Open to start again.
   `startFixAttempt` mints the `resolve_attempts.launch_id` (m222) once per call
   and `startBatch` returns the run (`batchId`, `launchId`) and the single
   `agentId`. Every later turn of that agent is another attempt row that inherits
@@ -219,7 +227,11 @@ record a live turn already wrote wins.
     retrying what could not be fixed (`retryCouldntFix({ sessionId, launchId,
 threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
     message typed in the transcript all send a turn to the same agent. Several
-    answers or retries make one turn. `prepareTurn` hands any turn of a resolver
+    answers or retries make one turn. An answer counts as delivered only when its
+    turn has started (`onStarted` on `sendTurn`, after the attempt is recorded):
+    the question is marked answered and delivered then, never before. If the turn
+    does not start, the error shows on that comment's card and the question stays
+    open under Needs you. `prepareTurn` hands any turn of a resolver
     with a batch the copy of its run (`resolverLaunchCopy`: the copy it already
     works in, else a fresh one on the same mount), so a typed message never lands
     on the live branch. The turn names the comments it claims

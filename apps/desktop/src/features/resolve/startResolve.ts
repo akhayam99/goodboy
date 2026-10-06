@@ -1,6 +1,7 @@
 import type { PullRequestState, ReplyVoice, ResolveCommitStyle, SessionId } from '@goodboy/types';
 import type { CommentThread } from '../integrations/github/comment-threads';
 import type { PriorContext } from '../chat/spawn-from-comment';
+import { contextWindowFor } from '../session/contextWindowFor';
 import {
   startFixAttempt,
   type SetAgentConfigFn,
@@ -26,6 +27,11 @@ type Params = {
   readonly style?: ResolveStartStyle;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
+};
+
+const contextWindowOf = ({ batch }: { readonly batch: ResolveAttemptBatch | null }) => {
+  const model = batch?.launchChoice.model ?? null;
+  return model === null ? null : contextWindowFor(model);
 };
 
 export const startResolve = async ({
@@ -54,6 +60,7 @@ export const startResolve = async ({
       fixupTargets,
       ...(style !== undefined && { voice: style.voice, styleNote: style.styleNote }),
     },
+    contextWindow: contextWindowOf({ batch }),
     batch:
       batch === null ? null : { ...batch, launchChoice: { ...batch.launchChoice, commitStyle } },
     spawnAgent,

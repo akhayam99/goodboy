@@ -1358,11 +1358,13 @@ workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
   [The right drawer](#the-right-drawer).
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](#the-branch-page).
-  Comments is one flow: the list grouped by the five words (Needs you,
-  Working, Ready, Couldn't fix, Open, and Done closed) under the run status
-  line, and the focused comment beside it in the page itself, never in a drawer; a
-  thread in the address is `s/{session}/branch/comments/t/{thread}`. A comment
-  nobody started shows `Fix` on hover (and `F`), which opens the launch panel
+  Comments is one flow: the list grouped by word (Needs you, Working, Ready,
+  Couldn't fix, Open, and Done closed) under the run status line, and the
+  focused comment beside it in the page itself, never in a drawer. A comment
+  in a fix run reads one of five words (Working, Needs you, Ready, Couldn't
+  fix, Done); a comment not yet in a fix run reads Open, a group of the list and
+  not a sixth word. A thread in the address is
+  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the launch panel
   in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Accept N` for ready comments. With no fix run

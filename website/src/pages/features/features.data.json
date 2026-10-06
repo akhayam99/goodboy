@@ -648,7 +648,7 @@
         },
         {
           "title": "Comment states",
-          "text": "Each comment is working, needs you, ready, couldn't fix or done, and the list groups by those words. A line under the tabs counts them.",
+          "text": "A comment in a fix run is working, needs you, ready, couldn't fix or done, and one not yet in a run is open. The list groups by those words. A line under the tabs counts them.",
           "group": "Review and resolve on the Branch page",
           "also": "comment states",
           "shown": true

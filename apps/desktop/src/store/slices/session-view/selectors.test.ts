@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
@@ -15,13 +15,31 @@ import type {
 type StoreState = Record<string, unknown>;
 
 const { store } = vi.hoisted(() => {
-  const store: { state: StoreState } = { state: {} };
+  const listeners = new Set<() => void>();
+  const store = {
+    state: {} as StoreState,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    notify: () => {
+      for (const listener of listeners) {
+        listener();
+      }
+    },
+  };
   return { store };
 });
 
-vi.mock('../../store', () => ({
-  useAppStore: (selector: (state: StoreState) => unknown) => selector(store.state),
-}));
+vi.mock('../../store', async () => {
+  const { useSyncExternalStore } = await import('react');
+  return {
+    useAppStore: (selector: (state: StoreState) => unknown) =>
+      useSyncExternalStore(store.subscribe, () => selector(store.state)),
+  };
+});
 
 import {
   useSessionStageInfo,
@@ -391,6 +409,89 @@ describe('useStageGroupedSessions', () => {
 
     expect(result.current).not.toBe(first);
   });
+});
+
+describe('fix runs and the grouped sessions', () => {
+  const OTHER_ID = 'session-other' as SessionId;
+
+  const fixThread = (threadId: string, state: 'working' | 'needs_answer') => ({
+    id: `row-${threadId}`,
+    sessionId: SESSION_ID,
+    threadId,
+    state,
+    stateReason: null,
+    activeAttemptId: 'attempt-1',
+  });
+
+  const withFixRunOf = ({
+    sessionId,
+    state,
+  }: {
+    readonly sessionId: SessionId;
+    readonly state: 'working' | 'needs_answer';
+  }): void => {
+    store.state.sessionResolveThreads = {
+      ...(store.state.sessionResolveThreads as Record<string, unknown>),
+      [sessionId]: [fixThread(`PRRT_${sessionId}`, state)],
+    };
+    store.state.sessionResolveAttempts = {
+      ...(store.state.sessionResolveAttempts as Record<string, unknown>),
+      [sessionId]: [],
+    };
+  };
+
+  beforeEach(() => {
+    store.state.workspaces = [createWorkspace()];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing', [OTHER_ID]: 'ak/feat-two' };
+    store.state.sessionResolveThreads = {};
+    store.state.sessionResolveAttempts = {};
+  });
+
+  it.each([
+    ['useStageGroupedSessions', useStageGroupedSessions],
+    ['useSortedGroupedSessions', useSortedGroupedSessions],
+  ])(
+    '%s renders nothing again when a fix run changes in a session it does not show',
+    (_name, useGrouped) => {
+      const sessions = [createSession(SESSION_ID)];
+      withFixRunOf({ sessionId: SESSION_ID, state: 'working' });
+      let renders = 0;
+      const { result } = renderHook(() => {
+        renders += 1;
+        return useGrouped(WORKSPACE_ID, sessions);
+      });
+      const first = result.current;
+      const rendersBefore = renders;
+
+      act(() => {
+        withFixRunOf({ sessionId: OTHER_ID, state: 'needs_answer' });
+        store.notify();
+      });
+
+      expect(renders).toBe(rendersBefore);
+      expect(result.current).toBe(first);
+    },
+  );
+
+  it.each([
+    ['useStageGroupedSessions', useStageGroupedSessions],
+    ['useSortedGroupedSessions', useSortedGroupedSessions],
+  ])(
+    '%s groups the session again when a fix run changes in a session it shows',
+    (_name, useGrouped) => {
+      const sessions = [createSession(SESSION_ID)];
+      withFixRunOf({ sessionId: SESSION_ID, state: 'working' });
+      const { result } = renderHook(() => useGrouped(WORKSPACE_ID, sessions));
+      expect(result.current.map((group) => group.key)).not.toContain('attention');
+
+      act(() => {
+        withFixRunOf({ sessionId: SESSION_ID, state: 'needs_answer' });
+        store.notify();
+      });
+
+      expect(result.current.map((group) => group.key)).toContain('attention');
+    },
+  );
 });
 
 describe('shared project filtering', () => {

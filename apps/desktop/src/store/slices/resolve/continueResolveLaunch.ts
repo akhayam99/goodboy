@@ -10,6 +10,7 @@ import type { ResolveQueueRow } from '../../../features/resolve/buildResolveQueu
 import { resolveFixupTargets } from '../../../features/resolve/resolveFixupTargets';
 import { launchRowsOf } from '../../../features/resolve/reviewRows';
 import { sessionResolveStyle } from '../../sessionReplySettings';
+import { sendUntilStarted } from './sendUntilStarted';
 import type { GetFn } from './types';
 
 export type ContinueEntry = {
@@ -24,6 +25,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly entries: ReadonlyArray<ContinueEntry>;
   readonly hint?: string;
+  readonly onStarted?: (params: { readonly threadIds: ReadonlyArray<string> }) => Promise<void>;
 };
 
 const NO_RUN = 'This fix run is no longer available. Start the fix again';
@@ -70,6 +72,7 @@ export const continueResolveLaunch = async ({
   sessionId,
   entries,
   hint = '',
+  onStarted,
 }: Params): Promise<void> => {
   const state = get();
   const attempts = state.sessionResolveAttempts[sessionId] ?? [];
@@ -114,15 +117,20 @@ export const continueResolveLaunch = async ({
     if (agent.status === 'skipped') {
       await invokeAgentUpdateStatus(agent.id, { status: 'pending' });
     }
-    void get()
-      .sendTurn({
-        sessionId,
-        agentId: agent.id,
-        content,
-        resolveThreadIds: group.entries.map(({ entry }) => entry.threadId),
-      })
-      .catch((error: unknown) =>
+    const threadIds = group.entries.map(({ entry }) => entry.threadId);
+    const started = sendUntilStarted({
+      get,
+      input: { sessionId, agentId: agent.id, content, resolveThreadIds: threadIds },
+      onLateError: (error) =>
+        void get().reportError({ title: "Couldn't continue the fix run", error, sessionId }),
+    });
+    if (onStarted === undefined) {
+      void started.catch((error: unknown) =>
         get().reportError({ title: "Couldn't continue the fix run", error, sessionId }),
       );
+      continue;
+    }
+    await started;
+    await onStarted({ threadIds });
   }
 };

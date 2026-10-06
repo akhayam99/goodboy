@@ -28,6 +28,7 @@ import {
   worktreeWriterStatus,
 } from '../../../features/worktree/worktree';
 import { beginResolveCandidate } from './beginResolveCandidate';
+import { feedLaunchTurns } from './feedLaunchTurns';
 import { projectResolveRows } from './projectResolveRows';
 import { recordResolvePhase } from './recordResolvePhase';
 import { failureCauseOfError } from './resolveFailure';
@@ -343,6 +344,7 @@ const startResolverTurn = async ({
     }
     if (!isWriterLeaseDenied) {
       await get().drainResolveQueue({ sessionId, endedAttemptId: attempt.id });
+      await feedLaunchTurns({ get, sessionId, attempt });
     }
   }
 };

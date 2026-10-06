@@ -49,6 +49,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const spawnCtx = { ...promptCtx, ...prompt };
     const spawn = await buildTurnSpawn({ set, get, lease, ctx: spawnCtx });
     const ctx = { ...spawnCtx, ...spawn };
+    input.onStarted?.();
     try {
       await readTurnStream({ set, get, ctx });
       await finalizeTurnStream({ set, get, ctx });

@@ -2,6 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AgentId, PrComment, PullRequestState, SessionId } from '@goodboy/types';
 import type { CommentThread } from '../integrations/github/comment-threads';
+import { takeLaunchTurn } from '../../store/slices/resolve/launchTurns';
 import { startFixAttempt, type SetAgentConfigFn, type SpawnAgentFn } from './startFixAttempt';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -21,12 +22,20 @@ const pr: PullRequestState = {
   updatedAt: '2026-01-01T00:00:00Z',
 };
 
-const threadOn = ({ id, path }: { readonly id: string; readonly path: string }): CommentThread => ({
+const threadOn = ({
+  id,
+  path,
+  body = 'rename it',
+}: {
+  readonly id: string;
+  readonly path: string;
+  readonly body?: string;
+}): CommentThread => ({
   head: {
     id,
     author: 'harbor-reviewer',
     authorAvatarUrl: null,
-    body: 'rename it',
+    body,
     createdAt: '2026-01-01T00:00:00Z',
     url: `https://github.com/acme/web/pull/248#discussion_${id}`,
     source: 'review',
@@ -45,7 +54,7 @@ const harness = () => {
 };
 
 describe('startFixAttempt', () => {
-  it('starts one agent for sixteen comments and hands it every thread id', async () => {
+  it('starts one agent for sixteen comments over two files and holds the second file as its next turn', async () => {
     const { spawnAgent, setAgentConfig } = harness();
     const threads = Array.from({ length: 16 }, (_, index) =>
       threadOn({ id: `t${index}`, path: index < 8 ? 'a.ts' : 'b.ts' }),
@@ -63,10 +72,67 @@ describe('startFixAttempt', () => {
     expect(setAgentConfig).toHaveBeenCalledTimes(1);
     expect(started.agentId).toBe('agent-1');
     const args = spawnAgent.mock.calls[0]?.[1];
-    expect(args?.sourceThreadIds).toEqual(threads.map((thread) => thread.head.threadId));
+    expect(args?.sourceThreadIds).toEqual(
+      threads.slice(0, 8).map((thread) => thread.head.threadId),
+    );
     expect(args?.focus).toBe('none');
     expect(args?.kindOverride).toBe('resolver');
     expect(args?.name).toBe('Resolve: 16 review comments');
+    const next = takeLaunchTurn({ launchId: started.launchId });
+    expect(next?.threadIds).toEqual(threads.slice(8).map((thread) => thread.head.threadId));
+    expect(next?.content).toContain('Resolve 8 threads');
+    expect(takeLaunchTurn({ launchId: started.launchId })).toBeNull();
+  });
+
+  it('bounds every turn of a large pull request by the model context window', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+    const contextWindow = 40_000;
+    const threads = Array.from({ length: 40 }, (_, index) =>
+      threadOn({ id: `t${index}`, path: `f${index}.ts`, body: 'x'.repeat(10_000) }),
+    );
+
+    const started = await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads,
+      pr,
+      contextWindow,
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    const budgetChars = (contextWindow / 2) * 4;
+    const first = spawnAgent.mock.calls[0]?.[1];
+    const turns = [
+      { threadIds: first?.sourceThreadIds ?? [], content: first?.initialPrompt ?? '' },
+    ];
+    for (
+      let turn = takeLaunchTurn({ launchId: started.launchId });
+      turn !== null;
+      turn = takeLaunchTurn({ launchId: started.launchId })
+    ) {
+      turns.push(turn);
+    }
+    expect(turns.length).toBeGreaterThan(Math.ceil(threads.length / 12));
+    expect(turns.every((turn) => turn.content.length <= budgetChars)).toBe(true);
+    expect(turns.flatMap((turn) => turn.threadIds)).toEqual(
+      threads.map((thread) => thread.head.threadId),
+    );
+  });
+
+  it('drops the held turns when the agent could not be started', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+    spawnAgent.mockRejectedValueOnce(new Error('no room for another agent'));
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce('0a1b2c3d-0000-4000-8000-00000000000f');
+    const threads = Array.from({ length: 14 }, (_, index) =>
+      threadOn({ id: `t${index}`, path: 'a.ts' }),
+    );
+
+    await expect(
+      startFixAttempt({ sessionId: SESSION_ID, threads, pr, spawnAgent, setAgentConfig }),
+    ).rejects.toThrow('no room for another agent');
+
+    expect(takeLaunchTurn({ launchId: '0a1b2c3d-0000-4000-8000-00000000000f' })).toBeNull();
   });
 
   it('writes one launch id on the agent and a new one on the next user action', async () => {

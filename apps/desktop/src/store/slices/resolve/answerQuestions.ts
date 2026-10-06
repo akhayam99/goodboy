@@ -29,6 +29,7 @@ export const answerQuestions = async ({
   const questions = state.sessionOpenQuestions[sessionId] ?? [];
   const entries: Array<ContinueEntry> = [];
   const pairs: Array<{
+    readonly threadId: string;
     readonly id: OpenQuestion['id'];
     readonly text: string;
     readonly answer: string;
@@ -45,13 +46,24 @@ export const answerQuestions = async ({
     entries.push({ threadId, intent: 'answer', question: thread.question, answer: answer.trim() });
     const open = openQuestionOfThread({ questions, attempts, threadId, question: thread.question });
     if (open !== undefined) {
-      pairs.push({ id: open.id, text: open.text, answer: answer.trim() });
+      pairs.push({ threadId, id: open.id, text: open.text, answer: answer.trim() });
     }
   }
-  if (pairs.length > 0) {
-    await persistOpenQuestionAnswers({ get, sessionId, pairs });
-    await markOpenQuestionAnswersDelivered({ db: tauriDatabase, ids: pairs.map(({ id }) => id) });
-    await get().loadSessionAnsweredQuestions(sessionId);
-  }
-  await continueResolveLaunch({ get, sessionId, entries });
+  await continueResolveLaunch({
+    get,
+    sessionId,
+    entries,
+    onStarted: async ({ threadIds }) => {
+      const delivered = pairs.filter((pair) => threadIds.includes(pair.threadId));
+      if (delivered.length === 0) {
+        return;
+      }
+      await persistOpenQuestionAnswers({ get, sessionId, pairs: delivered });
+      await markOpenQuestionAnswersDelivered({
+        db: tauriDatabase,
+        ids: delivered.map(({ id }) => id),
+      });
+      await get().loadSessionAnsweredQuestions(sessionId);
+    },
+  });
 };

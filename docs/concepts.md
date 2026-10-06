@@ -749,10 +749,11 @@ reads every page of threads GitHub returns. If the read fails, Review
 shows the error from `gh` instead of an empty list.
 
 Review is one flow: the list on the left, the focused comment on the right.
-Every comment shows one of five words, the same word in the list, the thread,
-Activity, Needs you, the transcript card and the breadcrumb menus. One pure
-projection (`features/resolve/commentProjection.ts`) owns them, and every count
-is a count of comments, never of agents:
+Every comment in a fix run shows one of five words, the same word in the list,
+the thread, Activity, Needs you, the transcript card and the breadcrumb menus.
+A comment not yet in a fix run reads Open, which is not a sixth word. One pure
+projection (`features/resolve/commentProjection.ts`) owns the words, and every
+count is a count of comments, never of agents:
 
 - **Working**: the resolver is on it (Waiting while a launch queues behind
   another, Pushing while a push is in flight)
@@ -774,7 +775,8 @@ is a count of comments, never of agents:
   (a reply only), Skipped (it never blocks the push), Pushed, and Resolved on
   GitHub when someone else closed it
 
-A comment nobody started reads Open. What git says (Already on origin, Looks
+A comment not yet in a fix run reads Open; starting a fix moves it into the run
+and under one of the five words. What git says (Already on origin, Looks
 fixed, Still needed, Fix went missing), Comment changed (the reviewer edited the
 original comment since the draft) and Checks failed (the change stays Ready) are
 chips next to the word, never in place of it. The list groups by the word:

@@ -62,6 +62,23 @@ function liveAgentTurnStateOf(
   return entries;
 }
 
+const pickBySessions = <T>({
+  map,
+  sessions,
+}: {
+  readonly map: Readonly<Record<SessionId, T>> | undefined;
+  readonly sessions: ReadonlyArray<Session>;
+}): Readonly<Record<SessionId, T>> => {
+  const picked: Record<SessionId, T> = {};
+  for (const session of sessions) {
+    const value = map?.[session.id as SessionId];
+    if (value !== undefined) {
+      picked[session.id as SessionId] = value;
+    }
+  }
+  return picked;
+};
+
 export const useSessionStageInfo = (session: Session): SessionStageInfo =>
   useAppStore(useShallow((s) => stageInfoOf(s, session)));
 
@@ -111,11 +128,19 @@ export const useSortedGroupedSessions = (
   );
   const currentSessionId = useAppStore((s) => (needsStage ? s.currentSessionId : null));
   const githubStatus = useAppStore((s) => (needsStage ? s.githubStatus : null));
-  const sessionResolveThreads = useAppStore((s) =>
-    needsStage ? s.sessionResolveThreads : (EMPTY_GITHUB_STATE as typeof s.sessionResolveThreads),
+  const sessionResolveThreads = useAppStore(
+    useShallow((s) =>
+      needsStage
+        ? pickBySessions({ map: s.sessionResolveThreads, sessions: filteredSessions })
+        : (EMPTY_GITHUB_STATE as typeof s.sessionResolveThreads),
+    ),
   );
-  const sessionResolveAttempts = useAppStore((s) =>
-    needsStage ? s.sessionResolveAttempts : (EMPTY_GITHUB_STATE as typeof s.sessionResolveAttempts),
+  const sessionResolveAttempts = useAppStore(
+    useShallow((s) =>
+      needsStage
+        ? pickBySessions({ map: s.sessionResolveAttempts, sessions: filteredSessions })
+        : (EMPTY_GITHUB_STATE as typeof s.sessionResolveAttempts),
+    ),
   );
   const workspaces = useAppStore((s) => (needsStage ? s.workspaces : EMPTY_WORKSPACES));
   const projects = useAppStore((s) => (needsStage ? s.projects : EMPTY_PROJECTS));
@@ -254,8 +279,14 @@ export const useStageGroupedSessions = (
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const githubStatus = useAppStore((s) => s.githubStatus);
-  const sessionResolveThreads = useAppStore((s) => s.sessionResolveThreads);
-  const sessionResolveAttempts = useAppStore((s) => s.sessionResolveAttempts);
+  const sessionResolveThreads = useAppStore(
+    useShallow((s) => pickBySessions({ map: s.sessionResolveThreads, sessions: filteredSessions })),
+  );
+  const sessionResolveAttempts = useAppStore(
+    useShallow((s) =>
+      pickBySessions({ map: s.sessionResolveAttempts, sessions: filteredSessions }),
+    ),
+  );
   const workspaces = useAppStore((s) => s.workspaces);
   const projects = useAppStore((s) => s.projects);
   const sessionBranches = useAppStore((s) => s.sessionBranches);

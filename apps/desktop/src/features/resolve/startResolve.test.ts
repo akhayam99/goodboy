@@ -4,6 +4,7 @@ import type { AgentId, BranchCommit, PrComment, PullRequestState, SessionId } fr
 import type { CommentThread } from '../integrations/github/comment-threads';
 import type { SpawnAgentFn } from '../review/startFixAttempt';
 import type { BlameLineParams } from '../worktree/worktree';
+import { takeLaunchTurn } from '../../store/slices/resolve/launchTurns';
 import { startResolve } from './startResolve';
 
 const { listBranchCommits, worktreeBlameLine } = vi.hoisted(() => ({
@@ -131,9 +132,40 @@ describe('startResolve', () => {
     expect(prompt).toContain('Voice: friendly.');
   });
 
-  it('lists every comment of the run, with its id, in the order the owner picked them', async () => {
+  it('feeds a large pull request to one agent as successive turns, never as new agents', async () => {
     const { spawnAgent, setAgentConfig } = spawnSpy();
-    const ids = Array.from({ length: 16 }, (_, index) => `PRRT_${index + 1}`);
+    const ids = Array.from({ length: 30 }, (_, index) => `PRRT_${index + 1}`);
+
+    const started = await startResolve({
+      sessionId: SESSION_ID,
+      threads: ids.map((id) => threadOf(id)),
+      pr: PR,
+      batch: batchOf(),
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.name).toBe('Resolve: 30 review comments');
+    expect(args?.sourceThreadIds).toEqual(ids.slice(0, 12));
+    expect(args?.initialPrompt).toContain('Resolve 12 threads');
+    const turns = [];
+    for (
+      let turn = takeLaunchTurn({ launchId: started.launchId });
+      turn !== null;
+      turn = takeLaunchTurn({ launchId: started.launchId })
+    ) {
+      turns.push(turn);
+    }
+    expect(turns.map((turn) => turn.threadIds)).toEqual([ids.slice(12, 24), ids.slice(24)]);
+    expect(turns[1]?.content).toContain('Resolve 6 threads');
+    expect(turns[1]?.content).toContain('each of the 6 thread ids listed above');
+  });
+
+  it('lists every comment of a turn, with its id, in the order the owner picked them', async () => {
+    const { spawnAgent, setAgentConfig } = spawnSpy();
+    const ids = Array.from({ length: 12 }, (_, index) => `PRRT_${index + 1}`);
 
     await startResolve({
       sessionId: SESSION_ID,
@@ -148,11 +180,11 @@ describe('startResolve', () => {
     const args = spawnAgent.mock.calls[0]?.[1];
     expect(args?.sourceThreadIds).toEqual(ids);
     const prompt = args?.initialPrompt ?? '';
-    expect(prompt).toContain('Resolve 16 threads');
+    expect(prompt).toContain('Resolve 12 threads');
     const positions = ids.map((id) => prompt.indexOf(`- thread id: ${id}\n`));
     expect(positions.every((position) => position > -1)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-    expect(prompt).toContain('each of the 16 thread ids listed above');
+    expect(prompt).toContain('each of the 12 thread ids listed above');
   });
 
   it('keeps the fixup style and the prior work when a run is given earlier context', async () => {

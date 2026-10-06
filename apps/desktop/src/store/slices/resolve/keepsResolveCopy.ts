@@ -1,4 +1,5 @@
 import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
+import { hasLaunchTurns } from './launchTurns';
 import { attemptsOfLaunch, launchKeyOf } from './resolveLaunch';
 
 type Params = {
@@ -8,6 +9,9 @@ type Params = {
 };
 
 export const keepsResolveCopy = ({ attempt, attempts, rows }: Params): boolean => {
+  if (hasLaunchTurns({ launchId: launchKeyOf({ attempt }) })) {
+    return true;
+  }
   const launch = attemptsOfLaunch({ attempts, launchKey: launchKeyOf({ attempt }) }).filter(
     (item) => item.agentId === attempt.agentId,
   );

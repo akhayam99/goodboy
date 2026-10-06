@@ -14,7 +14,7 @@ onto its own paragraph.
 
 ## Goodboy v0.20.0
 
-One agent works through a pull request's comments, every comment has one of five words, and Fix, answer and accept work on many comments at once.
+One agent works through a pull request's comments, every comment in a fix run has one of five words, and Fix, answer and accept work on many comments at once.
 
 This version updates your data in one direction. To go back to 0.19, restore the backup Goodboy made before updating.
 
@@ -27,10 +27,10 @@ Fix on one comment or on many starts one fix run: one agent in one copy of your 
 
 A line under the tabs says what the run is doing, counts its comments by word, each count a filter for the list, and shows the model with Open transcript and Stop. A run starts on the model set for resolving, never on the one you used last. A model you pick in the panel holds for the session, and the panel says so.
 
-#### Five words for every comment
+#### Five words for comments in a fix run
 <!-- gb area=review -->
 
-A comment reads Working, Needs you, Ready, Couldn't fix or Done, in the list, on the Branch page, in Activity and in Needs you. Done keeps a quiet word after it: Pushed, Resolved on GitHub, Skipped or Answered. The list groups by the words, Needs you on top and Done closed.
+A comment in a fix run reads Working, Needs you, Ready, Couldn't fix or Done, in the list, on the Branch page, in Activity and in Needs you. A comment that is not in a fix run reads Open. Done keeps a quiet word after it: Pushed, Resolved on GitHub, Skipped or Answered. The list groups by the words, Needs you on top and Done closed.
 
 Activity shows one row per fix run, and Needs you shows one row per pull request. A comment that needs you or could not be fixed also marks the session as needing you and sends one notification.
 
