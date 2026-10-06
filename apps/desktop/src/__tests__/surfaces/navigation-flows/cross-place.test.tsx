@@ -215,19 +215,41 @@ const focusOwner = (): FocusOwner => {
 type LeftEdge = {
   readonly main: Element | null;
   readonly pageColumn: string | null;
+  readonly columns: ReadonlyArray<string>;
 };
+
+const visiblePageColumns = (): ReadonlyArray<HTMLElement> =>
+  [...document.querySelectorAll<HTMLElement>('main [data-drawer-main] [data-page-column]')].filter(
+    (column) => column.closest('[inert]') === null && column.closest('.invisible') === null,
+  );
+
+const columnShape = (column: HTMLElement): string => column.getAttribute('data-width') ?? '';
 
 const leftEdge = (): LeftEdge => {
   const main = document.querySelector('main [data-drawer-main]');
+  const columns = visiblePageColumns();
   return {
     main,
-    pageColumn: main?.querySelector('[data-page-column]')?.className ?? null,
+    pageColumn: columns[0]?.className ?? null,
+    columns: columns.map(columnShape),
   };
 };
 
-const expectLeftAligned = (): void => {
-  const { pageColumn } = leftEdge();
-  expect(pageColumn ?? '').not.toMatch(/\bmx-auto\b/);
+const expectCentredColumns = (): void => {
+  const { columns } = leftEdge();
+  expect(columns.length).toBeGreaterThan(0);
+  for (const shape of columns) {
+    expect(['column', 'measure', 'full']).toContain(shape);
+  }
+};
+
+const expectAskInColumn = (): void => {
+  const end = document.querySelector('main [data-slot="trail-end"]');
+  const column = end?.closest<HTMLElement>('[data-page-column]') ?? null;
+  expect(column, 'the Ask button sits in the trail column').not.toBeNull();
+  expect(column?.querySelector('[data-testid="ask-trail-button"]')).not.toBeNull();
+  expect(end?.parentElement).toBe(column);
+  expect(end?.nextElementSibling).toBeNull();
 };
 
 const expectDrawerBesideContent = ({
@@ -239,7 +261,8 @@ const expectDrawerBesideContent = ({
 }): void => {
   const now = leftEdge();
   expect(now.main, `${kind} keeps the page mounted`).toBe(edge.main);
-  expect(now.pageColumn, `${kind} keeps the left edge`).toBe(edge.pageColumn);
+  expect(now.pageColumn, `${kind} keeps the page column`).toBe(edge.pageColumn);
+  expect(now.columns, `${kind} keeps every column where it was`).toEqual(edge.columns);
   const aside = document.querySelector('main aside[aria-label="Side panel"]');
   expect(aside?.getAttribute('data-drawer-mode'), kind).not.toBe('closed');
   expect(
@@ -581,6 +604,72 @@ describe('moving across every place keeps one frame', () => {
   );
 
   it(
+    'keeps the centred column at the same x across Overview, Runs, Agents, Artifacts and Settings, drawer or not',
+    async () => {
+      const { sessionId } = await boot({ seed: 'pr' });
+      seedShipAFix();
+      await click(sessionRow(sessionId));
+
+      const PAGES = ['Overview', 'Runs', 'Agents', 'Artifacts'] as const;
+      const trailColumn = (): string =>
+        document.querySelector('main [data-slot="trail-bar"] [data-page-column]')?.className ?? '';
+      const columnTiers = (): ReadonlySet<string> =>
+        new Set(
+          visiblePageColumns()
+            .filter((column) => column.getAttribute('data-width') !== 'full')
+            .map((column) => columnShape(column)),
+        );
+
+      const walk = async (withDrawer: boolean): Promise<ReadonlyArray<string>> => {
+        const trails: Array<string> = [];
+        for (const page of PAGES) {
+          await click(pageRow(page));
+          expect(currentPage()).toBe(page);
+          if (withDrawer) {
+            act(() =>
+              useAppStore.getState().openDrawer({
+                kind: 'context',
+                sessionId,
+                payload: { tab: 'goal', view: 'current' },
+              }),
+            );
+            await settle();
+            expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
+          }
+          expectCentredColumns();
+          expectAskInColumn();
+          for (const shape of columnTiers()) {
+            expect(['column', 'measure'], `${page} centres its column`).toContain(shape);
+          }
+          trails.push(trailColumn());
+          if (withDrawer) {
+            await escape();
+          }
+        }
+        return trails;
+      };
+
+      const atRest = await walk(false);
+      expect(new Set(atRest).size, 'the trail column keeps one shape without a drawer').toBe(1);
+      const withDrawer = await walk(true);
+      expect(new Set(withDrawer).size, 'the trail column keeps one shape with a drawer').toBe(1);
+      expect(withDrawer[0], 'a drawer slides the column, it does not reshape it').toBe(atRest[0]);
+
+      door('settings').focus();
+      await click(door('settings'));
+      expect(studio()).toBe('settings');
+      const settingsColumns = [
+        ...document.querySelectorAll<HTMLElement>('[data-studio-slot] [data-page-column]'),
+      ].filter((column) => column.getAttribute('data-width') !== 'full');
+      expect(settingsColumns.length).toBeGreaterThan(0);
+      for (const column of settingsColumns) {
+        expect(['column', 'measure']).toContain(column.getAttribute('data-width'));
+      }
+    },
+    JOURNEY_MS,
+  );
+
+  it(
     'walks one app instance across the column, every page, drawer, studio and the palette',
     async () => {
       const { sessionId } = await boot({ seed: 'pr' });
@@ -600,7 +689,10 @@ describe('moving across every place keeps one frame', () => {
         await click(pageRow(page));
         expectPlace({ session: sessionId, lens, studio: null, doors: [] });
         expect(currentPage()).toBe(page);
-        expectLeftAligned();
+        expectCentredColumns();
+        expectAskInColumn();
+        const trail = document.querySelector('main [data-slot="trail-bar"] [data-page-column]');
+        expect(trail?.getAttribute('data-width')).toBe(lens === 'branch' ? 'full' : 'column');
       }
 
       await click(pageRow('Branch'));

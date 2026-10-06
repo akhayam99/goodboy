@@ -73,3 +73,40 @@ type MainParams = {
 
 export const mainWidthOf = ({ columnWidth, mode, drawerWidthPx }: MainParams): number =>
   mode === 'push' ? columnWidth - drawerTrackOf(drawerWidthPx) : columnWidth;
+
+export const COLUMN_FRAME = 1008;
+export const MEASURE_FRAME = 768;
+
+export type PageTier = 'column' | 'measure' | 'full';
+
+type PageBoxParams = {
+  readonly paneWidth: number;
+  readonly tier: PageTier;
+  readonly drawerWidthPx: number | null;
+  readonly sizing?: DrawerSizing;
+};
+
+export type PageBox = {
+  readonly left: number;
+  readonly right: number;
+  readonly width: number;
+};
+
+export const pageBoxOf = ({
+  paneWidth,
+  tier,
+  drawerWidthPx,
+  sizing = 'default',
+}: PageBoxParams): PageBox => {
+  const mode =
+    drawerWidthPx === null
+      ? 'closed'
+      : drawerModeOf({ isOpen: true, sizing, columnWidth: paneWidth, drawerWidthPx });
+  const space = mainWidthOf({ columnWidth: paneWidth, mode, drawerWidthPx: drawerWidthPx ?? 0 });
+  if (tier === 'full') {
+    return { left: 0, right: space, width: space };
+  }
+  const width = Math.min(tier === 'column' ? COLUMN_FRAME : MEASURE_FRAME, space);
+  const left = (space - width) / 2;
+  return { left, right: left + width, width };
+};

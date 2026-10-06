@@ -180,7 +180,7 @@ describe('content column contract', () => {
     expect([...stalePx, ...staleCentred]).toEqual([]);
   });
 
-  it('reads prose at one measure and anchors every column on the left edge', () => {
+  it('reads prose at one measure and keeps every column on the shared frame variables', () => {
     const styles = read('styles.css');
 
     expect(styles).toMatch(/--measure:\s*720px;/);
@@ -189,6 +189,30 @@ describe('content column contract', () => {
       .map(toKey)
       .filter((key) => /max-w-\[var\(--measure\)\]/.test(read(key)));
     expect(prose.length).toBeGreaterThan(0);
+  });
+
+  it('centres column and measure in PageColumn alone, never full, never per view', () => {
+    const source = readFileSync(
+      join(SRC, '..', '..', '..', 'packages/ui/src/components/PageColumn.tsx'),
+      'utf8',
+    );
+
+    expect(source).toMatch(/column: `mx-auto max-w-\[var\(--column-frame\)\]/);
+    expect(source).toMatch(/measure: `mx-auto max-w-\[var\(--measure-frame\)\]/);
+    expect(source).toMatch(/full: GUTTER_CLASS,/);
+    const centred = walk(FEATURES)
+      .map(toKey)
+      .filter((key) => /\bmx-auto\b/.test(read(key)) && !CENTRED_ALLOWLIST.has(key));
+    expect(centred).toEqual([]);
+  });
+
+  it('puts the Ask button inside the trail column, on the same rail as the crumbs', () => {
+    const source = read('features/session/components/SessionWorkspace/parts/TrailBar.tsx');
+    const column = source.slice(source.indexOf('<PageColumn'), source.indexOf('</PageColumn>'));
+
+    expect(column).toContain('{end}');
+    expect(column).toContain('<SessionCrumbs');
+    expect(source.slice(source.indexOf('</PageColumn>'))).not.toContain('{end}');
   });
 
   it('puts the workspace chat header, thread and composer on the page column', () => {
