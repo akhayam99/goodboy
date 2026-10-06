@@ -1629,14 +1629,15 @@ studio body puts one beside its list. It opens at 400px, resizes from 340 to
 (`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
 ends) for every drawer. It is a
 floating card: 8px from the top, right and bottom edges and from the column,
-radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. The drawer opens
-in the space on the right of the content: every page is anchored on one left
-edge, so opening a drawer never moves the main content to the left, it only
-takes the room on the right. When the main area minus the drawer's track
+radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. A drawer opens
+beside the page: column and measure pages are centred, and the column slides
+left to re-centre in the space left of the drawer (full tier work surfaces
+keep their left edge and give up their right). When the main area minus the drawer's track
 (insets counted) and the two gutters would leave it under 560px, the card lies
 over the right of the main area with a shadow and no scrim, and the main stays
 interactive; pushing, it has no shadow. Closed,
-its track is 0px wide and `inert`. Opening pushes the track open in 220ms while
+its track is 0px wide and `inert`. Opening and closing move the track in 180ms ease-out (none under reduced
+motion), and the centred column slides with it while
 the card slides 12px in; over the page it slides 16px in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never touches the sidebar
 preference.

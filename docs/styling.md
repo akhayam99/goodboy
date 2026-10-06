@@ -135,9 +135,9 @@ size.
 
 The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
 area beside the page, 0px wide while closed and the saved width plus two 8px
-insets while open. It opens in the space on the right of the content: the page
-is anchored left, so opening a drawer never moves the content, it only takes
-space from the right. When pushing would leave the main area under 560px plus
+insets while open. It opens beside the page: the main area gives up the drawer's track and the
+centred column slides left to re-centre in what is left of it (see The content
+column). When pushing would leave the main area under 560px plus
 its 48px of gutters (the drawer's track, insets included, is counted), the
 drawer lies over the page instead. `sizing` on `DrawerColumn` is `default` (the
 saved width, with the resize handle), `half` (half of the column, capped so the
@@ -169,31 +169,54 @@ the right of it, never the session sidebar.
 ## The content column
 
 Every main pane renders through `PaneShell`, and its crumb, header and body
-sit in one `PageColumn`. Every page starts at the same x: the column is
-anchored left next to the session column, never centred, so moving from
-Overview to Branch to Runs to Artifacts to a settings page never shifts the
-first letter. The gutter is 24px a side, 16px once the pane is under 720px
-wide. The gutter switch is a container query on the pane (`@container` on the
-`PaneShell` root, `@max-[720px]:` on the column), never a media query on the
-window, because the space that counts is the pane's.
+sit in one `PageColumn`. At rest the column is centred in the pane, with equal
+space either side: Overview, Runs, Agents, Artifacts, the session pages, Chat,
+Workflows, Inbox detail, settings pages, agent and pull request detail. The
+header, the trail band (the `Session` crumbs and the Ask button), the body and
+the footer share the same column edges, so moving from Overview to Runs to
+Agents to a settings page never shifts the first letter. The Ask button is the
+last item of the trail's `PageColumn`: its right edge is the column's right
+edge, the header actions' right edge. The gutter is 24px a side, 16px once the
+pane is under 720px wide. The gutter switch is a container query on the pane
+(`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
+media query on the window, because the space that counts is the pane's.
 
-Three width tiers, one rule each, all on that one left edge:
+Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
+on `full`). No view centres itself.
+
+Three width tiers, one rule each:
 
 | Tier    | Width                 | Used by                                                                                                                                          |
 | ------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | measure | `--measure`, 720px    | prose: transcript assistant text, plan prose, comment and note bodies, a Brief, Chat answers (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
-| column  | `--column-max`, 960px | the page column: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `PANE_RHYTHM.column`)               |
-| full    | the pane, fluid       | work surfaces: every Branch tab, the diff, File versions, the terminal, Inbox lists (`PageColumn width="full"`)                                  |
+| column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `PANE_RHYTHM.column`)      |
+| full    | the pane, fluid       | work surfaces, from the pane's left edge: every Branch tab, File versions, the terminal, Inbox lists, the Board (`PageColumn width="full"`)      |
+
+Prose keeps its 720px measure aligned left inside the column. The `full` tier
+is the only exception to centring and ignores the slide below: its right edge
+follows the drawer exactly as before.
+
+**The drawer slide.** When a right drawer opens (Context, Ask, a transcript, an
+artifact document, a plan) the main area gives up the drawer's track and the
+centred column re-centres in the space left of the drawer, keeping its full
+width while that space is wide enough. It shrinks only below its frame, down to
+the column minimum (560px plus gutters); under that the drawer lies over the
+page, as before. Closing the drawer slides the column back. It is one 180ms
+ease-out width transition on the drawer's track, so the column's centre follows
+it in the same frames; it is off under `prefers-reduced-motion`. A route change
+never moves the column, with or without a drawer. The pure geometry is
+`pageBoxOf` in `packages/ui/src/drawerGeometry.ts`.
 
 A margin rail (`--margin-rail`, 288px) sits on the right of a work surface
 from 1280px of pane: Branch thread properties.
 
-No view picks its own width. The column changes only when the window changes
-or the right drawer opens, never because you moved from Overview to Review to a
-chat. `shared/layout/columnContract.test.ts` fails under `features/` on any
+No view picks its own width or its own centring. The column changes only when
+the window changes or the right drawer opens, never because you moved from
+Overview to Review to a chat. `shared/layout/columnContract.test.ts` fails under `features/` on any
 `max-w-[Nch]`, any `max-w-[Npx]` (the palette and the onboarding wizard are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
-the Board frame and two centred empty states, `PANE_RHYTHM.measure`,
+the Board frame and two centred empty states (centring is `PageColumn`'s job,
+and the test asserts it centres `column` and `measure` and not `full`), `PANE_RHYTHM.measure`,
 `DIFF_CAPPED_COLUMN_CLASS` and `max-w-xl` to `max-w-7xl` (with a narrow list
 for cards that still use `max-w-xl`), and on a lens the session workspace
 mounts without `PaneShell`, or a root that draws a crumb of its own. The
@@ -207,8 +230,8 @@ under the header (properties, a banner, an approval rail, the agent's next
 action) is the first block of the body. A body that owns its scroll, such as a
 transcript or a diff, asks for `scroll="self"`.
 
-A Session or Agent page reads as one column: every child, banner, card and
-footer sits on the same edges. Only prose keeps the 720px measure, aligned
+A Session or Agent page reads as one centred column: every child, banner, card
+and footer sits on the same edges. Only prose keeps the 720px measure, aligned
 left inside the column. Tables, code and cards take the whole column.
 
 **Work** pages (the tabs of the Branch) take the whole width of the pane: Files
