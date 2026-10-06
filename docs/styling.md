@@ -103,19 +103,20 @@ and the contrast floors are in
 class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
 
 `bg-chrome` is the app frame and nothing else: `AppShell` paints it on the
-window and the sidebar column, and `AppTopBar` and `AppFooter` paint their
-bars with it. The main pane stays on `bg-background`, one step in front.
+window and the left column, and `AppTopBar` (and `AppFooter` under Classic
+bars) paint their bars with it. The main pane stays on `bg-background`, one step in front.
 `no-token-bypass.test.ts` fails a `bg-chrome` anywhere else.
 
 ## The window grid
 
-Columns, resize handles and the footer are areas of **one** CSS grid. Their
+Columns, resize handles, the studio slot and (under Classic bars) the footer
+are areas of **one** CSS grid. Their
 widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and
 nothing inside it needs to know. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
 
-Top bar, sidebar and footer are one chrome field, and `main` is a **sheet** on
+Top bar and left column are one chrome field, and `main` is a **sheet** on
 it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`). A sheet corner rounds only
 where the chrome wraps it on two sides: with the sidebar, the top-left and
 bottom-left corners take `rounded-frame` (10px) and one uniform 1px
@@ -251,7 +252,7 @@ structure. Titles, breadcrumbs, toolbars and error banners live in a
 ## Dividers separate chrome from content, never content from content
 
 Chrome and content separate with the edge of the content sheet, not with a
-line: the top bar, the footer and a studio rail draw no horizontal `Divider`
+line: the top bar, the left column and a studio rail draw no horizontal `Divider`
 against the content, and the board header sits `gap-6` above its columns. A
 `Divider` marks what is left of the boundary between chrome and a pane's
 content, never a boundary inside content. Allowed: a vertical divider inside
@@ -321,11 +322,12 @@ token and a row in the table.
 That order is a precedence chain, not taste. Each step must sit above the one
 under it, because it can be opened while that one is still open. **A control
 earns a name here only when its trigger stays clickable under a fullscreen
-studio**, so it can be opened while that studio is up. The footer's popovers
-qualify, because the studio leaves the bars clickable. Anything narrower keeps
-the nearest local `z-10`..`z-40`. That value is scoped to one card, toolbar or
-pane, and never compared against a full-page studio. This is why the footer
-builds its own popover instead of raising the shared one. Many pane menus use
+studio**, so it can be opened while that studio is up. The popovers of the
+top bar and the left column qualify, because a studio leaves both clickable.
+Anything narrower keeps the nearest local `z-10`..`z-40`. That value is scoped
+to one card, toolbar or pane, and never compared against a full-page studio.
+This is why the chrome builds its own popovers instead of raising the shared
+one. Many pane menus use
 the shared popover, and raising it would raise all of them at once.
 
 ## Focus rings

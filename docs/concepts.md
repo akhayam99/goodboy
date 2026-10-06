@@ -1357,7 +1357,8 @@ task up again in Goodboy.
   notes page. The old words are ⌘K aliases or retired names.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
-  request. **Connect an integration** is the footer button that adds a tool.
+  request. **Connect an integration** is the Classic bars footer button that
+  adds a tool; with the column, tools connect from Settings > Integrations.
 - **When to ask** is the setting that decides how often a run stops for you.
   Its top choice is **Run on its own** (it was Autorun and Autonomy).
 - **Needs you** is the one name for anything that waits on you: the top bar

@@ -25,7 +25,7 @@ between them instead of mixing one surface through opacity.
 
 | step | role     | class           | holds                                                 |
 | ---- | -------- | --------------- | ----------------------------------------------------- |
-| 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer, studio rails |
+| 0    | chrome   | `bg-chrome`     | the app frame: top bar, left column and its rail      |
 | 1    | sheet    | `bg-background` | the content sheet, a studio's detail, viewer dialogs  |
 | 2    | panel    | `bg-subtle`     | a drawer that pushes the column                       |
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
@@ -206,14 +206,14 @@ Bare `rounded` comes out at 3.75px on the 15px root, so it is always written
 Five levels plus the tooltip. A level sets surface, shadow, border and radius
 together, and there is no arbitrary shadow.
 
-| level      | surface                          | shadow      | border                        | radius                     | holds                                 |
-| ---------- | -------------------------------- | ----------- | ----------------------------- | -------------------------- | ------------------------------------- |
-| 0 frame    | `chrome`                         | none        | none                          | n/a                        | top bar, sidebar, footer, studio rail |
-| 1 sheet    | `background`                     | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail                |
-| 2 band     | `fill` (band), `subtle` (drawer) | none        | none                          | `lg` band, `frame` drawer  | groups, a drawer that pushes          |
-| 3 card     | `elevated`                       | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`               |
-| 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs      |
-| 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                              |
+| level      | surface                          | shadow      | border                        | radius                     | holds                            |
+| ---------- | -------------------------------- | ----------- | ----------------------------- | -------------------------- | -------------------------------- |
+| 0 frame    | `chrome`                         | none        | none                          | n/a                        | top bar, left column, rail       |
+| 1 sheet    | `background`                     | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
+| 2 band     | `fill` (band), `subtle` (drawer) | none        | none                          | `lg` band, `frame` drawer  | groups, a drawer that pushes     |
+| 3 card     | `elevated`                       | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`          |
+| 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
+| 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                         |
 
 A drawer in overlay adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
@@ -964,7 +964,7 @@ props and reads no store, so it also renders inside `ErrorBoundary` after the
 app below it has crashed.
 
 - **Variants**: `floating` is level 4 (`floating`, `shadow-lg`, `border`,
-  `rounded-lg`), placed by the host above the footer chip with no overlay.
+  `rounded-lg`), placed by the host at the bottom of the window with no overlay.
   `inline` drops the shadow onto `subtle`, for the crash and startup screens.
 - **Head**: the bug glyph, a `text-heading` title, an optional type control (a
   `chip` Listbox) and an Esc `KbdPill` when the sheet can close.
@@ -984,6 +984,36 @@ app below it has crashed.
   `text-meta` on the left, Add detail while the detail is closed, and the
   primary button whose label names the destination, with its shortcut in an
   on-tone pill.
+
+## The left column
+
+`AppShell` lays out one left column on the chrome, a resize handle and the
+content sheet. The column is 240px by default, resizable from 200 to 400
+(`LEFT_SIDEBAR_*`), and its one reduced state is a 44px rail
+(`COLLAPSED_RAIL_WIDTH`). The desktop fills it with `SideColumn`; the rules for
+what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surfaces.
+
+| part        | shape                                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| toggle      | a size-8 icon button centred in a 44px box, on the same axis as the workspace tile and the rail        |
+| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary |
+| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover      |
+| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame               |
+| foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                       |
+| rail button | a size-8 icon button with the word and shortcut in a right-side `Tooltip`                              |
+
+Rows sit 2px apart (`gap-0.5`); the doors start 4px under New session. The
+column swaps its content only for Settings, as two layers in place that
+cross-fade (opacity and a 6px slide, 160ms, `motion-safe` only); the hidden
+layer is `inert`. A studio never covers it: `studioCoversLeft={false}` puts the
+studio slot in the `main` area as its own wrapped sheet (`bg-background`, the
+`wrapped` sheet edge), and `StudioFrame` with `placement="content"` draws its
+band on that sheet instead of on the chrome.
+
+A list that belongs to a studio's page (Chat's chats, Changelog's releases)
+uses `StudioRailLayout` with `placement="page"`: the list sits on the page
+background and the resize handle draws the only line between it and the
+detail.
 
 ## Pane anatomy
 

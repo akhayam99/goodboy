@@ -2,6 +2,7 @@ import { Band } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { UpdatesSection } from './UpdatesSection';
 import { ThemePreferenceField } from './ThemePreferenceField';
+import { ClassicBarsField } from './ClassicBarsField';
 import { OpenWithBand } from './OpenWithBand';
 import { SearchIndexBand } from './SearchIndexBand';
 
@@ -19,6 +20,7 @@ export const AppGeneralSection = () => {
       >
         <div className="flex flex-col">
           <ThemePreferenceField />
+          <ClassicBarsField />
         </div>
       </Band>
 

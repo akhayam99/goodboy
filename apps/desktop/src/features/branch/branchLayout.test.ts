@@ -43,7 +43,7 @@ describe('branchLayoutOf', () => {
       sidebarPx: LEFT_SIDEBAR_MAX,
       isDrawerOpen: true,
     });
-    expect(widthPx).toBe(384);
+    expect(widthPx).toBe(624);
     expect(branchLayoutOf({ widthPx })).toBe('single');
   });
 
@@ -65,13 +65,23 @@ describe('branchLayoutOf', () => {
     expect(branchLayoutOf({ widthPx })).toBe('three');
   });
 
-  it('falls back to one column when a pushed drawer opens beside a 1600px window', () => {
+  it('keeps the list beside the thread when a pushed drawer opens beside a 1600px window', () => {
     const widthPx = paneWidthOf({
       windowPx: 1600,
       sidebarPx: LEFT_SIDEBAR_DEFAULT,
       isDrawerOpen: true,
     });
-    expect(widthPx).toBe(844);
+    expect(widthPx).toBe(944);
+    expect(branchLayoutOf({ widthPx })).toBe('two');
+  });
+
+  it('falls back to one column when a pushed drawer opens beside the widest column at 1600px', () => {
+    const widthPx = paneWidthOf({
+      windowPx: 1600,
+      sidebarPx: LEFT_SIDEBAR_MAX,
+      isDrawerOpen: true,
+    });
+    expect(widthPx).toBe(784);
     expect(branchLayoutOf({ widthPx })).toBe('single');
   });
 });

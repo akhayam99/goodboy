@@ -1,15 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppFooter } from '../../../AppFooter';
 import { AppTopBar } from '../../../AppTopBar';
 import { NoWorkspaceScreen } from '../../../AppEmptyState';
 import { KeepAliveWorkSurface } from '../../../KeepAliveWorkSurface';
+import { ShellLeft } from '../../../SideColumn/ShellLeft';
+import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
+import { useGoToBoard } from '../../../../hooks/useGoToBoard';
 import { shellArrangement } from '../../../../shellArrangement';
 import { StageBoard } from '../../../../../features/workspace/components/StageBoard';
-import { SessionNavSidebar } from '../../../../../features/session/components/SessionNavSidebar';
-import { CollapsedRail } from '../../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { useCurrentSession, useCurrentWorkspace, useSessions } from '../../../../../store';
+import { sceneShellMode } from '../sceneShell';
 import { FRAME_CONNECTED } from './frameSeed';
 import { triggerFrameView } from './frameViews';
 
@@ -24,7 +26,15 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const sessions = useSessions();
+  const goToBoard = useGoToBoard();
+  const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
   const isLauncher = view === 'launcher';
+  const arrangement = shellArrangement({
+    hasWorkspace: currentWorkspace !== null,
+    hasActiveSession: currentSession !== null,
+    isSidebarCollapsed: isRailCollapsed,
+    mode: sceneShellMode(),
+  });
   const overlays = useAppOverlays({
     connected: FRAME_CONNECTED,
     currentSession,
@@ -33,7 +43,21 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
     isSessionSidebarCollapsed: isRailCollapsed,
     isWorkspaceLauncherBranch: isLauncher,
     pinSessionSidebar: noop,
+    studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
+    settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsSlot : null,
   });
+  const actions = useMemo<ColumnActions>(
+    () => ({
+      openBoard: goToBoard,
+      openInbox: overlays.openInbox,
+      openChat: overlays.openChat,
+      openWorkflows: overlays.openWorkflows,
+      openSettings: overlays.openSettings,
+      openChangelog: overlays.openChangelog,
+      openShortcuts: overlays.openShortcutHelp,
+    }),
+    [goToBoard, overlays],
+  );
 
   useEffect(() => {
     const id = window.setTimeout(() => triggerFrameView({ view, openers: overlays }), 30);
@@ -44,25 +68,15 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
     return <>{overlays.layers}</>;
   }
 
-  const arrangement = shellArrangement({
-    hasWorkspace: currentWorkspace !== null,
-    hasActiveSession: currentSession !== null,
-    isSidebarCollapsed: isRailCollapsed,
-  });
-
-  const leftSidebar =
-    currentSession === null ||
-    arrangement.leftSlot === 'none' ? undefined : arrangement.leftSlot === 'rail' ? (
-      <CollapsedRail />
-    ) : (
-      <SessionNavSidebar currentSessionId={currentSession.id} />
-    );
-
   const main =
     currentSession !== null ? (
       <KeepAliveWorkSurface sessionId={currentSession.id} isActive />
     ) : currentWorkspace !== null ? (
-      <StageBoard workspaceId={currentWorkspace.id} sessions={sessions} />
+      <StageBoard
+        workspaceId={currentWorkspace.id}
+        sessions={sessions}
+        hasNewSession={arrangement.mode === 'classic'}
+      />
     ) : (
       <NoWorkspaceScreen onAddWorkspace={overlays.openAddWorkspace} />
     );
@@ -70,26 +84,48 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
   return (
     <>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={overlays.openSpend} onOpenScript={noop} />}
-        footer={
-          <AppFooter
-            scope={arrangement.footer}
-            target={overlays.footer}
-            connected={FRAME_CONNECTED}
-            onOpenIntegration={overlays.openIntegration}
-            onOpenInbox={overlays.openInbox}
-            onOpenWorkflows={overlays.openWorkflows}
+        topBar={
+          <AppTopBar
+            mode={arrangement.mode}
+            onOpenSpend={overlays.openSpend}
             onOpenImpact={overlays.openImpact}
-            onOpenSettings={overlays.openSettings}
-            onOpenShortcuts={overlays.openShortcutHelp}
-            onOpenChangelog={overlays.openChangelog}
+            onOpenScript={noop}
           />
+        }
+        footer={
+          arrangement.footer === null ? undefined : (
+            <AppFooter
+              scope={arrangement.footer}
+              target={overlays.footer}
+              connected={FRAME_CONNECTED}
+              onOpenIntegration={overlays.openIntegration}
+              onOpenInbox={overlays.openInbox}
+              onOpenWorkflows={overlays.openWorkflows}
+              onOpenImpact={overlays.openImpact}
+              onOpenSettings={overlays.openSettings}
+              onOpenShortcuts={overlays.openShortcutHelp}
+              onOpenChangelog={overlays.openChangelog}
+            />
+          )
         }
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={leftSidebar}
+        leftSidebar={
+          arrangement.leftSlot === 'none' ? undefined : (
+            <ShellLeft
+              arrangement={arrangement}
+              workspaceId={currentWorkspace?.id ?? null}
+              currentSessionId={currentSession?.id ?? null}
+              isDraftShown={false}
+              actions={actions}
+              onToggle={noop}
+              settingsSlotRef={setSettingsSlot}
+            />
+          )
+        }
         main={<div className="relative h-full w-full">{main}</div>}
         studio={overlays.studio}
+        studioCoversLeft={arrangement.studioCoversLeft}
       />
       {overlays.layers}
     </>

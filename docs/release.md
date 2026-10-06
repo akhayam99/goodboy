@@ -131,7 +131,7 @@ reports show them as the build. A local build has no value and reports `dev`.
 
 On launch, packaged builds check
 `releases/latest/download/latest.json` through `tauri-plugin-updater`. If a
-newer version exists, the footer's Goodboy chip says "Update ready" and its
+newer version exists, the column's Goodboy row says "Update ready" and its
 popover offers "Restart to update", and an "Update to X" chip shows up in
 `WorkspaceLauncher`. Clicking that chip opens an inline confirm anchored to it
 (no dialog). It says how many running agents pick up after the restart, links

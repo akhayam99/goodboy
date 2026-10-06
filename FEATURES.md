@@ -52,12 +52,13 @@ Move between the tasks of a workspace, and see from any screen which one needs y
 
 [More on switching between tasks](docs/features/switching.md)
 
-<a id="go-anywhere"></a><a id="command-palette"></a><a id="search"></a><a id="right-click-menus"></a>
+<a id="sidebar"></a><a id="go-anywhere"></a><a id="command-palette"></a><a id="search"></a><a id="right-click-menus"></a>
 
 ## Search and navigation
 
 Find any session, message, plan or action, and reach it from the keyboard.
 
+- Sidebar
 - Go anywhere
 - Command palette
 - Search

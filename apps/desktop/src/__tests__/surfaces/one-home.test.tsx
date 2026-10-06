@@ -22,7 +22,7 @@ import {
   seedSettingsBase,
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { StageBoard } from '../../features/workspace/components/StageBoard';
-import { ProvidersMenu } from '../../app/components/AppFooter/ProvidersMenu';
+import { ProvidersMenu } from '../../app/components/ProvidersMenu';
 import { LinkedWorkChips } from '../../features/session/components/SessionOverviewPane/LinkedWorkChips';
 
 const STAGE_DEFAULT_REASONS = ['no PR yet', 'awaiting review'];

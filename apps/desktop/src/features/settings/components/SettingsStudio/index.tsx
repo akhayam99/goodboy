@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
@@ -11,6 +11,7 @@ import { useAppStore } from '../../../../store';
 import { settingsTrail } from '../../trail/settingsTrail';
 import { AppScopePanel } from './AppScopePanel';
 import { SettingsRail } from './SettingsRail';
+import { SettingsColumnNav } from './SettingsColumnNav';
 import { isNestedScope, settingsScopeAvailable, type NestedScope } from './settingsScopes';
 import { appSectionOf } from './appSections';
 import { workspacePageOf } from './workspacePages';
@@ -26,6 +27,7 @@ type Props = {
   readonly focus: SettingsFocus;
   readonly onScopeChange: (params: SettingsScopeChange) => void;
   readonly onClose: () => void;
+  readonly columnSlot?: HTMLElement | null;
 };
 
 type Slots = Readonly<Partial<Record<NestedScope, HTMLDivElement>>>;
@@ -65,7 +67,13 @@ export const SettingsStudio = ({
   focus: requestedFocus,
   onScopeChange,
   onClose,
+  columnSlot = null,
 }: Props) => {
+  const amendStudio = useAppStore((state) => state.amendStudio);
+  const openFocus = useCallback(
+    (next: SettingsFocus) => amendStudio({ studio: { kind: 'settings', focus: next } }),
+    [amendStudio],
+  );
   const hasWorkspace = currentWorkspace !== null;
   const workspaceId = currentWorkspace?.id ?? null;
   const workspaceName = currentWorkspace?.name ?? null;
@@ -184,6 +192,18 @@ export const SettingsStudio = ({
     );
   };
 
+  const renderRail = ({ isInColumn }: { readonly isInColumn: boolean }): ReactNode => (
+    <SettingsRail
+      scope={availableScope}
+      pageKey={pageKey}
+      groups={groups}
+      nestedSlot={slotRefs.rail}
+      onNestedClosed={({ scope }) => setLeaving((current) => (current === scope ? null : current))}
+      onSelect={onScopeChange}
+      isInColumn={isInColumn}
+    />
+  );
+
   return (
     <StudioShell
       icon={CONCEPT_ICONS.settings}
@@ -203,26 +223,34 @@ export const SettingsStudio = ({
             })}
           />
           <div className="relative flex min-h-0 min-w-0 flex-1">
-            <StudioRailLayout
-              railLabel="Settings scopes"
-              railWidth="narrow"
-              surface="settings"
-              rail={
-                <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
-                  <SettingsRail
-                    scope={availableScope}
-                    pageKey={pageKey}
+            {columnSlot === null ? (
+              <StudioRailLayout
+                railLabel="Settings scopes"
+                railWidth="narrow"
+                surface="settings"
+                rail={
+                  <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
+                    {renderRail({ isInColumn: false })}
+                  </ScrollFade>
+                }
+                detail={renderDetail(requestClose)}
+              />
+            ) : (
+              <>
+                {createPortal(
+                  <SettingsColumnNav
                     groups={groups}
-                    nestedSlot={slotRefs.rail}
-                    onNestedClosed={({ scope }) =>
-                      setLeaving((current) => (current === scope ? null : current))
-                    }
-                    onSelect={onScopeChange}
-                  />
-                </ScrollFade>
-              }
-              detail={renderDetail(requestClose)}
-            />
+                    rail={renderRail({ isInColumn: true })}
+                    onBack={requestClose}
+                    onOpen={openFocus}
+                  />,
+                  columnSlot,
+                )}
+                <div data-settings-detail="" className="flex min-h-0 min-w-0 flex-1 flex-col">
+                  {renderDetail(requestClose)}
+                </div>
+              </>
+            )}
           </div>
           {NESTED_SCOPES.filter((scope) => scope === availableScope || scope === leaving).map(
             renderScope,

@@ -182,6 +182,7 @@ export const MOCK_SCENES = {
   workspace: WorkspaceScene,
   workflow: WorkflowScene,
   shell: ShellScene,
+  'column-rail': () => <ShellScene isRail />,
   'chat-shell': ChatShellScene,
   'chat-room': ChatRoomScene,
   inbox: InboxScene,

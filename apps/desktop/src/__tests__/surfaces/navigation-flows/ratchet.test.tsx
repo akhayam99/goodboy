@@ -87,6 +87,51 @@ const EXEMPT: Readonly<Record<string, string>> = {
   openScribePullRequest: 'the engine pushing and opening the pull request, not a page',
 };
 
+const CHROME_TARGET_CEILING = 24;
+
+const CHROME_ROOTS = [
+  '[data-top-bar]',
+  '[data-side-column] [data-column-layer="nav"]',
+  '[data-slot="trail-bar"]',
+];
+
+const INTERACTIVE = 'button, a[href], input, [role="button"]';
+
+const chromeTargets = (): ReadonlyArray<string> =>
+  CHROME_ROOTS.flatMap((selector) => {
+    const root = document.querySelector(selector);
+    if (root === null) {
+      return [];
+    }
+    return Array.from(root.querySelectorAll<HTMLElement>(INTERACTIVE))
+      .filter((element) => element.closest('[data-column-sessions]') === null)
+      .map((element) => element.getAttribute('aria-label') ?? element.textContent ?? '');
+  });
+
+describe('the frame holds at most 24 chrome targets on a session page', () => {
+  it('counts the top bar, the column outside its sessions list and the trail', async () => {
+    await boot({ seed: 'pr' });
+
+    expect(document.querySelector('[data-side-column]')).not.toBeNull();
+    expect(document.querySelector('[data-app-footer]')).toBeNull();
+    const targets = chromeTargets();
+    expect(targets.length, targets.join(' | ')).toBeLessThanOrEqual(CHROME_TARGET_CEILING);
+    expect(targets.length).toBeGreaterThan(10);
+  }, 30_000);
+
+  it('counts more under the classic bars, which is why the column replaces them', async () => {
+    await boot({ seed: 'pr', bars: 'classic' });
+
+    const classic = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        `[data-top-bar] :is(${INTERACTIVE}), [data-app-footer] :is(${INTERACTIVE}), [data-slot="trail-bar"] :is(${INTERACTIVE})`,
+      ),
+    );
+    expect(document.querySelector('[data-side-column]')).toBeNull();
+    expect(classic.length).toBeGreaterThan(0);
+  }, 30_000);
+});
+
 describe('navigation flow table ratchet', () => {
   it('runs every rows file from a test file of the same name', () => {
     expect(ROW_FILES.length).toBeGreaterThan(0);

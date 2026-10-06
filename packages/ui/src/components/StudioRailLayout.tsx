@@ -14,6 +14,8 @@ export const STUDIO_RAIL_MAX = 420;
 
 type RailWidth = keyof typeof STUDIO_RAIL_WIDTHS;
 
+export type StudioRailPlacement = 'chrome' | 'page';
+
 const RAIL_WIDTH_VAR = '--goodboy-studio-rail-width';
 
 export const studioRailStorageKey = ({ surface }: { readonly surface: string }): string =>
@@ -39,9 +41,17 @@ type Props = {
   readonly railLabel: string;
   readonly railWidth: RailWidth;
   readonly surface: string;
+  readonly placement?: StudioRailPlacement;
 };
 
-export const StudioRailLayout = ({ rail, detail, railLabel, railWidth, surface }: Props) => {
+export const StudioRailLayout = ({
+  rail,
+  detail,
+  railLabel,
+  railWidth,
+  surface,
+  placement = 'chrome',
+}: Props) => {
   const resizable = useResizableWidth<HTMLDivElement>({
     storageKey: studioRailStorageKey({ surface }),
     defaultWidth: STUDIO_RAIL_WIDTHS[railWidth],
@@ -50,13 +60,14 @@ export const StudioRailLayout = ({ rail, detail, railLabel, railWidth, surface }
     cssVar: RAIL_WIDTH_VAR,
   });
   const [activity, setActivity] = useState<ResizeActivity>('idle');
+  const isPage = placement === 'page';
 
   return (
     <div
       ref={resizable.targetRef}
-      data-studio-rail=""
+      data-studio-rail={placement}
       style={resizable.style}
-      className="flex h-full min-h-0 flex-1 bg-chrome"
+      className={cn('flex h-full min-h-0 flex-1', isPage ? 'bg-background' : 'bg-chrome')}
     >
       <aside
         aria-label={railLabel}
@@ -69,16 +80,15 @@ export const StudioRailLayout = ({ rail, detail, railLabel, railWidth, surface }
             {...resizable.handleProps}
             ariaLabel={`Resize ${railLabel.toLowerCase()}`}
             onActivityChange={setActivity}
-            drawsEdge={false}
+            drawsEdge={isPage}
           />
         </div>
       </aside>
       <div
-        data-sheet="wrapped"
-        data-left-resize={activity}
+        {...(!isPage && { 'data-sheet': 'wrapped', 'data-left-resize': activity })}
         className={cn(
           'min-h-0 min-w-0 flex-1 overflow-hidden bg-background',
-          SHEET_CLASSES.wrapped,
+          !isPage && SHEET_CLASSES.wrapped,
         )}
       >
         {detail}

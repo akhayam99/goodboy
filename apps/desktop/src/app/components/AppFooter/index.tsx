@@ -4,9 +4,9 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcon
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { FOOTER_INTEGRATIONS } from './categories';
 import { FooterButton } from './FooterButton';
-import { GoodboyChip } from './GoodboyChip';
+import { GoodboyChip } from '../GoodboyChip';
 import { IntegrationAddPopover } from './IntegrationAddPopover';
-import { ProvidersMenu } from './ProvidersMenu';
+import { ProvidersMenu } from '../ProvidersMenu';
 import { useAppStore } from '../../../store';
 import {
   IntegrationGlyph,
@@ -47,7 +47,7 @@ export const AppFooter = ({
   const currentWorkspaceId = useAppStore((state) => state.currentWorkspaceId);
 
   return (
-    <div className="flex shrink-0 flex-col">
+    <div data-app-footer="" className="flex shrink-0 flex-col">
       <div className="@container/footer grid h-9 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 bg-chrome px-2 [&>*:last-child]:justify-self-end">
         <div className="flex min-w-0 items-center gap-2 overflow-hidden">
           {isWorkspace && (

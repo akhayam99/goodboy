@@ -1,7 +1,7 @@
 # Navigation and information architecture
 
 > **Read this when** deciding what surface exists and where it lives: pane,
-> sidebar, strip, footer, breadcrumb. **Not for** spacing/scroll/overlay
+> column, strip, breadcrumb. **Not for** spacing/scroll/overlay
 > mechanics (`docs/styling.md`) or design intent and tone (`DESIGN.md`).
 
 ## The model
@@ -30,19 +30,24 @@
   Archived chip with an inline Restore. The composer, new agents, workflows and
   project mounts stay disabled with "Restore this session to continue". Nothing
   restores on its own, so a shelved session never spends by itself.
-- **Four surfaces, four jobs, no competition.** The top bar is chrome ("where am I
-  and what is it costing"). The footer is access ("where do I go"). The sidebar is
-  presence ("what else is going on"). The ⌘K palette is transit ("where do I
-  want to be").
+- **Three surfaces, three jobs, no competition.** The top bar is now ("what is
+  happening, where am I and what is it costing"). The left column is access and
+  presence ("where do I go, what else is going on"): its doors and the sessions
+  list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
-  Forward, Board, Chat and Search, clustered in the centre. Destinations (studios)
-  stay in the footer, and the bar never edits a record in place. The spend
-  chip is the one exception: it is state that opens the studio that owns that
-  number, on Impact's Spend tab. Board is not a destination like Inbox: it is
-  home, and home sits with the arrows.
+  Forward and Search, clustered in the centre. It never holds a destination
+  again, with one exception: Impact is an icon door beside the bell, because it
+  reads like a figure, not a place you work in. The spend chip is state that
+  opens the studio that owns that number, on Impact's Spend tab, and the Limits
+  chips open the Providers menu. The bar never edits a record in place.
+- **The column holds every door.** Board, Inbox, Chat and Workflows sit under
+  New session, the Sessions list follows, Settings and the Goodboy row sit at
+  the foot. Board is home and the first door (⌘⇧H). The column is on every
+  screen with a workspace: the board, a session, the draft and every studio but
+  Settings, which swaps the column's content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
-  is always pinned at the left of the top bar. Neither the sidebar nor a studio
+  is always pinned at the left of the top bar. Neither the column nor a studio
   header shows the workspace name again. A studio subtitle is a one-line
   purpose or the installed version, never the workspace.
 - **Pin the structure, flex the density.** A control keeps a fixed position so
@@ -54,15 +59,16 @@
   their exact position. The update control comes and goes with a pending update,
   because an update is an event, not a count.
 - **Hidden is not gone.** Anything the user can put away must come back without
-  a hunt. A hidden sessions column peeks back when the pointer rests at the
-  window edge. Peek floats the one sidebar over the page instead of laying it
-  out.
+  a hunt. ⌘B folds the column into its rail of doors, which keeps every
+  destination; the full column, sessions included, peeks back when the pointer
+  rests at the window edge. Peek floats the one column over the page instead of
+  laying it out.
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
-  is the only emphasised sidebar control. Navigation rows, Board included, are
-  neutral at rest, and so is the footer's Goodboy chip, with one exception: a
-  downloaded update tints the chip into a pill until you act on it. A ready
-  update is an event, not a rest state.
+  is the only emphasised column control. Doors, Board included, are neutral at
+  rest, and so is the column's Goodboy row, with one exception: a downloaded
+  update tints the row into a pill until you act on it. A ready update is an
+  event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
@@ -71,8 +77,8 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a footer button, the Chat button, a ⌘K Go to row, the limits chip and the
-  spend chip. Pressing a door while a studio is open replaces that studio in
+  a column door (Inbox, Chat, Workflows, Settings), the Impact icon, a ⌘K Go to
+  row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
   that opens Settings, a card that opens Impact) stacks (`openStudio`), so Back
@@ -82,13 +88,16 @@
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself.
-- **One selected sign.** The open studio's door, or Board on the board, takes
-  `bg-overlay-selected` with `cursor-default` and `aria-current="page"`, in the
-  top bar and the footer alike. At most one of Board, Chat and the footer doors
-  carries it. A popover trigger (Providers) is never selected: it only reports
+- **One selected sign.** The open studio's door, New session while the draft is
+  open, or Board on the board, takes `bg-selected` with `cursor-default` and
+  `aria-current="page"`, in the column, on the rail and on the Impact icon
+  alike. Every door reads it from one place (`columnPlaceOf`, through
+  `useColumnPlace`), so at most one door carries it; inside a session no door
+  does, because the open session's row is the sign. A popover trigger (the
+  Limits chips, the Goodboy row) is never selected: it only reports
   `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
-  (`Workflows`, `Chat`); the tooltip adds only the shortcut or a count. A narrow
-  window hides the label and keeps the tooltip.
+  (`Workflows`, `Chat`); the hover hint adds only the shortcut.
+  `__tests__/navigation/oneDoor.test.ts` pins the rule.
 
 A second entry point reuses the existing mount and never builds a parallel one.
 The palette dispatches an event that the owning component listens for. The
@@ -330,19 +339,36 @@ never exists on one surface only.
 
 ## Surfaces
 
-**Shell layout.** One strip of chrome sits above, one footer below, and between
-them one sidebar plus main. **There is one app layout and every surface fills its
-slots.** The board, the session and the studios do not define their own frames.
-A surface that needs a different frame changes the shared one instead of forking
-a second. **Two navigation columns at once is not the IA. The right drawer is
-context, never navigation.** A session draws one full-width pane, and its
-navigation lives in that single left sidebar. The right drawer holds reference
-material beside the page and closes with the pane that opened it. The
-sidebar carries presence. It appears when something else is going on. Inside a
-session it follows a saved preference, toggled from the first button of the
-sidebar (or of the collapsed rail, on the same axis) or ⌘B. ⌘B does nothing on
-the board or under a studio, where the sidebar is not there to see. Peek never
-touches that preference.
+**Shell layout.** One strip of chrome sits above, and under it one left column
+plus main. There is no footer. **There is one app layout and every surface fills
+its slots.** The board, the session and the studios do not define their own
+frames. A surface that needs a different frame changes the shared one instead of
+forking a second (`app/shellArrangement`, which every shell mount, the app and
+the mock scenes alike, reads). **Two navigation columns at once is not the IA.
+The right drawer is context, never navigation.** A session draws one full-width
+pane, and its navigation lives in the left column. The right drawer holds
+reference material beside the page and closes with the pane that opened it.
+
+**The column** (`app/components/SideColumn/`) is on every screen with a
+workspace, in the same shape everywhere: the toggle on the traffic-light axis,
+New session (⌘N, the only emphasised control, selected while the draft is open,
+a primary dot and `Draft in progress` while a draft waits), the doors Board
+(⌘⇧H), Inbox, Chat and Workflows as one 28px row each (icon and word, the
+shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
+belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
+and a bug icon that opens the report sheet. Chat's door carries a running dot
+or a new-reply dot. Before any workspace exists the column keeps only its app
+half: Settings, the Goodboy row and the bug. The column is 240px by default and
+resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
+width resets once). Its first button or ⌘B folds it, on every screen, into the
+rail; the choice is saved and peek never touches it.
+
+**Classic bars.** Settings > App > General > Classic bars (setting
+`shell.classicBars`, off by default) brings back the 0.20.0 frame: Board and
+Chat in the top bar, the footer with its doors and integration glyphs, the
+sessions sidebar only inside a session, studios covering it. It ships with
+0.21.0 and leaves in a later release; the tests of exits, doors and restore run
+on both arrangements while it exists.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
@@ -353,18 +379,21 @@ hide animation or overlay can move it.
 **The columns** are one grid at saved widths, clamped when read.
 
 - **A column has one reduced state, and it is never a narrower copy of
-  itself.** Hiding a column sets it and its handle to zero width and marks the
-  aside `inert`. A zero-width column that still takes focus is a keyboard
-  trap. Narrowing to a rail is allowed only where the content still works at
-  rail width. Where peek already answers "let me glance at it", a rail would be
-  a second copy of the same list, so it is not added. The shell primitive can
-  lay out more reduced states than the product uses. Which one a column gets is
-  decided here, not by what the primitive offers.
+  itself.** The left column's one reduced state is the 44px rail of doors
+  (`ColumnRail`): the toggle, New, Board, Inbox, Chat and Workflows as icons
+  with their names and shortcuts in tooltips, then Settings, the bug and the
+  Goodboy mark at the bottom. It works at rail width because it holds doors,
+  not the list; the sessions list comes back through the peek. Hiding a column
+  outright sets it and its handle to zero width and marks the aside `inert`: a
+  zero-width column that still takes focus is a keyboard trap. The shell
+  primitive can lay out more reduced states than the product uses. Which one a
+  column gets is decided here, not by what the primitive offers.
 - **The overlay slots sit inside the grid, not above it.** The peek spans the
   work row, so it can hover over main without taking layout space. The studio
-  slot spans the same row, sidebar included, and sits above the peek. A studio
-  covers the columns between the bars, never the bars, and reaches the bottom
-  edge when the footer is hidden.
+  slot covers the content area only (`studioCoversLeft={false}`), as its own
+  sheet, so the column stays live beside every studio; the peek is drawn after
+  it, so a peeked column floats over a studio too. A studio never covers the
+  top bar.
 
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
@@ -402,11 +431,13 @@ Every row carries a `ToneBar`, the same tone primitive as its card
 (`sessionTone`), never only running and needs-you rows. Nothing the row knows
 hides in a tooltip.
 
-**Peek is a way of showing the sidebar, not a second sidebar.** The overlay
-renders the same sidebar component, and the codebase has one sessions list.
-Peek is wider than the pinned column. The extra width applies at read time, so
-widening the peek never moves the column. It opens after a short rest at the
-screen edge, so a graze does not open it.
+**Peek is a way of showing the column, not a second column.** The overlay
+renders the same `SideColumn` (through `ShellLeft`), and the codebase has one
+sessions list. Only the pinned column's Goodboy row opens its menu by itself
+and reports updates; the peeked copy is quiet. Peek is wider than the pinned
+column. The extra width applies at read time, so widening the peek never moves
+the column. It opens after a short rest at the screen edge, so a graze does not
+open it.
 
 **The session overview is the reference page.** It shows the whole surface
 grammar on one screen, so read it before designing a new surface. Here is its
@@ -424,10 +455,10 @@ surface itself shows urgency, never a badge parked beside it.
 
 **New session is a draft, not a session.** New, ⌘N, the board, the palette
 and the checklist open the `New session` draft (the `session-draft` place,
-address `new`). Nothing is written: no row in the database, the sidebar or
+address `new`). Nothing is written: no row in the database, the column or
 the board. The trail and the title say `New session`, the title is faint and
 cannot be renamed, and there is no `⋯`, no chip and no projects section. The
-sidebar's New button stays selected while the draft is open. Each workspace
+column's New session row stays selected while the draft is open. Each workspace
 keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
 leaving it keeps it intact, New brings it back, and the button shows a primary
 dot with `Draft in progress` while a written draft waits. `Discard draft` in
@@ -656,7 +687,7 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.
   The first segment of a studio has no menu because studios change from the
-  footer. It is a button only when that studio has a start to return to.
+  column. It is a button only when that studio has a start to return to.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
   `isAgentFinished` makes), and a check on the current row, which is there even
@@ -680,7 +711,7 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
 
 ## Top bar
 
-The top bar says what is happening now. The footer takes you to places.
+The top bar says what is happening now. The column takes you to places.
 Preferences live in Settings. Each item has one home; anything else that shows
 it is a signal that links there.
 
@@ -696,20 +727,18 @@ outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
 - Left: workspace identity. It has a 200px limit and truncates, with the full
-  name in its tooltip. The sidebar toggle lives in the sidebar, not here.
+  name in its tooltip. The sidebar toggle lives in the column, not here.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
   (24px icons) name their destination in the tooltip (`Back to Review ·
 {session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
-  empty, and open the last 12 entries on right click or a 400ms hold. `Board`
-  is `SquareKanban` plus the word, 24px high like the search: on the board it
-  is pressed (`aria-current="page"`, `You're on the board`) and does nothing;
-  over a studio on the board it closes the studio and is not pressed; in a
-  session it navigates to the board as a history entry. ⌘⇧H does the same.
-  `Chat` sits right of `Board` in the same shape (`MessageCircle` plus the
-  word) and is a door to the `chat` studio on a new chat; while that studio is
-  open it is pressed and does nothing. Its name is always `Chat`, and the
-  tooltip adds the running count or `New reply`. It only shows when a workspace is open. The command center opens
-  the palette and shows ⌘K; it never takes typing itself. In the palette,
+  empty, and open the last 12 entries on right click or a 400ms hold. Board and
+  Chat left the bar for the column (under Classic bars they come back here, in
+  their old shape). Board, the column's first door, is pressed
+  (`aria-current="page"`) on the board and does nothing; over a studio on the
+  board it closes the studio; in a session it navigates to the board as a
+  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on a
+  new chat; its row carries a running dot or a new-reply dot. The command
+  center opens the palette and shows ⌘K; it never takes typing itself. In the palette,
   every search with text and no prefix starts with `Ask in Chat`, which opens
   a new chat with the query as its first message; a query that reads like a
   question (ends with `?` or has four words or more) has it picked, a shorter
@@ -735,12 +764,19 @@ covered.
   the provider's most used window; the number shows from 80%, `Out` with the
   reset day at 100%, a clock marks data older than 30 minutes or a window that
   reset since, and a dashed track means no data. The card tooltip always
-  carries every window, its percentage and its reset. A click opens Settings >
-  Providers & models on that provider, scrolled to Usage, and the chip stays
-  pressed while that page is open. The strip is a toolbar: arrow keys move
-  between chips. With no provider connected the strip is one `Connect a
-provider` chip. A bar in the chrome is always a provider window; money is
-  always a figure. The bell opens the notification popover.
+  carries every window, its percentage and its reset. A click on any chip, or
+  on a provider under `+N`, opens the Providers menu anchored under the strip
+  (`LimitsProvidersMenu`, the same `ProvidersMenuPanel` the classic footer
+  opens): the policy list, Connect for each CLI provider that is missing, and
+  Manage providers. Usage stays in the chip tooltip and in Settings >
+  Providers & models. Without a workspace a chip still opens that usage page.
+  The strip is a toolbar: arrow keys move between chips. With no provider
+  connected the strip is one `Connect a provider` chip that pulses and opens
+  the same menu, and nothing shows while providers are still being detected.
+  A bar in the chrome is always a provider window; money is always a figure.
+  Then the theme toggle, the Impact icon (a door to the Impact studio on its
+  Overview tab, pressed while it is open, tooltip `Impact`) and the bell, which
+  opens the notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
@@ -753,9 +789,9 @@ ask` (wide it adds `in {workspace}`), and
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
-The traffic lights, identity, the movement cluster (Board and Chat keep their words),
-the command center, the needs-you count, the
-spend figure, the first Limits chip and the bell never hide. A Limits chip is
+The traffic lights, identity, the movement cluster, the command center, the
+needs-you count, the spend figure, the first Limits chip, Impact and the bell
+never hide. A Limits chip is
 the provider glyph and two bars, with no card, label or number around it; the
 percentage lives in its tooltip and its accessible name. A provider with no
 figures yet draws no chip. The Limits chips past the ones that fit, and the
@@ -790,29 +826,22 @@ only drop under zoom.
   in the never-hide list. The three-way choice (dark, light, Match system)
   stays in Settings > App > General and in the palette.
 - The top bar never edits. Reporting a bug, the setup checklist, the update
-  and the version are about Goodboy itself, so they live in the Goodboy chip in
-  the footer.
+  and the version are about Goodboy itself, so they live at the foot of the
+  column: the Goodboy row and the bug icon beside it.
 
-## Footer
+## The column foot
 
-Left: the integrations connected to this workspace, then one **Link
-integration** action. Each connected integration is a named glyph that opens
-its studio. The action lists every available integration and whether it is
-connected, so connected and disconnected tools are both reachable through one
-flow.
+Settings (⌘,) sits above the Goodboy row; the bug icon sits right of the row
+and opens the report sheet (⌘I), nothing else. On the rail the three keep their
+place at the bottom: the Settings icon, the bug and the Goodboy mark, which
+carries a dot while an update or setup waits.
 
-- With nothing connected, the action invites the first connection.
-- The glyph strip scrolls sideways inside its region. The link action stays
-  fixed, so many connections never push the rest of the footer aside.
-- The footer does not depend on having a repository. Turning a folder-only
-  workspace into one backed by a git repository happens in the workspace link
-  and convert flow, not in the footer.
-
-Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
-the Apple menu or Linear's help menu does. Its label says one thing, in this
-order: an update is ready, setup is unfinished (with its progress), or
-"Goodboy | BETA v<version>" with the installed version. Below the
-`chrome-labels` width it keeps only the mark and the version. The version is
+The Goodboy row (`app/components/GoodboyChip`, variants `column`, `rail` and
+the classic `footer`) holds everything about Goodboy itself, the way the Apple
+menu or Linear's help menu does. Its label says one thing, in this order: an
+update is ready, setup is unfinished (with its progress), or
+"Goodboy | BETA v<version>" with the installed version. The classic footer
+chip keeps only the mark and the version below the `chrome-labels` width. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
 and shows in mock scenes too. The update pill is soft, enters once and holds
@@ -822,14 +851,16 @@ checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
 addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
-checklist has no floating card.
+checklist has no floating card. Only the pinned row does that (and reports the
+update arrival); the copy inside a peeked column is quiet.
 
 ## Report sheet
 
 One sheet files every report. `ReportSheetHost`
-(`features/bug-report/components/ReportSheetHost`) floats it above the footer
-chip, centred, with no overlay: the page under it stays live. Every door lands
-there: ⌘I from anywhere, Report a bug in the Goodboy chip, Report a bug in the
+(`features/bug-report/components/ReportSheetHost`) floats it at the bottom of
+the window, centred, with no overlay: the page under it stays live. Every door
+lands there: ⌘I from anywhere, the bug icon at the column foot, Report a bug in
+the Goodboy menu, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
 **Help > Report a bug** in the macOS menu bar (`help_menu.rs`
 emits `goodboy://report-open` to the focused window), and Report this on a
@@ -887,49 +918,41 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows, Impact, Providers and Settings. Settings (and ⌘,)
-always opens the last settings page (General at first), with or without a workspace; Workspace settings
-opens only from the
-gear on the current-workspace row of the workspace popover. Impact is a
-destination, so it has a launcher; the launcher opens its Overview tab, while
-the spend figure in the top bar and the `Impact: Spend` palette entry open its
-Spend tab. **Providers** is not a door to the Providers & models page: it opens
-a menu that changes things in place (`AppFooter/ProvidersMenu`). Settings >
-Providers & models is the one home for providers and usage; the menu holds
-no usage figure and sends there with **Manage providers** (a door). It lists
-the same `ProviderPolicyList` as the Models row When a provider is out, writing through
-the same `setProviderPolicy`, then Connect for each CLI provider that is not
-connected, then Manage providers. The top bar's limits chip opens the same
-home on Usage. It reads the cached providers and never refreshes them on
-open. With no provider connected the button pulses; that pulse
-replaced the top bar's old Connect a provider chip, so the limits strip shows
-nothing until a provider is connected. Changelog opens from the Goodboy chip and
-the palette, so it earns no footer entry.
+## Column doors
 
-The footer is an `@container/footer` on the same `chrome-labels` step as the
-top bar. Below it, every launcher label and the **Connect an integration** label
-drop together and the glyphs stay, with the name in the tooltip. The first
-link action keeps its label, since it is the only thing on the left. The
-Goodboy chip never hides. Past that the glyph strip scrolls.
+Settings (the foot door and ⌘,) always opens the last settings page (General
+at first), with or without a workspace; Workspace settings opens only from the
+gear on the current-workspace row of the workspace popover. Impact is a
+destination, so it has a door, the icon beside the bell; it opens its Overview
+tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
+open its Spend tab. The **Providers menu** is not a door to the Providers &
+models page: it changes things in place (`app/components/ProvidersMenu`, opened
+from the Limits strip). Settings > Providers & models is the one home for
+providers and usage; the menu holds no usage figure and sends there with
+**Manage providers** (a door). It lists the same `ProviderPolicyList` as the
+Models row When a provider is out, writing through the same
+`setProviderPolicy`, then Connect for each CLI provider that is not connected,
+then Manage providers. It reads the cached providers and never refreshes them
+on open. Changelog opens from the Goodboy menu and the palette, so it earns no
+door. The connected tools have no glyph strip any more: the Inbox's Source
+filter is the tool door, and Connect a tool lives in Settings > Integrations.
 
 - **The release notice answers "have you read the notes for what you're
   running"**, not "has a new release been published". After an update, one
   notice names the installed version and opens its notes. It works offline. A
   fresh install shows none, and dismissing it marks that version as read.
-- The footer target is a pair, the place and the tool (`FooterTarget`). The
-  place has the active fill: Inbox while the Inbox studio is open, whatever
-  source it filters, or the link action when a disconnected tool form is open.
-  The tool glyph of a connected source that is scoped takes the same selected
-  fill, and Inbox then stays unlit so exactly one control is current. Every
-  lit control carries `aria-current="page"`, and tests read that instead of
-  classes. The source filter can change inside the Inbox and the ring follows.
-  Opening any studio closes the others.
-- **Before any workspace exists, the footer keeps its app half**: Settings and
-  the Goodboy chip. The integration strip, Inbox and Workflows belong to a
-  workspace and wait for one. Settings then opens its home with only the App and
-  Providers & models groups, and Providers opens on an account instead of on the
-  workspace defaults. Precedent: VS Code keeps its status bar and Manage gear
-  with no folder open.
+- Opening any studio closes the others. A door that is current does nothing.
+- **Before any workspace exists, the column keeps its app half**: Settings,
+  the Goodboy row and the bug. New session, the doors and the sessions belong
+  to a workspace and wait for one. Settings then opens its home with only the
+  App and Providers & models groups, and Providers opens on an account instead
+  of on the workspace defaults. Precedent: VS Code keeps its status bar and
+  Manage gear with no folder open.
+- **Under Classic bars the 0.20.0 footer comes back** (`AppFooter`): the
+  connected integration glyphs and Link integration on the left, the Goodboy
+  chip in the centre, Inbox, Workflows, Impact, Providers and Settings on the
+  right. Its target is a pair, the place and the tool (`FooterTarget`), so a
+  scoped tool glyph and Inbox never light together.
 
 ## Shortcuts
 
@@ -1003,11 +1026,19 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
 
-Utility studios render in the shell's studio slot, between the top bar and the
-footer, so both bars stay visible and usable. The one exception is the
-workspace launcher, which has no shell. There, Add workspace takes the whole
-window, and so do the app studios: Settings (its corner gear, ⌘, or ⌘/ for
-shortcuts) and the guide. The palette opens there too.
+Utility studios (Inbox, Chat, Workflows, Impact, Notifications, Changelog,
+the guide, pairing, Add workspace) render in the shell's studio slot, which
+covers the content area only, beside the column, as its own sheet with the
+studio band on top. The column stays live, so another door or a session row is
+one click away. **Settings is the one studio that swaps the column**: the
+column's content cross-fades (160ms) to `‹ Back to app` (with its Esc hint),
+`Search settings` and the settings groups, and the page fills the content area.
+The band reads `Settings › App › General` and has no Close: Back to app, Esc
+and Back land alike. With the column folded into the rail, Settings shows its
+groups beside the page instead. The one exception is the workspace launcher,
+which has no shell. There, Add workspace takes the whole window, and so do the
+app studios: Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide.
+The palette opens there too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
@@ -1025,7 +1056,8 @@ one is open at a time.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Inbox to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle and accessory, Close), the Esc layer and the motion: `studio-in` when
+  subtitle and accessory, Close, which Settings drops while it holds the
+  column), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
@@ -1048,9 +1080,9 @@ one is open at a time.
   (`__tests__/regressions/escape-and-keys-use-the-stack.test.ts`) counts
   `'Escape'` literals and window key listeners per file and fails on growth.
 
-- **Not every studio earns a footer entry.** Notifications opens from the bell
+- **Not every studio earns a door.** Notifications opens from the bell
   popover (its footer's Open all notifications) and from the palette's Go to
-  group, never from the footer, since the bell already shows the unread count.
+  group, never from the column, since the bell already shows the unread count.
   The popover never deletes history. That lives in the studio, behind its
   confirm. Reporting a bug is not a studio: it is the report sheet above.
 - **Notifications have one row and one scope.** `NotificationRow` draws a
@@ -1060,8 +1092,9 @@ one is open at a time.
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
   studio the time owns a fixed last column and Mark read and Dismiss swap in
-  over it on hover, so the row never changes width. The studio rail filters by
-  view, severity and source with counts that come from SQL
+  over it on hover, so the row never changes width. A **Filters** button in the
+  list header opens the facets (`NotificationFiltersButton`, with the count of
+  active filters) by view, severity and source, with counts that come from SQL
   (`countNotifications`), so they stay true past the loaded page; Load older
   pages with a cursor. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
@@ -1070,9 +1103,11 @@ one is open at a time.
   J and K or the arrow keys move, Enter runs the row's action and E dismisses.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
-  are shared primitives. The inbox uses all three: its rail filters by view,
+  are shared primitives. The inbox uses all three: its facets filter by view,
   type and source (one pick per section, a tool that did not load says so in
-  its row), its one-line rows are grouped by the same days in time order, and
+  its row) behind the same Filters button in the list header, so the inbox is
+  the list and the record beside the column, never a third column; its
+  one-line rows are grouped by the same days in time order, and
   J and K move the selection while the record follows beside the list. The
   inbox opens with its first row chosen, so those keys act at once; Enter opens
   the launch popover on that row (⌘↵ in the panel launches) or the session once
@@ -1080,20 +1115,24 @@ one is open at a time.
   the record has one (a Sentry issue has none: the rail drops Reply and R does
   nothing there, `recordCanReply`), S stars or unstars, / focuses the search, and Escape in
   the search leaves the field. Escape closes a record you picked before the
-  studio, and closes the studio when the first row was only chosen for you. Below a 720px list column the rail folds into a Filters button in
-  the list header.
-- **Every studio rail resizes.** `StudioRailLayout` (Settings, Guide, Chat,
-  Notifications, Changelog, Bitbucket) and the Inbox filters rail drag from
-  their right edge between 220 and 420px, step 8px (32 with Shift) with the
-  arrow keys, and go back to their default (256 narrow, 288 standard) on a
-  double click. Each studio keeps its own width
+  studio, and closes the studio when the first row was only chosen for you.
+- **A list that belongs to the page sits in the page.** Chat's list of chats,
+  Changelog's releases and the guide's chapters are content beside their
+  detail, not a second navigation column: `StudioRailLayout` with
+  `placement="page"` draws the list on the page background with the resize
+  edge as the only line. Chat's list opens at 288px.
+- **Every studio list resizes.** `StudioRailLayout` (Settings when the column
+  is folded, Guide, Chat, Changelog, Bitbucket) drags from its right edge
+  between 220 and 420px, step 8px (32 with Shift) with the arrow keys, and goes
+  back to its default (256 narrow, 288 standard) on a double click. Each studio
+  keeps its own width
   (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
   that width. `useResizableWidth` (`@goodboy/ui`) owns read, clamp and save
   for these rails, the session sidebar and the drawer: while the pointer
   moves the width lives in a CSS variable (the drawer writes its own style),
   so nothing renders and nothing is saved until the drag ends. Precedent: VS
   Code, Zed and Linear sidebars.
-- **Settings opens on a page, never on a grid.** The footer, ⌘, and the
+- **Settings opens on a page, never on a grid.** The Settings door, ⌘, and the
   palette's Open settings land on the page opened last, held in memory only
   (`lastSettingsFocus`, slice `settings-last-page`): the first open after the
   app starts lands on General, and a remembered page that no longer exists
@@ -1101,15 +1140,19 @@ one is open at a time.
   back to General (`resolveSettingsFocus`). A link that names a page (a scope,
   a section, a provider or a tool) opens that page. `scope: 'home'` stays as
   the alias for "the last page" and `SettingsStudio` resolves it once, then
-  amends the history entry to the concrete page. The rail is the only index:
-  its four groups (App, Workspace, Providers & models, Integrations) come
-  from `settingsDirectory`, with the status line of a row shown only when
+  amends the history entry to the concrete page. The rail is the only index,
+  portaled into the swapped column (`SettingsColumnNav`) or drawn beside the
+  page when the column is folded: its four groups (App, Workspace, Providers &
+  models, Integrations) come from `settingsDirectory`, with the status line of a row shown only when
   something needs doing (no quiet hints). A provider row says only what is
   wrong (Update needed, Not signed in, Error) or Not connected, never an
   identity or usage; the closed Providers & models group says how many
   providers it holds ("2 providers") unless one of them needs attention. Every page is also a palette entry
   (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`), built from
-  the same list, so ⌘K and the rail cannot disagree. The status lines are read
+  the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
+  column filters those same entries by name and former name, lists them in
+  place of the groups, and opens the one picked on the same history entry; with
+  no match it says `No settings match`. The status lines are read
   once per studio (`useSettingsStatus`, on the minute clock of `useNow`);
   opening Settings starts no loading of its own (no storage scan, no branch
   scan, no provider refresh). Without a workspace the Workspace and
@@ -1852,7 +1895,7 @@ viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
 wrapping to the first; `F` puts focus on the tree; `/` and `T` are one action
 (`diff.focusFilter`, `T` is its alias) and focus the filter field, the one input
 in the tree column that carries `data-diff-filter` (it opens the tree first when
-it is folded); `⌘⇧B` shows or hides the tree (`⌘B` stays the session sidebar).
+it is folded); `⌘⇧B` shows or hides the tree (`⌘B` stays the column).
 A line under the tree lists them once, from the registry (`keyHelp.ts`).
 
 Big and narrow cases (`useNarrowPane`, `useTreePanel`, `lib/windowRows.ts`).

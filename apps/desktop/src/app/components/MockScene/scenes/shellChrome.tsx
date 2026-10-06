@@ -9,18 +9,18 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { AppFooter } from '../../AppFooter';
 import { DrawerHost } from '../../DrawerHost';
 import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { AppTopBar } from '../../AppTopBar';
+import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
-import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
 import { useAppStore, type LensKind } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
 import { sceneClock } from '../sceneClock';
+import { SceneFooter } from './SceneFooter';
+import { SCENE_COLUMN_ACTIONS, sceneShellMode } from './sceneShell';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
 
@@ -114,43 +114,35 @@ export const ShellFrame = ({
     hasWorkspace: true,
     hasActiveSession: true,
     isSidebarCollapsed: sidebar === 'collapsed',
+    mode: sceneShellMode(),
   });
 
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        topBar={
+          <AppTopBar
+            mode={arrangement.mode}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+            onOpenImpact={noop}
+          />
+        }
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
-          arrangement.leftSlot === 'sessions' ? (
-            <SessionNavSidebar currentSessionId={session.id} />
-          ) : (
-            <CollapsedRail />
-          )
+          <ShellLeft
+            arrangement={arrangement}
+            workspaceId={session.workspaceId}
+            currentSessionId={session.id}
+            isDraftShown={false}
+            actions={SCENE_COLUMN_ACTIONS}
+            onToggle={noop}
+          />
         }
         footer={
-          <AppFooter
-            scope={arrangement.footer}
-            target={{ place: null, tool: null }}
-            connected={{
-              github: true,
-              linear: true,
-              jira: true,
-              sentry: true,
-              gitlab: false,
-              bitbucket: false,
-              slack: true,
-            }}
-            onOpenIntegration={noop}
-            onOpenInbox={noop}
-            onOpenWorkflows={noop}
-            onOpenImpact={noop}
-            onOpenSettings={noop}
-            onOpenShortcuts={noop}
-            onOpenChangelog={noop}
-          />
+          arrangement.footer === null ? undefined : <SceneFooter scope={arrangement.footer} />
         }
         main={
           <div className="@container flex h-full w-full min-w-0 flex-col">

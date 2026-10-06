@@ -34,6 +34,8 @@ const { state } = vi.hoisted(() => {
       closeStudio: vi.fn(),
       sessionWorktrees: {},
       providers: [] as ReadonlyArray<{ connection: string }>,
+      settings: { 'shell.classicBars': 'true' } as Record<string, string | undefined>,
+      loadSetting: vi.fn(async () => null),
     },
   };
 });

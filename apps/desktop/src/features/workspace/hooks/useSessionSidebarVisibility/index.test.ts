@@ -12,17 +12,17 @@ afterEach(cleanup);
 
 const renderCollapsed = () => {
   localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, '1');
-  return renderHook(() => useSessionSidebarVisibility({ hasActiveSession: true }));
+  return renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
 };
 
 describe('useSessionSidebarVisibility', () => {
   it('shows the session sidebar by default when a session is open', () => {
-    const { result } = renderHook(() => useSessionSidebarVisibility({ hasActiveSession: true }));
+    const { result } = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
     expect(result.current.isCollapsed).toBe(false);
   });
 
   it('toggles the session sidebar and persists the choice', () => {
-    const { result } = renderHook(() => useSessionSidebarVisibility({ hasActiveSession: true }));
+    const { result } = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
     act(() => {
       result.current.toggle();
     });
@@ -38,12 +38,12 @@ describe('useSessionSidebarVisibility', () => {
 
   it('restores a persisted collapsed choice on remount', () => {
     localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, '1');
-    const { result } = renderHook(() => useSessionSidebarVisibility({ hasActiveSession: true }));
+    const { result } = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
     expect(result.current.isCollapsed).toBe(true);
   });
 
   it('keeps overview board-only and ignores toggle while no session is open', () => {
-    const { result } = renderHook(() => useSessionSidebarVisibility({ hasActiveSession: false }));
+    const { result } = renderHook(() => useSessionSidebarVisibility({ hasSidebar: false }));
     act(() => {
       result.current.toggle();
     });
@@ -79,7 +79,7 @@ describe('useSessionSidebarVisibility', () => {
 
   it('never peeks while the column is pinned open', () => {
     vi.useFakeTimers();
-    const { result } = renderHook(() => useSessionSidebarVisibility({ hasActiveSession: true }));
+    const { result } = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
 
     act(() => {
       result.current.requestPeek();
@@ -178,8 +178,8 @@ describe('useSessionSidebarVisibility', () => {
     vi.useFakeTimers();
     localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, '1');
     const { result, rerender } = renderHook(
-      ({ hasActiveSession }) => useSessionSidebarVisibility({ hasActiveSession }),
-      { initialProps: { hasActiveSession: true } },
+      ({ hasSidebar }) => useSessionSidebarVisibility({ hasSidebar }),
+      { initialProps: { hasSidebar: true } },
     );
 
     act(() => {
@@ -188,7 +188,7 @@ describe('useSessionSidebarVisibility', () => {
     });
     expect(result.current.isPeeking).toBe(true);
 
-    rerender({ hasActiveSession: false });
+    rerender({ hasSidebar: false });
 
     expect(result.current.isPeeking).toBe(false);
     vi.useRealTimers();

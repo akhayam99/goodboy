@@ -1,12 +1,12 @@
 import { ExternalLink, Heart } from 'lucide-react';
 import { Button, Divider, Eyebrow, DogMascot, XIcon } from '@goodboy/ui';
-import { finish } from '../../../../features/onboarding/onboarding-store';
-import type { OnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
-import { ChecklistBody } from '../../../../features/onboarding/SetupChecklist/ChecklistBody';
-import { CompletedBody } from '../../../../features/onboarding/SetupChecklist/CompletedBody';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { NAMES } from '../../../../shared/names';
+import { finish } from '../../../features/onboarding/onboarding-store';
+import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
+import { ChecklistBody } from '../../../features/onboarding/SetupChecklist/ChecklistBody';
+import { CompletedBody } from '../../../features/onboarding/SetupChecklist/CompletedBody';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { NAMES } from '../../../shared/names';
 import { MenuRow } from './MenuRow';
 import { UpdateNotice } from './UpdateNotice';
 

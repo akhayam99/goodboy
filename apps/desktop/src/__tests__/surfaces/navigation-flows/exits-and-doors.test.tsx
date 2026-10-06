@@ -19,6 +19,7 @@ import {
   installNavigationHooks,
   settle,
   useAppStore,
+  type Bars,
   type BridgeArgs,
 } from './harness';
 
@@ -37,12 +38,24 @@ const DOORS: ReadonlyArray<Door> = [
   { name: 'Chat', kind: 'chat' },
 ];
 
+const ARRANGEMENTS: ReadonlyArray<Bars> = ['column', 'classic'];
+
 const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
   const found = Array.from(
     document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
   ).find((button) => (button.getAttribute('aria-label') ?? '').startsWith(verb));
   expect(found).toBeDefined();
   return found as HTMLElement;
+};
+
+const closeControl = (): HTMLElement => {
+  const bandClose = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-studio-band] button'),
+  ).find((button) => /^close/i.test(button.getAttribute('aria-label') ?? ''));
+  if (bandClose !== undefined) {
+    return bandClose;
+  }
+  return screen.getByRole('button', { name: /^Back to app/ });
 };
 
 type Exit = {
@@ -54,11 +67,7 @@ const EXITS: ReadonlyArray<Exit> = [
   {
     name: 'Close',
     run: async () => {
-      const close = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-studio-band] button'),
-      ).find((button) => /^close/i.test(button.getAttribute('aria-label') ?? ''));
-      expect(close).toBeDefined();
-      await click(close as HTMLElement);
+      await click(closeControl());
       await settle(8);
     },
   },
@@ -82,15 +91,33 @@ const stack = () => {
 
 const appStudioKind = (): string | null => useAppStore.getState().appStudio?.kind ?? null;
 
-const barCurrent = (): ReadonlyArray<string> => {
-  const footer = screen.getByTestId('goodboy-chip').closest('.grid');
-  const bar = document.querySelector('[data-nav-cluster]');
-  const marked = [bar, footer].flatMap((root) =>
-    root === null || root === undefined
+const currentMarks = (): ReadonlyArray<string> => {
+  const roots = [
+    document.querySelector('[data-top-bar]'),
+    document.querySelector('[data-side-column] [data-column-layer="nav"]'),
+    document.querySelector('[data-column-rail]'),
+    document.querySelector('[data-app-footer]'),
+  ];
+  return roots.flatMap((root) =>
+    root === null
       ? []
-      : Array.from(root.querySelectorAll('[aria-current="page"]')),
+      : Array.from(root.querySelectorAll('[aria-current="page"]')).map(
+          (element) => element.getAttribute('aria-label') ?? element.textContent ?? '',
+        ),
   );
-  return marked.map((element) => element.getAttribute('aria-label') ?? element.textContent ?? '');
+};
+
+const openDoor = async ({ door, bars }: { readonly door: Door; readonly bars: Bars }) => {
+  if (bars === 'column' && door.name !== 'Impact') {
+    const id = door.kind === 'workflow' ? 'workflows' : door.kind;
+    const control = document.querySelector<HTMLElement>(
+      `[data-side-column] [data-column-door="${id}"]`,
+    );
+    expect(control).not.toBeNull();
+    await click(control as HTMLElement);
+    return;
+  }
+  await clickButton(door.name);
 };
 
 const fireOpenSettings = async (detail: Readonly<Record<string, unknown>>): Promise<void> => {
@@ -100,7 +127,7 @@ const fireOpenSettings = async (detail: Readonly<Record<string, unknown>>): Prom
   await settle();
 };
 
-describe('every studio exits the same way', () => {
+describe.each(ARRANGEMENTS)('every studio exits the same way, %s', (bars) => {
   it.each(
     DOORS.flatMap((door) =>
       EXITS.map((exit) => [`${door.name} by ${exit.name}`, door, exit] as const),
@@ -108,11 +135,11 @@ describe('every studio exits the same way', () => {
   )(
     '%s lands where it started with the same forward',
     async (_name, door, exit) => {
-      await boot({ seed: 'pr' });
+      await boot({ seed: 'pr', bars });
       const startSession = useAppStore.getState().currentSessionId;
       const startIndex = stack()?.index ?? 0;
 
-      await clickButton(door.name);
+      await openDoor({ door, bars });
       expect(appStudioKind()).toBe(door.kind);
 
       await exit.run();
@@ -128,13 +155,16 @@ describe('every studio exits the same way', () => {
   );
 });
 
-describe('the Board button leaves an open studio for the board', () => {
+describe.each(ARRANGEMENTS)('the Board door leaves an open studio for the board, %s', (bars) => {
   it.each(DOORS.map((door) => [door.name, door] as const))(
     'closes %s and shows the board',
     async (_name, door) => {
-      await boot({ seed: 'pr' });
+      await boot({ seed: 'pr', bars });
 
-      await clickButton(door.name);
+      await openDoor({ door, bars });
+      if (door.kind === 'settings' && bars === 'column') {
+        await click(screen.getByRole('button', { name: /^Back to app/ }));
+      }
       await clickButton(/^Board/);
 
       expect(appStudioKind()).toBeNull();
@@ -148,11 +178,11 @@ describe('doors replace the open studio and content links stack', () => {
   it('replaces the open studio when another door is pressed', async () => {
     await boot({ seed: 'pr' });
 
-    await clickButton('Inbox');
+    await openDoor({ door: { name: 'Inbox', kind: 'inbox' }, bars: 'column' });
     const withOneStudio = stack()?.entries.length ?? 0;
-    await clickButton('Workflows');
+    await openDoor({ door: { name: 'Workflows', kind: 'workflow' }, bars: 'column' });
     await clickButton('Impact');
-    await clickButton('Chat');
+    await openDoor({ door: { name: 'Chat', kind: 'chat' }, bars: 'column' });
 
     expect(appStudioKind()).toBe('chat');
     expect(stack()?.entries.length).toBe(withOneStudio);
@@ -184,39 +214,49 @@ describe('doors replace the open studio and content links stack', () => {
   });
 });
 
-describe('exactly one entry in the bars is marked current', () => {
+describe.each(ARRANGEMENTS)('exactly one door in the frame is marked current, %s', (bars) => {
   it.each(DOORS.map((door) => [door.name, door] as const))(
     'marks only %s while its studio is open',
     async (_name, door) => {
-      await boot({ seed: 'pr' });
+      await boot({ seed: 'pr', bars });
 
-      await clickButton(door.name);
+      await openDoor({ door, bars });
 
-      expect(barCurrent()).toEqual([door.name]);
+      expect(currentMarks()).toEqual([door.name]);
+      if (door.kind === 'settings' && bars === 'column') {
+        expect(
+          document.querySelector('[data-column-layer="settings"]')?.hasAttribute('inert'),
+        ).toBe(false);
+        expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
+          true,
+        );
+      }
     },
     30_000,
   );
 
   it('marks one door at a time while the doors replace each other', async () => {
-    await boot({ seed: 'pr' });
+    await boot({ seed: 'pr', bars });
 
-    for (const door of DOORS) {
-      await clickButton(door.name);
-      expect(barCurrent()).toEqual([door.name]);
+    for (const door of DOORS.filter(
+      (candidate) => bars === 'classic' || candidate.kind !== 'settings',
+    )) {
+      await openDoor({ door, bars });
+      expect(currentMarks()).toEqual([door.name]);
     }
   });
 
   it('marks nothing doubled on a session page', async () => {
-    await boot({ seed: 'pr' });
+    await boot({ seed: 'pr', bars });
 
-    expect(barCurrent().length).toBeLessThanOrEqual(1);
+    expect(currentMarks().length).toBeLessThanOrEqual(1);
   });
 
   it('marks Board once the board is shown', async () => {
-    await boot({ seed: 'pr' });
+    await boot({ seed: 'pr', bars });
 
     await clickButton(/^Board/);
 
-    expect(barCurrent()).toEqual(['Board']);
+    expect(currentMarks()).toEqual(['Board']);
   });
 });

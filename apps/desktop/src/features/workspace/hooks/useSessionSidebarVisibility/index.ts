@@ -3,7 +3,7 @@ import { useEscapeLayer } from '@goodboy/ui';
 import { STORAGE_KEYS, persistedPref } from '../../../../shared/lib/storage-keys';
 
 type Params = {
-  readonly hasActiveSession: boolean;
+  readonly hasSidebar: boolean;
 };
 
 const OPEN_DELAY_MS = 150;
@@ -25,7 +25,7 @@ type WriteParams = {
 
 const writePreference = ({ next }: WriteParams): void => collapsedPref.write(next);
 
-export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
+export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
   const [isCollapsed, setIsCollapsed] = useState(readPreference);
   const [isPeeking, setIsPeeking] = useState(false);
   const openTimer = useRef<number | null>(null);
@@ -77,7 +77,7 @@ export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
   }, [clearCloseTimer, clearOpenTimer]);
 
   const requestPeek = useCallback(() => {
-    if (!hasActiveSession || !isCollapsed) {
+    if (!hasSidebar || !isCollapsed) {
       return;
     }
     cancelClose();
@@ -88,7 +88,7 @@ export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
       openTimer.current = null;
       setIsPeeking(true);
     }, OPEN_DELAY_MS);
-  }, [cancelClose, hasActiveSession, isCollapsed, isPeeking]);
+  }, [cancelClose, hasSidebar, isCollapsed, isPeeking]);
 
   const cancelPeek = useCallback(() => {
     clearOpenTimer();
@@ -116,7 +116,7 @@ export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
   }, [closePeek]);
 
   const toggle = useCallback(() => {
-    if (!hasActiveSession) {
+    if (!hasSidebar) {
       return;
     }
     closePeek();
@@ -125,14 +125,14 @@ export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
       writePreference({ next });
       return next;
     });
-  }, [closePeek, hasActiveSession]);
+  }, [closePeek, hasSidebar]);
 
   useEffect(() => {
-    if (hasActiveSession && isCollapsed) {
+    if (hasSidebar && isCollapsed) {
       return;
     }
     closePeek();
-  }, [closePeek, hasActiveSession, isCollapsed]);
+  }, [closePeek, hasSidebar, isCollapsed]);
 
   useEscapeLayer(() => {
     if (holdCount.current > 0) {

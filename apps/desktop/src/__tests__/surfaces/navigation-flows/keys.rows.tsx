@@ -241,7 +241,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'column.toggle',
-    lands: () => visible('button', /^Show sessions/),
+    lands: () => visible('button', /^Show sidebar/),
   }),
   pressRow({
     id: 'session.board',

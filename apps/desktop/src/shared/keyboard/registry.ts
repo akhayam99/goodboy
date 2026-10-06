@@ -175,7 +175,7 @@ export const SHORTCUTS = {
   },
   'column.toggle': {
     combo: 'cmd+KeyB',
-    label: 'Show or hide the session sidebar',
+    label: 'Show or hide the sidebar',
     plane: 'app',
     group: 'navigate',
   },

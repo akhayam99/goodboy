@@ -12,10 +12,9 @@ import type {
   SessionId,
   TelemetryRecordId,
 } from '@goodboy/types';
-import { AppFooter } from '../../AppFooter';
 import { AppTopBar } from '../../AppTopBar';
+import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
 import { shellArrangement } from '../../../shellArrangement';
@@ -23,6 +22,8 @@ import { NOW, SESSION, WORKSPACE_ID, seedWorkflowScene } from './workflowSeed';
 import { sceneClock } from '../sceneClock';
 import { sceneParam } from './audit/sceneParams';
 import { seedPolicyScene } from './providerPolicySeed';
+import { SceneFooter } from './SceneFooter';
+import { SCENE_COLUMN_ACTIONS, sceneShellMode } from './sceneShell';
 
 const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
@@ -273,7 +274,11 @@ const seedChatOrigin = (): void => {
   });
 };
 
-export const ShellScene = () => {
+type Props = {
+  readonly isRail?: boolean;
+};
+
+export const ShellScene = ({ isRail = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -289,7 +294,8 @@ export const ShellScene = () => {
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: true,
-    isSidebarCollapsed: false,
+    isSidebarCollapsed: isRail,
+    mode: sceneShellMode(),
   });
 
   if (!isReady) {
@@ -299,35 +305,41 @@ export const ShellScene = () => {
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        topBar={
+          <AppTopBar
+            mode={arrangement.mode}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+            onOpenImpact={noop}
+          />
+        }
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
-          arrangement.leftSlot === 'sessions' ? (
-            <SessionNavSidebar currentSessionId={SESSION.id} />
-          ) : undefined
+          <ShellLeft
+            arrangement={arrangement}
+            workspaceId={WORKSPACE_ID}
+            currentSessionId={SESSION.id}
+            isDraftShown={false}
+            actions={SCENE_COLUMN_ACTIONS}
+            onToggle={noop}
+          />
         }
         footer={
-          <AppFooter
-            scope={arrangement.footer}
-            target={{ place: null, tool: null }}
-            connected={{
-              github: true,
-              linear: true,
-              jira: false,
-              sentry: false,
-              gitlab: false,
-              bitbucket: false,
-              slack: false,
-            }}
-            onOpenIntegration={noop}
-            onOpenInbox={noop}
-            onOpenWorkflows={noop}
-            onOpenImpact={noop}
-            onOpenSettings={noop}
-            onOpenShortcuts={noop}
-            onOpenChangelog={noop}
-          />
+          arrangement.footer === null ? undefined : (
+            <SceneFooter
+              scope={arrangement.footer}
+              connected={{
+                github: true,
+                linear: true,
+                jira: false,
+                sentry: false,
+                gitlab: false,
+                bitbucket: false,
+                slack: false,
+              }}
+            />
+          )
         }
         main={<SessionOverviewPane session={SESSION} onSelectLens={noop} />}
       />

@@ -1,10 +1,9 @@
 import { cn, DogMascot, Eyebrow } from '@goodboy/ui';
-import { ONBOARDING_STEPS } from '../../../../features/onboarding/onboarding-store';
-import type { OnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
-import { useAppStore } from '../../../../store';
-import { useRunningAgentCount } from '../../../../features/updater/hooks/useRunningAgentCount';
-import { UpdatePillVisual } from '../../../../features/updater/components/UpdatePill/UpdatePillVisual';
-import { FOOTER_LABEL } from '../FooterButton';
+import { ONBOARDING_STEPS } from '../../../features/onboarding/onboarding-store';
+import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
+import { useAppStore } from '../../../store';
+import { useRunningAgentCount } from '../../../features/updater/hooks/useRunningAgentCount';
+import { UpdatePillVisual } from '../../../features/updater/components/UpdatePill/UpdatePillVisual';
 
 export type GoodboyChipState = 'update' | 'setup' | 'rest';
 
@@ -12,16 +11,28 @@ type Props = {
   readonly state: GoodboyChipState;
   readonly progress: OnboardingProgress;
   readonly installedVersion: string | null;
+  readonly labelClassName?: string;
+  readonly isMarkOnly?: boolean;
 };
 
 const MARK_SIZE = 14;
+const RAIL_MARK_SIZE = 16;
 
-export const GoodboyChipLabel = ({ state, progress, installedVersion }: Props) => {
+export const GoodboyChipLabel = ({
+  state,
+  progress,
+  installedVersion,
+  labelClassName,
+  isMarkOnly = false,
+}: Props) => {
   const status = useAppStore((s) => s.updaterStatus);
   const version = useAppStore((s) => s.updateVersion);
   const isQueued = useAppStore((s) => s.updateQueuedUntilIdle);
   const runningCount = useRunningAgentCount();
 
+  if (isMarkOnly) {
+    return <DogMascot size={RAIL_MARK_SIZE} className="text-foreground" />;
+  }
   if (state === 'update') {
     return (
       <UpdatePillVisual
@@ -56,9 +67,9 @@ export const GoodboyChipLabel = ({ state, progress, installedVersion }: Props) =
   return (
     <>
       <DogMascot size={MARK_SIZE} className="text-foreground" />
-      <span className={cn(FOOTER_LABEL, 'font-semibold text-foreground')}>Goodboy</span>
-      <span aria-hidden className={cn(FOOTER_LABEL, 'h-3 w-px bg-border')} />
-      <Eyebrow label="Beta" muted className={FOOTER_LABEL} />
+      <span className={cn(labelClassName, 'font-semibold text-foreground')}>Goodboy</span>
+      <span aria-hidden className={cn(labelClassName, 'h-3 w-px bg-border')} />
+      <Eyebrow label="Beta" muted className={labelClassName} />
       {installedVersion === null ? null : (
         <span className="tabular-nums text-faint-foreground">v{installedVersion}</span>
       )}

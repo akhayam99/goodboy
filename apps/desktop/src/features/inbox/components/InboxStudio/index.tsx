@@ -5,7 +5,6 @@ import { NAMES } from '../../../../shared/names';
 import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
 import { openUrl } from '../../../../shared/lib/editor';
 import { groupByDay } from '../../../../shared/utils/groupByDay';
@@ -48,9 +47,6 @@ type Props = {
   readonly onFocusChange?: (focus: InboxStudioFocus) => void;
   readonly onClose: () => void;
 };
-
-const FACET_RAIL_PX = 256;
-const COLUMN_FOLD_PX = 720;
 
 const VIEW_TITLE = {
   all: 'All items',
@@ -153,8 +149,6 @@ export const InboxStudio = ({
   const filteredSession = useSessionById(sessionFilter);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const detailRef = useRef<HTMLElement | null>(null);
-  const body = useElementWidth();
-  const isFacetFolded = body.width !== null && body.width - FACET_RAIL_PX < COLUMN_FOLD_PX;
 
   useEffect(() => {
     writeInboxFilters({ workspaceId, kind: filters.kind, source: filters.source });
@@ -398,8 +392,6 @@ export const InboxStudio = ({
     >
       {(requestClose) => (
         <InboxStudioLayout
-          bodyRef={body.ref}
-          rail={isFacetFolded ? null : facets}
           list={
             <PaneShell
               scroll="body"
@@ -419,7 +411,6 @@ export const InboxStudio = ({
                   onClearSession={() => setSessionFilter(null)}
                   isRefreshing={isLoading}
                   onRefresh={refetch}
-                  isFacetFolded={isFacetFolded}
                   activeFilterCount={activeFilterCount({ filters })}
                   facets={facets}
                 />

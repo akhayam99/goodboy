@@ -44,14 +44,15 @@ never a new file.
 tile, then the word `Goodboy`. It has no tagline, no registered mark and no
 second line.
 
-In the app chrome the mark drops the tile. The footer Goodboy chip draws the bare glyph in
+In the app chrome the mark drops the tile. The Goodboy row at the foot of the column draws the bare glyph in
 `text-foreground`, so it is light on the dark theme and dark on the
 light theme, next to the same word. The mask file and its ratios do not
 change. This is the title bar convention of Linear, Cursor and Arc: a
 monochrome glyph in the chrome, the tile on the dock icon.
 
-The app shows the mark in two places only: the footer Goodboy chip (and the
-header of its menu) and the boot splash. Empty states, onboarding, the
+The app shows the mark in two places only: the Goodboy chip (the row at the
+foot of the column, the mark on its rail, and the header of its menu) and the
+boot splash. Empty states, onboarding, the
 workspace launcher and agent kinds draw no dog. They use a concept tile
 (`ConceptTile`), the stage chips or the kind chip. A ratchet
 (`dog-mascot-only-marks-the-brand.test.ts`) keeps `DogMascot` to those files.
