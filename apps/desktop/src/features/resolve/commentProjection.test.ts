@@ -49,7 +49,7 @@ describe('projectResolveComment', () => {
       'ready',
       'ready',
       'couldnt_fix',
-      'done',
+      'ready',
       'done',
       'done',
       'done',
@@ -71,6 +71,10 @@ describe('projectResolveComment', () => {
     expect(label('skipped')).toBe('Skipped');
     expect(label('replied')).toBe('Answered');
     expect(label('accepted')).toBe('Accepted');
+    expect(projectResolveComment(facts({ state: 'accepted' }))).toMatchObject({
+      word: 'ready',
+      sub: 'accepted',
+    });
     expect(projectResolveComment(facts({ state: 'resolved', sourceLabel: 'GitLab' })).label).toBe(
       'Resolved on GitLab',
     );
@@ -80,9 +84,9 @@ describe('projectResolveComment', () => {
     });
   });
 
-  it('keeps a comment being published a Done one that says Pushing', () => {
+  it('keeps a comment being published a Ready one that says Pushing', () => {
     expect(projectResolveComment(facts({ state: 'accepted', isPublishing: true }))).toMatchObject({
-      word: 'done',
+      word: 'ready',
       sub: 'pushing',
       label: 'Pushing',
     });
@@ -214,6 +218,11 @@ describe('resolveTallyOf', () => {
       '2 working',
       "1 couldn't fix",
     ]);
+  });
+
+  it('keeps accepted comments in Ready until they are pushed', () => {
+    const tally = resolveTallyOf({ states: ['accepted', 'accepted', 'ready', 'pushed'] });
+    expect(tally).toMatchObject({ ready: 3, done: 1 });
   });
 
   it('names a state by its word', () => {

@@ -359,6 +359,7 @@ const queueOf = ({
           question: member.word === 'needs' ? (cast.question?.text ?? null) : null,
           createdMinutesAgo: cast.minutes,
         }),
+        ...(member.word === 'accepted' && { commitShas: [`bulk${member.key}c0ffee`] }),
         ...(member.word === 'done' && {
           closedAt: msAgo({ minutes: 30 }),
           closedSource: 'goodboy' as const,

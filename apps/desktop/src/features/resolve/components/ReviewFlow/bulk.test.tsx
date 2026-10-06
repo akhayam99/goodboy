@@ -310,9 +310,20 @@ describe('accept in bulk', () => {
     await mount({ stage: 'accepted' });
 
     expect(screen.getByText('5 accepted')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /^Undo/ }));
+    fireEvent.click(within(screen.getByRole('status')).getByRole('button', { name: /^Undo/ }));
 
     await waitFor(() => expect(undoReviewAccepts).toHaveBeenCalledWith({ sessionId: SESSION.id }));
+  });
+
+  it('keeps accepted comments in Ready with an Accepted sub-word until they are pushed', async () => {
+    await mount({ stage: 'accepted' });
+
+    const ready = within(list()).getByRole('region', { name: 'Ready' });
+    expect(within(ready).getAllByText('Accepted')).toHaveLength(5);
+    expect(within(ready).queryByRole('button', { name: /^Accept \d+$/ })).toBeNull();
+    const done = within(list()).getByRole('region', { name: 'Done' });
+    expect(within(done).queryByText('Accepted')).toBeNull();
+    expect(within(done).getByText('Done 3')).toBeDefined();
   });
 
   it('shows no undo bar once the accepted comments are no longer undoable', async () => {

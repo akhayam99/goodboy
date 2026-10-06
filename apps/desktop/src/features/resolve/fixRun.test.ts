@@ -68,11 +68,11 @@ describe('fixRunOf', () => {
 
     expect(run?.total).toBe(6);
     expect(run?.tally).toMatchObject({
-      ready: 2,
+      ready: 3,
       needs_you: 1,
       working: 1,
       couldnt_fix: 1,
-      done: 1,
+      done: 0,
     });
     expect(run?.isLive).toBe(true);
     expect(run?.agentId).toBe('agent-1');
@@ -96,10 +96,18 @@ describe('fixRunOf', () => {
     expect(run?.isLive).toBe(false);
   });
 
-  it('drops the run once every comment is decided', () => {
+  it('drops the run once every comment is pushed or skipped', () => {
     expect(
-      fixRunOf({ sources: [source('t1', 'accepted', FIRST), source('t2', 'skipped', FIRST)] }),
+      fixRunOf({ sources: [source('t1', 'pushed', FIRST), source('t2', 'skipped', FIRST)] }),
     ).toBeNull();
+  });
+
+  it('keeps the run while accepted comments wait for the push', () => {
+    const run = fixRunOf({
+      sources: [source('t1', 'accepted', FIRST), source('t2', 'skipped', FIRST)],
+    });
+
+    expect(run?.tally).toMatchObject({ ready: 1, done: 1 });
   });
 
   it('names the model with its effort', () => {
