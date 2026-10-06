@@ -262,7 +262,7 @@ export const SHORTCUTS = {
   },
   'activity.openRun': {
     combo: 'shift+Enter',
-    label: 'Open the workflow of an activity row',
+    label: 'Open the run of an activity row',
     plane: 'session',
     group: 'session',
     scope: 'activityRow',

@@ -13,7 +13,7 @@ export const NOTIFICATION_SOURCES = [
 ] as const satisfies ReadonlyArray<NotificationSource>;
 
 export const NOTIFICATION_SOURCE_LABEL = {
-  agents: 'Agents and workflows',
+  agents: 'Agents and runs',
   sessions: 'Sessions',
   'pull-requests': 'Pull requests',
   budget: 'Budget',

@@ -475,7 +475,7 @@ asks before each step, the next step waits for your go.
 
 ### Closing a workflow
 
-**Stop workflow** ends a run that nobody else will end: an orchestrated run
+**Stop run** ends a run that nobody else will end: an orchestrated run
 between decisions, a run stuck on a failed step, a run you have seen enough
 of. It sits in the header of the workflow detail and in the menu of the run
 row in the activity feed. Goodboy asks you to confirm first. Steps that have
@@ -490,8 +490,8 @@ manual start, so closing never starts other work. The closure lands in the
 activity feed as its own row ("Closed Add rate limiting by you"). Adding a step
 opens the run again.
 
-Stop workflow is offered once the run has started and until it ends. A queued
-run has nothing to stop; archive it instead. **Archive workflow** and
+Stop run is offered once the run has started and until it ends. A queued
+run has nothing to stop; archive it instead. **Archive run** and
 **Delete** sit in the run menu next to it.
 
 **Delete** removes the run and every agent it owns, for preset, custom and
@@ -506,7 +506,7 @@ tombstoned (`agentPurgeStatements`, one transaction for the whole run). The
 agents drop out of the session, the board and the per-agent cost rows at
 once, and there is no undo. What they already spent stays in the session
 total, as it does for a deleted agent. The launch cleanup of agents a run left
-behind purges them the same way. Archive workflow is the verb that keeps the
+behind purges them the same way. Archive run is the verb that keeps the
 run and its agents restorable.
 
 ### Hands-free runs
@@ -744,7 +744,7 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   A failed or unreadable call saves `failure`. **Stop** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
   **Pause** saves `paused`, which keeps the step in flight and starts nothing.
-  **Stop workflow** (`closeWorkflowRun`) saves `closed` next to the `done`
+  **Stop run** (`closeWorkflowRun`) saves `closed` next to the `done`
   outcome, on static runs too, so `isWorkflowRunClosedByUser` is the one test
   for a closed run and `isWorkflowRunComplete` reads it as ended. A decision
   in flight is thrown away when it returns, as after an operator stop or a

@@ -15,10 +15,10 @@ describe('WorkflowAttachButton', () => {
     window.addEventListener('goodboy:open-workflow-builder', listener);
 
     render(<WorkflowAttachButton sessionId={SESSION_ID} placement="header" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Attach another workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start another run' }));
     cleanup();
     render(<WorkflowAttachButton sessionId={SESSION_ID} placement="inline" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Attach another workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start another run' }));
 
     window.removeEventListener('goodboy:open-workflow-builder', listener);
     expect(listener).toHaveBeenCalledTimes(2);

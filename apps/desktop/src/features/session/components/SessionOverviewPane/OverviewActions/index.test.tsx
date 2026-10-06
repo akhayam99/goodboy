@@ -84,15 +84,15 @@ describe('OverviewActions', () => {
   it('keeps one New control that lists workflow, agent, report and wireframe', () => {
     renderActions();
 
-    expect(itemLabels()).toEqual(['Run workflow', 'Start agent', 'Report', 'Wireframe']);
+    expect(itemLabels()).toEqual(['Start a run', 'Start agent', 'Report', 'Wireframe']);
     expect(screen.queryByRole('button', { name: 'Create' })).toBeNull();
   });
 
-  it('opens the workflow builder from Run workflow', () => {
+  it('opens the workflow builder from Start a run', () => {
     const onOpenWorkflowBuilder = vi.fn();
     renderActions({ onOpenWorkflowBuilder });
 
-    fireEvent.click(screen.getByRole('menuitem', { name: /Run workflow/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Start a run/ }));
 
     expect(onOpenWorkflowBuilder).toHaveBeenCalledOnce();
   });
@@ -101,7 +101,7 @@ describe('OverviewActions', () => {
     const onOpenRun = vi.fn();
     renderActions({ session: { ...SESSION, workflowRuns: [RUN] }, onOpenRun });
 
-    expect(screen.queryByRole('menuitem', { name: /Run workflow/ })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /Start a run/ })).toBeNull();
     fireEvent.click(screen.getByRole('menuitem', { name: /Open run/ }));
 
     expect(onOpenRun).toHaveBeenCalledOnce();
@@ -121,7 +121,7 @@ describe('OverviewActions', () => {
     });
     renderActions({ session: { ...SESSION, workflowRuns: [RUN] } });
 
-    screen.getByRole('menuitem', { name: /Run workflow/ });
+    screen.getByRole('menuitem', { name: /Start a run/ });
   });
 
   it('opens the agent form from Start agent', () => {

@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const TimelineLaneHit = ({ span, target }: Props) => {
-  const label = `Open workflow: ${target.title}`;
+  const label = `Open run: ${target.title}`;
   return (
     <Tooltip content={`${label} (${shortcutGlyphs('activity.openRun')})`} side="right">
       <button

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Plus, Smartphone } from 'lucide-react';
-import type { AgentId, ProjectScript, SessionId, Workflow } from '@goodboy/types';
+import type { AgentId, ProjectScript, SessionId } from '@goodboy/types';
 import {
   BOARD_PLACE,
   EMPTY_ARRAY,
@@ -43,6 +43,7 @@ import { runPinnedScript } from '../../scripts/runPinnedScript';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
 import { useSessionsEverywhere } from './useSessionsEverywhere';
+import { useStartRun } from './useStartRun';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 
 const PAIR_SEPARATOR = '\u0000';
@@ -80,6 +81,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const sessionId = currentSession === null ? null : (currentSession.id as SessionId);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const navigate = useAppStore((s) => s.navigate);
+  const openStudio = useAppStore((s) => s.openStudio);
   const toggleContextDrawer = useAppStore((s) => s.toggleContextDrawer);
   const projectPairs = useAppStore((s) =>
     Object.entries(s.sessionProjectMounts)
@@ -92,10 +94,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
-  const workflows = useAppStore((s) =>
-    currentWorkspace ? (s.phaseTemplates[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
-  ) as ReadonlyArray<Workflow>;
-  const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
+  const { workflows, start: startRun } = useStartRun();
   const agents = useAppStore((s) =>
     sessionId === null ? EMPTY_ARRAY : (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
   );
@@ -153,16 +152,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
             classifyAgent({ agent, override: agentKindOverride[agent.id as AgentId] ?? null }),
           open: ({ agentId }) => navigate({ to: agentPlace({ sessionId, agentId }) }),
         }),
-        ...workflowEntries({
-          workflows,
-          start: (workflow) => {
-            void attachWorkflowToSession(sessionId, workflow.id, { navigate: true })
-              .then(() => showToast({ kind: 'success', message: `Started ${workflow.name}.` }))
-              .catch((error: unknown) =>
-                reportError({ title: `Couldn't start ${workflow.name}`, error, sessionId }),
-              );
-          },
-        }),
+        ...workflowEntries({ workflows, start: startRun }),
         ...artifactEntries({
           sessionId,
           plans,
@@ -181,7 +171,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         out.push({
           key: `lens:${destination.lens ?? 'overview'}`,
           label: `Open ${SHORTCUTS[destination.shortcut].label}`,
-          kind: 'action',
+          kind: 'page',
           group: 'action',
           icon: destination.lens === null ? CONCEPT_ICONS.sessions : LENS_ICON[destination.lens],
           shortcut: destination.shortcut,
@@ -193,7 +183,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         {
           key: 'action:context',
           label: SHORTCUTS['lens.context'].label,
-          kind: 'action',
+          kind: 'page',
           group: 'action',
           icon: CONCEPT_ICONS.context,
           shortcut: 'lens.context',
@@ -204,7 +194,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
               {
                 key: 'action:refresh',
                 label: SHORTCUTS['session.refresh'].label,
-                kind: 'action' as const,
+                kind: 'page' as const,
                 group: 'action' as const,
                 icon: CONCEPT_ICONS.refresh,
                 shortcut: 'session.refresh' as const,
@@ -214,7 +204,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           : []),
         {
           key: 'goto:board',
-          label: 'Back to board',
+          label: 'Board',
+          secondary: ['Back to board'],
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.workspace,
@@ -249,6 +240,14 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           run: () => fire({ name: 'goodboy:open-inbox', detail: { door: true } }),
         },
         {
+          key: 'goto:chat',
+          label: 'Chat',
+          kind: 'goto',
+          group: null,
+          icon: CONCEPT_ICONS.chat,
+          run: () => openStudio({ studio: { kind: 'chat', chatId: null } }),
+        },
+        {
           key: 'goto:workflows',
           label: 'Workflows',
           kind: 'goto',
@@ -259,7 +258,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         {
           key: 'goto:run-defaults',
           label: NAMES.runDefaults,
-          kind: 'goto',
+          kind: 'page',
           group: null,
           icon: CONCEPT_ICONS.workflows,
           secondary: formerNamesOf(NAMES.runDefaults),
@@ -276,10 +275,18 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         {
           key: 'goto:impact-spend',
           label: 'Impact: Spend',
-          kind: 'goto',
+          kind: 'page',
           group: null,
           icon: CONCEPT_ICONS.budget,
           run: () => openImpactStudio({ scope: { kind: 'spend' }, door: true }),
+        },
+        {
+          key: 'goto:notifications',
+          label: 'Notifications',
+          kind: 'goto',
+          group: null,
+          icon: CONCEPT_ICONS.notifications,
+          run: openNotificationsDoor,
         },
         {
           key: 'goto:changelog',
@@ -289,14 +296,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           icon: CONCEPT_ICONS.changelog,
           secondary: formerNamesOf(NAMES.whatsNew),
           run: openChangelogStudio,
-        },
-        {
-          key: 'goto:notifications',
-          label: 'Notifications',
-          kind: 'goto',
-          group: null,
-          icon: CONCEPT_ICONS.notifications,
-          run: openNotificationsDoor,
         },
         {
           key: 'action:new-session',
@@ -313,7 +312,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       {
         key: 'goto:start-new-project',
         label: 'Start a new project',
-        kind: 'goto',
+        kind: 'page',
         group: null,
         icon: Plus,
         run: () => fire({ name: 'goodboy:start-new-project' }),
@@ -321,7 +320,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       {
         key: 'goto:add-workspace',
         label: 'Open a folder',
-        kind: 'goto',
+        kind: 'page',
         group: null,
         icon: Plus,
         run: () => fire({ name: 'goodboy:add-workspace' }),
@@ -404,7 +403,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     out.push(
       {
         key: 'action:settings',
-        label: 'Open settings',
+        label: 'Settings',
+        secondary: ['Open settings'],
         kind: 'action',
         group: 'action',
         icon: CONCEPT_ICONS.settings,
@@ -481,7 +481,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     artifacts,
     plans,
     workflows,
-    attachWorkflowToSession,
+    startRun,
     scripts,
     scriptPins,
     workspaceProjects,
@@ -489,6 +489,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     destinations,
     openWorkspace,
     navigate,
+    openStudio,
     toggleContextDrawer,
     runScript,
     reportError,

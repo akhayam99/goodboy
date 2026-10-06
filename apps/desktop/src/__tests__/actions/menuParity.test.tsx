@@ -74,6 +74,26 @@ const closeMenus = async (): Promise<void> => {
   });
 };
 
+const GOTO_LABELS: ReadonlySet<string> = new Set([
+  'Board',
+  'Inbox',
+  'Chat',
+  'Workflows',
+  'Impact',
+  'Notifications',
+  "What's new",
+  'New session',
+  'Settings',
+  'Connect a provider',
+  'Pair your iPhone',
+  'Report a bug',
+  'Keyboard shortcuts',
+  'Guide',
+]);
+
+const optionLabels = (): ReadonlyArray<string> =>
+  screen.getAllByRole('option').map((option) => option.getAttribute('aria-label') ?? '');
+
 const overflowThenContext = async ({
   overflow,
   context,
@@ -268,7 +288,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       })?.resolve({ viewing: { kind: 'workflowRun', id: RUN } }) ?? []
     ).map((action) => action.label);
     const { fromOverflow, fromContext } = await overflowThenContext({
-      overflow: screen.getByRole('button', { name: /workflow actions$/ }),
+      overflow: screen.getByRole('button', { name: /run actions$/ }),
       context: screen.getByRole('heading', { name: 'Settlement export' }),
     });
 
@@ -432,7 +452,75 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(fromPalette).toEqual(fromOverflow);
   });
+});
 
+describe('⌘K lists the same set as the registry, in the order of the state', () => {
+  it('session verbs: the All actions level holds exactly the registry set', () => {
+    seedActionState({
+      useAppStore,
+      seed: {
+        mounts: [mountFixture()],
+        branch: 'hl/payout-export',
+        prUrl: 'https://example.test/pr/7',
+      },
+    });
+    act(() => useAppStore.setState({ currentSessionId: SESSION }));
+    const registry = (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'session', sessionId: SESSION },
+      })?.resolve() ?? []
+    )
+      .filter((action) => action.blockedReason === null)
+      .map((action) => action.label.replace(/^Open /, ''));
+    render(
+      <ToastProvider>
+        <PaletteOverlay onClose={vi.fn()} />
+      </ToastProvider>,
+    );
+    const firstScreen = optionLabels().filter((label) => !GOTO_LABELS.has(label));
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'All actions for this session' }));
+    const level = optionLabels().map((label) => label.replace(/^Open /, '').replace(/…$/, ''));
+
+    expect([...level].sort()).toEqual([...registry].sort());
+    expect(firstScreen.some((label) => label === 'Rename')).toBe(true);
+    expect(
+      firstScreen.filter((label) => registry.includes(label.replace(/^Open /, ''))).length,
+    ).toBeLessThanOrEqual(8);
+  });
+
+  it('run verbs: the Runs section lists only verbs of the run page', () => {
+    const session = sessionFixture({ workflowRuns: [runFixture()] });
+    seedActionState({
+      useAppStore,
+      seed: { session, workflows: [workflowFixture()], mounts: [mountFixture()] },
+    });
+    act(() => useAppStore.setState({ currentSessionId: SESSION }));
+    const registry = (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'workflowRun', sessionId: SESSION, runId: RUN },
+      })?.resolve() ?? []
+    ).map((action) => action.label);
+    render(
+      <ToastProvider>
+        <PaletteOverlay onClose={vi.fn()} />
+      </ToastProvider>,
+    );
+    const labels = optionLabels();
+    const runs = labels.slice(
+      labels.indexOf('Settlement export'),
+      labels.findIndex((label) => label === 'Board' || label === 'Open Runs'),
+    );
+
+    expect(runs[0]).toBe('Settlement export');
+    for (const label of runs.slice(1)) {
+      expect(registry).toContain(label.replace(/…$/, ''));
+    }
+  });
+});
+
+describe('menus open from the keyboard and never for a session that is gone', () => {
   it('opens the same menu from the keyboard with Shift+F10 and gives focus back on Escape', async () => {
     seedActionState({ useAppStore, seed: { mounts: [mountFixture()] } });
     withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);

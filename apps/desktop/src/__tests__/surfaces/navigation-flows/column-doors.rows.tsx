@@ -33,7 +33,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(async (text: string) => {
         clipboardWrites.push(text);
       });
-      await openPalette(/^Copy worktree path$/);
+      await openPalette(/^Copy worktree path$/, 'copy worktree path');
       const all = screen.queryByRole('option', { name: 'Copy all paths' });
       if (all !== null) {
         fireEvent.mouseDown(all);
@@ -53,7 +53,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(async (text: string) => {
         clipboardWrites.push(text);
       });
-      await openPalette(new RegExp(`^${label}$`));
+      await openPalette(new RegExp(`^${label}$`), label);
     },
     lands: async () => {
       await waitFor(() => expect(clipboardWrites).toHaveLength(1), WAIT);
@@ -65,14 +65,14 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['palette:Archive'],
     open: async () => {
       useAppStore.setState({ archiveTask: async () => undefined } as never);
-      await openPalette(/^Archive$/);
+      await openPalette(/^Archive$/, 'archive');
     },
     lands: async () => expect(await screen.findByText('Session archived', {}, WAIT)).toBeDefined(),
   },
   {
     name: 'palette verb: Delete asks first',
     covers: ['palette:Delete…'],
-    open: () => openPalette(/^Delete/),
+    open: () => openPalette(/^Delete/, 'delete'),
     lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
   },
   {

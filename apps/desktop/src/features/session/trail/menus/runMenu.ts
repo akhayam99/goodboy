@@ -106,7 +106,7 @@ export const runMenu = ({
   ].filter((group) => group.rows.length > 0);
 
   return {
-    title: 'Workflow runs',
+    title: 'Runs',
     context: 'this session',
     count: runs.length,
     triggerLabel: 'Switch run',

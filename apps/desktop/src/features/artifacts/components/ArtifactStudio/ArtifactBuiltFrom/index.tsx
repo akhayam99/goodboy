@@ -28,9 +28,9 @@ const scopeLine = ({ kind, sourceWorkflowRunId }: ScopeParams): string => {
     return 'The whole session';
   }
   if (kind === 'wireframe') {
-    return `Workflow run ${sourceWorkflowRunId}. Agents were scoped to that run, session plans were not`;
+    return `Run ${sourceWorkflowRunId}. Agents were scoped to that run, session plans were not`;
   }
-  return `Workflow run ${sourceWorkflowRunId}. Agents and artifacts were scoped to that run, session events, checks and local change evidence were not`;
+  return `Run ${sourceWorkflowRunId}. Agents and artifacts were scoped to that run, session events, checks and local change evidence were not`;
 };
 
 export const ArtifactBuiltFrom = ({ artifact }: Props) => {
@@ -116,7 +116,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
         <BuiltFromRow label="Ran in">
           {provenance.executingWorkflowRunId === null
             ? 'No workflow step, this agent ran on its own'
-            : `Workflow run ${provenance.executingWorkflowRunId}`}
+            : `Run ${provenance.executingWorkflowRunId}`}
         </BuiltFromRow>
         <div className="flex min-w-0 flex-col gap-1">
           <Eyebrow label="Evidence sent" />

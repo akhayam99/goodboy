@@ -188,7 +188,7 @@ describe('RunIdentityCard', () => {
     renderCard();
 
     expect(screen.getByText('Harden the webhook')).toBeDefined();
-    expect(screen.getByText('Preset workflow')).toBeDefined();
+    expect(screen.getByText('Preset run')).toBeDefined();
   });
 
   it('tallies the steps by state and the questions answered', () => {

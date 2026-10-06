@@ -184,7 +184,7 @@ describe('WorkflowsPane', () => {
     render(<WorkflowsPane session={buildSession({ runIds: [] })} />);
 
     expect(screen.getByTestId('workflow-empty')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Attach another workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start another run' })).toBeNull();
     expect(screen.queryByTestId('workflow-detail')).toBeNull();
   });
 
@@ -194,7 +194,7 @@ describe('WorkflowsPane', () => {
     expect(screen.getByText('First workflow')).toBeDefined();
     expect(screen.getByText('Second workflow')).toBeDefined();
     expect(screen.getAllByText('Next: First')).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Start another run' })).toHaveLength(1);
     expect(screen.queryByTestId('workflow-detail')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Runs' })).toBeDefined();
   });
@@ -383,11 +383,11 @@ describe('WorkflowsPane', () => {
 
     expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
     expect(screen.getByText('First workflow')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Start another run' })).toHaveLength(1);
 
     expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
     expect(screen.getByRole('region', { name: 'Finished history' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Start another run' })).toHaveLength(1);
   });
 
   it('shows a discarded run below the active list with its true state', () => {
@@ -466,7 +466,7 @@ describe('WorkflowsPane', () => {
     );
 
     expect(screen.getByTestId('workflow-empty')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Attach another workflow' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Start another run' })).toHaveLength(1);
   });
 
   it('restores a discarded run from its list card', () => {

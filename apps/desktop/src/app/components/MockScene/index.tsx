@@ -142,6 +142,7 @@ import { FeaturesImpactOverviewScene } from './scenes/features/ImpactOverviewSce
 import { FeaturesNewerDataScene } from './scenes/features/NewerDataScene';
 import { RepoStatusScene } from './scenes/features/RepoStatusScene';
 import { PaletteQueryScene } from './scenes/features/PaletteQueryScene';
+import { PaletteStateScene } from './scenes/features/PaletteStateScene';
 import { FeaturesReportSheetScene } from './scenes/features/ReportSheetScene';
 import { FeaturesScriptDrawerScene } from './scenes/features/ScriptDrawerScene';
 import { FeaturesComposerMenuScene } from './scenes/features/ComposerMenuScene';
@@ -319,6 +320,7 @@ export const MOCK_SCENES = {
   'features-newer-data': FeaturesNewerDataScene,
   'repo-status': RepoStatusScene,
   'palette-query': PaletteQueryScene,
+  'palette-state': PaletteStateScene,
   'features-report-sheet': FeaturesReportSheetScene,
   'features-script-drawer': FeaturesScriptDrawerScene,
   'features-composer-menu': FeaturesComposerMenuScene,

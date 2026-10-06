@@ -84,7 +84,7 @@ const isLive = ({ facts }: { readonly facts: WorkflowRunFacts }): boolean =>
   facts.state !== 'discarded' && facts.state !== 'done';
 
 export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, WorkflowRunFacts> = {
-  noun: 'workflow run',
+  noun: 'run',
   facts: ({ state, target }) => {
     const session = sessionById(state.sessions, target.sessionId) ?? null;
     const run = session?.workflowRuns.find((candidate) => candidate.id === target.runId) ?? null;
@@ -127,7 +127,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         : (agents.find((agent) => agent.stepId === manualStep.id && agent.status === 'pending') ??
           null);
     const stoppedAgent = agents.find((agent) => agent.status === 'stopped') ?? null;
-    const name = run.title ?? workflow?.name ?? 'Workflow';
+    const name = run.title ?? workflow?.name ?? 'Run';
     const mounts = state.sessionProjectMounts[target.sessionId] ?? [];
     return {
       run,
@@ -277,12 +277,12 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.discard',
-      label: NAMES.archiveWorkflow,
+      label: NAMES.archiveRun,
       icon: Ban,
       group: 'danger',
       when: ({ facts }) => facts.state !== 'discarded',
       confirm: () => ({
-        title: 'Archive this workflow?',
+        title: 'Archive this run?',
         description:
           'Hides the run, and you can restore it. Agents already started stay in the session.',
         confirmLabel: 'Archive',
@@ -292,13 +292,13 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     },
     {
       id: 'workflowRun.delete',
-      label: 'Delete workflow run',
+      label: NAMES.deleteRun,
       icon: CONCEPT_ICONS.delete,
       group: 'danger',
       when: () => true,
       confirm: () => ({
-        title: 'Delete workflow run?',
-        description: 'Permanently removes this workflow run from the session.',
+        title: 'Delete run?',
+        description: 'Permanently removes this run from the session.',
         confirmLabel: 'Delete',
         role: 'danger',
       }),

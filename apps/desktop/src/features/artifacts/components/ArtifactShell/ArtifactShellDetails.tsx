@@ -46,9 +46,7 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
               </button>
             ),
             <span key="kind">{ARTIFACT_KIND_MARKER_LABEL[artifact.kind]}</span>,
-            <span key="scope">
-              {artifact.workflowRunId === null ? 'standalone' : 'workflow run'}
-            </span>,
+            <span key="scope">{artifact.workflowRunId === null ? 'standalone' : 'run'}</span>,
             <span key="revision">rev {artifact.revision}</span>,
             <span key="created" className="tabular-nums">
               {formatDateTime({ at: artifact.createdAt })}

@@ -767,7 +767,7 @@ describe('TimelinePane run row menu', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(
-      within(runRow()).queryByRole('button', { name: 'Add rate limiting workflow actions' }),
+      within(runRow()).queryByRole('button', { name: 'Add rate limiting run actions' }),
     ).toBeNull();
   });
 

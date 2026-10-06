@@ -146,7 +146,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run a workflow',
-        desc: 'The same workflow builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, then Start workflow creates the session and starts the run.',
+        desc: 'The same workflow builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, then Start run creates the session and starts the run.',
       },
       {
         term: 'Ask an agent',
@@ -215,11 +215,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Talking to an agent',
-        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a workflow run.',
+        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a run.',
       },
       {
         term: 'Activity',
-        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a workflow run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the workflow runs of a session, and a run page reads in execution order.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session, and a run page reads in execution order.',
       },
       {
         term: 'Agent suggests',

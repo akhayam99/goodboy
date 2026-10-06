@@ -1,5 +1,5 @@
 import type { AgentId } from '@goodboy/types';
-import type { LensKind } from '../../../../store';
+import type { LensKind } from '../../store';
 
 type SessionSurfaceLayer = 'lens' | 'agent' | 'studio';
 

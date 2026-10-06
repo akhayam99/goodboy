@@ -10,7 +10,7 @@ export const startWorkflowAction = ({
   readonly sessionId: SessionId;
 }): CrumbMenuAction => ({
   id: 'start-workflow',
-  label: 'Start a workflow',
+  label: 'Start a run',
   icon: Plus,
   confirm: null,
   onRun: () =>

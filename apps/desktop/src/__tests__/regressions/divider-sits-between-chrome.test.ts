@@ -49,7 +49,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'debt',
   },
   'packages/ui/src/components/Listbox/index.tsx': { count: 1, reason: 'chrome' },
-  'apps/desktop/src/features/palette/components/CommandsMode/index.tsx': {
+  'apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx': {
     count: 2,
     reason: 'chrome',
   },

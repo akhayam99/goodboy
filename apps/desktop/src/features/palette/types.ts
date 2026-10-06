@@ -2,11 +2,14 @@ import type { LucideIcon } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import type {
+  ActionConfirm,
   AgentActionTarget,
   CommitActionTarget,
   ObjectTarget,
+  PullRequestActionTarget,
   ResolvedAction,
   SessionActionTarget,
+  WorkflowRunActionTarget,
 } from '../actions/types';
 import type { RankCandidate } from './rank';
 
@@ -19,7 +22,13 @@ export type CommitScope = CommitActionTarget & {
   readonly sessionId: SessionId;
 };
 
-export type PaletteScope = WorkspaceScope | SessionActionTarget | AgentActionTarget | CommitScope;
+export type PaletteScope =
+  | WorkspaceScope
+  | SessionActionTarget
+  | AgentActionTarget
+  | WorkflowRunActionTarget
+  | PullRequestActionTarget
+  | CommitScope;
 
 type PaletteGroup =
   'agent' | 'session' | 'workspace' | 'skill' | 'workflow' | 'script' | 'action' | 'help';
@@ -35,7 +44,17 @@ export type PaletteKind =
   | 'script'
   | 'workflow'
   | 'action'
+  | 'page'
+  | 'next'
+  | 'run'
+  | 'needs'
+  | 'level'
   | 'help';
+
+type PaletteLevelRequest =
+  | { readonly kind: 'actions'; readonly target: ObjectTarget }
+  | { readonly kind: 'start-run' }
+  | { readonly kind: 'confirm-run'; readonly workflowId: string };
 
 export type PaletteEntry = RankCandidate & {
   readonly kind: PaletteKind;
@@ -47,5 +66,7 @@ export type PaletteEntry = RankCandidate & {
   readonly shortcut?: ShortcutId;
   readonly target?: ObjectTarget;
   readonly action?: ResolvedAction;
+  readonly confirm?: ActionConfirm;
+  readonly level?: PaletteLevelRequest;
   readonly run: () => void;
 };

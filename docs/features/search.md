@@ -22,7 +22,7 @@ Reach any screen without the mouse. **⌘K** opens on what you are looking at, a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-command-palette-light.webp" alt="The command palette on the agent Resolve review on payments-api#318: For this agent lists Show its changes, Message this agent, Change model, Copy name and Delete agent, and For this session lists Open Review, Open Diff and Open Terminal with their shortcuts">
 </picture>
 
-Press **⌘K** to act on what you are looking at. The verbs of the open agent come first under **For this agent**, then **For this session** with the shortcut of each action, and **→** shows every action of any row. Results are ranked by how well they match and how often you use them, and the composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
+Press **⌘K** to act on what you are looking at. Inside a session it opens on **Next**, the steps Goodboy would take now, such as answering a question or pushing commits, then **For this session**, the actions that fit what the session is doing (a running agent first, a finished one last), and **Runs** with the verbs of the session’s runs. **→** shows every action of any row. Results are ranked by how well they match and how often you use them, and the composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
 
 ### Search
 
@@ -42,4 +42,4 @@ Once you land on a hit, walk the other matches in that view with **⌘G**.
 
 ### Right click menus
 
-Right click a session, agent, run, artifact, pull request, worktree row, diff file or message to see every action it has, at the pointer. The **⋯** menu and the palette list the same actions in the same order, and one that cannot run says why. **Shift+F10** opens the menu on the focused row.
+Right click a session, agent, run, artifact, pull request, worktree row, diff file or message to see every action it has, at the pointer. The **⋯** menu and the palette list the same actions, the palette in the order that fits what the session is doing, and one that cannot run says why. **Shift+F10** opens the menu on the focused row.

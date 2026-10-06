@@ -366,7 +366,7 @@ describe('startWorkflowRun', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Workflow step held back',
+        title: 'Run step held back',
         body: expect.stringContaining('Open questions'),
         sessionId: SESSION_ID,
       }),

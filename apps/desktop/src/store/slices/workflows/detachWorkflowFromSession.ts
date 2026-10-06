@@ -133,8 +133,8 @@ export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
         .emitNotification({
           kind: 'error',
           severity: 'warning',
-          title: 'Deleted workflow agent is still running',
-          body: 'The workflow is gone, but a provider process did not stop. Anything it writes from here is discarded. Quit it yourself if it keeps holding the worktree.',
+          title: 'Deleted run agent is still running',
+          body: 'The run is gone, but a provider process did not stop. Anything it writes from here is discarded. Quit it yourself if it keeps holding the worktree.',
           sessionId,
           workspaceId: session.workspaceId,
         })

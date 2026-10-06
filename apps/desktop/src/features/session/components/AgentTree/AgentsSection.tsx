@@ -33,11 +33,11 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
         <SectionHeader
           className={FIRST_HEADER_CLASS}
           icon={<CONCEPT_ICONS.workflows size={11} aria-hidden className="text-primary" />}
-          label="Workflow"
+          label="Runs"
           action={
             <SectionToggle
               expanded={section.workflowExpanded}
-              label="workflow"
+              label="runs"
               onToggle={() =>
                 section.setPanelSectionExpanded(task.id, 'workflow', !section.workflowExpanded)
               }
@@ -48,9 +48,7 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
       {!isWorkflowExpanded && (
         <CollapsedSummary
           text={
-            section.hasAnyWorkflow
-              ? pluralize(section.attachedRuns.length, 'workflow')
-              : 'No workflows yet'
+            section.hasAnyWorkflow ? pluralize(section.attachedRuns.length, 'run') : 'No runs yet'
           }
         />
       )}

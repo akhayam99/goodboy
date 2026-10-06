@@ -9,11 +9,11 @@ type RunKindGlyph = {
 };
 
 export const RUN_KIND_GLYPH: Record<RunWorkflowKind, RunKindGlyph> = {
-  preset: { icon: CONCEPT_ICONS.workflowPreset, label: 'Preset workflow', isNamedInTooltip: true },
-  custom: { icon: CONCEPT_ICONS.workflowCustom, label: 'Custom workflow', isNamedInTooltip: true },
+  preset: { icon: CONCEPT_ICONS.workflowPreset, label: 'Preset run', isNamedInTooltip: true },
+  custom: { icon: CONCEPT_ICONS.workflowCustom, label: 'Custom run', isNamedInTooltip: true },
   orchestrator: {
     icon: CONCEPT_ICONS.orchestrator,
-    label: 'Orchestrated workflow',
+    label: 'Orchestrated run',
     isNamedInTooltip: false,
   },
 };

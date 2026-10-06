@@ -90,11 +90,11 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   pr_approved: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_approved], label: 'Pull request' },
   pr_merged: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_merged], label: 'Pull request' },
   pr_closed: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_closed], label: 'Pull request' },
-  workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Workflow' },
-  workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
-  workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Workflow' },
-  workflow_closed: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
-  workflow_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Workflow' },
+  workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Run' },
+  workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Run' },
+  workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Run' },
+  workflow_closed: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Run' },
+  workflow_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Run' },
   decisions_changed: {
     icon: CONCEPT_ICONS.decisions,
     tone: CONCEPT_TONE.decisions,
@@ -158,7 +158,7 @@ const prSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
 
 const workflowSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
   payload?.workflowName == null
-    ? { kind: 'text', text: 'Workflow' }
+    ? { kind: 'text', text: 'Run' }
     : { kind: 'value', text: payload.workflowName, variant: 'workflow' };
 
 type DecisionDiff = {
