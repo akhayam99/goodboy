@@ -248,7 +248,9 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **Back restores the entry as it was; a forward move arrives clean.** Before a
   push, the live view is captured into the current entry, so Back finds the
   same run, artifact or diff focus. A forward move (crumb, sidebar, palette,
-  notification, Board) starts with an empty focus.
+  notification, Board) starts with an empty focus. A page row in the column
+  navigates first and clears the run and artifact focus after, so the clear
+  never reaches the entry it leaves (`SessionPages`).
 - **Up goes to the parent.** When the previous entry is the parent, Up is Back.
   Otherwise it pushes the parent. Closing an app studio is Back to the entry
   below it, so Up from a studio and Close land in the same place.
