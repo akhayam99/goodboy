@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import type { ResolvePublicationPreview } from '@goodboy/types';
 import { BranchPage } from '../../../../features/branch/components/BranchPage';
 import { useAppStore } from '../../../../store';
-import { EXPANDED_THREAD_ID, SESSION, THREAD_IDS, seedResolveScene } from './resolveSeed';
+import {
+  EXPANDED_THREAD_ID,
+  SESSION,
+  THREAD_IDS,
+  seedResolveScene,
+  type ReplyOnlyVariant,
+} from './resolveSeed';
 
 const PUSH_PREVIEW: ResolvePublicationPreview = {
   publicationId: 'mock-branch-publication',
@@ -48,13 +54,22 @@ type Props = {
   readonly width: string | null;
   readonly openPush: boolean;
   readonly threadId?: string;
+  readonly replyOnly?: ReplyOnlyVariant;
 };
 
-export const BranchSceneShell = ({ width, openPush, threadId = EXPANDED_THREAD_ID }: Props) => {
+export const BranchSceneShell = ({
+  width,
+  openPush,
+  threadId = EXPANDED_THREAD_ID,
+  replyOnly,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedResolveScene({ expandedThreadId: threadId });
+    seedResolveScene({
+      expandedThreadId: threadId,
+      ...(replyOnly !== undefined && { replyOnly }),
+    });
     useAppStore.setState({
       preparePublication: async () => PUSH_PREVIEW,
     });

@@ -151,6 +151,9 @@ export type ResolveActions = {
   readonly replyAndResolveThread: (
     params: ThreadParams & { readonly reply?: string },
   ) => Promise<void>;
+  readonly publishThreadNow: (params: ThreadParams) => Promise<void>;
+  readonly reconcileHandReplies: (params: SourceSnapshotsParams) => Promise<number>;
+  readonly switchToReplyOnly: (params: ThreadParams) => Promise<void>;
   readonly recheckThread: (params: ThreadParams) => Promise<RecheckOutcome>;
   readonly settleThreadRecheck: (
     params: SessionParams & {
