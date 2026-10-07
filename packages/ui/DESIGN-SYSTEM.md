@@ -1553,26 +1553,29 @@ collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
 
-A theme switch is a class swap on `<html>` and nothing else: `applyDocumentTheme`
-sets the `light` or `dark` class, `data-theme` and `color-scheme`, and the CSS
-variables repaint the page in one frame, with no React state (the zustand
-store keeps only the preference). A switch the user asks for (the toggle,
-Settings, the palette, the system or another window) wraps that same swap in
-one document view transition: the old and new window snapshots cross-fade
-over 420ms, `cubic-bezier(0.45, 0, 0.55, 1)`. A circular reveal from the
-toggle was tried and dropped, because its hard bright edge flips a third of
-the screen between two frames. `html[data-theme-switching]` turns every
-element transition off from the swap until the fade ends, so no
-`transition-colors` surface animates on its own. Never add a per-element
-color transition for the theme: that is what made the switch flash and lag
-before. A switch asked for mid-fade waits and runs once the fade ends, the
-last request winning, so repeated clicks never stack. The first paint,
-reduced motion and an engine without `document.startViewTransition` swap at
-once. The toggle icon wrapper (`data-theme-icon`) takes
-`view-transition-name: theme-icon` for the switch only, so the old icon turns
-out (`theme-icon-out`, 300ms) while the new one turns in
-(`theme-icon-in`, 420ms), transform and opacity only. The few things that
-paint with JS colors (the xterm terminal, the changelog image, the theme
+A theme switch is one paint, a class swap on `<html>` and nothing else:
+`applyDocumentTheme` writes the `light` or `dark` class, `data-theme` and
+`color-scheme` once each in a single task, and the CSS variables repaint the
+page in that frame. There is no React state for it (the zustand store keeps
+only the preference, set in the same call, so the toggle, the Settings field
+and the footer chip commit once together). Every route into a switch (the
+toggle, Settings, the palette, the system, another window) goes through that
+one function, and it writes nothing when the resolved theme is already
+applied. `html[data-theme-switching]` turns every element transition off from
+before the swap until two painted frames later (a timer guards a window that
+never paints), so no `transition-colors` surface animates on its own and a
+state change in the same click, such as the selected tab, does not fade
+through the new palette. Never add a per-element color transition for the
+theme, and never wrap the swap in `document.startViewTransition`: a view
+transition repaints the whole window for every frame of a 420ms fade
+(Chrome measured 44 style recalcs, 22 paints and 225ms of main-thread work
+against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames
+with a 500ms freeze on a large diff, against 80 frames with the swap alone),
+and a window that repaints for a fade reads as the UI flickering, worst on
+the busiest pages. A circular reveal and a cross-fade were both tried and
+dropped for that reason. The toggle icon alone turns in (`theme-icon-in`,
+420ms, transform and opacity only) when its sun or moon swaps. The few things
+that paint with JS colors (the xterm terminal, the changelog image, the theme
 toggle icon) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 

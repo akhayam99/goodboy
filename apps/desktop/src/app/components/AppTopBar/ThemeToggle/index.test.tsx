@@ -48,7 +48,7 @@ describe('ThemeToggle', () => {
     expect(container.querySelector('.lucide-sun')).not.toBeNull();
   });
 
-  it('turns a fresh icon in on every switch, inside the part the cross-fade leaves out', () => {
+  it('turns a fresh icon in on every switch', () => {
     setTheme({ preference: 'dark', theme: 'dark' });
     const { container } = render(<ThemeToggle />);
     const moon = container.querySelector('.lucide-moon');
@@ -58,7 +58,7 @@ describe('ThemeToggle', () => {
     const sun = container.querySelector('.lucide-sun');
     expect(moon?.isConnected).toBe(false);
     expect(sun?.getAttribute('class')).toContain('motion-safe:animate-theme-icon-in');
-    expect(sun?.parentElement?.hasAttribute('data-theme-icon')).toBe(true);
+    expect(sun?.parentElement?.tagName).toBe('BUTTON');
   });
 
   it('turns Match system into an explicit choice on click', () => {

@@ -10,20 +10,17 @@ const sheet = document.createElement('style');
 
 type Probe = {
   readonly app: HTMLElement;
-  readonly icon: HTMLElement;
   readonly row: HTMLElement;
 };
 
 const mountProbe = (): Probe => {
   const app = document.createElement('div');
   app.id = 'root';
-  const icon = document.createElement('button');
-  icon.setAttribute('data-theme-icon', '');
   const row = document.createElement('div');
   row.style.transition = 'opacity 1s';
-  app.append(icon, row);
+  app.append(row);
   document.body.append(app);
-  return { app, icon, row };
+  return { app, row };
 };
 
 beforeAll(() => {
@@ -66,18 +63,8 @@ describe('color scheme', () => {
     expect(getComputedStyle(switching.row).transition).toBe('none');
   });
 
-  it('names the toggle icon for the view transition only while a switch runs', () => {
-    const idle = mountProbe();
-    expect(getComputedStyle(idle.icon).getPropertyValue('view-transition-name')).not.toBe(
-      'theme-icon',
-    );
-    idle.app.remove();
-
-    root.setAttribute('data-theme-switching', '');
-    const switching = mountProbe();
-
-    expect(getComputedStyle(switching.icon).getPropertyValue('view-transition-name')).toBe(
-      'theme-icon',
-    );
+  it('has no view transition rule, so the window never cross-fades through two full snapshots', () => {
+    expect(STYLES).not.toContain('view-transition');
+    expect(STYLES).not.toContain('theme-icon-out');
   });
 });
