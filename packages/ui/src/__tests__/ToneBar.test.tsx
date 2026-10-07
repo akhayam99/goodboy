@@ -14,6 +14,13 @@ describe('ToneBar', () => {
     expect(barClassName()).toContain('bg-danger');
   });
 
+  it('paints the warning line with the line amber, lighter than the text amber in light', () => {
+    render(<ToneBar tone="warning" density="card" />);
+
+    expect(barClassName()).toContain('bg-warning-mark');
+    expect(barClassName()).not.toMatch(/(^| )bg-warning( |$)/);
+  });
+
   it('names its tone, so a surface can be checked without reading classes', () => {
     render(<ToneBar tone="warning" density="row" />);
 

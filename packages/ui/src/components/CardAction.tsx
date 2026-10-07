@@ -11,7 +11,6 @@ export type CardActionProps = {
   readonly size?: 'compact' | 'default';
   readonly reveal?: boolean;
   readonly revealGroup?: string;
-  readonly highlighted?: boolean;
   readonly pressed?: boolean;
   readonly expanded?: boolean;
   readonly disabled?: boolean;
@@ -26,7 +25,6 @@ export const CardAction = ({
   size = 'compact',
   reveal = false,
   revealGroup = 'group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100',
-  highlighted = false,
   pressed,
   expanded,
   disabled = false,
@@ -55,7 +53,6 @@ export const CardAction = ({
           tintClasses(tone).hoverBgSoft,
           tintClasses(tone).hoverText,
           reveal ? cn('opacity-0', revealGroup) : disabled && 'opacity-40',
-          highlighted && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
         )}
       >
         <Icon

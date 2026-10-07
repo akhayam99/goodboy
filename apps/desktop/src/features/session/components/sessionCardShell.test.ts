@@ -45,6 +45,11 @@ describe('sessionCardShell', () => {
     expect(classes).not.toMatch(/border-l-(info|warning|danger|success|primary|merged)/);
   });
 
+  it('washes the whole card on hover with the shared wash, a selected card keeps its tint', () => {
+    expect(sessionCardShell({})).toContain('hover:bg-hover');
+    expect(sessionCardShell({ selected: true })).not.toContain('hover:bg-hover');
+  });
+
   it('positions itself so the tone bar can sit inside it', () => {
     expect(sessionCardShell({})).toContain('relative');
   });

@@ -55,6 +55,7 @@
      (`elevated`), which is what sets their lightness floor. */
   --color-danger: oklch(0.742 0.17 22);
   --color-warning: oklch(0.76 0.13 78);
+  --color-warning-mark: oklch(0.76 0.13 78);
   --color-success: oklch(0.71 0.13 148);
   --color-info: oklch(0.716 0.12 245);
   --color-merged: oklch(0.734 0.15 305);
@@ -493,6 +494,7 @@ html[data-theme='light'] {
      L is brownish; amber stays recognizable while clearing 4.5:1 against bg. */
   --color-danger: oklch(0.5 0.19 22);
   --color-warning: oklch(0.498 0.17 55);
+  --color-warning-mark: oklch(0.65 0.15 70);
   --color-success: oklch(0.45 0.14 148);
   --color-info: oklch(0.481 0.14 245);
   --color-merged: oklch(0.49 0.18 305);

@@ -422,7 +422,7 @@ describe('StageBoardCard actions visibility', () => {
     expect(nav.selectCard).toHaveBeenCalledTimes(2);
   });
 
-  it('shows the attention tint on the visible action at rest', () => {
+  it('leaves the attention action neutral at rest so the line is the one tone signal', () => {
     useDynamicActionsMock.mockReturnValue([
       {
         key: 'questions',
@@ -441,13 +441,15 @@ describe('StageBoardCard actions visibility', () => {
     ]);
     render(<StageBoardCard session={session} nav={nav} />);
     const attention = screen.getByLabelText('1 open question');
-    expect(attention.className.includes(' bg-warning/5')).toBe(true);
-    expect(attention.className).toContain('text-warning');
+    expect(attention.className).not.toContain(' bg-warning/5');
+    expect(attention.className).not.toMatch(/(^| )text-warning/);
+    expect(attention.className).toContain('text-muted-foreground');
+    expect(attention.className).toContain('hover:text-warning');
     expect(attention.className).not.toContain('opacity-0');
     expect(screen.queryByLabelText('run next step')).toBeNull();
   });
 
-  it('highlights a danger action', () => {
+  it('leaves a danger action neutral at rest too', () => {
     useDynamicActionsMock.mockReturnValue([
       {
         key: 'blocked',
@@ -459,8 +461,55 @@ describe('StageBoardCard actions visibility', () => {
     ]);
     render(<StageBoardCard session={session} nav={nav} />);
     const action = screen.getByLabelText('Confirm skip and continue');
-    expect(action.className).toContain('bg-danger/5');
-    expect(action.className).toContain('text-danger');
+    expect(action.className).not.toMatch(/(^| )bg-danger/);
+    expect(action.className).not.toMatch(/(^| )text-danger/);
+    expect(action.className).toContain('text-muted-foreground');
+  });
+
+  it('paints exactly one tinted element on a Needs you card, the tone line', () => {
+    useDynamicActionsMock.mockReturnValue([
+      {
+        key: 'questions',
+        icon: HelpCircle,
+        tone: 'warning',
+        label: '1 open question',
+        onClick: vi.fn(),
+      },
+    ]);
+    render(<StageBoardCard session={session} nav={nav} />);
+    const tinted = Array.from(screen.getByRole('article').querySelectorAll('[class]')).filter(
+      (node) => /(^| )(bg|text)-(warning|danger)(\/|$| )/.test(node.getAttribute('class') ?? ''),
+    );
+    expect(tinted).toEqual([]);
+  });
+
+  it('shows the pointer on the whole card, title included', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByRole('article').className).toContain('cursor-pointer');
+    expect(cardTitle().className).toContain('cursor-pointer');
+  });
+
+  it('washes the whole card on hover with the shared row wash', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByRole('article').className).toContain('hover:bg-hover');
+  });
+
+  it('swaps the age for the cost on hover in one slot, so the chips never move', () => {
+    hooks.cost = 1.23;
+    const updated = aSession({
+      ...session,
+      updatedAt: new Date(Date.now() - 7_200_000).toISOString() as IsoDateTime,
+    });
+    render(<StageBoardCard session={updated} nav={nav} />);
+    const age = screen.getByText('2h ago');
+    const cost = screen.getByText('$1.23');
+    expect(age.parentElement).toBe(cost.parentElement);
+    expect(age.className).toContain('col-start-1');
+    expect(cost.className).toContain('col-start-1');
+    expect(cost.className).toContain('invisible');
+    expect(cost.className).not.toContain('hidden');
+    expect(age.className).toContain('group-hover/session-card:invisible');
+    expect(cost.className).toContain('group-hover/session-card:visible');
   });
 
   it('keeps nothing hover-only on the card', () => {

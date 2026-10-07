@@ -1458,7 +1458,11 @@ The desktop app has no wrapper for it now: a word that stays gets a
 **One card action grammar.** Two fixed slots. Navigation sits top right and is
 always visible. Lifecycle and destructive actions sit bottom right. Hover may
 show lifecycle actions without moving either slot, and keyboard focus shows the
-same. Icon actions use the shared `Tooltip`, never the native `title`. A
+same. A card says its state once, with its `ToneBar`: the quick action stays
+`muted-foreground` at rest and takes its tone only on hover, and a closed pull
+request glyph on a Done card is quiet too. `CardAction` has no resting tint. The
+warning line paints with `warning-mark` (the same amber as `warning` in dark, a
+lighter amber in light), because the text amber reads brick red as a line. Icon actions use the shared `Tooltip`, never the native `title`. A
 hover slot keeps its width at rest: it fades with `opacity-0
 group-hover:opacity-100 group-focus-within:opacity-100`, never `hidden
 group-hover:flex`, and the row's primary action stays outside it, visible.

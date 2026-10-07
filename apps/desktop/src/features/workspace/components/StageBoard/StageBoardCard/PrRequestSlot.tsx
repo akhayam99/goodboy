@@ -43,6 +43,7 @@ export const PrRequestSlot = ({ linkedRequest, isGitlab, prFetchState, onOpen }:
             number={linkedRequest.number}
             iconSize={14}
             title={linkedRequest.title}
+            className={linkedRequest.state === 'closed' ? 'text-muted-foreground' : undefined}
           />
         </button>
       </Tooltip>
