@@ -725,14 +725,17 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   are shortcuts into a place that already has a parent. None of them may
   rewrite it. History is what Back is for.
 - **The Branch is one page with its tabs in the address.** A branch is shaped
-  like a pull request: a header (title, `Draft · project · head → base ·
-checks`, one primary by state, `⋯` for the rare pull request lifecycle) over
+  like a pull request: a header (title, `Draft · project · head ▾ → base ·
+checks`, where `project · head ▾` is the branch switcher, one primary by
+  state, `⋯` for the rare pull request lifecycle) over
   the tabs `Comments · Files · Commits · Checks`
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
   thread selection replace the entry, so Back never walks them. The trail is
   `Session > Branch ▾ > {thread or file}`, the same from
-  every door; Up is the crumb to the left of the open one. `Branch ▾` lists the
-  session branches and makes the picked one the active mount. `layers.ts` is
+  every door and always reading `Branch`, never the branch or pull request name
+  (the header names it); Up is the crumb to the left of the open one.
+  `Branch ▾` lists the session branches and makes the picked one the active
+  mount. `layers.ts` is
   gone. The requests `pr`, `review` and `files` (a mount present) are
   rewritten to the Branch address by `canonicalLocation`, so the palette, the
   shortcuts, a notification, a chip, a search hit and an Activity row all land
@@ -1855,9 +1858,25 @@ Files tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
-**Header.** Title (`#318 Ledger export`, or the branch name without a pull
-request), the line `Draft · project · head → base · ✓ N checks`, one primary
-and `⋯`. The primary is the first that applies: `Rebase on main`
+**Header.** Title, the one h1 (`#318 Ledger export`, or the branch name
+without a pull request), the line `Open · payments-api · hl/fix-credit ▾ → main
+· ✓ N checks` (the state word, `Draft` for a draft and `No pull request` without
+one, then the switcher chip, the base and the checks), one primary and `⋯`. The
+branch name prints once in that line, in `text-code`: the trail reads `Branch`
+and the title is the pull request's. **The switcher chip** (`BranchSwitcher`)
+is the repo and the branch of the page. It opens a menu of the session's
+branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
+glyph, branch cut in the middle, `#318 Open`, a check on the current one,
+grouped by repo when there are several) and `New branch`. Choosing a branch
+makes it the active mount and replaces the address with the same tab
+(`switchBranchMount`, also what the trail menu runs), so the crumb, the header
+and the body follow together. `New branch` swaps the menu for a name field
+(empty names it automatically) and a `Create branch` that forks a worktree
+(`forkMount`) and lands on it on the same tab; a folder project cannot fork and
+offers none. With one branch the chip has no chevron and its menu holds only
+`New branch`; with neither it is plain text.
+
+The primary is the first that applies: `Rebase on main`
 (`Open terminal` while a rebase is stopped, with `Abort rebase` beside it),
 `Push N` (accepted threads, then unpushed commits), `Publish N replies` (the
 fix is already on origin), `Retry N`, `Create PR`, `Ready for review`, `Merge`
@@ -1875,22 +1894,28 @@ review, Convert to draft, Close or Reopen, Open on GitHub, Copy link) and the
 branch actions (Change base branch…, Open terminal, Open in editor, Copy
 branch name, Copy patch).
 
-**Comments.** A closed Description, then the list (`Needs you`, `Ready`,
-`Done`, local notes included with a `Local` label) and the open thread with the
-code around the commented line above it (`hunkAround`, linking to Files). The
-properties (State, Origin with the code host link and Copy link, Attempts with
-the transcript, Fix commit, Author) sit in a rail only when the pane is wide.
-Every Branch tab uses the full pane width (`PaneShell width="full"`), and the
-Comments tab reads the width of its own pane (`branchLayoutOf`, so a wide
-sidebar or an open drawer narrows it): from 1280px a 300px list, the thread and
-a 288px margin rail; from 900px the list and a wide thread, with the properties inline under
-the thread; under 900px the list, then the thread with `‹ Comments` (Up). The
-selected row stays selected on the way back. `branchLayout.test.ts` pins the
-widths a 1024px window gets with a wide sidebar and an open drawer. Fix, Resolve without a reply and Stop live on the thread and its
-properties; Fix launches from the list or the thread, never from Files.
+**Comments.** The Description (open when the pull request has a body, closed
+when it has none, with a visible `Edit` on its header while it is closed and
+`Edit` on the title and the description once it is open; `Edit title and
+description` in `⋯` still works), then the list (`Needs you`, `Ready`, `Done`,
+local notes included with a `Local` label) and the open thread with the code
+around the commented line above it (`hunkAround`, linking to Files). The
+properties (State, Origin with the code host link and Copy link, Attempts, Fix
+commit) sit inline under the thread at every width, never in a margin rail.
+Every Branch tab sits on the 960px column (`PaneShell width="column"`, bodies in
+`PageColumn width="column"`), the header, the tabs and Ask included, so nothing
+moves from one tab to the next. The Comments tab reads the width of its own pane
+(`branchLayoutOf`, so a wide sidebar or an open drawer narrows it): from 900px a
+300px list beside a wide thread; under 900px the list, then the thread with
+`‹ Comments` (Up). The selected row stays selected on the way back.
+`branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
+and an open drawer. The tab counts (Comments, Files, Commits) read a muted `-`
+named `Not loaded` until the data arrives, then the number, never 0 for an
+unknown (`TabCount`). Fix, Resolve without a reply and Stop live on the thread
+and its properties; Fix launches from the list or the thread, never from Files.
 
-**Files.** The branch against its base with the change tree on the left
-(`ChangeTree`, 320px by default, from 900px of pane up; drag its right edge or use the arrow keys to resize it, never past 30% of the pane, saved as `goodboy:diff-tree-width`): folders first, then files, alphabetical,
+**Files.** The branch against its base, on the column, with the change tree on
+the left of the diff body (`ChangeTree`, 320px by default, from 900px of pane up; drag its right edge or use the arrow keys to resize it, never past 30% of the pane, saved as `goodboy:diff-tree-width`): folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5

@@ -267,6 +267,8 @@ export const BranchPage = ({ session, workingDir }: Props) => {
         header={
           <div className="flex min-w-0 flex-col gap-3">
             <BranchHeader
+              sessionId={sessionId}
+              mountPath={identity.mountPath}
               pr={pr}
               checks={checks}
               projectName={projectName}

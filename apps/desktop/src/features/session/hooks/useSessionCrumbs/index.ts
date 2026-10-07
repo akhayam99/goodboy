@@ -104,10 +104,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     }
     return null;
   }, [branchFilePath, branchTab, branchThreadId, lens, pullRequestMode, selectedThreadLabel]);
-  const branch = useMemo(
-    () => ({ label: branchIdentity.label, leaf: branchLeaf }),
-    [branchIdentity.label, branchLeaf],
-  );
+  const branch = useMemo(() => ({ leaf: branchLeaf }), [branchLeaf]);
 
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,

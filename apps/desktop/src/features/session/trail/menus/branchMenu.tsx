@@ -1,4 +1,4 @@
-import type { SessionProjectMount, WorktreeStatus } from '@goodboy/types';
+import type { PullRequestStateKind, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 import type {
   CrumbMenuAction,
   CrumbMenuGroup,
@@ -25,6 +25,7 @@ import {
   type BranchPriorityKind,
   type OpenRequestHead,
 } from '../../../../shared/lib/branchPresence';
+import { pullRequestWord } from '../../../branch/pullRequestWord';
 import { DiffStat } from '../../components/DiffStat';
 
 type BranchStat = {
@@ -32,15 +33,25 @@ type BranchStat = {
   readonly deletions: number;
 };
 
-type Params = {
+type BranchRequest = {
+  readonly number: number;
+  readonly state: PullRequestStateKind;
+  readonly isDraft: boolean;
+};
+
+type GroupsParams = {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
   readonly currentPath: string | null;
   readonly statOf: (mount: SessionProjectMount) => BranchStat | null;
   readonly statusOf: (mount: SessionProjectMount) => WorktreeStatus | null;
   readonly isRequestMergedOf: (mount: SessionProjectMount) => boolean;
   readonly openRequestOf?: (mount: SessionProjectMount) => OpenRequestHead | null;
-  readonly actions: ReadonlyArray<CrumbMenuAction>;
+  readonly requestOf?: (mount: SessionProjectMount) => BranchRequest | null;
   readonly onSelect: (mount: SessionProjectMount) => void;
+};
+
+type Params = GroupsParams & {
+  readonly actions: ReadonlyArray<CrumbMenuAction>;
 };
 
 type BranchLook = Pick<CrumbState, 'tone' | 'glyph'>;
@@ -93,24 +104,25 @@ const branchStateOf = ({
   return { word: priority.word, ...PRIORITY_LOOK[priority.kind] };
 };
 
-export const branchMenu = ({
+export const branchMenuGroups = ({
   mounts,
   currentPath,
   statOf,
   statusOf,
   isRequestMergedOf,
   openRequestOf = () => null,
-  actions,
+  requestOf = () => null,
   onSelect,
-}: Params): CrumbMenuModel => {
+}: GroupsParams): ReadonlyArray<CrumbMenuGroup> => {
   const rowOf = (mount: SessionProjectMount): CrumbMenuRow => {
     const stat = statOf(mount);
     const hasChanges = stat !== null && (stat.additions > 0 || stat.deletions > 0);
+    const request = requestOf(mount);
     return {
       id: mount.worktreePath,
       lead: { kind: 'icon', icon: CONCEPT_ICONS.branch },
       label: mount.branch === '' ? mount.mountName : mount.branch,
-      secondary: null,
+      secondary: request === null ? null : `#${request.number} ${pullRequestWord(request)}`,
       metaA:
         stat === null ? null : hasChanges ? (
           <DiffStat additions={stat.additions} deletions={stat.deletions} />
@@ -131,20 +143,20 @@ export const branchMenu = ({
     };
   };
   const repos = [...new Set(mounts.map((mount) => mount.mountName))];
-  const groups: ReadonlyArray<CrumbMenuGroup> = repos.map((repo) => ({
+  return repos.map((repo) => ({
     id: repo,
     label: repo,
     rows: mounts.filter((mount) => mount.mountName === repo).map(rowOf),
   }));
-
-  return {
-    title: 'Branches',
-    context: 'this session',
-    count: mounts.length,
-    triggerLabel: 'Switch branch',
-    groups,
-    actions: actions.slice(0, 2),
-    width: 'wide',
-    filterPlaceholder: 'Filter branches',
-  };
 };
+
+export const branchMenu = ({ actions, ...params }: Params): CrumbMenuModel => ({
+  title: 'Branches',
+  context: 'this session',
+  count: params.mounts.length,
+  triggerLabel: 'Switch branch',
+  groups: branchMenuGroups(params),
+  actions: actions.slice(0, 2),
+  width: 'wide',
+  filterPlaceholder: 'Filter branches',
+});
