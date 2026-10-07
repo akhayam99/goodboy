@@ -4,6 +4,7 @@ import type {
   CatalogModel,
   EffortLevel,
   ModelCostTier,
+  ModelDescriptor,
   ModelSelection,
   ProviderId,
 } from '@goodboy/types';
@@ -226,6 +227,32 @@ const skippedAtLimitBefore = ({ pick, context }: SkippedParams): ReadonlyArray<P
     .filter((provider) => atLimit.includes(provider));
 };
 
+type TierUsableParams = {
+  readonly provider: ProviderId;
+  readonly model: ModelDescriptor;
+  readonly context: AutoContext;
+};
+
+const isTierModelUsable = ({ provider, model, context }: TierUsableParams): boolean => {
+  const catalogModel = catalogModelOf({ provider, choice: { key: model.id } });
+  if (
+    catalogModel != null &&
+    catalogModel.provider === 'cursor' &&
+    context.isCursorMaxModeOn !== true &&
+    catalogModel.combos.every((combo) => combo.maxMode)
+  ) {
+    return false;
+  }
+  return (
+    cliGate({
+      provider,
+      modelKey: model.id,
+      installedVersion: context.cliVersions?.[provider] ?? null,
+      learned: context.learned ?? [],
+    }) === null
+  );
+};
+
 type HiddenTierParams = ProviderPickParams & {
   readonly isCeilingKept: boolean;
 };
@@ -245,6 +272,7 @@ const hiddenTierPick = ({
     tier: slotTier(slot),
     wantsThinker: slot.kind === 'role' && THINKING_ROLES.has(slot.id),
     hidden: context.hidden,
+    isUsable: (candidate) => isTierModelUsable({ provider, model: candidate, context }),
   });
   if (model == null) {
     return null;
