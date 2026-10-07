@@ -86,6 +86,8 @@ Notices and the Needs you card keep their tone as one line inside the card.
 - The first comment in the Fix run drawer is no longer cut short. <!-- gb area=review -->
 - Switching the theme no longer flickers. <!-- gb area=app -->
 - The Done mark is a filled violet check, so a finished session reads as complete. <!-- gb area=sessions -->
+- A closed or merged pull request no longer shows as Draft, even when it was a draft. <!-- gb area=review -->
+- A session whose pull request waits in the merge queue shows In merge queue with its own mark, and stays out of Needs you. <!-- gb area=sessions -->
 - When Merge is blocked, the Branch header says why beside it, such as 1 check still running. <!-- gb area=review -->
 - Several comments go into one Fix run, and its drawer shows the status, the comments it covers and its commits. <!-- gb area=review -->
 - You can pick a branch a teammate pushed and keep working on it, and a worktree left stranded is repaired. <!-- gb area=sessions -->
