@@ -259,22 +259,38 @@ providers it may pick from with **Can use**.
 In the workflow detail, an orchestrated run shows the orchestrator as one row
 (`OrchestratorStrip`): what it is doing ("Choosing the next step", "Waiting on
 step 3 · Implement"), how long the running step has taken, the model it runs
-on, the run controls and a menu. The row says its state with the colour
-of its left rail, never with a filled background. **Pause** shows while a step
-or a decision is in flight, **Resume** while the run is paused, and **Stop**
-(with an inline confirmation) in both. Besides them it shows at most one
-action: **Decide next step** only when the run asks before each step,
-**Continue the run** after you stopped it or once it is complete, **Retry**
-after a failed decision, or the spend cap on a budget pause. A failed step and an open
-question are left to the Next action strip, so the row only says the run is
-paused, on a neutral rail: the strip above carries the tone. When the pane is
-too narrow for the sentence and the controls on one line, the controls wrap to
-a second line on the right instead of cutting the sentence. When to ask
-(**Ask before each step** or **Run on its own**) and **Model per step** (the
-model each step runs on, and why) sit in the menu. A model picked for the
-orchestrator turns its chip amber, and the picker itself says "Overriding
-default" with **reset**; the row draws no separate cross beside the chip
-(`hasTriggerReset={false}`). The hint field sits under the row, always open.
+on, a menu and, while a step is in flight, **Stop step**. The row says its state
+with a `ToneBar` inside its padding, never with an outer edge or a filled
+background. **Pause**, **Resume** and **Stop run** are not in the row: they are
+one cluster in the header of [the run page](#the-run-page). Besides **Stop step**
+the row shows at most one action: **Decide next step** only when the run asks
+before each step, **Continue the run** after you stopped it or once it is
+complete, **Retry** after a failed decision, **Review plan** while the run
+waits for its plan, **Answer** when the planner asked a question, or the spend
+cap on a budget pause. **Stop step** asks first, then cancels the step in
+flight, marks it skipped and holds the run (`stopWorkflowRunNow`); **Continue
+the run** takes it from there.
+
+The row has phases of its own for a run held for its plan. A held run reads
+"Plan ready · waiting for you" (`plan-approval`). While the planner revises the
+plan after your comments it reads "The planner is revising the plan"
+(`plan-revising`, pulsing, no action). When the planner asked you something it
+reads "The planner asked: ..." (`plan-question`) with **Answer**, which opens the
+planner at its question. Both phases are checked before the stop presentation,
+and `resolveOrchestratorState` takes them as a `plan` signal the strip reads
+from the plan the run waits on, so a pause or a decision in flight still speaks
+first.
+
+A failed step and an open question are left to the Next action strip, so the
+row only says the run is paused, on a neutral line: the strip above carries the
+tone. When the pane is too narrow for the sentence and the controls on one
+line, the controls wrap to a second line on the right instead of cutting the
+sentence. When to ask (**Ask before each step** or **Run on its own**) and
+**Model per step** (the model each step runs on, and why) sit in the menu. A
+model picked for the orchestrator turns its chip amber, and the picker itself
+says "Overriding default" with **reset**; the row draws no separate cross
+beside the chip (`hasTriggerReset={false}`). The hint field is not in the row:
+it docks at the bottom of the page.
 
 ### Why each step
 
@@ -298,10 +314,11 @@ with the step where the orchestrator first read it.
 
 - **Queue** waits until the next decision
 - **Read now** restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
+- The help sits in each button's tooltip, not in a sentence under the field. Read now says what it does in the state the run is in
 - The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter reads now. **Preview** shows it as markdown, and the hint log reads it as markdown too
 - Paste, drop or attach images. They are saved as files of the run, so the next agent gets them, and the hint keeps their ids
 - The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text and your images come back
-- Each hint says where it stands: **Waits for the next decision**, **Reading now** while a decision has it, or **Read at step N**. Read hints sit behind a count
+- Queued hints fold into one row, "2 queued", with a chevron that opens them in place. A hint a decision is reading shows by itself, and each says where it stands: **Waits for the next decision**, **Reading now**, or **Read at step N**. Read hints sit behind a count
 - You can remove a hint, except while a decision is reading it
 
 Asking for a certain provider or model on a step is a hint too.
@@ -320,6 +337,20 @@ cap and its strip says `Paused at the $10.00 spend cap for this session.`
 with **Raise spend cap**, which opens the chip on the editor. With **Warn only**
 nothing stops: one notification says the session passed its cap. Single
 agents are never stopped by it.
+
+## The run page
+
+The run page (`WorkflowsPane` over `WorkflowRow`) reads top to bottom: a
+pinned header, the strips, the steps in their own scroller, and a composer
+docked under them.
+
+- **Header.** The title, the status, the facts (steps, agents, cost, spend cap, when to ask, time left) and one cluster of actions: **Review plan** while the run waits for its plan, **Pause** (or **Resume**) and **Stop run** as one pair (`RunControls`), and an overflow menu. The chevron is named **Show run summary**, in its accessible name and its tooltip. It folds the run into its card in the Runs list; a run opened from a list that is collapsed offers **Expand ... run** instead
+- **Scroll edge.** The steps scroll under the pinned block. `ScrollFade` takes `edge="line"`: its root draws a 1px `border` line at its own top edge while `scrollTop` is above 0, shown through `data-scrolled` on the root, set imperatively inside `applyFade`, never through React state, and faded in over 120ms under `motion-safe`. With the line the top mask fade is off and the bottom fade stays. `PaneShell` with `scroll="body"` and the steps scroller of the run both use it. The default `edge="fade"` is unchanged. The scroller opens at 0; the live-row reveal of the run tree uses `scrollIntoView({ block: 'nearest' })`, so it only moves the scroller when the live row is below the visible area
+- **Composer.** A dynamic run's hint field docks at the bottom of the page as the `dock` of the `PaneShell`, as in Chat, below the scroller and never inside it (`OrchestratorDock`). Steps and cost come first. Queued hints fold into one "2 queued" row above the steps, and the help sentence moved into the tooltips of **Queue** and **Read now**
+- **Two Stops, two names.** **Stop run** is in the header, next to Pause: it ends the run and asks first ("Steps that have not run are skipped..."). **Stop step** is in the strip while a step is in flight: it cancels that step, holds the run and leaves **Continue the run** on offer. A static run has no strip, so it has the one Stop run. Never two buttons with one name
+- **Plan entry points.** While the run is held for its plan, the header's primary is **Review plan**: it opens the drawer for the plan the run waits on with `openPlanDrawer`, over the page. The plan comes from `runPlanOf` (the newest active plan the run's planner wrote, `useRunPlan`). **Approve plan** moves into the overflow menu: it is one item of the run controls menu on a static run, and of a **Plan actions** menu on a dynamic one, and it is off with the reason "The planner is revising this plan" while the planner revises. A run with no plan to open keeps **Approve plan** as its primary. The static run's **Plan ready** status becomes a secondary **Review plan** button when the header holds the primary. The orchestrator strip has the same **Review plan**, plus the `plan-revising` and `plan-question` phases ([The orchestrator strip](#the-orchestrator-strip))
+- **Approve from the overflow** (`useApproveRunPlan`) calls `approveWorkflowRunPlan` and reads its answer: `approved` marks the run as a start of yours (`markUserStart`) and raises one `useFollowToast` toast, **Plan approved**, saying "The run goes on" or "Implement started" with the step's name, with the action **Follow the run** left out because the run page is on screen. `noop` raises nothing and `failed` goes to the log as "Couldn't approve the plan"
+- **Tone and empty states.** The strips draw their tone as a `ToneBar` inside their padding. A run with no agents says "No agents yet" and "The run starts its first step here." (`EmptyState size="section"`)
 
 ## How a run advances
 
@@ -477,8 +508,8 @@ asks before each step, the next step waits for your go.
 
 **Stop run** ends a run that nobody else will end: an orchestrated run
 between decisions, a run stuck on a failed step, a run you have seen enough
-of. It sits in the header of the workflow detail and in the menu of the run
-row in the activity feed. Goodboy asks you to confirm first. Steps that have
+of. It sits in the header of the workflow detail, next to **Pause**, and in the
+menu of the run row in the activity feed. Goodboy asks you to confirm first. Steps that have
 not run are marked skipped, the step in flight stops and is marked skipped,
 and a failed step stays failed, because it did fail. Everything already written
 is kept.
@@ -518,7 +549,7 @@ without its own setting follows the session.
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on
 - **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Resume** starts where the run left off, static or orchestrated, and never changes when to ask
-- **Stop** ends a run at once. Goodboy asks you to confirm first. The step that is running is cancelled and marked skipped, and everything it already wrote is kept
+- **Stop step**, in the orchestrator strip, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The step is marked skipped and everything it already wrote is kept. **Stop run** in the header ends the run ([Closing a workflow](#closing-a-workflow))
 - **Continue the run** starts a stopped run again. It turns autorun back on and asks for the next step
 
 A hands-free run still stops and waits for you when:
@@ -643,8 +674,9 @@ and `maybeAutoAdvanceWorkflow`. `bypassGate` never skips it, so the step
 button, a skip, a read-now hint and a retry all stop at the hold.
 Switching the run to another autonomy also drops the hold. A plan step that
 writes no plan never holds. While it holds, the run's status reads
-**Plan ready**, not a failure, and **Run next step** is hidden, so **Approve**
-is the only way on; **Run next step** comes back once the plan is approved.
+**Plan ready**, not a failure (a button, **Review plan**, on the run page), and
+**Run next step** is hidden, so **Approve** is the only way on; **Run next
+step** comes back once the plan is approved.
 
 #### Approve moves the run on
 
@@ -663,9 +695,10 @@ and it answers with what happened so the caller can say it:
 
 A write that fails leaves no half approval: the snapshot write comes first, and
 if clearing the stop fails after it, the snapshot is put back. The in-store run
-changes only after both writes went through. Every other caller (the run
-header, the comment bar) may ignore the result; the Artifacts page, the palette
-and the object menu read it through `artifact.runPlan`.
+changes only after both writes went through. The comment bar may ignore the
+result; the run header's overflow reads it through `useApproveRunPlan`, and the
+Artifacts page, the palette and the object menu read it through
+`artifact.runPlan` ([The run page](#the-run-page)).
 
 #### One primary for a plan
 
