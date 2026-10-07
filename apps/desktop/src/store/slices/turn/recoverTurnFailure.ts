@@ -26,6 +26,7 @@ import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordTurnSpan } from './recordTurnSpan';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 import type { GetFn, SendTurnResult, SetFn, SendTurnInput, TurnLease } from './types';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { TurnContext } from './turnContext';
@@ -129,6 +130,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
           cooldowns: get().providerCooldowns,
           nowMs: Date.now(),
         }),
+        hidden: selectHiddenModels({ state: get() }),
         ...(preferredFallback != null && {
           preferred: {
             provider: preferredFallback.provider,

@@ -97,6 +97,7 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
       providers: get().providers,
       cooldowns: get().providerCooldowns,
       alerts: get().budgetAlerts ?? [],
+      hidden: selectHiddenModels({ state: get() }),
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),

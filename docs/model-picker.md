@@ -47,13 +47,20 @@ The row above the provider chips is one component with two meanings.
 Which models the list shows is a per app choice, stored in the settings key
 value store (`providers.hiddenModels`). Catalog entries marked `legacy` start
 hidden. The body filters the catalog before `modelAxes` builds the rows, so a
-family with every version hidden leaves the Model row. The same list reaches
-routing: Auto skips a hidden model for roles, a background task keeps it only when
-no visible model of the same cost tier or cheaper exists, and the orchestrator
-model menu (`orchestratorModelPool`, which takes `hidden`) leaves it out. The
-current value always shows, marked `Hidden in the picker`. The
-settings icon next to **Provider** opens that provider's **Models in the picker**
-section.
+family with every version hidden leaves the Model row.
+
+Hidden also means never chosen automatically. `selectableModels` and
+`isModelHidden` (`modelVisibility.ts`) are the one filter. Every automatic choice
+uses it: Auto for roles and background tasks (`resolveAuto`, with no `keptHidden`
+escape), the orchestrator model menu (`orchestratorModelPool`), routing availability
+(`workflowRoutingAvailability` answers `hidden` unless the pick is explicit), turn and
+task fallback, and the Ask and Chat defaults. An explicit choice bypasses it: a role
+or task model set in Settings, a step or agent lock, and a hand pick for one agent.
+When no allowed model is left for a role, `resolveRoleRouting` sets
+`noAllowedModel` and the spawn refuses inline instead of running a hidden model. The
+current value always shows in the picker, marked `Hidden in the picker`. The settings
+icon next to **Provider** opens that provider's **Models in the picker** section,
+which carries the one line that states this rule.
 
 ## What a catalog entry declares
 

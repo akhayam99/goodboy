@@ -10,6 +10,7 @@ import type { CatalogModel, ProviderId, WorkspaceId } from '@goodboy/types';
 import { BAND_ROW_CLASS, Band, Button, Switch, Tooltip, cn } from '@goodboy/ui';
 import { PickerChip } from '../../../../../../shared/components/RoutingPicker/PickerChip';
 import { useHiddenModels, useSaveHiddenModels } from '../../../../hooks/useHiddenModels';
+import { HIDDEN_MODELS_LINE } from './constants';
 import { PinnedCount } from './PinnedCount';
 
 const LAST_VISIBLE_COPY = 'At least one model stays visible';
@@ -84,7 +85,7 @@ export const ModelsGroup = ({ providerId, workspaceId, isFocused }: Props) => {
       <Band
         label="Models in the picker"
         ariaLabel="Models in the picker"
-        hint="A model you turn off is hidden from pickers and Auto. A model you pinned keeps running."
+        hint={HIDDEN_MODELS_LINE}
         action={
           <div className="flex items-center gap-2">
             {workspaceId === null ? null : (

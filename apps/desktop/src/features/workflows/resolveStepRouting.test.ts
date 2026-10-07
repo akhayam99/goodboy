@@ -341,3 +341,49 @@ describe('resolveStepRouting spread by headroom', () => {
     expect(routing.provider).toBe('anthropic');
   });
 });
+
+describe('resolveStepRouting with hidden models', () => {
+  const scope = {
+    defaultProvider: 'anthropic' as const,
+    hidden: { anthropic: ['sonnet-5.5', 'sonnet-5'] },
+  };
+
+  it('never plans a hidden model for a role step', () => {
+    const routing = resolveStepRouting({
+      step: step({ role: 'implementer' }),
+      kind: 'implementer',
+      roleModels: null,
+      sessionProvider: 'anthropic',
+      scope,
+    });
+
+    expect(routing.provider).toBe('anthropic');
+    expect(['sonnet-5.5', 'sonnet-5']).not.toContain(routing.model);
+  });
+
+  it('keeps a hidden model the step itself names', () => {
+    const routing = resolveStepRouting({
+      step: step({ role: 'implementer', providerOverride: 'anthropic', modelOverride: 'sonnet-5' }),
+      kind: 'implementer',
+      roleModels: null,
+      sessionProvider: 'anthropic',
+      scope,
+    });
+
+    expect(routing.model).toBe('sonnet-5');
+  });
+
+  it('keeps a hidden model the agent was picked on by hand', () => {
+    const routing = resolveStepRouting({
+      step: step({ role: 'implementer' }),
+      kind: 'implementer',
+      roleModels: null,
+      agentProvider: 'anthropic',
+      agentModel: 'sonnet-5',
+      sessionProvider: 'anthropic',
+      scope,
+    });
+
+    expect(routing.model).toBe('sonnet-5');
+  });
+});

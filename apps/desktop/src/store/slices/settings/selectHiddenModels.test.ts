@@ -84,12 +84,27 @@ describe('a model hidden from the pickers', () => {
     ).toContain('opus-5.5');
   });
 
-  it('keeps the summarizer on a hidden Haiku rather than a dearer model', () => {
+  it('never puts the summarizer on a hidden Haiku when the task is on Auto', () => {
     seed({ hidden: { anthropic: ['haiku-4.5'] } });
     const summarizer = resolveLimitedTaskModel({
       limitContext: autoLimitContext({ state: useAppStore.getState() }),
       task: 'summarizer',
       preferences: null,
+      connectedProviders: ['anthropic', 'codex'],
+      workspaceDefaultProviderId: 'anthropic',
+      sessionDefaultProviderId: 'anthropic',
+    });
+
+    expect(summarizer.model).not.toBe('haiku-4.5');
+  });
+
+  it('keeps a hidden Haiku when Settings name it for the summarizer', () => {
+    seed({ hidden: { anthropic: ['haiku-4.5'] } });
+    const summarizer = resolveLimitedTaskModel({
+      limitContext: autoLimitContext({ state: useAppStore.getState() }),
+      task: 'summarizer',
+      preferences: { summarizer: { providerId: 'anthropic', model: 'haiku-4.5' } },
+      connectedProviders: ['anthropic', 'codex'],
       workspaceDefaultProviderId: 'anthropic',
       sessionDefaultProviderId: 'anthropic',
     });

@@ -44,6 +44,7 @@ import { ArtifactCreationActions } from './ArtifactCreationActions';
 import { useArtifactAttachments } from './useArtifactAttachments';
 import { useArtifactContextPreview } from './useArtifactContextPreview';
 import { useArtifactCreationDraft } from './useArtifactCreationDraft';
+import { selectHiddenModels } from '../../../../store/slices/settings/selectHiddenModels';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -143,6 +144,7 @@ export const ArtifactCreationPane = ({
         providers: s.providers ?? [],
         cooldowns: s.providerCooldowns ?? {},
         alerts: s.budgetAlerts ?? [],
+        hidden: selectHiddenModels({ state: s }),
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),

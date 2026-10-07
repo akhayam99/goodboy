@@ -39,6 +39,7 @@ import {
   isAgentStatusSettled,
   runsForWorkflowRun,
   serializeRunSummary,
+  type HiddenModels,
   type OrchestratorModelOption,
   type OrchestratorRoleDefault,
   type RunSummary,
@@ -113,15 +114,21 @@ type RoleDefaultsParams = {
   readonly provider: ProviderId;
   readonly roleModels: RoleModelPreferences | null;
   readonly menu: ReadonlyArray<OrchestratorModelOption>;
+  readonly hidden: HiddenModels;
 };
 
 const roleDefaultsFor = ({
   provider,
   roleModels,
   menu,
+  hidden,
 }: RoleDefaultsParams): ReadonlyArray<OrchestratorRoleDefault> =>
   SELECTABLE_AGENT_ROLES.filter((role) => ROLE_REGISTRY[role].workflowEligible).map((role) => {
-    const routing = resolveRoleRouting({ role, prefs: roleModels });
+    const routing = resolveRoleRouting({
+      role,
+      prefs: roleModels,
+      auto: { defaultProvider: provider, hidden },
+    });
     if (routing.isOverride === true) {
       const setMenu = roleModelSetMenu({ menu, role, prefs: roleModels });
       return {
@@ -137,7 +144,7 @@ const roleDefaultsFor = ({
     return {
       role,
       provider,
-      model: recommendedModelForRole({ role, provider, prefs: roleModels }),
+      model: recommendedModelForRole({ role, provider, prefs: roleModels, hidden }),
       effort: routing.effort,
     };
   });
@@ -665,6 +672,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         providers: get().providers ?? [],
         cooldowns: get().providerCooldowns ?? {},
         alerts: get().budgetAlerts ?? [],
+        hidden: selectHiddenModels({ state: get() }),
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
@@ -680,6 +688,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         provider: defaultProvider,
         roleModels: workspaceRoleModels,
         menu: modelMenu,
+        hidden: selectHiddenModels({ state: get() }),
       });
       const client = new OrchestratorClient({
         ...routing,
@@ -816,7 +825,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         const compiled = resolveRoleRouting({
           role: proposed.role,
           prefs: null,
-          auto: { defaultProvider },
+          auto: { defaultProvider, hidden: selectHiddenModels({ state: get() }) },
         });
         const parsedProposal = parseWorkflowRoutingProposal({
           fields: proposed,

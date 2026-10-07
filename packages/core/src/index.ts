@@ -345,6 +345,7 @@ export {
   isModelHidden,
   legacyHiddenModels,
   parseHiddenModels,
+  selectableModels,
   visibleCatalog,
   visibleModelCount,
   withModelsVisible,

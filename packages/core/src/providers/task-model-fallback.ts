@@ -1,5 +1,6 @@
 import type { ProviderId, TaskModelPreference } from '@goodboy/types';
 import { alignedProviderPlan, type TurnFailureKind } from './planTurnFallback';
+import type { HiddenModels } from './modelVisibility';
 import { taskModelProviderPool } from './providerFallbackPool';
 
 export const MAX_TASK_MODEL_PROVIDER_ATTEMPTS = 1;
@@ -19,6 +20,7 @@ type Params = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly enabledProviders: ReadonlyArray<ProviderId> | null;
   readonly coolingDownProviders: ReadonlyArray<ProviderId>;
+  readonly hidden?: HiddenModels | null;
 };
 
 export const planTaskModelFallback = ({
@@ -28,6 +30,7 @@ export const planTaskModelFallback = ({
   connectedProviders,
   enabledProviders,
   coolingDownProviders,
+  hidden,
 }: Params): TaskModelPreference | null => {
   if (attempt >= MAX_TASK_MODEL_PROVIDER_ATTEMPTS) {
     return null;
@@ -46,6 +49,7 @@ export const planTaskModelFallback = ({
     model: taskModel.model,
     candidateProviders: pool,
     wantsThinker: false,
+    ...(hidden != null && { hidden }),
   });
   if (plan == null) {
     return null;

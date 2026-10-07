@@ -1,3 +1,4 @@
+import { MODEL_CATALOGS } from '../catalogs';
 import { describe, expect, it } from 'vitest';
 import { resolveAuto } from './resolveAuto';
 
@@ -181,19 +182,47 @@ describe('resolveAuto', () => {
     });
   });
 
-  it('keeps a hidden summarizer model rather than climbing to a dearer one', () => {
+  it('never picks a hidden summarizer model', () => {
+    const pick = resolveAuto({
+      slot: { kind: 'task', id: 'summarizer' },
+      defaultProvider: 'anthropic',
+      hidden: { anthropic: ['haiku-4.5'] },
+    });
+
+    expect(pick).not.toBeNull();
+    expect(pick?.provider === 'anthropic' && pick.model === 'haiku-4.5').toBe(false);
+    expect(pick).not.toHaveProperty('keptHidden');
+  });
+
+  it('moves a hidden background task to the next allowed provider before a dearer model', () => {
     expect(
       resolveAuto({
         slot: { kind: 'task', id: 'summarizer' },
         defaultProvider: 'anthropic',
+        connected: ['anthropic', 'gemini'],
+        fallbackOrder: ['anthropic', 'gemini'],
         hidden: { anthropic: ['haiku-4.5'] },
-      }),
-    ).toEqual({
+      })?.provider,
+    ).toBe('gemini');
+  });
+
+  it('falls back to the one visible model of the provider when every curated pick is hidden', () => {
+    const hidden = {
+      anthropic: MODEL_CATALOGS.anthropic
+        .map((model) => model.key)
+        .filter((key) => key !== 'opus-4.6'),
+    };
+    const pick = resolveAuto({
+      slot: { kind: 'role', id: 'implementer' },
+      defaultProvider: 'anthropic',
+      hidden,
+    });
+
+    expect(pick).toEqual({
       provider: 'anthropic',
-      model: 'haiku-4.5',
+      model: 'opus-4.6',
       effort: null,
-      step: 'curated',
-      keptHidden: true,
+      step: 'cost-tier',
     });
   });
 

@@ -33,7 +33,11 @@ export const revalidateStepRouting = ({ step, availability }: Params): StepRouti
   if (current === null) {
     return KEEP;
   }
-  const status = workflowRoutingAvailability({ pick: current, snapshot: availability });
+  const status = workflowRoutingAvailability({
+    pick: current,
+    snapshot: availability,
+    isExplicit: lock !== null,
+  });
   if (status.kind === 'available') {
     return KEEP;
   }

@@ -55,4 +55,26 @@ describe('defaultChatModel', () => {
     expect(chatModelLabel({ provider: 'anthropic', model: 'sonnet-5' })).toBe('Sonnet 5');
     expect(chatModelLabel({ provider: 'anthropic', model: 'unknown-key' })).toBe('unknown-key');
   });
+
+  it('never starts a chat on a hidden Sonnet, it takes the next visible one', () => {
+    const newest = latestInGroup({ provider: 'anthropic', group: 'Sonnet' })[0];
+    const choice = defaultChatModel({
+      connected: ['anthropic'],
+      hidden: { anthropic: [newest?.key ?? ''] },
+    });
+
+    expect(choice.provider).toBe('anthropic');
+    expect(choice.model).not.toBe(newest?.key);
+  });
+
+  it('moves a chat to the next chat provider when every Sonnet is hidden', () => {
+    const everySonnet = latestInGroup({ provider: 'anthropic', group: 'Sonnet' }).map(
+      (model) => model.key,
+    );
+
+    expect(
+      defaultChatModel({ connected: ['anthropic', 'codex'], hidden: { anthropic: everySonnet } })
+        .provider,
+    ).toBe('codex');
+  });
 });

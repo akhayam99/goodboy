@@ -501,6 +501,79 @@ describe('fan-out child routing precedence', () => {
     expect(resolution.decision.selected.model).toBe('gpt-5.6-sol');
   });
 
+  it('replaces an orchestrator pick of a hidden model with an allowed one', () => {
+    const { state, get } = buildHarness();
+    state.settings = {
+      'providers.hiddenModels': JSON.stringify({ anthropic: ['opus-5', 'sonnet-5'] }),
+    };
+
+    const { resolution } = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      role: 'reviewer',
+      childLock: null,
+      proposal: {
+        pick: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
+        reason: 'A critical cross-file review needs deep reasoning.',
+        source: 'agent',
+        profile: { taskType: 'review', difficulty: 'standard', basis: 'agent' },
+      },
+      promptText: 'review the diff',
+      missingProposal: 'deterministic_pick',
+    });
+
+    expect(resolution.kind).toBe('ready');
+    if (resolution.kind !== 'ready') {
+      return;
+    }
+    expect(resolution.decision.adjustment).toBe('hidden');
+    expect(resolution.decision.selected.model).not.toBe('opus-5');
+    expect(resolution.decision.proposal?.pick.model).toBe('opus-5');
+  });
+
+  it('keeps the orchestrator pick when the model is not hidden', () => {
+    const { state, get } = buildHarness();
+    state.settings = { 'providers.hiddenModels': JSON.stringify({ anthropic: ['sonnet-5'] }) };
+
+    const { resolution } = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      role: 'reviewer',
+      childLock: null,
+      proposal: {
+        pick: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
+        reason: 'A critical cross-file review needs deep reasoning.',
+        source: 'agent',
+        profile: { taskType: 'review', difficulty: 'standard', basis: 'agent' },
+      },
+      promptText: 'review the diff',
+      missingProposal: 'deterministic_pick',
+    });
+
+    expect(resolution.kind === 'ready' && resolution.decision.selected.model).toBe('opus-5');
+  });
+
+  it('keeps a child lock the owner set on a hidden model', () => {
+    const { state, get } = buildHarness();
+    state.settings = { 'providers.hiddenModels': JSON.stringify({ anthropic: ['opus-5'] }) };
+
+    const { resolution } = resolveWorkflowChildRouting({
+      state: get(),
+      sessionId: SESSION_ID,
+      role: 'reviewer',
+      childLock: {
+        version: 1,
+        pick: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
+        origin: 'user',
+      },
+      proposal: null,
+      promptText: 'review the diff',
+      missingProposal: 'deterministic_pick',
+    });
+
+    expect(resolution.kind === 'ready' && resolution.decision.selected.model).toBe('opus-5');
+  });
+
   it('budget block prevents partial child materialization', () => {
     const { state, get } = buildHarness();
     state.budgetAlerts = [

@@ -1,5 +1,6 @@
 import type { ProviderId, WorkflowModelPick } from '@goodboy/types';
 import { catalogModelForId } from '../providers/catalogModelForId';
+import { isModelHidden, type HiddenModels } from '../providers/modelVisibility';
 
 export type WorkflowRoutingAvailabilitySnapshot = Readonly<{
   connectedProviders: ReadonlyArray<ProviderId>;
@@ -9,10 +10,11 @@ export type WorkflowRoutingAvailabilitySnapshot = Readonly<{
   isRunBudgetBlocked: boolean;
   nowMs: number;
   providerOrder?: ReadonlyArray<ProviderId>;
+  hiddenModels?: HiddenModels | null;
 }>;
 
 export type WorkflowRoutingUnavailableCause =
-  'unknown_model' | 'disconnected' | 'cooldown' | 'budget';
+  'unknown_model' | 'disconnected' | 'cooldown' | 'budget' | 'hidden';
 
 export type WorkflowRoutingAvailability =
   | Readonly<{ kind: 'available' }>
@@ -21,15 +23,24 @@ export type WorkflowRoutingAvailability =
 type Params = {
   readonly pick: WorkflowModelPick;
   readonly snapshot: WorkflowRoutingAvailabilitySnapshot;
+  readonly isExplicit?: boolean;
 };
 
 export const workflowRoutingAvailability = ({
   pick,
   snapshot,
+  isExplicit = false,
 }: Params): WorkflowRoutingAvailability => {
   const model = catalogModelForId({ provider: pick.provider, modelId: pick.model });
   if (model === null) {
     return { kind: 'unavailable', cause: 'unknown_model' };
+  }
+  if (
+    isExplicit === false &&
+    snapshot.hiddenModels != null &&
+    isModelHidden({ provider: pick.provider, hidden: snapshot.hiddenModels, key: model.key })
+  ) {
+    return { kind: 'unavailable', cause: 'hidden' };
   }
   if (snapshot.connectedProviders.includes(pick.provider) === false) {
     return { kind: 'unavailable', cause: 'disconnected' };

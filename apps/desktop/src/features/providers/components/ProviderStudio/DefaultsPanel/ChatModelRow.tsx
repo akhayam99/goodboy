@@ -11,6 +11,7 @@ import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultM
 import { chatModelId, chatModelKey, shownChatEffort } from '../../../../workspace-chat/chatRouting';
 import { defaultChatRouting } from '../../../../workspace-chat/defaultChatRouting';
 import { chatModelOf } from '../../../../workspace-chat/defaultChatModel';
+import { useHiddenModels } from '../../../hooks/useHiddenModels';
 import { DefaultRow } from './DefaultRow';
 import { useAppStore } from '../../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
@@ -31,13 +32,15 @@ export const ChatModelRow = ({ workspaceId, connectedProviderIds, disabled }: Pr
   const workspaceDefaultProvider = useAppStore(
     (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderOverride,
   );
+  const hidden = useHiddenModels();
   const automatic = defaultChatRouting({
     connected: connectedProviderIds,
     saved: null,
     workspaceDefaultProvider,
+    hidden,
   });
   const preferredProvider = saved?.provider ?? automatic.provider;
-  const preferredModel = saved?.model ?? chatModelOf({ provider: preferredProvider });
+  const preferredModel = saved?.model ?? chatModelOf({ provider: preferredProvider, hidden });
   const [providerId, setProviderId] = useState<ProviderId>(preferredProvider);
   const pendingProvider = useRef<ProviderId>(preferredProvider);
   const pendingModel = useRef(preferredModel);

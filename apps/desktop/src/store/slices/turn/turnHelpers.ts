@@ -98,6 +98,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -443,6 +444,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       connectedProviders,
       enabledProviders,
       cooldowns: get().providerCooldowns,
+      hidden: selectHiddenModels({ state: get() }),
       nowMs: Date.now(),
     });
 
@@ -752,6 +754,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
               cooldowns: get().providerCooldowns,
               nowMs: Date.now(),
             }),
+            hidden: selectHiddenModels({ state: get() }),
           });
     const willRetry = willRetryParse || providerFallback !== null;
     set((state) => {
