@@ -3,7 +3,6 @@ import { COLUMN_FRAME } from '@goodboy/ui';
 import {
   TREE_STRIP_WIDTH,
   dockedRailLimitOf,
-  treeRailMarginOf,
   treeRailModeOf,
   type TreeRailMode,
 } from './treeRailMode';
@@ -93,12 +92,7 @@ describe('treeRailModeOf', () => {
   });
 });
 
-describe('treeRailMarginOf and dockedRailLimitOf', () => {
-  it('is half of what the column leaves', () => {
-    expect(treeRailMarginOf({ paneWidth: 1920 })).toBe(456);
-    expect(treeRailMarginOf({ paneWidth: 1009 })).toBe(0.5);
-  });
-
+describe('dockedRailLimitOf', () => {
   it('limits a docked rail to the margin less 24px, whole pixels', () => {
     expect(dockedRailLimitOf({ paneWidth: 1920 })).toBe(432);
     expect(dockedRailLimitOf({ paneWidth: 1617 })).toBe(280);

@@ -22,16 +22,20 @@ export const DiffRailScope = ({ isActive, children }: Props) => {
     if (element === null) {
       return;
     }
-    const measure = () => {
-      const next = element.getBoundingClientRect().width;
-      paneWidthRef.current = next > 0 ? next : null;
+    const apply = (width: number) => {
+      paneWidthRef.current = width > 0 ? width : null;
       setPaneWidth(paneWidthRef.current);
     };
-    measure();
+    apply(element.getBoundingClientRect().width);
     if (typeof ResizeObserver === 'undefined') {
       return;
     }
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry !== undefined) {
+        apply(entry.contentRect.width);
+      }
+    });
     observer.observe(element);
     return () => observer.disconnect();
   }, []);

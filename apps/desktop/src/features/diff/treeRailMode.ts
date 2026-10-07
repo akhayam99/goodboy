@@ -15,8 +15,7 @@ type ModeParams = PaneParams & {
   readonly railWidth: number;
 };
 
-export const treeRailMarginOf = ({ paneWidth }: PaneParams): number =>
-  (paneWidth - COLUMN_FRAME) / 2;
+const treeRailMarginOf = ({ paneWidth }: PaneParams): number => (paneWidth - COLUMN_FRAME) / 2;
 
 export const dockedRailLimitOf = ({ paneWidth }: PaneParams): number =>
   Math.floor(treeRailMarginOf({ paneWidth }) - RAIL_CLEARANCE);
