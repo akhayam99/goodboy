@@ -469,9 +469,12 @@ mode. The sidebar lists the workspace's sessions in one list, and the open
 session tells its own story in the main pane. Its five work pages nest under
 its row: Overview, Branch, Runs, Agents and Artifacts. They are the same pages
 as the first five rows of the trail's page menu, with the same count words from
-one selector (`usePageSummaries`), so the two doors never disagree. The
-nesting is not a mode: the list stays the list, the nested rows fold away when
-another session opens, and `←` and `→` on the open row fold and open them. The
+one selector (`usePageSummaries`), so the two doors never disagree. The open
+session and its pages sit in one card (`data-session-card`, a surface one step
+above the column), so it is plain that the pages belong to that session; every
+other session stays a flat row. The nesting is not a mode: the list stays the
+list, the card moves to another session when it opens, and `←` and `→` on the
+open row fold and open the pages while the session row stays in the card. The
 tools (Scripts, Terminal, Explore) and the linked records (Linear, GitLab,
 Jira, Slack, GitHub issue) stay in the page menu and the palette. Rows and
 chips inside the overview still route to the other surfaces. Board → session
@@ -525,6 +528,23 @@ the rest sit under **Show N more**, remembered per workspace. A session that
 needs you and the open session are never folded. A grouped list shows every
 group, finished groups start collapsed, and nothing folds. `⌘⇧[` and `⌘⇧]` walk
 this same order and skip folded rows, so they match what you see.
+
+**Pin a session and it stays at the top of the list.** **Pin session** and
+**Unpin session** are session actions (the row's right-click menu, `⌘K` and
+every other menu of a session), shown for a live session only, one at a time
+by whether it is pinned. Pinned sessions form a **Pinned** group above
+everything, in the order they were pinned (oldest first), under every sort,
+group, project filter and fold: a pinned session shows once, under Pinned, and
+leaves its own group, the group's count and the fold's count. In a grouped list
+the Pinned header is a toggle like the others; in a flat list it is a label
+and the rest of the list reads **Other sessions**. Archiving a pinned session
+hides it with the archive; the pin is kept, so Restore and Undo bring it back
+under Pinned. Pins are stored per workspace in the `settings` table (key
+`sessions.pinned.<workspace id>`, a JSON list of `{ id, at }`), written by
+compare and swap with one retry so two windows never drop each other's pin,
+read when a workspace opens and when the window regains focus, and pruned of
+deleted sessions on read (`store/slices/session-pins`). Rail buttons, the
+switcher's Pinned section, a Board glyph and reordering are not built yet.
 
 **Two keys switch sessions without the list.** `⌃Tab` opens a list of the
 recent sessions in last-opened order, the open one first. `Tab` and `⇧Tab`

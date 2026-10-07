@@ -51,6 +51,7 @@ import {
 } from './store';
 import { useGithubPolling } from './features/integrations/github/hooks/useGithubPolling';
 import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
+import { useSessionPinsSync } from './features/workspace/hooks/useSessionPinsSync';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';
 import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
@@ -164,6 +165,7 @@ export const App = () => {
 
   useGithubPolling();
   useSessionFocusRecheck();
+  useSessionPinsSync();
   useProviderRefreshOnFocus();
   useProviderLimitsProbe();
   useUpdaterPolling();

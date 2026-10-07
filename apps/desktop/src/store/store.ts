@@ -49,6 +49,8 @@ import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createSessionViewSlice } from './slices/session-view';
+import { createSessionPinsSlice } from './slices/session-pins';
+import { sessionPinsInitialState } from './slices/session-pins/state';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
 import { createTerminalSlice } from './slices/terminal';
@@ -240,6 +242,7 @@ export type AppStore = AppState &
   ReturnType<typeof createScriptsSlice> &
   ReturnType<typeof createPermissionsSlice> &
   ReturnType<typeof createSessionViewSlice> &
+  ReturnType<typeof createSessionPinsSlice> &
   ReturnType<typeof createSessionsSlice> &
   ReturnType<typeof createTranscriptsSlice> &
   ReturnType<typeof createSummariesSlice> &
@@ -295,6 +298,7 @@ export const initialState: AppState = {
   ...backupInitialState,
   ...budgetInitialState,
   ...createInitialSessionViewState({}),
+  ...sessionPinsInitialState,
   ...sessionFiltersInitialState,
   ...workspacesInitialState,
   ...projectsInitialState,
@@ -390,6 +394,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSidebarSlice({ set, get }),
   ...createSettingsLastPageSlice({ set, get }),
   ...createSessionViewSlice({ set, get }),
+  ...createSessionPinsSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),
   ...createScriptsSlice({ set, get }),

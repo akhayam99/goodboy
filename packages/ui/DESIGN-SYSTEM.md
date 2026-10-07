@@ -766,10 +766,13 @@ rank below running, because an agent may be working on exactly that.
 The title is `text-row`. Needs you and running read in `foreground`, idle, done
 and archived in `muted-foreground`. The open session is medium weight, and its
 row has no fill while its pages are nested under it. The pages are five 28px
-child rows in a `SelectableRow`, indented by `PANE_RHYTHM.navRail.nest`: the
-page icon in its concept tone, its word, and its count word in
-`faint-foreground`. The current page takes `bg-selected` and `aria-current="page"`,
-and the session row then carries `aria-current="true"`.
+child rows in a `SelectableRow`, with no indent of their own because the card
+groups them (see The left column): the page icon in its concept tone, centred
+in a 14px box so it sits in the node's column, then its word starting at the
+title's x, and its count word in `faint-foreground`. The current page takes
+`bg-selected` and `aria-current="page"`, and the session row then carries
+`aria-current="true"`. The row and the page rows take their hover wash and
+focus ring from `ROW_INTERACTIVE`, never a copy.
 
 The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
 at `z-popover`, 8px to the right of the column and aligned to its row, with a
@@ -1154,6 +1157,23 @@ band on that sheet instead of on the chrome. A frame whose body is a bare
 page (Settings in the default shell) draws no band (`hasBand={false}`) and gives
 its page the band's 40px as top padding, so the title row lands where a session
 page's does under its trail.
+
+**The open session is a card.** In the sessions list the open session and its
+page rows sit in one card (`data-session-card`): `rounded-lg`, `p-1`, `bg-subtle`
+(one surface step above the chrome) and no border. It is not `bg-fill`: that is
+white at 6% and the hover layer is 5%, so a card on it would read as a stuck
+hover. The rows inside are `rounded-md`, concentric with the card, and the
+current page keeps `bg-selected`. The card stays around the session row when
+`←` folds the pages, it follows the open session, and every other session is a
+flat row. The selection checkbox sits relative to its row, so it moves with the
+card's padding.
+
+**Pinned sessions are a group.** A **Pinned** group sits first in the sessions
+list, above every other group, in pin order. Its header is an `Eyebrow` with the
+count, the same header as a group's: a toggle in a grouped list, a plain label
+in a flat one (the rest of the flat list then reads Other sessions, so the
+boundary is named, with no divider). A pinned row is the same row as any other,
+with no glyph at rest.
 
 A list that belongs to a studio's page (Chat's chats, Changelog's releases)
 uses `StudioRailLayout` with `placement="page"`: the list sits on the page
