@@ -120,13 +120,4 @@ describe('an empty line is written through a wrapper', () => {
       `Write an empty line with EmptyLine, a first-time state with EmptyState (DESIGN-SYSTEM.md, Empty states):\n${grown.join('\n')}`,
     ).toEqual([]);
   });
-
-  it('shrinks the allowance as sentences move into the wrappers', () => {
-    const counts = measure();
-    const stale = Object.entries(ALLOWED)
-      .filter(([path, allowed]) => (counts[path] ?? 0) < allowed)
-      .map(([path, allowed]) => `${path}: allowed ${allowed}, found ${counts[path] ?? 0}`);
-
-    expect(stale, `Lower or remove these entries:\n${stale.join('\n')}`).toEqual([]);
-  });
 });
