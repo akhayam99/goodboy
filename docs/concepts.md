@@ -758,6 +758,17 @@ Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
 reads every page of threads GitHub returns. If the read fails, Review
 shows the error from `gh` instead of an empty list.
 
+The pull request detail reads reviews, review requests and checks in three
+separate `gh pr view` calls, so a field the access cannot read never hides the
+others. Each read comes back `ok`, `denied` or `failed` (`checksRead`,
+`reviewsRead` and `reviewRequestsRead` on the detail) with the first line of the
+error. `classifyGhFailure` decides `denied`: it mirrors the marker lists in
+`apps/desktop/src-tauri/src/github.rs`, and a parity test reads that file and
+fails when the lists drift. The list and view calls ask for the checks rollup
+too. When GitHub denies it they ask again without it and the pull request
+carries `checksUnknown`, so the Checks tab and the merge gates say Checks
+unknown and never read it as no checks.
+
 Review is one flow: the list on the left, the focused comment on the right.
 Every comment in a fix run shows one of five words, the same word in the list,
 the thread, Activity, Needs you, the transcript card and the breadcrumb menus.
