@@ -16,6 +16,13 @@ type Store = {
     workspaceId: string;
     providerPreference: { defaultProvider: 'anthropic'; allowTurnOverride: false };
   }>;
+  readonly currentWorkspaceId: null;
+  readonly currentSessionId: null;
+  readonly openSessionDraftWorkspaceId: null;
+  readonly appStudio: null;
+  readonly drawer: null;
+  readonly sessionPhaseRuns: Record<string, never>;
+  readonly agentKindOverride: Record<string, never>;
   sessionGitlabMr: Record<string, unknown>;
   readonly sessionBranches: Record<string, string>;
   readonly refreshSessionMr: ReturnType<typeof vi.fn>;
@@ -66,6 +73,13 @@ const h = vi.hoisted(() => ({
         providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
       },
     ],
+    currentWorkspaceId: null,
+    currentSessionId: null,
+    openSessionDraftWorkspaceId: null,
+    appStudio: null,
+    drawer: null,
+    sessionPhaseRuns: {},
+    agentKindOverride: {},
     sessionGitlabMr: {},
     sessionBranches: { 'session-3': 'ak/gitlab-release' },
     refreshSessionMr: vi.fn(async () => undefined),
@@ -259,7 +273,7 @@ describe('MrDetailPanel', () => {
     await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
     expect(h.store.navigate).not.toHaveBeenCalled();
     const action = h.showToast.mock.calls[0]![0]?.action;
-    expect(action?.label).toBe('Open the agent');
+    expect(action?.label).toBe('Follow');
 
     action?.onClick();
 

@@ -76,16 +76,25 @@ vi.mock('../../../../store', async () => {
     cliRequirements: [],
     sessions: h.sessions,
     workspaceOverrides: {},
+    currentWorkspaceId: null,
     currentSessionId: 'session-1',
+    openSessionDraftWorkspaceId: null,
+    appStudio: null,
     activeLens: { 'session-1': 'explore' },
+    sessionStudio: {},
+    selectedAgentId: {},
+    sessionPhaseRuns: {},
+    agentKindOverride: {},
     drawer: null,
     ...createDrawerSlice({ set: set as never, get: get as never }),
   }));
   h.resetStore = () => store.setState({ drawer: null });
   return {
     ...(await import('../../../../store/slices/navigation/place')),
-    useAppStore: <T,>(selector: (state: Store) => T) =>
-      store((state) => selector(state as unknown as Store)),
+    useAppStore: Object.assign(
+      <T,>(selector: (state: Store) => T) => store((state) => selector(state as unknown as Store)),
+      { getState: store.getState },
+    ),
   };
 });
 
@@ -339,7 +348,7 @@ describe('ExplorePane', () => {
 
     expect(h.showToast.mock.calls[0]![0]?.kind).toBe('info');
     const action = h.showToast.mock.calls[0]![0]?.action;
-    expect(action?.label).toBe('Open the agent');
+    expect(action?.label).toBe('Follow');
     action?.onClick();
 
     await waitFor(() =>

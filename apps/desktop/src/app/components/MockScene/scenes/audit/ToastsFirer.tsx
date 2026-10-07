@@ -58,9 +58,9 @@ export const ToastsFirer = ({ variant }: Props) => {
     });
     showToast({
       kind: 'info',
-      message: 'An agent is drafting the merge request. You can keep working.',
+      message: 'An agent is drafting the merge request.',
       title: 'Agent started',
-      action: { label: 'Open the agent', onClick: noop },
+      action: { label: 'Follow', onClick: noop },
     });
     showToast({ kind: 'info', message: 'Bash is denied for the rest of this session.' });
     previewNotification({

@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnchoredPopover, Button, FormActions, useDropdown } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
+import { agentPlace, useAppStore } from '../../../../store';
+import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { resolveSpawnRouting } from '../../../session/spawn-routing';
@@ -37,7 +37,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
   });
   const { open, close, toggle } = dropdown;
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const announceAgentStarted = useAgentStartedToast();
+  const followAgent = useFollowToast();
   const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
   const roleDefault = useKindRouting({ sessionId, kind: 'scout' });
   const spawnRouting = resolveSpawnRouting({ kind: 'scout', roleDefault, session });
@@ -88,12 +88,12 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
         focus: 'none',
       });
       close();
-      announceAgentStarted({
-        sessionId,
-        agentId,
+      followAgent({
         title: 'Agent started',
-        message: `An agent is working on ${entry.name}. You can keep working.`,
-        onOpen: () => window.dispatchEvent(new CustomEvent('goodboy:reveal-chat')),
+        message: `An agent is working on ${entry.name}.`,
+        target: { place: agentPlace({ sessionId, agentId }) },
+        startKey: agentId,
+        onFollow: () => window.dispatchEvent(new CustomEvent('goodboy:reveal-chat')),
       });
     } catch (error) {
       setSpawnError(toErrorMessage({ error }));
