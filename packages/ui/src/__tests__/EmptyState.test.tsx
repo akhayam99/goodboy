@@ -3,32 +3,94 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Inbox } from 'lucide-react';
-import { EmptyState } from '../components/EmptyState';
+import { EmptyState, FilledEmptyState, LensEmptyState } from '../components/EmptyState';
 
 afterEach(cleanup);
 
-describe('EmptyState', () => {
-  it('uses distinct small and large scales', () => {
-    render(
-      <div>
-        <EmptyState icon={Inbox} title="Small state" size="sm" />
-        <EmptyState icon={Inbox} title="Large state" size="lg" />
-      </div>,
+const CIRCLE = /\brounded-full\b|\bsize-12\b|\bbg-fill\b/;
+
+const hasCircle = (container: HTMLElement): boolean =>
+  Array.from(container.querySelectorAll('*')).some((element) =>
+    CIRCLE.test(element.getAttribute('class') ?? ''),
+  );
+
+describe('EmptyState page', () => {
+  it('draws a bare 18px muted icon, the title as an h2 and one sentence under it', () => {
+    const { container } = render(
+      <EmptyState
+        icon={Inbox}
+        size="page"
+        title="No runs yet"
+        description="A run is a workflow working on this session."
+        action={<button type="button">Start a run</button>}
+      />,
     );
 
-    const smallState = screen.getByText('Small state').parentElement?.parentElement;
-    const largeState = screen.getByText('Large state').parentElement?.parentElement;
-
-    expect(smallState?.className).toContain('gap-3 px-6 py-10');
-    expect(smallState?.className).not.toContain('border-dashed');
-    expect(smallState?.querySelector('.bg-fill')).toBeTruthy();
-    expect(largeState?.className).toContain('gap-6 px-8 py-10');
+    expect(screen.getByRole('heading', { level: 2, name: 'No runs yet' })).toBeTruthy();
+    expect(screen.getByText('A run is a workflow working on this session.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start a run' })).toBeTruthy();
+    const icon = container.querySelector('svg');
+    expect(icon?.getAttribute('width')).toBe('18');
+    expect(icon?.getAttribute('class')).toContain('text-muted-foreground');
+    expect(hasCircle(container)).toBe(false);
   });
 
-  it('renders a requested heading while keeping the default title unheaded', () => {
+  it('lets a caller pick another heading level, and never draws a border', () => {
+    const { container } = render(
+      <EmptyState icon={Inbox} size="page" headingLevel={3} title="No notes" />,
+    );
+
+    expect(screen.getByRole('heading', { level: 3, name: 'No notes' })).toBeTruthy();
+    expect(container.innerHTML).not.toContain('border-dashed');
+  });
+});
+
+describe('EmptyState section', () => {
+  it('is one line with no card, no padding block and no heading', () => {
+    const { container } = render(
+      <EmptyState
+        icon={Inbox}
+        size="section"
+        title="No runs or agents yet"
+        description="Start one from the actions above."
+        action={<button type="button">See Log</button>}
+      />,
+    );
+
+    expect(screen.queryByRole('heading')).toBeNull();
+    expect(screen.getByText('No runs or agents yet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'See Log' })).toBeTruthy();
+    const root = container.firstElementChild;
+    expect(root?.className).not.toMatch(/\bp[yb]?-\d/);
+    expect(root?.className).not.toMatch(/\bbg-/);
+    expect(root?.className).not.toContain('border');
+    expect(container.querySelector('svg')?.getAttribute('width')).toBe('14');
+    expect(hasCircle(container)).toBe(false);
+  });
+});
+
+describe('EmptyState old sizes', () => {
+  it.each(['lg', 'xl'] as const)('maps %s onto the page layout without a circle', (size) => {
+    const { container } = render(<EmptyState icon={Inbox} size={size} title="Large state" />);
+
+    expect(screen.getByText('Large state')).toBeTruthy();
+    expect(container.firstElementChild?.className).toContain('flex-col items-center');
+    expect(hasCircle(container)).toBe(false);
+  });
+
+  it.each(['sm', 'inline'] as const)('maps %s onto the section layout', (size) => {
+    const { container } = render(<EmptyState icon={Inbox} size={size} title="Small state" />);
+
+    expect(screen.getByText('Small state')).toBeTruthy();
+    expect(container.firstElementChild?.className).toContain('min-h-7');
+    expect(screen.queryByRole('heading')).toBeNull();
+    expect(hasCircle(container)).toBe(false);
+  });
+
+  it('keeps the default title unheaded and renders a requested heading level', () => {
     render(
       <div>
-        <EmptyState icon={Inbox} title="Semantic title" headingLevel={2} />
+        <EmptyState icon={Inbox} size="lg" title="Semantic title" headingLevel={2} />
         <EmptyState icon={Inbox} title="Default title" />
       </div>,
     );
@@ -37,14 +99,27 @@ describe('EmptyState', () => {
     expect(screen.queryByRole('heading', { name: 'Default title' })).toBeNull();
   });
 
-  it('renders inline states without an icon pill or implicit heading', () => {
-    render(<EmptyState icon={Inbox} title="Inline state" size="inline" />);
+  it('renders a bordered state as a page without the border', () => {
+    const { container } = render(<EmptyState icon={Inbox} bordered title="Bordered state" />);
 
-    const state = screen.getByText('Inline state').parentElement?.parentElement;
+    expect(container.firstElementChild?.className).toContain('flex-col items-center');
+    expect(container.innerHTML).not.toContain('border');
+  });
+});
 
-    expect(state?.className).toContain('items-start gap-3 px-3 py-3 text-left');
-    expect(state?.querySelector('svg')).toBeTruthy();
-    expect(state?.querySelector('.size-12')).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Inline state' })).toBeNull();
+describe('EmptyState wrappers', () => {
+  it('draws the lens and filled wrappers as sections with the same props', () => {
+    const { container } = render(
+      <div>
+        <LensEmptyState icon={Inbox} title="No lens rows" description="Nothing to list here." />
+        <FilledEmptyState icon={Inbox} title="No filled rows" />
+      </div>,
+    );
+
+    expect(screen.getByText('No lens rows')).toBeTruthy();
+    expect(screen.getByText('Nothing to list here.')).toBeTruthy();
+    expect(screen.getByText('No filled rows')).toBeTruthy();
+    expect(container.querySelectorAll('.min-h-7')).toHaveLength(2);
+    expect(hasCircle(container)).toBe(false);
   });
 });

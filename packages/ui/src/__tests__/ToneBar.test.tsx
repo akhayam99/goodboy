@@ -25,6 +25,12 @@ describe('ToneBar', () => {
     expect(row).toContain('w-0.5');
   });
 
+  it('keeps a card line at least 16px tall so a one-line card still shows it', () => {
+    render(<ToneBar tone="warning" density="card" />);
+
+    expect(barClassName()).toContain('min-h-4');
+  });
+
   it('holds still unless told to breathe', () => {
     render(<ToneBar tone="info" density="card" />);
 

@@ -39,10 +39,59 @@ describe('Notice', () => {
       expect(screen.getByText("GitHub didn't answer.").className).toContain(
         'text-muted-foreground',
       );
-      expect(container.querySelector('[data-notice-rail]')?.className).toContain(`bg-${tone}`);
+      expect(
+        container.querySelector('[data-notice-rail], [data-testid="tone-bar"]')?.className,
+      ).toContain(`bg-${tone}`);
       expect(screen.getByTestId('notice-icon').getAttribute('class')).toContain(`text-${tone}`);
     },
   );
+
+  it.each(['inline', 'banner', 'floating'] as const)(
+    'draws the %s tone as an inner line inside the padding, never an edge',
+    (placement) => {
+      const { container } = render(
+        <Notice tone="warning" placement={placement} title="Spend is at 92%" />,
+      );
+      const root = container.firstElementChild;
+      const bar = screen.getByTestId('tone-bar');
+
+      expect(root?.contains(bar)).toBe(true);
+      expect(bar.className).toContain('left-1.5');
+      expect(bar.className).toContain('top-3');
+      expect(bar.className).toContain('bottom-3');
+      expect(bar.className).toContain('min-h-4');
+      expect(root?.className).toContain('pl-4');
+      expect(root?.className).toContain('py-3');
+      const edges = Array.from(root?.children ?? []).filter(
+        (child) => child.className.includes('left-0') && child.className.includes('inset-y-0'),
+      );
+      expect(edges).toEqual([]);
+      expect(container.querySelector('[data-notice-rail]')).toBeNull();
+    },
+  );
+
+  it('keeps the transcript tone as an edge, because a transcript notice is a quote rail', () => {
+    const { container } = render(
+      <Notice tone="danger" placement="transcript" title="The turn stopped" />,
+    );
+    const edge = container.querySelector('[data-notice-rail]');
+
+    expect(edge?.className).toContain('left-0');
+    expect(edge?.className).toContain('inset-y-0');
+    expect(edge?.className).toContain('bg-danger');
+    expect(screen.queryByTestId('tone-bar')).toBeNull();
+  });
+
+  it('passes the alert role through on every placement', () => {
+    render(
+      <>
+        <Notice tone="danger" placement="inline" role="alert" title="Couldn't load the inbox" />
+        <Notice tone="warning" placement="banner" role="alert" title="Spend is at 92%" />
+      </>,
+    );
+
+    expect(screen.getAllByRole('alert')).toHaveLength(2);
+  });
 
   it('keeps technical detail behind a Details disclosure', () => {
     render(
