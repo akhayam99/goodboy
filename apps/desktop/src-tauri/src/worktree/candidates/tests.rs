@@ -163,8 +163,16 @@ fn symlinks_into_the_main_checkout_never_enter_a_candidate() {
     std::fs::create_dir_all(main.join("libraries/ledger-core/dist")).unwrap();
     let base = commit(&root, "base.txt", "base", "base");
     std::fs::write(root.join("base.txt"), "base edited").unwrap();
-    link_dist(&root, "ledger-core", &main.join("libraries/ledger-core/dist"));
-    link_dist(&root, "notify-relay", &main.join("libraries/notify-relay/dist"));
+    link_dist(
+        &root,
+        "ledger-core",
+        &main.join("libraries/ledger-core/dist"),
+    );
+    link_dist(
+        &root,
+        "notify-relay",
+        &main.join("libraries/notify-relay/dist"),
+    );
 
     let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
 
@@ -179,18 +187,31 @@ fn symlinks_the_agent_committed_itself_are_stripped_from_the_candidate() {
     let main = temp_root("candidate-committed-main");
     let base = commit(&root, "base.txt", "base", "base");
     commit(&root, "fix.txt", "fix", "fix the rounding");
-    link_dist(&root, "ledger-core", &main.join("libraries/ledger-core/dist"));
+    link_dist(
+        &root,
+        "ledger-core",
+        &main.join("libraries/ledger-core/dist"),
+    );
     git_ok(&root, &["add", "--all"]);
-    git_ok(&root, &["commit", "--no-verify", "-m", "oops, add built output"]);
+    git_ok(
+        &root,
+        &["commit", "--no-verify", "-m", "oops, add built output"],
+    );
     commit(&root, "second.txt", "second", "second fix");
 
     let candidate = quarantine(&root, "cand-1", &base).expect("a candidate was produced");
 
     let files = git_ok(&root, &["ls-tree", "-r", "--name-only", &candidate]);
     assert!(!files.contains("dist"), "{files}");
-    assert!(files.contains("fix.txt") && files.contains("second.txt"), "{files}");
+    assert!(
+        files.contains("fix.txt") && files.contains("second.txt"),
+        "{files}"
+    );
     assert_eq!(
-        git_ok(&root, &["log", "--format=%s", &format!("{base}..{candidate}")]),
+        git_ok(
+            &root,
+            &["log", "--format=%s", &format!("{base}..{candidate}")]
+        ),
         "second fix\nfix the rounding",
         "the agent's own commits were not kept as they were"
     );
@@ -274,7 +295,11 @@ fn stacked_splitting_gives_each_commit_its_own_candidate_in_commit_order() {
     let done = split_stacked(
         &root,
         &base,
-        &[("run-1-c", &third), ("run-1-a", &first), ("run-1-b", &second)],
+        &[
+            ("run-1-c", &third),
+            ("run-1-a", &first),
+            ("run-1-b", &second),
+        ],
     );
 
     let sha_of = |id: &str| {
