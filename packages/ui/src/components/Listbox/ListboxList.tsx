@@ -67,6 +67,7 @@ export const ListboxList = <T extends ListboxValue>({
               meta={option.meta}
               match={match}
               isCode={option.isCode}
+              tail={option.tail}
               isActive={index === activeIndex}
               isSelected={selectedValues.includes(option.value)}
               disabledReason={option.disabledReason}

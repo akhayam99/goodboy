@@ -34,7 +34,7 @@ const restBorder = ({ selected }: Pick<ShellParams, 'selected'>): string => {
   if (selected === true) {
     return cn('border-primary', tintClasses('primary').bgSoft);
   }
-  return 'border-border-soft hover:border-border';
+  return 'border-border-soft hover:border-border hover:bg-hover';
 };
 
 export const sessionCardShell = ({ selected, active, dimmed }: ShellParams): string =>

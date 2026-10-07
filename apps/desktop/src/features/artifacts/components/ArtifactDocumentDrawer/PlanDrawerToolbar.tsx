@@ -43,7 +43,9 @@ export const PlanDrawerToolbar = ({
       data-testid="plan-drawer-version"
       className="shrink-0 text-meta tabular-nums text-muted-foreground"
     >
-      {`v${version}`}
+      {editor.conflict === null
+        ? `v${version}`
+        : `v${version} · v${editor.conflict.revision} available`}
     </span>
     {isInline ? null : <span aria-hidden className="min-w-0 flex-1" />}
     {isPast ? null : editor.isEditing ? (

@@ -132,7 +132,7 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
     unchanged !== null && unchanged.version === version && !isRevising && pastVersion === null;
 
   const content = (
-    <div data-testid="plan-drawer" className="flex min-w-0 flex-col gap-4">
+    <div data-testid="plan-drawer" className="flex min-h-full min-w-0 flex-col gap-4">
       {isExpanded ? line : null}
       {pastVersion === null ? (
         <>
@@ -147,7 +147,7 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
             data-testid="plan-drawer-body"
             data-revising={isRevising ? 'true' : 'false'}
             className={cn(
-              'min-w-0 motion-safe:transition-opacity',
+              'flex min-w-0 flex-1 flex-col motion-safe:transition-opacity',
               isRevising && 'pointer-events-none select-none opacity-55',
             )}
           >
@@ -163,6 +163,7 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
                   plannerName: creator?.name ?? null,
                 })}
                 onSent={onSent}
+                isApproveInBar={false}
                 onOpenPart={(row) => {
                   if (hasRun && row.agentId !== null) {
                     navigate({ to: agentPlace({ sessionId, agentId: row.agentId }) });

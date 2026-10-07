@@ -62,6 +62,7 @@ describe('OrchestratorHintComposer', () => {
 
   it('sends a pasted image with the hint and says where images go', async () => {
     const drafts = mount();
+    fireEvent.focus(field());
     expect(screen.getByText('Images go to the next agent')).toBeDefined();
     fireEvent.change(field(), { target: { value: 'the trace is attached' } });
     await pasteImage('checkout-trace.png');
@@ -95,5 +96,73 @@ describe('OrchestratorHintComposer', () => {
       'cap the backoff at 2 s',
       'log each retry',
     ]);
+  });
+
+  describe('at rest', () => {
+    const form = () => screen.getByRole('form', { name: 'Tell the orchestrator' });
+
+    it('is one text row with no tabs, no key hints and no buttons until it is used', () => {
+      mount();
+
+      expect(form().getAttribute('data-open')).toBe('false');
+      expect(field().getAttribute('rows')).toBe('1');
+      expect(screen.queryByRole('tab', { name: 'Preview' })).toBeNull();
+      expect(screen.queryByTestId('orchestrator-hint-queue')).toBeNull();
+      expect(screen.queryByTestId('orchestrator-hint-now')).toBeNull();
+      expect(screen.queryByText('Images go to the next agent')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Attach files' })).toBeDefined();
+    });
+
+    it('opens on focus with the tabs, the hints and both buttons, and two rows', () => {
+      mount();
+
+      fireEvent.focus(field());
+
+      expect(form().getAttribute('data-open')).toBe('true');
+      expect(field().getAttribute('rows')).toBe('2');
+      expect(screen.getByRole('tab', { name: 'Preview' })).toBeDefined();
+      expect(screen.getByTestId('orchestrator-hint-queue')).toBeDefined();
+      expect(screen.getByTestId('orchestrator-hint-now')).toBeDefined();
+    });
+
+    it('closes again when focus leaves an empty field', () => {
+      mount();
+
+      fireEvent.focus(field());
+      fireEvent.blur(field(), { relatedTarget: document.body });
+
+      expect(form().getAttribute('data-open')).toBe('false');
+    });
+
+    it('stays open while it holds text, even without focus', () => {
+      mount();
+
+      fireEvent.change(field(), { target: { value: 'skip the visual suite' } });
+      fireEvent.blur(field(), { relatedTarget: document.body });
+
+      expect(form().getAttribute('data-open')).toBe('true');
+      expect(screen.getByTestId('orchestrator-hint-queue')).toBeDefined();
+    });
+
+    it('stays open while focus moves to its own buttons', () => {
+      mount();
+      fireEvent.focus(field());
+
+      fireEvent.blur(field(), { relatedTarget: screen.getByRole('tab', { name: 'Preview' }) });
+
+      expect(form().getAttribute('data-open')).toBe('true');
+    });
+
+    it('returns to the write view when it closes from the preview tab', async () => {
+      mount();
+      fireEvent.focus(field());
+      fireEvent.click(screen.getByRole('tab', { name: 'Preview' }));
+      await screen.findByTestId('prompt-preview');
+
+      fireEvent.blur(screen.getByRole('tab', { name: 'Write' }), { relatedTarget: document.body });
+
+      expect(screen.queryByTestId('prompt-preview')).toBeNull();
+      expect(field()).toBeDefined();
+    });
   });
 });

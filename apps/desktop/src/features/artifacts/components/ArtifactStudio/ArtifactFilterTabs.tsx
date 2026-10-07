@@ -14,7 +14,7 @@ type Props = {
 export const ArtifactFilterTabs = ({ value, counts, onChange }: Props) => (
   <SegmentedTabs
     ariaLabel="Artifact kind"
-    size="sm"
+    size="xs"
     className="w-max shrink-0"
     value={value}
     onChange={onChange}

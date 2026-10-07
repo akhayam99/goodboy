@@ -6,7 +6,7 @@ type Props = {
 };
 
 export const PlanDrawerStateLine = ({ revising }: Props) => {
-  if (revising.kind === 'none') {
+  if (revising.kind !== 'newVersion') {
     return null;
   }
   return (

@@ -138,8 +138,10 @@ describe('PlanEditor', () => {
     expect(updatePlanBody).not.toHaveBeenCalled();
   });
 
-  it('shows a failed write inline and keeps the editor open', async () => {
+  it('shows a failed write in plain words inline, keeps the editor open and files the detail', async () => {
+    const reportError = vi.fn(async () => undefined);
     useAppStore.setState({
+      reportError,
       updatePlanBody: vi.fn(async () => {
         throw new Error('The database is locked');
       }),
@@ -150,8 +152,48 @@ describe('PlanEditor', () => {
     edit('# Retry once\n\n## Goal\nMine.');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect((await screen.findByRole('alert')).textContent).toContain('The database is locked');
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe("Couldn't save the plan. Your text is still here.");
+    expect(alert.textContent).not.toContain('database');
     expect(screen.getByTestId('state').textContent).toBe('editing');
+    expect(reportError).toHaveBeenCalledTimes(1);
+    expect(reportError).toHaveBeenCalledWith({
+      title: "Couldn't save the plan",
+      error: expect.objectContaining({ message: 'The database is locked' }),
+      sessionId: PLAN_FIXTURE_SESSION,
+    });
+  });
+
+  it('turns Save off after a conflict, because the same save would conflict again', async () => {
+    const updatePlanBody = stubSave({ kind: 'conflict', revision: 3 });
+    render(<Harness />);
+    start();
+
+    edit('# Retry once\n\n## Goal\nMine.');
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await screen.findByText('The planner wrote v3 meanwhile');
+
+    const save = screen.getByRole('button', { name: 'Save' });
+    expect(save.hasAttribute('disabled')).toBe(true);
+    expect(save.getAttribute('title')).toBe(
+      'A newer version exists. Copy your text, discard, then edit again.',
+    );
+    fireEvent.click(save);
+    expect(updatePlanBody).toHaveBeenCalledTimes(1);
+  });
+
+  it('turns Save back on once the edit is discarded and started again', async () => {
+    stubSave({ kind: 'conflict', revision: 3 });
+    render(<Harness />);
+    start();
+    edit('# Retry once\n\n## Goal\nMine.');
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await screen.findByText('The planner wrote v3 meanwhile');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    start();
+
+    expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('leaves on Escape when nothing changed', () => {

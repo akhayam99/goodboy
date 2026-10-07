@@ -59,7 +59,19 @@ describe('CardAction', () => {
 
   it('tints itself when highlighted', () => {
     render(<CardAction icon={Star} label="Pin" tone="success" highlighted onClick={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Pin' }).className).toContain('success');
+    const button = screen.getByRole('button', { name: 'Pin' });
+    expect(button.className).toContain('success');
+    expect(button.hasAttribute('data-highlighted')).toBe(true);
+  });
+
+  it('stays neutral at rest and takes its tone only on hover unless highlighted', () => {
+    render(<CardAction icon={Star} label="Pin" tone="success" onClick={vi.fn()} />);
+    const { className } = screen.getByRole('button', { name: 'Pin' });
+    expect(className).toContain('text-muted-foreground');
+    expect(className).toContain('hover:text-success');
+    expect(className).toContain('hover:bg-success/5');
+    expect(className).not.toMatch(/(^| )bg-success/);
+    expect(className).not.toMatch(/(^| )text-success/);
   });
 
   it('exposes pressed and expanded state', () => {

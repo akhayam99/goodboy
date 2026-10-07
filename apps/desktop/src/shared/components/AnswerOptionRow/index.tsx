@@ -43,7 +43,7 @@ export const AnswerOptionRow = ({
         aria-hidden
         className={cn(
           'grid size-5 place-items-center rounded-sm text-chip',
-          selected ? 'bg-hover text-foreground' : 'bg-fill text-faint-foreground',
+          selected ? 'bg-hover text-foreground' : 'bg-fill text-muted-foreground',
         )}
       >
         {keyHint}

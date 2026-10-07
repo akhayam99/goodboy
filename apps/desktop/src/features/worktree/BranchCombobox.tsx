@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Listbox, type ListboxOption } from '@goodboy/ui';
 import { branchChoiceGroup, branchChoiceOrigin, type BranchChoice } from './branchChoices';
+import { BRANCH_PICKER_MAX_WIDTH, branchPickerOption } from './branchPicker';
 import type { LocalBranchInfo } from './worktree';
 
 type PickableBranch = LocalBranchInfo & Partial<Omit<BranchChoice, keyof LocalBranchInfo>>;
@@ -73,9 +74,7 @@ export const BranchCombobox = ({
       .map((branch) => {
         const keywords = branchKeywords({ branch });
         return {
-          value: branch.name,
-          label: branch.name,
-          isCode: true,
+          ...branchPickerOption({ name: branch.name }),
           meta: branchMeta({ branch }),
           ...(branch.source === undefined
             ? {}
@@ -93,6 +92,7 @@ export const BranchCombobox = ({
       searchLabel="Search branches"
       searchPlaceholder="Search branches"
       noun="branch"
+      maxPopupWidth={BRANCH_PICKER_MAX_WIDTH}
       placeholder={placeholderOf({ loading, isEmpty: branches.length === 0, emptyLabel })}
       disabled={disabled || branches.length === 0}
       value={value === '' ? null : value}

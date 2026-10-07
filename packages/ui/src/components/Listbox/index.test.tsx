@@ -214,6 +214,72 @@ describe('Listbox', () => {
     expect(popup instanceof HTMLElement ? popup.style.left : '').toBe('12px');
   });
 
+  it('caps the popup at 360px, or at the width the caller asks for', () => {
+    const popupOf = () => screen.getByRole('listbox').closest('[data-dropdown-portal] > div');
+    render(<Listbox ariaLabel="Theme" options={THEMES} value="system" onChange={vi.fn()} />);
+    fireEvent.click(trigger());
+    expect(popupOf()?.getAttribute('style')).toContain('max-width: 360px');
+    cleanup();
+
+    render(
+      <Listbox
+        ariaLabel="Theme"
+        options={THEMES}
+        value="system"
+        maxPopupWidth={480}
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(trigger());
+    expect(popupOf()?.getAttribute('style')).toContain('max-width: 480px');
+  });
+
+  it('keeps the tail of a long label whole and cuts the middle, in the row and the trigger', () => {
+    const name = 'grw-1348-cta-per-bypassare-la-selezione-dello-slot';
+    const options: ReadonlyArray<ListboxOption<string>> = [
+      { value: name, label: name, isCode: true, tail: '-slot' },
+      { value: 'main', label: 'main', isCode: true },
+    ];
+    render(<SingleHarness options={options} initial={name} />);
+
+    const triggerHead = trigger().querySelector('[data-slot="label-head"]');
+    const triggerTail = trigger().querySelector('[data-slot="label-tail"]');
+    expect(triggerHead?.textContent).toBe('grw-1348-cta-per-bypassare-la-selezione-dello');
+    expect(triggerHead?.className).toContain('truncate');
+    expect(triggerTail?.textContent).toBe('-slot');
+    expect(triggerTail?.className).toContain('shrink-0');
+
+    fireEvent.click(trigger());
+    const row = screen.getByRole('option', { name });
+    expect(row.querySelector('[data-slot="label-head"]')?.className).toContain('truncate');
+    expect(row.querySelector('[data-slot="label-tail"]')?.textContent).toBe('-slot');
+    const plain = screen.getByRole('option', { name: 'main' });
+    expect(plain.querySelector('[data-slot="label-tail"]')).toBeNull();
+  });
+
+  it('underlines a search match on both sides of the cut', () => {
+    const name = 'fix/retry-backoff';
+    render(
+      <Listbox
+        ariaLabel="Theme"
+        searchable
+        options={[{ value: name, label: name, isCode: true, tail: '-backoff' }]}
+        value={null}
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(trigger());
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search' }), {
+      target: { value: 'rbk' },
+    });
+
+    const row = screen.getByRole('option', { name });
+    const head = row.querySelector('[data-slot="label-head"]');
+    const tail = row.querySelector('[data-slot="label-tail"]');
+    expect(head?.querySelectorAll('[data-match]').length).toBeGreaterThan(0);
+    expect(tail?.querySelectorAll('[data-match]').length).toBeGreaterThan(0);
+  });
+
   it('offers to create the typed value when nothing matches exactly', () => {
     const onCreate = vi.fn();
     render(

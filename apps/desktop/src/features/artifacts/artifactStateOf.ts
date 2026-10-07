@@ -139,6 +139,8 @@ const withDetail = ({
   readonly detail: string | null;
 }): ArtifactState => ({ ...ARTIFACT_STATE_PRESENTATION[key], detail });
 
+const PLANNER_ASKED_DETAIL = 'waiting for your answer';
+
 const plural = ({ count, noun }: { readonly count: number; readonly noun: string }): string =>
   count === 1 ? `1 ${noun}` : `${count} ${noun}s`;
 
@@ -196,6 +198,9 @@ const planState = (params: StoredParams): ArtifactState => {
       label: planRevisingLabel({ revising: params.revising }),
       detail: null,
     };
+  }
+  if (params.plannerQuestionCount > 0) {
+    return withDetail({ key: 'needs', detail: PLANNER_ASKED_DETAIL });
   }
   if (params.openQuestionCount > 0) {
     return withDetail({

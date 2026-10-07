@@ -25,6 +25,7 @@ const AUTOPLAY: Readonly<Record<PlanDrawerVariant, ReadonlyArray<AutoplayStep>>>
     { selector: '[data-testid="artifact-save"]' },
   ],
   split: [],
+  follow: [],
 };
 
 type Props = {
@@ -73,4 +74,5 @@ export const U21_PLAN_DRAWER_SCENES = {
   'plan-drawer-editing': () => <PlanDrawerScene variant="editing" />,
   'plan-drawer-conflict': () => <PlanDrawerScene variant="conflict" />,
   'plan-drawer-split': () => <PlanDrawerScene variant="split" />,
+  'plan-drawer-follow': () => <PlanDrawerScene variant="follow" />,
 };

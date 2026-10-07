@@ -1,5 +1,11 @@
 import { useMemo } from 'react';
-import { AnchoredPopover, MenuList, Tooltip, cn, useDropdown, type MenuEntry } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  MenuList,
+  MenuTriggerButton,
+  useDropdown,
+  type MenuEntry,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { runObjectAction } from '../../../actions/registry';
 import { toMenuEntries } from '../../../actions/toMenuEntries';
@@ -57,21 +63,14 @@ export const BranchOverflow = ({ diffControls, pullRequestControls }: Props) => 
       dropdown={dropdown}
       anchorClassName="shrink-0"
       trigger={
-        <Tooltip content={MENU_LABEL} anchorClassName="shrink-0">
-          <button
-            type="button"
-            onClick={dropdown.toggle}
-            aria-label={MENU_LABEL}
-            aria-haspopup="menu"
-            aria-expanded={dropdown.open}
-            className={cn(
-              'shrink-0 rounded-sm p-1 text-faint-foreground hover:bg-hover hover:text-foreground motion-safe:transition-colors',
-              dropdown.open && 'bg-selected text-foreground',
-            )}
-          >
-            <CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />
-          </button>
-        </Tooltip>
+        <MenuTriggerButton
+          label={MENU_LABEL}
+          isOpen={dropdown.open}
+          size="control"
+          onClick={dropdown.toggle}
+        >
+          <CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />
+        </MenuTriggerButton>
       }
     >
       <MenuList label={MENU_LABEL} entries={entries} onClose={dropdown.close} />

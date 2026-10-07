@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react';
-import { formatError } from '@goodboy/ui';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { useCopyText } from '../../../../../shared/hooks/useCopyText';
 import { parsePlanSource, planToSource } from '../../../../plans/planSource';
 
 const PLAN_TITLE_MISSING = 'The first line is the plan title. Add one before saving.';
+
+const SAVE_FAILED_TITLE = "Couldn't save the plan";
+
+const SAVE_FAILED_INLINE = "Couldn't save the plan. Your text is still here.";
 
 type Params = Readonly<{
   sessionId: SessionId;
@@ -27,6 +30,7 @@ export type PlanEditorModel = Readonly<{
   draft: string;
   isDirty: boolean;
   isSaving: boolean;
+  canSave: boolean;
   error: string | null;
   conflict: Conflict | null;
   isDiscardAsked: boolean;
@@ -42,6 +46,7 @@ export type PlanEditorModel = Readonly<{
 
 export const usePlanEditor = ({ sessionId, plan, revision, onSaved }: Params): PlanEditorModel => {
   const updatePlanBody = useAppStore((state) => state.updatePlanBody);
+  const reportError = useAppStore((state) => state.reportError);
   const copyText = useCopyText();
   const [session, setSession] = useState<Session | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -72,7 +77,7 @@ export const usePlanEditor = ({ sessionId, plan, revision, onSaved }: Params): P
   }, []);
 
   const save = useCallback(async () => {
-    if (plan === null || session === null || isSaving) {
+    if (plan === null || session === null || isSaving || conflict !== null) {
       return;
     }
     setError(null);
@@ -101,11 +106,12 @@ export const usePlanEditor = ({ sessionId, plan, revision, onSaved }: Params): P
       clear();
       onSaved?.({ revision: result.revision });
     } catch (cause) {
-      setError(formatError(cause));
+      setError(SAVE_FAILED_INLINE);
+      await reportError({ title: SAVE_FAILED_TITLE, error: cause, sessionId });
     } finally {
       setIsSaving(false);
     }
-  }, [clear, isSaving, onSaved, plan, session, sessionId, updatePlanBody]);
+  }, [clear, conflict, isSaving, onSaved, plan, reportError, session, sessionId, updatePlanBody]);
 
   const isDirty = session !== null && session.draft !== session.initial;
 
@@ -141,6 +147,7 @@ export const usePlanEditor = ({ sessionId, plan, revision, onSaved }: Params): P
     draft: session?.draft ?? '',
     isDirty,
     isSaving,
+    canSave: conflict === null,
     error,
     conflict,
     isDiscardAsked,

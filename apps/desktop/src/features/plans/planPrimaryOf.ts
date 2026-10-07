@@ -1,5 +1,6 @@
 import type { ArtifactComment, PlanWithCount, WorkflowRun } from '@goodboy/types';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
+import { PLANNER_QUESTION_REASON } from './plannerQuestions';
 import { NOT_REVISING, PLAN_REVISING_REASON, type PlanRevising } from './planRevising';
 
 type PlanPrimaryKind = 'approve' | 'run' | 'disabled' | 'none';
@@ -19,6 +20,7 @@ type Params = Readonly<{
   drafts: ReadonlyArray<ArtifactComment>;
   revising?: PlanRevising;
   isRunning?: boolean;
+  plannerQuestionCount?: number;
 }>;
 
 const NONE: PlanPrimary = { kind: 'none', label: null, reason: null, isSecondary: false };
@@ -29,6 +31,7 @@ export const planPrimaryOf = ({
   drafts,
   revising = NOT_REVISING,
   isRunning = false,
+  plannerQuestionCount = 0,
 }: Params): PlanPrimary => {
   const feedsRun = run !== null && run.discardedAt == null;
   if (revising.kind === 'revising') {
@@ -41,6 +44,14 @@ export const planPrimaryOf = ({
   }
   if (plan.status !== 'active' || plan.consumptionCount > 0 || isRunning) {
     return NONE;
+  }
+  if (plannerQuestionCount > 0) {
+    return {
+      kind: 'disabled',
+      label: feedsRun ? 'Approve' : 'Run plan',
+      reason: PLANNER_QUESTION_REASON,
+      isSecondary: false,
+    };
   }
   const isSecondary = drafts.length > 0;
   if (!feedsRun) {

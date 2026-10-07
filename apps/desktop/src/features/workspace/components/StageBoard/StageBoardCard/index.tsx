@@ -33,7 +33,7 @@ import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { PrRequestSlot } from './PrRequestSlot';
 import { ProjectMountChips } from './ProjectMountChips';
-import { useDynamicActions, type DynamicAction } from './useDynamicActions';
+import { useDynamicActions } from './useDynamicActions';
 import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../../actions/useRenameRequest';
@@ -46,9 +46,6 @@ const SESSION_CARD_REVEAL =
 
 const RAIL_UNDER_CHECKBOX =
   'group-hover/select-row:top-9 group-focus-within/select-row:top-9 group-data-[selecting=true]/select-list:top-9';
-
-const isUrgent = ({ tone }: { readonly tone: DynamicAction['tone'] }): boolean =>
-  tone === 'warning' || tone === 'danger';
 
 type CardSelectionEvent = {
   readonly shiftKey: boolean;
@@ -236,7 +233,7 @@ export const StageBoardCard = memo(function StageBoardCard({
                 }
                 nav.selectCard(session);
               }}
-              className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="min-w-0 flex-1 cursor-pointer rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               <InlineMarkdown text={title} className="line-clamp-2 min-h-10 text-row" />
             </button>
@@ -258,7 +255,6 @@ export const StageBoardCard = memo(function StageBoardCard({
               key={visibleAction.key}
               icon={visibleAction.icon}
               tone={visibleAction.tone}
-              highlighted={isUrgent({ tone: visibleAction.tone })}
               label={visibleAction.label}
               onClick={visibleAction.onClick}
             />
@@ -337,15 +333,19 @@ export const StageBoardCard = memo(function StageBoardCard({
             />
           ))}
         </span>
-        <span className="ml-auto flex shrink-0 items-center gap-2">
+        <span className="ml-auto grid shrink-0 items-center justify-items-end">
           {sessionCost > 0 && (
             <CostBadge
               value={sessionCost}
               title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="hidden shrink-0 text-meta text-faint-foreground group-hover/session-card:inline group-focus-within/session-card:inline"
+              className="invisible col-start-1 row-start-1 shrink-0 text-meta text-faint-foreground group-hover/session-card:visible group-focus-within/session-card:visible"
             />
           )}
-          {age && <span className="shrink-0 text-meta text-faint-foreground">{age}</span>}
+          {age && (
+            <span className="col-start-1 row-start-1 shrink-0 text-meta text-faint-foreground group-hover/session-card:invisible group-focus-within/session-card:invisible">
+              {age}
+            </span>
+          )}
         </span>
       </span>
     </article>

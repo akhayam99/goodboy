@@ -422,45 +422,33 @@ describe('StageBoardCard actions visibility', () => {
     expect(nav.selectCard).toHaveBeenCalledTimes(2);
   });
 
-  it('shows the attention tint on the visible action at rest', () => {
-    useDynamicActionsMock.mockReturnValue([
-      {
-        key: 'questions',
-        icon: HelpCircle,
-        tone: 'warning',
-        label: '1 open question',
-        onClick: vi.fn(),
-      },
-      {
-        key: 'run',
-        icon: Play,
-        tone: 'primary',
-        label: 'run next step',
-        onClick: vi.fn(),
-      },
-    ]);
-    render(<StageBoardCard session={session} nav={nav} />);
-    const attention = screen.getByLabelText('1 open question');
-    expect(attention.className.includes(' bg-warning/5')).toBe(true);
-    expect(attention.className).toContain('text-warning');
-    expect(attention.className).not.toContain('opacity-0');
-    expect(screen.queryByLabelText('run next step')).toBeNull();
-  });
+  it.each([
+    ['warning', '1 open question'],
+    ['danger', 'Confirm skip and continue'],
+  ] as const)(
+    'keeps a %s quick action quiet at rest, so the tone line is the one signal',
+    (tone, label) => {
+      useDynamicActionsMock.mockReturnValue([
+        { key: 'attention', icon: HelpCircle, tone, label, onClick: vi.fn() },
+        { key: 'run', icon: Play, tone: 'primary', label: 'run next step', onClick: vi.fn() },
+      ]);
+      render(<StageBoardCard session={session} nav={nav} />);
 
-  it('highlights a danger action', () => {
-    useDynamicActionsMock.mockReturnValue([
-      {
-        key: 'blocked',
-        icon: HelpCircle,
-        tone: 'danger',
-        label: 'Confirm skip and continue',
-        onClick: vi.fn(),
-      },
-    ]);
-    render(<StageBoardCard session={session} nav={nav} />);
-    const action = screen.getByLabelText('Confirm skip and continue');
-    expect(action.className).toContain('bg-danger/5');
-    expect(action.className).toContain('text-danger');
+      expect(screen.getByLabelText(label).hasAttribute('data-highlighted')).toBe(false);
+      expect(screen.getAllByTestId('tone-bar')).toHaveLength(1);
+      expect(screen.queryByLabelText('run next step')).toBeNull();
+    },
+  );
+
+  it('swaps the age for the cost on hover in one slot, so the chips never move', () => {
+    hooks.cost = 1.23;
+    const updated = aSession({
+      ...session,
+      updatedAt: new Date(Date.now() - 7_200_000).toISOString() as IsoDateTime,
+    });
+    render(<StageBoardCard session={updated} nav={nav} />);
+
+    expect(screen.getByText('2h ago').parentElement).toBe(screen.getByText('$1.23').parentElement);
   });
 
   it('keeps nothing hover-only on the card', () => {

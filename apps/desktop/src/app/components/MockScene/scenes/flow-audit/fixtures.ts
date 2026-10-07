@@ -1074,17 +1074,23 @@ export const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
   },
 ];
 
+const PLAN_TITLE = 'Dedupe on the event id';
+
+const PLAN_BODY = [
+  '1. Keep the processor event id on every credit row.',
+  '2. Check the event id inside the credit transaction, not in the handler.',
+  '3. Leave ledger-core alone, it already rejects a second posting.',
+  '4. Record the attempts on each delivery in notify-relay.',
+].join('\n');
+
 const PLAN_MESSAGE = [
   'The second credit is not in ledger-core. The handler checks for the event before the transaction',
   'opens, so a retry that lands mid-write slips past it and posts again.',
   '',
   '<<plan>>',
-  '# Dedupe on the event id',
+  `# ${PLAN_TITLE}`,
   '',
-  '1. Keep the processor event id on every credit row.',
-  '2. Check the event id inside the credit transaction, not in the handler.',
-  '3. Leave ledger-core alone, it already rejects a second posting.',
-  '4. Record the attempts on each delivery in notify-relay.',
+  PLAN_BODY,
   '<</plan>>',
 ].join('\n');
 
@@ -1101,8 +1107,8 @@ export const CHAT_PLANS: ReadonlyArray<PlanWithCount> = [
     id: 'mock-flow-plan-rounding' as PlanId,
     sessionId: CHAT_SESSION_ID,
     agentId: CHAT_AGENT_TRIAGE_ID,
-    title: 'Dedupe on the event id',
-    bodyMd: PLAN_MESSAGE,
+    title: PLAN_TITLE,
+    bodyMd: PLAN_BODY,
     status: 'active',
     createdAt: clock.iso({ at: '2026-09-16T10:31:00.000Z' }),
     updatedAt: clock.iso({ at: '2026-09-16T10:31:00.000Z' }),

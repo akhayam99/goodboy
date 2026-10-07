@@ -344,11 +344,11 @@ The run page (`WorkflowsPane` over `WorkflowRow`) reads top to bottom: a
 pinned header, the strips, the steps in their own scroller, and a composer
 docked under them.
 
-- **Header.** The title, the status, the facts (steps, agents, cost, spend cap, when to ask, time left) and one cluster of actions: **Review plan** while the run waits for its plan, **Pause** (or **Resume**) and **Stop run** as one pair (`RunControls`), and an overflow menu. The chevron is named **Show run summary**, in its accessible name and its tooltip. It folds the run into its card in the Runs list; a run opened from a list that is collapsed offers **Expand ... run** instead
-- **Scroll edge.** The steps scroll under the pinned block. `ScrollFade` takes `edge="line"`: its root draws a 1px `border` line at its own top edge while `scrollTop` is above 0, shown through `data-scrolled` on the root, set imperatively inside `applyFade`, never through React state, and faded in over 120ms under `motion-safe`. With the line the top mask fade is off and the bottom fade stays. `PaneShell` with `scroll="body"` and the steps scroller of the run both use it. The default `edge="fade"` is unchanged. The scroller opens at 0; the live-row reveal of the run tree uses `scrollIntoView({ block: 'nearest' })`, so it only moves the scroller when the live row is below the visible area
-- **Composer.** A dynamic run's hint field docks at the bottom of the page as the `dock` of the `PaneShell`, as in Chat, below the scroller and never inside it (`OrchestratorDock`). Steps and cost come first. Queued hints fold into one "2 queued" row above the steps, and the help sentence moved into the tooltips of **Queue** and **Read now**
+- **Header.** The title, the status, the facts (steps, agents, cost, spend cap, when to ask, time left) and one cluster of actions: **Review plan** while the run waits for its plan, **Pause** (or **Resume**) and **Stop run** as one pair (`RunControls`), and an overflow menu. The chevron is named **Show run summary**, in its accessible name and its tooltip. It folds the run into its card in the Runs list; a run opened from a list that is collapsed offers **Expand ... run** instead. The header pins only the title and these facts: the write destination ("Starts in ..."), the strips and the steps all scroll under it
+- **Scroll edge.** The steps scroll under the pinned block. `ScrollFade` takes `edge="line"`: its root draws a 1px `border-soft` line (the quietest divider, never the brighter `border`) at its own top edge while `scrollTop` is above 0, shown through `data-scrolled` on the root, set imperatively inside `applyFade`, never through React state, and faded in over 120ms under `motion-safe`. With the line the top mask fade shrinks to 8px, growing with the scroll from 0, so a card clipped under the line fades out instead of leaving a cut edge as a sliver; the bottom fade stays. `PaneShell` with `scroll="body"` and the steps scroller of the run both use it. The default `edge="fade"` is unchanged. The scroller opens at 0; the live-row reveal of the run tree uses `scrollIntoView({ block: 'nearest' })`, so it only moves the scroller when the live row is below the visible area
+- **Composer.** A dynamic run's hint field docks at the bottom of the page as the `dock` of the `PaneShell`, as in Chat, below the scroller and never inside it (`OrchestratorDock`). Steps and cost come first. Queued hints fold into one "2 queued" row above the steps, and the help sentence moved into the tooltips of **Queue** and **Read now**. At rest the field is one text row with the attach button, no Write and Preview tabs, no key hints and no buttons (`data-open` is `false`); it opens to two rows with all of them while it has focus or holds text or an image, and closes again on blur when empty, so a short window keeps most of its height for the steps (the steps scroller is at least 440px tall at a 760px window)
 - **Two Stops, two names.** **Stop run** is in the header, next to Pause: it ends the run and asks first ("Steps that have not run are skipped..."). **Stop step** is in the strip while a step is in flight: it cancels that step, holds the run and leaves **Continue the run** on offer. A static run has no strip, so it has the one Stop run. Never two buttons with one name
-- **Plan entry points.** While the run is held for its plan, the header's primary is **Review plan**: it opens the drawer for the plan the run waits on with `openPlanDrawer`, over the page. The plan comes from `runPlanOf` (the newest active plan the run's planner wrote, `useRunPlan`). **Approve plan** moves into the overflow menu: it is one item of the run controls menu on a static run, and of a **Plan actions** menu on a dynamic one, and it is off with the reason "The planner is revising this plan" while the planner revises. A run with no plan to open keeps **Approve plan** as its primary. The static run's **Plan ready** status becomes a secondary **Review plan** button when the header holds the primary. The orchestrator strip has the same **Review plan**, plus the `plan-revising` and `plan-question` phases ([The orchestrator strip](#the-orchestrator-strip))
+- **Plan entry points.** While the run is held for its plan, the header's primary is **Review plan**: it opens the drawer for the plan the run waits on with `openPlanDrawer`, over the page. The plan comes from `runPlanOf` (the newest active plan the run's planner wrote, `useRunPlan`). **Approve plan** moves into the overflow menu: it is one item of the run controls menu on a static run, and of a **Plan actions** menu on a dynamic one, and it is off with the reason "The planner is revising this plan" while the planner revises. A run with no plan to open keeps **Approve plan** as its primary. The static run's **Plan ready** status becomes a secondary **Review plan** button when the header holds the primary. The orchestrator strip says **Open plan** (the header and the planner row already say **Review plan**, so the run page never shows the same label three times), plus the `plan-revising` and `plan-question` phases ([The orchestrator strip](#the-orchestrator-strip))
 - **Approve from the overflow** (`useApproveRunPlan`) calls `approveWorkflowRunPlan` and reads its answer: `approved` marks the run as a start of yours (`markUserStart`) and raises one `useFollowToast` toast, **Plan approved**, saying "The run goes on" or "Implement started" with the step's name, with the action **Follow the run** left out because the run page is on screen. `noop` raises nothing and `failed` goes to the log as "Couldn't approve the plan"
 - **Tone and empty states.** The strips draw their tone as a `ToneBar` inside their padding. A run with no agents says "No agents yet" and "The run starts its first step here." (`EmptyState size="section"`)
 
@@ -773,9 +773,16 @@ own **Open in Artifacts**.
   Approved or Running). With unsent comments the kind stays, the button turns
   secondary and the comment bar's **Send to planner** is the one filled
   button; pressing **Approve** then asks inline "3 comments are not sent.
-  Approve anyway?". The comment bar keeps an **Approve** (secondary) whenever
-  the run waits on the plan, with or without comments. **Run plan** on a
-  session plan is `usePlanRun` and its own toast.
+  Approve anyway?". In the drawer the header primary is the only **Approve**:
+  the comment bar holds **Send to planner** and, with no comment, the hint
+  "Select text or click a block to comment". The Artifacts page keeps a
+  secondary **Approve** in its bar (`isApproveInBar`), because its header
+  scrolls away. An open question the planner asked turns the primary off with
+  "The planner asked a question. Answer it first." (`plannerQuestionCount` in
+  `planPrimaryOf`); the chip then reads **Needs you** with "waiting for your
+  answer", never "Revising", because the planner is not writing (a revising
+  turn is a running turn, a question is an open one).
+  **Run plan** on a session plan is `usePlanRun` and its own toast.
 - **Approve.** `markUserStart` for the run first, then
   `approveWorkflowRunPlan` for the run held for the plan (a run that is not
   held starts the step through `runPlan`). `approved` raises one
@@ -784,8 +791,10 @@ own **Open in Artifacts**.
   out when the run page is open and uncovered; when the drawer sits over that
   run's page it closes first. `noop` closes and raises nothing. `failed`
   goes to `reportError` ("Couldn't approve the plan") and the drawer stays.
-- **Comment and re-plan.** Drafts gather in the bar. Send dims the body under a
-  "Revising to v3" line. A new version shows "v3 · Revised by planner" and
+- **Comment and re-plan.** Drafts gather in the bar. Send dims the body and
+  the chip reads "Revising to v3", with the reason beside the off primary and no
+  third copy in the body (the "Writing a new version" line stays for a plan that
+  already ran, where the chip says Ran). A new version shows "v3 · Revised by planner" and
   settles the comments as before. `unchanged` shows "The planner answered
   without changing the plan" with **Open the reply** (the planner's page) and
   leaves the comments open. A question the planner asked is the existing
@@ -803,7 +812,10 @@ revision as author `user` and refreshes the session's plans and artifacts.
 comments are unsent ("Send or discard your 3 comments first"), or the plan
 runs as two or more parallel parts ("This plan runs as 3 parallel parts. Ask
 the planner to change it."), because the parts a run fans out from live in the
-plan's metadata and a hand edit keeps them.
+plan's metadata and a hand edit keeps them. A body that lists parts twice,
+as `## Parts` in the markdown and as structured parts, shows them once: the
+body drops a top-level `Parts` section when the plan has structured parts
+(`dropPartsSection`), so the structured rows stay the one list.
 
 The editor is one component, `PlanEditor` with `usePlanEditor`
 (`features/artifacts/components/PlanEditor`), used by the drawer and by the
@@ -812,7 +824,12 @@ the markdown editor in place; the header's primary becomes **Save** with
 **Cancel** beside it, and **Approve** is hidden. **Save** sends the revision the
 edit started from: `saved` leaves edit mode and the line reads "v3 · Edited by
 you"; `conflict` keeps your text and says "The planner wrote v3 meanwhile",
-with **Copy your text** and **Discard**. **Esc** in edit mode leaves edit mode
+with **Copy your text** and **Discard**; **Save** is off after a conflict,
+because the same save would conflict again, with the reason "A newer version
+exists. Copy your text, discard, then edit again.", and the version beside the
+state reads "v2 · v3 available". A failed write says "Couldn't save the plan.
+Your text is still here." inline and files the exception detail through
+`reportError`. **Esc** in edit mode leaves edit mode
 and never closes the drawer: the editor registers its own escape layer above
 the drawer's, so a scrim click does the same. A changed edit asks "Discard your
 edit?" first, and **Esc** again keeps editing.

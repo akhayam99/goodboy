@@ -18,12 +18,15 @@
   share one frame centred in the pane, so the title's left edge is the first
   lane's left edge and the actions' right edge is the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
-  review, done, archived), each from 208px to 320px wide with 12px gaps, and
-  the frame stops at six lanes of 320px, so a wide or zoomed-out window never
-  stretches the board. `boardLanesOf` decides by the frame's width: six lanes
-  from 1308px; from 1088px five lanes with Done above Archived in the fifth,
-  each half with its own header, count, empty line and scroll; below that the
-  five lanes scroll sideways and the title row stays. Every lane always renders
+  review, done, archived), each from 13rem to 20rem wide with 0.75rem gaps, and
+  the frame stops at six lanes of 20rem, so a wide or zoomed-out window never
+  stretches the board. `boardLanesOf` decides by the frame's width in those rem
+  values times the root font size (`BOARD_LANE_MIN_REM` and `BOARD_LANE_GAP_REM`
+  in `paneRhythm.ts`, the same numbers the lane classes use; 15px root): six
+  lanes from 1226px; from 1020px five lanes with Done above Archived in the
+  fifth, each half with its own header, count, empty line and scroll; below
+  that the five lanes scroll sideways, the title row stays, and the scroller
+  opens at its end so Done and Archived are on screen. Every lane always renders
   its header and, when empty, one line naming what is missing; Archived shows
   Loading until its list answers, and it is the list the sidebar shows under
   Show archived. There is no dock and no collapse: Done and Archived are never
@@ -470,8 +473,8 @@ session tells its own story in the main pane. Its five work pages nest under
 its row: Overview, Branch, Runs, Agents and Artifacts. They are the same pages
 as the first five rows of the trail's page menu, with the same count words from
 one selector (`usePageSummaries`), so the two doors never disagree. The open
-session and its pages sit in one card (`data-session-card`, a surface one step
-above the column), so it is plain that the pages belong to that session; every
+session and its pages sit in one card (`data-session-card`, the elevated surface with
+a hairline, so it reads against the column in light too), so it is plain that the pages belong to that session; every
 other session stays a flat row. The nesting is not a mode: the list stays the
 list, the card moves to another session when it opens, and `←` and `→` on the
 open row fold and open the pages while the session row stays in the card. The
@@ -763,7 +766,9 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
 - **The Branch is one page with its tabs in the address.** A branch is shaped
   like a pull request: a header (title, `Draft · project · head ▾ → base ·
 checks`, where `project · head ▾` is the branch switcher, one primary by
-  state, `⋯` for the rare pull request lifecycle) over
+  state, `⋯` for the rare pull request lifecycle; the primary and `⋯` are both
+  28px, `⋯` last, and a blocked primary's reason, such as `1 check still
+running.` on Merge, reads in the meta line as well as in the tooltip) over
   the tabs `Comments · Files · Commits · Checks`
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
   thread selection replace the entry, so Back never walks them. The trail is
@@ -1787,7 +1792,9 @@ slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 **Ask**, the session title as the count, and **New**. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five
 comment words, running agents, open questions and the session cost) and three
-suggested questions; once a thread has turns it folds to one row. Then
+suggested questions; each line's mark is a `LineMark` (one text line tall), so
+it centres on the first line of text even when the line wraps; once a thread has
+turns it folds to one row. Then
 **Earlier** threads on a fresh thread, then the turns. An answer chip that
 targets a page navigates (the drawer stays, see above); a chip that targets a
 plan or another artifact opens it inside the drawer under **Back to answer**,

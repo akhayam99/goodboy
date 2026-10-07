@@ -21,9 +21,19 @@ import type {
 import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
+import { installSceneDatabase } from '../sceneDatabase';
+import { installScenePlanEngine } from '../scenePlanEngine';
 
 export type PlanDrawerVariant =
-  'waiting' | 'drafts' | 'revising' | 'unchanged' | 'question' | 'editing' | 'conflict' | 'split';
+  | 'waiting'
+  | 'drafts'
+  | 'revising'
+  | 'unchanged'
+  | 'question'
+  | 'editing'
+  | 'conflict'
+  | 'split'
+  | 'follow';
 
 const clock = sceneClock({ anchor: '2026-10-06T09:40:00.000Z' });
 
@@ -48,12 +58,18 @@ const TITLE = 'Reconcile the settlement export';
 const GOAL =
   'Every settlement batch in ledger-core must match its invoice, to the cent, before the export leaves Harborline.';
 
-const BODY = [
+const BODY_STEPS = [
   `## Goal\n\n${GOAL}`,
-  '## Parts',
+  '## Steps',
   '1. Replace the CSV query with the ledger view',
   '2. Round half-even at the ledger boundary',
   '3. Replay last week of settlements and compare the totals',
+].join('\n\n');
+
+const BODY_SPLIT = [
+  `## Goal\n\n${GOAL}`,
+  '## Approach',
+  'Read the batches from the ledger view, round once where an amount enters the ledger, then replay a week of settlements against their invoices.',
 ].join('\n\n');
 
 const PARTS = [
@@ -232,9 +248,6 @@ const turnOf = ({ variant }: { readonly variant: PlanDrawerVariant }): TurnState
   if (variant === 'revising') {
     return { kind: 'running', runId: RUN_REVISING, startedAt: NOW };
   }
-  if (variant === 'question') {
-    return { kind: 'blocked', runId: RUN_REVISING, blockedAt: NOW };
-  }
   return { kind: 'idle', lastActivityAt: NOW };
 };
 
@@ -251,7 +264,7 @@ const planOf = ({ variant }: { readonly variant: PlanDrawerVariant }): PlanWithC
   agentId: PLANNER_ID,
   workflowRunId: PLAN_DRAWER_RUN_ID,
   title: TITLE,
-  bodyMd: BODY,
+  bodyMd: variant === 'split' ? BODY_SPLIT : BODY_STEPS,
   status: 'active',
   ...(variant === 'split' ? { clusters: PARTS } : {}),
   createdAt: NOW,
@@ -278,19 +291,6 @@ const storedOf = ({ plan }: { readonly plan: PlanWithCount }): PlanArtifact => (
   openedAt: null,
 });
 
-const updateComments = ({
-  update,
-}: {
-  readonly update: (comments: ReadonlyArray<ArtifactComment>) => ReadonlyArray<ArtifactComment>;
-}): void => {
-  useAppStore.setState((state) => ({
-    artifactComments: {
-      ...state.artifactComments,
-      [PLAN_DRAWER_SESSION_ID]: update(state.artifactComments[PLAN_DRAWER_SESSION_ID] ?? []),
-    },
-  }));
-};
-
 export const seedPlanDrawerScene = ({ variant }: { readonly variant: PlanDrawerVariant }): void => {
   const plan = planOf({ variant });
   useAppStore.setState({
@@ -308,29 +308,19 @@ export const seedPlanDrawerScene = ({ variant }: { readonly variant: PlanDrawerV
     artifactComments: { [PLAN_DRAWER_SESSION_ID]: commentsOf({ variant }) },
     artifactCommentSends: {},
     documentDrawerExpanded: { [PLAN_DRAWER_SESSION_ID]: false },
-    activeLens: { [PLAN_DRAWER_SESSION_ID]: 'workflows' },
-    focusedWorkflowRunId: { [PLAN_DRAWER_SESSION_ID]: PLAN_DRAWER_RUN_ID },
+    activeLens: { [PLAN_DRAWER_SESSION_ID]: variant === 'follow' ? null : 'workflows' },
+    focusedWorkflowRunId:
+      variant === 'follow' ? {} : { [PLAN_DRAWER_SESSION_ID]: PLAN_DRAWER_RUN_ID },
     drawer: {
       kind: 'artifact-document',
       sessionId: PLAN_DRAWER_SESSION_ID,
       payload: { artifactId: PLAN_DRAWER_PLAN_ID, revision: null },
     },
-    loadArtifactComments: async () => undefined,
-    removeArtifactComment: async ({ commentId }) => {
-      updateComments({ update: (comments) => comments.filter((entry) => entry.id !== commentId) });
-      return true;
-    },
-    sendArtifactComments: async () => {
-      updateComments({
-        update: (comments) => comments.map((comment) => ({ ...comment, status: 'open' as const })),
-      });
-      return { kind: 'unchanged' as const };
-    },
-    updatePlanBody: async () => ({ kind: 'conflict' as const, revision: 3 }),
-    approveWorkflowRunPlan: async () => ({
-      kind: 'approved' as const,
-      next: 'started' as const,
-      agentId: IMPLEMENTER_ID,
-    }),
+  });
+  installSceneDatabase();
+  installScenePlanEngine({
+    sessionId: PLAN_DRAWER_SESSION_ID,
+    isSaveConflict: variant === 'conflict',
+    isReplyOnly: variant === 'unchanged',
   });
 };

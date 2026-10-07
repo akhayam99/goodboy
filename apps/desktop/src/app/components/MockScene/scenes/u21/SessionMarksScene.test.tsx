@@ -140,6 +140,21 @@ describe('the session marks scene', () => {
     },
   );
 
+  it('opens the session on its Overview, not on the loading skeleton', async () => {
+    render(
+      <ToastProvider>
+        <SessionMarksScene />
+      </ToastProvider>,
+    );
+
+    const title = await screen.findByRole('heading', {
+      level: 1,
+      name: 'Refactor the CSV mapper',
+    });
+    expect(title).toBeDefined();
+    expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
+  });
+
   it('draws the unread dot on the unread reply and nowhere else', async () => {
     render(
       <ToastProvider>

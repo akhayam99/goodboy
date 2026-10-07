@@ -16,6 +16,7 @@ import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
 import { openPlanDrawer } from '../../../features/plans/openPlanDrawer';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { STORY_NOW } from '../../../store/storyHarness';
+import { aPlannerQuestion } from '../../../test/planDrawerFixtures';
 import { aPlan, aStoredPlan } from '../../../test/planFixtures';
 import { type Ctx, type Row, WAIT, settle, useAppStore, visible } from './harness';
 
@@ -305,11 +306,67 @@ const approvedAndFollowed = async (ctx: Ctx): Promise<void> => {
   expect(state.focusedWorkflowRunId[ctx.sessionId]).toBe(RUN_ID);
 };
 
+const openPlanThePlannerAsksAbout = async (ctx: Ctx): Promise<void> => {
+  seedHeldRun(ctx);
+  useAppStore.setState((state) => ({
+    sessionOpenQuestions: {
+      ...state.sessionOpenQuestions,
+      [ctx.sessionId]: [
+        aPlannerQuestion({ sessionId: ctx.sessionId, createdByAgentId: PLANNER_ID }),
+      ],
+    },
+    agentTurnState: {
+      ...state.agentTurnState,
+      [PLANNER_ID]: { kind: 'idle', lastActivityAt: STORY_NOW },
+    },
+  }));
+  act(() =>
+    useAppStore.getState().navigate({
+      to: sessionPlace({
+        sessionId: ctx.sessionId,
+        lens: 'workflows',
+        target: { kind: 'run', runId: RUN_ID },
+      }),
+    }),
+  );
+  await settle();
+  act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
+  await settle();
+  await visible('button', 'More plan actions');
+};
+
+const askedPlanWaitsThenApproves = async (ctx: Ctx): Promise<void> => {
+  await screen.findByTestId('plan-drawer-question', undefined, WAIT);
+  expect(screen.getByTestId('artifact-state-detail').textContent).toBe('waiting for your answer');
+  expect(screen.queryByText(/Revising/)).toBeNull();
+  expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
+  expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(true);
+  expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
+    'The planner asked a question. Answer it first.',
+  );
+  expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(1);
+
+  act(() =>
+    useAppStore.setState((state) => ({
+      sessionOpenQuestions: { ...state.sessionOpenQuestions, [ctx.sessionId]: [] },
+    })),
+  );
+  await settle();
+  expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(false);
+  expect(screen.queryByTestId('plan-drawer-question')).toBeNull();
+};
+
 export const PLAN_DRAWER_ROWS: ReadonlyArray<Row> = [
   {
     name: 'plan drawer: comment, re-plan, edit by hand, Approve closes the drawer and starts the step once',
     covers: ['navigate', 'openDrawer'],
     open: openAndWorkThePlan,
     lands: approvedAndFollowed,
+  },
+  {
+    name: 'plan drawer: a planner question holds Approve off with waiting for your answer, and answering frees it',
+    covers: ['navigate', 'openDrawer'],
+    open: openPlanThePlannerAsksAbout,
+    lands: askedPlanWaitsThenApproves,
   },
 ];

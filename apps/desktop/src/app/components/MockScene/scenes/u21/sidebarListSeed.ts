@@ -12,7 +12,11 @@ import { projectById } from '../../../../../store/slices/projects/projectIndex';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from '../audit/workspaceChrome';
+import { seedLoadedSession } from './seedLoadedSession';
+import { sessionPinsKey } from '../../../../../store/slices/session-pins/sessionPinsKey';
+import { serializeSessionPins } from '../../../../../store/slices/session-pins/parseSessionPins';
 import { sceneClock } from '../../sceneClock';
+import { installSceneDatabase } from '../sceneDatabase';
 
 const clock = sceneClock({ anchor: '2026-10-07T10:00:00.000Z' });
 
@@ -128,6 +132,14 @@ const mountOf = ({ session, project }: { readonly session: Session; readonly pro
     revision: 1,
   }) satisfies SessionProjectMount;
 
+const installPinsDatabase = (): void => {
+  const pins = useAppStore.getState().sessionPins[WORKSPACE_ID] ?? [];
+  installSceneDatabase({
+    settings: { [sessionPinsKey({ workspaceId: WORKSPACE_ID })]: serializeSessionPins({ pins }) },
+    liveSessionIds: () => useAppStore.getState().sessions.map((session) => session.id),
+  });
+};
+
 export const seedPinnedSessions = (): Session => {
   seedWorkflowScene();
   const base = useAppStore.getState().projects[0];
@@ -145,6 +157,7 @@ export const seedPinnedSessions = (): Session => {
     return SESSION;
   }
   seedWorkspaceChrome({ session: open, siblings: sessions.filter((session) => session !== open) });
+  seedLoadedSession({ session: open });
   useAppStore.setState({
     projects,
     sessionProjectMounts: Object.fromEntries(
@@ -175,11 +188,13 @@ export const seedPinnedSessions = (): Session => {
       },
     },
   });
+  installPinsDatabase();
   return open;
 };
 
 export const seedSessionCard = (): Session => {
   seedWorkflowScene();
   seedWorkspaceChrome({ session: SESSION, siblings: WORKSPACE_SIBLINGS });
+  installPinsDatabase();
   return SESSION;
 };

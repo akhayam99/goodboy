@@ -17,6 +17,7 @@ import { useAppStore } from '../../../../../store';
 import type { SessionGithubState } from '../../../../../store/types';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
 import { seedWorkspaceChrome } from '../audit/workspaceChrome';
+import { seedLoadedSession } from './seedLoadedSession';
 import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-10-07T10:00:00.000Z' });
@@ -285,6 +286,7 @@ export const seedSessionMarks = (): Session => {
     return SESSION;
   }
   seedWorkspaceChrome({ session: open, siblings });
+  seedLoadedSession({ session: open });
   const state = useAppStore.getState();
   useAppStore.setState({
     sessionGithub: { ...state.sessionGithub, ...GITHUB },

@@ -3,6 +3,7 @@ import { normalizeText } from '../planCommentAnchors';
 import { blockOfNode, type ProseBlock } from '../proseBlocks';
 
 const SELECTION_LIMIT = 600;
+const CHIP_GAP = 6;
 
 export type ProseSelection = Readonly<{
   block: ProseBlock;
@@ -40,7 +41,7 @@ export const useProseSelection = ({ wrapperRef, blocks, isEnabled }: Params) => 
     setSelection({
       block,
       text: text.length <= SELECTION_LIMIT ? text : text.slice(0, SELECTION_LIMIT).trimEnd(),
-      top: Math.max(rect.top - frame.top - 36, 0),
+      top: Math.max(rect.bottom - frame.top + CHIP_GAP, 0),
       left: Math.max(rect.left - frame.left, 0),
     });
   }, [blocks, isEnabled, wrapperRef]);

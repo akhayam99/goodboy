@@ -4,7 +4,6 @@ import type {
   OpenQuestionId,
   PlanArtifact,
   PlanWithCount,
-  ProviderRunId,
   Session,
   WorkflowRun,
 } from '@goodboy/types';
@@ -45,8 +44,6 @@ const PLAN_HOLD_AGENTS: ReadonlyArray<Agent> = FLOW_AGENTS.map((agent) =>
 );
 
 const PLANNER: Agent = PLAN_HOLD_AGENTS.find((agent) => agent.kind === 'planner')!;
-
-const PLANNER_RUN_ID = 'mock-flow-provider-run-plan-revise' as ProviderRunId;
 
 const [BASE_RUN, ...OTHER_RUNS] = FLOW_SESSION.workflowRuns;
 
@@ -159,12 +156,5 @@ export const seedWorkflowRunPlanQuestion = (): void => {
   seedHold({ session: PLAN_HOLD_DYNAMIC_SESSION });
   useAppStore.setState({
     sessionOpenQuestions: { [FLOW_SESSION_ID]: [PLANNER_QUESTION] },
-    agentTurnState: {
-      [PLANNER.id]: {
-        kind: 'blocked',
-        runId: PLANNER_RUN_ID,
-        blockedAt: clock.iso({ at: '2026-09-16T11:12:00.000Z' }),
-      },
-    },
   });
 };

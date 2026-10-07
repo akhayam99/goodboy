@@ -1,6 +1,8 @@
 import { Button } from '@goodboy/ui';
 import type { PlanEditorModel } from './usePlanEditor';
 
+const SAVE_BLOCKED_REASON = 'A newer version exists. Copy your text, discard, then edit again.';
+
 type Props = {
   readonly editor: PlanEditorModel;
 };
@@ -12,6 +14,8 @@ export const PlanEditorActions = ({ editor }: Props) => (
       size="sm"
       onClick={() => void editor.save()}
       isBusy={editor.isSaving}
+      disabled={!editor.canSave}
+      title={editor.canSave ? undefined : SAVE_BLOCKED_REASON}
       data-testid="artifact-save"
       data-filled="true"
     >

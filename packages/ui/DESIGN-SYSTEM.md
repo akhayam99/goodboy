@@ -18,6 +18,12 @@ Text uses four opaque semantic steps. `foreground` is primary content,
 placeholders and trailing hints. `disabled-foreground` is reserved for disabled
 controls. Opacity modifiers do not create additional text steps.
 
+`faint-foreground` clears 4.5:1 on every surface step and on a `fill` chip sunk
+into `background`, `subtle` or `muted`, in both themes, and the syntax tokens
+clear 4.5:1 on the plain diff background and on an added or removed line, word
+fill included. `text-contrast.test.ts` reads the tokens from `styles.css` and
+fails when one drifts under.
+
 ## Surface ladder
 
 Six opaque roles, from the back of the window to the eye. Components step
@@ -79,7 +85,8 @@ medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
 hairline track, `bg-selected` on the active segment, no raised pill. It has
 three sizes: `xs` (28px strip, for a header row that also holds the title and
-actions), `sm` (36px) and `md`. No ring and no primary tint mark a
+actions), `sm` (36px) and `md`; the tablist carries `data-size` so a test can
+check it against its neighbours. No ring and no primary tint mark a
 selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
@@ -722,7 +729,9 @@ string on their one clickable element. `InteractiveRow` splits it, because its
 frame is not the control: the frame takes `ROW_HOVER` so the wash stays while
 the pointer is over an inner link or button, and the overlay button that opens
 the row takes the ring. A row that opens nothing carries none of it, and no
-pseudo-element stands in for the layer. An unread row keeps its tint under the
+pseudo-element stands in for the layer. The Files tree rows and strip of a
+diff (`ChangeTree`, `TreeStrip`) take the shared string; a Board card washes
+whole through `sessionCardShell` and its title button shows the pointer. An unread row keeps its tint under the
 pointer: hovering it for 450ms marks it seen when the pointer leaves, never
 while it is still on the row.
 `row-interactive-is-shared.test.ts` holds the listed rows to the shared string.
@@ -986,12 +995,20 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   writes would beat a `max-w-*` class. Popovers stop above the status bar: the
   hook subtracts `--dropdown-bottom-inset` (36px, set in `styles.css`) from the
   room below the trigger, so a popover shrinks or flips instead of covering it.
+  A list of long identifiers passes `maxPopupWidth` to raise the 360 cap: the
+  branch pickers (`BranchCombobox`, `BaseBranchSelect`) pass
+  `BRANCH_PICKER_MAX_WIDTH` (480), wide enough for a ticket-prefixed branch and
+  its pull request note on one line.
 - **Option**: 32px on one line, or two lines with an 11/16 faint description;
   a 16px leading slot, `text-body`, meta on the right. The cursor, mouse or
   keyboard, is `bg-selected`; the current value is a check on the right and
   `text-row`. No primary tint. A blocked option stays visible in
   `disabled-foreground` and says why on its second line. A group label is a
-  muted `Eyebrow`.
+  muted `Eyebrow`. A label that can outgrow the popup names its `tail`, the
+  last characters that must stay readable: the row and the trigger cut the
+  middle (the head takes the ellipsis, the tail never shrinks) and the search
+  underline covers both halves. A branch name takes `splitBranchLabel` for it
+  (`branchPickerOption`).
 - **Search** appears on its own above 8 options (or with `searchable`): a flush
   row (search icon, no box, a hairline divider below, no focus ring of its own),
   a fuzzy filter, the match underlined, a count ("3 of 41"), and an empty state in one
@@ -1175,9 +1192,13 @@ its page the band's 40px as top padding, so the title row lands where a session
 page's does under its trail.
 
 **The open session is a card.** In the sessions list the open session and its
-page rows sit in one card (`data-session-card`): `rounded-lg`, `p-1`, `bg-subtle`
-(one surface step above the chrome) and no border. It is not `bg-fill`: that is
-white at 6% and the hover layer is 5%, so a card on it would read as a stuck
+page rows sit in one card (`data-session-card`, `SESSION_CARD_CLASS`):
+`rounded-lg`, `bg-elevated`, a `border-soft` hairline and `p-0.75` inside it, so
+the rows sit 4px from the list edge as they did without the border. The card
+must read against the chrome in both themes: the surface or the hairline clears
+1.25:1 (`sessionCard.test.ts` measures it). In light the white surface alone is
+1.15:1, so the hairline carries it. It is not `bg-fill`: that is white at 6%
+and the hover layer is 8.5%, so a card on it would read as a stuck
 hover. The rows inside are `rounded-md`, concentric with the card, and the
 current page keeps `bg-selected`. The card stays around the session row when
 `←` folds the pages, it follows the open session, and every other session is a
@@ -1458,10 +1479,26 @@ The desktop app has no wrapper for it now: a word that stays gets a
 **One card action grammar.** Two fixed slots. Navigation sits top right and is
 always visible. Lifecycle and destructive actions sit bottom right. Hover may
 show lifecycle actions without moving either slot, and keyboard focus shows the
-same. Icon actions use the shared `Tooltip`, never the native `title`. A
+same. A card says its state once, with its `ToneBar`: the quick action stays
+`muted-foreground` at rest and takes its tone only on hover, and a closed pull
+request glyph on a Done card is quiet too. `CardAction` has no resting tint unless
+a caller passes `highlighted` for a state of its own (an inspected or armed row). The
+warning line paints with `warning-mark` (the same amber as `warning` in dark, a
+lighter amber in light), because the text amber reads brick red as a line. Icon actions use the shared `Tooltip`, never the native `title`. A
 hover slot keeps its width at rest: it fades with `opacity-0
 group-hover:opacity-100 group-focus-within:opacity-100`, never `hidden
 group-hover:flex`, and the row's primary action stays outside it, visible.
+
+**A header row has one control height.** Title row, trail band and page header
+rows that hold several controls draw them all at 28px: `SegmentedTabs` `xs`,
+`Button` `sm`, and an icon-only menu trigger as a 28px centred square
+(`MenuTriggerButton size="control"`, which `OverflowMenu size="control"` and the
+Branch header's Branch actions both draw). The compact trigger (21px, the
+default) is for the end of a row of text, never beside a button. `Button`,
+`SegmentedTabs` and the trigger carry `data-size`, so a screen's test asserts the
+sizes it chose without reading a class. A primary and its overflow share one
+baseline, primary first and overflow last, and a Branch header shows one primary
+only.
 
 **A control whose only content is an icon carries a tooltip, everywhere.** The
 `aria-label` names it for assistive tech but gives the mouse user nothing. So

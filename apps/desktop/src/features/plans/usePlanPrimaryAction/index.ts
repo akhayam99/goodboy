@@ -8,13 +8,14 @@ import type {
   Workflow,
   WorkflowRun,
 } from '@goodboy/types';
-import { useAppStore } from '../../../store';
+import { useAppStore, useSessionOpenQuestions } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 import { useFollowToast } from '../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../shared/lib/userStarts';
 import { planApprovedFollowOf } from '../planApprovedFollow';
 import { planPrimaryOf, type PlanPrimary } from '../planPrimaryOf';
+import { plannerQuestionsOf } from '../plannerQuestions';
 import { planRunOf } from '../planRunOf';
 import type { PlanRevising } from '../planRevising';
 import { usePlanRun, usePlanRunToast } from '../usePlanRun';
@@ -83,6 +84,8 @@ export const usePlanPrimaryAction = ({
       session === null ? undefined : state.phaseTemplates[session.workspaceId],
     ) ?? NO_TEMPLATES;
   const comments = useAppStore((state) => state.artifactComments[sessionId]) ?? NO_COMMENTS;
+  const openQuestions = useSessionOpenQuestions(sessionId);
+  const plannerQuestionCount = plannerQuestionsOf({ questions: openQuestions, plan }).length;
   const approveWorkflowRunPlan = useAppStore((state) => state.approveWorkflowRunPlan);
   const runPlan = useAppStore((state) => state.runPlan);
   const reportError = useAppStore((state) => state.reportError);
@@ -109,8 +112,8 @@ export const usePlanPrimaryAction = ({
     [plan, agents, session, templates],
   );
   const primary = useMemo(
-    () => planPrimaryOf({ plan, run, drafts, revising, isRunning }),
-    [plan, run, drafts, revising, isRunning],
+    () => planPrimaryOf({ plan, run, drafts, revising, isRunning, plannerQuestionCount }),
+    [plan, run, drafts, revising, isRunning, plannerQuestionCount],
   );
 
   const settleApproved = useCallback(

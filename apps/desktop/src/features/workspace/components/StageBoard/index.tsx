@@ -20,7 +20,7 @@ import type { ObjectTarget } from '../../../actions/types';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
 import { BoardLanes } from './BoardLanes';
-import { boardLanesOf } from './boardLanesOf';
+import { boardLanesOf, rootRemPx } from './boardLanesOf';
 import { BOARD_STAGES } from './boardStages';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
@@ -139,7 +139,8 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
   const { selectedIds } = selection;
   const boardRef = useRef<HTMLDivElement | null>(null);
   const frame = useElementWidth();
-  const layout = boardLanesOf({ width: frame.width ?? WIDTH_BEFORE_MEASURE });
+  const remPx = useMemo(() => rootRemPx(), []);
+  const layout = boardLanesOf({ width: frame.width ?? WIDTH_BEFORE_MEASURE, remPx });
   const selectionTarget = useMemo<ObjectTarget | null>(
     () => (selectedIds.length === 0 ? null : { kind: 'sessions', sessionIds: selectedIds }),
     [selectedIds],

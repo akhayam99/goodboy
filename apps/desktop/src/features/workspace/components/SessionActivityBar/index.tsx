@@ -34,6 +34,7 @@ import { SessionViewMenu } from './SessionViewMenu';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
 import { SessionPages } from './SessionPages';
+import { SESSION_CARD_CLASS } from './sessionCard';
 
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
 
@@ -257,7 +258,7 @@ export const SessionActivityBar = ({
     return (
       <li key={session.id} className="flex flex-col">
         {isCard ? (
-          <div data-session-card className="flex flex-col rounded-lg bg-subtle p-1">
+          <div data-session-card className={SESSION_CARD_CLASS}>
             {row}
             {isPagesShown ? <SessionPages session={session} /> : null}
           </div>

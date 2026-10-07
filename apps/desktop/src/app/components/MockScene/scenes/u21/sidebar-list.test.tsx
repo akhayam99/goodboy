@@ -1,18 +1,21 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
+vi.mock('@tauri-apps/api/core', async () => {
+  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
+  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
+});
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
+import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { SessionCardScene } from './SessionCardScene';
 import { SessionPinnedScene } from './SessionPinnedScene';
 
@@ -24,7 +27,10 @@ beforeEach(async () => {
   await resetStoryStore();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  clearSceneInvoke();
+});
 
 const sessionList = (): HTMLElement => {
   const list = document.querySelector('[data-column-sessions]');
@@ -48,11 +54,25 @@ describe('the pinned sessions scene', () => {
   const mount = async () => {
     render(
       <ToastProvider>
-        <SessionPinnedScene />
+        <ObjectMenuProvider>
+          <SessionPinnedScene />
+        </ObjectMenuProvider>
       </ToastProvider>,
     );
     await waitFor(() => expect(screen.getByRole('button', { name: /^Pinned/ })).toBeDefined());
   };
+
+  it('opens the session on its Overview, not on the loading skeleton', async () => {
+    await mount();
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Add idempotency keys to payments-api',
+      }),
+    ).toBeDefined();
+    expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
+  });
 
   it('puts the Pinned group first, with the two pins in pin order', async () => {
     await mount();
@@ -79,6 +99,61 @@ describe('the pinned sessions scene', () => {
     ]);
     expect(within(groupOf(/^ledger-core/)).getByText('2')).toBeDefined();
     expect(within(groupOf(/^payments-api/)).getByText('2')).toBeDefined();
+  });
+
+  const rowOf = (title: string): HTMLElement => {
+    const row = Array.from(sessionList().querySelectorAll('button[data-select-id]')).find(
+      (candidate) => candidate.lastElementChild?.textContent === title,
+    );
+    if (!(row instanceof HTMLElement)) {
+      throw new Error(`the list has no row ${title}`);
+    }
+    return row;
+  };
+
+  it('pins a session from its menu, moves it into Pinned in pin order, and unpins it again', async () => {
+    await mount();
+
+    fireEvent.contextMenu(rowOf('Backfill the settlement dates'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Pin session' }));
+
+    await waitFor(() =>
+      expect(rowTitles(groupOf(/^Pinned/))).toEqual([
+        'Reconcile the ledger export',
+        'Paginate the payments list',
+        'Backfill the settlement dates',
+      ]),
+    );
+    expect(within(groupOf(/^Pinned/)).getByText('3')).toBeDefined();
+    expect(rowTitles(groupOf(/^ledger-core/))).toEqual(['Move the ledger export to a queue']);
+    expect(screen.queryByText("Couldn't pin the session")).toBeNull();
+
+    fireEvent.contextMenu(rowOf('Backfill the settlement dates'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Unpin session' }));
+
+    await waitFor(() =>
+      expect(rowTitles(groupOf(/^Pinned/))).toEqual([
+        'Reconcile the ledger export',
+        'Paginate the payments list',
+      ]),
+    );
+    expect(rowTitles(groupOf(/^ledger-core/))).toEqual([
+      'Backfill the settlement dates',
+      'Move the ledger export to a queue',
+    ]);
+  });
+
+  it('keeps the seeded pins after a pin is written, because the database holds them too', async () => {
+    await mount();
+
+    fireEvent.contextMenu(rowOf('Tune the payments rate limiter'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Pin session' }));
+
+    await waitFor(() => expect(within(groupOf(/^Pinned/)).getByText('3')).toBeDefined());
+    expect(rowTitles(groupOf(/^Pinned/)).slice(0, 2)).toEqual([
+      'Reconcile the ledger export',
+      'Paginate the payments list',
+    ]);
   });
 
   it('folds one project group away and keeps the open session in its card', async () => {
