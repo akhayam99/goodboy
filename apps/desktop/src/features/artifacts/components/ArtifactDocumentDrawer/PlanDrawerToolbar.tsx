@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react';
-import { Pencil } from 'lucide-react';
-import { Button, cn } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { cn } from '@goodboy/ui';
 import type { ArtifactState } from '../../artifactStateOf';
 import type { ResolvedAction } from '../../../actions/types';
-import { PlanPrimaryButton } from '../../../plans/planSurfaces';
 import type { PlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';
 import { PlanEditorActions } from '../PlanEditor/PlanEditorActions';
 import type { PlanEditorModel } from '../PlanEditor/usePlanEditor';
 import { ArtifactStateChip } from '../ArtifactShell/ArtifactStateChip';
+import { PlanDrawerReadingActions } from './PlanDrawerReadingActions';
 
 type Props = {
   readonly version: number;
@@ -51,22 +49,7 @@ export const PlanDrawerToolbar = ({
     {isPast ? null : editor.isEditing ? (
       <PlanEditorActions editor={editor} />
     ) : (
-      <>
-        <PlanPrimaryButton action={action} isReasonShown={false} />
-        {editAction === null ? null : (
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={editAction.blockedReason !== null}
-            title={editAction.blockedReason ?? undefined}
-            onClick={onEdit}
-            data-testid="plan-drawer-edit"
-          >
-            <Pencil size={ICON_SIZE.row} aria-hidden />
-            Edit
-          </Button>
-        )}
-      </>
+      <PlanDrawerReadingActions action={action} editAction={editAction} onEdit={onEdit} />
     )}
     {menu}
   </div>
