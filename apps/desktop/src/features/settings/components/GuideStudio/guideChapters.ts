@@ -204,7 +204,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rows',
-        desc: 'One line each: a mark and the title. The mark is red only when something broke, amber when you must answer, approve or act, green when the pull request is ready to merge, and a filled violet check when the session is done. Rest on a row for its card. The Sessions menu sorts, groups, filters by project and shows archived. Control Tab flips between recent sessions, and Option Command Down jumps to the next one that needs you.',
+        desc: 'One line each: a mark and the title. The mark is red only when something broke, amber when you must answer, approve or act, green when the pull request is ready to merge, a teal ring while it waits in the merge queue, and a filled violet check when the session is done. Rest on a row for its card. The Sessions menu sorts, groups, filters by project and shows archived. Control Tab flips between recent sessions, and Option Command Down jumps to the next one that needs you.',
       },
       {
         term: 'Pin a session',
