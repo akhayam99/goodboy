@@ -1,7 +1,7 @@
 import { Band } from '@goodboy/ui';
 import type { Agent, PlanId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
+import { agentPlace, useAppStore } from '../../../../store';
+import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import type { AgentKind, AgentKindRouting } from '../../agent-kind';
 import { AGENT_KIND_META } from '../../agent-kind';
 import { agentFollowUpMoves, composeFollowUpSeed } from '../../followUpMoves';
@@ -28,7 +28,7 @@ export const AgentFollowUps = ({
   activePlanId,
 }: Props) => {
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const announceAgentStarted = useAgentStartedToast();
+  const followAgent = useFollowToast();
 
   const moves = agentFollowUpMoves({ sourceKind });
   if (moves.length === 0) {
@@ -56,11 +56,11 @@ export const AgentFollowUps = ({
         parentAgentId: sourceAgent.id,
         focus: 'agent',
       });
-      announceAgentStarted({
-        sessionId,
-        agentId,
+      followAgent({
         title: `${AGENT_KIND_META[nextKind].label} started`,
         message: `Picking up where ${sourceAgent.name} left off. Runs on ${routingShortText(routing)}.`,
+        target: { place: agentPlace({ sessionId, agentId }) },
+        startKey: agentId,
       });
     })();
   };

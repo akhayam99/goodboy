@@ -18,9 +18,9 @@ import { AgentSpawnConfig } from '../../../../session/components/AgentSpawnConfi
 import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../../../session/taskModelAgentSpawnConfig';
 import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
-import { useAppStore } from '../../../../../store';
+import { agentPlace, useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../shared/components/Toast';
-import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
+import { useFollowToast } from '../../../../../shared/hooks/useFollowToast';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
@@ -41,7 +41,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
   const createMrForSession = useAppStore((s) => s.createMrForSession);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const { showToast } = useToast();
-  const announceAgentStarted = useAgentStartedToast();
+  const followAgent = useFollowToast();
 
   const limitContext = useAutoLimitContext();
   const resolvedAgentConfig = useMemo(
@@ -129,12 +129,12 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
         focus: 'none',
       });
       setFailure(null);
-      announceAgentStarted({
-        sessionId,
-        agentId,
+      followAgent({
         title: 'Agent started',
-        message: 'An agent is drafting the merge request. You can keep working.',
-        onOpen: onClose,
+        message: 'An agent is drafting the merge request.',
+        target: { place: agentPlace({ sessionId, agentId }) },
+        startKey: agentId,
+        onFollow: onClose,
       });
     } catch (err) {
       setFailure(formatError(err));

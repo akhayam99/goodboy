@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
-import { useAgentStartedToast } from '../../../../../../shared/hooks/useAgentStartedToast';
+import { useFollowToast } from '../../../../../../shared/hooks/useFollowToast';
+import { agentPlace } from '../../../../../../store/slices/navigation/place';
 import type { AgentKind } from '../../../../../session/agent-kind';
 import type { PendingAttachment } from '../../../../../attachments/pendingAttachment';
 import type { SendWith } from '../useComposerSend';
@@ -36,7 +37,7 @@ export const useComposerSuggestions = ({
   const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const reportError = useAppStore((s) => s.reportError);
-  const announceAgentStarted = useAgentStartedToast();
+  const followAgent = useFollowToast();
 
   const onScopeSpawn = async () => {
     if (!scope.scopePending) {
@@ -49,12 +50,13 @@ export const useComposerSuggestions = ({
     await scope.recordScopeOutcome('accepted');
     try {
       const agentId = await spawnAgent(session.id, { kindOverride: target, focus: 'none' });
-      announceAgentStarted({
-        sessionId: session.id,
-        agentId,
-        title: 'Agent started',
-        message: 'The agent is picking this up. You can keep working.',
-      });
+      if (agentId !== null) {
+        followAgent({
+          title: 'Agent started',
+          target: { place: agentPlace({ sessionId: session.id, agentId }) },
+          startKey: agentId,
+        });
+      }
     } catch (error) {
       void reportError({ title: "Couldn't start the agent", error, sessionId: session.id });
     }
@@ -124,12 +126,13 @@ export const useComposerSuggestions = ({
 
   const onAcceptHandoff = async (targetSessionId: SessionId) => {
     const agentId = await acceptSessionNudgeHandoff({ sessionId: targetSessionId });
-    announceAgentStarted({
-      sessionId: targetSessionId,
-      agentId,
-      title: 'Agent started',
-      message: 'The agent is picking this up. You can keep working.',
-    });
+    if (agentId !== null) {
+      followAgent({
+        title: 'Agent started',
+        target: { place: agentPlace({ sessionId: targetSessionId, agentId }) },
+        startKey: agentId,
+      });
+    }
   };
 
   return useSuggestionCards({

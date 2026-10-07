@@ -33,6 +33,11 @@ const storeMocks = vi.hoisted(() => ({
   closeWorkflowRun: vi.fn(async () => undefined),
   pauseWorkflowRun: vi.fn(async () => undefined),
   workspaceDurationHistory: {} as Record<string, unknown>,
+  followRun: vi.fn(),
+}));
+
+vi.mock('../../../../shared/hooks/useFollowToast', () => ({
+  useFollowToast: () => storeMocks.followRun,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -40,23 +45,34 @@ vi.mock('../../../../store', () => ({
   useRunSpendUsd: () => storeMocks.runSpendUsd,
   useSessionOpenQuestions: () => [],
   useExecutedAgentRouting: () => null,
-  useAppStore: <T,>(selector: (state: unknown) => T) =>
-    selector({
-      renameWorkflowRun: storeMocks.renameWorkflowRun,
-      orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
-      agentEffortOverride: {},
-      sessionMounts: {},
-      sessions: storeMocks.sessions,
-      sessionProjectMounts: storeMocks.sessionProjectMounts,
-      sessionPhaseRuns: storeMocks.sessionPhaseRuns,
-      closeWorkflowRun: storeMocks.closeWorkflowRun,
-      pauseWorkflowRun: storeMocks.pauseWorkflowRun,
-      workspaceDurationHistory: storeMocks.workspaceDurationHistory,
-      sessionTurnSpans: { [SESSION_ID]: [] },
-      agentTurnState: {},
-      providers: [],
-      cliRequirements: [],
-    }),
+  useAppStore: Object.assign(
+    <T,>(selector: (state: unknown) => T) =>
+      selector({
+        renameWorkflowRun: storeMocks.renameWorkflowRun,
+        orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
+        agentEffortOverride: {},
+        sessionMounts: {},
+        sessions: storeMocks.sessions,
+        sessionProjectMounts: storeMocks.sessionProjectMounts,
+        sessionPhaseRuns: storeMocks.sessionPhaseRuns,
+        closeWorkflowRun: storeMocks.closeWorkflowRun,
+        pauseWorkflowRun: storeMocks.pauseWorkflowRun,
+        workspaceDurationHistory: storeMocks.workspaceDurationHistory,
+        sessionTurnSpans: { [SESSION_ID]: [] },
+        agentTurnState: {},
+        providers: [],
+        cliRequirements: [],
+      }),
+    {
+      getState: () => ({
+        currentWorkspaceId: null,
+        currentSessionId: null,
+        openSessionDraftWorkspaceId: null,
+        appStudio: null,
+        drawer: null,
+      }),
+    },
+  ),
 }));
 
 vi.mock('../../../chat/components/WriteDestinationControl', () => ({
@@ -236,6 +252,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  storeMocks.followRun.mockClear();
   storeMocks.orchestratingWorkflowRuns = {};
   storeMocks.runSpendUsd = 0;
   storeMocks.workspaceDurationHistory = {};
@@ -572,6 +589,11 @@ describe('WorkflowRow manual start gate', () => {
     await Promise.resolve();
 
     expect(startWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    await vi.waitFor(() =>
+      expect(storeMocks.followRun).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Run started', startKey: RUN_ID }),
+      ),
+    );
   });
 
   it('names the blocker and starts only after an explicit override', async () => {

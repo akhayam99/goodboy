@@ -18,6 +18,11 @@ const { extractHandoffMock, showToast, state } = vi.hoisted(() => {
       vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
     state: {
       sessions,
+      currentWorkspaceId: null,
+      currentSessionId: null,
+      openSessionDraftWorkspaceId: null,
+      appStudio: null,
+      drawer: null,
       sessionNudges: {} as Record<string, unknown>,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
       agentTurnState: {} as Record<string, unknown>,
@@ -40,7 +45,9 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 vi.mock('../../../../store', async () => ({
   ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
 }));
 
 vi.mock('../../../../store/slices/agents/selectKindRouting', () => ({
@@ -221,7 +228,8 @@ describe('HandoffChip', () => {
     expect(state.spawnAgent).not.toHaveBeenCalled();
     expect(state.navigate).not.toHaveBeenCalled();
     const opts = showToast.mock.calls[0]![0];
-    expect(opts?.action?.label).toBe('Open the agent');
+    expect(opts?.title).toBe('Implement started');
+    expect(opts?.action?.label).toBe('Follow');
 
     opts?.action?.onClick();
 
