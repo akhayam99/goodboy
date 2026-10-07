@@ -67,6 +67,8 @@ export const BranchHeader = ({
   const base = pr?.baseBranch ?? baseBranch;
   const abort =
     controls.diffControls.actions.find((action) => action.id === 'diff.abortRebase') ?? null;
+  const blockedReason =
+    primary === null || primary.isBusy || isPushBusy ? null : primary.blockedReason;
   const primaryButton =
     primary === null ? null : (
       <Button
@@ -128,6 +130,14 @@ export const BranchHeader = ({
                 >
                   {summary.tone === 'success' && <Check size={ICON_SIZE.row} aria-hidden />}
                   {summary.label}
+                </span>
+              </>
+            )}
+            {blockedReason !== null && (
+              <>
+                <span aria-hidden>·</span>
+                <span data-testid="branch-blocked-reason" className="min-w-0">
+                  {blockedReason}
                 </span>
               </>
             )}

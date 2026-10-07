@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cn, Listbox } from '@goodboy/ui';
+import { BRANCH_PICKER_MAX_WIDTH, branchPickerOption } from './branchPicker';
 import { listBranchNames, repoDefaultBaseBranch } from './worktree';
 
 type Props = {
@@ -84,6 +85,7 @@ export const BaseBranchSelect = ({
       ariaLabel="Base branch"
       size="sm"
       noun="branch"
+      maxPopupWidth={BRANCH_PICKER_MAX_WIDTH}
       searchable
       searchLabel="Search branches"
       searchPlaceholder="Search or enter a branch"
@@ -92,7 +94,7 @@ export const BaseBranchSelect = ({
       value={value ?? AUTO_VALUE}
       options={[
         { value: AUTO_VALUE, label: 'Auto', description: autoDescription },
-        ...branches.map((branch) => ({ value: branch, label: branch, isCode: true })),
+        ...branches.map((branch) => branchPickerOption({ name: branch })),
       ]}
       onChange={commit}
       onOpenChange={setIsOpen}

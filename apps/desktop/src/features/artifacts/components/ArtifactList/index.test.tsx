@@ -74,6 +74,23 @@ describe('ArtifactList states', () => {
   });
 });
 
+describe('ArtifactList header row', () => {
+  it('holds the tab strip, New and More at one 28px control height', () => {
+    renderList();
+
+    const tabs = screen.getByRole('tablist', { name: 'Artifact kind' });
+    const create = screen.getByTestId('artifact-new');
+    const more = screen.getByRole('button', { name: 'More' });
+    expect(tabs.getAttribute('data-size')).toBe('xs');
+    expect(create.getAttribute('data-size')).toBe('sm');
+    expect(more.getAttribute('data-size')).toBe('control');
+    const actions = create.closest('[class*="ml-auto"]');
+    expect(actions).not.toBeNull();
+    expect(actions?.contains(more)).toBe(true);
+    expect(actions?.contains(tabs)).toBe(false);
+  });
+});
+
 const openImport = () => {
   fireEvent.click(screen.getByTestId('artifact-new'));
   fireEvent.click(screen.getByRole('menuitem', { name: /Import wireframe JSON/ }));

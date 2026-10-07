@@ -85,7 +85,8 @@ medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
 hairline track, `bg-selected` on the active segment, no raised pill. It has
 three sizes: `xs` (28px strip, for a header row that also holds the title and
-actions), `sm` (36px) and `md`. No ring and no primary tint mark a
+actions), `sm` (36px) and `md`; the tablist carries `data-size` so a test can
+check it against its neighbours. No ring and no primary tint mark a
 selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
@@ -994,12 +995,20 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   writes would beat a `max-w-*` class. Popovers stop above the status bar: the
   hook subtracts `--dropdown-bottom-inset` (36px, set in `styles.css`) from the
   room below the trigger, so a popover shrinks or flips instead of covering it.
+  A list of long identifiers passes `maxPopupWidth` to raise the 360 cap: the
+  branch pickers (`BranchCombobox`, `BaseBranchSelect`) pass
+  `BRANCH_PICKER_MAX_WIDTH` (480), wide enough for a ticket-prefixed branch and
+  its pull request note on one line.
 - **Option**: 32px on one line, or two lines with an 11/16 faint description;
   a 16px leading slot, `text-body`, meta on the right. The cursor, mouse or
   keyboard, is `bg-selected`; the current value is a check on the right and
   `text-row`. No primary tint. A blocked option stays visible in
   `disabled-foreground` and says why on its second line. A group label is a
-  muted `Eyebrow`.
+  muted `Eyebrow`. A label that can outgrow the popup names its `tail`, the
+  last characters that must stay readable: the row and the trigger cut the
+  middle (the head takes the ellipsis, the tail never shrinks) and the search
+  underline covers both halves. A branch name takes `splitBranchLabel` for it
+  (`branchPickerOption`).
 - **Search** appears on its own above 8 options (or with `searchable`): a flush
   row (search icon, no box, a hairline divider below, no focus ring of its own),
   a fuzzy filter, the match underlined, a count ("3 of 41"), and an empty state in one
@@ -1479,6 +1488,17 @@ lighter amber in light), because the text amber reads brick red as a line. Icon 
 hover slot keeps its width at rest: it fades with `opacity-0
 group-hover:opacity-100 group-focus-within:opacity-100`, never `hidden
 group-hover:flex`, and the row's primary action stays outside it, visible.
+
+**A header row has one control height.** Title row, trail band and page header
+rows that hold several controls draw them all at 28px: `SegmentedTabs` `xs`,
+`Button` `sm`, and an icon-only menu trigger as a 28px centred square
+(`MenuTriggerButton size="control"`, which `OverflowMenu size="control"` and the
+Branch header's Branch actions both draw). The compact trigger (21px, the
+default) is for the end of a row of text, never beside a button. `Button`,
+`SegmentedTabs` and the trigger carry `data-size`, so a screen's test asserts the
+sizes it chose without reading a class. A primary and its overflow share one
+baseline, primary first and overflow last, and a Branch header shows one primary
+only.
 
 **A control whose only content is an icon carries a tooltip, everywhere.** The
 `aria-label` names it for assistive tech but gives the mouse user nothing. So

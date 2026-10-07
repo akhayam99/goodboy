@@ -766,7 +766,9 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
 - **The Branch is one page with its tabs in the address.** A branch is shaped
   like a pull request: a header (title, `Draft · project · head ▾ → base ·
 checks`, where `project · head ▾` is the branch switcher, one primary by
-  state, `⋯` for the rare pull request lifecycle) over
+  state, `⋯` for the rare pull request lifecycle; the primary and `⋯` are both
+  28px, `⋯` last, and a blocked primary's reason, such as `1 check still
+running.` on Merge, reads in the meta line as well as in the tooltip) over
   the tabs `Comments · Files · Commits · Checks`
   (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
   thread selection replace the entry, so Back never walks them. The trail is
@@ -1790,7 +1792,9 @@ slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
 **Ask**, the session title as the count, and **New**. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five
 comment words, running agents, open questions and the session cost) and three
-suggested questions; once a thread has turns it folds to one row. Then
+suggested questions; each line's mark is a `LineMark` (one text line tall), so
+it centres on the first line of text even when the line wraps; once a thread has
+turns it folds to one row. Then
 **Earlier** threads on a fresh thread, then the turns. An answer chip that
 targets a page navigates (the drawer stays, see above); a chip that targets a
 plan or another artifact opens it inside the drawer under **Back to answer**,

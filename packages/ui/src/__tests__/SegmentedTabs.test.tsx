@@ -68,6 +68,20 @@ describe('SegmentedTabs', () => {
     });
   });
 
+  it('names its size so a header row can check every control shares one height', () => {
+    render(
+      <SegmentedTabs
+        size="xs"
+        ariaLabel="view"
+        options={OPTIONS}
+        value="first"
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('tablist').getAttribute('data-size')).toBe('xs');
+  });
+
   it('sits the icon in the heading line, immediately before the label it names', () => {
     render(
       <SegmentedTabs

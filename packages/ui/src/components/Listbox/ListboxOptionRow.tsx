@@ -13,6 +13,7 @@ export type ListboxOptionRowProps = {
   readonly meta?: ReactNode;
   readonly match?: ListboxMatch;
   readonly isCode?: boolean;
+  readonly tail?: string;
   readonly isActive: boolean;
   readonly isSelected: boolean;
   readonly disabledReason?: string;
@@ -33,6 +34,7 @@ export const ListboxOptionRow = ({
   meta,
   match = NO_MATCH,
   isCode = false,
+  tail,
   isActive,
   isSelected,
   disabledReason,
@@ -105,7 +107,7 @@ export const ListboxOptionRow = ({
             isCode ? 'text-code' : isEmphasized ? 'text-row' : 'text-body',
           )}
         >
-          <HighlightedLabel label={label} match={match} />
+          <HighlightedLabel label={label} match={match} tail={tail} />
         </span>
         {hasSecondLine ? (
           <span

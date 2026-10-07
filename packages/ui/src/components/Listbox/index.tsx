@@ -7,7 +7,8 @@ import { AnchoredPopover } from '../AnchoredPopover';
 import { Button } from '../Button';
 import { ScrollFade } from '../ScrollFade';
 import { Tooltip } from '../Tooltip';
-import { filterOptions } from './filterOptions';
+import { filterOptions, type ListboxMatch } from './filterOptions';
+import { HighlightedLabel } from './HighlightedLabel';
 import { ListboxList, listboxOptionId } from './ListboxList';
 import { ListboxTrigger } from './ListboxTrigger';
 import type {
@@ -45,6 +46,7 @@ type CommonProps<T extends ListboxValue> = {
   readonly openEvent?: string;
   readonly isBlock?: boolean;
   readonly popupWidth?: 'content' | 'trigger';
+  readonly maxPopupWidth?: number;
   readonly className?: string;
   readonly anchorClassName?: string;
   readonly onOpenChange?: (isOpen: boolean) => void;
@@ -71,6 +73,8 @@ const LISTBOX_VIEWPORT_MARGIN = 12;
 const LISTBOX_MAX_WIDTH = 360;
 
 const NO_VALUES: ReadonlyArray<never> = [];
+
+const NO_MATCH: ListboxMatch = [];
 
 const selectedValuesOf = <T extends ListboxValue>(props: ListboxProps<T>): ReadonlyArray<T> => {
   if (props.multiple === true) {
@@ -104,6 +108,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     openEvent,
     isBlock = false,
     popupWidth = 'content',
+    maxPopupWidth = LISTBOX_MAX_WIDTH,
     className,
     anchorClassName,
     onOpenChange,
@@ -116,7 +121,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     disabled,
     align,
     width: popupWidth === 'trigger' ? undefined : 'w-max',
-    maxWidth: LISTBOX_MAX_WIDTH,
+    maxWidth: maxPopupWidth,
     expectedHeight: 320,
     expectedWidth: 240,
     openEvent,
@@ -241,10 +246,24 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
             {firstSelectedOption.leading}
           </span>
         ) : null}
-        <span className={cn('truncate', firstSelectedOption.isCode === true && 'text-code')}>
-          {selectedOptions.length > 1
-            ? `${selectedOptions.length} selected`
-            : firstSelectedOption.label}
+        <span
+          className={cn(
+            'min-w-0',
+            selectedOptions.length > 1 || firstSelectedOption.tail === undefined
+              ? 'truncate'
+              : 'flex',
+            firstSelectedOption.isCode === true && 'text-code',
+          )}
+        >
+          {selectedOptions.length > 1 ? (
+            `${selectedOptions.length} selected`
+          ) : (
+            <HighlightedLabel
+              label={firstSelectedOption.label}
+              match={NO_MATCH}
+              tail={firstSelectedOption.tail}
+            />
+          )}
         </span>
       </>
     ));

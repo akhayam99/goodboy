@@ -76,6 +76,8 @@ export { Notice } from './components/Notice';
 export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
+export { MenuTriggerButton } from './components/MenuTriggerButton';
+export { LineMark } from './components/LineMark';
 export { MenuItems } from './components/MenuItems';
 export { ContextMenu } from './components/ContextMenu/ContextMenu';
 export { MenuList } from './components/ContextMenu/MenuList';

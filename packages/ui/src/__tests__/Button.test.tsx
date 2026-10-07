@@ -49,6 +49,14 @@ describe('Button', () => {
     expect(classes).not.toContain('h-7');
   });
 
+  it('draws sm at 28px and names its size for a header row to check', () => {
+    render(<Button size="sm">Create PR</Button>);
+    const button = screen.getByRole('button', { name: 'Create PR' });
+
+    expect(button.getAttribute('data-size')).toBe('sm');
+    expect(button.className.split(' ')).toContain('h-7');
+  });
+
   it('keeps every emphasis as an enabled button', () => {
     render(
       <>

@@ -617,6 +617,71 @@ describe('BranchHeader merge state', () => {
   });
 });
 
+describe('BranchHeader blocked reason', () => {
+  const readyPr: PullRequestState = { ...PR, isDraft: false, checks: 'pending' };
+
+  const withReadyPr = (): void => {
+    useAppStore.setState({
+      sessionGithub: { [SESSION_ID]: { ...MOUNT_GITHUB, pr: readyPr } },
+      mountGithub: { [MOUNT_ID]: { ...MOUNT_GITHUB, pr: readyPr } },
+    });
+  };
+
+  it('prints why Merge is blocked in the meta line, beside the tooltip', () => {
+    withReadyPr();
+    status = statusOf({});
+    renderHeader({ pr: readyPr });
+
+    const merge = screen.getByRole('button', { name: /Merge/ }) as HTMLButtonElement;
+    expect(merge.disabled).toBe(true);
+    const reason = screen.getByTestId('branch-blocked-reason');
+    expect(reason.textContent).toMatch(/still running/);
+    const meta = screen.getByText('Open').closest('div') as HTMLElement;
+    expect(meta.contains(reason)).toBe(true);
+  });
+
+  it('leaves the meta line alone when the primary can run', () => {
+    withReadyPr();
+    status = statusOf({});
+    renderHeader({
+      pr: readyPr,
+      review: { accepted: 1, replies: 0, failed: 0, isPushing: false },
+    });
+
+    expect(screen.queryByTestId('branch-blocked-reason')).toBeNull();
+  });
+});
+
+describe('BranchHeader action row', () => {
+  it('ends on Branch actions after the one primary, both at the 28px control height', () => {
+    status = statusOf({ upstream: null });
+    renderHeader();
+
+    const primary = screen.getByRole('button', { name: /Create PR/ });
+    const more = screen.getByRole('button', { name: 'Branch actions' });
+    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
+    expect(primary.getAttribute('data-size')).toBe('sm');
+    expect(more.getAttribute('data-size')).toBe('control');
+    expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(primary.closest('h1')).toBeNull();
+    const row = more.closest('[class*="shrink-0"][class*="gap-2"]');
+    expect(row?.contains(primary)).toBe(true);
+  });
+
+  it('keeps Abort rebase first, then the one primary, then Branch actions', () => {
+    withMountPr();
+    status = statusOf({ changed: 3, inProgress: 'rebase' });
+    renderHeader({ pr: PR });
+
+    const abort = screen.getByRole('button', { name: 'Abort rebase' });
+    const primary = document.querySelector('[data-branch-primary]') as HTMLElement;
+    const more = screen.getByRole('button', { name: 'Branch actions' });
+    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
+    expect(abort.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
 describe('BranchHeader overflow', () => {
   it('holds the rare lifecycle and branch actions, and no Rewrite or Restore', () => {
     withMountPr();

@@ -93,6 +93,7 @@ export const SegmentedTabs = <T extends string>({
       ref={tablistRef}
       role="tablist"
       aria-label={ariaLabel}
+      data-size={size}
       className={cn(
         isCard
           ? 'grid grid-cols-1 gap-2 sm:grid-cols-3'

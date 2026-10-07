@@ -11,6 +11,7 @@ const { listBranchNames, repoDefaultBaseBranch } = vi.hoisted(() => ({
 vi.mock('./worktree', () => ({ listBranchNames, repoDefaultBaseBranch }));
 
 import { BaseBranchSelect } from './BaseBranchSelect';
+import { BRANCH_PICKER_MAX_WIDTH } from './branchPicker';
 
 const trigger = () => screen.getByRole('combobox', { name: 'Base branch' });
 const search = () => screen.getByRole('combobox', { name: 'Search branches' });
@@ -43,6 +44,18 @@ describe('BaseBranchSelect', () => {
 
     const auto = await screen.findByRole('option', { name: /^Auto/ });
     expect(auto.textContent).toContain('Detected from origin/HEAD: develop');
+  });
+
+  it('gives the list the branch picker width and cuts a long name in the middle', async () => {
+    const long = 'nw/fix-billing-api-settlement-exports-stuck-deliveries';
+    listBranchNames.mockResolvedValue(['main', long]);
+    render(<BaseBranchSelect repoPath="/repo" value={null} onCommit={vi.fn()} />);
+    fireEvent.click(trigger());
+
+    const row = await screen.findByRole('option', { name: long });
+    const popup = row.closest('[data-dropdown-portal] > div');
+    expect(popup?.getAttribute('style')).toContain(`max-width: ${BRANCH_PICKER_MAX_WIDTH}px`);
+    expect(row.querySelector('[data-slot="label-tail"]')?.textContent).toBe('-deliveries');
   });
 
   it('filters the fetched branch list', async () => {
