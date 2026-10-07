@@ -102,7 +102,7 @@ One Branch page per branch holds the Comments, Files, Commits and Checks tabs. T
 
 [More on review and resolve on the branch page](docs/features/review.md)
 
-<a id="stage-board"></a><a id="session-card"></a><a id="done-and-archived-dock"></a><a id="bulk-select"></a>
+<a id="stage-board"></a><a id="session-card"></a><a id="done-and-archived-dock"></a><a id="done-and-archived-lanes"></a><a id="bulk-select"></a>
 
 ## The board
 
