@@ -176,8 +176,34 @@ const seed = ({ variant }: Props): void => {
 const HANDLERS = handlersFor(BRANCH_FILES_PATCH);
 const OPEN_DELAY_MS = 400;
 
+const EMPTY_THREADS = JSON.stringify({
+  data: {
+    repository: {
+      pullRequest: {
+        reviewThreads: { pageInfo: { hasNextPage: false, endCursor: null }, nodes: [] },
+      },
+    },
+  },
+});
+
+const isGraphqlCall = ({ payload }: { readonly payload: unknown }): boolean =>
+  typeof payload === 'object' &&
+  payload !== null &&
+  'args' in payload &&
+  Array.isArray(payload.args) &&
+  payload.args.includes('graphql');
+
 const installWorktreeIpc = (): void => {
-  mockSceneIpc((command) => HANDLERS[command]?.(undefined) ?? null);
+  mockSceneIpc((command, payload) => {
+    if (command === 'gh_run') {
+      return {
+        stdout: isGraphqlCall({ payload }) ? EMPTY_THREADS : '[]',
+        stderr: '',
+        exitCode: 0,
+      };
+    }
+    return HANDLERS[command]?.(undefined) ?? null;
+  });
 };
 
 const BranchU21Scene = ({ variant }: Props) => {

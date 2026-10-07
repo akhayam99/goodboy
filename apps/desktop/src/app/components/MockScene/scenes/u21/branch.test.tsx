@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -39,13 +39,26 @@ const renderScene = (name: keyof typeof U21_BRANCH_SCENES) => {
   );
 };
 
+const SETTLE_MS = 600;
+
+const waitForSettledReads = (): Promise<void> =>
+  act(() => new Promise<void>((resolve) => window.setTimeout(resolve, SETTLE_MS)));
+
+const expectNoErrorNotice = (): void => {
+  expect(screen.queryByText('Something went wrong')).toBeNull();
+  expect(screen.queryByText(/^Couldn't read comments from/)).toBeNull();
+  expect(screen.queryByText(/failed: Cannot read properties of null/)).toBeNull();
+  expect(screen.queryByRole('alert')).toBeNull();
+};
+
 describe('the u21 branch scenes', () => {
   it('opens the switcher on three branches of two repos, with their pull requests', async () => {
     renderScene('branch-switcher');
 
     const rows = await screen.findAllByRole('menuitemradio', undefined, { timeout: 3_000 });
 
-    expect(screen.queryByText('Something went wrong')).toBeNull();
+    await waitForSettledReads();
+    expectNoErrorNotice();
     expect(rows).toHaveLength(3);
     expect(rows.map((row) => row.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false']);
     expect(rows[0]?.textContent).toContain('#318 Open');
@@ -65,7 +78,8 @@ describe('the u21 branch scenes', () => {
 
     const toggle = await screen.findByRole('button', { name: 'Description' });
 
-    expect(screen.queryByText('Something went wrong')).toBeNull();
+    await waitForSettledReads();
+    expectNoErrorNotice();
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(
       screen.getByText(/^Retried webhook deliveries no longer post a second credit/),

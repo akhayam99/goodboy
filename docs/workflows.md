@@ -766,7 +766,9 @@ own **Open in Artifacts**.
   row and the body is centred at 720px. A line under the header says one thing
   at a time: the inline question, the reason the primary or **Edit** is off, or
   who wrote this version ("v3 · Revised by planner", "v3 · Edited by you",
-  from the revision's author).
+  from the revision's author). The second row never wraps at the default 400px
+  drawer: the chip's detail ("waiting for your answer") shows from 420px of
+  toolbar width up, and a conflict reads "v2 · v3" with the full words on hover.
 - **One primary.** `PlanPrimaryButton` draws `planPrimaryOf`: `approve` is a
   filled **Approve**, `run` a filled **Run plan**, `disabled` the same button
   off with its reason printed beside it, `none` no button (the chip says
@@ -827,7 +829,7 @@ you"; `conflict` keeps your text and says "The planner wrote v3 meanwhile",
 with **Copy your text** and **Discard**; **Save** is off after a conflict,
 because the same save would conflict again, with the reason "A newer version
 exists. Copy your text, discard, then edit again.", and the version beside the
-state reads "v2 · v3 available". A failed write says "Couldn't save the plan.
+state reads "v2 · v3". A failed write says "Couldn't save the plan.
 Your text is still here." inline and files the exception detail through
 `reportError`. **Esc** in edit mode leaves edit mode
 and never closes the drawer: the editor registers its own escape layer above
