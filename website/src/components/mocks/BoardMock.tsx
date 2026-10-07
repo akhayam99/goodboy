@@ -16,7 +16,7 @@ type Props = {
 
 type Card = {
   readonly title: string;
-  readonly reason: string;
+  readonly reason?: string;
   readonly repo: string;
   readonly cost: string;
   readonly age: string;
@@ -124,10 +124,50 @@ const COLUMNS: readonly Column[] = [
       },
     ],
   },
+  {
+    name: 'Done',
+    tone: 'merged',
+    cards: [
+      {
+        title: 'Bump the lockfile after the audit',
+        reason: 'PR #198 merged',
+        repo: 'payments-api',
+        cost: '$1.64',
+        age: '3d ago',
+        hasPullRequest: true,
+      },
+      {
+        title: 'Retire the legacy export route',
+        reason: 'PR #205 merged',
+        repo: 'notify-relay',
+        cost: '$2.10',
+        age: '4d ago',
+        hasPullRequest: true,
+      },
+    ],
+  },
+  {
+    name: 'Archived',
+    tone: 'neutral',
+    cards: [
+      {
+        title: 'Update the refund policy copy',
+        repo: 'payments-api',
+        cost: '$0.74',
+        age: '5d ago',
+      },
+      {
+        title: 'Fix a flaky retry test in the export',
+        repo: 'ledger-core',
+        cost: '$1.31',
+        age: '9d ago',
+      },
+    ],
+  },
 ];
 
 const ARIA_LABEL =
-  'Board with four stage columns, two cards each. Building: draft the payout delay notice, rotate the processor signing secret. Running: speed up the payout export, nightly reconciliation job. Needs you: two cards, each with one open question. In review: stop retried webhook credits on PR 318, reconcile export with the ledger on draft PR 90.';
+  'Board with six lanes, two cards each. Building: draft the payout delay notice, rotate the processor signing secret. Running: speed up the payout export, nightly reconciliation job. Needs you: two cards, each with one open question. In review: stop retried webhook credits on PR 318, reconcile export with the ledger on draft PR 90. Done: bump the lockfile after the audit on merged PR 198, retire the legacy export route on merged PR 205. Archived: update the refund policy copy, fix a flaky retry test in the export.';
 
 export const BoardMock = ({ className }: Props) => (
   <MockStage label={ARIA_LABEL} className={className}>
@@ -150,7 +190,9 @@ export const BoardMock = ({ className }: Props) => (
                   ) : null}
                   <span className="brdTitle">{card.title}</span>
                 </span>
-                <span className="brdReason">{card.reason}</span>
+                {card.reason === undefined ? null : (
+                  <span className="brdReason">{card.reason}</span>
+                )}
               </span>
               <span className="brdSide">
                 {card.hasQuestion === true ? (
