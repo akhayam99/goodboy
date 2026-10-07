@@ -14,7 +14,8 @@ const OWNERS: ReadonlySet<string> = new Set([
 ]);
 
 const HAND_MADE_NOTICE = /bg-subtle px-4 py-3(?![.\d])/g;
-const BARE_EMPTY_LINE = /<p className="[^"]*text-(?:faint|muted)-foreground[^"]*">\s*No [a-z]/g;
+const BARE_EMPTY_LINE =
+  /<p className="[^"]*text-(?:faint|muted)-foreground[^"]*">\s*(?:No [a-z]|Nothing\b|None\b)/g;
 
 type Counts = Readonly<Record<string, Readonly<{ notices: number; emptyLines: number }>>>;
 
@@ -86,6 +87,15 @@ describe('hand-made notices and bare empty lines only ever shrink', () => {
     expect(
       countEmptyLines({ text: '<p className="text-meta text-muted-foreground">No notes.' }),
     ).toBe(1);
+    expect(
+      countEmptyLines({ text: '<p className="text-meta text-faint-foreground">Nothing yet.' }),
+    ).toBe(1);
+    expect(
+      countEmptyLines({ text: '<p className="text-label text-muted-foreground">None found' }),
+    ).toBe(1);
+    expect(
+      countEmptyLines({ text: '<p className="text-label text-muted-foreground">Notes saved' }),
+    ).toBe(0);
     expect(countEmptyLines({ text: '<EmptyLine>No notes on this screen.</EmptyLine>' })).toBe(0);
   });
 
