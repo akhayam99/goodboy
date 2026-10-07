@@ -210,6 +210,23 @@ scene mounts the real `SessionWorkspace` (trail band, **Ask**, page rows that
 move), and a scene that opens a session seeds its agents and plans so the
 overview never stays on its loading skeleton.
 
+A scene whose flow writes can be clicked through, not only looked at.
+`scenes/sceneDatabase.ts` (`installSceneDatabase`) keeps the settings rows in
+memory and answers the live session ids, so **Pin session** and **Unpin
+session** run the real `changeSessionPins` and the Pinned group follows (the
+sidebar scenes seed the pin row too, so a new pin never wipes the seeded ones),
+and a held run's approval writes its rows. `scenes/scenePlanEngine.ts`
+(`installScenePlanEngine`) answers the plan flows at the store: an added
+comment is a draft, **Send to planner** marks it sent, runs the planner as a
+running turn for 1.4s and lands v3 with the comments addressed (or answers
+without a change for the reply-only scene), **Save** writes the new text as the
+next version unless the scene is the conflict one, and the next step starts at
+once. Approving a plan is the real `approveWorkflowRunPlan`. The plan drawer
+scenes and the plan scenes of the run page install both. `plan-drawer-follow`
+opens the drawer over the Overview, so **Approve** raises the "Plan approved"
+toast with **Follow the run**; over the run page the toast has no action,
+because the page is already there.
+
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.
 

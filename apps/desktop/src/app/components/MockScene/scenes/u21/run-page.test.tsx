@@ -1,12 +1,13 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
+vi.mock('@tauri-apps/api/core', async () => {
+  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
+  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
+});
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -14,8 +15,10 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { WorkflowRunScene } from '../flow-audit/WorkflowRunScene';
 import { PLAN_HOLD_PLAN } from '../flow-audit/planHoldRun';
+import { FLOW_SESSION_ID } from '../flow-audit/fixtures';
 import { U21_RUN_PAGE_SCENES } from './run-page';
 
 let useAppStore: StoryStore;
@@ -32,6 +35,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  clearSceneInvoke();
   Element.prototype.scrollIntoView = ORIGINAL_SCROLL_INTO_VIEW;
   window.history.replaceState(null, '', '/');
   vi.restoreAllMocks();
@@ -161,6 +165,42 @@ describe('the u21 run page scenes', () => {
     expect(within(header()).getByRole('button', { name: 'Review plan' })).toBeDefined();
     expect(within(header()).queryByRole('button', { name: 'Approve plan' })).toBeNull();
     expect((await screen.findByTestId('plan-primary')).textContent).toBe('Approve');
+  });
+
+  it('approves from the drawer on the run page: the hold lifts, the drawer closes, one toast', async () => {
+    renderScene('workflow-run-plan-review');
+
+    fireEvent.click(await screen.findByTestId('plan-primary'));
+
+    expect(await screen.findByText('Plan approved')).toBeDefined();
+    expect(screen.getByText('The run goes on')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
+    await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+    const run = useAppStore.getState().sessions.find((session) => session.id === FLOW_SESSION_ID)
+      ?.workflowRuns[0];
+    expect(run?.orchestrationStop).toBeUndefined();
+    expect(run?.rulesSnapshot?.planApproved).toBe(true);
+    expect(screen.queryByText("Couldn't approve the plan")).toBeNull();
+  });
+
+  it('adds a comment from the run page drawer and keeps it as a draft in the bar', async () => {
+    renderScene('workflow-run-plan-review');
+
+    const body = await screen.findByTestId('plan-body');
+    const paragraph = body.querySelector('p, li');
+    if (paragraph === null) {
+      throw new Error('the plan has no text to comment on');
+    }
+    fireEvent.mouseOver(paragraph);
+    fireEvent.click(await screen.findByRole('button', { name: 'Comment on this text' }));
+    fireEvent.change(await screen.findByRole('textbox', { name: /comment/i }), {
+      target: { value: 'Keep the window at five minutes.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
+
+    expect(await screen.findByText('Keep the window at five minutes.')).toBeDefined();
+    expect(screen.getByTestId('plan-comment-bar').textContent).toContain('1 comment');
+    expect(screen.getByRole('button', { name: 'Send to planner' })).toBeDefined();
   });
 
   it('says what the planner asked and offers Answer in the strip', async () => {

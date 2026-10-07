@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Session } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
 import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
 import { openPlanDrawer } from '../../../../../features/plans/openPlanDrawer';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
@@ -11,6 +12,8 @@ import {
   seedWorkflowRunPlanQuestion,
 } from '../flow-audit/planHoldRun';
 import { seedWorkflowRun } from '../flow-audit/seeds';
+import { installSceneDatabase } from '../sceneDatabase';
+import { installScenePlanEngine } from '../scenePlanEngine';
 import { seedRecentBackfillOutput } from '../flow-audit/runControl';
 
 const SCROLLED_PX = 40;
@@ -19,6 +22,20 @@ const SCROLL_DELAY_MS = 300;
 const seedLiveRun = (): void => {
   seedWorkflowRun();
   seedRecentBackfillOutput();
+};
+
+const seedPlanReview = (): void => {
+  seedWorkflowRunPlanHoldDynamic();
+  useAppStore.setState({ selectedAgentId: {} });
+  installSceneDatabase();
+  installScenePlanEngine({ sessionId: FLOW_SESSION_ID });
+};
+
+const seedPlanQuestion = (): void => {
+  seedWorkflowRunPlanQuestion();
+  useAppStore.setState({ selectedAgentId: {} });
+  installSceneDatabase();
+  installScenePlanEngine({ sessionId: FLOW_SESSION_ID });
 };
 
 const scrollerOf = (): HTMLElement | null => {
@@ -57,6 +74,7 @@ const RunPageScene = ({ session, seed, afterMount }: SceneProps) => {
       telemetryAt: NOW,
       lens: 'workflows',
     });
+    useAppStore.setState({ currentWorkspaceId: session.workspaceId });
     setIsReady(true);
   }, [seed, session]);
 
@@ -95,11 +113,11 @@ export const U21_RUN_PAGE_SCENES = {
   'workflow-run-plan-review': () => (
     <RunPageScene
       session={PLAN_HOLD_DYNAMIC_SESSION}
-      seed={seedWorkflowRunPlanHoldDynamic}
+      seed={seedPlanReview}
       afterMount={openHeldPlan}
     />
   ),
   'workflow-run-plan-question': () => (
-    <RunPageScene session={PLAN_HOLD_DYNAMIC_SESSION} seed={seedWorkflowRunPlanQuestion} />
+    <RunPageScene session={PLAN_HOLD_DYNAMIC_SESSION} seed={seedPlanQuestion} />
   ),
 };
