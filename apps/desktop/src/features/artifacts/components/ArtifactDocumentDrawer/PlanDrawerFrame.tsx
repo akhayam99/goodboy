@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { DrawerFrame, cn } from '@goodboy/ui';
+import { DrawerFrame, PageColumn, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { agentPlace, sessionPlace, useAppStore, useSessionOpenQuestions } from '../../../../store';
@@ -131,6 +131,70 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
   const isUnchangedShown =
     unchanged !== null && unchanged.version === version && !isRevising && pastVersion === null;
 
+  const content = (
+    <div data-testid="plan-drawer" className="flex min-w-0 flex-col gap-4">
+      {isExpanded ? line : null}
+      {pastVersion === null ? (
+        <>
+          <PlanDrawerNotes
+            sessionId={sessionId}
+            questions={questions}
+            isUnchanged={isUnchangedShown}
+            onOpenReply={() => navigate({ to: agentPlace({ sessionId, agentId: plan.agentId }) })}
+          />
+          <PlanDrawerStateLine revising={revising} />
+          <div
+            data-testid="plan-drawer-body"
+            data-revising={isRevising ? 'true' : 'false'}
+            className={cn(
+              'min-w-0 motion-safe:transition-opacity',
+              isRevising && 'pointer-events-none select-none opacity-55',
+            )}
+          >
+            {editor.isEditing ? (
+              <PlanEditor editor={editor} title={plan.title} />
+            ) : (
+              <ArtifactPlanBody
+                plan={plan}
+                rows={rows}
+                hasRun={hasRun}
+                splitSentence={planSplitSentence({
+                  count: rows.length,
+                  plannerName: creator?.name ?? null,
+                })}
+                onSent={onSent}
+                onOpenPart={(row) => {
+                  if (hasRun && row.agentId !== null) {
+                    navigate({ to: agentPlace({ sessionId, agentId: row.agentId }) });
+                    return;
+                  }
+                  openDrawer({
+                    kind: 'plan-part',
+                    sessionId,
+                    payload: { planId: plan.id, index: row.index },
+                  });
+                }}
+              />
+            )}
+          </div>
+        </>
+      ) : (
+        <ArtifactPastVersion
+          artifactId={plan.id}
+          revision={pastVersion}
+          latest={version}
+          onOpenCurrent={() =>
+            openDrawer({
+              kind: 'artifact-document',
+              sessionId,
+              payload: { artifactId: plan.id, revision: null },
+            })
+          }
+        />
+      )}
+    </div>
+  );
+
   return (
     <DrawerFrame
       title={plan.title}
@@ -148,73 +212,7 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
         )
       }
     >
-      <div
-        data-testid="plan-drawer"
-        className={cn(
-          'flex min-w-0 flex-col gap-4',
-          isExpanded && 'mx-auto w-full max-w-[var(--measure)]',
-        )}
-      >
-        {isExpanded ? line : null}
-        {pastVersion === null ? (
-          <>
-            <PlanDrawerNotes
-              sessionId={sessionId}
-              questions={questions}
-              isUnchanged={isUnchangedShown}
-              onOpenReply={() => navigate({ to: agentPlace({ sessionId, agentId: plan.agentId }) })}
-            />
-            <PlanDrawerStateLine revising={revising} />
-            <div
-              data-testid="plan-drawer-body"
-              data-revising={isRevising ? 'true' : 'false'}
-              className={cn(
-                'min-w-0 motion-safe:transition-opacity',
-                isRevising && 'pointer-events-none select-none opacity-55',
-              )}
-            >
-              {editor.isEditing ? (
-                <PlanEditor editor={editor} title={plan.title} />
-              ) : (
-                <ArtifactPlanBody
-                  plan={plan}
-                  rows={rows}
-                  hasRun={hasRun}
-                  splitSentence={planSplitSentence({
-                    count: rows.length,
-                    plannerName: creator?.name ?? null,
-                  })}
-                  onSent={onSent}
-                  onOpenPart={(row) => {
-                    if (hasRun && row.agentId !== null) {
-                      navigate({ to: agentPlace({ sessionId, agentId: row.agentId }) });
-                      return;
-                    }
-                    openDrawer({
-                      kind: 'plan-part',
-                      sessionId,
-                      payload: { planId: plan.id, index: row.index },
-                    });
-                  }}
-                />
-              )}
-            </div>
-          </>
-        ) : (
-          <ArtifactPastVersion
-            artifactId={plan.id}
-            revision={pastVersion}
-            latest={version}
-            onOpenCurrent={() =>
-              openDrawer({
-                kind: 'artifact-document',
-                sessionId,
-                payload: { artifactId: plan.id, revision: null },
-              })
-            }
-          />
-        )}
-      </div>
+      {isExpanded ? <PageColumn width="measure">{content}</PageColumn> : content}
     </DrawerFrame>
   );
 };

@@ -198,6 +198,18 @@ describe('plan document drawer header', () => {
     expect(useAppStore.getState().documentDrawerExpanded[PLAN_FIXTURE_SESSION]).toBe(false);
   });
 
+  it('centres the body on the reading measure only while expanded', () => {
+    seedPlanDrawer();
+    renderDrawer();
+    expect(screen.getByTestId('plan-drawer').closest('[data-page-column]')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Expand' }));
+
+    const column = screen.getByTestId('plan-drawer').closest('[data-page-column]');
+    expect(column?.getAttribute('data-width')).toBe('measure');
+  });
+
   it('copies the plan from the overflow', async () => {
     const writeText = vi.fn(async () => undefined);
     Object.defineProperty(globalThis.navigator, 'clipboard', {
