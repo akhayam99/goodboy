@@ -18,6 +18,12 @@ Text uses four opaque semantic steps. `foreground` is primary content,
 placeholders and trailing hints. `disabled-foreground` is reserved for disabled
 controls. Opacity modifiers do not create additional text steps.
 
+`faint-foreground` clears 4.5:1 on every surface step and on a `fill` chip sunk
+into `background`, `subtle` or `muted`, in both themes, and the syntax tokens
+clear 4.5:1 on the plain diff background and on an added or removed line, word
+fill included. `text-contrast.test.ts` reads the tokens from `styles.css` and
+fails when one drifts under.
+
 ## Surface ladder
 
 Six opaque roles, from the back of the window to the eye. Components step
