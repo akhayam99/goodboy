@@ -8,7 +8,14 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
-import { laneChainOf, laneHolderOf, laneQueueOf, laneTipOf, lanePathsOf } from './resolveLane';
+import {
+  attemptOfCandidate,
+  laneChainOf,
+  laneHolderOf,
+  laneQueueOf,
+  laneTipOf,
+  lanePathsOf,
+} from './resolveLane';
 
 const PATH_A = '/repo/ledger-core';
 const PATH_B = '/repo/payments-api';
@@ -20,6 +27,7 @@ const candidateOf = ({
   candidateSha,
   worktreePath = PATH_A,
   state = 'ready',
+  integratedSha = null,
 }: {
   readonly id: string;
   readonly revision: number;
@@ -27,6 +35,7 @@ const candidateOf = ({
   readonly candidateSha: string;
   readonly worktreePath?: string;
   readonly state?: ResolveCandidate['state'];
+  readonly integratedSha?: string | null;
 }): { readonly candidate: ResolveCandidate } => ({
   candidate: {
     id,
@@ -37,7 +46,7 @@ const candidateOf = ({
     worktreePath,
     mountTarget: null,
     state,
-    integratedSha: null,
+    integratedSha,
     createdAt: revision,
     updatedAt: revision,
   },
@@ -122,6 +131,147 @@ describe('laneChainOf', () => {
     expect(laneChainOf({ candidates, worktreePath: PATH_A }).chain).toHaveLength(1);
     expect(laneTipOf({ candidates, worktreePath: PATH_B })).toBe('c9');
     expect(laneTipOf({ candidates: [], worktreePath: PATH_A })).toBeNull();
+  });
+});
+
+describe('laneChainOf on a base that is gone', () => {
+  const idsOf = (entries: ReadonlyArray<{ readonly candidate: ResolveCandidate }>) =>
+    entries.map(({ candidate }) => candidate.id);
+
+  it('breaks every fix built on a refused first fix, so none heads the chain', () => {
+    const candidates = [
+      candidateOf({
+        id: 'one',
+        revision: 1,
+        baseSha: 'root',
+        candidateSha: 'c1',
+        state: 'discarded',
+      }),
+      candidateOf({ id: 'two', revision: 2, baseSha: 'c1', candidateSha: 'c2' }),
+      candidateOf({ id: 'three', revision: 3, baseSha: 'c2', candidateSha: 'c3' }),
+    ];
+
+    const { chain, broken } = laneChainOf({ candidates, worktreePath: PATH_A });
+
+    expect(idsOf(chain)).toEqual([]);
+    expect(idsOf(broken)).toEqual(['two', 'three']);
+    expect(laneTipOf({ candidates, worktreePath: PATH_A })).toBeNull();
+  });
+
+  it('breaks a fix built on a stale fix', () => {
+    const candidates = [
+      candidateOf({ id: 'one', revision: 1, baseSha: 'root', candidateSha: 'c1', state: 'stale' }),
+      candidateOf({ id: 'two', revision: 2, baseSha: 'c1', candidateSha: 'c2' }),
+    ];
+
+    expect(idsOf(laneChainOf({ candidates, worktreePath: PATH_A }).broken)).toEqual(['two']);
+  });
+
+  it('breaks a fix built on one the branch took as a copy under another commit', () => {
+    const candidates = [
+      candidateOf({
+        id: 'one',
+        revision: 1,
+        baseSha: 'root',
+        candidateSha: 'c1',
+        state: 'integrated',
+        integratedSha: 'moved-c1',
+      }),
+      candidateOf({ id: 'two', revision: 2, baseSha: 'c1', candidateSha: 'c2' }),
+    ];
+
+    expect(idsOf(laneChainOf({ candidates, worktreePath: PATH_A }).broken)).toEqual(['two']);
+  });
+
+  it('keeps a fix built on one the branch took as it was', () => {
+    const candidates = [
+      candidateOf({
+        id: 'one',
+        revision: 1,
+        baseSha: 'root',
+        candidateSha: 'c1',
+        state: 'integrated',
+        integratedSha: 'c1',
+      }),
+      candidateOf({ id: 'two', revision: 2, baseSha: 'c1', candidateSha: 'c2' }),
+    ];
+
+    const { chain, broken } = laneChainOf({ candidates, worktreePath: PATH_A });
+
+    expect(idsOf(chain)).toEqual(['two']);
+    expect(broken).toEqual([]);
+  });
+
+  it('keeps a fix built on a commit a discarded parent shares with a live split', () => {
+    const candidates = [
+      candidateOf({
+        id: 'run',
+        revision: 1,
+        baseSha: 'root',
+        candidateSha: 'c2',
+        state: 'discarded',
+      }),
+      candidateOf({ id: 'run-1', revision: 2, baseSha: 'root', candidateSha: 'c1' }),
+      candidateOf({ id: 'run-2', revision: 3, baseSha: 'c1', candidateSha: 'c2' }),
+      candidateOf({ id: 'next', revision: 4, baseSha: 'c2', candidateSha: 'c3' }),
+    ];
+
+    const { chain, broken } = laneChainOf({ candidates, worktreePath: PATH_A });
+
+    expect(idsOf(chain)).toEqual(['run-1', 'run-2', 'next']);
+    expect(broken).toEqual([]);
+  });
+
+  it('ignores a discarded candidate that never made a commit', () => {
+    const candidates = [
+      candidateOf({
+        id: 'empty',
+        revision: 1,
+        baseSha: 'root',
+        candidateSha: 'root',
+        state: 'discarded',
+      }),
+      candidateOf({ id: 'one', revision: 2, baseSha: 'root', candidateSha: 'c1' }),
+    ];
+
+    expect(idsOf(laneChainOf({ candidates, worktreePath: PATH_A }).chain)).toEqual(['one']);
+  });
+
+  it('does not mix up the commits of another branch', () => {
+    const candidates = [
+      candidateOf({
+        id: 'elsewhere',
+        revision: 1,
+        baseSha: 'root',
+        candidateSha: 'c1',
+        state: 'discarded',
+        worktreePath: PATH_B,
+      }),
+      candidateOf({ id: 'two', revision: 2, baseSha: 'c1', candidateSha: 'c2' }),
+    ];
+
+    expect(idsOf(laneChainOf({ candidates, worktreePath: PATH_A }).chain)).toEqual(['two']);
+  });
+});
+
+describe('attemptOfCandidate', () => {
+  const attempts = [
+    attemptOf({ id: 'run-1', phase: 'finished', path: PATH_A, createdAt: 1 }),
+    attemptOf({ id: 'run-2-3', phase: 'finished', path: PATH_A, createdAt: 2 }),
+  ];
+
+  it('finds the attempt of a candidate by its own id', () => {
+    expect(attemptOfCandidate({ attempts, candidateId: 'run-1' })?.id).toBe('run-1');
+  });
+
+  it('finds the attempt of a split fix, named after it with a number', () => {
+    expect(attemptOfCandidate({ attempts, candidateId: 'run-1-3' })?.id).toBe('run-1');
+    expect(attemptOfCandidate({ attempts, candidateId: 'run-2-3-1' })?.id).toBe('run-2-3');
+  });
+
+  it('finds nothing for an id that is no attempt and no split of one', () => {
+    expect(attemptOfCandidate({ attempts, candidateId: 'run-1-x' })).toBeNull();
+    expect(attemptOfCandidate({ attempts, candidateId: 'other' })).toBeNull();
   });
 });
 

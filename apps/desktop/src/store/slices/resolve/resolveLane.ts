@@ -67,6 +67,38 @@ export const laneQueueOf = ({
     )
     .sort((left, right) => left.createdAt - right.createdAt);
 
+const isLanded = ({ candidate }: Chained): boolean =>
+  candidate.state === 'integrated' && candidate.integratedSha === candidate.candidateSha;
+
+const isCopiedElsewhere = ({ candidate }: Chained): boolean =>
+  candidate.state === 'integrated' &&
+  candidate.integratedSha !== null &&
+  candidate.integratedSha !== candidate.candidateSha;
+
+const goneShasOf = <T extends Chained>({
+  candidates,
+  worktreePath,
+}: ChainParams<T>): Set<string> => {
+  const own = candidates.filter((entry) => entry.candidate.worktreePath === worktreePath);
+  const live = new Set(
+    own
+      .filter((entry) => entry.candidate.state === 'ready' || isLanded(entry))
+      .map(({ candidate }) => candidate.candidateSha),
+  );
+  return new Set(
+    own
+      .filter(
+        (entry) =>
+          entry.candidate.candidateSha !== entry.candidate.baseSha &&
+          (entry.candidate.state === 'discarded' ||
+            entry.candidate.state === 'stale' ||
+            isCopiedElsewhere(entry)),
+      )
+      .map(({ candidate }) => candidate.candidateSha)
+      .filter((sha) => !live.has(sha)),
+  );
+};
+
 export const laneChainOf = <T extends Chained>({
   candidates,
   worktreePath,
@@ -76,19 +108,39 @@ export const laneChainOf = <T extends Chained>({
       ({ candidate }) => candidate.state === 'ready' && candidate.worktreePath === worktreePath,
     )
     .sort((left, right) => left.candidate.revision - right.candidate.revision);
+  const gone = goneShasOf({ candidates, worktreePath });
   const chain: Array<T> = [];
   const broken: Array<T> = [];
   let expected: string | null = null;
   for (const entry of ready) {
-    if (expected === null || entry.candidate.baseSha === expected) {
+    const isBuiltOnGone = gone.has(entry.candidate.baseSha);
+    if (!isBuiltOnGone && (expected === null || entry.candidate.baseSha === expected)) {
       chain.push(entry);
       expected = entry.candidate.candidateSha;
       continue;
     }
     broken.push(entry);
+    gone.add(entry.candidate.candidateSha);
   }
   return { chain, broken };
 };
+
+type AttemptOfParams = {
+  readonly attempts: ReadonlyArray<ResolveAttempt>;
+  readonly candidateId: string;
+};
+
+export const attemptOfCandidate = ({
+  attempts,
+  candidateId,
+}: AttemptOfParams): ResolveAttempt | null =>
+  attempts.find((attempt) => attempt.id === candidateId) ??
+  attempts.find(
+    (attempt) =>
+      candidateId.startsWith(`${attempt.id}-`) &&
+      /^\d+$/.test(candidateId.slice(attempt.id.length + 1)),
+  ) ??
+  null;
 
 export const laneTipOf = <T extends Chained>(params: ChainParams<T>): string | null =>
   laneChainOf(params).chain.at(-1)?.candidate.candidateSha ?? null;
