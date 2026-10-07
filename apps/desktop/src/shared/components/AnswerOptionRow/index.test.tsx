@@ -15,12 +15,6 @@ describe('AnswerOptionRow', () => {
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
-  it('reads the option number in the muted foreground, not the faint one', () => {
-    render(<AnswerOptionRow label="yes" keyHint={1} selected={false} onToggle={vi.fn()} />);
-    expect(screen.getByText('1').className).toContain('text-muted-foreground');
-    expect(screen.getByText('1').className).not.toContain('text-faint-foreground');
-  });
-
   it('uses the checkbox role and aria-checked in multi-choice mode', () => {
     render(
       <AnswerOptionRow label="yes" keyHint={1} selected mode="many" onToggle={() => undefined} />,

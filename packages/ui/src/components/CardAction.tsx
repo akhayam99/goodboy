@@ -44,6 +44,7 @@ export const CardAction = ({
         aria-label={label}
         aria-pressed={pressed}
         aria-expanded={expanded}
+        data-highlighted={highlighted ? '' : undefined}
         disabled={disabled}
         onClick={(event) => {
           event.stopPropagation();

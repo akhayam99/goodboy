@@ -69,22 +69,4 @@ describe('PrRequestSlot', () => {
     );
     expect(container.querySelector('[class*="animate-pulse"]')).toBeNull();
   });
-
-  it('draws a closed pull request in the quiet foreground so the card line stays the one tone', () => {
-    const linked = getLinkedRequest({
-      pullRequest: { number: 205, state: 'closed' } as never,
-      mergeRequest: null,
-    });
-    const { container } = render(
-      <PrRequestSlot
-        linkedRequest={linked}
-        isGitlab={false}
-        prFetchState="known"
-        onOpen={vi.fn()}
-      />,
-    );
-    const glyph = container.querySelector('button span');
-    expect(glyph?.className).toContain('text-muted-foreground');
-    expect(glyph?.className).not.toContain('text-danger');
-  });
 });

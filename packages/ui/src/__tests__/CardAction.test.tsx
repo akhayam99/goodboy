@@ -59,7 +59,9 @@ describe('CardAction', () => {
 
   it('tints itself when highlighted', () => {
     render(<CardAction icon={Star} label="Pin" tone="success" highlighted onClick={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Pin' }).className).toContain('success');
+    const button = screen.getByRole('button', { name: 'Pin' });
+    expect(button.className).toContain('success');
+    expect(button.hasAttribute('data-highlighted')).toBe(true);
   });
 
   it('stays neutral at rest and takes its tone only on hover unless highlighted', () => {
