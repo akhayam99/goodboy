@@ -9,8 +9,8 @@ import {
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   canDrawerPush,
-  drawerModeOf,
-  drawerWidthOf,
+  drawerAsideWidthOf,
+  drawerLayoutOf,
   mainWidthOf,
   type DrawerSizing,
 } from '@goodboy/ui';
@@ -22,8 +22,6 @@ const SESSION_ID = 'session-1' as SessionId;
 const WINDOWS = [1280, 1440] as const;
 const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
 const SAVED_WIDTHS = [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX] as const;
-
-const trackOf = (drawerWidthPx: number): number => drawerWidthPx + DRAWER_INSET * 2;
 
 const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   { kind: 'context', sessionId: SESSION_ID, payload: { tab: 'goal', view: 'current' } },
@@ -123,19 +121,23 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
   it.each(CASES)(
     '$kind ($sizing) at $windowPx with a $savedPx saved width over a $columnWidth column',
     ({ sizing, columnWidth, savedPx }) => {
-      const drawerWidthPx = drawerWidthOf({ sizing, columnWidth, resizableWidth: savedPx });
-      const mode = drawerModeOf({ isOpen: true, sizing, columnWidth, drawerWidthPx });
-      const trackPx = trackOf(drawerWidthPx);
-      const cardRight = columnWidth - trackPx + DRAWER_INSET + drawerWidthPx;
+      const { mode, width: drawerWidthPx } = drawerLayoutOf({
+        main: columnWidth,
+        sizing,
+        savedWidth: savedPx,
+      });
+      const asidePx = drawerAsideWidthOf({ width: drawerWidthPx, mode });
+      const cardRight = columnWidth - asidePx + DRAWER_INSET + drawerWidthPx;
 
-      expect(trackPx).toBeLessThanOrEqual(columnWidth);
-      expect(cardRight + DRAWER_INSET).toBe(columnWidth);
-      expect(cardRight + slideOf('drawer-card-in')).toBeLessThanOrEqual(columnWidth);
-      expect(cardRight + slideOf('drawer-overlay-in')).toBeLessThanOrEqual(columnWidth);
+      expect(asidePx).toBeLessThanOrEqual(columnWidth);
       if (mode === 'push') {
-        expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + trackPx).toBe(columnWidth);
+        expect(cardRight + DRAWER_INSET).toBe(columnWidth);
+        expect(cardRight + slideOf('drawer-card-in')).toBeLessThanOrEqual(columnWidth);
+        expect(mainWidthOf({ columnWidth, mode, drawerWidthPx }) + asidePx).toBe(columnWidth);
         expect(canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })).toBe(true);
+        return;
       }
+      expect(cardRight).toBe(columnWidth);
     },
   );
 });

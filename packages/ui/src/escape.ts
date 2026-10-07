@@ -54,3 +54,7 @@ export const registerEscapeLayer = (handler: () => void): (() => void) => {
 };
 
 export const escapeLayerCount = (): number => stack.length;
+
+export const dismissTopEscapeLayer = (): void => {
+  stack[stack.length - 1]?.handler();
+};
