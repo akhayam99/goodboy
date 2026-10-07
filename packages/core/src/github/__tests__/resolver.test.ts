@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { GhRunner } from '../gh';
+import type { GhResult, GhRunner } from '../gh';
 import { GhCliError } from '../gh';
-import { detectRepoSlug, listPrsForBranch, resolvePrForBranch } from '../resolver';
+import { detectRepoSlug, listPrsForBranch, resolvePrForBranch, viewPullRequest } from '../resolver';
+
+type Call = ReadonlyArray<string>;
 
 function makeRunner(result: { stdout: string; stderr: string; exitCode: number }): GhRunner {
   return { run: vi.fn().mockResolvedValue(result) };
@@ -447,5 +449,193 @@ describe('detectRepoSlug', () => {
     const runner = makeRunner({ stdout: '   ', stderr: '', exitCode: 0 });
     const result = await detectRepoSlug(runner, '/some/path');
     expect(result).toBeNull();
+  });
+});
+
+const SAML_STDERR =
+  'HTTP 403: Resource protected by organization SAML enforcement. You must grant your token access to this organization.';
+
+const PR = {
+  number: 318,
+  title: 'Stop retried webhooks posting a second credit',
+  url: 'https://github.com/harborline/payments-api/pull/318',
+  state: 'OPEN',
+  isDraft: false,
+  mergeable: 'MERGEABLE',
+  baseRefName: 'main',
+  headRefName: 'hl/fix-duplicate-credit',
+  reviewDecision: null,
+  updatedAt: '2026-10-05T10:00:00Z',
+  body: '',
+  autoMergeRequest: null,
+};
+
+const ROLLUP = [{ status: 'COMPLETED', conclusion: 'FAILURE' }];
+
+const fieldsOf = ({ args }: { readonly args: Call }): ReadonlyArray<string> =>
+  (args[args.indexOf('--json') + 1] ?? '').split(',');
+
+type Options = {
+  readonly withRollup: GhResult;
+  readonly withoutRollup?: GhResult;
+};
+
+const ok = ({ data }: { readonly data: unknown }): GhResult => ({
+  stdout: JSON.stringify(data),
+  stderr: '',
+  exitCode: 0,
+});
+
+const failure = ({ stderr }: { readonly stderr: string }): GhResult => ({
+  stdout: '',
+  stderr,
+  exitCode: 1,
+});
+
+const runnerOf = ({
+  withRollup,
+  withoutRollup,
+}: Options): { readonly runner: GhRunner; readonly calls: Call[] } => {
+  const calls: Call[] = [];
+  return {
+    calls,
+    runner: {
+      run: async (args) => {
+        calls.push(args);
+        if (args.includes('graphql')) {
+          return ok({ data: { repository: { pullRequests: { nodes: [] } } } });
+        }
+        if (fieldsOf({ args }).includes('statusCheckRollup')) {
+          return withRollup;
+        }
+        return withoutRollup ?? failure({ stderr: 'unexpected second read' });
+      },
+    },
+  };
+};
+
+const listCalls = ({ calls }: { readonly calls: ReadonlyArray<Call> }): ReadonlyArray<Call> =>
+  calls.filter((args) => args.includes('--json'));
+
+describe('a token that cannot read checks keeps its pull request', () => {
+  describe('resolvePrForBranch', () => {
+    it('retries once without statusCheckRollup and marks the checks unknown', async () => {
+      const { runner, calls } = runnerOf({
+        withRollup: failure({ stderr: SAML_STDERR }),
+        withoutRollup: ok({ data: [PR] }),
+      });
+
+      const pr = await resolvePrForBranch(runner, 'harborline/payments-api', PR.headRefName);
+
+      expect(pr).toMatchObject({ number: 318, state: 'open', checks: null, checksUnknown: true });
+      const reads = listCalls({ calls });
+      expect(reads).toHaveLength(2);
+      expect(fieldsOf({ args: reads[0] ?? [] })).toContain('statusCheckRollup');
+      expect(fieldsOf({ args: reads[1] ?? [] })).not.toContain('statusCheckRollup');
+      expect(fieldsOf({ args: reads[1] ?? [] })).toContain('reviewDecision');
+    });
+
+    it('keeps the verdict of a read that succeeds and never sets the flag', async () => {
+      const { runner, calls } = runnerOf({
+        withRollup: ok({ data: [{ ...PR, statusCheckRollup: ROLLUP }] }),
+      });
+
+      const pr = await resolvePrForBranch(runner, 'harborline/payments-api', PR.headRefName);
+
+      expect(pr?.checks).toBe('failure');
+      expect(pr).not.toHaveProperty('checksUnknown');
+      expect(listCalls({ calls })).toHaveLength(1);
+    });
+
+    it('still answers null, without a retry, when the failure is not a permission problem', async () => {
+      const { runner, calls } = runnerOf({
+        withRollup: failure({ stderr: 'gh: something new went wrong' }),
+        withoutRollup: ok({ data: [PR] }),
+      });
+
+      const pr = await resolvePrForBranch(runner, 'harborline/payments-api', PR.headRefName);
+
+      expect(pr).toBeNull();
+      expect(listCalls({ calls })).toHaveLength(1);
+    });
+
+    it('does not retry a rate limit that arrives as HTTP 403', async () => {
+      const { runner, calls } = runnerOf({
+        withRollup: failure({
+          stderr: 'gh: API rate limit exceeded for user ID 12345. (HTTP 403)',
+        }),
+        withoutRollup: ok({ data: [PR] }),
+      });
+
+      const pr = await resolvePrForBranch(runner, 'harborline/payments-api', PR.headRefName);
+
+      expect(pr).toBeNull();
+      expect(listCalls({ calls })).toHaveLength(1);
+    });
+
+    it('answers null when the retry is denied too', async () => {
+      const { runner } = runnerOf({
+        withRollup: failure({ stderr: SAML_STDERR }),
+        withoutRollup: failure({ stderr: SAML_STDERR }),
+      });
+
+      const pr = await resolvePrForBranch(runner, 'harborline/payments-api', PR.headRefName);
+
+      expect(pr).toBeNull();
+    });
+  });
+
+  describe('viewPullRequest', () => {
+    it('retries once without statusCheckRollup and marks the checks unknown', async () => {
+      const { runner, calls } = runnerOf({
+        withRollup: failure({ stderr: SAML_STDERR }),
+        withoutRollup: ok({ data: PR }),
+      });
+
+      const pr = await viewPullRequest({ runner, repo: 'harborline/payments-api', number: 318 });
+
+      expect(pr).toMatchObject({ number: 318, checks: null, checksUnknown: true });
+      expect(listCalls({ calls })).toHaveLength(2);
+      expect(fieldsOf({ args: listCalls({ calls })[1] ?? [] })).not.toContain('statusCheckRollup');
+    });
+
+    it('still answers null when gh cannot find the pull request', async () => {
+      const { runner, calls } = runnerOf({
+        withRollup: failure({ stderr: 'no pull requests found' }),
+      });
+
+      const pr = await viewPullRequest({ runner, repo: 'harborline/payments-api', number: 9 });
+
+      expect(pr).toBeNull();
+      expect(listCalls({ calls })).toHaveLength(1);
+    });
+  });
+
+  describe('listPrsForBranch', () => {
+    it('marks every listed pull request when the first read was denied', async () => {
+      const { runner } = runnerOf({
+        withRollup: failure({ stderr: SAML_STDERR }),
+        withoutRollup: ok({
+          data: [PR, { ...PR, number: 319, updatedAt: '2026-10-04T10:00:00Z' }],
+        }),
+      });
+
+      const prs = await listPrsForBranch(runner, 'harborline/payments-api', PR.headRefName);
+
+      expect(prs.map((pr) => [pr.number, pr.checks, pr.checksUnknown])).toEqual([
+        [318, null, true],
+        [319, null, true],
+      ]);
+    });
+
+    it('still rethrows a failure that is not a permission problem', async () => {
+      const { runner } = runnerOf({
+        withRollup: failure({ stderr: 'gh: something new went wrong' }),
+      });
+
+      await expect(
+        listPrsForBranch(runner, 'harborline/payments-api', PR.headRefName),
+      ).rejects.toMatchObject({ name: 'GhCliError' });
+    });
   });
 });

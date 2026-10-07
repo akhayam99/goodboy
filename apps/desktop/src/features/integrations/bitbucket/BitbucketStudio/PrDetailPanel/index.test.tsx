@@ -170,7 +170,7 @@ describe('PrDetailPanel', () => {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /^Checks/ }));
     await waitFor(() =>
-      expect(screen.getByTestId('checks-rollup').textContent).toBe('1 failed, 1 in progress'),
+      expect(screen.getByTestId('checks-rollup').textContent).toBe('1 failing · 1 running'),
     );
     screen.getByText('unit tests');
   });

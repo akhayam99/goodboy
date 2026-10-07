@@ -493,6 +493,7 @@ export type {
   PrCheckRun,
   PrComment,
   PrDetail,
+  PrDetailRead,
   PrMergeMethod,
   PrReview,
   PrReviewRequest,

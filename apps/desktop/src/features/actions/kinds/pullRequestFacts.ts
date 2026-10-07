@@ -1,9 +1,16 @@
-import type { PrCheckRun, PrComment, PrReview, PullRequestState, SessionId } from '@goodboy/types';
+import type {
+  PrCheckRun,
+  PrComment,
+  PrDetailRead,
+  PrReview,
+  PullRequestState,
+  SessionId,
+} from '@goodboy/types';
 import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
 
 type PullRequestPhase = 'none' | 'draft' | 'open' | 'queued' | 'merged' | 'closed';
 
-type PullRequestChecksPhase = 'none' | 'pending' | 'failing' | 'green';
+type PullRequestChecksPhase = 'none' | 'pending' | 'failing' | 'green' | 'unknown';
 
 export type PullRequestFacts = {
   readonly sessionId: SessionId;
@@ -27,6 +34,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly pr: PullRequestState | null;
   readonly checks: ReadonlyArray<PrCheckRun> | null;
+  readonly checksRead?: PrDetailRead | null;
   readonly comments: ReadonlyArray<PrComment>;
   readonly reviews: ReadonlyArray<PrReview>;
   readonly viewer: string | null;
@@ -49,10 +57,15 @@ const phaseOf = ({ pr }: { readonly pr: PullRequestState | null }): PullRequestP
 const checksOf = ({
   pr,
   checks,
+  checksRead,
 }: {
   readonly pr: PullRequestState | null;
   readonly checks: ReadonlyArray<PrCheckRun> | null;
+  readonly checksRead: PrDetailRead | null;
 }): PullRequestChecksPhase => {
+  if (pr?.checksUnknown === true || (checksRead !== null && checksRead !== 'ok')) {
+    return 'unknown';
+  }
   if (checks !== null && checks.length > 0) {
     if (checks.some((check) => FAILED.has(check.conclusion))) {
       return 'failing';
@@ -92,6 +105,7 @@ export const pullRequestFacts = ({
   sessionId,
   pr,
   checks,
+  checksRead = null,
   comments,
   reviews,
   viewer,
@@ -106,7 +120,7 @@ export const pullRequestFacts = ({
     pr,
     number: pr?.number ?? null,
     phase: phaseOf({ pr }),
-    checks: checksOf({ pr, checks }),
+    checks: checksOf({ pr, checks, checksRead }),
     failingChecks: failing.map((check) => check.name),
     runningChecks: runs.filter((check) => check.conclusion === 'pending').length,
     failingLogUrl: failing.find((check) => check.detailsUrl !== null)?.detailsUrl ?? null,

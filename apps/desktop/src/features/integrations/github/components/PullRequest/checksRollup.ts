@@ -1,38 +1,46 @@
-import type { PrCheckConclusion, PrCheckRun } from '@goodboy/types';
+import type { PrCheckConclusion, PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
 
-type Bucket = 'failed' | 'in progress' | 'passed' | 'cancelled' | 'skipped' | 'needs attention';
+type ChecksGroup = 'failing' | 'running' | 'passed' | 'skipped';
 
-const BUCKET_ORDER: ReadonlyArray<Bucket> = [
-  'failed',
-  'in progress',
-  'needs attention',
-  'passed',
-  'cancelled',
-  'skipped',
-];
+type ChecksGroupRuns = {
+  readonly group: ChecksGroup;
+  readonly label: string;
+  readonly runs: ReadonlyArray<PrCheckRun>;
+};
 
-type BucketParams = {
+export type ChecksWord = 'unknown' | 'none' | 'pending' | 'failing' | 'passing';
+
+const GROUP_ORDER: ReadonlyArray<ChecksGroup> = ['failing', 'running', 'passed', 'skipped'];
+
+const GROUP_LABEL: Readonly<Record<ChecksGroup, string>> = {
+  failing: 'Failing',
+  running: 'Running',
+  passed: 'Passed',
+  skipped: 'Skipped',
+};
+
+const ROLLUP_SEPARATOR = ' · ';
+
+type GroupParams = {
   readonly conclusion: PrCheckConclusion;
 };
 
-const bucketOf = ({ conclusion }: BucketParams): Bucket => {
+const groupOf = ({ conclusion }: GroupParams): ChecksGroup => {
   switch (conclusion) {
     case 'failure':
     case 'timed_out':
-      return 'failed';
+    case 'action_required':
+    case 'cancelled':
+      return 'failing';
     case 'pending':
-      return 'in progress';
+    case 'unknown':
+      return 'running';
     case 'success':
       return 'passed';
-    case 'cancelled':
-      return 'cancelled';
     case 'skipped':
     case 'neutral':
     case 'stale':
       return 'skipped';
-    case 'action_required':
-    case 'unknown':
-      return 'needs attention';
     default: {
       const unexpectedConclusion: never = conclusion;
       return unexpectedConclusion;
@@ -44,16 +52,44 @@ type Params = {
   readonly checks: ReadonlyArray<PrCheckRun>;
 };
 
-export const checksRollup = ({ checks }: Params): string => {
-  if (checks.length === 0) {
-    return '';
+export const checksGroupsOf = ({ checks }: Params): ReadonlyArray<ChecksGroupRuns> =>
+  GROUP_ORDER.map((group) => ({
+    group,
+    label: GROUP_LABEL[group],
+    runs: checks.filter((check) => groupOf({ conclusion: check.conclusion }) === group),
+  })).filter((entry) => entry.runs.length > 0);
+
+export const checksRollup = ({ checks }: Params): string =>
+  checksGroupsOf({ checks })
+    .map((entry) => `${entry.runs.length} ${entry.label.toLowerCase()}`)
+    .join(ROLLUP_SEPARATOR);
+
+type WordParams = {
+  readonly pr: PullRequestState | null;
+  readonly detail: PrDetail | null;
+};
+
+export const checksWordOf = ({ pr, detail }: WordParams): ChecksWord => {
+  if (pr === null) {
+    return 'none';
   }
-  const counts = new Map<Bucket, number>();
-  for (const check of checks) {
-    const bucket = bucketOf({ conclusion: check.conclusion });
-    counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
+  const matched = detail !== null && detail.prNumber === pr.number ? detail : null;
+  const read = matched?.checksRead ?? 'ok';
+  if (pr.checksUnknown === true || read !== 'ok') {
+    return 'unknown';
   }
-  return BUCKET_ORDER.filter((bucket) => (counts.get(bucket) ?? 0) > 0)
-    .map((bucket) => `${counts.get(bucket) ?? 0} ${bucket}`)
-    .join(', ');
+  if (matched !== null && matched.checks.length > 0) {
+    const groups = checksGroupsOf({ checks: matched.checks }).map((entry) => entry.group);
+    if (groups.includes('failing')) {
+      return 'failing';
+    }
+    return groups.includes('running') ? 'pending' : 'passing';
+  }
+  if (pr.checks === 'failure') {
+    return 'failing';
+  }
+  if (pr.checks === 'pending') {
+    return 'pending';
+  }
+  return pr.checks === 'success' ? 'passing' : 'none';
 };

@@ -265,6 +265,151 @@ describe('fetchPrDetail', () => {
     expect(detail.reviews).toEqual([]);
     expect(detail.reviewRequests).toEqual([]);
     expect(detail.checks).toEqual([]);
+    expect([detail.reviewsRead, detail.reviewRequestsRead, detail.checksRead]).toEqual([
+      'failed',
+      'failed',
+      'failed',
+    ]);
+  });
+
+  describe('reads reviews, review requests and checks apart', () => {
+    const SAML_STDERR =
+      'HTTP 403: Resource protected by organization SAML enforcement. You must grant your token access to this organization.\nsecond line';
+
+    const viewField = (field: string) => (a: ReadonlyArray<string>) =>
+      a[0] === 'pr' && a[1] === 'view' && a[a.indexOf('--json') + 1] === field;
+
+    const REVIEW = {
+      id: 1,
+      author: { login: 'alice' },
+      authorAssociation: 'MEMBER',
+      body: 'lgtm',
+      state: 'APPROVED',
+      submittedAt: '2026-01-03T10:00:00Z',
+    };
+
+    const RUN = {
+      name: 'build',
+      status: 'completed',
+      conclusion: 'success',
+      detailsUrl: 'https://github.com/runs/1',
+    };
+
+    const reads = ({
+      checks,
+      requests,
+      reviews,
+    }: {
+      readonly checks: GhResult;
+      readonly requests: GhResult;
+      readonly reviews: GhResult;
+    }): GhRunner =>
+      makeMultiRunner([
+        { match: matchIssueComments, result: jsonOk([]) },
+        { match: matchReviewThreads, result: emptyReviewThreads },
+        { match: viewField('reviews'), result: reviews },
+        { match: viewField('reviewRequests'), result: requests },
+        { match: viewField('statusCheckRollup'), result: checks },
+      ]);
+
+    it('asks gh for each field in its own call', async () => {
+      const runner = reads({
+        reviews: jsonOk({ reviews: [REVIEW] }),
+        requests: jsonOk({ reviewRequests: [] }),
+        checks: jsonOk({ statusCheckRollup: [RUN] }),
+      });
+
+      await fetchPrDetail(runner, 'org/repo', 1);
+
+      const fields = vi
+        .mocked(runner.run)
+        .mock.calls.map(([args]) => args)
+        .filter((args) => args[0] === 'pr')
+        .map((args) => args[args.indexOf('--json') + 1])
+        .sort();
+      expect(fields).toEqual(['reviewRequests', 'reviews', 'statusCheckRollup']);
+    });
+
+    it('keeps reviews and requests when the token cannot read checks', async () => {
+      const runner = reads({
+        reviews: jsonOk({ reviews: [REVIEW] }),
+        requests: jsonOk({ reviewRequests: [{ login: 'carol', avatarUrl: null }] }),
+        checks: { stdout: '', stderr: SAML_STDERR, exitCode: 1 },
+      });
+
+      const detail = await fetchPrDetail(runner, 'org/repo', 1);
+
+      expect(detail.checksRead).toBe('denied');
+      expect(detail.checksError).toBe(SAML_STDERR.split('\n')[0]);
+      expect(detail.checks).toEqual([]);
+      expect(detail.reviewsRead).toBe('ok');
+      expect(detail.reviews.map((review) => review.author)).toEqual(['alice']);
+      expect(detail.reviewRequestsRead).toBe('ok');
+      expect(detail.reviewRequests.map((request) => request.login)).toEqual(['carol']);
+    });
+
+    it('keeps checks when only the review requests fail', async () => {
+      const runner = reads({
+        reviews: jsonOk({ reviews: [REVIEW] }),
+        requests: { stdout: '', stderr: SAML_STDERR, exitCode: 1 },
+        checks: jsonOk({ statusCheckRollup: [RUN] }),
+      });
+
+      const detail = await fetchPrDetail(runner, 'org/repo', 1);
+
+      expect(detail.reviewRequestsRead).toBe('denied');
+      expect(detail.reviewRequests).toEqual([]);
+      expect(detail.checksRead).toBe('ok');
+      expect(detail.checksError).toBeNull();
+      expect(detail.checks.map((check) => check.name)).toEqual(['build']);
+      expect(detail.reviews).toHaveLength(1);
+    });
+
+    it('reads an unrecognised failure as failed, never as denied', async () => {
+      const runner = reads({
+        reviews: jsonOk({ reviews: [] }),
+        requests: jsonOk({ reviewRequests: [] }),
+        checks: { stdout: '', stderr: 'gh: something new went wrong\nstack noise', exitCode: 1 },
+      });
+
+      const detail = await fetchPrDetail(runner, 'org/repo', 1);
+
+      expect(detail.checksRead).toBe('failed');
+      expect(detail.checksError).toBe('gh: something new went wrong');
+    });
+
+    it('reads a rate limit as failed so the tab offers a retry instead of a settings fix', async () => {
+      const runner = reads({
+        reviews: jsonOk({ reviews: [] }),
+        requests: jsonOk({ reviewRequests: [] }),
+        checks: {
+          stdout: '',
+          stderr: 'gh: API rate limit exceeded for user ID 12345. (HTTP 403)',
+          exitCode: 1,
+        },
+      });
+
+      const detail = await fetchPrDetail(runner, 'org/repo', 1);
+
+      expect(detail.checksRead).toBe('failed');
+    });
+
+    it('reports every read as ok when nothing fails', async () => {
+      const runner = reads({
+        reviews: jsonOk({ reviews: [] }),
+        requests: jsonOk({ reviewRequests: [] }),
+        checks: jsonOk({ statusCheckRollup: [] }),
+      });
+
+      const detail = await fetchPrDetail(runner, 'org/repo', 1);
+
+      expect([detail.reviewsRead, detail.reviewRequestsRead, detail.checksRead]).toEqual([
+        'ok',
+        'ok',
+        'ok',
+      ]);
+      expect(detail.checks).toEqual([]);
+    });
   });
 
   it('fails the read when the review threads query returns graphql errors', async () => {

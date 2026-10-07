@@ -75,6 +75,9 @@ const mergeBlock = ({ facts }: FactsOnly): string | null => {
   if (facts.hasConflicts) {
     return `Conflicts with ${baseOf({ facts })}. Rebase in the Diff.`;
   }
+  if (facts.checks === 'unknown') {
+    return 'Checks unknown.';
+  }
   if (facts.checks === 'failing') {
     const count = Math.max(facts.failingChecks.length, 1);
     const names = facts.failingChecks.length > 0 ? `: ${facts.failingChecks.join(', ')}` : '';
@@ -365,6 +368,7 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
       sessionId: target.sessionId,
       pr,
       checks: detailMatches ? detail.checks : null,
+      checksRead: detailMatches ? (detail.checksRead ?? 'ok') : null,
       comments: detailMatches ? detail.comments : [],
       reviews: detailMatches ? detail.reviews : [],
       viewer: state.githubStatus?.user ?? null,

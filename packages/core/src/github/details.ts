@@ -3,12 +3,14 @@ import type {
   PrCheckRun,
   PrComment,
   PrDetail,
+  PrDetailRead,
   PrReview,
   PrReviewRequest,
   PrReviewState,
 } from '@goodboy/types';
+import { classifyGhFailure } from './classifyGhFailure';
 import type { GhRunner, GhRunOptions } from './gh';
-import { GhCliError, runJson } from './gh';
+import { GhCliError, GhJsonParseError, runJson } from './gh';
 
 type RawIssueComment = {
   id: number;
@@ -351,34 +353,59 @@ async function fetchReviewThreads(
   return out;
 }
 
-async function fetchPrViewDetail(
-  runner: GhRunner,
-  repo: string,
-  prNumber: number,
-  opts: GhRunOptions = {},
-): Promise<RawPrViewForDetail> {
+type PrViewField = 'reviews' | 'reviewRequests' | 'statusCheckRollup';
+
+type FieldRead<T> = {
+  readonly read: PrDetailRead;
+  readonly value: ReadonlyArray<T>;
+  readonly error: string | null;
+};
+
+type PrViewFieldParams<T> = {
+  readonly runner: GhRunner;
+  readonly repo: string;
+  readonly prNumber: number;
+  readonly field: PrViewField;
+  readonly pick: (raw: RawPrViewForDetail) => ReadonlyArray<T> | null | undefined;
+  readonly opts: GhRunOptions;
+};
+
+const firstLineOf = ({ text }: { readonly text: string }): string =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line !== '') ?? '';
+
+const readPrViewField = async <T>({
+  runner,
+  repo,
+  prNumber,
+  field,
+  pick,
+  opts,
+}: PrViewFieldParams<T>): Promise<FieldRead<T>> => {
   try {
-    return await runJson<RawPrViewForDetail>({
+    const raw = await runJson<RawPrViewForDetail>({
       runner,
-      args: [
-        'pr',
-        'view',
-        String(prNumber),
-        '--repo',
-        repo,
-        '--json',
-        'reviews,reviewRequests,statusCheckRollup',
-      ],
+      args: ['pr', 'view', String(prNumber), '--repo', repo, '--json', field],
       opts,
       shape: 'object',
     });
+    return { read: 'ok', value: pick(raw) ?? [], error: null };
   } catch (err) {
     if (err instanceof GhCliError) {
-      return {};
+      return {
+        read: classifyGhFailure({ stderr: err.stderr }) === 'denied' ? 'denied' : 'failed',
+        value: [],
+        error: firstLineOf({ text: err.stderr }) || err.message,
+      };
+    }
+    if (err instanceof GhJsonParseError) {
+      return { read: 'failed', value: [], error: err.message };
     }
     throw err;
   }
-}
+};
 
 export const fetchPrDetail = async (
   runner: GhRunner,
@@ -386,16 +413,32 @@ export const fetchPrDetail = async (
   prNumber: number,
   opts: GhRunOptions = {},
 ): Promise<PrDetail> => {
-  const [issueComments, reviewComments, prView] = await Promise.all([
+  const [issueComments, reviewComments, reviewsRead, requestsRead, checksRead] = await Promise.all([
     fetchIssueComments(runner, repo, prNumber, opts),
     fetchReviewThreads(runner, repo, prNumber, opts),
-    fetchPrViewDetail(runner, repo, prNumber, opts),
+    readPrViewField({ runner, repo, prNumber, field: 'reviews', pick: (raw) => raw.reviews, opts }),
+    readPrViewField({
+      runner,
+      repo,
+      prNumber,
+      field: 'reviewRequests',
+      pick: (raw) => raw.reviewRequests,
+      opts,
+    }),
+    readPrViewField({
+      runner,
+      repo,
+      prNumber,
+      field: 'statusCheckRollup',
+      pick: (raw) => raw.statusCheckRollup,
+      opts,
+    }),
   ]);
 
   const merged = dedupeComments([...issueComments, ...reviewComments]);
   const sorted = [...merged].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
-  const reviews: ReadonlyArray<PrReview> = (prView.reviews ?? []).map((r) => ({
+  const reviews: ReadonlyArray<PrReview> = reviewsRead.value.map((r) => ({
     id: `review-${r.id}`,
     author: r.author?.login ?? 'unknown',
     authorAvatarUrl: null,
@@ -404,7 +447,7 @@ export const fetchPrDetail = async (
     body: r.body ?? '',
   }));
 
-  const reviewRequests: ReadonlyArray<PrReviewRequest> = (prView.reviewRequests ?? []).map((rr) => {
+  const reviewRequests: ReadonlyArray<PrReviewRequest> = requestsRead.value.map((rr) => {
     if ('login' in rr) {
       return {
         login: rr.login,
@@ -419,7 +462,7 @@ export const fetchPrDetail = async (
     };
   });
 
-  const checks: ReadonlyArray<PrCheckRun> = (prView.statusCheckRollup ?? []).map((entry) => ({
+  const checks: ReadonlyArray<PrCheckRun> = checksRead.value.map((entry) => ({
     name: entry.name ?? entry.workflowName ?? 'check',
     conclusion: mapCheckConclusion(entry),
     detailsUrl: entry.detailsUrl ?? null,
@@ -432,5 +475,11 @@ export const fetchPrDetail = async (
     reviews,
     reviewRequests,
     checks,
+    checksRead: checksRead.read,
+    checksError: checksRead.error,
+    reviewsRead: reviewsRead.read,
+    reviewsError: reviewsRead.error,
+    reviewRequestsRead: requestsRead.read,
+    reviewRequestsError: requestsRead.error,
   };
 };
