@@ -132,6 +132,7 @@ export {
   listSessionsForWorkspace,
   listArchivedSessionsForWorkspace,
   listArchivedSessionRefs,
+  listLiveSessionIds,
   listSessionTitlesAcrossWorkspaces,
   renameSession,
   deleteSession,
@@ -232,6 +233,7 @@ export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export {
   deleteSetting,
   getSetting,
+  insertSettingIfAbsent,
   listSettingsWithPrefix,
   replaceSettingIfUnchanged,
   setSetting,
