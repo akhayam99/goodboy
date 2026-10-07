@@ -127,7 +127,7 @@ This version updates your data in one direction. To go back to 0.20, restore the
 ### New
 
 #### One left column for every place
-<!-- gb area=app -->
+<!-- gb area=app image=left-column -->
 
 Under New session sit Board, Inbox, Chat and Workflows, then your sessions. Settings, the Goodboy row and the bug report button sit at the bottom. The column stays beside every screen, so another place is always one click away.
 
@@ -141,14 +141,14 @@ The top bar keeps Back, Forward, search, your spend and the limits of each provi
 Settings swaps the column for its own list of pages, and Back to app returns to your sessions.
 
 #### Session rows that show state
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=session-rows -->
 
 A session is one line: a sign and its title. The sign says needs you, running, done, idle or archived. Rest on a row for a card with the full title, the pull request and its checks, the agents, the spend and the age.
 
 The Sessions menu sorts, groups by pull request state, stage or project, filters by project and shows archived. Needs you comes first by default, and your choice is kept per workspace.
 
 #### Ask in a session
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=ask-in-session -->
 
 The Ask button at the right end of a session's page bar, or ⌘L, opens a panel that reads the session for you. Right now lists comments by word, running agents, open questions and cost, with no model call, and three questions to start from.
 

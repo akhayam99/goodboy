@@ -208,7 +208,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pin a session',
-        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group above the rest, in the order you pinned them, whatever the sort or filter. Unpin session puts it back.",
+        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group at the top of the list, in the order you pinned them, whatever the sort or filter. Unpin session puts it back.",
       },
       {
         term: 'Ask in a session',
