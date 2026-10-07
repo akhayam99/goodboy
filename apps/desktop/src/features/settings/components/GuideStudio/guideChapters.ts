@@ -176,7 +176,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     group: 'task',
     title: 'Board',
     concept: 'workspace',
-    lead: 'The home screen. Each session sits in a column based on what is happening in it, so you never move cards by hand.',
+    lead: 'The home screen. Each session sits in a lane based on what is happening in it, so you never move cards by hand.',
     points: [
       {
         term: 'Session card',
@@ -184,11 +184,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Done and archived',
-        desc: 'Finished and archived sessions fold into two icons at the side of the board. Archive keeps everything and can be undone. Delete removes the transcript and files for good, and its cost and merged pull requests still count in Impact.',
+        desc: 'Done and archived are lanes of their own, always on the board with every card, after building, running, needs you and in review. Archive keeps everything and can be undone. Delete removes the transcript and files for good, and its cost and merged pull requests still count in Impact.',
       },
       {
         term: 'Select many',
-        desc: 'Tick the checkbox that shows when you point at a card, press X on a card, or lasso or modifier-click cards across columns. The bar at the bottom archives, restores or deletes them together, and Esc clears. Lists with checkboxes elsewhere use the same bar.',
+        desc: 'Tick the checkbox that shows when you point at a card, press X on a card, or lasso or modifier-click cards across lanes. The bar at the bottom archives, restores or deletes them together, and Esc clears. Lists with checkboxes elsewhere use the same bar.',
       },
       {
         term: 'Ongoing',
@@ -204,7 +204,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rows',
-        desc: 'One line each: a sign and the title. Rest on a row for its card. The Sessions menu sorts, groups, filters by project and shows archived. Control Tab flips between recent sessions, and Option Command Down jumps to the next one that needs you.',
+        desc: 'One line each: a mark and the title. The mark is red only when something broke, amber when you must answer, approve or act, green when the pull request is ready to merge, and a filled violet check when the session is done. Rest on a row for its card. The Sessions menu sorts, groups, filters by project and shows archived. Control Tab flips between recent sessions, and Option Command Down jumps to the next one that needs you.',
+      },
+      {
+        term: 'Pin a session',
+        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group above the rest, in the order you pinned them, whatever the sort or filter. Unpin session puts it back.",
       },
       {
         term: 'Ask in a session',
@@ -231,7 +235,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Activity',
-        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session, and a run page reads in execution order.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session.',
+      },
+      {
+        term: 'Run page',
+        desc: 'A run page reads top to bottom: the header with Pause and Stop run, the steps with sub-agents indented under their agent and finished sets folded into one row, and the composer at the bottom. While the run waits for its plan, Review plan opens it in a drawer.',
       },
       {
         term: 'Agent suggests',
@@ -255,7 +263,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'When to ask',
-        desc: 'Ask before each step, Ask after the plan or Run on its own. Ask after the plan waits once on the plan, and Approve plan runs the rest without you. A guard stops an agent after 4 unattended turns in an hour.',
+        desc: 'Ask before each step, Ask after the plan or Run on its own. Ask after the plan waits once, on the plan: Review plan opens it in a drawer, and Approve runs the rest without you. A guard stops an agent after 4 unattended turns in an hour.',
       },
       {
         term: 'Open questions',
@@ -346,7 +354,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'One page per branch, with the tabs Comments, Files, Commits and Checks. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, and Back walks your history.',
+        desc: 'One page per branch, with the tabs Comments, Files, Commits and Checks, all on one centred column. A branch chip in the header switches branches or starts a new one. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, and Back walks your history.',
       },
       {
         term: 'Comments',
@@ -358,7 +366,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Files',
-        desc: 'The changed files as a tree beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review is a form with line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
+        desc: 'The changed files as a tree in a rail at the left edge, which never moves the page, beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review is a form with line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Notes',
@@ -374,7 +382,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'The CI runs of a GitHub pull request, with the failing step. Whether it can merge reads in plain words, the next step is the one main action, and Merge and Close confirm under the header.',
+        desc: 'The CI runs of a GitHub pull request, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
       },
       {
         term: 'Push',
@@ -446,7 +454,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Plan beside the planner',
-        desc: 'In the planner chat and its Brief a plan is one row. Press it to read the plan in a drawer, where one button moves it on, Approve or Run plan, and Edit changes it by hand. Expand and Open in Artifacts sit in its menu. While the planner reworks it, the drawer says Revising to v2 and the button is off.',
+        desc: 'In the planner chat and its Brief a plan is one row. Press it to read the plan in a drawer, where one button moves it on, Approve or Run plan, and Edit changes it by hand. Approve moves the run on, and one toast offers Follow the run. Expand and Open in Artifacts sit in its menu. While the planner reworks it, the drawer says Revising to v2 and the button is off.',
       },
       {
         term: 'Comments on a plan',
@@ -532,7 +540,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: 'Settings opens on the page you opened last, or General the first time. The rail lists App, Workspace, Providers & models and Integrations, and a row speaks only when it needs you. Every page is also in the palette. Drag the edge of a rail to resize it.',
+        desc: 'Settings opens on the page you opened last, or General the first time, and takes over the left column with Back to app and Search settings on top, open or folded. The rail lists App, Workspace, Providers & models and Integrations, and a dot marks a page that needs you. Every page is also in the palette. Drag the edge of a rail to resize it.',
       },
       {
         term: 'App and workspace',
@@ -685,7 +693,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Habits that pay off across sessions.',
     points: [
       {
-        term: 'Triage the board by column',
+        term: 'Triage the board by lane',
         desc: 'Start with needs you, then in review, and let the running ones run.',
       },
       {
