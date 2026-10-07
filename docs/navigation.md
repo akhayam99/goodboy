@@ -408,12 +408,14 @@ resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
 width resets once). Its first button or ⌘B folds it, on every screen, into the
 rail; the choice is saved and peek never touches it.
 
-**Classic bars.** Settings > App > General > Classic bars (setting
-`shell.classicBars`, off by default) brings back the 0.20.0 frame: Board and
-Chat in the top bar, the footer with its doors and integration glyphs, the
-sessions sidebar only inside a session, studios covering it. It ships with
-0.21.0 and leaves in a later release; the tests of exits, doors and restore run
-on both arrangements while it exists.
+**Legacy layout.** Settings > App > General > Legacy layout (setting
+`shell.classicBars`, off by default; the stored key kept its name when the
+setting was renamed) brings back the 0.20.0 frame: Board and Chat in the top
+bar, the footer with its doors and integration glyphs, the sessions sidebar
+only inside a session, studios covering it, Settings drawn as a covering studio
+with its own rail and band. The field says it may be removed in a future
+version; the tests of exits, doors and restore run on both arrangements while
+it exists.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
@@ -827,7 +829,7 @@ covered.
   (24px icons) name their destination in the tooltip (`Back to Review ·
 {session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
-  Chat left the bar for the column (under Classic bars they come back here, in
+  Chat left the bar for the column (under Legacy layout they come back here, in
   their old shape). Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
   board it closes the studio; in a session it navigates to the board as a
@@ -1046,7 +1048,7 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
   App and Providers & models groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and
   Manage gear with no folder open.
-- **Under Classic bars the 0.20.0 footer comes back** (`AppFooter`): the
+- **Under Legacy layout the 0.20.0 footer comes back** (`AppFooter`): the
   connected integration glyphs and Link integration on the left, the Goodboy
   chip in the centre, Inbox, Workflows, Impact, Providers and Settings on the
   right. Its target is a pair, the place and the tool (`FooterTarget`), so a

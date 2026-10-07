@@ -76,7 +76,7 @@ describe('shellArrangement, the column', () => {
   });
 });
 
-describe('shellArrangement, the classic bars', () => {
+describe('shellArrangement, the legacy layout', () => {
   const classic = (params: {
     readonly hasWorkspace: boolean;
     readonly hasActiveSession: boolean;

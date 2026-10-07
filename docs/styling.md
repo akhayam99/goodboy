@@ -109,7 +109,7 @@ bars) paint their bars with it. The main pane stays on `bg-background`, one step
 
 ## The window grid
 
-Columns, resize handles, the studio slot and (under Classic bars) the footer
+Columns, resize handles, the studio slot and (under Legacy layout) the footer
 are areas of **one** CSS grid. Their
 widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and
