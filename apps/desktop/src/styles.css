@@ -480,7 +480,7 @@ html[data-theme='light'] {
   --color-disabled-foreground: oklch(0.61 0.005 250);
   --color-border-strong: oklch(0.48 0.006 250);
   --color-border: oklch(0.59 0.006 250);
-  --color-border-soft: oklch(0.88 0.005 250);
+  --color-border-soft: oklch(0.872 0.005 250);
   --color-overlay-hover: oklch(0 0 0 / 0.075);
   --color-overlay-selected: oklch(0 0 0 / 0.12);
   --color-scrim: oklch(0 0 0 / 0.35);

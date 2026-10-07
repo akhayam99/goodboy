@@ -470,8 +470,8 @@ session tells its own story in the main pane. Its five work pages nest under
 its row: Overview, Branch, Runs, Agents and Artifacts. They are the same pages
 as the first five rows of the trail's page menu, with the same count words from
 one selector (`usePageSummaries`), so the two doors never disagree. The open
-session and its pages sit in one card (`data-session-card`, a surface one step
-above the column), so it is plain that the pages belong to that session; every
+session and its pages sit in one card (`data-session-card`, the elevated surface with
+a hairline, so it reads against the column in light too), so it is plain that the pages belong to that session; every
 other session stays a flat row. The nesting is not a mode: the list stays the
 list, the card moves to another session when it opens, and `←` and `→` on the
 open row fold and open the pages while the session row stays in the card. The

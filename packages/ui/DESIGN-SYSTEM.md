@@ -1175,9 +1175,13 @@ its page the band's 40px as top padding, so the title row lands where a session
 page's does under its trail.
 
 **The open session is a card.** In the sessions list the open session and its
-page rows sit in one card (`data-session-card`): `rounded-lg`, `p-1`, `bg-subtle`
-(one surface step above the chrome) and no border. It is not `bg-fill`: that is
-white at 6% and the hover layer is 5%, so a card on it would read as a stuck
+page rows sit in one card (`data-session-card`, `SESSION_CARD_CLASS`):
+`rounded-lg`, `bg-elevated`, a `border-soft` hairline and `p-0.75` inside it, so
+the rows sit 4px from the list edge as they did without the border. The card
+must read against the chrome in both themes: the surface or the hairline clears
+1.25:1 (`sessionCard.test.ts` measures it). In light the white surface alone is
+1.15:1, so the hairline carries it. It is not `bg-fill`: that is white at 6%
+and the hover layer is 8.5%, so a card on it would read as a stuck
 hover. The rows inside are `rounded-md`, concentric with the card, and the
 current page keeps `bg-selected`. The card stays around the session row when
 `←` folds the pages, it follows the open session, and every other session is a
