@@ -5,7 +5,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -41,14 +41,22 @@ describe('LegacyLayoutField', () => {
     expect(screen.queryByText('Classic bars')).toBeNull();
   });
 
-  it('labels the switch by the setting, with no On or Off word', () => {
+  it('says On or Off beside the switch and keeps the setting as its name', () => {
     useAppStore.setState({ settings: { [SETTING_SHELL_CLASSIC_BARS]: 'false' } });
     render(<LegacyLayoutField />);
 
     const toggle = screen.getByRole('switch', { name: 'Legacy layout' });
 
-    expect(toggle.textContent).toBe('Legacy layout');
+    expect(within(toggle).getByText('Off').getAttribute('aria-hidden')).toBe('true');
     expect(screen.queryByText('On')).toBeNull();
+
+    cleanup();
+    useAppStore.setState({ settings: { [SETTING_SHELL_CLASSIC_BARS]: 'true' } });
+    render(<LegacyLayoutField />);
+
+    expect(
+      within(screen.getByRole('switch', { name: 'Legacy layout' })).getByText('On'),
+    ).toBeDefined();
     expect(screen.queryByText('Off')).toBeNull();
   });
 

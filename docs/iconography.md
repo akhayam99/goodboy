@@ -107,9 +107,12 @@ a sentence that the Board card, the Now chip rows and the palette read too. Red
 answer, approve or act on: `?` for a question or a comment that needs you, the
 shield for an approval or a held plan, and an amber `!` (`alert`) for changes
 requested and comments the fix could not fix. A solid green disc with a white
-check (`approved`) is a pull request ready to merge, and it is not the outlined
-check of a finished session (`done`). Blue is moving or new: the running ring,
-and the small dot of an unread reply. The sentence is the node's accessible
+check (`approved`) is a pull request ready to merge. A finished session
+(`finished`) is the same solid disc in the `merged` violet with a white check,
+so a done session reads as complete beside the hollow rings; a session whose
+pull request closed unmerged keeps the muted check (`closed`). The check inside
+the 14px sidebar node is 12px, never smaller. Blue is moving or new: the
+running ring, and the small dot of an unread reply. The sentence is the node's accessible
 label. DESIGN-SYSTEM.md owns the full table.
 
 ## Agent kinds

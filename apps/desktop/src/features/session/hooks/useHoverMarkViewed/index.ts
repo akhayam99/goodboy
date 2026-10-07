@@ -17,6 +17,7 @@ type Handlers = {
 
 export const useHoverMarkViewed = ({ sessionId, agentId, hasUnread }: Params): Handlers => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasDwelledRef = useRef(false);
 
   const onMouseEnter = useCallback(() => {
     if (timerRef.current != null || agentId == null) {
@@ -24,17 +25,21 @@ export const useHoverMarkViewed = ({ sessionId, agentId, hasUnread }: Params): H
     }
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
-      void useAppStore.getState().markAgentSeen(sessionId, agentId);
+      hasDwelledRef.current = true;
     }, HOVER_DWELL_MS);
-  }, [agentId, sessionId]);
+  }, [agentId]);
 
   const onMouseLeave = useCallback(() => {
-    if (timerRef.current == null) {
+    if (timerRef.current != null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (!hasDwelledRef.current || agentId == null) {
       return;
     }
-    clearTimeout(timerRef.current);
-    timerRef.current = null;
-  }, []);
+    hasDwelledRef.current = false;
+    void useAppStore.getState().markAgentSeen(sessionId, agentId);
+  }, [agentId, sessionId]);
 
   useEffect(
     () => () => {

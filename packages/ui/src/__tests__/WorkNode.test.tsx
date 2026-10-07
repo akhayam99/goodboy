@@ -21,6 +21,7 @@ describe('WorkNode', () => {
       'failed',
       'approved',
       'done',
+      'finished',
       'closed',
       'stopped',
       'skipped',
@@ -150,12 +151,68 @@ describe('WorkNode', () => {
     expect(fillOf('Approved')).not.toBe(fillOf('Done'));
   });
 
-  it('draws the approved check at 9px in the small node', () => {
+  it('draws the approved check at 12px in the small node, inside the same 14px ring', () => {
     render(<WorkNode state="approved" mark={{ kind: 'dot' }} label="Approved" size="sm" />);
 
     const node = nodeOf('Approved');
     expect(node.style.width).toBe('14px');
-    expect(node.querySelector('svg.lucide-check')?.getAttribute('width')).toBe('9');
+    expect(node.querySelector('svg.lucide-check')?.getAttribute('width')).toBe('12');
+  });
+
+  it('draws a finished node as a solid violet disc with a white check, apart from approved', () => {
+    render(
+      <>
+        <WorkNode state="finished" mark={{ kind: 'dot' }} label="Finished" size="sm" />
+        <WorkNode state="approved" mark={{ kind: 'dot' }} label="Approved" size="sm" />
+      </>,
+    );
+
+    const finished = nodeOf('Finished');
+    const disc = finished.querySelector('circle')?.getAttribute('class') ?? '';
+    expect(finished.style.width).toBe('14px');
+    expect(disc).toContain('fill-merged');
+    expect(disc).toContain('stroke-merged');
+    expect(disc).not.toContain('fill-none');
+    expect(disc).not.toContain('success');
+    const check = finished.querySelector('svg.lucide-check');
+    expect(check?.getAttribute('class')).toContain('text-on-tone');
+    expect(check?.getAttribute('width')).toBe('12');
+    const approved = nodeOf('Approved').querySelector('circle');
+    expect(approved?.getAttribute('r')).toBe(finished.querySelector('circle')?.getAttribute('r'));
+    expect(approved?.getAttribute('stroke-width')).toBe(
+      finished.querySelector('circle')?.getAttribute('stroke-width'),
+    );
+  });
+
+  it('draws no glyph under 12px in the small node, in any state', () => {
+    const states: ReadonlyArray<WorkNodeState> = [
+      'queued',
+      'question',
+      'budget',
+      'approval',
+      'alert',
+      'failed',
+      'approved',
+      'done',
+      'finished',
+      'closed',
+      'stopped',
+      'skipped',
+      'marker',
+    ];
+    render(
+      <>
+        {states.map((state) => (
+          <WorkNode key={state} state={state} mark={{ kind: 'dot' }} label={state} size="sm" />
+        ))}
+      </>,
+    );
+
+    for (const state of states) {
+      for (const glyph of nodeOf(state).querySelectorAll('svg.lucide')) {
+        expect(Number(glyph.getAttribute('width'))).toBeGreaterThanOrEqual(12);
+      }
+    }
   });
 
   it('draws an alert node as an amber ring around an amber exclamation mark', () => {

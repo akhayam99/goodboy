@@ -28,7 +28,12 @@ export const LegacyLayoutField = () => {
       }
     >
       <Switch
-        label={<span className="sr-only">{NAMES.legacyLayout}</span>}
+        label={
+          <>
+            <span className="sr-only">{NAMES.legacyLayout}</span>
+            <span aria-hidden>{isLegacy ? 'On' : 'Off'}</span>
+          </>
+        }
         checked={isLegacy}
         onChange={(next) => void onChange(next)}
       />

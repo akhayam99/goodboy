@@ -5,7 +5,7 @@ export const loadDetectedBrowsers = (set: SetFn, _get: GetFn) => {
   return async (): Promise<void> => {
     try {
       const browsers = await detectBrowsers();
-      set({ detectedBrowsers: browsers });
+      set({ detectedBrowsers: browsers ?? [] });
     } catch {
       set({ detectedBrowsers: [] });
     }

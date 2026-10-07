@@ -177,6 +177,7 @@ import { BrandStorageScene } from './scenes/brand/StorageScene';
 import { BrandSecurityFindingsScene } from './scenes/brand/SecurityFindingsScene';
 import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
+import { useHideSceneToasts } from './useHideSceneToasts';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
@@ -412,8 +413,6 @@ export const MOCK_SCENES = {
   ...U21_PLAN_DRAWER_SCENES,
 };
 
-const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];
-
 export const MockScene = () => {
   useReportSheetParam();
   useEffect(() => {
@@ -429,20 +428,7 @@ export const MockScene = () => {
     finishOnboarding();
   }
 
-  useEffect(() => {
-    if (params.get('brand') !== '1') {
-      return;
-    }
-    const drop = () =>
-      document.querySelectorAll('[role="alert"], [role="status"]').forEach((node) => {
-        if (BRAND_HIDDEN_TOASTS.some((text) => node.textContent?.includes(text))) {
-          (node as HTMLElement).style.display = 'none';
-        }
-      });
-    const observer = new MutationObserver(drop);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
+  useHideSceneToasts();
 
   useBrandChrome({ isBrand: params.get('brand') === '1' });
 

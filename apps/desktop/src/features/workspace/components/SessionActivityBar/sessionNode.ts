@@ -28,7 +28,8 @@ type SessionNodeInfo = Pick<
   | 'openQuestionCount'
   | 'fixNeedsYouCount'
   | 'fixCouldntFixCount'
->;
+> &
+  Partial<Pick<SessionStageInfo, 'prState'>>;
 
 type Params = {
   readonly info: SessionNodeInfo;
@@ -113,11 +114,12 @@ export const sessionNodeOf = ({ info, isArchived }: Params): SessionNode => {
     };
   }
   if (stage === 'done') {
+    const isClosedUnmerged = info.prState === 'closed';
     return {
       kind: 'done',
-      state: 'closed',
+      state: isClosedUnmerged ? 'closed' : 'finished',
       mark: RING_ONLY,
-      tone: 'neutral',
+      tone: isClosedUnmerged ? 'neutral' : 'merged',
       label: NAMES.done,
       isSpinning: false,
       hasUnread,

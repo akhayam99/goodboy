@@ -116,7 +116,7 @@ export const reviewCommentWord = ({
 
 export const REVIEW_COMMENT_NODE: Record<
   ReviewCommentState,
-  Exclude<WorkNodeState, 'marker' | 'mixed'>
+  Exclude<WorkNodeState, 'marker' | 'mixed' | 'finished'>
 > = {
   new: 'queued',
   drafting: 'running',

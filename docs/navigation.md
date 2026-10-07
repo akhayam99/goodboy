@@ -491,7 +491,7 @@ no cost. The node says the state by meaning (`sessionNodeOf`, from
 `useSessionSummary`): under needs you it draws the mark of the winning reason
 from the one reason table (`?`, the approval shield, an amber `!`, a solid green
 check for an approved pull request, and a red `!` only for an agent error or
-failing checks); running is the ring, done the muted check, in review and
+failing checks); running is the ring, done a solid violet disc with a white check, in review and
 building a 1px hollow ring named by the stage word, and archived a dashed ring,
 only under Show archived. Colour is never the only sign. The open
 session is set in medium weight, and its pages nest under it. The row's

@@ -147,7 +147,7 @@ describe('AgentRow', () => {
     expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
   });
 
-  it('marks an unread row seen after the hover dwell', () => {
+  it('marks an unread row seen when the pointer leaves after the hover dwell', () => {
     vi.useFakeTimers();
     hoverState.hasUnread = true;
     const { container } = renderRow(false);
@@ -159,6 +159,8 @@ describe('AgentRow', () => {
 
     fireEvent.mouseEnter(rowElement);
     vi.advanceTimersByTime(450);
+    expect(markAgentSeen).not.toHaveBeenCalled();
+    fireEvent.mouseLeave(rowElement);
 
     expect(markAgentSeen).toHaveBeenCalledWith(SID, run.id);
   });

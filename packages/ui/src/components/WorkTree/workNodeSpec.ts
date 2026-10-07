@@ -12,6 +12,7 @@ export type WorkNodeState =
   | 'failed'
   | 'approved'
   | 'done'
+  | 'finished'
   | 'closed'
   | 'stopped'
   | 'skipped'
@@ -31,7 +32,7 @@ const WORK_NODE_SIZE_SM = 14;
 
 export const WORK_NODE_GLYPH_SIZE = 12;
 
-const WORK_NODE_GLYPH_SIZE_SM = 9;
+const WORK_NODE_GLYPH_SIZE_SM = 12;
 
 export const WORK_NODE_SIZE_FOR: Record<WorkNodeSize, number> = {
   md: WORK_NODE_SIZE,
@@ -133,6 +134,13 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, 
     strokeWidth: 1,
     strokeClassName: 'stroke-success/70',
     fillClassName: 'fill-success/18',
+    dashArray: null,
+  },
+  finished: {
+    radius: 9.5,
+    strokeWidth: 1,
+    strokeClassName: 'stroke-merged',
+    fillClassName: 'fill-merged',
     dashArray: null,
   },
   closed: {
