@@ -184,6 +184,13 @@ export const STAGE_TONE: Record<SessionStage, Tone> = {
   done: 'merged',
 };
 
+export const ARCHIVED_LANE: StatePresentation = {
+  label: 'archived',
+  reason: 'put away, still here if you need it back',
+  tone: 'neutral',
+  icon: CONCEPT_ICONS.archive,
+};
+
 type BucketParams = {
   readonly stage: SessionStage;
 };

@@ -44,7 +44,7 @@ const STOPS: readonly Stop[] = [
     id: 'board',
     tab: 'Board',
     title: 'See where every task stands',
-    text: 'Building, running, needs you and in review. Each card shows its pull request and what it cost.',
+    text: 'Building, running, needs you, in review, done and archived. Each card shows its pull request and what it cost.',
     href: '/features#running',
     mock: <BoardMock />,
   },

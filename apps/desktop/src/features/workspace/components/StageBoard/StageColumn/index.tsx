@@ -1,6 +1,6 @@
 import { cn, EmptyLine, EmptyState, Eyebrow, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
-import { describeStageBucket } from '../../../../session/session-stage';
+import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
 import {
   stateDescription,
   type StatePresentation,
@@ -8,7 +8,6 @@ import {
 import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { EMPTY_COPY, type ColumnKey } from './emptyCopy';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 type ColumnSpec =
@@ -22,16 +21,7 @@ type ColumnView = {
 
 const viewFor = (spec: ColumnSpec): ColumnView => {
   if (spec.kind === 'archived') {
-    return {
-      key: 'archived',
-      presentation: {
-        label: 'archived',
-        reason: 'put away, still here if you need it back',
-        tone: 'neutral',
-        icon: CONCEPT_ICONS.archive,
-      },
-      archived: true,
-    };
+    return { key: 'archived', presentation: ARCHIVED_LANE, archived: true };
   }
   return {
     key: spec.stage,
