@@ -73,7 +73,7 @@ describe('resolveSessionRequest', () => {
       hasUnread: false,
       openQuestionCount: 0,
     });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'done',
       reason: 'MR !7 merged',
       addsFact: true,
@@ -91,7 +91,7 @@ describe('resolveSessionRequest', () => {
       hasUnread: false,
       openQuestionCount: 0,
     });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'review',
       reason: 'PR #42 awaiting review',
       addsFact: false,

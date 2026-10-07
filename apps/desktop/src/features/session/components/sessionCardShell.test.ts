@@ -10,8 +10,12 @@ describe('sessionTone', () => {
     expect(sessionTone({ stage: 'done' }).tone).toBe('merged');
   });
 
-  it('breathes only while running', () => {
+  it('breathes while running, and when a human-input reason holds a running session in needs you', () => {
     expect(sessionTone({ stage: 'running' }).isBreathing).toBe(true);
+    expect(
+      sessionTone({ stage: 'attention', attention: 'open-question', isRunning: true }),
+    ).toEqual({ tone: 'warning', isBreathing: true });
+    expect(sessionTone({ stage: 'attention', attention: 'open-question' }).isBreathing).toBe(false);
     expect(sessionTone({ stage: 'building' }).isBreathing).toBe(false);
     expect(sessionTone({ stage: 'review' }).isBreathing).toBe(false);
     expect(sessionTone({ stage: 'done' }).isBreathing).toBe(false);
@@ -20,7 +24,11 @@ describe('sessionTone', () => {
   it('tones the needs-you bar by the reason the session waits', () => {
     expect(sessionTone({ stage: 'attention', attention: 'agent-error' }).tone).toBe('danger');
     expect(sessionTone({ stage: 'attention', attention: 'open-question' }).tone).toBe('warning');
-    expect(sessionTone({ stage: 'attention', attention: 'unread-reply' }).tone).toBe('primary');
+    expect(sessionTone({ stage: 'attention', attention: 'unread-reply' }).tone).toBe('info');
+    expect(sessionTone({ stage: 'attention', attention: 'changes-requested' }).tone).toBe(
+      'warning',
+    );
+    expect(sessionTone({ stage: 'attention', attention: 'pr-approved' }).tone).toBe('success');
   });
 
   it('falls back to the stage tone when attention carries no reason', () => {

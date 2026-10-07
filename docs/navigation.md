@@ -472,19 +472,22 @@ with `[KEY]` (`sessionRowTitle` strips the key from the title and returns it;
 `SessionRowTitle` draws it in muted mono, the title truncates and the key never
 does; the switcher row and the hover card title do the same, the board card
 keeps its chip). It has no second line, no `ToneBar`, no marks, no age and
-no cost. The node shows one of five signs, the first that matches
-(`sessionNodeOf`, from `useSessionSummary`): needs you (`?`, the approval shield
-or `!`, in the warning or danger tone, when the stage is attention), running
-(the ring), done (the muted check, when the pull request is merged or all the
-work is closed), idle (a 1px hollow ring, everything else) and archived (a
-dashed ring, only under Show archived). Colour is never the only sign. The open
+no cost. The node says the state by meaning (`sessionNodeOf`, from
+`useSessionSummary`): under needs you it draws the mark of the winning reason
+from the one reason table (`?`, the approval shield, an amber `!`, a solid green
+check for an approved pull request, and a red `!` only for an agent error or
+failing checks); running is the ring, done the muted check, in review and
+building a 1px hollow ring named by the stage word, and archived a dashed ring,
+only under Show archived. Colour is never the only sign. The open
 session is set in medium weight, and its pages nest under it. The row's
 accessible description carries the stage word and its reason, so nothing is
 mouse-only.
 
 The rest is one rest away. After a 500ms rest on a row, or on keyboard focus
 after the same delay, the hover card opens beside the column: the full title,
-the stage word with its reason when the reason adds a fact, the run progress
+the stage word with its reason when the reason adds a fact (under needs you, the
+words of the winning reason, then each other reason that holds on its own line),
+the run progress
 (`Implement · 3 of 5`, counted from the steps that started, never estimated),
 the pull request with its checks, the linked task chips, the project chips, the
 agent count, the spend and the age, and one ghost action, **Open what needs

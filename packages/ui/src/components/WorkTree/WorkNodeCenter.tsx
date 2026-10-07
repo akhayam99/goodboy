@@ -81,8 +81,12 @@ export const WorkNodeCenter = ({
       return signOf({ sign: '$', className: 'text-warning' });
     case 'approval':
       return <Shield size={glyphSize} strokeWidth={2.5} className="text-warning" />;
+    case 'alert':
+      return signOf({ sign: '!', className: 'text-warning' });
     case 'failed':
       return signOf({ sign: '!', className: 'text-danger' });
+    case 'approved':
+      return <Check size={glyphSize} strokeWidth={3} className="text-on-tone" />;
     case 'done':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-success" />;
     case 'closed':

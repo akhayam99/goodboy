@@ -252,7 +252,18 @@ describe('deriveSessionStage', () => {
     expect(info.reason).toBe('agent errored');
   });
 
-  it('running state beats attention signals', () => {
+  it('running state beats attention signals that are not waiting for you', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: { ...makePr(), checks: 'failure' as const },
+      ...signals,
+      hasUnread: true,
+      hasRunningAgent: true,
+    });
+    expect(info.stage).toBe('running');
+  });
+
+  it('an open question outranks a running agent', () => {
     const info = deriveSessionStage({
       session: base(1),
       pr: null,
@@ -260,15 +271,30 @@ describe('deriveSessionStage', () => {
       openQuestionCount: 2,
       hasRunningAgent: true,
     });
-    expect(info.stage).toBe('running');
+    expect(info).toMatchObject({ stage: 'attention', attention: 'open-question', isRunning: true });
   });
 
-  it('a fix run comment that needs you → attention, ahead of open questions', () => {
+  it('a fix run comment that needs you → attention, below open questions', () => {
     const info = deriveSessionStage({
       session: base(1),
       pr: makePr(),
       ...signals,
       openQuestionCount: 2,
+      fixNeedsYouCount: 1,
+    });
+    expect(info).toMatchObject({
+      stage: 'attention',
+      reason: '2 open questions',
+      attention: 'open-question',
+      otherReasons: ['fix-needs-you'],
+    });
+  });
+
+  it('a fix run comment that needs you → attention', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: makePr(),
+      ...signals,
       fixNeedsYouCount: 1,
     });
     expect(info).toMatchObject({
@@ -295,9 +321,9 @@ describe('deriveSessionStage', () => {
   it('CI failure on live PR → attention', () => {
     const pr = { ...makePr(), checks: 'failure' as const };
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'attention',
-      reason: 'PR #1: CI failed',
+      reason: 'PR #1: checks failing',
       attention: 'ci-failed',
       addsFact: true,
       prState: 'open',
@@ -307,7 +333,7 @@ describe('deriveSessionStage', () => {
   it('changes requested → attention', () => {
     const pr = makePr({ reviewDecision: 'changes_requested' });
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'attention',
       reason: 'PR #1: changes requested',
       attention: 'changes-requested',
@@ -323,7 +349,7 @@ describe('deriveSessionStage', () => {
       hasUnread: false,
       openQuestionCount: 3,
     });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'attention',
       reason: '3 open questions',
       attention: 'open-question',
@@ -335,7 +361,7 @@ describe('deriveSessionStage', () => {
   it('approved live PR → attention, ready to merge', () => {
     const pr = makePr({ state: 'approved', reviewDecision: 'approved' });
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'attention',
       reason: 'PR #1 approved, ready to merge',
       attention: 'pr-approved',
@@ -351,7 +377,7 @@ describe('deriveSessionStage', () => {
       hasUnread: true,
       openQuestionCount: 0,
     });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'attention',
       reason: 'unread agent reply',
       attention: 'unread-reply',
@@ -362,7 +388,7 @@ describe('deriveSessionStage', () => {
 
   it('no PR and quiet → building', () => {
     const info = deriveSessionStage({ session: base(1), pr: null, ...signals });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'building',
       reason: 'no PR yet',
       attention: null,
@@ -373,7 +399,7 @@ describe('deriveSessionStage', () => {
 
   it('open PR and quiet → review', () => {
     const info = deriveSessionStage({ session: base(1), pr: makePr(), ...signals });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'review',
       reason: 'PR #1 awaiting review',
       attention: null,
@@ -385,7 +411,7 @@ describe('deriveSessionStage', () => {
   it('draft PR → review with draft reason', () => {
     const pr = makePr({ isDraft: true });
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'review',
       reason: 'draft PR #1',
       attention: null,
@@ -403,7 +429,7 @@ describe('deriveSessionStage', () => {
   it('merged PR and quiet → done', () => {
     const pr = makePr({ state: 'merged' });
     const info = deriveSessionStage({ session: base(1), pr, ...signals });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'done',
       reason: 'PR #1 merged',
       attention: null,
@@ -445,7 +471,7 @@ describe('deriveSessionStage', () => {
       ...signals,
       hasRunningAgent: true,
     });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'running',
       reason: 'agent running',
       attention: null,
@@ -454,7 +480,7 @@ describe('deriveSessionStage', () => {
     });
   });
 
-  it('running agent outranks open questions', () => {
+  it('an open question keeps the session in needs you while an agent runs', () => {
     const info = deriveSessionStage({
       session: base(1),
       pr: null,
@@ -462,7 +488,7 @@ describe('deriveSessionStage', () => {
       openQuestionCount: 4,
       hasRunningAgent: true,
     });
-    expect(info.stage).toBe('running');
+    expect(info).toMatchObject({ stage: 'attention', isRunning: true });
   });
 
   it('running agent on a merged PR → running, not done', () => {
@@ -484,7 +510,7 @@ describe('deriveSessionStage', () => {
       hasRunningAgent: true,
       isBranchless: true,
     });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'running',
       reason: 'agent running',
       attention: null,
@@ -508,14 +534,14 @@ describe('deriveSessionStage', () => {
       openQuestionCount: 0,
       isBranchless: true,
     });
-    expect(questions).toEqual({
+    expect(questions).toMatchObject({
       stage: 'attention',
       reason: '2 open questions',
       attention: 'open-question',
       addsFact: true,
       prState: null,
     });
-    expect(unread).toEqual({
+    expect(unread).toMatchObject({
       stage: 'attention',
       reason: 'unread agent reply',
       attention: 'unread-reply',
@@ -531,7 +557,7 @@ describe('deriveSessionStage', () => {
       ...signals,
       isBranchless: true,
     });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'building',
       reason: 'ready for work',
       attention: null,

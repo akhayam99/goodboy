@@ -61,11 +61,7 @@ const SessionActivityItemView = ({
   onPagesToggle,
 }: Props) => {
   const summary = useSessionSummary({ session });
-  const node = sessionNodeOf({
-    stage: summary.stage,
-    attention: summary.attention,
-    isArchived,
-  });
+  const node = sessionNodeOf({ info: summary.info, isArchived });
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const sessionId = session.id as SessionId;
   const descriptionId = useId();

@@ -351,7 +351,7 @@ describe('live work across every mount of a session', () => {
 
     expect(view.stage()).toMatchObject({
       attention: 'ci-failed',
-      reason: 'PR #8: CI failed',
+      reason: 'PR #8: checks failing',
     });
     expect(view.columnOf()).toBe('attention');
     expect(view.chipLabel()).toBe('1 session needs you');

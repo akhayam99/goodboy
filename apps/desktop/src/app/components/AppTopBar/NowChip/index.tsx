@@ -48,6 +48,9 @@ const PANEL_MAX_HEIGHT = 480;
 const SEGMENT = 'flex items-center gap-1';
 const SEGMENT_WORD = 'hidden text-muted-foreground @min-chrome-labels/topbar:inline';
 
+const needsYouWord = ({ count }: { readonly count: number }): string =>
+  count === 1 ? NAMES.needsYou.toLowerCase() : 'need you';
+
 const chipLabel = ({ attention, running, scripts }: CountLabelParams): string =>
   [
     attention > 0 ? `${attention} ${attention === 1 ? 'session needs' : 'sessions need'} you` : '',
@@ -136,7 +139,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
             <span className={SEGMENT}>
               <StatusDot tone="warning" size="sm" pulsing />
               <span className="font-medium tabular-nums text-foreground">{needsYou.length}</span>
-              <span className={SEGMENT_WORD}>{NAMES.needsYou.toLowerCase()}</span>
+              <span className={SEGMENT_WORD}>{needsYouWord({ count: needsYou.length })}</span>
             </span>
           ) : null}
           {running.length > 0 ? (

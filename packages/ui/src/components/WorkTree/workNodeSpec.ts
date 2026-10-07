@@ -8,7 +8,9 @@ export type WorkNodeState =
   | 'question'
   | 'budget'
   | 'approval'
+  | 'alert'
   | 'failed'
+  | 'approved'
   | 'done'
   | 'closed'
   | 'stopped'
@@ -105,11 +107,25 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, 
     fillClassName: 'fill-none',
     dashArray: null,
   },
+  alert: {
+    radius: 9.25,
+    strokeWidth: 1.5,
+    strokeClassName: 'stroke-warning',
+    fillClassName: 'fill-none',
+    dashArray: null,
+  },
   failed: {
     radius: 9.25,
     strokeWidth: 1.5,
     strokeClassName: 'stroke-danger',
     fillClassName: 'fill-none',
+    dashArray: null,
+  },
+  approved: {
+    radius: 9.5,
+    strokeWidth: 1,
+    strokeClassName: 'stroke-success',
+    fillClassName: 'fill-success',
     dashArray: null,
   },
   done: {

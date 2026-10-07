@@ -13,7 +13,8 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import { aWorkflowRun } from '@goodboy/types/testing';
+import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -21,7 +22,13 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
-import { ledgerCore, paymentsApi, seedColumn, sessionOf } from '../../testing/sessionColumn';
+import {
+  ledgerCore,
+  paymentsApi,
+  runningState,
+  seedColumn,
+  sessionOf,
+} from '../../testing/sessionColumn';
 import { nextNeedsYou } from './nextNeedsYou';
 import { SessionSwitcher } from '.';
 
@@ -117,5 +124,78 @@ describe('the key for the next session that needs you', () => {
     render(<SessionSwitcher />);
     press();
     expect(useAppStore.getState().currentSessionId).toBe(idOf(quiet));
+  });
+});
+
+describe('sessions that wait on you while work goes on', () => {
+  const runningAsking = sessionOf({
+    goal: 'Running and asking',
+    state: runningState(),
+    updatedAt: '2026-10-02T09:00:00.000Z',
+  });
+  const planHeld = {
+    ...sessionOf({ goal: 'Plan held', updatedAt: '2026-10-03T09:00:00.000Z' }),
+    workflowRuns: [
+      aWorkflowRun({
+        id: 'run-plan-held' as WorkflowRunId,
+        orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+      }),
+    ],
+  };
+  const runningQuiet = sessionOf({
+    goal: 'Running and quiet',
+    state: runningState(),
+    updatedAt: '2026-10-01T09:00:00.000Z',
+  });
+
+  const seedWork = (currentSessionId: SessionId | null) =>
+    seedColumn({
+      store: useAppStore,
+      sessions: [quiet, runningAsking, planHeld, runningQuiet],
+      currentSessionId,
+      questions: [runningAsking],
+    });
+
+  it('reaches a running session that has a question', () => {
+    seedWork(idOf(quiet));
+    expect(nextNeedsYou({ state: useAppStore.getState() })).toEqual({
+      sessionId: idOf(runningAsking),
+      reason: 'open-question',
+    });
+  });
+
+  it('reaches a session whose plan waits for approval, then wraps back', () => {
+    seedWork(idOf(runningAsking));
+    expect(nextNeedsYou({ state: useAppStore.getState() })).toEqual({
+      sessionId: idOf(planHeld),
+      reason: 'plan-approval',
+    });
+    seedWork(idOf(planHeld));
+    expect(nextNeedsYou({ state: useAppStore.getState() })?.sessionId).toBe(idOf(runningAsking));
+  });
+
+  it('skips a running session with nothing waiting on you', () => {
+    const reached = new Set<SessionId>();
+    for (const from of [quiet, runningAsking, planHeld]) {
+      seedWork(idOf(from));
+      const next = nextNeedsYou({ state: useAppStore.getState() })?.sessionId;
+      if (next !== undefined) {
+        reached.add(next);
+      }
+    }
+    expect(reached.has(idOf(runningQuiet))).toBe(false);
+    expect(reached.size).toBe(2);
+  });
+
+  it('lands the key on the run page of the held plan', () => {
+    seedWork(idOf(runningAsking));
+    render(<SessionSwitcher />);
+    act(() => {
+      pressShortcut({ id: 'session.nextNeedsYou', target: document.body });
+    });
+    const state = useAppStore.getState();
+    expect(state.currentSessionId).toBe(idOf(planHeld));
+    expect(state.activeLens[planHeld.id]).toBe('workflows');
+    expect(state.focusedWorkflowRunId[planHeld.id]).toBe('run-plan-held');
   });
 });

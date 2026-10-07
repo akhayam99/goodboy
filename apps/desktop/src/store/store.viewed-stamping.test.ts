@@ -398,7 +398,7 @@ describe('markAllAgentsSeen', () => {
         (question) => question.status === 'open',
       ).length,
     });
-    expect(stage).toEqual({
+    expect(stage).toMatchObject({
       stage: 'attention',
       reason: '1 open question',
       attention: 'open-question',
