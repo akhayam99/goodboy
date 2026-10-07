@@ -213,7 +213,7 @@ describe('SettingsStudio', () => {
       screen.getByRole('navigation', { name: 'Settings scopes' }),
     ).getByRole('button', { name: /^Integrations/ });
     expect(integrations.getAttribute('aria-current')).toBe('false');
-    expect(integrations.textContent).toContain('0 of 7 connected');
+    expect(integrations.textContent).toBe('Integrations');
   });
 
   const renderApp = ({
@@ -342,15 +342,18 @@ describe('SettingsStudio', () => {
       const flagged = screen.getByRole('navigation', { name: /settings scopes/i });
       expect(within(flagged).getByRole('img', { name: 'Update available' })).toBeDefined();
       expect(
-        within(flagged).getByRole('button', { name: /^Providers & models/ }).textContent,
-      ).toContain('Claude CLI needs an update');
+        within(within(flagged).getByRole('button', { name: /^Providers & models/ })).getByRole(
+          'img',
+          { name: 'Claude CLI needs an update' },
+        ),
+      ).toBeDefined();
     } finally {
       state.updaterStatus = 'idle';
       state.providers = [];
     }
   });
 
-  it('says how many providers the closed group holds, with no tone and no usage', () => {
+  it('keeps the closed providers group to one line, with no count, no tone and no usage', () => {
     state.providers = [
       { id: 'anthropic', label: 'Claude', connection: 'connected', version: '9.9.9' },
       { id: 'codex', label: 'Codex', connection: 'connected', version: '9.9.9' },
@@ -360,7 +363,7 @@ describe('SettingsStudio', () => {
       const rail = screen.getByRole('navigation', { name: /settings scopes/i });
       const group = within(rail).getByRole('button', { name: /^Providers & models/ });
 
-      expect(group.textContent).toContain('2 providers');
+      expect(group.textContent).toBe('Providers & models');
       expect(within(rail).queryByRole('img')).toBeNull();
       expect(within(rail).queryByRole('list', { name: 'Providers & models settings' })).toBeNull();
     } finally {
@@ -517,5 +520,70 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('heading', { name: 'Backup' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Export' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
+  });
+});
+
+describe('SettingsStudio, the frame it draws', () => {
+  const mountSlot = (): HTMLDivElement => {
+    const slot = document.createElement('div');
+    document.body.appendChild(slot);
+    return slot;
+  };
+
+  it('draws only the page in the default shell, with the navigation in the column slot', () => {
+    const slot = mountSlot();
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+        columnSlot={slot}
+        isInColumnShell
+      />,
+    );
+
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    expect(document.querySelector('[data-studio-rail]')).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Settings scopes' })).toBeNull();
+    const nav = within(slot).getByRole('navigation', { name: 'Settings scopes' });
+    expect(within(slot).getAllByRole('button')[0]?.textContent).toContain('Back to app');
+    expect(within(nav).getByRole('button', { name: 'General' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
+    slot.remove();
+  });
+
+  it('draws the page before its navigation arrives, never a rail of its own', () => {
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+        isInColumnShell
+      />,
+    );
+
+    expect(document.querySelector('[data-studio-rail]')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Settings scopes' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+  });
+
+  it('keeps the trail and the rail layout in the legacy layout and the launcher', () => {
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        onScopeChange={vi.fn()}
+        focus={{ scope: 'app' }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toBeDefined();
+    expect(document.querySelector('[data-studio-rail]')).not.toBeNull();
+    expect(screen.getByRole('complementary', { name: 'Settings scopes' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Back to app/ })).toBeNull();
   });
 });

@@ -95,6 +95,10 @@ type StudioParams = {
   readonly settingsColumnSlot?: HTMLElement | null;
 };
 
+type RenderParams = Omit<StudioParams, 'placement'> & {
+  readonly isInColumnShell: boolean;
+};
+
 const renderStudio = ({
   overlay,
   close,
@@ -106,7 +110,8 @@ const renderStudio = ({
   workspaceProjectRoot,
   offerWorkspaceRepo,
   settingsColumnSlot = null,
-}: StudioParams): ReactNode => {
+  isInColumnShell,
+}: RenderParams): ReactNode => {
   switch (overlay.kind) {
     case 'settings':
       return (
@@ -116,6 +121,7 @@ const renderStudio = ({
           onScopeChange={onSettingsScopeChange}
           onClose={close}
           columnSlot={settingsColumnSlot}
+          isInColumnShell={isInColumnShell}
         />
       );
     case 'guide':
@@ -190,12 +196,15 @@ export const AppStudio = ({
   if (overlay === null) {
     return null;
   }
+  const isInColumnShell = placement === 'content';
+  const isColumnSettings = overlay.kind === 'settings' && isInColumnShell;
   return (
     <StudioFrame
       kind={overlay.kind}
       onClose={close}
       placement={placement}
-      isClosable={overlay.kind !== 'settings' || settingsColumnSlot === null}
+      isClosable={!isColumnSettings}
+      hasBand={!isColumnSettings}
     >
       {renderStudio({
         overlay,
@@ -208,6 +217,7 @@ export const AppStudio = ({
         workspaceProjectRoot,
         offerWorkspaceRepo,
         settingsColumnSlot,
+        isInColumnShell,
       })}
     </StudioFrame>
   );

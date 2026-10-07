@@ -62,6 +62,37 @@ describe('StudioFrame', () => {
     expect(container.querySelector('[data-studio-skeleton="grid"]')).toBeNull();
   });
 
+  it('draws no band for a frame that is only a page, and its skeleton has no rail', () => {
+    const Pending = lazy(() => new Promise<never>(() => undefined));
+    const { container } = render(
+      <StudioFrame kind="settings" placement="content" hasBand={false} onClose={() => undefined}>
+        <Pending />
+      </StudioFrame>,
+    );
+
+    expect(screen.queryByRole('banner')).toBeNull();
+    expect(container.querySelector('[data-studio-band]')).toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="rail"]')).toBeNull();
+    expect(container.querySelector('[data-studio-skeleton="list"]')).not.toBeNull();
+  });
+
+  it('still closes a bandless frame on Escape', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    render(
+      <StudioFrame kind="settings" placement="content" hasBand={false} onClose={onClose}>
+        <Body />
+      </StudioFrame>,
+    );
+
+    pressEscape();
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('names the studio with the trail primitive in its band', () => {
     render(
       <StudioFrame kind="inbox" onClose={() => undefined}>

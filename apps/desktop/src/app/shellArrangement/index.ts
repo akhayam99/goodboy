@@ -14,6 +14,7 @@ export type ShellArrangement = {
   readonly columnScope: ShellColumnScope;
   readonly leftHidden: boolean;
   readonly leftSidebarCollapsed: boolean;
+  readonly isLeftRail: boolean;
   readonly leftSlot: ShellLeftSlot;
   readonly leftOverlaySlot: ShellLeftOverlaySlot;
   readonly studioCoversLeft: boolean;
@@ -24,13 +25,16 @@ type ShellArrangementParams = {
   readonly hasActiveSession: boolean;
   readonly isSidebarCollapsed: boolean;
   readonly mode?: ShellMode;
+  readonly isSettingsOpen?: boolean;
 };
+
+type ClassicParams = Omit<ShellArrangementParams, 'mode' | 'isSettingsOpen'>;
 
 const classicArrangement = ({
   hasWorkspace,
   hasActiveSession,
   isSidebarCollapsed,
-}: ShellArrangementParams): ShellArrangement => {
+}: ClassicParams): ShellArrangement => {
   const columnScope: ShellColumnScope = hasWorkspace ? 'workspace' : 'app';
   if (!hasWorkspace || !hasActiveSession) {
     return {
@@ -39,6 +43,7 @@ const classicArrangement = ({
       columnScope,
       leftHidden: true,
       leftSidebarCollapsed: false,
+      isLeftRail: false,
       leftSlot: 'none',
       leftOverlaySlot: 'none',
       studioCoversLeft: true,
@@ -50,9 +55,33 @@ const classicArrangement = ({
     columnScope,
     leftHidden: false,
     leftSidebarCollapsed: isSidebarCollapsed,
+    isLeftRail: isSidebarCollapsed,
     leftSlot: isSidebarCollapsed ? 'rail' : 'sessions',
     leftOverlaySlot: isSidebarCollapsed ? 'peek' : 'none',
     studioCoversLeft: true,
+  };
+};
+
+type ColumnParams = Pick<ShellArrangementParams, 'hasWorkspace' | 'isSidebarCollapsed'> & {
+  readonly isSettingsOpen: boolean;
+};
+
+const columnArrangement = ({
+  hasWorkspace,
+  isSidebarCollapsed,
+  isSettingsOpen,
+}: ColumnParams): ShellArrangement => {
+  const isRail = isSidebarCollapsed && !isSettingsOpen;
+  return {
+    mode: 'column',
+    footer: null,
+    columnScope: hasWorkspace ? 'workspace' : 'app',
+    leftHidden: false,
+    leftSidebarCollapsed: isSidebarCollapsed,
+    isLeftRail: isRail,
+    leftSlot: isRail ? 'rail' : 'column',
+    leftOverlaySlot: isRail && hasWorkspace ? 'peek' : 'none',
+    studioCoversLeft: false,
   };
 };
 
@@ -61,18 +90,10 @@ export const shellArrangement = ({
   hasActiveSession,
   isSidebarCollapsed,
   mode = 'column',
+  isSettingsOpen = false,
 }: ShellArrangementParams): ShellArrangement => {
   if (mode === 'classic') {
     return classicArrangement({ hasWorkspace, hasActiveSession, isSidebarCollapsed });
   }
-  return {
-    mode: 'column',
-    footer: null,
-    columnScope: hasWorkspace ? 'workspace' : 'app',
-    leftHidden: false,
-    leftSidebarCollapsed: isSidebarCollapsed,
-    leftSlot: isSidebarCollapsed ? 'rail' : 'column',
-    leftOverlaySlot: isSidebarCollapsed && hasWorkspace ? 'peek' : 'none',
-    studioCoversLeft: false,
-  };
+  return columnArrangement({ hasWorkspace, isSidebarCollapsed, isSettingsOpen });
 };

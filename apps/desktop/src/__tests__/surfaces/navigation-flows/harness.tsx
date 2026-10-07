@@ -337,6 +337,11 @@ export const band = async (title: string): Promise<void> => {
   );
 };
 
+export const settingsColumn = async (): Promise<void> => {
+  await visible('button', /^Back to app/);
+  expect(document.querySelector('[data-studio-band]')).toBeNull();
+};
+
 export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   await waitFor(
     () => expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe(lensName),

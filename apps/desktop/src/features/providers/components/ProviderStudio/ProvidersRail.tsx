@@ -1,10 +1,11 @@
 import { useShallow } from 'zustand/react/shallow';
-import { cn, PANE_RHYTHM, SelectableRow, StatusRailItem } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
+import { useNow } from '../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../shared/names';
 import { useAppStore } from '../../../../store';
 import { providerRailStatus } from '../../providerRailStatus';
@@ -16,42 +17,41 @@ type Props = {
   readonly onSelectDefaults?: () => void;
 };
 
+const STATUS_CLOCK_MS = 60_000;
+
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {
-  const state = useAppStore(useShallow((store) => ({ cliRequirements: store.cliRequirements })));
+  const nowMs = useNow(STATUS_CLOCK_MS);
+  const state = useAppStore(
+    useShallow((store) => ({
+      cliRequirements: store.cliRequirements,
+      providerLimits: store.providerLimits,
+    })),
+  );
   return (
-    <ul
-      aria-label="Providers & models settings"
-      className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
-    >
+    <ul aria-label="Providers & models settings" className="flex flex-col gap-0.5">
       {onSelectDefaults !== undefined && (
         <li>
-          <SelectableRow
-            selected={focusedId === 'defaults'}
+          <SettingsNavRow
+            level="page"
+            icon={<SlidersHorizontal size={ICON_SIZE.row} aria-hidden className="text-primary" />}
+            label={NAMES.models}
+            isCurrent={focusedId === 'defaults'}
             onClick={onSelectDefaults}
-            ariaCurrent={focusedId === 'defaults'}
-            className="items-center gap-3 px-3 py-2"
-          >
-            <SlidersHorizontal
-              size={ICON_SIZE.control}
-              aria-hidden
-              className="shrink-0 text-primary"
-            />
-            <span className="text-row text-foreground">{NAMES.models}</span>
-          </SelectableRow>
+          />
         </li>
       )}
       {providers.map((p) => {
         const id = p.id as ProviderId;
         const Icon = PROVIDER_BRAND[id].icon;
-        const { subtitle, tone } = providerRailStatus({ provider: p, state });
+        const { subtitle, tone } = providerRailStatus({ provider: p, state, nowMs });
         return (
           <li key={id}>
-            <StatusRailItem
-              icon={<Icon size={ICON_SIZE.control} style={{ color: brandColor(id) }} />}
+            <SettingsNavRow
+              level="page"
+              icon={<Icon size={ICON_SIZE.row} style={{ color: brandColor(id) }} />}
               label={p.label}
-              subtitle={subtitle}
-              tone={tone}
-              selected={id === focusedId}
+              isCurrent={id === focusedId}
+              status={tone === undefined ? null : { tone, label: subtitle ?? null }}
               onClick={() => onSelect(id)}
             />
           </li>
