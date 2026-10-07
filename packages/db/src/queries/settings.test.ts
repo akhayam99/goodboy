@@ -3,6 +3,7 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteSetting,
   getSetting,
+  insertSettingIfAbsent,
   listSettingsWithPrefix,
   replaceSettingIfUnchanged,
   setSetting,
@@ -28,6 +29,18 @@ describe('settings queries', () => {
       }),
     ).toBe(false);
     expect(await getSetting(db, 'restart.interrupted_runs')).toBe('first');
+  });
+
+  it('inserts a missing key once and never overwrites an existing one', async () => {
+    const db = await makeMigratedTestDatabase();
+
+    expect(await insertSettingIfAbsent(db, { key: 'sessions.pinned.w1', value: 'first' })).toBe(
+      true,
+    );
+    expect(await insertSettingIfAbsent(db, { key: 'sessions.pinned.w1', value: 'second' })).toBe(
+      false,
+    );
+    expect(await getSetting(db, 'sessions.pinned.w1')).toBe('first');
   });
 
   it('lists only the keys under a prefix, taking a percent sign literally', async () => {

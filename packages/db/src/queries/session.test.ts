@@ -15,6 +15,7 @@ import {
   getSessionById,
   insertSession,
   listArchivedSessionsForWorkspace,
+  listLiveSessionIds,
   listSessionsForWorkspace,
   purgeSessionForDelete,
   updateSessionAutoRun,
@@ -208,6 +209,28 @@ describe('purgeSessionForDelete', () => {
 
     await db.execute('UPDATE sessions SET archived_at = 1 WHERE id = ?', [sessionId]);
     await expect(listArchivedSessionsForWorkspace(db, workspaceId)).resolves.toEqual([]);
+  });
+});
+
+describe('listLiveSessionIds', () => {
+  it('lists the sessions of one workspace, archived ones included, and never a deleted one', async () => {
+    const db = await makeMigratedTestDatabase();
+    await db.execute(
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1), (?, ?, ?, 1, 1)',
+      [workspaceId, 'Workspace', '/tmp/workspace', 'workspace-2', 'Other', '/tmp/other'],
+    );
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at, archived_at, deleted_at)
+       VALUES ('session-live', ?, 'Live', 'idle', 1, 1, NULL, NULL),
+              ('session-archived', ?, 'Archived', 'idle', 1, 1, 5, NULL),
+              ('session-deleted', ?, 'Deleted', 'idle', 1, 1, NULL, 6),
+              ('session-elsewhere', 'workspace-2', 'Elsewhere', 'idle', 1, 1, NULL, NULL)`,
+      [workspaceId, workspaceId, workspaceId],
+    );
+
+    const ids = await listLiveSessionIds({ db, workspaceId });
+
+    expect([...ids].sort()).toEqual(['session-archived', 'session-live']);
   });
 });
 

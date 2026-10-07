@@ -299,6 +299,7 @@ export const NON_SESSION_STATE_KEYS = [
   'wireframeDrafts',
   'artifactCommentSends',
   'sessionGroupExpanded',
+  'sessionPins',
   'bootstrapPhase',
   'bootstrapRemoteProbe',
   'bootstrapMoveReport',

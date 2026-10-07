@@ -398,6 +398,22 @@ export const listArchivedSessionsForWorkspace = async (
   return hydrateSessions(db, rows);
 };
 
+type ListLiveSessionIdsParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+};
+
+export const listLiveSessionIds = async ({
+  db,
+  workspaceId,
+}: ListLiveSessionIdsParams): Promise<ReadonlyArray<SessionId>> => {
+  const rows = await db.select<{ id: string }>(
+    'SELECT id FROM sessions WHERE workspace_id = ? AND deleted_at IS NULL',
+    [workspaceId],
+  );
+  return rows.map((row) => row.id as SessionId);
+};
+
 export type ArchivedSessionRef = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;

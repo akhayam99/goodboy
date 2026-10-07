@@ -22,6 +22,7 @@ const LIVE: SessionFacts = {
   sessionId: SESSION_ID,
   title: 'Speed up the payout export',
   isArchived: false,
+  isPinned: false,
   isBranchless: false,
   hasMount: true,
   branch: 'feat/stream-payout-export',
@@ -139,6 +140,7 @@ describe('palette verbs follow the session state', () => {
       'Open Terminal',
       'Open in editor',
       'Rename',
+      'Pin session',
       'Start agent',
       'Link work',
       'Copy title',
@@ -164,6 +166,7 @@ describe('palette verbs follow the session state', () => {
       'Open Review',
       'Open Terminal',
       'Rename',
+      'Pin session',
       'Start agent',
       'Link work',
       'Copy title',
@@ -176,6 +179,15 @@ describe('palette verbs follow the session state', () => {
     expect(sessionView({ facts, query: 'editor' })).toEqual([
       'Open in editor (This session has no worktree yet)',
     ]);
+  });
+
+  it('offers Unpin session instead of Pin session on a pinned session, and finds it by search', () => {
+    const facts = { ...LIVE, isPinned: true };
+
+    expect(sessionView({ facts, query: '' })).toContain('Unpin session');
+    expect(sessionView({ facts, query: '' })).not.toContain('Pin session');
+    expect(sessionView({ facts, query: 'unpin' })).toEqual(['Unpin session']);
+    expect(sessionView({ facts: LIVE, query: 'pin session' })[0]).toBe('Pin session');
   });
 
   it('offers Restore, never Archive or a lens, on an archived session', () => {
@@ -192,6 +204,10 @@ describe('palette verbs follow the session state', () => {
     for (const query of ['archive', 'review', 'diff', 'terminal', 'editor', 'rename', 'start']) {
       expect(sessionView({ facts, query })).toEqual([]);
     }
+    expect(sessionView({ facts, query: 'pin session' })).not.toContain('Pin session');
+    expect(sessionView({ facts: { ...facts, isPinned: true }, query: 'unpin' })).not.toContain(
+      'Unpin session',
+    );
   });
 });
 
