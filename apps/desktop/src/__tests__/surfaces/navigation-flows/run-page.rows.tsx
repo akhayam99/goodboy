@@ -158,7 +158,7 @@ const reviewThenApproveFromTheOverflow = async (ctx: Ctx): Promise<void> => {
       }),
     WAIT,
   );
-  expect(await screen.findByRole('button', { name: 'Open in Artifacts' }, WAIT)).toBeDefined();
+  expect((await screen.findByTestId('plan-primary', {}, WAIT)).textContent).toBe('Approve');
   expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('workflows');
 
   fireEvent.click(await screen.findByRole('button', { name: /^Close/ }, WAIT));
