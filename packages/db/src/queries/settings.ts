@@ -37,14 +37,12 @@ export const replaceSettingIfUnchanged = async (
 };
 
 type InsertParams = {
+  readonly db: Database;
   readonly key: string;
   readonly value: string;
 };
 
-export const insertSettingIfAbsent = async (
-  db: Database,
-  { key, value }: InsertParams,
-): Promise<boolean> => {
+export const insertSettingIfAbsent = async ({ db, key, value }: InsertParams): Promise<boolean> => {
   const result = await db.execute(
     `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)
      ON CONFLICT(key) DO NOTHING`,

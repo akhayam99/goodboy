@@ -28,8 +28,8 @@ describe('the scene database', () => {
   it('inserts a missing setting once and refuses a second insert', async () => {
     installSceneDatabase();
 
-    expect(await insertSettingIfAbsent(tauriDatabase, { key: 'k', value: 'a' })).toBe(true);
-    expect(await insertSettingIfAbsent(tauriDatabase, { key: 'k', value: 'b' })).toBe(false);
+    expect(await insertSettingIfAbsent({ db: tauriDatabase, key: 'k', value: 'a' })).toBe(true);
+    expect(await insertSettingIfAbsent({ db: tauriDatabase, key: 'k', value: 'b' })).toBe(false);
     expect(await getSetting(tauriDatabase, 'k')).toBe('a');
   });
 
