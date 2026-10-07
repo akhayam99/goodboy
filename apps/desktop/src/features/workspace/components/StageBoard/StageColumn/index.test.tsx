@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { BoardNavigation } from '../useBoardNavigation';
 
@@ -24,9 +24,11 @@ vi.mock('../StageBoardCard', () => ({
   ),
 }));
 
-import { StageColumn, type ColumnCollapse } from './index';
+import { StageColumn } from './index';
+import { EMPTY_COPY, type ColumnKey } from './emptyCopy';
 
-type ColumnSelection = Parameters<typeof StageColumn>[0]['selection'];
+type StageColumnProps = Parameters<typeof StageColumn>[0];
+type ColumnSelection = StageColumnProps['selection'];
 
 const nav = {} as BoardNavigation;
 
@@ -43,12 +45,21 @@ const makeSelection = (over: Partial<ColumnSelection> = {}): ColumnSelection => 
   ...over,
 });
 
-const renderColumn = (
-  sessions: ReadonlyArray<Session>,
-  selection: ColumnSelection = makeSelection(),
-  spec: Parameters<typeof StageColumn>[0]['spec'] = { kind: 'stage', stage: 'building' },
-  collapse?: ColumnCollapse,
-) =>
+type RenderParams = {
+  readonly sessions?: ReadonlyArray<Session>;
+  readonly selection?: ColumnSelection;
+  readonly spec?: StageColumnProps['spec'];
+  readonly placement?: StageColumnProps['placement'];
+  readonly isLoading?: boolean;
+};
+
+const renderColumn = ({
+  sessions = [],
+  selection = makeSelection(),
+  spec = { kind: 'stage', stage: 'building' },
+  placement,
+  isLoading,
+}: RenderParams = {}) =>
   render(
     <StageColumn
       spec={spec}
@@ -57,93 +68,96 @@ const renderColumn = (
       selection={selection}
       onClearSelection={noop}
       onRestore={noop}
-      collapse={collapse}
+      placement={placement}
+      isLoading={isLoading}
     />,
   );
 
 afterEach(cleanup);
 
 describe('StageColumn', () => {
-  it('names an empty column in one line, without a sentence or a count', () => {
-    const { container } = renderColumn([], makeSelection(), {
-      kind: 'stage',
-      stage: 'attention',
-    });
-    expect(screen.getByText('needs you')).toBeDefined();
-    expect(screen.getByText('Nothing needs you')).toBeDefined();
-    expect(screen.queryByText(/when an agent asks you something/)).toBeNull();
-    expect(container.querySelector('.tabular-nums')).toBeNull();
+  it('names an empty lane in one line inside it, without a sentence or a count', () => {
+    renderColumn({ spec: { kind: 'stage', stage: 'attention' } });
+    const lane = screen.getByRole('group', { name: 'needs you' });
+
+    expect(within(lane).getByText('needs you')).toBeDefined();
+    expect(within(lane).getByText('Nothing needs you')).toBeDefined();
+    expect(within(lane).queryByText(/when an agent asks you something/)).toBeNull();
+    expect(within(lane).queryByText('0')).toBeNull();
   });
 
-  it('renders the count and stage label once the column has cards', () => {
-    renderColumn([makeSession('s-1', 'one')]);
-    expect(screen.getByText('1')).toBeDefined();
-    expect(screen.getByText('building')).toBeDefined();
+  it.each<[ColumnKey, string, StageColumnProps['spec']]>([
+    ['building', 'building', { kind: 'stage', stage: 'building' }],
+    ['running', 'running', { kind: 'stage', stage: 'running' }],
+    ['attention', 'needs you', { kind: 'stage', stage: 'attention' }],
+    ['review', 'in review', { kind: 'stage', stage: 'review' }],
+    ['done', 'done', { kind: 'stage', stage: 'done' }],
+    ['archived', 'archived', { kind: 'archived' }],
+  ])('keeps the %s lane and its own empty line when it holds no card', (key, label, spec) => {
+    renderColumn({ spec });
+    const lane = screen.getByRole('group', { name: label });
+
+    expect(within(lane).getByText(EMPTY_COPY[key].title)).toBeDefined();
+  });
+
+  it('renders the count and stage label once the lane has cards', () => {
+    renderColumn({ sessions: [makeSession('s-1', 'one')] });
+    const lane = screen.getByRole('group', { name: 'building' });
+    expect(within(lane).getByText('1')).toBeDefined();
+    expect(within(lane).getByText('building')).toBeDefined();
+    expect(within(lane).queryByText('Nothing in progress')).toBeNull();
 
     cleanup();
-    renderColumn([makeSession('s-1', 'one')], makeSelection(), {
-      kind: 'stage',
-      stage: 'running',
+    renderColumn({
+      sessions: [makeSession('s-1', 'one')],
+      spec: { kind: 'stage', stage: 'running' },
     });
-    expect(screen.getByText('running')).toBeDefined();
+    expect(screen.getByRole('group', { name: 'running' })).toBeDefined();
   });
 
-  it('offers a collapse control only on a folding column', () => {
-    renderColumn([makeSession('s-1', 'one')]);
-    expect(screen.queryByRole('button', { name: /sessions?$/ })).toBeNull();
+  it('shows a muted Loading line instead of the empty line while its list is unknown', () => {
+    renderColumn({ spec: { kind: 'archived' }, isLoading: true });
+    const lane = screen.getByRole('group', { name: 'archived' });
+
+    expect(within(lane).getByText('Loading')).toBeDefined();
+    expect(within(lane).queryByText('Nothing archived')).toBeNull();
+    expect(lane.getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('turns the Loading line into the empty line once the list answers empty', () => {
+    renderColumn({ spec: { kind: 'archived' }, isLoading: false });
+    const lane = screen.getByRole('group', { name: 'archived' });
+
+    expect(within(lane).queryByText('Loading')).toBeNull();
+    expect(within(lane).getByText('Nothing archived')).toBeDefined();
+    expect(lane.getAttribute('aria-busy')).toBe('false');
+  });
+
+  it('keeps its header, count and empty line when it is half of the stacked lane', () => {
+    renderColumn({
+      spec: { kind: 'stage', stage: 'done' },
+      placement: 'half',
+    });
+    const half = screen.getByRole('group', { name: 'done' });
+
+    expect(within(half).getByText('Nothing done yet')).toBeDefined();
 
     cleanup();
-    const onCollapse = vi.fn();
-    renderColumn(
-      [makeSession('s-1', 'one')],
-      makeSelection(),
-      { kind: 'stage', stage: 'done' },
-      { label: 'Done, 1 session', onCollapse },
-    );
-    const button = screen.getByRole('button', { name: 'Done, 1 session' });
-    expect(button.getAttribute('aria-expanded')).toBe('true');
-    expect(button.getAttribute('aria-controls')).toBe('board-column-done');
-    expect(button.id).toBe('board-collapse-done');
-    expect(button.hasAttribute('title')).toBe(false);
-    expect(screen.getByRole('button', { name: 'card one' })).toBeDefined();
-
-    fireEvent.click(button);
-    expect(onCollapse).toHaveBeenCalledTimes(1);
-  });
-
-  it('holds every column at the fixed board width', () => {
-    const { container } = renderColumn(
-      [],
-      makeSelection(),
-      { kind: 'archived' },
-      { label: 'Archived, 0 sessions', onCollapse: noop },
-    );
-    const column = container.querySelector('#board-column-archived');
-    expect(column?.className).toContain('w-72');
-    expect(column?.className).toContain('motion-safe:starting:w-11');
-    expect(screen.getByText('Nothing archived')).toBeDefined();
-  });
-
-  it('gives every empty column the same min-height, whatever its copy length', () => {
-    const { container: shortOne } = renderColumn([], makeSelection(), {
-      kind: 'stage',
-      stage: 'done',
+    renderColumn({
+      sessions: [makeSession('s-1', 'one'), makeSession('s-2', 'two')],
+      spec: { kind: 'stage', stage: 'done' },
+      placement: 'half',
     });
-    const { container: longOne } = renderColumn([], makeSelection(), {
-      kind: 'stage',
-      stage: 'attention',
-    });
-    const shortEmpty = shortOne.querySelector('[class*="min-h-28"]');
-    const longEmpty = longOne.querySelector('[class*="min-h-28"]');
-    expect(shortEmpty).not.toBeNull();
-    expect(longEmpty).not.toBeNull();
+    const filled = screen.getByRole('group', { name: 'done' });
+    expect(within(filled).getByText('2')).toBeDefined();
+    expect(within(filled).getAllByRole('button')).toHaveLength(2);
   });
 
   it('marks the cards the board selection owns', () => {
-    renderColumn(
-      [makeSession('s-1', 'one'), makeSession('s-2', 'two')],
-      makeSelection({ isSelected: (id) => id === ('s-2' as SessionId) }),
-    );
+    renderColumn({
+      sessions: [makeSession('s-1', 'one'), makeSession('s-2', 'two')],
+      selection: makeSelection({ isSelected: (id) => id === ('s-2' as SessionId) }),
+    });
 
     expect(screen.getByRole('button', { name: 'card one' }).getAttribute('aria-pressed')).toBe(
       'false',
@@ -155,7 +169,10 @@ describe('StageColumn', () => {
 
   it('routes a modifier click straight to the board selection', () => {
     const onItemClick = vi.fn();
-    renderColumn([makeSession('s-1', 'one')], makeSelection({ onItemClick }));
+    renderColumn({
+      sessions: [makeSession('s-1', 'one')],
+      selection: makeSelection({ onItemClick }),
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'card one' }), { altKey: true });
 

@@ -23,7 +23,6 @@ export const STORAGE_PREFIXES = {
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
   workflowBuilderMode: `${PREFIX}workflow-builder-mode:`,
-  boardCollapsed: `${PREFIX}board-collapsed:v1:`,
   scriptsGroupsCollapsed: `${PREFIX}scripts-groups-collapsed:v1:`,
   scriptsPackagesCollapsed: `${PREFIX}scripts-packages-collapsed:v1:`,
   turnCursor: `${PREFIX}turn-cursor:`,

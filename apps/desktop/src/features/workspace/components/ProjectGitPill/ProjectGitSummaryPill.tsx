@@ -25,6 +25,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly entries: ReadonlyArray<ProjectGitStatusEntry>;
+  readonly isQuiet?: boolean;
 };
 
 type SummaryEntry = ProjectGitStatusEntry & {
@@ -111,7 +112,7 @@ const summaryPhraseOf = (entries: ReadonlyArray<SummaryEntry>): string | null =>
   return parts.length === 0 ? null : parts.join(' · ');
 };
 
-export const ProjectGitSummaryPill = ({ entries }: Props) => {
+export const ProjectGitSummaryPill = ({ entries, isQuiet = false }: Props) => {
   const dropdown = useDropdown({
     width: 'w-80',
     expectedWidth: 320,
@@ -223,10 +224,14 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
           className={cn(
-            'relative inline-flex h-7 min-w-0 items-center gap-2 rounded-md px-2 text-label font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            actionableCount > 0 || hasWarning
-              ? 'text-foreground hover:bg-hover'
-              : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+            'relative inline-flex min-w-0 items-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            isQuiet
+              ? 'h-6 gap-1 px-1 text-meta text-muted-foreground hover:text-foreground'
+              : 'h-7 gap-2 px-2 text-label font-medium',
+            !isQuiet &&
+              (actionableCount > 0 || hasWarning
+                ? 'text-foreground hover:bg-hover'
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground'),
           )}
         >
           <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
@@ -241,7 +246,10 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           ) : uncommittedCount > 0 ? (
             <span
               data-testid="project-git-summary-count"
-              className="shrink-0 text-meta tabular-nums text-warning"
+              className={cn(
+                'shrink-0 text-meta tabular-nums',
+                isQuiet ? 'text-muted-foreground' : 'text-warning',
+              )}
             >
               {uncommittedCount} uncommitted
             </span>

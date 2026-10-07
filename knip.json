@@ -127,7 +127,6 @@
         "src/features/workspace-chat/createMemoryChatBackend.ts": ["types"],
         "src/features/workspace-chat/landOnSession.ts": ["exports"],
         "src/features/workspace/color.ts": ["exports"],
-        "src/features/workspace/components/StageBoard/BoardDock/index.tsx": ["types"],
         "src/features/workspace/hooks/useSessionSummary/workflowProgress.ts": ["types"],
         "src/features/workspace/hooks/useWindowLayout/index.ts": ["exports"],
         "src/shared/hooks/useTitlebarInset/index.ts": ["exports"],

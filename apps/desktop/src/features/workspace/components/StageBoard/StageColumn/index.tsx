@@ -1,5 +1,4 @@
-import { PanelRightClose } from 'lucide-react';
-import { cn, FilledEmptyState, Eyebrow, IconButton, ScrollFade, tintClasses } from '@goodboy/ui';
+import { cn, EmptyLine, EmptyState, Eyebrow, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { describeStageBucket } from '../../../../session/session-stage';
 import {
@@ -8,9 +7,8 @@ import {
 } from '../../../../../shared/utils/statePresentation';
 import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
-import { boardColumnIds } from '../boardColumnIds';
 import { EMPTY_COPY, type ColumnKey } from './emptyCopy';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
 type ColumnSpec =
@@ -20,11 +18,6 @@ type ColumnView = {
   readonly key: ColumnKey;
   readonly presentation: StatePresentation;
   readonly archived: boolean;
-};
-
-export type ColumnCollapse = {
-  readonly label: string;
-  readonly onCollapse: () => void;
 };
 
 const viewFor = (spec: ColumnSpec): ColumnView => {
@@ -68,7 +61,8 @@ type StageColumnProps = {
   readonly selection: ColumnSelection;
   readonly onClearSelection: () => void;
   readonly onRestore: (session: Session) => void;
-  readonly collapse?: ColumnCollapse;
+  readonly placement?: 'lane' | 'half';
+  readonly isLoading?: boolean;
 };
 
 export const StageColumn = ({
@@ -78,75 +72,57 @@ export const StageColumn = ({
   selection,
   onClearSelection,
   onRestore,
-  collapse,
+  placement = 'lane',
+  isLoading = false,
 }: StageColumnProps) => {
   const view = viewFor(spec);
-  const empty = sessions.length === 0;
+  const isEmpty = sessions.length === 0;
+  const isHalf = placement === 'half';
   const { isSelected } = selection;
-  const ids = boardColumnIds({ key: view.key });
-  const isFolding = collapse !== undefined;
-
-  const header = (
-    <span
-      className="flex items-center gap-2"
-      title={stateDescription({ presentation: view.presentation })}
-    >
-      <Eyebrow
-        label={view.presentation.label}
-        muted={empty}
-        className={cn(!empty && tintClasses(view.presentation.tone).text)}
-      />
-      {!empty && (
-        <span className="text-meta tabular-nums text-faint-foreground">{sessions.length}</span>
-      )}
-    </span>
-  );
 
   return (
     <div
-      id={ids.column}
+      role="group"
+      aria-label={view.presentation.label}
+      aria-busy={isLoading}
       className={cn(
-        'flex min-h-0 flex-col',
-        PANE_RHYTHM.board.colWidth,
-        PANE_RHYTHM.board.colStack,
-        isFolding &&
-          'motion-safe:transition-[width] motion-safe:duration-220 motion-safe:ease-[cubic-bezier(0.2,0,0,1)] motion-safe:starting:w-11',
+        'flex min-h-0 min-w-0 flex-col',
+        PANE_RHYTHM.board.laneStack,
+        isHalf && (isEmpty ? 'flex-none' : 'flex-1 basis-0'),
       )}
     >
-      <div className="flex h-6 shrink-0 items-center justify-between gap-2">
-        {header}
-        {collapse !== undefined && (
-          <IconButton
-            id={ids.collapse}
-            icon={PanelRightClose}
-            iconSize={ICON_SIZE.control}
-            variant="ghost"
-            label={collapse.label}
-            tooltip="Collapse"
-            aria-expanded
-            aria-controls={ids.column}
-            onClick={collapse.onCollapse}
-            className="p-1"
+      <div className="flex h-6 shrink-0 items-center">
+        <span
+          className="flex items-center gap-2"
+          title={stateDescription({ presentation: view.presentation })}
+        >
+          <Eyebrow
+            label={view.presentation.label}
+            muted={isEmpty}
+            className={cn(!isEmpty && tintClasses(view.presentation.tone).text)}
           />
-        )}
+          {!isEmpty && (
+            <span className="text-meta tabular-nums text-faint-foreground">{sessions.length}</span>
+          )}
+        </span>
       </div>
 
-      {empty && (
-        <FilledEmptyState
+      {isLoading && <EmptyLine>Loading</EmptyLine>}
+
+      {!isLoading && isEmpty && (
+        <EmptyState
           icon={view.presentation.icon}
           title={EMPTY_COPY[view.key].title}
-          className={PANE_RHYTHM.board.emptyMinHeight}
+          size="section"
         />
       )}
 
-      {!empty && (
+      {!isEmpty && (
         <ScrollFade orientation="vertical" className="flex-1">
           <div
             className={cn(
               'flex flex-col group-data-[selecting=true]/select-list:pb-24',
               PANE_RHYTHM.board.cardGap,
-              isFolding &&
-                'motion-safe:transition-opacity motion-safe:delay-80 motion-safe:duration-120 motion-safe:starting:opacity-0',
             )}
           >
             {sessions.map((session) => (
