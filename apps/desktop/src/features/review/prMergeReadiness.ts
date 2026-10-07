@@ -1,4 +1,4 @@
-import type { PullRequestState } from '@goodboy/types';
+import type { PrDetailRead, PullRequestState } from '@goodboy/types';
 
 export type PrMergeReadiness = {
   readonly status: 'ready' | 'unknown' | 'blocked';
@@ -12,7 +12,14 @@ const READY_REASON = 'Squash merge this pull request';
 const UNKNOWN_REASON = 'GitHub has not finished checking whether this branch merges';
 const CAVEAT_REASON = 'GitHub can still refuse this merge';
 
-const blockingReason = ({ pr }: { readonly pr: PullRequestState }): string | null => {
+const CHECKS_UNKNOWN_REASON = 'Checks unknown';
+
+type BlockingParams = {
+  readonly pr: PullRequestState;
+  readonly checksRead: PrDetailRead | null;
+};
+
+const blockingReason = ({ pr, checksRead }: BlockingParams): string | null => {
   if (pr.state === 'merged') {
     return 'This pull request is already merged';
   }
@@ -27,6 +34,9 @@ const blockingReason = ({ pr }: { readonly pr: PullRequestState }): string | nul
   }
   if (pr.mergeable === false) {
     return `Resolve the conflicts with ${pr.baseBranch} first`;
+  }
+  if (pr.checksUnknown === true || (checksRead !== null && checksRead !== 'ok')) {
+    return CHECKS_UNKNOWN_REASON;
   }
   return null;
 };
@@ -50,10 +60,12 @@ const mergeCaveats = ({ pr }: { readonly pr: PullRequestState }): ReadonlyArray<
 
 export const evaluatePrMergeReadiness = ({
   pr,
+  checksRead = null,
 }: {
   readonly pr: PullRequestState;
+  readonly checksRead?: PrDetailRead | null;
 }): PrMergeReadiness => {
-  const blocked = blockingReason({ pr });
+  const blocked = blockingReason({ pr, checksRead });
   if (blocked !== null) {
     return { status: 'blocked', reason: blocked, caveats: NO_CAVEATS };
   }

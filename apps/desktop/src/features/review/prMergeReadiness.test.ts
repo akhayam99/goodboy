@@ -80,4 +80,40 @@ describe('evaluatePrMergeReadiness', () => {
 
     expect(readiness.caveats).toEqual([]);
   });
+
+  describe('when the checks cannot be read', () => {
+    it('is never ready while the list read marked the checks unknown', () => {
+      const readiness = evaluatePrMergeReadiness({
+        pr: pullRequest({ checks: null, checksUnknown: true }),
+      });
+
+      expect(readiness.status).toBe('blocked');
+      expect(readiness.reason).toBe('Checks unknown');
+      expect(readiness.caveats).toEqual([]);
+    });
+
+    it.each(['denied', 'failed'] as const)(
+      'is never ready while the detail read of the checks is %s',
+      (checksRead) => {
+        const readiness = evaluatePrMergeReadiness({ pr: pullRequest(), checksRead });
+
+        expect(readiness.status).toBe('blocked');
+        expect(readiness.reason).toBe('Checks unknown');
+      },
+    );
+
+    it('stays ready when the detail read of the checks is ok', () => {
+      expect(evaluatePrMergeReadiness({ pr: pullRequest(), checksRead: 'ok' }).status).toBe(
+        'ready',
+      );
+    });
+
+    it('says why a draft cannot merge before it says the checks are unknown', () => {
+      const readiness = evaluatePrMergeReadiness({
+        pr: pullRequest({ isDraft: true, checksUnknown: true }),
+      });
+
+      expect(readiness.reason).toBe('Mark this pull request ready before merging');
+    });
+  });
 });
