@@ -9,7 +9,7 @@ export type ThemePreference = Theme | 'system';
 const STORAGE_KEY = STORAGE_KEYS.theme;
 const LIGHT_QUERY = '(prefers-color-scheme: light)';
 const SWITCHING_ATTRIBUTE = 'data-theme-switching';
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const RELEASE_GUARD_MS = 120;
 
 const themePref = persistedPref<ThemePreference>({
   key: STORAGE_KEY,
@@ -56,16 +56,57 @@ const isApplied = ({ theme }: { readonly theme: Theme }): boolean => {
   return getAppliedTheme() === theme && root.classList.contains(theme);
 };
 
-const swapDocumentTheme = ({ theme }: { readonly theme: Theme }): void => {
-  const root = document.documentElement;
-  root.classList.remove(theme === 'light' ? 'dark' : 'light');
-  root.classList.add(theme);
-  root.style.colorScheme = theme;
-  root.toggleAttribute('data-theme', theme === 'light');
+const classNameFor = ({
+  root,
+  theme,
+}: {
+  readonly root: HTMLElement;
+  readonly theme: Theme;
+}): string =>
+  [...Array.from(root.classList).filter((name) => name !== 'light' && name !== 'dark'), theme].join(
+    ' ',
+  );
+
+const writeDataTheme = ({
+  root,
+  theme,
+}: {
+  readonly root: HTMLElement;
+  readonly theme: Theme;
+}): void => {
   if (theme === 'light') {
     root.setAttribute('data-theme', 'light');
+    return;
   }
+  root.removeAttribute('data-theme');
+};
+
+const swapDocumentTheme = ({ theme }: { readonly theme: Theme }): void => {
+  const root = document.documentElement;
+  root.className = classNameFor({ root, theme });
+  root.style.colorScheme = theme;
+  writeDataTheme({ root, theme });
   listeners.forEach((listener) => listener());
+};
+
+let releaseToken = 0;
+
+const releaseTransitionsAfterPaint = (): void => {
+  const root = document.documentElement;
+  releaseToken += 1;
+  const token = releaseToken;
+  const release = () => {
+    if (token !== releaseToken) {
+      return;
+    }
+    releaseToken += 1;
+    root.removeAttribute(SWITCHING_ATTRIBUTE);
+  };
+  window.setTimeout(release, RELEASE_GUARD_MS);
+  if (typeof window.requestAnimationFrame !== 'function') {
+    return;
+  }
+  window.requestAnimationFrame(() => window.requestAnimationFrame(release));
 };
 
 export const applyDocumentTheme = ({ theme }: { readonly theme: Theme }): void => {
@@ -76,53 +117,14 @@ export const applyDocumentTheme = ({ theme }: { readonly theme: Theme }): void =
   root.setAttribute(SWITCHING_ATTRIBUTE, '');
   swapDocumentTheme({ theme });
   void window.getComputedStyle(document.body).opacity;
-  window.setTimeout(() => root.removeAttribute(SWITCHING_ATTRIBUTE), 1);
-};
-
-const prefersReducedMotion = (): boolean =>
-  typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches;
-
-const canTransition = (): boolean =>
-  typeof document.startViewTransition === 'function' && !prefersReducedMotion();
-
-let isTransitioning = false;
-let queuedTheme: Theme | null = null;
-
-const transitionDocumentTheme = ({ theme }: { readonly theme: Theme }): void => {
-  if (isTransitioning) {
-    queuedTheme = theme;
-    return;
-  }
-  if (isApplied({ theme })) {
-    return;
-  }
-  if (!canTransition()) {
-    applyDocumentTheme({ theme });
-    return;
-  }
-  const root = document.documentElement;
-  isTransitioning = true;
-  root.setAttribute(SWITCHING_ATTRIBUTE, '');
-  const transition = document.startViewTransition(() => swapDocumentTheme({ theme }));
-  transition.ready.catch(() => undefined);
-  void transition.finished
-    .catch(() => undefined)
-    .then(() => {
-      isTransitioning = false;
-      root.removeAttribute(SWITCHING_ATTRIBUTE);
-      const next = queuedTheme;
-      queuedTheme = null;
-      if (next !== null) {
-        transitionDocumentTheme({ theme: next });
-      }
-    });
+  releaseTransitionsAfterPaint();
 };
 
 const resolvePreference = ({ preference }: { readonly preference: ThemePreference }): Theme =>
   resolveTheme({ preference, systemIsLight: lightQuery()?.matches === true });
 
-const transitionToPreference = ({ preference }: { readonly preference: ThemePreference }): void => {
-  transitionDocumentTheme({ theme: resolvePreference({ preference }) });
+const applyPreference = ({ preference }: { readonly preference: ThemePreference }): void => {
+  applyDocumentTheme({ theme: resolvePreference({ preference }) });
 };
 
 type ThemeState = {
@@ -135,7 +137,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   preference: 'dark',
   setPreference: (preference) => {
     themePref.write(preference);
-    transitionToPreference({ preference });
+    applyPreference({ preference });
     if (get().preference !== preference) {
       set({ preference });
     }
@@ -150,7 +152,7 @@ const isThemePreference = (value: string | null): value is ThemePreference =>
 
 export const bootstrapTheme = (): (() => void) => {
   const preference = readStoredPreference();
-  applyDocumentTheme({ theme: resolvePreference({ preference }) });
+  applyPreference({ preference });
   useThemeStore.setState({ preference });
   const query = lightQuery();
   const onSystemChange = () => {
@@ -158,13 +160,13 @@ export const bootstrapTheme = (): (() => void) => {
     if (current !== 'system') {
       return;
     }
-    transitionToPreference({ preference: current });
+    applyPreference({ preference: current });
   };
   const onStorage = (event: StorageEvent) => {
     if (event.key !== STORAGE_KEY || !isThemePreference(event.newValue)) {
       return;
     }
-    transitionToPreference({ preference: event.newValue });
+    applyPreference({ preference: event.newValue });
     useThemeStore.setState({ preference: event.newValue });
   };
   window.addEventListener('storage', onStorage);

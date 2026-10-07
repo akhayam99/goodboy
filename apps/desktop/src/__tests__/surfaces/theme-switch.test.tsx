@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Profiler, type ReactNode } from 'react';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -92,7 +92,9 @@ const toggleThreeTimes = async (): Promise<void> => {
     expect(document.documentElement.style.colorScheme).toBe(expected);
     expect(document.documentElement.hasAttribute('data-theme-switching')).toBe(true);
     await flush();
-    expect(document.documentElement.hasAttribute('data-theme-switching')).toBe(false);
+    await waitFor(() => {
+      expect(document.documentElement.hasAttribute('data-theme-switching')).toBe(false);
+    });
   }
 };
 
@@ -122,9 +124,9 @@ describe('theme switch is a class swap on the html element', () => {
     expect(surface.textContent).toBe(textBefore);
   });
 
-  it('re-renders nothing on the session detail page while the switch cross-fades', async () => {
+  it('commits each switch once and never defers the swap to a view transition', async () => {
     const startViewTransition = vi.fn((update: () => void) => {
-      update();
+      window.setTimeout(update, 0);
       return {
         ready: Promise.resolve(),
         updateCallbackDone: Promise.resolve(),
@@ -144,8 +146,8 @@ describe('theme switch is a class swap on the html element', () => {
 
     await toggleThreeTimes();
 
-    expect(startViewTransition).toHaveBeenCalledTimes(3);
-    expect(counts.tree).toBe(0);
+    expect(startViewTransition).not.toHaveBeenCalled();
+    expect(counts).toEqual({ tree: 0, toggle: 3 });
   });
 
   it('re-renders nothing on the board', async () => {

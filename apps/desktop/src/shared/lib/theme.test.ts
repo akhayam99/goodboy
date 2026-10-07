@@ -138,20 +138,60 @@ describe('theme store', () => {
 describe('theme switch paint', () => {
   const isSwitching = () => document.documentElement.hasAttribute('data-theme-switching');
 
+  const stubFrames = () => {
+    const queue: Array<() => void> = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => queue.push(callback));
+    return {
+      runFrame: () => {
+        const due = queue.splice(0, queue.length);
+        due.forEach((callback) => callback());
+      },
+    };
+  };
+
   afterEach(() => {
     vi.useRealTimers();
     document.documentElement.removeAttribute('data-theme-switching');
   });
 
-  it('holds element transitions off while the palette swaps, then releases them', () => {
+  it('holds element transitions off in the swap and for one painted frame after it', () => {
     vi.useFakeTimers();
+    const frames = stubFrames();
 
     useThemeStore.getState().setPreference('light');
 
     expect(isLightApplied()).toBe(true);
     expect(isSwitching()).toBe(true);
-    vi.runAllTimers();
+    frames.runFrame();
+    expect(isSwitching()).toBe(true);
+    frames.runFrame();
     expect(isSwitching()).toBe(false);
+  });
+
+  it('releases the hold on a timer where frames never run, such as a hidden window', () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', () => 0);
+
+    useThemeStore.getState().setPreference('light');
+    expect(isSwitching()).toBe(true);
+    vi.advanceTimersByTime(500);
+
+    expect(isSwitching()).toBe(false);
+  });
+
+  it('keeps the hold until the frame of the latest switch when two switches land close together', () => {
+    vi.useFakeTimers();
+    const frames = stubFrames();
+
+    useThemeStore.getState().setPreference('light');
+    frames.runFrame();
+    useThemeStore.getState().setPreference('dark');
+    frames.runFrame();
+    expect(isSwitching()).toBe(true);
+    frames.runFrame();
+
+    expect(isSwitching()).toBe(false);
+    expect(isLightApplied()).toBe(false);
   });
 
   it('leaves transitions alone when the resolved theme does not change', () => {
@@ -165,9 +205,110 @@ describe('theme switch paint', () => {
     expect(isLightApplied()).toBe(false);
     expect(isSwitching()).toBe(false);
   });
+
+  it('never starts a view transition, so the window repaints once and not for every frame of a fade', () => {
+    mockSystem({ isLight: false });
+    stop = bootstrapTheme();
+    const startViewTransition = vi.fn((update: () => void) => {
+      update();
+      return { finished: Promise.resolve(), ready: Promise.resolve() };
+    });
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      writable: true,
+      value: startViewTransition,
+    });
+
+    useThemeStore.getState().setPreference('light');
+    useThemeStore.getState().toggleTheme();
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: STORAGE_KEYS.theme, newValue: 'light' }),
+    );
+    Reflect.deleteProperty(document, 'startViewTransition');
+
+    expect(startViewTransition).not.toHaveBeenCalled();
+  });
+
+  it('swaps the palette inside the call that asked for it', () => {
+    useThemeStore.getState().setPreference('light');
+    expect(isLightApplied()).toBe(true);
+
+    useThemeStore.getState().toggleTheme();
+    expect(isLightApplied()).toBe(false);
+  });
 });
 
 describe('applied theme', () => {
+  const collectWrites = (): {
+    readonly count: () => Record<string, number>;
+    readonly stop: () => void;
+  } => {
+    const written: Array<string> = [];
+    const observer = new MutationObserver((records) => {
+      records.forEach((record) => written.push(record.attributeName ?? ''));
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return {
+      count: () => {
+        observer.takeRecords().forEach((record) => written.push(record.attributeName ?? ''));
+        return written.reduce<Record<string, number>>(
+          (tally, name) => ({ ...tally, [name]: (tally[name] ?? 0) + 1 }),
+          {},
+        );
+      },
+      stop: () => observer.disconnect(),
+    };
+  };
+
+  it('writes the class, data-theme and color-scheme once each per swap, to light and back', () => {
+    useThemeStore.getState().setPreference('dark');
+    document.documentElement.removeAttribute('data-theme-switching');
+    const writes = collectWrites();
+
+    useThemeStore.getState().setPreference('light');
+    expect(writes.count()).toEqual({
+      class: 1,
+      'data-theme': 1,
+      style: 1,
+      'data-theme-switching': 1,
+    });
+    writes.stop();
+
+    document.documentElement.removeAttribute('data-theme-switching');
+    const back = collectWrites();
+    useThemeStore.getState().setPreference('dark');
+
+    expect(back.count()).toEqual({
+      class: 1,
+      'data-theme': 1,
+      style: 1,
+      'data-theme-switching': 1,
+    });
+    back.stop();
+  });
+
+  it('writes nothing at all when the resolved theme is already applied', () => {
+    useThemeStore.getState().setPreference('dark');
+    const writes = collectWrites();
+
+    useThemeStore.getState().setPreference('dark');
+    useThemeStore.getState().setPreference('dark');
+
+    expect(writes.count()).toEqual({});
+    writes.stop();
+  });
+
+  it('keeps every other class on html when it swaps the theme class', () => {
+    const root = document.documentElement;
+    root.classList.add('tauri-window');
+    useThemeStore.getState().setPreference('dark');
+
+    useThemeStore.getState().setPreference('light');
+
+    expect([...root.classList].sort()).toEqual(['light', 'tauri-window']);
+    root.classList.remove('tauri-window');
+  });
+
   it('swaps the html class, data-theme and color-scheme together', () => {
     const root = document.documentElement;
 
@@ -200,117 +341,5 @@ describe('applied theme', () => {
     unsubscribe();
     useThemeStore.getState().toggleTheme();
     expect(painter).toHaveBeenCalledTimes(1);
-  });
-});
-
-type FakeTransition = {
-  readonly finish: () => Promise<void>;
-};
-
-const stubViewTransitions = () => {
-  const transitions: Array<FakeTransition> = [];
-  const start = vi.fn((update: () => void) => {
-    let resolveFinished: () => void = () => undefined;
-    const finished = new Promise<void>((resolve) => {
-      resolveFinished = resolve;
-    });
-    update();
-    transitions.push({
-      finish: async () => {
-        resolveFinished();
-        await Promise.resolve();
-        await Promise.resolve();
-        await Promise.resolve();
-      },
-    });
-    return {
-      ready: Promise.resolve(),
-      updateCallbackDone: Promise.resolve(),
-      finished,
-      skipTransition: () => undefined,
-    };
-  });
-  Object.defineProperty(document, 'startViewTransition', {
-    configurable: true,
-    writable: true,
-    value: start,
-  });
-  return { start, transitions };
-};
-
-const stubMotion = ({ isReduced }: { readonly isReduced: boolean }) => {
-  vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: query.includes('reduced-motion') ? isReduced : false,
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
-  }));
-};
-
-describe('theme switch transition', () => {
-  const isSwitching = () => document.documentElement.hasAttribute('data-theme-switching');
-
-  afterEach(() => {
-    Reflect.deleteProperty(document, 'startViewTransition');
-    document.documentElement.removeAttribute('data-theme-switching');
-  });
-
-  it('cross-fades the swap in one view transition and holds transitions off until it ends', async () => {
-    stubMotion({ isReduced: false });
-    const { start, transitions } = stubViewTransitions();
-
-    useThemeStore.getState().setPreference('light');
-
-    expect(start).toHaveBeenCalledTimes(1);
-    expect(isLightApplied()).toBe(true);
-    expect(isSwitching()).toBe(true);
-    await transitions[0]?.finish();
-    expect(isSwitching()).toBe(false);
-  });
-
-  it('swaps at once under reduced motion', () => {
-    stubMotion({ isReduced: true });
-    const { start } = stubViewTransitions();
-
-    useThemeStore.getState().setPreference('light');
-
-    expect(start).not.toHaveBeenCalled();
-    expect(isLightApplied()).toBe(true);
-  });
-
-  it('swaps at once where view transitions do not exist', () => {
-    stubMotion({ isReduced: false });
-
-    useThemeStore.getState().setPreference('light');
-
-    expect(isLightApplied()).toBe(true);
-  });
-
-  it('never animates the first paint', () => {
-    stubMotion({ isReduced: false });
-    const { start } = stubViewTransitions();
-    localStorage.setItem(STORAGE_KEYS.theme, 'light');
-
-    stop = bootstrapTheme();
-
-    expect(start).not.toHaveBeenCalled();
-    expect(isLightApplied()).toBe(true);
-  });
-
-  it('folds clicks made during a fade into one follow-up fade', async () => {
-    stubMotion({ isReduced: false });
-    const { start, transitions } = stubViewTransitions();
-
-    useThemeStore.getState().toggleTheme();
-    useThemeStore.getState().toggleTheme();
-    useThemeStore.getState().toggleTheme();
-    useThemeStore.getState().toggleTheme();
-
-    expect(start).toHaveBeenCalledTimes(1);
-    expect(isLightApplied()).toBe(true);
-    await transitions[0]?.finish();
-    expect(start).toHaveBeenCalledTimes(2);
-    expect(isLightApplied()).toBe(false);
-    await transitions[1]?.finish();
-    expect(start).toHaveBeenCalledTimes(2);
   });
 });
