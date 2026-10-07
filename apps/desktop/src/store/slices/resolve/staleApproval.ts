@@ -6,13 +6,25 @@ import {
   listResolveThreads,
 } from '@goodboy/db';
 import type { ResolveQueueItemWithThread, ResolveThread } from '@goodboy/types';
+import { launchRowsOf } from '../../../features/resolve/reviewRows';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
 import { projectResolveRows } from './projectResolveRows';
+import { staleCommentName } from './staleCommentName';
 import type { ItemParams, SliceParams } from './types';
 
 export const STALE_APPROVAL = 'This answer changed since you opened it. Review it again.';
+
+export class StaleApprovalError extends Error {
+  readonly itemIds: ReadonlyArray<string>;
+
+  constructor({ itemIds }: { readonly itemIds: ReadonlyArray<string> }) {
+    super(STALE_APPROVAL);
+    this.name = 'StaleApprovalError';
+    this.itemIds = itemIds;
+  }
+}
 
 type RunParams = { readonly revision: number };
 type GuardParams = SliceParams &
@@ -63,12 +75,17 @@ const entryOf = async ({
     (candidate) => candidate.item.id === itemId,
   );
 
+type FreshParams = Pick<SliceParams, 'get'> &
+  ItemParams & {
+    readonly revision: number | null;
+  };
+
 const freshRevision = async ({
   get,
   sessionId,
   itemId,
   revision,
-}: Pick<SliceParams, 'get'> & ItemParams & RunParams): Promise<number | null> => {
+}: FreshParams): Promise<number | null> => {
   const db = tauriDatabase;
   const entry = await entryOf({ sessionId, itemId });
   if (entry === undefined || !isUndelivered({ entry })) {
@@ -79,7 +96,7 @@ const freshRevision = async ({
   );
   if (
     seen === undefined ||
-    seen.revision !== revision ||
+    (revision !== null && seen.revision !== revision) ||
     !sameAnswer({ seen, fresh: entry.thread })
   ) {
     return null;
@@ -107,6 +124,35 @@ const freshRevision = async ({
     : null;
 };
 
+const commentNameOf = ({
+  get,
+  sessionId,
+  threadId,
+}: Pick<SliceParams, 'get'> &
+  Pick<ItemParams, 'sessionId'> & { readonly threadId: string }): string =>
+  staleCommentName({
+    head:
+      launchRowsOf({ state: get(), sessionId }).find((row) => row.thread.threadId === threadId)
+        ?.commentThread?.head ?? null,
+  });
+
+const repairEarlier = async ({
+  set,
+  get,
+  sessionId,
+  itemIds,
+}: SliceParams & Pick<ItemParams, 'sessionId'> & { readonly itemIds: ReadonlyArray<string> }) => {
+  for (const itemId of itemIds) {
+    if ((await freshRevision({ get, sessionId, itemId, revision: null })) !== null) {
+      continue;
+    }
+    const entry = await entryOf({ sessionId, itemId });
+    const name = commentNameOf({ get, sessionId, threadId: entry?.thread.threadId ?? '' });
+    await refreshView({ set, get, sessionId });
+    throw new Error(`${name} changed since you opened it. Review it again.`);
+  }
+};
+
 export const withStaleRecovery = async ({
   set,
   get,
@@ -115,6 +161,7 @@ export const withStaleRecovery = async ({
   revision,
   run,
 }: GuardParams): Promise<void> => {
+  let failure: unknown = null;
   try {
     await run({ revision });
     return;
@@ -122,11 +169,20 @@ export const withStaleRecovery = async ({
     if (!isStaleApproval({ error })) {
       throw error;
     }
+    failure = error;
   }
   const fresh = await freshRevision({ get, sessionId, itemId, revision });
   if (fresh === null) {
     await refreshView({ set, get, sessionId });
     throw new Error(STALE_APPROVAL);
+  }
+  if (failure instanceof StaleApprovalError) {
+    await repairEarlier({
+      set,
+      get,
+      sessionId,
+      itemIds: failure.itemIds.filter((earlierId) => earlierId !== itemId),
+    });
   }
   try {
     await run({ revision: fresh });

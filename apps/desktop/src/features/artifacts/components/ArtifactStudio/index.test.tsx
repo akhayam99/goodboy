@@ -69,6 +69,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
         return { 'sess-1': this.plans };
       },
       openQuestions: [] as ReadonlyArray<unknown>,
+      sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
     },
   };
 });
