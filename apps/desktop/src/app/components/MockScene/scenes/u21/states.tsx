@@ -1,5 +1,5 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
-import { PaneShell } from '@goodboy/ui';
+import { PaneShell, ScrollFade } from '@goodboy/ui';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { AgentsPane } from '../../../../../features/session/components/SessionWorkspace/parts/AgentsPane';
 import { QuestionsPane } from '../../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
@@ -112,9 +112,9 @@ const StateScene = ({
   if (frame === 'plain') {
     return (
       <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-        <div className="mx-auto min-h-0 w-full max-w-2xl flex-1 overflow-auto px-6 py-6">
-          {children}
-        </div>
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+          <div className="mx-auto w-full max-w-2xl px-6 py-6">{children}</div>
+        </ScrollFade>
       </main>
     );
   }
