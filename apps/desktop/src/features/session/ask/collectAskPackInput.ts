@@ -7,6 +7,7 @@ import type {
   TurnEvent,
 } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
+import { pullRequestKindOf } from '../../../shared/pullRequestKind';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { WORKFLOW_RUN_KIND } from '../../actions/kinds/workflowRun';
 import { classifyAgent } from '../agent-kind';
@@ -223,7 +224,7 @@ export const collectAskPackInput = ({
         : {
             number: pr.number,
             title: pr.title,
-            state: pr.isDraft ? 'draft' : pr.state,
+            state: pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
           },
     artifacts: (state.sessionArtifacts[sessionId] ?? []).map((artifact) => ({
       id: artifact.id,

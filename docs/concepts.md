@@ -1464,6 +1464,14 @@ failed push) gives `fix-couldnt-fix`. Both also send one notification when the
 count rises (`projectResolveRows`), with an action that opens Activity, where
 the Needs you row waits.
 
+A pull request has one state word, from `pullRequestKindOf` in
+`shared/pullRequestKind.ts`, and every surface that names it reads that
+function: the Overview mount rows, the Branch header and menus, the pull
+request pane and strip, the detail facts and the ask pack. The order is merged,
+closed, queued, approved, in review, draft. GitHub keeps `isDraft` true on a
+closed or merged draft, so the flag alone never makes a word: a closed or merged
+pull request never reads Draft.
+
 Attention reasons, in `SessionAttentionReason`, rank in this order when several
 hold: `needs-approval`, `agent-error`, `plan-approval`, `open-question`,
 `fix-needs-you`, `ci-failed`, `changes-requested`, `fix-couldnt-fix`,

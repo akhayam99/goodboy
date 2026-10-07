@@ -4,6 +4,7 @@ import type { PullRequestState, SessionId } from '@goodboy/types';
 import { pullRequestMeta } from '../../../../integrations/github/components/PullRequestChip';
 import { openReview } from '../../../../review/openReview';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { pullRequestKindOf } from '../../../../../shared/pullRequestKind';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -12,7 +13,7 @@ type Props = {
 
 export const GithubPrStrip = ({ sessionId, pullRequest }: Props) => {
   const meta = pullRequestMeta({
-    state: pullRequest.isDraft ? 'draft' : pullRequest.state,
+    state: pullRequestKindOf({ state: pullRequest.state, isDraft: pullRequest.isDraft }),
   });
 
   return (

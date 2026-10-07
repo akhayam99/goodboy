@@ -3,6 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { pullRequestKindOf } from '../../../../../shared/pullRequestKind';
 import {
   PullRequestChip,
   pullRequestMeta,
@@ -24,7 +25,7 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
     return null;
   }
 
-  const state = request.isDraft ? 'draft' : request.state;
+  const state = pullRequestKindOf({ state: request.state, isDraft: request.isDraft });
 
   return (
     <span className="flex min-w-0 shrink-0 items-center gap-1">
