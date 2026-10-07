@@ -9,7 +9,7 @@ import { seedPolicyScene } from '../providerPolicySeed';
 
 const OPEN_DELAY_MS = 30;
 
-type FrameContext = 'session' | 'rail';
+type FrameContext = 'board' | 'session' | 'rail';
 
 type Props = {
   readonly context: FrameContext;
@@ -57,6 +57,6 @@ export const U21_SETTINGS_SCENES: Readonly<Record<string, ComponentType>> = {
   'settings-general-pinned': () => <SettingsOverApp context="session" focus={GENERAL} />,
   'settings-providers-rail': () => <SettingsOverApp context="rail" focus={CLAUDE_PAGE} hasLimits />,
   'settings-general-legacy': () => (
-    <SettingsOverApp context="session" focus={GENERAL} mode="classic" />
+    <SettingsOverApp context="board" focus={GENERAL} mode="classic" />
   ),
 };

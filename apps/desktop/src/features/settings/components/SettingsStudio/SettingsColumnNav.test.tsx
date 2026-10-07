@@ -27,7 +27,6 @@ const STATUS: SettingsStatus = {
     },
   ],
   tools: [{ tool: 'linear', label: 'Linear', subtitle: 'Not connected', isConnected: false }],
-  toolsInventory: '0 of 1 connected',
 };
 
 const GROUPS = settingsDirectory({ status: STATUS, workspaceName: 'Harborline' });

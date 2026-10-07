@@ -5,6 +5,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { AppShell, StudioRailLayout } from '@goodboy/ui';
+import { StudioFrame } from '../../app/components/StudioFrame';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const CHROME_FILES = [
@@ -80,6 +81,33 @@ describe('the content is a sheet on the chrome', () => {
 
     expect(detail.dataset.sheet).toBe('wrapped');
     expect(screen.getByRole('complementary', { name: 'Sections' })).toBeDefined();
+  });
+
+  it('draws a page with no band as the one content sheet, with no second sheet inside it', () => {
+    render(
+      <AppShell
+        leftSidebar={<div>column</div>}
+        studioCoversLeft={false}
+        studio={
+          <StudioFrame
+            kind="settings"
+            placement="content"
+            hasBand={false}
+            onClose={() => undefined}
+          >
+            <p>page</p>
+          </StudioFrame>
+        }
+        main={<div>content</div>}
+      />,
+    );
+    const slot = document.querySelector('[data-studio-slot="content"]') as HTMLElement;
+
+    expect(slot).not.toBeNull();
+    expect(slot.querySelector('[data-studio-band]')).toBeNull();
+    expect(slot.querySelector('[data-sheet]')).toBeNull();
+    expect(slot.querySelector('[data-studio-rail]')).toBeNull();
+    expect(screen.getByText('page')).toBeDefined();
   });
 
   it.each(CHROME_FILES)('closes %s with no horizontal divider', (path) => {

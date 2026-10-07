@@ -21,7 +21,7 @@ export const SettingsRailPageGroup = ({ group, isCurrentGroup, pageKey, onSelect
         label={group.label}
         isActiveGroup={isCurrentGroup}
         status={
-          group.tone === undefined ? null : { tone: group.tone, label: group.subtitle ?? null }
+          group.tone === undefined ? null : { tone: group.tone, label: group.attention ?? null }
         }
         onClick={() => onSelect({ scope: group.scope })}
       />

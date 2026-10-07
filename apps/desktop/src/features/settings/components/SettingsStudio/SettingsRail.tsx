@@ -58,7 +58,7 @@ export const SettingsRail = ({
               status={
                 group.tone === undefined
                   ? null
-                  : { tone: group.tone, label: group.subtitle ?? null }
+                  : { tone: group.tone, label: group.attention ?? null }
               }
               onClick={() => onSelect({ scope: nested })}
             />

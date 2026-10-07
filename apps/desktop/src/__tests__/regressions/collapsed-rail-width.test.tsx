@@ -3,7 +3,8 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
+import { AppShell, COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
+import { shellArrangement } from '../../app/shellArrangement';
 import { PLAIN_INSET } from '../../shared/hooks/useTitlebarInset';
 import { CollapsedRail } from '../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 
@@ -80,5 +81,34 @@ describe('workspace tile and collapsed rail axis', () => {
     expect(COLUMN_RAIL).toMatch(/className="flex h-full min-w-0 shrink-0 flex-col items-center/);
     expect(COLUMN_RAIL).not.toMatch(/\bw-11\b/);
     expect(COLUMN_RAIL).not.toMatch(/className="[^"]*\bp[xl]-/);
+  });
+});
+
+describe('the column keeps its pinned width while Settings holds it', () => {
+  const columnWidthOf = ({ isSettingsOpen }: { readonly isSettingsOpen: boolean }): string => {
+    const arrangement = shellArrangement({
+      hasWorkspace: true,
+      hasActiveSession: true,
+      isSidebarCollapsed: true,
+      isSettingsOpen,
+    });
+    const { container } = render(
+      <AppShell
+        leftSidebar={<div>column</div>}
+        leftSidebarCollapsed={arrangement.isLeftRail}
+        studioCoversLeft={arrangement.studioCoversLeft}
+        main={<div>content</div>}
+      />,
+    );
+    const grid = container.querySelector('main')?.parentElement as HTMLElement;
+    return grid.style.gridTemplateColumns.split(' ')[0] ?? '';
+  };
+
+  it('draws the 44px rail on a folded sidebar while Settings is closed', () => {
+    expect(columnWidthOf({ isSettingsOpen: false })).toBe(`${COLLAPSED_RAIL_WIDTH}px`);
+  });
+
+  it('draws the column at its saved width on the same folded sidebar while Settings is open', () => {
+    expect(columnWidthOf({ isSettingsOpen: true })).toBe('var(--goodboy-left-sidebar-width)');
   });
 });

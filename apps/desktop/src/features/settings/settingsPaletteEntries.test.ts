@@ -8,7 +8,7 @@ const providersGroup: SettingsGroup = {
   label: 'Providers & models',
   concept: 'providers',
   place: 'Providers',
-  subtitle: undefined,
+  attention: undefined,
   tone: undefined,
   needsWorkspace: false,
   pages: [

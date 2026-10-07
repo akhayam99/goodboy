@@ -406,7 +406,9 @@ or a new-reply dot. Before any workspace exists the column keeps only its app
 half: Settings, the Goodboy row and the bug. The column is 240px by default and
 resizes from 200 to 400 (`goodboy:left-sidebar-width:v3`, so an older saved
 width resets once). Its first button or ⌘B folds it, on every screen, into the
-rail; the choice is saved and peek never touches it.
+rail; the choice is saved and peek never touches it. Settings is the one
+exception: it opens at the column's width over a folded sidebar, and ⌘B waits
+until Back to app (see Studios).
 
 **Legacy layout.** Settings > App > General > Legacy layout (setting
 `shell.classicBars`, off by default; the stored key kept its name when the
@@ -778,8 +780,8 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   turns into an icon. A Diff opened without a branch lands on the active mount.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
-- **Settings claims its studio band** with Settings, the scope and the App
-  section. The scope segment lists App, the workspace, Providers & models and
+- **In the legacy layout, Settings claims its studio band** with Settings, the
+  scope and the App section (the default shell draws no band for Settings). The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.
@@ -1131,17 +1133,29 @@ Utility studios (Inbox, Chat, Workflows, Impact, Notifications, Changelog,
 the guide, pairing, Add workspace) render in the shell's studio slot, which
 covers the content area only, beside the column, as its own sheet with the
 studio band on top. The column stays live, so another door or a session row is
-one click away. **Settings is the one studio that swaps the column**: the
-column's content cross-fades (160ms) to `‹ Back to app` (with its Esc hint),
-`Search settings` and the settings groups, and the page fills the content area.
-The band reads `Settings › App › General` and has no Close: Back to app, Esc
-and Back land alike. On close, `StudioFrame` gives focus back to what opened
-the studio, or to the studio's door when that is gone (the palette), unless
-focus already sits outside the studio (`restoreStudioOpener`). With the column folded into the rail, Settings shows its
-groups beside the page instead. The one exception is the workspace launcher,
-which has no shell. There, Add workspace takes the whole window, and so do the
-app studios: Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide.
-The palette opens there too.
+one click away. **Settings is the one studio that takes the column**, in
+both sidebar states: `shellArrangement` takes `isSettingsOpen` and returns
+`leftSlot: 'column'` with no peek, so a folded sidebar shows the column at its
+saved width while Settings is open and the rail returns when it closes. The
+stored collapse is never written (`leftSidebarCollapsed` reports it as it is,
+`isLeftRail` says what is drawn), and ⌘B waits. The column's content
+cross-fades (160ms) to `‹ Back to app` (with its Esc hint), `Search settings`
+and the settings groups, on the chrome like the sessions list, and the page
+fills the content area as the one sheet. There is no band, no crumb and no
+second sheet: `StudioFrame` draws no band (`hasBand={false}`), `SettingsStudio`
+draws no `StudioTrail` and no `StudioRailLayout`, and the page's title row sits
+where Overview's does (`UnderTrailContext` drops the 12px a bare page adds, and
+the 40px a band would take is the top padding). There is no Close: Back to app,
+Esc and Back land alike. A session key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward move and
+closes Settings on its way. On close, `StudioFrame` gives focus back to what
+opened the studio, or to the studio's door when that is gone (the palette),
+unless focus already sits outside the studio (`restoreStudioOpener`). The
+exceptions are the legacy layout and the workspace launcher, which have no
+column to give. In the legacy layout Settings covers the window as before, with
+its band, its crumbs and its own rail beside the page. In the launcher, Add
+workspace takes the whole window, and so do the app studios: Settings (its
+corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette opens there
+too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
@@ -1159,8 +1173,8 @@ one is open at a time.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Inbox to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle and accessory, Close, which Settings drops while it holds the
-  column), the Esc layer and the motion: `studio-in` when
+  subtitle and accessory, Close; Settings in the default shell has no band at all,
+  so `hasBand` is off and its skeleton has no rail), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
@@ -1224,8 +1238,8 @@ one is open at a time.
   detail, not a second navigation column: `StudioRailLayout` with
   `placement="page"` draws the list on the page background with the resize
   edge as the only line. Chat's list opens at 288px.
-- **Every studio list resizes.** `StudioRailLayout` (Settings when the column
-  is folded, Guide, Chat, Changelog, Bitbucket) drags from its right edge
+- **Every studio list resizes.** `StudioRailLayout` (Settings in the legacy
+  layout, Guide, Chat, Changelog, Bitbucket) drags from its right edge
   between 220 and 420px, step 8px (32 with Shift) with the arrow keys, and goes
   back to its default (256 narrow, 288 standard) on a double click. Each studio
   keeps its own width
@@ -1244,13 +1258,18 @@ one is open at a time.
   a section, a provider or a tool) opens that page. `scope: 'home'` stays as
   the alias for "the last page" and `SettingsStudio` resolves it once, then
   amends the history entry to the concrete page. The rail is the only index,
-  portaled into the swapped column (`SettingsColumnNav`) or drawn beside the
-  page when the column is folded: its four groups (App, Workspace, Providers &
-  models, Integrations) come from `settingsDirectory`, with the status line of a row shown only when
-  something needs doing (no quiet hints). A provider row says only what is
-  wrong (Update needed, Not signed in, Error) or Not connected, never an
-  identity or usage; the closed Providers & models group says how many
-  providers it holds ("2 providers") unless one of them needs attention. Every page is also a palette entry
+  portaled into the column (`SettingsColumnNav`, `Back to app` first, then
+  `Search settings`, then the groups) in both sidebar states, or drawn beside
+  the page in the legacy layout: its four groups (App, Workspace, Providers &
+  models, Integrations) come from `settingsDirectory`. Every row is one 28px
+  line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
+  row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
+  no count and no identity. A row that needs something shows a 6px dot at its
+  end, named for assistive tech by the sentence that used to sit under it
+  (Update needed, Not signed in, Error, Claude is about to run out); a quiet
+  row shows nothing. The sentence lives on the page: a provider about to run
+  out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
+  the usage notice that used to close the Usage band). Every page is also a palette entry
   (`settingsPaletteEntries`, `Settings: Storage`, `Providers: Claude`), built from
   the same list, so ⌘K and the rail cannot disagree. `Search settings` in the
   column filters those same entries by name and former name, lists them in
@@ -1392,24 +1411,23 @@ then N new commits`, unmerged and gone on origin, local only for over 30
   workspace; without one it says so instead of scanning anything.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. One reader, `railSubtitles({ state,
-workspaceId, nowMs })`, owns every row's subtitle and tone (it replaced three
+workspaceId, nowMs })`, owns every row's attention sentence and tone (it replaced three
   separate selectors read straight from `SettingsRail`). `useSettingsStatus`
   calls it once per studio and hands the result to the rail and the home, and
   a test mounts the home on the strict `invoke` mock to keep it free of
   commands and loads at render. A dot appears only
   when something needs doing: warning on Providers & models when a connected
   CLI is too old for a model it serves or no provider is connected
-  (`selectProviderAttention`, with the reason as the row subtitle), info on
+  (`selectProviderAttention`, with the reason as the dot's label), info on
   General while an app update is ready, info on Storage with "N GB can go" as
-  its subtitle once clean idle folders pass 10 GB (warning when the disk has
+  its label once clean idle folders pass 10 GB (warning when the disk has
   under 10 GB free and at least 1 GB can go, `storageAttention`),
   warning on Security findings with "N open" once the current workspace has
   an undismissed finding (`selectSecurityFindingsAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
   `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). Integrations carries a faint inventory subtitle with no dot,
-  "N of M connected" over the whole integration catalog
-  (`connectedInventory`). No rail row is red: the destructive actions sit at the
+  workspace). A connected tool shows a quiet success dot named by its identity;
+  an Integrations row says nothing more. No rail row is red: the destructive actions sit at the
   bottom of their page, Reset (Delete all data) at the end of Backup and
   Disconnect at the end of Projects, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
