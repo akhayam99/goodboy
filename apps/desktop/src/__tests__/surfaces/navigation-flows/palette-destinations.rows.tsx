@@ -16,6 +16,7 @@ import {
   lens,
   openCrumb,
   openPalette,
+  settingsColumn,
   useAppStore,
   visible,
 } from './harness';
@@ -270,7 +271,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:settings', 'scope:workspace', 'palette:Workspace settings'],
     open: () => openPalette(/^Workspace settings: Projects/, 'workspace settings projects'),
     lands: both(
-      () => band('Settings'),
+      () => settingsColumn(),
       () => visible('textbox', 'Workspace name'),
     ),
   },
@@ -279,7 +280,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:settings', 'scope:home', 'palette:Settings'],
     open: () => openPalette(/^Settings$/),
     lands: both(
-      () => band('Settings'),
+      () => settingsColumn(),
       () => visible('navigation', 'Settings scopes'),
     ),
   },
@@ -355,7 +356,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'scope:providers', 'palette:Connect a provider'],
     open: () => openPalette(/^Connect a provider/),
     lands: both(
-      () => band('Settings'),
+      () => settingsColumn(),
       () => visible('region', 'Providers'),
     ),
   },

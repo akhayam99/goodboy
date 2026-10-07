@@ -60,5 +60,6 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   { id: 'try-again', pattern: /^Try again(?: on [\w .-]+| with the hint)?$/, use: NAMES.retry },
   { id: 'your-roles', pattern: /\bYour roles\b/, use: NAMES.yourJob },
+  { id: 'classic-bars', pattern: /\bClassic bars\b/, use: NAMES.legacyLayout },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

@@ -27,6 +27,7 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
     hasActiveSession: false,
     isSidebarCollapsed: false,
     mode: sceneShellMode(),
+    isSettingsOpen,
   });
   const shell = useSceneShell({ arrangement });
   const slot = arrangement.leftSlot === 'column' ? shell.settingsSlot : null;
@@ -44,7 +45,7 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
           />
         }
         leftHidden={arrangement.leftHidden}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+        leftSidebarCollapsed={arrangement.isLeftRail}
         leftSidebar={
           arrangement.leftSlot === 'none' ? undefined : (
             <ShellLeft

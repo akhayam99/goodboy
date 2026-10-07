@@ -48,6 +48,7 @@ export const NAMES = {
   retry: 'Retry',
   removeLink: 'Remove link',
   removeLinkFromSession: 'Remove link from this session',
+  legacyLayout: 'Legacy layout',
   role: {
     scout: 'Scout',
     planner: 'Planner',

@@ -174,7 +174,7 @@ describe('AppTopBar', () => {
     expect(screen.queryByRole('button', { name: /sidebar \(/ })).toBeNull();
   });
 
-  it('keeps Board and Chat by the search under the classic bars, with no Impact button', () => {
+  it('keeps Board and Chat by the search under the legacy layout, with no Impact button', () => {
     renderBar({ mode: 'classic' });
 
     expect(screen.getByRole('button', { name: 'Board' })).toBeDefined();

@@ -20,6 +20,7 @@ type Props = {
   readonly children: ReactNode;
   readonly placement?: StudioPlacement;
   readonly isClosable?: boolean;
+  readonly hasBand?: boolean;
 };
 
 export const StudioFrame = ({
@@ -28,6 +29,7 @@ export const StudioFrame = ({
   children,
   placement = 'cover',
   isClosable = true,
+  hasBand = true,
 }: Props) => {
   const [chrome, setChrome] = useState<StudioChrome | null>(null);
   const [closingKind, setClosingKind] = useState<StudioKind | null>(null);
@@ -78,20 +80,22 @@ export const StudioFrame = ({
           isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
         )}
       >
-        <StudioBand
-          crumbKey={kind}
-          icon={band.icon}
-          {...('tone' in band && band.tone !== undefined && { tone: band.tone })}
-          {...(chrome?.glyph !== undefined && { glyph: chrome.glyph })}
-          title={band.title}
-          {...(chrome?.subtitle !== undefined && { subtitle: chrome.subtitle })}
-          closeLabel={band.closeLabel}
-          isClosable={isClosable}
-          accessory={chrome?.accessory}
-          isTrailClaimed={trailClaims > 0}
-          trailSlotRef={setTrailSlot}
-          onClose={requestClose}
-        />
+        {hasBand ? (
+          <StudioBand
+            crumbKey={kind}
+            icon={band.icon}
+            {...('tone' in band && band.tone !== undefined && { tone: band.tone })}
+            {...(chrome?.glyph !== undefined && { glyph: chrome.glyph })}
+            title={band.title}
+            {...(chrome?.subtitle !== undefined && { subtitle: chrome.subtitle })}
+            closeLabel={band.closeLabel}
+            isClosable={isClosable}
+            accessory={chrome?.accessory}
+            isTrailClaimed={trailClaims > 0}
+            trailSlotRef={setTrailSlot}
+            onClose={requestClose}
+          />
+        ) : null}
         <div
           className={cn(
             'relative flex min-h-0 min-w-0 flex-1 bg-background',
@@ -102,7 +106,7 @@ export const StudioFrame = ({
           <Suspense
             fallback={
               <StudioSkeleton
-                layout={meta.skeleton}
+                layout={hasBand ? meta.skeleton : 'list'}
                 title={meta.title}
                 railWidthPx={readStudioRailWidth({
                   surface: kind,
