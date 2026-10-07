@@ -1,11 +1,12 @@
 import { ArrowRight, Check } from 'lucide-react';
 import { Button, HeaderBand, Tooltip, cn } from '@goodboy/ui';
-import type { PrCheckRun, PullRequestState, SessionId } from '@goodboy/types';
+import type { PrCheckRun, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
+import { checksWordOf } from '../../../integrations/github/checksRollup';
 import type { BranchControls } from '../../hooks/useBranchControls';
-import { checksSummaryOf } from '../../checksSummary';
+import { checksSummaryOf, type ChecksSummary } from '../../checksSummary';
 import { pullRequestWord } from '../../pullRequestWord';
 import { BranchOverflow } from './BranchOverflow';
 import { BranchSwitcher } from './BranchSwitcher';
@@ -14,13 +15,31 @@ type Props = {
   readonly sessionId: SessionId;
   readonly mountPath: string | null;
   readonly pr: PullRequestState | null;
-  readonly checks: ReadonlyArray<PrCheckRun>;
+  readonly detail: PrDetail | null;
   readonly projectName: string | null;
   readonly branch: string | null;
   readonly baseBranch: string | null;
   readonly fallbackTitle: string;
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
+};
+
+const NO_CHECKS: ReadonlyArray<PrCheckRun> = [];
+const CHECKS_UNKNOWN: ChecksSummary = { tone: 'muted', label: 'Checks unknown' };
+
+type SummaryParams = {
+  readonly pr: PullRequestState | null;
+  readonly detail: PrDetail | null;
+};
+
+const summaryOf = ({ pr, detail }: SummaryParams): ChecksSummary | null => {
+  if (pr === null) {
+    return null;
+  }
+  if (checksWordOf({ pr, detail }) === 'unknown') {
+    return CHECKS_UNKNOWN;
+  }
+  return checksSummaryOf({ rollup: pr.checks, checks: detail?.checks ?? NO_CHECKS });
 };
 
 const stateWord = (pr: PullRequestState | null): string => {
@@ -34,7 +53,7 @@ export const BranchHeader = ({
   sessionId,
   mountPath,
   pr,
-  checks,
+  detail,
   projectName,
   branch,
   baseBranch,
@@ -43,7 +62,7 @@ export const BranchHeader = ({
   isPushBusy,
 }: Props) => {
   const { primary } = controls;
-  const summary = pr === null ? null : checksSummaryOf({ rollup: pr.checks, checks });
+  const summary = summaryOf({ pr, detail });
   const head = pr?.headBranch ?? branch;
   const base = pr?.baseBranch ?? baseBranch;
   const abort =

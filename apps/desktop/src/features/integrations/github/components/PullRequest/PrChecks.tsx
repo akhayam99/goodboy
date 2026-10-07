@@ -17,7 +17,7 @@ import {
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
 import { CheckConclusionIcon } from './CheckConclusionIcon';
-import { checksGroupsOf, checksRollup, checksWordOf, type ChecksWord } from './checksRollup';
+import { checksGroupsOf, checksRollup, checksWordOf, type ChecksWord } from '../../checksRollup';
 
 type Props = {
   readonly checks: ReadonlyArray<PrCheckRun>;

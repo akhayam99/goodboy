@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, type ReactNode } from 'react';
+import { useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -9,15 +10,16 @@ import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
 import { useDiffKeys } from '../../hooks/useDiffKeys';
-import { useNarrowPane } from '../../hooks/useNarrowPane';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
 import { useTreePanel } from '../../hooks/useTreePanel';
-import { TREE_WIDTH_MIN, TREE_WIDTH_SHARE, useTreeWidth } from '../../hooks/useTreeWidth';
-import { TreeResizer } from '../ChangeTree/TreeResizer';
+import { DiffRailContext } from '../../diffRailContext';
 import { ChangeTree } from '../ChangeTree';
-import { TreeStrip } from '../ChangeTree/TreeStrip';
+import { TreeFilesButton } from '../ChangeTree/TreeFilesButton';
 import { TreeLoading } from '../ChangeTree/TreeLoading';
+import { TreeRail } from '../ChangeTree/TreeRail';
+import { TreeResizer } from '../ChangeTree/TreeResizer';
+import { TreeStrip } from '../ChangeTree/TreeStrip';
 import { DiffView } from '../DiffView';
 import { DiffEmptyState } from './DiffEmptyState';
 
@@ -46,10 +48,8 @@ export const SessionDiffPane = ({
   );
 
   const filterRef = useRef<HTMLInputElement | null>(null);
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const isNarrow = useNarrowPane(rootRef);
-  const panel = useTreePanel({ isNarrow });
-  const treeWidth = useTreeWidth(rootRef);
+  const rail = useContext(DiffRailContext);
+  const panel = useTreePanel({ mode: rail.mode });
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
@@ -148,6 +148,16 @@ export const SessionDiffPane = ({
     />
   );
   const showsDiff = !diff.loading && diff.error === null && !isEmpty && !isFilteredOut;
+  const showsButton = hasTree && rail.mode === 'button';
+  const filesButton = showsButton ? (
+    <TreeFilesButton
+      triggerRef={panel.triggerRef}
+      viewed={viewedCount}
+      total={review.allFiles.length}
+      isOpen={panel.isOpen}
+      onToggle={panel.toggle}
+    />
+  ) : null;
 
   const metaNotice =
     diff.metaError === null ? null : (
@@ -207,7 +217,12 @@ export const SessionDiffPane = ({
       fileCommentPath={review.fileCommentPath}
       onFileCommentOpened={review.clearFileComment}
       columnWidth="full"
-      toolbarStart={selector}
+      toolbarStart={
+        <>
+          {filesButton}
+          {selector}
+        </>
+      }
       toolbarEnd={
         onWriteReview === null && toolbarExtra === null ? undefined : (
           <>
@@ -242,57 +257,70 @@ export const SessionDiffPane = ({
 
   const treeColumn = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
 
-  const docked = !isNarrow && treeColumn !== null && (panel.isOpen || !hasTree);
-  const strip = hasTree && (isNarrow || !panel.isOpen);
-  const overlay = isNarrow && hasTree && panel.isOpen;
+  const isDockedMode = rail.mode === 'docked';
+  const showsRail = isDockedMode && treeColumn !== null && (panel.isOpen || !hasTree);
+  const showsStrip = hasTree && (rail.mode === 'strip' || (isDockedMode && !panel.isOpen));
+  const showsOverlay = hasTree && !isDockedMode && panel.isOpen;
 
-  return (
-    <div ref={rootRef} className="relative flex min-h-0 min-w-0 flex-1">
-      {docked && (
-        <aside
-          ref={panel.asideRef}
-          aria-label="Files"
-          style={{
-            width: `clamp(${TREE_WIDTH_MIN}px, ${treeWidth.width}px, ${TREE_WIDTH_SHARE * 100}%)`,
-          }}
-          className="relative flex min-h-0 shrink-0 pl-3"
+  const railNodes = (
+    <>
+      {showsRail && (
+        <TreeRail
+          variant="docked"
+          asideRef={panel.asideRef}
+          width={rail.width}
+          count={hasTree ? review.allFiles.length : null}
+          isAfterStrip={false}
+          onFold={hasTree ? panel.fold : null}
+          resizer={
+            hasTree ? (
+              <TreeResizer
+                asideRef={panel.asideRef}
+                width={rail.width}
+                paneWidth={rail.paneWidth}
+                onResize={rail.resizeTo}
+              />
+            ) : null
+          }
         >
           {treeColumn}
-          {hasTree ? (
-            <TreeResizer
-              asideRef={panel.asideRef}
-              width={treeWidth.width}
-              paneWidth={treeWidth.paneWidth}
-              onResize={treeWidth.resizeTo}
-            />
-          ) : null}
-        </aside>
+        </TreeRail>
       )}
-      {strip && (
+      {showsStrip && (
         <TreeStrip
-          ref={panel.stripRef}
+          ref={panel.triggerRef}
           viewed={viewedCount}
           total={review.allFiles.length}
           isOpen={panel.isOpen}
           onToggle={panel.toggle}
         />
       )}
-      {overlay && (
-        <aside
-          ref={panel.asideRef}
-          aria-label="Files"
-          className="absolute inset-y-0 left-11 z-10 flex w-[280px] border-r border-border-soft bg-background py-2 pl-3 shadow-lg"
+      {showsOverlay && (
+        <TreeRail
+          variant="overlay"
+          asideRef={panel.asideRef}
+          width={rail.width}
+          count={review.allFiles.length}
+          isAfterStrip={rail.mode === 'strip'}
+          onFold={panel.fold}
         >
           {tree}
-        </aside>
+        </TreeRail>
       )}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {showsDiff || isEmpty ? null : (
-          <PageColumn className="flex min-w-0 pb-3">{selector}</PageColumn>
-        )}
-        {metaNotice}
-        {body}
-      </div>
+    </>
+  );
+
+  return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      {rail.host === null ? null : createPortal(railNodes, rail.host)}
+      {showsDiff || isEmpty ? null : (
+        <PageColumn className="flex min-w-0 items-center gap-2 pb-3">
+          {filesButton}
+          {selector}
+        </PageColumn>
+      )}
+      {metaNotice}
+      {body}
     </div>
   );
 };
