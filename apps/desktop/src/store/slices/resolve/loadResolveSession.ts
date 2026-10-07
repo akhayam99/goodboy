@@ -4,6 +4,7 @@ import {
   listResolveAttempts,
   listResolveQueueItems,
   listResolveThreads,
+  repairLaggingResolveQueueItems,
 } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -66,6 +67,7 @@ export const loadResolveSession = async ({ set, get, sessionId }: Params): Promi
       fromRevision: row.revision,
     });
   }
+  await repairLaggingResolveQueueItems({ db: tauriDatabase, sessionId }).catch(() => 0);
   const attempts = await listResolveAttempts({ db: tauriDatabase, sessionId });
   const queueItems = await listResolveQueueItems({ db: tauriDatabase, sessionId });
   projectResolveRows({

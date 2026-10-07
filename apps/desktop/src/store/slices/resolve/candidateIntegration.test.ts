@@ -1039,7 +1039,7 @@ describe('resolve candidates keep the branch tip approved', () => {
         revision: 0,
         reply: 'Reply for thread-a',
       }),
-    ).rejects.toThrow('stale');
+    ).rejects.toThrow('This answer changed since you opened it. Review it again.');
     expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(accepted);
     await expectNoAncestryLeak();
   });

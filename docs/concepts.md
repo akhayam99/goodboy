@@ -855,8 +855,16 @@ comment. Every refresh of the pull request compares the fingerprint of the root
 comment with the one stored in
 `resolve_threads.source_snapshot_json` when the draft was made, and a mismatch
 stores the new text, who wrote it and when Goodboy saw it. A plain write to the
-thread (a resolved flag, a phase) never marks it: those writes keep the draft in
-step with the thread revision. `Keep the draft` adopts the new text as the
+thread (a resolved flag, a phase, a stage) never marks it: the store moves the
+open item and its ready candidate to the new thread revision in the same
+transaction, as long as the reply, the commits, the question and the outcome are
+unchanged. A write that changes any of those leaves the item behind on purpose.
+Accept and Won't fix that miss on the revision reload the item: when the answer
+the owner had on screen is unchanged they retry once with the fresh revision,
+otherwise the view refreshes in place and the buttons show "This answer changed
+since you opened it. Review it again." Opening a session also moves any open
+item whose revision lags its thread, when its candidate is still ready and the
+thread is not working, asking or failed. `Keep the draft` adopts the new text as the
 baseline and keeps the draft acceptable; `Redraft with the new comment` moves
 the baseline when the agent starts. GitHub's outdated flag is a fact on the
 comment (The line moved), not a state. A new reply after the draft is a fact too

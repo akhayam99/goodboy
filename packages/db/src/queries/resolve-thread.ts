@@ -5,7 +5,11 @@ import type {
   ResolveThreadState,
   SessionId,
 } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
+import {
+  bookkeepingRebaseStatements,
+  keepResolveDraftCurrentStatements,
+} from './resolve-draft-current';
 import { resolveStringArray } from './resolve-json';
 
 type Row = Omit<ResolveThread, 'commitShas' | 'githubResolved' | 'sourceKind'> & {
@@ -59,13 +63,10 @@ export const listResolveThreads = async ({
   }));
 };
 
-export const upsertResolveThread = async ({
-  db,
-  row,
-  expectedRevision,
-}: UpsertParams): Promise<boolean> => {
-  const result = await db.execute(
-    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, diff_comment_id, state, stage, state_reason, revision, generation, reopened_from_thread_id, active_attempt_id, disposition, reply_draft, commit_shas_json, fixup_of_sha, replaces_sha, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at, source_kind, provider_thread_id)
+type UpsertStatementParams = Omit<UpsertParams, 'db'>;
+
+const upsertStatement = ({ row, expectedRevision }: UpsertStatementParams): PlainStatement => ({
+  sql: `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, diff_comment_id, state, stage, state_reason, revision, generation, reopened_from_thread_id, active_attempt_id, disposition, reply_draft, commit_shas_json, fixup_of_sha, replaces_sha, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at, source_kind, provider_thread_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (session_id, thread_id) DO UPDATE SET
        project_id = excluded.project_id,
@@ -90,41 +91,57 @@ export const upsertResolveThread = async ({
        updated_at = excluded.updated_at,
        revision = resolve_threads.revision + 1
      WHERE ? IS NULL OR resolve_threads.revision = ?`,
-    [
-      row.id,
-      row.sessionId,
-      row.projectId,
-      row.prNumber,
-      row.threadId,
-      row.originKind,
-      row.diffCommentId,
-      row.state,
-      row.stage,
-      row.stateReason,
-      row.revision,
-      row.generation,
-      row.reopenedFromThreadId,
-      row.activeAttemptId,
-      row.disposition,
-      row.replyDraft,
-      row.commitShas === null ? null : JSON.stringify(row.commitShas),
-      row.fixupOfSha,
-      row.replacesSha,
-      row.question,
-      row.replyPostedAt,
-      row.replyId,
-      row.githubResolved === null ? null : Number(row.githubResolved),
-      row.closedAt,
-      row.closedSource,
-      row.createdAt,
-      row.updatedAt,
-      sourceKindOf({ row }),
-      row.providerThreadId ?? null,
-      expectedRevision,
-      expectedRevision,
+  params: [
+    row.id,
+    row.sessionId,
+    row.projectId,
+    row.prNumber,
+    row.threadId,
+    row.originKind,
+    row.diffCommentId,
+    row.state,
+    row.stage,
+    row.stateReason,
+    row.revision,
+    row.generation,
+    row.reopenedFromThreadId,
+    row.activeAttemptId,
+    row.disposition,
+    row.replyDraft,
+    row.commitShas === null ? null : JSON.stringify(row.commitShas),
+    row.fixupOfSha,
+    row.replacesSha,
+    row.question,
+    row.replyPostedAt,
+    row.replyId,
+    row.githubResolved === null ? null : Number(row.githubResolved),
+    row.closedAt,
+    row.closedSource,
+    row.createdAt,
+    row.updatedAt,
+    sourceKindOf({ row }),
+    row.providerThreadId ?? null,
+    expectedRevision,
+    expectedRevision,
+  ],
+});
+
+export const upsertResolveThread = async ({
+  db,
+  row,
+  expectedRevision,
+}: UpsertParams): Promise<boolean> => {
+  const outcome = await db.transaction({
+    statements: [
+      ...bookkeepingRebaseStatements({ row, expectedRevision }),
+      {
+        ...upsertStatement({ row, expectedRevision }),
+        abortWhen: 'noChanges',
+        abortCode: 'THREAD_CHANGED',
+      },
     ],
-  );
-  return result.rowsAffected > 0;
+  });
+  return outcome.status === 'committed';
 };
 
 export const setResolveThreadState = async ({
@@ -136,12 +153,22 @@ export const setResolveThreadState = async ({
   stage,
   stateReason,
 }: StateParams): Promise<boolean> => {
-  const result = await db.execute(
-    `UPDATE resolve_threads SET state = ?, stage = ?, state_reason = ?, revision = revision + 1, updated_at = ?
+  const statement: PlainStatement = {
+    sql: `UPDATE resolve_threads SET state = ?, stage = ?, state_reason = ?, revision = revision + 1, updated_at = ?
      WHERE session_id = ? AND thread_id = ? AND revision = ?`,
-    [state, stage, stateReason, Date.now(), sessionId, threadId, revision],
-  );
-  return result.rowsAffected > 0;
+    params: [state, stage, stateReason, Date.now(), sessionId, threadId, revision],
+  };
+  if (state !== 'closed') {
+    const result = await db.execute(statement.sql, statement.params);
+    return result.rowsAffected > 0;
+  }
+  const outcome = await db.transaction({
+    statements: [
+      { ...statement, abortWhen: 'noChanges', abortCode: 'THREAD_CHANGED' },
+      ...keepResolveDraftCurrentStatements({ sessionId, threadId, fromRevision: revision }),
+    ],
+  });
+  return outcome.status === 'committed';
 };
 
 export const setResolveThreadStage = async ({

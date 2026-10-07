@@ -306,6 +306,27 @@ export const createResolveQueryMocks = () => {
         return true;
       },
     ),
+    repairLaggingResolveQueueItems: vi.fn(async ({ sessionId }: SessionParams) => {
+      let repaired = 0;
+      for (const [itemId, item] of queueItems) {
+        const thread = threads.get(item.threadId);
+        if (
+          thread === undefined ||
+          item.sessionId !== sessionId ||
+          item.supersededAt !== null ||
+          item.deliveredAt !== null ||
+          item.integratedSha !== null ||
+          (item.approvalState !== 'none' && item.approvalState !== 'deferred') ||
+          item.candidateRevision >= thread.revision ||
+          !['open', 'fixed', 'answered', 'closed'].includes(thread.state)
+        ) {
+          continue;
+        }
+        queueItems.set(itemId, { ...item, candidateRevision: thread.revision });
+        repaired += 1;
+      }
+      return repaired;
+    }),
     refuseResolveQueueItem: vi.fn(
       async ({ sessionId, itemId, revision, replyHash }: ApprovalParams) => {
         const item = queueItems.get(itemId);

@@ -59,6 +59,7 @@ const item: ResolveQueueItem = {
   createdAt: 1,
   updatedAt: 1,
 };
+const edited: ResolveThread = { ...thread, replyDraft: 'Fixed and renamed' };
 let db: Database;
 
 beforeEach(async () => {
@@ -95,7 +96,7 @@ beforeEach(async () => {
 
 describe('keepResolveDraftCurrent', () => {
   it('moves the item and its candidate to the revision a plain write produced', async () => {
-    await upsertResolveThread({ db, row: thread, expectedRevision: 2 });
+    await upsertResolveThread({ db, row: edited, expectedRevision: 2 });
     expect(
       await keepResolveDraftCurrent({ db, sessionId, threadId: 'thread', fromRevision: 2 }),
     ).toBe(true);
@@ -106,8 +107,8 @@ describe('keepResolveDraftCurrent', () => {
   });
 
   it('leaves an item alone when it was not in step with the revision before the write', async () => {
-    await upsertResolveThread({ db, row: thread, expectedRevision: 2 });
-    await upsertResolveThread({ db, row: thread, expectedRevision: 3 });
+    await upsertResolveThread({ db, row: edited, expectedRevision: 2 });
+    await upsertResolveThread({ db, row: edited, expectedRevision: 3 });
     expect(
       await keepResolveDraftCurrent({ db, sessionId, threadId: 'thread', fromRevision: 3 }),
     ).toBe(false);
