@@ -683,6 +683,22 @@ counts them in comments ("3 ready · 1 needs you"), never as agents. A comment
 that needs you, has a ready fix or could not be fixed sets the `reviewComment`
 ask, so Needs you carries it and the row itself is not tinted.
 
+### Row hover and focus
+
+Every row that can be clicked reads as clickable in three ways at once: the
+pointer turns to a hand, `bg-hover` washes it, and a keyboard focus draws the
+focus ring. The three live in one string, `ROW_INTERACTIVE`
+(`packages/ui/src/rowInteractive.ts`), and a row never copies it. `bg-hover`
+is a `background-image` layer, so a waiting or unread row keeps its tint and
+shows the wash on top of it. `SelectableRow` and the Activity rows
+(`TimelineStreamRow`, `TimelineCountRow`, `TimelineMoreRow`) carry the whole
+string on their one clickable element. `InteractiveRow` splits it, because its
+frame is not the control: the frame takes `ROW_HOVER` so the wash stays while
+the pointer is over an inner link or button, and the overlay button that opens
+the row takes the ring. A row that opens nothing carries none of it, and no
+pseudo-element stands in for the layer.
+`row-interactive-is-shared.test.ts` holds the listed rows to the shared string.
+
 ### Session row, hover card and switcher
 
 A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
@@ -958,6 +974,27 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
   ArrowLeft or Escape leaves it; Tab and a click outside close. Every
   `AnchoredPopover` with `role="menu"` gets the same arrow keys and typeahead
   through `useMenuKeys`, so `MenuItems` menus move the same way.
+
+## Key hints
+
+`Kbd` in `packages/ui/src/components/Kbd.tsx` draws every key hint, in one of
+two looks.
+
+- **`inline`** is the default. A chord inside a control ("Ask ⌘L", "Search
+  ⌘K") is bare `font-sans text-meta text-faint-foreground`: no border, no fill,
+  no fixed height. It sits 4px after the label, which is the control's own
+  `gap-1`, never a margin on the hint. It is `aria-hidden` when the control
+  already says the shortcut in its tooltip, its `aria-label` or
+  `aria-keyshortcuts`.
+- **`cap`** is the boxed 20px `rounded-sm` mono cap. A single key inside a
+  button (Accept A, Reply only R, Skip S) takes it, because a bare letter reads
+  as part of the label. The shortcut sheet and the Esc of a sheet header take it
+  too.
+
+Inside a filled button an inline hint uses the button's `on-tone` text at weight
+400, never an opacity step. `KbdPill` stays as `Kbd look="cap"` with the same
+props until the cap sites are swept. `Kbd` sets `data-look` so a test names the
+look without reading a class.
 
 ## Notices
 

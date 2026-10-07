@@ -284,3 +284,6 @@ export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
 export { WorkNode } from './components/WorkTree/WorkNode';
 export { WORK_NODE_GLYPH_SIZE, WORK_NODE_SIZE } from './components/WorkTree/workNodeSpec';
 export type { WorkNodeMark, WorkNodeSize, WorkNodeState } from './components/WorkTree/workNodeSpec';
+export { Kbd } from './components/Kbd';
+export type { KbdLook, KbdProps } from './components/Kbd';
+export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';

@@ -1,6 +1,7 @@
 import type { KeyboardEventHandler, MouseEventHandler, ReactNode } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
+import { ROW_HOVER } from '../rowInteractive';
 import { SELECTED_ROW_CLASSES } from '../selectedRow';
 
 export type InteractiveRowProps = {
@@ -32,7 +33,8 @@ export const InteractiveRow = ({
     onContextMenu={menu?.onContextMenu}
     onKeyDown={menu?.onKeyDown}
     className={cn(
-      'relative rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+      'relative rounded-md text-muted-foreground hover:text-foreground',
+      ROW_HOVER,
       SELECTED_ROW_CLASSES,
       frameClassName,
     )}
