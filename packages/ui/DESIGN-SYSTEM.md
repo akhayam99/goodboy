@@ -574,7 +574,9 @@ icon column), and sits on the canvas so the lane never shows through it.
 | `question` | 1.5px `warning`                         | `?`, warning              |
 | `budget`   | 1.5px `warning`                         | `$`, warning              |
 | `approval` | 1.5px `warning`                         | shield, warning           |
+| `alert`    | 1.5px `warning`                         | `!`, warning              |
 | `failed`   | 1.5px `danger`                          | `!`, danger               |
+| `approved` | 1px `success` over a solid `success`    | check, `on-tone` (white)  |
 | `done`     | 1px `success` over a `success/18` fill  | check, success            |
 | `closed`   | 1px `border`                            | check, muted              |
 | `stopped`  | 1px `border`                            | small square, muted       |
@@ -594,6 +596,16 @@ call waiting on you, distinct from `question` (an open question waiting on
 you) even though both use the warning tone. The transcript also gives a
 turn's `blocked` state its own node this way instead of sharing `question`'s
 glyph.
+
+`failed` is the red `!` and means something broke. `alert` is the same sign in
+`warning` for what you must act on while nothing is broken (changes requested,
+comments the fix could not fix), so red stays rare. `approved` is a solid
+`success` disc with a white check, 12px at `md` and 9px at `sm`: ready to ship.
+It is not `done`, which is an outline with a tinted fill and a `success` check:
+finished. Any state can also take `isSpinning`, which draws the running
+`spin-border` around the node's own ring and glyph in the colour of
+`spinClassName` (`spin-border-info` by default, motion-gated): the reason holds
+the session while an agent still works.
 
 A node can also take `progress`, measured active time over the usual time,
 from 0 to 1 and clamped. A `running` node with progress draws a 2px `info` arc
@@ -687,17 +699,50 @@ ask, so Needs you carries it and the row itself is not tinted.
 
 A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
 and the title, with a `gap-2` between them and `px-2` inside the pill. It has
-no second line, no `ToneBar`, no marks, no age and no cost. The node is one of
-five signs, picked by `sessionNodeOf` from the session's stage, first match
-wins:
+no second line, no `ToneBar`, no marks, no age and no cost. `sessionNodeOf`
+picks the node from the stage and, under needs you, from the winning reason,
+and every surface that says why a session waits reads the same table,
+`ATTENTION_REASON_META` in `features/session/session-stage.ts`: one mark, one
+tone and one sentence per reason. The sidebar node, the switcher row, the hover
+card, the Board card tone, the Now chip rows and the palette's Needs you rows
+agree on tone and words, and the node's accessible label is the sentence.
 
-| sign      | node                                         | when                                                 |
-| --------- | -------------------------------------------- | ---------------------------------------------------- |
-| needs you | `question`, `approval` or `failed`, no glyph | the stage is attention (`failed` in the danger tone) |
-| running   | `running` with the centre dot                | an agent turn runs                                   |
-| done      | `closed`, the muted check                    | the pull request is merged or all the work is closed |
-| idle      | `marker`, a 1px ring with no glyph           | anything else                                        |
-| archived  | `queued`, a dashed faint ring with no glyph  | only under Show archived                             |
+Red means broken, amber means you must answer, approve or act, green means
+ready to ship, blue means moving or new. A pictogram at 9px is unreadable, so
+the marks inside the ring are typographic: `?`, `!`, the approval shield and
+the check.
+
+| reason              | node                 | tone    | words                                    |
+| ------------------- | -------------------- | ------- | ---------------------------------------- |
+| `agent-error`       | `failed`, `!`        | danger  | An agent stopped on an error             |
+| `ci-failed`         | `failed`, `!`        | danger  | Checks failing                           |
+| `open-question`     | `question`, `?`      | warning | 1 question for you (plural by the count) |
+| `fix-needs-you`     | `question`, `?`      | warning | 3 comments need you                      |
+| `needs-approval`    | `approval`, shield   | warning | Waiting for your approval                |
+| `plan-approval`     | `approval`, shield   | warning | Plan v2 waits for your approval          |
+| `changes-requested` | `alert`, `!`         | warning | Changes requested                        |
+| `fix-couldnt-fix`   | `alert`, `!`         | warning | 2 comments it couldn't fix               |
+| `pr-approved`       | `approved`, solid    | success | Approved, ready to merge                 |
+| `unread-reply`      | `marker` and its dot | info    | New reply                                |
+
+`plan-approval` names the plan's version when it is known and says "The plan
+waits for your approval" otherwise. An unread reply is not a mark: the node
+stays the quiet ring and takes the row's 6px dot (`hasUnread`), and the dot
+also shows on any other node while a reply waits among the other reasons.
+
+The other nodes are the stage's own. Running is the ring with the centre dot,
+done is `closed`, the muted check, when the pull request is merged or all the
+work is closed, in review and building are a 1px hollow ring named by the stage
+word (never "Idle"), and archived is `queued`, a dashed faint ring, only under
+Show archived.
+
+Human-input reasons (`open-question`, `fix-needs-you`, `needs-approval` and
+`plan-approval`) outrank running: the stage is needs you and, while an agent
+works, the node keeps the reason's mark and takes the running `spin-border`
+(`isSpinning`), the Board card breathes as a running card, and the hover card
+adds a line, An agent is working. An agent error keeps its place above running.
+Failing checks, changes requested, comments it couldn't fix, approved and unread
+rank below running, because an agent may be working on exactly that.
 
 The title is `text-row`. Needs you and running read in `foreground`, idle, done
 and archived in `muted-foreground`. The open session is medium weight, and its
@@ -710,7 +755,10 @@ and the session row then carries `aria-current="true"`.
 The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
 at `z-popover`, 8px to the right of the column and aligned to its row, with a
 `gap-3` between its blocks: the title in `text-heading`, the node with the stage
-word and its reason in `text-meta`, the run progress, the chips (`Chip` `xs`:
+word and its reason in `text-meta` (under needs you, the winning reason's
+words, then each other reason that holds on its own line behind a small tone
+dot, so a red mark is always explained),
+the run progress, the chips (`Chip` `xs`:
 the pull request in its presentation tone, linked tasks as the compact task
 chip, projects with the folder glyph), a `text-meta` line of agents, spend and
 age in `faint-foreground`, and one `GhostActionButton` when the session needs

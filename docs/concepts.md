@@ -127,6 +127,19 @@ step all count as live work. The top bar chip, the workspace switcher's "N
 running", the footer count, the update pill and the restart-when-idle check all
 read it, so a workspace with one agent waiting on a permission is never "idle".
 
+**Needs you** outranks running when what waits is a human input: an open
+question, a tool waiting for your approval, a comment the fix run needs you for,
+or a plan waiting for your approval (a workflow run held at its plan). The
+session sits in needs you while its agents keep working, and the top bar chip,
+the board column, the palette and `⌥⌘↓` all count it there ("1 needs you",
+"2 need you"). An agent error also keeps its place above running. Failing
+checks, changes requested, comments the fix run could not fix, an approved pull
+request and an unread reply rank below running, because an agent may be working
+on exactly that. Every reason that holds is kept, not only the winner, and the
+hover card lists them all, so an approved pull request with a failing check
+shows both. The words and the mark of each reason come from one table (see
+Session stages under Identifiers).
+
 The board looks at the pull request or merge request of every mount, GitHub,
 GitLab or Bitbucket, and takes the worst one: failing CI, then changes
 requested, then approved. A session is done only when every request is merged
@@ -1434,11 +1447,24 @@ task up again in Goodboy.
 
 Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
 `review` (**in review**), `building`, `done`. A fix run raises `attention` too:
-a comment that **Needs you** gives the reason `fix-needs-you` (before open
-questions, it opens the Comments tab) and a comment that **Couldn't fix** (not
-one you stopped, not a failed push) gives `fix-couldnt-fix`. Both also send one
-notification when the count rises (`projectResolveRows`), with an action that
-opens Activity, where the Needs you row waits.
+a comment that **Needs you** gives the reason `fix-needs-you` (it opens the
+Comments tab) and a comment that **Couldn't fix** (not one you stopped, not a
+failed push) gives `fix-couldnt-fix`. Both also send one notification when the
+count rises (`projectResolveRows`), with an action that opens Activity, where
+the Needs you row waits.
+
+Attention reasons, in `SessionAttentionReason`, rank in this order when several
+hold: `needs-approval`, `agent-error`, `plan-approval`, `open-question`,
+`fix-needs-you`, `ci-failed`, `changes-requested`, `fix-couldnt-fix`,
+`pr-approved`, `unread-reply`. `attentionFactsOf` lists every reason that holds
+in that order, `deriveSessionStage` takes the first as `attention` and keeps
+the rest as `otherReasons`, and `SessionStageInfo.isRunning` tells a session in
+needs you that an agent still works. `plan-approval` comes from a workflow run
+whose `orchestrationStop` is `plan-approval` (`isRunHeldForPlan`) and opens that
+run's page. `ATTENTION_REASON_META` gives each reason its mark, tone and words
+for the sidebar, the switcher, the hover card, the Board card, the Now chip and
+the palette; red is only an agent error and failing checks. The reason text of a
+stage says "checks", never "CI".
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 
