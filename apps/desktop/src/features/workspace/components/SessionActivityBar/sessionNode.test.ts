@@ -2,7 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
 import { ATTENTION_REASON_META, attentionWordsOf } from '../../../session/session-stage';
-import { sessionNodeOf, type SessionNodeInfo } from './sessionNode';
+import { sessionNodeOf } from './sessionNode';
+
+type SessionNodeInfo = Parameters<typeof sessionNodeOf>[0]['info'];
 
 const REASONS = Object.keys(ATTENTION_REASON_META) as ReadonlyArray<SessionAttentionReason>;
 

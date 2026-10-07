@@ -18,7 +18,7 @@ export type AttentionFactsParams = {
   readonly hasPlanWaiting?: boolean;
 };
 
-export const ATTENTION_PRIORITY: ReadonlyArray<SessionAttentionReason> = [
+const ATTENTION_PRIORITY: ReadonlyArray<SessionAttentionReason> = [
   'needs-approval',
   'agent-error',
   'plan-approval',
@@ -45,10 +45,10 @@ type ReasonParams = {
 export const isHumanInputReason = ({ reason }: ReasonParams): boolean =>
   HUMAN_INPUT_REASONS.includes(reason);
 
-export const isPrLive = (pr: StagePullRequest | null): pr is StagePullRequest =>
+const isPrLive = (pr: StagePullRequest | null): pr is StagePullRequest =>
   pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
 
-export const NO_REASONS: ReadonlyArray<SessionAttentionReason> = [];
+const NO_REASONS: ReadonlyArray<SessionAttentionReason> = [];
 
 const interned = new Map<string, ReadonlyArray<SessionAttentionReason>>();
 

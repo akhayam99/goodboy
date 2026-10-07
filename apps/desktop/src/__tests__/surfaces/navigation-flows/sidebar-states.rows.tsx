@@ -1,7 +1,13 @@
 import { expect } from 'vitest';
 import { waitFor } from '@testing-library/react';
-import { aWorkflowRun } from '@goodboy/types/testing';
-import type { ProviderRunId, Session, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  ProviderRunId,
+  Session,
+  SessionId,
+  WorkflowId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { pressShortcut } from '../../helpers/pressKey';
 import { type Row, WAIT, heading, lens, settle, useAppStore } from './harness';
@@ -58,10 +64,17 @@ const seedWaitingWork = (sessionId: SessionId): void => {
     updatedAt: '2026-10-03T09:00:00.000Z',
     over: {
       workflowRuns: [
-        aWorkflowRun({
+        {
           id: HELD_RUN_ID,
+          workflowId: 'sidebar-states-workflow' as WorkflowId,
+          ordinal: 1,
+          currentStep: 0,
+          autoRun: false,
+          triggerMode: 'manual',
+          executionMode: 'dynamic',
           orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
-        }),
+          createdAt: '2026-10-03T08:00:00.000Z' as IsoDateTime,
+        },
       ],
     },
   });

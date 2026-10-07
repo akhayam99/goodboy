@@ -19,7 +19,7 @@ export type SessionNode = {
   readonly hasUnread: boolean;
 };
 
-export type SessionNodeInfo = Pick<
+type SessionNodeInfo = Pick<
   SessionStageInfo,
   | 'stage'
   | 'attention'

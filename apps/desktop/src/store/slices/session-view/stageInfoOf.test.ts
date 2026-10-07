@@ -22,9 +22,12 @@ import {
   type StoryStore,
 } from '../../storyHarness';
 import {
+  at,
+  mergedGithub,
+  openQuestionFor,
+  runningState,
   seedColumn,
   sessionOf,
-  runningState,
 } from '../../../features/workspace/testing/sessionColumn';
 import { useSessionStageInfo } from './selectors';
 import { stageInfoOf } from './stageInfoOf';
@@ -53,7 +56,7 @@ const seeded = ({ session }: { readonly session: Session }): Session => {
     sessions: [session],
     currentSessionId: session.id as SessionId,
   });
-  return useAppStore.getState().sessions[0] as Session;
+  return session;
 };
 
 const infoOf = (session: Session) => stageInfoOf(useAppStore.getState(), session);
@@ -88,16 +91,17 @@ describe('stageInfoOf and a plan that waits for approval', () => {
   });
 
   it('does not count a run that was archived or one stopped for another reason', () => {
-    const archived = { ...held('run-archived'), discardedAt: '2026-10-06T08:00:00.000Z' };
+    const archived = aWorkflowRun({
+      id: 'run-archived' as WorkflowRunId,
+      orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+      discardedAt: at('2026-10-06T08:00:00.000Z'),
+    });
     const paused = aWorkflowRun({
       id: 'run-paused' as WorkflowRunId,
       orchestrationStop: { kind: 'paused', message: 'Paused.' },
     });
     const session = seeded({
-      session: {
-        ...sessionOf({ goal: 'Retry webhooks' }),
-        workflowRuns: [archived as WorkflowRun, paused],
-      },
+      session: { ...sessionOf({ goal: 'Retry webhooks' }), workflowRuns: [archived, paused] },
     });
 
     expect(infoOf(session).attention).toBeNull();
@@ -109,18 +113,7 @@ describe('stageInfoOf and a plan that waits for approval', () => {
     });
     useAppStore.setState({
       sessionOpenQuestions: {
-        [session.id]: [
-          {
-            id: 'question-one' as never,
-            sessionId: session.id as SessionId,
-            text: 'Which window?',
-            suggestedAnswers: [],
-            isBlocking: true,
-            userAnswer: null,
-            status: 'open',
-            createdAt: '2026-10-05T09:00:00.000Z' as never,
-          },
-        ],
+        [session.id]: [openQuestionFor({ sessionId: session.id as SessionId })],
       },
     });
 
@@ -137,32 +130,20 @@ describe('useSessionStageInfo', () => {
     const session = seeded({
       session: { ...sessionOf({ goal: 'Retry webhooks' }), workflowRuns: [held('run-held')] },
     });
+    const github = mergedGithub();
     useAppStore.setState({
       sessionGithub: {
         [session.id]: {
-          pr: {
-            number: 318,
-            title: 'Retry webhooks',
-            url: 'https://github.com/harborline/payments-api/pull/318',
-            state: 'approved',
-            mergeable: null,
-            checks: 'failure',
-            baseBranch: 'main',
-            headBranch: 'goodboy/retry',
-            isDraft: false,
-            reviewDecision: 'approved',
-            body: '',
-            updatedAt: '2026-10-06T09:00:00.000Z',
-          },
-          linkedIssues: [],
-          fetchedAt: null,
-          failedAt: null,
-          loading: false,
-          error: null,
-          detail: null,
-          detailFetchedAt: null,
-          detailLoading: false,
-          detailError: null,
+          ...github,
+          pr:
+            github.pr === null
+              ? null
+              : {
+                  ...github.pr,
+                  state: 'approved',
+                  checks: 'failure',
+                  reviewDecision: 'approved',
+                },
         },
       },
     });

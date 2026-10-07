@@ -5,8 +5,6 @@ import {
   attentionFactsOf,
   internReasons,
   isHumanInputReason,
-  isPrLive,
-  NO_REASONS,
   type StagePullRequest,
 } from './attentionFactsOf';
 
@@ -158,7 +156,7 @@ describe('attentionFactsOf', () => {
     });
 
     expect(second).toBe(first);
-    expect(attentionFactsOf({ ...base })).toBe(NO_REASONS);
+    expect(attentionFactsOf({ ...base })).toBe(attentionFactsOf({ ...base, hasUnread: false }));
   });
 });
 
@@ -170,7 +168,8 @@ describe('internReasons', () => {
 
     expect(two).toBe(one);
     expect(other).not.toBe(one);
-    expect(internReasons({ reasons: [] })).toBe(NO_REASONS);
+    expect(internReasons({ reasons: [] })).toBe(internReasons({ reasons: [] }));
+    expect(internReasons({ reasons: [] })).toBe(attentionFactsOf({ ...base }));
   });
 });
 
@@ -188,14 +187,5 @@ describe('isHumanInputReason', () => {
     ['unread-reply', false],
   ])('says %s is human input: %s', (reason, expected) => {
     expect(isHumanInputReason({ reason })).toBe(expected);
-  });
-});
-
-describe('isPrLive', () => {
-  it('is false without a pull request and once it is settled', () => {
-    expect(isPrLive(null)).toBe(false);
-    expect(isPrLive(livePr({ state: 'merged' }))).toBe(false);
-    expect(isPrLive(livePr({ state: 'closed' }))).toBe(false);
-    expect(isPrLive(livePr({ state: 'queued' }))).toBe(true);
   });
 });

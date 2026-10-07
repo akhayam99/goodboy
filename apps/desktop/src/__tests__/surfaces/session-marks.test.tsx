@@ -11,30 +11,18 @@ vi.mock('../../shared/lib/db', async () =>
   (await import('../../store/storyHarness')).dbLibModuleMock(),
 );
 
-const fixture = vi.hoisted(() => ({ info: null as SessionStageInfo | null }));
-
-vi.mock('../../store/slices/session-view/stageInfoOf', () => ({
-  stageInfoOf: () =>
-    fixture.info ?? {
-      stage: 'building',
-      reason: '',
-      addsFact: false,
-      attention: null,
-      prState: null,
-    },
-}));
-
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, within } from '@testing-library/react';
 import { tintClasses } from '@goodboy/ui';
-import type { SessionAttentionReason, SessionStageInfo } from '@goodboy/types';
+import type { Session, SessionAttentionReason, SessionStageInfo } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { seedColumn, sessionOf } from '../../features/workspace/testing/sessionColumn';
+import { stageInfoOf } from '../../store/slices/session-view/stageInfoOf';
+import { seedSessionMarks } from '../../app/components/MockScene/scenes/u21/sessionMarksSeed';
 import { ATTENTION_REASON_META, attentionWordsOf } from '../../features/session/session-stage';
 import { sessionTone } from '../../features/session/components/sessionCardShell';
 import { needsYouEntries } from '../../features/palette/sources/needsYouEntries';
@@ -52,35 +40,30 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   localStorage.clear();
+  seedSessionMarks();
 });
 
-afterEach(() => {
-  cleanup();
-  fixture.info = null;
-});
+afterEach(cleanup);
 
 const REASONS = Object.keys(ATTENTION_REASON_META) as ReadonlyArray<SessionAttentionReason>;
 
-const COUNTS = { openQuestionCount: 2, fixNeedsYouCount: 3, fixCouldntFixCount: 2 };
+type Waiting = {
+  readonly session: Session;
+  readonly info: SessionStageInfo;
+};
 
-const infoFor = ({ reason }: { readonly reason: SessionAttentionReason }): SessionStageInfo => ({
-  stage: 'attention',
-  reason: 'a reason string the surfaces must not show',
-  addsFact: true,
-  attention: reason,
-  prState: null,
-  isRunning: false,
-  otherReasons: [],
-  ...COUNTS,
-});
-
-const session = sessionOf({ goal: 'Retry failed webhook deliveries' });
+const waitingFor = ({ reason }: { readonly reason: SessionAttentionReason }): Waiting => {
+  const state = useAppStore.getState();
+  for (const session of state.sessions) {
+    const info = stageInfoOf(state, session);
+    if (info.stage === 'attention' && info.attention === reason) {
+      return { session, info };
+    }
+  }
+  throw new Error(`the scene seed holds no session waiting for ${reason}`);
+};
 
 const noop = () => undefined;
-
-const seed = () => {
-  seedColumn({ store: useAppStore, sessions: [session] });
-};
 
 const withoutUnseen = (label: string | null): string | null =>
   label === null ? null : label.replace(/, unseen$/, '');
@@ -92,14 +75,10 @@ const nodeOf = (container: HTMLElement) => ({
 
 describe.each(REASONS)('every surface says %s the same way', (reason) => {
   const tone = ATTENTION_REASON_META[reason].tone;
-  const words = attentionWordsOf({ reason, counts: COUNTS });
-
-  beforeEach(() => {
-    seed();
-    fixture.info = infoFor({ reason });
-  });
 
   it('draws the sidebar row with the tone and words of the table', () => {
+    const { session, info } = waitingFor({ reason });
+    const words = attentionWordsOf({ reason, counts: info });
     const { container } = render(
       <SessionActivityItem
         session={session}
@@ -122,14 +101,20 @@ describe.each(REASONS)('every surface says %s the same way', (reason) => {
   });
 
   it('draws the switcher row with the same node', () => {
+    const { session, info } = waitingFor({ reason });
     const { container } = render(
       <SwitcherRow session={session} isSelected={false} onChoose={noop} />,
     );
 
-    expect(nodeOf(container)).toEqual({ tone, words });
+    expect(nodeOf(container)).toEqual({
+      tone,
+      words: attentionWordsOf({ reason, counts: info }),
+    });
   });
 
   it('draws the hover card with the same node and says the words once', () => {
+    const { session, info } = waitingFor({ reason });
+    const words = attentionWordsOf({ reason, counts: info });
     const { container } = render(
       <SessionHoverCardBody session={session} isArchived={false} onOpenAttention={noop} />,
     );
@@ -139,10 +124,13 @@ describe.each(REASONS)('every surface says %s the same way', (reason) => {
   });
 
   it('tones the Board card with the same tone', () => {
-    expect(sessionTone({ stage: 'attention', attention: reason }).tone).toBe(tone);
+    const { info } = waitingFor({ reason });
+
+    expect(sessionTone({ stage: info.stage, attention: reason }).tone).toBe(tone);
   });
 
   it('draws the Now chip row with the same tone and words', () => {
+    const { session, info } = waitingFor({ reason });
     const { container } = render(
       <ul>
         <NeedsYouSessionRow session={session} onSelect={noop} />
@@ -152,16 +140,14 @@ describe.each(REASONS)('every surface says %s the same way', (reason) => {
     expect(
       container.querySelector('[data-attention-tone]')?.getAttribute('data-attention-tone'),
     ).toBe(tone);
-    expect(within(container).getByText(words)).toBeDefined();
+    expect(within(container).getByText(attentionWordsOf({ reason, counts: info }))).toBeDefined();
   });
 
   it('draws the palette entry with the same tone and words', () => {
-    const [entry] = needsYouEntries({
-      items: [{ session, info: infoFor({ reason }) }],
-      open: noop,
-    });
+    const { session, info } = waitingFor({ reason });
+    const [entry] = needsYouEntries({ items: [{ session, info }], open: noop });
 
-    expect(entry?.detail).toBe(words);
+    expect(entry?.detail).toBe(attentionWordsOf({ reason, counts: info }));
     expect(entry?.accent).toBe(tintClasses(tone).dot);
   });
 });
