@@ -690,16 +690,22 @@ describe('useTrailMenus diff branch crumb', () => {
     expect(rowById(menu, '/work/notify-relay').state?.word).toBe("Not on the PR's commits");
   });
 
-  it('offers all branches in Session and opens the diff of a picked mount', () => {
+  it('offers all branches in Session and opens the diff of a picked mount', async () => {
     const menu = menuOf(branchPage, 'branch');
     expect(labelsOf(menu)).toEqual([['all-branches', 'All branches in Session']]);
     actionOf(menu, 'all-branches').onRun();
     expect(h.openLens).toHaveBeenCalledWith({ sessionId: SESSION_ID, lens: null });
     rowById(menu, '/work/notify-relay').onSelect();
-    expect(navigate).toHaveBeenLastCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, mountPath: '/work/notify-relay', tab: 'comments' }),
-      mode: 'replace',
-    });
+    await vi.waitFor(() =>
+      expect(navigate).toHaveBeenLastCalledWith({
+        to: branchPlace({
+          sessionId: SESSION_ID,
+          mountPath: '/work/notify-relay',
+          tab: 'comments',
+        }),
+        mode: 'replace',
+      }),
+    );
   });
 });
 

@@ -444,14 +444,16 @@ describe('BranchHeader branch switcher', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_FIX.mountId,
     });
-    expect(navigate).toHaveBeenCalledWith({
-      to: branchPlace({
-        sessionId: SESSION_ID,
-        mountPath: MOUNT_FIX.worktreePath,
-        tab: 'files',
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        to: branchPlace({
+          sessionId: SESSION_ID,
+          mountPath: MOUNT_FIX.worktreePath,
+          tab: 'files',
+        }),
+        mode: 'replace',
       }),
-      mode: 'replace',
-    });
+    );
     await waitFor(() => expect(screen.queryByRole('menuitemradio')).toBeNull());
   });
 

@@ -50,7 +50,7 @@ export const useBranchSwitcher = ({ sessionId, currentPath }: Params): BranchSwi
             : { number: request.number, state: request.state, isDraft: request.isDraft };
         },
         onSelect: (mount) =>
-          switchBranchMount({
+          void switchBranchMount({
             sessionId,
             mountId: mount.mountId,
             worktreePath: mount.worktreePath,
@@ -75,7 +75,11 @@ export const useBranchSwitcher = ({ sessionId, currentPath }: Params): BranchSwi
           ...(branch === '' ? {} : { branch }),
         });
         if (view.worktreePath !== null) {
-          switchBranchMount({ sessionId, mountId: view.id, worktreePath: view.worktreePath });
+          await switchBranchMount({
+            sessionId,
+            mountId: view.id,
+            worktreePath: view.worktreePath,
+          });
         }
         return true;
       } catch (error) {

@@ -28,6 +28,10 @@ export const diffBranchCrumbMenu = (scope: TrailMenuScope): CrumbMenuModel => {
       },
     ],
     onSelect: (mount) =>
-      switchBranchMount({ sessionId, mountId: mount.mountId, worktreePath: mount.worktreePath }),
+      void switchBranchMount({
+        sessionId,
+        mountId: mount.mountId,
+        worktreePath: mount.worktreePath,
+      }),
   });
 };
