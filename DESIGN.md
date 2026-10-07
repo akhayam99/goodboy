@@ -234,8 +234,8 @@ about its effect is a worse defect than one that reads badly.
 
 ## Status & signals
 
-- **Errors, warnings, tips and toasts are Notices.** A tone rail and a tone
-  icon on a neutral surface, neutral text, the raw output behind Details. A
+- **Errors, warnings, tips and toasts are Notices.** An inner tone line and a
+  tone icon on a neutral surface, neutral text, the raw output behind Details. A
   danger or warning tint never fills a message: `tone-is-a-rail-not-a-fill.test.ts`
   allows it only on chips, small controls and diff cells, and its debt list
   only shrinks. The anatomy and placements live in

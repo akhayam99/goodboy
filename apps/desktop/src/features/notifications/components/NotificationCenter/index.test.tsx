@@ -102,9 +102,29 @@ describe('NotificationCenter', () => {
     render(<NotificationCenter />);
     await openCenter();
 
-    expect(screen.getByText('No notifications')).toBeDefined();
-    expect(screen.getByText('No notifications')).toBeDefined();
+    expect(screen.getByText('No notifications yet')).toBeDefined();
     expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows one line and no Unread or All tabs when there is nothing', async () => {
+    render(<NotificationCenter />);
+    await openCenter();
+
+    expect(screen.getByText('No notifications yet')).toBeDefined();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'All' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /unread/i })).toBeNull();
+  });
+
+  it('keeps the Unread and All tabs once there is something to switch between', async () => {
+    state.notifications = [
+      buildNotification({ id: 'n1', title: 'build failed', coalesceKey: 'build', read: true }),
+    ];
+    render(<NotificationCenter />);
+    await openCenter();
+
+    expect(screen.getByRole('tab', { name: 'All' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /unread/i })).toBeDefined();
   });
 
   it('closes on escape, and only the bell when a layer sits below it', async () => {
@@ -112,11 +132,11 @@ describe('NotificationCenter', () => {
     const offBelow = registerEscapeLayer(closeBelow);
     render(<NotificationCenter />);
     await openCenter();
-    expect(screen.getByText('No notifications')).toBeDefined();
+    expect(screen.getByText('No notifications yet')).toBeDefined();
 
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
-    expect(screen.queryByText('No notifications')).toBeNull();
+    expect(screen.queryByText('No notifications yet')).toBeNull();
     expect(closeBelow).not.toHaveBeenCalled();
     offBelow();
   });

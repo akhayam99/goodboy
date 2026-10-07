@@ -246,7 +246,7 @@ describe('TimelinePane mount rows', () => {
 
     expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
     expect(screen.queryByText('Nothing yet')).toBeNull();
-    expect(screen.getByText(/Nothing launched yet/)).toBeDefined();
+    expect(screen.getByText('No runs or agents yet')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
     expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
   });
@@ -324,7 +324,11 @@ describe('TimelinePane Activity and Log', () => {
       target: { value: 'zzz' },
     });
 
-    expect(screen.getByText('Nothing in the log matches')).toBeDefined();
+    expect(screen.getByText('No log entries match this search.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+
+    expect(screen.getByText('hl/fix-duplicate-credit')).toBeDefined();
+    expect(screen.queryByText('No log entries match this search.')).toBeNull();
   });
 
   it('keeps the rewrite rows in Activity with no recovery verb and no menu: recovery lives in Commits', () => {
@@ -444,8 +448,45 @@ describe('TimelinePane on an empty session', () => {
     renderEmptySession();
 
     expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
-    expect(screen.getByText(/Nothing yet/)).toBeDefined();
+    expect(screen.getByText('No runs or agents yet')).toBeDefined();
+    expect(screen.queryByText(/Nothing yet/)).toBeNull();
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
+  });
+
+  it('hides See Log while the log has nothing in it', () => {
+    renderEmptySession();
+
+    expect(screen.queryByRole('button', { name: 'See Log' })).toBeNull();
+  });
+
+  it('points to the log, never to "Nothing yet", while a pull request sits in it', () => {
+    storeState.sessionEvents = {
+      'session-1': [
+        {
+          id: 'ev-pr',
+          sessionId: 'session-1',
+          kind: 'pr_created',
+          payload: { prNumber: 318, title: 'Webhook redelivery' },
+          createdAt: '2026-08-20T11:00:00.000Z',
+        },
+      ],
+    };
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.getByText('No runs or agents yet')).toBeDefined();
+    expect(screen.queryByText(/Nothing yet/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+
+    expect(screen.getByText(/Webhook redelivery/)).toBeDefined();
+    expect(screen.queryByText('No runs or agents yet')).toBeNull();
+  });
+
+  it('says the log is empty once Log is open', () => {
+    renderEmptySession();
+    openLog();
+
+    expect(screen.getByText('No log entries yet')).toBeDefined();
+    expect(screen.queryByRole('searchbox', { name: 'Search the log' })).not.toBeNull();
   });
 });
 
@@ -453,7 +494,7 @@ describe('TimelinePane loading', () => {
   it('holds a timeline skeleton until the session events resolve', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(screen.queryByText(/Nothing yet/)).toBeNull();
+    expect(screen.queryByText('No runs or agents yet')).toBeNull();
     expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
   });
 
@@ -463,7 +504,7 @@ describe('TimelinePane loading', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByRole('status', { name: 'Loading the timeline' })).toBeNull();
-    expect(screen.getByText(/Nothing yet/)).toBeDefined();
+    expect(screen.getByText('No runs or agents yet')).toBeDefined();
   });
 
   it('holds a timeline skeleton until the agents collection loads', () => {

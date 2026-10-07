@@ -6,14 +6,14 @@ import {
   Divider,
   SegmentedTabs,
   Skeleton,
+  EmptyState,
   Tooltip,
   useDropdown,
   type SegmentedTabOption,
-  FilledEmptyState,
 } from '@goodboy/ui';
 import type { Notification } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { notificationGroupKey, sortNotificationGroupsNewestFirst } from '../../grouping';
 import { openNotificationSession } from '../../openNotificationSession';
@@ -149,13 +149,15 @@ export const NotificationCenter = () => {
       >
         <header className="flex items-center justify-between gap-2 px-3 py-2">
           <span className="text-label font-semibold text-foreground">Notifications</span>
-          <SegmentedTabs
-            ariaLabel="Show unread or all notifications"
-            options={viewOptions}
-            value={view}
-            onChange={setView}
-            size="sm"
-          />
+          {notifications.length === 0 ? null : (
+            <SegmentedTabs
+              ariaLabel="Show unread or all notifications"
+              options={viewOptions}
+              value={view}
+              onChange={setView}
+              size="sm"
+            />
+          )}
         </header>
         <Divider />
         {notificationsLoading && notifications.length === 0 ? (
@@ -172,10 +174,11 @@ export const NotificationCenter = () => {
             ))}
           </div>
         ) : shownGroups.length === 0 ? (
-          <FilledEmptyState
+          <EmptyState
+            size="section"
+            className="px-3 py-2"
             icon={Bell}
-            tone={CONCEPT_TONE.notifications}
-            title={notifications.length === 0 ? 'No notifications' : "You're caught up"}
+            title={notifications.length === 0 ? 'No notifications yet' : "You're caught up"}
             description={
               notifications.length === 0
                 ? undefined

@@ -37,6 +37,18 @@ describe('Button', () => {
     expect(classes).toEqual(expect.arrayContaining(FOCUS_RING.split(' ')));
   });
 
+  it('has an extra small size for a ghost action inside a row', () => {
+    render(
+      <Button variant="ghost" size="xs">
+        Open
+      </Button>,
+    );
+    const classes = screen.getByRole('button', { name: 'Open' }).className.split(' ');
+
+    expect(classes).toContain('h-6');
+    expect(classes).not.toContain('h-7');
+  });
+
   it('keeps every emphasis as an enabled button', () => {
     render(
       <>

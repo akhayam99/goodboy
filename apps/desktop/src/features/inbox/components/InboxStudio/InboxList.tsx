@@ -1,8 +1,9 @@
-import { Button, EmptyState, Eyebrow, Notice, Skeleton } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { Button, EmptyLine, EmptyState, Eyebrow, Notice, Skeleton } from '@goodboy/ui';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { DayGroup } from '../../../../shared/utils/groupByDay';
 import { integrationLabel } from '../../../integrations/components/IntegrationGlyph';
 import type { InboxProvider, InboxRecord } from '../../types';
+import { inboxFailureNoticeOf } from './inboxFailureNotice';
 import { InboxRow, inboxOptionId } from './InboxRow';
 
 export type InboxLoadFailure = {
@@ -25,18 +26,6 @@ type Props = {
   readonly onClearFilters: () => void;
   readonly starOf?: (record: InboxRecord) => boolean | undefined;
   readonly onToggleStar?: (record: InboxRecord) => void;
-};
-
-type FailureTitleParams = {
-  readonly failures: ReadonlyArray<InboxLoadFailure>;
-};
-
-const failureTitle = ({ failures }: FailureTitleParams): string => {
-  const names = failures.map((failure) => integrationLabel({ provider: failure.provider }));
-  if (names.length <= 1) {
-    return `${names[0] ?? 'A tool'} didn't load.`;
-  }
-  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1] ?? ''} didn't load.`;
 };
 
 export const InboxList = ({
@@ -62,29 +51,26 @@ export const InboxList = ({
     days.some((day) => day.items.some((record) => record.key === selectedKey))
       ? inboxOptionId({ key: selectedKey })
       : undefined;
-  const firstFailure = failures[0];
+  const failureNotice = inboxFailureNoticeOf({
+    failures: failures.map((failure) => ({
+      name: integrationLabel({ provider: failure.provider }),
+      message: failure.message,
+    })),
+  });
 
   return (
     <div className="flex flex-col gap-4">
-      {firstFailure != null ? (
+      {failureNotice !== null ? (
         <Notice
-          tone="warning"
+          tone={failureNotice.tone}
           placement="inline"
-          title={failureTitle({ failures })}
-          body={failures.length === 1 ? firstFailure.message : undefined}
-          detail={
-            failures.length > 1
-              ? failures
-                  .map(
-                    (failure) =>
-                      `${integrationLabel({ provider: failure.provider })}: ${failure.message}`,
-                  )
-                  .join('\n')
-              : null
-          }
+          role="alert"
+          title={failureNotice.title}
+          body={failureNotice.body}
+          detail={failureNotice.detail}
           actions={
             <>
-              <Button variant="ghost" size="sm" onClick={onRetry}>
+              <Button variant="secondary" size="sm" onClick={onRetry}>
                 Retry
               </Button>
               <Button variant="ghost" size="sm" onClick={onOpenSettings}>
@@ -107,42 +93,37 @@ export const InboxList = ({
       ) : null}
       {!isShowingSkeleton && connectedCount === 0 && totalCount === 0 ? (
         <EmptyState
+          size="page"
           icon={CONCEPT_ICONS.inbox}
-          tone={CONCEPT_TONE.inbox}
-          title="Nothing assigned to you"
+          title="No tool connected"
+          description="Connect a tool to see what is assigned to you."
           action={
-            <Button variant="secondary" size="sm" onClick={onOpenSettings}>
+            <Button variant="primary" size="sm" onClick={onOpenSettings}>
               Connect a tool
             </Button>
           }
-          size="lg"
-          headingLevel={2}
         />
       ) : null}
       {!isShowingSkeleton && connectedCount > 0 && totalCount === 0 && failures.length === 0 ? (
         <EmptyState
+          size="page"
           icon={CONCEPT_ICONS.inbox}
-          tone={CONCEPT_TONE.inbox}
-          title="Nothing assigned to you"
-          size="lg"
-          headingLevel={2}
+          title="No items yet"
+          description="Issues and errors assigned to you in your tools are listed here."
         />
       ) : null}
       {totalCount > 0 && visibleCount === 0 ? (
-        <EmptyState
-          icon={CONCEPT_ICONS.inbox}
-          tone={CONCEPT_TONE.inbox}
-          title="No items match these filters"
+        <EmptyLine
           action={
             hasFiltersActive ? (
-              <Button variant="secondary" size="sm" onClick={onClearFilters}>
+              <Button variant="ghost" size="xs" onClick={onClearFilters}>
                 Clear filters
               </Button>
             ) : undefined
           }
-          size="lg"
-          headingLevel={2}
-        />
+        >
+          No items match these filters.
+        </EmptyLine>
       ) : null}
       {visibleCount > 0 ? (
         <ul

@@ -41,6 +41,39 @@ const renderList = (onImported = vi.fn()) => {
   return onImported;
 };
 
+describe('ArtifactList states', () => {
+  it('says what will be here and offers one primary the first time', async () => {
+    renderList();
+
+    expect(screen.getByRole('heading', { level: 2, name: 'No artifacts yet' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'New artifact' }));
+
+    expect(await screen.findByRole('menu', { name: 'New artifact' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: /Report/ })).toBeDefined();
+  });
+
+  it('names the filter and clears it when the filter matches nothing', () => {
+    const onFilterChange = vi.fn();
+    render(
+      <ArtifactList
+        sessionId={SESSION_ID}
+        rows={[]}
+        counts={{ all: 3, plan: 0, report: 2, wireframe: 1 }}
+        filter="plan"
+        onFilterChange={onFilterChange}
+        onOpen={vi.fn()}
+        onImported={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('heading', { name: 'No artifacts yet' })).toBeNull();
+    expect(screen.getByText('No plans in this session.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }));
+
+    expect(onFilterChange).toHaveBeenCalledWith('all');
+  });
+});
+
 const openImport = () => {
   fireEvent.click(screen.getByTestId('artifact-new'));
   fireEvent.click(screen.getByRole('menuitem', { name: /Import wireframe JSON/ }));

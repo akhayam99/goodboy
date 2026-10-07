@@ -2,9 +2,9 @@ import { useEffect, type ReactNode } from 'react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AdHocRow } from '../AgentTree/AdHocRow';
 import { AgentLane } from '../AgentLane';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
-import { AgentLaneNote } from '../AgentLane/AgentLaneNote';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { Button, EmptyState } from '@goodboy/ui';
+import { createAgentEventName } from '../../createAgentEventName';
 import { CreateAgentPopover } from '../CreateAgentPopover';
 import { AgentListSkeleton } from './AgentListSkeleton';
 import { useStandaloneAgentsLane } from './useStandaloneAgentsLane';
@@ -13,8 +13,7 @@ import { FinishedRegister } from '../../../../shared/components/FinishedRegister
 
 const VISIBLE_FINISHED_COUNT = 30;
 
-const NO_AGENTS_DESCRIPTION =
-  'Start an agent to work on this session, or kick off a workflow to run a sequence of agents toward the goal.';
+const NO_AGENTS_DESCRIPTION = 'An agent works on this session on its own.';
 const ALL_DONE_DESCRIPTION = 'Every agent here is marked done. Start a new one to keep going.';
 
 type Props = {
@@ -57,6 +56,8 @@ export const StandaloneAgentsLane = ({
     }
     onCompletedCountChange(lane.completedAgents.length);
   }, [isLens, lane.completedAgents.length, onCompletedCountChange]);
+
+  const startAgent = () => window.dispatchEvent(new CustomEvent(createAgentEventName(sessionId)));
 
   const renderList = (rows: ReadonlyArray<Agent>, muted: boolean) => (
     <ul className="flex flex-col gap-1">
@@ -101,7 +102,14 @@ export const StandaloneAgentsLane = ({
     return (
       <div className="flex flex-col gap-2">
         {isLoadingEmpty && <AgentListSkeleton />}
-        {!isLoadingEmpty && hasNoAgents && <AgentLaneNote text="No agents yet. Start one below." />}
+        {!isLoadingEmpty && hasNoAgents && (
+          <EmptyState
+            size="section"
+            icon={CONCEPT_ICONS.agents}
+            title="No agents yet"
+            description="Start one below."
+          />
+        )}
         {!isLoadingEmpty && !hasNoAgents && list}
         {showCreateControl && <CreateAgentPopover sessionId={sessionId} />}
         {error}
@@ -115,12 +123,24 @@ export const StandaloneAgentsLane = ({
       empty={
         isLoadingEmpty ? (
           <AgentListSkeleton />
-        ) : (
-          <LensEmptyState
-            tone={CONCEPT_TONE.agents}
+        ) : hasNoAgents ? (
+          <EmptyState
+            size="page"
             icon={CONCEPT_ICONS.agents}
-            title={hasNoAgents ? 'No agents yet' : 'No active agents'}
-            description={hasNoAgents ? NO_AGENTS_DESCRIPTION : ALL_DONE_DESCRIPTION}
+            title="No agents yet"
+            description={NO_AGENTS_DESCRIPTION}
+            action={
+              <Button variant="primary" size="sm" onClick={startAgent}>
+                Start an agent
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            size="section"
+            icon={CONCEPT_ICONS.agents}
+            title="No active agents"
+            description={ALL_DONE_DESCRIPTION}
           />
         )
       }

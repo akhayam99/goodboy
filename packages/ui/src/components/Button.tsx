@@ -6,7 +6,7 @@ import { StatusDot } from './StatusDot';
 
 export type ButtonVariant =
   'primary' | 'secondary' | 'ghost' | 'danger' | 'warning' | 'info' | 'success';
-export type ButtonSize = 'sm' | 'md';
+export type ButtonSize = 'xs' | 'sm' | 'md';
 export type ButtonEmphasis = 'solid' | 'outline';
 
 export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
@@ -44,6 +44,7 @@ const outlineClasses = (variant: ButtonVariant): string => {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
+  xs: 'h-6 px-2 text-label',
   sm: 'h-7 px-3 text-label',
   md: 'h-8 px-3 text-body',
 };
@@ -76,7 +77,12 @@ export const Button = ({
     >
       {isBusy ? (
         <>
-          <StatusDot tone="neutral" size={size} pulsing className="bg-current" />
+          <StatusDot
+            tone="neutral"
+            size={size === 'md' ? 'md' : 'sm'}
+            pulsing
+            className="bg-current"
+          />
           {busyLabel ?? children}
         </>
       ) : (
