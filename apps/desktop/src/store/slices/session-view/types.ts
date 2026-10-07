@@ -141,6 +141,8 @@ export const FOLD_LIMIT = 8;
 
 export const NO_PROJECT_GROUP_KEY = 'no-project';
 
+export const PINNED_GROUP_KEY = 'pinned';
+
 export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   'not-open': 0,
   draft: 1,
