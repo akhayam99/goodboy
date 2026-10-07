@@ -81,11 +81,12 @@ describe('the plan drawer scenes', () => {
     ).toEqual(['Send to planner']);
   });
 
-  it('revising: the body dims with a Revising line and the primary says why it waits', async () => {
+  it('revising: the body dims, the chip says so once and the primary says why it waits', async () => {
     renderScene('plan-drawer-revising');
 
-    const line = await screen.findByTestId('plan-drawer-state-line');
-    expect(line.textContent).toContain('Revising to v3');
+    const chip = await screen.findByTestId('artifact-state-chip');
+    expect(chip.textContent).toContain('Revising to v3');
+    expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
     expect(screen.getByTestId('plan-drawer-body').getAttribute('data-revising')).toBe('true');
     const drawer = screen.getByRole('region', { name: 'Reconcile the settlement export' });
     expect(within(drawer).getByTestId('plan-drawer-reason').textContent).toBe(
@@ -109,7 +110,7 @@ describe('the plan drawer scenes', () => {
     );
   });
 
-  it('question: the planner question is at the top with Answer and the bar waits', async () => {
+  it('question: the planner question is at the top, the state says waiting, never revising', async () => {
     renderScene('plan-drawer-question');
 
     const question = await screen.findByTestId('plan-drawer-question');
@@ -117,6 +118,12 @@ describe('the plan drawer scenes', () => {
     expect(within(question).getByRole('button', { name: 'Answer' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Send to planner' }).hasAttribute('disabled')).toBe(
       true,
+    );
+    expect(screen.getByTestId('artifact-state-detail').textContent).toBe('waiting for your answer');
+    expect(screen.queryByText(/Revising/)).toBeNull();
+    expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
+      'The planner asked a question. Answer it first.',
     );
   });
 
@@ -138,7 +145,7 @@ describe('the plan drawer scenes', () => {
     expect(screen.getByRole('button', { name: 'Copy your text' })).toBeDefined();
   });
 
-  it('split: Edit is off and says the plan runs as parallel parts', async () => {
+  it('split: Edit is off, the parts show once and say the plan runs as parallel parts', async () => {
     renderScene('plan-drawer-split');
 
     const edit = await screen.findByTestId('plan-drawer-edit');
@@ -146,5 +153,15 @@ describe('the plan drawer scenes', () => {
     expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
       'This plan runs as 3 parallel parts. Ask the planner to change it.',
     );
+    const body = screen.getByTestId('plan-body');
+    expect(within(body).getAllByText('Replace the CSV query with the ledger view')).toHaveLength(1);
+    expect(within(body).getAllByRole('heading', { name: /^Parts/ })).toHaveLength(1);
+  });
+
+  it('every scene prints no plan marker and no raw tag', async () => {
+    renderScene('plan-drawer-waiting');
+
+    const drawer = await screen.findByTestId('plan-drawer');
+    expect(drawer.textContent).not.toMatch(/<<|>>/);
   });
 });

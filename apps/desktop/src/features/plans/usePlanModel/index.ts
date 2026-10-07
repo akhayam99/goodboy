@@ -5,6 +5,7 @@ import { artifactStateOf, type ArtifactState } from '../../artifacts/artifactSta
 import type { PlanPartRow } from '../components/PlanParts/planPartRows';
 import { usePlanPartRows } from '../components/PlanParts/usePlanPartRows';
 import type { PlanRevising } from '../planRevising';
+import { plannerQuestionsOf } from '../plannerQuestions';
 import { planStateInputsOf } from '../planStateInputs';
 import { usePlanRevising } from '../useRevisingPlans';
 
@@ -32,11 +33,14 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
-  const openQuestionCount = useSessionOpenQuestions(sessionId).length;
+  const openQuestions = useSessionOpenQuestions(sessionId);
   const revising = usePlanRevising({ sessionId, planId });
   const plan = plans.find((candidate) => candidate.id === planId) ?? null;
   const stored = artifacts.find((candidate) => candidate.id === planId) ?? null;
   const rows = usePlanPartRows({ sessionId, plan, agents });
+  const openQuestionCount = openQuestions.length;
+  const plannerQuestionCount =
+    plan === null ? 0 : plannerQuestionsOf({ questions: openQuestions, plan }).length;
 
   return useMemo((): PlanModel | null => {
     if (plan === null) {
@@ -52,11 +56,11 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
         status: plan.status,
         isNew: false,
         openQuestionCount,
-        ...planStateInputsOf({ plan, rows, revising }),
+        ...planStateInputsOf({ plan, rows, revising, plannerQuestionCount }),
       }),
       rows,
       agents,
       hasRun: plan.consumptionCount > 0,
     };
-  }, [plan, stored, revising, openQuestionCount, rows, agents]);
+  }, [plan, stored, revising, openQuestionCount, plannerQuestionCount, rows, agents]);
 };

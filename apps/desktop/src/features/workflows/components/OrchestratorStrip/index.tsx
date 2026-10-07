@@ -208,7 +208,7 @@ export const OrchestratorStrip = ({
         return plan === null ? null : (
           <OrchestratorAction
             icon={CONCEPT_ICONS.plans}
-            label="Review plan"
+            label="Open plan"
             variant="secondary"
             testId="orchestrator-review-plan"
             title="Read the plan, comment on it or approve it"

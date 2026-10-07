@@ -48,12 +48,18 @@ const TITLE = 'Reconcile the settlement export';
 const GOAL =
   'Every settlement batch in ledger-core must match its invoice, to the cent, before the export leaves Harborline.';
 
-const BODY = [
+const BODY_STEPS = [
   `## Goal\n\n${GOAL}`,
-  '## Parts',
+  '## Steps',
   '1. Replace the CSV query with the ledger view',
   '2. Round half-even at the ledger boundary',
   '3. Replay last week of settlements and compare the totals',
+].join('\n\n');
+
+const BODY_SPLIT = [
+  `## Goal\n\n${GOAL}`,
+  '## Approach',
+  'Read the batches from the ledger view, round once where an amount enters the ledger, then replay a week of settlements against their invoices.',
 ].join('\n\n');
 
 const PARTS = [
@@ -232,9 +238,6 @@ const turnOf = ({ variant }: { readonly variant: PlanDrawerVariant }): TurnState
   if (variant === 'revising') {
     return { kind: 'running', runId: RUN_REVISING, startedAt: NOW };
   }
-  if (variant === 'question') {
-    return { kind: 'blocked', runId: RUN_REVISING, blockedAt: NOW };
-  }
   return { kind: 'idle', lastActivityAt: NOW };
 };
 
@@ -251,7 +254,7 @@ const planOf = ({ variant }: { readonly variant: PlanDrawerVariant }): PlanWithC
   agentId: PLANNER_ID,
   workflowRunId: PLAN_DRAWER_RUN_ID,
   title: TITLE,
-  bodyMd: BODY,
+  bodyMd: variant === 'split' ? BODY_SPLIT : BODY_STEPS,
   status: 'active',
   ...(variant === 'split' ? { clusters: PARTS } : {}),
   createdAt: NOW,

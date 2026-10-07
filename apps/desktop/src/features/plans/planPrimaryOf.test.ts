@@ -144,4 +144,44 @@ describe('planPrimaryOf', () => {
       isSecondary: false,
     });
   });
+
+  it('turns Approve off with the question reason while the planner has an open question', () => {
+    expect(
+      planPrimaryOf({ plan: aPlan(), run: heldRun, drafts: [], plannerQuestionCount: 1 }),
+    ).toEqual({
+      kind: 'disabled',
+      label: 'Approve',
+      reason: 'The planner asked a question. Answer it first.',
+      isSecondary: false,
+    });
+  });
+
+  it('turns Run plan off the same way for a session plan', () => {
+    expect(
+      planPrimaryOf({ plan: aPlan(), run: null, drafts: [], plannerQuestionCount: 2 }),
+    ).toMatchObject({ kind: 'disabled', label: 'Run plan' });
+  });
+
+  it('keeps the revising reason when the planner both revises and asks', () => {
+    expect(
+      planPrimaryOf({
+        plan: aPlan(),
+        run: heldRun,
+        drafts: [],
+        revising,
+        plannerQuestionCount: 1,
+      }).reason,
+    ).toBe('The planner is revising this plan');
+  });
+
+  it('shows nothing for a plan that already ran, question or not', () => {
+    expect(
+      planPrimaryOf({
+        plan: aPlan({ status: 'consumed', consumptionCount: 1 }),
+        run: heldRun,
+        drafts: [],
+        plannerQuestionCount: 1,
+      }).kind,
+    ).toBe('none');
+  });
 });

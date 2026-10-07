@@ -90,7 +90,7 @@ export const PlanProse = ({ text, section, hasLead = true, measure = 'reading' }
       onKeyUp={onKeyUp}
     >
       <ArtifactProse text={text} hasLead={hasLead} measure={measure} />
-      {hover === null ? null : (
+      {hover === null || selection !== null ? null : (
         <div className="absolute right-0" style={{ top: hover.top }}>
           <CommentButton
             label="Comment on this text"

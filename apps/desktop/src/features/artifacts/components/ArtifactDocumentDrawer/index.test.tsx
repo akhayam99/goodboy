@@ -157,7 +157,7 @@ describe('plan document drawer header', () => {
     await screen.findByTestId('plan-comment-bar');
     expect(filledButtons()).toEqual(['Send to planner']);
     expect(screen.getByTestId('plan-primary').getAttribute('data-filled')).toBe('false');
-    expect(screen.getByTestId('plan-bar-approve').getAttribute('data-filled')).toBe('false');
+    expect(screen.queryByTestId('plan-bar-approve')).toBeNull();
   });
 
   it('moves to Artifacts only through Open in Artifacts in the overflow', () => {
@@ -425,12 +425,21 @@ describe('approving from the drawer', () => {
 });
 
 describe('comment and re-plan', () => {
-  it('dims the plan with a Revising line while the planner revises, outside the dim', () => {
+  it('says revising once in the chip and once in the reason, with no third line in the body', () => {
     seedAndRender({ run: 'held', turn: running('run-2') });
 
     expect(screen.getByTestId('plan-drawer-body').getAttribute('data-revising')).toBe('true');
+    expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
+    expect(screen.getAllByText(/Revising to v3/)).toHaveLength(1);
+    expect(screen.getAllByText(REVISING_REASON)).toHaveLength(1);
+    expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Revising to v3');
+  });
+
+  it('keeps the Writing a new version line for a plan that already ran', () => {
+    seedAndRender({ status: 'consumed', run: 'took', turn: running('run-2') });
+
     const line = screen.getByTestId('plan-drawer-state-line');
-    expect(line.textContent).toContain('Revising to v3');
+    expect(line.textContent).toContain('Writing a new version');
     expect(screen.getByTestId('plan-drawer-body').contains(line)).toBe(false);
   });
 
@@ -507,6 +516,94 @@ describe('comment and re-plan', () => {
       'The planner asked a question. Answer it first.',
     );
   });
+
+  it('says waiting for your answer, never revising, while the planner asks', async () => {
+    seedPlanDrawer({
+      run: 'held',
+      questions: [aPlannerQuestion()],
+      turn: { kind: 'idle', lastActivityAt: PLAN_FIXTURE_AT },
+    });
+    renderDrawer();
+
+    await screen.findByTestId('plan-drawer-question');
+    const chip = screen.getByTestId('artifact-state-chip');
+    expect(chip.textContent).toContain('Needs you');
+    expect(screen.getByTestId('artifact-state-detail').textContent).toBe('waiting for your answer');
+    expect(screen.queryByText(/Revising/)).toBeNull();
+    expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
+    expect(screen.getByTestId('plan-drawer-body').getAttribute('data-revising')).toBe('false');
+  });
+
+  it('holds Approve off with the question reason beside it while the planner asks', async () => {
+    seedPlanDrawer({
+      run: 'held',
+      questions: [aPlannerQuestion()],
+      turn: { kind: 'idle', lastActivityAt: PLAN_FIXTURE_AT },
+    });
+    renderDrawer();
+
+    await screen.findByTestId('plan-drawer-question');
+    const primary = screen.getByTestId('plan-primary');
+    expect(primary.hasAttribute('disabled')).toBe(true);
+    expect(primary.getAttribute('title')).toBe('The planner asked a question. Answer it first.');
+    expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
+      'The planner asked a question. Answer it first.',
+    );
+  });
+
+  it('lets Approve through when the open question belongs to another agent', async () => {
+    seedPlanDrawer({
+      run: 'held',
+      questions: [aPlannerQuestion({ createdByAgentId: PLAN_IMPLEMENTER })],
+      turn: { kind: 'idle', lastActivityAt: PLAN_FIXTURE_AT },
+    });
+    renderDrawer();
+
+    expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(false);
+  });
+});
+
+describe('parts in the drawer body', () => {
+  const withPartsSection = () => {
+    seedPlanDrawer({ parts: 3 });
+    useAppStore.setState((state) => ({
+      sessionPlans: {
+        ...state.sessionPlans,
+        [PLAN_FIXTURE_SESSION]: (state.sessionPlans[PLAN_FIXTURE_SESSION] ?? []).map((plan) => ({
+          ...plan,
+          bodyMd:
+            '## Goal\nRetried webhooks must never post a second credit.\n\n## Parts\n1. Part 1\n2. Part 2\n3. Part 3\n\n## Risks\nA retry can still race.',
+        })),
+      },
+    }));
+    return renderDrawer();
+  };
+
+  it('shows the parts once when the planner wrote them as clusters and as a markdown section', () => {
+    withPartsSection();
+
+    const body = screen.getByTestId('plan-body');
+    expect(within(body).getAllByRole('heading', { name: /^Parts/ })).toHaveLength(1);
+    expect(within(body).getAllByText('Part 1')).toHaveLength(1);
+    expect(body.textContent).toContain('A retry can still race.');
+  });
+
+  it('keeps a Parts section when no structured parts exist', () => {
+    seedPlanDrawer({ parts: 0 });
+    useAppStore.setState((state) => ({
+      sessionPlans: {
+        ...state.sessionPlans,
+        [PLAN_FIXTURE_SESSION]: (state.sessionPlans[PLAN_FIXTURE_SESSION] ?? []).map((plan) => ({
+          ...plan,
+          bodyMd:
+            '## Goal\nRetried webhooks must never post a second credit.\n\n## Parts\n1. Only part',
+        })),
+      },
+    }));
+    renderDrawer();
+
+    expect(within(screen.getByTestId('plan-body')).getByText('Only part')).toBeDefined();
+  });
 });
 
 describe('the bar in the drawer', () => {
@@ -525,12 +622,14 @@ describe('the bar in the drawer', () => {
     expect(screen.queryByTestId('plan-bar-approve')).toBeNull();
   });
 
-  it('keeps Approve in the bar with no comment while the run waits on the plan', () => {
+  it('says Approve once, in the header, and keeps only the hint in the bar with no comment', () => {
     seedAndRender({ run: 'held' });
 
     const bar = screen.getByTestId('plan-comment-bar');
-    expect(within(bar).getByRole('button', { name: 'Approve' })).toBeDefined();
+    expect(within(bar).queryByRole('button', { name: 'Approve' })).toBeNull();
     expect(within(bar).queryByRole('button', { name: 'Send to planner' })).toBeNull();
+    expect(bar.textContent).toContain('Select text or click a block to comment');
+    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(1);
   });
 
   it('turns Send off with the revising reason while the planner revises', () => {
@@ -617,8 +716,11 @@ describe('editing the plan by hand in the drawer', () => {
     expect(await screen.findByText('The planner wrote v3 meanwhile')).toBeDefined();
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toContain('Mine.');
     expect(screen.getByRole('button', { name: 'Copy your text' })).toBeDefined();
+    expect(screen.getByTestId('artifact-save').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('plan-drawer-version').textContent).toBe('v2 · v3 available');
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     expect(screen.queryByRole('textbox')).toBeNull();
+    expect(screen.getByTestId('plan-drawer-version').textContent).toBe('v2');
   });
 
   it('copies your text from the conflict notice', async () => {

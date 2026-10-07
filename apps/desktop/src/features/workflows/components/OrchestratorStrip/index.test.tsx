@@ -375,7 +375,7 @@ describe('OrchestratorStrip state ladder', () => {
     expect(screen.queryByRole('button', { name: 'Resume' })).toBeNull();
     expect(storeState['setWorkflowRunAutonomy']).not.toHaveBeenCalled();
   });
-  it('says the plan is ready and opens it from Review plan, leaving Approve to the header', () => {
+  it('says the plan is ready and opens it from Open plan, leaving Review plan and Approve to the header', () => {
     useAppStore.setState({ sessionPlans: { [SESSION_ID]: [PLAN] } });
     renderStrip({
       runOverride: run({
@@ -387,7 +387,8 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(sentence()).toBe('Plan ready · waiting for you');
     expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Review plan' }));
+    expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open plan' }));
 
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'artifact-document',

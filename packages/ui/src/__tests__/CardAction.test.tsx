@@ -57,7 +57,12 @@ describe('CardAction', () => {
     expect(screen.getByRole('button', { name: 'Pin' }).className).not.toContain('opacity-0');
   });
 
-  it('stays neutral at rest and takes its tone only on hover', () => {
+  it('tints itself when highlighted', () => {
+    render(<CardAction icon={Star} label="Pin" tone="success" highlighted onClick={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Pin' }).className).toContain('success');
+  });
+
+  it('stays neutral at rest and takes its tone only on hover unless highlighted', () => {
     render(<CardAction icon={Star} label="Pin" tone="success" onClick={vi.fn()} />);
     const { className } = screen.getByRole('button', { name: 'Pin' });
     expect(className).toContain('text-muted-foreground');

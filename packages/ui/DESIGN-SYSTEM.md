@@ -1464,7 +1464,8 @@ always visible. Lifecycle and destructive actions sit bottom right. Hover may
 show lifecycle actions without moving either slot, and keyboard focus shows the
 same. A card says its state once, with its `ToneBar`: the quick action stays
 `muted-foreground` at rest and takes its tone only on hover, and a closed pull
-request glyph on a Done card is quiet too. `CardAction` has no resting tint. The
+request glyph on a Done card is quiet too. `CardAction` has no resting tint unless
+a caller passes `highlighted` for a state of its own (an inspected or armed row). The
 warning line paints with `warning-mark` (the same amber as `warning` in dark, a
 lighter amber in light), because the text amber reads brick red as a line. Icon actions use the shared `Tooltip`, never the native `title`. A
 hover slot keeps its width at rest: it fades with `opacity-0

@@ -339,12 +339,26 @@ export type ExtractedPlan = {
   readonly bodyMd: string;
 };
 
+const lastPlanBlock = (assistantText: string): string | null => {
+  let closeAt = assistantText.lastIndexOf(PLAN_CLOSE);
+  while (closeAt !== -1) {
+    const openAt = assistantText.lastIndexOf(PLAN_OPEN, closeAt);
+    if (openAt !== -1) {
+      const value = assistantText.slice(openAt + PLAN_OPEN.length, closeAt).trim();
+      if (value.length > 0) {
+        return value;
+      }
+    }
+    closeAt = closeAt === 0 ? -1 : assistantText.lastIndexOf(PLAN_CLOSE, closeAt - 1);
+  }
+  return null;
+};
+
 export const extractPlanFromMarker = (assistantText: string): ExtractedPlan | null => {
-  const matches = extractBlockContents(assistantText, PLAN_OPEN, PLAN_CLOSE);
-  if (matches.length === 0) {
+  const raw = lastPlanBlock(assistantText);
+  if (raw === null) {
     return null;
   }
-  const raw = matches[matches.length - 1]!;
   return parsePlanBody(raw);
 };
 

@@ -22,6 +22,7 @@ const NOW = '2026-09-14T16:40:00.000Z' as IsoDateTime;
 
 const NO_PLAN = {
   openQuestionCount: 0,
+  plannerQuestionCount: 0,
   partCount: 0,
   progress: null,
   hasPartAgents: false,
@@ -58,6 +59,36 @@ describe('artifactStateOf', () => {
       openQuestionCount: 1,
     });
     expect(state).toMatchObject({ key: 'needs', detail: '1 question', group: 'needs' });
+  });
+
+  it('says waiting for your answer when the open question is the planner own', () => {
+    const state = artifactStateOf({
+      ...NO_PLAN,
+      kind: 'plan',
+      status: 'active',
+      isNew: false,
+      openQuestionCount: 2,
+      plannerQuestionCount: 1,
+    });
+    expect(state).toMatchObject({
+      key: 'needs',
+      label: 'Needs you',
+      detail: 'waiting for your answer',
+      group: 'needs',
+    });
+  });
+
+  it('keeps revising ahead of a planner question, the planner is still writing', () => {
+    const state = artifactStateOf({
+      ...NO_PLAN,
+      kind: 'plan',
+      status: 'active',
+      isNew: false,
+      openQuestionCount: 1,
+      plannerQuestionCount: 1,
+      revising: { kind: 'revising', nextRevision: 3 },
+    });
+    expect(state?.key).toBe('revising');
   });
 
   it.each([

@@ -326,6 +326,34 @@ describe('PlanProse', () => {
     });
   });
 
+  it('offers one Comment at a time: the selection chip replaces the block button', async () => {
+    const value = api();
+    const { container } = render(
+      withApi({ value, children: <PlanProse text={TEXT} section="lead" /> }),
+    );
+    await waitFor(() => expect(container.querySelectorAll('p').length).toBe(2));
+    const paragraph = container.querySelector('p');
+    const textNode = paragraph?.firstChild;
+    if (paragraph === null || textNode === null || textNode === undefined) {
+      throw new Error('paragraph not rendered');
+    }
+    fireEvent.mouseOver(paragraph);
+    expect(await screen.findByRole('button', { name: 'Comment on this text' })).toBeDefined();
+
+    const range = document.createRange();
+    range.setStart(textNode, 'Stop the '.length);
+    range.setEnd(textNode, 'Stop the duplicate credit'.length);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    fireEvent.mouseUp(screen.getByTestId('plan-prose-comments'));
+
+    expect(
+      await screen.findByRole('button', { name: 'Comment on the selected text' }),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Comment on this text' })).toBeNull();
+  });
+
   it('shows the quote in italic above the composer of a selection comment', async () => {
     const value = api({
       composing: {
