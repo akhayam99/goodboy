@@ -9,9 +9,15 @@ type Props = {
   readonly project: Project;
   readonly status: WorkspaceGitStatus | null;
   readonly shouldShowProjectName: boolean;
+  readonly isQuiet?: boolean;
 };
 
-export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props) => {
+export const ProjectGitPill = ({
+  project,
+  status,
+  shouldShowProjectName,
+  isQuiet = false,
+}: Props) => {
   const isSetup = status?.state === 'absent' || status?.state === 'unborn';
   const dropdown = useDropdown({
     width: isSetup ? 'w-96' : 'w-72',
@@ -37,10 +43,14 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
           className={cn(
-            'relative inline-flex h-7 min-w-0 items-center gap-2 rounded-md px-2 text-label font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            actionableCount > 0 || isWarning
-              ? 'text-foreground hover:bg-hover'
-              : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+            'relative inline-flex min-w-0 items-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            isQuiet
+              ? 'h-6 gap-1 px-1 text-meta text-muted-foreground hover:text-foreground'
+              : 'h-7 gap-2 px-2 text-label font-medium',
+            !isQuiet &&
+              (actionableCount > 0 || isWarning
+                ? 'text-foreground hover:bg-hover'
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground'),
           )}
         >
           <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
@@ -52,7 +62,10 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
           ) : uncommittedCount > 0 ? (
             <span
               data-testid="project-git-count"
-              className="shrink-0 text-meta tabular-nums text-warning"
+              className={cn(
+                'shrink-0 text-meta tabular-nums',
+                isQuiet ? 'text-muted-foreground' : 'text-warning',
+              )}
             >
               {uncommittedCount} uncommitted
             </span>

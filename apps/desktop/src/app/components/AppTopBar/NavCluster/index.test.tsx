@@ -10,6 +10,7 @@ const { store } = vi.hoisted(() => ({
   store: {
     currentWorkspaceId: 'ws-1',
     currentSessionId: null as string | null,
+    openSessionDraftWorkspaceId: null as string | null,
     appStudio: null as { readonly kind: string } | null,
     sessions: [] as ReadonlyArray<Session>,
     navigation: {} as Record<string, unknown>,
@@ -63,6 +64,7 @@ const BOARD_ENTRY = {
 
 beforeEach(() => {
   store.currentSessionId = null;
+  store.openSessionDraftWorkspaceId = null;
   store.appStudio = null;
   store.navigation = {};
   store.chatStreams = {};
@@ -168,6 +170,18 @@ describe('NavCluster', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Board' }));
     expect(store.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
+  });
+
+  it('goes to the board from the new session draft, where Board is not the current page', () => {
+    store.openSessionDraftWorkspaceId = 'ws-1';
+    render(<NavCluster hasDoors />);
+
+    const board = screen.getByRole('button', { name: 'Board' });
+    expect(board.getAttribute('aria-current')).toBeNull();
+    expect(board.getAttribute('aria-disabled')).toBeNull();
+    fireEvent.click(board);
+    expect(store.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
+    expect(store.closeStudio).not.toHaveBeenCalled();
   });
 
   it('disables Back with nothing behind, and names the destination when there is one', () => {

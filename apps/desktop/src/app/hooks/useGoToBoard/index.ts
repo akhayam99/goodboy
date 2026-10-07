@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { BOARD_PLACE, useAppStore } from '../../../store';
+import { selectIsSessionDraftShown } from '../../../store/slices/sessionDraft/selectIsSessionDraftShown';
 
 export const useGoToBoard = (): (() => void) => {
   const navigate = useAppStore((s) => s.navigate);
@@ -7,7 +8,7 @@ export const useGoToBoard = (): (() => void) => {
 
   return useCallback(() => {
     const state = useAppStore.getState();
-    if (state.currentSessionId !== null) {
+    if (state.currentSessionId !== null || selectIsSessionDraftShown({ state })) {
       navigate({ to: BOARD_PLACE });
       return;
     }

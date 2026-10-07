@@ -261,10 +261,10 @@
           "shown": true
         },
         {
-          "title": "Done and Archived dock",
-          "text": "Finished sessions fold into two icons at the side of the board. Click one to open its column.",
+          "title": "Done and Archived lanes",
+          "text": "Done and Archived are lanes of their own, always in view, each with a line that says when it is empty.",
           "group": "The board",
-          "also": "done dock",
+          "also": "done lane",
           "shown": true
         },
         {
