@@ -24,13 +24,24 @@ type Result = {
 
 const NONE: ReadonlyArray<never> = [];
 
+const cachedLocalsOf = (repoRoot: string | null): ReadonlyArray<LocalBranchInfo> =>
+  repoRoot === null ? NONE : (getCachedLocalBranches(repoRoot) ?? NONE);
+
 export const useBranchChoices = ({ repoRoot, workspaceId, projectId }: Params): Result => {
+  const [loadedRoot, setLoadedRoot] = useState(repoRoot);
   const [locals, setLocals] = useState<ReadonlyArray<LocalBranchInfo>>(() =>
-    repoRoot === null ? NONE : (getCachedLocalBranches(repoRoot) ?? NONE),
+    cachedLocalsOf(repoRoot),
   );
   const [remotes, setRemotes] = useState<ReadonlyArray<RemoteBranchInfo>>(NONE);
   const [prs, setPrs] = useState<ReadonlyArray<OpenPrBranch>>(NONE);
   const [isLoading, setIsLoading] = useState(repoRoot !== null);
+
+  if (loadedRoot !== repoRoot) {
+    setLoadedRoot(repoRoot);
+    setLocals(cachedLocalsOf(repoRoot));
+    setRemotes(NONE);
+    setPrs(NONE);
+  }
 
   useEffect(() => {
     if (repoRoot === null) {

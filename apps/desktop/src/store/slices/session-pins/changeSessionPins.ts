@@ -29,7 +29,7 @@ const attempt = async ({ workspaceId, change }: Params): Promise<Attempt> => {
   const value = serializeSessionPins({ pins: next });
   const isWritten =
     raw === null
-      ? await insertSettingIfAbsent(tauriDatabase, { key, value })
+      ? await insertSettingIfAbsent({ db: tauriDatabase, key, value })
       : await replaceSettingIfUnchanged(tauriDatabase, { key, expected: raw, value });
   return isWritten ? { kind: 'settled', pins: next } : { kind: 'lost' };
 };

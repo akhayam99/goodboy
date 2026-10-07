@@ -8,9 +8,19 @@ type Params = {
   readonly worktreePath: string;
 };
 
-export const switchBranchMount = ({ sessionId, mountId, worktreePath }: Params): void => {
+export const switchBranchMount = async ({
+  sessionId,
+  mountId,
+  worktreePath,
+}: Params): Promise<void> => {
+  const before = useAppStore.getState();
+  try {
+    await before.setSessionActiveMount({ sessionId, mountId });
+  } catch (error) {
+    void before.reportError({ title: "Couldn't switch to that branch", error, sessionId });
+    return;
+  }
   const state = useAppStore.getState();
-  void state.setSessionActiveMount({ sessionId, mountId }).catch(() => undefined);
   state.navigate({
     to: branchPlace({
       sessionId,

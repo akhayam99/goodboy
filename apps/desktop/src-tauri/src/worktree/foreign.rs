@@ -1,5 +1,5 @@
 use super::base::resolve_base_ref;
-use super::create::{branch_checkout_path_with, try_fetch_origin};
+use super::create::{branch_checkout_path_with, remote_ref_is_absent, try_fetch_origin};
 use super::error::WorktreeError;
 use super::git::{git, is_ancestor};
 use super::types::{RemoteBranchInfo, RemoteBranchState};
@@ -34,12 +34,41 @@ pub(super) fn branch_source(repo_path: &Path, name: &str) -> BranchSource {
     }
 }
 
+fn origin_lookup_failure(name: &str, cause: &str) -> WorktreeError {
+    WorktreeError::Git {
+        message: format!("could not look up origin/{name}. fetching from origin failed: {cause}"),
+    }
+}
+
+fn reject_option_like(name: &str) -> Result<(), WorktreeError> {
+    if !name.starts_with('-') {
+        return Ok(());
+    }
+    Err(WorktreeError::InvalidBranchName {
+        branch: name.to_string(),
+        reason: "starts-with-dash".to_string(),
+    })
+}
+
+fn fetched_branch_source(repo_path: &Path, name: &str) -> Result<BranchSource, WorktreeError> {
+    let Some(cause) = try_fetch_origin(repo_path, name) else {
+        return Ok(branch_source(repo_path, name));
+    };
+    let has_cached_remote = ref_sha(repo_path, &format!("refs/remotes/origin/{name}")).is_some();
+    if has_cached_remote && !remote_ref_is_absent(repo_path, &cause) {
+        return Err(origin_lookup_failure(name, &cause));
+    }
+    match ref_sha(repo_path, &format!("refs/heads/{name}")) {
+        Some(_) => Ok(BranchSource::LocalOnly),
+        None => Ok(BranchSource::Absent),
+    }
+}
+
 pub(super) fn remote_backed_source(
     repo_path: &Path,
     name: &str,
 ) -> Result<Option<BranchSource>, WorktreeError> {
-    let _ = try_fetch_origin(repo_path, name);
-    match branch_source(repo_path, name) {
+    match fetched_branch_source(repo_path, name)? {
         BranchSource::Differs => Err(WorktreeError::LocalBranchDiffers {
             branch: name.to_string(),
         }),
@@ -90,8 +119,7 @@ pub(super) fn switch_to_remote_branch(
     if ref_sha(repo_path, &format!("refs/heads/{name}")).is_some() {
         return Ok(false);
     }
-    let _ = try_fetch_origin(repo_path, name);
-    if branch_source(repo_path, name) != BranchSource::RemoteOnly {
+    if fetched_branch_source(repo_path, name)? != BranchSource::RemoteOnly {
         return Ok(false);
     }
     git(
@@ -199,7 +227,13 @@ pub(super) fn remote_branch_state_blocking(
     if !repo.exists() {
         return Err(WorktreeError::RepoNotFound(repo_path));
     }
-    let _ = try_fetch_origin(repo, &branch);
+    reject_option_like(&branch)?;
+    if let Some(cause) = try_fetch_origin(repo, &branch) {
+        if remote_ref_is_absent(repo, &cause) {
+            return Ok(None);
+        }
+        return Err(origin_lookup_failure(&branch, &cause));
+    }
     let remote_ref = format!("refs/remotes/origin/{branch}");
     let local_ref = format!("refs/heads/{branch}");
     let (Some(remote_sha), Some(local_sha)) =
@@ -237,6 +271,7 @@ pub(super) fn use_remote_commits_blocking(
     if !wt.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
+    reject_option_like(&branch)?;
     let current = git(wt, &["rev-parse", "--abbrev-ref", "HEAD"])?;
     if current.trim() != branch {
         return Err(WorktreeError::Git {
@@ -250,7 +285,12 @@ pub(super) fn use_remote_commits_blocking(
                 .to_string(),
         });
     }
-    let _ = try_fetch_origin(wt, &branch);
+    if let Some(cause) = try_fetch_origin(wt, &branch) {
+        if remote_ref_is_absent(wt, &cause) {
+            return Err(WorktreeError::BranchNotFound { branch });
+        }
+        return Err(origin_lookup_failure(&branch, &cause));
+    }
     let remote_ref = format!("refs/remotes/origin/{branch}");
     let (Some(remote_sha), Some(local_sha)) = (ref_sha(wt, &remote_ref), ref_sha(wt, "HEAD"))
     else {

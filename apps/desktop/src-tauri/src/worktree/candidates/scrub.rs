@@ -209,7 +209,11 @@ pub(super) fn scrub_environment(
     let index = scratch_index(cwd, candidate_id)?;
     let mut parent = resolve_commit(cwd, base)?;
     let mut failure = None;
-    for commit in commits.lines().map(str::trim).filter(|line| !line.is_empty()) {
+    for commit in commits
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+    {
         match rewrite_commit(cwd, &index, commit, &parent, &leaked) {
             Ok(Some(created)) => parent = created,
             Ok(None) => {}

@@ -34,10 +34,10 @@ describe('settings queries', () => {
   it('inserts a missing key once and never overwrites an existing one', async () => {
     const db = await makeMigratedTestDatabase();
 
-    expect(await insertSettingIfAbsent(db, { key: 'sessions.pinned.w1', value: 'first' })).toBe(
+    expect(await insertSettingIfAbsent({ db, key: 'sessions.pinned.w1', value: 'first' })).toBe(
       true,
     );
-    expect(await insertSettingIfAbsent(db, { key: 'sessions.pinned.w1', value: 'second' })).toBe(
+    expect(await insertSettingIfAbsent({ db, key: 'sessions.pinned.w1', value: 'second' })).toBe(
       false,
     );
     expect(await getSetting(db, 'sessions.pinned.w1')).toBe('first');

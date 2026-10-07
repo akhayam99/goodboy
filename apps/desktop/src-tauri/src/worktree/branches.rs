@@ -237,7 +237,7 @@ fn switch_to_existing(
     if switch_to_remote_branch(repo_path, wt, trimmed)? {
         return Ok(ChangedBranch { adopted: true });
     }
-    git(wt, &["switch", trimmed])?;
+    git(wt, &["switch", "--no-guess", trimmed])?;
     Ok(ChangedBranch { adopted: true })
 }
 

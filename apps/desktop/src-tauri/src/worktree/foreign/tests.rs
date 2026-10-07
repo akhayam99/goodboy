@@ -4,7 +4,7 @@ use super::{
 use crate::worktree::branches::worktree_change_branch_blocking as change_branch;
 use crate::worktree::create::worktree_create_blocking;
 use crate::worktree::error::WorktreeError;
-use crate::worktree::git::git;
+use crate::worktree::git::{git, git_argv_log};
 use crate::worktree::types::{ChangeBranchArgs, CreateArgs};
 use std::path::{Path, PathBuf};
 
@@ -46,7 +46,10 @@ fn commit(root: &Path, file: &str, body: &str, message: &str) -> String {
 
 fn push_to_new_remote(root: &Path) -> PathBuf {
     let remote = root.join("remote.git");
-    git_ok(root, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        root,
+        &["init", "--bare", "-b", "main", remote.to_str().unwrap()],
+    );
     git_ok(root, &["remote", "add", "origin", remote.to_str().unwrap()]);
     git_ok(root, &["push", "-u", "origin", "main"]);
     remote
@@ -363,5 +366,212 @@ fn repair_refuses_a_local_branch_with_commits_of_its_own() {
     let wire = serde_json::to_value(&error).unwrap();
     assert_eq!(wire["kind"], "local_branch_differs");
     assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), own);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+fn origin_deletes_the_branch(root: &Path, branch: &str) {
+    git_ok(
+        &root.join("remote.git"),
+        &["update-ref", "-d", &format!("refs/heads/{branch}")],
+    );
+}
+
+fn origin_becomes_unreachable(root: &Path) {
+    let gone = root.join("gone.git");
+    git_ok(
+        root,
+        &["remote", "set-url", "origin", gone.to_str().unwrap()],
+    );
+}
+
+#[test]
+fn creating_a_branch_whose_remote_copy_was_deleted_does_not_adopt_the_cached_ref() {
+    let root = std::fs::canonicalize(init_repo("foreign-create-deleted")).unwrap();
+    let base = commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    teammate_pushes_a_branch(&root, TEAMMATE_BRANCH);
+    git_ok(&root, &["fetch", "origin"]);
+    origin_deletes_the_branch(&root, TEAMMATE_BRANCH);
+
+    let created = worktree_create_blocking(create_args(&root, TEAMMATE_BRANCH, "pr")).unwrap();
+
+    let path = PathBuf::from(&created.worktree_path);
+    assert!(!created.tracked_remote);
+    assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), base);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn creating_a_branch_refuses_a_cached_ref_when_origin_cannot_be_reached() {
+    let root = std::fs::canonicalize(init_repo("foreign-create-outage")).unwrap();
+    commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    teammate_pushes_a_branch(&root, TEAMMATE_BRANCH);
+    git_ok(&root, &["fetch", "origin"]);
+    origin_becomes_unreachable(&root);
+
+    let error = worktree_create_blocking(create_args(&root, TEAMMATE_BRANCH, "pr")).unwrap_err();
+
+    let WorktreeError::Git { message } = error else {
+        panic!("expected a git error, found {error:?}");
+    };
+    assert!(message.contains("could not look up origin/"), "{message}");
+    assert!(!root.join(".goodboy/worktrees/pr").exists());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn creating_a_fresh_branch_still_works_while_origin_cannot_be_reached() {
+    let root = std::fs::canonicalize(init_repo("foreign-create-offline")).unwrap();
+    let base = commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    origin_becomes_unreachable(&root);
+
+    let created = worktree_create_blocking(create_args(&root, "ak/own-work", "own")).unwrap();
+
+    let path = PathBuf::from(&created.worktree_path);
+    assert!(!created.tracked_remote);
+    assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), base);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn switching_onto_a_branch_deleted_on_origin_does_not_adopt_the_cached_ref() {
+    let root = std::fs::canonicalize(init_repo("foreign-switch-deleted")).unwrap();
+    commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    teammate_pushes_a_branch(&root, TEAMMATE_BRANCH);
+    git_ok(&root, &["fetch", "origin"]);
+    let mount = worktree_create_blocking(create_args(&root, "ak/mine", "mine")).unwrap();
+    let mount_path = PathBuf::from(&mount.worktree_path);
+    origin_deletes_the_branch(&root, TEAMMATE_BRANCH);
+
+    let outcome = change_branch(switch_args(&root, &mount_path, TEAMMATE_BRANCH, false));
+
+    assert!(outcome.is_err());
+    assert_eq!(
+        git_ok(&mount_path, &["rev-parse", "--abbrev-ref", "HEAD"]),
+        "ak/mine"
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn reads_nothing_when_the_remote_branch_was_deleted_after_a_fetch() {
+    let root = std::fs::canonicalize(init_repo("foreign-state-deleted")).unwrap();
+    stranded_mount(&root);
+    origin_deletes_the_branch(&root, TEAMMATE_BRANCH);
+
+    let state = remote_branch_state_blocking(
+        root.to_string_lossy().into_owned(),
+        TEAMMATE_BRANCH.to_string(),
+        Some("main".to_string()),
+    )
+    .unwrap();
+
+    assert_eq!(state, None);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn reading_the_remote_state_fails_when_origin_cannot_be_reached() {
+    let root = std::fs::canonicalize(init_repo("foreign-state-outage")).unwrap();
+    stranded_mount(&root);
+    origin_becomes_unreachable(&root);
+
+    let outcome = remote_branch_state_blocking(
+        root.to_string_lossy().into_owned(),
+        TEAMMATE_BRANCH.to_string(),
+        Some("main".to_string()),
+    );
+
+    assert!(outcome.is_err());
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn repair_refuses_a_branch_deleted_on_origin_and_changes_nothing() {
+    let root = std::fs::canonicalize(init_repo("foreign-repair-deleted")).unwrap();
+    let path = stranded_mount(&root);
+    let before = git_ok(&path, &["rev-parse", "HEAD"]);
+    origin_deletes_the_branch(&root, TEAMMATE_BRANCH);
+
+    let error = use_remote_commits_blocking(
+        path.to_string_lossy().into_owned(),
+        TEAMMATE_BRANCH.to_string(),
+    )
+    .unwrap_err();
+
+    let wire = serde_json::to_value(&error).unwrap();
+    assert_eq!(wire["kind"], "branch_not_found");
+    assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), before);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn repair_refuses_when_origin_cannot_be_reached_and_changes_nothing() {
+    let root = std::fs::canonicalize(init_repo("foreign-repair-outage")).unwrap();
+    let path = stranded_mount(&root);
+    let before = git_ok(&path, &["rev-parse", "HEAD"]);
+    origin_becomes_unreachable(&root);
+
+    let error = use_remote_commits_blocking(
+        path.to_string_lossy().into_owned(),
+        TEAMMATE_BRANCH.to_string(),
+    )
+    .unwrap_err();
+
+    let WorktreeError::Git { message } = error else {
+        panic!("expected a git error, found {error:?}");
+    };
+    assert!(message.contains("could not look up origin/"), "{message}");
+    assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), before);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn fetching_a_branch_ends_option_parsing_before_its_name() {
+    let root = std::fs::canonicalize(init_repo("foreign-fetch-argv")).unwrap();
+    commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    git_argv_log::reset();
+
+    remote_branch_state_blocking(
+        root.to_string_lossy().into_owned(),
+        "ak/mine".to_string(),
+        Some("main".to_string()),
+    )
+    .unwrap();
+
+    let fetches: Vec<Vec<String>> = git_argv_log::recorded()
+        .into_iter()
+        .filter(|args| args.first().map(String::as_str) == Some("fetch"))
+        .collect();
+    assert_eq!(fetches.len(), 1);
+    let dashes = fetches[0].iter().position(|arg| arg == "--").unwrap();
+    let name = fetches[0].iter().position(|arg| arg == "ak/mine").unwrap();
+    assert!(dashes < name, "{:?}", fetches[0]);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_branch_name_that_looks_like_an_option_is_refused_before_any_fetch() {
+    let root = std::fs::canonicalize(init_repo("foreign-dash")).unwrap();
+    commit(&root, "base.txt", "base\n", "base");
+    push_to_new_remote(&root);
+    git_argv_log::reset();
+
+    let error = remote_branch_state_blocking(
+        root.to_string_lossy().into_owned(),
+        "--upload-pack=touch-pwned".to_string(),
+        Some("main".to_string()),
+    )
+    .unwrap_err();
+
+    let wire = serde_json::to_value(&error).unwrap();
+    assert_eq!(wire["kind"], "invalid_branch_name");
+    assert!(git_argv_log::recorded()
+        .iter()
+        .all(|args| args.first().map(String::as_str) != Some("fetch")));
     std::fs::remove_dir_all(root).unwrap();
 }
