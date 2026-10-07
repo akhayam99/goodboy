@@ -7,6 +7,7 @@ import { isReportedError } from '../../../../store/slices/notifications/reported
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { ChatView } from '../ChatView';
+import { TranscriptReplyDock } from './TranscriptReplyDock';
 import { agentTranscriptTitle, TRANSCRIPT_DRAWER_COPY } from './transcriptDrawerCopy';
 
 type Props = {
@@ -99,11 +100,7 @@ export const AgentTranscriptDrawer = ({ sessionId, agentId, lead = null, onClose
               hasComposer={false}
             />
           </div>
-          {reply === null ? null : (
-            <div data-testid="transcript-drawer-reply" className="shrink-0 px-4 pb-4">
-              {reply}
-            </div>
-          )}
+          {reply === null ? null : <TranscriptReplyDock>{reply}</TranscriptReplyDock>}
         </div>
       )}
     </DrawerFrame>

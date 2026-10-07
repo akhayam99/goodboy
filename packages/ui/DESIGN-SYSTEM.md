@@ -68,7 +68,7 @@ any colour class with no `--color-*` token behind it.
 
 `bg-hover` and `bg-selected` are interaction overlays painted as a
 background-image layer, so they stack on whatever fill the element rests on
-instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is reserved for modal backdrops.
+instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is reserved for modal backdrops and the backdrop of a drawer over the page.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
@@ -216,7 +216,7 @@ together, and there is no arbitrary shadow.
 | 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
 | 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                         |
 
-A drawer in overlay adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
+A drawer over the page is flush with the sheet (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
 ## Spacing scale
@@ -1164,8 +1164,16 @@ file diff, script output, a fix run transcript, an agent conversation) takes
 its track from the main area and the centred column re-centres in the space
 left of it, at its full width while that space is wide enough, in one 180ms
 ease-out move (none under reduced motion). A full tier work surface keeps its
-left edge and only gives up its right. When the main area would drop under
-560px plus gutters the drawer lies over the page.
+left edge and only gives up its right. One rule decides the mode: with
+`room = main - 16 - 48 - 560`, the drawer pushes while `room >= 384` (a side
+drawer at `min(saved, room)`, a wide one at `min(560, room)`) and otherwise
+lies over the page. Pushing it is the inset card of the Elevation table. Over
+the page it spends no pixels on an inset: the card runs the full height of the
+sheet, flush with its top, bottom and right edges, with `rounded-l-frame`, a
+left border only and `shadow-xl`, over a `scrim` that fades in in 120ms. The
+page under it is `inert`, a click on the scrim dismisses the top escape layer
+like Esc, and focus moves into the card on open and back to the trigger on
+close.
 
 **A form opens where you clicked.** One placement rule for every inline form:
 

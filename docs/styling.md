@@ -134,23 +134,28 @@ in the content column of the pane that owns them and do not set the top bar's
 size.
 
 The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
-area beside the page, 0px wide while closed and the saved width plus two 8px
-insets while open. It opens beside the page: the main area gives up the drawer's track and the
-centred column slides left to re-centre in what is left of it (see The content
-column). When pushing would leave the main area under 560px plus
-its 48px of gutters (the drawer's track, insets included, is counted), the
-drawer lies over the page instead. `sizing` on `DrawerColumn` is `default` (the
-saved width, with the resize handle), `half` (half of the column, capped so the
-main area keeps its 560px and the drawer still pushes, no handle) or `full`
-(the whole column, always over the page). The pure geometry lives in
-`packages/ui/src/drawerGeometry.ts` (`drawerWidthOf`, `drawerModeOf`,
-`mainWidthOf`) and `drawerGeometry.test.ts` runs it over a width matrix:
-1024, 1440 and 1920 windows at zoom 0.8, 1 and 1.25, default and widest
-sidebar. `selectDrawerSizing.test.ts` takes every drawer kind at 1280 and
-1440 and checks the card ends 8px inside the aside, also while it slides in:
-`drawer-card-in` and `drawer-overlay-in` slide at most the 8px inset, never
-past the window edge. `DrawerColumn.test.tsx` pins the classes that math
-assumes (an 8px `w-2` handle, the card's `mr-2`, the track's min width).
+area beside the page, 0px wide while closed. Pushing, its aside is the card
+width plus two 8px insets; over the page it is the card width plus the 8px
+handle gutter, because the card is flush with the sheet's right edge. It opens
+beside the page: the main area gives up the drawer's track and the centred
+column slides left to re-centre in what is left of it (see The content
+column). While the page keeps 560px plus its 48px of gutters beside the
+narrowest drawer (384px, insets counted) the drawer pushes; below that it lies
+over the page, full height, with a scrim and an `inert` page. `sizing` on
+`DrawerColumn` is `default` (the saved width, with the resize handle), `half`
+(560px, narrowed to the room the page leaves, no handle) or `full` (the whole
+column, always over the page). The pure geometry lives in
+`packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
+`drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
+sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
+1920 windows at zoom 0.8, 1 and 1.25, default and widest sidebar.
+`selectDrawerSizing.test.ts` takes every drawer kind at 1280 and 1440 and
+checks the pushing card ends 8px inside the aside and the overlay card ends on
+the column edge. `drawer-card-in` and `drawer-overlay-in` slide at most the
+8px inset; the overlay card starts that far outside the sheet and is clipped by
+it. `DrawerColumn.test.tsx` pins the classes that math assumes (an 8px `w-2`
+handle, the pushing card's `my-2 mr-2`, the overlay card's `rounded-l-frame`
+and `border-l`, the track's min width).
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's
@@ -209,7 +214,7 @@ artifact document, a plan) the main area gives up the drawer's track and the
 centred column re-centres in the space left of the drawer, keeping its full
 width while that space is wide enough. It shrinks only below its frame, down to
 the column minimum (560px plus gutters); under that the drawer lies over the
-page, as before. Closing the drawer slides the column back. It is one 180ms
+page. Closing the drawer slides the column back. It is one 180ms
 ease-out width transition on the drawer's track, so the column's centre follows
 it in the same frames; it is off under `prefers-reduced-motion`. A route change
 never moves the column, with or without a drawer. The pure geometry is

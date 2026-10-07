@@ -193,6 +193,7 @@ import { ReportSheetHost } from '../../../features/bug-report/components/ReportS
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 import { U21_KEYS_ROWS_SCENES } from './scenes/u21/keys-rows';
 import { U21_STATES_SCENES } from './scenes/u21/states';
+import { U21_DRAWERS_SCENES } from './scenes/u21/drawers';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -388,6 +389,7 @@ export const MOCK_SCENES = {
   'crash-report': CrashReportScene,
   ...U21_KEYS_ROWS_SCENES,
   ...U21_STATES_SCENES,
+  ...U21_DRAWERS_SCENES,
 };
 
 const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];
