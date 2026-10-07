@@ -18,7 +18,7 @@ import { captureLocation } from '../../../store/slices/navigation/captureLocatio
 import { BOARD_PLACE, agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
 import type { OpenDrawer } from '../../../store/slices/drawer/state';
 import { isUserStart } from '../../lib/userStarts';
-import { useFollowToast, type FollowParams } from '.';
+import { useFollowToast } from '.';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
@@ -34,7 +34,9 @@ vi.mock('@goodboy/db', async () =>
 
 let useAppStore: StoryStore;
 let sessionId: SessionId;
-let follow: (params: FollowParams) => void;
+type FollowParams = Parameters<ReturnType<typeof useFollowToast>>[0];
+
+let follow: ReturnType<typeof useFollowToast>;
 
 const Caller = () => {
   follow = useFollowToast();

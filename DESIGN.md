@@ -252,6 +252,10 @@ about its effect is a worse defect than one that reads badly.
   means started, or neutral. `warning` means done with a caveat, or input the
   user sees refused right now (attachment limit, refused drop). Toast copy is
   written as a sentence. Nothing capitalizes it for you.
+- **A start offers Follow.** An action that starts work or creates something
+  elsewhere shows one `info` toast per start, with a past-tense title and a
+  `Follow` action that drops when the user already sees the target
+  ([docs/navigation.md](docs/navigation.md#follow-toasts)).
 - **An error lands in the log first.** When something the user asked for did
   not happen, it becomes a notification row (`reportError`) with a title that
   names the action ("Couldn't prune archived transcripts"). The toast is only

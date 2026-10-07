@@ -393,11 +393,11 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
 - The board card's "Continue" and the Next surface's primary action for a
   ready workflow step both call `activateWorkflowAgent` on the same pending
   agent; neither one just opens a panel and leaves starting the step to you.
-- Accepting plan-ready announces the started implementer with the same
-  `useAgentStartedToast` every other spawn-and-open flow uses ("Implementer
-  started", with an "Open the agent" action) - the toast the standalone
-  PlanReadySuggestion component used to show before the unified resolver
-  replaced it in E7-5, restored here.
+- Accepting plan-ready announces the started implementer with the Follow toast
+  every other start uses ("Implementer started", with a `Follow` action, built by
+  `planRunToast`; see `docs/navigation.md` Follow toasts) - the toast the
+  standalone PlanReadySuggestion component used to show before the unified
+  resolver replaced it in E7-5, restored here.
 - The resolve-threads card ("Draft fixes for N") never starts an agent: it
   sends a `fix` request (`requestReview`) with the fixable comments and opens
   the launch panel on the Comments tab, pre-filled. The board card "Resolve N

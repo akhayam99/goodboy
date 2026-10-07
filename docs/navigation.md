@@ -2204,3 +2204,41 @@ current placements with the operation's expected result and restores the
 snapshot in one guarded database transaction. A later re-link or changed row
 makes Undo do nothing and say why. Other tasks and projects stay untouched.
 Stop tracking restores only the workspace task; it changes no session link.
+
+## Follow toasts
+
+An action that starts work, or creates something that lives somewhere else,
+offers Follow once it returns. The toast is `info` (`success` means finished),
+its title is past tense ("Run started", "Session started", "Agent started"),
+and its one-line message appears only when it adds a fact the title lacks. The
+one action is `Follow`, or `Follow the run` when the target is not the thing
+the title names. It navigates as a push, so Back returns to where the user
+was, and it opens the target's drawer when the target is a drawer. Pending
+stays the control's `isBusy` pulse, never a spinner, and a failure never
+becomes a Follow toast: it lands in the log (`reportError`) or stays beside the
+form that was still open.
+
+On screen is the exception: when the target place is the current place (and
+its named drawer is the open one), no studio covers the page and no overlay
+drawer covers it (`data-drawer-mode="overlay"` on the drawer `aside`), the
+toast keeps its title and drops the action. A push drawer leaves the page
+visible, so it does not count as covering.
+
+A user start raises one toast. The caller passes a `startKey` (a run id or an
+agent id) to `useFollowToast`; the key marks the run or agent as user-started
+for 5 seconds (`shared/lib/userStarts.ts`) and becomes the toast's `dedupeKey`
+`follow:<startKey>`. `WorkflowFollowToastBridge` skips a step start whose run
+or agent carries the mark, so Approve or Run plan never raises a second toast,
+while a step the orchestrator starts on its own keeps its one `Follow` toast.
+The mark is what keeps the bridge quiet. `dedupeKey` is one part of a toast's
+identity beside its kind, title and message: an identical repeat folds into
+the first toast (with a count) and a different title under the same key is a
+second toast. A caller that starts work and then awaits it marks the key before
+it awaits (`markUserStart`), because the bridge hears the step start first.
+
+The title reaches assistive tech through the toast card itself, which is a
+polite `status` region for every non-warning toast. Code that cannot call a
+hook builds the same params: `planRunToast` returns the Follow params for Run
+plan and marks the agent. Starts that already land on their page raise nothing
+new: the Runs page start navigates to the run (`useAgentsSection`), so
+`WorkflowRunStartButton` toasts only for a start that does not.

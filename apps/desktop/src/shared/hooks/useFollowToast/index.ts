@@ -7,12 +7,12 @@ import { FOLLOW_LABEL, followDedupeKey } from '../../lib/followToast';
 import { markUserStart } from '../../lib/userStarts';
 import { isTargetShown } from './isTargetShown';
 
-export type FollowTarget = {
+type FollowTarget = {
   readonly place: PlaceRequest;
   readonly drawer?: OpenDrawer;
 };
 
-export type FollowParams = {
+type FollowParams = {
   readonly title: string;
   readonly message?: string;
   readonly target: FollowTarget;
