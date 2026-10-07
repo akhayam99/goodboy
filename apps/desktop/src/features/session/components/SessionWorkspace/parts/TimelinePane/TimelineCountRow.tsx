@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { TimelineCountItem } from '../../../../timeline/buildTimelineStream';
 import { groupSummaryText } from '../../../../timeline/groupSummary';
 import { runIdentityStroke } from '../../../../timeline/runIdentity';
@@ -65,7 +65,7 @@ export const TimelineCountRow = ({ item, rail, railWidth, lanes, isExpanded, onS
           onKeyDown={onKeyDown}
           className={cn(
             'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-2 text-left',
-            'motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            ROW_INTERACTIVE,
           )}
           style={{ height: TIMELINE_RHYTHM.grade.count.height }}
         >
