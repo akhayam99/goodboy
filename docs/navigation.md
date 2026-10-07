@@ -1996,8 +1996,33 @@ named `Not loaded` until the data arrives, then the number, never 0 for an
 unknown (`TabCount`). Fix, Resolve without a reply and Stop live on the thread
 and its properties; Fix launches from the list or the thread, never from Files.
 
-**Files.** The branch against its base, on the column, with the change tree on
-the left of the diff body (`ChangeTree`, 320px by default, from 900px of pane up; drag its right edge or use the arrow keys to resize it, never past 30% of the pane, saved as `goodboy:diff-tree-width`): folders first, then files, alphabetical,
+**Files.** The branch against its base, on the column like every other tab, with
+the change tree in a rail of its own at the pane's left edge, outside the column.
+`BranchPage` wraps its `PaneShell` in `DiffRailScope`, which measures the lens
+body (the sidebar and a pushed drawer are already out of it) and renders the
+rail host as a sibling of the `PaneShell`, on the Files tab only; `SessionDiffPane`
+portals `ChangeTree` into it, so the tree and the diff still share one
+`useReviewState` and the keys stay in `useDiffKeys`. The rail never moves the
+column: no mode, no resize and no tab change the title, the tabs, Ask or the
+diff's left edge. `treeRailModeOf` (`features/diff/treeRailMode.ts`) picks the
+mode from the pane width alone, with `margin = (pane - 1008) / 2` (1008 is
+`COLUMN_FRAME`): `docked` when `rail + 24 <= margin`, else `strip` when
+`44 + 16 <= margin`, else `button`. Docked, the rail is open beside the column,
+280px by default; drag its right edge or use the arrow keys between 240 and 400,
+never past what still docks (`rail <= margin - 24`), saved as
+`goodboy:diff-tree-width`. Its head reads `Files 6` and a fold button
+(`⌘⇧B`), then `N of M viewed`, the filter and the chips below. The strip is
+44px in the margin with the progress ring and `1/6`. The button is `Files 1/6`,
+the first control of the Files toolbar. The strip and the button open the same
+overlay over the diff: 280px from the strip's right edge (the pane's left edge
+when there is no strip), no scrim, `shadow-lg`; `Esc` or a click outside closes
+it and hands focus back to the strip or the button, and picking a file closes
+it. `F` opens it and focuses the tree, `/` and `T` open it on the filter, `⌘⇧B`
+opens and closes it. Docked, `⌘⇧B` and the fold button fold the rail to the
+strip and back, and `F` docks it again; `useTreePanel` keeps that choice while
+the Files tab stays open. A pane that has not been measured yet reads as docked.
+The toolbar on the column reads `Compared with main · All 5 commits`, then
+`Display`, `Post notes` and `Write review`. Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
@@ -2160,11 +2185,11 @@ previous file and skip the files of a closed folder, `[` and `]` are aliases;
 viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
 wrapping to the first; `F` puts focus on the tree; `/` and `T` are one action
 (`diff.focusFilter`, `T` is its alias) and focus the filter field, the one input
-in the tree column that carries `data-diff-filter` (it opens the tree first when
-it is folded); `⌘⇧B` shows or hides the tree (`⌘B` stays the column).
+in the tree rail that carries `data-diff-filter` (it opens the tree first when
+it is folded or an overlay); `⌘⇧B` folds or opens the tree (`⌘B` stays the column).
 A line under the tree lists them once, from the registry (`keyHelp.ts`).
 
-Big and narrow cases (`useNarrowPane`, `useTreePanel`, `lib/windowRows.ts`).
+Big and folded cases (`treeRailMode.ts`, `useTreePanel`, `lib/windowRows.ts`).
 Past 120 visible rows the tree draws only the rows in view plus a margin (fixed
 28px rows, 44px for a rename), so 512 files scroll as light as 20. A change
 over 300 files starts with its deepest folders over 50 files closed (a parent of
@@ -2172,13 +2197,13 @@ a big folder stays open), and starts that way again when a different set of
 files arrives, not on a reload of the same files. The diff keeps its own
 progressive mounting; the patch parse stays on the main thread because a
 512-file patch parses and becomes a tree in about 2ms (`largeChange.test.ts`
-fails over 100ms, the point where a worker earns its cost). Under 900px of pane
-(a 1024px window with the session sidebar open) the tree is a 44px strip with
-the progress ring and `12/46`; click it, or `F`, and the tree opens over the
-diff with no scrim; picking a file or `Esc` closes it. `⌘⇧B` on a wide pane
-folds the tree to the same strip. While the diff loads the tree column shows
-skeleton rows and `Loading files…`. An empty scope drops the tree, the strip
-and the toolbar and shows one centred empty state on the page column
+fails over 100ms, the point where a worker earns its cost). Where the margin
+cannot hold the rail (a 1440px window with the sidebar pinned gets a strip, a
+1100px pane gets the `Files 12/46` button) the tree opens as the overlay with no
+scrim; picking a file or `Esc` closes it. `⌘⇧B` on a pane that docks folds the
+rail to the strip. While the diff loads the rail shows skeleton rows and
+`Loading files…`. An empty scope drops the tree, the strip, the button and the
+toolbar and shows one centred empty state on the page column
 (`DiffEmptyState`): what is empty in plain words, the scope picker inline and,
 when the other scope has files, one button that switches to it (`Show branch vs
 main (6 files)`, `Show working tree (2 files)`; `alternate` on `useSessionDiff`

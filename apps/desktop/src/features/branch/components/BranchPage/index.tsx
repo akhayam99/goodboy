@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { PageColumn, PaneShell, SegmentedTabs } from '@goodboy/ui';
-import type { PrCheckRun, Session, SessionId } from '@goodboy/types';
+import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { openLens } from '../../../session/openLens';
+import { DiffRailScope } from '../../../diff/DiffRailScope';
 import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { GithubConnectionEmptyState } from '../../../integrations/github/components/GithubConnectionEmptyState';
@@ -36,7 +37,6 @@ type Props = {
   readonly workingDir: string | null;
 };
 
-const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const TAB_LABEL = {
   comments: 'Comments',
   files: 'Files',
@@ -79,7 +79,6 @@ export const BranchPage = ({ session, workingDir }: Props) => {
   });
 
   const { pr } = identity;
-  const checks = github?.detail?.checks ?? EMPTY_CHECKS;
   const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
   const isPushBusy =
     push.phase.kind === 'preparing' ||
@@ -261,54 +260,56 @@ export const BranchPage = ({ session, workingDir }: Props) => {
 
   return (
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
-      <PaneShell
-        width="column"
-        scroll="self"
-        header={
-          <div className="flex min-w-0 flex-col gap-3">
-            <BranchHeader
-              sessionId={sessionId}
-              mountPath={identity.mountPath}
-              pr={pr}
-              checks={checks}
-              projectName={projectName}
-              branch={identity.mount?.branch ?? null}
-              baseBranch={identity.mount?.baseBranch ?? null}
-              fallbackTitle={identity.label}
-              controls={controls}
-              isPushBusy={isPushBusy}
-            />
-            <PushBanner sessionId={sessionId} push={push} />
-            {baseRow}
-            {controls.rebaseError !== null && (
-              <p role="alert" className="text-meta text-danger" title={controls.rebaseError}>
-                {controls.rebaseError}
-              </p>
-            )}
-            <SegmentedTabs<BranchTab>
-              ariaLabel="Branch"
-              size="sm"
-              className="w-fit"
-              value={tab}
-              onChange={selectTab}
-              options={TAB_ORDER.map((value) => ({
-                value,
-                label: TAB_LABEL[value],
-                badge:
-                  value === 'comments' ? (
-                    <TabCount count={commentsCount} />
-                  ) : value === 'files' ? (
-                    <TabCount count={filesCount} />
-                  ) : value === 'commits' ? (
-                    <TabCount count={commitCount} />
-                  ) : undefined,
-              }))}
-            />
-          </div>
-        }
-      >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3">{body()}</div>
-      </PaneShell>
+      <DiffRailScope isActive={tab === 'files'}>
+        <PaneShell
+          width="column"
+          scroll="self"
+          header={
+            <div className="flex min-w-0 flex-col gap-3">
+              <BranchHeader
+                sessionId={sessionId}
+                mountPath={identity.mountPath}
+                pr={pr}
+                detail={github?.detail ?? null}
+                projectName={projectName}
+                branch={identity.mount?.branch ?? null}
+                baseBranch={identity.mount?.baseBranch ?? null}
+                fallbackTitle={identity.label}
+                controls={controls}
+                isPushBusy={isPushBusy}
+              />
+              <PushBanner sessionId={sessionId} push={push} />
+              {baseRow}
+              {controls.rebaseError !== null && (
+                <p role="alert" className="text-meta text-danger" title={controls.rebaseError}>
+                  {controls.rebaseError}
+                </p>
+              )}
+              <SegmentedTabs<BranchTab>
+                ariaLabel="Branch"
+                size="sm"
+                className="w-fit"
+                value={tab}
+                onChange={selectTab}
+                options={TAB_ORDER.map((value) => ({
+                  value,
+                  label: TAB_LABEL[value],
+                  badge:
+                    value === 'comments' ? (
+                      <TabCount count={commentsCount} />
+                    ) : value === 'files' ? (
+                      <TabCount count={filesCount} />
+                    ) : value === 'commits' ? (
+                      <TabCount count={commitCount} />
+                    ) : undefined,
+                }))}
+              />
+            </div>
+          }
+        >
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3">{body()}</div>
+        </PaneShell>
+      </DiffRailScope>
     </BranchDiffContext.Provider>
   );
 };

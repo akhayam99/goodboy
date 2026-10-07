@@ -507,3 +507,93 @@ describe('Branch page Checks and Files', () => {
     expect(screen.getByText('No worktree for this session')).toBeDefined();
   });
 });
+
+describe('Branch page files rail', () => {
+  const mountFiles = async ({ width }: { readonly width: number }): Promise<void> => {
+    seedResolveScene({ expandedThreadId: null });
+    seedWorktree({ isDiffLoaded: true });
+    withCommits();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, width, 600),
+    );
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+  };
+
+  const visit = async (name: RegExp): Promise<void> => {
+    fireEvent.click(screen.getByRole('tab', { name }));
+    await settle();
+  };
+
+  const columnOf = (): HTMLElement =>
+    document
+      .querySelector('[data-slot="pane-header"]')
+      ?.closest<HTMLElement>('[data-page-column]') as HTMLElement;
+
+  const railOf = (): HTMLElement | null => screen.queryByRole('complementary', { name: 'Files' });
+
+  it('keeps the column, the title and the tab strip the same elements from Comments to Files and back', async () => {
+    await mountFiles({ width: 1920 });
+    const column = columnOf();
+    const title = screen.getByRole('heading', { level: 1 });
+    const tabs = screen.getByRole('tablist', { name: 'Branch' });
+    expect(column.getAttribute('data-width')).toBe('column');
+
+    for (const name of [/^Files/, /^Comments/, /^Commits/, /^Files/, /^Checks/, /^Files/]) {
+      await visit(name);
+
+      expect(columnOf()).toBe(column);
+      expect(column.getAttribute('data-width')).toBe('column');
+      expect(screen.getByRole('heading', { level: 1 })).toBe(title);
+      expect(screen.getByRole('tablist', { name: 'Branch' })).toBe(tabs);
+    }
+  });
+
+  it('draws the rail on Files only, beside the column and never inside it', async () => {
+    await mountFiles({ width: 1920 });
+    expect(railOf()).toBeNull();
+
+    await visit(/^Files/);
+    const rail = railOf() as HTMLElement;
+    expect(rail.getAttribute('data-rail')).toBe('docked');
+    expect(columnOf().contains(rail)).toBe(false);
+    const scope = columnOf().closest('[data-diff-rail-scope]') as HTMLElement;
+    expect(rail.closest('[data-slot="diff-rail-host"]')?.parentElement).toBe(scope);
+
+    for (const name of [/^Comments/, /^Commits/, /^Checks/]) {
+      await visit(name);
+      expect(railOf()).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Files, / })).toBeNull();
+      expect(document.querySelector('[data-slot="diff-rail-host"]')).toBeNull();
+    }
+  });
+
+  it.each([
+    [1920, 'docked'],
+    [1196, 'strip'],
+    [1100, 'button'],
+  ] as const)(
+    'shows the tree as a %i pane wants it, %s, on the same column',
+    async (width, mode) => {
+      await mountFiles({ width });
+      const column = columnOf();
+
+      await visit(/^Files/);
+
+      expect(columnOf()).toBe(column);
+      const toolbar = document.querySelector('[data-slot="diff-toolbar"]') as HTMLElement;
+      const strips = screen
+        .queryAllByRole('button', { name: /^Files, / })
+        .filter((button) => !toolbar.contains(button));
+      expect(railOf()?.getAttribute('data-rail') ?? null).toBe(mode === 'docked' ? 'docked' : null);
+      expect(strips).toHaveLength(mode === 'strip' ? 1 : 0);
+      expect(within(toolbar).queryAllByRole('button', { name: /^Files, / })).toHaveLength(
+        mode === 'button' ? 1 : 0,
+      );
+    },
+  );
+});

@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 import { Notice, PaneShell } from '@goodboy/ui';
 import type { BitbucketIntegrationBinding, FileDiff, SessionId, WorkspaceId } from '@goodboy/types';
 import { bitbucketPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
-import { checksRollup } from '../../../github/components/PullRequest/checksRollup';
+import { checksRollup } from '../../../github/checksRollup';
 import { openUrl } from '../../../../../shared/lib/editor';
 import { PrChecks } from '../../../github/components/PullRequest/PrChecks';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';

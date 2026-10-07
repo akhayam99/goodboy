@@ -22,6 +22,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import type {
   MountId,
   PrCheckRun,
+  PrDetail,
   ProjectId,
   PullRequestState,
   SessionId,
@@ -167,7 +168,19 @@ type HarnessProps = {
   readonly pr: PullRequestState | null;
   readonly review: BranchReviewCounts;
   readonly checks: ReadonlyArray<PrCheckRun>;
+  readonly detail?: PrDetail | null;
 };
+
+const detailOf = ({
+  pr,
+  checks,
+}: {
+  readonly pr: PullRequestState | null;
+  readonly checks: ReadonlyArray<PrCheckRun>;
+}): PrDetail | null =>
+  pr === null
+    ? null
+    : { prNumber: pr.number, comments: [], reviews: [], reviewRequests: [], checks };
 
 const diffOf = (): SessionDiff => ({
   files: [],
@@ -186,7 +199,7 @@ const diffOf = (): SessionDiff => ({
   clearFocus: vi.fn(),
 });
 
-const Harness = ({ pr, review, checks }: HarnessProps) => {
+const Harness = ({ pr, review, checks, detail }: HarnessProps) => {
   const controls = useBranchControls({
     sessionId: SESSION_ID,
     worktreePath: MOUNT.worktreePath,
@@ -199,7 +212,7 @@ const Harness = ({ pr, review, checks }: HarnessProps) => {
       sessionId={SESSION_ID}
       mountPath={MOUNT.worktreePath}
       pr={pr}
-      checks={checks}
+      detail={detail === undefined ? detailOf({ pr, checks }) : detail}
       projectName="payments-api"
       branch={MOUNT.branch}
       baseBranch="main"
@@ -214,10 +227,11 @@ const renderHeader = ({
   pr = null,
   review = NO_REVIEW,
   checks = NO_CHECKS,
+  detail,
 }: Partial<HarnessProps> = {}) =>
   render(
     <ToastProvider>
-      <Harness pr={pr} review={review} checks={checks} />
+      <Harness pr={pr} review={review} checks={checks} detail={detail} />
     </ToastProvider>,
   );
 
@@ -278,6 +292,77 @@ describe('BranchHeader identity', () => {
     renderHeader({ pr: { ...PR, isDraft: false } });
 
     expect(screen.getByText('Open')).toBeDefined();
+  });
+});
+
+describe('BranchHeader checks word', () => {
+  const metaOf = (): string =>
+    (screen.getByText('Draft').closest('div') as HTMLElement).textContent ?? '';
+
+  it('says Checks unknown when the pull request carries checksUnknown, never 0 checks', () => {
+    status = statusOf({});
+    renderHeader({ pr: { ...PR, checksUnknown: true } });
+
+    expect(screen.getByText('Checks unknown')).toBeDefined();
+    expect(metaOf()).not.toMatch(/0 checks|checks passed/);
+  });
+
+  it('says Checks unknown when the checks read was denied, even with a passing rollup', () => {
+    status = statusOf({});
+    renderHeader({
+      pr: PR,
+      detail: {
+        prNumber: PR.number,
+        comments: [],
+        reviews: [],
+        reviewRequests: [],
+        checks: [],
+        checksRead: 'denied',
+      },
+    });
+
+    expect(screen.getByText('Checks unknown')).toBeDefined();
+    expect(metaOf()).not.toMatch(/0 checks/);
+  });
+
+  it('says Checks unknown when the checks read failed', () => {
+    status = statusOf({});
+    renderHeader({
+      pr: { ...PR, checks: 'pending' },
+      detail: {
+        prNumber: PR.number,
+        comments: [],
+        reviews: [],
+        reviewRequests: [],
+        checks: [],
+        checksRead: 'failed',
+      },
+    });
+
+    expect(screen.getByText('Checks unknown')).toBeDefined();
+    expect(screen.queryByText(/running/)).toBeNull();
+  });
+
+  it('keeps the count of a readable rollup', () => {
+    status = statusOf({});
+    renderHeader({
+      pr: PR,
+      checks: [
+        { name: 'build', conclusion: 'success', detailsUrl: null, durationMs: 1 },
+        { name: 'lint', conclusion: 'success', detailsUrl: null, durationMs: 1 },
+      ],
+    });
+
+    expect(screen.queryByText('Checks unknown')).toBeNull();
+    expect(metaOf()).toContain('2 checks');
+  });
+
+  it('shows no checks word when there is no pull request', () => {
+    status = statusOf({ upstream: null });
+    renderHeader();
+
+    expect(screen.queryByText('Checks unknown')).toBeNull();
+    expect(screen.queryByText(/checks/)).toBeNull();
   });
 });
 

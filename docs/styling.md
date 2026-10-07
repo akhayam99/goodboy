@@ -246,9 +246,11 @@ left inside the column. Tables, code and cards take the whole column.
 
 **The Branch page** sits on the column like every other page: its header, the
 tabs, the trail and the Ask button, and every tab body share the 960px column,
-so nothing moves from one tab to the next. Files puts its file tree on the left
-from 900px of pane up and the diff beside it (under 900px the tree is a 44px
-strip that opens over the diff); Comments puts the list and the thread side by
+so nothing moves from one tab to the next. Files puts its file tree in a rail of
+its own at the pane's left edge, outside the column: open in the margin where the
+rail and 24px fit, else a 44px strip in the margin, else a `Files 1/6` button in
+the toolbar, the last two opening it over the diff (`treeRailModeOf`), so the
+diff keeps the column in every mode; Comments puts the list and the thread side by
 side from 900px, the thread's properties inline under it at every width. Both
 read the width of their own pane (`branchLayoutOf`), so a wide sidebar or an
 open drawer narrows them.
