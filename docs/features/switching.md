@@ -11,7 +11,7 @@ Move between the tasks of a workspace, and see from any screen which one needs y
 
 Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, a **?** or **!** means the session needs you, a check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
 
-Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open shows its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count.
+Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open sits in a card with its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count, so it is clear they belong to that session.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
@@ -21,6 +21,10 @@ Rest the pointer on a row for half a second, or move the keyboard focus to it, a
 The options button in the **Sessions** header sorts the list by **Needs you first**, **Alphabetical**, **Last activity** or **Created**, groups it by **None**, **PR state**, **Stage** or **Project**, narrows it to a project and shows archived sessions. Goodboy keeps your choice for each workspace. The first eight rows show, and **Show more** opens the rest.
 
 To switch without looking at the list, hold **Control** and press **Tab** to flip through your recent sessions, then let go to open one. **Option Command Down** jumps to the next session that needs you.
+
+### Pin a session to keep it at the top
+
+With many sessions, keep the ones you return to at the top of the list. Choose **Pin session** from a row's right-click menu or from the command palette, and the session moves to a **Pinned** group above the rest, in the order you pinned them, whatever the sort, grouping or project filter. **Unpin session** puts it back. A pinned session you archive comes back to Pinned when you restore it.
 
 ### Now chip
 
