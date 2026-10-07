@@ -26,7 +26,7 @@ import { projectResolveRows } from './projectResolveRows';
 import { remapIntegratedCommits } from './remapIntegratedCommits';
 import { attemptOfCandidate, laneChainOf } from './resolveLane';
 import { saveResolveThread } from './saveResolveThread';
-import { STALE_APPROVAL, withStaleRecovery } from './staleApproval';
+import { STALE_APPROVAL, StaleApprovalError, withStaleRecovery } from './staleApproval';
 import { withSavedReplyDraft } from './saveResolveReplyDraft';
 import {
   UNCAPTURED_WORK_ON_BRANCH,
@@ -171,6 +171,16 @@ const stepOf = async ({
   };
 };
 
+const isLagging = ({ itemRevision, entry }: Covered): boolean =>
+  entry?.item.candidateRevision !== itemRevision || entry.thread.revision !== itemRevision;
+
+const laggingItemIdsOf = ({
+  steps,
+}: {
+  readonly steps: ReadonlyArray<Step>;
+}): ReadonlyArray<string> =>
+  steps.flatMap(({ covered }) => covered.filter(isLagging).map(({ queueItemId }) => queueItemId));
+
 const assertAcceptable = ({
   steps,
   targetId,
@@ -189,13 +199,8 @@ const assertAcceptable = ({
     if (covered.some(({ entry }) => entry?.item.approvalState === 'wont_fix')) {
       throw new Error(isTarget ? PARTIAL_REFUSAL : EARLIER_SET_ASIDE);
     }
-    if (
-      covered.some(
-        ({ itemRevision, entry }) =>
-          entry?.item.candidateRevision !== itemRevision || entry.thread.revision !== itemRevision,
-      )
-    ) {
-      throw new Error(STALE_APPROVAL);
+    if (covered.some(isLagging)) {
+      throw new StaleApprovalError({ itemIds: laggingItemIdsOf({ steps }) });
     }
   }
 };

@@ -150,7 +150,11 @@ file holds those explanations. Everything below has been "fixed" at least once a
   aborted and the branch reset, the links turn `stale` and the threads fail
   with `failed:accept_conflict`, so a retry redoes it on top; the fixes after
   them are rebuilt. A branch that only moved ahead takes the fix by cherry-pick
-  and each link records the commit it landed as. Every drain
+  and each link records the commit it landed as. An accept that finds the
+  answer moved a revision without changing is repaired and tried once more
+  (`withStaleRecovery`), for every link of the chain; a link whose answer
+  really changed stops it and the error names that comment
+  (`staleCommentName`). Every drain
   releases the copies of ended attempts, and app start removes every
   `resolve-` copy no process holds. A copy is never reused across turns: a
   later turn of the same agent without a copy (an operator message) runs on
