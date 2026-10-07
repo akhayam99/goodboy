@@ -12,7 +12,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import type {
+  Agent,
   AgentId,
+  ArtifactComment,
   ArtifactKind,
   ArtifactStatus,
   ArtifactId,
@@ -21,15 +23,18 @@ import type {
   SessionArtifact,
   WireframeArtifact,
   SessionId,
+  Workflow,
+  WorkflowRun,
+  WorkflowRunId,
 } from '@goodboy/types';
+import { planApprovedToast } from '../../plans/planApprovedToast';
 import { planAsArtifact } from '../../plans/planAsArtifact';
+import { planEditBlockOf } from '../../plans/planEditBlock';
+import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
+import { planRunOf } from '../../plans/planRunOf';
 import { planRunToast } from '../../plans/planRunToast';
-import {
-  NOT_REVISING,
-  PLAN_REVISING_REASON,
-  planRevisingOf,
-  type PlanRevising,
-} from '../../plans/planRevising';
+import { openPlanDrawer } from '../../plans/openPlanDrawer';
+import { NOT_REVISING, planRevisingOf, type PlanRevising } from '../../plans/planRevising';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../shared/utils/planConsumer';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/names';
@@ -60,6 +65,8 @@ import type {
   ObjectKindDefinition,
 } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import type { AppStore } from '../../../store/store';
+import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 
 export const ARTIFACT_EDIT_EVENT = 'goodboy:artifact-edit';
 
@@ -74,12 +81,20 @@ export type ArtifactFacts = {
   readonly status: ArtifactStatus | null;
   readonly isPlanRunning: boolean;
   readonly planRevising: PlanRevising;
+  readonly planRun: WorkflowRun | null;
+  readonly planDrafts: ReadonlyArray<ArtifactComment>;
   readonly generation: ArtifactGeneration | null;
   readonly kickoff: string | null;
   readonly ports: ArtifactPorts;
 };
 
 const NO_PORTS: ArtifactPorts = {};
+
+const NO_DRAFTS: ReadonlyArray<ArtifactComment> = [];
+
+const NO_AGENTS: ReadonlyArray<Agent> = [];
+
+const NO_TEMPLATES: ReadonlyArray<Workflow> = [];
 
 type FactsOnly = { readonly facts: ArtifactFacts };
 
@@ -140,6 +155,31 @@ const runHistoryOf = ({ facts }: FactsOnly): string | null => {
 const agentOf = ({ facts }: FactsOnly): AgentId | null =>
   facts.generation?.agentId ?? artifactOf({ facts })?.agentId ?? null;
 
+const primaryOf = ({ facts }: FactsOnly): PlanPrimary =>
+  planPrimaryOf({
+    plan: facts.plan ?? { status: facts.planStatus ?? 'active', consumptionCount: 0 },
+    run: facts.planRun,
+    drafts: facts.planDrafts,
+    revising: facts.planRevising,
+    isRunning: facts.isPlanRunning,
+  });
+
+const editBlockOf = ({ facts }: FactsOnly): string | null =>
+  facts.kind === 'plan'
+    ? planEditBlockOf({
+        plan: { clusters: facts.plan?.clusters },
+        drafts: facts.planDrafts,
+        isRevising: facts.planRevising.kind === 'revising',
+      })
+    : null;
+
+const isOnArtifactsLens = ({ facts, env }: FactsOnly & { readonly env: ActionEnv }): boolean => {
+  const state = env.getState();
+  return (
+    state.currentSessionId === facts.sessionId && state.activeLens[facts.sessionId] === 'plans'
+  );
+};
+
 const openArtifact = ({ facts, env }: FactsOnly & { readonly env: ActionEnv }): void => {
   const artifactId = idOf({ facts });
   if (artifactId === null) {
@@ -183,13 +223,69 @@ const portBlocked = ({ facts, id }: FactsOnly & { readonly id: ArtifactPortId })
 const portBusy = ({ facts, id }: FactsOnly & { readonly id: ArtifactPortId }): boolean =>
   portOf({ facts, id })?.isBusy === true;
 
-const runPlan = async ({ facts, env }: FactsOnly & { readonly env: ActionEnv }): Promise<void> => {
+const stepNameOf = ({
+  state,
+  sessionId,
+  agentId,
+}: {
+  readonly state: AppStore;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+}): string =>
+  (state.sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === agentId)?.name ??
+  'The next step';
+
+const isOnRunPage = ({
+  state,
+  sessionId,
+  runId,
+}: {
+  readonly state: AppStore;
+  readonly sessionId: SessionId;
+  readonly runId: WorkflowRunId;
+}): boolean =>
+  state.currentSessionId === sessionId &&
+  state.activeLens[sessionId] === 'workflows' &&
+  state.focusedWorkflowRunId[sessionId] === runId;
+
+type ApprovedParams = FactsOnly & {
+  readonly env: ActionEnv;
+  readonly runId: WorkflowRunId;
+  readonly startedAgentId: AgentId | null;
+};
+
+const showApproved = ({ facts, env, runId, startedAgentId }: ApprovedParams): void => {
+  const state = env.getState();
+  env.showToast(
+    planApprovedToast({
+      sessionId: facts.sessionId,
+      runId,
+      startedStepName:
+        startedAgentId === null
+          ? null
+          : stepNameOf({ state, sessionId: facts.sessionId, agentId: startedAgentId }),
+      isOnRunPage: isOnRunPage({ state, sessionId: facts.sessionId, runId }),
+      navigate: state.navigate,
+    }),
+  );
+};
+
+type RunPlanParams = FactsOnly & {
+  readonly env: ActionEnv;
+  readonly approvesRun?: WorkflowRun | null;
+};
+
+const runPlan = async ({ facts, env, approvesRun = null }: RunPlanParams): Promise<void> => {
   const planId = idOf({ facts });
   if (planId === null) {
     return;
   }
   const state = env.getState();
   const result = await state.runPlan(facts.sessionId, planId);
+  if (approvesRun !== null && result.kind === 'started' && result.scope === 'workflow') {
+    showApproved({ facts, env, runId: approvesRun.id, startedAgentId: result.agentId });
+    return;
+  }
   const toast = planRunToast({
     result,
     sessionId: facts.sessionId,
@@ -200,6 +296,49 @@ const runPlan = async ({ facts, env }: FactsOnly & { readonly env: ActionEnv }):
   }
 };
 
+const approvePlan = async ({
+  facts,
+  env,
+}: FactsOnly & { readonly env: ActionEnv }): Promise<void> => {
+  const run = facts.planRun;
+  if (run === null) {
+    return;
+  }
+  if (!isRunHeldForPlan({ run })) {
+    await runPlan({ facts, env, approvesRun: run });
+    return;
+  }
+  const state = env.getState();
+  const result = await state.approveWorkflowRunPlan(facts.sessionId, run.id);
+  if (result.kind === 'failed') {
+    await state.reportError({
+      title: "Couldn't approve the plan",
+      error: new Error(result.message),
+      sessionId: facts.sessionId,
+    });
+    return;
+  }
+  if (result.kind === 'approved') {
+    showApproved({
+      facts,
+      env,
+      runId: run.id,
+      startedAgentId: result.next === 'started' ? result.agentId : null,
+    });
+  }
+};
+
+const runPlanAction = async ({
+  facts,
+  env,
+}: FactsOnly & { readonly env: ActionEnv }): Promise<void> => {
+  if (primaryOf({ facts }).kind === 'approve') {
+    await approvePlan({ facts, env });
+    return;
+  }
+  await ported({ id: 'runPlan', fallback: runPlan })({ facts, env });
+};
+
 const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   {
     id: 'artifact.open',
@@ -208,7 +347,14 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     group: 'open',
     when: ({ facts, viewing }) =>
       isStored({ facts }) && !(viewing?.kind === 'artifact' && viewing.id === idOf({ facts })),
-    run: openArtifact,
+    run: ({ facts, env }) => {
+      const planId = idOf({ facts });
+      if (facts.kind === 'plan' && planId !== null && !isOnArtifactsLens({ facts, env })) {
+        openPlanDrawer({ sessionId: facts.sessionId, planId });
+        return;
+      }
+      openArtifact({ facts, env });
+    },
   },
   {
     id: 'artifact.openAgent',
@@ -226,16 +372,16 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   },
   {
     id: 'artifact.runPlan',
-    label: 'Run plan',
+    label: ({ facts }) => primaryOf({ facts }).label ?? 'Run plan',
     icon: Play,
     group: 'act',
     slot: () => 'primary',
-    when: ({ facts }) => planIn({ facts, statuses: ['active'] }),
+    when: ({ facts }) =>
+      planIn({ facts, statuses: ['active'] }) && primaryOf({ facts }).kind !== 'none',
     blockedReason: ({ facts }) =>
-      portBlocked({ facts, id: 'runPlan' }) ??
-      (facts.planRevising.kind === 'revising' ? PLAN_REVISING_REASON : null),
+      portBlocked({ facts, id: 'runPlan' }) ?? primaryOf({ facts }).reason,
     isBusy: ({ facts }) => portBusy({ facts, id: 'runPlan' }),
-    run: ported({ id: 'runPlan', fallback: runPlan }),
+    run: runPlanAction,
   },
   {
     id: 'artifact.edit',
@@ -246,6 +392,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     when: ({ facts }) =>
       planIn({ facts, statuses: ['active'] }) ||
       (facts.kind === 'report' && isLiveStored({ facts })),
+    blockedReason: ({ facts }) => portBlocked({ facts, id: 'edit' }) ?? editBlockOf({ facts }),
     run: ported({
       id: 'edit',
       fallback: ({ facts, env }) => {
@@ -553,6 +700,8 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
         status: null,
         isPlanRunning: false,
         planRevising: NOT_REVISING,
+        planRun: null,
+        planDrafts: NO_DRAFTS,
         generation,
         kickoff: null,
         ports,
@@ -585,6 +734,21 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
         stored === null || stored.kind !== 'plan'
           ? NOT_REVISING
           : planRevisingOf({ artifact: stored, turn: state.agentTurnState[stored.agentId] }),
+      planRun:
+        plan === null || session === null
+          ? null
+          : planRunOf({
+              plan,
+              agents: state.sessionPhaseRuns[target.sessionId] ?? NO_AGENTS,
+              runs: session.workflowRuns,
+              templates: state.phaseTemplates[session.workspaceId] ?? NO_TEMPLATES,
+            }),
+      planDrafts:
+        kind === 'plan'
+          ? (state.artifactComments[target.sessionId] ?? NO_DRAFTS).filter(
+              (comment) => comment.artifactId === artifactId && comment.status === 'draft',
+            )
+          : NO_DRAFTS,
       generation: null,
       kickoff:
         stored?.kind === 'report'

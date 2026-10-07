@@ -1,8 +1,8 @@
 import { ChevronLeft } from 'lucide-react';
 import { Button, Markdown, useEscapeLayer } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
-import { sessionPlace, useAppStore } from '../../../../../store';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { openPlanDrawer } from '../../../../plans/openPlanDrawer';
 import { usePlanModel } from '../../../../plans/usePlanModel';
 
 type Props = {
@@ -14,11 +14,6 @@ type Props = {
 export const AskPlanView = ({ sessionId, artifactId, onBack }: Props) => {
   const model = usePlanModel({ sessionId, planId: artifactId });
   useEscapeLayer(onBack);
-  const navigate = useAppStore((state) => state.navigate);
-  const openInArtifacts = () =>
-    navigate({
-      to: sessionPlace({ sessionId, lens: 'plans', target: { kind: 'artifact', artifactId } }),
-    });
   return (
     <div data-testid="ask-plan" className="flex min-w-0 flex-col gap-3">
       <button
@@ -36,8 +31,13 @@ export const AskPlanView = ({ sessionId, artifactId, onBack }: Props) => {
           <Markdown text={model.plan.bodyMd} className="text-prose" />
         </article>
       )}
-      <Button variant="secondary" size="sm" className="self-start" onClick={openInArtifacts}>
-        Open in Artifacts
+      <Button
+        variant="secondary"
+        size="sm"
+        className="self-start"
+        onClick={() => openPlanDrawer({ sessionId, planId: artifactId })}
+      >
+        Open plan
       </Button>
     </div>
   );

@@ -75,6 +75,8 @@ const base: Omit<ArtifactFacts, 'kind' | 'title' | 'plan' | 'stored' | 'planStat
   workspaceSlug: 'harborline',
   isPlanRunning: false,
   planRevising: NOT_REVISING,
+  planRun: null,
+  planDrafts: [],
   generation: null,
   kickoff: 'a kickoff',
   ports: {},
