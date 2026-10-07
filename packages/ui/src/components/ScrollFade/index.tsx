@@ -25,6 +25,7 @@ export type ScrollFadeProps = {
 
 const SPACING_CLASS_PATTERN = /^[wh]-(\d+(?:\.\d+)?)$/;
 const DEFAULT_FADE_PX = 32;
+const LINE_EDGE_FADE_PX = 8;
 
 const fadeSizeToPx = (fadeSize: number | string): number => {
   if (typeof fadeSize === 'number') {
@@ -72,7 +73,8 @@ export const ScrollFade = ({
     const clientSize = horizontal ? el.clientWidth : el.clientHeight;
     const scrollSize = horizontal ? el.scrollWidth : el.scrollHeight;
     const maxScroll = Math.max(0, scrollSize - clientSize);
-    const top = fadeEdges === 'end' || isLineEdge ? 0 : Math.min(fadePx, scrollPos);
+    const topFade = isLineEdge ? LINE_EDGE_FADE_PX : fadePx;
+    const top = fadeEdges === 'end' ? 0 : Math.min(topFade, scrollPos);
     const bottom = Math.min(fadePx, Math.max(0, maxScroll - scrollPos));
     el.style.setProperty('--fade-top', `${top}px`);
     el.style.setProperty('--fade-bottom', `${bottom}px`);
@@ -140,7 +142,7 @@ export const ScrollFade = ({
           aria-hidden
           data-slot="scroll-edge"
           className={cn(
-            'pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-border opacity-0',
+            'pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-border-soft opacity-0',
             'motion-safe:transition-opacity motion-safe:duration-120 group-data-[scrolled=true]/edge:opacity-100',
           )}
         />

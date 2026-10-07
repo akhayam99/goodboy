@@ -236,7 +236,7 @@ export const WorkflowRow = ({
           isDiscarded && TERMINAL_DIM,
         )}
       >
-        <PageColumn className="shrink-0 py-5">
+        <PageColumn className="shrink-0 pb-2 pt-3">
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">
               <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
@@ -409,9 +409,6 @@ export const WorkflowRow = ({
                 </CardActionSlot>
               </div>
             </div>
-            {expanded && !isDiscarded && writableMountCount > 1 && (
-              <WriteDestinationControl sessionId={task.id} agentId={null} fallback="automatic" />
-            )}
             {expanded && !isDiscarded && (
               <NextActionStrip
                 sessionId={task.id}
@@ -425,6 +422,9 @@ export const WorkflowRow = ({
         {expanded && (
           <ScrollFade className="min-h-0 min-w-0 flex-1" fadeSize={24} edge="line">
             <PageColumn className={cn(PANE_RHYTHM.stack, 'pb-5')}>
+              {!isDiscarded && writableMountCount > 1 && (
+                <WriteDestinationControl sessionId={task.id} agentId={null} fallback="automatic" />
+              )}
               {!isDiscarded && !isDynamic && (
                 <WorkflowNextStepCta
                   workflow={workflow}

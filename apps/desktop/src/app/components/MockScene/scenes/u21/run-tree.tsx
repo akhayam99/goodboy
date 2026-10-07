@@ -3,11 +3,12 @@ import type {
   Agent,
   AgentId,
   IsoDateTime,
+  MeasuredTurnSpan,
   ProviderRunId,
   TelemetryRecord,
   TelemetryRecordId,
 } from '@goodboy/types';
-import { WorkflowRunDetail } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
+import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -16,7 +17,6 @@ import {
   AGENT_ROUNDING_ID,
   CHAT_AGENTS,
   CHAT_SESSION_ID,
-  DYNAMIC_RUN_ID,
   FLOW_AGENTS,
   FLOW_AGENT_KINDS,
   FLOW_SESSION,
@@ -171,6 +171,34 @@ const SCOUT_SPEND: ReadonlyArray<TelemetryRecord> = ROUNDING_SCOUTS.map((agent) 
   spendOf({ agent, costUsd: 0.03 }),
 );
 
+const spansOf = ({
+  agents,
+}: {
+  readonly agents: ReadonlyArray<Agent>;
+}): ReadonlyArray<MeasuredTurnSpan> =>
+  agents.flatMap((agent) =>
+    agent.startedAt === undefined || agent.completedAt === undefined
+      ? []
+      : [
+          {
+            agentId: agent.id,
+            parentAgentId: agent.parentAgentId ?? null,
+            agentStatus: agent.status,
+            workflowRunId: agent.workflowRunId ?? null,
+            isOrchestratedRunDone: false,
+            stepRole: 'scout' as const,
+            provider: 'anthropic' as const,
+            model: 'claude-haiku-4-5',
+            effort: null,
+            startedAtMs: Date.parse(agent.startedAt),
+            endedAtMs: Date.parse(agent.completedAt),
+            endReason: 'succeeded' as const,
+            costUsd: 0.03,
+            touchedMountIds: null,
+          },
+        ],
+  );
+
 const kindsOf = ({ agents }: { readonly agents: ReadonlyArray<Agent> }) =>
   Object.fromEntries(agents.map((agent) => [agent.id, agent.kind as AgentKind]));
 
@@ -179,6 +207,9 @@ const seedWith = ({ agents }: { readonly agents: ReadonlyArray<Agent> }): void =
   useAppStore.setState({
     sessionPhaseRuns: { [FLOW_SESSION_ID]: agents, [CHAT_SESSION_ID]: CHAT_AGENTS },
     sessionTelemetry: { [FLOW_SESSION_ID]: [...FLOW_TELEMETRY, ...SCOUT_SPEND] },
+    sessionTurnSpans: {
+      [FLOW_SESSION_ID]: spansOf({ agents: agents.filter((agent) => agent.parentAgentId != null) }),
+    },
     agentKindOverride: { ...FLOW_AGENT_KINDS, ...kindsOf({ agents }) },
   });
 };
@@ -275,7 +306,7 @@ const RunTreeScene = ({ seed }: SceneProps) => {
       session={FLOW_SESSION}
       main={
         <div className="flex h-full min-h-0 flex-col">
-          <WorkflowRunDetail session={FLOW_SESSION} workflowRunId={DYNAMIC_RUN_ID} />
+          <WorkflowsPane session={FLOW_SESSION} />
         </div>
       }
     />

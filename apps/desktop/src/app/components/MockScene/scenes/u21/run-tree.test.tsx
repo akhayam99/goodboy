@@ -45,7 +45,9 @@ describe('the u21 run tree scenes', () => {
   it('folds the settled scouts under their running step and keeps the working set open', async () => {
     renderScene('workflow-run-finished-sets');
 
-    const folds = await screen.findAllByRole('button', { name: '3 scouts · done · $0.09, expand' });
+    const folds = await screen.findAllByRole('button', {
+      name: /^3 scouts · done · \d+m · \$0\.09, expand$/,
+    });
     const fold = folds[1]!;
 
     expect(folds).toHaveLength(2);
@@ -59,6 +61,25 @@ describe('the u21 run tree scenes', () => {
     expect(screen.getByText('Read the credit writer in payments-api')).toBeDefined();
     expect(screen.getByText('Find the webhook tests that cover a retry')).toBeDefined();
   });
+
+  it.each(['workflow-run-finished-sets', 'workflow-run-nested'] as const)(
+    '%s sits inside the real run page, the composer docked under the scrolling tree',
+    async (id) => {
+      renderScene(id);
+
+      const tree = await screen.findByTestId('run-tree');
+      const composer = await screen.findByTestId('orchestrator-hint-input');
+      const edge = document.querySelector('[data-slot="scroll-edge"]');
+      const scroller = edge?.previousElementSibling ?? null;
+
+      expect(scroller?.contains(tree)).toBe(true);
+      expect(scroller?.contains(composer)).toBe(false);
+      expect(
+        tree.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Show run summary' })).toBeDefined();
+    },
+  );
 
   it('shows a sub-agent of a sub-agent while its set is still working', async () => {
     renderScene('workflow-run-nested');

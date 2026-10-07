@@ -311,6 +311,16 @@ describe('WorkflowRow detail dashboard', () => {
     expect(screen.getByTestId('write-destination-control').textContent).toBe('automatic');
   });
 
+  it('puts the write destination in the scrolling steps so the pinned header stays short', () => {
+    storeMocks.sessionProjectMounts = { [SESSION_ID]: [{}, {}] };
+
+    renderDetail();
+
+    const control = screen.getByTestId('write-destination-control');
+    const scroller = document.querySelector('[data-slot="scroll-edge"]')?.previousElementSibling;
+    expect(scroller?.contains(control)).toBe(true);
+  });
+
   it('hides the write destination when the session has one mount', () => {
     storeMocks.sessionProjectMounts = { [SESSION_ID]: [{}] };
 

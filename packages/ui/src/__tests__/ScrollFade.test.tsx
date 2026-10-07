@@ -239,12 +239,21 @@ describe('ScrollFade line edge', () => {
     expect(root.hasAttribute('data-scrolled')).toBe(false);
   });
 
-  it('keeps the top fade at 0 while scrolled and leaves the bottom fade on', () => {
+  it('softens the content under the line over 8px, never the full fade, and leaves the bottom fade on', () => {
     const { viewport, scrollTo } = renderLine();
     scrollTo({ top: 150 });
 
-    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('8px');
     expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
+  });
+
+  it('grows the soft top edge with the scroll, so a clipped card edge never shows as a sliver', () => {
+    const { viewport, scrollTo } = renderLine();
+
+    scrollTo({ top: 0 });
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
+    scrollTo({ top: 3 });
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('3px');
   });
 
   it('draws one decorative hairline on its own top edge, lit only by the scrolled mark', () => {
@@ -256,7 +265,8 @@ describe('ScrollFade line edge', () => {
     expect(line.getAttribute('aria-hidden')).toBe('true');
     expect(line.className).toContain('top-0');
     expect(line.className).toContain('h-px');
-    expect(line.className).toContain('bg-border');
+    expect(line.className).toMatch(/(^| )bg-border-soft( |$)/);
+    expect(line.className).not.toMatch(/(^| )bg-border( |$)/);
     expect(line.className).toContain('opacity-0');
     expect(line.className).toContain('group-data-[scrolled=true]/edge:opacity-100');
     expect(line.className).toContain('motion-safe:transition-opacity');
