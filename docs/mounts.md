@@ -421,6 +421,13 @@ Rust, so it holds for typed names too:
   `local_branch_differs` and nothing is overwritten; the form shows the message
   inline. Switching onto an existing name that is only on origin does the same
   `--track`.
+- The fetch decides. When it says origin has no such branch, a cached
+  `origin/<name>` is stale and is ignored. When origin cannot be reached and a
+  cached `origin/<name>` exists, the call fails with a "could not look up"
+  error instead of adopting what may be old commits; with nothing cached a
+  fresh branch is still cut, so work offline keeps going. The fetch passes `--`
+  before the branch name, and the two commands that take a branch from the
+  frontend refuse a name that starts with `-`.
 - The switcher also says so under a typed name that is on origin (`That branch
 is already on origin`), with the request number and author.
 - A mount made this way is `branch_origin = 'adopted'`: `worktree_create`

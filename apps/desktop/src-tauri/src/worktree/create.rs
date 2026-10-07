@@ -239,7 +239,7 @@ fn find_existing(
 }
 
 pub(super) fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
-    git(repo_path, &["fetch", "origin", base])
+    git(repo_path, &["fetch", "--", "origin", base])
         .err()
         .map(|error| error.to_string())
 }
@@ -247,7 +247,7 @@ pub(super) fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
 /// Tell "origin has no such branch" apart from "origin could not be reached".
 /// Only the first one lets a caller cut the branch itself: an outage that
 /// silently became a fresh branch would diverge from the real one.
-fn remote_ref_is_absent(repo_path: &Path, fetch_failure: &str) -> bool {
+pub(super) fn remote_ref_is_absent(repo_path: &Path, fetch_failure: &str) -> bool {
     fetch_failure.contains("couldn't find remote ref")
         || git(repo_path, &["remote", "get-url", "origin"]).is_err()
 }
