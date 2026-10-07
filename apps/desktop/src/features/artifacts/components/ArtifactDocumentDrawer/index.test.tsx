@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { ProviderRunId, TurnState } from '@goodboy/types';
+import type { ProviderRunId, TurnState, WorkflowRunId } from '@goodboy/types';
 
 const { listArtifactRevisions } = vi.hoisted(() => ({ listArtifactRevisions: vi.fn() }));
 
@@ -287,11 +287,12 @@ describe('approving from the drawer', () => {
   });
 
   it('marks the start as the user own before the store approves', async () => {
-    seedPlanDrawer({ run: 'held' });
+    const runId = 'run-own-start' as WorkflowRunId;
+    seedPlanDrawer({ run: 'held', runId });
     const seen: boolean[] = [];
     useAppStore.setState({
       approveWorkflowRunPlan: async () => {
-        seen.push(isUserStart({ key: PLAN_RUN_ID }));
+        seen.push(isUserStart({ key: runId }));
         return { kind: 'approved', next: 'continues', agentId: null };
       },
     });

@@ -117,11 +117,20 @@ export type PlanDrawerSeed = Readonly<{
   drafts?: ReadonlyArray<ArtifactComment>;
   questions?: ReadonlyArray<OpenQuestion>;
   parts?: number;
+  runId?: WorkflowRunId;
 }>;
 
-const runOf = ({ kind, isAutoRun }: { readonly kind: PlanRunKind; readonly isAutoRun: boolean }) =>
+const runOf = ({
+  kind,
+  isAutoRun,
+  runId,
+}: {
+  readonly kind: PlanRunKind;
+  readonly isAutoRun: boolean;
+  readonly runId: WorkflowRunId;
+}) =>
   aWorkflowRun({
-    id: PLAN_RUN_ID,
+    id: runId,
     workflowId: PLAN_WORKFLOW_ID,
     autoRun: isAutoRun,
     ...(kind === 'held'
@@ -149,13 +158,14 @@ export const seedPlanDrawer = ({
   drafts = [],
   questions = [],
   parts = 0,
+  runId = PLAN_RUN_ID,
 }: PlanDrawerSeed = {}): { readonly plan: PlanWithCount; readonly stored: PlanArtifact } => {
   const clusters = partsOf({ count: parts });
   const plan = aPlan({
     status,
     consumptionCount: status === 'consumed' ? 1 : 0,
     ...(clusters === undefined ? {} : { clusters }),
-    ...(run === 'none' ? {} : { workflowRunId: PLAN_RUN_ID }),
+    ...(run === 'none' ? {} : { workflowRunId: runId }),
   });
   const stored = aStoredPlan({ revision, status }, plan);
   const isRunPlan = run !== 'none';
@@ -165,7 +175,7 @@ export const seedPlanDrawer = ({
     name: 'Planner',
     ordinal: 0,
     status: 'completed',
-    ...(isRunPlan ? { workflowRunId: PLAN_RUN_ID, stepId: PLAN_STEP_PLAN } : {}),
+    ...(isRunPlan ? { workflowRunId: runId, stepId: PLAN_STEP_PLAN } : {}),
   });
   const implementer = anAgent({
     id: PLAN_IMPLEMENTER,
@@ -173,11 +183,11 @@ export const seedPlanDrawer = ({
     name: 'Implement',
     ordinal: 1,
     status: 'pending',
-    workflowRunId: PLAN_RUN_ID,
+    workflowRunId: runId,
     stepId: PLAN_STEP_IMPLEMENT,
   });
   const workflowRuns: ReadonlyArray<WorkflowRun> = isRunPlan
-    ? [runOf({ kind: run, isAutoRun })]
+    ? [runOf({ kind: run, isAutoRun, runId })]
     : [];
   useAppStore.setState({
     ...REAL_ACTIONS,
