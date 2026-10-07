@@ -172,7 +172,6 @@
   --column-frame: calc(var(--column-max) + 48px);
   --measure: 720px;
   --measure-frame: calc(var(--measure) + 48px);
-  --margin-rail: 288px;
 
   --container-chrome-wide: 1280px;
   --container-chrome-labels: 960px;

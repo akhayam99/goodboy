@@ -45,5 +45,5 @@ export const DiffNotesScene = () => {
     return null;
   }
 
-  return <ShellFrame session={CTX_SESSION} main={<DiffStage />} trailWidth="full" />;
+  return <ShellFrame session={CTX_SESSION} main={<DiffStage />} />;
 };

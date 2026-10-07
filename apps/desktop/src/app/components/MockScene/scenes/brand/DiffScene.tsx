@@ -104,5 +104,5 @@ export const BrandDiffScene = ({
       <DiffStage />
     );
 
-  return <ShellFrame session={CTX_SESSION} main={isStaged ? stage : null} trailWidth="full" />;
+  return <ShellFrame session={CTX_SESSION} main={isStaged ? stage : null} />;
 };

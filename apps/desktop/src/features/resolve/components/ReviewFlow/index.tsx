@@ -686,7 +686,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
                     onTryAgain={() => void controller.retryRun(focused.threadId)}
                     onStartOver={() => void controller.startOver(focused.threadId)}
                   />
-                  <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
+                  <ThreadProperties sessionId={sessionId} entry={focused} />
                 </div>
               </div>
             )}

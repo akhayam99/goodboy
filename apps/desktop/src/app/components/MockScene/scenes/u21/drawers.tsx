@@ -40,11 +40,7 @@ const DrawerOverlayNarrowScene = () => {
       <DrawerColumn
         main={
           <div className="@container flex h-full w-full min-w-0 flex-col">
-            <TrailBar
-              session={SESSION}
-              width="column"
-              end={<AskTrailButton sessionId={SESSION.id} />}
-            />
+            <TrailBar session={SESSION} end={<AskTrailButton sessionId={SESSION.id} />} />
             <UnderTrailContext.Provider value>
               <div className="min-h-0 flex-1">
                 <SessionOverviewPane session={SESSION} onSelectLens={noop} />

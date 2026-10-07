@@ -103,7 +103,6 @@ type ShellFrameProps = {
   readonly session: Session;
   readonly main: ReactNode;
   readonly sidebar?: 'collapsed' | 'expanded';
-  readonly trailWidth?: 'column' | 'full';
   readonly hasOwnTrail?: boolean;
 };
 
@@ -111,7 +110,6 @@ export const ShellFrame = ({
   session,
   main,
   sidebar = 'collapsed',
-  trailWidth = 'column',
   hasOwnTrail = false,
 }: ShellFrameProps) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
@@ -158,11 +156,7 @@ export const ShellFrame = ({
             main
           ) : (
             <div className="@container flex h-full w-full min-w-0 flex-col">
-              <TrailBar
-                session={session}
-                width={trailWidth}
-                end={<AskTrailButton sessionId={session.id} />}
-              />
+              <TrailBar session={session} end={<AskTrailButton sessionId={session.id} />} />
               <UnderTrailContext.Provider value>
                 <div className="min-h-0 flex-1">{main}</div>
               </UnderTrailContext.Provider>
