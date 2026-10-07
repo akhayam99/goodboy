@@ -1,21 +1,43 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbModuleMock(),
+);
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { MountId, SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+} from '../../../../../store/storyHarness';
 import type {
   MountRequestView,
   MountRowView,
 } from '../../../../../store/slices/project-mounts/mountRowModel';
-
-vi.mock('../../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: { readonly openMountRequest: () => Promise<never> }) => T) =>
-    selector({ openMountRequest: () => new Promise<never>(() => undefined) }),
-}));
-
 import { MountRequestLink } from './MountRequestLink';
 
 const SESSION = 'session-1' as SessionId;
+
+beforeAll(async () => {
+  await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
+
+afterEach(cleanup);
 
 const requestOf = (over: Partial<MountRequestView>): MountRequestView => ({
   provider: 'github',
@@ -31,13 +53,31 @@ const requestOf = (over: Partial<MountRequestView>): MountRequestView => ({
   ...over,
 });
 
-const rowOf = (request: MountRequestView): MountRowView =>
-  ({ mountId: 'mount-1' as MountId, request }) as unknown as MountRowView;
+const rowOf = (request: MountRequestView): MountRowView => ({
+  mountId: 'mount-1' as MountId,
+  projectId: 'project-1' as ProjectId,
+  projectName: 'payments-api',
+  projectKind: 'repo',
+  mountName: 'payments-api',
+  branch: 'harborline/opaque-aliases',
+  baseBranch: 'main',
+  worktreePath: '/tmp/payments-api/opaque-aliases',
+  lastWorktreePath: null,
+  repoRoot: '/tmp/payments-api',
+  isAttached: true,
+  isMainCheckout: false,
+  isOnDisk: true,
+  revision: 1,
+  parallelIndex: 0,
+  request,
+  series: null,
+  observation: null,
+  observedBranchHolder: null,
+  isCompleted: request.state === 'merged' || request.state === 'closed',
+});
 
 const renderLink = (request: MountRequestView) =>
   render(<MountRequestLink sessionId={SESSION} row={rowOf(request)} label="payments-api" />);
-
-afterEach(cleanup);
 
 describe('MountRequestLink', () => {
   it('reads a closed pull request as Closed even when GitHub still flags it as a draft', () => {
