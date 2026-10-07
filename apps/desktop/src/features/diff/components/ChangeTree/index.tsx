@@ -200,10 +200,17 @@ export const ChangeTree = ({
                       total={row.fileCount}
                     />
                     <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                    <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
-                      {row.fileCount}
-                    </span>
-                    <Delta additions={row.additions} deletions={row.deletions} />
+                    {isOpen ? null : (
+                      <>
+                        <span
+                          data-tone="muted"
+                          className="shrink-0 text-meta tabular-nums text-faint-foreground"
+                        >
+                          {row.fileCount}
+                        </span>
+                        <Delta additions={row.additions} deletions={row.deletions} isMuted />
+                      </>
+                    )}
                   </button>
                 </li>
               );

@@ -13,6 +13,7 @@ import {
   POST_CREDIT_PATH,
   RENAMED_PATH,
 } from './contextDiffPatch';
+import { CLEAN_HANDLERS, EDITS_ONLY_HANDLERS } from './diffEmptyHandlers';
 import { DiffStage, handlersFor } from './DiffStage';
 import { LARGE_PATCH } from './largeDiffPatch';
 import { MANY_FILES_PATCH } from './manyFilesDiffPatch';
@@ -53,9 +54,14 @@ const markViewed = (): void => {
 type Props = {
   readonly manyFiles?: boolean;
   readonly largeChange?: boolean;
+  readonly empty?: 'clean' | 'editsOnly';
 };
 
-export const BrandDiffScene = ({ manyFiles = false, largeChange = false }: Props) => {
+export const BrandDiffScene = ({
+  manyFiles = false,
+  largeChange = false,
+  empty = undefined,
+}: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [isStaged, setIsStaged] = useState(false);
 
@@ -64,14 +70,15 @@ export const BrandDiffScene = ({ manyFiles = false, largeChange = false }: Props
     markViewed();
     useAppStore.setState({
       diffComments: { [CTX_SESSION_ID]: NOTES },
-      diffFocus: {},
+      diffFocus:
+        empty === 'clean' ? { [CTX_SESSION_ID]: { kind: 'working' as const, path: null } } : {},
       branchTab: { [CTX_SESSION_ID]: 'files' },
       branchThreadId: {},
       loadDiffComments: async () => undefined,
       sessionPhaseRuns: { [CTX_SESSION_ID]: [] },
     });
     setIsReady(true);
-  }, []);
+  }, [empty]);
 
   useEffect(() => {
     if (isReady) {
@@ -83,13 +90,19 @@ export const BrandDiffScene = ({ manyFiles = false, largeChange = false }: Props
     return null;
   }
 
-  const stage = largeChange ? (
-    <DiffStage handlers={LARGE_HANDLERS} centerNote={false} />
-  ) : manyFiles ? (
-    <DiffStage handlers={MANY_FILES_HANDLERS} centerNote={false} />
-  ) : (
-    <DiffStage />
-  );
+  const stage =
+    empty !== undefined ? (
+      <DiffStage
+        handlers={empty === 'clean' ? CLEAN_HANDLERS : EDITS_ONLY_HANDLERS}
+        centerNote={false}
+      />
+    ) : largeChange ? (
+      <DiffStage handlers={LARGE_HANDLERS} centerNote={false} />
+    ) : manyFiles ? (
+      <DiffStage handlers={MANY_FILES_HANDLERS} centerNote={false} />
+    ) : (
+      <DiffStage />
+    );
 
   return <ShellFrame session={CTX_SESSION} main={isStaged ? stage : null} trailWidth="full" />;
 };

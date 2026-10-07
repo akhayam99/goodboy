@@ -174,6 +174,7 @@ const diffOf = (): SessionDiff => ({
   error: null,
   view: { kind: 'branch' },
   setView: vi.fn(),
+  alternate: null,
   commits: [],
   status,
   metaError: null,

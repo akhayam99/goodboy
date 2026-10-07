@@ -50,6 +50,45 @@ type Params = {
   readonly branchRevision?: number;
 };
 
+export type DiffAlternate = {
+  readonly view: DiffView;
+  readonly fileCount: number;
+};
+
+const hasUncommittedWork = (status: WorktreeStatus): boolean =>
+  status.workingTree.kind === 'known' &&
+  status.workingTree.staged +
+    status.workingTree.unstaged +
+    status.workingTree.untracked +
+    status.workingTree.unmerged >
+    0;
+
+const isCleanWithCommitsAhead = (status: WorktreeStatus): boolean =>
+  status.workingTree.kind === 'known' &&
+  !hasUncommittedWork(status) &&
+  status.mainDistance.kind === 'known' &&
+  status.mainDistance.ahead > 0;
+
+type AlternateViewParams = {
+  readonly view: DiffView;
+  readonly status: WorktreeStatus | null;
+};
+
+const alternateViewOf = ({ view, status }: AlternateViewParams): DiffView | null => {
+  if (status === null) {
+    return null;
+  }
+  if (view.kind === 'working') {
+    return status.mainDistance.kind === 'known' && status.mainDistance.ahead === 0
+      ? null
+      : DEFAULT_VIEW;
+  }
+  if (view.kind === 'branch') {
+    return hasUncommittedWork(status) ? { kind: 'working', scope: 'all' } : null;
+  }
+  return null;
+};
+
 export type SessionDiff = {
   readonly files: ReadonlyArray<FileDiff>;
   readonly patch: string;
@@ -57,6 +96,7 @@ export type SessionDiff = {
   readonly error: string | null;
   readonly view: DiffView;
   readonly setView: (view: DiffView) => void;
+  readonly alternate: DiffAlternate | null;
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly status: WorktreeStatus | null;
   readonly metaError: string | null;
@@ -77,7 +117,9 @@ export const useSessionDiff = ({
   const [patch, setPatch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<DiffView>(DEFAULT_VIEW);
+  const [view, setViewState] = useState<DiffView>(DEFAULT_VIEW);
+  const [alternate, setAlternate] = useState<DiffAlternate | null>(null);
+  const hasPickedView = useRef(false);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>([]);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
   const [metaError, setMetaError] = useState<string | null>(null);
@@ -100,6 +142,10 @@ export const useSessionDiff = ({
   );
 
   const refresh = useCallback(() => setRefreshTick((tick) => tick + 1), []);
+  const setView = useCallback((next: DiffView) => {
+    hasPickedView.current = true;
+    setViewState(next);
+  }, []);
   const clearFocus = useCallback(() => setFocusPath(null), []);
 
   useEffect(() => {
@@ -113,7 +159,7 @@ export const useSessionDiff = ({
     if (diffFocus == null) {
       return;
     }
-    setView(
+    setViewState(
       diffFocus.kind === 'working'
         ? { kind: 'working', scope: 'all' }
         : diffFocus.kind === 'branch'
@@ -122,6 +168,15 @@ export const useSessionDiff = ({
     );
     setFocusPath(diffFocus.path);
   }, [diffFocus]);
+
+  useEffect(() => {
+    if (hasPickedView.current || view.kind !== 'working' || status === null) {
+      return;
+    }
+    if (isCleanWithCommitsAhead(status)) {
+      setViewState(DEFAULT_VIEW);
+    }
+  }, [status, view]);
 
   useEffect(() => {
     if (worktreePath === null) {
@@ -181,6 +236,33 @@ export const useSessionDiff = ({
     };
   }, [worktreePath, baseBranch, view, refreshTick, loader]);
 
+  const isEmptyView = !loading && error === null && files.length === 0;
+
+  useEffect(() => {
+    const target = isEmptyView ? alternateViewOf({ view, status }) : null;
+    if (worktreePath === null || target === null) {
+      setAlternate(null);
+      return;
+    }
+    let cancelled = false;
+    loadDiffForView({ worktreePath, baseBranch, view: target })
+      .then((raw) => {
+        if (cancelled) {
+          return;
+        }
+        const fileCount = parseUnifiedDiff(raw).length;
+        setAlternate(fileCount === 0 ? null : { view: target, fileCount });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAlternate(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isEmptyView, view, status, worktreePath, baseBranch]);
+
   useEffect(() => {
     setReviewedMap(readReviewedMap(sessionId, view, mountId));
   }, [sessionId, view, mountId, files]);
@@ -218,6 +300,7 @@ export const useSessionDiff = ({
     error,
     view,
     setView,
+    alternate,
     commits,
     status,
     metaError,
