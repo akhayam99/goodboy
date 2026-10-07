@@ -28,7 +28,7 @@ const h = vi.hoisted(() => {
     operations,
     branchNames: ['ak/base'] as Array<string>,
     createWorktree: vi.fn(),
-    changeWorktreeBranch: vi.fn(async () => undefined),
+    changeWorktreeBranch: vi.fn(async () => ({ adopted: false })),
     listBranchNames: vi.fn(async () => h.branchNames),
     inspectWorktree: vi.fn(async () => ({ kind: 'registered' }) as { kind: string }),
     removeWorktreeChecked: vi.fn(

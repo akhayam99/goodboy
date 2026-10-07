@@ -1,9 +1,20 @@
 import { useState } from 'react';
 import { GitFork } from 'lucide-react';
-import { AnchoredPopover, Button, Input, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { useShallow } from 'zustand/react/shallow';
+import {
+  AnchoredPopover,
+  Button,
+  Input,
+  SegmentedTabs,
+  Tooltip,
+  cn,
+  useDropdown,
+} from '@goodboy/ui';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { selectProjectById } from '../../../../../store/slices/projects/selectProjectById';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ExistingBranchField } from '../../../../worktree/ExistingBranchField';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -20,9 +31,14 @@ export const NewBranchMountAction = ({
   presentation = 'button',
   triggerClassName,
 }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 190 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 240 });
   const forkMount = useAppStore((state) => state.forkMount);
   const reportError = useAppStore((state) => state.reportError);
+  const project = useAppStore((state) => selectProjectById(state, projectId));
+  const mountedBranches = useAppStore(
+    useShallow((state) => (state.sessionProjectMounts?.[sessionId] ?? []).map((m) => m.branch)),
+  );
+  const [mode, setMode] = useState<'new' | 'existing'>('new');
   const [branch, setBranch] = useState('');
   const [isBusy, setIsBusy] = useState(false);
 
@@ -30,7 +46,12 @@ export const NewBranchMountAction = ({
     setIsBusy(true);
     try {
       const trimmed = branch.trim();
-      await forkMount({ sessionId, projectId, ...(trimmed === '' ? {} : { branch: trimmed }) });
+      await forkMount({
+        sessionId,
+        projectId,
+        ...(trimmed === '' ? {} : { branch: trimmed }),
+        ...(mode === 'existing' ? { adoptExistingBranch: true } : {}),
+      });
       setBranch('');
       dropdown.close();
     } catch (error) {
@@ -80,27 +101,56 @@ export const NewBranchMountAction = ({
             requests.
           </span>
         </div>
-        <Input
-          value={branch}
-          autoFocus
-          disabled={isBusy}
-          aria-label="Branch name"
-          placeholder="Leave empty to name it automatically"
-          onChange={(event) => setBranch(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== 'Enter') {
-              return;
-            }
-            event.preventDefault();
-            void create();
+        <SegmentedTabs
+          ariaLabel="Branch source"
+          options={[
+            { value: 'new', label: 'New branch', disabled: isBusy },
+            { value: 'existing', label: 'Existing branch', disabled: isBusy },
+          ]}
+          value={mode}
+          onChange={(next) => {
+            setMode(next);
+            setBranch('');
           }}
-          className="h-8 w-full text-label"
+          size="sm"
         />
+        {mode === 'existing' && project !== null ? (
+          <ExistingBranchField
+            repoRoot={project.rootPath}
+            workspaceId={project.workspaceId}
+            projectId={projectId}
+            value={branch}
+            onChange={setBranch}
+            disabled={isBusy}
+            excludeNames={mountedBranches}
+          />
+        ) : (
+          <Input
+            value={branch}
+            autoFocus
+            disabled={isBusy}
+            aria-label="Branch name"
+            placeholder="Leave empty to name it automatically"
+            onChange={(event) => setBranch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') {
+                return;
+              }
+              event.preventDefault();
+              void create();
+            }}
+            className="h-8 w-full text-label"
+          />
+        )}
         <div className="flex items-center justify-end gap-1">
           <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => dropdown.close()}>
             Cancel
           </Button>
-          <Button size="sm" disabled={isBusy} onClick={() => void create()}>
+          <Button
+            size="sm"
+            disabled={isBusy || (mode === 'existing' && branch.trim() === '')}
+            onClick={() => void create()}
+          >
             {isBusy ? 'Creating…' : 'Create worktree'}
           </Button>
         </div>

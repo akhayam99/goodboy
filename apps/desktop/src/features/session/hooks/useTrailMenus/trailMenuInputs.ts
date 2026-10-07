@@ -54,6 +54,7 @@ export type TrailMenuInputs = TrailMenuStoreActions & {
   readonly diffStats: ReturnType<typeof useMountDiffStats>;
   readonly branchStatuses: ReturnType<typeof useWorktreeStatuses>;
   readonly mergedMountIds: ReadonlyArray<string>;
+  readonly openRequestHeads: Readonly<Record<string, string>>;
   readonly queueRows: ReadonlyArray<ResolveQueueRow>;
   readonly resolveAgain: (params: {
     readonly threadId: string;

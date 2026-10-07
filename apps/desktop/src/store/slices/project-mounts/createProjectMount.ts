@@ -180,6 +180,7 @@ export const createProjectMount = async ({
           isRepo: project.kind === 'repo',
           adopted: adoptedBranch !== undefined,
           reused: 'reused' in created && created.reused,
+          trackedRemote: 'trackedRemote' in created && created.trackedRemote === true,
         }),
         createdAt: Date.now(),
       };

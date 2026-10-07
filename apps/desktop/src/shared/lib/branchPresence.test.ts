@@ -89,6 +89,56 @@ describe('branchPresenceOf', () => {
   });
 });
 
+describe('branchPresenceOf with an open pull request', () => {
+  const onBase = statusOf({ head: 'aaaaaaa1' });
+
+  it('says the worktree is not on the pull request commits when it sits on the base', () => {
+    expect(
+      branchPresenceOf({
+        status: onBase,
+        isMerged: false,
+        openRequest: { headSha: 'bbbbbbb2' },
+      }),
+    ).toEqual({ kind: 'not-on-pr', label: "Not on the PR's commits", toPush: null });
+  });
+
+  it('reads as normal when HEAD is the pull request head, short or full sha', () => {
+    const full = 'aaaaaaa1ffffffffffffffffffffffffffffffff';
+
+    expect(
+      branchPresenceOf({ status: onBase, isMerged: false, openRequest: { headSha: full } }).kind,
+    ).toBe('on-origin');
+  });
+
+  it('reads as normal when the worktree has commits of its own', () => {
+    const status = statusOf({
+      head: 'ccccccc3',
+      mainDistance: { kind: 'known', ahead: 2, behind: 0 },
+    });
+
+    expect(
+      branchPresenceOf({ status, isMerged: false, openRequest: { headSha: 'bbbbbbb2' } }).kind,
+    ).toBe('on-origin');
+  });
+
+  it('reads as normal when the pull request head is not known', () => {
+    expect(
+      branchPresenceOf({ status: onBase, isMerged: false, openRequest: { headSha: null } }).kind,
+    ).toBe('on-origin');
+  });
+
+  it('leads the priority word', () => {
+    const presence = branchPresenceOf({
+      status: onBase,
+      isMerged: false,
+      openRequest: { headSha: 'bbbbbbb2' },
+    });
+    const main = mainPresenceOf({ status: onBase, isRebasingAgent: false });
+
+    expect(branchPriorityOf({ presence, main }).word).toBe("Not on the PR's commits");
+  });
+});
+
 describe('mainPresenceOf', () => {
   it('reports rebasing on main when an agent is on it, even if git has no rebase folders', () => {
     expect(mainPresenceOf({ status: statusOf(), isRebasingAgent: true })).toEqual({
@@ -228,6 +278,33 @@ describe('isBranchMergedOf', () => {
         commitsAfterMerge: 2,
       }),
     ).toBe(false);
+  });
+
+  it('never infers merged from ancestry while the mount links an open pull request', () => {
+    const status = statusOf({ mainDistance: { kind: 'known', ahead: 0, behind: 2 } });
+    const withRequest = (hasOpenRequest: boolean) =>
+      isBranchMergedOf({
+        status,
+        baseBranch: 'main',
+        isMainCheckout: false,
+        isRequestMerged: false,
+        hasOpenRequest,
+      });
+
+    expect(withRequest(false)).toBe(true);
+    expect(withRequest(true)).toBe(false);
+  });
+
+  it('still trusts the request itself when it merged', () => {
+    expect(
+      isBranchMergedOf({
+        status: statusOf(),
+        baseBranch: 'main',
+        isMainCheckout: false,
+        isRequestMerged: true,
+        hasOpenRequest: true,
+      }),
+    ).toBe(true);
   });
 
   it('calls a pushed branch with nothing past the base merged', () => {

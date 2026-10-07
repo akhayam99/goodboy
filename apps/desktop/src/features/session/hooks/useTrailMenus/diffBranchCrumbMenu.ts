@@ -8,12 +8,17 @@ import type { TrailMenuScope } from './trailMenuScope';
 
 export const diffBranchCrumbMenu = (scope: TrailMenuScope): CrumbMenuModel => {
   const { sessionId, mounts, diffPath, diffStats, branchStatuses, mergedMountIds } = scope;
+  const { openRequestHeads } = scope;
   return branchMenu({
     mounts,
     currentPath: diffPath,
     statOf: (mount) => diffStats.get(mount.worktreePath) ?? null,
     statusOf: (mount) => branchStatuses.get(mount.worktreePath) ?? null,
     isRequestMergedOf: (mount) => mergedMountIds.includes(mount.mountId),
+    openRequestOf: (mount) => {
+      const head = openRequestHeads[mount.mountId];
+      return head === undefined ? null : { headSha: head === '' ? null : head };
+    },
     actions: [
       {
         id: 'all-branches',

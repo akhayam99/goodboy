@@ -298,7 +298,13 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   row menu.
 - **Merged rows move under `Show completed`.** A row is merged when its
   request merged, or when a pushed branch that tracks its own name has a
-  clean tree and nothing past the base. A merged request whose branch moved
+  clean tree and nothing past the base. Ancestry alone never decides it while
+  the mount links an open request (draft, open, approved or queued):
+  `isBranchMergedOf` takes `hasOpenRequest` and answers no, so such a row is
+  never under Completed and never reads `Merged`. A worktree with nothing past
+  the base whose HEAD is not the open request's head sha reads `Not on the PR's
+commits` (`branchPresenceOf`, `openRequest`); on the request's head it reads
+  as any row. A merged request whose branch moved
   past its `merged_head_sha` stays open instead and reads `Merged, then N
 new commits` (`checkMergedThen`, one git check per tip, kept in
   `mergedThen` by mount).
@@ -389,6 +395,54 @@ commits` otherwise. Without a record, only a merge commit or a rebase
   database is attached to a mount only after a provider lookup confirms its
   provider, host, repository, number and head branch. A branch name alone
   does not prove earlier intent.
+
+## Branches that are not the owner's
+
+The branch pickers (Switch branch `Pick existing`, New worktree `Existing
+branch`, New worktree for a task) list three groups from `useBranchChoices`:
+`On this Mac` (local branches), `Open pull requests` (open requests of the
+repository, from `gh pr list`, fork heads left out) and `On origin` (remote
+branches nobody has locally, from `worktree_list_remote_branches`). Each entry
+carries the request number and its author when known, and the search matches
+the name, the number, the author and the request title. The list opens on the
+branches already read and refreshes after a background `git fetch --prune
+origin` (`worktree_fetch_remote_branches`). `mergeBranchChoices` merges the
+three sources; a request whose branch was never fetched is still offered.
+
+Choosing a branch that exists on origin and not locally checks out a local
+branch tracking `origin/<name>`, never one cut from the base. The guard lives in
+Rust, so it holds for typed names too:
+
+- `worktree_change_branch` with `createNew` and `worktree_create` for a new
+  branch name first fetch that one ref. When `origin/<name>` exists and no local
+  branch has the name, the worktree is added or switched with `--track` on it.
+  When a local branch with the name points at the same commit, it is used as it
+  is. When the local branch differs, the call fails with the typed error
+  `local_branch_differs` and nothing is overwritten; the form shows the message
+  inline. Switching onto an existing name that is only on origin does the same
+  `--track`.
+- The switcher also says so under a typed name that is on origin (`That branch
+is already on origin`), with the request number and author.
+- A mount made this way is `branch_origin = 'adopted'`: `worktree_create`
+  answers `trackedRemote`, `worktree_change_branch` answers `adopted`, and
+  `updateSessionMountBranch` writes the origin with the branch. Only a switch
+  onto a fresh name keeps `created`, so the after-merge rule never deletes a
+  teammate's branch. An adopted fork keeps the name as typed, without the
+  workspace prefix.
+
+A mount that was stranded before the guard (the branch was cut from the base
+while `origin/<name>` has the commits) is repaired in place. A row whose
+worktree has nothing past the base and either an open request or an upstream of
+its own name that is behind runs `worktree_remote_branch_state` once per head
+(one fetch of that ref). When origin has commits the local branch lacks and
+contains the local tip, the row shows one notice with `Use the PR's commits`
+(`ForeignCommitsNotice`). The button is disabled with the reason while the
+worktree has local changes. `moveMountToRemoteCommits` runs
+`worktree_use_remote_commits`: it refuses a dirty tree and a local branch with
+commits of its own (`local_branch_differs`), then fast-forwards to
+`origin/<name>` with `merge --ff-only` and sets the upstream. It never resets or
+rewrites anything. The row then records `adopted` and re-reads its status. No
+migration is involved.
 
 ## Rendered view is not the row
 
