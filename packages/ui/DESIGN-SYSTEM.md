@@ -89,7 +89,9 @@ none, so a rail shows tone only on the rows that need attention, and
 tighter child row under a rail heading. The row never indents itself: every
 child list under a rail heading takes `PANE_RHYTHM.navRail.nest`, so child
 icons line up under the parent label and every nested list indents by one
-step.
+step. The Settings navigation does not use it: its rows are one 28px line of
+icon and word (`SettingsNavRow` in the desktop app), a 6px `StatusDot` at the
+end names a row that needs attention, and the sentence lives on the page.
 
 ## Type scale
 
@@ -1143,10 +1145,15 @@ what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surface
 Rows sit 2px apart (`gap-0.5`); the doors start 4px under New session. The
 column swaps its content only for Settings, as two layers in place that
 cross-fade (opacity and a 6px slide, 160ms, `motion-safe` only); the hidden
-layer is `inert`. A studio never covers it: `studioCoversLeft={false}` puts the
+layer is `inert`. Settings takes the column in both sidebar states: over the
+44px rail the grid track grows to the saved width while the stored collapse
+stays untouched. A studio never covers it: `studioCoversLeft={false}` puts the
 studio slot in the `main` area as its own wrapped sheet (`bg-background`, the
 `wrapped` sheet edge), and `StudioFrame` with `placement="content"` draws its
-band on that sheet instead of on the chrome.
+band on that sheet instead of on the chrome. A frame whose body is a bare
+page (Settings in the default shell) draws no band (`hasBand={false}`) and gives
+its page the band's 40px as top padding, so the title row lands where a session
+page's does under its trail.
 
 A list that belongs to a studio's page (Chat's chats, Changelog's releases)
 uses `StudioRailLayout` with `placement="page"`: the list sits on the page

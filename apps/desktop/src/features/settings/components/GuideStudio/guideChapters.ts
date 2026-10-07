@@ -200,7 +200,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Left column',
-        desc: 'New session, Board, Inbox, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Classic bars in Settings, App, General brings back the top bar buttons and the footer.',
+        desc: 'New session, Board, Inbox, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
       },
       {
         term: 'Session rows',

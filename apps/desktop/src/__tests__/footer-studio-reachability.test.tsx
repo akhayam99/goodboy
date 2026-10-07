@@ -387,7 +387,7 @@ describe('No workspace yet', () => {
   });
 });
 
-describe('The classic bars switch', () => {
+describe('The legacy layout switch', () => {
   it('draws no footer at all while the switch is off', () => {
     state.settings = { 'shell.classicBars': 'false' };
     render(<App />);

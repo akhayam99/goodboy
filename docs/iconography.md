@@ -188,7 +188,7 @@ between the repo and the folder glyph. Never work it out again inline.
 
 Brand marks only, never a lucide stand-in. `github`, `gitlab`, `bitbucket`,
 `linear`, `jira`, `sentry`, `slack` map to the `@goodboy/ui` brand
-components. The Inbox source facets and the Classic bars footer strip draw them through `IntegrationGlyph`: in brand
+components. The Inbox source facets and the Legacy layout footer strip draw them through `IntegrationGlyph`: in brand
 color when the integration is connected, muted when it is not. `providers`
 (`Blocks`) and `integrations` (`Link2`) name the categories, not a vendor.
 

@@ -217,6 +217,14 @@ every other scene. A scene opens a studio through the same entrance the app
 uses (a store opener or a click on the real control), never by mounting the
 studio itself.
 
+The Settings frames of the default shell are `settings-general-rail`,
+`settings-general-pinned` and `settings-providers-rail`, and the legacy layout
+has `settings-general-legacy`; they live in `scenes/u21/settings.tsx`. Each
+mounts `audit/AppFrame` and opens Settings through the store, so the column,
+the rail and the page behave as in the app. The `rail` ones fold the sidebar
+first, and `settings-providers-rail` seeds Claude near its limit to show the dot
+and the notice on its page.
+
 The dense capture fixtures are `rules-teleport`,
 `rules-no-limits`, `rail-ticket-ids`, and `activity-groups` (it opens the finished
 run's `6 steps` count row and then a `subagents` count row). The resolver

@@ -98,6 +98,7 @@ export const App = () => {
   const hasActiveSession = currentSession != null || isDraftShown;
   const isClassicBars = useClassicBars();
   const shellMode: ShellMode = isClassicBars ? 'classic' : 'column';
+  const isSettingsOpen = useAppStore((s) => s.appStudio?.kind === 'settings');
   const sessionSidebar = useSessionSidebarVisibility({
     hasSidebar: shellMode === 'column' || hasActiveSession,
   });
@@ -110,6 +111,7 @@ export const App = () => {
     hasActiveSession,
     isSidebarCollapsed: sessionSidebar.isCollapsed,
     mode: shellMode,
+    isSettingsOpen,
   });
   const goToBoard = useGoToBoard();
   const {
@@ -289,7 +291,7 @@ export const App = () => {
             )
           }
           leftHidden={arrangement.leftHidden}
-          leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+          leftSidebarCollapsed={arrangement.isLeftRail}
           leftSidebar={
             arrangement.leftSlot === 'none' ? undefined : (
               <ShellLeft

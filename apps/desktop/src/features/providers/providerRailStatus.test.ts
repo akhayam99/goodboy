@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { ProviderConnectionState } from '@goodboy/types';
+import type { IsoDateTime, ProviderConnectionState, ProviderLimits } from '@goodboy/types';
 import type { ProviderDisplayInfo } from './providers';
 import { providerRailStatus } from './providerRailStatus';
 
@@ -39,6 +39,57 @@ describe('providerRailStatus', () => {
         state,
       }),
     ).toEqual({ subtitle: 'Update needed', tone: 'warning' });
+  });
+
+  describe('when the provider reports limits', () => {
+    const NOW = Date.UTC(2026, 8, 25, 12, 0);
+    const iso = (hours: number): IsoDateTime =>
+      new Date(Date.UTC(2026, 8, 25, hours, 0)).toISOString() as IsoDateTime;
+    const limits = (usedFraction: number): ProviderLimits => ({
+      providerId: 'anthropic',
+      plan: null,
+      status: usedFraction >= 1 ? 'reached' : 'warning',
+      windows: [
+        {
+          kind: 'fiveHour',
+          model: null,
+          status: usedFraction >= 1 ? 'reached' : 'warning',
+          usedFraction,
+          resetsAt: iso(14),
+        },
+      ],
+      observedAt: iso(11),
+    });
+
+    it('flags a connected provider that is about to run out', () => {
+      expect(
+        providerRailStatus({
+          provider: provider({ connection: 'connected' }),
+          state: { ...state, providerLimits: { anthropic: limits(0.9) } },
+          nowMs: NOW,
+        }),
+      ).toEqual({ subtitle: 'Claude is about to run out', tone: 'warning' });
+    });
+
+    it('flags a connected provider that is out', () => {
+      expect(
+        providerRailStatus({
+          provider: provider({ connection: 'connected' }),
+          state: { ...state, providerLimits: { anthropic: limits(1) } },
+          nowMs: NOW,
+        }),
+      ).toEqual({ subtitle: 'Claude is out', tone: 'warning' });
+    });
+
+    it('leaves a provider that is not signed in with its own word', () => {
+      expect(
+        providerRailStatus({
+          provider: provider({ connection: 'installed_disconnected' }),
+          state: { ...state, providerLimits: { anthropic: limits(1) } },
+          nowMs: NOW,
+        }),
+      ).toEqual({ subtitle: 'Not signed in', tone: 'warning' });
+    });
   });
 
   it.each([

@@ -197,6 +197,7 @@ import { U21_DRAWERS_SCENES } from './scenes/u21/drawers';
 import { U21_CHECKS_SCENES } from './scenes/u21/checks';
 import { U21_SIDEBAR_SCENES } from './scenes/u21/sidebar';
 import { U21_BRANCH_SCENES } from './scenes/u21/branch';
+import { U21_SETTINGS_SCENES } from './scenes/u21/settings';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -396,6 +397,7 @@ export const MOCK_SCENES = {
   ...U21_CHECKS_SCENES,
   ...U21_SIDEBAR_SCENES,
   ...U21_BRANCH_SCENES,
+  ...U21_SETTINGS_SCENES,
 };
 
 const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];

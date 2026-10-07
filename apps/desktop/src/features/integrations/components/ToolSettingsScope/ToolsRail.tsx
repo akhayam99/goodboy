@@ -1,7 +1,7 @@
-import { cn, PANE_RHYTHM, StatusRailItem } from '@goodboy/ui';
 import type { IntegrationBinding } from '@goodboy/types';
 import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -24,20 +24,17 @@ export const ToolsRail = ({
   connected,
   githubIdentity,
 }: Props) => (
-  <ul
-    aria-label="Integrations settings"
-    className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
-  >
+  <ul aria-label="Integrations settings" className="flex flex-col gap-0.5">
     {FOOTER_INTEGRATIONS.map(({ provider }) => {
       const subtitle = toolRailSubtitle({ provider, integrations, connected, githubIdentity });
       return (
         <li key={provider}>
-          <StatusRailItem
-            icon={<IntegrationGlyph provider={provider} size={ICON_SIZE.control} useBrandColor />}
+          <SettingsNavRow
+            level="page"
+            icon={<IntegrationGlyph provider={provider} size={ICON_SIZE.row} useBrandColor />}
             label={integrationLabel({ provider })}
-            subtitle={subtitle}
-            tone={connected[provider] ? 'success' : 'neutral'}
-            selected={provider === focusedId}
+            isCurrent={provider === focusedId}
+            status={connected[provider] ? { tone: 'success', label: subtitle } : null}
             onClick={() => onSelect(provider)}
           />
         </li>

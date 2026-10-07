@@ -181,15 +181,7 @@ describe('ToolSettingsScope', () => {
       within(rail)
         .getAllByRole('button')
         .map((row) => row.textContent),
-    ).toEqual([
-      'GitHubNot connected',
-      'GitLabNot connected',
-      'BitbucketNot connected',
-      'LinearNot connected',
-      'JiraNot connected',
-      'SentryNot connected',
-      'SlackNot connected',
-    ]);
+    ).toEqual(['GitHub', 'GitLab', 'Bitbucket', 'Linear', 'Jira', 'Sentry', 'Slack']);
   });
 
   it.each([
@@ -203,7 +195,7 @@ describe('ToolSettingsScope', () => {
     await act(async () => {
       render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
     });
-    fireEvent.click(screen.getByRole('button', { name: `${label} Not connected` }));
+    fireEvent.click(screen.getByRole('button', { name: label }));
     expect(screen.getByLabelText(field).id).toBe(id);
     expect(screen.getByLabelText(field)).toBe(document.activeElement);
     expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([label]);
@@ -216,9 +208,7 @@ describe('ToolSettingsScope', () => {
       );
     });
     expect(screen.getByLabelText('User token')).toBeDefined();
-    expect(
-      screen.getByRole('button', { name: 'Slack Not connected' }).getAttribute('aria-current'),
-    ).toBe('true');
+    expect(screen.getByRole('button', { name: 'Slack' }).getAttribute('aria-current')).toBe('true');
   });
 
   it('shows the connected identity and confirms disconnect', async () => {
@@ -336,9 +326,9 @@ describe('ToolSettingsScope', () => {
       render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
     });
     await waitFor(() => expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat'));
-    expect(
-      screen.getByRole('button', { name: 'GitLab Not connected' }).getAttribute('aria-current'),
-    ).toBe('true');
+    expect(screen.getByRole('button', { name: 'GitLab' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
   });
 
   it.each([undefined, 'linear'] satisfies ReadonlyArray<'linear' | undefined>)(
@@ -521,7 +511,7 @@ describe('ToolSettingsScope', () => {
       );
     });
     await screen.findByRole('button', { name: 'Use a different key' });
-    screen.getByRole('button', { name: 'GitHub Not connected' }).focus();
+    screen.getByRole('button', { name: 'GitHub' }).focus();
     await user.tab();
     await user.keyboard('{Enter}');
     expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat');

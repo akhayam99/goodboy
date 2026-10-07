@@ -18,6 +18,7 @@ import { AccountGroup, type AccountConfirm } from './AccountGroup';
 import { CliGroup } from './AccountGroup/CliGroup';
 import { ModelsGroup } from './ModelsGroup';
 import { PermissionsGroup } from './PermissionsGroup';
+import { ProviderAttentionNotice } from './ProviderAttentionNotice';
 import { UsageGroup } from './UsageGroup';
 import { usePlanLabel } from './usePlanLabel';
 
@@ -138,6 +139,7 @@ export const ProviderPageBody = ({
       meta={metaLine({ planLabel, isApi })}
       actions={<OverflowMenu items={menuItems} label={`More ${info.label} actions`} />}
     >
+      {isReady && !isApi ? <ProviderAttentionNotice providerId={id} /> : null}
       {hasDetectionError ? (
         <EmptyState
           bordered

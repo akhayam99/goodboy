@@ -1,6 +1,7 @@
-import { PANE_RHYTHM, Reveal, StatusRailItem, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, Reveal, cn } from '@goodboy/ui';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import type { SettingsGroup } from './settingsDirectory';
 import { SettingsRailPageGroup } from './SettingsRailPageGroup';
 import { isNestedScope, type NestedScope } from './settingsScopes';
@@ -49,14 +50,17 @@ export const SettingsRail = ({
         const isActive = scope === nested;
         return (
           <div key={nested} data-settings-group={nested} className="flex flex-col gap-0.5">
-            <StatusRailItem
+            <SettingsNavRow
+              level="group"
               icon={<Icon size={ICON_SIZE.control} />}
               label={group.label}
-              subtitle={group.subtitle}
-              tone={group.tone}
-              selected={false}
+              isActiveGroup={isActive}
+              status={
+                group.tone === undefined
+                  ? null
+                  : { tone: group.tone, label: group.attention ?? null }
+              }
               onClick={() => onSelect({ scope: nested })}
-              className={cn(isActive && 'text-foreground')}
             />
             <Reveal open={isActive} onClosed={() => onNestedClosed({ scope: nested })}>
               <div ref={nestedSlot[nested]} />

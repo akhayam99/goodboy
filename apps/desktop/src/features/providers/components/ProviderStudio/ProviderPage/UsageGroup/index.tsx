@@ -40,7 +40,8 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
   const label = PROVIDER_LABEL[providerId];
   const windows = sortLimitWindows({ windows: chip.windows });
   const detour = useAutoDetour({ providerId });
-  const notice = billing === 'token' ? null : usageNotice({ chip, nowMs, detour });
+  const usage = billing === 'token' ? null : usageNotice({ chip, nowMs, detour });
+  const notice = usage !== null && usage.tone === 'info' ? usage : null;
   const reports = PROVIDERS_REPORTING_LIMITS.includes(providerId);
   const isChecking = probe?.isChecking === true;
   const hasFailed = (probe?.failures ?? 0) >= PROBE_FAILURE_LIMIT;
