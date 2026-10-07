@@ -68,7 +68,11 @@ any colour class with no `--color-*` token behind it.
 
 `bg-hover` and `bg-selected` are interaction overlays painted as a
 background-image layer, so they stack on whatever fill the element rests on
-instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is reserved for modal backdrops and the backdrop of a drawer over the page.
+instead of replacing it, and `cn` keeps them beside a surface class. Hover is
+8.5% white in dark and 7.5% black in light, about 19 of 255 levels on a row and
+on a tinted waiting or unread row, enough to notice while moving down a list;
+selected is 13% and 12%, so a selected row always reads above a hovered one.
+`row-hover-wash.test.ts` holds both floors. `scrim` is reserved for modal backdrops and the backdrop of a drawer over the page.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
@@ -603,9 +607,12 @@ glyph.
 `failed` is the red `!` and means something broke. `alert` is the same sign in
 `warning` for what you must act on while nothing is broken (changes requested,
 comments the fix could not fix), so red stays rare. `approved` is a solid
-`success` disc with a white check, 12px at `md` and 9px at `sm`: ready to ship.
-It is not `done`, which is an outline with a tinted fill and a `success` check:
-finished. Any state can also take `isSpinning`, which draws the running
+`success` disc with a white check, 12px at `md` and at `sm`: ready to ship.
+`finished` is its twin in `merged` violet: the same solid disc, ring and 12px
+white check, for a session that is done. Neither is `done`, which is an outline
+with a tinted fill and a `success` check (a finished workflow step). The glyph
+inside a node is never under 12px, so the `sm` node (14px) keeps its ring and
+only the glyph grew from 9px. Any state can also take `isSpinning`, which draws the running
 `spin-border` around the node's own ring and glyph in the colour of
 `spinClassName` (`spin-border-info` by default, motion-gated): the reason holds
 the session while an agent still works.
@@ -711,7 +718,9 @@ string on their one clickable element. `InteractiveRow` splits it, because its
 frame is not the control: the frame takes `ROW_HOVER` so the wash stays while
 the pointer is over an inner link or button, and the overlay button that opens
 the row takes the ring. A row that opens nothing carries none of it, and no
-pseudo-element stands in for the layer.
+pseudo-element stands in for the layer. An unread row keeps its tint under the
+pointer: hovering it for 450ms marks it seen when the pointer leaves, never
+while it is still on the row.
 `row-interactive-is-shared.test.ts` holds the listed rows to the shared string.
 
 ### Session row, hover card and switcher
@@ -727,9 +736,9 @@ card, the Board card tone, the Now chip rows and the palette's Needs you rows
 agree on tone and words, and the node's accessible label is the sentence.
 
 Red means broken, amber means you must answer, approve or act, green means
-ready to ship, blue means moving or new. A pictogram at 9px is unreadable, so
-the marks inside the ring are typographic: `?`, `!`, the approval shield and
-the check.
+ready to ship, violet means done, blue means moving or new. A pictogram under
+12px is unreadable, so the marks inside the ring are typographic or 12px:
+`?`, `!`, the approval shield and the check.
 
 | reason              | node                 | tone    | words                                    |
 | ------------------- | -------------------- | ------- | ---------------------------------------- |
@@ -743,6 +752,7 @@ the check.
 | `fix-couldnt-fix`   | `alert`, `!`         | warning | 2 comments it couldn't fix               |
 | `pr-approved`       | `approved`, solid    | success | Approved, ready to merge                 |
 | `unread-reply`      | `marker` and its dot | info    | New reply                                |
+| stage `done`        | `finished`, solid    | merged  | Done                                     |
 
 `plan-approval` names the plan's version when it is known and says "The plan
 waits for your approval" otherwise. An unread reply is not a mark: the node
@@ -750,10 +760,12 @@ stays the quiet ring and takes the row's 6px dot (`hasUnread`), and the dot
 also shows on any other node while a reply waits among the other reasons.
 
 The other nodes are the stage's own. Running is the ring with the centre dot,
-done is `closed`, the muted check, when the pull request is merged or all the
-work is closed, in review and building are a 1px hollow ring named by the stage
-word (never "Idle"), and archived is `queued`, a dashed faint ring, only under
-Show archived.
+done is `finished`: a solid `merged` violet disc with a white 12px check, the
+same size and weight as the green approved disc, so it reads as complete next
+to the hollow rings (a session whose pull request closed unmerged keeps
+`closed`, the muted check), in review and building are a 1px hollow ring named
+by the stage word (never "Idle"), and archived is `queued`, a dashed faint
+ring, only under Show archived.
 
 Human-input reasons (`open-question`, `fix-needs-you`, `needs-approval` and
 `plan-approval`) outrank running: the stage is needs you and, while an agent

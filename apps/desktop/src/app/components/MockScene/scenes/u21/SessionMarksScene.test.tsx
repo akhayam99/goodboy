@@ -113,8 +113,8 @@ const MARKS: ReadonlyArray<Mark> = [
   },
   {
     title: 'Northwind CSV export',
-    tone: 'neutral',
-    state: 'closed',
+    tone: 'merged',
+    state: 'finished',
     words: 'Done',
   },
 ];

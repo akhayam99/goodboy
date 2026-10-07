@@ -108,10 +108,24 @@ describe('the node of every other session', () => {
     });
   });
 
-  it('draws a finished session as the muted check', () => {
+  it('draws a finished session as a solid violet disc with a check, never an empty ring', () => {
     expect(nodeOf({ stage: 'done' })).toMatchObject({
       kind: 'done',
+      state: 'finished',
+      tone: 'merged',
+      label: 'Done',
+    });
+    expect(nodeOf({ stage: 'done', prState: 'merged' })).toMatchObject({
+      state: 'finished',
+      tone: 'merged',
+    });
+  });
+
+  it('keeps the muted check for a session whose pull request closed unmerged', () => {
+    expect(nodeOf({ stage: 'done', prState: 'closed' })).toMatchObject({
+      kind: 'done',
       state: 'closed',
+      tone: 'neutral',
       label: 'Done',
     });
   });
