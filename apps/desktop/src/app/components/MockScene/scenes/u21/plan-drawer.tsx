@@ -1,15 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Button, DrawerColumn } from '@goodboy/ui';
-import { openPlanDrawer } from '../../../../../features/plans/openPlanDrawer';
+import { DrawerColumn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
-import {
-  PLAN_DRAWER_PLAN_ID,
-  PLAN_DRAWER_SESSION_ID,
-  seedPlanDrawerScene,
-  type PlanDrawerVariant,
-} from './planDrawerSeed';
+import { PlanDrawerRunStub } from './PlanDrawerRunStub';
+import { seedPlanDrawerScene, type PlanDrawerVariant } from './planDrawerSeed';
 import { usePlanDrawerAutoplay, type AutoplayStep } from './usePlanDrawerAutoplay';
 
 const EDIT_BUTTON = '[data-testid="plan-drawer-edit"]';
@@ -36,29 +31,6 @@ type Props = {
   readonly variant: PlanDrawerVariant;
 };
 
-const RunStub = () => (
-  <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-6">
-    <h1 className="text-title text-foreground">Settlement export fix</h1>
-    <p className="text-label text-muted-foreground">
-      The planner finished step 2. Its plan waits for you.
-    </p>
-    <div className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-subtle px-3 py-2">
-      <span className="min-w-0 truncate text-row text-foreground">
-        Planner · Plan the reconciliation
-      </span>
-      <Button
-        variant="secondary"
-        size="xs"
-        onClick={() =>
-          openPlanDrawer({ sessionId: PLAN_DRAWER_SESSION_ID, planId: PLAN_DRAWER_PLAN_ID })
-        }
-      >
-        Review plan
-      </Button>
-    </div>
-  </div>
-);
-
 const PlanDrawerScene = ({ variant }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const sizing = useAppStore(selectDrawerSizing);
@@ -82,7 +54,7 @@ const PlanDrawerScene = ({ variant }: Props) => {
       className="flex h-screen bg-background text-foreground"
     >
       <DrawerColumn
-        main={<RunStub />}
+        main={<PlanDrawerRunStub />}
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         sizing={sizing}
         ariaLabel="Side panel"

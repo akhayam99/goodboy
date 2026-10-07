@@ -43,12 +43,12 @@ export const usePlanDrawerAutoplay = ({ isReady, steps }: Params): void => {
       if (target === null) {
         return;
       }
-      if (step.text === undefined) {
-        target.click();
-      } else {
-        typeInto({ field: target, text: step.text });
-      }
       index += 1;
+      if (step.text !== undefined) {
+        typeInto({ field: target, text: step.text });
+        return;
+      }
+      target.click();
     }, POLL_MS);
     return () => window.clearInterval(interval);
   }, [isReady, steps]);
