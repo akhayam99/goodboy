@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { WorkflowRunDetail } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
+import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
-import { DYNAMIC_RUN_ID, FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from './fixtures';
+import { FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from './fixtures';
 import { FINISHED_SESSION } from './finishedRun';
 import { PARALLEL_SESSION } from './parallelRun';
 import { PLAN_HOLD_SESSION, seedWorkflowRunPlanHold } from './planHoldRun';
@@ -75,7 +75,7 @@ export const WorkflowRunScene = () => {
       session={session}
       main={
         <div className="flex h-full min-h-0 flex-col">
-          <WorkflowRunDetail session={session} workflowRunId={DYNAMIC_RUN_ID} />
+          <WorkflowsPane session={session} />
         </div>
       }
     />

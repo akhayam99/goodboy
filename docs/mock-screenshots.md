@@ -248,8 +248,13 @@ waiting on the step (`scenes/flow-audit/parallelRun.ts`).
 `?scene=workflow-run&run=finished` shows the run done, with every step complete
 and no NOW (`scenes/flow-audit/finishedRun.ts`).
 `?scene=workflow-run&run=plan-hold` shows it as a custom run held in Ask after
-the plan, with **Approve plan**, **Plan ready** and the **Guidance** tag on the
-steps the standing guidance went to (`scenes/flow-audit/planHoldRun.ts`).
+the plan, with **Review plan** in the header, **Approve plan** in its menu and
+the **Guidance** tag on the steps the standing guidance went to
+(`scenes/flow-audit/planHoldRun.ts`). The same file seeds the orchestrated
+hold behind `?scene=workflow-run-plan-review` (the plan drawer open over the
+page) and `?scene=workflow-run-plan-question` (the planner asked, the strip
+says what), and `?scene=workflow-run-scrolled` scrolls the steps 40px so the
+edge line shows (`scenes/u21/run-page.tsx`).
 
 The README and feature-area guide docs are captured from these scenes. The
 `brand-*` scenes in `scenes/brand/` tell one Harborline story (issue HBL-412,

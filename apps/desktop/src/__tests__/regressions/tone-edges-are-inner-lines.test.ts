@@ -12,7 +12,7 @@ const TONE_CLASS =
   /\b(?:border|bg|text|ring)-(?:danger|warning|info|success|primary)\b|tintClasses\(|\b(?:accent|tint)\.(?:border|borderSoft|rail)\b/;
 const WINDOW_LINES = 3;
 
-type Reason = 'strip' | 'diff-comment' | 'transcript-rail' | 'boot' | 'log' | 'row';
+type Reason = 'diff-comment' | 'transcript-rail' | 'boot' | 'log' | 'row';
 
 type Allowance = {
   readonly count: number;
@@ -20,14 +20,6 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/features/workflows/components/OrchestratorStrip/index.tsx': {
-    count: 1,
-    reason: 'strip',
-  },
-  'apps/desktop/src/features/workflows/components/NextActionStrip/index.tsx': {
-    count: 1,
-    reason: 'strip',
-  },
   'apps/desktop/src/features/diff/components/DiffView/CommentComposer.tsx': {
     count: 1,
     reason: 'diff-comment',

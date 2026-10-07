@@ -2,11 +2,17 @@ import { useState } from 'react';
 import { Check, Pause, Play } from 'lucide-react';
 import type { Agent, SessionId, WorkflowAutonomy, WorkflowRun } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { openPlanDrawer } from '../../../plans/openPlanDrawer';
+import { PLAN_REVISING_REASON } from '../../../plans/planRevising';
+import { usePlanRevising } from '../../../plans/useRevisingPlans';
+import { useApproveRunPlan } from '../../useApproveRunPlan';
+import { useRunPlan } from '../../useRunPlan';
 import { isRunPaused } from '../../isRunPaused';
 import { runAutonomyOf } from '../../runAutonomy';
 import { OrchestratorAction } from '../OrchestratorStrip/OrchestratorAction';
+import { WorkflowCloseButton } from '../WorkflowCloseButton';
 import { RunControlMenu } from './RunControlMenu';
-import { RunStopButton } from './RunStopButton';
 
 type AutonomyMenu = {
   readonly label: string;
@@ -19,8 +25,11 @@ type Props = {
   readonly agents: ReadonlyArray<Agent>;
   readonly isOrchestrating: boolean;
   readonly isRunOver: boolean;
+  readonly onClose?: (() => void) | null;
   readonly autonomyMenu?: AutonomyMenu | null;
 };
+
+const PLAN_MENU_LABEL = 'Plan actions';
 
 export const RunControls = ({
   sessionId,
@@ -28,19 +37,21 @@ export const RunControls = ({
   agents,
   isOrchestrating,
   isRunOver,
+  onClose = null,
   autonomyMenu = null,
 }: Props) => {
   const pauseWorkflowRun = useAppStore((state) => state.pauseWorkflowRun);
   const resumeWorkflowRun = useAppStore((state) => state.resumeWorkflowRun);
-  const approveWorkflowRunPlan = useAppStore((state) => state.approveWorkflowRunPlan);
-  const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
+  const approvePlan = useApproveRunPlan({ sessionId, runId: run.id });
+  const plan = useRunPlan({ sessionId, runId: run.id });
+  const revising = usePlanRevising({ sessionId, planId: plan?.id ?? null });
   const [isBusy, setIsBusy] = useState(false);
   const isPaused = isRunPaused({ run });
   const isHeldForPlan = run.orchestrationStop?.kind === 'plan-approval';
   const isStopped = run.orchestrationStop?.kind === 'operator';
   const hasStepInFlight = agents.some((agent) => agent.status === 'running');
   const isLive = isOrchestrating || hasStepInFlight;
-  if (isRunOver || isStopped || run.discardedAt != null) {
+  if (isRunOver || run.discardedAt != null) {
     return null;
   }
 
@@ -56,59 +67,81 @@ export const RunControls = ({
     }
   };
 
+  const hasPlanToReview = isHeldForPlan && plan !== null;
+  const approveItem = hasPlanToReview
+    ? {
+        reason: revising.kind === 'revising' ? PLAN_REVISING_REASON : null,
+        onApprove: () => void guard(approvePlan),
+      }
+    : null;
+  const canPause = !isPaused && !isStopped && isLive;
+  const hasPair = isPaused || canPause || onClose !== null;
+
   return (
     <>
-      {isHeldForPlan ? (
+      {hasPlanToReview ? (
+        <OrchestratorAction
+          icon={CONCEPT_ICONS.plans}
+          label="Review plan"
+          variant="primary"
+          testId="run-review-plan"
+          title="Read the plan, comment on it or approve it"
+          onClick={() => openPlanDrawer({ sessionId, planId: plan.id })}
+        />
+      ) : null}
+      {isHeldForPlan && plan === null ? (
         <OrchestratorAction
           icon={Check}
           label="Approve plan"
           variant="primary"
           testId="run-approve-plan"
-          title="Approve the plan and let the rest run on its own"
+          title="Approve the plan and move the run on"
           disabled={isBusy}
-          onClick={() =>
-            void guard(async () => {
-              await approveWorkflowRunPlan(sessionId, run.id);
-            })
-          }
+          onClick={() => void guard(approvePlan)}
         />
       ) : null}
-      {isPaused ? (
-        <OrchestratorAction
-          icon={Play}
-          label="Resume"
-          variant="primary"
-          testId="run-resume"
-          title="Start where the run left off"
-          disabled={isBusy}
-          onClick={() => void guard(() => resumeWorkflowRun(sessionId, run.id))}
-        />
+      {hasPair ? (
+        <div role="group" aria-label="Run controls" className="flex items-center gap-1">
+          {isPaused ? (
+            <OrchestratorAction
+              icon={Play}
+              label="Resume"
+              variant="primary"
+              testId="run-resume"
+              title="Start where the run left off"
+              disabled={isBusy}
+              onClick={() => void guard(() => resumeWorkflowRun(sessionId, run.id))}
+            />
+          ) : null}
+          {canPause ? (
+            <OrchestratorAction
+              icon={Pause}
+              label="Pause"
+              variant="secondary"
+              testId="run-pause"
+              title="Finish the step in flight and start no others"
+              disabled={isBusy}
+              onClick={() => void guard(() => pauseWorkflowRun(sessionId, run.id))}
+            />
+          ) : null}
+          {onClose === null ? null : <WorkflowCloseButton onConfirm={onClose} />}
+        </div>
       ) : null}
-      {!isPaused && isLive ? (
-        <OrchestratorAction
-          icon={Pause}
-          label="Pause"
-          variant="secondary"
-          testId="run-pause"
-          title="Finish the step in flight and start no others"
-          disabled={isBusy}
-          onClick={() => void guard(() => pauseWorkflowRun(sessionId, run.id))}
-        />
-      ) : null}
-      {isPaused || isHeldForPlan || isLive ? (
-        <RunStopButton
-          hasStepInFlight={hasStepInFlight}
-          disabled={isBusy}
-          onStop={() => void guard(() => stopWorkflowRunNow(sessionId, run.id))}
-        />
-      ) : null}
-      {autonomyMenu === null ? null : (
+      {autonomyMenu === null && approveItem === null ? null : (
         <RunControlMenu
-          label={autonomyMenu.label}
+          label={autonomyMenu?.label ?? PLAN_MENU_LABEL}
           autonomy={
-            runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy }).key
+            autonomyMenu === null
+              ? null
+              : {
+                  value: runAutonomyOf({
+                    autoRun: run.autoRun,
+                    autonomy: run.rulesSnapshot?.autonomy,
+                  }).key,
+                  onChange: autonomyMenu.onAutonomy,
+                }
           }
-          onAutonomy={autonomyMenu.onAutonomy}
+          approvePlan={approveItem}
         />
       )}
     </>

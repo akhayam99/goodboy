@@ -1,3 +1,5 @@
+import { Fragment, type ReactNode } from 'react';
+import { Check } from 'lucide-react';
 import type { WorkflowAutonomy } from '@goodboy/types';
 import { AnchoredPopover, IconButton, MenuItems, cn, useDropdown } from '@goodboy/ui';
 import type { OverflowMenuItem } from '@goodboy/ui';
@@ -10,14 +12,37 @@ type RoutingToggle = {
   readonly onToggle: () => void;
 };
 
-type Props = {
-  readonly label: string;
-  readonly autonomy: WorkflowAutonomy;
-  readonly routing?: RoutingToggle | null;
-  readonly onAutonomy: (autonomy: WorkflowAutonomy) => void;
+type AutonomyChoice = {
+  readonly value: WorkflowAutonomy;
+  readonly onChange: (autonomy: WorkflowAutonomy) => void;
 };
 
-const routingItems = ({ routing }: { readonly routing: RoutingToggle | null }) =>
+type ApprovePlanItem = {
+  readonly reason: string | null;
+  readonly onApprove: () => void;
+};
+
+type Props = {
+  readonly label: string;
+  readonly autonomy?: AutonomyChoice | null;
+  readonly routing?: RoutingToggle | null;
+  readonly approvePlan?: ApprovePlanItem | null;
+};
+
+type Section = {
+  readonly key: string;
+  readonly node: ReactNode;
+};
+
+type RoutingParams = {
+  readonly routing: RoutingToggle | null;
+};
+
+type ApproveParams = {
+  readonly approvePlan: ApprovePlanItem | null;
+};
+
+const routingItems = ({ routing }: RoutingParams): ReadonlyArray<OverflowMenuItem> =>
   routing === null
     ? []
     : [
@@ -29,10 +54,31 @@ const routingItems = ({ routing }: { readonly routing: RoutingToggle | null }) =
             : WORKFLOW_ROUTING_COPY.sectionLabel,
           icon: CONCEPT_ICONS.providers,
           onClick: routing.onToggle,
-        } satisfies OverflowMenuItem,
+        },
       ];
 
-export const RunControlMenu = ({ label, autonomy, routing = null, onAutonomy }: Props) => {
+const approveItems = ({ approvePlan }: ApproveParams): ReadonlyArray<OverflowMenuItem> =>
+  approvePlan === null
+    ? []
+    : [
+        {
+          kind: 'item',
+          key: 'approve-plan',
+          label: 'Approve plan',
+          icon: Check,
+          disabled: approvePlan.reason !== null,
+          ...(approvePlan.reason !== null && { description: approvePlan.reason }),
+          onClick: approvePlan.onApprove,
+        },
+      ];
+
+export const RunControlMenu = ({
+  label,
+  autonomy = null,
+  routing = null,
+  approvePlan = null,
+}: Props) => {
+  const approve = approveItems({ approvePlan });
   const items = routingItems({ routing });
   const dropdown = useDropdown({
     align: 'end',
@@ -40,6 +86,39 @@ export const RunControlMenu = ({ label, autonomy, routing = null, onAutonomy }: 
     expectedWidth: 256,
     expectedHeight: 140,
   });
+
+  const sections: ReadonlyArray<Section> = [
+    ...(approve.length > 0
+      ? [
+          {
+            key: 'approve',
+            node: <MenuItems items={approve} onClose={dropdown.close} />,
+          },
+        ]
+      : []),
+    ...(autonomy === null
+      ? []
+      : [
+          {
+            key: 'autonomy',
+            node: (
+              <RunAutonomyItems
+                autonomy={autonomy.value}
+                onChange={(next) => {
+                  dropdown.close();
+                  if (next === autonomy.value) {
+                    return;
+                  }
+                  autonomy.onChange(next);
+                }}
+              />
+            ),
+          },
+        ]),
+    ...(items.length > 0
+      ? [{ key: 'routing', node: <MenuItems items={items} onClose={dropdown.close} /> }]
+      : []),
+  ];
 
   return (
     <AnchoredPopover
@@ -61,22 +140,12 @@ export const RunControlMenu = ({ label, autonomy, routing = null, onAutonomy }: 
         />
       }
     >
-      <RunAutonomyItems
-        autonomy={autonomy}
-        onChange={(next) => {
-          dropdown.close();
-          if (next === autonomy) {
-            return;
-          }
-          onAutonomy(next);
-        }}
-      />
-      {items.length === 0 ? null : (
-        <>
-          <div aria-hidden className="my-1 h-px bg-border-soft" />
-          <MenuItems items={items} onClose={dropdown.close} />
-        </>
-      )}
+      {sections.map((section, index) => (
+        <Fragment key={section.key}>
+          {index > 0 ? <div aria-hidden className="my-1 h-px bg-border-soft" /> : null}
+          {section.node}
+        </Fragment>
+      ))}
     </AnchoredPopover>
   );
 };

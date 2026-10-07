@@ -43,10 +43,6 @@
     "notices": 1,
     "emptyLines": 0
   },
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRow.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": {
     "notices": 0,
     "emptyLines": 1

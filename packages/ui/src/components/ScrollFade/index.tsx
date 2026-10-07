@@ -20,6 +20,7 @@ export type ScrollFadeProps = {
   readonly onViewportScroll?: () => void;
   readonly scrollbar?: 'overlay' | 'none';
   readonly fadeEdges?: 'both' | 'end';
+  readonly edge?: 'fade' | 'line';
 };
 
 const SPACING_CLASS_PATTERN = /^[wh]-(\d+(?:\.\d+)?)$/;
@@ -52,9 +53,12 @@ export const ScrollFade = ({
   onViewportScroll,
   scrollbar = 'overlay',
   fadeEdges = 'both',
+  edge = 'fade',
 }: ScrollFadeProps) => {
   const ownRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const ref = viewportRef ?? ownRef;
+  const isLineEdge = edge === 'line';
   const horizontal = orientation === 'horizontal';
   const fadePx = fadeSizeToPx(fadeSize);
   const frameRef = useRef<number | null>(null);
@@ -68,11 +72,20 @@ export const ScrollFade = ({
     const clientSize = horizontal ? el.clientWidth : el.clientHeight;
     const scrollSize = horizontal ? el.scrollWidth : el.scrollHeight;
     const maxScroll = Math.max(0, scrollSize - clientSize);
-    const top = fadeEdges === 'end' ? 0 : Math.min(fadePx, scrollPos);
+    const top = fadeEdges === 'end' || isLineEdge ? 0 : Math.min(fadePx, scrollPos);
     const bottom = Math.min(fadePx, Math.max(0, maxScroll - scrollPos));
     el.style.setProperty('--fade-top', `${top}px`);
     el.style.setProperty('--fade-bottom', `${bottom}px`);
-  }, [fadeEdges, fadePx, horizontal, ref]);
+    const root = rootRef.current;
+    if (!isLineEdge || root === null) {
+      return;
+    }
+    if (scrollPos > 0) {
+      root.setAttribute('data-scrolled', 'true');
+      return;
+    }
+    root.removeAttribute('data-scrolled');
+  }, [fadeEdges, fadePx, horizontal, isLineEdge, ref]);
 
   const scheduleFade = useCallback(() => {
     if (frameRef.current !== null) {
@@ -105,7 +118,7 @@ export const ScrollFade = ({
   }, [applyFade, scheduleFade, ref]);
 
   return (
-    <div className={cn('relative min-h-0', className)}>
+    <div ref={rootRef} className={cn('relative min-h-0', isLineEdge && 'group/edge', className)}>
       <div
         ref={ref}
         onScroll={() => {
@@ -122,6 +135,16 @@ export const ScrollFade = ({
       >
         {children}
       </div>
+      {isLineEdge && !horizontal ? (
+        <span
+          aria-hidden
+          data-slot="scroll-edge"
+          className={cn(
+            'pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-border opacity-0',
+            'motion-safe:transition-opacity motion-safe:duration-120 group-data-[scrolled=true]/edge:opacity-100',
+          )}
+        />
+      ) : null}
       {scrollbar === 'overlay' ? (
         <OverlayThumb viewportRef={ref} orientation={orientation} />
       ) : null}
