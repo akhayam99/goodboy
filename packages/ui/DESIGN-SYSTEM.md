@@ -722,7 +722,9 @@ string on their one clickable element. `InteractiveRow` splits it, because its
 frame is not the control: the frame takes `ROW_HOVER` so the wash stays while
 the pointer is over an inner link or button, and the overlay button that opens
 the row takes the ring. A row that opens nothing carries none of it, and no
-pseudo-element stands in for the layer. An unread row keeps its tint under the
+pseudo-element stands in for the layer. The Files tree rows and strip of a
+diff (`ChangeTree`, `TreeStrip`) take the shared string; a Board card washes
+whole through `sessionCardShell` and its title button shows the pointer. An unread row keeps its tint under the
 pointer: hovering it for 450ms marks it seen when the pointer leaves, never
 while it is still on the row.
 `row-interactive-is-shared.test.ts` holds the listed rows to the shared string.

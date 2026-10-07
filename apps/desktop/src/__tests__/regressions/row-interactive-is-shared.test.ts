@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const TIMELINE = 'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane';
 const SESSION_BAR = 'apps/desktop/src/features/workspace/components/SessionActivityBar';
+const CHANGE_TREE = 'apps/desktop/src/features/diff/components/ChangeTree';
 
 const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   'packages/ui/src/components/InteractiveRow.tsx',
@@ -15,6 +16,8 @@ const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   `${TIMELINE}/TimelineMoreRow.tsx`,
   `${SESSION_BAR}/SessionActivityItem.tsx`,
   `${SESSION_BAR}/index.tsx`,
+  `${CHANGE_TREE}/index.tsx`,
+  `${CHANGE_TREE}/TreeStrip.tsx`,
 ];
 
 const COMPOSED_ROWS: ReadonlyArray<string> = [`${SESSION_BAR}/SessionPages.tsx`];
