@@ -160,7 +160,7 @@ describe('the u21 run page scenes', () => {
     expect(stripPhase()).toBe('plan-approval');
     expect(within(header()).getByRole('button', { name: 'Review plan' })).toBeDefined();
     expect(within(header()).queryByRole('button', { name: 'Approve plan' })).toBeNull();
-    expect(await screen.findByRole('button', { name: 'Open in Artifacts' })).toBeDefined();
+    expect((await screen.findByTestId('plan-primary')).textContent).toBe('Approve');
   });
 
   it('says what the planner asked and offers Answer in the strip', async () => {
