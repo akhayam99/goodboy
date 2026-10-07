@@ -264,7 +264,12 @@ export const storySpies = {
   listPlansForSession: vi.fn<PlansModule['listPlansForSession']>(async () => []),
   upsertPlan: vi.fn<PlansModule['upsertPlan']>(),
   setPlanStatus: vi.fn(async () => undefined),
-  setPlanBody: vi.fn(async () => undefined),
+  setPlanBodyIfRevision: vi.fn<PlansModule['setPlanBodyIfRevision']>(
+    async (_id, _title, _bodyMd, expectedRevision) => ({
+      kind: 'saved',
+      revision: expectedRevision + 1,
+    }),
+  ),
   addPlanConsumption: vi.fn<PlansModule['addPlanConsumption']>(),
   listConsumptionsForPlan: vi.fn<PlansModule['listConsumptionsForPlan']>(async () => []),
   linearConnect: vi.fn(),
@@ -776,7 +781,7 @@ export const plansModuleMock = () => ({
   listPlansForSession: storySpies.listPlansForSession,
   upsertPlan: storySpies.upsertPlan,
   setPlanStatus: storySpies.setPlanStatus,
-  setPlanBody: storySpies.setPlanBody,
+  setPlanBodyIfRevision: storySpies.setPlanBodyIfRevision,
   deletePlan: vi.fn(),
   addPlanConsumption: storySpies.addPlanConsumption,
   listConsumptionsForPlan: storySpies.listConsumptionsForPlan,

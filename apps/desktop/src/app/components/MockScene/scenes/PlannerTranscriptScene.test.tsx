@@ -56,7 +56,7 @@ describe('planner transcript scenes', () => {
     expect(row.getAttribute('data-span')).toBe('column');
     expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Revising to v2');
     expect(screen.getByTestId('plan-run').getAttribute('title')).toBe(
-      'Planner is revising this plan',
+      'The planner is revising this plan',
     );
   });
 

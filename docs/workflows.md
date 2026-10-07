@@ -641,11 +641,73 @@ it returns `paused`, `plan-approval` or nothing, writes the hold the first time
 it sees the plan, and runs inside `activateWorkflowAgent`, `orchestrateNextStep`
 and `maybeAutoAdvanceWorkflow`. `bypassGate` never skips it, so the step
 button, a skip, a read-now hint and a retry all stop at the hold.
-**Approve plan** (`approveWorkflowRunPlan`) marks the copy `planApproved`,
-clears the stop and lets the run advance; switching the run to another autonomy
-also drops the hold. A plan step that writes no plan never holds. While it holds, the run's status reads
-**Plan ready**, not a failure, and **Run next step** is hidden, so **Approve plan**
-is the only way on; it comes back once the plan is approved.
+Switching the run to another autonomy also drops the hold. A plan step that
+writes no plan never holds. While it holds, the run's status reads
+**Plan ready**, not a failure, and **Run next step** is hidden, so **Approve**
+is the only way on; **Run next step** comes back once the plan is approved.
+
+#### Approve moves the run on
+
+**Approve** (`approveWorkflowRunPlan(sessionId, runId)`) approves the plan the
+run holds for and moves the run on, whether or not it runs on its own.
+It writes the copy's `planApproved` first, then clears the stop, then moves on,
+and it answers with what happened so the caller can say it:
+
+| Result                                           | When                                                                                                                                                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `approved`, `next: 'started'`, `agentId`         | the run does not run on its own: the step that consumes the plan was started through `activateWorkflowAgent`, the same door as **Run next step**, and the answer comes once that step has started, not once it has finished |
+| `approved`, `next: 'continues'`, `agentId: null` | the run runs on its own (`maybeAutoAdvanceWorkflow` takes it from here), a dynamic run (the orchestrator decides the next step), or the next step was blocked by an open question (the notification says why)               |
+| `noop`, `missing-run`                            | the run is not in the session                                                                                                                                                                                               |
+| `noop`, `not-held`                               | the run is not held, or an Approve for it is already in flight: a second Approve does nothing and starts nothing                                                                                                            |
+| `failed`, `message`                              | a write failed, or the planner is revising the plan; the hold stays                                                                                                                                                         |
+
+A write that fails leaves no half approval: the snapshot write comes first, and
+if clearing the stop fails after it, the snapshot is put back. The in-store run
+changes only after both writes went through. Every other caller (the run
+header, the comment bar) may ignore the result; the Artifacts page, the palette
+and the object menu read it through `artifact.runPlan`.
+
+#### One primary for a plan
+
+`planPrimaryOf({ plan, run, drafts })` (`features/plans/planPrimaryOf.ts`) is
+the one rule for the primary button of a plan, on every surface. `run` is the
+run the plan feeds (`planRunOf`): the run held for the plan, or the run whose
+planner step wrote it and whose next step consumes plans.
+
+| Plan and run                                      | Primary                                                | Label                                                 |
+| ------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------- |
+| the planner is revising it                        | `disabled`, reason "The planner is revising this plan" | `Approve` on a run plan, `Run plan` on a session plan |
+| ran, replaced, deleted or running                 | `none`                                                 | none                                                  |
+| a run is held for it                              | `approve`                                              | `Approve`                                             |
+| its run's next step consumes it                   | `approve`                                              | `Approve`                                             |
+| its run took it already (`planApproved`, no hold) | `none`                                                 | none                                                  |
+| its run was discarded                             | `run`                                                  | `Run plan`                                            |
+| a session plan                                    | `run`                                                  | `Run plan`                                            |
+
+With unsent comments the kind stays and `isSecondary` is true: the comment
+bar's **Send to planner** is the one filled button. `artifact.runPlan` takes its
+label, its reason and its action from this rule, so it is never **Run plan** on
+a plan that belongs to a run. On a held run it calls `approveWorkflowRunPlan`,
+whatever the page hands it as its own run port; on a run that is not held it
+runs the plan through its workflow. After an `approved` result, or a workflow
+start from **Approve**, it shows one `info` toast, **Plan approved**, saying
+"The run goes on" or "Implement started", with the key `follow:<run id>` and
+the action **Follow the run** (left out when the run page is already open).
+A `noop` shows nothing and a `failed` goes to the notifications as "Couldn't
+approve the plan".
+
+#### Editing a plan by hand
+
+A hand edit saves against the revision it started from
+(`updatePlanBody(sessionId, planId, title, bodyMd, expectedRevision)` over
+`updatePlanBodyIfRevision`): if the planner wrote meanwhile the answer is
+`conflict` with the planner's revision and nothing is written; a save bumps the
+revision as author `user` and refreshes the session's plans and artifacts.
+`planEditBlockOf` gives the reason **Edit** is off: the planner is revising,
+comments are unsent ("Send or discard your 3 comments first"), or the plan
+runs as two or more parallel parts ("This plan runs as 3 parallel parts. Ask
+the planner to change it."), because the parts a run fans out from live in the
+plan's metadata and a hand edit keeps them.
 
 ### Pause is one admission check
 

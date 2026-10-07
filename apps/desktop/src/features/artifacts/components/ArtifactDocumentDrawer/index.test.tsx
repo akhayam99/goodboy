@@ -102,7 +102,7 @@ describe('plan document drawer', () => {
     expect(screen.getByTestId('plan-drawer-body').getAttribute('data-revising')).toBe('true');
     const run = screen.getByTestId('plan-run');
     expect(run.hasAttribute('disabled')).toBe(true);
-    expect(run.getAttribute('title')).toBe('Planner is revising this plan');
+    expect(run.getAttribute('title')).toBe('The planner is revising this plan');
   });
 
   it('does not offer Run plan for a plan that already ran', () => {
@@ -277,7 +277,7 @@ describe('plan document drawer', () => {
       const send = screen.getByRole('button', { name: 'Send to planner' });
       expect(send.hasAttribute('disabled')).toBe(true);
       expect(screen.getByTestId('plan-comment-note').textContent).toBe(
-        'Planner is revising this plan',
+        'The planner is revising this plan',
       );
       expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
     });
