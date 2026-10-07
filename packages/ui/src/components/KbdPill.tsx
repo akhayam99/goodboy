@@ -1,16 +1,8 @@
 import type { ComponentProps } from 'react';
-import { cn } from '../cn';
+import { Kbd } from './Kbd';
 
 export type KbdPillProps = ComponentProps<'kbd'>;
 
-export const KbdPill = ({ className, ...rest }: KbdPillProps) => {
-  return (
-    <kbd
-      className={cn(
-        'inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-border bg-muted px-1 text-code text-muted-foreground',
-        className,
-      )}
-      {...rest}
-    />
-  );
+export const KbdPill = (props: KbdPillProps) => {
+  return <Kbd look="cap" {...props} />;
 };

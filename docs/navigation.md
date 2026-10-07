@@ -674,8 +674,9 @@ activity yet show the plain overview with its actions.
 - **The band has one right slot, and Ask holds it.** `TrailBar` takes an `end`
   node outside the `PageColumn`, at the right end of the band.
   `SessionWorkspace` puts `AskTrailButton` there: the question-bubble glyph
-  (`CONCEPT_ICONS.ask`, never Chat's `MessageCircle`), the word **Ask** and a
-  ⌘L key cap, pressed while the Ask drawer is open for that session. Its
+  (`CONCEPT_ICONS.ask`, never Chat's `MessageCircle`), the word **Ask** and the
+  ⌘L chord as bare faint text, the same inline `Kbd` hint as Search's ⌘K and
+  with no box around it, pressed while the Ask drawer is open for that session. Its
   tooltip reads `Ask what is happening in this session ⌘L`. It toggles the
   drawer; ⌘L (`ask.open`, app plane) opens it or, when it is open, focuses its
   box. Only the visible session's button binds ⌘L.
