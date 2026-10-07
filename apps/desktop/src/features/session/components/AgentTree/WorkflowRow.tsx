@@ -353,6 +353,8 @@ export const WorkflowRow = ({
                     {isQueuedManual ? (
                       <WorkflowRunStartButton
                         variant="detail"
+                        sessionId={task.id}
+                        runId={run.id}
                         blockReason={wfBlockReason}
                         onStart={() => startWorkflowRun(task.id, run.id)}
                       />

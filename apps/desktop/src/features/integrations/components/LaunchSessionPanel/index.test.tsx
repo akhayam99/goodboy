@@ -12,17 +12,29 @@ const h = vi.hoisted(() => ({
   })),
   requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
   showToast: vi.fn(),
+  navigate: vi.fn(),
   issueBriefs: {} as Record<string, unknown>,
 }));
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
-    selector({
-      createSession: h.createSession,
-      requestIssueBrief: h.requestIssueBrief,
-      issueBriefs: h.issueBriefs,
-    }),
-}));
+vi.mock('../../../../store', () => {
+  const storeState = () => ({
+    createSession: h.createSession,
+    requestIssueBrief: h.requestIssueBrief,
+    issueBriefs: h.issueBriefs,
+    navigate: h.navigate,
+    currentWorkspaceId: null,
+    currentSessionId: null,
+    openSessionDraftWorkspaceId: null,
+    appStudio: null,
+    drawer: null,
+  });
+  return {
+    useAppStore: Object.assign(
+      <T,>(selector: (state: Record<string, unknown>) => T) => selector(storeState()),
+      { getState: storeState },
+    ),
+  };
+});
 
 vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
@@ -84,6 +96,7 @@ beforeEach(() => {
   h.createSession.mockClear();
   h.requestIssueBrief.mockClear();
   h.showToast.mockClear();
+  h.navigate.mockClear();
   h.issueBriefs = {};
 });
 
@@ -105,6 +118,52 @@ describe('LaunchSessionPanel', () => {
       goal: 'Fix the flake',
       externalTasks: [EXTERNAL_TASK],
     });
+  });
+
+  it('offers Follow to the new session as one info toast, never a success toast', async () => {
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+
+    await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
+    const toast = h.showToast.mock.calls[0]?.[0] as {
+      readonly kind: string;
+      readonly title: string;
+      readonly message: string;
+      readonly dedupeKey: string;
+      readonly action: { readonly label: string; readonly onClick: () => void };
+    };
+    expect(toast).toMatchObject({
+      kind: 'info',
+      title: 'Session started',
+      message: 'Fix the flake',
+      dedupeKey: 'follow:session-9',
+      action: { label: 'Follow' },
+    });
+    expect(h.showToast).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'success' }));
+    expect(h.navigate).not.toHaveBeenCalled();
+
+    toast.action.onClick();
+
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: {
+        at: 'session',
+        sessionId: 'session-9',
+        view: { lens: null, agentId: null, studio: null, target: null },
+      },
+    });
+  });
+
+  it('keeps a failed launch inline and raises no toast', async () => {
+    h.createSession.mockRejectedValueOnce(new Error('worktree is locked'));
+    renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toContain('worktree is locked'),
+    );
+    expect(h.showToast).not.toHaveBeenCalled();
   });
 
   it('launches on the keyboard submit shortcut', async () => {
