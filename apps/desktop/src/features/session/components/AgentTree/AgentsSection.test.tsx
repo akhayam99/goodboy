@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import type {
   Agent,
   AgentId,
@@ -304,6 +305,7 @@ function reset() {
     summarizerStatus: {},
     agentTurnState: {},
     sessionOpenQuestions: {},
+    sessionArtifacts: {},
     setPanelSectionExpanded: h.setPanelSectionExpanded,
     sessionPanelExpanded: {},
     workflowExpand: {},
@@ -445,19 +447,21 @@ describe('AgentsSection step start gate', () => {
 
   function renderSection() {
     render(
-      <AgentsSection
-        task={buildSession({
-          workflowRuns: [
-            {
-              id: RUN_ID,
-              workflowId: 'wf-def-1',
-              ordinal: 0,
-              triggerMode: 'immediate',
-              autoRun: false,
-            } as never,
-          ],
-        })}
-      />,
+      <ToastProvider>
+        <AgentsSection
+          task={buildSession({
+            workflowRuns: [
+              {
+                id: RUN_ID,
+                workflowId: 'wf-def-1',
+                ordinal: 0,
+                triggerMode: 'immediate',
+                autoRun: false,
+              } as never,
+            ],
+          })}
+        />
+      </ToastProvider>,
     );
   }
 
