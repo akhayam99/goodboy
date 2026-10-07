@@ -446,7 +446,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Plan beside the planner',
-        desc: 'In the planner chat and its Brief a plan is one row. Press it to read the plan in a drawer, Expand it to the whole pane, or Open in Artifacts. While the planner reworks it, the drawer says Revising to v2 and Run plan is off.',
+        desc: 'In the planner chat and its Brief a plan is one row. Press it to read the plan in a drawer, where one button moves it on, Approve or Run plan, and Edit changes it by hand. Expand and Open in Artifacts sit in its menu. While the planner reworks it, the drawer says Revising to v2 and the button is off.',
       },
       {
         term: 'Comments on a plan',

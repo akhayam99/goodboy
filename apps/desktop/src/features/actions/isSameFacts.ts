@@ -1,6 +1,23 @@
+const isPlainObject = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype;
+
+const isSameEntries = (
+  a: Readonly<Record<string, unknown>>,
+  b: Readonly<Record<string, unknown>>,
+): boolean => {
+  const entries = Object.entries(a);
+  return (
+    entries.length === Object.keys(b).length &&
+    entries.every(([key, value]) => Object.is(value, Reflect.get(b, key)))
+  );
+};
+
 const isSameValue = (a: unknown, b: unknown): boolean => {
   if (Object.is(a, b)) {
     return true;
+  }
+  if (isPlainObject(a) && isPlainObject(b)) {
+    return isSameEntries(a, b);
   }
   if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
     return false;
