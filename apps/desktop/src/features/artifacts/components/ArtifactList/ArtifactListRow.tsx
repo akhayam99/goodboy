@@ -6,6 +6,7 @@ import type { ArtifactListRow as Row } from '../../artifactListRows';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
+import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ArtifactOverflowMenu } from '../ArtifactShell/ArtifactOverflowMenu';
 import type { ActionControls } from '../../../actions/useActionControls';
@@ -91,8 +92,19 @@ const targetOf = ({
       : { kind: 'stored', artifactId: row.target.artifactId, isPlanRunning: row.isPlanRunning },
 });
 
+const RUN_PLAN_ACTION_ID = 'artifact.runPlan';
+
 const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow }: Props) => {
   const target = useMemo(() => targetOf({ row, sessionId }), [row, sessionId]);
+  const planId =
+    row.target.kind === 'artifact' && row.kind === 'plan' ? row.target.artifactId : null;
+  const hasUnsentComments = useAppStore((state) =>
+    planId === null
+      ? false
+      : (state.artifactComments[sessionId] ?? []).some(
+          (comment) => comment.artifactId === planId && comment.status === 'draft',
+        ),
+  );
   const anchorKey = `artifact-row:${row.id}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
   const controls = useActionControls({ target, anchorKey });
@@ -110,6 +122,10 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
     ? findAction({ actions: controls.actions, id: 'artifact.deletePermanently' })
     : null;
   const primary = isDeleted ? null : primaryOf({ row, controls });
+  const isFilled =
+    primary !== null &&
+    primary.slot === 'primary' &&
+    !(primary.id === RUN_PLAN_ACTION_ID && hasUnsentComments);
   const hover = isDeleted ? [] : hoverActionsOf({ row, actions: controls.actions });
   const at = row.deletedAt ?? row.at;
   const atTitle =
@@ -205,11 +221,12 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
               {primary === null ? null : (
                 <Button
                   size="sm"
-                  variant={primary.slot === 'primary' ? 'primary' : 'secondary'}
-                  emphasis={primary.slot === 'primary' ? 'outline' : 'solid'}
+                  variant={isFilled ? 'primary' : 'secondary'}
+                  emphasis={isFilled ? 'outline' : 'solid'}
                   disabled={primary.blockedReason !== null}
                   isBusy={controls.pendingId === primary.id}
                   title={primary.blockedReason ?? primary.description ?? undefined}
+                  data-filled={isFilled ? 'true' : 'false'}
                   onClick={() => controls.trigger({ actionId: primary.id })}
                 >
                   {primary.shortLabel}

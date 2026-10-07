@@ -75,4 +75,36 @@ describe('DrawerFrame', () => {
     expect(body?.className).toContain('flex-1');
     expect(body?.className).toContain('min-h-0');
   });
+
+  it('puts a toolbar on a second row under the title and the close button', () => {
+    render(
+      <DrawerFrame
+        title="Retry-safe webhook credits"
+        closeLabel="Close the plan"
+        toolbar={<button type="button">Approve</button>}
+        onClose={vi.fn()}
+      >
+        <p>body</p>
+      </DrawerFrame>,
+    );
+
+    const header = screen.getByRole('banner');
+    const toolbar = header.querySelector('[data-drawer-toolbar]');
+    expect(toolbar?.contains(screen.getByRole('button', { name: 'Approve' }))).toBe(true);
+    expect(toolbar?.contains(screen.getByRole('button', { name: 'Close the plan' }))).toBe(false);
+    expect(header.contains(screen.getByRole('button', { name: 'Close the plan' }))).toBe(true);
+    expect(
+      header.contains(screen.getByRole('heading', { name: 'Retry-safe webhook credits' })),
+    ).toBe(true);
+  });
+
+  it('has no toolbar row unless one is passed', () => {
+    render(
+      <DrawerFrame title="Drafts" onClose={vi.fn()}>
+        <p>body</p>
+      </DrawerFrame>,
+    );
+
+    expect(screen.getByRole('banner').querySelector('[data-drawer-toolbar]')).toBeNull();
+  });
 });

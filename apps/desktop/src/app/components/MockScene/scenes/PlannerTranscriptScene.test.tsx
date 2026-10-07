@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -46,7 +46,7 @@ describe('planner transcript scenes', () => {
     expect(row.getAttribute('data-span')).toBe('column');
     expect(row.textContent).toContain('Plan · Retry-safe webhook credits');
     expect(row.textContent).toContain('v1');
-    expect(screen.getByTestId('plan-run').hasAttribute('disabled')).toBe(false);
+    expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(false);
   });
 
   it('revising: the same row says Revising to v2 and Run plan waits', async () => {
@@ -55,7 +55,7 @@ describe('planner transcript scenes', () => {
     const row = await screen.findByTestId('plan-row');
     expect(row.getAttribute('data-span')).toBe('column');
     expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Revising to v2');
-    expect(screen.getByTestId('plan-run').getAttribute('title')).toBe(
+    expect(screen.getByTestId('plan-primary').getAttribute('title')).toBe(
       'The planner is revising this plan',
     );
   });
@@ -83,6 +83,7 @@ describe('planner transcript scenes', () => {
 
     await screen.findByTestId('plan-drawer');
     expect(panel().getAttribute('data-drawer-sizing')).toBe('full');
-    screen.getByRole('button', { name: 'Collapse' });
+    fireEvent.click(screen.getByRole('button', { name: 'More plan actions' }));
+    screen.getByRole('menuitem', { name: 'Collapse' });
   });
 });

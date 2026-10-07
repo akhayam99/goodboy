@@ -13,6 +13,7 @@ export type DrawerFrameProps = {
   readonly iconClassName?: string;
   readonly count?: ReactNode;
   readonly action?: ReactNode;
+  readonly toolbar?: ReactNode;
   readonly closeLabel?: string;
   readonly onClose: () => void;
   readonly dock?: ReactNode;
@@ -37,6 +38,7 @@ export const DrawerFrame = ({
   iconClassName,
   count,
   action,
+  toolbar,
   closeLabel = 'Close panel',
   onClose,
   dock,
@@ -45,6 +47,7 @@ export const DrawerFrame = ({
 }: DrawerFrameProps) => {
   const triggerRef = useRef<HTMLElement | null>(focusableTrigger());
   useEscapeLayer(onClose);
+  const hasToolbar = toolbar != null;
 
   useEffect(() => {
     const trigger = triggerRef.current;
@@ -56,34 +59,66 @@ export const DrawerFrame = ({
     };
   }, []);
 
+  const titleRow = (
+    <>
+      <div className={cn('flex min-w-0 flex-1 gap-2', hasToolbar ? 'items-start' : 'items-center')}>
+        {Icon == null ? null : (
+          <span className="flex h-5 shrink-0 items-center">
+            <Icon size={14} aria-hidden className={iconClassName} />
+          </span>
+        )}
+        <h2
+          className={cn(
+            'min-w-0 text-heading text-foreground',
+            hasToolbar ? 'line-clamp-2' : 'truncate',
+          )}
+        >
+          {title}
+        </h2>
+        {count != null ? (
+          <span className="flex h-5 shrink-0 items-center text-meta tabular-nums text-muted-foreground">
+            {count}
+          </span>
+        ) : null}
+      </div>
+      <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
+        {action}
+        <Tooltip content={closeLabel}>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={closeLabel}
+            className="rounded-md p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <X size={14} aria-hidden />
+          </button>
+        </Tooltip>
+      </div>
+    </>
+  );
+
   return (
     <section
       aria-label={title}
       className="flex h-full min-h-0 min-w-0 flex-col bg-subtle motion-safe:animate-nav-step-in"
     >
-      <header className="flex h-11 shrink-0 items-center gap-2 pl-4 pr-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          {Icon == null ? null : (
-            <Icon size={14} aria-hidden className={cn('shrink-0', iconClassName)} />
-          )}
-          <h2 className="min-w-0 truncate text-heading text-foreground">{title}</h2>
-          {count != null ? (
-            <span className="shrink-0 text-meta tabular-nums text-muted-foreground">{count}</span>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          {action}
-          <Tooltip content={closeLabel}>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={closeLabel}
-              className="rounded-md p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              <X size={14} aria-hidden />
-            </button>
-          </Tooltip>
-        </div>
+      <header
+        className={
+          hasToolbar
+            ? 'flex shrink-0 flex-col gap-2 py-2'
+            : 'flex h-11 shrink-0 items-center gap-2 pl-4 pr-2'
+        }
+      >
+        {hasToolbar ? (
+          <div className="flex min-w-0 items-start gap-2 pl-4 pr-2">{titleRow}</div>
+        ) : (
+          titleRow
+        )}
+        {hasToolbar ? (
+          <div data-drawer-toolbar="" className="flex min-w-0 flex-col gap-2 px-4">
+            {toolbar}
+          </div>
+        ) : null}
       </header>
       <Divider />
       {scroll === 'self' ? (
