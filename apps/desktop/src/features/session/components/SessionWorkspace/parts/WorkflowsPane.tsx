@@ -3,10 +3,11 @@ import { BookmarkPlus } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { LensEmptyState, PaneShell } from '@goodboy/ui';
+import { EmptyState, PaneShell } from '@goodboy/ui';
 import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
+import { OrchestratorDock } from '../../../../workflows/components/OrchestratorStrip/OrchestratorDock';
 import { WorkflowStartButton } from '../../AgentTree/WorkflowStartButton';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRailCard } from './WorkflowRailCard';
@@ -78,9 +79,21 @@ export const WorkflowsPane = ({ session }: Props) => {
   };
 
   if (focusedRun != null) {
+    const hasComposer =
+      focusedRun.run.executionMode === 'dynamic' && focusedRun.run.discardedAt == null;
+    const conversation = {
+      composer: hasComposer ? (
+        <OrchestratorDock
+          sessionId={sessionId}
+          run={focusedRun.run}
+          agents={agentsByRunId.get(focusedRun.run.id) ?? EMPTY_ARRAY}
+        />
+      ) : undefined,
+    };
     return (
       <PaneShell
         scroll="self"
+        dock={conversation.composer}
         title={focusedRun.run.title ?? workflowKindName(focusedRun.workflow)}
         icon={CONCEPT_ICONS.workflows}
         tone={CONCEPT_TONE.workflows}
@@ -119,10 +132,10 @@ export const WorkflowsPane = ({ session }: Props) => {
     >
       {!hasRuns ? <WorkflowStartButton sessionId={sessionId} /> : null}
       {shouldShowEmptyCard ? (
-        <LensEmptyState
-          tone={CONCEPT_TONE.workflows}
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.workflows}
-          title="Nothing running"
+          title="No runs in progress"
           action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
         />
       ) : null}

@@ -401,7 +401,6 @@ const railOf = (element: Element | null): string => {
 };
 
 const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
-const FULL_RAIL = 'full';
 
 const placeRoot = (): Element => {
   const root =
@@ -856,12 +855,12 @@ describe('moving across every place keeps one frame', () => {
       expect(lensOf()).toBe('files');
       const versionLayers = (): RailLayers =>
         sessionLayers({ body: shown('[data-slot="pane-body"]') });
-      expectOneRail({ place: 'File versions', layers: versionLayers(), rail: FULL_RAIL });
+      expectOneRail({ place: 'File versions', layers: versionLayers(), rail: COLUMN_RAIL });
       await openContextDrawer(sessionId);
       expectOneRail({
         place: 'File versions with a drawer',
         layers: versionLayers(),
-        rail: FULL_RAIL,
+        rail: COLUMN_RAIL,
       });
       await escape();
 
@@ -910,7 +909,10 @@ describe('moving across every place keeps one frame', () => {
         expectCentredColumns();
         expectAskInColumn();
         const trail = document.querySelector('main [data-slot="trail-bar"] [data-page-column]');
-        expect(trail?.getAttribute('data-width')).toBe(lens === 'branch' ? 'full' : 'column');
+        expect(trail?.getAttribute('data-width')).toBe('column');
+        if (lens === 'branch') {
+          expect(leftEdge().columns).not.toContain('full');
+        }
       }
 
       await click(pageRow('Branch'));

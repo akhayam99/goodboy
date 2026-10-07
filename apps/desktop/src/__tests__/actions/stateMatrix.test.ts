@@ -134,6 +134,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.terminal',
       'session.editor (This session has no worktree yet)',
       'session.rename',
+      'session.pin',
       'session.startAgent',
       'session.linkIssue',
       'session.copyTitle',
@@ -156,6 +157,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.terminal',
       'session.editor',
       'session.rename',
+      'session.pin',
       'session.startAgent',
       'session.linkIssue',
       'session.copyTitle',
@@ -181,6 +183,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.terminal',
       'session.editor',
       'session.rename',
+      'session.pin',
       'session.startAgent',
       'session.linkIssue',
       'session.copyTitle',
@@ -280,6 +283,67 @@ describe('session menu in every state', () => {
     expect(action?.confirm?.description).toBe(
       'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. This cannot be undone.',
     );
+  });
+});
+
+describe('pinning a session', () => {
+  const pinSpy = vi.fn(async () => undefined);
+  const unpinSpy = vi.fn(async () => undefined);
+
+  beforeEach(() => {
+    pinSpy.mockClear();
+    unpinSpy.mockClear();
+    seed({ mounts: [mountFixture()], branch: 'hl/payout-export' });
+    useAppStore.setState({ pinSession: pinSpy, unpinSession: unpinSpy });
+  });
+
+  const pinVerbs = (): ReadonlyArray<string> =>
+    matrixOf(SESSION_TARGET).filter((entry) => /^session\.(un)?pin\b/.test(entry));
+
+  it('offers Pin session, and not Unpin session, while the session is not pinned', () => {
+    expect(pinVerbs()).toEqual(['session.pin']);
+  });
+
+  it('offers Unpin session, and not Pin session, while the session is pinned', () => {
+    useAppStore.setState({ sessionPins: { [WORKSPACE]: [{ id: SESSION, at: 1 }] } });
+    expect(pinVerbs()).toEqual(['session.unpin']);
+  });
+
+  it('keeps a pin in another workspace from marking this session as pinned', () => {
+    useAppStore.setState({
+      sessionPins: { ['ws-northwind' as typeof WORKSPACE]: [{ id: SESSION, at: 1 }] },
+    });
+    expect(pinVerbs()).toEqual(['session.pin']);
+  });
+
+  it('offers neither once the session is archived, pinned or not', () => {
+    seed({ session: sessionFixture({ archivedAt: FIXTURE_NOW }), isArchived: true });
+    useAppStore.setState({ sessionPins: { [WORKSPACE]: [{ id: SESSION, at: 1 }] } });
+    expect(pinVerbs()).toEqual([]);
+  });
+
+  it('labels the verbs for the menu, the row and the palette', () => {
+    const labels = (
+      bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })?.resolve() ?? []
+    )
+      .filter((action) => action.id === 'session.pin')
+      .map((action) => action.label);
+    expect(labels).toEqual(['Pin session']);
+    useAppStore.setState({ sessionPins: { [WORKSPACE]: [{ id: SESSION, at: 1 }] } });
+    expect(
+      (bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })?.resolve() ?? [])
+        .filter((action) => action.id === 'session.unpin')
+        .map((action) => action.label),
+    ).toEqual(['Unpin session']);
+  });
+
+  it('pins and unpins the session it was opened on', async () => {
+    await run(SESSION_TARGET, 'session.pin');
+    expect(pinSpy).toHaveBeenCalledWith(SESSION);
+    expect(unpinSpy).not.toHaveBeenCalled();
+    useAppStore.setState({ sessionPins: { [WORKSPACE]: [{ id: SESSION, at: 1 }] } });
+    await run(SESSION_TARGET, 'session.unpin');
+    expect(unpinSpy).toHaveBeenCalledWith(SESSION);
   });
 });
 

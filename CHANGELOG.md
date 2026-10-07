@@ -12,6 +12,90 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.22.0
+
+Plans are approved in a drawer where you read them, sessions can be pinned, checks say what they know, and the Branch page and the Board sit in the middle.
+
+### New
+
+#### Approve a plan where you read it
+<!-- gb area=workflows image=plan-drawer -->
+
+Review plan on a run opens the planner's plan in a drawer over the run page. Select text or click a block to comment, send the comments to the planner for a new version, or press Edit and change the plan by hand. Approve is the one filled button, and a question the planner asked comes first.
+
+Approving moves the run on at once. One toast, Plan approved, offers Follow the run when you are on another page. The palette, search and chat open the same drawer.
+
+#### Pin sessions to the top
+<!-- gb area=sessions -->
+
+Pin session, in a row's right-click menu or the command palette, moves a session to a Pinned group above the rest, in the order you pinned them, whatever the sort, grouping or project filter. Unpin session puts it back. A pinned session you archive returns to Pinned when you restore it.
+
+#### Checks say what they know
+<!-- gb area=review -->
+
+The Checks tab reads checks, reviewers and review requests apart, so a check Goodboy can't read no longer hides who approved. It opens with one line of counts, then groups the runs as Failing, Running, Passed and Skipped.
+
+When the GitHub access Goodboy uses can't read checks, the tab names the repository and the fix for that access, and Merge says Checks unknown instead of ready.
+
+### Improved
+
+#### Branch pages sit in the middle
+<!-- gb area=review image=branch-centred -->
+
+Every tab of the Branch page sits on one centred column, the header and Ask included, so nothing moves when you switch tabs. The file tree has a rail of its own at the left edge that never moves the page.
+
+A branch chip in the header switches branches or starts a new one, and the pull request description opens when the pull request has one.
+
+#### Done and Archived always on the Board
+<!-- gb area=sessions image=board-lanes -->
+
+The Board shows six lanes at all times, in the order of the work: building, running, needs you, in review, done and archived. Done and archived used to fold into two icons at the edge. Now they are lanes with every card, and an empty lane says so in one line, such as Nothing done yet.
+
+The lanes sit in one centred frame with the title and the buttons.
+
+#### Session marks say what waits
+<!-- gb area=sessions -->
+
+A session's mark in the sidebar is red only when something broke, amber when you must answer, approve or act, and green when its pull request is ready to merge. A done session is a filled violet disc with a check.
+
+The open session sits in one card with its pages, and the row, the hover card and the Board card give the same reason in the same words.
+
+#### The run page reads top to bottom
+<!-- gb area=workflows -->
+
+The run page puts the composer at the bottom, draws a line under the header once the steps scroll, indents sub-agents under their agent and folds a finished set into one row. Pause and Stop run are one pair in the header, and Review plan is one click away while the run waits for its plan.
+
+#### Settings in one column
+<!-- gb area=settings screen=settings/app -->
+
+Settings uses the left column for its pages, with Back to app and Search settings above them, whether the sidebar is open or folded to the rail. The page fills one sheet with no band above it, each page is one line, and a dot marks a page that needs you.
+
+#### Empty pages explain themselves
+<!-- gb area=app -->
+
+Lists and pages share four looks: first time, nothing matches, can't load and not connected. Each says what belongs there or why it is empty, with one action such as Start a run, Clear filter, Retry or Connect a tool, and a permission problem names the fix.
+
+Notices and the Needs you card keep their tone as one line inside the card.
+
+### Fixed
+
+- On a small window the drawer covers the page from top to bottom, with a scrim behind it. <!-- gb area=app -->
+- Ask shows its shortcut `⌘L` the way search shows `⌘K`. <!-- gb area=sessions -->
+- A run in Activity highlights when you point at it again, and every row shows a focus ring. <!-- gb area=sessions -->
+- Classic bars is now called Legacy layout, and it may be removed in a future version. <!-- gb area=settings -->
+- The first comment in the Fix run drawer is no longer cut short. <!-- gb area=review -->
+- Switching the theme no longer flickers. <!-- gb area=app -->
+- The Done mark is a filled violet check, so a finished session reads as complete. <!-- gb area=sessions -->
+- A closed or merged pull request no longer shows as Draft, even when it was a draft. <!-- gb area=review -->
+- A session whose pull request waits in the merge queue shows In merge queue with its own mark, and stays out of Needs you. <!-- gb area=sessions -->
+- When Merge is blocked, the Branch header says why beside it, such as 1 check still running. <!-- gb area=review -->
+- Several comments go into one Fix run, and its drawer shows the status, the comments it covers and its commits. <!-- gb area=review -->
+- You can pick a branch a teammate pushed and keep working on it, and a worktree left stranded is repaired. <!-- gb area=sessions -->
+- The diff tree opens on the branch's changes and shows one empty state when there are none. <!-- gb area=review -->
+- Accepting a fix whose draft went stale retries once and never shows a raw error. <!-- gb area=review -->
+- Models you hide are never picked by Auto. <!-- gb area=providers -->
+- A branch runs one fix at a time. Comments sent meanwhile wait as Queued, after the current fix, and each fix stacks on the one before. <!-- gb area=review -->
+
 ## Goodboy v0.21.2
 
 Ask works with Claude again, branches an agent adds show up in the session, review replies post right away, and session rows and sub-pages look right again.
@@ -45,7 +129,7 @@ This version updates your data in one direction. To go back to 0.20, restore the
 ### New
 
 #### One left column for every place
-<!-- gb area=app -->
+<!-- gb area=app image=left-column -->
 
 Under New session sit Board, Inbox, Chat and Workflows, then your sessions. Settings, the Goodboy row and the bug report button sit at the bottom. The column stays beside every screen, so another place is always one click away.
 
@@ -59,14 +143,14 @@ The top bar keeps Back, Forward, search, your spend and the limits of each provi
 Settings swaps the column for its own list of pages, and Back to app returns to your sessions.
 
 #### Session rows that show state
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=session-rows -->
 
 A session is one line: a sign and its title. The sign says needs you, running, done, idle or archived. Rest on a row for a card with the full title, the pull request and its checks, the agents, the spend and the age.
 
 The Sessions menu sorts, groups by pull request state, stage or project, filters by project and shows archived. Needs you comes first by default, and your choice is kept per workspace.
 
 #### Ask in a session
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=ask-in-session -->
 
 The Ask button at the right end of a session's page bar, or ⌘L, opens a panel that reads the session for you. Right now lists comments by word, running agents, open questions and cost, with no model call, and three questions to start from.
 

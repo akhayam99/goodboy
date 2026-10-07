@@ -16,7 +16,9 @@ const { state } = vi.hoisted(() => ({
     providers: [] as ReadonlyArray<unknown>,
     providerCredentials: [] as ReadonlyArray<{ providerId: string }>,
     authResults: { anthropic: { state: 'connected', identity: 'dev@acme.test', plan: 'team' } },
-    providerLimits: {},
+    providerLimits: {} as Record<string, unknown>,
+    workspaces: [] as ReadonlyArray<never>,
+    currentWorkspaceId: null as string | null,
     cliRequirements: [] as ReadonlyArray<unknown>,
     providerLifecycle: {
       anthropic: { phase: 'idle', action: null, runId: null, errorTail: null },
@@ -74,6 +76,41 @@ const regionNames = (): ReadonlyArray<string> =>
   screen.getAllByRole('region').map((region) => region.getAttribute('aria-label') ?? '');
 
 describe('ProviderPage', () => {
+  it('opens on the attention notice when the provider is about to run out, above the usage', () => {
+    state.providerLimits = {
+      anthropic: {
+        providerId: 'anthropic',
+        plan: null,
+        status: 'warning',
+        windows: [
+          {
+            kind: 'fiveHour',
+            model: null,
+            status: 'warning',
+            usedFraction: 0.9,
+            resetsAt: new Date(Date.now() + 3_600_000).toISOString(),
+          },
+        ],
+        observedAt: new Date().toISOString(),
+      },
+    };
+    try {
+      render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+
+      const notice = screen.getByText('Claude is about to run out.');
+      const usage = screen.getByRole('region', { name: 'Usage for anthropic' });
+      expect(notice.compareDocumentPosition(usage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    } finally {
+      state.providerLimits = {};
+    }
+  });
+
+  it('shows no attention notice for a provider with room left', () => {
+    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+
+    expect(screen.queryByText(/about to run out|is out/)).toBeNull();
+  });
+
   it('lays out usage, models, permissions and account in that order', () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
 

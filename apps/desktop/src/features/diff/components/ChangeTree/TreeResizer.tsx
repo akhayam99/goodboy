@@ -30,7 +30,10 @@ export const TreeResizer = ({ asideRef, width, paneWidth, onResize }: Props) => 
     if (start === null || aside === null) {
       return;
     }
-    live.current = clampTreeWidth(start.width + event.clientX - start.x, paneWidth());
+    live.current = clampTreeWidth({
+      width: start.width + event.clientX - start.x,
+      paneWidth: paneWidth(),
+    });
     aside.style.width = `${live.current}px`;
   };
 
@@ -56,9 +59,9 @@ export const TreeResizer = ({ asideRef, width, paneWidth, onResize }: Props) => 
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize file tree"
+      aria-label="Resize the file rail"
       aria-valuemin={TREE_WIDTH_MIN}
-      aria-valuemax={TREE_WIDTH_MAX}
+      aria-valuemax={clampTreeWidth({ width: TREE_WIDTH_MAX, paneWidth: paneWidth() })}
       aria-valuenow={width}
       tabIndex={0}
       onPointerDown={onPointerDown}

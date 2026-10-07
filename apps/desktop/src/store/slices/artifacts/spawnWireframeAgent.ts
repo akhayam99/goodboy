@@ -25,6 +25,7 @@ import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAv
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const WIREFRAME_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';
 
@@ -77,6 +78,7 @@ export const resolveWireframeRouting = ({
     providers: state.providers ?? [],
     cooldowns: state.providerCooldowns ?? {},
     alerts: state.budgetAlerts ?? [],
+    hidden: selectHiddenModels({ state: state }),
     sessionId,
     isRunBudgetBlocked: false,
     nowMs: Date.now(),

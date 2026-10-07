@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { escapeLayerCount, registerEscapeLayer } from './escape';
+import { dismissTopEscapeLayer, escapeLayerCount, registerEscapeLayer } from './escape';
 
 const cleanups: Array<() => void> = [];
 
@@ -116,5 +116,37 @@ describe('escape layers', () => {
     layer(close);
     press();
     expect(close).toHaveBeenCalledOnce();
+  });
+});
+
+describe('dismissing the top layer without a key', () => {
+  it('calls only the layer on top, once', () => {
+    const closeUnder = vi.fn();
+    const closeOver = vi.fn();
+    layer(closeUnder);
+    layer(closeOver);
+
+    dismissTopEscapeLayer();
+
+    expect(closeOver).toHaveBeenCalledOnce();
+    expect(closeUnder).not.toHaveBeenCalled();
+  });
+
+  it('answers with the layer that is on top after the first one goes', () => {
+    const closeUnder = vi.fn();
+    const closeOver = vi.fn();
+    layer(closeUnder);
+    const offOver = layer(closeOver);
+
+    offOver();
+    dismissTopEscapeLayer();
+
+    expect(closeUnder).toHaveBeenCalledOnce();
+    expect(closeOver).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when no layer is open', () => {
+    expect(escapeLayerCount()).toBe(0);
+    expect(() => dismissTopEscapeLayer()).not.toThrow();
   });
 });

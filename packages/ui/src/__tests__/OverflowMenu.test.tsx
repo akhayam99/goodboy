@@ -75,6 +75,18 @@ describe('OverflowMenu', () => {
     expect(screen.getByRole('menuitem', { name: 'X' })).toBeDefined();
   });
 
+  it('keeps the compact trigger by default and a 28px centred square on request', () => {
+    const { rerender } = render(<OverflowMenu items={[]} />);
+    const compact = screen.getByRole('button', { name: /more actions/i });
+    expect(compact.getAttribute('data-size')).toBe('compact');
+    expect(compact.className.split(' ')).toContain('p-1');
+
+    rerender(<OverflowMenu items={[]} size="control" />);
+    const control = screen.getByRole('button', { name: /more actions/i });
+    expect(control.getAttribute('data-size')).toBe('control');
+    expect(control.className.split(' ')).toContain('size-7');
+  });
+
   it('does not open when disabled', () => {
     const items: OverflowMenuItem[] = [{ kind: 'item', key: 'x', label: 'X', onClick: vi.fn() }];
     render(<OverflowMenu items={items} disabled />);

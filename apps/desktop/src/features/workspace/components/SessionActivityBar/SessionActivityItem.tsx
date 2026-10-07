@@ -1,6 +1,6 @@
 import { memo, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { Input, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
+import { Input, ROW_INTERACTIVE, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
@@ -61,11 +61,7 @@ const SessionActivityItemView = ({
   onPagesToggle,
 }: Props) => {
   const summary = useSessionSummary({ session });
-  const node = sessionNodeOf({
-    stage: summary.stage,
-    attention: summary.attention,
-    isArchived,
-  });
+  const node = sessionNodeOf({ info: summary.info, isArchived });
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const sessionId = session.id as SessionId;
   const descriptionId = useId();
@@ -106,7 +102,11 @@ const SessionActivityItemView = ({
     );
   }
 
-  const isCalm = node.kind === 'idle' || node.kind === 'done' || node.kind === 'archived';
+  const isCalm =
+    node.kind === 'idle' ||
+    node.kind === 'queue' ||
+    node.kind === 'done' ||
+    node.kind === 'archived';
 
   return (
     <div className="group/select-row relative">
@@ -155,7 +155,8 @@ const SessionActivityItemView = ({
           onModifierClick(sessionId, event);
         }}
         className={cn(
-          'group/session-row relative flex h-7 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-row motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          'group/session-row relative flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-row',
+          ROW_INTERACTIVE,
           isCalm ? 'text-muted-foreground' : 'text-foreground',
           isActive && 'font-medium text-foreground',
           isSelected && 'bg-selected text-foreground',

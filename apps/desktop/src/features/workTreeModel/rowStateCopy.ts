@@ -5,7 +5,7 @@ import { ORCHESTRATOR_DECIDING_SENTENCE } from '../workflows/orchestratorCopy';
 import { REVIEW_COMMENT_NODE, REVIEW_COMMENT_TONE } from '../resolve/reviewCommentState';
 import type { RowPhase, RowState, RowStateReason } from './rowState';
 
-export type RowNodeState = Exclude<WorkNodeState, 'marker' | 'mixed'>;
+export type RowNodeState = Exclude<WorkNodeState, 'marker' | 'mixed' | 'finished' | 'merging'>;
 
 export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   queued: 'Not started',
@@ -14,7 +14,9 @@ export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   question: NAMES.needsYou,
   budget: 'Paused at the spend cap',
   approval: 'Waiting for your approval',
+  alert: NAMES.needsYou,
   failed: 'Failed',
+  approved: 'Approved',
   done: 'Done',
   closed: 'Closed by you',
   stopped: 'Stopped by you',

@@ -41,6 +41,7 @@ import {
   FIXTURE_NOW,
   RUN,
   SESSION,
+  WORKSPACE,
   agentFixture,
   mountFixture,
   runFixture,
@@ -61,7 +62,12 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const withMenus = (node: ReactNode) => render(<ObjectMenuProvider>{node}</ObjectMenuProvider>);
+const withMenus = (node: ReactNode) =>
+  render(
+    <ToastProvider>
+      <ObjectMenuProvider>{node}</ObjectMenuProvider>
+    </ToastProvider>,
+  );
 
 const menuLabels = (): ReadonlyArray<string> =>
   screen
@@ -133,6 +139,28 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     });
     expect(fromOverflow.length).toBeGreaterThan(5);
     expect(fromContext).toEqual(fromOverflow);
+  });
+
+  it('board card: the ⋯ and the right click offer Pin session, then Unpin session once pinned', async () => {
+    seedActionState({
+      useAppStore,
+      seed: { mounts: [mountFixture()], branch: 'hl/payout-export' },
+    });
+    const { container } = withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);
+    const overflow = screen.getByRole('button', { name: 'Session actions' });
+    const context = container.querySelector('article') as HTMLElement;
+
+    const before = await overflowThenContext({ overflow, context });
+    expect(before.fromOverflow).toContain('Pin session');
+    expect(before.fromOverflow).not.toContain('Unpin session');
+    expect(before.fromContext).toEqual(before.fromOverflow);
+    await closeMenus();
+
+    act(() => useAppStore.setState({ sessionPins: { [WORKSPACE]: [{ id: SESSION, at: 1 }] } }));
+    const after = await overflowThenContext({ overflow, context });
+    expect(after.fromOverflow).toContain('Unpin session');
+    expect(after.fromOverflow).not.toContain('Pin session');
+    expect(after.fromContext).toEqual(after.fromOverflow);
   });
 
   it('diff file header', async () => {

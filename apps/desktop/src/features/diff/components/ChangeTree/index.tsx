@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Check, ChevronRight, MessageSquare, MessageSquarePlus } from 'lucide-react';
-import { Button, ScrollFade, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import {
+  Button,
+  FOCUS_RING,
+  ROW_INTERACTIVE,
+  ScrollFade,
+  Tooltip,
+  cn,
+  tintClasses,
+} from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
@@ -185,7 +193,10 @@ export const ChangeTree = ({
                     title={row.id}
                     onClick={() => onToggleFolder(row.id)}
                     style={{ paddingLeft: indent }}
-                    className="flex h-7 w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-row hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                    className={cn(
+                      'flex h-7 w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-row',
+                      ROW_INTERACTIVE,
+                    )}
                   >
                     <ChevronRight
                       size={ICON_SIZE.row}
@@ -200,10 +211,17 @@ export const ChangeTree = ({
                       total={row.fileCount}
                     />
                     <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                    <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
-                      {row.fileCount}
-                    </span>
-                    <Delta additions={row.additions} deletions={row.deletions} />
+                    {isOpen ? null : (
+                      <>
+                        <span
+                          data-tone="muted"
+                          className="shrink-0 text-meta tabular-nums text-faint-foreground"
+                        >
+                          {row.fileCount}
+                        </span>
+                        <Delta additions={row.additions} deletions={row.deletions} isMuted />
+                      </>
+                    )}
                   </button>
                 </li>
               );
@@ -223,7 +241,8 @@ export const ChangeTree = ({
                   onClick={() => onPick(row.id)}
                   style={{ paddingLeft: indent + ICON_SIZE.row + 8, height: rowHeightOf(row) }}
                   className={cn(
-                    'flex w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-body hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                    'flex w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-body',
+                    ROW_INTERACTIVE,
                     isActive && 'bg-overlay-selected',
                     viewed ? 'text-muted-foreground' : 'text-foreground',
                   )}
@@ -295,7 +314,10 @@ export const ChangeTree = ({
                       type="button"
                       aria-label={`Comment on ${row.name}`}
                       onClick={() => onCommentOnFile(row.id)}
-                      className="inline-flex size-6 items-center justify-center rounded-sm bg-subtle text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                      className={cn(
+                        'inline-flex size-6 items-center justify-center rounded-sm bg-subtle text-muted-foreground hover:text-foreground',
+                        FOCUS_RING,
+                      )}
                     >
                       <MessageSquarePlus size={ICON_SIZE.row} aria-hidden />
                     </button>

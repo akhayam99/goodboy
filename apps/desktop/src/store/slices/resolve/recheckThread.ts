@@ -8,6 +8,7 @@ import {
 } from '../../../features/resolve/commentVerdict';
 import { startRecheck } from '../../../features/resolve/startRecheck';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { isSessionLaneBusy } from './isSessionLaneBusy';
 import type { ThreadRecheck } from './state';
 import type { SliceParams, ThreadParams } from './types';
 
@@ -66,6 +67,15 @@ export const recheckThread = async ({
 }: SliceParams & ThreadParams): Promise<RecheckOutcome> => {
   const current = recheckOf({ set, get, sessionId, threadId });
   if (current !== null && current.error === null) {
+    return 'started';
+  }
+  if (await isSessionLaneBusy({ get, sessionId })) {
+    putRecheck({
+      set,
+      sessionId,
+      threadId,
+      recheck: { agentId: null, error: null, isQueued: true },
+    });
     return 'started';
   }
   putRecheck({ set, sessionId, threadId, recheck: { agentId: null, error: null } });

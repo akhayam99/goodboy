@@ -326,6 +326,34 @@ describe('PlanProse', () => {
     });
   });
 
+  it('offers one Comment at a time: the selection chip replaces the block button', async () => {
+    const value = api();
+    const { container } = render(
+      withApi({ value, children: <PlanProse text={TEXT} section="lead" /> }),
+    );
+    await waitFor(() => expect(container.querySelectorAll('p').length).toBe(2));
+    const paragraph = container.querySelector('p');
+    const textNode = paragraph?.firstChild;
+    if (paragraph === null || textNode === null || textNode === undefined) {
+      throw new Error('paragraph not rendered');
+    }
+    fireEvent.mouseOver(paragraph);
+    expect(await screen.findByRole('button', { name: 'Comment on this text' })).toBeDefined();
+
+    const range = document.createRange();
+    range.setStart(textNode, 'Stop the '.length);
+    range.setEnd(textNode, 'Stop the duplicate credit'.length);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    fireEvent.mouseUp(screen.getByTestId('plan-prose-comments'));
+
+    expect(
+      await screen.findByRole('button', { name: 'Comment on the selected text' }),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Comment on this text' })).toBeNull();
+  });
+
   it('shows the quote in italic above the composer of a selection comment', async () => {
     const value = api({
       composing: {
@@ -358,8 +386,17 @@ describe('PlanProse', () => {
   });
 });
 
+type PlanBarApprove = NonNullable<Parameters<typeof PlanCommentBar>[0]['approve']>;
+
 describe('PlanCommentBar', () => {
   const allowed = { canSend: true, reason: null };
+
+  const approval = (overrides: Partial<PlanBarApprove> = {}): PlanBarApprove => ({
+    press: vi.fn(),
+    isBusy: false,
+    confirm: null,
+    ...overrides,
+  });
 
   it('counts the comments and sends', () => {
     const onSend = vi.fn(async () => undefined);
@@ -370,13 +407,13 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={onSend}
-        onApprove={null}
+        approve={null}
       />,
     );
     expect(screen.getByText('2 comments')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Send to planner' }));
     expect(onSend).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
   });
 
   it('says why Send is off', () => {
@@ -388,7 +425,7 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={onSend}
-        onApprove={null}
+        approve={null}
       />,
     );
     expect(screen.getByText('1 comment')).toBeDefined();
@@ -399,8 +436,8 @@ describe('PlanCommentBar', () => {
     expect(onSend).not.toHaveBeenCalled();
   });
 
-  it('puts Approve plan next to Send while the run waits for approval', async () => {
-    const onApprove = vi.fn(async () => undefined);
+  it('makes Send the one filled button and keeps Approve beside it while the run waits', () => {
+    const press = vi.fn();
     render(
       <PlanCommentBar
         count={1}
@@ -408,11 +445,71 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error={null}
         onSend={vi.fn(async () => undefined)}
-        onApprove={onApprove}
+        approve={approval({ press })}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
-    await waitFor(() => expect(onApprove).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('plan-bar-send').getAttribute('data-filled')).toBe('true');
+    expect(screen.getByTestId('plan-bar-approve').getAttribute('data-filled')).toBe('false');
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    expect(press).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays with Approve alone and a hint when there is no comment yet', () => {
+    render(
+      <PlanCommentBar
+        count={0}
+        guard={allowed}
+        isSending={false}
+        error={null}
+        onSend={vi.fn(async () => undefined)}
+        approve={approval()}
+      />,
+    );
+    expect(screen.getByText('Select text or click a block to comment')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Send to planner' })).toBeNull();
+  });
+
+  it('asks inline about the unsent comments before it approves', () => {
+    const confirm = vi.fn(async () => undefined);
+    const cancel = vi.fn();
+    render(
+      <PlanCommentBar
+        count={3}
+        guard={allowed}
+        isSending={false}
+        error={null}
+        onSend={vi.fn(async () => undefined)}
+        approve={approval({ confirm: { count: 3, confirm, cancel } })}
+      />,
+    );
+    expect(
+      screen.getByRole('group', { name: '3 comments are not sent. Approve anyway?' }),
+    ).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Approve anyway' }));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it('lets the question be cancelled', () => {
+    const confirm = vi.fn(async () => undefined);
+    const cancel = vi.fn();
+    render(
+      <PlanCommentBar
+        count={1}
+        guard={allowed}
+        isSending={false}
+        error={null}
+        onSend={vi.fn(async () => undefined)}
+        approve={approval({ confirm: { count: 1, confirm, cancel } })}
+      />,
+    );
+    expect(
+      screen.getByRole('group', { name: '1 comment is not sent. Approve anyway?' }),
+    ).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(confirm).not.toHaveBeenCalled();
   });
 
   it('shows a send failure as an alert', () => {
@@ -423,7 +520,7 @@ describe('PlanCommentBar', () => {
         isSending={false}
         error="The session budget is reached."
         onSend={vi.fn(async () => undefined)}
-        onApprove={null}
+        approve={null}
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('The session budget is reached.');

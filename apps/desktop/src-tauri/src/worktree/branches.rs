@@ -1,10 +1,11 @@
 use super::base::resolve_origin_head;
 use super::create::branch_checkout_path_with;
 use super::error::WorktreeError;
+use super::foreign::{remote_backed_source, switch_to_remote_branch, BranchSource};
 use super::git::git;
 use super::inspect::{canonical_path, parse_porcelain};
 use super::merge_state::{branch_merge_state, BranchMergeState};
-use super::types::{BranchInfo, ChangeBranchArgs, WorktreeInfo};
+use super::types::{BranchInfo, ChangeBranchArgs, ChangedBranch, WorktreeInfo};
 use std::path::{Path, PathBuf};
 
 #[tauri::command]
@@ -166,13 +167,17 @@ fn worktree_has_uncommitted(path: &str) -> bool {
 }
 
 #[tauri::command]
-pub async fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+pub async fn worktree_change_branch(
+    args: ChangeBranchArgs,
+) -> Result<ChangedBranch, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || worktree_change_branch_blocking(args))
         .await
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+pub(super) fn worktree_change_branch_blocking(
+    args: ChangeBranchArgs,
+) -> Result<ChangedBranch, WorktreeError> {
     let wt = Path::new(&args.worktree_path);
     if !wt.exists() {
         return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
@@ -188,13 +193,39 @@ fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<(), Worktre
             message: "branch name cannot start with '-'".to_string(),
         });
     }
-    if args.create_new {
-        git(wt, &["switch", "-c", trimmed])?;
-        return Ok(());
-    }
     let repo_path = PathBuf::from(&args.repo_path);
+    if args.create_new {
+        return match remote_backed_source(&repo_path, trimmed)? {
+            Some(BranchSource::RemoteOnly) => {
+                git(
+                    wt,
+                    &[
+                        "switch",
+                        "--track",
+                        "-c",
+                        trimmed,
+                        &format!("origin/{trimmed}"),
+                    ],
+                )?;
+                Ok(ChangedBranch { adopted: true })
+            }
+            Some(_) => switch_to_existing(&repo_path, wt, trimmed),
+            None => {
+                git(wt, &["switch", "-c", trimmed])?;
+                Ok(ChangedBranch { adopted: false })
+            }
+        };
+    }
+    switch_to_existing(&repo_path, wt, trimmed)
+}
+
+fn switch_to_existing(
+    repo_path: &Path,
+    wt: &Path,
+    trimmed: &str,
+) -> Result<ChangedBranch, WorktreeError> {
     if let Some(holder) =
-        branch_checkout_path_with(&repo_path, trimmed, &mut |cwd, args| git(cwd, args))
+        branch_checkout_path_with(repo_path, trimmed, &mut |cwd, args| git(cwd, args))
     {
         if !is_same_directory(Path::new(&holder), wt) {
             return Err(WorktreeError::BranchInUse {
@@ -203,8 +234,11 @@ fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<(), Worktre
             });
         }
     }
-    git(wt, &["switch", trimmed])?;
-    Ok(())
+    if switch_to_remote_branch(repo_path, wt, trimmed)? {
+        return Ok(ChangedBranch { adopted: true });
+    }
+    git(wt, &["switch", "--no-guess", trimmed])?;
+    Ok(ChangedBranch { adopted: true })
 }
 
 fn is_same_directory(left: &Path, right: &Path) -> bool {

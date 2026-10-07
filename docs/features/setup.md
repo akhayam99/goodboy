@@ -67,7 +67,7 @@ Tell agents once who you are and how you like to work, in four short parts: **Yo
 
 ### Settings
 
-Find any setting from the sidebar: Settings takes it over with **Back to app**, a **Search settings** field and every page. **Settings** at the foot of the sidebar and **⌘,** open on the page you used last, or on General the first time after the app starts. The rail lists **App**, **Workspace**, **Providers & models** and **Integrations**, and a row says something only when it needs you. Every page is also in the palette, like **Settings: Storage**; a link that names a page opens that page. **Open with**, in General, picks the editor worktrees open in and the browser for links and artifacts. Drag the edge of a rail, or use the keys or a double click, to resize it, and each one remembers its width.
+Find any setting from the sidebar: Settings takes it over with **Back to app**, a **Search settings** field and every page. **Settings** at the foot of the sidebar and **⌘,** open on the page you used last, or on General the first time after the app starts. The rail lists **App**, **Workspace**, **Providers & models** and **Integrations**, and a small dot marks a row that needs you, named by what is wrong. Every page is also in the palette, like **Settings: Storage**; a link that names a page opens that page. **Open with**, in General, picks the editor worktrees open in and the browser for links and artifacts. Drag the edge of a rail, or use the keys or a double click, to resize it, and each one remembers its width.
 
 **Also in this area**
 

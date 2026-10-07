@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button, InlineConfirm, Textarea, formatError, PaneShell } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
@@ -7,7 +7,6 @@ import { usePlanRevising } from '../../../plans/useRevisingPlans';
 import { usePlanRun } from '../../../plans/usePlanRun';
 import { artifactStateOf } from '../../artifactStateOf';
 import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../../../plans/planStateInputs';
-import { parsePlanSource, planToSource } from '../../../plans/planSource';
 import {
   planPartsProgress,
   planSplitSentence,
@@ -21,6 +20,9 @@ import { ReportStudio } from '../../../reports/components/ReportStudio';
 import { WireframeViewer } from '../../../wireframes/components/WireframeViewer';
 import { WireframeDivergenceChip } from '../../../wireframes/components/WireframeDivergenceChip';
 import { WireframeShellActions } from './WireframeShellActions';
+import { PlanEditor } from '../PlanEditor';
+import { PlanEditorActions } from '../PlanEditor/PlanEditorActions';
+import { usePlanEditor } from '../PlanEditor/usePlanEditor';
 import { ArtifactPlanBody } from './ArtifactPlanBody';
 import type { ArtifactDocumentSubject } from './artifactShellSubject';
 import { ArtifactDrawerToggles } from './ArtifactDrawerToggles';
@@ -45,15 +47,11 @@ type Armed = {
 
 const COPY_NOT_READY = 'The saved copy is not ready yet';
 
-const PLAN_TITLE_MISSING = 'The first line is the plan title. Add one before saving.';
-
 export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => {
   const { artifact } = subject;
   const plan = subject.kind === 'plan' ? subject.plan : null;
   const openQuestionCount = useSessionOpenQuestions(sessionId).length;
-  const updatePlanBody = useAppStore((s) => s.updatePlanBody);
   const updateArtifactSource = useAppStore((s) => s.updateArtifactSource);
-  const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const exporter = useArtifactExport({ artifact });
@@ -62,6 +60,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const regenerate = useReportRegenerate({ sessionId, artifact });
   const planRun = usePlanRun({ sessionId, planId: artifact.id });
   const revising = usePlanRevising({ sessionId, planId: plan === null ? null : plan.id });
+  const editor = usePlanEditor({ sessionId, plan, revision: artifact.revision });
   const [draft, setDraft] = useState<string | null>(null);
   const [armed, setArmed] = useState<Armed>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -84,26 +83,15 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
 
   const startEditing = () => {
     setError(null);
-    setDraft(plan === null ? artifact.sourceText : planToSource(plan));
+    if (plan !== null) {
+      editor.start();
+      return;
+    }
+    setDraft(artifact.sourceText);
   };
 
   const save = async (next: string) => {
     setError(null);
-    if (plan !== null) {
-      const parsed = parsePlanSource({ source: next });
-      if (parsed.title.length === 0) {
-        setError(PLAN_TITLE_MISSING);
-        return;
-      }
-      if (parsed.title === plan.title && parsed.bodyMd === plan.bodyMd) {
-        setDraft(null);
-        return;
-      }
-      await updatePlanBody(sessionId, plan.id, parsed.title, parsed.bodyMd);
-      await loadSessionArtifacts(sessionId);
-      setDraft(null);
-      return;
-    }
     if (next === artifact.sourceText) {
       setDraft(null);
       return;
@@ -195,8 +183,32 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       />
     ) : null;
 
-  const actions =
-    draft !== null ? (
+  const readerActions = (
+    <span className="flex min-w-0 items-center gap-2">
+      <ArtifactExportStatus status={exporter.status} />
+      {subject.kind === 'wireframe' ? (
+        <WireframeShellActions
+          sessionId={sessionId}
+          artifact={subject.artifact}
+          target={target}
+          exporter={exporter}
+          screenId={wireframeScreenId}
+          onArm={setArmed}
+        />
+      ) : (
+        <ArtifactShellActions target={target} onArm={setArmed} />
+      )}
+    </span>
+  );
+
+  const actionsNode = (): ReactNode => {
+    if (editor.isEditing) {
+      return <PlanEditorActions editor={editor} />;
+    }
+    if (draft === null) {
+      return confirm ?? readerActions;
+    }
+    return (
       <span className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="sm" onClick={() => setDraft(null)} disabled={isSaving}>
           Cancel
@@ -211,25 +223,9 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           Save
         </Button>
       </span>
-    ) : (
-      (confirm ?? (
-        <span className="flex min-w-0 items-center gap-2">
-          <ArtifactExportStatus status={exporter.status} />
-          {subject.kind === 'wireframe' ? (
-            <WireframeShellActions
-              sessionId={sessionId}
-              artifact={subject.artifact}
-              target={target}
-              exporter={exporter}
-              screenId={wireframeScreenId}
-              onArm={setArmed}
-            />
-          ) : (
-            <ArtifactShellActions target={target} onArm={setArmed} />
-          )}
-        </span>
-      ))
     );
+  };
+  const actions = actionsNode();
 
   const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;
   const state = artifactStateOf({
@@ -298,13 +294,14 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
             aria-label={`Edit ${artifact.title}`}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            className={`${plan === null ? 'artifact-prose-measure ' : ''}w-full font-mono text-body`}
+            className="artifact-prose-measure w-full font-mono text-body"
             autoGrow
             minRows={12}
             maxRows={80}
           />
         ) : null}
-        {draft === null && subject.kind === 'plan' ? (
+        {plan === null ? null : <PlanEditor editor={editor} title={artifact.title} />}
+        {!editor.isEditing && subject.kind === 'plan' ? (
           <ArtifactPlanBody
             plan={subject.plan}
             rows={partRows}

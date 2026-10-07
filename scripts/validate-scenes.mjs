@@ -11,6 +11,15 @@ const HEIGHT = 1000;
 const STILL_CAP_PX = 1;
 const SEAM_TOLERANCE_PX = 0.05;
 const META_GAP_CAP_PX = 80;
+const PLAN_DRAWER_SCENES = [
+  { scene: 'plan-drawer-waiting', until: null },
+  { scene: 'plan-drawer-drafts', until: null },
+  { scene: 'plan-drawer-revising', until: null },
+  { scene: 'plan-drawer-question', until: null },
+  { scene: 'plan-drawer-conflict', until: '·' },
+];
+const PLAN_DRAWER_WIDTH = 1024;
+const ROW_TOLERANCE_PX = 2;
 const SETTLE_MS = 500;
 
 const args = Object.fromEntries(
@@ -21,6 +30,7 @@ const args = Object.fromEntries(
 );
 const app = args.app ?? 'http://localhost:5230';
 const wait = Number(args.wait ?? 2500);
+const only = args.only;
 
 const pause = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 
@@ -195,6 +205,42 @@ const validateWorkflowScroll = async ({ send, scene, click }) => {
   );
 };
 
+const planDrawerHeader = async ({ until, tolerance }) => {
+  const find = () => document.querySelector('[data-testid="plan-drawer-toolbar"]');
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    const version = document.querySelector('[data-testid="plan-drawer-version"]');
+    if (find() !== null && (until === null || (version?.textContent ?? '').includes(until))) break;
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  }
+  const toolbar = find();
+  if (!(toolbar instanceof HTMLElement)) return { missing: true };
+  const card = toolbar.closest('[data-drawer-card]');
+  const box = toolbar.getBoundingClientRect();
+  const children = [...toolbar.children]
+    .filter((child) => child.getBoundingClientRect().width > 0)
+    .map((child) => {
+      const rect = child.getBoundingClientRect();
+      return {
+        label: (child.textContent ?? '').trim().slice(0, 24),
+        centre: rect.top + rect.height / 2,
+        right: rect.right,
+        left: rect.left,
+      };
+    });
+  const centres = children.map((child) => child.centre);
+  const title = card?.querySelector('h2') ?? null;
+  const lineHeight = title === null ? 0 : parseFloat(getComputedStyle(title).lineHeight);
+  return {
+    missing: false,
+    cardWidth: card === null ? null : Math.round(card.getBoundingClientRect().width),
+    rowSpread: Math.max(...centres) - Math.min(...centres),
+    overflow: toolbar.scrollWidth - toolbar.clientWidth,
+    pastEdge: children.filter((child) => child.right > box.right + 0.5).map((child) => child.label),
+    titleLines: title === null || lineHeight === 0 ? 0 : Math.round(title.getBoundingClientRect().height / lineHeight),
+    tolerance,
+  };
+};
+
 const openEveryGroup = async ({ stillCap, settleMs }) => {
   const frame = () => new Promise((resolvePromise) => requestAnimationFrame(resolvePromise));
   const drifts = [];
@@ -319,7 +365,7 @@ const main = async () => {
   const failures = [];
   const session = await browser();
   try {
-    for (const scene of ['activity-run', 'activity-resolves']) {
+    for (const scene of only === undefined ? ['activity-run', 'activity-resolves'] : []) {
       for (const zoom of ZOOMS) {
         await open({ send: session.send, scene, width: WIDTHS[0], zoom });
         const motion = await run(session.send, openEveryGroup, {
@@ -352,10 +398,39 @@ const main = async () => {
         }
       }
     }
-    for (const target of [
-      { scene: 'workflow-studio&view=rules', click: null },
-      { scene: 'frame&view=workflows', click: 'Rules' },
-    ]) {
+    for (const { scene, until } of only === undefined || only === 'plan-drawer'
+      ? PLAN_DRAWER_SCENES
+      : []) {
+      await open({
+        send: session.send,
+        scene,
+        width: PLAN_DRAWER_WIDTH,
+        zoom: 1,
+        readySelector: '[data-testid="plan-drawer-toolbar"]',
+      });
+      const header = await run(session.send, planDrawerHeader, {
+        until,
+        tolerance: ROW_TOLERANCE_PX,
+      });
+      const isBroken =
+        header.missing ||
+        header.rowSpread > ROW_TOLERANCE_PX ||
+        header.overflow > 0 ||
+        header.pastEdge.length > 0 ||
+        header.titleLines > 2;
+      if (isBroken) {
+        failures.push({ scene, check: 'plan drawer header wraps or overflows', header });
+      }
+      console.log(
+        `${scene}: card ${header.cardWidth}px, header row spread ${header.rowSpread}px, overflow ${header.overflow}px`,
+      );
+    }
+    for (const target of only === undefined
+      ? [
+          { scene: 'workflow-studio&view=rules', click: null },
+          { scene: 'frame&view=workflows', click: 'Rules' },
+        ]
+      : []) {
       const result = await validateWorkflowScroll({ send: session.send, ...target });
       if (!result.reached) {
         failures.push({ scene: target.scene, check: 'workflow bottom unreachable', result });

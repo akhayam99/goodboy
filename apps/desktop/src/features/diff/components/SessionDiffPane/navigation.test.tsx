@@ -37,6 +37,7 @@ import { useMemo, useState } from 'react';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
+import { DiffRailScope } from '../../DiffRailScope';
 import { SessionDiffPane } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -83,6 +84,7 @@ const Host = ({ initialFocus = null }: HostProps) => {
       error: null,
       view: { kind: 'branch' },
       setView: vi.fn(),
+      alternate: null,
       commits: [],
       status: null,
       metaError: null,
@@ -100,13 +102,15 @@ const Host = ({ initialFocus = null }: HostProps) => {
     [focusPath, viewedPaths],
   );
   return (
-    <SessionDiffPane
-      sessionId={SESSION_ID}
-      workingDir={WORKTREE}
-      worktreePath={WORKTREE}
-      diff={diff}
-      onWriteReview={null}
-    />
+    <DiffRailScope isActive>
+      <SessionDiffPane
+        sessionId={SESSION_ID}
+        workingDir={WORKTREE}
+        worktreePath={WORKTREE}
+        diff={diff}
+        onWriteReview={null}
+      />
+    </DiffRailScope>
   );
 };
 
@@ -124,7 +128,10 @@ beforeEach(() => {
   });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const sections = () => document.querySelectorAll('[data-file-path]');
 
@@ -164,6 +171,40 @@ describe('SessionDiffPane with the real DiffView', () => {
     pressShortcut({ id: 'diff.fileUp' });
 
     await waitFor(() => expect(scrolled).toContain(fileAt(9).path));
+  });
+
+  it('follows j and k with the tree in a strip or a button, closed, and marks the file in the tree', async () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 1100,
+      height: 600,
+    } as DOMRect);
+    render(<Host />);
+    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+
+    pressShortcut({ id: 'diff.fileDown' });
+    await waitFor(() => expect(scrolled).toContain(fileAt(0).path));
+    pressShortcut({ id: 'diff.fileDown' });
+    await waitFor(() => expect(scrolled).toContain(fileAt(1).path));
+    pressShortcut({ id: 'diff.fileUp' });
+    await waitFor(() => expect(scrolled.at(-1)).toBe(fileAt(0).path));
+
+    pressShortcut({ id: 'diff.toggleTree' });
+    expect(treeRow(0).getAttribute('aria-current')).toBe('true');
+    expect(treeRow(1).getAttribute('aria-current')).toBeNull();
+  });
+
+  it('keeps j and k moving after the rail folds to the strip, and after the overlay opens and closes', async () => {
+    render(<Host />);
+    fireEvent.click(treeRow(10));
+    await waitFor(() => expect(scrolled).toContain(fileAt(10).path));
+
+    pressShortcut({ id: 'diff.toggleTree' });
+    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    pressShortcut({ id: 'diff.fileDown' });
+    await waitFor(() => expect(scrolled).toContain(fileAt(11).path));
+
+    pressShortcut({ id: 'diff.toggleTree' });
+    expect(treeRow(11).getAttribute('aria-current')).toBe('true');
   });
 
   it('marks the file viewed and scrolls to the next unviewed one', async () => {

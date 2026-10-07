@@ -10,8 +10,11 @@ import { SettingsToastProbe } from './SettingsToastProbe';
 import { StudioFrame } from '../../../StudioFrame';
 import { StudioFrame as SceneStudioFrame } from '../StudioFrame';
 import { installSettingsInvokeMocks } from './installSettingsInvokeMocks';
+import { sceneShellMode } from '../sceneShell';
 
 const noop = () => undefined;
+
+const IS_COLUMN_SHELL = sceneShellMode() === 'column';
 
 type Props = {
   readonly focus: SettingsFocus;
@@ -40,8 +43,9 @@ export const SettingsFrame = ({ focus, hasWorkspace = true, seed = noop }: Props
           <StudioFrame
             kind="settings"
             onClose={noop}
-            placement={columnSlot === null ? 'cover' : 'content'}
-            isClosable={columnSlot === null}
+            placement={IS_COLUMN_SHELL ? 'content' : 'cover'}
+            isClosable={!IS_COLUMN_SHELL}
+            hasBand={!IS_COLUMN_SHELL}
           >
             <SettingsStudio
               currentWorkspace={hasWorkspace ? SETTINGS_WORKSPACE : null}
@@ -49,6 +53,7 @@ export const SettingsFrame = ({ focus, hasWorkspace = true, seed = noop }: Props
               onScopeChange={changeScope}
               onClose={noop}
               columnSlot={columnSlot}
+              isInColumnShell={IS_COLUMN_SHELL}
             />
           </StudioFrame>
         )}

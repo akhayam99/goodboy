@@ -6,7 +6,7 @@ import {
 } from '../project-mounts/mountRowModel';
 import type { AppState } from '../../types';
 import { isPullRequestApproved } from './pullRequestGroup';
-import type { StagePullRequest } from './deriveSessionStage';
+import type { StagePullRequest } from './attentionFactsOf';
 
 export type StageRequest = Readonly<{
   pr: StagePullRequest;
@@ -29,15 +29,18 @@ const rankOf = ({ request }: RankParams): number => {
     return 0;
   }
   if (request.checks === 'failure') {
-    return 4;
+    return 5;
   }
   if (request.reviewDecision === 'changes_requested') {
-    return 3;
+    return 4;
   }
   if (isPullRequestApproved({ pr: request })) {
-    return 2;
+    return 3;
   }
-  return 1;
+  if (request.state === 'queued') {
+    return 1;
+  }
+  return 2;
 };
 
 const worstMountRequestOf = ({

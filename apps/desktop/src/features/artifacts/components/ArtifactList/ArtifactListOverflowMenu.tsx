@@ -19,6 +19,7 @@ export const ArtifactListOverflowMenu = ({ sessionId }: Props) => {
     <OverflowMenu
       label="More"
       tooltip="More actions"
+      size="control"
       items={[
         {
           kind: 'item',

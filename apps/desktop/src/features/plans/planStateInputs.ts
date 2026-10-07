@@ -11,6 +11,7 @@ export type PlanStateInputs = Readonly<{
   progress: PlanPartsProgress | null;
   hasPartAgents: boolean;
   revising: PlanRevising;
+  plannerQuestionCount: number;
 }>;
 
 export const NO_PLAN_STATE_INPUTS: PlanStateInputs = {
@@ -18,16 +19,19 @@ export const NO_PLAN_STATE_INPUTS: PlanStateInputs = {
   progress: null,
   hasPartAgents: false,
   revising: NOT_REVISING,
+  plannerQuestionCount: 0,
 };
 
 export const planStateInputsOf = ({
   plan,
   rows,
   revising = NOT_REVISING,
+  plannerQuestionCount = 0,
 }: {
   readonly plan: PlanWithCount;
   readonly rows: ReadonlyArray<PlanPartRow>;
   readonly revising?: PlanRevising;
+  readonly plannerQuestionCount?: number;
 }): PlanStateInputs => ({
   partCount: plan.clusters?.length ?? 0,
   progress:
@@ -36,4 +40,5 @@ export const planStateInputsOf = ({
       : null,
   hasPartAgents: rows.some((row) => row.agentId !== null),
   revising,
+  plannerQuestionCount,
 });

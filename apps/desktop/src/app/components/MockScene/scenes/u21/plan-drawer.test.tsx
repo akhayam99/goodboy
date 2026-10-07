@@ -1,0 +1,268 @@
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', async () => {
+  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
+  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
+});
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { ToastProvider } from '../../../../../shared/components/Toast';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
+import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { U21_PLAN_DRAWER_SCENES } from './plan-drawer';
+import { PLAN_DRAWER_SESSION_ID } from './planDrawerSeed';
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
+
+afterEach(() => {
+  cleanup();
+  clearSceneInvoke();
+});
+
+const SCENE_IDS = [
+  'plan-drawer-waiting',
+  'plan-drawer-drafts',
+  'plan-drawer-revising',
+  'plan-drawer-unchanged',
+  'plan-drawer-question',
+  'plan-drawer-editing',
+  'plan-drawer-conflict',
+  'plan-drawer-split',
+  'plan-drawer-follow',
+] as const;
+
+const renderScene = (id: (typeof SCENE_IDS)[number]) => {
+  const Scene = U21_PLAN_DRAWER_SCENES[id];
+  return render(
+    <ToastProvider>
+      <Scene />
+    </ToastProvider>,
+  );
+};
+
+const filled = (): ReadonlyArray<string> =>
+  Array.from(document.querySelectorAll('[data-filled="true"]')).map(
+    (node) => node.textContent ?? '',
+  );
+
+const WAIT = { timeout: 4_000 };
+
+describe('the plan drawer scenes', () => {
+  it('registers exactly the scenes the plan names', () => {
+    expect(Object.keys(U21_PLAN_DRAWER_SCENES).sort()).toEqual([...SCENE_IDS].sort());
+  });
+
+  it('waiting: a run held for its plan, one filled Approve, no comment yet', async () => {
+    renderScene('plan-drawer-waiting');
+
+    await screen.findByTestId('plan-drawer');
+    expect(screen.getByTestId('plan-drawer-toolbar').textContent).toContain('v2');
+    expect(screen.getByTestId('plan-primary').textContent).toBe('Approve');
+    expect(filled()).toEqual(['Approve']);
+    expect(screen.getByTestId('plan-comment-bar').textContent).toContain(
+      'Select text or click a block to comment',
+    );
+  });
+
+  it('drafts: Send is the one filled button and Approve turns secondary', async () => {
+    renderScene('plan-drawer-drafts');
+
+    await screen.findByTestId('plan-comment-bar');
+    expect(screen.getByTestId('plan-comment-bar').textContent).toContain('3 comments');
+    expect(screen.getByTestId('plan-primary').getAttribute('data-filled')).toBe('false');
+    const drawer = screen.getByRole('region', { name: 'Reconcile the settlement export' });
+    expect(
+      Array.from(drawer.querySelectorAll('[data-filled="true"]')).map((n) => n.textContent),
+    ).toEqual(['Send to planner']);
+  });
+
+  it('revising: the body dims, the chip says so once and the primary says why it waits', async () => {
+    renderScene('plan-drawer-revising');
+
+    const chip = await screen.findByTestId('artifact-state-chip');
+    expect(chip.textContent).toContain('Revising to v3');
+    expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
+    expect(screen.getByTestId('plan-drawer-body').getAttribute('data-revising')).toBe('true');
+    const drawer = screen.getByRole('region', { name: 'Reconcile the settlement export' });
+    expect(within(drawer).getByTestId('plan-drawer-reason').textContent).toBe(
+      'The planner is revising this plan',
+    );
+  });
+
+  it('unchanged: the planner answered, with Open the reply, and the comments stay open', async () => {
+    renderScene('plan-drawer-unchanged');
+
+    expect(
+      await screen.findByText('The planner answered without changing the plan', undefined, WAIT),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open the reply' })).toBeDefined();
+    await waitFor(
+      () =>
+        expect(
+          screen.getAllByTestId('plan-comment').map((card) => card.getAttribute('data-status')),
+        ).toEqual(['open', 'open', 'open']),
+      WAIT,
+    );
+  });
+
+  it('question: the planner question is at the top, the state says waiting, never revising', async () => {
+    renderScene('plan-drawer-question');
+
+    const question = await screen.findByTestId('plan-drawer-question');
+    expect(question.textContent).toContain('Should refunds older than 90 days stay in the export?');
+    expect(within(question).getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Send to planner' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    expect(screen.getByTestId('artifact-state-detail').textContent).toBe('waiting for your answer');
+    expect(screen.queryByText(/Revising/)).toBeNull();
+    expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
+      'The planner asked a question. Answer it first.',
+    );
+  });
+
+  it('editing: the editor replaces the plan, with Save as the one filled button', async () => {
+    renderScene('plan-drawer-editing');
+
+    expect(await screen.findByRole('textbox', undefined, WAIT)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDefined();
+    expect(screen.queryByTestId('plan-primary')).toBeNull();
+  });
+
+  it('conflict: the save failed inline and the text is kept', async () => {
+    renderScene('plan-drawer-conflict');
+
+    expect(
+      await screen.findByText('The planner wrote v3 meanwhile', undefined, WAIT),
+    ).toBeDefined();
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toContain('to the cent.');
+    expect(screen.getByRole('button', { name: 'Copy your text' })).toBeDefined();
+  });
+
+  it('split: Edit is off, the parts show once and say the plan runs as parallel parts', async () => {
+    renderScene('plan-drawer-split');
+
+    const edit = await screen.findByTestId('plan-drawer-edit');
+    expect(edit.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
+      'This plan runs as 3 parallel parts. Ask the planner to change it.',
+    );
+    const body = screen.getByTestId('plan-body');
+    expect(within(body).getAllByText('Replace the CSV query with the ledger view')).toHaveLength(1);
+    expect(within(body).getAllByRole('heading', { name: /^Parts/ })).toHaveLength(1);
+  });
+
+  it('every scene prints no plan marker and no raw tag', async () => {
+    renderScene('plan-drawer-waiting');
+
+    const drawer = await screen.findByTestId('plan-drawer');
+    expect(drawer.textContent).not.toMatch(/<<|>>/);
+  });
+
+  describe('the flows the mock engine answers', () => {
+    it('approve: the real approval runs, the drawer closes and the toast says Plan approved', async () => {
+      renderScene('plan-drawer-waiting');
+
+      await screen.findByTestId('plan-drawer');
+      fireEvent.click(screen.getByTestId('plan-primary'));
+
+      expect(await screen.findByText('Plan approved', undefined, WAIT)).toBeDefined();
+      expect(screen.getByText('Implement started')).toBeDefined();
+      await waitFor(() => expect(useAppStore.getState().drawer).toBeNull(), WAIT);
+      const run = useAppStore.getState().sessions[0]?.workflowRuns[0];
+      expect(run?.orchestrationStop).toBeUndefined();
+      expect(run?.rulesSnapshot?.planApproved).toBe(true);
+    });
+
+    it('follow: approving over the overview raises the toast with Follow the run, and it goes to the run', async () => {
+      renderScene('plan-drawer-follow');
+
+      await screen.findByTestId('plan-drawer');
+      fireEvent.click(screen.getByTestId('plan-primary'));
+
+      const follow = await screen.findByRole('button', { name: 'Follow the run' }, WAIT);
+      expect(screen.getByText('Plan approved')).toBeDefined();
+      fireEvent.click(follow);
+
+      await waitFor(() => {
+        const state = useAppStore.getState();
+        expect(state.activeLens[PLAN_DRAWER_SESSION_ID]).toBe('workflows');
+        expect(state.focusedWorkflowRunId[PLAN_DRAWER_SESSION_ID]).toBe(
+          state.sessions[0]?.workflowRuns[0]?.id,
+        );
+      }, WAIT);
+    });
+
+    it('comment: a block comment becomes a draft in the bar, ready to send', async () => {
+      renderScene('plan-drawer-waiting');
+
+      const body = await screen.findByTestId('plan-body');
+      const paragraph = body.querySelector('p');
+      if (paragraph === null) {
+        throw new Error('the plan body has no paragraph');
+      }
+      fireEvent.mouseOver(paragraph);
+      fireEvent.click(await screen.findByRole('button', { name: 'Comment on this text' }));
+      fireEvent.change(await screen.findByRole('textbox', { name: /comment/i }), {
+        target: { value: 'Name the view in the title.' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Add comment' }));
+
+      expect(await screen.findByText('Name the view in the title.', undefined, WAIT)).toBeDefined();
+      expect(screen.getByTestId('plan-comment-bar').textContent).toContain('1 comment');
+      expect(screen.getByRole('button', { name: 'Send to planner' })).toBeDefined();
+    });
+
+    it('send: the planner revises, the chip says so, then v3 lands and the comments are addressed', async () => {
+      renderScene('plan-drawer-drafts');
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Send to planner' }));
+
+      await waitFor(
+        () =>
+          expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Revising to v3'),
+        WAIT,
+      );
+      await waitFor(
+        () => expect(screen.getByTestId('plan-drawer-version').textContent).toBe('v3'),
+        { timeout: 6_000 },
+      );
+      expect(
+        screen.getAllByTestId('plan-comment').map((card) => card.getAttribute('data-status')),
+      ).toEqual(['addressed', 'addressed', 'addressed']);
+      expect(screen.getByTestId('plan-body').textContent).toContain('Changes in this version');
+    });
+
+    it('edit: Save writes the new text as v3 and leaves edit mode', async () => {
+      renderScene('plan-drawer-editing');
+
+      const editor = await screen.findByRole('textbox', undefined, WAIT);
+      fireEvent.change(editor, {
+        target: { value: '# Reconcile the settlement export\n\n## Goal\nEvery batch matches.' },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      });
+
+      await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull(), WAIT);
+      expect(screen.getByTestId('plan-drawer-version').textContent).toBe('v3');
+      expect(screen.getByTestId('plan-body').textContent).toContain('Every batch matches.');
+    });
+  });
+});

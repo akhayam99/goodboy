@@ -1,6 +1,14 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import { Button, Tooltip, WORK_ROW, cn, tintClasses, useEscapeLayer } from '@goodboy/ui';
+import {
+  Button,
+  ROW_INTERACTIVE,
+  Tooltip,
+  WORK_ROW,
+  cn,
+  tintClasses,
+  useEscapeLayer,
+} from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
@@ -119,9 +127,7 @@ export const TimelineStreamRow = ({
   };
   const contentClassName = cn(
     'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-2 text-left',
-    openTarget == null
-      ? null
-      : 'motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+    openTarget == null ? null : ROW_INTERACTIVE,
     isWaiting && tintClasses('warning').bgSoft,
     !isWaiting && item.hasUnread && tintClasses('primary').bgSoft,
   );

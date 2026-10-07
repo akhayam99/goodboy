@@ -1,140 +1,115 @@
-import { isPullRequestApproved } from './pullRequestGroup';
-import type {
-  PullRequestState,
-  Session,
-  SessionPrFetchState,
-  SessionStageInfo,
-} from '@goodboy/types';
+import type { SessionAttentionReason, SessionPrFetchState, SessionStageInfo } from '@goodboy/types';
+import {
+  attentionFactsOf,
+  internReasons,
+  isHumanInputReason,
+  type AttentionFactsParams,
+} from './attentionFactsOf';
 
-export type StagePullRequest = Pick<
-  PullRequestState,
-  'number' | 'state' | 'isDraft' | 'checks' | 'reviewDecision'
->;
-
-type Params = {
-  session: Session;
-  pr: StagePullRequest | null;
-  hasUnread: boolean;
-  openQuestionCount: number;
-  fixNeedsYouCount?: number;
-  fixCouldntFixCount?: number;
-  hasRunningAgent?: boolean;
-  hasBlockedAgent?: boolean;
-  isDecidingWorkflow?: boolean;
-  isPrReview?: boolean;
-  isBranchless?: boolean;
-  requestLabel?: string;
-  prFetchState?: SessionPrFetchState;
-  remainingWork?: number;
-  remainingReason?: string | null;
+type Params = AttentionFactsParams & {
+  readonly hasRunningAgent?: boolean;
+  readonly isDecidingWorkflow?: boolean;
+  readonly isPrReview?: boolean;
+  readonly requestLabel?: string;
+  readonly prFetchState?: SessionPrFetchState;
+  readonly remainingWork?: number;
+  readonly remainingReason?: string | null;
   readonly hasRun?: boolean;
 };
 
-const isPrLive = (pr: StagePullRequest | null): pr is StagePullRequest =>
-  pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
-
-type StageWithoutRequest = Omit<SessionStageInfo, 'prState' | 'addsFact'> & {
+type StageWithoutRequest = Pick<SessionStageInfo, 'stage' | 'reason' | 'attention'> & {
+  readonly isRunning?: boolean;
   readonly isStageDefault?: true;
 };
 
-const deriveStage = ({
-  session,
-  pr,
-  hasUnread,
-  openQuestionCount,
-  fixNeedsYouCount = 0,
-  fixCouldntFixCount = 0,
-  hasRunningAgent = false,
-  hasBlockedAgent = false,
-  isDecidingWorkflow = false,
-  isPrReview = false,
-  isBranchless = false,
-  requestLabel,
-  prFetchState = 'known',
-  remainingWork = 0,
-  remainingReason = null,
-  hasRun = true,
-}: Params): StageWithoutRequest => {
+type ReasonTextParams = {
+  readonly label: string;
+  readonly openQuestionCount: number;
+  readonly fixNeedsYouCount: number;
+  readonly fixCouldntFixCount: number;
+};
+
+const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => string> = {
+  'needs-approval': () => 'Needs approval',
+  'agent-error': () => 'agent errored',
+  'plan-approval': () => 'plan waiting for approval',
+  'open-question': ({ openQuestionCount }) =>
+    openQuestionCount === 1 ? '1 open question' : `${openQuestionCount} open questions`,
+  'fix-needs-you': ({ fixNeedsYouCount }) =>
+    fixNeedsYouCount === 1 ? '1 comment needs you' : `${fixNeedsYouCount} comments need you`,
+  'ci-failed': ({ label }) => `${label}: checks failing`,
+  'changes-requested': ({ label }) => `${label}: changes requested`,
+  'fix-couldnt-fix': ({ fixCouldntFixCount }) =>
+    fixCouldntFixCount === 1
+      ? "1 comment couldn't be fixed"
+      : `${fixCouldntFixCount} comments couldn't be fixed`,
+  'pr-queued': ({ label }) => `${label} in the merge queue`,
+  'pr-approved': ({ label }) => `${label} approved, ready to merge`,
+  'unread-reply': () => 'unread agent reply',
+};
+
+const deriveStage = (params: Params): StageWithoutRequest => {
+  const {
+    session,
+    pr,
+    openQuestionCount,
+    fixNeedsYouCount = 0,
+    fixCouldntFixCount = 0,
+    hasRunningAgent = false,
+    isDecidingWorkflow = false,
+    isPrReview = false,
+    requestLabel,
+    prFetchState = 'known',
+    remainingWork = 0,
+    remainingReason = null,
+    hasRun = true,
+    isBranchless = false,
+  } = params;
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
-  if (hasBlockedAgent) {
-    return { stage: 'attention', reason: 'Needs approval', attention: 'needs-approval' };
-  }
-  if (session.state.kind === 'error') {
-    return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
+  const [winner] = attentionFactsOf(params);
+  const isLive = hasRunningAgent || isDecidingWorkflow;
+  const reasonText = (reason: SessionAttentionReason): string =>
+    REASON_TEXT[reason]({ label, openQuestionCount, fixNeedsYouCount, fixCouldntFixCount });
+  if (
+    winner !== undefined &&
+    (winner === 'agent-error' || isHumanInputReason({ reason: winner }))
+  ) {
+    return {
+      stage: 'attention',
+      reason: reasonText(winner),
+      attention: winner,
+      isRunning: winner !== 'agent-error' && isLive,
+    };
   }
   if (hasRunningAgent) {
-    return { stage: 'running', reason: 'agent running', attention: null, isStageDefault: true };
+    return {
+      stage: 'running',
+      reason: 'agent running',
+      attention: null,
+      isRunning: true,
+      isStageDefault: true,
+    };
   }
   if (isDecidingWorkflow) {
-    return { stage: 'running', reason: 'deciding the next step', attention: null };
+    return {
+      stage: 'running',
+      reason: 'deciding the next step',
+      attention: null,
+      isRunning: true,
+    };
+  }
+  if (winner === 'pr-queued') {
+    return { stage: 'review', reason: reasonText(winner), attention: winner };
+  }
+  if (winner !== undefined) {
+    return { stage: 'attention', reason: reasonText(winner), attention: winner };
   }
   if (isBranchless) {
-    if (openQuestionCount === 1) {
-      return { stage: 'attention', reason: '1 open question', attention: 'open-question' };
-    }
-    if (openQuestionCount > 1) {
-      return {
-        stage: 'attention',
-        reason: `${openQuestionCount} open questions`,
-        attention: 'open-question',
-      };
-    }
-    if (hasUnread) {
-      return { stage: 'attention', reason: 'unread agent reply', attention: 'unread-reply' };
-    }
     return {
       stage: 'building',
       reason: hasRun ? 'ready for work' : 'not started',
       attention: null,
     };
-  }
-  if (isPrLive(pr) && pr.checks === 'failure') {
-    return { stage: 'attention', reason: `${label}: CI failed`, attention: 'ci-failed' };
-  }
-  if (isPrLive(pr) && pr.reviewDecision === 'changes_requested') {
-    return {
-      stage: 'attention',
-      reason: `${label}: changes requested`,
-      attention: 'changes-requested',
-    };
-  }
-  if (fixNeedsYouCount > 0) {
-    return {
-      stage: 'attention',
-      reason:
-        fixNeedsYouCount === 1 ? '1 comment needs you' : `${fixNeedsYouCount} comments need you`,
-      attention: 'fix-needs-you',
-    };
-  }
-  if (openQuestionCount === 1) {
-    return { stage: 'attention', reason: '1 open question', attention: 'open-question' };
-  }
-  if (openQuestionCount > 1) {
-    return {
-      stage: 'attention',
-      reason: `${openQuestionCount} open questions`,
-      attention: 'open-question',
-    };
-  }
-  if (fixCouldntFixCount > 0) {
-    return {
-      stage: 'attention',
-      reason:
-        fixCouldntFixCount === 1
-          ? "1 comment couldn't be fixed"
-          : `${fixCouldntFixCount} comments couldn't be fixed`,
-      attention: 'fix-couldnt-fix',
-    };
-  }
-  if (isPrLive(pr) && isPullRequestApproved({ pr })) {
-    return {
-      stage: 'attention',
-      reason: `${label} approved, ready to merge`,
-      attention: 'pr-approved',
-    };
-  }
-  if (hasUnread) {
-    return { stage: 'attention', reason: 'unread agent reply', attention: 'unread-reply' };
   }
   if (isPrReview && pr === null) {
     return { stage: 'review', reason: 'reviewing an external PR', attention: null };
@@ -165,7 +140,7 @@ const deriveStage = ({
     return { stage: 'review', reason: `draft ${label}`, attention: null };
   }
   if (pr.checks === 'pending') {
-    return { stage: 'review', reason: `${label}: CI running`, attention: null };
+    return { stage: 'review', reason: `${label}: checks running`, attention: null };
   }
   return {
     stage: 'review',
@@ -176,10 +151,17 @@ const deriveStage = ({
 };
 
 export const deriveSessionStage = (params: Params): SessionStageInfo => {
-  const { isStageDefault = false, ...stage } = deriveStage(params);
+  const { isStageDefault = false, isRunning = false, ...stage } = deriveStage(params);
   return {
     ...stage,
     addsFact: !isStageDefault,
     prState: params.pr?.state ?? null,
+    isRunning,
+    otherReasons: internReasons({
+      reasons: attentionFactsOf(params).filter((reason) => reason !== stage.attention),
+    }),
+    openQuestionCount: params.openQuestionCount,
+    fixNeedsYouCount: params.fixNeedsYouCount ?? 0,
+    fixCouldntFixCount: params.fixCouldntFixCount ?? 0,
   };
 };

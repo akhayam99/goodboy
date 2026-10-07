@@ -59,6 +59,7 @@ describe('search hit target', () => {
       expect(searchHitTarget({ hit: hit({ kind, refId: 'art-1' }) })).toMatchObject({
         kind: 'artifact',
         artifactId: 'art-1',
+        isPlan: kind === 'plan',
         label: `Open ${kind}`,
       });
     }

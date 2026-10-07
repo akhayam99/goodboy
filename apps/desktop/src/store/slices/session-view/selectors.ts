@@ -18,6 +18,7 @@ import { useProjectMountsForSessions } from '../project-mounts/useProjectMountsF
 import { useTelemetryForSessions } from '../sessions/selectors';
 import { useDormantSpend } from '../dormant-spend/selectors';
 import { spendSources } from '../../../shared/utils/spendSources';
+import { usePinnedSessionIds } from '../session-pins/selectors';
 import { sortAndGroupSessions } from './sortAndGroupSessions';
 import { layoutSessionColumn, type SessionColumnLayout } from './layoutSessionColumn';
 import { projectsBySession } from './projectOfSession';
@@ -253,12 +254,20 @@ export const useSessionColumn = (
   const { groups, stageBySession } = useSessionListModel(workspaceId, sessions);
   const groupExpanded = useAppStore((s) => s.sessionGroupExpanded);
   const currentSessionId = useAppStore((s) => s.currentSessionId as SessionId | null);
+  const pinnedIds = usePinnedSessionIds({ workspaceId });
   return useMemo(
     () => ({
-      ...layoutSessionColumn({ groups, prefs, groupExpanded, currentSessionId, stageBySession }),
+      ...layoutSessionColumn({
+        groups,
+        prefs,
+        groupExpanded,
+        currentSessionId,
+        stageBySession,
+        pinnedIds,
+      }),
       stageBySession,
     }),
-    [groups, prefs, groupExpanded, currentSessionId, stageBySession],
+    [groups, prefs, groupExpanded, currentSessionId, stageBySession, pinnedIds],
   );
 };
 

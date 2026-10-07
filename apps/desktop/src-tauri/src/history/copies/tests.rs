@@ -408,7 +408,7 @@ fn the_resolve_copy_links_the_dependencies_of_the_main_tree() {
     pnpm_workspace(&l);
     let before = listing(&l.root);
     let copy = copy_path_of(&slug("deps-linked"));
-    prepare_resolve_copy_at(&l.root, &copy).unwrap();
+    prepare_resolve_copy_at(&l.root, &copy, None).unwrap();
     assert!(copy
         .join("node_modules")
         .symlink_metadata()
@@ -439,7 +439,7 @@ fn a_workspace_package_in_the_copy_resolves_to_the_copy_and_not_the_main_tree() 
     let l = ledger("deps-workspace");
     pnpm_workspace(&l);
     let copy = copy_path_of(&slug("deps-workspace"));
-    prepare_resolve_copy_at(&l.root, &copy).unwrap();
+    prepare_resolve_copy_at(&l.root, &copy, None).unwrap();
     std::fs::write(copy.join("packages/core/index.ts"), "copy core\n").unwrap();
     assert_eq!(
         std::fs::read_to_string(copy.join("apps/app/node_modules/@acme/core/index.ts")).unwrap(),
@@ -456,7 +456,7 @@ fn a_workspace_package_in_the_copy_resolves_to_the_copy_and_not_the_main_tree() 
 fn a_main_tree_without_dependencies_gives_a_copy_without_links() {
     let l = ledger("deps-missing");
     let copy = copy_path_of(&slug("deps-missing"));
-    let prepared = prepare_resolve_copy_at(&l.root, &copy).unwrap();
+    let prepared = prepare_resolve_copy_at(&l.root, &copy, None).unwrap();
     assert_eq!(prepared.head, l.typo);
     assert!(!copy.join("node_modules").exists());
     assert!(copy.join("ledger.ts").exists());

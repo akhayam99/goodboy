@@ -49,7 +49,6 @@ type ApprovalParams = QueueItemIdParams & {
 type DeliveredParams = QueueItemIdParams & { readonly deliveredAt: number };
 type RebaseParams = QueueItemIdParams & { readonly candidateRevision: number };
 type BatchParams = { readonly batch: ResolveBatch };
-type LimitParams = SessionParams & { readonly limit: number };
 type CopyPathParams = { readonly id: string; readonly copyPath: string | null };
 
 const ACTIVE_PHASES: ReadonlyArray<ResolvePublicationPhase> = [
@@ -66,7 +65,6 @@ export const createResolveQueryMocks = () => {
   const publicationThreads = new Map<string, ResolvePublicationThread>();
   const queueItems = new Map<string, ResolveQueueItem>();
   const batches = new Map<string, ResolveBatch>();
-  const limits = new Map<SessionId, number>();
   const gitStates = new Map<string, ResolveThreadGitState | null>();
   return {
     resetResolveQueryMocks: () => {
@@ -76,7 +74,6 @@ export const createResolveQueryMocks = () => {
       publicationThreads.clear();
       queueItems.clear();
       batches.clear();
-      limits.clear();
       gitStates.clear();
     },
     insertResolveBatch: vi.fn(async ({ batch }: BatchParams) => {
@@ -85,13 +82,6 @@ export const createResolveQueryMocks = () => {
     listResolveBatches: vi.fn(async ({ sessionId }: SessionParams) =>
       [...batches.values()].filter((batch) => batch.sessionId === sessionId),
     ),
-    getResolveParallelLimit: vi.fn(
-      async ({ sessionId }: SessionParams) => limits.get(sessionId) ?? 4,
-    ),
-    setResolveParallelLimit: vi.fn(async ({ sessionId, limit }: LimitParams) => {
-      limits.set(sessionId, limit);
-      return limit;
-    }),
     setResolveAttemptCopyPath: vi.fn(async ({ id, copyPath }: CopyPathParams) => {
       const attempt = attempts.get(id);
       if (attempt !== undefined) {
@@ -306,6 +296,27 @@ export const createResolveQueryMocks = () => {
         return true;
       },
     ),
+    repairLaggingResolveQueueItems: vi.fn(async ({ sessionId }: SessionParams) => {
+      let repaired = 0;
+      for (const [itemId, item] of queueItems) {
+        const thread = threads.get(item.threadId);
+        if (
+          thread === undefined ||
+          item.sessionId !== sessionId ||
+          item.supersededAt !== null ||
+          item.deliveredAt !== null ||
+          item.integratedSha !== null ||
+          (item.approvalState !== 'none' && item.approvalState !== 'deferred') ||
+          item.candidateRevision >= thread.revision ||
+          !['open', 'fixed', 'answered', 'closed'].includes(thread.state)
+        ) {
+          continue;
+        }
+        queueItems.set(itemId, { ...item, candidateRevision: thread.revision });
+        repaired += 1;
+      }
+      return repaired;
+    }),
     refuseResolveQueueItem: vi.fn(
       async ({ sessionId, itemId, revision, replyHash }: ApprovalParams) => {
         const item = queueItems.get(itemId);

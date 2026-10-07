@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { ListTree } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { ProgressRing } from './ProgressRing';
@@ -22,7 +22,8 @@ export const TreeStrip = forwardRef<HTMLButtonElement, Props>(
       title={`Files (${shortcutGlyphs('diff.focusTree')})`}
       onClick={onToggle}
       className={cn(
-        'flex h-full w-11 shrink-0 flex-col items-center gap-3 rounded-sm pt-3 text-muted-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        'flex h-full w-11 shrink-0 flex-col items-center gap-3 rounded-sm pt-3 text-muted-foreground',
+        ROW_INTERACTIVE,
         isOpen && 'bg-overlay-selected',
       )}
     >

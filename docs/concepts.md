@@ -127,6 +127,19 @@ step all count as live work. The top bar chip, the workspace switcher's "N
 running", the footer count, the update pill and the restart-when-idle check all
 read it, so a workspace with one agent waiting on a permission is never "idle".
 
+**Needs you** outranks running when what waits is a human input: an open
+question, a tool waiting for your approval, a comment the fix run needs you for,
+or a plan waiting for your approval (a workflow run held at its plan). The
+session sits in needs you while its agents keep working, and the top bar chip,
+the board column, the palette and `⌥⌘↓` all count it there ("1 needs you",
+"2 need you"). An agent error also keeps its place above running. Failing
+checks, changes requested, comments the fix run could not fix, an approved pull
+request and an unread reply rank below running, because an agent may be working
+on exactly that. Every reason that holds is kept, not only the winner, and the
+hover card lists them all, so an approved pull request with a failing check
+shows both. The words and the mark of each reason come from one table (see
+Session stages under Identifiers).
+
 The board looks at the pull request or merge request of every mount, GitHub,
 GitLab or Bitbucket, and takes the worst one: failing CI, then changes
 requested, then approved. A session is done only when every request is merged
@@ -393,11 +406,11 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
 - The board card's "Continue" and the Next surface's primary action for a
   ready workflow step both call `activateWorkflowAgent` on the same pending
   agent; neither one just opens a panel and leaves starting the step to you.
-- Accepting plan-ready announces the started implementer with the same
-  `useAgentStartedToast` every other spawn-and-open flow uses ("Implementer
-  started", with an "Open the agent" action) - the toast the standalone
-  PlanReadySuggestion component used to show before the unified resolver
-  replaced it in E7-5, restored here.
+- Accepting plan-ready announces the started implementer with the Follow toast
+  every other start uses ("Implementer started", with a `Follow` action, built by
+  `planRunToast`; see `docs/navigation.md` Follow toasts) - the toast the
+  standalone PlanReadySuggestion component used to show before the unified
+  resolver replaced it in E7-5, restored here.
 - The resolve-threads card ("Draft fixes for N") never starts an agent: it
   sends a `fix` request (`requestReview`) with the fixable comments and opens
   the launch panel on the Comments tab, pre-filled. The board card "Resolve N
@@ -620,7 +633,7 @@ the stored revisions once the planner is idle. Send is refused, with its reason,
 when the planner is gone or still working, when the plan was consumed or
 replaced, or when a later step of the plan's workflow run has already left
 `pending`; a run held for plan approval is the exception, because a held run
-does not advance (`workflowPlanApproval.ts`), and the bar offers **Approve plan**
+does not advance (`workflowPlanApproval.ts`), and the bar offers **Approve**
 beside Send. The comments are removed with their artifact.
 
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
@@ -758,6 +771,17 @@ Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
 reads every page of threads GitHub returns. If the read fails, Review
 shows the error from `gh` instead of an empty list.
 
+The pull request detail reads reviews, review requests and checks in three
+separate `gh pr view` calls, so a field the access cannot read never hides the
+others. Each read comes back `ok`, `denied` or `failed` (`checksRead`,
+`reviewsRead` and `reviewRequestsRead` on the detail) with the first line of the
+error. `classifyGhFailure` decides `denied`: it mirrors the marker lists in
+`apps/desktop/src-tauri/src/github.rs`, and a parity test reads that file and
+fails when the lists drift. The list and view calls ask for the checks rollup
+too. When GitHub denies it they ask again without it and the pull request
+carries `checksUnknown`, so the Checks tab and the merge gates say Checks
+unknown and never read it as no checks.
+
 Review is one flow: the list on the left, the focused comment on the right.
 Every comment in a fix run shows one of five words, the same word in the list,
 the thread, Activity, Needs you, the transcript card and the breadcrumb menus.
@@ -855,8 +879,16 @@ comment. Every refresh of the pull request compares the fingerprint of the root
 comment with the one stored in
 `resolve_threads.source_snapshot_json` when the draft was made, and a mismatch
 stores the new text, who wrote it and when Goodboy saw it. A plain write to the
-thread (a resolved flag, a phase) never marks it: those writes keep the draft in
-step with the thread revision. `Keep the draft` adopts the new text as the
+thread (a resolved flag, a phase, a stage) never marks it: the store moves the
+open item and its ready candidate to the new thread revision in the same
+transaction, as long as the reply, the commits, the question and the outcome are
+unchanged. A write that changes any of those leaves the item behind on purpose.
+Accept and Won't fix that miss on the revision reload the item: when the answer
+the owner had on screen is unchanged they retry once with the fresh revision,
+otherwise the view refreshes in place and the buttons show "This answer changed
+since you opened it. Review it again." Opening a session also moves any open
+item whose revision lags its thread, when its candidate is still ready and the
+thread is not working, asking or failed. `Keep the draft` adopts the new text as the
 baseline and keeps the draft acceptable; `Redraft with the new comment` moves
 the baseline when the agent starts. GitHub's outdated flag is a fact on the
 comment (The line moved), not a state. A new reply after the draft is a fact too
@@ -1382,7 +1414,7 @@ task up again in Goodboy.
   notes page. The old words are ⌘K aliases or retired names.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
-  request. **Connect an integration** is the Classic bars footer button that
+  request. **Connect an integration** is the Legacy layout footer button that
   adds a tool; with the column, tools connect from Settings > Integrations.
 - **When to ask** is the setting that decides how often a run stops for you.
   Its top choice is **Run on its own** (it was Autorun and Autonomy).
@@ -1426,11 +1458,36 @@ task up again in Goodboy.
 
 Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
 `review` (**in review**), `building`, `done`. A fix run raises `attention` too:
-a comment that **Needs you** gives the reason `fix-needs-you` (before open
-questions, it opens the Comments tab) and a comment that **Couldn't fix** (not
-one you stopped, not a failed push) gives `fix-couldnt-fix`. Both also send one
-notification when the count rises (`projectResolveRows`), with an action that
-opens Activity, where the Needs you row waits.
+a comment that **Needs you** gives the reason `fix-needs-you` (it opens the
+Comments tab) and a comment that **Couldn't fix** (not one you stopped, not a
+failed push) gives `fix-couldnt-fix`. Both also send one notification when the
+count rises (`projectResolveRows`), with an action that opens Activity, where
+the Needs you row waits.
+
+A pull request has one state word, from `pullRequestKindOf` in
+`shared/pullRequestKind.ts`, and every surface that names it reads that
+function: the Overview mount rows, the Branch header and menus, the pull
+request pane and strip, the detail facts and the ask pack. The order is merged,
+closed, queued, approved, in review, draft. GitHub keeps `isDraft` true on a
+closed or merged draft, so the flag alone never makes a word: a closed or merged
+pull request never reads Draft.
+
+Attention reasons, in `SessionAttentionReason`, rank in this order when several
+hold: `needs-approval`, `agent-error`, `plan-approval`, `open-question`,
+`fix-needs-you`, `ci-failed`, `changes-requested`, `fix-couldnt-fix`,
+`pr-queued`, `pr-approved`, `unread-reply`. `attentionFactsOf` lists every reason
+that holds in that order, `deriveSessionStage` takes the first as `attention` and
+keeps the rest as `otherReasons`, and `SessionStageInfo.isRunning` tells a session in
+needs you that an agent still works. `plan-approval` comes from a workflow run
+whose `orchestrationStop` is `plan-approval` (`isRunHeldForPlan`) and opens that
+run's page. `ATTENTION_REASON_META` gives each reason its mark, tone and words
+for the sidebar, the switcher, the hover card, the Board card, the Now chip and
+the palette; red is only an agent error and failing checks. `pr-queued` ("In
+merge queue", a pull request GitHub is set to merge) is not a needs-you reason:
+when it wins, the stage is `review` and `attention` still carries it, so the
+marks and words read it while the session stays out of Needs you. A queued pull
+request is never also `pr-approved`. The reason text of a stage says "checks",
+never "CI".
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 

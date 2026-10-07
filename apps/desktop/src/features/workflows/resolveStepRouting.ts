@@ -71,6 +71,7 @@ export const resolveStepRouting = ({
       effort: decided.effort,
     };
   }
+  const hidden = auto?.hidden ?? null;
   const role = step?.role;
   const size = step?.size ?? null;
   const roleRouting =
@@ -101,11 +102,19 @@ export const resolveStepRouting = ({
     roleRouting?.provider ??
     fallback.provider;
   const roleModel =
-    role != null ? recommendedModelForRole({ role, provider, prefs: roleModels, size }) : null;
+    role != null
+      ? recommendedModelForRole({ role, provider, prefs: roleModels, size, hidden })
+      : null;
   const kindModel =
     provider === fallback.provider
       ? fallback.model
-      : recommendedModelForRole({ role: KIND_TO_ROLE[kind], provider, prefs: roleModels, size });
+      : recommendedModelForRole({
+          role: KIND_TO_ROLE[kind],
+          provider,
+          prefs: roleModels,
+          size,
+          hidden,
+        });
   const preferredEffort = preference.isOverride ? preference.effort : null;
   const sessionScopedModel = provider === sessionProvider ? sessionModel : null;
   return {

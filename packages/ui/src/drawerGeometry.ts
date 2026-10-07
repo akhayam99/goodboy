@@ -1,4 +1,4 @@
-export const RIGHT_DRAWER_MIN = 340;
+export const RIGHT_DRAWER_MIN = 384;
 export const RIGHT_DRAWER_MAX = 560;
 export const RIGHT_DRAWER_DEFAULT = 400;
 export const COLUMN_MIN_PUSH = 560;
@@ -16,8 +16,59 @@ type PushParams = {
   readonly drawerWidthPx: number;
 };
 
+const pushRoomOf = (mainWidthPx: number): number =>
+  mainWidthPx - DRAWER_INSET * 2 - COLUMN_GUTTERS - COLUMN_MIN_PUSH;
+
 export const canDrawerPush = ({ mainWidthPx, drawerWidthPx }: PushParams): boolean =>
-  mainWidthPx - drawerTrackOf(drawerWidthPx) - COLUMN_GUTTERS >= COLUMN_MIN_PUSH;
+  pushRoomOf(mainWidthPx) >= drawerWidthPx;
+
+export type DrawerLayout = {
+  readonly mode: Exclude<DrawerMode, 'closed'>;
+  readonly width: number;
+  readonly dragMax: number;
+};
+
+type LayoutParams = {
+  readonly main: number;
+  readonly sizing: DrawerSizing;
+  readonly savedWidth: number;
+};
+
+export const drawerLayoutOf = ({ main, sizing, savedWidth }: LayoutParams): DrawerLayout => {
+  if (sizing === 'full') {
+    return {
+      mode: 'overlay',
+      width: Math.max(RIGHT_DRAWER_MIN, main - DRAWER_INSET * 2),
+      dragMax: RIGHT_DRAWER_MAX,
+    };
+  }
+  const target = sizing === 'half' ? RIGHT_DRAWER_MAX : savedWidth;
+  const room = pushRoomOf(main);
+  if (room >= RIGHT_DRAWER_MIN) {
+    return {
+      mode: 'push',
+      width: Math.min(target, room),
+      dragMax: Math.min(RIGHT_DRAWER_MAX, room),
+    };
+  }
+  return {
+    mode: 'overlay',
+    width: Math.min(target, main - DRAWER_INSET * 2),
+    dragMax: RIGHT_DRAWER_MAX,
+  };
+};
+
+type AsideParams = {
+  readonly width: number;
+  readonly mode: DrawerMode;
+};
+
+export const drawerAsideWidthOf = ({ width, mode }: AsideParams): number => {
+  if (mode === 'closed') {
+    return 0;
+  }
+  return mode === 'overlay' ? width + DRAWER_INSET : drawerTrackOf(width);
+};
 
 type SizedParams = {
   readonly sizing: DrawerSizing;
@@ -25,19 +76,11 @@ type SizedParams = {
   readonly resizableWidth: number;
 };
 
-const pushableWidthOf = (columnWidth: number): number =>
-  columnWidth - COLUMN_GUTTERS - COLUMN_MIN_PUSH - DRAWER_INSET * 2;
-
 export const drawerWidthOf = ({ sizing, columnWidth, resizableWidth }: SizedParams): number => {
-  if (sizing === 'default' || columnWidth === null) {
+  if (columnWidth === null) {
     return resizableWidth;
   }
-  if (sizing === 'full') {
-    return Math.max(RIGHT_DRAWER_MIN, columnWidth - DRAWER_INSET * 2);
-  }
-  const half = Math.round(columnWidth / 2) - DRAWER_INSET * 2;
-  const pushable = pushableWidthOf(columnWidth);
-  return Math.max(RIGHT_DRAWER_MIN, pushable >= RIGHT_DRAWER_MIN ? Math.min(half, pushable) : half);
+  return drawerLayoutOf({ main: columnWidth, sizing, savedWidth: resizableWidth }).width;
 };
 
 type ModeParams = {
@@ -59,10 +102,7 @@ export const drawerModeOf = ({
   if (columnWidth === null) {
     return 'push';
   }
-  if (sizing === 'full' || !canDrawerPush({ mainWidthPx: columnWidth, drawerWidthPx })) {
-    return 'overlay';
-  }
-  return 'push';
+  return drawerLayoutOf({ main: columnWidth, sizing, savedWidth: drawerWidthPx }).mode;
 };
 
 type MainParams = {
@@ -92,17 +132,27 @@ export type PageBox = {
   readonly width: number;
 };
 
+type PushedSpaceParams = {
+  readonly paneWidth: number;
+  readonly sizing: DrawerSizing;
+  readonly savedWidth: number;
+};
+
+const pushedSpaceOf = ({ paneWidth, sizing, savedWidth }: PushedSpaceParams): number => {
+  const layout = drawerLayoutOf({ main: paneWidth, sizing, savedWidth });
+  return mainWidthOf({ columnWidth: paneWidth, mode: layout.mode, drawerWidthPx: layout.width });
+};
+
 export const pageBoxOf = ({
   paneWidth,
   tier,
   drawerWidthPx,
   sizing = 'default',
 }: PageBoxParams): PageBox => {
-  const mode =
+  const space =
     drawerWidthPx === null
-      ? 'closed'
-      : drawerModeOf({ isOpen: true, sizing, columnWidth: paneWidth, drawerWidthPx });
-  const space = mainWidthOf({ columnWidth: paneWidth, mode, drawerWidthPx: drawerWidthPx ?? 0 });
+      ? paneWidth
+      : pushedSpaceOf({ paneWidth, sizing, savedWidth: drawerWidthPx });
   if (tier === 'full') {
     return { left: 0, right: space, width: space };
   }

@@ -259,22 +259,38 @@ providers it may pick from with **Can use**.
 In the workflow detail, an orchestrated run shows the orchestrator as one row
 (`OrchestratorStrip`): what it is doing ("Choosing the next step", "Waiting on
 step 3 · Implement"), how long the running step has taken, the model it runs
-on, the run controls and a menu. The row says its state with the colour
-of its left rail, never with a filled background. **Pause** shows while a step
-or a decision is in flight, **Resume** while the run is paused, and **Stop**
-(with an inline confirmation) in both. Besides them it shows at most one
-action: **Decide next step** only when the run asks before each step,
-**Continue the run** after you stopped it or once it is complete, **Retry**
-after a failed decision, or the spend cap on a budget pause. A failed step and an open
-question are left to the Next action strip, so the row only says the run is
-paused, on a neutral rail: the strip above carries the tone. When the pane is
-too narrow for the sentence and the controls on one line, the controls wrap to
-a second line on the right instead of cutting the sentence. When to ask
-(**Ask before each step** or **Run on its own**) and **Model per step** (the
-model each step runs on, and why) sit in the menu. A model picked for the
-orchestrator turns its chip amber, and the picker itself says "Overriding
-default" with **reset**; the row draws no separate cross beside the chip
-(`hasTriggerReset={false}`). The hint field sits under the row, always open.
+on, a menu and, while a step is in flight, **Stop step**. The row says its state
+with a `ToneBar` inside its padding, never with an outer edge or a filled
+background. **Pause**, **Resume** and **Stop run** are not in the row: they are
+one cluster in the header of [the run page](#the-run-page). Besides **Stop step**
+the row shows at most one action: **Decide next step** only when the run asks
+before each step, **Continue the run** after you stopped it or once it is
+complete, **Retry** after a failed decision, **Review plan** while the run
+waits for its plan, **Answer** when the planner asked a question, or the spend
+cap on a budget pause. **Stop step** asks first, then cancels the step in
+flight, marks it skipped and holds the run (`stopWorkflowRunNow`); **Continue
+the run** takes it from there.
+
+The row has phases of its own for a run held for its plan. A held run reads
+"Plan ready · waiting for you" (`plan-approval`). While the planner revises the
+plan after your comments it reads "The planner is revising the plan"
+(`plan-revising`, pulsing, no action). When the planner asked you something it
+reads "The planner asked: ..." (`plan-question`) with **Answer**, which opens the
+planner at its question. Both phases are checked before the stop presentation,
+and `resolveOrchestratorState` takes them as a `plan` signal the strip reads
+from the plan the run waits on, so a pause or a decision in flight still speaks
+first.
+
+A failed step and an open question are left to the Next action strip, so the
+row only says the run is paused, on a neutral line: the strip above carries the
+tone. When the pane is too narrow for the sentence and the controls on one
+line, the controls wrap to a second line on the right instead of cutting the
+sentence. When to ask (**Ask before each step** or **Run on its own**) and
+**Model per step** (the model each step runs on, and why) sit in the menu. A
+model picked for the orchestrator turns its chip amber, and the picker itself
+says "Overriding default" with **reset**; the row draws no separate cross
+beside the chip (`hasTriggerReset={false}`). The hint field is not in the row:
+it docks at the bottom of the page.
 
 ### Why each step
 
@@ -298,10 +314,11 @@ with the step where the orchestrator first read it.
 
 - **Queue** waits until the next decision
 - **Read now** restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
+- The help sits in each button's tooltip, not in a sentence under the field. Read now says what it does in the state the run is in
 - The field is a message box: Enter queues, Shift+Enter adds a line, ⌘Enter reads now. **Preview** shows it as markdown, and the hint log reads it as markdown too
 - Paste, drop or attach images. They are saved as files of the run, so the next agent gets them, and the hint keeps their ids
 - The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text and your images come back
-- Each hint says where it stands: **Waits for the next decision**, **Reading now** while a decision has it, or **Read at step N**. Read hints sit behind a count
+- Queued hints fold into one row, "2 queued", with a chevron that opens them in place. A hint a decision is reading shows by itself, and each says where it stands: **Waits for the next decision**, **Reading now**, or **Read at step N**. Read hints sit behind a count
 - You can remove a hint, except while a decision is reading it
 
 Asking for a certain provider or model on a step is a hint too.
@@ -320,6 +337,20 @@ cap and its strip says `Paused at the $10.00 spend cap for this session.`
 with **Raise spend cap**, which opens the chip on the editor. With **Warn only**
 nothing stops: one notification says the session passed its cap. Single
 agents are never stopped by it.
+
+## The run page
+
+The run page (`WorkflowsPane` over `WorkflowRow`) reads top to bottom: a
+pinned header, the strips, the steps in their own scroller, and a composer
+docked under them.
+
+- **Header.** The title, the status, the facts (steps, agents, cost, spend cap, when to ask, time left) and one cluster of actions: **Review plan** while the run waits for its plan, **Pause** (or **Resume**) and **Stop run** as one pair (`RunControls`), and an overflow menu. The chevron is named **Show run summary**, in its accessible name and its tooltip. It folds the run into its card in the Runs list; a run opened from a list that is collapsed offers **Expand ... run** instead. The header pins only the title and these facts: the write destination ("Starts in ..."), the strips and the steps all scroll under it
+- **Scroll edge.** The steps scroll under the pinned block. `ScrollFade` takes `edge="line"`: its root draws a 1px `border-soft` line (the quietest divider, never the brighter `border`) at its own top edge while `scrollTop` is above 0, shown through `data-scrolled` on the root, set imperatively inside `applyFade`, never through React state, and faded in over 120ms under `motion-safe`. With the line the top mask fade shrinks to 8px, growing with the scroll from 0, so a card clipped under the line fades out instead of leaving a cut edge as a sliver; the bottom fade stays. `PaneShell` with `scroll="body"` and the steps scroller of the run both use it. The default `edge="fade"` is unchanged. The scroller opens at 0; the live-row reveal of the run tree uses `scrollIntoView({ block: 'nearest' })`, so it only moves the scroller when the live row is below the visible area
+- **Composer.** A dynamic run's hint field docks at the bottom of the page as the `dock` of the `PaneShell`, as in Chat, below the scroller and never inside it (`OrchestratorDock`). Steps and cost come first. Queued hints fold into one "2 queued" row above the steps, and the help sentence moved into the tooltips of **Queue** and **Read now**. At rest the field is one text row with the attach button, no Write and Preview tabs, no key hints and no buttons (`data-open` is `false`); it opens to two rows with all of them while it has focus or holds text or an image, and closes again on blur when empty, so a short window keeps most of its height for the steps (the steps scroller is at least 440px tall at a 760px window)
+- **Two Stops, two names.** **Stop run** is in the header, next to Pause: it ends the run and asks first ("Steps that have not run are skipped..."). **Stop step** is in the strip while a step is in flight: it cancels that step, holds the run and leaves **Continue the run** on offer. A static run has no strip, so it has the one Stop run. Never two buttons with one name
+- **Plan entry points.** While the run is held for its plan, the header's primary is **Review plan**: it opens the drawer for the plan the run waits on with `openPlanDrawer`, over the page. The plan comes from `runPlanOf` (the newest active plan the run's planner wrote, `useRunPlan`). **Approve plan** moves into the overflow menu: it is one item of the run controls menu on a static run, and of a **Plan actions** menu on a dynamic one, and it is off with the reason "The planner is revising this plan" while the planner revises. A run with no plan to open keeps **Approve plan** as its primary. The static run's **Plan ready** status becomes a secondary **Review plan** button when the header holds the primary. The orchestrator strip says **Open plan** (the header and the planner row already say **Review plan**, so the run page never shows the same label three times), plus the `plan-revising` and `plan-question` phases ([The orchestrator strip](#the-orchestrator-strip))
+- **Approve from the overflow** (`useApproveRunPlan`) calls `approveWorkflowRunPlan` and reads its answer: `approved` marks the run as a start of yours (`markUserStart`) and raises one `useFollowToast` toast, **Plan approved**, saying "The run goes on" or "Implement started" with the step's name, with the action **Follow the run** left out because the run page is on screen. `noop` raises nothing and `failed` goes to the log as "Couldn't approve the plan"
+- **Tone and empty states.** The strips draw their tone as a `ToneBar` inside their padding. A run with no agents says "No agents yet" and "The run starts its first step here." (`EmptyState size="section"`)
 
 ## How a run advances
 
@@ -358,7 +389,10 @@ the same way: the first step sits on top, steps follow in the order they ran,
 and queued steps come last, dashed. There is no NOW: the story ends on the last
 step, as the agent tree does. The run lane starts on the first step, so the
 tree has no session spine and no time column. Sub-agents sit one column right,
-under their step, on the run's colour. The view scrolls to the row that is
+under their step, on the run's colour, and their label starts one column right
+of their step's label too (two columns for a sub-agent of a sub-agent), so the
+nesting reads in the text and not only in the lane. A step keeps its place
+whatever its sub-agents do. The view scrolls to the row that is
 running or waiting on you when it opens. The run header and the Next action
 strip stay pinned while the tree scrolls. A long run name wraps to a second
 line in the header before it truncates, and so does a long agent name in the
@@ -371,10 +405,29 @@ that answers a question for a step never shows it, in the tree or in the
 activity feed, because the question belongs to that step. Every row ends with
 the same meta as the activity feed: the model, the effort and what the row has
 spent, with a dotted model name when routing picked another one than the plan.
-The Answer column exists only while a row in the tree has an Answer, so a tree
-with nothing to answer gives that width to the titles. In a narrow pane the
-kind chip narrows and the effort column hides, so the title keeps its room.
-Clicking a row opens that agent.
+The action column exists only while a row in the tree has an action, so a tree
+with nothing to do gives that width to the titles. The action is **Answer**, or
+on the step that produced a plan **Review plan** while the run waits on that
+plan and **Open plan** once it does not. Both open the plan in the plan
+drawer, over the run, and a row that asks something keeps its **Answer** alone.
+In a narrow pane the kind chip narrows and the effort column hides, so the
+title keeps its room. Clicking a row opens that agent.
+
+A set of sub-agents, the children of one agent, folds into one row under its
+parent when every one of them is settled and none has an open question,
+whatever the state of the parent. The row says what the set holds, for example
+`3 scouts · done · 2m · $0.09`: the role when all of them share one,
+`subagents` otherwise, the work time of the set (time spent waiting on you is
+not counted) and what it spent. A set with a running, queued, waiting, failed
+or asking agent stays open and has no fold row, and a new or restarted
+sub-agent opens a folded set again. The fold follows the activity feed: a set
+already settled when the page opens starts folded, a set you watched settle
+stays open until you fold it, and leaving the page forgets it. Click the row,
+or press Enter or Right on it, to open the set downward under the row, whose
+chevron then points up; click, Enter or Left folds it. Inside an open set the
+sub-agents run oldest first, top to bottom, and a set inside a set folds on its
+own. `foldSettledSets` does this over the items of the run tree, so the
+activity feed and its stream builder are untouched.
 
 An agent's Brief draws its sub-agents with the same tree, under **Subagents**
 (`SubagentTree`, from `buildAgentTreeStream`). The agent sits on top
@@ -383,7 +436,8 @@ it one column right, `3.1`, `3.2`, `3.3`, each with its own model, effort and
 spend. Sub-agents of an agent outside a workflow are numbered from `1`. The
 header counts them in words ("2 of 3 done"). An implementer split into parts
 shows no Outcome, because the tree already says what each part did. A planner
-shows no sub-agents, and delegates and follow-ups keep their own sections.
+shows no sub-agents, and delegates and follow-ups keep their own sections. This
+tree never folds a set and has no plan action.
 
 In the activity feed, an agent or step row leads with its role as a glyph and
 ends with the model that ran, then its duration with what it has spent under
@@ -477,8 +531,8 @@ asks before each step, the next step waits for your go.
 
 **Stop run** ends a run that nobody else will end: an orchestrated run
 between decisions, a run stuck on a failed step, a run you have seen enough
-of. It sits in the header of the workflow detail and in the menu of the run
-row in the activity feed. Goodboy asks you to confirm first. Steps that have
+of. It sits in the header of the workflow detail, next to **Pause**, and in the
+menu of the run row in the activity feed. Goodboy asks you to confirm first. Steps that have
 not run are marked skipped, the step in flight stops and is marked skipped,
 and a failed step stays failed, because it did fail. Everything already written
 is kept.
@@ -518,7 +572,7 @@ without its own setting follows the session.
 - The session's autorun also covers agents running outside a workflow
 - A workflow you add to a session with autorun on starts with autorun on
 - **Pause** lets the step in flight finish its turn and starts nothing new: no next step, no orchestrator decision, no read-now hint, no step button, not even turning autorun back on. The pause survives a restart. **Resume** starts where the run left off, static or orchestrated, and never changes when to ask
-- **Stop** ends a run at once. Goodboy asks you to confirm first. The step that is running is cancelled and marked skipped, and everything it already wrote is kept
+- **Stop step**, in the orchestrator strip, cancels the step that is running and holds the run. Goodboy asks you to confirm first. The step is marked skipped and everything it already wrote is kept. **Stop run** in the header ends the run ([Closing a workflow](#closing-a-workflow))
 - **Continue the run** starts a stopped run again. It turns autorun back on and asks for the next step
 
 A hands-free run still stops and waits for you when:
@@ -641,11 +695,149 @@ it returns `paused`, `plan-approval` or nothing, writes the hold the first time
 it sees the plan, and runs inside `activateWorkflowAgent`, `orchestrateNextStep`
 and `maybeAutoAdvanceWorkflow`. `bypassGate` never skips it, so the step
 button, a skip, a read-now hint and a retry all stop at the hold.
-**Approve plan** (`approveWorkflowRunPlan`) marks the copy `planApproved`,
-clears the stop and lets the run advance; switching the run to another autonomy
-also drops the hold. A plan step that writes no plan never holds. While it holds, the run's status reads
-**Plan ready**, not a failure, and **Run next step** is hidden, so **Approve plan**
-is the only way on; it comes back once the plan is approved.
+Switching the run to another autonomy also drops the hold. A plan step that
+writes no plan never holds. While it holds, the run's status reads
+**Plan ready**, not a failure (a button, **Review plan**, on the run page), and
+**Run next step** is hidden, so **Approve** is the only way on; **Run next
+step** comes back once the plan is approved.
+
+#### Approve moves the run on
+
+**Approve** (`approveWorkflowRunPlan(sessionId, runId)`) approves the plan the
+run holds for and moves the run on, whether or not it runs on its own.
+It writes the copy's `planApproved` first, then clears the stop, then moves on,
+and it answers with what happened so the caller can say it:
+
+| Result                                           | When                                                                                                                                                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `approved`, `next: 'started'`, `agentId`         | the run does not run on its own: the step that consumes the plan was started through `activateWorkflowAgent`, the same door as **Run next step**, and the answer comes once that step has started, not once it has finished |
+| `approved`, `next: 'continues'`, `agentId: null` | the run runs on its own (`maybeAutoAdvanceWorkflow` takes it from here), a dynamic run (the orchestrator decides the next step), or the next step was blocked by an open question (the notification says why)               |
+| `noop`, `missing-run`                            | the run is not in the session                                                                                                                                                                                               |
+| `noop`, `not-held`                               | the run is not held, or an Approve for it is already in flight: a second Approve does nothing and starts nothing                                                                                                            |
+| `failed`, `message`                              | a write failed, or the planner is revising the plan; the hold stays                                                                                                                                                         |
+
+A write that fails leaves no half approval: the snapshot write comes first, and
+if clearing the stop fails after it, the snapshot is put back. The in-store run
+changes only after both writes went through. The run header's overflow reads it
+through `useApproveRunPlan`; the plan drawer, its comment bar and the plan row
+read it through `usePlanPrimaryAction`; the Artifacts page, the palette and the
+object menu read it through `artifact.runPlan` ([The run page](#the-run-page)).
+
+#### One primary for a plan
+
+`planPrimaryOf({ plan, run, drafts })` (`features/plans/planPrimaryOf.ts`) is
+the one rule for the primary button of a plan, on every surface. `run` is the
+run the plan feeds (`planRunOf`): the run held for the plan, or the run whose
+planner step wrote it and whose next step consumes plans.
+
+| Plan and run                                      | Primary                                                | Label                                                 |
+| ------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------- |
+| the planner is revising it                        | `disabled`, reason "The planner is revising this plan" | `Approve` on a run plan, `Run plan` on a session plan |
+| ran, replaced, deleted or running                 | `none`                                                 | none                                                  |
+| a run is held for it                              | `approve`                                              | `Approve`                                             |
+| its run's next step consumes it                   | `approve`                                              | `Approve`                                             |
+| its run took it already (`planApproved`, no hold) | `none`                                                 | none                                                  |
+| its run was discarded                             | `run`                                                  | `Run plan`                                            |
+| a session plan                                    | `run`                                                  | `Run plan`                                            |
+
+With unsent comments the kind stays and `isSecondary` is true: the comment
+bar's **Send to planner** is the one filled button. `artifact.runPlan` takes its
+label, its reason and its action from this rule, so it is never **Run plan** on
+a plan that belongs to a run. On a held run it calls `approveWorkflowRunPlan`,
+whatever the page hands it as its own run port; on a run that is not held it
+runs the plan through its workflow. After an `approved` result, or a workflow
+start from **Approve**, it shows one `info` toast, **Plan approved**, saying
+"The run goes on" or "Implement started", with the key `follow:<run id>` and
+the action **Follow the run** (left out when the run page is already open).
+A `noop` shows nothing and a `failed` goes to the notifications as "Couldn't
+approve the plan".
+
+#### The plan drawer
+
+The drawer (`features/artifacts/components/ArtifactDocumentDrawer`) is where a
+plan is read, commented, edited and approved. Every plan entry opens it over
+the current page (`openPlanAnywhere`); the only way to the Artifacts page is its
+own **Open in Artifacts**.
+
+- **Header.** Two rows at any width: the plan icon, the title (two lines at
+  most) and Close; then the state chip, the version (`v2`), the one primary,
+  **Edit** and an overflow with **Open in Artifacts**, **Expand** or
+  **Collapse**, and **Copy markdown**. Expanded, the header is one full-width
+  row and the body is centred at 720px. A line under the header says one thing
+  at a time: the inline question, the reason the primary or **Edit** is off, or
+  who wrote this version ("v3 · Revised by planner", "v3 · Edited by you",
+  from the revision's author). The second row never wraps at the default 400px
+  drawer: the chip's detail ("waiting for your answer") shows from 420px of
+  toolbar width up, and a conflict reads "v2 · v3" with the full words on hover.
+- **One primary.** `PlanPrimaryButton` draws `planPrimaryOf`: `approve` is a
+  filled **Approve**, `run` a filled **Run plan**, `disabled` the same button
+  off with its reason printed beside it, `none` no button (the chip says
+  Approved or Running). With unsent comments the kind stays, the button turns
+  secondary and the comment bar's **Send to planner** is the one filled
+  button; pressing **Approve** then asks inline "3 comments are not sent.
+  Approve anyway?". In the drawer the header primary is the only **Approve**:
+  the comment bar holds **Send to planner** and, with no comment, the hint
+  "Select text or click a block to comment". The Artifacts page keeps a
+  secondary **Approve** in its bar (`isApproveInBar`), because its header
+  scrolls away. An open question the planner asked turns the primary off with
+  "The planner asked a question. Answer it first." (`plannerQuestionCount` in
+  `planPrimaryOf`); the chip then reads **Needs you** with "waiting for your
+  answer", never "Revising", because the planner is not writing (a revising
+  turn is a running turn, a question is an open one). The palette, the menu and
+  the Artifacts page run the same rule: `artifact.runPlan` reads
+  `plannerQuestionCount` from its facts for the same off reason, and asks the
+  same "N comments are not sent. Approve anyway?" before it approves.
+  **Run plan** on a session plan is `usePlanRun` and its own toast.
+- **Approve.** `markUserStart` for the run first, then
+  `approveWorkflowRunPlan` for the run held for the plan (a run that is not
+  held starts the step through `runPlan`). `approved` raises one
+  `useFollowToast` toast, "Plan approved" with "The run goes on" or
+  "<Step> started" and the action **Follow the run**, which the hook leaves
+  out when the run page is open and uncovered; when the drawer sits over that
+  run's page it closes first. `noop` closes and raises nothing. `failed`
+  goes to `reportError` ("Couldn't approve the plan") and the drawer stays.
+- **Comment and re-plan.** Drafts gather in the bar. Send dims the body and
+  the chip reads "Revising to v3", with the reason beside the off primary and no
+  third copy in the body (the "Writing a new version" line stays for a plan that
+  already ran, where the chip says Ran). A new version shows "v3 · Revised by planner" and
+  settles the comments as before. `unchanged` shows "The planner answered
+  without changing the plan" with **Open the reply** (the planner's page) and
+  leaves the comments open. A question the planner asked is the existing
+  question card at the top of the body with **Answer**, and the bar waits
+  ("The planner asked a question. Answer it first.").
+
+#### Editing a plan by hand
+
+A hand edit saves against the revision it started from
+(`updatePlanBody(sessionId, planId, title, bodyMd, expectedRevision)` over
+`updatePlanBodyIfRevision`): if the planner wrote meanwhile the answer is
+`conflict` with the planner's revision and nothing is written; a save bumps the
+revision as author `user` and refreshes the session's plans and artifacts.
+`planEditBlockOf` gives the reason **Edit** is off: the planner is revising,
+comments are unsent ("Send or discard your 3 comments first"), or the plan
+runs as two or more parallel parts ("This plan runs as 3 parallel parts. Ask
+the planner to change it."), because the parts a run fans out from live in the
+plan's metadata and a hand edit keeps them. A body that lists parts twice,
+as `## Parts` in the markdown and as structured parts, shows them once: the
+body drops a top-level `Parts` section when the plan has structured parts
+(`dropPartsSection`), so the structured rows stay the one list.
+
+The editor is one component, `PlanEditor` with `usePlanEditor`
+(`features/artifacts/components/PlanEditor`), used by the drawer and by the
+Artifacts page through the `artifact.edit` action. **Edit** swaps the body for
+the markdown editor in place; the header's primary becomes **Save** with
+**Cancel** beside it, and **Approve** is hidden. **Save** sends the revision the
+edit started from: `saved` leaves edit mode and the line reads "v3 · Edited by
+you"; `conflict` keeps your text and says "The planner wrote v3 meanwhile",
+with **Copy your text** and **Discard**; **Save** is off after a conflict,
+because the same save would conflict again, with the reason "A newer version
+exists. Copy your text, discard, then edit again.", and the version beside the
+state reads "v2 · v3". A failed write says "Couldn't save the plan.
+Your text is still here." inline and files the exception detail through
+`reportError`. **Esc** in edit mode leaves edit mode
+and never closes the drawer: the editor registers its own escape layer above
+the drawer's, so a scrim click does the same. A changed edit asks "Discard your
+edit?" first, and **Esc** again keeps editing.
 
 ### Pause is one admission check
 

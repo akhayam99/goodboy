@@ -142,7 +142,6 @@ export const FIX_RUN_QUESTION_COPY = {
 export const FIX_RUN_THREAD_COPY = {
   working: 'Working on it',
   sameRun: 'Same fix run',
-  queued: 'Next in line. Starts when the current comment is done.',
   retry: 'Retry in this run',
   startOver: 'Start over with a new agent',
   retryHint:
@@ -153,10 +152,13 @@ export const FIX_RUN_COPY = {
   didHeading: 'What it did',
   fromReply: 'from the last reply',
   commitsHeading: 'Commits',
-  threadsHeading: 'Comments it touched',
+  threadsHeading: ({ count }: { readonly count: number }): string =>
+    count === 1 ? 'Covers 1 comment' : `Covers ${count} comments`,
   openBatch: 'Open them in Comments',
-  loading: 'Loading the commits',
-  noCommit: 'This run left no commit.',
+  noCommit: 'No commits yet',
+  statusWorking: 'Working',
+  statusQueued: 'Queued',
+  statusWaiting: 'Waiting for you',
   gone: 'This comment is no longer on the branch.',
   comment: 'Comment',
   commit: 'Commit',

@@ -6,7 +6,6 @@ import {
   deletePlan,
   listConsumptionsForPlan,
   listPlansForSession,
-  updatePlanBody,
   updatePlanStatus,
   upsertPlan,
 } from './plan';
@@ -210,21 +209,6 @@ describe('plan artifact queries', () => {
     await updatePlanStatus(db, plan.id, 'consumed');
     const refreshed = await listPlansForSession(db, sessionId);
     expect(refreshed[0]!.status).toBe('consumed');
-  });
-
-  it('updatePlanBody changes title and body', async () => {
-    const db = await seedFixture();
-    const plan = await upsertPlan(db, {
-      id: 'p1' as PlanId,
-      sessionId: sessionId,
-      agentId: agentA1,
-      title: 'old',
-      bodyMd: 'b',
-    });
-    await updatePlanBody(db, plan.id, 'new title', 'new body');
-    const refreshed = await listPlansForSession(db, sessionId);
-    expect(refreshed[0]!.title).toBe('new title');
-    expect(refreshed[0]!.bodyMd).toBe('new body');
   });
 
   it('deletePlan removes the row', async () => {

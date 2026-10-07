@@ -102,9 +102,6 @@ export type ResolveBatch = Readonly<{
   createdAt: number;
 }>;
 
-export const RESOLVE_PARALLEL_LIMIT_DEFAULT = 4;
-export const RESOLVE_PARALLEL_LIMIT_MAX = 16;
-
 export type ResolveThreadGitState =
   'local' | 'on_origin' | 'fixed_elsewhere' | 'folded' | 'missing';
 

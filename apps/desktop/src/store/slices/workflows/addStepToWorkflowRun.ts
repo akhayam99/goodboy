@@ -31,6 +31,7 @@ import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
 import { withHeadroom } from './withHeadroom';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 export type AddStepToWorkflowRunParams = {
   readonly sessionId: SessionId;
@@ -261,6 +262,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         providers: get().providers ?? [],
         cooldowns: get().providerCooldowns ?? {},
         alerts: get().budgetAlerts ?? [],
+        hidden: selectHiddenModels({ state: get() }),
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),

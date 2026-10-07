@@ -3,6 +3,7 @@ import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'luc
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { tintClasses } from '../../tint';
+import { ToneBar } from '../ToneBar';
 
 export type NoticeTone = 'danger' | 'warning' | 'info' | 'success';
 
@@ -33,13 +34,6 @@ const PLACEMENT_SURFACE = {
   inline: 'rounded-lg border border-border-soft bg-subtle py-3 pl-4 pr-3',
   banner: 'rounded-lg border border-border-soft bg-subtle py-3 pl-4 pr-3',
   floating: 'rounded-lg border border-border-soft bg-floating py-3 pl-4 pr-3 shadow-lg',
-} as const satisfies Record<NoticePlacement, string>;
-
-const PLACEMENT_RAIL = {
-  transcript: 'w-0.5',
-  inline: 'w-0.5',
-  banner: 'w-0.5',
-  floating: 'w-1',
 } as const satisfies Record<NoticePlacement, string>;
 
 const PLACEMENT_TITLE = {
@@ -93,11 +87,15 @@ export const Notice = ({
         className,
       )}
     >
-      <span
-        aria-hidden
-        data-notice-rail
-        className={cn('absolute inset-y-0 left-0', PLACEMENT_RAIL[placement], tint.dot)}
-      />
+      {placement === 'transcript' ? (
+        <span
+          aria-hidden
+          data-notice-rail
+          className={cn('absolute inset-y-0 left-0 w-0.5', tint.dot)}
+        />
+      ) : (
+        <ToneBar tone={tone} density="card" />
+      )}
       <div
         data-notice-layout
         className={cn(

@@ -23,11 +23,13 @@ import { OverviewUnassignedNotesScene } from './scenes/OverviewUnassignedNotesSc
 import { LinkScopeScene } from './scenes/LinkScopeScene';
 import { OverviewRefreshingScene } from './scenes/OverviewRefreshingScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
+import { ForeignBranchScene } from './scenes/ForeignBranchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveLaunchScene } from './scenes/ResolveLaunchScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
 import { ResolveBulkScene } from './scenes/ResolveBulkScene';
 import { BranchCommentsScene } from './scenes/BranchCommentsScene';
+import { BranchLaneScene } from './scenes/BranchLaneScene';
 import { BranchNarrowScene } from './scenes/BranchNarrowScene';
 import { BranchPushScene } from './scenes/BranchPushScene';
 import { BranchReplyOnlyScene } from './scenes/BranchReplyOnlyScene';
@@ -41,6 +43,8 @@ import { ResolveRunAnsweredScene } from './scenes/ResolveRunAnsweredScene';
 import { ResolveRunQuestionScene } from './scenes/ResolveRunQuestionScene';
 import { ResolveRunWorkingScene } from './scenes/ResolveRunWorkingScene';
 import { FixRunQuestionScene } from './scenes/FixRunQuestionScene';
+import { FixRunMultiScene } from './scenes/FixRunMultiScene';
+import { FixRunMultiDoneScene } from './scenes/FixRunMultiDoneScene';
 import { SpaceDiffCommentScene } from './scenes/SpaceDiffCommentScene';
 import { SpaceDiffSplitScene } from './scenes/SpaceDiffSplitScene';
 import { BoardScene } from './scenes/BoardScene';
@@ -156,6 +160,8 @@ import { BrandContextScene } from './scenes/brand/ContextScene';
 import { BrandCompareScene } from './scenes/brand/CompareScene';
 import { BrandDiffScene } from './scenes/brand/DiffScene';
 import { BrandDiffLargeScene } from './scenes/brand/DiffLargeScene';
+import { BrandDiffEditsOnlyScene } from './scenes/brand/DiffEditsOnlyScene';
+import { BrandDiffEmptyScene } from './scenes/brand/DiffEmptyScene';
 import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
 import { DiffNotesScene } from './scenes/brand/DiffNotesScene';
 import { ResolveNotesScene } from './scenes/ResolveNotesScene';
@@ -171,6 +177,7 @@ import { BrandStorageScene } from './scenes/brand/StorageScene';
 import { BrandSecurityFindingsScene } from './scenes/brand/SecurityFindingsScene';
 import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
+import { useHideSceneToasts } from './useHideSceneToasts';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
@@ -185,6 +192,19 @@ import { ScribeProposalTranscriptScene } from './scenes/ScribeProposalTranscript
 import { FixRunScene } from './scenes/FixRunScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
+import { U21_KEYS_ROWS_SCENES } from './scenes/u21/keys-rows';
+import { U21_STATES_SCENES } from './scenes/u21/states';
+import { U21_DRAWERS_SCENES } from './scenes/u21/drawers';
+import { U21_CHECKS_SCENES } from './scenes/u21/checks';
+import { U21_SIDEBAR_SCENES } from './scenes/u21/sidebar';
+import { U21_BRANCH_SCENES } from './scenes/u21/branch';
+import { U21_SETTINGS_SCENES } from './scenes/u21/settings';
+import { U21_BOARD_SCENES } from './scenes/u21/board';
+import { U21_SIDEBAR_LIST_SCENES } from './scenes/u21/sidebar-list';
+import { U21_FILES_RAIL_SCENES } from './scenes/u21/files-rail';
+import { U21_RUN_TREE_SCENES } from './scenes/u21/run-tree';
+import { U21_RUN_PAGE_SCENES } from './scenes/u21/run-page';
+import { U21_PLAN_DRAWER_SCENES } from './scenes/u21/plan-drawer';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -207,6 +227,8 @@ export const MOCK_SCENES = {
   'task-links-undo': TaskLinksUndoScene,
   'overview-refreshing': OverviewRefreshingScene,
   'mount-mismatch': MountMismatchScene,
+  'foreign-stranded': () => <ForeignBranchScene state="stranded" />,
+  'foreign-picker': () => <ForeignBranchScene state="picker" />,
   resolve: ResolveScene,
   'resolve-select': ResolveSelectScene,
   'resolve-launch': ResolveLaunchScene,
@@ -218,6 +240,8 @@ export const MOCK_SCENES = {
   'branch-comments': BranchCommentsScene,
   'branch-commits': BrandHistoryScene,
   'branch-files': BrandDiffScene,
+  'branch-lane-working': () => <BranchLaneScene variant="working" />,
+  'branch-lane-chain': () => <BranchLaneScene variant="chain" />,
   'branch-narrow': BranchNarrowScene,
   'branch-push': BranchPushScene,
   'branch-reply-bundled': () => <BranchReplyOnlyScene variant="bundled" />,
@@ -340,6 +364,8 @@ export const MOCK_SCENES = {
   'brand-compare': BrandCompareScene,
   'brand-diff': BrandDiffScene,
   'brand-diff-many': BrandDiffManyFilesScene,
+  'brand-diff-empty': BrandDiffEmptyScene,
+  'brand-diff-edits-only': BrandDiffEditsOnlyScene,
   'brand-diff-large': BrandDiffLargeScene,
   'diff-notes': DiffNotesScene,
   'resolve-notes': ResolveNotesScene,
@@ -367,12 +393,25 @@ export const MOCK_SCENES = {
   'fix-run': FixRunScene,
   'fix-run-question': FixRunQuestionScene,
   'resolve-transcript-drawer': FixRunQuestionScene,
+  'resolve-transcript-drawer-multi': FixRunMultiScene,
+  'resolve-transcript-drawer-multi-done': FixRunMultiDoneScene,
   'space-diff-split': SpaceDiffSplitScene,
   'space-diff-comment': SpaceDiffCommentScene,
   'crash-report': CrashReportScene,
+  ...U21_KEYS_ROWS_SCENES,
+  ...U21_STATES_SCENES,
+  ...U21_DRAWERS_SCENES,
+  ...U21_CHECKS_SCENES,
+  ...U21_SIDEBAR_SCENES,
+  ...U21_BRANCH_SCENES,
+  ...U21_SETTINGS_SCENES,
+  ...U21_BOARD_SCENES,
+  ...U21_SIDEBAR_LIST_SCENES,
+  ...U21_FILES_RAIL_SCENES,
+  ...U21_RUN_TREE_SCENES,
+  ...U21_RUN_PAGE_SCENES,
+  ...U21_PLAN_DRAWER_SCENES,
 };
-
-const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];
 
 export const MockScene = () => {
   useReportSheetParam();
@@ -389,20 +428,7 @@ export const MockScene = () => {
     finishOnboarding();
   }
 
-  useEffect(() => {
-    if (params.get('brand') !== '1') {
-      return;
-    }
-    const drop = () =>
-      document.querySelectorAll('[role="alert"], [role="status"]').forEach((node) => {
-        if (BRAND_HIDDEN_TOASTS.some((text) => node.textContent?.includes(text))) {
-          (node as HTMLElement).style.display = 'none';
-        }
-      });
-    const observer = new MutationObserver(drop);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
+  useHideSceneToasts();
 
   useBrandChrome({ isBrand: params.get('brand') === '1' });
 

@@ -29,6 +29,7 @@ const BASE: ReviewCommentFacts = {
   isReplyOnly: false,
   isReplyFailure: false,
   hasFixOnBranch: false,
+  laneAcceptCount: 1,
 };
 
 const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict => ({

@@ -89,6 +89,7 @@ describe('NowChip', () => {
     const { rerender } = render(<NowChip onOpenScript={vi.fn()} />);
 
     expect(trigger().getAttribute('aria-label')).toBe('1 running');
+    expect(screen.queryByText('need you')).toBeNull();
     expect(screen.queryByText('needs you')).toBeNull();
     expect(screen.queryByText('scripts')).toBeNull();
 
@@ -102,7 +103,7 @@ describe('NowChip', () => {
     expect(trigger().getAttribute('aria-label')).toBe(
       '2 sessions need you, 1 running, 1 script running',
     );
-    expect(screen.getByText('needs you').className).toContain('@min-chrome-labels/topbar:inline');
+    expect(screen.getByText('need you').className).toContain('@min-chrome-labels/topbar:inline');
     expect(screen.getByText('scripts').className).toContain('@min-chrome-labels/topbar:inline');
   });
 

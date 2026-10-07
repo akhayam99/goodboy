@@ -20,6 +20,7 @@ type Props = {
   readonly label: string;
   readonly tone?: Tone;
   readonly spinClassName?: string;
+  readonly isSpinning?: boolean;
   readonly hasUnread?: boolean;
   readonly progress?: number | null;
   readonly size?: WorkNodeSize;
@@ -86,6 +87,7 @@ export const WorkNode = ({
   label,
   tone = 'neutral',
   spinClassName = 'spin-border-info',
+  isSpinning = false,
   hasUnread = false,
   progress = null,
   size = 'md',
@@ -101,7 +103,8 @@ export const WorkNode = ({
       data-node-size={size}
       className={cn(
         'relative inline-flex shrink-0 items-center justify-center rounded-full bg-background',
-        state === 'running' && progress === null && cn('spin-border', spinClassName),
+        (isSpinning || (state === 'running' && progress === null)) &&
+          cn('spin-border', spinClassName),
         state === 'marker' && cn('ring-1', tintClasses(tone).ring),
       )}
       style={{ width: nodeSize, height: nodeSize }}

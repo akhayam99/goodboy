@@ -1,19 +1,23 @@
 import { LayoutDashboard } from 'lucide-react';
 import type { CrumbMenuModel } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
-import { branchPlace } from '../../../../store/slices/navigation/place';
+import { switchBranchMount } from '../../../branch/switchBranchMount';
 import { openLens } from '../../openLens';
 import { branchMenu } from '../../trail/menus/branchMenu';
 import type { TrailMenuScope } from './trailMenuScope';
 
 export const diffBranchCrumbMenu = (scope: TrailMenuScope): CrumbMenuModel => {
   const { sessionId, mounts, diffPath, diffStats, branchStatuses, mergedMountIds } = scope;
+  const { openRequestHeads } = scope;
   return branchMenu({
     mounts,
     currentPath: diffPath,
     statOf: (mount) => diffStats.get(mount.worktreePath) ?? null,
     statusOf: (mount) => branchStatuses.get(mount.worktreePath) ?? null,
     isRequestMergedOf: (mount) => mergedMountIds.includes(mount.mountId),
+    openRequestOf: (mount) => {
+      const head = openRequestHeads[mount.mountId];
+      return head === undefined ? null : { headSha: head === '' ? null : head };
+    },
     actions: [
       {
         id: 'all-branches',
@@ -23,19 +27,11 @@ export const diffBranchCrumbMenu = (scope: TrailMenuScope): CrumbMenuModel => {
         onRun: () => openLens({ sessionId, lens: null }),
       },
     ],
-    onSelect: (mount) => {
-      const state = useAppStore.getState();
-      void state
-        .setSessionActiveMount({ sessionId, mountId: mount.mountId })
-        .catch(() => undefined);
-      scope.navigate({
-        to: branchPlace({
-          sessionId,
-          mountPath: mount.worktreePath,
-          tab: state.branchTab?.[sessionId] ?? 'comments',
-        }),
-        mode: 'replace',
-      });
-    },
+    onSelect: (mount) =>
+      void switchBranchMount({
+        sessionId,
+        mountId: mount.mountId,
+        worktreePath: mount.worktreePath,
+      }),
   });
 };

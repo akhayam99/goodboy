@@ -41,7 +41,7 @@ import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { isReportedError } from '../notifications/reportedError';
+import { ReportedError, isReportedError } from '../notifications/reportedError';
 import { sessionById } from '../sessions/sessionIndex';
 import { scopedKindRouting } from './scopedKindRouting';
 
@@ -69,6 +69,10 @@ type SpawnArgs = {
   resolveBatch?: ResolveAttemptBatch;
   resolveLaunch?: ResolveAttemptLaunch;
 };
+
+const NO_ALLOWED_MODEL_TITLE = 'No model is allowed for this agent';
+const NO_ALLOWED_MODEL_MESSAGE =
+  'Every model this agent could use is hidden. Show a model in Settings, or pick one for this agent by hand.';
 
 type Params = {
   readonly set: SetFn;
@@ -130,6 +134,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         });
         const roleModels = settings?.roleModels ?? null;
         const routing = scopedKindRouting({ state: get(), settings, kind: resolvedKind });
+        if (routing.noAllowedModel === true && args.provider == null && args.model == null) {
+          const error = new ReportedError(NO_ALLOWED_MODEL_MESSAGE);
+          await get().reportError({ title: NO_ALLOWED_MODEL_TITLE, error, sessionId });
+          throw error;
+        }
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
         const inserted = await invokeAgentInsert({
           sessionId,

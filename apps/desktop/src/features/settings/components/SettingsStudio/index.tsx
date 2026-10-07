@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
+import { ScrollFade, StudioRailLayout, UnderTrailContext } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
@@ -28,6 +28,7 @@ type Props = {
   readonly onScopeChange: (params: SettingsScopeChange) => void;
   readonly onClose: () => void;
   readonly columnSlot?: HTMLElement | null;
+  readonly isInColumnShell?: boolean;
 };
 
 type Slots = Readonly<Partial<Record<NestedScope, HTMLDivElement>>>;
@@ -68,6 +69,7 @@ export const SettingsStudio = ({
   onScopeChange,
   onClose,
   columnSlot = null,
+  isInColumnShell = false,
 }: Props) => {
   const amendStudio = useAppStore((state) => state.amendStudio);
   const openFocus = useCallback(
@@ -204,6 +206,42 @@ export const SettingsStudio = ({
     />
   );
 
+  const nested = NESTED_SCOPES.filter((scope) => scope === availableScope || scope === leaving).map(
+    renderScope,
+  );
+
+  if (isInColumnShell) {
+    return (
+      <StudioShell
+        icon={CONCEPT_ICONS.settings}
+        tone={CONCEPT_TONE.settings}
+        title="Settings"
+        closeLabel="Back to app"
+        onClose={onClose}
+      >
+        {(requestClose) => (
+          <UnderTrailContext.Provider value>
+            {columnSlot === null
+              ? null
+              : createPortal(
+                  <SettingsColumnNav
+                    groups={groups}
+                    rail={renderRail({ isInColumn: true })}
+                    onBack={requestClose}
+                    onOpen={openFocus}
+                  />,
+                  columnSlot,
+                )}
+            <div data-settings-detail="" className="flex min-h-0 min-w-0 flex-1 flex-col pt-10">
+              {renderDetail(requestClose)}
+            </div>
+            {nested}
+          </UnderTrailContext.Provider>
+        )}
+      </StudioShell>
+    );
+  }
+
   return (
     <StudioShell
       icon={CONCEPT_ICONS.settings}
@@ -223,38 +261,19 @@ export const SettingsStudio = ({
             })}
           />
           <div className="relative flex min-h-0 min-w-0 flex-1">
-            {columnSlot === null ? (
-              <StudioRailLayout
-                railLabel="Settings scopes"
-                railWidth="narrow"
-                surface="settings"
-                rail={
-                  <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
-                    {renderRail({ isInColumn: false })}
-                  </ScrollFade>
-                }
-                detail={renderDetail(requestClose)}
-              />
-            ) : (
-              <>
-                {createPortal(
-                  <SettingsColumnNav
-                    groups={groups}
-                    rail={renderRail({ isInColumn: true })}
-                    onBack={requestClose}
-                    onOpen={openFocus}
-                  />,
-                  columnSlot,
-                )}
-                <div data-settings-detail="" className="flex min-h-0 min-w-0 flex-1 flex-col">
-                  {renderDetail(requestClose)}
-                </div>
-              </>
-            )}
+            <StudioRailLayout
+              railLabel="Settings scopes"
+              railWidth="narrow"
+              surface="settings"
+              rail={
+                <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
+                  {renderRail({ isInColumn: false })}
+                </ScrollFade>
+              }
+              detail={renderDetail(requestClose)}
+            />
           </div>
-          {NESTED_SCOPES.filter((scope) => scope === availableScope || scope === leaving).map(
-            renderScope,
-          )}
+          {nested}
         </>
       )}
     </StudioShell>

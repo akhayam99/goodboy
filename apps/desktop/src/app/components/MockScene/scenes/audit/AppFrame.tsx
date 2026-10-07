@@ -8,9 +8,14 @@ import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
-import { shellArrangement } from '../../../../shellArrangement';
+import { shellArrangement, type ShellMode } from '../../../../shellArrangement';
 import { StageBoard } from '../../../../../features/workspace/components/StageBoard';
-import { useCurrentSession, useCurrentWorkspace, useSessions } from '../../../../../store';
+import {
+  useAppStore,
+  useCurrentSession,
+  useCurrentWorkspace,
+  useSessions,
+} from '../../../../../store';
 import { sceneShellMode } from '../sceneShell';
 import { FRAME_CONNECTED } from './frameSeed';
 import { triggerFrameView } from './frameViews';
@@ -20,20 +25,23 @@ const noop = () => undefined;
 type Props = {
   readonly view: string;
   readonly isRailCollapsed: boolean;
+  readonly mode?: ShellMode;
 };
 
-export const AppFrame = ({ view, isRailCollapsed }: Props) => {
+export const AppFrame = ({ view, isRailCollapsed, mode = sceneShellMode() }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const sessions = useSessions();
   const goToBoard = useGoToBoard();
   const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
+  const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
   const isLauncher = view === 'launcher';
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace !== null,
     hasActiveSession: currentSession !== null,
     isSidebarCollapsed: isRailCollapsed,
-    mode: sceneShellMode(),
+    mode,
+    isSettingsOpen,
   });
   const overlays = useAppOverlays({
     connected: FRAME_CONNECTED,
@@ -109,7 +117,7 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
           )
         }
         leftHidden={arrangement.leftHidden}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+        leftSidebarCollapsed={arrangement.isLeftRail}
         leftSidebar={
           arrangement.leftSlot === 'none' ? undefined : (
             <ShellLeft

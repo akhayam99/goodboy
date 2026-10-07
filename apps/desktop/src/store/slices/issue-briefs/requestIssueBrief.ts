@@ -17,6 +17,7 @@ import type {
   SetFn,
 } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
 
@@ -83,6 +84,7 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
       connectedProviders,
       enabledProviders: session?.providerPreference.enabledProviders ?? null,
       cooldowns: state.providerCooldowns,
+      hidden: selectHiddenModels({ state }),
       nowMs: Date.now(),
     });
     if (taskModel == null || !connectedProviders.includes(taskModel.providerId)) {

@@ -48,4 +48,19 @@ describe('pullRequestMenu', () => {
 
     expect(menu.groups[0]?.rows[0]?.state?.word).toBe('Draft');
   });
+
+  it('says closed and merged for a pull request GitHub still flags as a draft', () => {
+    const menu = pullRequestMenu({
+      prs: [
+        pr({ number: 9913, state: 'closed', isDraft: true }),
+        pr({ number: 9914, state: 'merged', isDraft: true }),
+      ],
+      currentNumber: null,
+      actions: [],
+      onSelect: vi.fn(),
+    });
+
+    const rows = menu.groups.flatMap((group) => group.rows);
+    expect(rows.map((row) => row.state?.word)).toEqual(['Closed', 'Merged']);
+  });
 });

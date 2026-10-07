@@ -14,6 +14,8 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { MODEL_CATALOGS } from '@goodboy/core';
+import { PROVIDER_IDS } from '@goodboy/types';
 import { buildResolverAgentArgs } from '../../../features/chat/spawn-from-comment';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -759,5 +761,43 @@ describe('spawnAgent runs what every launch point shows', () => {
       modelOverride: 'sonnet-5',
       effort: 'medium',
     });
+  });
+
+  it('runs a hidden model the owner picks by hand for one agent', async () => {
+    const { getState, spawn } = buildHarness([]);
+    Object.assign(getState(), {
+      settings: { 'providers.hiddenModels': JSON.stringify({ anthropic: ['opus-5'] }) },
+    });
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'implementer',
+      provider: 'anthropic',
+      model: 'opus-5',
+    });
+
+    expect(updateAgentConfigSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      INSERTED_ID,
+      expect.objectContaining({ providerOverride: 'anthropic', modelOverride: 'opus-5' }),
+    );
+  });
+
+  it('says so inline and starts nothing when every model is hidden', async () => {
+    const { getState, reportError, spawn } = buildHarness([]);
+    const everyModel = Object.fromEntries(
+      PROVIDER_IDS.map((provider) => [provider, MODEL_CATALOGS[provider].map((m) => m.key)]),
+    );
+    Object.assign(getState(), {
+      settings: { 'providers.hiddenModels': JSON.stringify(everyModel) },
+    });
+
+    await expect(spawn(SESSION_ID, { kindOverride: 'implementer' })).rejects.toThrow(
+      'Every model this agent could use is hidden',
+    );
+
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'No model is allowed for this agent' }),
+    );
+    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
   });
 });

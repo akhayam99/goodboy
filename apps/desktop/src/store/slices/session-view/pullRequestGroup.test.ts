@@ -42,6 +42,18 @@ describe('pullRequestGroupOf', () => {
     expect(pullRequestGroupOf({ pr: draft })).toBe('draft');
   });
 
+  it('never calls a pull request in the merge queue approved, even with an approving review', () => {
+    const queued = pr({ state: 'queued', reviewDecision: 'approved' });
+
+    expect(isPullRequestApproved({ pr: queued })).toBe(false);
+    expect(pullRequestGroupOf({ pr: queued })).toBe('queued');
+  });
+
+  it('keeps a closed or merged draft in its own group, never the draft one', () => {
+    expect(pullRequestGroupOf({ pr: pr({ state: 'closed', isDraft: true }) })).toBe('closed');
+    expect(pullRequestGroupOf({ pr: pr({ state: 'merged', isDraft: true }) })).toBe('merged');
+  });
+
   it('puts a session without a pull request in its own group', () => {
     expect(pullRequestGroupOf({ pr: null })).toBe('not-open');
     expect(pullRequestGroupOf({ pr: undefined })).toBe('not-open');

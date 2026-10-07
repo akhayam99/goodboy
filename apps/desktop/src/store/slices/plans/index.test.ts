@@ -639,7 +639,7 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
       expect(result).toEqual({
         kind: 'refused',
-        reason: 'Planner is revising this plan',
+        reason: 'The planner is revising this plan',
         workflowRunId: null,
       });
       expect(state.spawnAgent).not.toHaveBeenCalled();
@@ -654,7 +654,10 @@ describe('runPlan, workflow-aware spawn routing', () => {
 
       const result = await buildSlice(state).runPlan(SESSION_ID, PLAN_ID);
 
-      expect(result).toMatchObject({ kind: 'refused', reason: 'Planner is revising this plan' });
+      expect(result).toMatchObject({
+        kind: 'refused',
+        reason: 'The planner is revising this plan',
+      });
       expect(state.spawnAgent).not.toHaveBeenCalled();
     });
 

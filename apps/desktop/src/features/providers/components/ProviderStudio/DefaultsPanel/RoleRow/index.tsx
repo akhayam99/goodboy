@@ -63,8 +63,6 @@ export const RoleRow = ({
       ? hiddenModelNote({
           provider: firstLive.choice.providerId,
           model: firstLive.choice.model,
-          isPinned: true,
-          job: label,
         })
       : help;
   const availableProviderIds = connectedProviderIds.filter(

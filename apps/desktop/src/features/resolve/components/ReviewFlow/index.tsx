@@ -43,6 +43,7 @@ import {
 } from '../../../review/reviewTargetCopy';
 import { fixRunOf, type FixRunWord } from '../../fixRun';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
+import { useLaneStatus } from '../../hooks/useLaneStatus';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
 import { isUndoableAccept } from '../../bulkAccept';
 import { REVIEW_BULK_LABEL, bulkAcceptFailureLine } from '../../reviewBulkCopy';
@@ -104,6 +105,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const env = useActionEnv({ origin: 'button' });
   const { entries, groups: allGroups } = useReviewEntries({ sessionId });
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
+  const stopResolveLane = useAppStore((s) => s.stopResolveLane);
   const [filter, setFilter] = useState<FixRunWord | null>(null);
   const [isDoneOpen, setIsDoneOpen] = useState(false);
   const run = useMemo(
@@ -117,6 +119,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
       }),
     [entries],
   );
+  const lane = useLaneStatus({ sessionId, entries });
   const activeFilter = run !== null && filter !== null && run.tally[filter] > 0 ? filter : null;
   const groups = useMemo(
     () =>
@@ -683,15 +686,8 @@ export const ReviewFlow = ({ session, push }: Props) => {
                     onTryAgain={() => void controller.retryRun(focused.threadId)}
                     onStartOver={() => void controller.startOver(focused.threadId)}
                   />
-                  {layout !== 'three' && (
-                    <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
-                  )}
+                  <ThreadProperties sessionId={sessionId} entry={focused} />
                 </div>
-                {layout === 'three' && (
-                  <aside aria-label="Thread details" className="w-[var(--margin-rail)] shrink-0">
-                    <ThreadProperties sessionId={sessionId} entry={focused} layout="rail" />
-                  </aside>
-                )}
               </div>
             )}
           </ScrollFade>
@@ -702,7 +698,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
 
   return (
     <div ref={stage.ref} className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
-      <PageColumn width="full" className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+      <PageColumn width="column" className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
         {refreshError !== null && !isWholeError && (
           <ErrorStrip
             label={resolveQueueRefreshLabel({ provider: provider ?? 'GitHub' })}
@@ -721,6 +717,11 @@ export const ReviewFlow = ({ session, push }: Props) => {
             error={new Error(targetError)}
             onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
           />
+        )}
+        {lane?.rebuildLine != null && (
+          <p role="status" className="text-meta text-muted-foreground">
+            {lane.rebuildLine}
+          </p>
         )}
         {acceptError !== null && (
           <Notice
@@ -746,7 +747,12 @@ export const ReviewFlow = ({ session, push }: Props) => {
             onOpenTranscript={() =>
               openDrawer({ kind: 'transcript', sessionId, payload: { agentId: run.agentId } })
             }
-            onStop={() => void forceCloseResolver(sessionId, run.agentId)}
+            lane={lane}
+            onStop={() =>
+              void (lane === null
+                ? forceCloseResolver(sessionId, run.agentId)
+                : stopResolveLane({ sessionId, worktreePath: lane.worktreePath }))
+            }
             actions={
               bulkRun === null ? null : (
                 <RunStatusBulkActions

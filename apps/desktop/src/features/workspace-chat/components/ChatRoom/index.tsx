@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Play } from 'lucide-react';
+import { parseHiddenModels } from '@goodboy/core';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, DrawerColumn, PageColumn } from '@goodboy/ui';
 import type {
@@ -26,6 +27,7 @@ import { ChatHeaderDelete } from './ChatHeaderDelete';
 import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
 import { useChatDrafts } from '../../hooks/useChatDrafts';
+import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
 type Props = {
@@ -96,15 +98,17 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
   const workspaceDefaultProvider = useAppStore(
     (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderOverride,
   );
+  const rawHidden = useAppStore((state) => state.settings?.[SETTING_HIDDEN_MODELS] ?? null);
+  const hidden = useMemo(() => parseHiddenModels(rawHidden), [rawHidden]);
   const model = useMemo<ChatRouting>(() => {
     if (chat !== null) {
       return { provider: chat.provider, model: chat.model, effort: chat.effort };
     }
     return (
       draftRouting ??
-      defaultChatRouting({ connected, saved: savedDefault, workspaceDefaultProvider })
+      defaultChatRouting({ connected, saved: savedDefault, workspaceDefaultProvider, hidden })
     );
-  }, [chat, draftRouting, connected, savedDefault, workspaceDefaultProvider]);
+  }, [chat, draftRouting, connected, savedDefault, workspaceDefaultProvider, hidden]);
 
   const send = async ({ text, images = NO_IMAGES }: SendParams): Promise<boolean> => {
     if (chatId !== null) {
@@ -119,6 +123,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
         connected,
         saved: await readSavedDefault(),
         workspaceDefaultProvider,
+        hidden,
       });
     const created = await createChat({
       workspaceId,

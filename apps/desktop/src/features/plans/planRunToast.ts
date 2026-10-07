@@ -1,5 +1,7 @@
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import type { ShowToastParams } from '../../shared/components/Toast/toastContext';
+import { FOLLOW_LABEL, followDedupeKey } from '../../shared/lib/followToast';
+import { markUserStart } from '../../shared/lib/userStarts';
 import { agentPlace, sessionPlace } from '../../store/slices/navigation/place';
 import type { AppStore } from '../../store/store';
 import type { RunPlanResult } from '../../store/slices/plans/types';
@@ -10,31 +12,55 @@ type Params = Readonly<{
   navigate: AppStore['navigate'];
 }>;
 
+type StartedParams = Readonly<{
+  kind: 'info' | 'warning';
+  message: string;
+  agentId: AgentId;
+  sessionId: SessionId;
+  navigate: AppStore['navigate'];
+}>;
+
 const STARTED_TITLE = 'Implementer started';
 const STARTED_MESSAGE = 'An agent is running this plan. You can keep working.';
+
+const startedToast = ({
+  kind,
+  message,
+  agentId,
+  sessionId,
+  navigate,
+}: StartedParams): ShowToastParams => {
+  markUserStart({ key: agentId });
+  return {
+    kind,
+    title: STARTED_TITLE,
+    message,
+    dedupeKey: followDedupeKey({ startKey: agentId }),
+    action: {
+      label: FOLLOW_LABEL,
+      onClick: () => navigate({ to: agentPlace({ sessionId, agentId }) }),
+    },
+  };
+};
 
 export const planRunToast = ({ result, sessionId, navigate }: Params): ShowToastParams | null => {
   switch (result.kind) {
     case 'started':
-      return {
+      return startedToast({
         kind: 'info',
-        title: STARTED_TITLE,
         message: STARTED_MESSAGE,
-        action: {
-          label: 'Open the agent',
-          onClick: () => navigate({ to: agentPlace({ sessionId, agentId: result.agentId }) }),
-        },
-      };
+        agentId: result.agentId,
+        sessionId,
+        navigate,
+      });
     case 'startedOutside':
-      return {
+      return startedToast({
         kind: 'warning',
-        title: STARTED_TITLE,
         message: result.note,
-        action: {
-          label: 'Open the agent',
-          onClick: () => navigate({ to: agentPlace({ sessionId, agentId: result.agentId }) }),
-        },
-      };
+        agentId: result.agentId,
+        sessionId,
+        navigate,
+      });
     case 'refused': {
       const { reason, workflowRunId } = result;
       if (reason === null) {

@@ -10,10 +10,18 @@ export type SessionTone = {
 type ToneParams = {
   readonly stage: SessionStage;
   readonly attention?: SessionAttentionReason | null;
+  readonly isRunning?: boolean;
 };
 
-export const sessionTone = ({ stage, attention = null }: ToneParams): SessionTone => {
+export const sessionTone = ({
+  stage,
+  attention = null,
+  isRunning = false,
+}: ToneParams): SessionTone => {
   if (stage === 'attention' && attention !== null) {
+    return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: isRunning };
+  }
+  if (stage === 'review' && attention === 'pr-queued') {
     return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: false };
   }
   return { tone: STAGE_TONE[stage], isBreathing: stage === 'running' };
@@ -29,7 +37,7 @@ const restBorder = ({ selected }: Pick<ShellParams, 'selected'>): string => {
   if (selected === true) {
     return cn('border-primary', tintClasses('primary').bgSoft);
   }
-  return 'border-border-soft hover:border-border';
+  return 'border-border-soft hover:border-border hover:bg-hover';
 };
 
 export const sessionCardShell = ({ selected, active, dimmed }: ShellParams): string =>

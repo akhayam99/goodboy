@@ -8,6 +8,8 @@ pub struct CreatedWorktree {
     pub branch_name: String,
     pub slug: String,
     pub reused: bool,
+    #[serde(rename = "trackedRemote")]
+    pub tracked_remote: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -162,6 +164,35 @@ pub struct BranchInfo {
     pub has_uncommitted: bool,
 }
 
+#[derive(Debug, Serialize)]
+pub struct RemoteBranchInfo {
+    pub name: String,
+    pub author: String,
+    pub sha: String,
+    pub timestamp: i64,
+    #[serde(rename = "hasLocal")]
+    pub has_local: bool,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct RemoteBranchState {
+    #[serde(rename = "remoteAhead")]
+    pub remote_ahead: u32,
+    #[serde(rename = "localOwn")]
+    pub local_own: u32,
+    #[serde(rename = "remoteContainsLocal")]
+    pub remote_contains_local: bool,
+    #[serde(rename = "remoteSha")]
+    pub remote_sha: String,
+    #[serde(rename = "localSha")]
+    pub local_sha: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ChangedBranch {
+    pub adopted: bool,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ChangeBranchArgs {
     #[serde(rename = "repoPath")]
@@ -195,6 +226,8 @@ pub struct QuarantineCandidateArgs {
     pub candidate_id: String,
     #[serde(rename = "baseSha")]
     pub base_sha: String,
+    #[serde(default)]
+    pub stack: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -212,6 +245,8 @@ pub struct SplitCandidatesArgs {
     #[serde(rename = "baseSha")]
     pub base_sha: String,
     pub picks: Vec<SplitCandidatePick>,
+    #[serde(default)]
+    pub stack: bool,
 }
 
 #[derive(Debug, Serialize)]

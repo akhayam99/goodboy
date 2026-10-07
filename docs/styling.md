@@ -109,7 +109,7 @@ bars) paint their bars with it. The main pane stays on `bg-background`, one step
 
 ## The window grid
 
-Columns, resize handles, the studio slot and (under Classic bars) the footer
+Columns, resize handles, the studio slot and (under Legacy layout) the footer
 are areas of **one** CSS grid. Their
 widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and
@@ -134,23 +134,28 @@ in the content column of the pane that owns them and do not set the top bar's
 size.
 
 The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
-area beside the page, 0px wide while closed and the saved width plus two 8px
-insets while open. It opens beside the page: the main area gives up the drawer's track and the
-centred column slides left to re-centre in what is left of it (see The content
-column). When pushing would leave the main area under 560px plus
-its 48px of gutters (the drawer's track, insets included, is counted), the
-drawer lies over the page instead. `sizing` on `DrawerColumn` is `default` (the
-saved width, with the resize handle), `half` (half of the column, capped so the
-main area keeps its 560px and the drawer still pushes, no handle) or `full`
-(the whole column, always over the page). The pure geometry lives in
-`packages/ui/src/drawerGeometry.ts` (`drawerWidthOf`, `drawerModeOf`,
-`mainWidthOf`) and `drawerGeometry.test.ts` runs it over a width matrix:
-1024, 1440 and 1920 windows at zoom 0.8, 1 and 1.25, default and widest
-sidebar. `selectDrawerSizing.test.ts` takes every drawer kind at 1280 and
-1440 and checks the card ends 8px inside the aside, also while it slides in:
-`drawer-card-in` and `drawer-overlay-in` slide at most the 8px inset, never
-past the window edge. `DrawerColumn.test.tsx` pins the classes that math
-assumes (an 8px `w-2` handle, the card's `mr-2`, the track's min width).
+area beside the page, 0px wide while closed. Pushing, its aside is the card
+width plus two 8px insets; over the page it is the card width plus the 8px
+handle gutter, because the card is flush with the sheet's right edge. It opens
+beside the page: the main area gives up the drawer's track and the centred
+column slides left to re-centre in what is left of it (see The content
+column). While the page keeps 560px plus its 48px of gutters beside the
+narrowest drawer (384px, insets counted) the drawer pushes; below that it lies
+over the page, full height, with a scrim and an `inert` page. `sizing` on
+`DrawerColumn` is `default` (the saved width, with the resize handle), `half`
+(560px, narrowed to the room the page leaves, no handle) or `full` (the whole
+column, always over the page). The pure geometry lives in
+`packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
+`drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
+sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
+1920 windows at zoom 0.8, 1 and 1.25, default and widest sidebar.
+`selectDrawerSizing.test.ts` takes every drawer kind at 1280 and 1440 and
+checks the pushing card ends 8px inside the aside and the overlay card ends on
+the column edge. `drawer-card-in` and `drawer-overlay-in` slide at most the
+8px inset; the overlay card starts that far outside the sheet and is clipped by
+it. `DrawerColumn.test.tsx` pins the classes that math assumes (an 8px `w-2`
+handle, the pushing card's `my-2 mr-2`, the overlay card's `rounded-l-frame`
+and `border-l`, the track's min width).
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's
@@ -193,12 +198,12 @@ Three width tiers, one rule each:
 | ------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | measure | `--measure`, 720px    | prose: transcript assistant text, plan prose, comment and note bodies, a Brief, Chat answers (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
 | column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                |
-| full    | the pane, fluid       | work surfaces, from the pane's left edge: every Branch tab, File versions, the terminal, Inbox lists, the Board (`PageColumn width="full"`)      |
+| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Inbox lists, the Board (`PageColumn width="full"`)                                       |
 
 A body that owns its scroll (`scroll="self"`: the agent transcript and its
 composer) puts its own `PageColumn` around the scrolling content and the
 composer, so it shares the header's edges; the scroll viewport spans the pane
-and carries no gutter. File versions is `full`, trail included.
+and carries no gutter.
 
 Prose keeps its 720px measure aligned left inside the column. The `full` tier
 is the only exception to centring and ignores the slide below: its right edge
@@ -209,14 +214,11 @@ artifact document, a plan) the main area gives up the drawer's track and the
 centred column re-centres in the space left of the drawer, keeping its full
 width while that space is wide enough. It shrinks only below its frame, down to
 the column minimum (560px plus gutters); under that the drawer lies over the
-page, as before. Closing the drawer slides the column back. It is one 180ms
+page. Closing the drawer slides the column back. It is one 180ms
 ease-out width transition on the drawer's track, so the column's centre follows
 it in the same frames; it is off under `prefers-reduced-motion`. A route change
 never moves the column, with or without a drawer. The pure geometry is
 `pageBoxOf` in `packages/ui/src/drawerGeometry.ts`.
-
-A margin rail (`--margin-rail`, 288px) sits on the right of a work surface
-from 1280px of pane: Branch thread properties.
 
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
@@ -242,11 +244,16 @@ A Session or Agent page reads as one centred column: every child, banner, card
 and footer sits on the same edges. Only prose keeps the 720px measure, aligned
 left inside the column. Tables, code and cards take the whole column.
 
-**Work** pages (the tabs of the Branch) take the whole width of the pane: Files
-puts its file tree on the left from 900px of pane up and the diff beside it
-(under 900px the tree is a 44px strip that opens over the diff), Comments puts
-the list and the thread side by side from 900px, the thread's properties
-inline under it until 1280px and in the margin rail from there.
+**The Branch page** sits on the column like every other page: its header, the
+tabs, the trail and the Ask button, and every tab body share the 960px column,
+so nothing moves from one tab to the next. Files puts its file tree in a rail of
+its own at the pane's left edge, outside the column: open in the margin where the
+rail and 24px fit, else a 44px strip in the margin, else a `Files 1/6` button in
+the toolbar, the last two opening it over the diff (`treeRailModeOf`), so the
+diff keeps the column in every mode; Comments puts the list and the thread side by
+side from 900px, the thread's properties inline under it at every width. Both
+read the width of their own pane (`branchLayoutOf`), so a wide sidebar or an
+open drawer narrows them.
 
 ## Layout: fixed-height shell, scroll on content
 

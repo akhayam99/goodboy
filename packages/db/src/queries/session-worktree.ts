@@ -64,6 +64,7 @@ type InsertSessionMountParams = {
 
 type UpdateSessionMountBranchParams = MountKeyParams & {
   readonly branch: string;
+  readonly branchOrigin?: BranchOrigin | null;
   readonly expectedRevision: number;
   readonly updatedAt: IsoDateTime;
 };
@@ -217,14 +218,15 @@ export const updateSessionMountBranch = async ({
   sessionId,
   mountId,
   branch,
+  branchOrigin = null,
   expectedRevision,
   updatedAt,
 }: UpdateSessionMountBranchParams): Promise<boolean> => {
   const result = await db.execute(
     `UPDATE session_worktrees
-     SET branch = ?, revision = revision + 1, updated_at = ?
+     SET branch = ?, branch_origin = COALESCE(?, branch_origin), revision = revision + 1, updated_at = ?
      WHERE session_id = ? AND id = ? AND revision = ?`,
-    [branch, Date.parse(updatedAt), sessionId, mountId, expectedRevision],
+    [branch, branchOrigin, Date.parse(updatedAt), sessionId, mountId, expectedRevision],
   );
   return result.rowsAffected > 0;
 };

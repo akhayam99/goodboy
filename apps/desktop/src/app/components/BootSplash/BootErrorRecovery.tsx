@@ -1,4 +1,4 @@
-import { Button, cn, tintClasses } from '@goodboy/ui';
+import { Button, Notice } from '@goodboy/ui';
 import { useMemo, useState } from 'react';
 import { CrashReport } from '../../../features/bug-report/components/CrashReport';
 import { crashPart } from '../../../features/bug-report/crashReport';
@@ -21,29 +21,28 @@ export const BootErrorRecovery = ({ error, category, onRetry }: Props) => {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div
-        role="alert"
-        className={cn(
-          'flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label',
-          tintClasses('danger').border,
-        )}
-      >
-        <div className="flex flex-col gap-1">
-          <span className="font-medium text-danger">{`${sentenceCase({ text: category })} failed`}</span>
-          <p className="leading-relaxed text-muted-foreground">{error}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {onRetry !== undefined ? (
-            <Button variant="danger" size="sm" onClick={onRetry}>
-              Retry
-            </Button>
-          ) : null}
-          {isReporting ? null : (
-            <Button variant="ghost" size="sm" onClick={() => setIsReporting(true)}>
-              Report this
-            </Button>
-          )}
-        </div>
+      <div className="w-72">
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title={`${sentenceCase({ text: category })} failed`}
+          body={error}
+          actions={
+            <>
+              {onRetry !== undefined ? (
+                <Button variant="secondary" size="sm" onClick={onRetry}>
+                  Retry
+                </Button>
+              ) : null}
+              {isReporting ? null : (
+                <Button variant="ghost" size="sm" onClick={() => setIsReporting(true)}>
+                  Report this
+                </Button>
+              )}
+            </>
+          }
+        />
       </div>
       {isReporting ? (
         <div className="w-full max-w-140">

@@ -7,43 +7,138 @@ import { NAMES } from '../../shared/names';
 import { PULL_REQUEST_PRESENTATION } from '../../shared/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
+export type AttentionMark = '!' | '?' | 'approval' | 'queue' | 'approved' | 'none';
+
 type AttentionEntry = {
   readonly icon: keyof typeof CONCEPT_ICONS;
   readonly tone: Tone;
+  readonly mark: AttentionMark;
+  readonly words: string;
   readonly reason: string;
 };
 
+type EntryParams = Pick<AttentionEntry, 'icon' | 'tone' | 'mark' | 'words'>;
+
+const entryOf = ({ icon, tone, mark, words }: EntryParams): AttentionEntry => ({
+  icon,
+  tone,
+  mark,
+  words,
+  reason: words,
+});
+
 export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntry> = {
-  'agent-error': { icon: 'errors', tone: 'danger', reason: 'The agent stopped with an error' },
-  'open-question': { icon: 'questions', tone: 'warning', reason: 'The agent asked you something' },
-  'fix-needs-you': {
+  'agent-error': entryOf({
+    icon: 'errors',
+    tone: 'danger',
+    mark: '!',
+    words: 'An agent stopped on an error',
+  }),
+  'ci-failed': entryOf({ icon: 'checks', tone: 'danger', mark: '!', words: 'Checks failing' }),
+  'open-question': entryOf({
+    icon: 'questions',
+    tone: 'warning',
+    mark: '?',
+    words: '1 question for you',
+  }),
+  'fix-needs-you': entryOf({
     icon: 'review',
     tone: 'warning',
-    reason: 'The fix run asked you something about a comment',
-  },
-  'fix-couldnt-fix': {
-    icon: 'review',
-    tone: 'danger',
-    reason: "The fix run couldn't fix a comment",
-  },
-  'unread-reply': {
-    icon: 'agents',
-    tone: 'primary',
-    reason: "The agent replied and you haven't read it",
-  },
-  'ci-failed': { icon: 'checks', tone: 'danger', reason: 'A check failed on the pull request' },
-  'changes-requested': { icon: 'review', tone: 'danger', reason: 'A reviewer asked for changes' },
-  'pr-approved': {
-    icon: 'pr',
-    tone: 'success',
-    reason: 'The pull request is approved and ready to merge',
-  },
-  'needs-approval': {
+    mark: '?',
+    words: '1 comment needs you',
+  }),
+  'needs-approval': entryOf({
     icon: 'approval',
     tone: 'warning',
-    reason: 'The agent is waiting for you to approve a tool call',
-  },
+    mark: 'approval',
+    words: 'Waiting for your approval',
+  }),
+  'plan-approval': entryOf({
+    icon: 'plan',
+    tone: 'warning',
+    mark: 'approval',
+    words: 'The plan waits for your approval',
+  }),
+  'changes-requested': entryOf({
+    icon: 'review',
+    tone: 'warning',
+    mark: '!',
+    words: 'Changes requested',
+  }),
+  'fix-couldnt-fix': entryOf({
+    icon: 'review',
+    tone: 'warning',
+    mark: '!',
+    words: "1 comment it couldn't fix",
+  }),
+  'pr-queued': entryOf({
+    icon: 'merge',
+    tone: 'primary',
+    mark: 'queue',
+    words: 'In merge queue',
+  }),
+  'pr-approved': entryOf({
+    icon: 'pr',
+    tone: 'success',
+    mark: 'approved',
+    words: 'Approved, ready to merge',
+  }),
+  'unread-reply': entryOf({ icon: 'agents', tone: 'info', mark: 'none', words: 'New reply' }),
 };
+
+type AttentionCounts = Pick<
+  SessionStageInfo,
+  'openQuestionCount' | 'fixNeedsYouCount' | 'fixCouldntFixCount'
+>;
+
+type WordsParams = {
+  readonly reason: SessionAttentionReason;
+  readonly counts?: AttentionCounts;
+  readonly planVersion?: number | null;
+};
+
+const countOf = ({ count }: { readonly count: number | undefined }): number =>
+  Math.max(count ?? 1, 1);
+
+export const attentionWordsOf = ({
+  reason,
+  counts = {},
+  planVersion = null,
+}: WordsParams): string => {
+  if (reason === 'open-question') {
+    const count = countOf({ count: counts.openQuestionCount });
+    return count === 1 ? '1 question for you' : `${count} questions for you`;
+  }
+  if (reason === 'fix-needs-you') {
+    const count = countOf({ count: counts.fixNeedsYouCount });
+    return count === 1 ? '1 comment needs you' : `${count} comments need you`;
+  }
+  if (reason === 'fix-couldnt-fix') {
+    const count = countOf({ count: counts.fixCouldntFixCount });
+    return count === 1 ? "1 comment it couldn't fix" : `${count} comments it couldn't fix`;
+  }
+  if (reason === 'plan-approval' && planVersion !== null) {
+    return `Plan v${planVersion} waits for your approval`;
+  }
+  return ATTENTION_REASON_META[reason].words;
+};
+
+export type AttentionLine = {
+  readonly reason: SessionAttentionReason;
+  readonly tone: Tone;
+  readonly words: string;
+};
+
+type LinesParams = {
+  readonly info: SessionStageInfo;
+};
+
+export const otherAttentionLinesOf = ({ info }: LinesParams): ReadonlyArray<AttentionLine> =>
+  (info.otherReasons ?? []).map((reason) => ({
+    reason,
+    tone: ATTENTION_REASON_META[reason].tone,
+    words: attentionWordsOf({ reason, counts: info }),
+  }));
 
 type SessionStageEntry = {
   readonly label: string;
@@ -87,6 +182,13 @@ export const STAGE_TONE: Record<SessionStage, Tone> = {
   review: 'success',
   building: 'neutral',
   done: 'merged',
+};
+
+export const ARCHIVED_LANE: StatePresentation = {
+  label: 'archived',
+  reason: 'put away, still here if you need it back',
+  tone: 'neutral',
+  icon: CONCEPT_ICONS.archive,
 };
 
 type BucketParams = {

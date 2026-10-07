@@ -300,3 +300,140 @@ describe('the empty list', () => {
     expect(screen.getByText('No sessions yet')).toBeDefined();
   });
 });
+
+describe('pinned sessions', () => {
+  const ledger = sessionOf({
+    goal: 'Reconcile the ledger export',
+    lastOpenedAt: '2026-10-01T09:00:00.000Z',
+  });
+  const payments = sessionOf({
+    goal: 'Paginate the payments list',
+    lastOpenedAt: '2026-10-02T09:00:00.000Z',
+  });
+  const relay = sessionOf({
+    goal: 'Stop notify-relay retries',
+    lastOpenedAt: '2026-10-06T09:00:00.000Z',
+  });
+  const digest = sessionOf({
+    goal: 'Write the notify-relay digest',
+    lastOpenedAt: '2026-10-05T09:00:00.000Z',
+  });
+
+  const pin = (...sessions: ReadonlyArray<typeof ledger>) =>
+    useAppStore.setState({
+      sessionPins: {
+        [harborline.id]: sessions.map((session, index) => ({
+          id: session.id as SessionId,
+          at: index + 1,
+        })),
+      },
+    });
+
+  it('lists the pinned sessions first, in pin order, under a Pinned label', () => {
+    seedColumn({ store: useAppStore, sessions: [relay, digest, ledger, payments] });
+    pin(ledger, payments);
+    renderBar();
+
+    expect(titlesOnScreen()).toEqual([
+      'Reconcile the ledger export',
+      'Paginate the payments list',
+      'Stop notify-relay retries',
+      'Write the notify-relay digest',
+    ]);
+    expect(screen.getByText('Pinned')).toBeDefined();
+    expect(screen.getByText('Other sessions')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Pinned/ })).toBeNull();
+  });
+
+  it('draws no label and no group while nothing is pinned', () => {
+    seedColumn({ store: useAppStore, sessions: [relay, digest] });
+    renderBar();
+
+    expect(screen.queryByText('Pinned')).toBeNull();
+    expect(screen.queryByText('Other sessions')).toBeNull();
+  });
+
+  it('shows a pinned session once, ahead of a fold that would hide it, and counts the fold without it', () => {
+    const twelve = Array.from({ length: 12 }, (_, index) =>
+      sessionOf({
+        goal: `Session ${String(index + 1).padStart(2, '0')}`,
+        lastOpenedAt: `2026-10-06T${String(20 - index).padStart(2, '0')}:00:00.000Z`,
+      }),
+    );
+    const last = twelve[11] as (typeof twelve)[number];
+    seedColumn({ store: useAppStore, sessions: twelve });
+    pin(last);
+    renderBar();
+
+    const titles = titlesOnScreen();
+    expect(titles[0]).toBe('Session 12');
+    expect(titles.filter((title) => title === 'Session 12')).toHaveLength(1);
+    expect(titles).toHaveLength(9);
+    expect(screen.getByRole('button', { name: 'Show 3 more' })).toBeDefined();
+  });
+
+  it('keeps pinned sessions on top when the list is grouped, and folds the group with its toggle', () => {
+    seedColumn({ store: useAppStore, sessions: [relay, digest, ledger] });
+    pin(ledger);
+    act(() => {
+      useAppStore.getState().setSessionViewPrefs({
+        workspaceId: harborline.id,
+        patch: { group: 'stage' },
+      });
+    });
+    renderBar();
+
+    const toggle = screen.getByRole('button', { name: /^Pinned/ });
+    expect(titlesOnScreen()[0]).toBe('Reconcile the ledger export');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(toggle);
+    expect(screen.getByRole('button', { name: /^Pinned/ }).getAttribute('aria-expanded')).toBe(
+      'false',
+    );
+    expect(titlesOnScreen()).not.toContain('Reconcile the ledger export');
+  });
+
+  it('shows an archived pinned session only under Archived and only when archived sessions are shown', () => {
+    seedColumn({ store: useAppStore, sessions: [relay], archived: [ledger] });
+    pin(ledger);
+    renderBar();
+
+    expect(titlesOnScreen()).toEqual(['Stop notify-relay retries']);
+    expect(screen.queryByText('Pinned')).toBeNull();
+    act(() => {
+      useAppStore.getState().setSessionViewPrefs({
+        workspaceId: harborline.id,
+        patch: { isArchivedShown: true },
+      });
+    });
+
+    expect(
+      titlesOnScreen().filter((title) => title === 'Reconcile the ledger export'),
+    ).toHaveLength(1);
+    expect(screen.queryByText('Pinned')).toBeNull();
+  });
+
+  it('brings a restored pinned session back under Pinned', () => {
+    seedColumn({ store: useAppStore, sessions: [relay], archived: [ledger] });
+    pin(ledger);
+    renderBar();
+    expect(screen.queryByText('Pinned')).toBeNull();
+
+    act(() => {
+      seedColumn({ store: useAppStore, sessions: [relay, ledger] });
+    });
+
+    expect(titlesOnScreen()).toEqual(['Reconcile the ledger export', 'Stop notify-relay retries']);
+    expect(screen.getByText('Pinned')).toBeDefined();
+  });
+
+  it('draws the pinned row like any other row, with no extra mark at rest', () => {
+    seedColumn({ store: useAppStore, sessions: [relay, ledger] });
+    pin(ledger);
+    renderBar();
+
+    const pinned = rowOf('Reconcile the ledger export');
+    const plain = rowOf('Stop notify-relay retries');
+    expect(pinned.children).toHaveLength(plain.children.length);
+  });
+});

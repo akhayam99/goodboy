@@ -14,6 +14,19 @@ describe('ToneBar', () => {
     expect(barClassName()).toContain('bg-danger');
   });
 
+  it('paints the warning line with the line amber, lighter than the text amber in light', () => {
+    render(<ToneBar tone="warning" density="card" />);
+
+    expect(barClassName()).toContain('bg-warning-mark');
+    expect(barClassName()).not.toMatch(/(^| )bg-warning( |$)/);
+  });
+
+  it('names its tone, so a surface can be checked without reading classes', () => {
+    render(<ToneBar tone="warning" density="row" />);
+
+    expect(screen.getByTestId('tone-bar').getAttribute('data-tone')).toBe('warning');
+  });
+
   it('sizes the card density wider and taller than the row density', () => {
     render(<ToneBar tone="info" density="card" />);
     const card = barClassName();
@@ -23,6 +36,12 @@ describe('ToneBar', () => {
 
     expect(card).toContain('w-0.75');
     expect(row).toContain('w-0.5');
+  });
+
+  it('keeps a card line at least 16px tall so a one-line card still shows it', () => {
+    render(<ToneBar tone="warning" density="card" />);
+
+    expect(barClassName()).toContain('min-h-4');
   });
 
   it('holds still unless told to breathe', () => {

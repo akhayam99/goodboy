@@ -73,7 +73,7 @@ afterEach(() => {
 });
 
 describe('UsageGroup', () => {
-  it('lists each window with its use and reset, and warns once near the limit', async () => {
+  it('lists each window with its use and reset, and leaves the warning to the page', async () => {
     state.providerLimits = { anthropic: CLAUDE_LOW };
     render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
@@ -84,8 +84,8 @@ describe('UsageGroup', () => {
       '5-hour window82% usedResets 14:30 · in 2h 30m',
       expect.stringMatching(/^Weekly47% usedResets \S+ 09:00 · in 3 days$/),
     ]);
-    screen.getByText('Claude is about to run out.');
-    screen.getByText('The 5-hour window resets at 14:30.');
+    expect(screen.queryByText('Claude is about to run out.')).toBeNull();
+    expect(screen.queryByText('The 5-hour window resets at 14:30.')).toBeNull();
     screen.getByText('Updated 3m ago');
     screen.getByText(/never reads your sign-in/);
     await waitFor(() =>
@@ -97,7 +97,7 @@ describe('UsageGroup', () => {
     expect(screen.queryByText('$18.40')).toBeNull();
   });
 
-  it('says Codex is out for the week with the day it comes back', () => {
+  it('lists the window Codex is out of and leaves the sentence to the page', () => {
     state.providerLimits = {
       codex: {
         providerId: 'codex',
@@ -117,37 +117,9 @@ describe('UsageGroup', () => {
     };
     render(<UsageGroup providerId="codex" billing="plan" planLabel={null} />);
 
-    screen.getByText('Codex is out for the week.');
+    expect(screen.queryByText('Codex is out for the week.')).toBeNull();
     expect(screen.getByRole('listitem').textContent).toMatch(/100% usedOut until \S+ 18:12$/);
     expect(screen.queryByText(/Auto routes new agents/)).toBeNull();
-  });
-
-  it('says where Auto sends new agents only when the ladder really skips the provider', () => {
-    state.providers = [
-      { id: 'codex', connection: 'connected' },
-      { id: 'anthropic', connection: 'connected' },
-    ];
-    state.providerLimits = {
-      codex: {
-        providerId: 'codex',
-        plan: 'Plus',
-        status: 'reached',
-        windows: [
-          {
-            kind: 'weekly',
-            model: null,
-            status: 'reached',
-            usedFraction: 1,
-            resetsAt: localIso(18, 12, 6),
-          },
-        ],
-        observedAt: localIso(11, 48),
-      },
-    };
-    render(<UsageGroup providerId="codex" billing="plan" planLabel={null} />);
-
-    screen.getByText(/Auto routes new agents to Claude until then\.$/);
-    state.providers = [];
   });
 
   it('tells a provider without limits apart from one still waiting for a turn', () => {

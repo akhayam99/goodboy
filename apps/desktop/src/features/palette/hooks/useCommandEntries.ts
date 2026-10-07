@@ -34,6 +34,7 @@ import { settingsPaletteEntries } from '../../settings/settingsPaletteEntries';
 import type { SettingsFocus } from '../../settings/settingsFocus';
 import { useToast } from '../../../shared/components/Toast';
 import { agentEntries } from '../sources/agentEntries';
+import { openPlanAnywhere } from '../../plans/openPlanAnywhere';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
 import { workflowEntries } from '../sources/workflowEntries';
@@ -165,6 +166,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
                 target: { kind: 'artifact', artifactId },
               }),
             }),
+          openPlan: ({ artifactId }) => openPlanAnywhere({ sessionId, planId: artifactId }),
         }),
       );
       for (const destination of destinations) {

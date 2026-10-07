@@ -16,8 +16,13 @@ describe('WorkNode', () => {
       'running',
       'question',
       'budget',
+      'approval',
+      'alert',
       'failed',
+      'approved',
+      'merging',
       'done',
+      'finished',
       'closed',
       'stopped',
       'skipped',
@@ -96,6 +101,154 @@ describe('WorkNode', () => {
 
     expect(nodeOf('Deciding').className).toContain('spin-border-identity-2');
     expect(nodeOf('Waiting').className).not.toContain('spin-border');
+  });
+
+  it('spins the ring of any state when the caller says the work goes on', () => {
+    render(
+      <>
+        <WorkNode state="question" mark={{ kind: 'dot' }} label="Asking" isSpinning />
+        <WorkNode
+          state="approval"
+          mark={{ kind: 'dot' }}
+          label="Approving"
+          isSpinning
+          spinClassName="spin-border-primary"
+        />
+        <WorkNode state="alert" mark={{ kind: 'dot' }} label="Quiet" />
+      </>,
+    );
+
+    expect(nodeOf('Asking').className).toContain('spin-border spin-border-info');
+    expect(nodeOf('Asking').textContent).toBe('?');
+    expect(nodeOf('Approving').className).toContain('spin-border-primary');
+    expect(nodeOf('Quiet').className).not.toContain('spin-border');
+  });
+
+  it('draws an approved node as a solid success disc with a white check', () => {
+    render(<WorkNode state="approved" mark={{ kind: 'dot' }} label="Approved" />);
+
+    const node = nodeOf('Approved');
+    const disc = node.querySelector('circle');
+    expect(disc?.getAttribute('class')).toContain('fill-success');
+    expect(disc?.getAttribute('class')).toContain('stroke-success');
+    expect(disc?.getAttribute('class')).not.toContain('fill-none');
+    const check = screen.getByTestId('work-node-glyph').querySelector('svg.lucide-check');
+    expect(check).not.toBeNull();
+    expect(check?.getAttribute('class')).toContain('text-on-tone');
+    expect(check?.getAttribute('width')).toBe('12');
+  });
+
+  it('keeps an approved disc apart from a done node, which is an outline with a tinted fill', () => {
+    render(
+      <>
+        <WorkNode state="approved" mark={{ kind: 'dot' }} label="Approved" />
+        <WorkNode state="done" mark={{ kind: 'dot' }} label="Done" />
+      </>,
+    );
+
+    const fillOf = (label: string) => nodeOf(label).querySelector('circle')?.getAttribute('class');
+    expect(fillOf('Done')).toContain('fill-success/18');
+    expect(fillOf('Approved')).not.toContain('fill-success/18');
+    expect(fillOf('Approved')).not.toBe(fillOf('Done'));
+  });
+
+  it('draws the approved check at 12px in the small node, inside the same 14px ring', () => {
+    render(<WorkNode state="approved" mark={{ kind: 'dot' }} label="Approved" size="sm" />);
+
+    const node = nodeOf('Approved');
+    expect(node.style.width).toBe('14px');
+    expect(node.querySelector('svg.lucide-check')?.getAttribute('width')).toBe('12');
+  });
+
+  it('draws a finished node as a solid violet disc with a white check, apart from approved', () => {
+    render(
+      <>
+        <WorkNode state="finished" mark={{ kind: 'dot' }} label="Finished" size="sm" />
+        <WorkNode state="approved" mark={{ kind: 'dot' }} label="Approved" size="sm" />
+      </>,
+    );
+
+    const finished = nodeOf('Finished');
+    const disc = finished.querySelector('circle')?.getAttribute('class') ?? '';
+    expect(finished.style.width).toBe('14px');
+    expect(disc).toContain('fill-merged');
+    expect(disc).toContain('stroke-merged');
+    expect(disc).not.toContain('fill-none');
+    expect(disc).not.toContain('success');
+    const check = finished.querySelector('svg.lucide-check');
+    expect(check?.getAttribute('class')).toContain('text-on-tone');
+    expect(check?.getAttribute('width')).toBe('12');
+    const approved = nodeOf('Approved').querySelector('circle');
+    expect(approved?.getAttribute('r')).toBe(finished.querySelector('circle')?.getAttribute('r'));
+    expect(approved?.getAttribute('stroke-width')).toBe(
+      finished.querySelector('circle')?.getAttribute('stroke-width'),
+    );
+  });
+
+  it('draws a merging node as a primary ring around a half-filled core, apart from the solid discs', () => {
+    render(
+      <>
+        <WorkNode state="merging" mark={{ kind: 'dot' }} label="Merging" size="sm" />
+        <WorkNode state="approved" mark={{ kind: 'dot' }} label="Approved" size="sm" />
+        <WorkNode state="finished" mark={{ kind: 'dot' }} label="Finished" size="sm" />
+      </>,
+    );
+
+    const merging = nodeOf('Merging');
+    const ring = merging.querySelector('circle')?.getAttribute('class') ?? '';
+    expect(merging.style.width).toBe('14px');
+    expect(ring).toContain('stroke-primary');
+    expect(ring).toContain('fill-none');
+    expect(merging.querySelector('circle')?.getAttribute('stroke-dasharray')).toBeNull();
+    const core = merging.querySelector('path');
+    expect(core?.parentElement?.getAttribute('class')).toContain('fill-primary');
+    expect(core?.getAttribute('d')).toContain('A');
+    expect(merging.querySelector('svg.lucide-check')).toBeNull();
+    expect(nodeOf('Approved').querySelector('svg.lucide-check')).not.toBeNull();
+    expect(nodeOf('Finished').querySelector('svg.lucide-check')).not.toBeNull();
+    expect(merging.textContent).toBe('');
+  });
+
+  it('draws no glyph under 12px in the small node, in any state', () => {
+    const states: ReadonlyArray<WorkNodeState> = [
+      'queued',
+      'question',
+      'budget',
+      'approval',
+      'alert',
+      'failed',
+      'approved',
+      'merging',
+      'done',
+      'finished',
+      'closed',
+      'stopped',
+      'skipped',
+      'marker',
+    ];
+    render(
+      <>
+        {states.map((state) => (
+          <WorkNode key={state} state={state} mark={{ kind: 'dot' }} label={state} size="sm" />
+        ))}
+      </>,
+    );
+
+    for (const state of states) {
+      for (const glyph of nodeOf(state).querySelectorAll('svg.lucide')) {
+        expect(Number(glyph.getAttribute('width'))).toBeGreaterThanOrEqual(12);
+      }
+    }
+  });
+
+  it('draws an alert node as an amber ring around an amber exclamation mark', () => {
+    render(<WorkNode state="alert" mark={{ kind: 'dot' }} label="Alert" />);
+
+    const node = nodeOf('Alert');
+    expect(node.textContent).toBe('!');
+    expect(node.querySelector('circle')?.getAttribute('class')).toContain('stroke-warning');
+    expect(node.innerHTML).toContain('text-warning');
+    expect(node.innerHTML).not.toContain('text-danger');
   });
 
   it('pulses the running dot behind motion-safe', () => {

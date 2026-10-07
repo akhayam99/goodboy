@@ -1,5 +1,5 @@
-import { Copy, GitBranch, Link, Link2, Pencil } from 'lucide-react';
-import type { Session, SessionId, SessionProjectMount } from '@goodboy/types';
+import { Copy, GitBranch, Link, Link2, Pencil, Pin, PinOff } from 'lucide-react';
+import type { Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
@@ -25,6 +25,7 @@ export type SessionFacts = {
   readonly sessionId: SessionId;
   readonly title: string;
   readonly isArchived: boolean;
+  readonly isPinned: boolean;
   readonly isBranchless: boolean;
   readonly hasMount: boolean;
   readonly branch: string | null;
@@ -239,6 +240,22 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     },
   },
   {
+    id: 'session.pin',
+    label: 'Pin session',
+    icon: Pin,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && !facts.isPinned,
+    run: ({ facts, env }) => env.getState().pinSession(facts.sessionId),
+  },
+  {
+    id: 'session.unpin',
+    label: 'Unpin session',
+    icon: PinOff,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.isPinned,
+    run: ({ facts, env }) => env.getState().unpinSession(facts.sessionId),
+  },
+  {
     id: 'session.startAgent',
     label: 'Start agent',
     icon: CONCEPT_ICONS.agents,
@@ -364,6 +381,9 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       sessionId: target.sessionId,
       title: sessionTitle({ session }),
       isArchived: session.archivedAt != null,
+      isPinned: (state.sessionPins[session.workspaceId as WorkspaceId] ?? []).some(
+        (pin) => pin.id === target.sessionId,
+      ),
       isBranchless: isBranchlessSession({ branch: rawBranch }),
       hasMount: mounts.length > 0 || branch !== null,
       branch: branch ?? mounts[0]?.branch ?? null,

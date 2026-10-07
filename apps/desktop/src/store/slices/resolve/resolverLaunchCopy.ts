@@ -1,9 +1,10 @@
-import { listResolveAttempts } from '@goodboy/db';
+import { listResolveAttempts, listResolveCandidates } from '@goodboy/db';
 import type { AgentId, MountTargetSnapshot, SessionId } from '@goodboy/types';
 import { classifyAgent } from '../../../features/session/agent-kind';
 import { prepareResolveCopy, worktreeStatus } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { selectMountById } from '../project-mounts/selectors';
+import { laneTipOf } from './resolveLane';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import type { GetFn } from './types';
 
@@ -53,6 +54,14 @@ export const resolverLaunchCopy = async ({
   if (worktreePath === null) {
     return null;
   }
-  const copy = await prepareResolveCopy({ worktreePath, attemptId: latest.id });
+  const candidates = (await listResolveCandidates({ db: tauriDatabase, sessionId })).map(
+    (candidate) => ({ candidate }),
+  );
+  const startSha = laneTipOf({ candidates, worktreePath });
+  const copy = await prepareResolveCopy({
+    worktreePath,
+    attemptId: latest.id,
+    ...(startSha !== null && { startSha }),
+  });
   return { copyPath: copy.copyPath, mountTarget: latest.mountTarget };
 };

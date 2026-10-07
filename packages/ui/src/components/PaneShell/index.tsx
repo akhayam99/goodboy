@@ -149,7 +149,7 @@ export const PaneShell = (props: Props) => {
           {children}
         </div>
       ) : (
-        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24} edge="line">
           <PageColumn width={width} className="pb-5">
             <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
               {children}

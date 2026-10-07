@@ -94,6 +94,19 @@ const STATES: ReadonlyArray<{
     ],
   },
   {
+    name: 'Checks unknown',
+    facts: facts({ checks: 'unknown', review: 'approved' }),
+    expected: [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (Checks unknown.)',
+      ...OWN_LIVE_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...COPIES,
+      'pullRequest.close menu',
+    ],
+  },
+  {
     name: 'Changes requested',
     facts: facts({ review: 'changes_requested', changesRequestedBy: ['kenji-w'], openComments: 3 }),
     expected: [

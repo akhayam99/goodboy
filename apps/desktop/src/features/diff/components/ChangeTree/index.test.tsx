@@ -108,12 +108,31 @@ describe('ChangeTree', () => {
     expect(screen.getByRole('button', { name: '? all keys' })).toBeDefined();
   });
 
-  it('shows folders with their file counts and sums, files with their status letter', () => {
+  it('shows no count or +/- on an expanded folder, its files carry them in colour', () => {
     renderTree();
 
     const folder = screen.getByRole('button', { name: /\bexport\b/ });
-    expect(within(folder).getByText('2')).toBeDefined();
-    expect(within(folder).getByText('+6')).toBeDefined();
+    expect(within(folder).queryByText('2')).toBeNull();
+    expect(within(folder).queryByText('+6')).toBeNull();
+    const file = screen.getByRole('button', { name: /page\.tsx/ });
+    expect(within(file).getByText('+3').closest('[data-tone]')?.getAttribute('data-tone')).toBe(
+      'diff',
+    );
+  });
+
+  it('shows a collapsed folder count and +/- in one muted tone', () => {
+    renderTree({ collapsed: new Set(['dir:src/ledger/export']) });
+
+    const folder = screen.getByRole('button', { name: /\bexport\b/ });
+    const tones = ['2', '+6', '−2'].map((text) =>
+      within(folder).getByText(text).closest('[data-tone]')?.getAttribute('data-tone'),
+    );
+    expect(tones).toEqual(['muted', 'muted', 'muted']);
+  });
+
+  it('shows files with their status letter and rename source', () => {
+    renderTree();
+
     expect(screen.getByLabelText('Renamed').textContent).toBe('R');
     expect(screen.getByLabelText('Deleted').textContent).toBe('D');
     expect(screen.getByText('from src/ledger/csv.ts')).toBeDefined();

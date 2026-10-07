@@ -1,7 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { ChevronLeft, Search } from 'lucide-react';
-import { EmptyLine, ScrollFade, StatusRailItem, cn } from '@goodboy/ui';
+import { EmptyLine, ScrollFade, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import { settingsPaletteEntries } from '../../settingsPaletteEntries';
 import type { SettingsFocus } from '../../settingsFocus';
 import type { SettingsGroup } from './settingsDirectory';
@@ -73,11 +74,10 @@ export const SettingsColumnNav = ({ groups, rail, onBack, onOpen }: Props) => {
               const Icon = entry.icon;
               return (
                 <div role="listitem" key={entry.key}>
-                  <StatusRailItem
+                  <SettingsNavRow
+                    level="group"
                     icon={<Icon size={ICON_SIZE.control} />}
                     label={entry.label}
-                    selected={false}
-                    density="compact"
                     onClick={() => {
                       setQuery('');
                       entry.run();

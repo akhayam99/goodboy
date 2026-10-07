@@ -62,16 +62,13 @@ const GOAL =
 
 const PLAN_BODY_V1 = [
   `## Goal\n\n${GOAL}`,
-  '## Parts',
-  '1. Add the idempotency key column in payments-api',
-  '2. Key the dedupe check on the processor event id',
-  '3. Backfill keys for settled events in ledger-core',
-  '4. Cover duplicate delivery with a replay test',
+  '## Approach',
+  'Add one idempotency key per processor event, check it inside the credit transaction, and backfill the keys for events already settled.',
 ].join('\n\n');
 
 const PLAN_BODY_V2 = PLAN_BODY_V1.replace(
-  '3. Backfill keys for settled events in ledger-core',
-  '3. Write the backfill job, then run it on events from the last 90 days',
+  'backfill the keys for events already settled',
+  'backfill the keys for events from the last 90 days',
 );
 
 const envelope = ({ body }: { readonly body: string }): string =>

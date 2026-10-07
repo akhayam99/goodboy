@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Button, FormActions, Input } from '@goodboy/ui';
+import { useShallow } from 'zustand/react/shallow';
+import { Button, FormActions, Input, SegmentedTabs } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { ExistingBranchField } from '../../../worktree/ExistingBranchField';
 import { selectProjectById } from '../../../../store/slices/projects/selectProjectById';
 import { taskBranchPreview } from './taskBranchPreview';
 
@@ -23,6 +25,11 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
     projectId === undefined ? '' : (selectProjectById(state, projectId)?.name ?? ''),
   );
   const preview = useAppStore((state) => taskBranchPreview({ state, sessionId, projectId, task }));
+  const project = useAppStore((state) => selectProjectById(state, projectId ?? null));
+  const mountedBranches = useAppStore(
+    useShallow((state) => (state.sessionProjectMounts?.[sessionId] ?? []).map((m) => m.branch)),
+  );
+  const [mode, setMode] = useState<'new' | 'existing'>('new');
   const [branch, setBranch] = useState('');
   const [isBusy, setIsBusy] = useState(false);
 
@@ -39,6 +46,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
         taskIdentifier: task.identifier,
         taskTitle: task.title,
         ...(trimmed === '' ? {} : { branch: trimmed }),
+        ...(mode === 'existing' ? { adoptExistingBranch: true } : {}),
       });
       await assignSessionExternalTask({
         sessionId,
@@ -66,30 +74,61 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
           {projectName === '' ? 'It gets its own branch.' : `${projectName} · from its base branch`}
         </span>
       </div>
-      <Input
-        value={branch}
-        autoFocus
-        disabled={isBusy}
-        aria-label="Branch name"
-        placeholder={preview ?? 'Leave empty to name it automatically'}
-        onChange={(event) => setBranch(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter') {
-            return;
-          }
-          event.preventDefault();
-          void create();
+      <SegmentedTabs
+        ariaLabel="Branch source"
+        options={[
+          { value: 'new', label: 'New branch', disabled: isBusy },
+          { value: 'existing', label: 'Existing branch', disabled: isBusy },
+        ]}
+        value={mode}
+        onChange={(next) => {
+          setMode(next);
+          setBranch('');
         }}
-        className="h-8 w-full text-label"
+        size="sm"
       />
-      <span className="text-meta text-muted-foreground">
-        {`Leave it empty to use ${preview ?? 'an automatic name'}.`}
-      </span>
+      {mode === 'existing' && project !== null ? (
+        <ExistingBranchField
+          repoRoot={project.rootPath}
+          workspaceId={project.workspaceId}
+          projectId={project.id}
+          value={branch}
+          onChange={setBranch}
+          disabled={isBusy}
+          excludeNames={mountedBranches}
+        />
+      ) : (
+        <>
+          <Input
+            value={branch}
+            autoFocus
+            disabled={isBusy}
+            aria-label="Branch name"
+            placeholder={preview ?? 'Leave empty to name it automatically'}
+            onChange={(event) => setBranch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') {
+                return;
+              }
+              event.preventDefault();
+              void create();
+            }}
+            className="h-8 w-full text-label"
+          />
+          <span className="text-meta text-muted-foreground">
+            {`Leave it empty to use ${preview ?? 'an automatic name'}.`}
+          </span>
+        </>
+      )}
       <FormActions>
         <Button size="sm" variant="ghost" disabled={isBusy} onClick={onBack}>
           Back
         </Button>
-        <Button size="sm" disabled={isBusy} onClick={() => void create()}>
+        <Button
+          size="sm"
+          disabled={isBusy || (mode === 'existing' && branch.trim() === '')}
+          onClick={() => void create()}
+        >
           {isBusy ? 'Creating…' : 'Create worktree'}
         </Button>
       </FormActions>

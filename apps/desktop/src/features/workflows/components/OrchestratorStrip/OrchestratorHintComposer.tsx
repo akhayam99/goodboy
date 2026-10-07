@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { Button } from '@goodboy/ui';
+import { useRef, useState, type FocusEvent } from 'react';
+import { Button, Tooltip } from '@goodboy/ui';
 import { PromptField, type PromptSubmitMode } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
@@ -24,6 +24,8 @@ type ReadNowParams = {
   readonly isStepRunning: boolean;
   readonly isPaused: boolean;
 };
+
+const QUEUE_COPY = 'Queue waits for the next decision.';
 
 const readNowCopy = ({ isDeciding, isStepRunning, isPaused }: ReadNowParams): string => {
   if (isPaused) {
@@ -50,9 +52,18 @@ export const OrchestratorHintComposer = ({
   onSubmit,
 }: Props) => {
   const [text, setText] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const fieldRef = useRef<HTMLDivElement>(null);
   const files = usePromptFiles({ note: 'Images go to the next agent' });
   const canSend = text.trim() !== '' || files.attachments.length > 0;
+  const isOpen = isFocused || canSend;
+
+  const leave = (event: FocusEvent<HTMLFormElement>) => {
+    if (event.currentTarget.contains(event.relatedTarget)) {
+      return;
+    }
+    setIsFocused(false);
+  };
 
   const send = async ({ delivery }: SendParams) => {
     const draft = text;
@@ -79,7 +90,10 @@ export const OrchestratorHintComposer = ({
   return (
     <form
       aria-label="Tell the orchestrator"
+      data-open={isOpen}
       className="flex flex-col gap-2"
+      onFocus={() => setIsFocused(true)}
+      onBlur={leave}
       onSubmit={(event) => {
         event.preventDefault();
         void send({ delivery: 'queue' });
@@ -93,41 +107,44 @@ export const OrchestratorHintComposer = ({
         onChange={setText}
         onSubmit={(mode) => void send({ delivery: DELIVERY[mode] })}
         canSendNow
-        hasPreview
+        hasPreview={isOpen}
         notice={files.notice}
-        keyLabels={{ send: 'queue', now: 'read now' }}
+        keyLabels={isOpen ? { send: 'queue', now: 'read now' } : undefined}
         fieldRef={fieldRef}
         id="orchestrator-hint-field"
         testId="orchestrator-hint-input"
-        minRows={2}
+        minRows={isOpen ? 2 : 1}
         maxRows={6}
         files={files.files}
         actions={
-          <>
-            <Button
-              type="submit"
-              size="sm"
-              variant="ghost"
-              disabled={canSend === false}
-              data-testid="orchestrator-hint-queue"
-            >
-              Queue
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={canSend === false}
-              data-testid="orchestrator-hint-now"
-              onClick={() => void send({ delivery: 'now' })}
-            >
-              Read now
-            </Button>
-          </>
+          isOpen ? (
+            <>
+              <Tooltip content={QUEUE_COPY} side="top">
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="ghost"
+                  disabled={canSend === false}
+                  data-testid="orchestrator-hint-queue"
+                >
+                  Queue
+                </Button>
+              </Tooltip>
+              <Tooltip content={readNowCopy({ isDeciding, isStepRunning, isPaused })} side="top">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={canSend === false}
+                  data-testid="orchestrator-hint-now"
+                  onClick={() => void send({ delivery: 'now' })}
+                >
+                  Read now
+                </Button>
+              </Tooltip>
+            </>
+          ) : undefined
         }
       />
-      <span data-testid="orchestrator-hint-timing" className="text-meta text-muted-foreground">
-        Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning, isPaused })}
-      </span>
     </form>
   );
 };

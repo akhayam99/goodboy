@@ -1,5 +1,6 @@
+import { Fragment } from 'react';
 import { ArrowRight, Folder } from 'lucide-react';
-import { Chip, GhostActionButton, formatUsd } from '@goodboy/ui';
+import { Chip, GhostActionButton, StatusDot, formatUsd } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
@@ -32,11 +33,7 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const mounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
-  const node = sessionNodeOf({
-    stage: summary.stage,
-    attention: summary.attention,
-    isArchived,
-  });
+  const node = sessionNodeOf({ info: summary.info, isArchived });
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const linked = getLinkedRequest({ pullRequest, mergeRequest });
   const request = linked.state === 'none' ? null : PULL_REQUEST_PRESENTATION[linked.state];
@@ -49,16 +46,34 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
   ].filter((fact): fact is string => fact !== null);
   const stateText = isArchived
     ? 'Archived'
-    : [stageWord({ stage: summary.stage }), summary.addsFact ? summary.reason : null]
+    : (summary.words ??
+      [stageWord({ stage: summary.stage }), summary.addsFact ? summary.reason : null]
         .filter((part): part is string => part !== null && part !== '')
-        .join(' · ');
+        .join(' · '));
+  const needsYou = summary.stage === 'attention' && summary.attention !== null;
+  const isWorking = !isArchived && summary.isRunning && needsYou;
+  const otherLines = isArchived ? [] : summary.otherLines;
 
   return (
     <div className="flex flex-col gap-3">
       <SessionRowTitle keys={keys} title={title} titleClassName="text-heading text-foreground" />
-      <div className="flex items-center gap-2 text-meta text-muted-foreground">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
         <SessionStateNode node={node} />
         <span className="min-w-0">{stateText}</span>
+        {isWorking ? (
+          <>
+            <StatusDot tone="info" size="sm" pulsing className="justify-self-center" />
+            <span className="min-w-0">An agent is working</span>
+          </>
+        ) : null}
+        {otherLines.map((line) => (
+          <Fragment key={line.reason}>
+            <StatusDot tone={line.tone} size="sm" className="justify-self-center" />
+            <span className="min-w-0" data-attention-line={line.reason}>
+              {line.words}
+            </span>
+          </Fragment>
+        ))}
       </div>
       {summary.progress === null ? null : (
         <SessionProgress progress={summary.progress} tone={summary.tone} />
@@ -92,13 +107,13 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
         </div>
       ) : null}
       <span className="text-meta text-faint-foreground">{facts.join(' · ')}</span>
-      {summary.attention === null ? null : (
+      {needsYou ? (
         <GhostActionButton
           icon={ArrowRight}
           label="Open what needs you"
           onClick={() => onOpenAttention({ sessionId, reason: summary.attention })}
         />
-      )}
+      ) : null}
     </div>
   );
 };

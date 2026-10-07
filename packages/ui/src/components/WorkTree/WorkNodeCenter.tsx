@@ -22,6 +22,8 @@ const signOf = ({ sign, className }: SignParams) => (
 
 const READY_TRIANGLE = 'M 3 1.5 L 9 5 L 3 8.5 Z';
 
+const MERGING_HALF = 'M 10 4.5 A 5.5 5.5 0 0 1 10 15.5 Z';
+
 type MarkParams = {
   readonly mark: WorkNodeMark;
   readonly tone: 'faint' | 'foreground' | 'running';
@@ -81,10 +83,22 @@ export const WorkNodeCenter = ({
       return signOf({ sign: '$', className: 'text-warning' });
     case 'approval':
       return <Shield size={glyphSize} strokeWidth={2.5} className="text-warning" />;
+    case 'alert':
+      return signOf({ sign: '!', className: 'text-warning' });
     case 'failed':
       return signOf({ sign: '!', className: 'text-danger' });
+    case 'approved':
+      return <Check size={glyphSize} strokeWidth={3} className="text-on-tone" />;
+    case 'merging':
+      return (
+        <svg viewBox="0 0 20 20" className="size-full fill-primary">
+          <path d={MERGING_HALF} />
+        </svg>
+      );
     case 'done':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-success" />;
+    case 'finished':
+      return <Check size={glyphSize} strokeWidth={3} className="text-on-tone" />;
     case 'closed':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-muted-foreground" />;
     case 'stopped':

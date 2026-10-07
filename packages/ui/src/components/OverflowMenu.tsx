@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { MoreVertical } from 'lucide-react';
-import { cn } from '../cn';
 import { AnchoredPopover } from './AnchoredPopover';
-import { Tooltip } from './Tooltip';
+import { MenuTriggerButton, type MenuTriggerSize } from './MenuTriggerButton';
 import { useDropdown } from '../useDropdown';
 import { MenuItems, type OverflowMenuItem } from './MenuItems';
 
@@ -14,6 +13,7 @@ type Props = {
   readonly trigger?: ReactNode;
   readonly disabled?: boolean;
   readonly align?: 'left' | 'right';
+  readonly size?: MenuTriggerSize;
 };
 
 export const OverflowMenu = ({
@@ -24,6 +24,7 @@ export const OverflowMenu = ({
   trigger,
   disabled,
   align = 'right',
+  size = 'compact',
 }: Props) => {
   const dropdown = useDropdown({
     disabled,
@@ -39,26 +40,17 @@ export const OverflowMenu = ({
       ariaLabel={label}
       className="py-1"
       trigger={
-        <Tooltip content={tooltip ?? label} anchorClassName="shrink-0">
-          <button
-            type="button"
-            onClick={dropdown.toggle}
-            disabled={disabled}
-            aria-label={label}
-            aria-haspopup="menu"
-            aria-expanded={dropdown.open}
-            className={cn(
-              'shrink-0 rounded-sm p-1 motion-safe:transition-colors',
-              disabled
-                ? 'cursor-not-allowed text-faint-foreground'
-                : 'text-faint-foreground hover:bg-hover hover:text-foreground',
-              dropdown.open && 'bg-selected text-foreground',
-              triggerClassName,
-            )}
-          >
-            {trigger ?? <MoreVertical size={13} aria-hidden />}
-          </button>
-        </Tooltip>
+        <MenuTriggerButton
+          label={label}
+          tooltip={tooltip}
+          isOpen={dropdown.open}
+          size={size}
+          disabled={disabled}
+          className={triggerClassName}
+          onClick={dropdown.toggle}
+        >
+          {trigger ?? <MoreVertical size={size === 'control' ? 14 : 13} aria-hidden />}
+        </MenuTriggerButton>
       }
     >
       <MenuItems items={items} onClose={dropdown.close} />

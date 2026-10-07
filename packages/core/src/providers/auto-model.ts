@@ -1,5 +1,6 @@
 import type { ProviderId, RoleModelPreferences, StepSize } from '@goodboy/types';
 import { getDefaultTurnModel } from './capabilities';
+import type { HiddenModels } from './modelVisibility';
 import { resolveRoleRouting } from './role-models';
 
 export type AutoModelChoice = {
@@ -12,6 +13,7 @@ type AutoParams = {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly prefs?: RoleModelPreferences | null;
   readonly size?: StepSize | null;
+  readonly hidden?: HiddenModels | null;
 };
 
 type Params = {
@@ -19,6 +21,7 @@ type Params = {
   readonly provider: ProviderId;
   readonly prefs?: RoleModelPreferences | null;
   readonly size?: StepSize | null;
+  readonly hidden?: HiddenModels | null;
 };
 
 export const autoModelForRole = ({
@@ -26,6 +29,7 @@ export const autoModelForRole = ({
   providers,
   prefs,
   size = null,
+  hidden = null,
 }: AutoParams): AutoModelChoice | null => {
   const [defaultProvider] = providers;
   if (defaultProvider == null) {
@@ -34,7 +38,12 @@ export const autoModelForRole = ({
   const routing = resolveRoleRouting({
     role,
     prefs,
-    auto: { defaultProvider, fallbackOrder: providers, connected: providers },
+    auto: {
+      defaultProvider,
+      fallbackOrder: providers,
+      connected: providers,
+      ...(hidden !== null && { hidden }),
+    },
     size,
   });
   if (!providers.includes(routing.provider)) {
@@ -43,9 +52,15 @@ export const autoModelForRole = ({
   return { provider: routing.provider, model: routing.model };
 };
 
-export const recommendedModelForRole = ({ role, provider, prefs, size = null }: Params): string => {
+export const recommendedModelForRole = ({
+  role,
+  provider,
+  prefs,
+  size = null,
+  hidden = null,
+}: Params): string => {
   return (
-    autoModelForRole({ role, providers: [provider], prefs, size })?.model ??
+    autoModelForRole({ role, providers: [provider], prefs, size, hidden })?.model ??
     getDefaultTurnModel({ id: provider })
   );
 };

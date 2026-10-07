@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { defaultChatModel } from '../../../features/workspace-chat/defaultChatModel';
 import type { AppStore } from '../../store';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 import type { AskRouting } from './state';
 
 type Params = {
@@ -23,6 +24,6 @@ export const askRoutingOf = ({ state, sessionId }: Params): AskRouting => {
   const connected = state.providers
     .filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
-  const choice = defaultChatModel({ connected });
+  const choice = defaultChatModel({ connected, hidden: selectHiddenModels({ state }) });
   return { provider: choice.provider, model: choice.model, effort: ASK_DEFAULT_EFFORT };
 };

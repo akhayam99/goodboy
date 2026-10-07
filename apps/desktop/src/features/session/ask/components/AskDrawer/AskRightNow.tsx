@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { Eyebrow, WorkNode, type WorkNodeState } from '@goodboy/ui';
+import { Eyebrow, LineMark, WorkNode, type WorkNodeState } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { AskRightNowLine, AskRightNowTone } from '../../askRightNow';
 
@@ -54,18 +54,18 @@ export const AskRightNow = ({ lines, suggestions, isFolded, onUnfold, onAsk }: P
       <ul className="flex flex-col gap-1">
         {lines.map((line) => (
           <li key={line.key} className="flex min-w-0 items-start gap-2 py-0.5 text-prose">
-            {line.tone === 'cost' ? (
-              <span className="flex h-5 shrink-0 items-center text-faint-foreground">
-                <CostIcon size={ICON_SIZE.row} aria-hidden />
-              </span>
-            ) : (
-              <WorkNode
-                size="sm"
-                state={NODE_STATE[line.tone]}
-                mark={{ kind: 'dot' }}
-                label={line.lead}
-              />
-            )}
+            <LineMark>
+              {line.tone === 'cost' ? (
+                <CostIcon size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
+              ) : (
+                <WorkNode
+                  size="sm"
+                  state={NODE_STATE[line.tone]}
+                  mark={{ kind: 'dot' }}
+                  label={line.lead}
+                />
+              )}
+            </LineMark>
             <span className="min-w-0 text-foreground">
               {line.key === 'comments' ? <strong>{line.lead}</strong> : line.lead}
               {line.detail === null ? null : (

@@ -18,6 +18,7 @@ export type CreatedWorktree = {
   readonly branchName: string;
   readonly slug: string;
   readonly reused: boolean;
+  readonly trackedRemote?: boolean;
 };
 
 export type CreateWorktreeArgs = {
@@ -45,6 +46,7 @@ type QuarantineCandidateParams = {
   readonly worktreePath: string;
   readonly candidateId: string;
   readonly baseSha: string;
+  readonly stack?: boolean;
 };
 
 export type QuarantinedCandidate = {
@@ -70,6 +72,7 @@ type SplitCandidatesParams = {
   readonly worktreePath: string;
   readonly baseSha: string;
   readonly picks: ReadonlyArray<{ readonly candidateId: string; readonly commitSha: string }>;
+  readonly stack?: boolean;
 };
 
 export type SplitCandidate = {
@@ -90,6 +93,7 @@ export type ResolveCopy = {
 export const prepareResolveCopy = async (args: {
   readonly worktreePath: string;
   readonly attemptId: string;
+  readonly startSha?: string;
 }): Promise<ResolveCopy> => invokeCommand<ResolveCopy>('resolve_copy_prepare', { args });
 
 export type WorktreeWriterLease = {
@@ -791,8 +795,12 @@ export type ChangeBranchArgs = {
   readonly createNew: boolean;
 };
 
-export const changeWorktreeBranch = async (args: ChangeBranchArgs): Promise<void> => {
-  await invokeCommand('worktree_change_branch', { args });
+export type ChangedBranch = {
+  readonly adopted: boolean;
+};
+
+export const changeWorktreeBranch = async (args: ChangeBranchArgs): Promise<ChangedBranch> => {
+  return invokeCommand<ChangedBranch>('worktree_change_branch', { args });
 };
 
 type BranchHolderParams = {
@@ -805,4 +813,62 @@ export const worktreeBranchHolder = async ({
   branch,
 }: BranchHolderParams): Promise<string | null> => {
   return invokeCommand<string | null>('worktree_branch_holder', { repoPath, branch });
+};
+
+export type RemoteBranchInfo = {
+  readonly name: string;
+  readonly author: string;
+  readonly sha: string;
+  readonly timestamp: number;
+  readonly hasLocal: boolean;
+};
+
+export const listRemoteBranches = async (
+  repoPath: string,
+): Promise<ReadonlyArray<RemoteBranchInfo>> => {
+  return invokeCommand<ReadonlyArray<RemoteBranchInfo>>('worktree_list_remote_branches', {
+    repoPath,
+  });
+};
+
+export const fetchRemoteBranches = async (repoPath: string): Promise<void> => {
+  await invokeCommand('worktree_fetch_remote_branches', { repoPath });
+};
+
+export type RemoteBranchState = {
+  readonly remoteAhead: number;
+  readonly localOwn: number;
+  readonly remoteContainsLocal: boolean;
+  readonly remoteSha: string;
+  readonly localSha: string;
+};
+
+type RemoteBranchStateParams = {
+  readonly repoPath: string;
+  readonly branch: string;
+  readonly base?: string | null;
+};
+
+export const remoteBranchState = async ({
+  repoPath,
+  branch,
+  base = null,
+}: RemoteBranchStateParams): Promise<RemoteBranchState | null> => {
+  return invokeCommand<RemoteBranchState | null>('worktree_remote_branch_state', {
+    repoPath,
+    branch,
+    base,
+  });
+};
+
+type MoveToRemoteCommitsParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+};
+
+export const moveToRemoteCommits = async ({
+  worktreePath,
+  branch,
+}: MoveToRemoteCommitsParams): Promise<void> => {
+  await invokeCommand('worktree_use_remote_commits', { worktreePath, branch });
 };

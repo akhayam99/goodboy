@@ -34,6 +34,7 @@ describe('shellArrangement, the column', () => {
       columnScope: 'workspace',
       leftHidden: false,
       leftSidebarCollapsed: false,
+      isLeftRail: false,
       leftSlot: 'column',
       leftOverlaySlot: 'none',
       studioCoversLeft: false,
@@ -76,7 +77,7 @@ describe('shellArrangement, the column', () => {
   });
 });
 
-describe('shellArrangement, the classic bars', () => {
+describe('shellArrangement, the legacy layout', () => {
   const classic = (params: {
     readonly hasWorkspace: boolean;
     readonly hasActiveSession: boolean;
@@ -92,6 +93,7 @@ describe('shellArrangement, the classic bars', () => {
       columnScope: 'workspace',
       leftHidden: true,
       leftSidebarCollapsed: false,
+      isLeftRail: false,
       leftSlot: 'none',
       leftOverlaySlot: 'none',
       studioCoversLeft: true,
@@ -132,6 +134,167 @@ describe('shellArrangement, the classic bars', () => {
     expect(
       classic({ hasWorkspace: false, hasActiveSession: true, isSidebarCollapsed: false }),
     ).toMatchObject({ footer: 'app', leftHidden: true, leftSlot: 'none' });
+  });
+});
+
+type Slot = 'none' | 'rail' | 'sessions' | 'column';
+
+type Peek = 'none' | 'peek';
+
+type Row = readonly [
+  mode: 'column' | 'classic',
+  hasWorkspace: boolean,
+  hasActiveSession: boolean,
+  isSidebarCollapsed: boolean,
+  isSettingsOpen: boolean,
+  leftSlot: Slot,
+  leftOverlaySlot: Peek,
+  studioCoversLeft: boolean,
+];
+
+const TABLE: ReadonlyArray<Row> = [
+  ['column', false, false, false, false, 'column', 'none', false],
+  ['column', false, false, false, true, 'column', 'none', false],
+  ['column', false, false, true, false, 'rail', 'none', false],
+  ['column', false, false, true, true, 'column', 'none', false],
+  ['column', false, true, false, false, 'column', 'none', false],
+  ['column', false, true, false, true, 'column', 'none', false],
+  ['column', false, true, true, false, 'rail', 'none', false],
+  ['column', false, true, true, true, 'column', 'none', false],
+  ['column', true, false, false, false, 'column', 'none', false],
+  ['column', true, false, false, true, 'column', 'none', false],
+  ['column', true, false, true, false, 'rail', 'peek', false],
+  ['column', true, false, true, true, 'column', 'none', false],
+  ['column', true, true, false, false, 'column', 'none', false],
+  ['column', true, true, false, true, 'column', 'none', false],
+  ['column', true, true, true, false, 'rail', 'peek', false],
+  ['column', true, true, true, true, 'column', 'none', false],
+  ['classic', false, false, false, false, 'none', 'none', true],
+  ['classic', false, false, false, true, 'none', 'none', true],
+  ['classic', false, false, true, false, 'none', 'none', true],
+  ['classic', false, false, true, true, 'none', 'none', true],
+  ['classic', false, true, false, false, 'none', 'none', true],
+  ['classic', false, true, false, true, 'none', 'none', true],
+  ['classic', false, true, true, false, 'none', 'none', true],
+  ['classic', false, true, true, true, 'none', 'none', true],
+  ['classic', true, false, false, false, 'none', 'none', true],
+  ['classic', true, false, false, true, 'none', 'none', true],
+  ['classic', true, false, true, false, 'none', 'none', true],
+  ['classic', true, false, true, true, 'none', 'none', true],
+  ['classic', true, true, false, false, 'sessions', 'none', true],
+  ['classic', true, true, false, true, 'sessions', 'none', true],
+  ['classic', true, true, true, false, 'rail', 'peek', true],
+  ['classic', true, true, true, true, 'rail', 'peek', true],
+];
+
+const label = ([mode, hasWorkspace, hasActiveSession, isSidebarCollapsed, isSettingsOpen]: Row) =>
+  [
+    mode,
+    hasWorkspace ? 'workspace' : 'no workspace',
+    hasActiveSession ? 'session' : 'no session',
+    isSidebarCollapsed ? 'collapsed' : 'pinned',
+    isSettingsOpen ? 'settings open' : 'settings closed',
+  ].join(', ');
+
+describe('shellArrangement, every combination of mode, workspace, session, sidebar and Settings', () => {
+  it('covers each of the 32 combinations once', () => {
+    expect(new Set(TABLE.map(label)).size).toBe(32);
+  });
+
+  it.each(TABLE.map((row) => [label(row), row] as const))(
+    '%s',
+    (
+      _name,
+      [mode, hasWorkspace, hasActiveSession, isSidebarCollapsed, isSettingsOpen, ...rest],
+    ) => {
+      const [leftSlot, leftOverlaySlot, studioCoversLeft] = rest;
+
+      expect(
+        shellArrangement({
+          mode,
+          hasWorkspace,
+          hasActiveSession,
+          isSidebarCollapsed,
+          isSettingsOpen,
+        }),
+      ).toMatchObject({ leftSlot, leftOverlaySlot, studioCoversLeft });
+    },
+  );
+
+  it('hands the column to Settings on a collapsed sidebar without touching the stored collapse', () => {
+    const open = shellArrangement({
+      hasWorkspace: true,
+      hasActiveSession: true,
+      isSidebarCollapsed: true,
+      isSettingsOpen: true,
+    });
+
+    expect(open).toMatchObject({
+      leftSlot: 'column',
+      leftOverlaySlot: 'none',
+      leftHidden: false,
+      leftSidebarCollapsed: true,
+      isLeftRail: false,
+    });
+  });
+
+  it('gives the rail back, with its peek, once Settings closes', () => {
+    const closed = shellArrangement({
+      hasWorkspace: true,
+      hasActiveSession: true,
+      isSidebarCollapsed: true,
+      isSettingsOpen: false,
+    });
+
+    expect(closed).toMatchObject({
+      leftSlot: 'rail',
+      leftOverlaySlot: 'peek',
+      leftSidebarCollapsed: true,
+      isLeftRail: true,
+    });
+  });
+
+  it('draws the column at its pinned width exactly while it is not the rail', () => {
+    for (const row of TABLE) {
+      const [mode, hasWorkspace, hasActiveSession, isSidebarCollapsed, isSettingsOpen] = row;
+      const arrangement = shellArrangement({
+        mode,
+        hasWorkspace,
+        hasActiveSession,
+        isSidebarCollapsed,
+        isSettingsOpen,
+      });
+
+      expect(arrangement.isLeftRail, label(row)).toBe(arrangement.leftSlot === 'rail');
+    }
+  });
+
+  it('is not moved by the Settings flag in the legacy layout', () => {
+    for (const row of TABLE.filter(([mode]) => mode === 'classic')) {
+      const [mode, hasWorkspace, hasActiveSession, isSidebarCollapsed] = row;
+      const base = { mode, hasWorkspace, hasActiveSession, isSidebarCollapsed } as const;
+
+      expect(shellArrangement({ ...base, isSettingsOpen: true }), label(row)).toEqual(
+        shellArrangement({ ...base, isSettingsOpen: false }),
+      );
+    }
+  });
+
+  it('keeps the stored collapse as the sidebar preference on every column row', () => {
+    for (const row of TABLE.filter(([mode]) => mode === 'column')) {
+      const [mode, hasWorkspace, hasActiveSession, isSidebarCollapsed, isSettingsOpen] = row;
+
+      expect(
+        shellArrangement({
+          mode,
+          hasWorkspace,
+          hasActiveSession,
+          isSidebarCollapsed,
+          isSettingsOpen,
+        }).leftSidebarCollapsed,
+        label(row),
+      ).toBe(isSidebarCollapsed);
+    }
   });
 });
 

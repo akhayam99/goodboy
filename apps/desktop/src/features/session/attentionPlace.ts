@@ -1,9 +1,11 @@
-import type { Agent, SessionAttentionReason, SessionId, TurnState } from '@goodboy/types';
+import type { Agent, Session, SessionAttentionReason, SessionId, TurnState } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace } from '../../store';
 import type { PlaceRequest } from '../../store/slices/navigation/types';
 import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
+import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 
 type State = {
+  readonly sessions: ReadonlyArray<Session>;
   readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
   readonly agentTurnState: Readonly<Record<string, TurnState>>;
 };
@@ -23,6 +25,19 @@ const latestAgent = ({ agents }: { readonly agents: ReadonlyArray<Agent> }): Age
 export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceRequest => {
   if (reason === 'open-question') {
     return sessionPlace({ sessionId, lens: 'questions' });
+  }
+  if (reason === 'plan-approval') {
+    const heldRun = state.sessions
+      .find((session) => session.id === sessionId)
+      ?.workflowRuns.find((run) => run.discardedAt == null && isRunHeldForPlan({ run }));
+    if (heldRun === undefined) {
+      return sessionPlace({ sessionId, lens: 'workflows' });
+    }
+    return sessionPlace({
+      sessionId,
+      lens: 'workflows',
+      target: { kind: 'run', runId: heldRun.id },
+    });
   }
   if (reason === 'ci-failed') {
     return branchPlace({ sessionId, tab: 'checks' });

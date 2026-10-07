@@ -8,8 +8,12 @@ export type WorkNodeState =
   | 'question'
   | 'budget'
   | 'approval'
+  | 'alert'
   | 'failed'
+  | 'approved'
+  | 'merging'
   | 'done'
+  | 'finished'
   | 'closed'
   | 'stopped'
   | 'skipped'
@@ -29,7 +33,7 @@ const WORK_NODE_SIZE_SM = 14;
 
 export const WORK_NODE_GLYPH_SIZE = 12;
 
-const WORK_NODE_GLYPH_SIZE_SM = 9;
+const WORK_NODE_GLYPH_SIZE_SM = 12;
 
 export const WORK_NODE_SIZE_FOR: Record<WorkNodeSize, number> = {
   md: WORK_NODE_SIZE,
@@ -105,10 +109,31 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, 
     fillClassName: 'fill-none',
     dashArray: null,
   },
+  alert: {
+    radius: 9.25,
+    strokeWidth: 1.5,
+    strokeClassName: 'stroke-warning',
+    fillClassName: 'fill-none',
+    dashArray: null,
+  },
   failed: {
     radius: 9.25,
     strokeWidth: 1.5,
     strokeClassName: 'stroke-danger',
+    fillClassName: 'fill-none',
+    dashArray: null,
+  },
+  approved: {
+    radius: 9.5,
+    strokeWidth: 1,
+    strokeClassName: 'stroke-success',
+    fillClassName: 'fill-success',
+    dashArray: null,
+  },
+  merging: {
+    radius: 9.25,
+    strokeWidth: 1.5,
+    strokeClassName: 'stroke-primary',
     fillClassName: 'fill-none',
     dashArray: null,
   },
@@ -117,6 +142,13 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, 
     strokeWidth: 1,
     strokeClassName: 'stroke-success/70',
     fillClassName: 'fill-success/18',
+    dashArray: null,
+  },
+  finished: {
+    radius: 9.5,
+    strokeWidth: 1,
+    strokeClassName: 'stroke-merged',
+    fillClassName: 'fill-merged',
     dashArray: null,
   },
   closed: {

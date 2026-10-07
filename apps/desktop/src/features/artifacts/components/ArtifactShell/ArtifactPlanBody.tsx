@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type { PlanWithCount } from '@goodboy/types';
+import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { dropLeadingTitleHeading } from '../ArtifactDocument/dropLeadingTitleHeading';
+import { dropPartsSection } from '../../../plans/dropPartsSection';
 import { splitPlanBody } from '../../../plans/splitPlanBody';
 import { PlanParts } from '../../../plans/components/PlanParts';
 import type { PlanPartRow } from '../../../plans/components/PlanParts/planPartRows';
@@ -14,21 +16,36 @@ type Props = {
   readonly hasRun: boolean;
   readonly splitSentence: string;
   readonly onOpenPart: (row: PlanPartRow) => void;
+  readonly onSent?: (result: SendArtifactCommentsResult) => void;
+  readonly isApproveInBar?: boolean;
 };
 
-export const ArtifactPlanBody = ({ plan, rows, hasRun, splitSentence, onOpenPart }: Props) => {
-  const body = useMemo(
-    () =>
-      splitPlanBody({
-        bodyMd: dropLeadingTitleHeading({ sourceText: plan.bodyMd, title: plan.title }),
-      }),
-    [plan.bodyMd, plan.title],
-  );
+export const ArtifactPlanBody = ({
+  plan,
+  rows,
+  hasRun,
+  splitSentence,
+  onOpenPart,
+  onSent,
+  isApproveInBar = true,
+}: Props) => {
+  const hasRows = rows.length > 0;
+  const body = useMemo(() => {
+    const split = splitPlanBody({
+      bodyMd: dropLeadingTitleHeading({ sourceText: plan.bodyMd, title: plan.title }),
+    });
+    return hasRows ? { ...split, rest: dropPartsSection({ text: split.rest }) } : split;
+  }, [plan.bodyMd, plan.title, hasRows]);
   const hasLead = body.lead.length > 0;
 
   return (
-    <PlanCommentsProvider sessionId={plan.sessionId} plan={plan}>
-      <div data-testid="plan-body" className="flex min-w-0 flex-col gap-6">
+    <PlanCommentsProvider
+      sessionId={plan.sessionId}
+      plan={plan}
+      onSent={onSent}
+      isApproveInBar={isApproveInBar}
+    >
+      <div data-testid="plan-body" className="flex min-w-0 flex-1 flex-col gap-6">
         {hasLead ? <PlanProse text={body.lead} section="lead" /> : null}
         <PlanParts
           sessionId={plan.sessionId}
@@ -44,7 +61,7 @@ export const ArtifactPlanBody = ({ plan, rows, hasRun, splitSentence, onOpenPart
           )}
         />
         {body.rest.trim().length === 0 ? null : (
-          <PlanProse text={body.rest} section="rest" hasLead={!hasLead && rows.length === 0} />
+          <PlanProse text={body.rest} section="rest" hasLead={!hasLead && !hasRows} />
         )}
       </div>
     </PlanCommentsProvider>

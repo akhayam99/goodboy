@@ -201,11 +201,31 @@ column actions, studio and overlay layers from `scenes/useSceneShell`, which
 runs the app's own `useAppOverlays`: Board, Inbox, Chat, Workflows and Settings
 in the column work as in the app, Settings swaps the column and **Back to app**
 returns. A scene that installs its own IPC answers goes through
-`scenes/mockSceneIpc.ts`, which answers editor and browser detection with an
-empty list when the scene has nothing, so Settings opens there too. The `shell`
+`scenes/mockSceneIpc.ts`, which answers editor and browser detection, `db_select`,
+the workflow and budget rule lists and the unread list with an empty list, and
+`db_execute` with no rows touched, when the scene has nothing, so Settings and
+the Branch page open there too. A bare `mockIPC` answers `undefined` and the
+real code crashes on it in a browser, never in a unit test that mocks `invoke`. The `shell`
 scene mounts the real `SessionWorkspace` (trail band, **Ask**, page rows that
 move), and a scene that opens a session seeds its agents and plans so the
 overview never stays on its loading skeleton.
+
+A scene whose flow writes can be clicked through, not only looked at.
+`scenes/sceneDatabase.ts` (`installSceneDatabase`) keeps the settings rows in
+memory and answers the live session ids, so **Pin session** and **Unpin
+session** run the real `changeSessionPins` and the Pinned group follows (the
+sidebar scenes seed the pin row too, so a new pin never wipes the seeded ones),
+and a held run's approval writes its rows. `scenes/scenePlanEngine.ts`
+(`installScenePlanEngine`) answers the plan flows at the store: an added
+comment is a draft, **Send to planner** marks it sent, runs the planner as a
+running turn for 1.4s and lands v3 with the comments addressed (or answers
+without a change for the reply-only scene), **Save** writes the new text as the
+next version unless the scene is the conflict one, and the next step starts at
+once. Approving a plan is the real `approveWorkflowRunPlan`. The plan drawer
+scenes and the plan scenes of the run page install both. `plan-drawer-follow`
+opens the drawer over the Overview, so **Approve** raises the "Plan approved"
+toast with **Follow the run**; over the run page the toast has no action,
+because the page is already there.
 
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.
@@ -216,6 +236,15 @@ settings and workspace seeds there. They are registered in `MOCK_SCENES` like
 every other scene. A scene opens a studio through the same entrance the app
 uses (a store opener or a click on the real control), never by mounting the
 studio itself.
+
+The Settings frames of the default shell are `settings-general-pinned` and
+`settings-providers-rail`, and the legacy layout has `settings-general-legacy`;
+they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens
+Settings through the store, so the column, the rail and the page behave as in
+the app. Settings replaces the sidebar with its own column, so the General page
+has one scene, not one per sidebar state. `settings-providers-rail` folds the
+sidebar first and seeds Claude near its limit to show the dot and the notice on
+its page.
 
 The dense capture fixtures are `rules-teleport`,
 `rules-no-limits`, `rail-ticket-ids`, and `activity-groups` (it opens the finished
@@ -240,8 +269,13 @@ waiting on the step (`scenes/flow-audit/parallelRun.ts`).
 `?scene=workflow-run&run=finished` shows the run done, with every step complete
 and no NOW (`scenes/flow-audit/finishedRun.ts`).
 `?scene=workflow-run&run=plan-hold` shows it as a custom run held in Ask after
-the plan, with **Approve plan**, **Plan ready** and the **Guidance** tag on the
-steps the standing guidance went to (`scenes/flow-audit/planHoldRun.ts`).
+the plan, with **Review plan** in the header, **Approve plan** in its menu and
+the **Guidance** tag on the steps the standing guidance went to
+(`scenes/flow-audit/planHoldRun.ts`). The same file seeds the orchestrated
+hold behind `?scene=workflow-run-plan-review` (the plan drawer open over the
+page) and `?scene=workflow-run-plan-question` (the planner asked, the strip
+says what), and `?scene=workflow-run-scrolled` scrolls the steps 40px so the
+edge line shows (`scenes/u21/run-page.tsx`).
 
 The README and feature-area guide docs are captured from these scenes. The
 `brand-*` scenes in `scenes/brand/` tell one Harborline story (issue HBL-412,

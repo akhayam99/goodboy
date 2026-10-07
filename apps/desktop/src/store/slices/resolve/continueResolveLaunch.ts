@@ -125,12 +125,13 @@ export const continueResolveLaunch = async ({
         void get().reportError({ title: "Couldn't continue the fix run", error, sessionId }),
     });
     if (onStarted === undefined) {
-      void started.catch((error: unknown) =>
+      await started.catch((error: unknown) =>
         get().reportError({ title: "Couldn't continue the fix run", error, sessionId }),
       );
       continue;
     }
-    await started;
-    await onStarted({ threadIds });
+    if (await started) {
+      await onStarted({ threadIds });
+    }
   }
 };

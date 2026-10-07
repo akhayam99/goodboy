@@ -11,7 +11,7 @@ export { useDropdown } from './useDropdown';
 export { PopoverPortalProvider } from './PopoverPortalContext';
 export type { DropdownController } from './useDropdown';
 export { ICON_SIZE } from './iconSize';
-export { PANE_RHYTHM } from './paneRhythm';
+export { BOARD_LANE_GAP_REM, BOARD_LANE_MIN_REM, PANE_RHYTHM } from './paneRhythm';
 export { TERMINAL_DIM } from './terminalDim';
 export { formatError } from './formatError';
 export { splitErrorMessage } from './splitErrorMessage';
@@ -27,6 +27,7 @@ export {
 export { DrawerColumn, RIGHT_DRAWER_STORAGE_KEY } from './components/DrawerColumn';
 export type { DrawerColumnProps } from './components/DrawerColumn';
 export {
+  COLUMN_FRAME,
   DRAWER_INSET,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
@@ -75,6 +76,8 @@ export { Notice } from './components/Notice';
 export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
+export { MenuTriggerButton } from './components/MenuTriggerButton';
+export { LineMark } from './components/LineMark';
 export { MenuItems } from './components/MenuItems';
 export { ContextMenu } from './components/ContextMenu/ContextMenu';
 export { MenuList } from './components/ContextMenu/MenuList';
@@ -284,3 +287,8 @@ export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
 export { WorkNode } from './components/WorkTree/WorkNode';
 export { WORK_NODE_GLYPH_SIZE, WORK_NODE_SIZE } from './components/WorkTree/workNodeSpec';
 export type { WorkNodeMark, WorkNodeSize, WorkNodeState } from './components/WorkTree/workNodeSpec';
+export { Kbd } from './components/Kbd';
+export type { KbdLook, KbdProps } from './components/Kbd';
+export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';
+export { drawerAsideWidthOf, drawerLayoutOf } from './drawerGeometry';
+export type { DrawerLayout } from './drawerGeometry';

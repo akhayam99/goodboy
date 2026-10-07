@@ -23,6 +23,7 @@ import {
 } from '../../../../store/storyHarness';
 import {
   ledgerCore,
+  openQuestionFor,
   paymentsApi,
   renderBar,
   runningState,
@@ -220,18 +221,20 @@ describe('what the hover card says', () => {
     return within(card() as HTMLElement);
   };
 
-  it('names the stage and the reason of a session that needs you', () => {
+  it('says what waits on you in the words of the reason table', () => {
     const view = openCard('Retry policy for 429s');
-    expect(view.getByText('Needs you · 1 open question')).toBeDefined();
+    expect(view.getByText('1 question for you')).toBeDefined();
   });
 
   it('agrees with what the row tells a screen reader', () => {
     mount();
     const described = rowOf('Retry policy for 429s').getAttribute('aria-describedby') ?? '';
-    expect(document.getElementById(described)?.textContent ?? '').toMatch(/needs you/i);
+    expect(document.getElementById(described)?.textContent ?? '').toBe(
+      'needs you, 1 question for you',
+    );
     fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
     rest(500);
-    expect(within(card() as HTMLElement).getByText(/^Needs you/)).toBeDefined();
+    expect(within(card() as HTMLElement).getByText('1 question for you')).toBeDefined();
   });
 
   it('shows the pull request, its checks, the linked task and the project', () => {
@@ -257,6 +260,72 @@ describe('what the hover card says', () => {
   it('offers no action for a session that needs nothing', () => {
     const view = openCard('Fix webhook retries');
     expect(view.queryByRole('button', { name: 'Open what needs you' })).toBeNull();
+  });
+
+  const failingApproved = (): PullRequestState => ({
+    ...draftPr(),
+    state: 'approved',
+    isDraft: false,
+    reviewDecision: 'approved',
+    checks: 'failure',
+  });
+
+  const seedGithubFor = ({
+    session,
+    pr,
+  }: {
+    readonly session: typeof retry;
+    readonly pr: PullRequestState;
+  }) => {
+    const current = useAppStore.getState().sessionGithub;
+    const template = current[webhook.id];
+    if (template === undefined) {
+      throw new Error('the webhook seed has no pull request');
+    }
+    useAppStore.setState({ sessionGithub: { ...current, [session.id]: { ...template, pr } } });
+  };
+
+  it('lists the facts behind the winner, each on its own line', () => {
+    mount();
+    seedGithubFor({ session: retry, pr: failingApproved() });
+    fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
+    rest(500);
+    const view = within(card() as HTMLElement);
+
+    expect(view.getByText('1 question for you')).toBeDefined();
+    expect(view.getByText('Checks failing').getAttribute('data-attention-line')).toBe('ci-failed');
+    expect(view.getByText('Approved, ready to merge').getAttribute('data-attention-line')).toBe(
+      'pr-approved',
+    );
+  });
+
+  it('says an agent is working when a reason keeps a running session in needs you', () => {
+    mount();
+    useAppStore.setState({
+      sessionOpenQuestions: {
+        ...useAppStore.getState().sessionOpenQuestions,
+        [webhook.id]: [openQuestionFor({ sessionId: webhook.id as SessionId })],
+      },
+    });
+    fireEvent.mouseEnter(rowOf('Fix webhook retries'));
+    rest(500);
+    const view = within(card() as HTMLElement);
+
+    expect(view.getByText('1 question for you')).toBeDefined();
+    expect(view.getByText('An agent is working')).toBeDefined();
+  });
+
+  it('lists what is wrong behind a running session without turning it into needs you', () => {
+    mount();
+    seedGithubFor({ session: webhook, pr: failingApproved() });
+    fireEvent.mouseEnter(rowOf('Fix webhook retries'));
+    rest(500);
+    const view = within(card() as HTMLElement);
+
+    expect(view.getByText('Running')).toBeDefined();
+    expect(view.getByText('Checks failing')).toBeDefined();
+    expect(view.getByText('Approved, ready to merge')).toBeDefined();
+    expect(view.queryByText('An agent is working')).toBeNull();
   });
 
   it('says Archived for an archived session', () => {

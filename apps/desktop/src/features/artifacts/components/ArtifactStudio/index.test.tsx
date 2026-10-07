@@ -18,6 +18,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       activeLens: { 'sess-1': 'plans' } as Record<string, string | null>,
       drawer: null as unknown,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+      phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
       sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
       wireframeDrafts: {} as Record<string, unknown>,
       artifactComments: {} as Record<string, ReadonlyArray<unknown>>,
@@ -33,7 +34,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       transcripts: {} as Record<string, ReadonlyArray<unknown>>,
       loadSessionArtifacts: vi.fn(async () => undefined),
       loadConsumptionsForPlan: vi.fn(async () => undefined),
-      updatePlanBody: vi.fn(async () => undefined),
+      updatePlanBody: vi.fn(async () => ({ kind: 'saved', revision: 2 })),
       updateArtifactSource: vi.fn(async () => undefined),
       markArtifactOpened: vi.fn(),
       runPlan: vi.fn(async () => 'agent-impl'),
@@ -68,6 +69,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
         return { 'sess-1': this.plans };
       },
       openQuestions: [] as ReadonlyArray<unknown>,
+      sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
     },
   };
 });
@@ -444,6 +446,7 @@ describe('ArtifactStudio shell', () => {
         'plan-1',
         'Backfill once',
         '## Goal\nmatch',
+        1,
       ),
     );
   });

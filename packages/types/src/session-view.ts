@@ -23,8 +23,10 @@ export type SessionAttentionReason =
   | 'unread-reply'
   | 'ci-failed'
   | 'changes-requested'
+  | 'pr-queued'
   | 'pr-approved'
-  | 'needs-approval';
+  | 'needs-approval'
+  | 'plan-approval';
 
 export type SessionPrFetchState = 'unknown' | 'unreachable' | 'known';
 
@@ -34,6 +36,11 @@ export type SessionStageInfo = Readonly<{
   addsFact: boolean;
   attention: SessionAttentionReason | null;
   prState: PullRequestStateKind | null;
+  isRunning?: boolean;
+  otherReasons?: ReadonlyArray<SessionAttentionReason>;
+  openQuestionCount?: number;
+  fixNeedsYouCount?: number;
+  fixCouldntFixCount?: number;
 }>;
 
 export type SessionPrGroup =

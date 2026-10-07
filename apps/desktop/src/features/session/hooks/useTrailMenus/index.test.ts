@@ -34,6 +34,7 @@ const h = vi.hoisted(() => ({
   threadId: null as string | null,
   branchPrs: [] as ReadonlyArray<unknown>,
   mergedMounts: new Set<string>(),
+  openHeads: new Map<string, string>(),
   diffStats: new Map<string, { additions: number; deletions: number }>(),
   statuses: new Map<string, unknown>(),
   resolveAgain: vi.fn(),
@@ -57,6 +58,7 @@ vi.mock('../../../../store/slices/worktrees/resolveSessionRepo', () => ({
 }));
 vi.mock('../../../../store/slices/project-mounts/mountRowModel', () => ({
   isMountRequestMerged: ({ mountId }: { mountId: string }) => h.mergedMounts.has(mountId),
+  mountOpenRequestHead: ({ mountId }: { mountId: string }) => h.openHeads.get(mountId) ?? null,
 }));
 vi.mock('../../../../store/slices/navigation/resolverThread', () => ({
   resolverThread: () => h.threadId,
@@ -296,6 +298,7 @@ beforeEach(() => {
   h.threadId = null;
   h.branchPrs = [];
   h.mergedMounts = new Set();
+  h.openHeads = new Map();
   h.diffStats = new Map();
   h.statuses = new Map();
   cancelCurrentTurn.mockResolvedValue(undefined);
@@ -660,16 +663,49 @@ describe('useTrailMenus diff branch crumb', () => {
     expect(rowById(menu, '/work/ledger-core').state).toBeNull();
   });
 
-  it('offers all branches in Session and opens the diff of a picked mount', () => {
+  it('never reads a worktree with an open pull request as merged from ancestry', () => {
+    h.openHeads = new Map([['mount-notify-relay', 'bbbbbbb2']]);
+    h.statuses = new Map([
+      [
+        '/work/notify-relay',
+        {
+          branch: 'ak/feat-notify',
+          head: 'aaaaaaa1',
+          upstream: 'origin/ak/feat-notify',
+          upstreamDistance: { kind: 'known', ahead: 0, behind: 2 },
+          mainDistance: { kind: 'known', ahead: 0, behind: 0 },
+          workingTree: {
+            kind: 'known',
+            staged: 0,
+            unstaged: 0,
+            untracked: 0,
+            unmerged: 0,
+            changed: 0,
+          },
+          inProgress: null,
+        },
+      ],
+    ]);
+    const menu = menuOf(branchPage, 'branch');
+    expect(rowById(menu, '/work/notify-relay').state?.word).toBe("Not on the PR's commits");
+  });
+
+  it('offers all branches in Session and opens the diff of a picked mount', async () => {
     const menu = menuOf(branchPage, 'branch');
     expect(labelsOf(menu)).toEqual([['all-branches', 'All branches in Session']]);
     actionOf(menu, 'all-branches').onRun();
     expect(h.openLens).toHaveBeenCalledWith({ sessionId: SESSION_ID, lens: null });
     rowById(menu, '/work/notify-relay').onSelect();
-    expect(navigate).toHaveBeenLastCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, mountPath: '/work/notify-relay', tab: 'comments' }),
-      mode: 'replace',
-    });
+    await vi.waitFor(() =>
+      expect(navigate).toHaveBeenLastCalledWith({
+        to: branchPlace({
+          sessionId: SESSION_ID,
+          mountPath: '/work/notify-relay',
+          tab: 'comments',
+        }),
+        mode: 'replace',
+      }),
+    );
   });
 });
 

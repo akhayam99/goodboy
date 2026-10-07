@@ -2,7 +2,6 @@ import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_TONE, type CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
-import { pluralize } from '../../../../shared/utils/pluralize';
 import type { ToolRailEntry } from '../../../integrations/toolRailEntries';
 import type { ProviderRailStatus } from '../../../providers/providerRailStatus';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
@@ -37,7 +36,7 @@ export type SettingsGroup = {
   readonly label: string;
   readonly concept: Concept;
   readonly place: string;
-  readonly subtitle: string | undefined;
+  readonly attention: string | undefined;
   readonly tone: Tone | undefined;
   readonly needsWorkspace: boolean;
   readonly pages: ReadonlyArray<SettingsPage>;
@@ -53,7 +52,6 @@ export type SettingsStatus = {
   readonly subtitles: RailSubtitles;
   readonly providers: ReadonlyArray<SettingsProviderEntry>;
   readonly tools: ReadonlyArray<ToolRailEntry>;
-  readonly toolsInventory: string;
 };
 
 type Params = {
@@ -115,7 +113,7 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
   label: 'App',
   concept: 'settings',
   place: 'This Mac',
-  subtitle: undefined,
+  attention: undefined,
   tone: undefined,
   needsWorkspace: false,
   pages: APP_SECTIONS.map((section): SettingsPage => ({
@@ -131,7 +129,7 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
 const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   ...scopeMeta('workspace'),
   place: workspaceName ?? 'This workspace',
-  subtitle: status.subtitles.workspaceText ?? workspaceName ?? undefined,
+  attention: status.subtitles.workspaceText,
   tone: status.subtitles.workspaceTone,
   pages: WORKSPACE_PAGES.map((page): SettingsPage => ({
     key: `workspace:${page.id}`,
@@ -189,13 +187,10 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
   ];
 };
 
-const providerCount = (count: number): string | undefined =>
-  count === 0 ? undefined : pluralize(count, 'provider');
-
 const providersGroup = (params: Params): SettingsGroup => ({
   ...scopeMeta('providers'),
   place: params.workspaceName ?? 'This Mac',
-  subtitle: params.status.subtitles.providersText ?? providerCount(params.status.providers.length),
+  attention: params.status.subtitles.providersText,
   tone: params.status.subtitles.providersTone,
   pages: providerPages(params),
 });
@@ -203,7 +198,7 @@ const providersGroup = (params: Params): SettingsGroup => ({
 const toolsGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   ...scopeMeta('tools'),
   place: workspaceName ?? 'This workspace',
-  subtitle: status.toolsInventory,
+  attention: undefined,
   tone: undefined,
   pages: status.tools.map((entry): SettingsPage => ({
     key: `tool:${entry.tool}`,

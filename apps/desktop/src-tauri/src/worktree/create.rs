@@ -2,6 +2,7 @@ use super::base::{base_candidates_with, default_base_name, resolve_origin_head};
 use super::branch_name::branch_name_problem;
 use super::error::WorktreeError;
 use super::exclude::ensure_goodboy_excluded;
+use super::foreign::{add_remote_backed_worktree, remote_backed_source};
 use super::git::{git, RunGit};
 use super::inspect::parse_porcelain;
 use super::slug::sanitize_slug;
@@ -82,11 +83,13 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
             branch_name: existing.branch.unwrap_or(branch_name),
             slug,
             reused: true,
+            tracked_remote: false,
         });
     }
 
     std::fs::create_dir_all(&parent)?;
 
+    let mut tracked_remote = false;
     if let Some(name) = existing_branch {
         let local_exists = git(
             &repo_path,
@@ -183,6 +186,9 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
                 },
             }
         }
+    } else if let Some(source) = remote_backed_source(&repo_path, &branch_name)? {
+        add_remote_backed_worktree(&repo_path, &worktree_path, &branch_name, &source)?;
+        tracked_remote = true;
     } else {
         let configured_base = args
             .base_branch
@@ -217,6 +223,7 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
         branch_name,
         slug,
         reused: false,
+        tracked_remote,
     })
 }
 
@@ -231,8 +238,8 @@ fn find_existing(
         .find(|w| Path::new(&w.path) == worktree_path))
 }
 
-fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
-    git(repo_path, &["fetch", "origin", base])
+pub(super) fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
+    git(repo_path, &["fetch", "--", "origin", base])
         .err()
         .map(|error| error.to_string())
 }
@@ -240,7 +247,7 @@ fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
 /// Tell "origin has no such branch" apart from "origin could not be reached".
 /// Only the first one lets a caller cut the branch itself: an outage that
 /// silently became a fresh branch would diverge from the real one.
-fn remote_ref_is_absent(repo_path: &Path, fetch_failure: &str) -> bool {
+pub(super) fn remote_ref_is_absent(repo_path: &Path, fetch_failure: &str) -> bool {
     fetch_failure.contains("couldn't find remote ref")
         || git(repo_path, &["remote", "get-url", "origin"]).is_err()
 }

@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { BranchCombobox } from './BranchCombobox';
+import { BRANCH_PICKER_MAX_WIDTH } from './branchPicker';
 
 afterEach(cleanup);
 
@@ -42,6 +43,92 @@ describe('BranchCombobox', () => {
     });
 
     expect(onChange).toHaveBeenCalledWith('nw/retry-queue');
+  });
+
+  it('offers teammates branches with author and pull request, searchable by both', () => {
+    const onChange = vi.fn();
+    render(
+      <BranchCombobox
+        branches={[
+          { name: 'ak/own-work', inUse: false, hasUncommitted: false, source: 'local' },
+          {
+            name: 'grw-1348-cta-for-the-slot',
+            inUse: false,
+            hasUncommitted: false,
+            source: 'pr',
+            author: 'pat-harborline',
+            prNumber: 9900,
+            isDraft: false,
+            title: 'Skip the slot step',
+          },
+          {
+            name: 'old-experiment',
+            inUse: false,
+            hasUncommitted: false,
+            source: 'remote',
+            author: 'Sam Northwind',
+            prNumber: null,
+            isDraft: false,
+            title: null,
+          },
+        ]}
+        value=""
+        onChange={onChange}
+        disabled={false}
+        loading={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Branch' }));
+
+    expect(screen.getByRole('option', { name: /grw-1348/ }).textContent).toContain(
+      'PR #9900 · pat-harborline',
+    );
+    expect(screen.getByRole('option', { name: /old-experiment/ }).textContent).toContain(
+      'Sam Northwind',
+    );
+    screen.getByText('On this Mac');
+    screen.getByText('Open pull requests');
+    screen.getByText('On origin');
+
+    const search = screen.getByRole('combobox', { name: 'Search branches' });
+    fireEvent.change(search, { target: { value: '9900' } });
+    expect(screen.queryByRole('option', { name: /old-experiment/ })).toBeNull();
+    fireEvent.change(search, { target: { value: 'northwind' } });
+    expect(screen.queryByRole('option', { name: /grw-1348/ })).toBeNull();
+    fireEvent.keyDown(search, { key: 'Enter' });
+
+    expect(onChange).toHaveBeenCalledWith('old-experiment');
+  });
+
+  it('opens a popup wide enough for a long branch and cuts it in the middle', () => {
+    const long = 'grw-1348-cta-per-bypassare-la-selezione-dello-slot';
+    render(
+      <BranchCombobox
+        branches={[
+          { name: 'main', inUse: false, hasUncommitted: false },
+          { name: long, inUse: false, hasUncommitted: false },
+        ]}
+        value={long}
+        onChange={vi.fn()}
+        disabled={false}
+        loading={false}
+      />,
+    );
+
+    const trigger = screen.getByRole('combobox', { name: 'Branch' });
+    expect(trigger.querySelector('[data-slot="label-tail"]')?.textContent).toBe('-slot');
+    fireEvent.click(trigger);
+
+    const popup = screen.getByRole('listbox').closest('[data-dropdown-portal] > div');
+    expect(popup?.getAttribute('style')).toContain(`max-width: ${BRANCH_PICKER_MAX_WIDTH}px`);
+    expect(BRANCH_PICKER_MAX_WIDTH).toBeGreaterThan(360);
+    const row = screen.getByRole('option', { name: long });
+    expect(row.querySelector('[data-slot="label-head"]')?.textContent).toBe(
+      'grw-1348-cta-per-bypassare-la-selezione-dello',
+    );
+    expect(row.querySelector('[data-slot="label-tail"]')?.textContent).toBe('-slot');
+    expect(screen.getByRole('option', { name: 'main' }).querySelector('[data-slot]')).toBeNull();
   });
 
   it('stays closed with no local branch', () => {

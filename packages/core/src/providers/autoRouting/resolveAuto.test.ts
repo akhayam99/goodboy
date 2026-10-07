@@ -1,3 +1,4 @@
+import { MODEL_CATALOGS } from '../catalogs';
 import { describe, expect, it } from 'vitest';
 import { resolveAuto } from './resolveAuto';
 
@@ -181,19 +182,100 @@ describe('resolveAuto', () => {
     });
   });
 
-  it('keeps a hidden summarizer model rather than climbing to a dearer one', () => {
+  it('never picks a hidden summarizer model', () => {
+    const pick = resolveAuto({
+      slot: { kind: 'task', id: 'summarizer' },
+      defaultProvider: 'anthropic',
+      hidden: { anthropic: ['haiku-4.5'] },
+    });
+
+    expect(pick).not.toBeNull();
+    expect(pick?.provider === 'anthropic' && pick.model === 'haiku-4.5').toBe(false);
+    expect(pick).not.toHaveProperty('keptHidden');
+  });
+
+  it('moves a hidden background task to the next allowed provider before a dearer model', () => {
     expect(
       resolveAuto({
         slot: { kind: 'task', id: 'summarizer' },
         defaultProvider: 'anthropic',
+        connected: ['anthropic', 'gemini'],
+        fallbackOrder: ['anthropic', 'gemini'],
         hidden: { anthropic: ['haiku-4.5'] },
-      }),
-    ).toEqual({
+      })?.provider,
+    ).toBe('gemini');
+  });
+
+  it('falls back to the one visible model of the provider when every curated pick is hidden', () => {
+    const hidden = {
+      anthropic: MODEL_CATALOGS.anthropic
+        .map((model) => model.key)
+        .filter((key) => key !== 'opus-4.6'),
+    };
+    const pick = resolveAuto({
+      slot: { kind: 'role', id: 'implementer' },
+      defaultProvider: 'anthropic',
+      hidden,
+    });
+
+    expect(pick).toEqual({
       provider: 'anthropic',
-      model: 'haiku-4.5',
+      model: 'opus-4.6',
       effort: null,
-      step: 'curated',
-      keptHidden: true,
+      step: 'cost-tier',
+    });
+  });
+
+  it('never falls back to a visible model the installed cli is too old to run', () => {
+    const everyModelButSonnet55 = {
+      anthropic: MODEL_CATALOGS.anthropic
+        .map((model) => model.key)
+        .filter((key) => key !== 'sonnet-5.5'),
+    };
+    const slot = { kind: 'role', id: 'implementer' } as const;
+
+    const oldCli = resolveAuto({
+      slot,
+      defaultProvider: 'anthropic',
+      hidden: everyModelButSonnet55,
+      cliVersions: { anthropic: '2.1.200' },
+    });
+    const newCli = resolveAuto({
+      slot,
+      defaultProvider: 'anthropic',
+      hidden: everyModelButSonnet55,
+      cliVersions: { anthropic: '2.1.290' },
+    });
+
+    expect(oldCli?.model).not.toBe('sonnet-5.5');
+    expect(newCli?.model).toBe('sonnet-5.5');
+  });
+
+  it('never falls back to a Cursor model that only runs in Max Mode while Max Mode is off', () => {
+    const everyModelButOpus5 = {
+      cursor: MODEL_CATALOGS.cursor.map((model) => model.key).filter((key) => key !== 'opus-5'),
+    };
+    const slot = { kind: 'role', id: 'implementer' } as const;
+
+    const maxModeOff = resolveAuto({
+      slot,
+      defaultProvider: 'cursor',
+      hidden: everyModelButOpus5,
+      isCursorMaxModeOn: false,
+    });
+    const maxModeOn = resolveAuto({
+      slot,
+      defaultProvider: 'cursor',
+      hidden: everyModelButOpus5,
+      isCursorMaxModeOn: true,
+    });
+
+    expect(maxModeOff?.model).not.toBe('opus-5');
+    expect(maxModeOn).toEqual({
+      provider: 'cursor',
+      model: 'opus-5',
+      effort: null,
+      step: 'cost-tier',
     });
   });
 

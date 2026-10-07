@@ -146,6 +146,26 @@ describe('ScrollFade', () => {
     vi.unstubAllGlobals();
   });
 
+  it('keeps the default edge a fade: no scrolled mark, no line, the top fade grows', () => {
+    runFrames();
+    const { container } = render(
+      <ScrollFade className="h-40" fadeSize={32}>
+        <p>content</p>
+      </ScrollFade>,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    const viewport = viewportOf(container);
+    makeOverflow({ viewport });
+    viewport.scrollTop = 150;
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    expect(root.hasAttribute('data-scrolled')).toBe(false);
+    expect(root.querySelector('[data-slot="scroll-edge"]')).toBeNull();
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('32px');
+    vi.unstubAllGlobals();
+  });
+
   it('renders no scrollbar track when the content does not overflow', () => {
     const { container } = render(
       <ScrollFade className="h-40">
@@ -165,6 +185,109 @@ describe('ScrollFade', () => {
     makeOverflow({ viewport });
     fireEvent.scroll(viewport);
     expect(container.querySelector('.pointer-events-auto')).toBeNull();
+  });
+});
+
+describe('ScrollFade line edge', () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  const queueFrames = () => {
+    const pending: Array<FrameRequestCallback> = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      pending.push(callback);
+      return pending.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+    return () => {
+      for (const callback of pending.splice(0)) {
+        callback(0);
+      }
+    };
+  };
+
+  const renderLine = () => {
+    const flushFrames = queueFrames();
+    const view = render(
+      <ScrollFade className="h-40" fadeSize={32} edge="line">
+        <p>content</p>
+      </ScrollFade>,
+    );
+    const viewport = viewportOf(view.container);
+    makeOverflow({ viewport });
+    const scrollTo = ({ top }: { top: number }): void => {
+      viewport.scrollTop = top;
+      act(() => {
+        fireEvent.scroll(viewport);
+        flushFrames();
+      });
+    };
+    return { root: view.container.firstElementChild as HTMLElement, viewport, scrollTo };
+  };
+
+  it('marks the root scrolled once the viewport leaves the top, and clears it at 0', () => {
+    const { root, scrollTo } = renderLine();
+    scrollTo({ top: 0 });
+    expect(root.hasAttribute('data-scrolled')).toBe(false);
+
+    scrollTo({ top: 1 });
+    expect(root.getAttribute('data-scrolled')).toBe('true');
+
+    scrollTo({ top: 0 });
+    expect(root.hasAttribute('data-scrolled')).toBe(false);
+  });
+
+  it('softens the content under the line over 8px, never the full fade, and leaves the bottom fade on', () => {
+    const { viewport, scrollTo } = renderLine();
+    scrollTo({ top: 150 });
+
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('8px');
+    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
+  });
+
+  it('grows the soft top edge with the scroll, so a clipped card edge never shows as a sliver', () => {
+    const { viewport, scrollTo } = renderLine();
+
+    scrollTo({ top: 0 });
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
+    scrollTo({ top: 3 });
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('3px');
+  });
+
+  it('draws one decorative hairline on its own top edge, lit only by the scrolled mark', () => {
+    const { root } = renderLine();
+    const lines = root.querySelectorAll('[data-slot="scroll-edge"]');
+
+    expect(lines).toHaveLength(1);
+    const line = lines[0] as HTMLElement;
+    expect(line.getAttribute('aria-hidden')).toBe('true');
+    expect(line.className).toContain('top-0');
+    expect(line.className).toContain('h-px');
+    expect(line.className).toMatch(/(^| )bg-border-soft( |$)/);
+    expect(line.className).not.toMatch(/(^| )bg-border( |$)/);
+    expect(line.className).toContain('opacity-0');
+    expect(line.className).toContain('group-data-[scrolled=true]/edge:opacity-100');
+    expect(line.className).toContain('motion-safe:transition-opacity');
+    expect(line.className).toContain('motion-safe:duration-120');
+  });
+
+  it('keeps the viewport the first child so callers that walk the root still find it', () => {
+    const { root, viewport } = renderLine();
+
+    expect(root.firstElementChild).toBe(viewport);
+  });
+
+  it('never imitates a horizontal scroller with a top line', () => {
+    runFrames();
+    const { container } = render(
+      <ScrollFade className="max-w-sm" orientation="horizontal" edge="line">
+        <p>content</p>
+      </ScrollFade>,
+    );
+
+    expect(container.querySelector('[data-slot="scroll-edge"]')).toBeNull();
   });
 });
 

@@ -43,19 +43,19 @@
     "notices": 1,
     "emptyLines": 0
   },
-  "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": {
-    "notices": 0,
-    "emptyLines": 2
-  },
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRow.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": {
     "notices": 0,
     "emptyLines": 1
   },
   "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/session/components/ContextDrawer/LearnedTab.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/session/components/ContextDrawer/SummaryBlock.tsx": {
     "notices": 0,
     "emptyLines": 1
   },
@@ -75,7 +75,19 @@
     "notices": 0,
     "emptyLines": 1
   },
+  "apps/desktop/src/features/storage/components/BranchesPage/RecentlyDeletedBranches.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/storage/components/StoragePage/ArtifactBulkDeleteBar.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
   "apps/desktop/src/features/storage/components/StoragePage/BulkRemoveBar.tsx": {
+    "notices": 0,
+    "emptyLines": 1
+  },
+  "apps/desktop/src/features/wireframes/components/WireframeViewer/ChangeList.tsx": {
     "notices": 0,
     "emptyLines": 1
   },

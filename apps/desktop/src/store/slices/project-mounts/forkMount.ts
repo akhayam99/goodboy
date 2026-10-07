@@ -141,7 +141,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
             await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
             try {
               created = await createWorktree(
-                adopt ? { ...request, existingBranch: branchName } : request,
+                adopt ? { ...request, branchName, existingBranch: branchName } : request,
               ).catch(async (error: unknown) => {
                 if (!adopt || worktreeErrorKind({ error }) !== 'branch_not_found') {
                   throw error;
@@ -207,6 +207,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                       isRepo: true,
                       adopted: usedExistingBranch,
                       reused: created.reused,
+                      trackedRemote: created.trackedRemote === true,
                     }),
                     createdAt: timestamp,
                     updatedAt: timestamp,

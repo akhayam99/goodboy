@@ -273,6 +273,23 @@ body 2<</plan>>`;
     expect(extractPlanFromMarker(text)?.title).toBe('final');
   });
 
+  it('starts at the nearest open marker so a repeated open never leaks into the body', () => {
+    const text = '<<plan>>draft\nold text\n<<plan>>real\nbody line<</plan>>';
+    const out = extractPlanFromMarker(text);
+    expect(out).toEqual({ title: 'real', bodyMd: 'body line' });
+    expect(out?.bodyMd).not.toContain('<<');
+  });
+
+  it('keeps the earlier plan when a later open never closes', () => {
+    const text = '<<plan>>first\nbody 1<</plan>>\n<<plan>>second\nstill writing';
+    expect(extractPlanFromMarker(text)?.title).toBe('first');
+  });
+
+  it('skips an empty last block and falls back to the one before it', () => {
+    const text = '<<plan>>kept\nbody<</plan>>\n<<plan>>  <</plan>>';
+    expect(extractPlanFromMarker(text)?.title).toBe('kept');
+  });
+
   it('survives repeat calls (no leaked lastIndex)', () => {
     const text = '<<plan>>x\nb<</plan>>';
     expect(extractPlanFromMarker(text)?.title).toBe('x');

@@ -2,6 +2,7 @@ import { useAppStore } from '../../store';
 import { chatDefaultModelKey, parseChatDefaultModel } from './chatDefaultModelSetting';
 import { defaultChatRouting } from './defaultChatRouting';
 import { selectWorkspaceResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
+import { selectHiddenModels } from '../../store/slices/settings/selectHiddenModels';
 
 type Params = {
   readonly question: string;
@@ -23,6 +24,7 @@ export const askInChat = async ({ question }: Params): Promise<void> => {
     const { provider, model, effort } = defaultChatRouting({
       connected,
       saved: parseChatDefaultModel({ raw }),
+      hidden: selectHiddenModels({ state }),
       workspaceDefaultProvider: selectWorkspaceResolvedSettings({ state, workspaceId })
         .defaultProviderOverride,
     });

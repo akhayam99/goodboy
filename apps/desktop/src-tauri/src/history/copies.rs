@@ -215,6 +215,8 @@ pub async fn history_copy_discard(
 pub struct ResolveCopyArgs {
     pub worktree_path: String,
     pub attempt_id: String,
+    #[serde(default)]
+    pub start_sha: Option<String>,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -231,11 +233,12 @@ pub(crate) fn resolve_copy_path_of(attempt_id: &str) -> PathBuf {
 pub(crate) fn prepare_resolve_copy_at(
     cwd: &Path,
     copy: &Path,
+    start: Option<&str>,
 ) -> Result<ResolveCopy, WorktreeError> {
     if copy.exists() && is_owned_copy(copy) {
         discard_copy(&copy.to_string_lossy());
     }
-    let head = resolve_commit(cwd, "HEAD")?;
+    let head = resolve_commit(cwd, start.unwrap_or("HEAD"))?;
     let mut guard = create_copy(cwd, copy, &head)?;
     deps::link_dependencies(cwd, copy);
     guard.is_kept = true;
@@ -264,7 +267,7 @@ pub async fn resolve_copy_prepare(args: ResolveCopyArgs) -> Result<ResolveCopy, 
         if !copy.is_absolute() {
             return Err(plan_error("there is no folder for the temporary copy"));
         }
-        prepare_resolve_copy_at(&cwd, &copy)
+        prepare_resolve_copy_at(&cwd, &copy, args.start_sha.as_deref())
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?

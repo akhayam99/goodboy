@@ -253,6 +253,9 @@ vi.mock('../shared/lib/zoom', () => ({
 vi.mock('../shared/hooks/useProviderRefreshOnFocus', () => ({
   useProviderRefreshOnFocus: vi.fn(),
 }));
+vi.mock('../features/workspace/hooks/useSessionPinsSync', () => ({
+  useSessionPinsSync: vi.fn(),
+}));
 vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
 }));
@@ -387,7 +390,7 @@ describe('No workspace yet', () => {
   });
 });
 
-describe('The classic bars switch', () => {
+describe('The legacy layout switch', () => {
   it('draws no footer at all while the switch is off', () => {
     state.settings = { 'shell.classicBars': 'false' };
     render(<App />);

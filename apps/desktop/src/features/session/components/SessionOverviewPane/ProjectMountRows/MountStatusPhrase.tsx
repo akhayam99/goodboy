@@ -1,6 +1,9 @@
 import { Skeleton, Tooltip, cn } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
-import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
+import {
+  isOpenRequest,
+  type MountRowView,
+} from '../../../../../store/slices/project-mounts/mountRowModel';
 import { branchPresenceOf, mainPresenceOf } from '../../../../../shared/lib/branchPresence';
 import { mountOperationView } from './mountRowState';
 
@@ -14,9 +17,12 @@ type Props = {
   readonly isMerged: boolean;
   readonly isRebasing: boolean;
   readonly commitsAfterMerge: number | null;
+  readonly request?: MountRowView['request'];
 };
 
-type PhraseParams = Pick<Props, 'status' | 'isMerged' | 'commitsAfterMerge'>;
+type PhraseParams = Pick<Props, 'status' | 'isMerged' | 'commitsAfterMerge'> & {
+  readonly request: MountRowView['request'];
+};
 
 type Phrase = {
   readonly text: string;
@@ -24,12 +30,25 @@ type Phrase = {
   readonly detail: string;
 };
 
-const phraseOf = ({ status, isMerged, commitsAfterMerge }: PhraseParams): Phrase | null => {
+const phraseOf = ({
+  status,
+  isMerged,
+  commitsAfterMerge,
+  request,
+}: PhraseParams): Phrase | null => {
   if (status === null) {
     return null;
   }
-  const presence = branchPresenceOf({ status, isMerged, commitsAfterMerge });
-  const isWarning = presence.kind === 'gone-on-origin' || presence.kind === 'diverged';
+  const presence = branchPresenceOf({
+    status,
+    isMerged,
+    commitsAfterMerge,
+    openRequest: isOpenRequest({ request }) ? { headSha: request?.headSha ?? null } : null,
+  });
+  const isWarning =
+    presence.kind === 'gone-on-origin' ||
+    presence.kind === 'diverged' ||
+    presence.kind === 'not-on-pr';
   if (presence.kind === 'on-origin') {
     return {
       text: presence.toPush === null ? 'Up to date' : `${presence.toPush} to push`,
@@ -71,6 +90,7 @@ export const MountStatusPhrase = ({
   isMerged,
   isRebasing,
   commitsAfterMerge,
+  request = null,
 }: Props) => {
   if (!isRepo) {
     return null;
@@ -83,7 +103,7 @@ export const MountStatusPhrase = ({
     );
   }
   const operation = mountOperationView({ status, label });
-  const phrase = phraseOf({ status, isMerged, commitsAfterMerge });
+  const phrase = phraseOf({ status, isMerged, commitsAfterMerge, request });
   const details = detailsOf({ status, series, isRebasing, phrase });
   const text = operation?.label ?? phrase?.text ?? null;
   if (text === null) {

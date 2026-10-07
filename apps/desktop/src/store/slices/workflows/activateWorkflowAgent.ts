@@ -41,6 +41,7 @@ export type ActivateWorkflowAgentParams = {
   readonly explicitPlanId?: PlanId;
   readonly focus?: SpawnFocus;
   readonly bypassGate?: boolean;
+  readonly onStarted?: () => void;
 };
 
 type PauseCheckParams = {
@@ -66,6 +67,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     explicitPlanId,
     focus = 'none',
     bypassGate = false,
+    onStarted,
   }: ActivateWorkflowAgentParams) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
@@ -229,6 +231,7 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
         agentId,
         content: kickoff,
         origin: 'workflow',
+        ...(onStarted !== undefined && { onStarted }),
         handoff: {
           instruction,
           goal: run?.goal ?? template?.goal ?? null,

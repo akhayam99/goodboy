@@ -8,7 +8,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../shared/components/Toast';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { issueBriefKey } from '../../../../store/slices/issue-briefs/issueBriefKey';
 import { selectIssueBrief } from '../../../../store/slices/issue-briefs/selectIssueBrief';
 import type { IssueBriefSource } from '../../../../store/slices/issue-briefs/types';
@@ -54,7 +55,7 @@ export const LaunchSessionPanel = ({
   const requestIssueBrief = useAppStore((state) => state.requestIssueBrief);
   const briefKey = briefSource === null ? null : issueBriefKey({ source: briefSource });
   const brief = useAppStore((state) => selectIssueBrief({ state, key: briefKey }));
-  const { showToast } = useToast();
+  const followSession = useFollowToast();
   const [isShowingBrief, setIsShowingBrief] = useState(true);
   const readyBrief = brief?.status === 'ready' && briefSource !== null ? brief : null;
   const briefGoal =
@@ -132,9 +133,11 @@ export const LaunchSessionPanel = ({
         ...(mount !== null && projectId !== null && { projectId, projectReason: mount.reason }),
         externalTasks: [externalTask],
       });
-      showToast({
-        kind: 'success',
-        message: `Session created: ${inlineMarkdownText({ text: session.goal })}`,
+      followSession({
+        title: 'Session started',
+        message: inlineMarkdownText({ text: session.goal }),
+        target: { place: sessionPlace({ sessionId: session.id }) },
+        startKey: session.id,
       });
       onClose();
     } catch (launchError) {

@@ -14,7 +14,8 @@ import {
   addPlanConsumption as dbAddPlanConsumption,
   listConsumptionsForPlan as dbListConsumptionsForPlan,
   listPlansForSession as dbListPlansForSession,
-  updatePlanBody as dbUpdatePlanBody,
+  updatePlanBodyIfRevision as dbUpdatePlanBodyIfRevision,
+  type UpdatePlanBodyResult,
   updatePlanStatus as dbUpdatePlanStatus,
   upsertPlan as dbUpsertPlan,
 } from '@goodboy/db';
@@ -54,8 +55,13 @@ export const setPlanStatus = async (id: PlanId, status: PlanStatus): Promise<voi
   await dbUpdatePlanStatus(tauriDatabase, id, status);
 };
 
-export const setPlanBody = async (id: PlanId, title: string, bodyMd: string): Promise<void> => {
-  await dbUpdatePlanBody(tauriDatabase, id, title, bodyMd);
+export const setPlanBodyIfRevision = async (
+  id: PlanId,
+  title: string,
+  bodyMd: string,
+  expectedRevision: number,
+): Promise<UpdatePlanBodyResult> => {
+  return dbUpdatePlanBodyIfRevision(tauriDatabase, id, title, bodyMd, expectedRevision);
 };
 
 export const addPlanConsumption = async (

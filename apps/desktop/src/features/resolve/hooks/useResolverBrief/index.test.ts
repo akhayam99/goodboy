@@ -62,6 +62,18 @@ describe('resolverBriefOf', () => {
     });
   });
 
+  it('covers every thread of the agent, even when each attempt names one', () => {
+    const attempts = [
+      attemptOf({ id: 'a-one', agentId: SINGLE, threadIds: [RETRY], batchId: null }),
+      attemptOf({ id: 'a-two', agentId: SINGLE, threadIds: [TYPO], batchId: null }),
+      attemptOf({ id: 'a-three', agentId: CHILD, threadIds: [CONSTANT], batchId: null }),
+    ];
+    expect(resolverBriefOf({ attempts, agentId: SINGLE })).toMatchObject({
+      ownThreadIds: [RETRY, TYPO],
+      isBatch: true,
+    });
+  });
+
   it('is absent for an agent that no attempt names', () => {
     expect(resolverBriefOf({ attempts: ATTEMPTS, agentId: 'nobody' as AgentId })).toBeNull();
   });

@@ -1,7 +1,7 @@
 import { AlertTriangle, CircleStop, ClipboardCheck, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
-import { Chip, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { Button, Chip, StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
@@ -17,6 +17,12 @@ type Props = {
   readonly hasOrchestratorStrip?: boolean;
   readonly blockReason?: WorkflowBlockReason | null;
   readonly question?: WorkflowRunStatusQuestion | null;
+  readonly reviewPlan?: WorkflowRunStatusReviewPlan | null;
+};
+
+type WorkflowRunStatusReviewPlan = {
+  readonly emphasis: 'primary' | 'secondary';
+  readonly onReview: () => void;
 };
 
 type WorkflowRunStatusQuestion = {
@@ -34,6 +40,7 @@ export const WorkflowRunStatus = ({
   hasOrchestratorStrip = false,
   blockReason = null,
   question = null,
+  reviewPlan = null,
 }: Props) => {
   const completedSteps = agents.filter((agent) =>
     isAgentStatusSettled({ status: agent.status }),
@@ -94,6 +101,20 @@ export const WorkflowRunStatus = ({
         <Pause size={10} aria-hidden />
         Paused
       </span>
+    );
+  }
+  if (isRunHeldForPlan({ run }) && !hasOrchestratorStrip && reviewPlan !== null) {
+    return (
+      <Button
+        size="xs"
+        variant={reviewPlan.emphasis === 'primary' ? 'primary' : 'secondary'}
+        title={stop?.message}
+        data-testid="workflow-run-plan-ready"
+        onClick={reviewPlan.onReview}
+      >
+        <ClipboardCheck size={ICON_SIZE.row} aria-hidden />
+        Review plan
+      </Button>
     );
   }
   if (isRunHeldForPlan({ run }) && !hasOrchestratorStrip) {

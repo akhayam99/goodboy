@@ -19,7 +19,6 @@ const QUIET_STATUS: SettingsStatus = {
   },
   providers: [],
   tools: [],
-  toolsInventory: '',
 };
 
 const LOUD_STATUS: SettingsStatus = {

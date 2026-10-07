@@ -43,6 +43,7 @@ import type { GetFn, SetFn } from './types';
 import { resolveScopedSettings } from '../overrides/selectResolvedSettings';
 import { scopedRoutingScope } from '../agents/scopedKindRouting';
 import { scopedKindRouting } from '../agents/scopedKindRouting';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type ExternalTaskInput = {
   provider: SessionExternalTaskProvider;
@@ -357,6 +358,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
             providers: get().providers ?? [],
             cooldowns: get().providerCooldowns ?? {},
             alerts: get().budgetAlerts ?? [],
+            hidden: selectHiddenModels({ state: get() }),
             sessionId: session.id,
             isRunBudgetBlocked: false,
             nowMs: Date.now(),

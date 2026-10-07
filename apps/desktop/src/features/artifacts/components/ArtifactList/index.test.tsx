@@ -41,6 +41,56 @@ const renderList = (onImported = vi.fn()) => {
   return onImported;
 };
 
+describe('ArtifactList states', () => {
+  it('says what will be here and offers one primary the first time', async () => {
+    renderList();
+
+    expect(screen.getByRole('heading', { level: 2, name: 'No artifacts yet' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'New artifact' }));
+
+    expect(await screen.findByRole('menu', { name: 'New artifact' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: /Report/ })).toBeDefined();
+  });
+
+  it('names the filter and clears it when the filter matches nothing', () => {
+    const onFilterChange = vi.fn();
+    render(
+      <ArtifactList
+        sessionId={SESSION_ID}
+        rows={[]}
+        counts={{ all: 3, plan: 0, report: 2, wireframe: 1 }}
+        filter="plan"
+        onFilterChange={onFilterChange}
+        onOpen={vi.fn()}
+        onImported={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('heading', { name: 'No artifacts yet' })).toBeNull();
+    expect(screen.getByText('No plans in this session.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }));
+
+    expect(onFilterChange).toHaveBeenCalledWith('all');
+  });
+});
+
+describe('ArtifactList header row', () => {
+  it('holds the tab strip, New and More at one 28px control height', () => {
+    renderList();
+
+    const tabs = screen.getByRole('tablist', { name: 'Artifact kind' });
+    const create = screen.getByTestId('artifact-new');
+    const more = screen.getByRole('button', { name: 'More' });
+    expect(tabs.getAttribute('data-size')).toBe('xs');
+    expect(create.getAttribute('data-size')).toBe('sm');
+    expect(more.getAttribute('data-size')).toBe('control');
+    const actions = create.closest('[class*="ml-auto"]');
+    expect(actions).not.toBeNull();
+    expect(actions?.contains(more)).toBe(true);
+    expect(actions?.contains(tabs)).toBe(false);
+  });
+});
+
 const openImport = () => {
   fireEvent.click(screen.getByTestId('artifact-new'));
   fireEvent.click(screen.getByRole('menuitem', { name: /Import wireframe JSON/ }));

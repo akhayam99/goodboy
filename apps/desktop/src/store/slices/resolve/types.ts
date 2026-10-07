@@ -179,6 +179,10 @@ export type ResolveActions = {
   readonly recordResolvePhase: (params: PhaseParams) => Promise<void>;
   readonly beginResolveCandidate: (params: CandidateBeginParams) => Promise<void>;
   readonly captureResolveCandidate: (params: CandidateCaptureParams) => Promise<string | null>;
+  readonly reconcileResolveLane: (params: SessionParams) => Promise<void>;
+  readonly stopResolveLane: (
+    params: SessionParams & { readonly worktreePath: string },
+  ) => Promise<void>;
   readonly runResolveCheck: (params: CheckRunParams) => Promise<ResolveCheckPair>;
   readonly recoverUncapturedResolveWork: (
     params: SessionParams,
@@ -197,7 +201,6 @@ export type ResolveActions = {
   readonly syncNoteThreads: (params: SessionParams) => Promise<number>;
   readonly closeResolvedNote: (params: ThreadParams) => Promise<void>;
   readonly createResolveBatch: (params: CreateBatchParams) => Promise<ResolveBatch>;
-  readonly setResolveParallelLimit: (params: ParallelLimitParams) => Promise<void>;
   readonly syncSourceSnapshots: (params: SourceSnapshotsParams) => Promise<void>;
   readonly settleResolveSourceChange: (params: SettleSourceChangeParams) => Promise<void>;
 };
@@ -222,4 +225,3 @@ export type CreateBatchParams = SessionParams & {
   readonly threadIds: ReadonlyArray<string>;
   readonly launchChoice: ResolveLaunchChoice;
 };
-export type ParallelLimitParams = SessionParams & { readonly limit: number };

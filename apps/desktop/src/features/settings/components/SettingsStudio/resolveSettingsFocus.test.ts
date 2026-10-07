@@ -35,7 +35,6 @@ const STATUS: SettingsStatus = {
     { tool: 'linear', label: 'Linear', subtitle: 'Not connected', isConnected: false },
     { tool: 'slack', label: 'Slack', subtitle: 'Not connected', isConnected: false },
   ],
-  toolsInventory: '0 of 2 connected',
 };
 
 const WITH_WORKSPACE = settingsDirectory({ workspaceName: 'Harborline', status: STATUS });

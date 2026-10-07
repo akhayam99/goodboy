@@ -90,29 +90,18 @@ vi.mock('./StageColumn', () => ({
     spec,
     sessions,
     selection,
-    collapse,
   }: {
     spec: { kind: string; stage?: string };
     sessions: ReadonlyArray<Session>;
     selection: {
       onItemClick: (id: SessionId, event: ModifierEvent) => void;
     };
-    collapse?: { label: string; onCollapse: () => void };
   }) => (
     <div
       data-testid="stage-column"
       id={`board-column-${spec.kind === 'stage' ? spec.stage : 'archived'}`}
     >
       {spec.kind === 'stage' ? spec.stage : 'archived'}
-      {collapse !== undefined && (
-        <button
-          type="button"
-          id={`board-collapse-${spec.kind === 'stage' ? spec.stage : 'archived'}`}
-          aria-expanded
-          aria-label={collapse.label}
-          onClick={collapse.onCollapse}
-        />
-      )}
       {sessions.map((entry) => (
         <button
           key={entry.id}
@@ -207,9 +196,6 @@ const projectOf = ({
 }): Project =>
   aProject({ id: id as ProjectId, workspaceId: wsId, kind, name, rootPath: `/tmp/${id}` });
 
-const storeCollapse = (next: { done: boolean; archived: boolean }, workspaceId = wsId) =>
-  localStorage.setItem(`goodboy:board-collapsed:v1:${workspaceId}`, JSON.stringify(next));
-
 beforeEach(() => {
   localStorage.clear();
   state.boardReady = true;
@@ -257,7 +243,6 @@ describe('StageBoard loading gate', () => {
   it('renders the board with the archived column instead of the hero when only archived sessions exist', () => {
     const shelved = aSession({ id: 's-9' as SessionId });
     state.archivedSessions = { [wsId]: [shelved] };
-    storeCollapse({ done: true, archived: false });
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByText('Start your first session')).toBeNull();
     expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
@@ -517,19 +502,18 @@ describe('StageBoard selection', () => {
     expect(screen.queryByText(/selected/)).toBeNull();
   });
 
-  it('never mixes the archived scope with the active one', () => {
+  it('holds an active card and an archived card in one selection', () => {
     groups.current = [{ key: 'building', sessions: [session] }];
     state.archivedSessions = { [wsId]: [shelved] };
-    storeCollapse({ done: true, archived: false });
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'card s-1' }), { altKey: true });
     fireEvent.click(screen.getByRole('button', { name: 'card s-9' }), { altKey: true });
 
-    expect(screen.getByText('1 selected')).toBeDefined();
+    expect(screen.getByText('2 selected')).toBeDefined();
   });
 
-  it('keeps the active-lane hits when a lasso spans into the archived column', () => {
+  it('takes the archived hit too when a lasso spans into the archived lane', () => {
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       cb(0);
       return 1;
@@ -540,7 +524,6 @@ describe('StageBoard selection', () => {
       { key: 'review', sessions: [other] },
     ];
     state.archivedSessions = { [wsId]: [shelved] };
-    storeCollapse({ done: true, archived: false });
     render(<StageBoard workspaceId={wsId} sessions={[session, other]} />);
 
     const cardA = screen.getByRole('button', { name: 'card s-1' });
@@ -563,62 +546,21 @@ describe('StageBoard selection', () => {
       }),
     );
 
-    expect(screen.getByText('2 selected')).toBeDefined();
+    expect(screen.getByText('3 selected')).toBeDefined();
   });
 });
 
-describe('StageBoard dock', () => {
+describe('StageBoard lanes', () => {
   const done = aSession({ id: 's-5' as SessionId });
   const shelved = aSession({ id: 's-9' as SessionId });
-
-  const renderBoard = (workspaceId: WorkspaceId = wsId) => {
-    groups.current = [
-      { key: 'building', sessions: [session] },
-      { key: 'done', sessions: [done] },
-    ];
-    state.archivedSessions = { [workspaceId]: [shelved] };
-    return render(<StageBoard workspaceId={workspaceId} sessions={[session, done]} />);
-  };
 
   const columnNames = () =>
     screen.getAllByTestId('stage-column').map((column) => column.id.replace('board-column-', ''));
 
-  it('folds done and archived into the dock by default', () => {
-    const { container } = renderBoard();
+  it('renders all six lanes in pipeline order with Done and Archived holding nothing', () => {
+    groups.current = [{ key: 'building', sessions: [session] }];
+    const { container } = render(<StageBoard workspaceId={wsId} sessions={[session]} />);
 
-    expect(columnNames()).toEqual(['building', 'running', 'attention', 'review']);
-    const dock = container.querySelector('[data-board-dock]');
-    expect(dock).not.toBeNull();
-    expect(dock?.lastElementChild?.getAttribute('aria-label')).toBe('Archived, 1 session');
-    const doneIcon = screen.getByRole('button', { name: 'Done, 1 session' });
-    expect(doneIcon.getAttribute('aria-expanded')).toBe('false');
-    expect(doneIcon.getAttribute('aria-controls')).toBe('board-column-done');
-  });
-
-  it('opens a column before the dock and moves focus to its collapse control', () => {
-    renderBoard();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Done, 1 session' }));
-
-    expect(columnNames()).toEqual(['building', 'running', 'attention', 'review', 'done']);
-    const collapse = screen.getByRole('button', { name: 'Done, 1 session' });
-    expect(collapse.getAttribute('aria-expanded')).toBe('true');
-    expect(document.activeElement).toBe(collapse);
-    expect(screen.getByRole('button', { name: 'Archived, 1 session' })).toBeDefined();
-
-    fireEvent.click(collapse);
-
-    expect(columnNames()).not.toContain('done');
-    const icon = screen.getByRole('button', { name: 'Done, 1 session' });
-    expect(icon.getAttribute('aria-expanded')).toBe('false');
-    expect(document.activeElement).toBe(icon);
-  });
-
-  it('drops the dock once both columns are open', () => {
-    storeCollapse({ done: false, archived: false });
-    const { container } = renderBoard();
-
-    expect(container.querySelector('[data-board-dock]')).toBeNull();
     expect(columnNames()).toEqual([
       'building',
       'running',
@@ -627,57 +569,35 @@ describe('StageBoard dock', () => {
       'done',
       'archived',
     ]);
+    expect(container.querySelector('[data-board-dock]')).toBeNull();
   });
 
-  it('remembers the open columns per workspace', () => {
-    renderBoard();
-    fireEvent.click(screen.getByRole('button', { name: 'Archived, 1 session' }));
-    expect(columnNames()).toContain('archived');
+  it('renders the Done and Archived cards in their own lanes without a click', () => {
+    groups.current = [
+      { key: 'building', sessions: [session] },
+      { key: 'done', sessions: [done] },
+    ];
+    state.archivedSessions = { [wsId]: [shelved] };
+    render(<StageBoard workspaceId={wsId} sessions={[session, done]} />);
 
-    cleanup();
-    renderBoard();
-    expect(columnNames()).toContain('archived');
-
-    cleanup();
-    renderBoard('ws-northwind' as WorkspaceId);
-    expect(columnNames()).not.toContain('archived');
+    expect(screen.getByRole('button', { name: 'card s-5' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'card s-9' })).toBeDefined();
   });
 
-  it('clears the archived selection when archived folds, but keeps the active one on done', () => {
-    storeCollapse({ done: false, archived: false });
-    renderBoard();
-
-    fireEvent.click(screen.getByRole('button', { name: 'card s-9' }), { altKey: true });
-    expect(screen.getByText('1 selected')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Archived, 1 session' }));
-    expect(screen.queryByText(/selected/)).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'card s-5' }), { altKey: true });
-    expect(screen.getByText('1 selected')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Done, 1 session' }));
-    expect(screen.getByText('1 selected')).toBeDefined();
-  });
-
-  it('never starts a lasso from the dock', () => {
-    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
-      cb(0);
-      return 1;
-    });
-    vi.stubGlobal('cancelAnimationFrame', () => undefined);
-    const { container } = renderBoard();
-    const dock = container.querySelector('[data-board-dock]') as HTMLElement;
-    const columns = dock.parentElement as HTMLElement;
-    columns.getBoundingClientRect = () => boxOf(0, 0, 500, 500);
-    screen.getByRole('button', { name: 'card s-1' }).getBoundingClientRect = () =>
-      boxOf(10, 10, 100, 40);
-
-    fireEvent.pointerDown(dock, { button: 0, pointerId: 1, clientX: 480, clientY: 5 });
-    fireEvent(
-      window,
-      new PointerEvent('pointermove', { pointerId: 1, clientX: 5, clientY: 100, bubbles: true }),
+  it('ignores a collapse value an older version stored', () => {
+    localStorage.setItem(
+      `goodboy:board-collapsed:v1:${wsId}`,
+      JSON.stringify({ done: true, archived: true }),
     );
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
 
-    expect(screen.queryByText(/selected/)).toBeNull();
-    fireEvent(window, new PointerEvent('pointerup', { pointerId: 1, bubbles: true }));
+    expect(columnNames()).toContain('done');
+    expect(columnNames()).toContain('archived');
+  });
+
+  it('asks for the archived list on every open', () => {
+    render(<StageBoard workspaceId={wsId} sessions={[session]} />);
+
+    expect(state.loadArchivedSessions).toHaveBeenCalledWith(wsId);
   });
 });

@@ -3,7 +3,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { state, listLocalBranches, getCachedLocalBranches, showToast } = vi.hoisted(() => ({
+const {
+  state,
+  listLocalBranches,
+  getCachedLocalBranches,
+  listRemoteBranches,
+  ghOpenPrBranches,
+  showToast,
+} = vi.hoisted(() => ({
   state: {
     session: { id: 'sess-1', workspaceId: 'ws-1', activeProjectId: 'project-1' },
     sessions: [{ id: 'sess-1', workspaceId: 'ws-1', activeProjectId: 'project-1' }],
@@ -42,6 +49,8 @@ const { state, listLocalBranches, getCachedLocalBranches, showToast } = vi.hoist
     (): ReadonlyArray<{ name: string; inUse: boolean; hasUncommitted: boolean }> | undefined =>
       undefined,
   ),
+  listRemoteBranches: vi.fn(),
+  ghOpenPrBranches: vi.fn(),
   showToast: vi.fn(),
 }));
 
@@ -57,6 +66,12 @@ vi.mock('../../../shared/components/Toast', () => ({
 vi.mock('../worktree', () => ({
   listLocalBranches,
   getCachedLocalBranches,
+  listRemoteBranches,
+  fetchRemoteBranches: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../integrations/github/github', () => ({
+  ghOpenPrBranches,
 }));
 
 vi.mock('../BranchCombobox', () => ({
@@ -77,7 +92,11 @@ vi.mock('../BranchCombobox', () => ({
   ),
 }));
 
+import type { MountId, SessionId } from '@goodboy/types';
 import { BranchSwitchPanel } from '.';
+
+const SESS = 'sess-1' as SessionId;
+const MOUNT = 'mount-1' as MountId;
 
 beforeEach(() => {
   state.sessionProjectMounts = {
@@ -113,6 +132,10 @@ beforeEach(() => {
   ]);
   getCachedLocalBranches.mockReset();
   getCachedLocalBranches.mockReturnValue(undefined);
+  listRemoteBranches.mockReset();
+  listRemoteBranches.mockResolvedValue([]);
+  ghOpenPrBranches.mockReset();
+  ghOpenPrBranches.mockResolvedValue([]);
   showToast.mockReset();
 });
 
@@ -286,6 +309,73 @@ describe('BranchSwitchPanel', () => {
         createNew: false,
       }),
     );
+  });
+
+  describe('a teammate branch', () => {
+    const TEAMMATE = 'grw-1348-cta-for-the-slot';
+
+    beforeEach(() => {
+      ghOpenPrBranches.mockResolvedValue([
+        {
+          number: 9900,
+          title: 'Skip the slot step',
+          headBranch: TEAMMATE,
+          isDraft: false,
+          author: 'pat-harborline',
+        },
+      ]);
+      listRemoteBranches.mockResolvedValue([
+        {
+          name: TEAMMATE,
+          author: 'Pat Harborline',
+          sha: 'bbbbbbb2',
+          timestamp: 1790000000,
+          hasLocal: false,
+        },
+      ]);
+    });
+
+    it('is offered in the list and continued, never created again', async () => {
+      render(<BranchSwitchPanel sessionId={SESS} mountId={MOUNT} onDone={vi.fn()} />);
+
+      fireEvent.click(screen.getByRole('tab', { name: /pick existing/i }));
+      await waitFor(() => screen.getByRole('button', { name: `Select ${TEAMMATE}` }));
+      fireEvent.click(screen.getByRole('button', { name: `Select ${TEAMMATE}` }));
+      fireEvent.click(screen.getByRole('button', { name: 'Switch branch' }));
+
+      await waitFor(() =>
+        expect(state.changeSessionBranch).toHaveBeenCalledWith('sess-1', {
+          mountId: 'mount-1',
+          branch: TEAMMATE,
+          createNew: false,
+        }),
+      );
+    });
+
+    it('is named inline when its name is typed by hand as a new branch', async () => {
+      render(<BranchSwitchPanel sessionId={SESS} mountId={MOUNT} onDone={vi.fn()} />);
+
+      await waitFor(() => expect(screen.getByRole('tab', { name: 'Pick existing' })).toBeDefined());
+      fireEvent.change(screen.getByRole('textbox', { name: 'New branch' }), {
+        target: { value: TEAMMATE },
+      });
+
+      screen.getByText('That branch is already on origin');
+      expect(
+        screen.getByText(/PR #9900 · pat-harborline\. Switching continues it\./),
+      ).toBeDefined();
+    });
+
+    it('says nothing for a fresh name', async () => {
+      render(<BranchSwitchPanel sessionId={SESS} mountId={MOUNT} onDone={vi.fn()} />);
+
+      await waitFor(() => expect(screen.getByRole('tab', { name: 'Pick existing' })).toBeDefined());
+      fireEvent.change(screen.getByRole('textbox', { name: 'New branch' }), {
+        target: { value: 'ak/own-work' },
+      });
+
+      expect(screen.queryByText('That branch is already on origin')).toBeNull();
+    });
   });
 
   it('requires a second confirmation for a branch used elsewhere', async () => {

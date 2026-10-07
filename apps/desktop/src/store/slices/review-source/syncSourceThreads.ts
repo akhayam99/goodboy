@@ -71,6 +71,9 @@ export const syncSourceThreads = async ({
   } catch (error) {
     console.warn(`[review-threads] ${sessionId}: ${formatError(error)}`);
   }
+  await get()
+    .reconcileResolveLane({ sessionId })
+    .catch((error: unknown) => console.warn(`[review-lane] ${sessionId}: ${formatError(error)}`));
   if (kind === 'github') {
     try {
       await get().reconcileHandReplies({ sessionId, prNumber, comments });

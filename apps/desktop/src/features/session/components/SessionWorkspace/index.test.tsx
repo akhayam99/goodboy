@@ -559,7 +559,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
   });
 
-  it('puts the crumb on the full-width edge for the branch page and centers it elsewhere', () => {
+  it('puts the crumb on the column for the branch page like every other page', () => {
     store.selectedAgentId = {};
     store.activeLens = { [SESSION_ID]: null };
     const view = render(<SessionWorkspace session={session} isActive />);
@@ -571,7 +571,11 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     store.activeLens = { [SESSION_ID]: 'branch' };
     view.rerender(<SessionWorkspace session={session} isActive />);
-    expect(width()).toBe('full');
+    expect(width()).toBe('column');
+
+    store.activeLens = { [SESSION_ID]: 'files' };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(width()).toBe('column');
   });
 
   it('keeps one trail band mounted across lens, agent and studio changes', () => {

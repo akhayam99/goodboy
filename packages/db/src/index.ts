@@ -132,6 +132,7 @@ export {
   listSessionsForWorkspace,
   listArchivedSessionsForWorkspace,
   listArchivedSessionRefs,
+  listLiveSessionIds,
   listSessionTitlesAcrossWorkspaces,
   renameSession,
   deleteSession,
@@ -232,6 +233,7 @@ export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export {
   deleteSetting,
   getSetting,
+  insertSettingIfAbsent,
   listSettingsWithPrefix,
   replaceSettingIfUnchanged,
   setSetting,
@@ -495,11 +497,12 @@ export {
   listPlansForSession,
   upsertPlan,
   updatePlanStatus,
-  updatePlanBody,
+  updatePlanBodyIfRevision,
   deletePlan,
   addPlanConsumption,
   listConsumptionsForPlan,
   type UpsertPlanInput,
+  type UpdatePlanBodyResult,
   type AddPlanConsumptionInput,
 } from './queries/plan';
 export {
@@ -559,12 +562,7 @@ export {
   setResolveAttemptCopyPath,
   setResolveAttemptFailureCause,
 } from './queries/resolve-attempt';
-export {
-  insertResolveBatch,
-  listResolveBatches,
-  getResolveParallelLimit,
-  setResolveParallelLimit,
-} from './queries/resolve-batch';
+export { insertResolveBatch, listResolveBatches } from './queries/resolve-batch';
 export {
   listResolveThreadFacts,
   setResolveThreadGitState,
@@ -572,7 +570,10 @@ export {
   setResolveThreadSourceSnapshot,
   setResolveThreadSource,
 } from './queries/resolve-thread-facts';
-export { keepResolveDraftCurrent } from './queries/resolve-draft-current';
+export {
+  keepResolveDraftCurrent,
+  repairLaggingResolveQueueItems,
+} from './queries/resolve-draft-current';
 export { hasResolveImport, commitResolveImport } from './queries/resolve-import';
 export {
   insertResolveCandidate,

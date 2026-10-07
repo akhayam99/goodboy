@@ -104,6 +104,7 @@ beforeEach(() => {
     sessionOpenQuestions: {},
     sessionViewPrefs: {},
     sessionGroupExpanded: {},
+    sessionPins: {},
     getSessionViewPrefs: vi.fn(),
     selectedProjectIds: {},
     getSelectedProjectIds: vi.fn(),
@@ -337,6 +338,43 @@ describe('useSessionColumn', () => {
       expect(result.current).toBe(first);
     },
   );
+
+  it('lists a pinned session once, under Pinned, ahead of the flat list', () => {
+    const second = createSession('session-2' as SessionId);
+    store.state.workspaces = [createWorkspace()];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    store.state.sessionPins = { [WORKSPACE_ID]: [{ id: second.id as SessionId, at: 1 }] };
+    const sessions = [createSession(SESSION_ID), second];
+
+    const { result } = renderHook(() => useSessionColumn(WORKSPACE_ID, sessions));
+
+    expect(
+      result.current.groups.map((group) => [group.key, group.sessions.map((s) => s.id)]),
+    ).toEqual([
+      ['pinned', [second.id]],
+      ['all', [SESSION_ID]],
+    ]);
+    expect(result.current.order).toEqual([second.id, SESSION_ID]);
+  });
+
+  it('follows a pin that appears after the first render and keeps the column otherwise', () => {
+    store.state.workspaces = [createWorkspace()];
+    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
+    const sessions = [createSession(SESSION_ID)];
+
+    const { result, rerender } = renderHook(() => useSessionColumn(WORKSPACE_ID, sessions));
+    const first = result.current;
+    store.state.terminalTabs = { unrelated: [] };
+    rerender();
+    expect(result.current).toBe(first);
+
+    act(() => {
+      store.state.sessionPins = { [WORKSPACE_ID]: [{ id: SESSION_ID, at: 1 }] };
+      store.notify();
+    });
+
+    expect(result.current.groups.map((group) => group.key)).toEqual(['pinned']);
+  });
 
   it('keeps the same stage map when the open session changes but no stage does', () => {
     store.state.workspaces = [createWorkspace()];

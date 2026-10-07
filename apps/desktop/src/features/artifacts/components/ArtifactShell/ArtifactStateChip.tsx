@@ -1,13 +1,14 @@
-import { Chip } from '@goodboy/ui';
+import { Chip, cn } from '@goodboy/ui';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ArtifactState } from '../../artifactStateOf';
 
 type Props = {
   readonly state: ArtifactState | null;
+  readonly isDetailCollapsible?: boolean;
 };
 
-export const ArtifactStateChip = ({ state }: Props) => {
+export const ArtifactStateChip = ({ state, isDetailCollapsible = false }: Props) => {
   if (state === null) {
     return null;
   }
@@ -27,7 +28,10 @@ export const ArtifactStateChip = ({ state }: Props) => {
       {state.detail === null ? null : (
         <span
           data-testid="artifact-state-detail"
-          className="shrink-0 text-meta text-faint-foreground"
+          className={cn(
+            'shrink-0 text-meta text-faint-foreground',
+            isDetailCollapsible && '@max-md:hidden',
+          )}
         >
           {state.detail}
         </span>

@@ -2,7 +2,11 @@ import type { AgentId } from '@goodboy/types';
 import { cancelPublication } from './cancelPublication';
 import { answerQuestions } from './answerQuestions';
 import { continueResolveThreads } from './continueResolveThreads';
+import { dropLaneCandidate } from './dropLaneCandidate';
 import { drainResolveQueue } from './drainResolveQueue';
+import { rebuildTakenUpFix } from './rebuildTakenUpFix';
+import { reconcileResolveLane } from './reconcileResolveLane';
+import { stopResolveLane } from './stopResolveLane';
 import { preparePublication } from './preparePublication';
 import { publishConversations } from './publishConversations';
 import { retryCouldntFix } from './retryCouldntFix';
@@ -29,7 +33,7 @@ import { materializeReviewThreads } from './materializeReviewThreads';
 import { syncNoteThreads } from './syncNoteThreads';
 import { closeResolvedNote } from './closeResolvedNote';
 import { resolveWithoutReply } from './resolveWithoutReply';
-import { createResolveBatch, setResolveParallelLimit } from './resolveBatches';
+import { createResolveBatch } from './resolveBatches';
 import { settleItemAnswered } from './settleItemAnswered';
 import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState';
 import { publishThreadNow } from './publishThreadNow';
@@ -65,7 +69,6 @@ import type {
   EnsureReviewThreadParams,
   MaterializeParams,
   CreateBatchParams,
-  ParallelLimitParams,
   SettleSourceChangeParams,
   SourceSnapshotsParams,
 } from './types';
@@ -75,16 +78,35 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
   type WriteParams<T> = SessionParams & { readonly run: () => Promise<T> };
   const serialize = <T>({ sessionId, run }: WriteParams<T>): Promise<T> =>
     writes.run({ key: sessionId, task: run });
+  const reconciles = createKeyedQueue();
+  const reconcileLane = ({ sessionId }: SessionParams): Promise<void> =>
+    reconciles.run({
+      key: sessionId,
+      task: () => reconcileResolveLane({ set, get, sessionId }),
+    });
+  const settleLane = async <T>({ sessionId, run }: WriteParams<T>): Promise<T> => {
+    const result = await serialize({ sessionId, run });
+    await reconcileLane({ sessionId }).catch(() => undefined);
+    return result;
+  };
   return {
-    acceptResolveQueueItem: (params: ItemRevisionParams) =>
-      serialize({
-        sessionId: params.sessionId,
-        run: () => acceptResolveQueueItem({ set, get, ...params }),
-      }),
+    acceptResolveQueueItem: async (params: ItemRevisionParams) => {
+      try {
+        await serialize({
+          sessionId: params.sessionId,
+          run: () => acceptResolveQueueItem({ set, get, ...params }),
+        });
+      } finally {
+        await reconcileLane({ sessionId: params.sessionId }).catch(() => undefined);
+      }
+    },
     refuseResolveQueueItem: (params: ItemRevisionParams) =>
-      serialize({
+      settleLane({
         sessionId: params.sessionId,
-        run: () => refuseResolveQueueItem({ set, get, ...params }),
+        run: async () => {
+          await refuseResolveQueueItem({ set, get, ...params });
+          await dropLaneCandidate({ set, sessionId: params.sessionId, itemId: params.itemId });
+        },
       }),
     resolveWithoutReply: (params: ItemParams) =>
       serialize({
@@ -111,7 +133,7 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         run: () => reconcileHandReplies({ set, get, ...params }),
       }),
     switchToReplyOnly: (params: ThreadParams) =>
-      serialize({
+      settleLane({
         sessionId: params.sessionId,
         run: () => switchToReplyOnly({ set, get, ...params }),
       }),
@@ -126,15 +148,20 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
     resolveThreadOnly: (params: ThreadParams) =>
       resolveThreadOnRemote({ set, get, ...params, mode: 'resolve_only' }),
     deferResolveQueueItem: (params: ItemParams) =>
-      serialize({
+      settleLane({
         sessionId: params.sessionId,
-        run: () => deferResolveQueueItem({ set, get, ...params }),
+        run: async () => {
+          await deferResolveQueueItem({ set, get, ...params });
+          await dropLaneCandidate({ set, ...params });
+        },
       }),
-    takeUpResolveQueueItem: (params: ItemParams) =>
-      serialize({
+    takeUpResolveQueueItem: async (params: ItemParams) => {
+      await serialize({
         sessionId: params.sessionId,
         run: () => takeUpResolveQueueItem({ set, get, ...params }),
-      }),
+      });
+      await rebuildTakenUpFix({ set, get, ...params }).catch(() => undefined);
+    },
     reopenResolveQueueItem: (params: Omit<ItemRevisionParams, 'reply'>) =>
       serialize({
         sessionId: params.sessionId,
@@ -146,12 +173,12 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         run: () => updateResolveThreads({ set, get, ...params }),
       }),
     loadResolveSession: (params: SessionParams) =>
-      serialize({
+      settleLane({
         sessionId: params.sessionId,
         run: () => loadResolveSession({ set, get, ...params }),
       }),
     persistResolveTurn: (params: TurnParams) =>
-      serialize({
+      settleLane({
         sessionId: params.sessionId,
         run: () => persistResolveTurn({ set, get, ...params }),
       }),
@@ -175,6 +202,9 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         sessionId: params.sessionId,
         run: () => captureResolveCandidate({ set, get, ...params }),
       }),
+    stopResolveLane: (params: SessionParams & { readonly worktreePath: string }) =>
+      stopResolveLane({ get, ...params }),
+    reconcileResolveLane: (params: SessionParams) => reconcileLane(params),
     runResolveCheck: (params: CheckRunParams) => runResolveCheck({ set, get, ...params }),
     recoverUncapturedResolveWork: (params: SessionParams) =>
       serialize({
@@ -258,7 +288,5 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         sessionId: params.sessionId,
         run: () => createResolveBatch({ set, get, ...params }),
       }),
-    setResolveParallelLimit: (params: ParallelLimitParams) =>
-      setResolveParallelLimit({ set, get, ...params }),
   };
 };

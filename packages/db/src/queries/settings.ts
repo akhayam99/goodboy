@@ -36,6 +36,21 @@ export const replaceSettingIfUnchanged = async (
   return result.rowsAffected === 1;
 };
 
+type InsertParams = {
+  readonly db: Database;
+  readonly key: string;
+  readonly value: string;
+};
+
+export const insertSettingIfAbsent = async ({ db, key, value }: InsertParams): Promise<boolean> => {
+  const result = await db.execute(
+    `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)
+     ON CONFLICT(key) DO NOTHING`,
+    [key, value, Date.now()],
+  );
+  return result.rowsAffected === 1;
+};
+
 export const deleteSetting = async (db: Database, key: string): Promise<void> => {
   await db.execute('DELETE FROM settings WHERE key = ?', [key]);
 };

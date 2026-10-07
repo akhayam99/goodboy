@@ -11,18 +11,23 @@ type Props = {
 };
 
 const DENSITY_CLASSES: Record<ToneBarDensity, string> = {
-  card: 'left-1.5 top-3 bottom-3 w-0.75',
+  card: 'left-1.5 top-3 bottom-3 min-h-4 w-0.75',
   row: 'left-1 top-2.25 bottom-2.25 w-0.5',
+};
+
+const BAR_FILL: Partial<Record<Tone, string>> = {
+  warning: 'bg-warning-mark',
 };
 
 export const ToneBar = ({ tone, density, isBreathing = false, className }: Props) => (
   <span
     aria-hidden
     data-testid="tone-bar"
+    data-tone={tone}
     className={cn(
       'pointer-events-none absolute rounded-full',
       DENSITY_CLASSES[density],
-      tintClasses(tone).dot,
+      BAR_FILL[tone] ?? tintClasses(tone).dot,
       isBreathing && 'motion-safe:animate-soft-pulse',
       className,
     )}

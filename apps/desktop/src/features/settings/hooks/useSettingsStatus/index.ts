@@ -3,7 +3,6 @@ import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { useAppStore } from '../../../../store';
-import { connectedInventory } from '../../../integrations/connectedInventory';
 import { TOOL_ORDER, toolRailEntries } from '../../../integrations/toolRailEntries';
 import { useToolConnections } from '../../../integrations/useToolConnections';
 import { orderProviders } from '../../../providers/orderProviders';
@@ -48,18 +47,14 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
       orderProviders({ providers: state.providers }).map((provider) => ({
         id: provider.id as ProviderId,
         label: provider.label,
-        status: providerRailStatus({ provider, state }),
+        status: providerRailStatus({ provider, state, nowMs }),
       })),
-    [state],
+    [state, nowMs],
   );
   const tools = useMemo(
     () => toolRailEntries({ integrations, connected, githubIdentity }),
     [integrations, connectedKey, githubIdentity],
   );
-  const toolsInventory = useMemo(() => connectedInventory({ connected }), [connectedKey]);
 
-  return useMemo(
-    () => ({ subtitles, providers, tools, toolsInventory }),
-    [subtitles, providers, tools, toolsInventory],
-  );
+  return useMemo(() => ({ subtitles, providers, tools }), [subtitles, providers, tools]);
 };

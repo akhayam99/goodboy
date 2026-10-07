@@ -23,7 +23,7 @@ vi.mock('../features/worktree/worktree', () => ({
     inProgress: null,
   })),
   worktreeBranchHolder: vi.fn(async () => null),
-  changeWorktreeBranch: vi.fn(async () => undefined),
+  changeWorktreeBranch: vi.fn(async () => ({ adopted: false })),
   invalidateLocalBranchesCache: vi.fn(),
   listBranchNames: vi.fn(async () => ['feature/one', 'feature/raw-checkout']),
   createWorktree: vi.fn(

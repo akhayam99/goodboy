@@ -72,7 +72,6 @@ const SETTINGS_SCOPES = namesIn({
 });
 
 const EXEMPT: Readonly<Record<string, string>> = {
-  openDrawer: 'generic drawer primitive, reached through openContextDrawer',
   openWorkspace: 'focuses or opens another window, not a page in this one',
   openTerminal: 'adds a terminal tab to the dock, not a page',
   setActiveLens: 'internal to the navigation slice, the one door is navigate',
@@ -119,7 +118,7 @@ describe('the frame holds at most 24 chrome targets on a session page', () => {
     expect(targets.length).toBeGreaterThan(10);
   }, 30_000);
 
-  it('counts more under the classic bars, which is why the column replaces them', async () => {
+  it('counts more under the legacy layout, which is why the column replaces them', async () => {
     await boot({ seed: 'pr', bars: 'classic' });
 
     const classic = Array.from(

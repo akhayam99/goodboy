@@ -143,6 +143,9 @@ export const useAppShortcuts = ({
     ) {
       return;
     }
+    if (sidebarToggleScope === 'everywhere' && state.appStudio?.kind === 'settings') {
+      return;
+    }
     toggleSidebar();
   }, [toggleSidebar, sidebarToggleScope]);
   const goToBoard = useGoToBoard();

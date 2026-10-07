@@ -234,8 +234,8 @@ about its effect is a worse defect than one that reads badly.
 
 ## Status & signals
 
-- **Errors, warnings, tips and toasts are Notices.** A tone rail and a tone
-  icon on a neutral surface, neutral text, the raw output behind Details. A
+- **Errors, warnings, tips and toasts are Notices.** An inner tone line and a
+  tone icon on a neutral surface, neutral text, the raw output behind Details. A
   danger or warning tint never fills a message: `tone-is-a-rail-not-a-fill.test.ts`
   allows it only on chips, small controls and diff cells, and its debt list
   only shrinks. The anatomy and placements live in
@@ -252,6 +252,10 @@ about its effect is a worse defect than one that reads badly.
   means started, or neutral. `warning` means done with a caveat, or input the
   user sees refused right now (attachment limit, refused drop). Toast copy is
   written as a sentence. Nothing capitalizes it for you.
+- **A start offers Follow.** An action that starts work or creates something
+  elsewhere shows one `info` toast per start, with a past-tense title and a
+  `Follow` action that drops when the user already sees the target
+  ([docs/navigation.md](docs/navigation.md#follow-toasts)).
 - **An error lands in the log first.** When something the user asked for did
   not happen, it becomes a notification row (`reportError`) with a title that
   names the action ("Couldn't prune archived transcripts"). The toast is only

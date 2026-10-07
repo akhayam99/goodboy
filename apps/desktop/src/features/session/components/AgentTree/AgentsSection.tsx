@@ -52,7 +52,9 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
           }
         />
       )}
-      {isWorkflowExpanded && !section.hasAnyWorkflow && <WorkflowStartButton sessionId={task.id} />}
+      {isWorkflowExpanded && !section.hasAnyWorkflow && (
+        <WorkflowStartButton sessionId={task.id} layout="section" />
+      )}
       {isWorkflowExpanded && section.hasAnyWorkflow && (
         <div className={cn('flex flex-col gap-2', forceExpanded && 'min-h-0 flex-1')}>
           <div className={cn('flex flex-col', forceExpanded ? 'min-h-0 flex-1 gap-3' : 'gap-0.5')}>

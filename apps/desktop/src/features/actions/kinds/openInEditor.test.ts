@@ -56,6 +56,7 @@ const sessionFacts: SessionFacts = {
   sessionId: 'session-harborline' as SessionId,
   title: 'Fix duplicate credit',
   isArchived: false,
+  isPinned: false,
   isBranchless: false,
   hasMount: true,
   branch: 'hl/fix-duplicate-credit',

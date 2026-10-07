@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
   IsoDateTime,
+  PlanWithCount,
   Session,
   SessionId,
   StepId,
@@ -33,6 +34,27 @@ const storeMocks = vi.hoisted(() => ({
   closeWorkflowRun: vi.fn(async () => undefined),
   pauseWorkflowRun: vi.fn(async () => undefined),
   workspaceDurationHistory: {} as Record<string, unknown>,
+  followRun: vi.fn(),
+  runPlan: null as PlanWithCount | null,
+  openPlanDrawer: vi.fn(),
+  approveRunPlan: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../../workflows/useRunPlan', () => ({
+  useRunPlan: () => storeMocks.runPlan,
+}));
+vi.mock('../../../plans/useRevisingPlans', () => ({
+  usePlanRevising: () => ({ kind: 'none' }),
+}));
+vi.mock('../../../plans/openPlanDrawer', () => ({
+  openPlanDrawer: storeMocks.openPlanDrawer,
+}));
+vi.mock('../../../workflows/useApproveRunPlan', () => ({
+  useApproveRunPlan: () => storeMocks.approveRunPlan,
+}));
+
+vi.mock('../../../../shared/hooks/useFollowToast', () => ({
+  useFollowToast: () => storeMocks.followRun,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -40,23 +62,34 @@ vi.mock('../../../../store', () => ({
   useRunSpendUsd: () => storeMocks.runSpendUsd,
   useSessionOpenQuestions: () => [],
   useExecutedAgentRouting: () => null,
-  useAppStore: <T,>(selector: (state: unknown) => T) =>
-    selector({
-      renameWorkflowRun: storeMocks.renameWorkflowRun,
-      orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
-      agentEffortOverride: {},
-      sessionMounts: {},
-      sessions: storeMocks.sessions,
-      sessionProjectMounts: storeMocks.sessionProjectMounts,
-      sessionPhaseRuns: storeMocks.sessionPhaseRuns,
-      closeWorkflowRun: storeMocks.closeWorkflowRun,
-      pauseWorkflowRun: storeMocks.pauseWorkflowRun,
-      workspaceDurationHistory: storeMocks.workspaceDurationHistory,
-      sessionTurnSpans: { [SESSION_ID]: [] },
-      agentTurnState: {},
-      providers: [],
-      cliRequirements: [],
-    }),
+  useAppStore: Object.assign(
+    <T,>(selector: (state: unknown) => T) =>
+      selector({
+        renameWorkflowRun: storeMocks.renameWorkflowRun,
+        orchestratingWorkflowRuns: storeMocks.orchestratingWorkflowRuns,
+        agentEffortOverride: {},
+        sessionMounts: {},
+        sessions: storeMocks.sessions,
+        sessionProjectMounts: storeMocks.sessionProjectMounts,
+        sessionPhaseRuns: storeMocks.sessionPhaseRuns,
+        closeWorkflowRun: storeMocks.closeWorkflowRun,
+        pauseWorkflowRun: storeMocks.pauseWorkflowRun,
+        workspaceDurationHistory: storeMocks.workspaceDurationHistory,
+        sessionTurnSpans: { [SESSION_ID]: [] },
+        agentTurnState: {},
+        providers: [],
+        cliRequirements: [],
+      }),
+    {
+      getState: () => ({
+        currentWorkspaceId: null,
+        currentSessionId: null,
+        openSessionDraftWorkspaceId: null,
+        appStudio: null,
+        drawer: null,
+      }),
+    },
+  ),
 }));
 
 vi.mock('../../../chat/components/WriteDestinationControl', () => ({
@@ -232,10 +265,14 @@ beforeEach(() => {
   storeMocks.sessionPhaseRuns = {};
   storeMocks.closeWorkflowRun.mockClear();
   storeMocks.pauseWorkflowRun.mockClear();
+  storeMocks.runPlan = null;
+  storeMocks.openPlanDrawer.mockClear();
+  storeMocks.approveRunPlan.mockClear();
 });
 
 afterEach(() => {
   cleanup();
+  storeMocks.followRun.mockClear();
   storeMocks.orchestratingWorkflowRuns = {};
   storeMocks.runSpendUsd = 0;
   storeMocks.workspaceDurationHistory = {};
@@ -274,6 +311,16 @@ describe('WorkflowRow detail dashboard', () => {
     expect(screen.getByTestId('write-destination-control').textContent).toBe('automatic');
   });
 
+  it('puts the write destination in the scrolling steps so the pinned header stays short', () => {
+    storeMocks.sessionProjectMounts = { [SESSION_ID]: [{}, {}] };
+
+    renderDetail();
+
+    const control = screen.getByTestId('write-destination-control');
+    const scroller = document.querySelector('[data-slot="scroll-edge"]')?.previousElementSibling;
+    expect(scroller?.contains(control)).toBe(true);
+  });
+
   it('hides the write destination when the session has one mount', () => {
     storeMocks.sessionProjectMounts = { [SESSION_ID]: [{}] };
 
@@ -296,12 +343,12 @@ describe('WorkflowRow detail dashboard', () => {
     const navigationSlot = screen.getByRole('group', { name: 'Run navigation actions' });
     const lifecycleSlot = screen.getByRole('group', { name: 'Run lifecycle actions' });
 
-    expect(
-      navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor run' })),
-    ).toBe(true);
-    expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'When Refactor asks' }))).toBe(
+    expect(navigationSlot.contains(screen.getByRole('button', { name: 'Show run summary' }))).toBe(
       true,
     );
+    expect(
+      lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor run controls' })),
+    ).toBe(true);
     expect(
       lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor run actions' })),
     ).toBe(true);
@@ -354,7 +401,7 @@ describe('WorkflowRow detail dashboard', () => {
   it('keeps when to ask apart from the destructive cluster', () => {
     renderDetail();
 
-    const choice = screen.getByRole('button', { name: 'When Refactor asks' });
+    const choice = screen.getByRole('button', { name: 'Refactor run controls' });
     const remove = screen.getByRole('button', { name: 'Refactor run actions' });
 
     expect(choice.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
@@ -365,7 +412,7 @@ describe('WorkflowRow detail dashboard', () => {
     renderDetail({ runOverride: { ...run, autoRun: true }, setWorkflowRunAutonomy: setAutonomy });
 
     expect(screen.getByTestId('run-autonomy-fact').textContent).toBe('Run on its own');
-    fireEvent.click(screen.getByRole('button', { name: 'When Refactor asks' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refactor run controls' }));
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask before each step' }));
 
     expect(setAutonomy).toHaveBeenCalledWith(SESSION_ID, RUN_ID, 'step');
@@ -388,9 +435,9 @@ describe('WorkflowRow detail dashboard', () => {
     const lifecycleSlot = screen.getByRole('group', { name: 'Run lifecycle actions' });
 
     expect(navigationSlot.children).toHaveLength(1);
-    expect(
-      navigationSlot.contains(screen.getByRole('button', { name: 'Collapse Refactor run' })),
-    ).toBe(true);
+    expect(navigationSlot.contains(screen.getByRole('button', { name: 'Show run summary' }))).toBe(
+      true,
+    );
     expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
     expect(
       lifecycleSlot.contains(screen.getByRole('button', { name: 'Refactor run actions' })),
@@ -524,6 +571,123 @@ describe('WorkflowRow detail dashboard', () => {
   });
 });
 
+const PLAN: PlanWithCount = {
+  id: 'plan-1' as PlanWithCount['id'],
+  sessionId: SESSION_ID,
+  agentId: 'agent-2' as AgentId,
+  workflowRunId: RUN_ID,
+  title: 'Retry-safe webhook credits',
+  bodyMd: '## Goal',
+  status: 'active',
+  createdAt: NOW,
+  updatedAt: NOW,
+  consumptionCount: 0,
+};
+
+const heldRun: WorkflowRun = {
+  ...run,
+  orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+};
+
+const lifecycle = () => screen.getByRole('group', { name: 'Run lifecycle actions' });
+
+describe('WorkflowRow chevron and scroll edge', () => {
+  it('names the chevron Show run summary, in the accessible name and in its tooltip', async () => {
+    renderDetail();
+
+    const chevron = screen.getByRole('button', { name: 'Show run summary' });
+    fireEvent.mouseEnter(chevron.parentElement as HTMLElement);
+
+    const tooltip = await screen.findByRole('tooltip', {}, { timeout: 2_000 });
+    expect(tooltip.textContent).toBe('Show run summary');
+  });
+
+  it('keeps the expand name for a collapsed run, where the chevron opens the steps', () => {
+    renderDetail({ workflowExpand: { [RUN_ID]: false } });
+
+    expect(screen.getByRole('button', { name: 'Expand Refactor run' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
+  });
+
+  it('draws the scroll edge line on the steps, and nothing while the run is collapsed', () => {
+    const { unmount } = renderDetail();
+    expect(document.querySelectorAll('[data-slot="scroll-edge"]')).toHaveLength(1);
+    unmount();
+
+    renderDetail({ workflowExpand: { [RUN_ID]: false } });
+    expect(document.querySelectorAll('[data-slot="scroll-edge"]')).toHaveLength(0);
+  });
+
+  it('follows the empty state contract when the run has no agents yet', () => {
+    renderDetail({ agentsOverride: [] });
+
+    expect(screen.getByText('No agents yet')).toBeDefined();
+    expect(screen.getByText('The run starts its first step here.')).toBeDefined();
+    expect(screen.queryByText('No agents yet for this workflow.')).toBeNull();
+  });
+});
+
+describe('WorkflowRow while the run waits on its plan', () => {
+  beforeEach(() => {
+    storeMocks.runPlan = PLAN;
+  });
+
+  it('makes Review plan the primary of the header and opens the plan drawer', () => {
+    renderDetail({ runOverride: heldRun });
+
+    const primary = within(lifecycle()).getByTestId('run-review-plan');
+    expect(primary.textContent).toBe('Review plan');
+    fireEvent.click(primary);
+
+    expect(storeMocks.openPlanDrawer).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      planId: PLAN.id,
+    });
+  });
+
+  it('moves Approve plan into the header overflow, and approves from there', () => {
+    renderDetail({ runOverride: heldRun });
+
+    expect(within(lifecycle()).queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Refactor run controls' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Approve plan' }));
+
+    expect(storeMocks.approveRunPlan).toHaveBeenCalledTimes(1);
+  });
+
+  it('turns the Plan ready status of a static run into a secondary Review plan button', () => {
+    renderDetail({ runOverride: heldRun });
+
+    const status = screen.getByTestId('workflow-run-plan-ready');
+    expect(status.tagName).toBe('BUTTON');
+    expect(status.textContent).toBe('Review plan');
+    expect(within(lifecycle()).queryByTestId('workflow-run-plan-ready')).toBeNull();
+    fireEvent.click(status);
+
+    expect(storeMocks.openPlanDrawer).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      planId: PLAN.id,
+    });
+  });
+
+  it('keeps Approve plan as the primary when the run has no plan to review', () => {
+    storeMocks.runPlan = null;
+    renderDetail({ runOverride: heldRun });
+
+    expect(within(lifecycle()).getByTestId('run-approve-plan')).toBeDefined();
+    expect(screen.queryByTestId('run-review-plan')).toBeNull();
+    expect(screen.getByText('Plan ready')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
+  });
+
+  it('shows no plan entry on a run that is not held for its plan', () => {
+    renderDetail();
+
+    expect(screen.queryByTestId('run-review-plan')).toBeNull();
+    expect(screen.queryByTestId('workflow-run-plan-ready')).toBeNull();
+  });
+});
+
 describe('WorkflowRow step-in-flight predicate', () => {
   it('offers Pause while the orchestrator is deciding, even with no agent running', () => {
     storeMocks.orchestratingWorkflowRuns[RUN_ID] = true;
@@ -572,6 +736,11 @@ describe('WorkflowRow manual start gate', () => {
     await Promise.resolve();
 
     expect(startWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    await vi.waitFor(() =>
+      expect(storeMocks.followRun).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Run started', startKey: RUN_ID }),
+      ),
+    );
   });
 
   it('names the blocker and starts only after an explicit override', async () => {

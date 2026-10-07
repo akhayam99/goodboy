@@ -20,10 +20,12 @@ export const FixRunLead = ({ sessionId, agentId }: Props) => {
     return null;
   }
   return (
-    <ScrollFade className="max-h-[45%] shrink-0" viewportClassName="px-4 pt-3" fadeSize="h-6">
-      <div data-testid="fix-run-lead">
-        <FixRunSummary session={session} agent={agent} brief={brief} />
-      </div>
-    </ScrollFade>
+    <div className="grid max-h-[45%] min-w-0 shrink-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)]">
+      <ScrollFade viewportClassName="px-4 pt-3" fadeSize="h-6">
+        <div data-testid="fix-run-lead">
+          <FixRunSummary session={session} agent={agent} brief={brief} />
+        </div>
+      </ScrollFade>
+    </div>
   );
 };
