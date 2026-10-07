@@ -14,6 +14,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'list header menu (open the artifacts folder), not an object in the map',
   'features/branch/components/BranchHeader/BranchOverflow.tsx':
     'branch header menu: its entries come from the pull request and diff kinds of the registry',
+  'features/artifacts/components/ArtifactDocumentDrawer/PlanDrawerMenu.tsx':
+    'plan drawer chrome: Open in Artifacts and Expand belong to the drawer, Copy markdown runs artifact.copySource',
   'features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx':
     'creation menu: picks the kind of artifact to create',
   'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
