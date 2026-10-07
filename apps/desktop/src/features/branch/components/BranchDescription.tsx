@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { PageColumn, ScrollFade, cn } from '@goodboy/ui';
+import { ChevronRight, Pencil } from 'lucide-react';
+import { Button, PageColumn, ScrollFade, cn } from '@goodboy/ui';
 import type { PrDetail, PullRequestState, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../store';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
@@ -30,7 +30,7 @@ export const BranchDescription = ({
   onSelectLens,
   onMutated,
 }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(pr.body.trim() !== '');
 
   useEffect(() => {
     const open = (): void => setIsOpen(true);
@@ -47,21 +47,35 @@ export const BranchDescription = ({
     };
   }, [sessionId]);
 
+  const startEditing = (): void => {
+    window.dispatchEvent(
+      new CustomEvent(pullRequestEventName({ name: PR_EDIT_DETAILS_EVENT, sessionId })),
+    );
+  };
+
   return (
-    <PageColumn width="full" className="flex min-w-0 flex-col gap-2 pb-2">
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        onClick={() => setIsOpen((current) => !current)}
-        className="inline-flex w-fit items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-      >
-        <ChevronRight
-          size={ICON_SIZE.row}
-          aria-hidden
-          className={cn('motion-safe:transition-transform', isOpen && 'rotate-90')}
-        />
-        Description
-      </button>
+    <PageColumn width="column" className="flex min-w-0 flex-col gap-2 pb-2">
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen((current) => !current)}
+          className="inline-flex w-fit items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        >
+          <ChevronRight
+            size={ICON_SIZE.row}
+            aria-hidden
+            className={cn('motion-safe:transition-transform', isOpen && 'rotate-90')}
+          />
+          Description
+        </button>
+        {canEdit && !isOpen ? (
+          <Button size="sm" variant="ghost" onClick={startEditing}>
+            <Pencil size={ICON_SIZE.row} aria-hidden />
+            Edit
+          </Button>
+        ) : null}
+      </div>
       <div hidden={!isOpen}>
         <ScrollFade className="max-h-[50vh]" viewportClassName="pb-2">
           <PrDetailsMode

@@ -176,12 +176,12 @@ describe('useSessionCrumbs Branch trail', () => {
     };
   };
 
-  it('reads Overview then the Branch named by its pull request, whatever tab is open', () => {
+  it('reads Overview then Branch, whatever tab is open, and never names the pull request', () => {
     for (const tab of ['comments', 'files', 'commits'] as const) {
       standOnBranch({ tab });
       const { result } = renderHook(() => useSessionCrumbs({ session }));
 
-      expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', '#318 Ledger export']);
+      expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Branch']);
       expect(result.current.map((crumb) => crumb.id)).toEqual(['overview', 'branch']);
     }
   });
@@ -209,7 +209,7 @@ describe('useSessionCrumbs Branch trail', () => {
     };
     const labels = labelsOf(null, RESOLVER_AGENT_ID);
 
-    expect(labels.slice(0, 2)).toEqual(['Session', '#318 Ledger export']);
+    expect(labels.slice(0, 2)).toEqual(['Session', 'Branch']);
   });
 });
 

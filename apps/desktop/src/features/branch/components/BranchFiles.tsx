@@ -9,6 +9,7 @@ import { useObjectActions } from '../../actions/useObjectActions';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { WriteReview } from '../../review/components/ReviewPane/WriteReview';
+import { BranchBodyColumn } from './BranchBodyColumn';
 
 type Props = {
   readonly session: Session;
@@ -28,7 +29,7 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
   const postNotes = actions.find((action) => action.id === 'review.postNotes') ?? null;
   if (worktreePath === null) {
     return (
-      <PageColumn width="full">
+      <PageColumn width="column">
         <LensEmptyState
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
@@ -40,23 +41,25 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
   }
   if (mode === 'write_review' && hasPullRequest) {
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-        <PageColumn width="full">
-          <button
-            type="button"
-            onClick={() => setPullRequestMode({ sessionId, mode: 'overview' })}
-            className="inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-          >
-            <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-            Files
-          </button>
-        </PageColumn>
-        <WriteReview session={session} />
-      </div>
+      <BranchBodyColumn>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+          <PageColumn width="full">
+            <button
+              type="button"
+              onClick={() => setPullRequestMode({ sessionId, mode: 'overview' })}
+              className="inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            >
+              <ChevronLeft size={ICON_SIZE.row} aria-hidden />
+              Files
+            </button>
+          </PageColumn>
+          <WriteReview session={session} />
+        </div>
+      </BranchBodyColumn>
     );
   }
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <BranchBodyColumn>
       <SessionDiffPane
         sessionId={sessionId}
         workingDir={workingDir}
@@ -77,6 +80,6 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
           )
         }
       />
-    </div>
+    </BranchBodyColumn>
   );
 };

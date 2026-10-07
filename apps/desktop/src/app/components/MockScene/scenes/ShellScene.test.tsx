@@ -18,6 +18,7 @@ import { ShellScene } from './ShellScene';
 
 beforeAll(async () => {
   await importStore();
+  await import('../../../../features/settings/components/SettingsStudio');
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {

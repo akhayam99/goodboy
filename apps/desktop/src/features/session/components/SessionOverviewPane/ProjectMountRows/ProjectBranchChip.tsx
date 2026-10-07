@@ -4,7 +4,7 @@ import { AnchoredPopover, Chip, FOCUS_RING, Tooltip, cn, useDropdown } from '@go
 import type { MountId, SessionId } from '@goodboy/types';
 import { MOUNT_SWITCH_BRANCH_EVENT, mountEventName } from '../../../../actions/kinds/mount';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
-import { splitBranchLabel } from './branchLabel';
+import { splitBranchLabel } from '../../../../../shared/utils/branchLabel';
 
 type Props = {
   readonly sessionId: SessionId;
