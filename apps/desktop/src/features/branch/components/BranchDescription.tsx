@@ -60,7 +60,7 @@ export const BranchDescription = ({
           type="button"
           aria-expanded={isOpen}
           onClick={() => setIsOpen((current) => !current)}
-          className="inline-flex w-fit items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="inline-flex h-7 w-fit items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <ChevronRight
             size={ICON_SIZE.row}

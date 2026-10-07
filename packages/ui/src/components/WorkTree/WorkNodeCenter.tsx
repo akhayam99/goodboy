@@ -89,6 +89,8 @@ export const WorkNodeCenter = ({
       return <Check size={glyphSize} strokeWidth={3} className="text-on-tone" />;
     case 'done':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-success" />;
+    case 'finished':
+      return <Check size={glyphSize} strokeWidth={3} className="text-on-tone" />;
     case 'closed':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-muted-foreground" />;
     case 'stopped':

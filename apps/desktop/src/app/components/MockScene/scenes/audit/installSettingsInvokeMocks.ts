@@ -1,4 +1,4 @@
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from '../mockSceneIpc';
 
 const EXPORT_COUNTS = {
   workspaces: 3,
@@ -12,7 +12,7 @@ const EXPORT_COUNTS = {
 };
 
 export const installSettingsInvokeMocks = (): void => {
-  mockIPC((command) => {
+  mockSceneIpc((command) => {
     if (command === 'permission_rule_list' || command === 'permission_audit_list') {
       return [];
     }

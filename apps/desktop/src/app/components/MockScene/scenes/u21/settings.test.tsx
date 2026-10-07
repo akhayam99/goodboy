@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
+vi.mock('@tauri-apps/api/core', async () => {
+  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
+  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
+});
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
@@ -15,6 +16,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
+import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U21_SETTINGS_SCENES } from './settings';
 
 const SETTLE_MS = 2_000;
@@ -32,6 +34,7 @@ beforeEach(async () => {
 afterEach(() => {
   vi.useRealTimers();
   cleanup();
+  clearSceneInvoke();
 });
 
 const mount = async (name: string): Promise<Element> => {
@@ -47,6 +50,7 @@ const mount = async (name: string): Promise<Element> => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS);
   });
+  expect(screen.queryByText('Something went wrong')).toBeNull();
   return container;
 };
 
