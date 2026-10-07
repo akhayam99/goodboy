@@ -1,47 +1,47 @@
-// @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(() => new Promise<never>(() => undefined)),
+}));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../store/storyHarness';
 import { branchPlace } from '../../store/slices/navigation/place';
-
-const h = vi.hoisted(() => ({
-  setSessionActiveMount: vi.fn(async (_params: unknown) => undefined),
-  navigate: vi.fn(),
-  reportError: vi.fn(async (_params: unknown) => undefined),
-  branchTab: {} as Record<string, string>,
-}));
-
-vi.mock('../../store', () => ({
-  useAppStore: {
-    getState: () => ({
-      setSessionActiveMount: h.setSessionActiveMount,
-      navigate: h.navigate,
-      reportError: h.reportError,
-      branchTab: h.branchTab,
-    }),
-  },
-}));
-
 import { switchBranchMount } from './switchBranchMount';
 
-const SESSION = 'session-1' as SessionId;
-const MOUNT = 'mount-2' as MountId;
+type StoreState = ReturnType<StoryStore['getState']>;
+
+const SESSION = 'session-ledger-export' as SessionId;
+const MOUNT = 'mount-ledger-core-fix' as MountId;
 const PATH = '/work/ledger-core-fix';
 
-beforeEach(() => {
-  h.setSessionActiveMount.mockReset().mockResolvedValue(undefined);
-  h.navigate.mockReset();
-  h.reportError.mockReset().mockResolvedValue(undefined);
-  h.branchTab = {};
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
 });
 
 describe('switchBranchMount', () => {
   it('makes the mount the write destination, then opens its branch page on the same tab', async () => {
-    h.branchTab = { [SESSION]: 'files' };
+    const navigate = vi.fn<StoreState['navigate']>();
+    const setSessionActiveMount = vi.fn<StoreState['setSessionActiveMount']>(async () => undefined);
+    useAppStore.setState({ navigate, setSessionActiveMount, branchTab: { [SESSION]: 'files' } });
 
     await switchBranchMount({ sessionId: SESSION, mountId: MOUNT, worktreePath: PATH });
 
-    expect(h.setSessionActiveMount).toHaveBeenCalledWith({ sessionId: SESSION, mountId: MOUNT });
-    expect(h.navigate).toHaveBeenCalledWith({
+    expect(setSessionActiveMount).toHaveBeenCalledWith({ sessionId: SESSION, mountId: MOUNT });
+    expect(navigate).toHaveBeenCalledWith({
       to: branchPlace({ sessionId: SESSION, mountPath: PATH, tab: 'files' }),
       mode: 'replace',
     });
@@ -49,12 +49,20 @@ describe('switchBranchMount', () => {
 
   it('reports the failure and stays on the page when the mount cannot become the destination', async () => {
     const failure = new Error('mount is no longer writable');
-    h.setSessionActiveMount.mockRejectedValue(failure);
+    const navigate = vi.fn<StoreState['navigate']>();
+    const reportError = vi.fn<StoreState['reportError']>(async () => undefined);
+    useAppStore.setState({
+      navigate,
+      reportError,
+      setSessionActiveMount: vi.fn<StoreState['setSessionActiveMount']>(async () => {
+        throw failure;
+      }),
+    });
 
     await switchBranchMount({ sessionId: SESSION, mountId: MOUNT, worktreePath: PATH });
 
-    expect(h.navigate).not.toHaveBeenCalled();
-    expect(h.reportError).toHaveBeenCalledWith(
+    expect(navigate).not.toHaveBeenCalled();
+    expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({ error: failure, sessionId: SESSION }),
     );
   });
