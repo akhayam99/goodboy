@@ -287,3 +287,5 @@ export type { WorkNodeMark, WorkNodeSize, WorkNodeState } from './components/Wor
 export { Kbd } from './components/Kbd';
 export type { KbdLook, KbdProps } from './components/Kbd';
 export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';
+export { drawerAsideWidthOf, drawerLayoutOf } from './drawerGeometry';
+export type { DrawerLayout } from './drawerGeometry';
