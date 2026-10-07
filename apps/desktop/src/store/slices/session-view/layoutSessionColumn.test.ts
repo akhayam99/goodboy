@@ -281,12 +281,10 @@ describe('the Pinned group', () => {
     expect(listedRest.every((session) => !shownPins.includes(session.id as SessionId))).toBe(true);
     if (group === 'none') {
       expect(result.hiddenCount + listedRest.length).toBe(rest.length);
-    } else {
-      expect(result.hiddenCount).toBe(0);
-      expect(result.groups.slice(1).reduce((sum, column) => sum + column.total, 0)).toBe(
-        rest.length,
-      );
+      return;
     }
+    expect(result.hiddenCount).toBe(0);
+    expect(result.groups.slice(1).reduce((sum, column) => sum + column.total, 0)).toBe(rest.length);
   });
 
   it('shows pinned sessions that the fold would hide and counts only the rest as hidden', () => {
