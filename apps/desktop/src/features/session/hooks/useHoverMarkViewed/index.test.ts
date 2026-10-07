@@ -26,7 +26,21 @@ afterEach(() => {
 });
 
 describe('useHoverMarkViewed', () => {
-  it('marks the agent seen after a continuous dwell', () => {
+  it('keeps the row unread while the pointer is still on it, even after the dwell', () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() =>
+      useHoverMarkViewed({ sessionId: SESSION_ID, agentId: AGENT_ID, hasUnread: true }),
+    );
+
+    act(() => {
+      result.current.onMouseEnter?.();
+      vi.advanceTimersByTime(5_000);
+    });
+
+    expect(markAgentSeen).not.toHaveBeenCalled();
+  });
+
+  it('marks the agent seen when the pointer leaves after a continuous dwell', () => {
     vi.useFakeTimers();
     const { result } = renderHook(() =>
       useHoverMarkViewed({ sessionId: SESSION_ID, agentId: AGENT_ID, hasUnread: true }),
@@ -35,8 +49,10 @@ describe('useHoverMarkViewed', () => {
     act(() => {
       result.current.onMouseEnter?.();
       vi.advanceTimersByTime(450);
+      result.current.onMouseLeave?.();
     });
 
+    expect(markAgentSeen).toHaveBeenCalledTimes(1);
     expect(markAgentSeen).toHaveBeenCalledWith(SESSION_ID, AGENT_ID);
   });
 
@@ -50,7 +66,7 @@ describe('useHoverMarkViewed', () => {
       result.current.onMouseEnter?.();
       vi.advanceTimersByTime(449);
       result.current.onMouseLeave?.();
-      vi.advanceTimersByTime(1);
+      vi.advanceTimersByTime(1_000);
     });
 
     expect(markAgentSeen).not.toHaveBeenCalled();
