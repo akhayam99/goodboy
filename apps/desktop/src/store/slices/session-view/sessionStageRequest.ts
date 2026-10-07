@@ -6,7 +6,7 @@ import {
 } from '../project-mounts/mountRowModel';
 import type { AppState } from '../../types';
 import { isPullRequestApproved } from './pullRequestGroup';
-import type { StagePullRequest } from './deriveSessionStage';
+import type { StagePullRequest } from './attentionFactsOf';
 
 export type StageRequest = Readonly<{
   pr: StagePullRequest;

@@ -9,7 +9,9 @@ import type {
   SessionAttentionReason,
   SessionId,
   TurnState,
+  WorkflowRunId,
 } from '@goodboy/types';
+import { aSession, aWorkflowRun } from '@goodboy/types/testing';
 import { attentionPlace } from './attentionPlace';
 
 const SESSION_ID = 'session-now' as SessionId;
@@ -34,7 +36,19 @@ const AGENTS: ReadonlyArray<Agent> = [
   agent({ id: LATEST, ordinal: 2, status: 'failed' }),
 ];
 
+const HELD = aWorkflowRun({
+  id: 'run-held' as WorkflowRunId,
+  orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+});
+const DISCARDED = aWorkflowRun({
+  id: 'run-discarded' as WorkflowRunId,
+  orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+  discardedAt: AT,
+});
+const RUNNING = aWorkflowRun({ id: 'run-going' as WorkflowRunId });
+
 const state = {
+  sessions: [aSession({ id: SESSION_ID, workflowRuns: [DISCARDED, RUNNING, HELD] })],
   sessionPhaseRuns: { [SESSION_ID]: AGENTS },
   agentTurnState: {
     [EARLIER]: {
@@ -78,6 +92,22 @@ describe('attentionPlace', () => {
       });
     },
   );
+
+  it('opens the page of the run that holds the plan, skipping a discarded one', () => {
+    expect(destination({ reason: 'plan-approval' })).toMatchObject({
+      at: 'session',
+      sessionId: SESSION_ID,
+      view: { lens: 'workflows', target: { kind: 'run', runId: 'run-held' } },
+    });
+  });
+
+  it('opens the runs list when no run holds a plan any more', () => {
+    const settled = { ...state, sessions: [aSession({ id: SESSION_ID, workflowRuns: [RUNNING] })] };
+
+    expect(
+      attentionPlace({ state: settled, sessionId: SESSION_ID, reason: 'plan-approval' }),
+    ).toMatchObject({ at: 'session', view: { lens: 'workflows', target: null } });
+  });
 
   it.each([
     'agent-error',

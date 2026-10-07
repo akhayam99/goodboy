@@ -98,6 +98,20 @@ The stage board section of the guide uses it.
 | `building`  | `Hammer`      | neutral |
 | `done`      | `CircleCheck` | merged  |
 
+The left column, the switcher and the hover card draw a session's state as a
+`WorkNode` mark, not as the stage glyph. The mark follows the reason that
+holds the session, from `ATTENTION_REASON_META` in
+`features/session/session-stage.ts`, which gives each reason a mark, a tone and
+a sentence that the Board card, the Now chip rows and the palette read too. Red
+`!` (`failed`) is only an agent error and failing checks. Amber is what you must
+answer, approve or act on: `?` for a question or a comment that needs you, the
+shield for an approval or a held plan, and an amber `!` (`alert`) for changes
+requested and comments the fix could not fix. A solid green disc with a white
+check (`approved`) is a pull request ready to merge, and it is not the outlined
+check of a finished session (`done`). Blue is moving or new: the running ring,
+and the small dot of an unread reply. The sentence is the node's accessible
+label. DESIGN-SYSTEM.md owns the full table.
+
 ## Agent kinds
 
 Each agent kind has one lucide glyph and one color, both on its entry in

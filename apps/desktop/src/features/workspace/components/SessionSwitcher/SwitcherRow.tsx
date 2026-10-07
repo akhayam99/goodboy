@@ -14,11 +14,7 @@ type Props = {
 
 export const SwitcherRow = ({ session, isSelected, onChoose }: Props) => {
   const summary = useSessionSummary({ session });
-  const node = sessionNodeOf({
-    stage: summary.stage,
-    attention: summary.attention,
-    isArchived: false,
-  });
+  const node = sessionNodeOf({ info: summary.info, isArchived: false });
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   return (
     <SelectableRow

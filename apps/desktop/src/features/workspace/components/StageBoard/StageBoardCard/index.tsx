@@ -85,7 +85,7 @@ export const StageBoardCard = memo(function StageBoardCard({
 }: StageBoardCardProps) {
   const id = session.id as SessionId;
   const summary = useSessionSummary({ session });
-  const { stage, reason, attention, progress, agentCount, age } = summary;
+  const { stage, reason, attention, isRunning, progress, agentCount, age } = summary;
   const externalTasks = summary.tasks;
   const sessionCost = summary.cost;
   const isAutoMode = summary.isAutorun;
@@ -165,7 +165,7 @@ export const StageBoardCard = memo(function StageBoardCard({
     return false;
   };
 
-  const tone = sessionTone({ stage, attention });
+  const tone = sessionTone({ stage, attention, isRunning });
 
   return (
     <article

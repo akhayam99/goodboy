@@ -7,6 +7,7 @@ import type {
   SessionExternalTask,
   SessionId,
   SessionStage,
+  SessionStageInfo,
 } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import {
@@ -16,7 +17,12 @@ import {
   useSessionCost,
   useSessionStageInfo,
 } from '../../../../store';
-import { describeSessionStage } from '../../../session/session-stage';
+import {
+  attentionWordsOf,
+  describeSessionStage,
+  otherAttentionLinesOf,
+  type AttentionLine,
+} from '../../../session/session-stage';
 import { distinctTasks } from '../../../../shared/utils/distinctTasks';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -27,6 +33,10 @@ import { useNow } from '../../../../shared/hooks/useNow';
 export type SessionSummary = {
   readonly stage: SessionStage;
   readonly attention: SessionAttentionReason | null;
+  readonly info: SessionStageInfo;
+  readonly words: string | null;
+  readonly otherLines: ReadonlyArray<AttentionLine>;
+  readonly isRunning: boolean;
   readonly tone: Tone;
   readonly reason: string;
   readonly addsFact: boolean;
@@ -65,6 +75,10 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
   const progress = useMemo(() => workflowProgress({ runs, agents: phaseRuns }), [runs, phaseRuns]);
 
   const presentation = describeSessionStage(stageInfo);
+  const words =
+    stageInfo.attention === null
+      ? null
+      : attentionWordsOf({ reason: stageInfo.attention, counts: stageInfo });
   const isAutorun =
     stageInfo.stage === 'running' &&
     session.workflowRuns.some((run) => run.autoRun && run.discardedAt == null);
@@ -72,10 +86,16 @@ export const useSessionSummary = ({ session }: Params): SessionSummary => {
   return {
     stage: stageInfo.stage,
     attention: stageInfo.attention,
+    info: stageInfo,
+    words,
+    otherLines: otherAttentionLinesOf({ info: stageInfo }),
+    isRunning: stageInfo.isRunning ?? false,
     tone: presentation.tone,
     reason: stageInfo.reason,
     addsFact: stageInfo.addsFact,
-    description: stateDescription({ presentation }),
+    description: stateDescription({
+      presentation: words === null ? presentation : { ...presentation, reason: words },
+    }),
     prState: stageInfo.prState,
     progress,
     tasks,
