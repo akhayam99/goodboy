@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { SelectableRow } from '@goodboy/ui';
+import { SelectableRow, cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -74,9 +74,11 @@ export const SessionPages = ({ session }: Props) => {
               onClick={() => openPage(page)}
               className="h-7 items-center gap-2 px-2 text-label"
             >
-              <span aria-hidden className="flex size-3.5 shrink-0 items-center justify-center">
-                <Icon size={ICON_SIZE.row} className={iconClassOf({ page })} />
-              </span>
+              <Icon
+                size={ICON_SIZE.row}
+                aria-hidden
+                className={cn('box-content shrink-0 p-px', iconClassOf({ page }))}
+              />
               <span className="min-w-0 flex-1 truncate">{page.label}</span>
               {count === null ? null : (
                 <span className="shrink-0 text-meta tabular-nums text-faint-foreground">

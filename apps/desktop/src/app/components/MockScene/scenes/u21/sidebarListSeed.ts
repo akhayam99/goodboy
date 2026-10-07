@@ -8,6 +8,8 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { projectById } from '../../../../../store/slices/projects/projectIndex';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from '../audit/workspaceChrome';
 import { sceneClock } from '../../sceneClock';
@@ -138,7 +140,7 @@ export const seedPinnedSessions = (): Session => {
     projectOf({ base, id: PAYMENTS_ID, name: 'payments-api' }),
   ];
   const sessions = SEEDS.map(sessionOf);
-  const open = sessions.find((session) => session.id === idOf(OPEN_SLUG));
+  const open = sessionById(sessions, idOf(OPEN_SLUG));
   if (open === undefined) {
     return SESSION;
   }
@@ -147,7 +149,7 @@ export const seedPinnedSessions = (): Session => {
     projects,
     sessionProjectMounts: Object.fromEntries(
       sessions.flatMap((session) => {
-        const project = projects.find((candidate) => candidate.id === session.activeProjectId);
+        const project = projectById(projects, session.activeProjectId);
         return project === undefined ? [] : [[session.id, [mountOf({ session, project })]]];
       }),
     ),
