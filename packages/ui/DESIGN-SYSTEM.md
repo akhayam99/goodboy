@@ -283,7 +283,7 @@ concept cannot get an icon without a tone, or a tone without an icon.
   a replaced or discarded one is `neutral`, and `merged` never appears on an
   artifact. In the report kit, `decision`, `summary`, `goal` and `note` are
   neutral structure, `risk` and `question` are `warning`. A kit callout is a
-  neutral surface with a tone rail and a toned icon, never a tinted fill.
+  neutral surface with a tone line and a toned icon, never a tinted fill.
 
 Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
 `draft`, `neutral`). Each one resolves through the single accessor
@@ -380,11 +380,12 @@ exactly one home (`activityView.ts`, `entriesOfView`):
   grade, one muted row per fact, rows of one kind and day merged, and a search
   box at the top. Each row opens its own object.
 - **Needs you** is a block on top of Activity, drawn only while it is not
-  empty: a card on `bg-subtle` with a `warning` eyebrow and one row per owner,
-  never one per child. A row is an icon in the warning tone, one line of text
-  (`#318 · 1 question · 5 to review`, `Retry policy · 1 question`,
-  `Rebase of feat/export stopped ×2`) and a ghost **Open** that goes to
-  whoever owns the action: the first comment that waits on you (the question
+  empty: a card on `bg-subtle` with one inner `warning` `ToneBar`, a neutral
+  eyebrow and one row per owner, never one per child. The line is the only
+  amber on the card: no ring, no triangle, muted row icons. A row is an icon,
+  one line of text (`#318 · 1 question · 5 to review`,
+  `Retry policy · 1 question`, `Rebase of feat/export stopped ×2`) and a ghost
+  `xs` **Open** that goes to whoever owns the action: the first comment that waits on you (the question
   before the reviews, the reviews before the failures), the exact question, the
   branch. A pull request is one row however many fix runs it had. It never
   offers Push or Answer, because the verb stays with its owner. The owners come
@@ -962,16 +963,26 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
 ## Notices
 
 `Notice` is the one shape for an error, a warning, an info line or a success
-that sits in the page. Its tone lives only in a left rail and in the icon. The
-surface stays neutral, the title is `foreground` and the body is
+that sits in the page. Its tone lives only in one inner line and in the icon.
+The surface stays neutral, the title is `foreground` and the body is
 `muted-foreground`. Tone never colors the text or fills the surface.
 
 - **Tone**: `danger` (`CircleAlert`), `warning` (`TriangleAlert`), `info`
   (`Info`), `success` (`CircleCheck`).
+- **The tone line is inner.** `inline`, `banner` and `floating` draw a
+  `ToneBar` at `card` density inside the padding: 3px wide, 6px from the left
+  edge, spanning the content box (top and bottom equal to the padding) with a
+  minimum height of 16px, so a title-only notice gets a line as tall as its
+  title. The icon stays beside it: a tone line and a tone icon on a neutral
+  surface. No outer edge, ring or tinted fill, on any card. `transcript` is
+  the one exception: it keeps a 2px edge at the left of its transparent
+  surface, because there it is a quote rail, not a card.
+  `tone-edges-are-inner-lines.test.ts` counts `border-l-2` next to a tone
+  class per file, and its allowance only shrinks.
 - **Placement** changes the surface and padding, never the anatomy.
   `transcript` is transparent with no border, `inline` and `banner` sit on
   `bg-subtle` with `border-border-soft`, `floating` sits on `bg-floating` with
-  a shadow. The rail is 2px in the page and 4px when floating.
+  a shadow.
 - **Title names the action** that failed ("Couldn't load pull requests"). The
   body states the cause in plain words. Raw output (stderr, exit codes, paths,
   URLs) goes in `detail`, which renders behind a Details disclosure in
@@ -990,10 +1001,12 @@ surface stays neutral, the title is `foreground` and the body is
 Every message shape in the desktop app renders through it. `ErrorStrip` is a
 thin `Notice placement="banner"` for a failed load with Retry. Budget alerts
 and the unpriced-turns warning are banners. Guide tips, the partial brief after a step,
-the branch switch confirmation and merge conflicts are `inline`. The sign-in
-prompt in the chat is `transcript`. Toasts are `floating`: the toast card owns
-only its timer, hover pause and dismiss, and passes its action and a ghost
-dismiss button as the Notice actions. Chat errors in the desktop app go through `formatErrorForHumans`, which
+the branch switch confirmation and merge conflicts are `inline`. A page that
+cannot load its list is an `inline` `danger` Notice with `role="alert"`
+(Empty states, state 4), and the startup error screen is the same Notice. The
+sign-in prompt in the chat is `transcript`. Toasts are `floating`: the toast
+card owns only its timer, hover pause and dismiss, and passes its action and a
+ghost dismiss button as the Notice actions. Chat errors in the desktop app go through `formatErrorForHumans`, which
 turns a known provider failure into a sentence and keeps the raw text as the
 detail.
 
@@ -1443,11 +1456,77 @@ to the drafts and the delegate controls; every place uses that one.
 
 ## Empty states
 
-A lens with nothing to show has one layout: `LensEmptyState`. It is a wrapper
-that fixes `bordered` and `size="inline"`, and makes `description` required.
-Lenses always use `inline`. Only a surface's own main empty state gets the
-large size and an `h2`. An empty lens leaves `headingLevel` unset, so it adds
-nothing to the document outline.
+A page is always in one of five states, and each state has one shape. So "nothing
+here" never reads five ways, loading never looks empty, and a failure is never
+drawn as an empty list.
+
+1. **Loading.** Never empty and never "Nothing yet" while loading. Keep the
+   last known content, or show the section's heading with a muted "Loading"
+   line. A part that reloads keeps its place with a skeleton of its own height
+   (below). Skeletons on every page are for the next round.
+2. **First time.** Something will be here, and nothing has made it yet.
+   `EmptyState size="page"`: a bare 18px icon in `text-muted-foreground` (no
+   circle, no fill, no border), a title that says what will be here, one
+   sentence that says how it gets here, and one primary that starts it. A page
+   with nothing the person can start (Questions) has no primary. Inside a
+   section of a page, `EmptyState size="section"`: one line, no card and no
+   padding block.
+3. **Nothing matches.** A filter or a search hides everything. `EmptyLine`
+   with `Clear filter` (or `Clear search`), or the next place to look. It never
+   uses the first-time shape: the list exists, the filter is the cause.
+4. **Can't load.** `Notice tone="danger" placement="inline" role="alert"`: a
+   title that names what failed, the reason in words, the fix, `Retry`, and
+   `Details` with the raw text. A permission problem uses `tone="warning"` and
+   names the fix. A failure is never an empty state, and an empty state is
+   never shown while a load failed.
+5. **Not connected.** The tool behind the page is not connected. The
+   `ConnectIntegrationEmptyState` pattern for one tool, a `page` state with
+   `Connect a tool` where several tools feed the page (the Inbox).
+
+### The primitives
+
+`EmptyState` takes `size: 'page' | 'section'`. The old sizes keep working and
+map onto the two: `lg` and `xl` to `page`, `sm` and `inline` to `section`, and a
+`bordered` state with no size to `page` without the border. The tinted circle
+and the dashed border are gone in every size, and `tone` no longer colours the
+icon: the glyph is the concept, the colour is not a state. A `page` state is an
+`h2` unless `headingLevel` says another level; a `section` state is no heading,
+so it adds nothing to the outline. `LensEmptyState` and `FilledEmptyState` are
+thin wrappers over `size="section"` with the same props, kept until every
+caller names the size itself. Nothing hand-rolls the shape: a caller passes
+only layout (`justify-center`, `basis-full`) or an inset (`px-3`), never a fill,
+a border or a circle.
+
+An empty line inside a section ("No scripts match "tset".") is `EmptyLine`: one
+faint sentence, an optional glyph before it and an optional action after it. It
+is the only shape for a one-line empty, never bare text in its own style.
+`hand-made-notices-and-empty-lines.test.ts` and
+`inline-empty-states-use-the-wrappers.test.ts` count text that opens with `No `,
+`Nothing` or `None` outside the wrappers, and their baselines only shrink.
+
+### Page by state
+
+A cell names the shape that page uses. N/A means the state cannot happen
+there. `0.22.1` marks a page the sweep has not reached yet: it still shows its
+old shape, and the next round moves it.
+
+| Page           | Loading                                  | First time                                                                         | Nothing matches                                          | Can't load                                                          | Not connected                             |
+| -------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Start a run. `section`: No runs in progress                   | N/A                                                      | N/A                                                                 | N/A                                       |
+| Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                 | N/A                                                      | N/A                                                                 | N/A                                       |
+| Artifacts      | 0.22.1                                   | `page`: No artifacts yet, New artifact                                             | `EmptyLine`: No plans in this session, Clear filter      | 0.22.1                                                              | N/A                                       |
+| Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add project. `section`: No pinned scripts, Pin in Settings | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |
+| Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                               | N/A                                                      | 0.22.1                                                              | N/A                                       |
+| Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries           | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
+| Notifications  | Skeleton rows                            | `section`: No notifications yet, one line and no Unread or All tabs                | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                       |
+| Inbox          | Skeleton rows                            | `page`: No items yet                                                               | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
+| Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                         | N/A                                                      | N/A                                                                 | N/A                                       |
+| Checks         | A muted Loading line                     | `section`: No checks have reported yet                                             | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
+| Comments       | 0.22.1                                   | 0.22.1                                                                             | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
+| Commits        | 0.22.1                                   | 0.22.1                                                                             | N/A                                                      | 0.22.1                                                              | N/A                                       |
+| Impact         | 0.22.1                                   | 0.22.1                                                                             | 0.22.1                                                   | 0.22.1                                                              | N/A                                       |
+| Chat           | 0.22.1                                   | 0.22.1                                                                             | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
+| Settings lists | 0.22.1                                   | 0.22.1                                                                             | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
 
 The new session draft is the kickoff. It asks "How do you want to
 start?" and answers with a single-select list of three rows, each a concept
@@ -1456,17 +1535,9 @@ selected row reveals its fields and its one primary under the list. Arrow keys
 move between rows and Enter moves into the selected row's fields. There is no
 example run and no grid of tiles.
 
-Inline empty states belong to a lens or a compact collection surface. A filled,
-borderless inline empty state belongs to a surface's own body and uses
-`FilledEmptyState`, which owns its inset and fill. Do not hand-roll either
-shape with `EmptyState size="inline"`: a caller passes only layout
-(`justify-center`, `basis-full`), never its own padding or fill, and
-`inline-empty-states-use-the-wrappers.test.ts` fails on any `size="inline"`
-under `apps/desktop/src`.
-
-An empty line inside a section ("No open worktrees.") is `EmptyLine`: one faint
-sentence, an optional glyph before it and an optional action after it. It is
-the only shape for a one-line empty, never bare text in its own style.
+Inline empty states belong to a lens or a compact collection surface, and they
+are `section` states. `inline-empty-states-use-the-wrappers.test.ts` fails on any
+`size="inline"` under `apps/desktop/src`: name `section` or `page`.
 
 **Loading keeps the page in place.** A part that reloads shows a skeleton of
 its own height: `SkeletonRow` (a row, with a `status` label naming what loads)
@@ -1474,9 +1545,10 @@ or `SkeletonChip` (a chip). Only the parts that reload turn to skeleton; the
 title, the goal, the timeline and the cost stay. A session refresh shows them
 only after 250 ms (`useSessionSkeleton`), so a fast refresh never flashes.
 
-**Inline beats the centred hero** because the pane already has a title and a
-rhythm. A hero repeats the title in bigger type. It pretends the lens is a
-landing page, when it is one of a rail full of destinations.
+**Bare beats the circle and the hero.** The pane already has a title and a
+rhythm. A tinted circle, a border and a bigger title repeat the title and
+pretend the page is a landing page, when it is one of a rail full of
+destinations. The page state is a glyph, two lines and one action.
 
 **The gap trap.** The parent flex container owns the spacing. So a child that
 renders `<div />` or an empty fragment still costs a full gap step, and leaves

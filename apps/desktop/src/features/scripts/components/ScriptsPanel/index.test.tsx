@@ -100,6 +100,8 @@ const { state } = vi.hoisted(() => ({
     mounts: [] as ReadonlyArray<Mount>,
     saved: [] as ReadonlyArray<Record<string, unknown>>,
     discovered: {} as Record<string, unknown>,
+    scans: {} as Record<string, { readonly status: string; readonly error: string | null }>,
+    refreshDiscoveredScripts: vi.fn(async () => undefined),
     runs: {} as Record<string, RunRecord>,
     drawer: null as Drawer | null,
     pins: null as Record<string, ReadonlyArray<string>> | null,
@@ -155,13 +157,13 @@ vi.mock('../../../../store', () => {
     sessionProjectMounts: { [SESSION]: state.mounts },
     sessionActiveProject: {},
     discoveredScripts: { [SESSION]: state.discovered },
-    discoveredScriptScans: { [SESSION]: {} },
+    discoveredScriptScans: { [SESSION]: state.scans },
     scriptRuns: { [SESSION]: state.runs },
     scriptsLensScope: null,
     setScriptsLensScope: vi.fn(),
     loadScripts: vi.fn(async () => undefined),
     loadDiscoveredScripts: vi.fn(async () => undefined),
-    refreshDiscoveredScripts: vi.fn(async () => undefined),
+    refreshDiscoveredScripts: state.refreshDiscoveredScripts,
     saveScript: state.saveScript,
     deleteScript: state.deleteScript,
     cancelScript: state.cancelScript,
@@ -201,6 +203,8 @@ beforeEach(() => {
     [RELAY_PATH]: [],
   };
   state.runs = {};
+  state.scans = {};
+  state.refreshDiscoveredScripts.mockClear();
   state.drawer = null;
   state.pins = null;
   for (const fn of [
@@ -394,6 +398,25 @@ describe('ScriptsPanel', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'No scripts yet' })).toBeDefined();
     expect(screen.getByText('Scripts run inside a project of this session.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+  });
+
+  it('says a project could not be read, with the reason and a Retry', () => {
+    state.discovered = { ...state.discovered, [RELAY_PATH]: undefined };
+    state.scans = {
+      [RELAY_PATH]: { status: 'error', error: 'package.json has a trailing comma.' },
+    };
+    renderPanel();
+
+    const relay = group('notify-relay · nw/retry-backoff');
+    const alert = within(relay).getByRole('alert');
+    expect(within(alert).getByText("Couldn't read the scripts of notify-relay")).toBeDefined();
+    expect(within(alert).getByText('package.json has a trailing comma.')).toBeDefined();
+    fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
+
+    expect(state.refreshDiscoveredScripts).toHaveBeenCalledWith({
+      sessionId: SESSION,
+      worktreePath: RELAY_PATH,
+    });
   });
 
   it('names saved scripts of projects that are not in the session', () => {

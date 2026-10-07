@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ScriptActionTarget } from '../../../actions/types';
 import { Plus } from 'lucide-react';
-import { Button, EmptyLine, EmptyState, formatError, useCopyLink, PaneShell } from '@goodboy/ui';
+import {
+  Button,
+  EmptyLine,
+  EmptyState,
+  Notice,
+  formatError,
+  splitErrorMessage,
+  useCopyLink,
+  PaneShell,
+} from '@goodboy/ui';
 import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -342,7 +351,28 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     }
     const scan = scans?.[group.worktreePath];
     if (scan?.status === 'error') {
-      return <p className="px-2 py-2 text-label text-faint-foreground">{scan.error}</p>;
+      const { summary, detail } = splitErrorMessage({ message: scan.error ?? '' });
+      return (
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title={`Couldn't read the scripts of ${group.projectName}`}
+          body={summary ?? 'Goodboy could not read this project.'}
+          detail={detail}
+          actions={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                void refreshDiscoveredScripts({ sessionId, worktreePath: group.worktreePath })
+              }
+            >
+              Retry
+            </Button>
+          }
+        />
+      );
     }
     if (discovered?.[group.worktreePath] === undefined) {
       return (
