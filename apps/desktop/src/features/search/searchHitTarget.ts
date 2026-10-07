@@ -31,6 +31,7 @@ export type SearchHitTarget =
       readonly workspaceId: WorkspaceId | null;
       readonly sessionId: SessionId;
       readonly artifactId: ArtifactId;
+      readonly isPlan: boolean;
       readonly label: string;
     }
   | {
@@ -158,6 +159,7 @@ const sessionBound = ({ hit }: Params): SearchHitTarget | null => {
         kind: 'artifact',
         ...base,
         artifactId: hit.refId as ArtifactId,
+        isPlan: hit.kind === 'plan',
         label: `Open ${hit.kind}`,
       };
     case 'decision':

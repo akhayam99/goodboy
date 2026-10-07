@@ -1,6 +1,7 @@
 import type { SearchHit, WorkspaceId } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../store';
 import { openUrl } from '../../shared/lib/editor';
+import { openPlanAnywhere } from '../plans/openPlanAnywhere';
 import { selectWritableMounts } from '../../store/slices/project-mounts/selectors';
 import { isNoteOnBranch, isUnassignedNote } from '../resolve/notes/noteThread';
 import { useOpenQuestions } from '../context/components/QuestionsTab/useOpenQuestions';
@@ -69,6 +70,10 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       store.navigate({ to: agentPlace({ sessionId, agentId: target.agentId }) });
       return true;
     case 'artifact':
+      if (target.isPlan) {
+        openPlanAnywhere({ sessionId, planId: target.artifactId });
+        return true;
+      }
       store.navigate({
         to: sessionPlace({
           sessionId,

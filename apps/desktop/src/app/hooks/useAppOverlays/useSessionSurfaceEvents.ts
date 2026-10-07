@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { Session, Workspace } from '@goodboy/types';
+import { openPlanAnywhere } from '../../../features/plans/openPlanAnywhere';
 import { sessionPlace, useAppStore } from '../../../store';
 import type { SessionStudio } from '../../../store/slices/session-view/types';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
@@ -46,12 +47,12 @@ export const useSessionSurfaceEvents = ({
       }
       const planId = eventValue({ event, key: 'planId' });
       close();
+      if (isPlanId(planId)) {
+        openPlanAnywhere({ sessionId, planId });
+        return;
+      }
       useAppStore.getState().navigate({
-        to: sessionPlace({
-          sessionId,
-          lens: 'plans',
-          target: isPlanId(planId) ? { kind: 'artifact', artifactId: planId } : null,
-        }),
+        to: sessionPlace({ sessionId, lens: 'plans', target: null }),
       });
     };
     const listeners: ReadonlyArray<Listener> = [

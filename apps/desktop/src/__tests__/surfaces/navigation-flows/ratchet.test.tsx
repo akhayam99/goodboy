@@ -72,7 +72,6 @@ const SETTINGS_SCOPES = namesIn({
 });
 
 const EXEMPT: Readonly<Record<string, string>> = {
-  openDrawer: 'generic drawer primitive, reached through openContextDrawer',
   openWorkspace: 'focuses or opens another window, not a page in this one',
   openTerminal: 'adds a terminal tab to the dock, not a page',
   setActiveLens: 'internal to the navigation slice, the one door is navigate',

@@ -18,6 +18,7 @@ type Params = {
   readonly plans: ReadonlyArray<PlanWithCount>;
   readonly artifacts: ReadonlyArray<SessionArtifact>;
   readonly open: (params: ArtifactOpenParams) => void;
+  readonly openPlan: (params: ArtifactOpenParams) => void;
 };
 
 const KIND_TAG = {
@@ -47,6 +48,7 @@ export const artifactEntries = ({
   plans,
   artifacts,
   open,
+  openPlan,
 }: Params): ReadonlyArray<PaletteEntry> => {
   const planEntries = plans.map((plan): PaletteEntry => {
     const artifactId = plan.id as unknown as ArtifactId;
@@ -59,7 +61,7 @@ export const artifactEntries = ({
       icon: CONCEPT_ICONS.plans,
       detail: PLAN_STATUS[plan.status],
       tag: KIND_TAG.plan,
-      run: () => open({ sessionId, artifactId }),
+      run: () => openPlan({ sessionId, artifactId }),
     };
   });
   const otherEntries = artifacts

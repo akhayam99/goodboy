@@ -79,6 +79,14 @@ const hitOf = (commentId: string): SearchHit => ({
   snippet: [],
 });
 
+const artifactHitOf = ({
+  kind,
+  refId,
+}: {
+  readonly kind: 'plan' | 'report';
+  readonly refId: string;
+}): SearchHit => ({ ...hitOf('unused'), docId: `${kind}:${refId}`, kind, refId });
+
 const displayedPath = (): string | null => useAppStore.getState().diffMountPath[SESSION_ID] ?? null;
 
 beforeEach(() => {
@@ -122,5 +130,35 @@ describe('opening a comment search hit', () => {
 
   it('reports a miss when the comment is gone', async () => {
     await expect(openSearchHit({ hit: hitOf('missing'), query: 'batch' })).resolves.toBe(false);
+  });
+});
+
+describe('opening a plan or a report search hit', () => {
+  it('reads a plan in the drawer on its session, not on the Artifacts page', async () => {
+    const opened = await openSearchHit({
+      hit: artifactHitOf({ kind: 'plan', refId: 'plan-retries' }),
+      query: 'retries',
+    });
+
+    expect(opened).toBe(true);
+    expect(useAppStore.getState().currentSessionId).toBe(SESSION_ID);
+    expect(useAppStore.getState().activeLens[SESSION_ID] ?? null).toBeNull();
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'artifact-document',
+      sessionId: SESSION_ID,
+      payload: { artifactId: 'plan-retries', revision: null },
+    });
+  });
+
+  it('still lands a report on the Artifacts page', async () => {
+    const opened = await openSearchHit({
+      hit: artifactHitOf({ kind: 'report', refId: 'report-drift' }),
+      query: 'drift',
+    });
+
+    expect(opened).toBe(true);
+    expect(useAppStore.getState().currentSessionId).toBe(SESSION_ID);
+    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('plans');
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 });
