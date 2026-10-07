@@ -201,8 +201,11 @@ column actions, studio and overlay layers from `scenes/useSceneShell`, which
 runs the app's own `useAppOverlays`: Board, Inbox, Chat, Workflows and Settings
 in the column work as in the app, Settings swaps the column and **Back to app**
 returns. A scene that installs its own IPC answers goes through
-`scenes/mockSceneIpc.ts`, which answers editor and browser detection with an
-empty list when the scene has nothing, so Settings opens there too. The `shell`
+`scenes/mockSceneIpc.ts`, which answers editor and browser detection, `db_select`,
+the workflow and budget rule lists and the unread list with an empty list, and
+`db_execute` with no rows touched, when the scene has nothing, so Settings and
+the Branch page open there too. A bare `mockIPC` answers `undefined` and the
+real code crashes on it in a browser, never in a unit test that mocks `invoke`. The `shell`
 scene mounts the real `SessionWorkspace` (trail band, **Ask**, page rows that
 move), and a scene that opens a session seeds its agents and plans so the
 overview never stays on its loading skeleton.

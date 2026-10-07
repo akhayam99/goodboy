@@ -2,13 +2,21 @@ import { mockIPC } from '@tauri-apps/api/mocks';
 
 type IpcHandler = Parameters<typeof mockIPC>[0];
 
-const LIST_COMMANDS: ReadonlySet<string> = new Set(['detect_editors', 'detect_browsers']);
+const EMPTY_ANSWERS: Readonly<Record<string, () => unknown>> = {
+  detect_editors: () => [],
+  detect_browsers: () => [],
+  db_select: () => [],
+  db_execute: () => ({ rowsAffected: 0 }),
+  budget_rule_list: () => [],
+  workflow_list: () => [],
+  workspaces_with_unread: () => [],
+};
 
 export const mockSceneIpc = (handler: IpcHandler): void => {
   mockIPC((cmd, payload) => {
     const answer = handler(cmd, payload);
     if (answer === null || answer === undefined) {
-      return LIST_COMMANDS.has(cmd) ? [] : answer;
+      return EMPTY_ANSWERS[cmd]?.() ?? answer;
     }
     return answer;
   });

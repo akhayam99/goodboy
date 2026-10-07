@@ -15,6 +15,7 @@ import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../sto
 
 const SCENE_SETTLE_MS = 10_000;
 const INTENTIONAL_CRASH = 'fetch failed: Authorization';
+const CRASH_SCENES: ReadonlySet<string> = new Set(['crash-report']);
 
 beforeAll(async () => {
   await importStore();
@@ -57,6 +58,9 @@ describe('a11y, every mock scene', () => {
     });
     vi.useRealTimers();
     expect(document.body.textContent?.trim() ?? '').not.toBe('');
+    if (!CRASH_SCENES.has(key)) {
+      expect(document.body.textContent ?? '').not.toContain('Something went wrong');
+    }
     expect(renderLoops).toEqual([]);
     await expectBaseline({ name: `scene ${key}`, container });
   });

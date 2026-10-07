@@ -5,7 +5,7 @@ export const loadDetectedEditors = (set: SetFn, _get: GetFn) => {
   return async (): Promise<void> => {
     try {
       const editors = await detectEditors();
-      set({ detectedEditors: editors });
+      set({ detectedEditors: editors ?? [] });
     } catch {
       set({ detectedEditors: [] });
     }

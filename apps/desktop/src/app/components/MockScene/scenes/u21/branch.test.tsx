@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(() => new Promise<never>(() => undefined)),
-}));
+vi.mock('@tauri-apps/api/core', async () => {
+  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
+  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
+});
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,6 +14,7 @@ import {
   importStore,
   resetStoryStore,
 } from '../../../../../store/storyHarness';
+import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U21_BRANCH_SCENES } from './branch';
 
 beforeAll(async () => {
@@ -23,7 +25,10 @@ beforeEach(async () => {
   await resetStoryStore();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  clearSceneInvoke();
+});
 
 const renderScene = (name: keyof typeof U21_BRANCH_SCENES) => {
   const Scene = U21_BRANCH_SCENES[name];
@@ -40,6 +45,7 @@ describe('the u21 branch scenes', () => {
 
     const rows = await screen.findAllByRole('menuitemradio', undefined, { timeout: 3_000 });
 
+    expect(screen.queryByText('Something went wrong')).toBeNull();
     expect(rows).toHaveLength(3);
     expect(rows.map((row) => row.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false']);
     expect(rows[0]?.textContent).toContain('#318 Open');
@@ -59,6 +65,7 @@ describe('the u21 branch scenes', () => {
 
     const toggle = await screen.findByRole('button', { name: 'Description' });
 
+    expect(screen.queryByText('Something went wrong')).toBeNull();
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(
       screen.getByText(/^Retried webhook deliveries no longer post a second credit/),
