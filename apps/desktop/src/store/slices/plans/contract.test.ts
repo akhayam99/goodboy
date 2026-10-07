@@ -203,13 +203,14 @@ describe('store contract', () => {
       expect(store.getState().sessionPlans[SESSION_ID]?.[0]?.status).toBe('discarded');
     });
 
-    it('updatePlanBody pushes through invokeSetPlanBody and refreshes', async () => {
+    it('updatePlanBody pushes through setPlanBodyIfRevision and refreshes', async () => {
       const store = useAppStore;
       storySpies.listPlansForSession.mockResolvedValueOnce([
         buildPlan({ title: 'x', bodyMd: 'y' }),
       ]);
-      await store.getState().updatePlanBody(SESSION_ID, PLAN_ID, 'x', 'y');
-      expect(storySpies.setPlanBody).toHaveBeenCalledWith(PLAN_ID, 'x', 'y');
+      const result = await store.getState().updatePlanBody(SESSION_ID, PLAN_ID, 'x', 'y', 1);
+      expect(result).toEqual({ kind: 'saved', revision: 2 });
+      expect(storySpies.setPlanBodyIfRevision).toHaveBeenCalledWith(PLAN_ID, 'x', 'y', 1);
       expect(store.getState().sessionPlans[SESSION_ID]?.[0]?.title).toBe('x');
     });
 

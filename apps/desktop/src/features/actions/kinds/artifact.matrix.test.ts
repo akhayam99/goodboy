@@ -75,6 +75,8 @@ const base: Omit<ArtifactFacts, 'kind' | 'title' | 'plan' | 'stored' | 'planStat
   workspaceSlug: 'harborline',
   isPlanRunning: false,
   planRevising: NOT_REVISING,
+  planRun: null,
+  planDrafts: [],
   generation: null,
   kickoff: 'a kickoff',
   ports: {},
@@ -325,7 +327,7 @@ describe('artifact verbs by kind and state', () => {
         facts: { ...planFacts({ status: 'active' }), planRevising },
       }).find((action) => action.id === 'artifact.runPlan');
     expect(runPlanOf({ kind: 'revising', nextRevision: 2 })?.blockedReason).toBe(
-      'Planner is revising this plan',
+      'The planner is revising this plan',
     );
     expect(runPlanOf(NOT_REVISING)?.blockedReason).toBeNull();
   });

@@ -7,7 +7,7 @@ export type PlanRevising =
 
 export const NOT_REVISING: PlanRevising = { kind: 'none' };
 
-export const PLAN_REVISING_REASON = 'Planner is revising this plan';
+export const PLAN_REVISING_REASON = 'The planner is revising this plan';
 
 export const NEW_VERSION_LABEL = 'Writing a new version';
 

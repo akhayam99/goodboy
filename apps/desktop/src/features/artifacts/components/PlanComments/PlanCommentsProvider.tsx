@@ -18,7 +18,9 @@ export const PlanCommentsProvider = ({ sessionId, plan, children }: Props) => {
   const { run } = model;
   const onApprove =
     run !== null && isRunHeldForPlan({ run }) && !model.isRevising
-      ? () => approveWorkflowRunPlan(sessionId, run.id)
+      ? async () => {
+          await approveWorkflowRunPlan(sessionId, run.id);
+        }
       : null;
 
   return (

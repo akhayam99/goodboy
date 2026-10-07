@@ -66,7 +66,11 @@ export const RunControls = ({
           testId="run-approve-plan"
           title="Approve the plan and let the rest run on its own"
           disabled={isBusy}
-          onClick={() => void guard(() => approveWorkflowRunPlan(sessionId, run.id))}
+          onClick={() =>
+            void guard(async () => {
+              await approveWorkflowRunPlan(sessionId, run.id);
+            })
+          }
         />
       ) : null}
       {isPaused ? (

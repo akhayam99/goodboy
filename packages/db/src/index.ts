@@ -495,11 +495,12 @@ export {
   listPlansForSession,
   upsertPlan,
   updatePlanStatus,
-  updatePlanBody,
+  updatePlanBodyIfRevision,
   deletePlan,
   addPlanConsumption,
   listConsumptionsForPlan,
   type UpsertPlanInput,
+  type UpdatePlanBodyResult,
   type AddPlanConsumptionInput,
 } from './queries/plan';
 export {
