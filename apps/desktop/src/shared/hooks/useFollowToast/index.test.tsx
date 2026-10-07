@@ -2,7 +2,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { ToastProvider } from '../../components/Toast';
 import {
   importStore,
@@ -151,7 +151,7 @@ describe('useFollowToast', () => {
 
     showFollow({
       title: 'Agent started',
-      target: { place: agentPlace({ sessionId, agentId: 'agent-follow' as never }) },
+      target: { place: agentPlace({ sessionId, agentId: 'agent-follow' as AgentId }) },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Follow' }));
 

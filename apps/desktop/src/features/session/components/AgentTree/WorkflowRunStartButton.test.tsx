@@ -157,7 +157,7 @@ describe('WorkflowRunStartButton', () => {
   it('keeps a failed start on the log and raises no Run started toast', async () => {
     useAppStore.getState().navigate({ to: BOARD_PLACE });
     const emitNotification = vi.fn(async () => undefined);
-    useAppStore.setState({ emitNotification } as never);
+    useAppStore.setState({ emitNotification });
     renderButton({
       onStart: async () => {
         throw new Error('the worktree is locked');

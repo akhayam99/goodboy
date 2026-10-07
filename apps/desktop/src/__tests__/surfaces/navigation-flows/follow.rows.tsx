@@ -1,15 +1,16 @@
 import { expect } from 'vitest';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import type {
+  Agent,
   AgentId,
   SessionId,
   StepId,
   Workflow,
   WorkflowId,
+  WorkflowRun,
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { markUserStart } from '../../../shared/lib/userStarts';
 import { STORY_NOW } from '../../../store/storyHarness';
 import { sessionPlace } from '../../../store/slices/navigation/place';
@@ -56,24 +57,27 @@ const seedRun = ({ sessionId }: Ctx, { isQueued }: SeedParams): void => {
     createdAt: STORY_NOW,
     updatedAt: STORY_NOW,
   };
-  const run = aWorkflowRun({
+  const run: WorkflowRun = {
     id: RUN_ID,
     workflowId: WORKFLOW_ID,
     ordinal: session.workflowRuns.length,
-    triggerMode: isQueued ? 'manual' : 'immediate',
+    currentStep: 0,
     autoRun: false,
-  });
-  const agents = isQueued
+    triggerMode: isQueued ? 'manual' : 'immediate',
+    executionMode: 'static',
+  };
+  const agents: ReadonlyArray<Agent> = isQueued
     ? []
     : [
-        anAgent({
+        {
           id: AGENT_ID,
           sessionId,
+          ordinal: 0,
           name: 'Implement',
           workflowRunId: RUN_ID,
           stepId: steps[1]?.id,
           status: 'running',
-        }),
+        },
       ];
   useAppStore.setState({
     phaseTemplates: { ...state.phaseTemplates, [workspaceId]: [workflow] },
