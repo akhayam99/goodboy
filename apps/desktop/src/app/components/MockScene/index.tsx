@@ -191,6 +191,7 @@ import { ScribeProposalTranscriptScene } from './scenes/ScribeProposalTranscript
 import { FixRunScene } from './scenes/FixRunScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
+import { U21_DRAWERS_SCENES } from './scenes/u21/drawers';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -384,6 +385,7 @@ export const MOCK_SCENES = {
   'space-diff-split': SpaceDiffSplitScene,
   'space-diff-comment': SpaceDiffCommentScene,
   'crash-report': CrashReportScene,
+  ...U21_DRAWERS_SCENES,
 };
 
 const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];
