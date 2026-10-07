@@ -26,6 +26,36 @@ describe('PaneShell', () => {
     );
   });
 
+  it('scrolls a body pane under a line edge, and leaves the other two modes alone', () => {
+    const edgeOf = (scroll: 'pane' | 'body' | 'self') => {
+      const { container, unmount } = render(
+        <PaneShell title="Notifications" scroll={scroll}>
+          <p>Body copy</p>
+        </PaneShell>,
+      );
+      const count = container.querySelectorAll('[data-slot="scroll-edge"]').length;
+      unmount();
+      return count;
+    };
+
+    expect(edgeOf('body')).toBe(1);
+    expect(edgeOf('pane')).toBe(0);
+    expect(edgeOf('self')).toBe(0);
+  });
+
+  it('keeps the body header outside the scroller the line edge belongs to', () => {
+    const { container } = render(
+      <PaneShell title="Notifications" scroll="body">
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const edge = container.querySelector('[data-slot="scroll-edge"]') as HTMLElement;
+    const scroller = edge.parentElement as HTMLElement;
+    expect(scroller.contains(screen.getByText('Body copy'))).toBe(true);
+    expect(scroller.contains(screen.getByRole('heading', { name: 'Notifications' }))).toBe(false);
+  });
+
   it('renders the title, meta, actions, and children', () => {
     render(
       <PaneShell title="Linear" meta={3} actions={<button type="button">Link issue</button>}>
