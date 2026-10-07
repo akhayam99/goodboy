@@ -16,7 +16,7 @@ const WIDE_WIDTH_PX = 1440;
 
 const noop = () => undefined;
 
-export const DrawerOverlayNarrowScene = () => {
+const DrawerOverlayNarrowScene = () => {
   const [isReady, setIsReady] = useState(false);
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const sizing = useAppStore(selectDrawerSizing);
@@ -61,13 +61,11 @@ export const DrawerOverlayNarrowScene = () => {
   );
 };
 
-export const DrawerWidePushScene = () => (
-  <div style={{ width: WIDE_WIDTH_PX }}>
-    <PlannerTranscriptScene variant="drawer" />
-  </div>
-);
-
 export const U21_DRAWERS_SCENES = {
   'drawer-overlay-narrow': DrawerOverlayNarrowScene,
-  'drawer-wide-push': DrawerWidePushScene,
+  'drawer-wide-push': () => (
+    <div style={{ width: WIDE_WIDTH_PX }}>
+      <PlannerTranscriptScene variant="drawer" />
+    </div>
+  ),
 };

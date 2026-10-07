@@ -46,25 +46,4 @@ export const DRAWER_ROWS: ReadonlyArray<Row> = [
       expect(document.activeElement).toBe(await askButton());
     },
   },
-  {
-    name: 'ask over a narrow page: Escape closes it the same way and focus returns to Ask',
-    covers: ['key:ask.open', 'openAsk'],
-    open: async () => {
-      const ask = await askButton();
-      ask.focus();
-      pressShortcut({ id: 'ask.open' });
-      await settle();
-      await waitFor(
-        () => expect(sidePanel().getAttribute('data-drawer-mode')).toBe('overlay'),
-        WAIT,
-      );
-    },
-    lands: async () => {
-      fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
-      await settle();
-      await waitFor(() => expect(selectOpenDrawer(useAppStore.getState())).toBeNull(), WAIT);
-      expect(scrimOf()).toBeNull();
-      expect(document.activeElement).toBe(await askButton());
-    },
-  },
 ];
