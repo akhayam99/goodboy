@@ -220,7 +220,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
       return <BranchCommits sessionId={sessionId} worktreePath={identity.mountPath} />;
     }
     if (tab === 'checks') {
-      return <BranchChecks pr={pr} checks={checks} />;
+      return <BranchChecks sessionId={sessionId} />;
     }
     if (!hasRemote && repo === null) {
       return (

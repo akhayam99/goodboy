@@ -52,6 +52,7 @@ export type PullRequestState = {
   headSha?: string | null;
   mergedAt?: string | null;
   author?: string | null;
+  checksUnknown?: boolean;
 };
 
 export type GithubInboxPrRole = 'review-requested' | 'author';
@@ -162,10 +163,18 @@ export type PrReviewRequest = {
   kind: 'user' | 'team';
 };
 
+export type PrDetailRead = 'ok' | 'denied' | 'failed';
+
 export type PrDetail = {
   prNumber: number;
   comments: ReadonlyArray<PrComment>;
   reviews: ReadonlyArray<PrReview>;
   reviewRequests: ReadonlyArray<PrReviewRequest>;
   checks: ReadonlyArray<PrCheckRun>;
+  checksRead?: PrDetailRead;
+  checksError?: string | null;
+  reviewsRead?: PrDetailRead;
+  reviewsError?: string | null;
+  reviewRequestsRead?: PrDetailRead;
+  reviewRequestsError?: string | null;
 };

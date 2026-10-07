@@ -4,7 +4,8 @@ import type {
   PullRequestState,
   PullRequestStateKind,
 } from '@goodboy/types';
-import type { GhRunner, GhRunOptions } from './gh';
+import { classifyGhFailure } from './classifyGhFailure';
+import type { GhJsonShape, GhRunner, GhRunOptions } from './gh';
 import { GhCliError, runJson } from './gh';
 import { fetchMergeQueuePlacements, type MergeQueuePlacement } from './merge-queue';
 
@@ -27,6 +28,8 @@ export const PR_FIELDS = [
   'author',
 ] as const;
 
+const PR_FIELDS_WITHOUT_ROLLUP = PR_FIELDS.filter((field) => field !== 'statusCheckRollup');
+
 type RawStatusCheck = {
   state?: string | null;
   status?: string | null;
@@ -43,7 +46,7 @@ export type RawPullRequest = {
   baseRefName: string;
   headRefName: string;
   reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null;
-  statusCheckRollup: ReadonlyArray<RawStatusCheck> | null;
+  statusCheckRollup?: ReadonlyArray<RawStatusCheck> | null;
   updatedAt: string;
   body: string | null;
   autoMergeRequest: Record<string, unknown> | null;
@@ -169,16 +172,19 @@ const REVIEW_DECISIONS: Record<string, PullRequestState['reviewDecision']> = {
 export const toPullRequestState = ({
   raw,
   mergeQueue = null,
+  checksUnknown = false,
 }: {
   raw: RawPullRequest;
   mergeQueue?: MergeQueuePlacement | null;
+  checksUnknown?: boolean;
 }): PullRequestState => ({
   number: raw.number,
   title: raw.title,
   url: raw.url,
   state: deriveStateKind({ raw, mergeQueue }),
   mergeable: deriveMergeable({ raw }),
-  checks: deriveChecks({ raw }),
+  checks: checksUnknown ? null : deriveChecks({ raw }),
+  ...(checksUnknown && { checksUnknown: true }),
   baseBranch: raw.baseRefName,
   headBranch: raw.headRefName,
   isDraft: raw.isDraft,
@@ -192,13 +198,48 @@ export const toPullRequestState = ({
   author: raw.author?.login ?? null,
 });
 
+type PrJsonRead<T> = {
+  readonly value: T;
+  readonly checksUnknown: boolean;
+};
+
+type ReadPrJsonParams = {
+  readonly runner: GhRunner;
+  readonly argsFor: (params: { readonly fields: ReadonlyArray<string> }) => ReadonlyArray<string>;
+  readonly opts: GhRunOptions;
+  readonly shape: GhJsonShape;
+};
+
+const readPrJson = async <T>({
+  runner,
+  argsFor,
+  opts,
+  shape,
+}: ReadPrJsonParams): Promise<PrJsonRead<T>> => {
+  try {
+    const value = await runJson<T>({ runner, args: argsFor({ fields: PR_FIELDS }), opts, shape });
+    return { value, checksUnknown: false };
+  } catch (err) {
+    if (!(err instanceof GhCliError) || classifyGhFailure({ stderr: err.stderr }) !== 'denied') {
+      throw err;
+    }
+    const value = await runJson<T>({
+      runner,
+      args: argsFor({ fields: PR_FIELDS_WITHOUT_ROLLUP }),
+      opts,
+      shape,
+    });
+    return { value, checksUnknown: true };
+  }
+};
+
 export const resolvePrForBranch = async (
   runner: GhRunner,
   repo: string,
   branch: string,
   opts: GhRunOptions = {},
 ): Promise<PullRequestState | null> => {
-  const args = [
+  const argsFor = ({ fields }: { readonly fields: ReadonlyArray<string> }) => [
     'pr',
     'list',
     '--repo',
@@ -210,17 +251,23 @@ export const resolvePrForBranch = async (
     '--limit',
     '5',
     '--json',
-    PR_FIELDS.join(','),
+    fields.join(','),
   ];
-  let raw: ReadonlyArray<RawPullRequest>;
+  let read: PrJsonRead<ReadonlyArray<RawPullRequest>>;
   try {
-    raw = await runJson<ReadonlyArray<RawPullRequest>>({ runner, args, opts, shape: 'array' });
+    read = await readPrJson<ReadonlyArray<RawPullRequest>>({
+      runner,
+      argsFor,
+      opts,
+      shape: 'array',
+    });
   } catch (err) {
     if (err instanceof GhCliError) {
       return null;
     }
     throw err;
   }
+  const raw = read.value;
   if (raw.length === 0) {
     return null;
   }
@@ -231,7 +278,11 @@ export const resolvePrForBranch = async (
     return null;
   }
   const placements = await fetchMergeQueuePlacements({ runner, repo, branch, opts });
-  return toPullRequestState({ raw: head, mergeQueue: placements.get(head.number) ?? null });
+  return toPullRequestState({
+    raw: head,
+    mergeQueue: placements.get(head.number) ?? null,
+    checksUnknown: read.checksUnknown,
+  });
 };
 
 type ViewPullRequestParams = {
@@ -247,10 +298,18 @@ export const viewPullRequest = async ({
   number,
   opts = {},
 }: ViewPullRequestParams): Promise<PullRequestState | null> => {
-  const args = ['pr', 'view', String(number), '--repo', repo, '--json', PR_FIELDS.join(',')];
+  const argsFor = ({ fields }: { readonly fields: ReadonlyArray<string> }) => [
+    'pr',
+    'view',
+    String(number),
+    '--repo',
+    repo,
+    '--json',
+    fields.join(','),
+  ];
   try {
-    const raw = await runJson<RawPullRequest>({ runner, args, opts, shape: 'object' });
-    return toPullRequestState({ raw });
+    const read = await readPrJson<RawPullRequest>({ runner, argsFor, opts, shape: 'object' });
+    return toPullRequestState({ raw: read.value, checksUnknown: read.checksUnknown });
   } catch (err) {
     if (err instanceof GhCliError) {
       return null;
@@ -265,7 +324,7 @@ export const listPrsForBranch = async (
   branch: string,
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<PullRequestState>> => {
-  const args = [
+  const argsFor = ({ fields }: { readonly fields: ReadonlyArray<string> }) => [
     'pr',
     'list',
     '--repo',
@@ -277,9 +336,15 @@ export const listPrsForBranch = async (
     '--limit',
     '20',
     '--json',
-    PR_FIELDS.join(','),
+    fields.join(','),
   ];
-  const raw = await runJson<ReadonlyArray<RawPullRequest>>({ runner, args, opts, shape: 'array' });
+  const read = await readPrJson<ReadonlyArray<RawPullRequest>>({
+    runner,
+    argsFor,
+    opts,
+    shape: 'array',
+  });
+  const raw = read.value;
   if (raw.length === 0) {
     return [];
   }
@@ -293,7 +358,13 @@ export const listPrsForBranch = async (
       }
       return b.updatedAt.localeCompare(a.updatedAt);
     })
-    .map((pr) => toPullRequestState({ raw: pr, mergeQueue: placements.get(pr.number) ?? null }));
+    .map((pr) =>
+      toPullRequestState({
+        raw: pr,
+        mergeQueue: placements.get(pr.number) ?? null,
+        checksUnknown: read.checksUnknown,
+      }),
+    );
 };
 
 const LINKED_KEYWORD_RE =
