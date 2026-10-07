@@ -10,7 +10,7 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { resolveOrchestratorState } from './orchestratorState';
+import { resolveOrchestratorState, type PlanSignal } from './orchestratorState';
 
 const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -48,6 +48,7 @@ type ResolveParams = {
   readonly isOrchestrating?: boolean;
   readonly hasOpenQuestions?: boolean;
   readonly costUsd?: number;
+  readonly plan?: PlanSignal;
 };
 
 const resolve = ({
@@ -56,8 +57,9 @@ const resolve = ({
   isOrchestrating = false,
   hasOpenQuestions = false,
   costUsd = 0,
+  plan = { kind: 'none' },
 }: ResolveParams = {}) =>
-  resolveOrchestratorState({ run, agents, isOrchestrating, hasOpenQuestions, costUsd });
+  resolveOrchestratorState({ run, agents, isOrchestrating, hasOpenQuestions, costUsd, plan });
 
 describe('resolveOrchestratorState', () => {
   it('reports deciding while the orchestrator is choosing', () => {
@@ -314,5 +316,84 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.sentence).toBe('Waiting on step 3 · step 2');
+  });
+});
+
+describe('resolveOrchestratorState while the run waits on its plan', () => {
+  const held = () =>
+    makeRun({
+      orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+    });
+
+  it('reads the plan stop as ready and waiting for you while the planner is quiet', () => {
+    const state = resolve({ run: held(), agents: [makeAgent(0, 'completed')] });
+
+    expect(state.phase).toBe('plan-approval');
+    expect(state.sentence).toBe('Plan ready · waiting for you');
+  });
+
+  it('says the planner is revising, ahead of the plan stop', () => {
+    const state = resolve({
+      run: held(),
+      agents: [makeAgent(0, 'completed')],
+      plan: { kind: 'revising' },
+    });
+
+    expect(state.phase).toBe('plan-revising');
+    expect(state.tone).toBe('info');
+    expect(state.sentence).toBe('The planner is revising the plan');
+  });
+
+  it('says what the planner asked, ahead of the plan stop', () => {
+    const state = resolve({
+      run: held(),
+      agents: [makeAgent(0, 'completed')],
+      plan: { kind: 'question', question: { text: 'Keep the retry window at 5 minutes?' } },
+    });
+
+    expect(state.phase).toBe('plan-question');
+    expect(state.tone).toBe('warning');
+    expect(state.sentence).toBe('The planner asked: Keep the retry window at 5 minutes?');
+  });
+
+  it('keeps a long question on one line of the strip', () => {
+    const state = resolve({
+      run: held(),
+      plan: { kind: 'question', question: { text: 'Keep the window\n\nat   5 minutes?\n' } },
+    });
+
+    expect(state.sentence).toBe('The planner asked: Keep the window at 5 minutes?');
+  });
+
+  it('wins over the stop presentation the held run would otherwise show', () => {
+    const plain = resolve({ run: held() });
+    const revising = resolve({ run: held(), plan: { kind: 'revising' } });
+    const asking = resolve({
+      run: held(),
+      plan: { kind: 'question', question: { text: 'Which table?' } },
+    });
+
+    expect(plain.phase).toBe('plan-approval');
+    expect([revising.phase, asking.phase]).toEqual(['plan-revising', 'plan-question']);
+  });
+
+  it('leaves a run that is not held for its plan to its own phase', () => {
+    const state = resolve({
+      agents: [makeAgent(0, 'running')],
+      plan: { kind: 'revising' },
+    });
+
+    expect(state.phase).toBe('waiting');
+  });
+
+  it('lets a pause or a decision in flight speak first', () => {
+    const paused = resolve({
+      run: makeRun({ orchestrationStop: { kind: 'paused', message: 'Paused by you.' } }),
+      plan: { kind: 'revising' },
+    });
+    const deciding = resolve({ run: held(), isOrchestrating: true, plan: { kind: 'revising' } });
+
+    expect(paused.phase).toBe('paused');
+    expect(deciding.phase).toBe('deciding');
   });
 });

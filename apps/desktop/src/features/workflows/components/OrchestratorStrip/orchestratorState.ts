@@ -1,7 +1,14 @@
 import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import type { Agent, AgentId, WorkflowOrchestrationStopKind, WorkflowRun } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  OpenQuestion,
+  WorkflowOrchestrationStopKind,
+  WorkflowRun,
+} from '@goodboy/types';
+import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../orchestratorCopy';
 import { isRunPaused } from '../../isRunPaused';
 
@@ -18,6 +25,8 @@ type OrchestratorPhase =
   | 'blocked'
   | 'needs-approval'
   | 'plan-approval'
+  | 'plan-revising'
+  | 'plan-question'
   | 'failed'
   | 'step-failed'
   | 'stopped'
@@ -31,12 +40,20 @@ export type OrchestratorState = {
   readonly waitingOnAgentId: AgentId | null;
 };
 
+export type PlanSignal =
+  | Readonly<{ kind: 'none' }>
+  | Readonly<{ kind: 'revising' }>
+  | Readonly<{ kind: 'question'; question: Pick<OpenQuestion, 'text'> }>;
+
+export const NO_PLAN_SIGNAL: PlanSignal = { kind: 'none' };
+
 type Params = {
   readonly run: WorkflowRun;
   readonly agents: ReadonlyArray<Agent>;
   readonly isOrchestrating: boolean;
   readonly hasOpenQuestions: boolean;
   readonly costUsd: number;
+  readonly plan?: PlanSignal;
 };
 
 type StopPresentation = {
@@ -127,12 +144,20 @@ const UNKNOWN_STOP: StopPresentation = {
   showsMessage: true,
 };
 
+const PLAN_REVISING_SENTENCE = 'The planner is revising the plan';
+
+const WHITESPACE = /\s+/g;
+
+const planQuestionSentence = ({ text }: Pick<OpenQuestion, 'text'>): string =>
+  `The planner asked: ${text.replace(WHITESPACE, ' ').trim()}`;
+
 export const resolveOrchestratorState = ({
   run,
   agents,
   isOrchestrating,
   hasOpenQuestions,
   costUsd,
+  plan = NO_PLAN_SIGNAL,
 }: Params): OrchestratorState => {
   const ordered = [...agents].sort((left, right) => left.ordinal - right.ordinal);
   const doneCount = ordered.filter((agent) =>
@@ -189,6 +214,22 @@ export const resolveOrchestratorState = ({
       phase: 'blocked',
       tone: 'warning',
       sentence: 'Stopped · needs a human call',
+    };
+  }
+  if (isRunHeldForPlan({ run }) && plan.kind === 'question') {
+    return {
+      ...base,
+      phase: 'plan-question',
+      tone: 'warning',
+      sentence: planQuestionSentence(plan.question),
+    };
+  }
+  if (isRunHeldForPlan({ run }) && plan.kind === 'revising') {
+    return {
+      ...base,
+      phase: 'plan-revising',
+      tone: 'info',
+      sentence: PLAN_REVISING_SENTENCE,
     };
   }
   const stop = run.orchestrationStop;

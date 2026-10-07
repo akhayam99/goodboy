@@ -62,7 +62,12 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const withMenus = (node: ReactNode) => render(<ObjectMenuProvider>{node}</ObjectMenuProvider>);
+const withMenus = (node: ReactNode) =>
+  render(
+    <ToastProvider>
+      <ObjectMenuProvider>{node}</ObjectMenuProvider>
+    </ToastProvider>,
+  );
 
 const menuLabels = (): ReadonlyArray<string> =>
   screen

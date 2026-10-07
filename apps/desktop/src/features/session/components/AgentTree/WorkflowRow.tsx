@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core';
 import {
   cn,
+  EmptyState,
   formatUsdPrecise,
   Input,
   PageColumn,
@@ -65,13 +66,15 @@ import type { StartStepAgentParams } from './useAgentsSection';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunAsk } from './WorkflowRunAsk';
 import { WorkflowRunStartButton } from './WorkflowRunStartButton';
-import { WorkflowCloseButton } from '../../../workflows/components/WorkflowCloseButton';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { isWorkflowRunClosable } from '../../../workflows/isWorkflowRunClosable';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { WorkflowRunMeta } from './WorkflowRunMeta';
 import { WorkflowRunStatus } from './WorkflowRunStatus';
+import { useRunPlan } from '../../../workflows/useRunPlan';
+import { openPlanDrawer } from '../../../plans/openPlanDrawer';
+import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -208,6 +211,14 @@ export const WorkflowRow = ({
     null;
   const highlightedStepId = hoveredStepId ?? selectedStepId;
   const hasOrchestratorStrip = isDynamic && !isDiscarded && expanded;
+  const runPlan = useRunPlan({ sessionId: task.id, runId: run.id });
+  const reviewPlan =
+    isRunHeldForPlan({ run }) && runPlan !== null
+      ? {
+          emphasis: 'secondary' as const,
+          onReview: () => openPlanDrawer({ sessionId: task.id, planId: runPlan.id }),
+        }
+      : null;
   const ctaAgent =
     wfAgents.find((agent) => agent.stepId === actionableStepId && agent.status === 'pending') ??
     null;
@@ -290,6 +301,7 @@ export const WorkflowRow = ({
                       isOrchestrating={isOrchestrating}
                       hasOrchestratorStrip={hasOrchestratorStrip}
                       blockReason={wfBlockReason}
+                      reviewPlan={reviewPlan}
                       question={{
                         count: Math.max(1, runQuestionCount),
                         isInView: expanded,
@@ -343,7 +355,7 @@ export const WorkflowRow = ({
                 <CardActionSlot label="Run navigation actions">
                   <CardAction
                     icon={expanded ? ChevronDown : ChevronRight}
-                    label={`${expanded ? 'Collapse' : 'Expand'} ${name} run`}
+                    label={expanded ? 'Show run summary' : `Expand ${name} run`}
                     expanded={expanded}
                     onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
                   />
@@ -359,27 +371,27 @@ export const WorkflowRow = ({
                         onStart={() => startWorkflowRun(task.id, run.id)}
                       />
                     ) : null}
-                    {!isDiscarded && !isCompleted && !hasOrchestratorStrip && (
+                    {!isDiscarded && !isCompleted && (
                       <RunControls
                         sessionId={task.id}
                         run={run}
                         agents={wfAgents}
                         isOrchestrating={isOrchestrating}
                         isRunOver={isCompleted}
-                        autonomyMenu={{
-                          label: `When ${name} asks`,
-                          onAutonomy: (autonomy) =>
-                            void setWorkflowRunAutonomy(task.id, run.id, autonomy),
-                        }}
+                        onClose={isClosable ? () => void closeWorkflowRun(task.id, run.id) : null}
+                        autonomyMenu={
+                          hasOrchestratorStrip
+                            ? null
+                            : {
+                                label: `${name} run controls`,
+                                onAutonomy: (autonomy) =>
+                                  void setWorkflowRunAutonomy(task.id, run.id, autonomy),
+                              }
+                        }
                       />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    {isClosable ? (
-                      <WorkflowCloseButton
-                        onConfirm={() => void closeWorkflowRun(task.id, run.id)}
-                      />
-                    ) : null}
                     {isDiscarded ? (
                       <GhostActionButton
                         icon={Undo2}
@@ -411,7 +423,7 @@ export const WorkflowRow = ({
           </div>
         </PageColumn>
         {expanded && (
-          <ScrollFade className="min-h-0 min-w-0 flex-1" fadeSize={24}>
+          <ScrollFade className="min-h-0 min-w-0 flex-1" fadeSize={24} edge="line">
             <PageColumn className={cn(PANE_RHYTHM.stack, 'pb-5')}>
               {!isDiscarded && !isDynamic && (
                 <WorkflowNextStepCta
@@ -481,9 +493,12 @@ export const WorkflowRow = ({
                     onAnswer={onAnswerQuestion}
                   />
                 ) : (
-                  <p className="pb-1 text-meta text-faint-foreground">
-                    No agents yet for this workflow.
-                  </p>
+                  <EmptyState
+                    size="section"
+                    icon={CONCEPT_ICONS.agents}
+                    title="No agents yet"
+                    description="The run starts its first step here."
+                  />
                 )}
                 {!isDiscarded && !isCompleted && (
                   <WorkflowAddStep

@@ -19,6 +19,7 @@ export const ToneBar = ({ tone, density, isBreathing = false, className }: Props
   <span
     aria-hidden
     data-testid="tone-bar"
+    data-tone={tone}
     className={cn(
       'pointer-events-none absolute rounded-full',
       DENSITY_CLASSES[density],

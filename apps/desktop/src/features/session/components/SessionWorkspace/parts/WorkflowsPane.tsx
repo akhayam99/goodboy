@@ -7,6 +7,7 @@ import { EmptyState, PaneShell } from '@goodboy/ui';
 import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
+import { OrchestratorDock } from '../../../../workflows/components/OrchestratorStrip/OrchestratorDock';
 import { WorkflowStartButton } from '../../AgentTree/WorkflowStartButton';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRailCard } from './WorkflowRailCard';
@@ -78,9 +79,21 @@ export const WorkflowsPane = ({ session }: Props) => {
   };
 
   if (focusedRun != null) {
+    const hasComposer =
+      focusedRun.run.executionMode === 'dynamic' && focusedRun.run.discardedAt == null;
+    const conversation = {
+      composer: hasComposer ? (
+        <OrchestratorDock
+          sessionId={sessionId}
+          run={focusedRun.run}
+          agents={agentsByRunId.get(focusedRun.run.id) ?? EMPTY_ARRAY}
+        />
+      ) : undefined,
+    };
     return (
       <PaneShell
         scroll="self"
+        dock={conversation.composer}
         title={focusedRun.run.title ?? workflowKindName(focusedRun.workflow)}
         icon={CONCEPT_ICONS.workflows}
         tone={CONCEPT_TONE.workflows}

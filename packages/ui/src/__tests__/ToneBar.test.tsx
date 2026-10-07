@@ -14,6 +14,12 @@ describe('ToneBar', () => {
     expect(barClassName()).toContain('bg-danger');
   });
 
+  it('names its tone, so a surface can be checked without reading classes', () => {
+    render(<ToneBar tone="warning" density="row" />);
+
+    expect(screen.getByTestId('tone-bar').getAttribute('data-tone')).toBe('warning');
+  });
+
   it('sizes the card density wider and taller than the row density', () => {
     render(<ToneBar tone="info" density="card" />);
     const card = barClassName();

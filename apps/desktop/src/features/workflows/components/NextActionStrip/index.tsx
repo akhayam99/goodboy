@@ -1,5 +1,5 @@
 import { CircleAlert } from 'lucide-react';
-import { ClampedProse, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { ClampedProse, StatusDot, ToneBar, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useWorkflowRunAdvance } from '../../hooks/useWorkflowRunAdvance';
@@ -58,11 +58,11 @@ export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, clas
       data-kind={action.kind}
       data-blocked={isBlocked || undefined}
       className={cn(
-        'flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 rounded-lg border border-l-2 border-border-soft bg-background px-3 py-3',
-        tint.rail,
+        'relative flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 rounded-lg border border-border-soft bg-background py-3 pl-4 pr-3',
         className,
       )}
     >
+      <ToneBar tone={isBlocked ? 'warning' : TONE[action.kind]} density="card" />
       <span className="flex h-4 shrink-0 items-center" aria-hidden>
         {action.kind === 'answer' && (
           <CONCEPT_ICONS.questions size={ICON_SIZE.control} className={tint.icon} />

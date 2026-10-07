@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { Button, ConfirmPopover } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useOpenAgentQuestion } from '../../../context/hooks/useOpenAgentQuestion';
+import { useAnswerQuestion } from '../../useAnswerQuestion';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { NextAction } from '../../resolveNextAction';
 
@@ -18,7 +18,7 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
   const [isChecking, setIsChecking] = useState(false);
   const recoverStuckStep = useAppStore((state) => state.recoverStuckStep);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
-  const answer = useOpenAgentQuestion({ sessionId });
+  const answer = useAnswerQuestion({ sessionId });
 
   const guard = async ({
     run,

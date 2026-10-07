@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Play, RotateCcw, Wallet } from 'lucide-react';
-import { ClampedProse, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { ClampedProse, StatusDot, ToneBar, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -19,14 +19,17 @@ import { isBudgetBlocked } from '../../../../store/slices/workflows/budgetBlock'
 import { WorkflowNodeRouting } from '../WorkflowNodeRouting';
 import { RunSpendLimitPopover } from '../RunSpendLimitPopover';
 import { OrchestratorAction } from './OrchestratorAction';
-import { OrchestratorHintComposer } from './OrchestratorHintComposer';
 import { OrchestratorHintLog } from './OrchestratorHintLog';
 import { RunControlMenu } from '../RunControls/RunControlMenu';
-import { RunControls } from '../RunControls';
 import { OrchestratorRoutingRow } from './OrchestratorRoutingRow';
-import { resolveOrchestratorState } from './orchestratorState';
+import { NO_PLAN_SIGNAL, resolveOrchestratorState, type PlanSignal } from './orchestratorState';
+import { StopStepButton } from './StopStepButton';
 import { runAutonomyOf } from '../../runAutonomy';
 import { useElapsedLabel } from './useElapsedLabel';
+import { useRunPlan } from '../../useRunPlan';
+import { openPlanDrawer } from '../../../plans/openPlanDrawer';
+import { usePlanRevising } from '../../../plans/useRevisingPlans';
+import { useAnswerQuestion } from '../../useAnswerQuestion';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -54,7 +57,6 @@ export const OrchestratorStrip = ({
   const orchestrateNextStep = useAppStore((state) => state.orchestrateNextStep);
   const retryWorkflowOrchestration = useAppStore((state) => state.retryWorkflowOrchestration);
   const continueWorkflowRun = useAppStore((state) => state.continueWorkflowRun);
-  const addWorkflowOrchestratorHint = useAppStore((state) => state.addWorkflowOrchestratorHint);
   const reportError = useAppStore((state) => state.reportError);
   const removeWorkflowOrchestratorHint = useAppStore(
     (state) => state.removeWorkflowOrchestratorHint,
@@ -90,19 +92,38 @@ export const OrchestratorStrip = ({
     void loadGoalAttachments({ type: 'workflow_run', id: run.id }).catch(() => undefined);
   }, [hasHintFiles, hasLoadedFiles, loadGoalAttachments, run.id]);
 
+  const plan = useRunPlan({ sessionId, runId: run.id });
+  const planRevising = usePlanRevising({ sessionId, planId: plan?.id ?? null });
+  const answer = useAnswerQuestion({ sessionId });
+  const planQuestion =
+    plan === null
+      ? null
+      : (openQuestions.find(
+          (question) => question.status === 'open' && question.createdByAgentId === plan.agentId,
+        ) ?? null);
+  const planSignal: PlanSignal =
+    planQuestion !== null
+      ? { kind: 'question', question: planQuestion }
+      : planRevising.kind === 'revising'
+        ? { kind: 'revising' }
+        : NO_PLAN_SIGNAL;
   const state = resolveOrchestratorState({
     run,
     agents,
     isOrchestrating,
     hasOpenQuestions: workflowRunHasOpenQuestions({ questions: openQuestions, run }),
     costUsd,
+    plan: planSignal,
   });
   const elapsed = useElapsedLabel({ agentId: state.waitingOnAgentId });
   const isPulsing =
-    state.phase === 'deciding' || state.phase === 'automatic' || state.phase === 'stopping';
+    state.phase === 'deciding' ||
+    state.phase === 'automatic' ||
+    state.phase === 'stopping' ||
+    state.phase === 'plan-revising';
   const pulseTone = state.tone === 'neutral' ? 'info' : state.tone;
-  const isRunOver = state.phase === 'done';
-  const isStepRunning = agents.some((agent) => agent.status === 'running');
+  const runningStep =
+    agents.find((agent) => agent.parentAgentId == null && agent.status === 'running') ?? null;
   const hasRouting = agents.length > 0;
 
   const guard = async (action: () => Promise<void>) => {
@@ -183,8 +204,31 @@ export const OrchestratorStrip = ({
             onClick={() => void guard(() => continueWorkflowRun(sessionId, run.id))}
           />
         );
-      case 'deciding':
       case 'plan-approval':
+        return plan === null ? null : (
+          <OrchestratorAction
+            icon={CONCEPT_ICONS.plans}
+            label="Review plan"
+            variant="secondary"
+            testId="orchestrator-review-plan"
+            title="Read the plan, comment on it or approve it"
+            onClick={() => openPlanDrawer({ sessionId, planId: plan.id })}
+          />
+        );
+      case 'plan-question':
+        return planQuestion === null ? null : (
+          <OrchestratorAction
+            icon={CONCEPT_ICONS.questions}
+            label="Answer"
+            variant="primary"
+            tone="warning"
+            testId="orchestrator-answer-plan-question"
+            title="Open the planner's question"
+            onClick={() => answer({ question: planQuestion })}
+          />
+        );
+      case 'deciding':
+      case 'plan-revising':
       case 'paused':
       case 'stopping':
       case 'waiting':
@@ -209,11 +253,9 @@ export const OrchestratorStrip = ({
     >
       <div
         data-testid="orchestrator-strip-row"
-        className={cn(
-          'flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-l-2 border-border-soft bg-background py-2 pl-3 pr-2',
-          tintClasses(state.tone).rail,
-        )}
+        className="relative flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border-soft bg-background py-2 pl-4 pr-2"
       >
+        <ToneBar tone={state.tone} density="card" />
         <div className="flex min-w-0 max-w-full flex-auto items-center gap-3">
           <span className="flex h-4 shrink-0 items-center" aria-hidden={!isPulsing}>
             {isPulsing ? (
@@ -251,13 +293,14 @@ export const OrchestratorStrip = ({
           className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2"
         >
           {primaryAction}
-          <RunControls
-            sessionId={sessionId}
-            run={run}
-            agents={agents}
-            isOrchestrating={isOrchestrating}
-            isRunOver={isRunOver}
-          />
+          {runningStep !== null && state.phase !== 'stopping' ? (
+            <StopStepButton
+              sessionId={sessionId}
+              runId={run.id}
+              agent={runningStep}
+              disabled={busy}
+            />
+          ) : null}
           <OrchestratorRoutingRow
             sessionId={sessionId}
             run={run}
@@ -265,15 +308,16 @@ export const OrchestratorStrip = ({
           />
           <RunControlMenu
             label="Orchestrator actions"
-            autonomy={
-              runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy }).key
-            }
+            autonomy={{
+              value: runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy })
+                .key,
+              onChange: (autonomy) => void setWorkflowRunAutonomy(sessionId, run.id, autonomy),
+            }}
             routing={
               hasRouting
                 ? { isOpen: isRoutingOpen, onToggle: () => setIsRoutingOpen((open) => !open) }
                 : null
             }
-            onAutonomy={(autonomy) => void setWorkflowRunAutonomy(sessionId, run.id, autonomy)}
           />
         </div>
         {state.detail != null && state.detail !== '' ? (
@@ -287,20 +331,6 @@ export const OrchestratorStrip = ({
         ) : null}
       </div>
 
-      <OrchestratorHintComposer
-        isDeciding={isOrchestrating}
-        isStepRunning={isStepRunning}
-        isPaused={state.phase === 'paused'}
-        onSubmit={async (draft) => {
-          try {
-            await addWorkflowOrchestratorHint(sessionId, run.id, draft);
-            return true;
-          } catch (error) {
-            void reportError({ title: "Couldn't save the hint", error, sessionId });
-            return false;
-          }
-        }}
-      />
       <OrchestratorHintLog
         hints={hints}
         readingHintIds={readingHintIds}
