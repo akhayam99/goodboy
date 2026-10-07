@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { PANE_RHYTHM, SelectableRow, StatusDot, cn, type Tone } from '@goodboy/ui';
 
-export type SettingsNavStatus = {
+type SettingsNavStatus = {
   readonly tone: Tone;
   readonly label: string | null;
 };
