@@ -450,6 +450,7 @@ export type AgentKindRouting = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly effort: AgentEffort;
+  readonly noAllowedModel?: true;
 };
 
 type KindRoutingParams = {
@@ -473,7 +474,12 @@ export const kindRouting = ({
     prefs: roleModels,
     ...(auto !== null && { auto }),
   });
-  return { provider: role.provider, model: role.model, effort: role.effort };
+  return {
+    provider: role.provider,
+    model: role.model,
+    effort: role.effort,
+    ...(role.noAllowedModel === true && { noAllowedModel: true as const }),
+  };
 };
 
 export const AGENT_KIND_DEFAULTS: Record<

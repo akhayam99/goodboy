@@ -24,6 +24,7 @@ import type { WorkflowRoutingNodeRef } from './types';
 import { isWorkflowNodeRoutingMutable } from './workflowNodeRoutingMutability';
 import { sessionById } from '../sessions/sessionIndex';
 import { configuredRolePick } from './configuredRolePick';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
@@ -114,7 +115,13 @@ export const workflowNodeRoutingContext = ({
   const defaultProvider = (session.providerOverride ??
     session.providerPreference.defaultProvider) as ProviderId;
   const compiled =
-    role === null ? null : resolveRoleRouting({ role, prefs: null, auto: { defaultProvider } });
+    role === null
+      ? null
+      : resolveRoleRouting({
+          role,
+          prefs: null,
+          auto: { defaultProvider, hidden: selectHiddenModels({ state }) },
+        });
   const lock = agent?.routingLock ?? step?.routingLock ?? null;
   const decision = agent?.routingDecision ?? step?.routingDecision ?? null;
   const taskProfile = agent?.taskProfile ?? step?.taskProfile ?? null;
@@ -149,6 +156,7 @@ export const workflowNodeRoutingContext = ({
       providers: state.providers ?? [],
       cooldowns: state.providerCooldowns ?? {},
       alerts: state.budgetAlerts ?? [],
+      hidden: selectHiddenModels({ state: state }),
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),

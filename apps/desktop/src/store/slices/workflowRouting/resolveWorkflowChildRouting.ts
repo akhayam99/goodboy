@@ -25,6 +25,7 @@ import type { AppStore } from '../../store';
 
 import { configuredRolePick } from './configuredRolePick';
 import { readHeadroom, type HeadroomMap } from '@goodboy/core';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
   taskType: 'general',
@@ -105,7 +106,11 @@ export const resolveWorkflowChildRouting = ({
     role,
     prefs: null,
     ...(defaultProvider !== null && {
-      auto: { defaultProvider, ...(headroom !== null && { headroom }) },
+      auto: {
+        defaultProvider,
+        hidden: selectHiddenModels({ state }),
+        ...(headroom !== null && { headroom }),
+      },
     }),
   });
   const resolution = resolveWorkflowRouting({
@@ -134,6 +139,7 @@ export const resolveWorkflowChildRouting = ({
       providers: state.providers ?? [],
       cooldowns: state.providerCooldowns ?? {},
       alerts: state.budgetAlerts ?? [],
+      hidden: selectHiddenModels({ state: state }),
       sessionId,
       isRunBudgetBlocked: false,
       nowMs: Date.now(),

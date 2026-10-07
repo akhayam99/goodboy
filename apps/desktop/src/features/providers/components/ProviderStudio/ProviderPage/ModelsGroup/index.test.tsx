@@ -70,4 +70,14 @@ describe('ModelsGroup', () => {
     expect(last[0]?.hasAttribute('disabled')).toBe(true);
     expect(last[0]?.getAttribute('title')).toBe('At least one model stays visible');
   });
+
+  it('says in one line that hidden models are not used unless a task setting names one', () => {
+    render(<ModelsGroup providerId="anthropic" workspaceId={null} isFocused={false} />);
+
+    expect(
+      screen.getByText(
+        'Hidden models are not used by agents or the orchestrator, except where a task setting names one.',
+      ),
+    ).toBeDefined();
+  });
 });

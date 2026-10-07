@@ -18,7 +18,12 @@ import { resolveModelArgs } from './resolveModelArgs';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 import { providerStanding } from './autoRouting/providerCandidates';
-import { resolveAuto, type AutoContext, type AutoStep } from './autoRouting/resolveAuto';
+import {
+  resolveAuto,
+  type AutoContext,
+  type AutoSlot,
+  type AutoStep,
+} from './autoRouting/resolveAuto';
 
 export type PinnedUnavailable = Readonly<{
   provider: ProviderId;
@@ -32,6 +37,7 @@ export type ResolvedRoleRouting = Readonly<{
   isOverride: boolean;
   autoStep?: AutoStep;
   pinnedUnavailable?: PinnedUnavailable;
+  noAllowedModel?: true;
 }>;
 
 export type ResolvedRoleChoice = Readonly<{
@@ -174,9 +180,12 @@ type AutoRoleParams = {
 };
 
 const autoRoleRouting = ({ role, auto }: AutoRoleParams): ResolvedRoleRouting => {
-  const pick =
-    resolveAuto({ slot: { kind: 'role', id: role }, ...auto }) ??
-    resolveAuto({ slot: { kind: 'role', id: role }, ...REFERENCE_CONTEXT });
+  const slot: AutoSlot = { kind: 'role', id: role };
+  const allowed =
+    resolveAuto({ slot, ...auto }) ??
+    (auto.hidden == null ? resolveAuto({ slot, ...REFERENCE_CONTEXT }) : null);
+  const isBlockedByHidden = allowed == null && resolveAuto({ slot, ...auto, hidden: null }) != null;
+  const pick = allowed ?? resolveAuto({ slot, ...REFERENCE_CONTEXT });
   if (pick == null) {
     throw new Error(`no curated default for role ${role}`);
   }
@@ -186,6 +195,7 @@ const autoRoleRouting = ({ role, auto }: AutoRoleParams): ResolvedRoleRouting =>
     effort: pick.effort ?? AUTO_ROLE_EFFORT,
     isOverride: false,
     autoStep: pick.step,
+    ...(isBlockedByHidden && { noAllowedModel: true as const }),
   };
 };
 

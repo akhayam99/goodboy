@@ -2,6 +2,7 @@ import type { ModelCostTier, ModelDescriptor, ProviderId } from '@goodboy/types'
 import { PROVIDER_CAPABILITIES } from './capabilities';
 import { taskModelProviderPool } from './providerFallbackPool';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+import { isModelHidden, type HiddenModels } from './modelVisibility';
 import { strongestModelForTier } from './strongestModelForTier';
 
 export type TurnFailureKind =
@@ -28,6 +29,7 @@ type Params = {
   readonly enabledProviders?: ReadonlyArray<ProviderId> | null;
   readonly coolingDownProviders?: ReadonlyArray<ProviderId>;
   readonly preferred?: TurnFallbackPlan;
+  readonly hidden?: HiddenModels | null;
 };
 
 type PreferredParams = {
@@ -54,6 +56,7 @@ type ClosestParams = {
   readonly wantsThinker: boolean;
   readonly excludeModel: string | null;
   readonly maxTierIndex: number | null;
+  readonly hidden: HiddenModels | null;
 };
 
 type OtherProviderParams = {
@@ -61,6 +64,7 @@ type OtherProviderParams = {
   readonly candidateProviders: ReadonlyArray<ProviderId>;
   readonly tier: ModelCostTier;
   readonly wantsThinker: boolean;
+  readonly hidden: HiddenModels | null;
 };
 
 type AlignedParams = {
@@ -68,6 +72,7 @@ type AlignedParams = {
   readonly model: string;
   readonly candidateProviders: ReadonlyArray<ProviderId>;
   readonly wantsThinker: boolean;
+  readonly hidden?: HiddenModels | null;
 };
 
 const MAX_ATTEMPTS = 2;
@@ -95,6 +100,7 @@ const pickClosest = ({
   wantsThinker,
   excludeModel,
   maxTierIndex,
+  hidden,
 }: ClosestParams): string | null => {
   const target = tierIndex({ tier });
   const candidates = PROVIDER_CAPABILITIES[provider].models.filter((candidate) => {
@@ -102,6 +108,9 @@ const pickClosest = ({
       return false;
     }
     if (candidate.thinkerOnly && !wantsThinker) {
+      return false;
+    }
+    if (hidden != null && isModelHidden({ provider, hidden, key: candidate.id })) {
       return false;
     }
     if (maxTierIndex == null) {
@@ -129,12 +138,18 @@ const otherProviderPlan = ({
   candidateProviders,
   tier,
   wantsThinker,
+  hidden,
 }: OtherProviderParams): TurnFallbackPlan | null => {
   for (const target of candidateProviders) {
     if (target === provider) {
       continue;
     }
-    const model = strongestModelForTier({ provider: target, tier, wantsThinker });
+    const model = strongestModelForTier({
+      provider: target,
+      tier,
+      wantsThinker,
+      ...(hidden != null && { hidden }),
+    });
     if (model != null) {
       return { provider: target, model: model.id };
     }
@@ -147,6 +162,7 @@ export const alignedProviderPlan = ({
   model,
   candidateProviders,
   wantsThinker,
+  hidden,
 }: AlignedParams): TurnFallbackPlan | null => {
   const failed = descriptorFor({ provider, model });
   return otherProviderPlan({
@@ -154,6 +170,7 @@ export const alignedProviderPlan = ({
     candidateProviders,
     tier: failed?.costTier ?? 'mid',
     wantsThinker,
+    hidden: hidden ?? null,
   });
 };
 
@@ -196,6 +213,7 @@ export const planTurnFallback = ({
   enabledProviders,
   coolingDownProviders,
   preferred,
+  hidden: hiddenModels,
 }: Params): TurnFallbackPlan | null => {
   if (attempt >= MAX_ATTEMPTS || failure === 'other') {
     return null;
@@ -218,15 +236,16 @@ export const planTurnFallback = ({
       return picked;
     }
   }
+  const hidden = hiddenModels ?? null;
   const failed = descriptorFor({ provider, model });
   const failedKey = descriptorKey({ provider, model });
   const tier = failed?.costTier ?? 'mid';
   const weight = failed?.weight ?? null;
   if (failure === 'usage_limit') {
-    return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker });
+    return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker, hidden });
   }
   if (failure === 'authentication') {
-    return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker });
+    return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker, hidden });
   }
   if (failure === 'unreachable' && attempt === 0) {
     return { provider, model };
@@ -239,6 +258,7 @@ export const planTurnFallback = ({
       wantsThinker,
       excludeModel: failedKey,
       maxTierIndex: Math.max(tierIndex({ tier }) - 1, 0),
+      hidden,
     });
     if (cheaper != null) {
       return { provider, model: cheaper };
@@ -252,10 +272,11 @@ export const planTurnFallback = ({
       wantsThinker,
       excludeModel: failedKey,
       maxTierIndex: null,
+      hidden,
     });
     if (sibling != null) {
       return { provider, model: sibling };
     }
   }
-  return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker });
+  return otherProviderPlan({ provider, candidateProviders, tier, wantsThinker, hidden });
 };

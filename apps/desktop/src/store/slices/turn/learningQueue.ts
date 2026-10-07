@@ -24,6 +24,7 @@ import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { scheduleIdle } from './turnHelpers';
 import type { GetFn, SetFn } from './types';
 
@@ -100,6 +101,7 @@ const runLearnings = async ({ set, get, sessionId, agentId, entries }: RunParams
       .map((provider) => provider.id),
     enabledProviders: session.providerPreference.enabledProviders ?? null,
     cooldowns: get().providerCooldowns,
+    hidden: selectHiddenModels({ state: get() }),
     nowMs: Date.now(),
   });
   if (taskModel === null) {

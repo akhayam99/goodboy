@@ -76,19 +76,19 @@ export const TaskModelRow = ({
   const pendingModel = useRef(effortModel);
   const hidden = useHiddenModels();
   const shownModel = preference ?? automatic;
-  const isShownHidden = isModelHidden({
-    provider: shownModel.providerId,
-    hidden,
-    key: resolveStoredModelSelection({ provider: shownModel.providerId, id: shownModel.model })
-      .selection.key,
-  });
+  const isShownHidden =
+    preference != null &&
+    isModelHidden({
+      provider: shownModel.providerId,
+      hidden,
+      key: resolveStoredModelSelection({ provider: shownModel.providerId, id: shownModel.model })
+        .selection.key,
+    });
   const summary = !isShownHidden
     ? help
     : hiddenModelNote({
         provider: shownModel.providerId,
         model: shownModel.model,
-        isPinned: preference != null,
-        job: label,
       });
   const limitReason = autoLimitReason({
     defaultProvider: defaultProviderId,

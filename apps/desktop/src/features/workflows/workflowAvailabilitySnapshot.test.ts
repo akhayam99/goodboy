@@ -31,6 +31,7 @@ const snapshot = (overrides: Partial<Parameters<typeof workflowAvailabilitySnaps
     providers: [provider('anthropic', 'connected'), provider('codex', 'connected')],
     cooldowns: {},
     alerts: [],
+    hidden: null,
     sessionId: SESSION_ID,
     isRunBudgetBlocked: false,
     nowMs: NOW,
@@ -162,5 +163,19 @@ describe('workflowAvailabilitySnapshot spread by headroom', () => {
 
     expect(result.connectedProviders).toEqual(['anthropic', 'codex', 'cursor']);
     expect(result.providerOrder).toBeUndefined();
+  });
+
+  it('carries the hidden models the owner turned off', () => {
+    const hidden = { anthropic: ['opus-5'] };
+
+    expect(snapshot({ hidden }).hiddenModels).toEqual(hidden);
+    expect(snapshot({ hidden: null }).hiddenModels).toBeUndefined();
+  });
+
+  it('keeps a hidden model out of the menu the orchestrator reads', () => {
+    const result = snapshot({ hidden: { anthropic: ['opus-5'] } });
+    const menu = orchestratorModelPool({ availability: result, hidden: null });
+
+    expect(menu.map((option) => option.model)).not.toContain('opus-5');
   });
 });

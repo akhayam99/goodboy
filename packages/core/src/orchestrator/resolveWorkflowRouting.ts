@@ -96,6 +96,17 @@ type AvailabilityParams = {
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
 };
 
+const NO_MODEL_REASON = 'No available catalog model can run this node.';
+
+const hiddenNote = ({ availability }: AvailabilityParams): string => {
+  const hidden = availability.hiddenModels ?? {};
+  const hasHidden = Object.values(hidden).some((keys) => keys !== undefined && keys.length > 0);
+  return hasHidden ? ' Models you hid are never used automatically.' : '';
+};
+
+const noModelReason = ({ availability }: AvailabilityParams): string =>
+  `${NO_MODEL_REASON}${hiddenNote({ availability })}`;
+
 const budgetCause = ({ availability }: AvailabilityParams): 'budget' | 'no_available_model' => {
   if (availability.isSessionBudgetBlocked === true || availability.isRunBudgetBlocked === true) {
     return 'budget';
@@ -108,6 +119,7 @@ const CAUSE_SENTENCE: Readonly<Record<WorkflowRoutingUnavailableCause, string>> 
   disconnected: 'The emitted selection needs a provider that is not connected.',
   cooldown: 'The emitted selection is in provider cooldown.',
   budget: 'The emitted selection is blocked by a hard budget cap.',
+  hidden: 'The emitted selection names a model you hid, which is never used automatically.',
 };
 
 type DecisionParams = {
@@ -152,7 +164,7 @@ const resolveLock = ({
   proposal,
   availability,
 }: LockParams): WorkflowRoutingResolution => {
-  const status = workflowRoutingAvailability({ pick, snapshot: availability });
+  const status = workflowRoutingAvailability({ pick, snapshot: availability, isExplicit: true });
   if (status.kind === 'unavailable') {
     return {
       kind: 'blocked',
@@ -208,7 +220,7 @@ const resolveRecovery = ({
     return {
       kind: 'blocked',
       cause: budgetCause({ availability }),
-      reason: 'No available catalog model can run this node.',
+      reason: noModelReason({ availability }),
     };
   }
   return readyDecision({
@@ -241,7 +253,7 @@ const resolveDeterministic = ({
     return {
       kind: 'blocked',
       cause: budgetCause({ availability }),
-      reason: 'No available catalog model can run this node.',
+      reason: noModelReason({ availability }),
     };
   }
   return readyDecision({
@@ -284,7 +296,11 @@ const resolveFallback = ({
       continue;
     }
     configured += 1;
-    const status = workflowRoutingAvailability({ pick, snapshot: availability });
+    const status = workflowRoutingAvailability({
+      pick,
+      snapshot: availability,
+      isExplicit: rung.source !== 'kind_default',
+    });
     if (status.kind !== 'available') {
       continue;
     }
@@ -307,7 +323,7 @@ const resolveFallback = ({
   return {
     kind: 'blocked',
     cause: budgetCause({ availability }),
-    reason: 'Every configured routing default for this node is unavailable.',
+    reason: `Every configured routing default for this node is unavailable.${hiddenNote({ availability })}`,
   };
 };
 

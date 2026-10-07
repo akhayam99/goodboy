@@ -35,6 +35,7 @@ import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
 import { withHeadroom } from './withHeadroom';
+import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type Options = {
   autoRun?: boolean;
@@ -172,6 +173,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
               providers: get().providers ?? [],
               cooldowns: get().providerCooldowns ?? {},
               alerts: get().budgetAlerts ?? [],
+              hidden: selectHiddenModels({ state: get() }),
               sessionId,
               isRunBudgetBlocked: false,
               nowMs: Date.now(),
