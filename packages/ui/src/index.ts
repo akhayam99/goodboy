@@ -27,6 +27,7 @@ export {
 export { DrawerColumn, RIGHT_DRAWER_STORAGE_KEY } from './components/DrawerColumn';
 export type { DrawerColumnProps } from './components/DrawerColumn';
 export {
+  COLUMN_FRAME,
   DRAWER_INSET,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
