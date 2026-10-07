@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_WORKFLOW_RULES,
   type AgentId,
+  type ArtifactComment,
   type IsoDateTime,
+  type OpenQuestion,
+  type OpenQuestionId,
   type ProviderRunId,
   type StepId,
   type Workflow,
@@ -23,6 +26,7 @@ import {
   aPlan,
   aStoredPlan,
 } from '../../../test/planFixtures';
+import { PLANNER_QUESTION_REASON } from '../../plans/plannerQuestions';
 import { resolveActions } from '../resolveActions';
 import type { ActionEnv, ArtifactPorts } from '../types';
 import { ARTIFACT_KIND } from './artifact';
@@ -191,6 +195,7 @@ const seed = ({ run, isRevising = false }: SeedParams) => {
         }
       : {},
     artifactComments: {},
+    sessionOpenQuestions: {},
     currentSessionId: null,
     activeLens: {},
     focusedWorkflowRunId: {},
@@ -239,7 +244,81 @@ const stubApprove = (result: ApprovePlanResult) => {
   return { approveWorkflowRunPlan, reportError, navigate, runPlan };
 };
 
+const aDraft = (id: string): ArtifactComment => ({
+  id,
+  sessionId: PLAN_FIXTURE_SESSION,
+  artifactId: PLAN_FIXTURE_ID,
+  revision: 1,
+  anchor: { kind: 'quote', order: 0, text: 'backoff', blockText: 'Add backoff' },
+  body: 'Cap the retries at three',
+  status: 'draft',
+  sentTurnId: null,
+  createdAt: AT,
+  updatedAt: AT,
+});
+
+const aQuestion = ({ askedBy }: { readonly askedBy: AgentId }): OpenQuestion => ({
+  id: 'question-backoff' as OpenQuestionId,
+  sessionId: PLAN_FIXTURE_SESSION,
+  createdByAgentId: askedBy,
+  text: 'Should the retries back off?',
+  suggestedAnswers: [],
+  isBlocking: false,
+  userAnswer: null,
+  status: 'open',
+  createdAt: AT,
+});
+
 describe('the primary plan action follows the one rule', () => {
+  it('says why it waits while the planner has an open question, for Approve and for Run plan', () => {
+    for (const run of [heldRun, null]) {
+      seed({ run });
+      useAppStore.setState({
+        sessionOpenQuestions: {
+          [PLAN_FIXTURE_SESSION]: [aQuestion({ askedBy: PLAN_FIXTURE_PLANNER })],
+        },
+      });
+
+      expect(resolved()?.blockedReason).toBe(PLANNER_QUESTION_REASON);
+    }
+  });
+
+  it('ignores a question another agent asked', () => {
+    seed({ run: heldRun });
+    useAppStore.setState({
+      sessionOpenQuestions: {
+        [PLAN_FIXTURE_SESSION]: [aQuestion({ askedBy: 'agent-implement' as AgentId })],
+      },
+    });
+
+    expect(resolved()?.blockedReason).toBeNull();
+  });
+
+  it('asks before approving while comments are not sent, like the drawer', () => {
+    seed({ run: heldRun });
+    useAppStore.setState({ artifactComments: { [PLAN_FIXTURE_SESSION]: [aDraft('draft-1')] } });
+    expect(resolved()?.confirm).toMatchObject({
+      title: '1 comment is not sent. Approve anyway?',
+      confirmLabel: 'Approve anyway',
+      role: 'alert',
+    });
+
+    useAppStore.setState({
+      artifactComments: { [PLAN_FIXTURE_SESSION]: [aDraft('draft-1'), aDraft('draft-2')] },
+    });
+    expect(resolved()?.confirm?.title).toBe('2 comments are not sent. Approve anyway?');
+
+    useAppStore.setState({ artifactComments: {} });
+    expect(resolved()?.confirm).toBeNull();
+  });
+
+  it('does not ask before running a plan no run holds', () => {
+    seed({ run: null });
+    useAppStore.setState({ artifactComments: { [PLAN_FIXTURE_SESSION]: [aDraft('draft-1')] } });
+
+    expect(resolved()?.confirm).toBeNull();
+  });
+
   it('is Approve for the plan a run is held for and Run plan for a session plan', () => {
     seed({ run: heldRun });
     expect(resolved()?.label).toBe('Approve');

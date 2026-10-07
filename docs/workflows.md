@@ -783,7 +783,10 @@ own **Open in Artifacts**.
   "The planner asked a question. Answer it first." (`plannerQuestionCount` in
   `planPrimaryOf`); the chip then reads **Needs you** with "waiting for your
   answer", never "Revising", because the planner is not writing (a revising
-  turn is a running turn, a question is an open one).
+  turn is a running turn, a question is an open one). The palette, the menu and
+  the Artifacts page run the same rule: `artifact.runPlan` reads
+  `plannerQuestionCount` from its facts for the same off reason, and asks the
+  same "N comments are not sent. Approve anyway?" before it approves.
   **Run plan** on a session plan is `usePlanRun` and its own toast.
 - **Approve.** `markUserStart` for the run first, then
   `approveWorkflowRunPlan` for the run held for the plan (a run that is not
