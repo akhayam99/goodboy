@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { PaneShell, SegmentedTabs } from '@goodboy/ui';
+import { PageColumn, PaneShell, SegmentedTabs } from '@goodboy/ui';
 import type { PrCheckRun, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
@@ -29,6 +29,7 @@ import { BranchCommits } from '../BranchCommits';
 import { BranchDescription } from '../BranchDescription';
 import { BranchFiles } from '../BranchFiles';
 import { BranchHeader } from '../BranchHeader';
+import { TabCount } from './TabCount';
 
 type Props = {
   readonly session: Session;
@@ -67,7 +68,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
   const repo = useSessionRepo({ sessionId });
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const isDraftAgentRunning = usePrDraftAgentRunning({ sessionId });
-  const { entries: sources } = useActiveReviewSource({ sessionId });
+  const { entries: sources, source: activeSource } = useActiveReviewSource({ sessionId });
   const { entries } = useReviewEntries({ sessionId });
   const push = useReviewPush({ sessionId });
   const diff = useSessionDiff({
@@ -178,20 +179,18 @@ export const BranchPage = ({ session, workingDir }: Props) => {
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
   const hasRemote = sources.some((source) => source.kind !== 'local');
   const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
-
-  const badge = (count: number | null) =>
-    count === null ? undefined : (
-      <span className="tabular-nums text-faint-foreground">{count}</span>
-    );
+  const commentsCount = activeSource !== null && !activeSource.hasDetail ? null : entries.length;
 
   const body = () => {
     if (tab === 'comments' && pr === null && mode === 'create_pr') {
       return isDraftAgentRunning ? (
-        <p role="status" className="px-6 text-body text-muted-foreground">
-          An agent is drafting the pull request.
-        </p>
+        <PageColumn width="column">
+          <p role="status" className="text-body text-muted-foreground">
+            An agent is drafting the pull request.
+          </p>
+        </PageColumn>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
+        <PageColumn width="column" className="flex min-h-0 flex-1 flex-col">
           <CreatePrMode
             sessionId={sessionId}
             defaultTitle={session.goal}
@@ -202,7 +201,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
             }}
             onCancel={() => setPullRequestMode({ sessionId, mode: 'overview' })}
           />
-        </div>
+        </PageColumn>
       );
     }
     if (tab === 'files') {
@@ -235,6 +234,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
       <>
         {pr !== null && (
           <BranchDescription
+            key={pr.number}
             sessionId={sessionId}
             pr={pr}
             detail={github?.detail ?? null}
@@ -262,7 +262,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
   return (
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
       <PaneShell
-        width="full"
+        width="column"
         scroll="self"
         header={
           <div className="flex min-w-0 flex-col gap-3">
@@ -293,13 +293,13 @@ export const BranchPage = ({ session, workingDir }: Props) => {
                 value,
                 label: TAB_LABEL[value],
                 badge:
-                  value === 'comments'
-                    ? badge(entries.length)
-                    : value === 'files'
-                      ? badge(filesCount)
-                      : value === 'commits'
-                        ? badge(commitCount)
-                        : undefined,
+                  value === 'comments' ? (
+                    <TabCount count={commentsCount} />
+                  ) : value === 'files' ? (
+                    <TabCount count={filesCount} />
+                  ) : value === 'commits' ? (
+                    <TabCount count={commitCount} />
+                  ) : undefined,
               }))}
             />
           </div>

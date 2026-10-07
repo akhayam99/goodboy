@@ -686,15 +686,8 @@ export const ReviewFlow = ({ session, push }: Props) => {
                     onTryAgain={() => void controller.retryRun(focused.threadId)}
                     onStartOver={() => void controller.startOver(focused.threadId)}
                   />
-                  {layout !== 'three' && (
-                    <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
-                  )}
+                  <ThreadProperties sessionId={sessionId} entry={focused} layout="inline" />
                 </div>
-                {layout === 'three' && (
-                  <aside aria-label="Thread details" className="w-[var(--margin-rail)] shrink-0">
-                    <ThreadProperties sessionId={sessionId} entry={focused} layout="rail" />
-                  </aside>
-                )}
               </div>
             )}
           </ScrollFade>
@@ -705,7 +698,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
 
   return (
     <div ref={stage.ref} className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
-      <PageColumn width="full" className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+      <PageColumn width="column" className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
         {refreshError !== null && !isWholeError && (
           <ErrorStrip
             label={resolveQueueRefreshLabel({ provider: provider ?? 'GitHub' })}

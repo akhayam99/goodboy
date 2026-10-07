@@ -31,11 +31,14 @@ const paneWidthOf = ({
 };
 
 describe('branchLayoutOf', () => {
-  it('goes from one column to two to three as the pane widens', () => {
+  it('goes from one column to two at 900px and stays at two however wide the pane gets', () => {
     expect(branchLayoutOf({ widthPx: 899 })).toBe('single');
     expect(branchLayoutOf({ widthPx: 900 })).toBe('two');
+    expect(branchLayoutOf({ widthPx: 960 })).toBe('two');
     expect(branchLayoutOf({ widthPx: 1279 })).toBe('two');
-    expect(branchLayoutOf({ widthPx: 1280 })).toBe('three');
+    expect(branchLayoutOf({ widthPx: 1280 })).toBe('two');
+    expect(branchLayoutOf({ widthPx: 1600 })).toBe('two');
+    expect(branchLayoutOf({ widthPx: 3840 })).toBe('two');
   });
 
   it('reads two columns before the pane has been measured', () => {
@@ -72,7 +75,7 @@ describe('branchLayoutOf', () => {
     expect(branchLayoutOf({ widthPx })).toBe('two');
   });
 
-  it('adds the properties rail at 1920, and at 1440 zoomed out to 0.8', () => {
+  it('keeps two columns at 1920, and at 1440 zoomed out to 0.8, with no properties rail', () => {
     for (const [windowPx, zoom] of [
       [1920, 1],
       [1440, 0.8],
@@ -83,7 +86,7 @@ describe('branchLayoutOf', () => {
         sidebarPx: LEFT_SIDEBAR_DEFAULT,
         isDrawerOpen: false,
       });
-      expect(branchLayoutOf({ widthPx })).toBe('three');
+      expect(branchLayoutOf({ widthPx })).toBe('two');
     }
   });
 
@@ -98,7 +101,7 @@ describe('branchLayoutOf', () => {
     expect(branchLayoutOf({ widthPx: atMax })).toBe('single');
   });
 
-  it('gives the rail back when a pushed drawer opens beside a 1920px window', () => {
+  it('keeps two columns when a pushed drawer opens beside a 1920px window', () => {
     const widthPx = paneWidthOf({
       windowPx: 1920,
       sidebarPx: LEFT_SIDEBAR_DEFAULT,

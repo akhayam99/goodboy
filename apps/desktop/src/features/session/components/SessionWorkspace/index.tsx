@@ -145,11 +145,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
-      <TrailBar
-        session={session}
-        width={showLens && (lens === 'branch' || lens === 'files') ? 'full' : 'column'}
-        end={<AskTrailButton sessionId={sessionId} />}
-      />
+      <TrailBar session={session} width="column" end={<AskTrailButton sessionId={sessionId} />} />
       <FirstLapBanner sessionId={sessionId} />
       <UnderTrailContext.Provider value>
         <div className="relative min-h-0 flex-1">

@@ -6,7 +6,10 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
 import { LEFT_SIDEBAR_MAX } from '@goodboy/ui';
+import type { BranchCommit, MountId, ProjectId, SessionProjectMount } from '@goodboy/types';
+import { aProject } from '@goodboy/types/testing';
 import {
   installFakeResizeObserver,
   type FakeResizeObservers,
@@ -58,6 +61,96 @@ const mount = async ({
   await settle();
 };
 
+const PROJECT_ID = 'project-payments-api' as ProjectId;
+const MOUNT_ID = 'mount-payments-api' as MountId;
+const WORKTREE = '/w/payments-api';
+
+const MOUNT: SessionProjectMount = {
+  mountId: MOUNT_ID,
+  sessionId: SESSION.id,
+  projectId: PROJECT_ID,
+  mountName: 'payments-api',
+  worktreePath: WORKTREE,
+  lastWorktreePath: null,
+  repoRoot: '/repo/payments-api',
+  branch: 'hl/fix-duplicate-credit',
+  baseBranch: 'main',
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+};
+
+const PATCH = [
+  'diff --git a/src/credit.ts b/src/credit.ts',
+  'index 1111111..2222222 100644',
+  '--- a/src/credit.ts',
+  '+++ b/src/credit.ts',
+  '@@ -1,1 +1,2 @@',
+  ' export const credit = 1;',
+  '+export const dedupe = true;',
+  'diff --git a/src/webhook.ts b/src/webhook.ts',
+  'index 3333333..4444444 100644',
+  '--- a/src/webhook.ts',
+  '+++ b/src/webhook.ts',
+  '@@ -1,1 +1,2 @@',
+  ' export const webhook = 1;',
+  '+export const retry = 3;',
+  '',
+].join('\n');
+
+const COMMITS: ReadonlyArray<BranchCommit> = [1, 2, 3].map((index) => ({
+  sha: `a${index}`.padEnd(40, '0'),
+  shortSha: `a${index}00000`,
+  subject: `Commit ${index}`,
+  author: 'dana-r',
+  timestamp: 1,
+  pushed: false,
+  parentSha: null,
+}));
+
+const seedWorktree = ({ isDiffLoaded }: { readonly isDiffLoaded: boolean }): void => {
+  vi.mocked(invoke).mockImplementation(async (command: string) =>
+    command === 'worktree_diff' && isDiffLoaded ? PATCH : new Promise<never>(() => undefined),
+  );
+  useAppStore.setState((state) => ({
+    projects: [
+      aProject({
+        id: PROJECT_ID,
+        workspaceId: SESSION.workspaceId,
+        name: 'payments-api',
+        baseBranch: 'main',
+      }),
+    ],
+    sessionProjectMounts: { ...state.sessionProjectMounts, [SESSION.id]: [MOUNT] },
+    sessionActiveMount: { ...state.sessionActiveMount, [SESSION.id]: MOUNT_ID },
+  }));
+};
+
+const withCommits = (): void => {
+  useAppStore.setState((state) => ({
+    historyDrafts: {
+      ...state.historyDrafts,
+      [MOUNT_ID]: {
+        sessionId: SESSION.id,
+        mountId: MOUNT_ID,
+        planId: 'plan-1',
+        branch: MOUNT.branch,
+        baseSha: 'b'.repeat(40),
+        headSha: COMMITS[0]?.sha ?? '',
+        commits: COMMITS,
+        items: [],
+        onto: null,
+        graph: null,
+        undo: [],
+        prediction: null,
+        isPredicting: false,
+        loadError: null,
+      },
+    },
+  }));
+};
+
 const depthOf = (): number => {
   const state = useAppStore.getState();
   return state.navigation[state.currentWorkspaceId ?? '']?.entries.length ?? 0;
@@ -69,7 +162,7 @@ describe('Branch page header and tabs', () => {
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/#\d+/);
     const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
-    expect(tabs.map((text) => text.replace(/\d+$/, '').trim())).toEqual([
+    expect(tabs.map((text) => text.replace(/[\d-]+$/, '').trim())).toEqual([
       'Comments',
       'Files',
       'Commits',
@@ -145,6 +238,101 @@ afterEach(() => {
   observers = null;
 });
 
+const bodyColumnWidths = (): ReadonlyArray<string | null> =>
+  Array.from(document.querySelectorAll('[data-slot="pane-body"] [data-page-column]'))
+    .filter((column) => column.parentElement?.closest('[data-page-column]') === null)
+    .map((column) => column.getAttribute('data-width'));
+
+const headerColumn = (): string | null =>
+  document
+    .querySelector('[data-slot="pane-header"]')
+    ?.closest('[data-page-column]')
+    ?.getAttribute('data-width') ?? null;
+
+describe('Branch page column', () => {
+  it('keeps the header and the body of Comments, Files and Commits on the column at every tab', async () => {
+    await mount();
+
+    for (const name of [/^Comments/, /^Files/, /^Commits/]) {
+      fireEvent.click(screen.getByRole('tab', { name }));
+      await settle();
+
+      expect(headerColumn()).toBe('column');
+      expect(bodyColumnWidths().length).toBeGreaterThan(0);
+      expect(bodyColumnWidths().every((width) => width === 'column')).toBe(true);
+    }
+  });
+
+  it('keeps the diff and the commit graph on the column once the session has a worktree', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedWorktree({ isDiffLoaded: true });
+    withCommits();
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    for (const name of [/^Comments/, /^Files/, /^Commits/]) {
+      fireEvent.click(screen.getByRole('tab', { name }));
+      await settle();
+
+      expect(headerColumn()).toBe('column');
+      expect(bodyColumnWidths().length).toBeGreaterThan(0);
+      expect(bodyColumnWidths().every((width) => width === 'column')).toBe(true);
+    }
+  });
+});
+
+describe('Branch page counts', () => {
+  const countOf = (name: RegExp): string =>
+    screen.getByRole('tab', { name }).textContent?.replace(/^[A-Za-z]+/, '') ?? '';
+
+  it('shows a muted dash named Not loaded while a count is unknown, never 0', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedWorktree({ isDiffLoaded: false });
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [SESSION.id]: { ...state.sessionGithub[SESSION.id]!, detail: null },
+        },
+      }));
+    });
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    for (const name of [/^Comments/, /^Files/, /^Commits/]) {
+      const tab = screen.getByRole('tab', { name });
+      expect(within(tab).getByRole('img', { name: 'Not loaded' })).toBeDefined();
+      expect(tab.textContent).not.toMatch(/0/);
+    }
+    expect(within(screen.getByRole('tab', { name: /^Checks/ })).queryByRole('img')).toBeNull();
+  });
+
+  it('turns each dash into its number as the data arrives', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedWorktree({ isDiffLoaded: true });
+    withCommits();
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(screen.queryAllByRole('img', { name: 'Not loaded' })).toHaveLength(0);
+    expect(countOf(/^Files/)).toBe('2');
+    expect(countOf(/^Commits/)).toBe('3');
+    expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
+  });
+});
+
 describe('Branch page Comments', () => {
   it('opens a thread by putting it in the address, and Comments leads back to the list', async () => {
     await mountAt({ width: 384 });
@@ -204,20 +392,25 @@ describe('Branch page Comments', () => {
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 
-  it('keeps the properties inline under a wide thread until 1280px of pane', async () => {
+  it('keeps the properties inline under the thread at 1279px of pane', async () => {
     await mountAt({ width: 1279, threadId: EXPANDED_THREAD_ID });
 
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
     expect(screen.getAllByRole('group', { name: 'Comment properties' })).toHaveLength(1);
   });
 
-  it('adds the properties rail only on a wide pane', async () => {
-    await mountAt({ width: 1280, threadId: EXPANDED_THREAD_ID });
+  it('keeps the properties inline under the thread on the widest panes, with no margin rail', async () => {
+    for (const width of [1280, 1920]) {
+      await mountAt({ width, threadId: EXPANDED_THREAD_ID });
 
-    screen.getByRole('navigation', { name: 'Comments' });
-    const rail = screen.getByRole('complementary', { name: 'Thread details' });
-    within(rail).getByText('State');
-    expect(screen.getAllByRole('group', { name: 'Comment properties' })).toHaveLength(1);
+      screen.getByRole('navigation', { name: 'Comments' });
+      expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
+      const groups = screen.getAllByRole('group', { name: 'Comment properties' });
+      expect(groups).toHaveLength(1);
+      within(groups[0] as HTMLElement).getByText('State');
+      cleanup();
+      vi.restoreAllMocks();
+    }
   });
 
   it('reads one column in a 1024px window with a wide sidebar and an open drawer', async () => {
@@ -234,13 +427,42 @@ describe('Branch page Comments', () => {
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 
-  it('keeps the description closed until it is asked for', async () => {
+  it('keeps the description closed while the pull request has no body', async () => {
     await mount();
 
     const toggle = screen.getByRole('button', { name: 'Description' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('opens the description on its own when the pull request has a body', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionGithub: {
+          ...state.sessionGithub,
+          [SESSION.id]: {
+            ...state.sessionGithub[SESSION.id]!,
+            pr: {
+              ...state.sessionGithub[SESSION.id]!.pr!,
+              body: 'Retried deliveries no longer post a second credit.',
+            },
+          },
+        },
+      }));
+    });
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={null} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(screen.getByRole('button', { name: 'Description' }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+    expect(screen.getByText('Retried deliveries no longer post a second credit.')).toBeDefined();
   });
 });
 
