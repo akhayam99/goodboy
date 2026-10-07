@@ -1637,23 +1637,47 @@ the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
 
 Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
 split nested inside a pane. `AppShell` puts one beside the main area, and a
-studio body puts one beside its list. It opens at 400px, resizes from 340 to
-560px from a handle on its left edge, and keeps one saved width
+studio body puts one beside its list. A side drawer (Ask, Context, a fix run
+or agent transcript, script output, a plan part) opens at 400px, resizes from
+384 to 560px from a handle on its left edge, and keeps one saved width
 (`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
-ends) for every drawer. It is a
+ends) for every side drawer. A wide drawer (`artifact-document`: plan, report,
+wireframe, file diff) is 560px with no handle, and **Expand** takes the whole
+column. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+
+**One push rule.** `room = main - 16 - 48 - 560`: the main area (the
+`DrawerColumn`'s own width) minus the drawer's two 8px insets, the page's two
+24px gutters and the 560px the page keeps. While `room >= 384` the drawer
+pushes: a side drawer at `min(saved, room)`, a wide one at `min(560, room)`.
+Below that it lies over the page at `min(target, main - 16)`, where target is
+the saved width or 560. Expanded always lies over. The mode and width come
+from the committed width, never from a drag in progress, and while it pushes
+the handle stops at `min(560, room)`, so a drag never flips the mode. Once a
+drawer pushes at some width it pushes at every wider one. Pushing, it is a
 floating card: 8px from the top, right and bottom edges and from the column,
-radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. A drawer opens
-beside the page: column and measure pages are centred, and the column slides
-left to re-centre in the space left of the drawer (full tier work surfaces
-keep their left edge and give up their right). When the main area minus the drawer's track
-(insets counted) and the two gutters would leave it under 560px, the card lies
-over the right of the main area with a shadow and no scrim, and the main stays
-interactive; pushing, it has no shadow. Closed,
-its track is 0px wide and `inert`. Opening and closing move the track in 180ms ease-out (none under reduced
-motion), and the centred column slides with it while
-the card slides 12px in; over the page it slides 16px in 200ms; a new kind in
+radius 10 (`rounded-frame`), `bg-subtle`, a hairline border, no shadow. The
+column and measure pages are centred, and the column slides left to
+re-centre in the space left of the drawer (full tier work surfaces keep their
+left edge and give up their right).
+
+**Over the page, the card runs the full height of the sheet.** It has no
+inset: flush with the sheet's top, bottom and right edges, left corners
+rounded (`rounded-l-frame`), a left border only, `shadow-xl`. A scrim
+(`bg-scrim`, 120ms fade, none under reduced motion) covers the page below the
+card, and the page is `inert`, so nothing under it takes a click, a Tab or a
+screen reader. A click on the scrim asks the top layer of the escape stack
+(`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
+unsent draft inside the drawer answers first, exactly as it does to Esc.
+Opening it over the page moves focus to the first control in the card, unless
+the drawer already focused something (Ask focuses its composer); closing it
+returns focus to the control that opened it (`DrawerFrame`). The Ask toggle is
+under the scrim then, and is reached by `⌘L` and the drawer's Close. Pushing
+has no scrim, nothing is inert and focus stays where it was. Closed, the
+aside is 0px wide and `inert`. Opening and closing move the track in 180ms
+ease-out (none under reduced motion), and the centred column slides with it
+while the card slides 8px in; over the page it slides in 200ms; a new kind in
 an open drawer fades its content in 120ms. It never touches the sidebar
-preference.
+preference: the page does not fold the sidebar to keep a drawer pushing.
 
 One drawer at a time, per window. The `drawer` store slice holds
 `{ kind, sessionId, payload }`: `openDrawer`, `closeDrawer` and `toggleDrawer`
@@ -1686,9 +1710,10 @@ its own, **Open in Artifacts** in the drawer header, and it is the only page
 change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
-drawer that can expand: it opens at half the window (`sizing="half"` on
-`DrawerColumn`, with no resize handle, capped so the page keeps 560px and the
-drawer still pushes), **Expand** takes the whole column and
+drawer that can expand: it opens at 560px (`sizing="half"` on
+`DrawerColumn`, with no resize handle, narrowed to the room the page leaves
+when that is less, so the page keeps its 560px and the drawer still pushes),
+**Expand** takes the whole column and
 lies over the page (`sizing="full"`), and Expand toggles back. The choice is
 kept per session in `documentDrawerExpanded` and is forgotten when the session
 is archived. The header holds the title, `vN`, the state chip, **Run plan**,
