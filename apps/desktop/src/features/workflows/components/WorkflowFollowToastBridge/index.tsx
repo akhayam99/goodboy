@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { agentPlace, useAppStore } from '../../../../store';
 import { isWatchingWorkflowLens } from '../../../../store/slices/workflows/isWatchingWorkflowLens';
-import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
+import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { useToast } from '../../../../shared/components/Toast';
+import { isUserStart } from '../../../../shared/lib/userStarts';
 
 type StepStartedDetail = {
   readonly sessionId: SessionId;
@@ -12,7 +13,7 @@ type StepStartedDetail = {
 };
 
 export const WorkflowFollowToastBridge = () => {
-  const announceAgentStarted = useAgentStartedToast();
+  const followStep = useFollowToast();
   const { showToast } = useToast();
   const generations = useAppStore((state) => state.workflowGenerations);
   const visibleWorkspaceId = useAppStore((state) => state.visibleWorkflowStudioWorkspaceId);
@@ -65,17 +66,23 @@ export const WorkflowFollowToastBridge = () => {
       if (isWatching || isSelected) {
         return;
       }
-      announceAgentStarted({
-        sessionId: detail.sessionId,
-        agentId: detail.agentId,
+      const runId =
+        (state.sessionPhaseRuns[detail.sessionId] ?? []).find(
+          (agent) => agent.id === detail.agentId,
+        )?.workflowRunId ?? null;
+      if (isUserStart(detail.agentId) || (runId !== null && isUserStart(runId))) {
+        return;
+      }
+      followStep({
         title: `${detail.stepName} started`,
         message: 'The run moved on to the next step.',
-        actionLabel: 'Follow',
+        target: { place: agentPlace({ sessionId: detail.sessionId, agentId: detail.agentId }) },
+        startKey: runId ?? detail.agentId,
       });
     };
     window.addEventListener('goodboy:workflow-step-started', onStepStarted);
     return () => window.removeEventListener('goodboy:workflow-step-started', onStepStarted);
-  }, [announceAgentStarted]);
+  }, [followStep]);
 
   return null;
 };

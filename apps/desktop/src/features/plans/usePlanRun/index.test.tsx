@@ -51,7 +51,7 @@ describe('usePlanRun', () => {
     await runWith({ kind: 'started', agentId: 'agent-impl' as AgentId, scope: 'workflow' });
 
     screen.getByText('Implementer started');
-    screen.getByRole('button', { name: 'Open the agent' });
+    screen.getByRole('button', { name: 'Follow' });
   });
 
   it('says it started outside the workflow when the run was discarded', async () => {
@@ -69,5 +69,7 @@ describe('usePlanRun', () => {
 
     expect(hook.result.current.error).toContain('database is locked');
     expect(hook.result.current.isSpawning).toBe(false);
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

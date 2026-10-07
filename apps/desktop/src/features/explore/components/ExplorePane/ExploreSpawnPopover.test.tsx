@@ -37,8 +37,8 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
 }));
-vi.mock('../../../../shared/hooks/useAgentStartedToast', () => ({
-  useAgentStartedToast: () => vi.fn(),
+vi.mock('../../../../shared/hooks/useFollowToast', () => ({
+  useFollowToast: () => vi.fn(),
 }));
 
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';

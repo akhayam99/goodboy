@@ -30,8 +30,8 @@ vi.mock('../../../../store/slices/transcripts/selectors', () => ({
   useTranscript: () => [],
 }));
 
-vi.mock('../../../../shared/hooks/useAgentStartedToast', () => ({
-  useAgentStartedToast: () => announce,
+vi.mock('../../../../shared/hooks/useFollowToast', () => ({
+  useFollowToast: () => announce,
 }));
 
 import { AgentFollowUps } from './AgentFollowUps';
@@ -113,6 +113,30 @@ describe('AgentFollowUps suggestions', () => {
       sessionId,
       expect.objectContaining({ kindOverride: 'planner', parentAgentId: sourceId }),
     );
+  });
+
+  it('offers Follow to the spawned agent, keyed by its id, with the default label', async () => {
+    render(
+      <AgentFollowUps
+        sourceAgent={source}
+        sourceKind="reviewer"
+        summary="two findings"
+        sessionId={sessionId}
+        followUps={[]}
+        activePlanId={null}
+      />,
+    );
+
+    screen.getByText('Turn the review findings into a plan').click();
+    await vi.waitFor(() => expect(announce).toHaveBeenCalledTimes(1));
+
+    const call = announce.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(call).toMatchObject({
+      title: 'Plan started',
+      target: { place: { at: 'agent', sessionId, agentId: 'agent-2' } },
+      startKey: 'agent-2',
+    });
+    expect(call).not.toHaveProperty('label');
   });
 
   it('hands the active plan to an implementer instead of a seed so it can fan out', async () => {

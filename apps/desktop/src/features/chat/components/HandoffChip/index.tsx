@@ -17,7 +17,7 @@ import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { composeHandoffSeed } from '../../utils/composeHandoffSeed';
 import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStatusIcon';
 import { TranscriptShell } from '../TranscriptShell';
-import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
+import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -68,7 +68,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
   const navigate = useAppStore((s) => s.navigate);
-  const announceAgentStarted = useAgentStartedToast();
+  const followAgent = useFollowToast();
   const spawnedChildren = useMemo(
     () => selectSpawnedChildren({ runs, parentAgentId: sourceAgentId, turnStates }),
     [runs, sourceAgentId, turnStates],
@@ -135,11 +135,10 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
           setIsPending(false);
           return;
         }
-        announceAgentStarted({
-          sessionId,
-          agentId,
+        followAgent({
           title: `${meta.label} started`,
-          message: 'The agent is picking this up. You can keep working.',
+          target: { place: agentPlace({ sessionId, agentId }) },
+          startKey: agentId,
         });
       } catch {
         pendingRef.current = false;
