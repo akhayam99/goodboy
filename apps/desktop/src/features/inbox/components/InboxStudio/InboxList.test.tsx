@@ -110,8 +110,9 @@ describe('InboxList', () => {
       onOpenSettings,
     });
 
-    expect(screen.getByText("Sentry didn't load.")).toBeDefined();
-    expect(screen.getByText('The token was refused (401).')).toBeDefined();
+    const alert = screen.getByRole('alert');
+    expect(within(alert).getByText("Couldn't load Sentry")).toBeDefined();
+    expect(within(alert).getByText('The token was refused (401).')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
     expect(onRetry).toHaveBeenCalledOnce();
@@ -126,7 +127,8 @@ describe('InboxList', () => {
       ],
     });
 
-    expect(screen.getByText("Jira and Sentry didn't load.")).toBeDefined();
+    expect(screen.getByRole('alert')).toBeDefined();
+    expect(screen.getByText("Couldn't load Jira and Sentry")).toBeDefined();
     expect(screen.queryByText(/Timed out/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
     expect(screen.getByText(/Jira: Timed out/)).toBeDefined();
@@ -142,22 +144,37 @@ describe('InboxList', () => {
     const onOpenSettings = vi.fn();
     renderList({ records: [], totalCount: 0, connectedCount: 0, onOpenSettings });
 
+    expect(screen.getByRole('heading', { level: 2, name: 'No tool connected' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Connect a tool' }));
     expect(onOpenSettings).toHaveBeenCalledOnce();
   });
 
-  it('says nothing is assigned when connected tools return nothing', () => {
+  it('says what will be here the first time, when connected tools return nothing', () => {
     renderList({ records: [], totalCount: 0 });
 
-    expect(screen.getByText('Nothing assigned to you')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 2, name: 'No items yet' })).toBeDefined();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Connect a tool' })).toBeNull();
   });
 
   it('offers to clear filters when they hide every item', () => {
     const onClearFilters = vi.fn();
     renderList({ records: [], totalCount: 4, onClearFilters });
 
-    expect(screen.getByText('No items match these filters')).toBeDefined();
+    expect(screen.getByText('No items match these filters.')).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'No items yet' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(onClearFilters).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the failure and the first-time state apart: a failed load never says "No items yet"', () => {
+    renderList({
+      records: [],
+      totalCount: 0,
+      failures: [{ provider: 'linear', message: 'Timed out' }],
+    });
+
+    expect(screen.getByRole('alert')).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'No items yet' })).toBeNull();
   });
 });

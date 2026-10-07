@@ -62,7 +62,9 @@ export const ScriptGroupSection = ({
               <span className="truncate">{group.branch}</span>
             </span>
           )}
-          <span className="shrink-0 text-meta tabular-nums text-muted-foreground">{count}</span>
+          {count === 0 ? null : (
+            <span className="shrink-0 text-meta tabular-nums text-muted-foreground">{count}</span>
+          )}
         </button>
         {group.isReady ? (
           <RefreshIconButton

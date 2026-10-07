@@ -1,13 +1,15 @@
 import { Plus } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Button, EmptyState } from '@goodboy/ui';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly layout?: 'page' | 'section';
 };
 
-export const WorkflowStartButton = ({ sessionId }: Props) => {
+export const WorkflowStartButton = ({ sessionId, layout = 'page' }: Props) => {
+  const isPage = layout === 'page';
   const onClick = () => {
     window.dispatchEvent(
       new CustomEvent('goodboy:open-workflow-builder', { detail: { sessionId } }),
@@ -15,20 +17,20 @@ export const WorkflowStartButton = ({ sessionId }: Props) => {
   };
 
   return (
-    <LensEmptyState
-      tone={CONCEPT_TONE.workflows}
+    <EmptyState
+      size={layout}
       icon={CONCEPT_ICONS.workflows}
       title="No runs yet"
-      description="Start a run from a workflow to work through structured steps."
+      description="A run is a workflow working on this session."
       action={
-        <button
-          type="button"
+        <Button
+          variant={isPage ? 'primary' : 'ghost'}
+          size={isPage ? 'sm' : 'xs'}
           onClick={onClick}
-          className="inline-flex items-center gap-2 rounded-lg bg-subtle px-3 py-2 text-label font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-hover"
         >
           <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           Start a run
-        </button>
+        </Button>
       }
     />
   );

@@ -3,7 +3,7 @@ import { BookmarkPlus } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { LensEmptyState, PaneShell } from '@goodboy/ui';
+import { EmptyState, PaneShell } from '@goodboy/ui';
 import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
@@ -119,10 +119,10 @@ export const WorkflowsPane = ({ session }: Props) => {
     >
       {!hasRuns ? <WorkflowStartButton sessionId={sessionId} /> : null}
       {shouldShowEmptyCard ? (
-        <LensEmptyState
-          tone={CONCEPT_TONE.workflows}
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.workflows}
-          title="Nothing running"
+          title="No runs in progress"
           action={<WorkflowAttachButton sessionId={sessionId} placement="header" />}
         />
       ) : null}

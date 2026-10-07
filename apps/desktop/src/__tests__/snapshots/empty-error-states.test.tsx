@@ -89,7 +89,7 @@ describe('empty states', () => {
   it('NotificationCenter: no notifications', async () => {
     render(<NotificationCenter />);
     fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
-    expect(await screen.findByText('No notifications')).toBeDefined();
+    expect(await screen.findByText('No notifications yet')).toBeDefined();
   });
 
   it('NoWorkspaceScreen: no workspace, start and open CTAs', () => {

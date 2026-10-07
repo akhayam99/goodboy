@@ -381,15 +381,17 @@ describe('ScriptsPanel', () => {
   it('says why a mount has no scripts and why a session has none', () => {
     renderPanel();
 
+    const relay = group('notify-relay · nw/retry-backoff');
+    expect(within(relay).getByText('No pinned scripts')).toBeDefined();
+    expect(within(relay).queryByText('0')).toBeNull();
     expect(
-      within(group('notify-relay · nw/retry-backoff')).getByText(
-        'No pinned scripts in notify-relay.',
-      ),
+      within(relay).getByRole('button', { name: 'Pin scripts of notify-relay in Settings' }),
     ).toBeDefined();
     cleanup();
 
     state.mounts = [];
     renderPanel();
+    expect(screen.getByRole('heading', { level: 2, name: 'No scripts yet' })).toBeDefined();
     expect(screen.getByText('Scripts run inside a project of this session.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
@@ -411,6 +413,11 @@ describe('ScriptsPanel', () => {
 
     fireEvent.change(filter, { target: { value: 'tset' } });
     expect(screen.getByText('No scripts match "tset".')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }));
+    expect(screen.queryByText('No scripts match "tset".')).toBeNull();
+    expect(screen.getAllByRole('button', { name: /^Show .* output$/ }).length).toBeGreaterThan(1);
+    expect((filter as HTMLInputElement).value).toBe('');
   });
 
   it('opens a row in the drawer and runs in the mount of its group', () => {
@@ -538,7 +545,7 @@ describe('ScriptsPanel', () => {
     expect(
       within(group('notify-relay · nw/retry-backoff')).getByRole('button', { expanded: false }),
     ).toBeDefined();
-    expect(screen.queryByText('No pinned scripts in notify-relay.')).toBeNull();
+    expect(screen.queryByText('No pinned scripts')).toBeNull();
   });
 
   it('lists only the scripts pinned for the project when it has more discovered ones', () => {
@@ -607,7 +614,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     const relay = group('notify-relay · nw/retry-backoff');
-    expect(within(relay).getByText('No pinned scripts in notify-relay.')).toBeDefined();
+    expect(within(relay).getByText('No pinned scripts')).toBeDefined();
     expect(within(relay).queryByRole('button', { name: /^Show .* output$/ })).toBeNull();
     fireEvent.click(
       within(relay).getByRole('button', { name: 'Pin scripts of notify-relay in Settings' }),

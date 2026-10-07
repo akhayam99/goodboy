@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
@@ -29,6 +29,7 @@ vi.mock('../AgentTree/AdHocRow', () => ({
   ),
 }));
 
+import { createAgentEventName } from '../../createAgentEventName';
 import { StandaloneAgentsLane } from './index';
 
 const WS_ID = 'ws-1' as WorkspaceId;
@@ -90,6 +91,30 @@ describe('StandaloneAgentsLane', () => {
 
     expect(onCompletedCountChange).toHaveBeenCalledWith(0);
     expect(screen.queryByRole('tablist')).toBeNull();
+  });
+
+  it('says what an agent is and offers one primary when none was ever started', () => {
+    setAgents([]);
+    const opened = vi.fn();
+    window.addEventListener(createAgentEventName(SESSION_ID), opened);
+    render(<StandaloneAgentsLane session={session} variant="lens" />);
+
+    expect(screen.getByRole('heading', { level: 2, name: 'No agents yet' })).toBeDefined();
+    expect(screen.getByText('An agent works on this session on its own.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Start an agent' }));
+    window.removeEventListener(createAgentEventName(SESSION_ID), opened);
+
+    expect(opened).toHaveBeenCalledOnce();
+    expect(screen.queryByText('No active agents')).toBeNull();
+  });
+
+  it('keeps the sidebar variant to one line, with no heading and no primary', () => {
+    setAgents([]);
+    render(<StandaloneAgentsLane session={session} variant="sidebar" />);
+
+    expect(screen.getByText('No agents yet')).toBeDefined();
+    expect(screen.queryByRole('heading')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start an agent' })).toBeNull();
   });
 
   it('shows the active empty state while completed agents are hidden', () => {
