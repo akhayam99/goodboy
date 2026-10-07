@@ -459,7 +459,9 @@ where its children would be, above the parent: `6 steps · 1 question answered`
 over a run, `3 subagents` over a step, `2 outputs` over a launch. A tally follows the total only when not everything is done (`3
 subagents · 1 closed`). A click on the count row, or Right on it, opens the
 branch; the count row stays as the top cap of the lane and a second click, or
-Left, folds it again. There is no chevron and no chip at the right of a row.
+Left, folds it again. There is no chevron and no chip at the right of a feed
+row; the run tree's fold row is the one exception and ends in a chevron, down
+while it is folded and up while it is open.
 Right and Left work on every expandable row too: Right opens the branch the row
 carries, Left folds it, and Left on a child folds the branch it hangs in and
 moves the focus to its count row. A run that finishes while you watch it stays
@@ -476,7 +478,9 @@ false`, the run lane takes column 0 and starts on the run's first step, steps
 follow in execution order and children take column 1. Its lanes are `down`
 groups, the feed's are `up` groups; `buildTimelineStream` takes the direction
 from its caller, so the run tree and the agent tree keep their order. There is
-no run row, no NOW, no time column and no count row on the run page.
+no run row, no NOW and no time column on the run page. Its one count row is the
+fold row of a settled set of sub-agents (`RunTreeFoldRow`): it sits under its
+parent step, one column in, and opens the set downward, oldest first.
 
 Never delete a rail element without the defect it fixes. 0.17 had a head node
 with a grey stub for a folded group; the stub landed on the lane and not on the
