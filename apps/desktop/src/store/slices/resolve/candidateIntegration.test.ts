@@ -1409,6 +1409,19 @@ const seedSiblings = async ({ ids }: { readonly ids: ReadonlyArray<string> }): P
   }
 };
 
+const showLaneOnScreen = async ({
+  live,
+}: {
+  readonly live: ReturnType<typeof makeHarness>;
+}): Promise<void> => {
+  await loadResolveCandidatesInto({ set: live.set, sessionId: SESSION_ID });
+  live.set({
+    sessionResolveThreads: {
+      [SESSION_ID]: await listResolveThreads({ db, sessionId: SESSION_ID }),
+    },
+  });
+};
+
 const readyCandidateIds = async (): Promise<ReadonlyArray<string>> =>
   (await listResolveCandidates({ db, sessionId: SESSION_ID }))
     .filter((candidate) => candidate.state === 'ready')
@@ -1626,12 +1639,7 @@ describe('a lane keeps one chain of fixes on a branch', () => {
     const live = makeHarness();
     const shas = await seedChain({ live, ids: ['thread-a', 'thread-b'] });
     const revision = await revisionOfItem({ itemId: 'item-thread-b' });
-    await loadResolveCandidatesInto({ set: live.set, sessionId: SESSION_ID });
-    live.store.setState({
-      sessionResolveThreads: {
-        [SESSION_ID]: await listResolveThreads({ db, sessionId: SESSION_ID }),
-      },
-    } as never);
+    await showLaneOnScreen({ live });
     await db.execute(
       "UPDATE resolve_threads SET revision = revision + 1 WHERE session_id = 'session-1'",
     );
@@ -1652,12 +1660,7 @@ describe('a lane keeps one chain of fixes on a branch', () => {
     const live = makeHarness();
     await seedChain({ live, ids: ['thread-a', 'thread-b'] });
     const revision = await revisionOfItem({ itemId: 'item-thread-b' });
-    await loadResolveCandidatesInto({ set: live.set, sessionId: SESSION_ID });
-    live.store.setState({
-      sessionResolveThreads: {
-        [SESSION_ID]: await listResolveThreads({ db, sessionId: SESSION_ID }),
-      },
-    } as never);
+    await showLaneOnScreen({ live });
     await db.execute(
       "UPDATE resolve_threads SET revision = revision + 1, reply_draft = 'A different reply' WHERE thread_id = 'thread-a'",
     );
