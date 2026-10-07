@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
 import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
+import { selectIsSessionDraftShown } from '../../../../store/slices/sessionDraft/selectIsSessionDraftShown';
 import { useGoToBoard } from '../../../hooks/useGoToBoard';
 import { BoardButton } from './BoardButton';
 import { ChatButton } from './ChatButton';
@@ -33,7 +34,9 @@ export const NavCluster = ({ hasDoors = false }: Props) => {
       return s.sessions.filter((session) => ids.has(session.id));
     }),
   );
-  const isOnBoard = useAppStore((s) => s.currentSessionId === null);
+  const isOnBoard = useAppStore(
+    (s) => s.currentSessionId === null && !selectIsSessionDraftShown({ state: s }),
+  );
   const studioKind = useAppStore((s) => s.appStudio?.kind ?? null);
   const hasWorkspace = useAppStore((s) => s.currentWorkspaceId !== null);
   const switchStudio = useAppStore((s) => s.switchStudio);
