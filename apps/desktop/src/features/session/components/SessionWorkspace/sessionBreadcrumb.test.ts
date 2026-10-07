@@ -58,10 +58,10 @@ describe('buildSessionBreadcrumb', () => {
 
   it('ends the trail on the Branch when no thread, file or page is open', () => {
     const crumbs = buildSessionBreadcrumb(
-      base({ lens: 'branch', branch: { label: '#318 Ledger export', leaf: null } }, makeHandlers()),
+      base({ lens: 'branch', branch: { leaf: null } }, makeHandlers()),
     );
     expect(crumbs.map((crumb) => crumb.id)).toEqual(['overview', 'branch']);
-    expect(last(crumbs)?.label).toBe('#318 Ledger export');
+    expect(last(crumbs)?.label).toBe('Branch');
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
 
@@ -69,10 +69,7 @@ describe('buildSessionBreadcrumb', () => {
     const toBranch = vi.fn();
     const leaf = { id: 'review-thread', label: 'page.tsx:21', icon: CONCEPT_ICONS.comments };
     const crumbs = buildSessionBreadcrumb(
-      base(
-        { lens: 'branch', branch: { label: '#318 Ledger export', leaf } },
-        { ...makeHandlers(), toBranch },
-      ),
+      base({ lens: 'branch', branch: { leaf } }, { ...makeHandlers(), toBranch }),
     );
     expect(crumbs.map((crumb) => crumb.id)).toEqual(['overview', 'branch', 'review-thread']);
     crumbs[1]?.onClick?.();
@@ -86,7 +83,7 @@ describe('buildSessionBreadcrumb', () => {
         {
           selectedChildHome: 'review',
           selectedChildLabel: 'resolve: ana on page.tsx:21',
-          branch: { label: '#318 Ledger export', leaf: null },
+          branch: { leaf: null },
         },
         makeHandlers(),
       ),

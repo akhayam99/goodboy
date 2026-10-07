@@ -25,10 +25,12 @@ import type {
   ProjectId,
   PullRequestState,
   SessionId,
+  SessionMountView,
   SessionProjectMount,
   WorktreeStatus,
 } from '@goodboy/types';
-import { aProject, aSession } from '@goodboy/types/testing';
+import { TEST_NOW, aProject, aSession } from '@goodboy/types/testing';
+import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { MountGithubState } from '../../../../store/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -194,6 +196,8 @@ const Harness = ({ pr, review, checks }: HarnessProps) => {
   });
   return (
     <BranchHeader
+      sessionId={SESSION_ID}
+      mountPath={MOUNT.worktreePath}
       pr={pr}
       checks={checks}
       projectName="payments-api"
@@ -230,7 +234,7 @@ describe('BranchHeader identity', () => {
 
     expect(screen.getByText('#318')).toBeDefined();
     expect(screen.getByText('Ledger export')).toBeDefined();
-    const meta = screen.getByText('Draft').closest('p') as HTMLElement;
+    const meta = screen.getByText('Draft').closest('div') as HTMLElement;
     expect(meta.textContent).toContain('payments-api');
     expect(meta.textContent).toContain('feat/export');
     expect(meta.textContent).toContain('main');
@@ -243,6 +247,182 @@ describe('BranchHeader identity', () => {
 
     expect(screen.getByText('feat/export')).toBeDefined();
     expect(screen.getByText('No pull request')).toBeDefined();
+  });
+
+  it('carries one h1: the pull request title, else the branch name', () => {
+    status = statusOf({});
+    renderHeader({ pr: PR });
+    const withPr = screen.getAllByRole('heading', { level: 1 });
+    expect(withPr).toHaveLength(1);
+    expect(withPr[0]?.textContent).toBe('#318Ledger export');
+    cleanup();
+
+    renderHeader();
+    const without = screen.getAllByRole('heading', { level: 1 });
+    expect(without).toHaveLength(1);
+    expect(without[0]?.textContent).toBe('feat/export');
+  });
+
+  it('prints the branch name once in the meta line, between the state and the base', () => {
+    status = statusOf({});
+    renderHeader({ pr: PR });
+
+    const meta = screen.getByText('Draft').closest('div') as HTMLElement;
+    expect(meta.textContent?.split('feat/export')).toHaveLength(2);
+    expect(meta.textContent).toMatch(/^Draft.*payments-api.*feat\/export.*main/);
+    expect(screen.queryByText('Open')).toBeNull();
+  });
+
+  it('reads Open for an open pull request that is not a draft', () => {
+    status = statusOf({});
+    renderHeader({ pr: { ...PR, isDraft: false } });
+
+    expect(screen.getByText('Open')).toBeDefined();
+  });
+});
+
+const MOUNT_FIX: SessionProjectMount = {
+  ...MOUNT,
+  mountId: 'mount-payments-api-fix' as MountId,
+  worktreePath: '/w/payments-api-fix',
+  branch: 'hl/fix-duplicate-credit',
+  parallelIndex: 1,
+};
+
+const MOUNT_DOCS: SessionProjectMount = {
+  ...MOUNT,
+  mountId: 'mount-payments-api-docs' as MountId,
+  worktreePath: '/w/payments-api-docs',
+  branch: 'hl/docs-credit-notes',
+  parallelIndex: 2,
+};
+
+const FORKED: SessionMountView = {
+  id: MOUNT_FIX.mountId,
+  sessionId: SESSION_ID,
+  projectId: PROJECT_ID,
+  worktreePath: MOUNT_FIX.worktreePath,
+  lastWorktreePath: null,
+  branch: 'hl/retry-credit-notes',
+  baseBranch: null,
+  parallelIndex: 1,
+  mountName: 'payments-api',
+  repoSlug: null,
+  repoRoot: MOUNT_FIX.repoRoot,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+  createdAt: TEST_NOW,
+  updatedAt: TEST_NOW,
+};
+
+const withMounts = (mounts: ReadonlyArray<SessionProjectMount>): void => {
+  useAppStore.setState({
+    sessionProjectMounts: { [SESSION_ID]: mounts },
+    sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
+    mountGithub: {
+      [MOUNT_FIX.mountId]: {
+        ...MOUNT_GITHUB,
+        mountId: MOUNT_FIX.mountId,
+        branch: MOUNT_FIX.branch,
+        pr: { ...PR, number: 331, isDraft: false, headBranch: MOUNT_FIX.branch },
+      },
+    },
+  });
+};
+
+const chipOf = (): HTMLElement => screen.getByRole('button', { name: /^Branch feat\/export$/ });
+
+describe('BranchHeader branch switcher', () => {
+  it('lists the session branches with their pull request and moves the page to the one picked', async () => {
+    const navigate = vi.fn();
+    const setSessionActiveMount = vi.fn<StoreState['setSessionActiveMount']>(async () => undefined);
+    useAppStore.setState({ navigate, setSessionActiveMount });
+    withMounts([MOUNT, MOUNT_FIX, MOUNT_DOCS]);
+    useAppStore.setState({ branchTab: { [SESSION_ID]: 'files' } });
+    status = statusOf({});
+    renderHeader({ pr: PR });
+
+    fireEvent.click(chipOf());
+
+    const rows = await screen.findAllByRole('menuitemradio');
+    expect(rows).toHaveLength(3);
+    expect(rows.map((row) => row.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false']);
+    expect(rows[1]?.textContent).toContain('hl/fix-duplicate-credit');
+    expect(rows[1]?.textContent).toContain('#331 Open');
+    expect(rows[2]?.textContent).not.toContain('#');
+    expect(screen.getByRole('menuitem', { name: 'New branch' })).toBeDefined();
+
+    fireEvent.click(rows[1] as HTMLElement);
+
+    expect(setSessionActiveMount).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_FIX.mountId,
+    });
+    expect(navigate).toHaveBeenCalledWith({
+      to: branchPlace({
+        sessionId: SESSION_ID,
+        mountPath: MOUNT_FIX.worktreePath,
+        tab: 'files',
+      }),
+      mode: 'replace',
+    });
+    await waitFor(() => expect(screen.queryByRole('menuitemradio')).toBeNull());
+  });
+
+  it('shows a chevron with several branches and none with one, which opens only New branch', async () => {
+    withMounts([MOUNT, MOUNT_FIX]);
+    status = statusOf({});
+    renderHeader({ pr: PR });
+    expect(chipOf().querySelector('[data-slot="switcher-chevron"]')).not.toBeNull();
+    cleanup();
+
+    withMounts([MOUNT]);
+    renderHeader({ pr: PR });
+    expect(chipOf().querySelector('[data-slot="switcher-chevron"]')).toBeNull();
+
+    fireEvent.click(chipOf());
+
+    expect(screen.queryByRole('menuitemradio')).toBeNull();
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['New branch']);
+  });
+
+  it('creates a new branch from the chip and lands on it, on the same tab', async () => {
+    const navigate = vi.fn();
+    const forkMount = vi.fn<StoreState['forkMount']>(async () => FORKED);
+    useAppStore.setState({
+      navigate,
+      forkMount,
+      setSessionActiveMount: vi.fn<StoreState['setSessionActiveMount']>(async () => undefined),
+    });
+    withMounts([MOUNT, MOUNT_FIX]);
+    status = statusOf({});
+    renderHeader({ pr: PR });
+
+    fireEvent.click(chipOf());
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'New branch' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Branch name' }), {
+      target: { value: 'hl/retry-credit-notes' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create branch' }));
+
+    await waitFor(() =>
+      expect(forkMount).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        projectId: PROJECT_ID,
+        branch: 'hl/retry-credit-notes',
+      }),
+    );
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        to: branchPlace({
+          sessionId: SESSION_ID,
+          mountPath: MOUNT_FIX.worktreePath,
+          tab: 'comments',
+        }),
+        mode: 'replace',
+      }),
+    );
   });
 });
 

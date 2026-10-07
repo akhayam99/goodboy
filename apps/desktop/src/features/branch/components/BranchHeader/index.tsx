@@ -1,14 +1,18 @@
 import { ArrowRight, Check } from 'lucide-react';
 import { Button, HeaderBand, Tooltip, cn } from '@goodboy/ui';
-import type { PrCheckRun, PullRequestState } from '@goodboy/types';
+import type { PrCheckRun, PullRequestState, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
 import type { BranchControls } from '../../hooks/useBranchControls';
 import { checksSummaryOf } from '../../checksSummary';
+import { pullRequestWord } from '../../pullRequestWord';
 import { BranchOverflow } from './BranchOverflow';
+import { BranchSwitcher } from './BranchSwitcher';
 
 type Props = {
+  readonly sessionId: SessionId;
+  readonly mountPath: string | null;
   readonly pr: PullRequestState | null;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly projectName: string | null;
@@ -23,13 +27,12 @@ const stateWord = (pr: PullRequestState | null): string => {
   if (pr === null) {
     return 'No pull request';
   }
-  if (pr.isDraft && pr.state === 'open') {
-    return 'Draft';
-  }
-  return pr.state.charAt(0).toUpperCase() + pr.state.slice(1);
+  return pullRequestWord({ state: pr.state, isDraft: pr.isDraft });
 };
 
 export const BranchHeader = ({
+  sessionId,
+  mountPath,
   pr,
   checks,
   projectName,
@@ -69,26 +72,29 @@ export const BranchHeader = ({
           </span>
         }
         meta={
-          <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
             <span className="text-foreground">{stateWord(pr)}</span>
-            {projectName !== null && (
-              <>
-                <span aria-hidden>·</span>
-                <span className="font-mono">{projectName}</span>
-              </>
-            )}
             {head !== null && (
               <>
                 <span aria-hidden>·</span>
-                <span className="inline-flex min-w-0 items-center gap-1 font-mono">
-                  {head}
-                  {base !== null && (
-                    <>
-                      <ArrowRight size={ICON_SIZE.row} aria-hidden />
-                      {base}
-                    </>
-                  )}
-                </span>
+                <BranchSwitcher
+                  sessionId={sessionId}
+                  currentPath={mountPath}
+                  repoName={projectName}
+                  branch={head}
+                />
+                {base !== null && (
+                  <span className="inline-flex min-w-0 items-center gap-1">
+                    <ArrowRight size={ICON_SIZE.row} aria-hidden />
+                    <span className="text-code">{base}</span>
+                  </span>
+                )}
+              </>
+            )}
+            {head === null && projectName !== null && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="text-code">{projectName}</span>
               </>
             )}
             {summary !== null && (
@@ -106,7 +112,7 @@ export const BranchHeader = ({
                 </span>
               </>
             )}
-          </p>
+          </div>
         }
         actions={
           <>

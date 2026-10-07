@@ -4,7 +4,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { NAMES } from '../../../../shared/names';
 import type { LensKind, SessionStudio } from '../../../../store';
 import type { AgentHomeLens } from '../../agent-kind';
-import { LENS_ICON, lensIconClass } from '../../lens-labels';
+import { LENS_ICON, LENS_LABEL, lensIconClass } from '../../lens-labels';
 
 export type SessionBreadcrumbHandlers = {
   toOverview: () => void;
@@ -19,7 +19,6 @@ export type SessionBreadcrumbHandlers = {
 };
 
 export type BranchCrumbs = {
-  readonly label: string;
   readonly leaf: BreadcrumbCrumb | null;
 };
 
@@ -51,13 +50,12 @@ const lensIcon = ({ lens }: { readonly lens: LensKind }) => ({
 });
 
 type BranchCrumbParams = {
-  readonly branch: BranchCrumbs;
   readonly onClick: (() => void) | undefined;
 };
 
-const branchCrumb = ({ branch, onClick }: BranchCrumbParams): BreadcrumbCrumb => ({
+const branchCrumb = ({ onClick }: BranchCrumbParams): BreadcrumbCrumb => ({
   id: 'branch',
-  label: branch.label,
+  label: LENS_LABEL.branch,
   icon: CONCEPT_ICONS.branch,
   iconClassName: tintClasses(CONCEPT_TONE.branch).icon,
   ...(onClick !== undefined && { onClick }),
@@ -189,7 +187,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       return sealLast([
         overview,
         selectedChildHome === 'review' && branch !== null
-          ? branchCrumb({ branch, onClick: handlers.toBranch })
+          ? branchCrumb({ onClick: handlers.toBranch })
           : {
               id: `lens-${selectedChildHome}`,
               label: lensLabel(selectedChildHome),
@@ -274,10 +272,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     const leaf = branch?.leaf ?? null;
     return sealLast([
       overview,
-      branchCrumb({
-        branch: branch ?? { label: lensLabel('branch'), leaf: null },
-        onClick: leaf === null ? undefined : handlers.toBranch,
-      }),
+      branchCrumb({ onClick: leaf === null ? undefined : handlers.toBranch }),
       ...(leaf === null ? [] : [leaf]),
     ]);
   }

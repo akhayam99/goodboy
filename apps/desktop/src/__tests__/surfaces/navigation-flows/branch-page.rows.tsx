@@ -32,7 +32,7 @@ const stackDepth = (): number => {
   return state.navigation[state.currentWorkspaceId ?? '']?.entries.length ?? 0;
 };
 
-const BRANCH_TRAIL = ['Session', '#', 'Stop retried webhooks'];
+const BRANCH_TRAIL = ['Session', 'Branch'];
 
 const seedReviewComment = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
@@ -118,7 +118,7 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     covers: ['trail:branch-menu'],
     open: async () => {
       await openCrumb(/^Diff/);
-      const crumb = within(trailNav()).getByRole('button', { name: /Stop retried webhooks/ });
+      const crumb = within(trailNav()).getByRole('button', { name: /Branch/ });
       await click(crumb);
     },
     lands: async () => {
