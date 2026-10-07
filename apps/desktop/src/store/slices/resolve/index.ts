@@ -78,17 +78,28 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
   type WriteParams<T> = SessionParams & { readonly run: () => Promise<T> };
   const serialize = <T>({ sessionId, run }: WriteParams<T>): Promise<T> =>
     writes.run({ key: sessionId, task: run });
+  const reconciles = createKeyedQueue();
+  const reconcileLane = ({ sessionId }: SessionParams): Promise<void> =>
+    reconciles.run({
+      key: sessionId,
+      task: () => reconcileResolveLane({ set, get, sessionId }),
+    });
   const settleLane = async <T>({ sessionId, run }: WriteParams<T>): Promise<T> => {
     const result = await serialize({ sessionId, run });
-    await reconcileResolveLane({ set, get, sessionId }).catch(() => undefined);
+    await reconcileLane({ sessionId }).catch(() => undefined);
     return result;
   };
   return {
-    acceptResolveQueueItem: (params: ItemRevisionParams) =>
-      serialize({
-        sessionId: params.sessionId,
-        run: () => acceptResolveQueueItem({ set, get, ...params }),
-      }),
+    acceptResolveQueueItem: async (params: ItemRevisionParams) => {
+      try {
+        await serialize({
+          sessionId: params.sessionId,
+          run: () => acceptResolveQueueItem({ set, get, ...params }),
+        });
+      } finally {
+        await reconcileLane({ sessionId: params.sessionId }).catch(() => undefined);
+      }
+    },
     refuseResolveQueueItem: (params: ItemRevisionParams) =>
       settleLane({
         sessionId: params.sessionId,
@@ -193,7 +204,7 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       }),
     stopResolveLane: (params: SessionParams & { readonly worktreePath: string }) =>
       stopResolveLane({ get, ...params }),
-    reconcileResolveLane: (params: SessionParams) => reconcileResolveLane({ set, get, ...params }),
+    reconcileResolveLane: (params: SessionParams) => reconcileLane(params),
     runResolveCheck: (params: CheckRunParams) => runResolveCheck({ set, get, ...params }),
     recoverUncapturedResolveWork: (params: SessionParams) =>
       serialize({

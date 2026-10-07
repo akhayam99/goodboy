@@ -129,18 +129,28 @@ file holds those explanations. Everything below has been "fixed" at least once a
   with several fixes is split into one candidate per fix, each based on the
   one before (all or nothing, else one shared candidate). The ready candidates
   of a mount form a chain by `baseSha`; a ready candidate whose base is not
-  the previous link is broken, and `reconcileResolveLane` (after load,
-  refuse, defer, switch to reply only, a turn and every source sync)
-  discards it and has the lane rebuild its comments on top, with
-  `LANE_REBUILD_HINT`. That is also how fixes the old parallel runs left
+  the previous link is broken, and so is one whose base is a fix that was
+  refused, deferred or made stale, or that the branch took as a copy under
+  another commit (`laneChainOf` weighs every candidate of the mount, not only
+  the ready ones, so a refused first fix cannot leave the next one heading the
+  chain). `reconcileResolveLane` (after load, refuse, defer, switch to reply
+  only, a turn, an accept and every source sync) runs one at a time per
+  session, discards the broken fixes first and then has the lane rebuild their
+  comments on top, with `LANE_REBUILD_HINT` and the model of the run that made
+  them (a split fix is named after its run: `attemptOfCandidate`). When the
+  rebuild cannot start, the fixes stay discarded and the comments it took back
+  up are set aside again. That is also how fixes the old parallel runs left
   side by side migrate: the first ready one stays, the rest are rebuilt, with
   no schema migration. Refusing or deferring a link drops its candidate and
   rebuilds the ones after it; taking a deferred fix back up rebuilds it.
   Accept of a link fast-forwards the branch through that link, accepting the
   earlier links with it (`acceptResolveQueueItem`); an earlier link that is
-  deferred or refused blocks it. A cherry-pick that no longer applies is
+  deferred or refused blocks it. A cherry-pick that no longer applies, or a
+  branch that no longer contains the base of the fix (`the branch moved`), is
   aborted and the branch reset, the links turn `stale` and the threads fail
-  with `failed:accept_conflict`, so a retry redoes it on top. Every drain
+  with `failed:accept_conflict`, so a retry redoes it on top; the fixes after
+  them are rebuilt. A branch that only moved ahead takes the fix by cherry-pick
+  and each link records the commit it landed as. Every drain
   releases the copies of ended attempts, and app start removes every
   `resolve-` copy no process holds. A copy is never reused across turns: a
   later turn of the same agent without a copy (an operator message) runs on
