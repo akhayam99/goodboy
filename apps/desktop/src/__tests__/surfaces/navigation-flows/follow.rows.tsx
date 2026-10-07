@@ -181,7 +181,7 @@ export const FOLLOW_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       seedRun(ctx, { isQueued: false });
       await moveAway(ctx);
-      markUserStart(RUN_ID);
+      markUserStart({ key: RUN_ID });
       await stepStarted(ctx);
     },
     lands: async () => {

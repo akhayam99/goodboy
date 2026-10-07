@@ -1250,17 +1250,18 @@ its field; the diff stays. A split diff needs 880px for its code: under that it
 draws unified and the toolbar says `Split needs a wider window`, and the
 choice comes back with room.
 
-**Work panes use the full width.** A pane whose body is a working surface (a
-list beside a thread, a file tree beside a diff, a terminal) passes
-`width="full"` to `PaneShell`, and to the `PageColumn` of its tabs. It keeps
-the 24px gutter (16px under 720px) and drops the 960px cap, so the header and
-the body share one left edge on any pane, from the pane's own edge. The Branch page is the main user.
-Its Comments tab reads the width of its own pane, not the window's
-(`branchLayoutOf`): under 900px one column, the list, then the thread with a
-`‹ Comments` back that keeps the selected row; from 900px a 300px list and the
-thread, wide, with the properties inline under it; from 1280px a 288px
-properties margin rail (`--margin-rail`) on the right. A drawer or a wide
-sidebar narrows the pane, so the layout follows them.
+**Work panes use the full width.** A pane whose body is a working surface (the
+terminal, an inbox list, the Board) passes `width="full"` to `PaneShell`, and to
+the `PageColumn` of its tabs. It keeps the 24px gutter (16px under 720px) and
+drops the 960px cap, so the header and the body share one left edge on any
+pane, from the pane's own edge. The Branch page is not one of them: every tab
+sits on the 960px column, the trail and the Ask button included, so nothing
+moves from one tab to the next. Its Comments tab reads the width of its own
+pane, not the window's (`branchLayoutOf`): under 900px one column, the list,
+then the thread with a `‹ Comments` back that keeps the selected row; from
+900px a 300px list and the thread, wide, with the properties inline under it at
+every width. A drawer or a wide sidebar narrows the pane, so the layout follows
+them.
 
 **Trail separator.** Each segment except the last ends with one 24px chevron
 slot in `faint-foreground`: a button that opens the segment's menu, or a static

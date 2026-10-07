@@ -75,6 +75,7 @@ const firstMountId = (ctx: Ctx): MountId =>
 
 const SEARCH_JUMPS: ReadonlyArray<{
   readonly kind: string;
+  readonly action?: string;
   readonly overrides: (ctx: Ctx) => Partial<SearchHit>;
   readonly lands: (ctx: Ctx) => Promise<void>;
 }> = [
@@ -84,7 +85,30 @@ const SEARCH_JUMPS: ReadonlyArray<{
     overrides: () => ({ kind: 'message', agentId: 'agent-gone' as AgentId, status: 'user' }),
     lands: lens('agents'),
   },
-  { kind: 'plan', overrides: () => ({ kind: 'plan', refId: 'plan-1' }), lands: lens('plans') },
+  {
+    kind: 'plan',
+    action: 'openDrawer',
+    overrides: () => ({ kind: 'plan', refId: 'plan-1' }),
+    lands: async (ctx) => {
+      await waitFor(
+        () =>
+          expect(useAppStore.getState().drawer).toMatchObject({
+            kind: 'artifact-document',
+            sessionId: ctx.sessionId,
+            payload: { artifactId: 'plan-1', revision: null },
+          }),
+        WAIT,
+      );
+    },
+  },
+  {
+    kind: 'report',
+    overrides: () => ({ kind: 'report', refId: 'report-1' }),
+    lands: async (ctx) => {
+      await lens('plans')(ctx);
+      expect(useAppStore.getState().drawer).toBeNull();
+    },
+  },
   {
     kind: 'decision',
     overrides: () => ({ kind: 'decision', ordinal: 1 }),
@@ -178,7 +202,10 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
   },
   ...SEARCH_JUMPS.map((jump): Row => ({
     name: `search: a ${jump.kind} hit lands in context`,
-    covers: [jump.kind === 'workflow' ? 'openStudio' : 'navigate', `search:${jump.kind}`],
+    covers: [
+      jump.action ?? (jump.kind === 'workflow' ? 'openStudio' : 'navigate'),
+      `search:${jump.kind}`,
+    ],
     open: (ctx) => searchAndOpen({ ctx, overrides: jump.overrides }),
     lands: jump.lands,
   })),

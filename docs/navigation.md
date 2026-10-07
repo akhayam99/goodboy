@@ -1731,10 +1731,13 @@ report or a wireframe row in Activity, and a report or wireframe chip in a
 transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
 report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
 the wireframe stage, with Open in Artifacts and Expand). **A plan always opens
-in the drawer** (`openPlanDrawer`): the object menu's **Open** and the plan
-view inside Ask open it over the page you are on, unless you are already on
-the Artifacts page. The palette's artifact entries and the other artifact kinds
-are transit and keep navigating; the Artifacts page stays the library. Going to
+in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
+inside Ask, a plan row in the palette, a plan hit in search and the plan chip in
+a chat open it over the page you are on, unless you are already on the
+Artifacts page, where they select the plan. From another session they land on
+that session with the drawer open (`openPlanAnywhere`). Reports and wireframes
+are transit from the palette and from search and keep navigating; the Artifacts
+page stays the library. Going to
 the Artifacts page from a drawer is a command of its own, **Open in Artifacts**
 in the drawer header, and it is the only page change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current

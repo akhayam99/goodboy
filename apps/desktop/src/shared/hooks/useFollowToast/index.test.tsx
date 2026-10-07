@@ -289,10 +289,10 @@ describe('useFollowToast', () => {
   it('marks the start key as a user start', () => {
     mountToasts();
     const startKey = nextStartKey();
-    expect(isUserStart(startKey)).toBe(false);
+    expect(isUserStart({ key: startKey })).toBe(false);
 
     showFollow({ title: 'Run started', target: { place: BOARD_PLACE }, startKey });
 
-    expect(isUserStart(startKey)).toBe(true);
+    expect(isUserStart({ key: startKey })).toBe(true);
   });
 });

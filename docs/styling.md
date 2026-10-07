@@ -198,12 +198,12 @@ Three width tiers, one rule each:
 | ------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | measure | `--measure`, 720px    | prose: transcript assistant text, plan prose, comment and note bodies, a Brief, Chat answers (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
 | column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                |
-| full    | the pane, fluid       | work surfaces, from the pane's left edge: every Branch tab, File versions, the terminal, Inbox lists, the Board (`PageColumn width="full"`)      |
+| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Inbox lists, the Board (`PageColumn width="full"`)                                       |
 
 A body that owns its scroll (`scroll="self"`: the agent transcript and its
 composer) puts its own `PageColumn` around the scrolling content and the
 composer, so it shares the header's edges; the scroll viewport spans the pane
-and carries no gutter. File versions is `full`, trail included.
+and carries no gutter.
 
 Prose keeps its 720px measure aligned left inside the column. The `full` tier
 is the only exception to centring and ignores the slide below: its right edge
@@ -219,9 +219,6 @@ ease-out width transition on the drawer's track, so the column's centre follows
 it in the same frames; it is off under `prefers-reduced-motion`. A route change
 never moves the column, with or without a drawer. The pure geometry is
 `pageBoxOf` in `packages/ui/src/drawerGeometry.ts`.
-
-A margin rail (`--margin-rail`, 288px) sits on the right of a work surface
-from 1280px of pane: Branch thread properties.
 
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
@@ -247,11 +244,14 @@ A Session or Agent page reads as one centred column: every child, banner, card
 and footer sits on the same edges. Only prose keeps the 720px measure, aligned
 left inside the column. Tables, code and cards take the whole column.
 
-**Work** pages (the tabs of the Branch) take the whole width of the pane: Files
-puts its file tree on the left from 900px of pane up and the diff beside it
-(under 900px the tree is a 44px strip that opens over the diff), Comments puts
-the list and the thread side by side from 900px, the thread's properties
-inline under it until 1280px and in the margin rail from there.
+**The Branch page** sits on the column like every other page: its header, the
+tabs, the trail and the Ask button, and every tab body share the 960px column,
+so nothing moves from one tab to the next. Files puts its file tree on the left
+from 900px of pane up and the diff beside it (under 900px the tree is a 44px
+strip that opens over the diff); Comments puts the list and the thread side by
+side from 900px, the thread's properties inline under it at every width. Both
+read the width of their own pane (`branchLayoutOf`), so a wide sidebar or an
+open drawer narrows them.
 
 ## Layout: fixed-height shell, scroll on content
 
