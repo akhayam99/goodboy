@@ -93,7 +93,7 @@ describe('PlanRow', () => {
     expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Revising to v2');
     const run = screen.getByTestId('plan-run');
     expect(run.hasAttribute('disabled')).toBe(true);
-    expect(run.getAttribute('title')).toBe('Planner is revising this plan');
+    expect(run.getAttribute('title')).toBe('The planner is revising this plan');
   });
 
   it('keeps the same frame when the revision settles and Run plan comes back', () => {
