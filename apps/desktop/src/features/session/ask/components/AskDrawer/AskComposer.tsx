@@ -4,6 +4,7 @@ import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../../shared/components/PromptField';
+import { useToastLift } from '../../../../../shared/components/Toast';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ASK_FOCUS_EVENT } from '../../askFocusEvent';
 import { AskRoutingPicker } from './AskRoutingPicker';
@@ -27,6 +28,7 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
   const [text, setText] = useState('');
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const canSend = text.trim() !== '' && !isStreaming;
+  useToastLift({ ref: fieldRef });
 
   useEffect(() => {
     const focus = () => fieldRef.current?.querySelector('textarea')?.focus();
