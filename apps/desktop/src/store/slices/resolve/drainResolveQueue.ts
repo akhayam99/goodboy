@@ -1,7 +1,7 @@
 import {
-  getResolveParallelLimit,
   listActiveResolveAttempts,
   listResolveAttempts,
+  listResolveCandidates,
   listResolveThreads,
   setResolveAttemptCopyPath,
   setResolveAttemptPhase,
@@ -32,6 +32,9 @@ import { feedLaunchTurns } from './feedLaunchTurns';
 import { projectResolveRows } from './projectResolveRows';
 import { recordResolvePhase } from './recordResolvePhase';
 import { failureCauseOfError } from './resolveFailure';
+import { isSessionLaneBusy } from './isSessionLaneBusy';
+import { recheckThread } from './recheckThread';
+import { lanePathsOf, laneHolderOf, laneTipOf } from './resolveLane';
 import { releaseEndedResolveCopies, releaseResolveCopy } from './releaseResolveCopy';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import {
@@ -293,6 +296,7 @@ const startResolverTurn = async ({
       agentId: attempt.agentId,
       mountTarget,
       ...(copyPath !== null && { resolveCopyPath: copyPath }),
+      ...(attempt.threadIds.length > 0 && { resolveThreadIds: attempt.threadIds }),
       content: instructions,
       ...(human !== null &&
         rules !== null && {
@@ -368,6 +372,7 @@ type CopyStartParams = SliceParams &
     readonly instructions: string;
     readonly mountTarget: MountTargetSnapshot;
     readonly worktreePath: string;
+    readonly startSha: string | null;
   };
 
 const startCopyAttempt = async ({
@@ -378,11 +383,14 @@ const startCopyAttempt = async ({
   instructions,
   mountTarget,
   worktreePath,
+  startSha,
 }: CopyStartParams): Promise<boolean> => {
   const db = tauriDatabase;
-  const copy = await prepareResolveCopy({ worktreePath, attemptId: attempt.id }).catch(
-    (error: unknown) => formatError(error),
-  );
+  const copy = await prepareResolveCopy({
+    worktreePath,
+    attemptId: attempt.id,
+    ...(startSha !== null && { startSha }),
+  }).catch((error: unknown) => formatError(error));
   if (typeof copy === 'string') {
     await failStart({
       set,
@@ -478,17 +486,22 @@ export const drainResolveQueue = async ({
   if (runs === null || dirty.isSessionBlocked) {
     return;
   }
-  const limit = await getResolveParallelLimit({ db, sessionId });
-  let runningCount = attempts.filter((attempt) => attempt.phase === 'running').length;
+  const candidates = (await listResolveCandidates({ db, sessionId })).map((candidate) => ({
+    candidate,
+  }));
+  const heldLanes = new Map<string, string>();
+  for (const lanePath of lanePathsOf({ attempts })) {
+    const holder = laneHolderOf({ attempts, agents: runs, worktreePath: lanePath });
+    if (holder !== null) {
+      heldLanes.set(lanePath, holder.agentId);
+    }
+  }
   let isBranchBusy = attempts.some(
     (attempt) => attempt.phase === 'running' && attempt.batchId === null,
   );
   const deniedPaths = new Set<string>();
   let hasCancelled = false;
   for (const attempt of attempts.filter((item) => item.phase === 'queued')) {
-    if (runningCount >= limit) {
-      break;
-    }
     const worktreePath = await pathOf({ attempt });
     const agent = runs.find((item) => item.id === attempt.agentId);
     const instructions = attempt.instructions ?? '';
@@ -519,6 +532,10 @@ export const drainResolveQueue = async ({
       continue;
     }
     if (attempt.batchId !== null) {
+      const holder = heldLanes.get(worktreePath);
+      if (holder !== undefined && holder !== attempt.agentId) {
+        continue;
+      }
       const hasStarted = await startCopyAttempt({
         set,
         get,
@@ -527,8 +544,11 @@ export const drainResolveQueue = async ({
         instructions,
         mountTarget,
         worktreePath,
+        startSha: laneTipOf({ candidates, worktreePath }),
       });
-      runningCount += hasStarted ? 1 : 0;
+      if (hasStarted) {
+        heldLanes.set(worktreePath, attempt.agentId);
+      }
       continue;
     }
     if (isBranchBusy) {
@@ -567,7 +587,6 @@ export const drainResolveQueue = async ({
       copyPath: null,
     });
     isBranchBusy = true;
-    runningCount += 1;
   }
   if (hasCancelled) {
     projectResolveRows({
@@ -577,5 +596,22 @@ export const drainResolveQueue = async ({
       rows: await listResolveThreads({ db, sessionId }),
       attempts: await listResolveAttempts({ db, sessionId }),
     });
+  }
+  await startQueuedRechecks({ set, get, sessionId });
+};
+
+const startQueuedRechecks = async ({ set, get, sessionId }: SliceParams & SessionParams) => {
+  const waiting = Object.entries(get().sessionThreadRechecks[sessionId] ?? {}).filter(
+    ([, recheck]) => recheck.isQueued === true,
+  );
+  if (waiting.length === 0 || (await isSessionLaneBusy({ get, sessionId }))) {
+    return;
+  }
+  for (const [threadId] of waiting) {
+    set((state) => {
+      const { [threadId]: _released, ...rest } = state.sessionThreadRechecks[sessionId] ?? {};
+      return { sessionThreadRechecks: { ...state.sessionThreadRechecks, [sessionId]: rest } };
+    });
+    await recheckThread({ set, get, sessionId, threadId }).catch(() => undefined);
   }
 };

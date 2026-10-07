@@ -17,22 +17,27 @@ export const refusalOf = (result: SendTurnResult): string | null => {
   return null;
 };
 
-export const sendUntilStarted = ({ get, input, onLateError }: Params): Promise<void> =>
-  new Promise<void>((resolve, reject) => {
+export const sendUntilStarted = ({ get, input, onLateError }: Params): Promise<boolean> =>
+  new Promise<boolean>((resolve, reject) => {
     let isStarted = false;
     get()
       .sendTurn({
         ...input,
         onStarted: () => {
           isStarted = true;
-          resolve();
+          resolve(true);
         },
       })
       .then(
         (result) => {
-          if (!isStarted) {
-            reject(new Error(refusalOf(result) ?? 'The fix run did not start'));
+          if (isStarted) {
+            return;
           }
+          if (result.isLaneQueued === true) {
+            resolve(false);
+            return;
+          }
+          reject(new Error(refusalOf(result) ?? 'The fix run did not start'));
         },
         (error: unknown) => {
           if (isStarted) {

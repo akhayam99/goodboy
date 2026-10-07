@@ -52,20 +52,24 @@ const splitOneCandidatePerFix = async ({
     worktreePath: capturePath,
     baseSha: candidate.baseSha,
     picks: picks.map(({ candidateId, commitSha }) => ({ candidateId, commitSha })),
+    stack: true,
   });
-  return done.flatMap(({ candidateId, sha }): ReadonlyArray<Split> => {
+  const splits = done.flatMap(({ candidateId, sha }): ReadonlyArray<Split> => {
     const pick = picks.find((item) => item.candidateId === candidateId);
     return pick === undefined || sha === null ? [] : [{ id: candidateId, sha, entry: pick.entry }];
   });
+  return picks.length === fixes.length && splits.length === picks.length ? splits : [];
 };
 
 const registerSplit = async ({
   sessionId,
   candidate,
+  baseSha,
   split,
 }: {
   readonly sessionId: SessionId;
   readonly candidate: ResolveCandidate;
+  readonly baseSha: string;
   readonly split: Split;
 }): Promise<void> => {
   const db = tauriDatabase;
@@ -76,6 +80,7 @@ const registerSplit = async ({
       ...candidate,
       id: split.id,
       revision: (await listResolveCandidates({ db, sessionId })).length + 1,
+      baseSha,
       candidateSha: split.sha,
       state: 'ready',
       integratedSha: null,
@@ -100,7 +105,7 @@ const registerSplit = async ({
   await recordCommitLinks({
     sessionId,
     worktreePath: candidate.worktreePath,
-    baseSha: candidate.baseSha,
+    baseSha,
     candidateSha: split.sha,
     threads: [{ ...split.entry.thread, commitShas: [split.sha] }],
   }).catch(() => undefined);
@@ -136,7 +141,22 @@ export const captureResolveCandidate = async ({
       item.approvalState !== 'accepted' &&
       thread.state !== 'closed',
   );
+  const copyPath = attempt?.copyPath ?? null;
+  const capturePath = copyPath ?? candidate.worktreePath;
+  const isStacked = copyPath !== null;
   const discard = async (): Promise<null> => {
+    if (isStacked) {
+      await withCandidateLock({
+        worktreePath: capturePath,
+        holder: `candidate:${candidate.id}`,
+        run: () =>
+          quarantineWorktreeCandidate({
+            worktreePath: capturePath,
+            candidateId: candidate.id,
+            baseSha: candidate.baseSha,
+          }),
+      }).catch(() => undefined);
+    }
     await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
     await loadResolveCandidatesInto({ set, sessionId });
     return null;
@@ -144,8 +164,6 @@ export const captureResolveCandidate = async ({
   if (covered.length === 0) {
     return discard();
   }
-  const copyPath = attempt?.copyPath ?? null;
-  const capturePath = copyPath ?? candidate.worktreePath;
   const fixes = covered.filter((entry) => fixShaOf({ entry }) !== null);
   const captured = await withCandidateLock({
     worktreePath: capturePath,
@@ -155,9 +173,10 @@ export const captureResolveCandidate = async ({
         worktreePath: capturePath,
         candidateId: candidate.id,
         baseSha: candidate.baseSha,
+        stack: isStacked,
       });
       const splits =
-        quarantined.sha === null || copyPath === null || fixes.length < 2
+        quarantined.sha === null || !isStacked || fixes.length < 2
           ? []
           : await splitOneCandidatePerFix({ candidate, fixes, capturePath }).catch(
               (): ReadonlyArray<Split> => [],
@@ -168,8 +187,10 @@ export const captureResolveCandidate = async ({
   if (captured.sha === null) {
     return discard();
   }
+  let chainBase = candidate.baseSha;
   for (const split of captured.splits) {
-    await registerSplit({ sessionId, candidate, split });
+    await registerSplit({ sessionId, candidate, baseSha: chainBase, split });
+    chainBase = split.sha;
   }
   const splitItemIds = new Set(captured.splits.map(({ entry }) => entry.item.id));
   const rest = (fixes.length === 0 ? covered : fixes).filter(

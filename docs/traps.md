@@ -111,19 +111,41 @@ file holds those explanations. Everything below has been "fixed" at least once a
   worktree writer lease, gets the copy
   and its git admin folder as writable roots, and cannot push. The writer
   lease still guards the real branch for resolvers without a batch, and only
-  one of them runs at a time. Up to the session limit
-  (`resolve_session_settings.parallel_limit`, default 4) batch resolvers run
-  at once; the rest stay `queued`. When the turn ends, the work is captured
-  from the copy as a candidate (`refs/goodboy/candidates/<attemptId>`, shared
-  by every worktree of the repo) and the copy is deleted; the candidate row
-  keeps the real worktree path, so Accept cherry-picks onto the real branch.
-  A cherry-pick that no longer applies is aborted and the branch reset, the
-  candidate turns `stale` and the thread fails with
-  `failed:accept_conflict`, so a retry redoes it on top. Every drain releases
-  the copies of ended attempts, and app start removes every `resolve-` copy no
-  process holds. A copy is never reused across turns: a later turn of the same
-  agent without a copy (an operator message) runs on the real branch with the
-  lease.
+  one of them runs at a time. Batch resolvers run in a lane: one lane per
+  mount worktree path, at most one agent holding it (`running` or `waiting`
+  for an answer, see `resolveLane.ts`), the rest `queued` in creation order.
+  A retry, Fix anyway, rewrite reply, steer or typed message of an agent
+  whose lane is held by another agent is turned into a queued attempt
+  (`queueTurnInLane`, called by `prepareTurn`) and a recheck waits for a free
+  lane (`ThreadRecheck.isQueued`); two branches still run side by side. The
+  copy starts at the lane tip (`resolve_copy_prepare` takes `startSha`: the
+  last ready candidate of the lane, else the branch head), so each fix is
+  built on the one before. When the turn ends, the work is captured from the
+  copy as a candidate (`refs/goodboy/candidates/<attemptId>`, shared by every
+  worktree of the repo) and the copy is deleted when its agent is done.
+  Capture keeps tracked changes only: untracked files, symlinks out of the
+  checkout, ignored paths and `node_modules` never enter a candidate. In a
+  copy the capture is stacked: the copy stays on the candidate tip and a run
+  with several fixes is split into one candidate per fix, each based on the
+  one before (all or nothing, else one shared candidate). The ready candidates
+  of a mount form a chain by `baseSha`; a ready candidate whose base is not
+  the previous link is broken, and `reconcileResolveLane` (after load,
+  refuse, defer, switch to reply only, a turn and every source sync)
+  discards it and has the lane rebuild its comments on top, with
+  `LANE_REBUILD_HINT`. That is also how fixes the old parallel runs left
+  side by side migrate: the first ready one stays, the rest are rebuilt, with
+  no schema migration. Refusing or deferring a link drops its candidate and
+  rebuilds the ones after it; taking a deferred fix back up rebuilds it.
+  Accept of a link fast-forwards the branch through that link, accepting the
+  earlier links with it (`acceptResolveQueueItem`); an earlier link that is
+  deferred or refused blocks it. A cherry-pick that no longer applies is
+  aborted and the branch reset, the links turn `stale` and the threads fail
+  with `failed:accept_conflict`, so a retry redoes it on top. Every drain
+  releases the copies of ended attempts, and app start removes every
+  `resolve-` copy no process holds. A copy is never reused across turns: a
+  later turn of the same agent without a copy (an operator message) runs on
+  the real branch with the lease. `resolve_session_settings` is no longer
+  read; the parallel limit it held is gone.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider

@@ -1,19 +1,31 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, MountId, ProjectId, ResolveAttempt, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  MountId,
+  ProjectId,
+  ResolveAttempt,
+  ResolveCandidate,
+  SessionId,
+} from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   attempts: [] as Array<ResolveAttempt>,
+  candidates: [] as Array<ResolveCandidate>,
   status: vi.fn(async (_params: { worktreePath: string }) => ({ head: 'base-sha' })),
-  prepare: vi.fn(async (_params: { worktreePath: string; attemptId: string }) => ({
-    copyPath: '/copies/fresh',
-    head: 'live-head',
-  })),
+  prepare: vi.fn(
+    async (_params: { worktreePath: string; attemptId: string; startSha?: string }) => ({
+      copyPath: '/copies/fresh',
+      head: 'live-head',
+    }),
+  ),
 }));
 
 vi.mock('@goodboy/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/db')>()),
   listResolveAttempts: async () => h.attempts,
+  listResolveCandidates: async () => h.candidates,
 }));
 vi.mock('../../../features/worktree/worktree', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../features/worktree/worktree')>()),
@@ -90,6 +102,7 @@ const getOf = ({ agent = resolver, revision = 1 }: { agent?: Agent; revision?: n
 
 beforeEach(() => {
   h.attempts = [];
+  h.candidates = [];
   h.status.mockClear().mockResolvedValue({ head: 'base-sha' });
   h.prepare.mockClear();
 });
@@ -137,6 +150,33 @@ describe('resolverLaunchCopy', () => {
       attemptId: 'attempt-1',
     });
     expect(copy).toEqual({ copyPath: '/copies/fresh', mountTarget: TARGET });
+  });
+
+  it('starts the fresh copy on the tip of the lane when fixes are waiting there', async () => {
+    h.attempts = [attemptOf({ copyPath: null })];
+    h.candidates = [
+      {
+        id: 'candidate-1',
+        sessionId: SESSION_ID,
+        revision: 1,
+        baseSha: 'head-sha',
+        candidateSha: 'tip-sha',
+        worktreePath: TARGET.worktreePath,
+        mountTarget: TARGET,
+        state: 'ready',
+        integratedSha: null,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+
+    await resolverLaunchCopy({ get: getOf(), sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(h.prepare).toHaveBeenCalledWith({
+      worktreePath: TARGET.worktreePath,
+      attemptId: 'attempt-1',
+      startSha: 'tip-sha',
+    });
   });
 
   it('makes a fresh copy when the folder it remembers is gone', async () => {

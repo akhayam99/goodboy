@@ -14,6 +14,7 @@ import { buildAttachmentPromptBlock } from './turnHelpers';
 import { selectActiveMount, selectMountById } from '../project-mounts/selectors';
 import { selectAutomaticTurnMount } from '../project-mounts/selectAutomaticTurnMount';
 import { rewriterCopyFor } from '../history/rewriterCopyFor';
+import { queueTurnInLane } from '../resolve/queueTurnInLane';
 import { resolverLaunchCopy } from '../resolve/resolverLaunchCopy';
 import { resolveWriteDestination } from '../project-mounts/writeDestination';
 import { resolveSkillPrompt } from './resolveSkillPrompt';
@@ -61,6 +62,21 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
     (project) => project.workspaceId === session.workspaceId,
   );
   const launchAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
+  if (
+    resolveCopyPath === undefined &&
+    launchAgentId !== null &&
+    origin !== 'mount-continuation' &&
+    (await queueTurnInLane({
+      get,
+      sessionId,
+      agentId: launchAgentId,
+      content,
+      threadIds: input.resolveThreadIds,
+    }))
+  ) {
+    void get().drainResolveQueue({ sessionId });
+    return turnDone({ result: { blockedOverBudget: false, isLaneQueued: true } });
+  }
   const launchCopy =
     resolveCopyPath !== undefined || launchAgentId === null || origin === 'mount-continuation'
       ? null

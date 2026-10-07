@@ -142,7 +142,6 @@ export const FIX_RUN_QUESTION_COPY = {
 export const FIX_RUN_THREAD_COPY = {
   working: 'Working on it',
   sameRun: 'Same fix run',
-  queued: 'Next in line. Starts when the current comment is done.',
   retry: 'Retry in this run',
   startOver: 'Start over with a new agent',
   retryHint:
