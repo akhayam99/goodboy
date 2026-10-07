@@ -595,6 +595,7 @@ icon column), and sits on the canvas so the lane never shows through it.
 | `alert`    | 1.5px `warning`                         | `!`, warning              |
 | `failed`   | 1.5px `danger`                          | `!`, danger               |
 | `approved` | 1px `success` over a solid `success`    | check, `on-tone` (white)  |
+| `merging`  | 1.5px `primary`                         | half-filled core, primary |
 | `done`     | 1px `success` over a `success/18` fill  | check, success            |
 | `closed`   | 1px `border`                            | check, muted              |
 | `stopped`  | 1px `border`                            | small square, muted       |
@@ -620,7 +621,10 @@ glyph.
 comments the fix could not fix), so red stays rare. `approved` is a solid
 `success` disc with a white check, 12px at `md` and at `sm`: ready to ship.
 `finished` is its twin in `merged` violet: the same solid disc, ring and 12px
-white check, for a session that is done. Neither is `done`, which is an outline
+white check, for a session that is done. `merging` is a pull request waiting in
+the merge queue: a hollow `primary` ring around a core filled on its right half,
+drawn to the node's own scale, so it reads as in progress and never as a solid
+disc, a check or the dashed pending ring. Neither is `done`, which is an outline
 with a tinted fill and a `success` check (a finished workflow step). The glyph
 inside a node is never under 12px, so the `sm` node (14px) keeps its ring and
 only the glyph grew from 9px. Any state can also take `isSpinning`, which draws the running
@@ -749,9 +753,10 @@ card, the Board card tone, the Now chip rows and the palette's Needs you rows
 agree on tone and words, and the node's accessible label is the sentence.
 
 Red means broken, amber means you must answer, approve or act, green means
-ready to ship, violet means done, blue means moving or new. A pictogram under
-12px is unreadable, so the marks inside the ring are typographic or 12px:
-`?`, `!`, the approval shield and the check.
+ready to ship, teal (`primary`) means waiting in the merge queue, violet means
+done, blue means moving or new. A pictogram under 12px is unreadable, so the
+marks inside the ring are typographic or 12px: `?`, `!`, the approval shield,
+the check and the half-filled core of the queue.
 
 | reason              | node                 | tone    | words                                    |
 | ------------------- | -------------------- | ------- | ---------------------------------------- |
@@ -763,9 +768,20 @@ ready to ship, violet means done, blue means moving or new. A pictogram under
 | `plan-approval`     | `approval`, shield   | warning | Plan v2 waits for your approval          |
 | `changes-requested` | `alert`, `!`         | warning | Changes requested                        |
 | `fix-couldnt-fix`   | `alert`, `!`         | warning | 2 comments it couldn't fix               |
+| `pr-queued`         | `merging`, half core | primary | In merge queue                           |
 | `pr-approved`       | `approved`, solid    | success | Approved, ready to merge                 |
 | `unread-reply`      | `marker` and its dot | info    | New reply                                |
 | stage `done`        | `finished`, solid    | merged  | Done                                     |
+
+`pr-queued` is the one reason in the table that does not need you. It ranks
+below the needs-you reasons and above `pr-approved`, and it is mutually exclusive
+with it: a pull request in the merge queue is never also approved, ready to merge,
+whatever its review decision. The session stays in the review stage, so the Board
+card sits in In review with the `primary` tone bar, the sidebar, the switcher
+and the hover card draw the `merging` node and the words, and the Now chip and
+the palette's Needs you rows never list it. The hover card shows no Needs you
+action for it. With several mounts, a mount in review or approved speaks for the
+session ahead of a mount in the queue, and failing checks speak ahead of both.
 
 `plan-approval` names the plan's version when it is known and says "The plan
 waits for your approval" otherwise. An unread reply is not a mark: the node

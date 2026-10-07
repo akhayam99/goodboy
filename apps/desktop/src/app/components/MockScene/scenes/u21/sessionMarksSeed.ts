@@ -145,6 +145,11 @@ const SESSIONS: ReadonlyArray<Session> = [
     openedAt: '2026-10-07T08:50:00.000Z',
   }),
   sessionOf({
+    slug: 'queued',
+    goal: 'Land the Harborline webhook retries',
+    openedAt: '2026-10-07T08:45:00.000Z',
+  }),
+  sessionOf({
     slug: 'merged',
     goal: 'Northwind CSV export',
     openedAt: '2026-10-07T08:40:00.000Z',
@@ -196,6 +201,10 @@ const GITHUB: Readonly<Record<string, SessionGithubState>> = {
     over: { state: 'approved', reviewDecision: 'approved', checks: 'failure' },
   }),
   [idOf('review')]: pullRequest({ number: 330, over: {} }),
+  [idOf('queued')]: pullRequest({
+    number: 327,
+    over: { state: 'queued', reviewDecision: 'approved', mergeQueue: { position: 2 } },
+  }),
   [idOf('merged')]: pullRequest({ number: 304, over: { state: 'merged' } }),
 };
 

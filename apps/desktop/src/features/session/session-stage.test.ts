@@ -32,6 +32,23 @@ describe('describeSessionStage', () => {
     expect(approved.reason).not.toBe(errored.reason);
   });
 
+  it('describes a session in the merge queue as in review, in its own calm tone and words', () => {
+    const queued = describeSessionStage(
+      info({ stage: 'review', attention: 'pr-queued', reason: 'PR #327 in the merge queue' }),
+    );
+
+    expect(queued).toMatchObject({
+      label: 'in review',
+      reason: 'PR #327 in the merge queue',
+      tone: 'primary',
+    });
+    expect(attentionWordsOf({ reason: 'pr-queued' })).toBe('In merge queue');
+    expect(ATTENTION_REASON_META['pr-queued']).toMatchObject({ mark: 'queue', tone: 'primary' });
+    expect(queued.tone).not.toBe(
+      describeSessionStage(info({ stage: 'attention', attention: 'pr-approved' })).tone,
+    );
+  });
+
   it('stops a closed pull request from reading as an integrated one', () => {
     const merged = describeSessionStage(info({ stage: 'done', prState: 'merged' }));
     const closed = describeSessionStage(info({ stage: 'done', prState: 'closed' }));

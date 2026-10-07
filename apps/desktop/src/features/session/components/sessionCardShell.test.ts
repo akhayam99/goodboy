@@ -31,6 +31,17 @@ describe('sessionTone', () => {
     expect(sessionTone({ stage: 'attention', attention: 'pr-approved' }).tone).toBe('success');
   });
 
+  it('tones a review card in the merge queue calm primary, never breathing', () => {
+    expect(sessionTone({ stage: 'review', attention: 'pr-queued' })).toEqual({
+      tone: 'primary',
+      isBreathing: false,
+    });
+    expect(
+      sessionTone({ stage: 'review', attention: 'pr-queued', isRunning: true }).isBreathing,
+    ).toBe(false);
+    expect(sessionTone({ stage: 'review' }).tone).toBe('success');
+  });
+
   it('falls back to the stage tone when attention carries no reason', () => {
     expect(sessionTone({ stage: 'attention' }).tone).toBe('warning');
   });

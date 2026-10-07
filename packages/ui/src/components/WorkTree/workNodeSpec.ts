@@ -11,6 +11,7 @@ export type WorkNodeState =
   | 'alert'
   | 'failed'
   | 'approved'
+  | 'merging'
   | 'done'
   | 'finished'
   | 'closed'
@@ -127,6 +128,13 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, 
     strokeWidth: 1,
     strokeClassName: 'stroke-success',
     fillClassName: 'fill-success',
+    dashArray: null,
+  },
+  merging: {
+    radius: 9.25,
+    strokeWidth: 1.5,
+    strokeClassName: 'stroke-primary',
+    fillClassName: 'fill-none',
     dashArray: null,
   },
   done: {

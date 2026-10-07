@@ -20,6 +20,7 @@ describe('WorkNode', () => {
       'alert',
       'failed',
       'approved',
+      'merging',
       'done',
       'finished',
       'closed',
@@ -184,6 +185,30 @@ describe('WorkNode', () => {
     );
   });
 
+  it('draws a merging node as a primary ring around a half-filled core, apart from the solid discs', () => {
+    render(
+      <>
+        <WorkNode state="merging" mark={{ kind: 'dot' }} label="Merging" size="sm" />
+        <WorkNode state="approved" mark={{ kind: 'dot' }} label="Approved" size="sm" />
+        <WorkNode state="finished" mark={{ kind: 'dot' }} label="Finished" size="sm" />
+      </>,
+    );
+
+    const merging = nodeOf('Merging');
+    const ring = merging.querySelector('circle')?.getAttribute('class') ?? '';
+    expect(merging.style.width).toBe('14px');
+    expect(ring).toContain('stroke-primary');
+    expect(ring).toContain('fill-none');
+    expect(merging.querySelector('circle')?.getAttribute('stroke-dasharray')).toBeNull();
+    const core = merging.querySelector('path');
+    expect(core?.parentElement?.getAttribute('class')).toContain('fill-primary');
+    expect(core?.getAttribute('d')).toContain('A');
+    expect(merging.querySelector('svg.lucide-check')).toBeNull();
+    expect(nodeOf('Approved').querySelector('svg.lucide-check')).not.toBeNull();
+    expect(nodeOf('Finished').querySelector('svg.lucide-check')).not.toBeNull();
+    expect(merging.textContent).toBe('');
+  });
+
   it('draws no glyph under 12px in the small node, in any state', () => {
     const states: ReadonlyArray<WorkNodeState> = [
       'queued',
@@ -193,6 +218,7 @@ describe('WorkNode', () => {
       'alert',
       'failed',
       'approved',
+      'merging',
       'done',
       'finished',
       'closed',

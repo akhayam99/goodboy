@@ -47,6 +47,8 @@ afterEach(cleanup);
 
 const REASONS = Object.keys(ATTENTION_REASON_META) as ReadonlyArray<SessionAttentionReason>;
 
+const NEEDS_YOU_REASONS = REASONS.filter((reason) => reason !== 'pr-queued');
+
 type Waiting = {
   readonly session: Session;
   readonly info: SessionStageInfo;
@@ -63,6 +65,17 @@ const waitingFor = ({ reason }: { readonly reason: SessionAttentionReason }): Wa
   throw new Error(`the scene seed holds no session waiting for ${reason}`);
 };
 
+const queuedSession = (): Waiting => {
+  const state = useAppStore.getState();
+  for (const session of state.sessions) {
+    const info = stageInfoOf(state, session);
+    if (info.attention === 'pr-queued') {
+      return { session, info };
+    }
+  }
+  throw new Error('the scene seed holds no session in the merge queue');
+};
+
 const noop = () => undefined;
 
 const withoutUnseen = (label: string | null): string | null =>
@@ -73,7 +86,7 @@ const nodeOf = (container: HTMLElement) => ({
   words: withoutUnseen(container.querySelector('[role="img"]')?.getAttribute('aria-label') ?? null),
 });
 
-describe.each(REASONS)('every surface says %s the same way', (reason) => {
+describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) => {
   const tone = ATTENTION_REASON_META[reason].tone;
 
   it('draws the sidebar row with the tone and words of the table', () => {
@@ -149,5 +162,69 @@ describe.each(REASONS)('every surface says %s the same way', (reason) => {
 
     expect(entry?.detail).toBe(attentionWordsOf({ reason, counts: info }));
     expect(entry?.accent).toBe(tintClasses(tone).dot);
+  });
+});
+
+describe('a session in the merge queue', () => {
+  const tone = ATTENTION_REASON_META['pr-queued'].tone;
+  const words = 'In merge queue';
+
+  it('stays in review, so it never fills the Now chip or the palette Needs you rows', () => {
+    const { info } = queuedSession();
+
+    expect(info).toMatchObject({ stage: 'review', attention: 'pr-queued' });
+    expect(info.stage).not.toBe('attention');
+  });
+
+  it('draws the sidebar row with the queue mark and the merge queue words', () => {
+    const { session } = queuedSession();
+    const { container } = render(
+      <SessionActivityItem
+        session={session}
+        isActive={false}
+        getSelectedIds={() => []}
+        onClearSelection={noop}
+        onModifierClick={noop}
+        onToggleSelect={noop}
+        onSelect={noop}
+        onRowEnter={noop}
+        onRowLeave={noop}
+        onPagesToggle={noop}
+      />,
+    );
+
+    expect(nodeOf(container)).toEqual({ tone, words });
+    expect(container.querySelector('[role="img"]')?.getAttribute('data-node-state')).toBe(
+      'merging',
+    );
+  });
+
+  it('draws the switcher row with the same node', () => {
+    const { session } = queuedSession();
+    const { container } = render(
+      <SwitcherRow session={session} isSelected={false} onChoose={noop} />,
+    );
+
+    expect(nodeOf(container)).toEqual({ tone, words });
+    expect(container.querySelector('[role="img"]')?.getAttribute('data-node-state')).toBe(
+      'merging',
+    );
+  });
+
+  it('draws the hover card with the same node, the words once and no Needs you action', () => {
+    const { session } = queuedSession();
+    const { container } = render(
+      <SessionHoverCardBody session={session} isArchived={false} onOpenAttention={noop} />,
+    );
+
+    expect(nodeOf(container)).toEqual({ tone, words });
+    expect(within(container).getAllByText(words)).toHaveLength(1);
+    expect(within(container).queryByRole('button', { name: 'Open what needs you' })).toBeNull();
+  });
+
+  it('tones the Board card with the same tone', () => {
+    const { info } = queuedSession();
+
+    expect(sessionTone({ stage: info.stage, attention: info.attention }).tone).toBe(tone);
   });
 });

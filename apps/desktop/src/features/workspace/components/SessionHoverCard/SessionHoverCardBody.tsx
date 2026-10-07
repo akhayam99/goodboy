@@ -50,7 +50,8 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
       [stageWord({ stage: summary.stage }), summary.addsFact ? summary.reason : null]
         .filter((part): part is string => part !== null && part !== '')
         .join(' · '));
-  const isWorking = !isArchived && summary.isRunning && summary.attention !== null;
+  const needsYou = summary.stage === 'attention' && summary.attention !== null;
+  const isWorking = !isArchived && summary.isRunning && needsYou;
   const otherLines = isArchived ? [] : summary.otherLines;
 
   return (
@@ -106,13 +107,13 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
         </div>
       ) : null}
       <span className="text-meta text-faint-foreground">{facts.join(' · ')}</span>
-      {summary.attention === null ? null : (
+      {needsYou ? (
         <GhostActionButton
           icon={ArrowRight}
           label="Open what needs you"
           onClick={() => onOpenAttention({ sessionId, reason: summary.attention })}
         />
-      )}
+      ) : null}
     </div>
   );
 };
