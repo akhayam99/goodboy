@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react';
+import { Kbd } from '@goodboy/ui';
 import { useCurrentWorkspace } from '../../../store';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
@@ -23,7 +24,9 @@ export const CommandCenter = () => {
         Search or ask
         <span className="hidden @min-chrome-wide/topbar:inline"> in {place}</span>
       </span>
-      <kbd className="shrink-0 font-sans text-meta text-faint-foreground">{glyph}</kbd>
+      <Kbd look="inline" aria-hidden className="shrink-0">
+        {glyph}
+      </Kbd>
     </button>
   );
 };

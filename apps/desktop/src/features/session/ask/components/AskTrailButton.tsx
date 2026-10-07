@@ -1,4 +1,4 @@
-import { KbdPill, Tooltip, cn } from '@goodboy/ui';
+import { Kbd, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
@@ -45,13 +45,15 @@ export const AskTrailButton = ({ sessionId }: Props) => {
         aria-pressed={isOpen}
         onClick={() => (isOpen ? closeDrawer() : openAsk({ sessionId }))}
         className={cn(
-          'flex h-6 shrink-0 items-center gap-1 rounded-md pl-2 pr-1 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          'flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           isOpen && 'bg-fill text-foreground',
         )}
       >
         <AskIcon size={ICON_SIZE.row} aria-hidden />
         <span>Ask</span>
-        <KbdPill aria-hidden>{glyphs}</KbdPill>
+        <Kbd look="inline" aria-hidden>
+          {glyphs}
+        </Kbd>
       </button>
     </Tooltip>
   );

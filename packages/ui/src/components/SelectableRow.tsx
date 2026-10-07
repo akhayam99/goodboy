@@ -1,5 +1,6 @@
 import type { AriaAttributes, ReactNode } from 'react';
 import { cn } from '../cn';
+import { ROW_INTERACTIVE } from '../rowInteractive';
 import { SELECTED_ROW_CLASSES } from '../selectedRow';
 
 export type SelectableRowProps = {
@@ -16,7 +17,8 @@ export type SelectableRowProps = {
 };
 
 const ROW_CLASSES = cn(
-  'flex w-full rounded-md text-left text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+  'flex w-full rounded-md text-left text-muted-foreground hover:text-foreground',
+  ROW_INTERACTIVE,
   SELECTED_ROW_CLASSES,
 );
 
