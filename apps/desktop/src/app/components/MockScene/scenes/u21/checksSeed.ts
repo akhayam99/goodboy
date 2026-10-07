@@ -127,7 +127,8 @@ const githubFor = ({ variant, current }: GithubParams): Github => {
 export const applyChecksSeed = ({ variant }: { readonly variant: ChecksVariant }): void => {
   if (variant === 'gitlab') {
     seedResolveGitlabScene({ selected: 'gitlab' });
-  } else {
+  }
+  if (variant !== 'gitlab') {
     seedResolveScene({ expandedThreadId: null });
   }
   useAppStore.setState((state) => {

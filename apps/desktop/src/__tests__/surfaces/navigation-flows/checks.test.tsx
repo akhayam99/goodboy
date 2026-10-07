@@ -8,9 +8,6 @@ vi.mock('@tauri-apps/api/event', () => ({
   emit: vi.fn(async () => undefined),
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
-vi.mock('../../../store/slices/review-source/syncSourceThreads', () => ({
-  syncSourceThreads: vi.fn(async () => undefined),
-}));
 
 import { vi } from 'vitest';
 import { installNavigationHooks, runNavigationRows } from './harness';

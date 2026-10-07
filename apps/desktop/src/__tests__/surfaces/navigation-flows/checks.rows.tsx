@@ -12,7 +12,18 @@ import {
 } from './harness';
 import { setGhChecksMode } from './checks.runner';
 
+const stopResolveSync = (): void => {
+  useAppStore.setState({
+    updateResolveThreads: async () => undefined,
+    materializeReviewThreads: async () => 0,
+    reconcileResolveLane: async () => undefined,
+    reconcileHandReplies: async () => 0,
+    syncSourceSnapshots: async () => undefined,
+  });
+};
+
 const activateFirstMount = ({ sessionId }: Ctx): void => {
+  stopResolveSync();
   const mountId = useAppStore.getState().sessionProjectMounts[sessionId]?.[0]?.mountId;
   if (mountId === undefined) {
     throw new Error('the pr seed has no mount to select');
