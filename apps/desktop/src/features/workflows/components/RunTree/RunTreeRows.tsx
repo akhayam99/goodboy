@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
-import type { Agent, AgentId, OpenQuestion, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, OpenQuestion, PlanWithCount, SessionId } from '@goodboy/types';
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
-import { TimelineNowRule } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineNowRule';
 import { useAgentSpendById } from '../../hooks/useAgentSpendById';
 import type { RowPhase } from '../../../workTreeModel/rowState';
+import { RunTreeFoldRow } from './RunTreeFoldRow';
 import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
 import type { RunStepSkipAction } from './RunStepSkip';
+import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
 
 type Props = {
@@ -19,12 +20,18 @@ type Props = {
   readonly selectedAgentId: AgentId | null;
   readonly highlightedStepId?: string | null;
   readonly skip?: RunStepSkipAction | null;
+  readonly folds?: RunTreeFolds;
+  readonly plans?: ReadonlyMap<string, PlanWithCount>;
   readonly onHighlight?: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
 };
 
 const LIVE_PHASES: ReadonlySet<RowPhase> = new Set<RowPhase>(['queued', 'running', 'waiting']);
+
+const NO_PLANS: ReadonlyMap<string, PlanWithCount> = new Map();
+
+const NO_CHILD_IDS: ReadonlyArray<AgentId> = [];
 
 type AgentRowItem = TimelineRowItem & { readonly entry: TimelineAgentEntry };
 
@@ -45,6 +52,8 @@ export const RunTreeRows = ({
   selectedAgentId,
   highlightedStepId = null,
   skip = null,
+  folds,
+  plans = NO_PLANS,
   onHighlight,
   onSelect,
   onAnswer,
@@ -69,7 +78,10 @@ export const RunTreeRows = ({
   }, [activeRowId, scrollKey]);
 
   const hasActionColumn = stream.items.some(
-    (item) => item.kind === 'row' && LIVE_PHASES.has(item.rowState.phase),
+    (item) =>
+      item.kind === 'row' &&
+      (LIVE_PHASES.has(item.rowState.phase) ||
+        (isAgentRow(item) && plans.has(item.entry.agent.id))),
   );
   const agentById = new Map<string, Agent>();
   for (const item of stream.items) {
@@ -97,14 +109,20 @@ export const RunTreeRows = ({
         if (railRow === undefined) {
           return null;
         }
-        if (item.kind === 'now') {
+        if (item.kind === 'count') {
+          if (folds === undefined) {
+            return null;
+          }
+          const childIds = folds.childIdsBySetId.get(item.expandId) ?? NO_CHILD_IDS;
           return (
-            <TimelineNowRule
+            <RunTreeFoldRow
               key={item.id}
               item={item}
               rail={railRow}
               railWidth={rail.width}
-              hasGutter={false}
+              childIds={childIds}
+              costUsd={childIds.reduce((total, id) => total + (spendByAgentId.get(id) ?? 0), 0)}
+              onSet={folds.onSet}
             />
           );
         }
@@ -124,6 +142,7 @@ export const RunTreeRows = ({
               costUsd={spendByAgentId.get(item.entry.agent.id) ?? 0}
               isNested={isNested}
               hasActionColumn={hasActionColumn}
+              plan={plans.get(item.entry.agent.id) ?? null}
               parentStepName={parentNameOf({ entry: item.entry })}
               isSelected={item.entry.agent.id === selectedAgentId}
               isHighlighted={stepId !== null && stepId === highlightedStepId}

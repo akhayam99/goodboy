@@ -11,6 +11,7 @@ import {
 import type {
   EffortLevel,
   OpenQuestion,
+  PlanWithCount,
   ProviderId,
   RoleModelPreferences,
   Step,
@@ -21,7 +22,9 @@ import {
   guidanceSentTo,
   guidanceTagTip,
 } from '../../../../store/slices/workflows/standingGuidance';
+import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
+import { openPlanDrawer } from '../../../plans/openPlanDrawer';
 import { useAgentRowWork } from '../../../session/hooks/useAgentRowWork';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { TimelineAgentMeta } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineAgentMeta';
@@ -34,13 +37,14 @@ import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
+import { rowSlotWidth } from './rowSlotWidth';
 
 export type RunTreeRouting = {
   readonly stepById: ReadonlyMap<string, Step>;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
-  readonly run?: Pick<WorkflowRun, 'executionMode' | 'rulesSnapshot'> | null;
+  readonly run?: Pick<WorkflowRun, 'executionMode' | 'rulesSnapshot' | 'orchestrationStop'> | null;
 };
 
 type Props = {
@@ -52,6 +56,7 @@ type Props = {
   readonly costUsd: number;
   readonly isNested: boolean;
   readonly hasActionColumn: boolean;
+  readonly plan: PlanWithCount | null;
   readonly parentStepName: string | null;
   readonly isSelected: boolean;
   readonly isHighlighted: boolean;
@@ -94,6 +99,7 @@ export const RunTreeRow = ({
   costUsd,
   isNested,
   hasActionColumn,
+  plan,
   parentStepName,
   isSelected,
   isHighlighted,
@@ -123,6 +129,11 @@ export const RunTreeRow = ({
   const answer = answerOf({ ask: item.rowState.ask });
   const answersFor = isQuestionDelegate({ agent }) ? parentStepName : null;
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
+  const slot = rowSlotWidth({ rail, railWidth, isNested });
+  const isSkipShown = answer === null && skip !== null && !isNested && agent.status === 'running';
+  const planAction = isNested || answer !== null || isSkipShown ? null : plan;
+  const isPlanHeld =
+    planAction !== null && planAction.status === 'active' && isRunHeldForPlan({ run: routing.run });
   const label =
     entry.stepLabel == null
       ? agent.name
@@ -137,8 +148,8 @@ export const RunTreeRow = ({
       onMouseEnter={onHighlight === undefined ? undefined : () => onHighlight(true)}
       onMouseLeave={onHighlight === undefined ? undefined : () => onHighlight(false)}
     >
-      <span className="relative shrink-0" style={{ width: railWidth }}>
-        <TimelineRail rail={rail} width={railWidth} />
+      <span className="relative shrink-0" style={{ width: slot }} data-testid="run-tree-rail-slot">
+        <TimelineRail rail={rail} width={slot} />
         {rail.markerY == null ? null : (
           <span
             className="absolute -translate-x-1/2 -translate-y-1/2"
@@ -202,9 +213,7 @@ export const RunTreeRow = ({
             <TimelineAgentMeta work={work} costUsd={costUsd} />
             {hasActionColumn ? (
               <span className={WORK_META_COLUMN.action}>
-                {answer === null && skip !== null && !isNested && agent.status === 'running' ? (
-                  <RunStepSkip agent={agent} skip={skip} />
-                ) : null}
+                {isSkipShown && skip !== null ? <RunStepSkip agent={agent} skip={skip} /> : null}
                 {answer === null ? null : (
                   <Button
                     variant="secondary"
@@ -213,6 +222,18 @@ export const RunTreeRow = ({
                     onClick={() => onAnswer(answer.question)}
                   >
                     Answer
+                  </Button>
+                )}
+                {planAction === null ? null : (
+                  <Button
+                    variant={isPlanHeld ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-6 shrink-0"
+                    onClick={() =>
+                      openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
+                    }
+                  >
+                    {isPlanHeld ? 'Review plan' : 'Open plan'}
                   </Button>
                 )}
               </span>

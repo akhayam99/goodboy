@@ -358,7 +358,10 @@ the same way: the first step sits on top, steps follow in the order they ran,
 and queued steps come last, dashed. There is no NOW: the story ends on the last
 step, as the agent tree does. The run lane starts on the first step, so the
 tree has no session spine and no time column. Sub-agents sit one column right,
-under their step, on the run's colour. The view scrolls to the row that is
+under their step, on the run's colour, and their label starts one column right
+of their step's label too (two columns for a sub-agent of a sub-agent), so the
+nesting reads in the text and not only in the lane. A step keeps its place
+whatever its sub-agents do. The view scrolls to the row that is
 running or waiting on you when it opens. The run header and the Next action
 strip stay pinned while the tree scrolls. A long run name wraps to a second
 line in the header before it truncates, and so does a long agent name in the
@@ -371,10 +374,29 @@ that answers a question for a step never shows it, in the tree or in the
 activity feed, because the question belongs to that step. Every row ends with
 the same meta as the activity feed: the model, the effort and what the row has
 spent, with a dotted model name when routing picked another one than the plan.
-The Answer column exists only while a row in the tree has an Answer, so a tree
-with nothing to answer gives that width to the titles. In a narrow pane the
-kind chip narrows and the effort column hides, so the title keeps its room.
-Clicking a row opens that agent.
+The action column exists only while a row in the tree has an action, so a tree
+with nothing to do gives that width to the titles. The action is **Answer**, or
+on the step that produced a plan **Review plan** while the run waits on that
+plan and **Open plan** once it does not. Both open the plan in the plan
+drawer, over the run, and a row that asks something keeps its **Answer** alone.
+In a narrow pane the kind chip narrows and the effort column hides, so the
+title keeps its room. Clicking a row opens that agent.
+
+A set of sub-agents, the children of one agent, folds into one row under its
+parent when every one of them is settled and none has an open question,
+whatever the state of the parent. The row says what the set holds, for example
+`3 scouts · done · 2m · $0.09`: the role when all of them share one,
+`subagents` otherwise, the work time of the set (time spent waiting on you is
+not counted) and what it spent. A set with a running, queued, waiting, failed
+or asking agent stays open and has no fold row, and a new or restarted
+sub-agent opens a folded set again. The fold follows the activity feed: a set
+already settled when the page opens starts folded, a set you watched settle
+stays open until you fold it, and leaving the page forgets it. Click the row,
+or press Enter or Right on it, to open the set downward under the row, whose
+chevron then points up; click, Enter or Left folds it. Inside an open set the
+sub-agents run oldest first, top to bottom, and a set inside a set folds on its
+own. `foldSettledSets` does this over the items of the run tree, so the
+activity feed and its stream builder are untouched.
 
 An agent's Brief draws its sub-agents with the same tree, under **Subagents**
 (`SubagentTree`, from `buildAgentTreeStream`). The agent sits on top
@@ -383,7 +405,8 @@ it one column right, `3.1`, `3.2`, `3.3`, each with its own model, effort and
 spend. Sub-agents of an agent outside a workflow are numbered from `1`. The
 header counts them in words ("2 of 3 done"). An implementer split into parts
 shows no Outcome, because the tree already says what each part did. A planner
-shows no sub-agents, and delegates and follow-ups keep their own sections.
+shows no sub-agents, and delegates and follow-ups keep their own sections. This
+tree never folds a set and has no plan action.
 
 In the activity feed, an agent or step row leads with its role as a glyph and
 ends with the model that ran, then its duration with what it has spent under

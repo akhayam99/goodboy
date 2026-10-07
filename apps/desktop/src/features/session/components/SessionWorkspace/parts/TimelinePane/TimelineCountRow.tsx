@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { TimelineCountItem } from '../../../../timeline/buildTimelineStream';
 import { groupSummaryText } from '../../../../timeline/groupSummary';
@@ -15,10 +15,21 @@ type Props = {
   readonly railWidth: number;
   readonly lanes: TimelineLaneControl | null;
   readonly isExpanded: boolean;
+  readonly hasGutter?: boolean;
+  readonly trailing?: ReactNode;
   readonly onSet: (params: { readonly id: string; readonly isExpanded: boolean }) => void;
 };
 
-export const TimelineCountRow = ({ item, rail, railWidth, lanes, isExpanded, onSet }: Props) => {
+export const TimelineCountRow = ({
+  item,
+  rail,
+  railWidth,
+  lanes,
+  isExpanded,
+  hasGutter = true,
+  trailing = null,
+  onSet,
+}: Props) => {
   const label = groupSummaryText({ summary: item.summary });
   const set = ({ isExpanded: next }: { readonly isExpanded: boolean }) =>
     onSet({ id: item.expandId, isExpanded: next });
@@ -35,7 +46,7 @@ export const TimelineCountRow = ({ item, rail, railWidth, lanes, isExpanded, onS
   };
   return (
     <div data-row-id={item.id} className="flex min-w-0" style={{ height: item.height }}>
-      <span className={cn('shrink-0', TIMELINE_GUTTER)} />
+      {hasGutter ? <span className={cn('shrink-0', TIMELINE_GUTTER)} /> : null}
       <span className="relative shrink-0" style={{ width: railWidth }}>
         <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
         {rail.markerY == null ? null : (
@@ -70,6 +81,7 @@ export const TimelineCountRow = ({ item, rail, railWidth, lanes, isExpanded, onS
           style={{ height: TIMELINE_RHYTHM.grade.count.height }}
         >
           <TimelineFoldSummary summary={item.summary} />
+          {trailing}
         </button>
       </div>
     </div>
