@@ -107,7 +107,12 @@ a sentence that the Board card, the Now chip rows and the palette read too. Red
 answer, approve or act on: `?` for a question or a comment that needs you, the
 shield for an approval or a held plan, and an amber `!` (`alert`) for changes
 requested and comments the fix could not fix. A solid green disc with a white
-check (`approved`) is a pull request ready to merge. A finished session
+check (`approved`) is a pull request ready to merge. A pull request in the merge
+queue (`pr-queued`) is the `merging` mark: a ring in the `primary` teal around a
+half-filled core, calm and in progress, because nothing is left for you to do.
+It ranks below the needs-you reasons and above approved, and the session stays
+in review, so it never enters Needs you, the Now chip or the palette's Needs you
+rows. A finished session
 (`finished`) is the same solid disc in the `merged` violet with a white check,
 so a done session reads as complete beside the hollow rings; a session whose
 pull request closed unmerged keeps the muted check (`closed`). The check inside

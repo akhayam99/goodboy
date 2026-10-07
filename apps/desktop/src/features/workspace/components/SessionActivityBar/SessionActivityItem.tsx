@@ -102,7 +102,11 @@ const SessionActivityItemView = ({
     );
   }
 
-  const isCalm = node.kind === 'idle' || node.kind === 'done' || node.kind === 'archived';
+  const isCalm =
+    node.kind === 'idle' ||
+    node.kind === 'queue' ||
+    node.kind === 'done' ||
+    node.kind === 'archived';
 
   return (
     <div className="group/select-row relative">

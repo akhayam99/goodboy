@@ -23,6 +23,7 @@ export type SessionAttentionReason =
   | 'unread-reply'
   | 'ci-failed'
   | 'changes-requested'
+  | 'pr-queued'
   | 'pr-approved'
   | 'needs-approval'
   | 'plan-approval';

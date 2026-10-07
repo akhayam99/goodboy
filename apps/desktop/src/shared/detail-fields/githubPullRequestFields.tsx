@@ -1,6 +1,7 @@
 import { AlertCircle, CheckCheck, CircleDashed, GitBranch, ListChecks } from 'lucide-react';
 import type { PrCheckRun, PullRequestState } from '@goodboy/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
+import { pullRequestKindOf } from '../pullRequestKind';
 import { PULL_REQUEST_PRESENTATION } from '../pullRequestPresentation';
 import type { InboxState } from '../../features/inbox/types';
 import type { FactRegistry } from './factTypes';
@@ -26,13 +27,14 @@ type CategoryParams = {
 };
 
 const githubPullRequestCategory = ({ pr }: CategoryParams): InboxState => {
-  if (pr.isDraft && pr.state === 'open') {
+  const kind = pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });
+  if (kind === 'draft') {
     return 'open';
   }
-  if (pr.state === 'open' || pr.state === 'queued') {
-    return 'active';
+  if (kind === 'merged' || kind === 'closed') {
+    return 'done';
   }
-  return 'done';
+  return 'active';
 };
 
 type ChecksParams = {
@@ -57,7 +59,7 @@ export const githubPullRequestFields: FactRegistry<GithubPullRequestFacts> = {
         category={githubPullRequestCategory({ pr: entity.pr })}
         label={
           PULL_REQUEST_PRESENTATION[
-            entity.pr.isDraft && entity.pr.state === 'open' ? 'draft' : entity.pr.state
+            pullRequestKindOf({ state: entity.pr.state, isDraft: entity.pr.isDraft })
           ].label
         }
       />

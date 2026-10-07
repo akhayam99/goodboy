@@ -1464,18 +1464,30 @@ failed push) gives `fix-couldnt-fix`. Both also send one notification when the
 count rises (`projectResolveRows`), with an action that opens Activity, where
 the Needs you row waits.
 
+A pull request has one state word, from `pullRequestKindOf` in
+`shared/pullRequestKind.ts`, and every surface that names it reads that
+function: the Overview mount rows, the Branch header and menus, the pull
+request pane and strip, the detail facts and the ask pack. The order is merged,
+closed, queued, approved, in review, draft. GitHub keeps `isDraft` true on a
+closed or merged draft, so the flag alone never makes a word: a closed or merged
+pull request never reads Draft.
+
 Attention reasons, in `SessionAttentionReason`, rank in this order when several
 hold: `needs-approval`, `agent-error`, `plan-approval`, `open-question`,
 `fix-needs-you`, `ci-failed`, `changes-requested`, `fix-couldnt-fix`,
-`pr-approved`, `unread-reply`. `attentionFactsOf` lists every reason that holds
-in that order, `deriveSessionStage` takes the first as `attention` and keeps
-the rest as `otherReasons`, and `SessionStageInfo.isRunning` tells a session in
+`pr-queued`, `pr-approved`, `unread-reply`. `attentionFactsOf` lists every reason
+that holds in that order, `deriveSessionStage` takes the first as `attention` and
+keeps the rest as `otherReasons`, and `SessionStageInfo.isRunning` tells a session in
 needs you that an agent still works. `plan-approval` comes from a workflow run
 whose `orchestrationStop` is `plan-approval` (`isRunHeldForPlan`) and opens that
 run's page. `ATTENTION_REASON_META` gives each reason its mark, tone and words
 for the sidebar, the switcher, the hover card, the Board card, the Now chip and
-the palette; red is only an agent error and failing checks. The reason text of a
-stage says "checks", never "CI".
+the palette; red is only an agent error and failing checks. `pr-queued` ("In
+merge queue", a pull request GitHub is set to merge) is not a needs-you reason:
+when it wins, the stage is `review` and `attention` still carries it, so the
+marks and words read it while the session stays out of Needs you. A queued pull
+request is never also `pr-approved`. The reason text of a stage says "checks",
+never "CI".
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 

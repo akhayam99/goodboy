@@ -7,7 +7,7 @@ import {
   type AttentionMark,
 } from '../../../session/session-stage';
 
-type SessionNodeKind = 'needs' | 'running' | 'done' | 'idle' | 'archived';
+type SessionNodeKind = 'needs' | 'queue' | 'running' | 'done' | 'idle' | 'archived';
 
 export type SessionNode = {
   readonly kind: SessionNodeKind;
@@ -54,6 +54,9 @@ const stateOfMark = ({ mark, tone }: MarkStateParams): WorkNodeState => {
   if (mark === 'approval') {
     return 'approval';
   }
+  if (mark === 'queue') {
+    return 'merging';
+  }
   if (mark === 'approved') {
     return 'approved';
   }
@@ -99,6 +102,18 @@ export const sessionNodeOf = ({ info, isArchived }: Params): SessionNode => {
       tone: meta.tone,
       label: attentionWordsOf({ reason: attention, counts: info }),
       isSpinning: isRunning,
+      hasUnread,
+    };
+  }
+  if (stage === 'review' && attention === 'pr-queued') {
+    const meta = ATTENTION_REASON_META[attention];
+    return {
+      kind: 'queue',
+      state: stateOfMark({ mark: meta.mark, tone: meta.tone }),
+      mark: RING_ONLY,
+      tone: meta.tone,
+      label: attentionWordsOf({ reason: attention, counts: info }),
+      isSpinning: false,
       hasUnread,
     };
   }

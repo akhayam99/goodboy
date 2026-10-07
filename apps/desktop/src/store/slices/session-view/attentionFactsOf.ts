@@ -27,6 +27,7 @@ const ATTENTION_PRIORITY: ReadonlyArray<SessionAttentionReason> = [
   'ci-failed',
   'changes-requested',
   'fix-couldnt-fix',
+  'pr-queued',
   'pr-approved',
   'unread-reply',
 ];
@@ -91,6 +92,7 @@ export const attentionFactsOf = ({
     'ci-failed': livePr !== null && livePr.checks === 'failure',
     'changes-requested': livePr !== null && livePr.reviewDecision === 'changes_requested',
     'fix-couldnt-fix': isOnBranch && fixCouldntFixCount > 0,
+    'pr-queued': livePr !== null && livePr.state === 'queued',
     'pr-approved': livePr !== null && isPullRequestApproved({ pr: livePr }),
     'unread-reply': hasUnread,
   };

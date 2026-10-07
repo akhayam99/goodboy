@@ -1,6 +1,7 @@
 import type { PullRequestState } from '@goodboy/types';
 import type { CrumbMenuAction, CrumbMenuModel, CrumbMenuRow } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 
 type Params = {
@@ -17,7 +18,8 @@ export const pullRequestMenu = ({
   onSelect,
 }: Params): CrumbMenuModel => {
   const rowOf = (pr: PullRequestState): CrumbMenuRow => {
-    const presentation = PULL_REQUEST_PRESENTATION[pr.isDraft ? 'draft' : pr.state];
+    const presentation =
+      PULL_REQUEST_PRESENTATION[pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft })];
     return {
       id: String(pr.number),
       lead: { kind: 'icon', icon: CONCEPT_ICONS.pr },

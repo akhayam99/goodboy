@@ -54,6 +54,8 @@ type Row = {
 
 const approvedPr = livePr({ state: 'approved', reviewDecision: 'approved' });
 
+const queuedPr = livePr({ state: 'queued', reviewDecision: 'approved' });
+
 const ROWS: ReadonlyArray<Row> = [
   {
     name: 'an open question alone',
@@ -152,6 +154,45 @@ const ROWS: ReadonlyArray<Row> = [
       stage: 'attention',
       attention: 'pr-approved',
       reason: 'PR #318 approved, ready to merge',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a queued pull request alone',
+    params: { ...base, pr: queuedPr },
+    before: null,
+    after: {
+      stage: 'review',
+      attention: 'pr-queued',
+      reason: 'PR #318 in the merge queue',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'running with a queued pull request',
+    params: { ...base, pr: queuedPr, hasRunningAgent: true },
+    before: null,
+    after: { stage: 'running', attention: null, reason: 'agent running', isRunning: true },
+  },
+  {
+    name: 'a queued pull request with an open question',
+    params: { ...base, pr: queuedPr, openQuestionCount: 1 },
+    before: null,
+    after: {
+      stage: 'attention',
+      attention: 'open-question',
+      reason: '1 open question',
+      isRunning: false,
+    },
+  },
+  {
+    name: 'a queued pull request with failing checks',
+    params: { ...base, pr: livePr({ ...queuedPr, checks: 'failure' }) },
+    before: null,
+    after: {
+      stage: 'attention',
+      attention: 'ci-failed',
+      reason: 'PR #318: checks failing',
       isRunning: false,
     },
   },
@@ -410,6 +451,7 @@ const PRIORITY: ReadonlyArray<SessionAttentionReason> = [
   'ci-failed',
   'changes-requested',
   'fix-couldnt-fix',
+  'pr-queued',
   'pr-approved',
   'unread-reply',
 ];
@@ -432,6 +474,7 @@ const paramsHolding = ({
   const pr = livePr({
     ...(holds('ci-failed') && { checks: 'failure' as const }),
     ...(holds('changes-requested') && { reviewDecision: 'changes_requested' as const }),
+    ...(holds('pr-queued') && { state: 'queued' as const }),
     ...(holds('pr-approved') && {
       state: 'approved' as const,
       reviewDecision: 'approved' as const,
@@ -452,7 +495,10 @@ const paramsHolding = ({
 
 const PAIRS = PRIORITY.flatMap((first, index) =>
   PRIORITY.slice(index + 1).flatMap((second) =>
-    first === 'changes-requested' && second === 'pr-approved' ? [] : [[first, second] as const],
+    (first === 'changes-requested' && second === 'pr-approved') ||
+    (first === 'pr-queued' && second === 'pr-approved')
+      ? []
+      : [[first, second] as const],
   ),
 );
 
@@ -460,7 +506,7 @@ describe('deriveSessionStage pairs of reasons', () => {
   it.each(PAIRS)('ranks %s above %s and keeps the other as a fact', (first, second) => {
     const info = deriveSessionStage(paramsHolding({ reasons: [second, first], isRunning: false }));
 
-    expect(info.stage).toBe('attention');
+    expect(info.stage).toBe(first === 'pr-queued' ? 'review' : 'attention');
     expect(info.attention).toBe(first);
     expect(info.otherReasons).toEqual([second]);
     expect(info.isRunning).toBe(false);

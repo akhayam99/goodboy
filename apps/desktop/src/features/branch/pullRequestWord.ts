@@ -1,4 +1,5 @@
 import type { PullRequestStateKind } from '@goodboy/types';
+import { pullRequestKindOf } from '../../shared/pullRequestKind';
 
 type Params = {
   readonly state: PullRequestStateKind;
@@ -6,8 +7,6 @@ type Params = {
 };
 
 export const pullRequestWord = ({ state, isDraft }: Params): string => {
-  if (isDraft && state === 'open') {
-    return 'Draft';
-  }
-  return state.charAt(0).toUpperCase() + state.slice(1);
+  const kind = pullRequestKindOf({ state, isDraft });
+  return kind.charAt(0).toUpperCase() + kind.slice(1);
 };

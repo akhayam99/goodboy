@@ -21,6 +21,9 @@ export const sessionTone = ({
   if (stage === 'attention' && attention !== null) {
     return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: isRunning };
   }
+  if (stage === 'review' && attention === 'pr-queued') {
+    return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: false };
+  }
   return { tone: STAGE_TONE[stage], isBreathing: stage === 'running' };
 };
 
