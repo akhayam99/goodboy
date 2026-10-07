@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button, Chip, StatusDot, WorkNode, type Tone } from '@goodboy/ui';
+import type { LaneStatus } from '../../laneStatus';
 import { FIX_RUN_CHIPS, fixRunTitle, type FixRun, type FixRunWord } from '../../fixRun';
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
   readonly onFilter: (word: FixRunWord | null) => void;
   readonly onOpenTranscript: () => void;
   readonly onStop: () => void;
+  readonly lane?: LaneStatus | null;
   readonly actions?: ReactNode;
 };
 
@@ -24,9 +26,11 @@ export const ResolveRunStatus = ({
   onFilter,
   onOpenTranscript,
   onStop,
+  lane = null,
   actions = null,
 }: Props) => {
-  const title = fixRunTitle({ run });
+  const title = lane === null ? fixRunTitle({ run }) : lane.line;
+  const isLive = run.isLive || lane !== null;
   return (
     <section
       aria-label="Fix run"
@@ -34,7 +38,7 @@ export const ResolveRunStatus = ({
       className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-subtle px-4 py-2 ring-1 ring-border-soft"
     >
       <span className="flex shrink-0 items-center gap-2 text-label text-foreground">
-        {run.isLive && <WorkNode state="running" label={title} mark={{ kind: 'dot' }} />}
+        {isLive && <WorkNode state="running" label={title} mark={{ kind: 'dot' }} />}
         {title}
       </span>
       <ul aria-label="Filter by state" className="flex min-w-0 flex-wrap items-center gap-1">
@@ -66,7 +70,7 @@ export const ResolveRunStatus = ({
         <Button size="sm" variant="ghost" onClick={onOpenTranscript}>
           Open transcript
         </Button>
-        {run.isLive && (
+        {isLive && (
           <Button size="sm" variant="ghost" onClick={onStop}>
             Stop
           </Button>

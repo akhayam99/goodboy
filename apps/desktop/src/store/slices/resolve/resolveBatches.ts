@@ -1,28 +1,14 @@
-import {
-  getResolveParallelLimit,
-  insertResolveBatch,
-  listResolveBatches,
-  setResolveParallelLimit as saveResolveParallelLimit,
-} from '@goodboy/db';
+import { insertResolveBatch, listResolveBatches } from '@goodboy/db';
 import type { ResolveBatch } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type {
-  CreateBatchParams,
-  ParallelLimitParams,
-  SessionParams,
-  SetFn,
-  SliceParams,
-} from './types';
+import type { CreateBatchParams, SessionParams, SetFn, SliceParams } from './types';
 
 type LoadParams = { readonly set: SetFn } & SessionParams;
 
 export const loadResolveBatchesInto = async ({ set, sessionId }: LoadParams): Promise<void> => {
-  const db = tauriDatabase;
-  const batches = await listResolveBatches({ db, sessionId });
-  const limit = await getResolveParallelLimit({ db, sessionId });
+  const batches = await listResolveBatches({ db: tauriDatabase, sessionId });
   set((state) => ({
     sessionResolveBatches: { ...state.sessionResolveBatches, [sessionId]: batches },
-    sessionResolveParallelLimit: { ...state.sessionResolveParallelLimit, [sessionId]: limit },
   }));
 };
 
@@ -42,15 +28,4 @@ export const createResolveBatch = async ({
   await insertResolveBatch({ db: tauriDatabase, batch });
   await loadResolveBatchesInto({ set, sessionId });
   return batch;
-};
-
-export const setResolveParallelLimit = async ({
-  set,
-  get,
-  sessionId,
-  limit,
-}: SliceParams & ParallelLimitParams): Promise<void> => {
-  await saveResolveParallelLimit({ db: tauriDatabase, sessionId, limit });
-  await loadResolveBatchesInto({ set, sessionId });
-  void get().drainResolveQueue({ sessionId });
 };

@@ -226,6 +226,8 @@ pub struct QuarantineCandidateArgs {
     pub candidate_id: String,
     #[serde(rename = "baseSha")]
     pub base_sha: String,
+    #[serde(default)]
+    pub stack: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -243,6 +245,8 @@ pub struct SplitCandidatesArgs {
     #[serde(rename = "baseSha")]
     pub base_sha: String,
     pub picks: Vec<SplitCandidatePick>,
+    #[serde(default)]
+    pub stack: bool,
 }
 
 #[derive(Debug, Serialize)]

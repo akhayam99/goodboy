@@ -559,12 +559,7 @@ export {
   setResolveAttemptCopyPath,
   setResolveAttemptFailureCause,
 } from './queries/resolve-attempt';
-export {
-  insertResolveBatch,
-  listResolveBatches,
-  getResolveParallelLimit,
-  setResolveParallelLimit,
-} from './queries/resolve-batch';
+export { insertResolveBatch, listResolveBatches } from './queries/resolve-batch';
 export {
   listResolveThreadFacts,
   setResolveThreadGitState,

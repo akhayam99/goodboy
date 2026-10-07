@@ -7,6 +7,7 @@ import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { fixRunModelLabel } from '../../fixRun';
+import { LANE_QUEUED_SENTENCE } from '../../laneCopy';
 import { FIX_RUN_THREAD_COPY } from '../../reviewFlowCopy';
 
 type Props = {
@@ -47,7 +48,7 @@ export const WorkingRun = ({ attempt }: Props) => {
         {isWaiting ? FIX_RUN_THREAD_COPY.working : `${FIX_RUN_THREAD_COPY.working} · ${elapsed}`}
       </h2>
       <p aria-live="polite" className="min-w-0 truncate text-body text-muted-foreground">
-        {isWaiting ? FIX_RUN_THREAD_COPY.queued : step}
+        {isWaiting ? LANE_QUEUED_SENTENCE : step}
       </p>
       <p className="text-meta text-faint-foreground">
         {FIX_RUN_THREAD_COPY.sameRun} · {fixRunModelLabel({ attempt })}

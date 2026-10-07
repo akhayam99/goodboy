@@ -1,9 +1,4 @@
-import {
-  RESOLVE_PARALLEL_LIMIT_DEFAULT,
-  RESOLVE_PARALLEL_LIMIT_MAX,
-  type ResolveBatch,
-  type SessionId,
-} from '@goodboy/types';
+import type { ResolveBatch, SessionId } from '@goodboy/types';
 import type { Database } from '../client';
 import { resolveStringArray } from './resolve-json';
 import {
@@ -61,32 +56,4 @@ export const listResolveBatches = async ({
     [sessionId],
   );
   return rows.map((row) => hydrate({ row }));
-};
-
-const clampLimit = ({ limit }: { readonly limit: number }): number =>
-  Math.min(Math.max(Math.round(limit), 1), RESOLVE_PARALLEL_LIMIT_MAX);
-
-export const getResolveParallelLimit = async ({
-  db,
-  sessionId,
-}: SessionParams): Promise<number> => {
-  const rows = await db.select<{ readonly limit: number }>(
-    'SELECT parallel_limit AS "limit" FROM resolve_session_settings WHERE session_id = ?',
-    [sessionId],
-  );
-  return rows[0]?.limit ?? RESOLVE_PARALLEL_LIMIT_DEFAULT;
-};
-
-export const setResolveParallelLimit = async ({
-  db,
-  sessionId,
-  limit,
-}: SessionParams & { readonly limit: number }): Promise<number> => {
-  const clamped = clampLimit({ limit });
-  await db.execute(
-    `INSERT INTO resolve_session_settings (session_id, parallel_limit, updated_at) VALUES (?, ?, ?)
-     ON CONFLICT (session_id) DO UPDATE SET parallel_limit = excluded.parallel_limit, updated_at = excluded.updated_at`,
-    [sessionId, clamped, Date.now()],
-  );
-  return clamped;
 };

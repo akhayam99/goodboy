@@ -9,6 +9,7 @@ import {
   seedResolveScene,
   type ReplyOnlyVariant,
 } from './resolveSeed';
+import { applyResolveLaneSeed, type ResolveLaneVariant } from './resolveLaneSeed';
 
 const PUSH_PREVIEW: ResolvePublicationPreview = {
   publicationId: 'mock-branch-publication',
@@ -55,6 +56,7 @@ type Props = {
   readonly openPush: boolean;
   readonly threadId?: string;
   readonly replyOnly?: ReplyOnlyVariant;
+  readonly lane?: ResolveLaneVariant;
 };
 
 export const BranchSceneShell = ({
@@ -62,6 +64,7 @@ export const BranchSceneShell = ({
   openPush,
   threadId = EXPANDED_THREAD_ID,
   replyOnly,
+  lane,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -70,6 +73,9 @@ export const BranchSceneShell = ({
       expandedThreadId: threadId,
       ...(replyOnly !== undefined && { replyOnly }),
     });
+    if (lane !== undefined) {
+      applyResolveLaneSeed({ variant: lane });
+    }
     useAppStore.setState({
       preparePublication: async () => PUSH_PREVIEW,
     });

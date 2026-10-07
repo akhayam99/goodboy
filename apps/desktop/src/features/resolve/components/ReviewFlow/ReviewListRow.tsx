@@ -1,8 +1,7 @@
-import { SelectionCheckbox, WorkNode, cn, inlineMarkdownText } from '@goodboy/ui';
+import { SelectionCheckbox, WorkNode, cn } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
-import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
-import { firstSentence } from './firstSentence';
+import { entryBodyOf, entryTitleOf } from './entryTitle';
 import { REMOTE_TONE_CLASS, STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
@@ -25,8 +24,8 @@ const fileOf = ({ path }: { readonly path: string | null }): string | null =>
 
 export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }: Props) => {
   const note = entry.row.reviewerNote;
-  const body = note === null ? null : inlineMarkdownText({ text: note.body });
-  const title = body === null ? RESOLVE_COMMENT_UNAVAILABLE : firstSentence({ text: body });
+  const body = entryBodyOf({ entry });
+  const title = entryTitleOf({ entry });
   const file = fileOf({ path: note?.path ?? null });
   const selectLabel = `${REVIEW_LAUNCH_LABEL.selectRow} ${note?.author ?? ''}`.trim();
   return (

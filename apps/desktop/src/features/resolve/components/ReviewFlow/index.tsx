@@ -43,6 +43,7 @@ import {
 } from '../../../review/reviewTargetCopy';
 import { fixRunOf, type FixRunWord } from '../../fixRun';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
+import { useLaneStatus } from '../../hooks/useLaneStatus';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
 import { isUndoableAccept } from '../../bulkAccept';
 import { REVIEW_BULK_LABEL, bulkAcceptFailureLine } from '../../reviewBulkCopy';
@@ -104,6 +105,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const env = useActionEnv({ origin: 'button' });
   const { entries, groups: allGroups } = useReviewEntries({ sessionId });
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
+  const stopResolveLane = useAppStore((s) => s.stopResolveLane);
   const [filter, setFilter] = useState<FixRunWord | null>(null);
   const [isDoneOpen, setIsDoneOpen] = useState(false);
   const run = useMemo(
@@ -117,6 +119,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
       }),
     [entries],
   );
+  const lane = useLaneStatus({ sessionId, entries });
   const activeFilter = run !== null && filter !== null && run.tally[filter] > 0 ? filter : null;
   const groups = useMemo(
     () =>
@@ -722,6 +725,11 @@ export const ReviewFlow = ({ session, push }: Props) => {
             onRetry={() => void openReview({ sessionId, destination: reviewTarget.destination })}
           />
         )}
+        {lane?.rebuildLine != null && (
+          <p role="status" className="text-meta text-muted-foreground">
+            {lane.rebuildLine}
+          </p>
+        )}
         {acceptError !== null && (
           <Notice
             tone="danger"
@@ -746,7 +754,12 @@ export const ReviewFlow = ({ session, push }: Props) => {
             onOpenTranscript={() =>
               openDrawer({ kind: 'transcript', sessionId, payload: { agentId: run.agentId } })
             }
-            onStop={() => void forceCloseResolver(sessionId, run.agentId)}
+            lane={lane}
+            onStop={() =>
+              void (lane === null
+                ? forceCloseResolver(sessionId, run.agentId)
+                : stopResolveLane({ sessionId, worktreePath: lane.worktreePath }))
+            }
             actions={
               bulkRun === null ? null : (
                 <RunStatusBulkActions

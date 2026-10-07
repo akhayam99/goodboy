@@ -193,20 +193,32 @@ fn worktree_quarantine_candidate_blocking(
         }
     };
     if is_dirty {
-        git(path, &["add", "--all"])?;
-        git(
-            path,
-            &[
-                "commit",
-                "--no-verify",
-                "--quiet",
-                "-m",
-                &format!("candidate {}", sanitize_slug(&args.candidate_id)),
-            ],
-        )?;
+        git(path, &["add", "--update"])?;
+        let staged = git(path, &["diff", "--cached", "--name-only"])?;
+        if !staged.trim().is_empty() {
+            git(
+                path,
+                &[
+                    "commit",
+                    "--no-verify",
+                    "--quiet",
+                    "-m",
+                    &format!("candidate {}", sanitize_slug(&args.candidate_id)),
+                ],
+            )?;
+        }
     }
-    let tip = resolve_commit(path, "HEAD")?;
+    let raw_tip = resolve_commit(path, "HEAD")?;
+    if raw_tip == base {
+        return Ok(QuarantinedCandidate {
+            sha: None,
+            base_sha: base,
+        });
+    }
+    let tip = scrub::scrub_environment(path, &base, &raw_tip, &args.candidate_id)?;
     if tip == base {
+        git(path, &["update-ref", "HEAD", &base, &raw_tip])?;
+        git(path, &["reset", "--hard", "--quiet", &base])?;
         return Ok(QuarantinedCandidate {
             sha: None,
             base_sha: base,
@@ -216,8 +228,9 @@ fn worktree_quarantine_candidate_blocking(
         path,
         &["update-ref", &candidate_ref(&args.candidate_id), &tip],
     )?;
-    git(path, &["update-ref", "HEAD", &base, &tip])?;
-    git(path, &["reset", "--hard", "--quiet", &base])?;
+    let rest_at = if args.stack { &tip } else { &base };
+    git(path, &["update-ref", "HEAD", rest_at, &raw_tip])?;
+    git(path, &["reset", "--hard", "--quiet", rest_at])?;
     Ok(QuarantinedCandidate {
         sha: Some(tip),
         base_sha: base,
@@ -241,6 +254,10 @@ fn worktree_split_candidates_blocking(
         return Err(WorktreeError::RepoNotFound(args.worktree_path));
     }
     let base = resolve_commit(path, &args.base_sha)?;
+    if args.stack {
+        ensure_integrable_tree(path)?;
+        return split_stacked(path, &base, args.picks);
+    }
     if resolve_commit(path, "HEAD")? != base {
         return Err(WorktreeError::Git {
             message: "the copy is not at the candidate base".to_string(),
@@ -256,6 +273,61 @@ fn worktree_split_candidates_blocking(
         });
     }
     Ok(out)
+}
+
+fn unsplit(picks: Vec<SplitCandidatePick>) -> Vec<SplitCandidate> {
+    picks
+        .into_iter()
+        .map(|pick| SplitCandidate {
+            candidate_id: pick.candidate_id,
+            sha: None,
+        })
+        .collect()
+}
+
+fn split_stacked(
+    path: &Path,
+    base: &str,
+    picks: Vec<SplitCandidatePick>,
+) -> Result<Vec<SplitCandidate>, WorktreeError> {
+    let head = resolve_commit(path, "HEAD")?;
+    if !is_ancestor(path, base, &head) {
+        return Err(WorktreeError::Git {
+            message: "the copy is not built on the candidate base".to_string(),
+        });
+    }
+    let range = format!("{base}..{head}");
+    let merges = git(path, &["rev-list", "--merges", &range])?;
+    if !merges.trim().is_empty() {
+        return Ok(unsplit(picks));
+    }
+    let listed = git(path, &["rev-list", "--reverse", &range])?;
+    let order: Vec<&str> = listed.lines().map(str::trim).collect();
+    let mut placed: Vec<(usize, String, String)> = Vec::with_capacity(picks.len());
+    for pick in &picks {
+        let Ok(commit) = resolve_commit(path, &pick.commit_sha) else {
+            return Ok(unsplit(picks));
+        };
+        let Some(index) = order.iter().position(|item| *item == commit) else {
+            return Ok(unsplit(picks));
+        };
+        placed.push((index, commit, pick.candidate_id.clone()));
+    }
+    placed.sort_by_key(|(index, _, _)| *index);
+    let is_contiguous = placed.iter().enumerate().all(|(slot, item)| slot == item.0);
+    if placed.len() != order.len() || !is_contiguous {
+        return Ok(unsplit(picks));
+    }
+    for (_, commit, candidate_id) in &placed {
+        git(path, &["update-ref", &candidate_ref(candidate_id), commit])?;
+    }
+    Ok(placed
+        .into_iter()
+        .map(|(_, commit, candidate_id)| SplitCandidate {
+            candidate_id,
+            sha: Some(commit),
+        })
+        .collect())
 }
 
 fn split_one(
@@ -282,6 +354,8 @@ fn split_one(
     git(path, &["reset", "--hard", "--quiet", base])?;
     Ok(Some(tip))
 }
+
+mod scrub;
 
 #[cfg(test)]
 mod tests;

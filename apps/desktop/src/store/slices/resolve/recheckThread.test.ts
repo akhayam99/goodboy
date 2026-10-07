@@ -11,7 +11,7 @@ import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
   execute: vi.fn(async () => undefined),
-  select: vi.fn(),
+  select: vi.fn(async () => []),
   startRecheck: vi.fn(),
   updateStatus: vi.fn(async () => undefined),
   listAgents: vi.fn(async () => []),

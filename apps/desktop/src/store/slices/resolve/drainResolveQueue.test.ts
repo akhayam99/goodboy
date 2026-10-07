@@ -1427,7 +1427,7 @@ describe('resolve queue scheduler', () => {
     return batch;
   };
 
-  it('runs four comments of a batch at once, each in its own copy, and keeps the fifth waiting', async () => {
+  it('runs one agent at a time in the lane of a branch and keeps the others queued in order', async () => {
     const harness = createHarness({
       worktreePathBySession: { [SESSION_A]: SHARED_PATH },
       extraResolvers: BATCH_AGENTS,
@@ -1436,17 +1436,106 @@ describe('resolve queue scheduler', () => {
 
     await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
 
-    expect(harness.sendTurn).toHaveBeenCalledTimes(4);
-    const copies = harness.sendTurn.mock.calls.map(([input]) => input.resolveCopyPath);
-    expect(new Set(copies).size).toBe(4);
+    expect(harness.sendTurn).toHaveBeenCalledTimes(1);
+    expect(harness.sendTurn.mock.calls[0]?.[0]?.agentId).toBe(BATCH_AGENTS[0]);
     expect(h.slots.get(SHARED_PATH)?.holder ?? null).toBeNull();
     const attempts = harness.get().sessionResolveAttempts[SESSION_A] ?? [];
-    expect(attempts.filter((attempt) => attempt.phase === 'queued').map((a) => a.agentId)).toEqual([
-      BATCH_AGENTS[4],
+    expect(attempts.filter((attempt) => attempt.phase === 'queued').map((a) => a.agentId)).toEqual(
+      BATCH_AGENTS.slice(1),
+    );
+  });
+
+  it('keeps the lane busy while its agent waits for an answer', async () => {
+    const harness = createHarness({
+      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
+      extraResolvers: BATCH_AGENTS,
+    });
+    await queueBatch({ harness, agents: BATCH_AGENTS.slice(0, 2) });
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+    const first = (harness.get().sessionResolveAttempts[SESSION_A] ?? []).find(
+      (attempt) => attempt.agentId === BATCH_AGENTS[0],
+    );
+
+    await harness.actions.recordResolvePhase({
+      sessionId: SESSION_A,
+      agentId: BATCH_AGENTS[0] as AgentId,
+      attemptId: first?.id,
+      phase: 'waiting',
+    });
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    expect(harness.sendTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts the next agent of the lane on the tip of the lane', async () => {
+    const harness = createHarness({
+      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
+      extraResolvers: BATCH_AGENTS,
+    });
+    await queueBatch({ harness, agents: BATCH_AGENTS.slice(0, 2) });
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+    const first = (harness.get().sessionResolveAttempts[SESSION_A] ?? []).find(
+      (attempt) => attempt.agentId === BATCH_AGENTS[0],
+    );
+    await db.execute(
+      `INSERT INTO resolve_candidates (id, session_id, revision, base_sha, candidate_sha, worktree_path, state, created_at, updated_at)
+       VALUES ('tip', ?, 1, 'head-sha', 'tip-sha', ?, 'ready', 1, 1)`,
+      [SESSION_A, SHARED_PATH],
+    );
+    await harness.actions.recordResolvePhase({
+      sessionId: SESSION_A,
+      agentId: BATCH_AGENTS[0] as AgentId,
+      attemptId: first?.id,
+      phase: 'finished',
+    });
+
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    expect(h.prepareCopy).toHaveBeenLastCalledWith(
+      expect.objectContaining({ startSha: 'tip-sha', worktreePath: SHARED_PATH }),
+    );
+  });
+
+  it('runs the lanes of two branches beside each other', async () => {
+    const SIBLING_PATH = '/repo/sibling';
+    const harness = createHarness({
+      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
+      selectedSiblingBySession: { [SESSION_A]: SIBLING_PATH },
+      extraResolvers: BATCH_AGENTS,
+    });
+    const batch = await harness.actions.createResolveBatch({
+      sessionId: SESSION_A,
+      threadIds: ['t-1', 't-2', 't-3'],
+      launchChoice: LAUNCH,
+    });
+    const targets = [
+      { agentId: BATCH_AGENTS[0], path: SHARED_PATH, mountId: `${SESSION_A}-mount` },
+      { agentId: BATCH_AGENTS[1], path: SHARED_PATH, mountId: `${SESSION_A}-mount` },
+      { agentId: BATCH_AGENTS[2], path: SIBLING_PATH, mountId: `${SESSION_A}-sibling` },
+    ];
+    for (const { agentId, path, mountId } of targets) {
+      await harness.actions.recordResolveAttempt({
+        sessionId: SESSION_A,
+        agent: resolver({ id: agentId as AgentId, sessionId: SESSION_A }),
+        provider: 'anthropic',
+        model: 'claude-sonnet-5',
+        effort: null,
+        instructions: `fix ${agentId}`,
+        phase: 'queued',
+        mountTarget: { mountId: mountId as MountId, mountRevision: 1, worktreePath: path },
+        batch: { batchId: batch.id, launchChoice: LAUNCH },
+      });
+    }
+
+    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
+
+    expect(harness.sendTurn.mock.calls.map(([input]) => input.agentId)).toEqual([
+      BATCH_AGENTS[0],
+      BATCH_AGENTS[2],
     ]);
   });
 
-  it('starts the waiting comment once a slot frees up and throws the finished copy away', async () => {
+  it('starts the waiting comment once the lane frees up and throws the finished copy away', async () => {
     const harness = createHarness({
       worktreePathBySession: { [SESSION_A]: SHARED_PATH },
       extraResolvers: BATCH_AGENTS,
@@ -1465,8 +1554,8 @@ describe('resolve queue scheduler', () => {
     });
     await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
 
-    expect(harness.sendTurn).toHaveBeenCalledTimes(5);
-    expect(harness.sendTurn.mock.calls[4]?.[0]?.agentId).toBe(BATCH_AGENTS[4]);
+    expect(harness.sendTurn).toHaveBeenCalledTimes(2);
+    expect(harness.sendTurn.mock.calls[1]?.[0]?.agentId).toBe(BATCH_AGENTS[1]);
     expect(h.discardCopy).toHaveBeenCalledWith({
       worktreePath: SHARED_PATH,
       copyPath: `/copies/${first?.id}`,
@@ -1477,21 +1566,7 @@ describe('resolve queue scheduler', () => {
     expect(after?.copyPath).toBeNull();
   });
 
-  it('honours a lower parallel limit set for the session', async () => {
-    const harness = createHarness({
-      worktreePathBySession: { [SESSION_A]: SHARED_PATH },
-      extraResolvers: BATCH_AGENTS,
-    });
-    await harness.actions.setResolveParallelLimit({ sessionId: SESSION_A, limit: 2 });
-    await queueBatch({ harness, agents: BATCH_AGENTS });
-
-    await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
-
-    expect(harness.sendTurn).toHaveBeenCalledTimes(2);
-    expect(harness.get().sessionResolveParallelLimit[SESSION_A]).toBe(2);
-  });
-
-  it('keeps a legacy resolver on the branch lease while batch copies run beside it', async () => {
+  it('keeps a legacy resolver on the branch lease while a batch copy runs beside it', async () => {
     const harness = createHarness({
       worktreePathBySession: { [SESSION_A]: SHARED_PATH },
       extraResolvers: BATCH_AGENTS,
@@ -1513,7 +1588,7 @@ describe('resolve queue scheduler', () => {
     await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
 
     const started = harness.sendTurn.mock.calls.map(([input]) => input.agentId);
-    expect(started).toEqual([AGENT_1, BATCH_AGENTS[0], BATCH_AGENTS[1]]);
+    expect(started).toEqual([AGENT_1, BATCH_AGENTS[0]]);
     expect(h.slots.get(SHARED_PATH)?.holder).toBe(AGENT_1);
   });
 
