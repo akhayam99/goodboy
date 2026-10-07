@@ -495,7 +495,6 @@ export {
   listPlansForSession,
   upsertPlan,
   updatePlanStatus,
-  updatePlanBody,
   updatePlanBodyIfRevision,
   deletePlan,
   addPlanConsumption,

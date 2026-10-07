@@ -226,29 +226,6 @@ export const updatePlanStatus = async (
   await setArtifactStatus({ db, artifactId: id, status, kind: 'plan' });
 };
 
-export const updatePlanBody = async (
-  db: Database,
-  id: PlanId,
-  title: string,
-  bodyMd: string,
-): Promise<void> => {
-  const existing = await loadPlan(db, id);
-  if (existing === null) {
-    return;
-  }
-  await updateArtifactSource({
-    db,
-    input: {
-      id,
-      title,
-      sourceFormat: 'markdown',
-      sourceText: bodyMd,
-      metadata: existing.metadata,
-      note: { author: 'user' },
-    },
-  });
-};
-
 export type UpdatePlanBodyResult =
   Readonly<{ kind: 'saved'; revision: number }> | Readonly<{ kind: 'conflict'; revision: number }>;
 

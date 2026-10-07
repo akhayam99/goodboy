@@ -2,9 +2,9 @@ import type { ArtifactComment, PlanWithCount, WorkflowRun } from '@goodboy/types
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 import { NOT_REVISING, PLAN_REVISING_REASON, type PlanRevising } from './planRevising';
 
-export type PlanPrimaryKind = 'approve' | 'run' | 'disabled' | 'none';
+type PlanPrimaryKind = 'approve' | 'run' | 'disabled' | 'none';
 
-export type PlanPrimaryLabel = 'Approve' | 'Run plan';
+type PlanPrimaryLabel = 'Approve' | 'Run plan';
 
 export type PlanPrimary = Readonly<{
   kind: PlanPrimaryKind;

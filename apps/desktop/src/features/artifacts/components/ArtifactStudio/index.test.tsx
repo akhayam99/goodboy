@@ -18,6 +18,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       activeLens: { 'sess-1': 'plans' } as Record<string, string | null>,
       drawer: null as unknown,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+      phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
       sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
       wireframeDrafts: {} as Record<string, unknown>,
       artifactComments: {} as Record<string, ReadonlyArray<unknown>>,
