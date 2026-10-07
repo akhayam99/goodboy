@@ -266,3 +266,103 @@ describe('counts on the pages and in the page menu', () => {
     expect(nestedCount('agents')).toBe('1 running');
   });
 });
+
+describe('the card around the open session', () => {
+  const cards = (): ReadonlyArray<HTMLElement> =>
+    Array.from(document.querySelectorAll<HTMLElement>('[data-session-card]'));
+
+  const currentPages = (card: HTMLElement) =>
+    within(card)
+      .getAllByRole('button')
+      .filter((button) => button.getAttribute('aria-current') === 'page');
+
+  it('wraps the open session and its pages in one card with exactly one current page', () => {
+    mountOpen();
+
+    expect(cards()).toHaveLength(1);
+    const [card] = cards();
+    expect(
+      within(card as HTMLElement).getByRole('button', { name: 'Fix webhook retries' }),
+    ).toBeDefined();
+    expect(within(card as HTMLElement).getByRole('list', { name: 'Pages' })).toBeDefined();
+    expect(currentPages(card as HTMLElement)).toHaveLength(1);
+    expect(currentPages(card as HTMLElement)[0]?.textContent).toMatch(/^Overview/);
+  });
+
+  it('keeps the other sessions as flat rows outside any card', () => {
+    mountOpen();
+
+    const row = screen.getByRole('button', { name: 'Ledger export speedup' });
+    expect(row.closest('[data-session-card]')).toBeNull();
+    expect(cards().some((card) => card.contains(row))).toBe(false);
+  });
+
+  it('keeps the session row inside the card when Left folds the pages', () => {
+    mountOpen();
+    const row = screen.getByRole('button', { name: 'Fix webhook retries' });
+
+    fireEvent.keyDown(row, { key: 'ArrowLeft' });
+
+    expect(screen.queryByRole('list', { name: 'Pages' })).toBeNull();
+    expect(cards()).toHaveLength(1);
+    expect(cards()[0]?.contains(screen.getByRole('button', { name: 'Fix webhook retries' }))).toBe(
+      true,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Fix webhook retries' }), {
+      key: 'ArrowRight',
+    });
+    expect(within(cards()[0] as HTMLElement).getByRole('list', { name: 'Pages' })).toBeDefined();
+  });
+
+  it('follows the open session from one row to another and never draws two cards', () => {
+    mountOpen();
+
+    act(() => {
+      useAppStore.setState({ currentSessionId: other.id });
+    });
+
+    expect(cards()).toHaveLength(1);
+    expect(
+      within(cards()[0] as HTMLElement).getByRole('button', { name: 'Ledger export speedup' }),
+    ).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Fix webhook retries' }).closest('[data-session-card]'),
+    ).toBeNull();
+  });
+
+  it('draws no card on the board, where no session is open', () => {
+    seedColumn({ store: useAppStore, sessions: [open, other], currentSessionId: null });
+    renderBar();
+
+    expect(cards()).toHaveLength(0);
+  });
+
+  it('moves the current mark with the page inside the card', () => {
+    mountOpen();
+
+    act(() => {
+      useAppStore.setState({ activeLens: { [open.id]: 'agents' } });
+    });
+
+    const [card] = cards();
+    expect(currentPages(card as HTMLElement)).toHaveLength(1);
+    expect(currentPages(card as HTMLElement)[0]?.textContent).toMatch(/^Agents/);
+  });
+
+  it('keeps the card around the open session when it is pinned', () => {
+    seedColumn({
+      store: useAppStore,
+      sessions: [open, other],
+      currentSessionId: open.id as SessionId,
+    });
+    useAppStore.setState({
+      sessionBranches: { [open.id]: 'goodboy/webhook-retries' },
+      sessionPins: { [harborline.id]: [{ id: open.id as SessionId, at: 1 }] },
+    });
+    renderBar();
+
+    expect(cards()).toHaveLength(1);
+    expect(screen.getByText('Pinned')).toBeDefined();
+    expect(within(cards()[0] as HTMLElement).getByRole('list', { name: 'Pages' })).toBeDefined();
+  });
+});

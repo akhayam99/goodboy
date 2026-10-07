@@ -352,14 +352,36 @@ describe('the Pinned group', () => {
     ).toEqual(['all']);
   });
 
-  it('collapses with its toggle and leaves the keyboard order while collapsed', () => {
-    const all = sessions(5);
-    const result = layout({
-      all,
-      pinnedIds: ['session-2' as SessionId],
+  it('collapses with its toggle in a grouped list and leaves the keyboard order while collapsed', () => {
+    const result = layoutSessionColumn({
+      groups: [{ key: 'running', sessions: sessions(5) }],
+      prefs: { ...DEFAULT_PREFS, group: 'stage' },
       groupExpanded: { [PINNED_GROUP_KEY]: false },
+      currentSessionId: null,
+      stageBySession: {},
+      pinnedIds: ['session-2' as SessionId],
     });
     expect(result.groups[0]?.isCollapsed).toBe(true);
+    expect(result.groups[1]?.isCollapsed).toBe(false);
     expect(result.order).not.toContain('session-2');
+    expect(result.order).toContain('session-1');
+  });
+
+  it('never collapses in a flat list, where its header is a plain label with no toggle', () => {
+    const result = layout({
+      all: sessions(5),
+      pinnedIds: ['session-2' as SessionId],
+      groupExpanded: { [PINNED_GROUP_KEY]: false, all: false },
+    });
+    expect(result.groups.map((group) => group.isCollapsed)).toEqual([false, false]);
+    expect(result.order).toContain('session-2');
+  });
+
+  it('labels the rest of a flat list only while something is pinned', () => {
+    const all = sessions(5);
+    expect(layout({ all }).groups.map((group) => group.label)).toEqual([null]);
+    expect(
+      layout({ all, pinnedIds: ['session-2' as SessionId] }).groups.map((group) => group.label),
+    ).toEqual(['Pinned', 'Other sessions']);
   });
 });

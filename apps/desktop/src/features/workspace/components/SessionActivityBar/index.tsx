@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { Eyebrow, FilledEmptyState, PANE_RHYTHM, cn, ScrollFade, tintClasses } from '@goodboy/ui';
+import {
+  Eyebrow,
+  FilledEmptyState,
+  PANE_RHYTHM,
+  ROW_INTERACTIVE,
+  cn,
+  ScrollFade,
+  tintClasses,
+} from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -9,11 +16,11 @@ import {
   useSessionViewPrefs,
 } from '../../../../store';
 import { sortAndGroupSessions } from '../../../../store/slices/session-view/sortAndGroupSessions';
-import { FOLD_LIMIT } from '../../../../store/slices/session-view/types';
+import { FOLD_LIMIT, PINNED_GROUP_KEY } from '../../../../store/slices/session-view/types';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { useActionControls } from '../../../actions/useActionControls';
 import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectionBar';
@@ -25,6 +32,7 @@ import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { sessionGroupPresentation } from './groupPresentation';
 import { SessionViewMenu } from './SessionViewMenu';
 import { SessionActivityItem } from './SessionActivityItem';
+import { SessionGroupHeader } from './SessionGroupHeader';
 import { SessionPages } from './SessionPages';
 
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
@@ -217,31 +225,45 @@ export const SessionActivityBar = ({
     hoveredId === null ? null : (everySession.find((session) => session.id === hoveredId) ?? null);
 
   const total = column.groups.reduce((count, group) => count + group.total, 0);
+  const foldableTotal = column.groups
+    .filter((group) => group.key !== PINNED_GROUP_KEY)
+    .reduce((count, group) => count + group.total, 0);
   const isFoldShown =
-    !column.isGrouped && (column.hiddenCount > 0 || (prefs.isFoldOpen && total > FOLD_LIMIT));
+    !column.isGrouped &&
+    (column.hiddenCount > 0 || (prefs.isFoldOpen && foldableTotal > FOLD_LIMIT));
 
   const renderRow = (session: Session, isArchived: boolean) => {
     const id = session.id as SessionId;
     const isActive = id === currentSessionId;
     const isPagesShown = isActive && foldedPagesFor !== id && !isArchived;
+    const row = (
+      <SessionActivityItem
+        session={session}
+        isActive={isActive}
+        isPagesShown={isPagesShown}
+        isArchived={isArchived}
+        isSelected={isSelected(id)}
+        getSelectedIds={getSelectedIds}
+        onClearSelection={clearSelection}
+        onModifierClick={selection.handleItemClick}
+        onToggleSelect={onToggleSelect}
+        onSelect={selectSession}
+        onRowEnter={hover.enter}
+        onRowLeave={hover.leave}
+        onPagesToggle={setPagesShown}
+      />
+    );
+    const isCard = isActive && !isArchived;
     return (
       <li key={session.id} className="flex flex-col">
-        <SessionActivityItem
-          session={session}
-          isActive={isActive}
-          isPagesShown={isPagesShown}
-          isArchived={isArchived}
-          isSelected={isSelected(id)}
-          getSelectedIds={getSelectedIds}
-          onClearSelection={clearSelection}
-          onModifierClick={selection.handleItemClick}
-          onToggleSelect={onToggleSelect}
-          onSelect={selectSession}
-          onRowEnter={hover.enter}
-          onRowLeave={hover.leave}
-          onPagesToggle={setPagesShown}
-        />
-        {isPagesShown ? <SessionPages session={session} /> : null}
+        {isCard ? (
+          <div data-session-card className="flex flex-col rounded-lg bg-subtle p-1">
+            {row}
+            {isPagesShown ? <SessionPages session={session} /> : null}
+          </div>
+        ) : (
+          row
+        )}
       </li>
     );
   };
@@ -279,32 +301,20 @@ export const SessionActivityBar = ({
               key: group.key,
               groupMode: prefs.group,
             });
+            const isHeadered = column.isGrouped || group.label !== null;
             return (
               <div key={group.key} className="flex flex-col gap-0.5">
-                {column.isGrouped ? (
-                  <button
-                    type="button"
-                    onClick={() => toggleSessionGroup({ key: group.key })}
-                    aria-expanded={!group.isCollapsed}
+                {isHeadered ? (
+                  <SessionGroupHeader
+                    label={presentation?.label ?? group.label ?? group.key}
+                    tone={presentation?.tone ?? 'neutral'}
+                    total={group.total}
                     title={presentation === null ? undefined : stateDescription({ presentation })}
-                    className="group mt-2 flex h-6 w-full items-center gap-1 rounded-sm px-2 text-left"
-                  >
-                    <ChevronRight
-                      size={ICON_SIZE.row}
-                      aria-hidden
-                      className={cn(
-                        'shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:text-muted-foreground',
-                        !group.isCollapsed && 'rotate-90',
-                      )}
-                    />
-                    <Eyebrow
-                      label={presentation?.label ?? group.label ?? group.key}
-                      tone={presentation?.tone ?? 'neutral'}
-                    />
-                    <span aria-hidden className="text-meta tabular-nums text-faint-foreground">
-                      {group.total}
-                    </span>
-                  </button>
+                    isCollapsed={group.isCollapsed}
+                    onToggle={
+                      column.isGrouped ? () => toggleSessionGroup({ key: group.key }) : undefined
+                    }
+                  />
                 ) : null}
                 {group.isCollapsed ? null : (
                   <ul role="list" className="flex flex-col">
@@ -321,7 +331,10 @@ export const SessionActivityBar = ({
               data-fold
               aria-expanded={prefs.isFoldOpen}
               onClick={toggleFold}
-              className="flex h-7 w-full items-center gap-2 rounded-md pl-7 pr-2 text-left text-meta text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className={cn(
+                'flex h-7 w-full items-center gap-2 rounded-md pl-7 pr-2 text-left text-meta text-faint-foreground hover:text-foreground',
+                ROW_INTERACTIVE,
+              )}
             >
               <span>{prefs.isFoldOpen ? 'Show fewer' : `Show ${column.hiddenCount} more`}</span>
             </button>

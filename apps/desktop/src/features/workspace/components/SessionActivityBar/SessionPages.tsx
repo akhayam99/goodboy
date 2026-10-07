@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { PANE_RHYTHM, SelectableRow, cn } from '@goodboy/ui';
+import { SelectableRow } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -72,16 +72,11 @@ export const SessionPages = ({ session }: Props) => {
               selected={isCurrent}
               ariaCurrent={isCurrent ? 'page' : undefined}
               onClick={() => openPage(page)}
-              className={cn(
-                'h-7 items-center gap-2 pr-2 text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-                PANE_RHYTHM.navRail.nest,
-              )}
+              className="h-7 items-center gap-2 px-2 text-label"
             >
-              <Icon
-                size={ICON_SIZE.row}
-                aria-hidden
-                className={cn('shrink-0', iconClassOf({ page }))}
-              />
+              <span aria-hidden className="flex size-3.5 shrink-0 items-center justify-center">
+                <Icon size={ICON_SIZE.row} className={iconClassOf({ page })} />
+              </span>
               <span className="min-w-0 flex-1 truncate">{page.label}</span>
               {count === null ? null : (
                 <span className="shrink-0 text-meta tabular-nums text-faint-foreground">

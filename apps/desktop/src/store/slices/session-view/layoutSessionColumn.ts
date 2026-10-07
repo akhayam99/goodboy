@@ -18,6 +18,8 @@ export type SessionColumnLayout = {
   readonly order: ReadonlyArray<SessionId>;
 };
 
+const OTHER_SESSIONS_LABEL = 'Other sessions';
+
 type Params = {
   readonly groups: ReadonlyArray<GroupedSessions>;
   readonly prefs: SessionViewPrefs;
@@ -97,7 +99,7 @@ export const layoutSessionColumn = ({
       });
       return {
         key: group.key,
-        label: null,
+        label: pinned.length === 0 ? null : OTHER_SESSIONS_LABEL,
         isCollapsed: false,
         total: group.sessions.length,
         sessions: folded.visible,
@@ -114,10 +116,9 @@ export const layoutSessionColumn = ({
           {
             key: PINNED_GROUP_KEY,
             label: 'Pinned',
-            isCollapsed: isSessionGroupCollapsed({
-              key: PINNED_GROUP_KEY,
-              overrides: groupExpanded,
-            }),
+            isCollapsed:
+              isGrouped &&
+              isSessionGroupCollapsed({ key: PINNED_GROUP_KEY, overrides: groupExpanded }),
             total: pinned.length,
             sessions: pinned,
           },
