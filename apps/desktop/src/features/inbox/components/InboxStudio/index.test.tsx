@@ -586,7 +586,7 @@ describe('InboxStudio', () => {
       target: { value: 'nothing matches this' },
     });
 
-    expect(screen.getByText('No items match these filters')).toBeDefined();
+    expect(screen.getByText('No items match these filters.')).toBeDefined();
     expect(detailText()).toBe('GBY-1');
   });
 
@@ -609,7 +609,7 @@ describe('InboxStudio', () => {
     renderStudio({ initialProvider: 'jira' });
 
     expect(facet('Source', /Jira/).getAttribute('aria-current')).toBe('true');
-    expect(screen.getByText('No items match these filters')).toBeDefined();
+    expect(screen.getByText('No items match these filters.')).toBeDefined();
 
     const [clear] = screen.getAllByRole('button', { name: 'Clear filters' });
     fireEvent.click(clear as HTMLElement);

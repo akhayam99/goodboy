@@ -155,7 +155,8 @@ describe('QuestionsPane', () => {
 
   it('shows the empty state when nothing was ever asked', () => {
     setup({ open: [] });
-    screen.getByText('No questions');
+    screen.getByRole('heading', { level: 2, name: 'No questions yet' });
+    screen.getByText('Agents ask you here when they need a decision.');
   });
 
   it('lists what waits on you and opens the first question', () => {

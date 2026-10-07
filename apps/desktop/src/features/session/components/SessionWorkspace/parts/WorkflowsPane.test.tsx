@@ -183,7 +183,8 @@ describe('WorkflowsPane', () => {
   it('offers only the empty state when no workflow is attached', () => {
     render(<WorkflowsPane session={buildSession({ runIds: [] })} />);
 
-    expect(screen.getByTestId('workflow-empty')).toBeDefined();
+    expect(screen.getByTestId('workflow-empty').textContent).toContain('No runs yet');
+    expect(screen.getByRole('button', { name: 'Start a run' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start another run' })).toBeNull();
     expect(screen.queryByTestId('workflow-detail')).toBeNull();
   });
@@ -381,11 +382,11 @@ describe('WorkflowsPane', () => {
       />,
     );
 
-    expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
+    expect(screen.getByTestId('workflow-empty').textContent).toContain('No runs in progress');
     expect(screen.getByText('First workflow')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Start another run' })).toHaveLength(1);
 
-    expect(screen.getByTestId('workflow-empty').textContent).toContain('Nothing running');
+    expect(screen.getByTestId('workflow-empty').textContent).toContain('No runs in progress');
     expect(screen.getByRole('region', { name: 'Finished history' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Start another run' })).toHaveLength(1);
   });

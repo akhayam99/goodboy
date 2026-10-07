@@ -14,6 +14,7 @@ import { useExplodeGroups, type ExplodeGroups } from '../../../../hooks/useExplo
 import { useScrollAnchor } from '../../../../hooks/useScrollAnchor';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import { NeedsYouBlock } from './NeedsYouBlock';
+import { TimelineEmpty } from './TimelineEmpty';
 import { TimelineRevealRow } from './TimelineRevealRow';
 import { TimelineRow } from './TimelineRow';
 import { TimelineSkeleton } from './TimelineSkeleton';
@@ -30,11 +31,6 @@ const VIEW_OPTIONS = ACTIVITY_VIEWS.map((view) => ({
   value: view,
   label: ACTIVITY_VIEW_LABEL[view],
 }));
-
-const EMPTY_COPY: Readonly<Record<ActivityView, string>> = {
-  activity: 'Nothing yet',
-  log: 'Nothing in the log yet',
-};
 
 export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props) => {
   const sessionId: SessionId = session.id;
@@ -85,12 +81,6 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
     () => entriesOfView({ entries, events: rows.events, view: 'log' }).length > 0,
     [entries, rows.events],
   );
-  const isLaunchesEmptyOnly = view === 'activity' && hasLogEntries;
-  const emptyCopy = isSearching
-    ? 'Nothing in the log matches'
-    : isLaunchesEmptyOnly
-      ? 'Nothing launched yet'
-      : EMPTY_COPY[view];
 
   return (
     <section aria-label="Activity" className="@container/activity flex flex-col gap-2">
@@ -130,14 +120,13 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
       {isLoading ? (
         <TimelineSkeleton />
       ) : viewEntries.length === 0 ? (
-        <p className="flex items-center gap-2 px-3 py-2 text-label text-muted-foreground">
-          {emptyCopy}
-          {isLaunchesEmptyOnly ? (
-            <Button variant="ghost" size="sm" className="h-6" onClick={() => setView('log')}>
-              See Log
-            </Button>
-          ) : null}
-        </p>
+        <TimelineEmpty
+          view={view}
+          isSearching={isSearching}
+          hasLogEntries={hasLogEntries}
+          onSeeLog={() => setView('log')}
+          onClearSearch={() => setQuery('')}
+        />
       ) : (
         <div className="flex flex-col gap-1">
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>

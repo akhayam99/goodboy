@@ -142,7 +142,7 @@ describe('script pins in the Scripts lens', () => {
     renderLens(FIRST.id);
     const strip = screen.getByRole('region', { name: 'Pinned scripts' });
     within(strip).getByText(/Pin scripts in Settings, under Projects/);
-    await screen.findByText('No pinned scripts in ledger-core.');
+    await screen.findByText('No pinned scripts');
     expect(screen.queryByRole('button', { name: 'Pin test' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show test output' })).toBeNull();
     cleanup();

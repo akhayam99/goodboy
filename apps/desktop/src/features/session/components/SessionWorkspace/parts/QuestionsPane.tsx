@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { CircleCheck } from 'lucide-react';
-import { LensEmptyState, PageColumn, ScrollFade, Skeleton, PaneShell } from '@goodboy/ui';
+import { EmptyState, PageColumn, ScrollFade, Skeleton, PaneShell } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -17,11 +17,7 @@ import { useOpenQuestions } from '../../../../context/components/QuestionsTab/us
 import type { AgentKind } from '../../../agent-kind';
 import { ContextLoadFailure } from '../../ContextDrawer/ContextLoadFailure';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { isTypingTarget } from '../../../../../shared/keyboard/isTypingTarget';
 import { QuestionsQueue } from './QuestionsQueue';
 import {
@@ -192,10 +188,11 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   if (allRows.length === 0) {
     return (
       <PaneShell title="Questions">
-        <LensEmptyState
-          tone={CONCEPT_TONE.questions}
+        <EmptyState
+          size="page"
           icon={CONCEPT_ICONS.questions}
-          title="No questions"
+          title="No questions yet"
+          description="Agents ask you here when they need a decision."
         />
       </PaneShell>
     );

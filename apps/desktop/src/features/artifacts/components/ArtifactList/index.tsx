@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { LensEmptyState, PaneShell } from '@goodboy/ui';
+import { Button, EmptyLine, EmptyState, PaneShell } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
@@ -11,8 +11,8 @@ import {
   type ArtifactListCounts,
   type ArtifactListRow as Row,
 } from '../../artifactListRows';
-import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { newArtifactEventName } from '../../newArtifactEventName';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
 import { ArtifactListOverflowMenu } from './ArtifactListOverflowMenu';
 import { ArtifactListGroup } from './ArtifactListGroup';
@@ -29,11 +29,11 @@ type Props = {
   readonly onImported: (artifactId: ArtifactId) => void;
 };
 
-const EMPTY_TITLE: Record<ArtifactFilter, string> = {
-  all: 'No artifacts yet',
-  plan: 'No plans yet',
-  report: 'No reports yet',
-  wireframe: 'No wireframes yet',
+const NO_MATCH_LINE: Record<ArtifactFilter, string> = {
+  all: 'No artifacts match this filter.',
+  plan: 'No plans in this session.',
+  report: 'No reports in this session.',
+  wireframe: 'No wireframes in this session.',
 };
 
 export const ArtifactList = ({
@@ -69,7 +69,7 @@ export const ArtifactList = ({
   });
   const { closedGroups, openPartsIds, toggleGroup, toggleParts } = useArtifactGroups({ rows });
   const groups = useMemo(() => groupArtifactRows({ rows }), [rows]);
-  const concept = filter === 'all' ? 'artifacts' : ARTIFACT_KIND_CONCEPT[filter];
+  const openNewMenu = () => window.dispatchEvent(new CustomEvent(newArtifactEventName(sessionId)));
 
   return (
     <PaneShell
@@ -112,12 +112,30 @@ export const ArtifactList = ({
             {importer.error}
           </span>
         ) : null}
-        {rows.length === 0 ? (
-          <LensEmptyState
-            tone={CONCEPT_TONE[concept]}
-            icon={CONCEPT_ICONS[concept]}
-            title={EMPTY_TITLE[filter]}
+        {rows.length === 0 && counts.all === 0 ? (
+          <EmptyState
+            size="page"
+            icon={CONCEPT_ICONS.artifacts}
+            title="No artifacts yet"
+            description="Plans, reports and wireframes made in this session are kept here."
+            action={
+              <Button variant="primary" size="sm" onClick={openNewMenu}>
+                New artifact
+              </Button>
+            }
           />
+        ) : rows.length === 0 ? (
+          <EmptyLine
+            action={
+              filter === 'all' ? undefined : (
+                <Button variant="ghost" size="xs" onClick={() => onFilterChange('all')}>
+                  Clear filter
+                </Button>
+              )
+            }
+          >
+            {NO_MATCH_LINE[filter]}
+          </EmptyLine>
         ) : (
           <div data-testid="artifact-list" className="flex min-w-0 flex-col gap-3">
             {groups.map((entry) => (

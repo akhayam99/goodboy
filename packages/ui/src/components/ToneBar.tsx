@@ -11,7 +11,7 @@ type Props = {
 };
 
 const DENSITY_CLASSES: Record<ToneBarDensity, string> = {
-  card: 'left-1.5 top-3 bottom-3 w-0.75',
+  card: 'left-1.5 top-3 bottom-3 min-h-4 w-0.75',
   row: 'left-1 top-2.25 bottom-2.25 w-0.5',
 };
 

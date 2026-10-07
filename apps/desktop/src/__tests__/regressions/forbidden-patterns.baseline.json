@@ -303,7 +303,6 @@
     "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": 4,
     "apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/SpendButton.tsx": 1,
-    "apps/desktop/src/app/components/BootSplash/BootErrorRecovery.tsx": 1,
     "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/ModelPickerScenes.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactChoiceRows.tsx": 1,
@@ -361,7 +360,6 @@
     "apps/desktop/src/features/session/components/AgentDetailPane/AgentStoppedNotice.tsx": 1,
     "apps/desktop/src/features/session/components/AgentRoleField.tsx": 1,
     "apps/desktop/src/features/session/components/AgentTree/ScoutSubtree.tsx": 1,
-    "apps/desktop/src/features/session/components/AgentTree/WorkflowStartButton.tsx": 1,
     "apps/desktop/src/features/session/components/CreateAgentPopover/AgentKindTile.tsx": 1,
     "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": 2,
     "apps/desktop/src/features/session/components/SessionKickoff/IssueBriefProposal/BriefReady.tsx": 1,
@@ -428,7 +426,6 @@
   },
   "raw-leading": {
     "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
-    "apps/desktop/src/app/components/BootSplash/BootErrorRecovery.tsx": 1,
     "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 2,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactBasedOnField.tsx": 2,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactBriefField.tsx": 1,
@@ -507,7 +504,6 @@
     "packages/ui/src/components/Popover.tsx": 1
   },
   "tone-border-rail": {
-    "apps/desktop/src/app/components/BootSplash/BootErrorRecovery.tsx": 1,
     "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 1,
     "apps/desktop/src/features/chat/components/TranscriptDisclosure.tsx": 1,
     "apps/desktop/src/features/chat/components/TranscriptShell/index.tsx": 2,
@@ -549,7 +545,6 @@
     "apps/desktop/src/features/scripts/components/RunningScriptRow.tsx": 1,
     "apps/desktop/src/features/session/components/AgentDetailPane/AgentStoppedNotice.tsx": 1,
     "apps/desktop/src/features/session/components/AgentRoleField.tsx": 1,
-    "apps/desktop/src/features/session/components/AgentTree/WorkflowStartButton.tsx": 1,
     "apps/desktop/src/features/session/components/CreateAgentPopover/AgentKindTile.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/NewBranchMountAction.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx": 3,
@@ -569,7 +564,6 @@
     "apps/desktop/src/shared/components/ProjectLinkList/index.tsx": 1,
     "apps/desktop/src/shared/components/PromptField/PromptDropOverlay.tsx": 1,
     "packages/ui/src/components/Band/index.tsx": 1,
-    "packages/ui/src/components/EmptyState.tsx": 1,
     "packages/ui/src/components/ErrorBoundary.tsx": 2,
     "packages/ui/src/components/FieldRow.tsx": 2,
     "packages/ui/src/components/RemoteImage/index.tsx": 1,

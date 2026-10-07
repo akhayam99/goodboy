@@ -3,7 +3,7 @@
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { BootSplash } from './index';
 
 afterEach(cleanup);
@@ -18,6 +18,12 @@ describe('BootSplash recovery controls', () => {
     expect(screen.getByRole('alert').textContent).toContain('db migration failed');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(retries).toEqual([1]);
+  });
+
+  it('draws the error tone as one inner line inside the alert', () => {
+    render(<BootSplash phase="error" error="db migration failed" onRetry={() => undefined} />);
+
+    expect(within(screen.getByRole('alert')).getAllByTestId('tone-bar')).toHaveLength(1);
   });
 
   it('offers no skip affordance while detecting agents', () => {
