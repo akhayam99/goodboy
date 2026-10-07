@@ -18,6 +18,7 @@ import type {
   ArtifactKind,
   ArtifactStatus,
   ArtifactId,
+  OpenQuestion,
   PlanWithCount,
   ReportArtifact,
   SessionArtifact,
@@ -31,6 +32,8 @@ import { planApprovedToast } from '../../plans/planApprovedToast';
 import { planAsArtifact } from '../../plans/planAsArtifact';
 import { planEditBlockOf } from '../../plans/planEditBlock';
 import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
+import { plannerQuestionsOf } from '../../plans/plannerQuestions';
+import { unsentCommentsQuestion } from '../../plans/unsentCommentsQuestion';
 import { planRunOf } from '../../plans/planRunOf';
 import { planRunToast } from '../../plans/planRunToast';
 import { openPlanDrawer } from '../../plans/openPlanDrawer';
@@ -83,6 +86,7 @@ export type ArtifactFacts = {
   readonly planRevising: PlanRevising;
   readonly planRun: WorkflowRun | null;
   readonly planDrafts: ReadonlyArray<ArtifactComment>;
+  readonly plannerQuestionCount: number;
   readonly generation: ArtifactGeneration | null;
   readonly kickoff: string | null;
   readonly ports: ArtifactPorts;
@@ -91,6 +95,8 @@ export type ArtifactFacts = {
 const NO_PORTS: ArtifactPorts = {};
 
 const NO_DRAFTS: ReadonlyArray<ArtifactComment> = [];
+
+const NO_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
 
@@ -162,6 +168,7 @@ const primaryOf = ({ facts }: FactsOnly): PlanPrimary =>
     drafts: facts.planDrafts,
     revising: facts.planRevising,
     isRunning: facts.isPlanRunning,
+    plannerQuestionCount: facts.plannerQuestionCount,
   });
 
 const editBlockOf = ({ facts }: FactsOnly): string | null =>
@@ -380,6 +387,15 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
       planIn({ facts, statuses: ['active'] }) && primaryOf({ facts }).kind !== 'none',
     blockedReason: ({ facts }) =>
       portBlocked({ facts, id: 'runPlan' }) ?? primaryOf({ facts }).reason,
+    confirm: ({ facts }) =>
+      primaryOf({ facts }).kind === 'approve' && facts.planDrafts.length > 0
+        ? {
+            title: unsentCommentsQuestion({ count: facts.planDrafts.length }),
+            description: 'Approving starts the run without them. They stay on the plan as drafts.',
+            confirmLabel: 'Approve anyway',
+            role: 'alert',
+          }
+        : null,
     isBusy: ({ facts }) => portBusy({ facts, id: 'runPlan' }),
     run: runPlanAction,
   },
@@ -702,6 +718,7 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
         planRevising: NOT_REVISING,
         planRun: null,
         planDrafts: NO_DRAFTS,
+        plannerQuestionCount: 0,
         generation,
         kickoff: null,
         ports,
@@ -749,6 +766,13 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
               (comment) => comment.artifactId === artifactId && comment.status === 'draft',
             )
           : NO_DRAFTS,
+      plannerQuestionCount:
+        plan === null
+          ? 0
+          : plannerQuestionsOf({
+              questions: state.sessionOpenQuestions[target.sessionId] ?? NO_QUESTIONS,
+              plan,
+            }).length,
       generation: null,
       kickoff:
         stored?.kind === 'report'
