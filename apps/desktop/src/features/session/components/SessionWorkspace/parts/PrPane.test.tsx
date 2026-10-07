@@ -262,6 +262,24 @@ describe('PrPane', () => {
     expect(title.closest('[data-page-column]')).not.toBeNull();
   });
 
+  it('badges a closed pull request as Closed even when GitHub still flags it as a draft', () => {
+    const closedDraft: PullRequestState = { ...PULL_REQUEST, state: 'closed', isDraft: true };
+    h.store.sessionGithub = {
+      [SESSION_ID]: {
+        pr: closedDraft,
+        detail: { checks: [], comments: [] },
+        loading: false,
+        error: null,
+      },
+    };
+    h.store.sessionProjectPrs = { [SESSION_ID]: { [PROJECT_ID]: [closedDraft] } };
+
+    render(<PrPane session={session} />);
+
+    expect(screen.getAllByText('Closed').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Draft')).toBeNull();
+  });
+
   it('names the host it is actually pointed at', () => {
     h.remoteKind = 'gitlab';
 

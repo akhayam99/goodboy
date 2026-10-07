@@ -36,6 +36,9 @@ const nodeText = (node: ReactNode): string => {
 const stateLabel = (node: ReactNode): string | null =>
   isValidElement<{ readonly label?: string }>(node) ? (node.props.label ?? null) : null;
 
+const stateCategory = (node: ReactNode): string | null =>
+  isValidElement<{ readonly category?: string }>(node) ? (node.props.category ?? null) : null;
+
 const LINEAR_ISSUE: LinearIssue = {
   id: 'issue-1',
   identifier: 'GB-42',
@@ -268,5 +271,35 @@ describe('the pull request registry', () => {
 
     expect(facts.map((fact) => fact.label)).toEqual(['Status', 'Branch']);
     expect(stateLabel(facts[0]?.node)).toBe('Draft');
+  });
+
+  it('says closed and merged, as done, for a pull request GitHub still flags as a draft', () => {
+    const closed = resolveFacts({
+      registry: githubPullRequestFields,
+      entity: { pr: { ...GITHUB_PR, state: 'closed', isDraft: true }, checks: [] },
+    });
+    const merged = resolveFacts({
+      registry: githubPullRequestFields,
+      entity: { pr: { ...GITHUB_PR, state: 'merged', isDraft: true }, checks: [] },
+    });
+
+    expect(stateLabel(closed[0]?.node)).toBe('Closed');
+    expect(stateCategory(closed[0]?.node)).toBe('done');
+    expect(stateLabel(merged[0]?.node)).toBe('Merged');
+    expect(stateCategory(merged[0]?.node)).toBe('done');
+  });
+
+  it('files a draft state as open and an approved or queued one as active', () => {
+    const categoryOf = (state: PullRequestState['state'], isDraft: boolean) =>
+      stateCategory(
+        resolveFacts({
+          registry: githubPullRequestFields,
+          entity: { pr: { ...GITHUB_PR, state, isDraft }, checks: [] },
+        })[0]?.node,
+      );
+
+    expect(categoryOf('draft', true)).toBe('open');
+    expect(categoryOf('approved', false)).toBe('active');
+    expect(categoryOf('queued', false)).toBe('active');
   });
 });

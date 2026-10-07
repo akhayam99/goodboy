@@ -112,6 +112,12 @@ const MARKS: ReadonlyArray<Mark> = [
     words: 'In review',
   },
   {
+    title: 'Land the Harborline webhook retries',
+    tone: 'primary',
+    state: 'merging',
+    words: 'In merge queue',
+  },
+  {
     title: 'Northwind CSV export',
     tone: 'merged',
     state: 'finished',

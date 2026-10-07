@@ -43,6 +43,7 @@ const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => 
     fixCouldntFixCount === 1
       ? "1 comment couldn't be fixed"
       : `${fixCouldntFixCount} comments couldn't be fixed`,
+  'pr-queued': ({ label }) => `${label} in the merge queue`,
   'pr-approved': ({ label }) => `${label} approved, ready to merge`,
   'unread-reply': () => 'unread agent reply',
 };
@@ -96,6 +97,9 @@ const deriveStage = (params: Params): StageWithoutRequest => {
       attention: null,
       isRunning: true,
     };
+  }
+  if (winner === 'pr-queued') {
+    return { stage: 'review', reason: reasonText(winner), attention: winner };
   }
   if (winner !== undefined) {
     return { stage: 'attention', reason: reasonText(winner), attention: winner };

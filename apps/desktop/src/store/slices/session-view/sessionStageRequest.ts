@@ -29,15 +29,18 @@ const rankOf = ({ request }: RankParams): number => {
     return 0;
   }
   if (request.checks === 'failure') {
-    return 4;
+    return 5;
   }
   if (request.reviewDecision === 'changes_requested') {
-    return 3;
+    return 4;
   }
   if (isPullRequestApproved({ pr: request })) {
-    return 2;
+    return 3;
   }
-  return 1;
+  if (request.state === 'queued') {
+    return 1;
+  }
+  return 2;
 };
 
 const worstMountRequestOf = ({

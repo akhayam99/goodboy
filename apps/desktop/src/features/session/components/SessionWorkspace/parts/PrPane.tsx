@@ -15,6 +15,7 @@ import { HeaderBand, StudioDetailTabs, PaneShell } from '@goodboy/ui';
 import { StateBadge } from '@goodboy/ui';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import type { RemoteHostKind } from '../../../../../shared/lib/remoteHost';
+import { pullRequestKindOf } from '../../../../../shared/pullRequestKind';
 import {
   availableProviderCount,
   resolvePullRequestProvider,
@@ -227,8 +228,12 @@ export const PrPane = ({ session }: Props) => {
               {pullRequest != null ? (
                 <StateBadge>
                   {
-                    pullRequestMeta({ state: pullRequest.isDraft ? 'draft' : pullRequest.state })
-                      .label
+                    pullRequestMeta({
+                      state: pullRequestKindOf({
+                        state: pullRequest.state,
+                        isDraft: pullRequest.isDraft,
+                      }),
+                    }).label
                   }
                 </StateBadge>
               ) : null}

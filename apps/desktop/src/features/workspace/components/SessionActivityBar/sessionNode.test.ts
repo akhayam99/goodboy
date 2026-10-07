@@ -31,6 +31,7 @@ describe('the node of a session that needs you', () => {
     ['plan-approval', 'approval'],
     ['changes-requested', 'alert'],
     ['fix-couldnt-fix', 'alert'],
+    ['pr-queued', 'merging'],
     ['pr-approved', 'approved'],
     ['unread-reply', 'marker'],
   ])('draws %s as the %s node', (attention, state) => {
@@ -94,6 +95,40 @@ describe('the node of a session that needs you', () => {
       tone: 'warning',
       label: 'Needs you',
     });
+  });
+});
+
+describe('the node of a session in the merge queue', () => {
+  it('draws the queue mark in the calm primary tone, with its words', () => {
+    expect(nodeOf({ stage: 'review', attention: 'pr-queued' })).toMatchObject({
+      kind: 'queue',
+      state: 'merging',
+      tone: 'primary',
+      label: 'In merge queue',
+      isSpinning: false,
+      hasUnread: false,
+    });
+  });
+
+  it('keeps it apart from approved, done and the dashed pending ring', () => {
+    const queue = nodeOf({ stage: 'review', attention: 'pr-queued' });
+
+    expect(queue.state).not.toBe('approved');
+    expect(queue.state).not.toBe('finished');
+    expect(queue.state).not.toBe('queued');
+    expect(queue.tone).not.toBe('success');
+    expect(queue.tone).not.toBe('merged');
+  });
+
+  it('shows the unread dot while a reply waits behind the queue', () => {
+    expect(
+      nodeOf({ stage: 'review', attention: 'pr-queued', otherReasons: ['unread-reply'] }).hasUnread,
+    ).toBe(true);
+  });
+
+  it('yields to a running agent and to what needs you', () => {
+    expect(nodeOf({ stage: 'running', isRunning: true }).state).toBe('running');
+    expect(needing('open-question').state).toBe('question');
   });
 });
 

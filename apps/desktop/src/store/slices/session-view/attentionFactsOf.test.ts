@@ -112,8 +112,34 @@ describe('attentionFactsOf', () => {
       { ...base, pr: livePr({ state: 'approved', reviewDecision: 'approved' }) },
       'pr-approved',
     ],
+    [
+      'a pull request in the merge queue, whatever its review decision',
+      { ...base, pr: livePr({ state: 'queued', reviewDecision: 'approved' }) },
+      'pr-queued',
+    ],
   ])('lists %s alone', (_name, params, reason) => {
     expect(attentionFactsOf(params)).toEqual([reason]);
+  });
+
+  it('ranks the merge queue below what needs you and above an unread reply', () => {
+    const queued = livePr({ state: 'queued', reviewDecision: 'approved' });
+
+    expect(
+      attentionFactsOf({ ...base, pr: queued, fixCouldntFixCount: 1, hasUnread: true }),
+    ).toEqual(['fix-couldnt-fix', 'pr-queued', 'unread-reply']);
+    expect(attentionFactsOf({ ...base, pr: { ...queued, checks: 'failure' } })).toEqual([
+      'ci-failed',
+      'pr-queued',
+    ]);
+    expect(
+      attentionFactsOf({ ...base, pr: { ...queued, reviewDecision: 'changes_requested' } }),
+    ).toEqual(['changes-requested', 'pr-queued']);
+  });
+
+  it('never calls a pull request in the merge queue approved, ready to merge', () => {
+    const queued = livePr({ state: 'queued', reviewDecision: 'approved' });
+
+    expect(attentionFactsOf({ ...base, pr: queued })).not.toContain('pr-approved');
   });
 
   it('ignores a pull request that is merged or closed', () => {
@@ -183,6 +209,7 @@ describe('isHumanInputReason', () => {
     ['ci-failed', false],
     ['changes-requested', false],
     ['fix-couldnt-fix', false],
+    ['pr-queued', false],
     ['pr-approved', false],
     ['unread-reply', false],
   ])('says %s is human input: %s', (reason, expected) => {

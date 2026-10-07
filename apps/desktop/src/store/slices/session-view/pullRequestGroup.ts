@@ -5,7 +5,9 @@ type ApprovalParams = {
 };
 
 export const isPullRequestApproved = ({ pr }: ApprovalParams): boolean =>
-  !pr.isDraft && (pr.state === 'approved' || pr.reviewDecision === 'approved');
+  !pr.isDraft &&
+  pr.state !== 'queued' &&
+  (pr.state === 'approved' || pr.reviewDecision === 'approved');
 
 type GroupParams = {
   readonly pr: PullRequestState | null | undefined;

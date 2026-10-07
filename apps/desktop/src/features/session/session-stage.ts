@@ -7,7 +7,7 @@ import { NAMES } from '../../shared/names';
 import { PULL_REQUEST_PRESENTATION } from '../../shared/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
-export type AttentionMark = '!' | '?' | 'approval' | 'approved' | 'none';
+export type AttentionMark = '!' | '?' | 'approval' | 'queue' | 'approved' | 'none';
 
 type AttentionEntry = {
   readonly icon: keyof typeof CONCEPT_ICONS;
@@ -70,6 +70,12 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     tone: 'warning',
     mark: '!',
     words: "1 comment it couldn't fix",
+  }),
+  'pr-queued': entryOf({
+    icon: 'merge',
+    tone: 'primary',
+    mark: 'queue',
+    words: 'In merge queue',
   }),
   'pr-approved': entryOf({
     icon: 'pr',
