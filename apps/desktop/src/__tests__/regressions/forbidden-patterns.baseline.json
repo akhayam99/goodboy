@@ -68,7 +68,6 @@
     "apps/desktop/src/features/chat/components/TranscriptCards/UserText.tsx": 2,
     "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": 1,
     "apps/desktop/src/features/integrations/components/ConnectForm/index.tsx": 1,
-    "apps/desktop/src/features/integrations/github/components/PullRequest/PrChecks.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountPreflightCard.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectBranchChip.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/PrPane.tsx": 1,
