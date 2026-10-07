@@ -90,7 +90,7 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Duplicate credit fix run on HBL-412: three scouts working in parallel under step 1, then a planner, two implementers and a tester, each on its own model, with Waiting on step 1 above the tree and $0.13 spent of the $12.00 spend limit">
 </picture>
 
-Follow a run as a tree with one pinned next action, and add steps to a live or finished run. Parallel scouts appear as branches under their step. After a restart, one **Resume all** above the steps starts every stopped agent in that run. Deleting a run deletes its agents and their open questions with it.
+Follow a run from top to bottom: the header with the status and **Pause** and **Stop run** as one pair, the steps in their own scroller with a line under the header once they scroll, and the composer at the bottom. Sub-agents sit indented under their agent, and a finished set folds into one row. While the run waits for its plan, **Review plan** opens it in a drawer. Add steps to a live or finished run. Parallel scouts appear as branches under their step. After a restart, one **Resume all** above the steps starts every stopped agent in that run. Deleting a run deletes its agents and their open questions with it.
 
 ### Hints to the orchestrator
 

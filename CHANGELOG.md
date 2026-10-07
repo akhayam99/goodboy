@@ -26,12 +26,12 @@ Review plan on a run opens the planner's plan in a drawer over the run page. Sel
 Approving moves the run on at once. One toast, Plan approved, offers Follow the run when you are on another page. The palette, search and chat open the same drawer.
 
 #### Pin sessions to the top
-<!-- gb area=sessions image=pinned-sessions -->
+<!-- gb area=sessions -->
 
 Pin session, in a row's right-click menu or the command palette, moves a session to a Pinned group above the rest, in the order you pinned them, whatever the sort, grouping or project filter. Unpin session puts it back. A pinned session you archive returns to Pinned when you restore it.
 
 #### Checks say what they know
-<!-- gb area=review image=checks-states -->
+<!-- gb area=review -->
 
 The Checks tab reads checks, reviewers and review requests apart, so a check Goodboy can't read no longer hides who approved. It opens with one line of counts, then groups the runs as Failing, Running, Passed and Skipped.
 
@@ -54,24 +54,24 @@ The Board shows six lanes at all times, in the order of the work: building, runn
 The lanes sit in one centred frame with the title and the buttons.
 
 #### Session marks say what waits
-<!-- gb area=sessions image=session-marks -->
+<!-- gb area=sessions -->
 
 A session's mark in the sidebar is red only when something broke, amber when you must answer, approve or act, and green when its pull request is ready to merge. A done session is a filled violet disc with a check.
 
 The open session sits in one card with its pages, and the row, the hover card and the Board card give the same reason in the same words.
 
 #### The run page reads top to bottom
-<!-- gb area=workflows image=run-page -->
+<!-- gb area=workflows -->
 
 The run page puts the composer at the bottom, draws a line under the header once the steps scroll, indents sub-agents under their agent and folds a finished set into one row. Pause and Stop run are one pair in the header, and Review plan is one click away while the run waits for its plan.
 
 #### Settings in one column
-<!-- gb area=settings screen=settings/app image=settings-one-level -->
+<!-- gb area=settings screen=settings/app -->
 
 Settings uses the left column for its pages, with Back to app and Search settings above them, whether the sidebar is open or folded to the rail. The page fills one sheet with no band above it, each page is one line, and a dot marks a page that needs you.
 
 #### Empty pages explain themselves
-<!-- gb area=app image=empty-states -->
+<!-- gb area=app -->
 
 Lists and pages share four looks: first time, nothing matches, can't load and not connected. Each says what belongs there or why it is empty, with one action such as Start a run, Clear filter, Retry or Connect a tool, and a permission problem names the fix.
 

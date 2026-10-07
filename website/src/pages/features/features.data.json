@@ -115,7 +115,7 @@
         },
         {
           "title": "Settings",
-          "text": "Settings opens on the page you used last, with the rail beside it. Every page is also in the palette.",
+          "text": "Settings opens on the page you used last and takes over the left column. Every page is also in the palette.",
           "group": "Set up",
           "also": "settings pages",
           "shown": true
@@ -196,6 +196,13 @@
           "main": true
         },
         {
+          "title": "Pin a session to keep it at the top",
+          "text": "Pin the sessions you return to. They sit in a Pinned group above the rest, in the order you pinned them, whatever the sort or filter.",
+          "group": "Switch between tasks",
+          "also": "pinned sessions",
+          "shown": true
+        },
+        {
           "title": "Now chip",
           "text": "A chip in the top bar counts sessions that need you and those running. Click it to jump straight to one.",
           "group": "Switch between tasks",
@@ -249,7 +256,7 @@
         },
         {
           "title": "Stage board",
-          "text": "See where each session stands without moving cards. Each one sits in building, running, needs you or in review.",
+          "text": "See where each session stands without moving cards. Each one sits in building, running, needs you, in review, done or archived.",
           "group": "The board",
           "main": true
         },
@@ -506,7 +513,7 @@
         },
         {
           "title": "Workflow run",
-          "text": "Follow a run as a tree with one pinned next action. After a restart, one Resume all starts the stopped agents again.",
+          "text": "Follow a run from top to bottom, with sub-agents under their agent and one pinned next action. After a restart, one Resume all starts the stopped agents again.",
           "group": "Workflows",
           "main": true
         },
@@ -765,7 +772,7 @@
         },
         {
           "title": "Checks",
-          "text": "The Checks tab lists CI runs with their durations and the failing step. Fix failing check hands a failed one to an agent.",
+          "text": "The Checks tab lists CI runs with their durations and the failing step, or says why it can't read them and names the fix. Fix failing check hands a failed one to an agent.",
           "group": "Review and resolve on the Branch page",
           "also": "checks",
           "shown": true
@@ -899,7 +906,7 @@
         },
         {
           "title": "Plan beside the planner",
-          "text": "Read a plan in a drawer next to the planner, without leaving the chat. While the planner reworks it, the plan says so and Run plan waits.",
+          "text": "Read a plan in a drawer, comment on it or edit it by hand, and Approve it where you read it. While the planner reworks it, the plan says so and Approve waits.",
           "group": "Plans, reports and wireframes",
           "also": "plan drawer"
         },

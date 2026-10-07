@@ -95,7 +95,7 @@ Know whether a GitHub pull request can merge, in plain words, with its checks, a
 
 ### One trail to the Branch page
 
-Reach a branch from any door and land on the same place. The palette, a notification, a chat card and the board all open the Branch page with the same trail, such as **Session**, **Branch**, **Comments**. **Up** is the crumb on the left and **Back** walks your history. There is no separate pull request, Diff or Review page.
+Reach a branch from any door and land on the same place. The palette, a notification, a chat card and the board all open the Branch page with the same trail, such as **Session**, **Branch**, **Comments**. **Up** is the crumb on the left and **Back** walks your history. Every tab sits on one centred column, so nothing moves when you switch tabs, and a branch chip in the header switches branches or starts a new one. There is no separate pull request, Diff or Review page.
 
 ### Write it
 
