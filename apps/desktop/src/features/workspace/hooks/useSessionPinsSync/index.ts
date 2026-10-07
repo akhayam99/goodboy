@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
 
-export const PINS_FOCUS_RELOAD_DEBOUNCE_MS = 400;
+const PINS_FOCUS_RELOAD_DEBOUNCE_MS = 400;
 
 export const useSessionPinsSync = (): void => {
   const workspaceId = useAppStore((state) => state.currentWorkspaceId);

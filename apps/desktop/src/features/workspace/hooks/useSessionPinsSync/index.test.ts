@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { PINS_FOCUS_RELOAD_DEBOUNCE_MS, useSessionPinsSync } from './index';
+import { useSessionPinsSync } from './index';
+
+const SETTLED_MS = 1_000;
 
 const HARBORLINE = 'workspace-harborline' as WorkspaceId;
 const NORTHWIND = 'workspace-northwind' as WorkspaceId;
@@ -50,7 +52,7 @@ describe('useSessionPinsSync', () => {
     window.dispatchEvent(new Event('focus'));
     document.dispatchEvent(new Event('visibilitychange'));
     window.dispatchEvent(new Event('focus'));
-    vi.advanceTimersByTime(PINS_FOCUS_RELOAD_DEBOUNCE_MS);
+    vi.advanceTimersByTime(SETTLED_MS);
 
     expect(loadSessionPins).toHaveBeenCalledTimes(1);
     expect(loadSessionPins).toHaveBeenCalledWith({ workspaceId: HARBORLINE });
@@ -61,7 +63,7 @@ describe('useSessionPinsSync', () => {
     renderHook(() => useSessionPinsSync());
 
     window.dispatchEvent(new Event('focus'));
-    vi.advanceTimersByTime(PINS_FOCUS_RELOAD_DEBOUNCE_MS);
+    vi.advanceTimersByTime(SETTLED_MS);
 
     expect(loadSessionPins).not.toHaveBeenCalled();
   });
@@ -73,7 +75,7 @@ describe('useSessionPinsSync', () => {
 
     window.dispatchEvent(new Event('focus'));
     unmount();
-    vi.advanceTimersByTime(PINS_FOCUS_RELOAD_DEBOUNCE_MS);
+    vi.advanceTimersByTime(SETTLED_MS);
 
     expect(loadSessionPins).not.toHaveBeenCalled();
   });

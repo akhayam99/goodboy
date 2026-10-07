@@ -9,7 +9,7 @@ type Params = {
   readonly workspaceId: WorkspaceId | null;
 };
 
-export const useSessionPins = ({ workspaceId }: Params): ReadonlyArray<SessionPin> =>
+const useSessionPins = ({ workspaceId }: Params): ReadonlyArray<SessionPin> =>
   useAppStore((state) =>
     workspaceId === null ? EMPTY_PINS : (state.sessionPins[workspaceId] ?? EMPTY_PINS),
   );

@@ -3,7 +3,7 @@ import type { SessionPinsState } from './state';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type LoadSessionPinsParams = {
+type LoadSessionPinsParams = {
   readonly workspaceId: WorkspaceId;
 };
 
