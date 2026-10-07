@@ -663,9 +663,10 @@ and it answers with what happened so the caller can say it:
 
 A write that fails leaves no half approval: the snapshot write comes first, and
 if clearing the stop fails after it, the snapshot is put back. The in-store run
-changes only after both writes went through. Every other caller (the run
-header, the comment bar) may ignore the result; the Artifacts page, the palette
-and the object menu read it through `artifact.runPlan`.
+changes only after both writes went through. The run header may ignore the
+result; the plan drawer, its comment bar and the plan row read it through
+`usePlanPrimaryAction`, and the Artifacts page, the palette and the object menu
+read it through `artifact.runPlan`.
 
 #### One primary for a plan
 
@@ -696,6 +697,46 @@ the action **Follow the run** (left out when the run page is already open).
 A `noop` shows nothing and a `failed` goes to the notifications as "Couldn't
 approve the plan".
 
+#### The plan drawer
+
+The drawer (`features/artifacts/components/ArtifactDocumentDrawer`) is where a
+plan is read, commented, edited and approved. Every plan entry opens it over
+the current page (`openPlanAnywhere`); the only way to the Artifacts page is its
+own **Open in Artifacts**.
+
+- **Header.** Two rows at any width: the plan icon, the title (two lines at
+  most) and Close; then the state chip, the version (`v2`), the one primary,
+  **Edit** and an overflow with **Open in Artifacts**, **Expand** or
+  **Collapse**, and **Copy markdown**. Expanded, the header is one full-width
+  row and the body is centred at 720px. A line under the header says one thing
+  at a time: the inline question, the reason the primary or **Edit** is off, or
+  who wrote this version ("v3 · Revised by planner", "v3 · Edited by you",
+  from the revision's author).
+- **One primary.** `PlanPrimaryButton` draws `planPrimaryOf`: `approve` is a
+  filled **Approve**, `run` a filled **Run plan**, `disabled` the same button
+  off with its reason printed beside it, `none` no button (the chip says
+  Approved or Running). With unsent comments the kind stays, the button turns
+  secondary and the comment bar's **Send to planner** is the one filled
+  button; pressing **Approve** then asks inline "3 comments are not sent.
+  Approve anyway?". The comment bar keeps an **Approve** (secondary) whenever
+  the run waits on the plan, with or without comments. **Run plan** on a
+  session plan is `usePlanRun` and its own toast.
+- **Approve.** `markUserStart` for the run first, then
+  `approveWorkflowRunPlan` for the run held for the plan (a run that is not
+  held starts the step through `runPlan`). `approved` raises one
+  `useFollowToast` toast, "Plan approved" with "The run goes on" or
+  "<Step> started" and the action **Follow the run**, which the hook leaves
+  out when the run page is open and uncovered; when the drawer sits over that
+  run's page it closes first. `noop` closes and raises nothing. `failed`
+  goes to `reportError` ("Couldn't approve the plan") and the drawer stays.
+- **Comment and re-plan.** Drafts gather in the bar. Send dims the body under a
+  "Revising to v3" line. A new version shows "v3 · Revised by planner" and
+  settles the comments as before. `unchanged` shows "The planner answered
+  without changing the plan" with **Open the reply** (the planner's page) and
+  leaves the comments open. A question the planner asked is the existing
+  question card at the top of the body with **Answer**, and the bar waits
+  ("The planner asked a question. Answer it first.").
+
 #### Editing a plan by hand
 
 A hand edit saves against the revision it started from
@@ -708,6 +749,18 @@ comments are unsent ("Send or discard your 3 comments first"), or the plan
 runs as two or more parallel parts ("This plan runs as 3 parallel parts. Ask
 the planner to change it."), because the parts a run fans out from live in the
 plan's metadata and a hand edit keeps them.
+
+The editor is one component, `PlanEditor` with `usePlanEditor`
+(`features/artifacts/components/PlanEditor`), used by the drawer and by the
+Artifacts page through the `artifact.edit` action. **Edit** swaps the body for
+the markdown editor in place; the header's primary becomes **Save** with
+**Cancel** beside it, and **Approve** is hidden. **Save** sends the revision the
+edit started from: `saved` leaves edit mode and the line reads "v3 · Edited by
+you"; `conflict` keeps your text and says "The planner wrote v3 meanwhile",
+with **Copy your text** and **Discard**. **Esc** in edit mode leaves edit mode
+and never closes the drawer: the editor registers its own escape layer above
+the drawer's, so a scrim click does the same. A changed edit asks "Discard your
+edit?" first, and **Esc** again keeps editing.
 
 ### Pause is one admission check
 
