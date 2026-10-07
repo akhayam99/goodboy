@@ -226,6 +226,59 @@ describe('resolveAuto', () => {
     });
   });
 
+  it('never falls back to a visible model the installed cli is too old to run', () => {
+    const everyModelButSonnet55 = {
+      anthropic: MODEL_CATALOGS.anthropic
+        .map((model) => model.key)
+        .filter((key) => key !== 'sonnet-5.5'),
+    };
+    const slot = { kind: 'role', id: 'implementer' } as const;
+
+    const oldCli = resolveAuto({
+      slot,
+      defaultProvider: 'anthropic',
+      hidden: everyModelButSonnet55,
+      cliVersions: { anthropic: '2.1.200' },
+    });
+    const newCli = resolveAuto({
+      slot,
+      defaultProvider: 'anthropic',
+      hidden: everyModelButSonnet55,
+      cliVersions: { anthropic: '2.1.290' },
+    });
+
+    expect(oldCli?.model).not.toBe('sonnet-5.5');
+    expect(newCli?.model).toBe('sonnet-5.5');
+  });
+
+  it('never falls back to a Cursor model that only runs in Max Mode while Max Mode is off', () => {
+    const everyModelButOpus5 = {
+      cursor: MODEL_CATALOGS.cursor.map((model) => model.key).filter((key) => key !== 'opus-5'),
+    };
+    const slot = { kind: 'role', id: 'implementer' } as const;
+
+    const maxModeOff = resolveAuto({
+      slot,
+      defaultProvider: 'cursor',
+      hidden: everyModelButOpus5,
+      isCursorMaxModeOn: false,
+    });
+    const maxModeOn = resolveAuto({
+      slot,
+      defaultProvider: 'cursor',
+      hidden: everyModelButOpus5,
+      isCursorMaxModeOn: true,
+    });
+
+    expect(maxModeOff?.model).not.toBe('opus-5');
+    expect(maxModeOn).toEqual({
+      provider: 'cursor',
+      model: 'opus-5',
+      effort: null,
+      step: 'cost-tier',
+    });
+  });
+
   it('moves a background task to a visible model of the same cost tier', () => {
     expect(
       resolveAuto({

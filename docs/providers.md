@@ -212,7 +212,10 @@ pick the orchestrator still names is replaced by an allowed model (the decision
 says `hidden`). Run planner, workflow recovery, turn fallback, task fallback, and
 the Ask and Chat defaults skip it too. A model that is the only one left for a
 role is never swapped for a hidden one: the run says so inline
-(`No model is allowed for this agent`).
+(`No model is allowed for this agent`). When every curated pick of a provider is
+hidden, Auto takes the strongest visible model of that provider by cost tier, and
+only one the installed CLI is new enough to run and, on Cursor, one that does not
+need Max Mode while Max Mode is off; with none left it moves to the next provider.
 
 An explicit choice still wins. A model you pinned for a role or a task in Settings,
 a step or agent lock, and a model you pick by hand for one agent or run keep

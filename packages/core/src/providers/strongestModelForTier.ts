@@ -8,6 +8,7 @@ type Params = {
   readonly tier: ModelCostTier;
   readonly wantsThinker: boolean;
   readonly hidden?: HiddenModels;
+  readonly isUsable?: (model: ModelDescriptor) => boolean;
 };
 
 type ScoreParams = {
@@ -24,6 +25,7 @@ export const strongestModelForTier = ({
   tier,
   wantsThinker,
   hidden,
+  isUsable,
 }: Params): ModelDescriptor | null => {
   let best: ModelDescriptor | null = null;
   for (const model of PROVIDER_CAPABILITIES[provider].models) {
@@ -31,6 +33,9 @@ export const strongestModelForTier = ({
       continue;
     }
     if (hidden != null && isModelHidden({ provider, hidden, key: model.id })) {
+      continue;
+    }
+    if (isUsable !== undefined && !isUsable(model)) {
       continue;
     }
     if (best === null || tierMatchScore({ model, tier }) > tierMatchScore({ model: best, tier })) {
