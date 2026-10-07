@@ -46,7 +46,10 @@ fn commit(root: &Path, file: &str, body: &str, message: &str) -> String {
 
 fn push_to_new_remote(root: &Path) -> PathBuf {
     let remote = root.join("remote.git");
-    git_ok(root, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        root,
+        &["init", "--bare", "-b", "main", remote.to_str().unwrap()],
+    );
     git_ok(root, &["remote", "add", "origin", remote.to_str().unwrap()]);
     git_ok(root, &["push", "-u", "origin", "main"]);
     remote
