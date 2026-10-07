@@ -1,7 +1,6 @@
-const LANE_MIN_WIDTH = 208;
-const LANE_GAP = 12;
-const SIX_LANES_WIDTH = 6 * LANE_MIN_WIDTH + 5 * LANE_GAP;
-const FIVE_LANES_WIDTH = 5 * LANE_MIN_WIDTH + 4 * LANE_GAP;
+import { BOARD_LANE_GAP_REM, BOARD_LANE_MIN_REM } from '@goodboy/ui';
+
+const DEFAULT_REM_PX = 15;
 
 export type BoardLanes = {
   readonly lanes: 5 | 6;
@@ -11,13 +10,25 @@ export type BoardLanes = {
 
 type Params = {
   readonly width: number;
+  readonly remPx?: number;
 };
 
-export const boardLanesOf = ({ width }: Params): BoardLanes => {
-  if (width >= SIX_LANES_WIDTH) {
+export const rootRemPx = (): number => {
+  if (typeof document === 'undefined') {
+    return DEFAULT_REM_PX;
+  }
+  const px = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return Number.isFinite(px) && px > 0 ? px : DEFAULT_REM_PX;
+};
+
+const lanesWidth = ({ count, remPx }: { readonly count: number; readonly remPx: number }): number =>
+  (count * BOARD_LANE_MIN_REM + (count - 1) * BOARD_LANE_GAP_REM) * remPx;
+
+export const boardLanesOf = ({ width, remPx = DEFAULT_REM_PX }: Params): BoardLanes => {
+  if (width >= lanesWidth({ count: 6, remPx })) {
     return { lanes: 6, stacked: false, scrolls: false };
   }
-  if (width >= FIVE_LANES_WIDTH) {
+  if (width >= lanesWidth({ count: 5, remPx })) {
     return { lanes: 5, stacked: true, scrolls: false };
   }
   return { lanes: 5, stacked: true, scrolls: true };

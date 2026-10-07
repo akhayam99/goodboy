@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { cn, PANE_RHYTHM, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY } from '../../../../store';
@@ -38,6 +38,16 @@ export const BoardLanes = ({
   onRestore,
 }: Props) => {
   const columnsRef = useRef<HTMLDivElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const isScrolling = layout.scrolls;
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (!isScrolling || viewport === null) {
+      return;
+    }
+    viewport.scrollLeft = viewport.scrollWidth - viewport.clientWidth;
+  }, [isScrolling]);
   const { selectIds, selectedIds } = selection;
   const onLassoSelect = useCallback(
     (ids: ReadonlyArray<SessionId>, mode: 'replace' | 'add') => selectIds(ids, mode),
@@ -71,7 +81,12 @@ export const BoardLanes = ({
   );
 
   return (
-    <ScrollFade orientation="horizontal" fadeSize="w-8" className="min-h-0 flex-1">
+    <ScrollFade
+      orientation="horizontal"
+      fadeSize="w-8"
+      className="min-h-0 flex-1"
+      viewportRef={viewportRef}
+    >
       <div
         ref={columnsRef}
         onPointerDown={lasso.onPointerDown}

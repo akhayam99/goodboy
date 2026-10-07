@@ -299,6 +299,62 @@ describe('StageBoard lanes', () => {
   });
 });
 
+describe('StageBoard sideways scroll', () => {
+  const stubExtent = ({
+    scrollWidth,
+    clientWidth,
+  }: {
+    scrollWidth: number;
+    clientWidth: number;
+  }) => {
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+      configurable: true,
+      get: () => scrollWidth,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get: () => clientWidth,
+    });
+  };
+
+  const unstubExtent = () => {
+    Reflect.deleteProperty(HTMLElement.prototype, 'scrollWidth');
+    Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
+  };
+
+  afterEach(unstubExtent);
+
+  const viewportOf = (): HTMLElement => {
+    const viewport = lane('done').closest('[class*="overflow-x-auto"]');
+    if (!(viewport instanceof HTMLElement)) {
+      throw new Error('the lanes have no horizontal scroller');
+    }
+    return viewport;
+  };
+
+  it('opens scrolled to the end, so Done and Archived are on screen, when the lanes do not fit', () => {
+    const building = sessionOf('Add idempotency keys to the refund endpoint');
+    seed({ active: [building] });
+    stubExtent({ scrollWidth: 1100, clientWidth: 700 });
+    const observers = measureBoard({ width: 900 });
+    mountBoard([building]);
+    act(() => observers.resizeAll());
+
+    expect(viewportOf().scrollLeft).toBe(400);
+  });
+
+  it('leaves the scroller alone when five lanes fit', () => {
+    const building = sessionOf('Add idempotency keys to the refund endpoint');
+    seed({ active: [building] });
+    stubExtent({ scrollWidth: 1100, clientWidth: 700 });
+    const observers = measureBoard({ width: 1100 });
+    mountBoard([building]);
+    act(() => observers.resizeAll());
+
+    expect(viewportOf().scrollLeft).toBe(0);
+  });
+});
+
 describe('StageBoard header', () => {
   type Changes = {
     readonly unstaged?: number;

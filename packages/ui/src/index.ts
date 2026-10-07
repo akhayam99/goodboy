@@ -11,7 +11,7 @@ export { useDropdown } from './useDropdown';
 export { PopoverPortalProvider } from './PopoverPortalContext';
 export type { DropdownController } from './useDropdown';
 export { ICON_SIZE } from './iconSize';
-export { PANE_RHYTHM } from './paneRhythm';
+export { BOARD_LANE_GAP_REM, BOARD_LANE_MIN_REM, PANE_RHYTHM } from './paneRhythm';
 export { TERMINAL_DIM } from './terminalDim';
 export { formatError } from './formatError';
 export { splitErrorMessage } from './splitErrorMessage';

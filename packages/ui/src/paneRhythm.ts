@@ -1,3 +1,7 @@
+export const BOARD_LANE_MIN_REM = 13;
+
+export const BOARD_LANE_GAP_REM = 0.75;
+
 export const PANE_RHYTHM = {
   inset: 'px-6',
   header: 'px-6 py-5',
