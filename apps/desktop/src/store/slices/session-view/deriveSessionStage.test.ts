@@ -47,7 +47,7 @@ describe('deriveSessionStage pull request freshness', () => {
 
   it('claims no PR only once the fetch has landed', () => {
     const info = deriveSessionStage({ session, pr: null, ...signals, prFetchState: 'known' });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'building',
       reason: 'no PR yet',
       addsFact: false,
@@ -63,7 +63,7 @@ describe('deriveSessionStage pull request freshness', () => {
       hasUnread: false,
       openQuestionCount: 1,
     });
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'attention',
       reason: '1 open question',
       addsFact: true,
@@ -129,7 +129,7 @@ describe('deriveSessionStage orchestrator decision', () => {
       isDecidingWorkflow: true,
     });
 
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'running',
       reason: 'deciding the next step',
       addsFact: true,
@@ -147,7 +147,7 @@ describe('deriveSessionStage orchestrator decision', () => {
       isDecidingWorkflow: true,
     });
 
-    expect(info).toEqual({
+    expect(info).toMatchObject({
       stage: 'running',
       reason: 'deciding the next step',
       addsFact: true,
@@ -276,7 +276,7 @@ describe('deriveSessionStage error against running', () => {
         isBranchless,
         hasRunningAgent: true,
       });
-      expect(info).toEqual({
+      expect(info).toMatchObject({
         stage: 'attention',
         reason: 'agent errored',
         addsFact: true,

@@ -24,10 +24,7 @@ export const useNeedsYouEntries = (): ReadonlyArray<PaletteEntry> => {
     const state = useAppStore.getState();
     const attention = groups.find((group) => group.key === 'attention')?.sessions ?? EMPTY_ARRAY;
     return needsYouEntries({
-      items: attention.map((session) => {
-        const info = stageInfoOf(state, session);
-        return { session, reason: info.reason, attention: info.attention };
-      }),
+      items: attention.map((session) => ({ session, info: stageInfoOf(state, session) })),
       open: ({ sessionId, attention: reason }) =>
         navigate({ to: attentionPlace({ state: useAppStore.getState(), sessionId, reason }) }),
     });

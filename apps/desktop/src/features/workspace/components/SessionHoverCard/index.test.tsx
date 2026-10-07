@@ -220,18 +220,20 @@ describe('what the hover card says', () => {
     return within(card() as HTMLElement);
   };
 
-  it('names the stage and the reason of a session that needs you', () => {
+  it('says what waits on you in the words of the reason table', () => {
     const view = openCard('Retry policy for 429s');
-    expect(view.getByText('Needs you · 1 open question')).toBeDefined();
+    expect(view.getByText('1 question for you')).toBeDefined();
   });
 
   it('agrees with what the row tells a screen reader', () => {
     mount();
     const described = rowOf('Retry policy for 429s').getAttribute('aria-describedby') ?? '';
-    expect(document.getElementById(described)?.textContent ?? '').toMatch(/needs you/i);
+    expect(document.getElementById(described)?.textContent ?? '').toBe(
+      'needs you, 1 question for you',
+    );
     fireEvent.mouseEnter(rowOf('Retry policy for 429s'));
     rest(500);
-    expect(within(card() as HTMLElement).getByText(/^Needs you/)).toBeDefined();
+    expect(within(card() as HTMLElement).getByText('1 question for you')).toBeDefined();
   });
 
   it('shows the pull request, its checks, the linked task and the project', () => {

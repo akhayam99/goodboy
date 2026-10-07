@@ -7,6 +7,7 @@ import { sessionPrFetchState } from '../github/sessionPrFetchState';
 import { liveWorkOfSession } from '../live-work/selectLiveWork';
 import { summarizeMountWork } from '../project-mounts/mountCompletion';
 import { resolveAttentionOf } from '../resolve/resolveAttention';
+import { isRunHeldForPlan } from '../workflows/workflowPlanApproval';
 import { deriveSessionStage } from './deriveSessionStage';
 import { isPrReviewSession } from './isPrReviewSession';
 import { resolveSessionRequest } from './resolveSessionRequest';
@@ -101,5 +102,8 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
     isBranchless,
     hasRun: sessionHasRunIn(state, sessionId),
+    hasPlanWaiting: session.workflowRuns.some(
+      (run) => run.discardedAt == null && isRunHeldForPlan({ run }),
+    ),
   });
 };

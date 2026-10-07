@@ -10,11 +10,16 @@ export type SessionTone = {
 type ToneParams = {
   readonly stage: SessionStage;
   readonly attention?: SessionAttentionReason | null;
+  readonly isRunning?: boolean;
 };
 
-export const sessionTone = ({ stage, attention = null }: ToneParams): SessionTone => {
+export const sessionTone = ({
+  stage,
+  attention = null,
+  isRunning = false,
+}: ToneParams): SessionTone => {
   if (stage === 'attention' && attention !== null) {
-    return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: false };
+    return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: isRunning };
   }
   return { tone: STAGE_TONE[stage], isBreathing: stage === 'running' };
 };

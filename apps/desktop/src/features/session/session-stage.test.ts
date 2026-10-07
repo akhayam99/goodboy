@@ -1,7 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SessionAttentionReason, SessionStageInfo } from '@goodboy/types';
-import { ATTENTION_REASON_META, describeSessionStage, describeStageBucket } from './session-stage';
+import {
+  ATTENTION_REASON_META,
+  attentionWordsOf,
+  describeSessionStage,
+  describeStageBucket,
+  otherAttentionLinesOf,
+} from './session-stage';
 import { stateDescription } from '../../shared/utils/statePresentation';
 
 const REASONS = Object.keys(ATTENTION_REASON_META) as ReadonlyArray<SessionAttentionReason>;
@@ -73,5 +79,82 @@ describe('describeStageBucket', () => {
     expect(describeStageBucket({ stage: 'review' })).toEqual(
       describeSessionStage(info({ stage: 'review' })),
     );
+  });
+});
+
+describe('the reason table', () => {
+  it('draws red only for an agent error and failing checks', () => {
+    expect(REASONS.filter((reason) => ATTENTION_REASON_META[reason].tone === 'danger')).toEqual([
+      'agent-error',
+      'ci-failed',
+    ]);
+  });
+
+  it.each<[SessionAttentionReason, string, string, string]>([
+    ['agent-error', '!', 'danger', 'An agent stopped on an error'],
+    ['ci-failed', '!', 'danger', 'Checks failing'],
+    ['open-question', '?', 'warning', '1 question for you'],
+    ['fix-needs-you', '?', 'warning', '1 comment needs you'],
+    ['needs-approval', 'approval', 'warning', 'Waiting for your approval'],
+    ['plan-approval', 'approval', 'warning', 'The plan waits for your approval'],
+    ['changes-requested', '!', 'warning', 'Changes requested'],
+    ['fix-couldnt-fix', '!', 'warning', "1 comment it couldn't fix"],
+    ['pr-approved', 'approved', 'success', 'Approved, ready to merge'],
+    ['unread-reply', 'none', 'info', 'New reply'],
+  ])('gives %s the mark %s in %s with the words "%s"', (reason, mark, tone, words) => {
+    expect(ATTENTION_REASON_META[reason]).toMatchObject({ mark, tone, words, reason: words });
+  });
+});
+
+describe('attentionWordsOf', () => {
+  it('pluralises from the count', () => {
+    expect(attentionWordsOf({ reason: 'open-question', counts: { openQuestionCount: 1 } })).toBe(
+      '1 question for you',
+    );
+    expect(attentionWordsOf({ reason: 'open-question', counts: { openQuestionCount: 4 } })).toBe(
+      '4 questions for you',
+    );
+    expect(attentionWordsOf({ reason: 'fix-needs-you', counts: { fixNeedsYouCount: 3 } })).toBe(
+      '3 comments need you',
+    );
+    expect(attentionWordsOf({ reason: 'fix-couldnt-fix', counts: { fixCouldntFixCount: 2 } })).toBe(
+      "2 comments it couldn't fix",
+    );
+  });
+
+  it('never says zero when the count is missing', () => {
+    expect(attentionWordsOf({ reason: 'open-question' })).toBe('1 question for you');
+    expect(attentionWordsOf({ reason: 'fix-needs-you', counts: { fixNeedsYouCount: 0 } })).toBe(
+      '1 comment needs you',
+    );
+  });
+
+  it('names the plan version when it is known and the plan otherwise', () => {
+    expect(attentionWordsOf({ reason: 'plan-approval', planVersion: 2 })).toBe(
+      'Plan v2 waits for your approval',
+    );
+    expect(attentionWordsOf({ reason: 'plan-approval' })).toBe('The plan waits for your approval');
+  });
+});
+
+describe('otherAttentionLinesOf', () => {
+  it('lists the facts behind the winner with their tone and words', () => {
+    const lines = otherAttentionLinesOf({
+      info: info({
+        stage: 'attention',
+        attention: 'pr-approved',
+        otherReasons: ['open-question', 'ci-failed'],
+        openQuestionCount: 2,
+      }),
+    });
+
+    expect(lines).toEqual([
+      { reason: 'open-question', tone: 'warning', words: '2 questions for you' },
+      { reason: 'ci-failed', tone: 'danger', words: 'Checks failing' },
+    ]);
+  });
+
+  it('lists nothing for a session without other facts', () => {
+    expect(otherAttentionLinesOf({ info: info({}) })).toEqual([]);
   });
 });
