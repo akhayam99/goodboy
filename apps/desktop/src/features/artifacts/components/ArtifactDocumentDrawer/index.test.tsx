@@ -62,6 +62,11 @@ const filledButtons = (): ReadonlyArray<string> =>
     (button) => button.textContent ?? '',
   );
 
+const toolbarButtons = (): ReadonlyArray<string> =>
+  Array.from(screen.getByTestId('plan-drawer-toolbar').querySelectorAll('button')).map(
+    (button) => button.getAttribute('aria-label') ?? button.textContent?.trim() ?? '',
+  );
+
 const stubApprove = (result: ApprovePlanResult) => {
   const approve = vi.fn(async () => result);
   useAppStore.setState({ approveWorkflowRunPlan: approve });
@@ -108,6 +113,7 @@ describe('plan document drawer header', () => {
     expect(within(toolbar).getByTestId('plan-primary').textContent).toBe('Approve');
     expect(within(toolbar).getByRole('button', { name: 'Edit' })).toBeDefined();
     expect(within(toolbar).getByRole('button', { name: 'More plan actions' })).toBeDefined();
+    expect(toolbarButtons()).toEqual(['Approve', 'Edit', 'More plan actions']);
   });
 
   it('has exactly one filled button for a plan a run holds for', () => {
@@ -717,7 +723,10 @@ describe('editing the plan by hand in the drawer', () => {
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toContain('Mine.');
     expect(screen.getByRole('button', { name: 'Copy your text' })).toBeDefined();
     expect(screen.getByTestId('artifact-save').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByTestId('plan-drawer-version').textContent).toBe('v2 · v3 available');
+    const version = screen.getByTestId('plan-drawer-version');
+    expect(version.textContent).toBe('v2 · v3');
+    expect(version.getAttribute('title')).toBe('Version 3 is available');
+    expect(toolbarButtons()).toEqual(['Save', 'Cancel', 'More plan actions']);
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(screen.getByTestId('plan-drawer-version').textContent).toBe('v2');

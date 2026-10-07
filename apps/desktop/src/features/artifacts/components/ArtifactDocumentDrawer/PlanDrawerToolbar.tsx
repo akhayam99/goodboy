@@ -33,19 +33,17 @@ export const PlanDrawerToolbar = ({
 }: Props) => (
   <div
     data-testid="plan-drawer-toolbar"
-    className={cn(
-      'flex min-w-0 items-center gap-2',
-      isInline ? 'justify-end' : 'flex-wrap gap-y-1',
-    )}
+    className={cn('flex min-w-0 items-center gap-2', isInline ? 'justify-end' : '@container')}
   >
-    {isPast ? null : <ArtifactStateChip state={state} />}
+    {isPast ? null : <ArtifactStateChip state={state} isDetailCollapsible={!isInline} />}
     <span
       data-testid="plan-drawer-version"
+      title={
+        editor.conflict === null ? undefined : `Version ${editor.conflict.revision} is available`
+      }
       className="shrink-0 text-meta tabular-nums text-muted-foreground"
     >
-      {editor.conflict === null
-        ? `v${version}`
-        : `v${version} · v${editor.conflict.revision} available`}
+      {editor.conflict === null ? `v${version}` : `v${version} · v${editor.conflict.revision}`}
     </span>
     {isInline ? null : <span aria-hidden className="min-w-0 flex-1" />}
     {isPast ? null : editor.isEditing ? (
