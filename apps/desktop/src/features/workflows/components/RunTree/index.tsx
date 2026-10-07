@@ -1,7 +1,11 @@
+import { useMemo } from 'react';
 import type { AgentId, OpenQuestion, SessionId, WorkflowRunId } from '@goodboy/types';
+import { useSessionPlans } from '../../../../store';
 import type { RunTreeRouting } from './RunTreeRow';
 import { RunTreeRows } from './RunTreeRows';
 import type { RunStepSkipAction } from './RunStepSkip';
+import { plansByAgentId } from './plansByAgentId';
+import { useFoldedRunTree } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
 
 type Props = {
@@ -29,13 +33,16 @@ export const RunTree = ({
   onSelect,
   onAnswer,
 }: Props) => {
-  if (tree === null) {
+  const folded = useFoldedRunTree({ tree });
+  const sessionPlans = useSessionPlans(sessionId);
+  const plans = useMemo(() => plansByAgentId({ plans: sessionPlans }), [sessionPlans]);
+  if (folded === null) {
     return null;
   }
   return (
     <RunTreeRows
       sessionId={sessionId}
-      tree={tree}
+      tree={folded.tree}
       scrollKey={runId}
       label="Run steps"
       testId="run-tree"
@@ -43,6 +50,8 @@ export const RunTree = ({
       selectedAgentId={selectedAgentId}
       highlightedStepId={highlightedStepId}
       skip={skip}
+      folds={folded.folds}
+      plans={plans}
       onHighlight={onHighlight}
       onSelect={onSelect}
       onAnswer={onAnswer}
