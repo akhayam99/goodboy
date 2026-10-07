@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Button } from '@goodboy/ui';
+import { Button, Tooltip } from '@goodboy/ui';
 import { PromptField, type PromptSubmitMode } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
@@ -24,6 +24,8 @@ type ReadNowParams = {
   readonly isStepRunning: boolean;
   readonly isPaused: boolean;
 };
+
+const QUEUE_COPY = 'Queue waits for the next decision.';
 
 const readNowCopy = ({ isDeciding, isStepRunning, isPaused }: ReadNowParams): string => {
   if (isPaused) {
@@ -104,30 +106,31 @@ export const OrchestratorHintComposer = ({
         files={files.files}
         actions={
           <>
-            <Button
-              type="submit"
-              size="sm"
-              variant="ghost"
-              disabled={canSend === false}
-              data-testid="orchestrator-hint-queue"
-            >
-              Queue
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={canSend === false}
-              data-testid="orchestrator-hint-now"
-              onClick={() => void send({ delivery: 'now' })}
-            >
-              Read now
-            </Button>
+            <Tooltip content={QUEUE_COPY} side="top">
+              <Button
+                type="submit"
+                size="sm"
+                variant="ghost"
+                disabled={canSend === false}
+                data-testid="orchestrator-hint-queue"
+              >
+                Queue
+              </Button>
+            </Tooltip>
+            <Tooltip content={readNowCopy({ isDeciding, isStepRunning, isPaused })} side="top">
+              <Button
+                type="button"
+                size="sm"
+                disabled={canSend === false}
+                data-testid="orchestrator-hint-now"
+                onClick={() => void send({ delivery: 'now' })}
+              >
+                Read now
+              </Button>
+            </Tooltip>
           </>
         }
       />
-      <span data-testid="orchestrator-hint-timing" className="text-meta text-muted-foreground">
-        Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning, isPaused })}
-      </span>
     </form>
   );
 };

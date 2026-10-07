@@ -36,6 +36,10 @@ const renderLog = (hints: ReadonlyArray<OrchestratorHint>) =>
     />,
   );
 
+const openQueued = (): void => {
+  fireEvent.click(screen.getByRole('button', { name: /queued/ }));
+};
+
 describe('OrchestratorHintLog', () => {
   it('reads a hint as markdown, with its lines and its image', () => {
     renderLog([
@@ -45,6 +49,7 @@ describe('OrchestratorHintLog', () => {
         attachmentIds: ['att-trace'],
       }),
     ]);
+    openQueued();
     const text = screen.getByTestId('orchestrator-hint-text');
     expect(Array.from(text.querySelectorAll('li')).map((item) => item.textContent)).toEqual([
       'keep the idempotency key',
@@ -61,6 +66,7 @@ describe('OrchestratorHintLog', () => {
     renderLog([
       hint({ text: Array.from({ length: 8 }, (_, index) => `line ${index}`).join('\n') }),
     ]);
+    openQueued();
     const toggle = screen.getByRole('button', { name: 'Show more' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
@@ -71,6 +77,52 @@ describe('OrchestratorHintLog', () => {
 
   it('keeps a short hint open', () => {
     renderLog([hint({})]);
+    openQueued();
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
+  });
+
+  it('folds the queued hints into one row that says how many, closed at first', () => {
+    renderLog([hint({ id: 'a' }), hint({ id: 'b', text: 'map ledger first' })]);
+
+    const row = screen.getByRole('button', { name: /2 queued/ });
+    expect(row.textContent).toContain('Read at the next decision');
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('list', { name: 'Hints' })).toBeNull();
+  });
+
+  it('opens the queued hints in place under the row, and folds them again', () => {
+    renderLog([hint({ id: 'a' }), hint({ id: 'b', text: 'map ledger first' })]);
+
+    const row = screen.getByRole('button', { name: /2 queued/ });
+    fireEvent.click(row);
+    const list = screen.getByRole('list', { name: 'Hints' });
+
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    expect(row.getAttribute('aria-controls')).toBe(list.id);
+    expect(within(list).getAllByTestId('orchestrator-hint-row')).toHaveLength(2);
+    fireEvent.click(row);
+    expect(screen.queryByRole('list', { name: 'Hints' })).toBeNull();
+  });
+
+  it('counts only the queued ones, and shows the hint being read without opening anything', () => {
+    render(
+      <OrchestratorHintLog
+        hints={[hint({ id: 'reading' }), hint({ id: 'queued' })]}
+        readingHintIds={['reading']}
+        runAttachments={[]}
+        onRemove={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /1 queued/ })).toBeDefined();
+    const rows = screen.getAllByTestId('orchestrator-hint-row');
+    expect(rows.map((item) => item.getAttribute('data-status'))).toEqual(['reading']);
+  });
+
+  it('has no row at all when every hint was read', () => {
+    renderLog([hint({ id: 'done', consumedAt: AT, consumedAtStep: 2 })]);
+
+    expect(screen.queryByRole('button', { name: /queued/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show read (1)' })).toBeDefined();
   });
 });

@@ -112,6 +112,9 @@ const agent = (index: number, status: Agent['status']): Agent => ({
   status,
 });
 
+const toneOf = (strip: HTMLElement): string | null =>
+  within(strip).getByTestId('tone-bar').getAttribute('data-tone');
+
 const renderStrip = ({
   subjectAgentId = null,
 }: { readonly subjectAgentId?: AgentId | null } = {}) => {
@@ -154,26 +157,24 @@ describe('NextActionStrip', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('names the failed step, the cause, and one primary way out on the danger rail', () => {
+  it('names the failed step, the cause, and one primary way out on a danger line', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'failed')] };
     renderStrip({ subjectAgentId: 'agent-1' as AgentId });
 
     const strip = screen.getByRole('region', { name: 'Next action: recover the step' });
-    expect(strip.className).toContain('border-l-danger');
-    expect(strip.className).not.toContain('bg-danger');
+    expect(toneOf(strip)).toBe('danger');
     expect(within(strip).getByText('Implement stopped before finishing.')).toBeDefined();
     expect(within(strip).getByText('Test waits on this step.')).toBeDefined();
     expect(within(strip).getByRole('button', { name: 'Ask it to continue' })).toBeDefined();
     within(strip).getByRole('button', { name: 'Skip' });
   });
 
-  it('puts a blocked step on the warning rail, never the danger one', () => {
+  it('puts a blocked step on a warning line, never the danger one', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'blocked')] };
     renderStrip({ subjectAgentId: 'agent-1' as AgentId });
 
     const strip = screen.getByRole('region', { name: 'Next action: recover the step' });
-    expect(strip.className).toContain('border-l-warning');
-    expect(strip.className).not.toContain('border-l-danger');
+    expect(toneOf(strip)).toBe('warning');
     expect(within(strip).getByRole('button', { name: 'Ask it to continue' })).toBeDefined();
   });
 
@@ -272,7 +273,7 @@ describe('NextActionStrip', () => {
     expect(screen.queryByRole('region', { name: 'Next action: answer' })).toBeNull();
   });
 
-  it('sends Answer to the agent that asked when no tree row shows it, on the warning rail', () => {
+  it('sends Answer to the agent that asked when no tree row shows it, on a warning line', () => {
     const delegate: Agent = {
       ...agent(1, 'completed'),
       id: 'agent-1' as AgentId,
@@ -304,7 +305,7 @@ describe('NextActionStrip', () => {
     renderStrip();
 
     const strip = screen.getByRole('region', { name: 'Next action: answer' });
-    expect(strip.className).toContain('border-l-warning');
+    expect(toneOf(strip)).toBe('warning');
     fireEvent.click(within(strip).getByRole('button', { name: 'Answer' }));
 
     expect(store.navigate).toHaveBeenCalledWith({
