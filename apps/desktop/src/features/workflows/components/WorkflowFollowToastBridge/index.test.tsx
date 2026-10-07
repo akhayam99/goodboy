@@ -110,7 +110,7 @@ describe('WorkflowFollowToastBridge', () => {
   });
 
   it('raises nothing for a step whose run the user just started', () => {
-    markUserStart(RUN_ID);
+    markUserStart({ key: RUN_ID });
     renderBridge();
 
     fireStepStarted();
@@ -120,7 +120,7 @@ describe('WorkflowFollowToastBridge', () => {
 
   it('raises nothing for a step whose agent the user just started', () => {
     const agentId = `agent-user-started-${startCount}` as AgentId;
-    markUserStart(agentId);
+    markUserStart({ key: agentId });
     renderBridge();
 
     fireStepStarted({ agentId });

@@ -26,11 +26,11 @@ describe('planRunToast', () => {
 
   it('marks the started agent as a user start so the bridge stays quiet', () => {
     const agentId = 'agent-plan-marked' as AgentId;
-    expect(isUserStart(agentId)).toBe(false);
+    expect(isUserStart({ key: agentId })).toBe(false);
 
     toastFor({ kind: 'started', agentId, scope: 'workflow' });
 
-    expect(isUserStart(agentId)).toBe(true);
+    expect(isUserStart({ key: agentId })).toBe(true);
   });
 
   it('follows to the agent page as a push', () => {
@@ -60,7 +60,7 @@ describe('planRunToast', () => {
       dedupeKey: `follow:${agentId}`,
       action: { label: 'Follow' },
     });
-    expect(isUserStart(agentId)).toBe(true);
+    expect(isUserStart({ key: agentId })).toBe(true);
   });
 
   it('leaves a refusal as it was: the reason, the way to the run, no start mark', () => {
@@ -76,7 +76,7 @@ describe('planRunToast', () => {
       action: { label: 'Open the run' },
     });
     expect(toast).not.toHaveProperty('dedupeKey');
-    expect(isUserStart('run-plan-refused')).toBe(false);
+    expect(isUserStart({ key: 'run-plan-refused' })).toBe(false);
   });
 
   it('says nothing when a gate already told the owner why', () => {

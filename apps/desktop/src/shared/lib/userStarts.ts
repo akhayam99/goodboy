@@ -31,6 +31,10 @@ const open = ({ marks, key }: MarksParams): void => {
   marks.set(key, now + START_WINDOW_MS);
 };
 
-export const markUserStart = (key: string): void => open({ marks: userStarts, key });
+type KeyParams = {
+  readonly key: string;
+};
 
-export const isUserStart = (key: string): boolean => isOpen({ marks: userStarts, key });
+export const markUserStart = ({ key }: KeyParams): void => open({ marks: userStarts, key });
+
+export const isUserStart = ({ key }: KeyParams): boolean => isOpen({ marks: userStarts, key });

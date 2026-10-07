@@ -144,10 +144,10 @@ describe('WorkflowRunStartButton', () => {
     const seenDuringStart = vi.fn();
     renderButton({
       onStart: async () => {
-        seenDuringStart(isUserStart(runId));
+        seenDuringStart(isUserStart({ key: runId }));
       },
     });
-    expect(isUserStart(runId)).toBe(false);
+    expect(isUserStart({ key: runId })).toBe(false);
 
     await pressStart();
 

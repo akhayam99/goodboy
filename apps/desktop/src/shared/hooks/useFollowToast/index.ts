@@ -32,7 +32,7 @@ export const useFollowToast = (): ((params: FollowParams) => void) => {
   return useCallback(
     ({ title, message = '', target, label = FOLLOW_LABEL, startKey, onFollow }: FollowParams) => {
       if (startKey !== undefined) {
-        markUserStart(startKey);
+        markUserStart({ key: startKey });
       }
       const drawer = target.drawer ?? null;
       const isShown = isTargetShown({

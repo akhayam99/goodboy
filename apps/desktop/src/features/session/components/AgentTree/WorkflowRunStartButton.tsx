@@ -47,7 +47,7 @@ export const WorkflowRunStartButton = ({
       });
       const historyBefore = useAppStore.getState().navigation;
       const wasThere = isAtPlace({ place });
-      markUserStart(runId);
+      markUserStart({ key: runId });
       await onStart();
       const hasNavigated = useAppStore.getState().navigation !== historyBefore;
       if (isAtPlace({ place }) && (hasNavigated || !wasThere)) {

@@ -30,7 +30,7 @@ const startedToast = ({
   sessionId,
   navigate,
 }: StartedParams): ShowToastParams => {
-  markUserStart(agentId);
+  markUserStart({ key: agentId });
   return {
     kind,
     title: STARTED_TITLE,

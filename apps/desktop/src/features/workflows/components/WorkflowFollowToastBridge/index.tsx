@@ -70,7 +70,7 @@ export const WorkflowFollowToastBridge = () => {
         (state.sessionPhaseRuns[detail.sessionId] ?? []).find(
           (agent) => agent.id === detail.agentId,
         )?.workflowRunId ?? null;
-      if (isUserStart(detail.agentId) || (runId !== null && isUserStart(runId))) {
+      if (isUserStart({ key: detail.agentId }) || (runId !== null && isUserStart({ key: runId }))) {
         return;
       }
       followStep({
