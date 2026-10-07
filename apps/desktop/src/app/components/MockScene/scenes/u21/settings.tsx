@@ -53,7 +53,6 @@ const GENERAL: SettingsFocus = { scope: 'app', section: 'general' };
 const CLAUDE_PAGE: SettingsFocus = { scope: 'providers', provider: 'anthropic' };
 
 export const U21_SETTINGS_SCENES: Readonly<Record<string, ComponentType>> = {
-  'settings-general-rail': () => <SettingsOverApp context="rail" focus={GENERAL} />,
   'settings-general-pinned': () => <SettingsOverApp context="session" focus={GENERAL} />,
   'settings-providers-rail': () => <SettingsOverApp context="rail" focus={CLAUDE_PAGE} hasLimits />,
   'settings-general-legacy': () => (

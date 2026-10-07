@@ -62,6 +62,18 @@ describe('the pinned sessions scene', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /^Pinned/ })).toBeDefined());
   };
 
+  it('opens the session on its Overview, not on the loading skeleton', async () => {
+    await mount();
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Add idempotency keys to payments-api',
+      }),
+    ).toBeDefined();
+    expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
+  });
+
   it('puts the Pinned group first, with the two pins in pin order', async () => {
     await mount();
 

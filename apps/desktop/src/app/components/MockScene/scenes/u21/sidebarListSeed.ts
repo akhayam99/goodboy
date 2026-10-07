@@ -12,6 +12,7 @@ import { projectById } from '../../../../../store/slices/projects/projectIndex';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from '../audit/workspaceChrome';
+import { seedLoadedSession } from './seedLoadedSession';
 import { sessionPinsKey } from '../../../../../store/slices/session-pins/sessionPinsKey';
 import { serializeSessionPins } from '../../../../../store/slices/session-pins/parseSessionPins';
 import { sceneClock } from '../../sceneClock';
@@ -156,6 +157,7 @@ export const seedPinnedSessions = (): Session => {
     return SESSION;
   }
   seedWorkspaceChrome({ session: open, siblings: sessions.filter((session) => session !== open) });
+  seedLoadedSession({ session: open });
   useAppStore.setState({
     projects,
     sessionProjectMounts: Object.fromEntries(

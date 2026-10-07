@@ -55,28 +55,27 @@ const mount = async (name: string): Promise<Element> => {
 };
 
 describe('the Settings scenes', () => {
-  it('names the four scenes the plan asks for', () => {
-    expect(Object.keys(U21_SETTINGS_SCENES).sort()).toEqual([
+  it('keeps one scene for the General page of the default shell', () => {
+    const names = Object.keys(U21_SETTINGS_SCENES).sort();
+
+    expect(names).toEqual([
       'settings-general-legacy',
       'settings-general-pinned',
-      'settings-general-rail',
       'settings-providers-rail',
     ]);
+    expect(names).not.toContain('settings-general-rail');
   });
 
-  it.each(['settings-general-rail', 'settings-general-pinned'])(
-    '%s shows the column on the chrome with Back to app and the page as one sheet',
-    async (name) => {
-      await mount(name);
+  it('settings-general-pinned shows the column on the chrome with Back to app and the page as one sheet', async () => {
+    await mount('settings-general-pinned');
 
-      expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
-      expect(document.querySelector('[data-column-rail]')).toBeNull();
-      expect(document.querySelector('[data-studio-band]')).toBeNull();
-      expect(document.querySelector('[data-studio-rail]')).toBeNull();
-      expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
-      expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
-    },
-  );
+    expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
+    expect(document.querySelector('[data-column-rail]')).toBeNull();
+    expect(document.querySelector('[data-studio-band]')).toBeNull();
+    expect(document.querySelector('[data-studio-rail]')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
+  });
 
   it('settings-providers-rail shows the dot in the nav and the notice on the Claude page', async () => {
     await mount('settings-providers-rail');
