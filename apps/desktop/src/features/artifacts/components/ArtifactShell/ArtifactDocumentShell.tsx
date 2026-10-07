@@ -53,7 +53,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const openQuestionCount = useSessionOpenQuestions(sessionId).length;
   const updatePlanBody = useAppStore((s) => s.updatePlanBody);
   const updateArtifactSource = useAppStore((s) => s.updateArtifactSource);
-  const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const exporter = useArtifactExport({ artifact });
@@ -63,6 +62,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const planRun = usePlanRun({ sessionId, planId: artifact.id });
   const revising = usePlanRevising({ sessionId, planId: plan === null ? null : plan.id });
   const [draft, setDraft] = useState<string | null>(null);
+  const [editRevision, setEditRevision] = useState<number | null>(null);
   const [armed, setArmed] = useState<Armed>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +84,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
 
   const startEditing = () => {
     setError(null);
+    setEditRevision(artifact.revision);
     setDraft(plan === null ? artifact.sourceText : planToSource(plan));
   };
 
@@ -99,8 +100,17 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
         setDraft(null);
         return;
       }
-      await updatePlanBody(sessionId, plan.id, parsed.title, parsed.bodyMd);
-      await loadSessionArtifacts(sessionId);
+      const saved = await updatePlanBody(
+        sessionId,
+        plan.id,
+        parsed.title,
+        parsed.bodyMd,
+        editRevision ?? artifact.revision,
+      );
+      if (saved.kind === 'conflict') {
+        setError(`The planner wrote v${saved.revision} meanwhile`);
+        return;
+      }
       setDraft(null);
       return;
     }

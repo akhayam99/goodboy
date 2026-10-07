@@ -33,7 +33,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       transcripts: {} as Record<string, ReadonlyArray<unknown>>,
       loadSessionArtifacts: vi.fn(async () => undefined),
       loadConsumptionsForPlan: vi.fn(async () => undefined),
-      updatePlanBody: vi.fn(async () => undefined),
+      updatePlanBody: vi.fn(async () => ({ kind: 'saved', revision: 2 })),
       updateArtifactSource: vi.fn(async () => undefined),
       markArtifactOpened: vi.fn(),
       runPlan: vi.fn(async () => 'agent-impl'),
@@ -444,6 +444,7 @@ describe('ArtifactStudio shell', () => {
         'plan-1',
         'Backfill once',
         '## Goal\nmatch',
+        1,
       ),
     );
   });
