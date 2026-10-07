@@ -633,7 +633,7 @@ the stored revisions once the planner is idle. Send is refused, with its reason,
 when the planner is gone or still working, when the plan was consumed or
 replaced, or when a later step of the plan's workflow run has already left
 `pending`; a run held for plan approval is the exception, because a held run
-does not advance (`workflowPlanApproval.ts`), and the bar offers **Approve plan**
+does not advance (`workflowPlanApproval.ts`), and the bar offers **Approve**
 beside Send. The comments are removed with their artifact.
 
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend

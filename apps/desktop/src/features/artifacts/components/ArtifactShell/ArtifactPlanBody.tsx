@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { PlanWithCount } from '@goodboy/types';
+import type { SendArtifactCommentsResult } from '../../../../store/slices/artifact-comments/types';
 import { dropLeadingTitleHeading } from '../ArtifactDocument/dropLeadingTitleHeading';
 import { splitPlanBody } from '../../../plans/splitPlanBody';
 import { PlanParts } from '../../../plans/components/PlanParts';
@@ -14,9 +15,17 @@ type Props = {
   readonly hasRun: boolean;
   readonly splitSentence: string;
   readonly onOpenPart: (row: PlanPartRow) => void;
+  readonly onSent?: (result: SendArtifactCommentsResult) => void;
 };
 
-export const ArtifactPlanBody = ({ plan, rows, hasRun, splitSentence, onOpenPart }: Props) => {
+export const ArtifactPlanBody = ({
+  plan,
+  rows,
+  hasRun,
+  splitSentence,
+  onOpenPart,
+  onSent,
+}: Props) => {
   const body = useMemo(
     () =>
       splitPlanBody({
@@ -27,7 +36,7 @@ export const ArtifactPlanBody = ({ plan, rows, hasRun, splitSentence, onOpenPart
   const hasLead = body.lead.length > 0;
 
   return (
-    <PlanCommentsProvider sessionId={plan.sessionId} plan={plan}>
+    <PlanCommentsProvider sessionId={plan.sessionId} plan={plan} onSent={onSent}>
       <div data-testid="plan-body" className="flex min-w-0 flex-col gap-6">
         {hasLead ? <PlanProse text={body.lead} section="lead" /> : null}
         <PlanParts

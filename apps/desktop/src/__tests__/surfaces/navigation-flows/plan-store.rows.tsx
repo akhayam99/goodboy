@@ -67,7 +67,7 @@ const planDrawerOverTheAgentPage = async (ctx: Ctx): Promise<void> => {
       }),
     WAIT,
   );
-  await visible('button', 'Open in Artifacts');
+  await visible('button', 'More plan actions');
   const state = useAppStore.getState();
   expect(state.currentSessionId).toBe(ctx.sessionId);
   expect(state.selectedAgentId[ctx.sessionId]).toBe(agentId);

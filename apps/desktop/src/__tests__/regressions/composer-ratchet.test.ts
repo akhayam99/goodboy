@@ -65,6 +65,7 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
   'features/settings/components/SettingsStudio/ReplyTemplateField.tsx': 'a setting',
   'features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx':
     'an artifact document edited in place',
+  'features/artifacts/components/PlanEditor/index.tsx': 'a plan edited in place',
   'features/session/components/ContextDrawer/GoalTab.tsx': 'saved session context, edited in place',
   'features/session/components/ContextDrawer/BlockEditor.tsx':
     'saved session context, edited in place',
