@@ -271,3 +271,11 @@ Review someone else's pull request from the diff, with **Write review** on the F
 3. Press the button at its end, which reads **Submit comments**, **Approve** or **Request changes** to match the verdict. GitHub shows it as one review
 
 Outdated drafts are marked **Stale**.
+
+**Also in this area**
+
+| Feature            | What it does for you                                                                                 |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| Written by Goodboy | Comments Goodboy posts end with a line that says so, and a setting turns it off                      |
+| Resolve again      | Rereads a comment and tries the fix once more                                                        |
+| Checks             | The checks with durations, or why they can't be read, and a failed one becomes a **Next** suggestion |
