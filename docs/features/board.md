@@ -32,4 +32,8 @@ Read a task at a glance: the pull request or status line, the agent count, proje
 
 ### Bulk select
 
-Tidy many sessions at once. Tick the checkbox that appears at the top left of a card when you point at it or focus it, above its colored edge and without moving the title, or lasso and modifier-click cards across lanes. Once one card is picked, every card shows its checkbox, and one bar floats at the bottom of the board with **Clear**, the count, **Select all** and the verbs: **Archive** acts on the picked sessions that are not archived and **Restore** on the archived ones. Both run at once and can be undone. **Delete** asks first, above the bar, and says what goes and what stays. **X** picks the card under the pointer, **⌘A** picks every card on the board in lane order, Done and Archived included, Shift-click extends a range through the lanes in that same order, **Esc** clears and **Delete** opens the confirmation.
+Tidy many sessions at once.
+
+Tick the checkbox that appears at the top left of a card when you point at it or focus it, above its colored edge and without moving the title, or lasso and modifier-click cards across lanes. Once one card is picked, every card shows its checkbox, and one bar floats at the bottom of the board with **Clear**, the count, **Select all** and the verbs: **Archive** acts on the picked sessions that are not archived and **Restore** on the archived ones.
+
+Both run at once and can be undone. **Delete** asks first, above the bar, and says what goes and what stays. **X** picks the card under the pointer, **⌘A** picks every card on the board in lane order, Done and Archived included, Shift-click extends a range through the lanes in that same order, **Esc** clears and **Delete** opens the confirmation.
