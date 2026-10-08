@@ -27,7 +27,8 @@
 .crumbs ol {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 4px 8px;
   list-style: none;
   font: var(--t-caption);
   color: var(--t3);
@@ -35,7 +36,8 @@
 
 .crumbs li {
   display: inline-flex;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
 }
 
 .crumbs li + li::before {
@@ -43,14 +45,21 @@
   color: var(--t4);
 }
 
+.crumbs li[aria-current] {
+  color: var(--t2);
+}
+
 .crumbs a {
   color: var(--t3);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
+  transition: color 0.16s ease-out;
 }
 
 .crumbs a:hover {
   color: var(--t1);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: none;
 }
 
 .cpList {
@@ -151,8 +160,9 @@
 }
 
 .prose img {
-  border: 1px solid var(--line);
-  border-radius: var(--r-view);
+  /* The screenshots carry their own rounded corners, so a CSS radius or
+     border would sit on a different curve. The outline follows the image. */
+  filter: drop-shadow(0 0 0.5px var(--line-strong));
 }
 
 .prose .themeImage.dark,
@@ -187,26 +197,63 @@
 
 .cpPager {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
 }
 
 .cpPagerLink {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   padding: 16px 20px;
   border: 1px solid var(--line);
   border-radius: var(--r-card);
   color: var(--t1);
+  transition:
+    background-color 0.16s ease-out,
+    border-color 0.16s ease-out;
+}
+
+.cpPagerLink[data-direction='forward'] {
+  grid-column: 2;
+  text-align: right;
 }
 
 .cpPagerLink:hover {
+  border-color: var(--line-strong);
   background: var(--hover);
+  transition: none;
+}
+
+.cpPagerLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .cpPagerLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font: var(--t-caption);
   color: var(--t3);
+}
+
+.cpPagerLink[data-direction='forward'] .cpPagerLabel {
+  justify-self: end;
+}
+
+.cpPagerArrow {
+  flex: none;
+  transition: transform 0.16s ease-out;
+}
+
+.cpPagerLink[data-direction='back']:hover .cpPagerArrow {
+  transform: translateX(-3px);
+}
+
+.cpPagerLink[data-direction='forward']:hover .cpPagerArrow {
+  transform: translateX(3px);
 }
 
 .cpPagerTitle {
@@ -222,7 +269,22 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .cpPagerArrow {
+    transition: none;
+  }
+  .cpPagerLink:hover .cpPagerArrow {
+    transform: none;
+  }
+}
+
 @media (max-width: 600px) {
+  .cpPager {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cpPagerLink[data-direction='forward'] {
+    grid-column: 1;
+  }
   .cpPage {
     gap: 32px;
     padding: 48px 0 72px;

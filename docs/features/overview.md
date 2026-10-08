@@ -9,7 +9,23 @@ Open a session and read everything about the task in one place: its goal, its pr
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of the session Stop retried webhooks posting a second credit, with Context, Questions 1 and Artifacts 2, the linked pull request #57, HBL-412 and PAYMENTS-API-3F2, a cost of $3.47, and the projects payments-api (pull request #318 In review) and notify-relay (pull request #57 In review), above an Activity header with Filter, Open run and Start agent">
 </picture>
 
-Find the goal, linked issues, projects, cost and the buttons to start an agent or a workflow on one screen. One row under the title holds the facts: **Context**, **Artifacts** (reports, wireframes and plans), linked work (a branch glyph marks a task linked to one branch), **Link work** and the cost. What waits on you is said once, in **Next**. Projects sits in one band. Each worktree is one row: the branch, the tasks linked to that branch, a quiet state like "2 to push", the pull request with its state, the changes, and one action with a menu. The part of a split and the distance from main show on hover. Past four open worktrees each project folds to one line, "3 worktrees · 2 in review · +312 -148", that opens on click. A first lap session shows its project folder as a row with **Publish**. The line that explains Projects closes with its x for good. The Activity header has two controls: **Filter**, which also holds **Mark all seen**, and **New**, with **Run workflow**, **Start agent**, **Report** and **Wireframe**. **Run workflow** turns into **Open run** while a run is live, so a second one does not start on top.
+Find the goal, linked issues, projects, cost and the buttons to start an agent or a workflow on one screen.
+
+#### Facts row
+
+One row under the title holds the facts: **Context**, **Artifacts** (reports, wireframes and plans), linked work (a branch glyph marks a task linked to one branch), **Link work** and the cost. What waits on you is said once, in **Next**.
+
+#### Projects
+
+Projects sits in one band, one row per worktree: the branch, the tasks linked to it, a quiet state like "2 to push", the pull request and its state, the changes, and one action with a menu. Hover a row to see the part of a split and the distance from main.
+
+- Past four open worktrees, a project folds to one line, "3 worktrees · 2 in review · +312 -148", that opens on click
+- A first lap session shows its project folder as a row with **Publish**
+- The line that explains Projects closes for good with its x
+
+#### Start something
+
+The Activity header has two controls: **Filter**, which also holds **Mark all seen**, and **New**, with **Run workflow**, **Start agent**, **Report** and **Wireframe**. **Run workflow** turns into **Open run** while a run is live, so a second one doesn't start on top.
 
 ### Refresh a session
 
@@ -22,7 +38,64 @@ See pull requests made outside Goodboy without reloading. One an agent opened or
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" alt="The Activity timeline of the session: a report titled Webhook redelivery no longer double credits, a queued step Cover the console retry states on Haiku 4.5 with a range of 11 to 14 minutes, the question Which failures should count toward a stuck delivery? with an Answer button, a folded row 10 resolves on PR #318 with 3 ready for you, 4 drafting, 2 pushed and 1 failed, Decisions 1 replaced, 1 withdrawn, and a folded row 6 subagents with 5 done and 1 running above the step Implement the stuck-delivery banner on Kimi K3">
 </picture>
 
-Read the session in two views, **Activity | Log**. Activity shows what you launched, one row per launch: an agent, a run, a fix run. Each agent row leads with its role as a small icon (Scout, Planner, Implementer and the rest) and a run row with an icon of its own, never a word. On the right each row shows its state or its one action, then the provider and the model that ran, then the duration with the cost under it, in the same columns on every row. When a step moved to another model, every model shows in the order it ran (**Kimi K3 → Sonnet 5.5**), and a run shows **Sonnet 5.5 + 1** on two models and **4 models** on more, never a clipped name. Rest the pointer on a role icon or on a model for a moment to open its card: the model and effort, start and finish, tokens and cost, and why a model took over. **I** on a focused row opens the card from the keyboard. When the timeline is narrow, like with the Context drawer open, the model shrinks to its icon, then the cost leaves, then the time, so the title stays readable. When something waits on you, a **Needs you** block sits on top with one row per owner, "#318 · 1 question · 5 to review", "Retry policy · 1 question", "Rebase of feat/export stopped ×2", each with **Open** to whoever owns the action; it disappears when nothing waits and never offers Push. A fix run is one row, "Fix run · #318 · 9 comments", with its tally ("5 ready · 1 needs you · 2 working · 1 couldn't fix"), the model, the real time span and the cost, and there is no row per agent. A click on it opens its transcript in a drawer on the Comments tab of the Branch. A comment that needs you or could not be fixed shows in the tally and in Needs you. A finished step with subagents has one muted, indented row, "6 subagents", on its lane right above it; open it and the children stand above the step, newest first, numbered 8.6 down to 8.1, each with its own time and cost, while the step's total counts them once. A step whose subagents are still working, queued or failed shows them all and cannot be folded; a subagent that asks you or failed also counts in Needs you. A finished agent that produced a plan, a report, a wireframe or a learning has "3 outputs" above it and lists them when you open it. The whole feed reads up like a git graph: newest first at every level, children above their parent, the steps of a run above the run row, and the clock never rises going down. The lanes, one colour per run and dashed up to Now while the run is live, pass beside whatever started in between, and a click on a lane opens the run page. Every row you can click, a run row included, takes a soft wash under the pointer and a ring on keyboard focus, and the pointer turns to a hand; a row that waits on you or has news keeps its tint under the wash. Every finished run or chain of agents folds the same way, whatever its size: its own row, and above it the row "8 steps · 1 question answered · Context · 2 added, 2 replaced", where the Context part says in the same words as the Context rows inside what its steps changed in the session context and shows only when they changed something. It opens on a click or the Right arrow, and a click on the run row itself opens the run page. A run that still asks you something, failed or is running stays open and cannot be folded, one that finishes while you look stays open until you fold it or open the page again, and the run page always lists every step in the order they ran. A fix run row says the state of its comments in the five words, Working, Needs you, Ready, Couldn't fix and Done, and a fix waiting on you shows in Needs you. The state sits at the same place on every row, right before the time; a finished state like Pushed or Resolved is an icon that says its word on hover. Children hang one indent in from their launch on the launch's own lane, a 2px line in the run's colour. The Log holds the facts: Context ("Context · 1 added, 2 replaced"), a plan, report, wireframe or learning made without a launch, branch and worktree events, links (an unlink carries **Re-link**), pull request events, answered questions without a launch and session archive and restore. It is flat, newest first, one compact muted row per fact, with a search box on top and no categories. A history row that still has a recovery stays in Activity and opens the Commits tab, where Undo rewrite, Retry and Restore previous history live. Consecutive stops of the same rebase on one day merge into one row, "Rebase of feat/export stopped ×2", which acts on the newest stop. Hover a clock to see when that row started and finished. A queued step sits on the dashed stretch above the newest row, under Now, with no clock.
+Read the session in two views, **Activity | Log**. Activity holds what you launched, the Log holds the facts.
+
+#### One row per launch
+
+An agent, a run and a fix run are one row each, and every row reads the same, left to right:
+
+- The role as a small icon (Scout, Planner, Implementer and the rest), or a run icon, never a word
+- The title
+- The state or its one action, always right before the time. A finished state like Pushed or Resolved is an icon that says its word on hover
+- The provider and the model that ran. A step that moved to another model shows each in order (**Kimi K3 → Sonnet 5.5**), and a run shows **Sonnet 5.5 + 1** or **4 models**, never a clipped name
+- The duration, with the cost under it
+
+Rest the pointer on a role icon or a model, or press **I** on a focused row, to open its card: the model and effort, start and finish, tokens, cost and why a model took over. Hover a clock to see when the row started and finished.
+
+When the timeline is narrow, like with the Context drawer open, the model shrinks to its icon, then the cost leaves, then the time, so the title stays readable. A row you can click takes a soft wash under the pointer and a ring on keyboard focus; a row that waits on you or has news keeps its tint.
+
+#### Needs you
+
+When something waits on you, a **Needs you** block sits on top with one row per owner, each with **Open**:
+
+- "#318 · 1 question · 5 to review"
+- "Retry policy · 1 question"
+- "Rebase of feat/export stopped ×2"
+
+It disappears when nothing waits and never offers Push. A subagent that asks you or failed counts here too.
+
+#### Order and lanes
+
+The feed reads up like a git graph: newest first at every level, children above their parent, the steps of a run above the run row, and the clock never rises going down.
+
+- Each run has a lane in its own colour, dashed up to **Now** while the run is live. Children hang one indent in, on a 2px line in that colour
+- A click on a lane or a run row opens the run page, which lists every step in the order they ran
+- A queued step sits on the dashed stretch under **Now**, with no clock
+
+#### Folding
+
+A finished run or chain of agents folds into its own row, with a summary above it: "8 steps · 1 question answered · Context · 2 added, 2 replaced". The Context part shows only when its steps changed the session context. Open it with a click or the Right arrow.
+
+- A run that still asks you something, failed or is running stays open. One that finishes while you look stays open until you fold it
+- A finished step with subagents shows one muted row, "6 subagents". Open it to see them above the step, numbered 8.6 down to 8.1, each with its time and cost; the step's total counts them once. Subagents still working, queued or failed always show
+- A finished agent that made a plan, a report, a wireframe or a learning shows "3 outputs" above it
+
+#### Fix runs
+
+A fix run is one row, "Fix run · #318 · 9 comments", with no row per agent. It shows its tally ("5 ready · 1 needs you · 2 working · 1 couldn't fix") in the five comment words, Working, Needs you, Ready, Couldn't fix and Done, then the model, the real time span and the cost. A click opens its transcript in a drawer on the Comments tab of the Branch. A comment that needs you or couldn't be fixed also shows in Needs you.
+
+#### Log
+
+The Log is flat, newest first, one compact muted row per fact, with a search box on top and no categories. It holds:
+
+- Context changes ("Context · 1 added, 2 replaced")
+- Plans, reports, wireframes and learnings made without a launch
+- Branch, worktree and pull request events
+- Links, with **Re-link** on an unlink
+- Questions answered without a launch
+- Session archive and restore
+
+A history row that still has a recovery stays in Activity and opens the Commits tab, where Undo rewrite, Retry and Restore previous history live. Stops of the same rebase on one day merge into one row, "Rebase of feat/export stopped ×2", which acts on the newest stop.
 
 ### Next
 
@@ -31,7 +104,10 @@ Read the session in two views, **Activity | Log**. Activity shows what you launc
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-light.webp" alt="The Next row of a session: the plan Show the attempts on each delivery, marked Ready to implement, with a Start implementer button and a more menu">
 </picture>
 
-Know the one move that unblocks a task, like answering a question, fixing a failing check or opening a pull request. Here the plan **Show the attempts on each delivery** is ready, and **Start implementer** starts it. **Not now** in the row menu puts a suggestion away until the situation changes. A step that starts an implementer, reviewer, resolver, PR reviewer or debugger shows **Runs on** with the model and effort it starts on, and **Change** picks another for that start.
+Know the one move that unblocks a task, like answering a question, fixing a failing check or opening a pull request. Here the plan **Show the attempts on each delivery** is ready, and **Start implementer** starts it.
+
+- **Not now** in the row menu puts a suggestion away until the situation changes
+- A step that starts an implementer, reviewer, resolver, PR reviewer or debugger shows **Runs on** with its model and effort, and **Change** picks another for that start
 
 ### Time left
 

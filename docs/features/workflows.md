@@ -63,7 +63,13 @@ Choose when a run asks: **Ask before each step**, **Ask after the plan** to stop
 
 ### Run defaults
 
-The **Run defaults** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step. **Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on. **Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them. When a control differs for one run, a **From your rules** line names what changed and the control gets a dot and a **Reset**; with nothing changed, the line is not there. A run keeps the rules it started with.
+The **Run defaults** tab of Workflows sets what every new run starts with: how it asks, the spend cap, and which providers get the next step.
+
+**Use providers with room left** sends steps with no pinned provider to the provider with the most 5h and weekly room, keeps a provider at its limit out of new work, and tells you in one sentence where the next step goes. It starts on in workspaces created from 0.16.0 and off in older ones, and it stays off until a provider that reports limits is on.
+
+**Guidance** is text every run starts with: the orchestrator reads it in orchestrated runs, and in custom and preset runs it goes to the roles that write code, Implementer and Docs, unless you pick others under Edit, and **Polish** tidies it into one rule per line. In a custom or preset run, a **Guidance** tag marks each step that received it. The builder opens filled from them.
+
+When a control differs for one run, a **From your rules** line names what changed and the control gets a dot and a **Reset**; with nothing changed, the line is not there. A run keeps the rules it started with.
 
 ### Spend cap
 
@@ -121,7 +127,11 @@ Start each step from a short brief instead of the whole previous chat. If the su
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-light.webp" alt="The Questions lens: 3 waiting and 1 blocking in a Waiting on you list, and the question Which queue should the delivery retries run on? from the Add the stuck-delivery banner agent, with the file src/deliveries/retry.ts and the answers Dedicated retry queue (Recommended), Shared jobs queue, Retry in process and Something else, plus Let an agent decide, Skip and Answer">
 </picture>
 
-Get each question as one card: who asks, whether it is **Blocking**, the question, and its answers as numbered tiles with the recommended one tagged. Pick with a number key, answer with **Enter**, or write something else in line. The Questions lens lists what waits on you next to the question you are answering, and **j** and **k** move through the list. The same card sits at the end of the transcript and at the top of the agent's Brief. The answers to one agent go out together once you answered its last question, and until then each one keeps an Undo. A blocking question holds its step until you answer, or until you write what you want to say and choose **Send as message**: the agent gets it as a normal message and the question closes. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
+Get each question as one card: who asks, whether it is **Blocking**, the question, and its answers as numbered tiles with the recommended one tagged.
+
+Pick with a number key, answer with **Enter**, or write something else in line. The Questions lens lists what waits on you next to the question you are answering, and **j** and **k** move through the list. The same card sits at the end of the transcript and at the top of the agent's Brief. The answers to one agent go out together once you answered its last question, and until then each one keeps an Undo.
+
+A blocking question holds its step until you answer, or until you write what you want to say and choose **Send as message**: the agent gets it as a normal message and the question closes. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
 
 ### Let an agent decide
 
