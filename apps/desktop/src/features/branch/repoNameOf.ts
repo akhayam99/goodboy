@@ -2,6 +2,8 @@ const PULL_REQUEST_URL = /^https?:\/\/[^/]+\/[^/]+\/([^/]+)\/pull\/\d+/;
 
 const MERGE_REQUEST_URL = /^https?:\/\/[^/]+\/(?:.+\/)?([^/]+)\/-\/merge_requests\/\d+/;
 
+const BITBUCKET_PULL_REQUEST_URL = /^https?:\/\/[^/]+\/[^/]+\/([^/]+)\/pull-requests\/\d+/;
+
 const FALLBACK_NAME = 'this repository';
 
 type Params = {
@@ -9,4 +11,7 @@ type Params = {
 };
 
 export const repoNameOf = ({ url }: Params): string =>
-  PULL_REQUEST_URL.exec(url)?.[1] ?? MERGE_REQUEST_URL.exec(url)?.[1] ?? FALLBACK_NAME;
+  PULL_REQUEST_URL.exec(url)?.[1] ??
+  MERGE_REQUEST_URL.exec(url)?.[1] ??
+  BITBUCKET_PULL_REQUEST_URL.exec(url)?.[1] ??
+  FALLBACK_NAME;

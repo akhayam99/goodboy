@@ -144,6 +144,12 @@ describe('repoNameOf', () => {
     ).toBe('ledger-core');
   });
 
+  it('reads the repository from a Bitbucket pull request address', () => {
+    expect(
+      repoNameOf({ url: 'https://bitbucket.org/harborline/payments-api/pull-requests/42' }),
+    ).toBe('payments-api');
+  });
+
   it('falls back to a plain phrase when the address has another shape', () => {
     expect(repoNameOf({ url: '' })).toBe('this repository');
     expect(repoNameOf({ url: 'https://example.invalid/a/b/issues/1' })).toBe('this repository');
