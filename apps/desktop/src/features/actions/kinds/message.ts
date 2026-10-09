@@ -50,7 +50,11 @@ export const MESSAGE_KIND: ObjectKindDefinition<MessageActionTarget, MessageFact
       run: ({ facts, env }) => {
         if (facts.sessionId !== null && facts.agentId !== null) {
           env.getState().navigate({
-            to: agentPlace({ sessionId: facts.sessionId, agentId: facts.agentId }),
+            to: agentPlace({
+              sessionId: facts.sessionId,
+              agentId: facts.agentId,
+              pane: 'transcript',
+            }),
           });
         }
       },

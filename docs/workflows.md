@@ -500,9 +500,10 @@ When a run needs you, one **Next action** strip says what to do. It sits on
 the workflow run row and at the top of the agent detail body, right under the
 header that holds Brief and Transcript, so both tabs show the same strip and
 the transcript does not repeat it at the bottom. Opening an agent from Activity, Workflow, the board or
-a toast follows one rule (`agentOpenTab`): an agent with an open question, and a
-resolver, open on Brief, where the question or the summary comes first; any other
-agent opens on Transcript, pinned to the latest line. A resolver that is still
+a toast follows one rule (`agentOpenTab`): the agent opens on Brief, where the
+question, the summary and the subagents come first, unless the user picked the
+Transcript by hand on that agent before or the door points at a line in the chat.
+The Transcript stays pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Fix run. Orchestrated runs get the same strip, and the
 orchestrator strip carries no answer or skip button of its own.
 

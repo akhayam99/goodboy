@@ -11,6 +11,10 @@ const state = vi.hoisted(() => ({
   agentEffortOverride: {} as Record<string, string>,
   agentTurnState: {} as Record<string, { kind: string }>,
   agentPane: {} as Record<string, 'brief' | 'transcript' | null>,
+  agentTab: {} as Record<string, 'brief' | 'transcript'>,
+  setAgentTab: ({ agentId, pane }: { agentId: string; pane: 'brief' | 'transcript' }) => {
+    state.agentTab = { ...state.agentTab, [agentId]: pane };
+  },
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
   sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
 }));
@@ -110,6 +114,7 @@ beforeEach(() => {
     agentEffortOverride: {},
     agentTurnState: {},
     agentPane: {},
+    agentTab: {},
     sessionOpenQuestions: {},
     sessionResolveAttempts: {},
   });
@@ -124,14 +129,14 @@ describe('AgentDetailPane', () => {
     );
 
     const header = container.querySelector('[data-slot="pane-header"]') as HTMLElement;
-    const transcriptStrip = screen.getByText('Next action strip');
-    const tabs = within(header).getByRole('tab', { name: 'Brief' });
-    expect(header.contains(transcriptStrip)).toBe(false);
+    const briefStrip = screen.getByText('Next action strip');
+    const tabs = within(header).getByRole('tab', { name: 'Transcript' });
+    expect(header.contains(briefStrip)).toBe(false);
     expect(
-      tabs.compareDocumentPosition(transcriptStrip) & Node.DOCUMENT_POSITION_FOLLOWING,
+      tabs.compareDocumentPosition(briefStrip) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      transcriptStrip.compareDocumentPosition(screen.getByText('Transcript body')) &
+      briefStrip.compareDocumentPosition(screen.getByText('Brief body')) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
@@ -139,7 +144,7 @@ describe('AgentDetailPane', () => {
     const strip = screen.getByText('Next action strip');
     expect(header.contains(strip)).toBe(false);
     expect(
-      strip.compareDocumentPosition(screen.getByText('Brief body')) &
+      strip.compareDocumentPosition(screen.getByText('Transcript body')) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
@@ -225,7 +230,7 @@ describe('AgentDetailPane', () => {
     expect(meta.compareDocumentPosition(tabsRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('opens on the transcript while the agent is running', () => {
+  it('opens on the brief while the agent is running', () => {
     render(
       <AgentDetailPane
         session={session}
@@ -235,9 +240,8 @@ describe('AgentDetailPane', () => {
       />,
     );
 
-    expect(screen.getByRole('tab', { name: 'Transcript' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('tab', { name: 'Brief' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByText('Brief body')).toBeDefined();
   });
 
   it('opens on the brief while the agent waits on an answer', () => {
@@ -255,21 +259,21 @@ describe('AgentDetailPane', () => {
     expect(screen.getByText('Brief body')).toBeDefined();
   });
 
-  it('opens on the transcript with no open question and keeps the brief one tab away', () => {
+  it('opens on the brief with no open question and keeps the transcript one tab away', () => {
     render(
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
-    expect(screen.getByText('Transcript body')).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Brief' }));
     expect(screen.getByText('Brief body')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    expect(screen.getByText('Transcript body')).toBeDefined();
   });
 
-  it('moves to the brief when the questions load after the pane opened', () => {
+  it('stays on the brief when the questions load after the pane opened', () => {
     const { rerender } = render(
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
-    expect(screen.getByText('Transcript body')).toBeDefined();
+    expect(screen.getByText('Brief body')).toBeDefined();
 
     state.sessionOpenQuestions = { [session.id]: [{ createdByAgentId: agent.id }] };
     rerender(
@@ -279,8 +283,7 @@ describe('AgentDetailPane', () => {
     expect(screen.getByText('Brief body')).toBeDefined();
   });
 
-  it('keeps the brief when an agent open reveals the chat, a plain reveal still shows the transcript', () => {
-    state.sessionOpenQuestions = { [session.id]: [{ createdByAgentId: agent.id }] };
+  it('keeps the brief when an agent open reveals the chat, a plain reveal shows the transcript', () => {
     render(
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
@@ -290,6 +293,34 @@ describe('AgentDetailPane', () => {
 
     act(() => window.dispatchEvent(new CustomEvent('goodboy:reveal-chat')));
     expect(screen.getByText('Transcript body')).toBeDefined();
+  });
+
+  it('remembers the tab picked by hand for that agent when the page opens again', () => {
+    const first = render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    expect(state.agentTab).toEqual({ [agentId]: 'transcript' });
+    first.unmount();
+
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByText('Transcript body')).toBeDefined();
+  });
+
+  it('does not carry the picked tab over to another agent', () => {
+    const other = { ...agent, id: 'agent-2' as AgentId, name: 'Review chat' } satisfies Agent;
+    state.agentTab = { [agentId]: 'transcript' };
+
+    render(
+      <AgentDetailPane session={session} agent={other} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByText('Brief body')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    expect(state.agentTab).toEqual({ [agentId]: 'transcript', 'agent-2': 'transcript' });
   });
 
   it('gives a resolver no Fix run page of its own, only the tabs every agent has', () => {
@@ -304,11 +335,11 @@ describe('AgentDetailPane', () => {
 
     expect(screen.queryByRole('tab', { name: 'Fix run' })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Brief' })).toBeDefined();
-    expect(screen.getByText('Transcript body')).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Transcript' })).toBeDefined();
   });
 
-  it('opens the tab the address asks for over the default', () => {
-    state.sessionOpenQuestions = { [session.id]: [{ createdByAgentId: agent.id }] };
+  it('opens the tab the address asks for over the default and over a tab picked before', () => {
+    state.agentTab = { [agentId]: 'brief' };
     state.agentPane = { [session.id]: 'transcript' };
 
     render(
@@ -320,7 +351,8 @@ describe('AgentDetailPane', () => {
     expect(screen.getByText('Transcript body')).toBeDefined();
   });
 
-  it('opens a plain agent on the brief when the address asks for it', () => {
+  it('opens on the brief when the address asks for it over a transcript picked before', () => {
+    state.agentTab = { [agentId]: 'transcript' };
     state.agentPane = { [session.id]: 'brief' };
 
     render(

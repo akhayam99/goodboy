@@ -9,6 +9,8 @@ activity-run
 activity-run-finished
 activity-run-hover
 agent-brief
+agent-brief-door
+agent-brief-door-transcript
 agent-brief-question
 agent-finished-model
 agent-running-stop

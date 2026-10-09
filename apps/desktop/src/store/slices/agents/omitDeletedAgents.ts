@@ -25,6 +25,7 @@ export const omitDeletedAgents = ({ state, sessionId, agentIds }: Params) => {
     agentTurnState: omit({ record: state.agentTurnState, ids: agentIds }),
     transcripts: omit({ record: state.transcripts, ids: agentIds }),
     agentDraft: omit({ record: state.agentDraft, ids: agentIds }),
+    agentTab: omit({ record: state.agentTab, ids: agentIds }),
     agentAttachments: omit({ record: state.agentAttachments, ids: agentIds }),
     agentQueue: omit({ record: state.agentQueue, ids: agentIds }),
     agentRunHistory: omit({ record: state.agentRunHistory, ids: agentIds }),

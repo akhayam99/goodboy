@@ -211,7 +211,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
       setSpawnError(WORKFLOW_BLOCK_COPY[blockReason]);
       return;
     }
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    window.dispatchEvent(openAgentRevealEvent());
     try {
       if (agent.status === 'pending') {
         await activateWorkflowAgent({

@@ -23,7 +23,9 @@ export const useOpenAgentQuestion = ({ sessionId }: Params) => {
         navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
         return;
       }
-      navigate({ to: agentPlace({ sessionId, agentId: question.createdByAgentId }) });
+      navigate({
+        to: agentPlace({ sessionId, agentId: question.createdByAgentId, pane: 'brief' }),
+      });
       requestOpenQuestionScroll({ agentId: question.createdByAgentId, questionId: question.id });
       window.dispatchEvent(openAgentRevealEvent());
     },

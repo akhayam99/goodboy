@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { asReportType } from '../reportTypes';
+import { openAgentRevealEvent } from '../../session/components/AgentDetailPane/agentOpenTab';
 
 export const REGENERATE_READY_HINT = 'Run the report again on the same evidence pack';
 
@@ -54,7 +55,7 @@ export const useReportRegenerate = ({ sessionId, artifact }: Params): ReportRege
       evidence: kickoff,
     })
       .then(() => {
-        window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+        window.dispatchEvent(openAgentRevealEvent());
       })
       .catch((cause: unknown) => {
         setError(formatError(cause));

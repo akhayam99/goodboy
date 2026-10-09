@@ -20,6 +20,7 @@ import { TranscriptShell } from '../TranscriptShell';
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
+import { openAgentRevealEvent } from '../../../session/components/AgentDetailPane/agentOpenTab';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -153,7 +154,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
       return;
     }
     navigate({ to: agentPlace({ sessionId, agentId: spawnedChild.agent.id }) });
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    window.dispatchEvent(openAgentRevealEvent());
   };
 
   const statusLabel =

@@ -3,11 +3,12 @@ import type { AgentPane } from '../../../../store/slices/navigation/types';
 export type AgentTab = AgentPane;
 
 type Params = {
-  readonly hasOpenQuestions: boolean;
+  readonly requested: AgentTab | null;
+  readonly remembered: AgentTab | null;
 };
 
-export const agentOpenTab = ({ hasOpenQuestions }: Params): AgentTab =>
-  hasOpenQuestions ? 'brief' : 'transcript';
+export const agentOpenTab = ({ requested, remembered }: Params): AgentTab =>
+  requested ?? remembered ?? 'brief';
 
 export const OPEN_AGENT_INTENT = 'open-agent';
 
