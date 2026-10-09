@@ -269,8 +269,8 @@ one cluster in the header of [the run page](#the-run-page). Besides **Stop step*
 the row shows at most one action: **Decide next step** only when the run asks
 before each step, **Continue the run** after you stopped it or once it is
 complete, **Retry** after a failed decision, **Review plan** while the run
-waits for its plan, **Answer** when the planner asked a question, or the spend
-cap on a budget pause. **Stop step** asks first, then cancels the step in
+waits for its plan, **Answer** when the planner or any step asked a question,
+or the spend cap on a budget pause. **Stop step** asks first, then cancels the step in
 flight, marks it skipped and holds the run (`stopWorkflowRunNow`); **Continue
 the run** takes it from there.
 
@@ -284,9 +284,15 @@ and `resolveOrchestratorState` takes them as a `plan` signal the strip reads
 from the plan the run waits on, so a pause or a decision in flight still speaks
 first.
 
-A failed step and an open question are left to the Next action strip, so the
-row only says the run is paused, on a neutral line: the strip above carries the
-tone. When the pane is too narrow for the sentence and the controls on one
+An open question the run waits on never reads as "Waiting on step 3": the row
+says "Paused for your answer", names the step that asked when one did ("Paused
+for your answer · step 1 · Ricognizione clinical tests", a sub-scout counts as
+the step it belongs to), counts the time that step has been running, and offers
+**Answer**, which opens the agent that asked at its question, or the questions
+view when no agent asked. A spend pause or a failure still speaks before it
+(`resolveOrchestratorState` takes the first open question as `question`). A
+failed step is left to the Next action strip, so the row only says the run is
+paused, on a neutral line: the strip above carries the tone. When the pane is too narrow for the sentence and the controls on one
 line, the controls wrap to a second line on the right instead of cutting the
 sentence. When to ask (**Ask before each step** or **Run on its own**) and
 **Model per step** (the model each step runs on, and why) sit in the menu. A
@@ -505,7 +511,8 @@ question, the summary and the subagents come first, unless the user picked the
 Transcript by hand on that agent before or the door points at a line in the chat.
 The Transcript stays pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Fix run. Orchestrated runs get the same strip, and the
-orchestrator strip carries no answer or skip button of its own.
+orchestrator strip carries no skip button of its own. It carries **Answer** when the run waits on a question
+([The orchestrator strip](#the-orchestrator-strip)).
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Ask it to continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**
 - A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Ask it to continue** and **Skip**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
@@ -608,6 +615,9 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/preSpawnWorkflowAgents.ts`: creates the run's agents when a workflow is added
 - `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: sends the blocked notification
 - `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: asks the orchestrator for one decision
+- `apps/desktop/src/store/slices/workflows/nextRunMove.ts`: `nextRunMove`, the one rule for what a run owes next (start a pending step, decide, or nothing). `maybeAutoAdvanceWorkflow` and the watchdog both read it
+- `apps/desktop/src/store/slices/workflows/findIdleRuns.ts` and `sweepIdleRuns.ts`: the watchdog over orchestrated runs. `apps/desktop/src/features/workflows/hooks/useRunWatchdog/` drives it from `App`
+- `apps/desktop/src/store/slices/workflows/summarizerGate.ts`: `waitForSessionSummarizer`, the 60s wait on the session summarizer
 - `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to
 - `apps/desktop/src/features/workflows/components/WorkflowBuilderView/`: the builder. It draws the plan with the shared step tree
 - `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
@@ -963,13 +973,44 @@ and `blocked` sends a notification. Every decision lands in the transcript as
 an `orchestrator_decision` event, and its spend is recorded against the run.
 
 - **One decision at a time.** A request that comes in while the run is
-  deciding waits in a queue and runs once the current decision settles.
+  deciding waits in a queue and runs once the current decision settles. A run
+  reads as deciding from the first request to the moment the step it chose
+  exists, never through that step's first turn (`orchestratingWorkflowRuns`
+  turns off before `activateWorkflowAgent`, while `orchestrationInFlight` keeps
+  the queue closed until the turn ends).
+- **The summarizer wait overlaps the decision.** The session context summarizer
+  must finish before the orchestrator acts on a decision, so the next step reads
+  fresh context and a run never reports done while the summarizer still writes.
+  The wait (`waitForSessionSummarizer`, 60s at most, gone when the decision is
+  thrown away) starts together with the decision call and the result is held
+  until it ends, so a step costs the longer of the two, not their sum. Before
+  this a step end waited on the summarizer twice (in `maybeAutoAdvanceWorkflow`
+  and again in `orchestrateNextStep`) and then asked, so a slow or retrying
+  summarizer put two minutes in front of a call that takes 20s.
+  `maybeAutoAdvanceWorkflow` now waits only when a static run is on autorun. A
+  forced skip (`bypassGate`) waits on nothing.
+- **A lost wake is recovered.** `sweepIdleRuns` runs every 15s and when the
+  window comes back to the front (`useRunWatchdog`). It looks for an orchestrated
+  autorun run that is started, has no outcome and no stop, is not deciding, has
+  no open question and whose session is not advancing, and that has a step to
+  decide or to start (`findIdleRuns`, built on `nextRunMove`, the same rule
+  `maybeAutoAdvanceWorkflow` uses). After 20s of that for a run that has no
+  step yet, 45s for any other, it calls `maybeAutoAdvanceWorkflow`, at most once
+  per 90s and three times per idle stretch (`runIdleEpisodes`). A run still idle after the third try gets a
+  `failure` stop, "Nothing picked this run up after three tries", and one
+  notification, so the run bar says so with **Retry**. A run that waits on an
+  answer is never nudged. Answering a question wakes the run itself, even when
+  no agent could take the answer (`answerOpenQuestions`); the next sweep is the
+  backstop.
 - **Stops are saved, with a kind.** Before the call, the orchestrator checks
   for a session paused by its spend cap (`sessionBudgetBlockAfterLoad`,
   which reads `session_budgets.on_exceed` first), the run's spend cap in
   pause mode, and open
   questions that block the run. Each one saves a `budget` or `questions` stop.
-  A failed or unreadable call saves `failure`. **Stop** saves `operator`,
+  A failed or unreadable call saves `failure`, and so does a decision whose
+  step cannot be created (the agent row, the saved workflow or the routing
+  failed), with a notification: that error used to leave the run with no step,
+  no stop and a decision that cost money and showed nowhere. **Stop** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
   **Pause** saves `paused`, which keeps the step in flight and starts nothing.
   **Stop run** (`closeWorkflowRun`) saves `closed` next to the `done`

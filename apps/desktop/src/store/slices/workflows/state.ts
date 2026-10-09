@@ -9,6 +9,12 @@ import type {
   AgentId,
 } from '@goodboy/types';
 
+export type RunIdleEpisode = {
+  readonly since: number;
+  readonly nudges: number;
+  readonly lastNudgeAt: number | null;
+};
+
 type PendingOrchestration = {
   readonly sessionId: SessionId;
   readonly bypassGate: boolean;
@@ -25,6 +31,7 @@ export type WorkflowsState = {
   readonly orchestratorReadingHints: Readonly<Record<WorkflowRunId, ReadonlyArray<string>>>;
   readonly pendingOrchestrations: Readonly<Record<WorkflowRunId, PendingOrchestration>>;
   readonly pendingAdvanceSessions: ReadonlySet<SessionId>;
+  readonly runIdleEpisodes: Readonly<Record<WorkflowRunId, RunIdleEpisode>>;
   readonly announcedWorkflowBlocks: Readonly<Record<WorkflowRunId, string>>;
   readonly announcedRunBudget: Readonly<Record<WorkflowRunId, number>>;
   readonly clusterStartAttempts: Readonly<Record<AgentId, number>>;
@@ -45,6 +52,7 @@ export const workflowsInitialState: WorkflowsState = {
   orchestratorReadingHints: {},
   pendingOrchestrations: {},
   pendingAdvanceSessions: new Set<SessionId>(),
+  runIdleEpisodes: {},
   announcedWorkflowBlocks: {},
   announcedRunBudget: {},
   clusterStartAttempts: {},

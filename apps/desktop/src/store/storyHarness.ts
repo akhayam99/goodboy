@@ -206,7 +206,10 @@ export const storySpies = {
   invokeSkillDelete: vi.fn(async () => undefined),
   invokeSkillRescan: vi.fn(async () => [] as ReadonlyArray<Skill>),
   invokeWorkflowList: vi.fn(async () => [] as ReadonlyArray<Workflow>),
-  invokeWorkflowUpsert: vi.fn(async () => undefined),
+  invokeWorkflowUpsert: vi.fn(
+    async (_args: Parameters<WorkflowsModule['invokeWorkflowUpsert']>[0]) =>
+      undefined as Workflow | undefined,
+  ),
   invokeWorkflowDelete: vi.fn(async () => undefined),
   invokeWorkflowsForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
   invokeAgentInsert: vi.fn(),

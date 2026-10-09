@@ -50,6 +50,7 @@ import {
   useWorkspaces,
 } from './store';
 import { useGithubPolling } from './features/integrations/github/hooks/useGithubPolling';
+import { useRunWatchdog } from './features/workflows/hooks/useRunWatchdog';
 import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
 import { useSessionPinsSync } from './features/workspace/hooks/useSessionPinsSync';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
@@ -164,6 +165,7 @@ export const App = () => {
   }, [hydrate, checkForUpdates]);
 
   useGithubPolling();
+  useRunWatchdog();
   useSessionFocusRecheck();
   useSessionPinsSync();
   useProviderRefreshOnFocus();

@@ -41,7 +41,7 @@ import {
 } from '../../../../store/storyHarness';
 
 import { WorkTimeContext, type WorkTimeSource } from '../../../workTreeModel/workTimeSource';
-import { agentPlace } from '../../../../store';
+import { agentPlace, sessionPlace } from '../../../../store';
 import { aPlan, aStoredPlan } from '../../../../test/planFixtures';
 
 const storeState: Record<string, unknown> = {};
@@ -469,7 +469,7 @@ describe('OrchestratorStrip state ladder', () => {
     });
     expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
   });
-  it('names a gating question and leaves the answer to the next action strip', () => {
+  it('names a gating question nobody asked and opens the questions on Answer', () => {
     Object.assign(storeState, {
       sessionOpenQuestions: {
         [SESSION_ID]: [{ id: 'q-1', status: 'open', workflowRunId: RUN_ID }],
@@ -478,7 +478,57 @@ describe('OrchestratorStrip state ladder', () => {
     renderStrip({ agents: [agent(0, 'completed')] });
 
     expect(sentence()).toBe('Paused for your answer');
-    expect(screen.queryByRole('button', { name: /answer/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+
+    expect(storeState['navigate']).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'questions' }),
+    });
+  });
+
+  it('says which running step asked and opens it at its question on Answer', () => {
+    Object.assign(storeState, {
+      sessionOpenQuestions: {
+        [SESSION_ID]: [
+          {
+            id: 'q-scout',
+            status: 'open',
+            workflowRunId: RUN_ID,
+            createdByAgentId: 'agent-0',
+            text: 'Should /diaries stay as an alias?',
+          },
+        ],
+      },
+    });
+    renderStrip({
+      runOverride: run({ autoRun: true }),
+      agents: [
+        agent(0, 'running', { name: 'Scout the diaries area' }),
+        agent(1, 'completed', {
+          name: 'api clinical tests module',
+          parentAgentId: 'agent-0' as AgentId,
+        }),
+      ],
+    });
+
+    expect(sentence()).toBe('Paused for your answer · step 1 · Scout the diaries area');
+    expect(screen.getByTestId('orchestrator-strip').getAttribute('data-phase')).toBe(
+      'needs-answer',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+
+    expect(storeState['navigate']).toHaveBeenCalledWith({
+      to: expect.objectContaining({ at: 'agent', agentId: 'agent-0', sessionId: SESSION_ID }),
+    });
+  });
+
+  it('keeps Waiting on step when the running step has no question to answer', () => {
+    renderStrip({
+      runOverride: run({ autoRun: true }),
+      agents: [agent(0, 'running', { name: 'Scout the diaries area' })],
+    });
+
+    expect(sentence()).toBe('Waiting on step 1 · Scout the diaries area');
+    expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
   });
 
   it('reads a budget pause as a pause, not as a failure', () => {
@@ -509,7 +559,7 @@ describe('OrchestratorStrip state ladder', () => {
     );
   });
 
-  it('reads a question stop as a question to answer, with no retry on offer', () => {
+  it('reads a question stop as a question to answer, with Answer and no retry on offer', () => {
     storeState['sessionOpenQuestions'] = { [SESSION_ID]: [openQuestion()] };
     renderStrip({
       runOverride: run({
@@ -522,7 +572,7 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(sentence()).toBe('Paused for your answer');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
-    expect(screen.queryByRole('button', { name: /answer/i })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Answer' })).toBeDefined();
   });
 
   it('offers the next step again once the question behind the stop is answered', () => {

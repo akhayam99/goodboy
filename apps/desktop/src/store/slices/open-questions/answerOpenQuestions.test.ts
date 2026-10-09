@@ -103,6 +103,7 @@ const deps = {
     };
   }),
   loadSessionSlots: vi.fn(async () => undefined),
+  maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
   sendTurn: vi.fn(
     async (_turn: { sessionId: SessionId; content: string; agentId?: string }) => undefined,
   ),
@@ -155,6 +156,34 @@ describe('answerOpenQuestions', () => {
     expect(lastTurn().agentId).toBe('agent-1');
     expect(lastTurn().content).toContain('Q: Q1?');
     expect(lastTurn().content).toContain('A: A1');
+  });
+
+  it('wakes the workflow once the answers went out', async () => {
+    await seed([
+      { id: 'oq-1', text: 'Q1?', createdByAgentId: 'agent-1', status: 'open', userAnswer: null },
+    ]);
+
+    await run(
+      sessionId,
+      [{ id: 'oq-1' as OpenQuestionId, text: 'Q1?', answer: 'A1' }],
+      'agent-1' as AgentId,
+    );
+
+    expect(deps.maybeAutoAdvanceWorkflow).toHaveBeenCalledExactlyOnceWith(sessionId);
+    expect(deps.sendTurn.mock.invocationCallOrder[0]).toBeLessThan(
+      deps.maybeAutoAdvanceWorkflow.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it('wakes the workflow even when no agent could take the answer', async () => {
+    await seed([{ id: 'oq-1', text: 'Q1?', status: 'open', userAnswer: null }]);
+    deps.sendTurn.mockRejectedValueOnce(new Error('no agent selected'));
+
+    await expect(
+      run(sessionId, [{ id: 'oq-1' as OpenQuestionId, text: 'Q1?', answer: 'A1' }], null),
+    ).rejects.toThrow('no agent selected');
+
+    expect(deps.maybeAutoAdvanceWorkflow).toHaveBeenCalledExactlyOnceWith(sessionId);
   });
 
   it('persists and sends nothing while the agent still has an open question', async () => {
