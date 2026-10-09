@@ -270,7 +270,7 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(stored).toContain('Tail passage: the migration lock is still held.');
     expect(stored).toContain('[middle dropped, the full text is in the step transcript]');
     expect(warnSpy).toHaveBeenCalledWith(
-      '[step-output] summarization failed on 2 attempts, using deterministic fallback: provider unavailable',
+      '[step-output] summarization failed, using deterministic fallback: provider unavailable',
     );
     expect(state.emitNotification).toHaveBeenCalledWith(
       expect.objectContaining({

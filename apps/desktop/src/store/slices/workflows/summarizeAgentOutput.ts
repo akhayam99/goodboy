@@ -116,9 +116,7 @@ const summarizeWithFallback = async ({
       attempts: result.attempts,
     };
   }
-  console.warn(
-    `[step-output] summarization failed on ${result.attempts.length} attempts, using deterministic fallback: ${result.error}`,
-  );
+  console.warn(`[step-output] summarization failed, using deterministic fallback: ${result.error}`);
   return {
     summary: fallbackStepOutputSummary({ output }),
     degraded: true,
