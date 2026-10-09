@@ -199,6 +199,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'The top bar counts sessions that need you and running ones, from any screen.',
       },
       {
+        term: 'Top bar',
+        desc: 'Now, Limits, Spend and the bell sit on the right, with +N for providers past the first few. Impact opens from Spend, and the theme is in Settings, App, General.',
+      },
+      {
         term: 'Left column',
         desc: 'New session, Board, Tasks, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
       },
@@ -208,7 +212,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pin a session',
-        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group at the top of the list, in the order you pinned them, whatever the sort or filter. Unpin session puts it back.",
+        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group at the top of the list, in the order you pinned them, whatever the sort or filter. Move up and Move down change the order, and Unpin session puts it back. When the column is folded to icons, pinned sessions stay on the rail, with a flyout for the rest.",
+      },
+      {
+        term: 'Branches in the sidebar',
+        desc: "The open session shows its pages in one card: Overview, Branch, Runs, Agents and Artifacts. Branch lists the session's branches under it, and one click switches the page to that branch.",
       },
       {
         term: 'Ask in a session',
@@ -227,7 +235,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Roles',
-        desc: 'Scout, Plan, Implement, Debug, Test, Review, Docs, Resolve and Generalist. A role sets the instructions, the default model and what the agent hands back.',
+        desc: 'Scout, Plan, Implement, Debug, Test, Review, Docs, Resolve and Generalist. A role sets the instructions, the default model and what the agent hands back. Resolve answers review comments from the Comments tab and is never a workflow step: a step that needs a fix uses Implement.',
       },
       {
         term: 'Talking to an agent',
@@ -235,7 +243,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Activity',
-        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon, never a word, and ends with the model that ran and its effort (N models on a run past two), the duration and the cost. Runs shows its steps the same way. Rest the pointer on an icon or a model to see its card in either place, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session.',
       },
       {
         term: 'Run page',
@@ -354,7 +362,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'One page per branch, with the tabs Comments, Files, Commits and Checks, all on one centred column. A branch chip in the header switches branches or starts a new one. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, and Back walks your history.',
+        desc: 'One page per branch, with the tabs Pull request, Comments, Files, Commits and Checks, all on one centred column. It opens on Pull request when the branch has one. A branch chip in the header switches branches or starts a new one. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, and Back walks your history.',
+      },
+      {
+        term: 'Pull request',
+        desc: 'The pull request on its own tab, on GitHub, GitLab (Merge request) and Bitbucket. Rename it with E and edit the description in place, read its activity, reviewers and checks, add reviewers, mark it ready, close it or merge it with the methods the host allows. A branch with no pull request offers Create pull request here.',
       },
       {
         term: 'Comments',
@@ -370,11 +382,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Notes',
-        desc: 'Add note on a line saves it with the project and branch you are on. It counts in Notes N on the Files tab, where the Notes drawer lists it and Fix starts an agent on it, and Move N to review draft takes the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
+        desc: 'Add note on a line saves it with the project and branch you are on. It counts in Notes N on the Files tab, where the Notes drawer lists it apart from the pull request comments and Fix starts an agent on it, in the same lane as fixes on comments, and Move N to review draft takes the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
       },
       {
         term: 'Review sources',
-        desc: 'The picker lists each pull request or merge request of the session, on GitHub, GitLab or Bitbucket, and Notes on this machine. Bitbucket cannot resolve a thread, so its comments offer Reply.',
+        desc: 'Each comment carries a label with its host, GitHub, GitLab or Bitbucket, and your own notes never show in Comments. Bitbucket cannot resolve a thread, so its comments offer Reply.',
       },
       {
         term: 'What git says',
@@ -382,7 +394,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'The CI runs of a GitHub pull request, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
+        desc: 'The CI runs of a pull request, or the jobs of the latest GitLab pipeline, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
       },
       {
         term: 'Push',
