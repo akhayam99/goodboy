@@ -83,7 +83,9 @@ The door, the bell and the palette say Tasks. Each job has one verb: Start for a
 ### Fixed
 
 - Workflows never hand a step to the Resolve agent, so a run no longer stops on Couldn't fix. A step that ends with no result says so. <!-- gb area=workflows -->
-- A Summarizer failure says what failed and falls back to another model you allow, once per provider. <!-- gb area=providers -->
+- Summaries, titles and orchestrator replies that fail retry on the other models you allow, and you get one notice only when every model failed. <!-- gb area=providers -->
+- The agent page opens on its Brief from every door. Transcript opens only from a link to a message, and an agent remembers the tab you picked. <!-- gb area=agents -->
+- The agent header shows elapsed time instead of longer than usual, and the Brief no longer reads 0 turns or ready on a running agent. <!-- gb area=agents -->
 - Accepting a fix that hits a conflict keeps the note open, so you can fix it again. <!-- gb area=review -->
 - A note opened from another branch of a multi-project session switches to that branch first. <!-- gb area=review -->
 - Back after a click on a branch row returns to the branch you left, with its own files and pull request. <!-- gb area=sessions -->
