@@ -104,7 +104,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Refresh session',
     covers: ['resyncSession', 'palette:Refresh session'],
     open: () => openPalette(/^Refresh session/, 'refresh session'),
-    lands: () => visible('button', /^Refresh(ing)?$/),
+    lands: () => visible('button', 'More session actions'),
   },
   {
     name: 'palette: Board',

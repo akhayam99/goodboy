@@ -280,7 +280,6 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         title="Speed up the payout export"
         chip={null}
         actions={<ArtifactShellActions target={target} onArm={() => undefined} />}
-        toggles={null}
         meta={null}
       />,
     );
@@ -328,7 +327,14 @@ describe('every ⋯ menu and its right click list the same actions in the same o
   it('agent header: the ⋯ lists every action, buttons included, never Open agent', async () => {
     const agent = agentFixture({ status: 'failed' });
     seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
-    withMenus(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
+    withMenus(
+      <AgentHeaderActions
+        agent={agent}
+        sessionId={SESSION}
+        allowInterrupt
+        onArm={() => undefined}
+      />,
+    );
     const registry = (
       bindTarget({
         state: useAppStore.getState(),

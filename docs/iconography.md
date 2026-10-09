@@ -221,19 +221,19 @@ section share one glyph.
 
 ## Actions
 
-| Concept        | Glyph                   | Tone    | Affordance                                 |
-| -------------- | ----------------------- | ------- | ------------------------------------------ |
-| `rename`       | `SquarePen`             | neutral | Rename an agent, workflow, title           |
-| `archive`      | `Archive`               | neutral | Archive a session                          |
-| `restore`      | `ArchiveRestore`        | neutral | Unarchive a session, on the board card too |
-| `refresh`      | `RefreshCw`             | neutral | Re-read a session's mounts and requests    |
-| `delete`       | `Trash2`                | danger  | Destructive delete                         |
-| `folderOpen`   | `FolderOpen`            | neutral | Reveal a path in the OS                    |
-| `openExternal` | `SquareArrowOutUpRight` | neutral | Open on the code host                      |
-| `terminal`     | `SquareTerminal`        | neutral | Open a terminal                            |
-| `scripts`      | `ListVideo`             | info    | Open scripts                               |
-| `more`         | `Ellipsis`              | neutral | Overflow menu trigger                      |
-| `search`       | `SearchX`               | info    | Empty search result                        |
+| Concept        | Glyph                   | Tone    | Affordance                                                                          |
+| -------------- | ----------------------- | ------- | ----------------------------------------------------------------------------------- |
+| `rename`       | `SquarePen`             | neutral | Rename an agent, workflow, title                                                    |
+| `archive`      | `Archive`               | neutral | Archive a session                                                                   |
+| `restore`      | `ArchiveRestore`        | neutral | Unarchive a session, on the board card too                                          |
+| `refresh`      | `RefreshCw`             | neutral | Re-read a session's mounts and requests                                             |
+| `delete`       | `Trash2`                | danger  | Destructive delete                                                                  |
+| `folderOpen`   | `FolderOpen`            | neutral | Reveal a path in the OS                                                             |
+| `openExternal` | `SquareArrowOutUpRight` | neutral | Open on the code host                                                               |
+| `terminal`     | `SquareTerminal`        | neutral | Open a terminal                                                                     |
+| `scripts`      | `ListVideo`             | info    | Open scripts                                                                        |
+| `more`         | `Ellipsis`              | neutral | Overflow menu trigger, the only overflow glyph (28 square in a header, 24 in a row) |
+| `search`       | `SearchX`               | info    | Empty search result                                                                 |
 
 `Ellipsis` replaced the deprecated `MoreHorizontal` alias on every overflow
 trigger in the migrated areas.

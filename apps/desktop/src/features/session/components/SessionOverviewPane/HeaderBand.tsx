@@ -1,12 +1,13 @@
-import { Pin, PinOff } from 'lucide-react';
-import { IconButton, Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
+import { useRef, useState } from 'react';
+import { HeaderActions, Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { sessionTitle } from '../../sessionTitle';
-import { SessionDestructiveActions } from './SessionDestructiveActions';
-import { SessionRefreshAction } from './SessionRefreshAction';
+import { SessionHeaderMenu } from './SessionHeaderMenu';
+import { DeleteSessionConfirm } from '../DeleteSessionConfirm';
+import { HeaderPanel } from '../../../../shared/components/HeaderPanel';
 import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { GoalTeaser } from './GoalTeaser';
@@ -15,7 +16,6 @@ import { ArtifactsChip } from './ArtifactsChip';
 import { ChatOriginRow } from './ChatOriginRow';
 import { ArchivedRestore } from './ArchivedRestore';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
-import { useSessionPin } from '../../../actions/useSessionPin';
 import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 
 type Props = {
@@ -32,7 +32,8 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
     anchorKeys: [null, SESSION_HEADER_ANCHOR],
     onRename: rename.start,
   });
-  const pin = useSessionPin({ session });
+  const titleRowRef = useRef<HTMLDivElement>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const titleText = sessionTitle({ session });
   const isNamedByGoodboy = useAppStore(
     (s) => s.goodboyNamedSessionId === sessionId && !session.titleUserEdited,
@@ -41,6 +42,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div
+        ref={titleRowRef}
         data-slot="pane-title-row"
         className={
           rename.editing ? 'flex min-h-8 items-center gap-2' : 'flex h-8 items-center gap-2'
@@ -84,19 +86,15 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
         {isNamedByGoodboy && !rename.editing ? (
           <span className="shrink-0 text-meta text-faint-foreground">Named by Goodboy</span>
         ) : null}
-        <div className="flex shrink-0 items-center gap-1">
-          {isArchived ? null : <SessionRefreshAction sessionId={sessionId} />}
-          <SessionDestructiveActions session={session} />
-          {isArchived ? null : (
-            <IconButton
-              icon={pin.isPinned ? PinOff : Pin}
-              label={pin.label}
-              aria-pressed={pin.isPinned}
-              onClick={pin.toggle}
-            />
-          )}
-        </div>
+        <HeaderActions
+          overflow={<SessionHeaderMenu session={session} onDelete={() => setIsDeleteOpen(true)} />}
+        />
       </div>
+      {isDeleteOpen ? (
+        <HeaderPanel triggerWithin={titleRowRef} onClose={() => setIsDeleteOpen(false)}>
+          <DeleteSessionConfirm session={session} onClose={() => setIsDeleteOpen(false)} />
+        </HeaderPanel>
+      ) : null}
       <ChatOriginRow session={session} />
       <GoalTeaser session={session} />
       <div aria-label="Session facts" className="flex min-w-0 flex-wrap items-center gap-2">

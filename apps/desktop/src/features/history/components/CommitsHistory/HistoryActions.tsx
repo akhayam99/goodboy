@@ -30,12 +30,7 @@ export const HistoryActions = ({ isBusy, onRefresh, onShowBackups, onOpenTermina
         <BackupIcon size={ICON_SIZE.row} aria-hidden />
         Backups
       </Button>
-      <OverflowMenu
-        items={overflow}
-        label="More history actions"
-        align="right"
-        trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
-      />
+      <OverflowMenu items={overflow} label="More history actions" align="right" />
     </>
   );
 };

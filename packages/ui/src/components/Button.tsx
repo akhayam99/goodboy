@@ -52,6 +52,7 @@ export const Button = ({
       disabled={disabled || isBusy}
       aria-busy={isBusy ? true : undefined}
       data-size={size}
+      data-variant={variant}
       className={cn(
         'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none',
         FOCUS_RING,

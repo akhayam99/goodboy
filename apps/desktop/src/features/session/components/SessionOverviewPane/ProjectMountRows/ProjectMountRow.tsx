@@ -5,7 +5,7 @@ import type { MountDiffStat } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { selectTurnMountCount } from '../../../../../store/slices/project-mounts/selectors';
 import { useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
 import { useActionControls } from '../../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
@@ -203,12 +203,7 @@ export const ProjectMountRow = ({
           ) : (
             <MountRowAction sessionId={sessionId} row={row} label={label} controls={controls} />
           )}
-          <ObjectOverflowMenu
-            target={target}
-            label={`${label} actions`}
-            trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
-            triggerClassName="flex size-7 items-center justify-center"
-          />
+          <ObjectOverflowMenu target={target} label={`${label} actions`} size="control" />
         </div>
       </div>
       {controls.failure === null ? null : (

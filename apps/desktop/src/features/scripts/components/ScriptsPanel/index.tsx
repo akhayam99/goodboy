@@ -10,6 +10,7 @@ import {
   splitErrorMessage,
   useCopyLink,
   PaneShell,
+  HeaderActions,
 } from '@goodboy/ui';
 import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -573,15 +574,17 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
 
   const actions =
     groups.length === 0 ? null : (
-      <div className="flex items-center gap-2">
-        <ScriptsFilterInput value={query} onChange={setQuery} />
-        {activeGroup === null ? null : (
-          <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
-            <Plus size={ICON_SIZE.row} aria-hidden />
-            New script
-          </Button>
-        )}
-      </div>
+      <HeaderActions
+        secondary={<ScriptsFilterInput value={query} onChange={setQuery} />}
+        button={
+          activeGroup === null ? null : (
+            <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
+              <Plus size={ICON_SIZE.row} aria-hidden />
+              New script
+            </Button>
+          )
+        }
+      />
     );
 
   return (

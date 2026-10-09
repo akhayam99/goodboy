@@ -1,4 +1,4 @@
-import { Ellipsis, Pin, Play, Square, Terminal } from 'lucide-react';
+import { Pin, Play, Square, Terminal } from 'lucide-react';
 import { IconButton, InteractiveRow, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { RunnableScript } from '../../buildSessionScripts';
@@ -134,7 +134,6 @@ export const ScriptRow = ({
           <ObjectOverflowMenu
             target={target}
             label={`More for ${script.name}`}
-            trigger={<Ellipsis size={ICON_SIZE.row} aria-hidden />}
             anchorKey={`script:${script.key}`}
           />
         </span>

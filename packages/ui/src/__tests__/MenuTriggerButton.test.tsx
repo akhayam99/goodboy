@@ -9,7 +9,7 @@ afterEach(cleanup);
 const trigger = (): HTMLElement => screen.getByRole('button', { name: 'Branch actions' });
 
 describe('MenuTriggerButton', () => {
-  it('is the 21px compact square by default', () => {
+  it('is the 24px compact square by default, the size of a list row icon button', () => {
     render(
       <MenuTriggerButton label="Branch actions" isOpen={false} onClick={vi.fn()}>
         <svg />
@@ -18,8 +18,11 @@ describe('MenuTriggerButton', () => {
 
     expect(trigger().getAttribute('data-size')).toBe('compact');
     const classes = trigger().className.split(' ');
-    expect(classes).toContain('p-1');
+    expect(classes).toEqual(
+      expect.arrayContaining(['inline-flex', 'size-6', 'items-center', 'justify-center']),
+    );
     expect(classes).not.toContain('size-7');
+    expect(classes).not.toContain('p-1');
   });
 
   it('is a 28px centred square at the control size, the height of a sm Button', () => {
@@ -34,7 +37,17 @@ describe('MenuTriggerButton', () => {
     expect(classes).toEqual(
       expect.arrayContaining(['inline-flex', 'size-7', 'items-center', 'justify-center']),
     );
-    expect(classes).not.toContain('p-1');
+    expect(classes).not.toContain('size-6');
+  });
+
+  it('keeps a visible focus ring so the trigger stays reachable by keyboard', () => {
+    render(
+      <MenuTriggerButton label="Branch actions" isOpen={false} onClick={vi.fn()}>
+        <svg />
+      </MenuTriggerButton>,
+    );
+
+    expect(trigger().className).toContain('focus-visible:ring-2');
   });
 
   it('names the menu it opens and says whether it is open', () => {

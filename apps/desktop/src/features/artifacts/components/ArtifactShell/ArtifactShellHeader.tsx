@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { ArtifactKind } from '@goodboy/types';
 import type { ArtifactActionTarget } from '../../../actions/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -15,11 +15,20 @@ type Props = {
   readonly title: string;
   readonly chip: ReactNode;
   readonly actions: ReactNode;
-  readonly toggles: ReactNode;
+  readonly below?: ReactNode;
+  readonly rootRef?: RefObject<HTMLDivElement | null>;
   readonly meta: ReactNode;
 };
 
-export const ArtifactShellHeader = ({ kind, title, chip, actions, toggles, meta }: Props) => {
+export const ArtifactShellHeader = ({
+  kind,
+  title,
+  chip,
+  actions,
+  below = null,
+  rootRef,
+  meta,
+}: Props) => {
   const targetRef = useRef<ArtifactActionTarget | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const register = useCallback((target: ArtifactActionTarget | null) => {
@@ -37,6 +46,7 @@ export const ArtifactShellHeader = ({ kind, title, chip, actions, toggles, meta 
   return (
     <ArtifactHeaderMenuContext.Provider value={register}>
       <div
+        ref={rootRef}
         data-testid="artifact-shell-header"
         className="flex min-w-0 flex-col gap-0.5"
         onContextMenu={menu.onContextMenu}
@@ -52,11 +62,9 @@ export const ArtifactShellHeader = ({ kind, title, chip, actions, toggles, meta 
             {title}
           </h1>
           {chip}
-          <span className="flex min-w-0 shrink-0 items-center gap-2">
-            {actions}
-            {toggles}
-          </span>
+          {actions}
         </div>
+        {below}
         {meta === null ? null : (
           <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-6">
             {meta}

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { PageColumn, SegmentedTabs, PaneShell } from '@goodboy/ui';
+import { HeaderConfirm } from '../../../../shared/components/HeaderConfirm';
+import type { ArmedAction } from '../../../../shared/components/HeaderConfirm/armedAction';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
@@ -52,6 +54,8 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const openTabRef = useRef(openTab);
   openTabRef.current = openTab;
   const [tab, setTab] = useState<AgentTab>(openTab);
+  const [armed, setArmed] = useState<ArmedAction | null>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
   );
@@ -68,6 +72,10 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   useEffect(() => {
     setTab(openTabRef.current);
   }, [agent.id, areQuestionsLoaded, requestedPane]);
+
+  useEffect(() => {
+    setArmed(null);
+  }, [agent.id]);
 
   useEffect(() => {
     const reveal = (event: Event) =>
@@ -99,6 +107,10 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       scroll={isTranscript ? 'self' : 'body'}
       header={
         <AgentHeader
+          rootRef={headerRef}
+          below={
+            <HeaderConfirm armed={armed} triggerWithin={headerRef} onClose={() => setArmed(null)} />
+          }
           title={
             <span
               className="flex min-w-0"
@@ -143,6 +155,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               agent={agent}
               sessionId={session.id}
               allowInterrupt
+              onArm={setArmed}
               onDeleted={onBack}
             />
           }

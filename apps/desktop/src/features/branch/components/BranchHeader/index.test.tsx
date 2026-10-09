@@ -172,6 +172,7 @@ type HarnessProps = {
   readonly detail?: PrDetail | null;
   readonly canEditTitle?: boolean;
   readonly isActive?: boolean;
+  readonly isPrimaryYielding?: boolean;
   readonly onMutated?: () => void;
 };
 
@@ -210,6 +211,7 @@ const Harness = ({
   detail,
   canEditTitle = false,
   isActive = true,
+  isPrimaryYielding = false,
   onMutated,
 }: HarnessProps) => {
   const controls = useBranchControls({
@@ -231,6 +233,7 @@ const Harness = ({
       fallbackTitle="feat/export"
       controls={controls}
       isPushBusy={false}
+      isPrimaryYielding={isPrimaryYielding}
       tab="pr"
       isActive={isActive}
       canEditTitle={canEditTitle}
@@ -247,6 +250,7 @@ const renderHeader = ({
   detail,
   canEditTitle,
   isActive,
+  isPrimaryYielding,
   onMutated,
 }: Partial<HarnessProps> = {}) =>
   render(
@@ -258,6 +262,7 @@ const renderHeader = ({
         detail={detail}
         canEditTitle={canEditTitle}
         isActive={isActive}
+        isPrimaryYielding={isPrimaryYielding}
         onMutated={onMutated}
       />
     </ToastProvider>,
@@ -693,8 +698,25 @@ describe('BranchHeader action row', () => {
     expect(more.getAttribute('data-size')).toBe('control');
     expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(primary.closest('h1')).toBeNull();
-    const row = more.closest('[class*="shrink-0"][class*="gap-2"]');
-    expect(row?.contains(primary)).toBe(true);
+    expect(more.closest('[data-slot="header-actions"]')?.contains(primary)).toBe(true);
+  });
+
+  it('turns the primary into a secondary while its own confirm is open and back when it closes', () => {
+    withMountPr();
+    status = statusOf({});
+    const review = { accepted: 3, replies: 0, failed: 0, isPushing: false };
+    renderHeader({ pr: PR, review, isPrimaryYielding: true });
+    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
+      'secondary',
+    );
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
+    cleanup();
+
+    renderHeader({ pr: PR, review, isPrimaryYielding: false });
+    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
+      'primary',
+    );
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 
   it('keeps Abort rebase first, then the one primary, then Branch actions', () => {

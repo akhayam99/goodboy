@@ -20,5 +20,5 @@ export const ReviewNotesMenu = ({ moveLabel, isClosedShown, onMove, onToggleClos
       onClick: onToggleClosed,
     },
   ];
-  return <OverflowMenu items={items} label={REVIEW_NOTES_COPY.moreActions} />;
+  return <OverflowMenu items={items} label={REVIEW_NOTES_COPY.moreActions} size="control" />;
 };

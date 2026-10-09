@@ -1,7 +1,9 @@
-import { MessageSquare, PanelRight } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { useRef } from 'react';
+import { PanelRight } from 'lucide-react';
+import { Button } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import type { ArtifactDrawerTab } from '../../../../store/slices/drawer/state';
 
@@ -12,6 +14,7 @@ type Props = {
 
 export const ArtifactDrawerToggles = ({ sessionId, artifactId }: Props) => {
   const toggleDrawer = useAppStore((s) => s.toggleDrawer);
+  const lastTab = useRef<ArtifactDrawerTab>('details');
   const openTab = useAppStore((s): ArtifactDrawerTab | null => {
     const drawer = selectOpenDrawer(s);
     if (drawer === null || drawer.kind !== 'artifact' || drawer.payload.artifactId !== artifactId) {
@@ -19,29 +22,27 @@ export const ArtifactDrawerToggles = ({ sessionId, artifactId }: Props) => {
     }
     return drawer.payload.tab;
   });
-  const toggle = (tab: ArtifactDrawerTab) =>
-    toggleDrawer({ kind: 'artifact', sessionId, payload: { artifactId, tab } });
+  if (openTab !== null) {
+    lastTab.current = openTab;
+  }
 
   return (
-    <span className="flex shrink-0 items-center gap-0.5">
-      <IconButton
-        variant="ghost"
-        icon={MessageSquare}
-        label="Chat"
-        tooltip="Talk to the agent about this artifact"
-        aria-pressed={openTab === 'chat'}
-        onClick={() => toggle('chat')}
-        data-testid="artifact-drawer-chat"
-      />
-      <IconButton
-        variant="ghost"
-        icon={PanelRight}
-        label="Details"
-        tooltip="Where this came from, its sources and scouts"
-        aria-pressed={openTab === 'details'}
-        onClick={() => toggle('details')}
-        data-testid="artifact-drawer-details"
-      />
-    </span>
+    <Button
+      variant="ghost"
+      size="sm"
+      aria-pressed={openTab !== null}
+      title="Where this came from, its sources and scouts"
+      data-testid="artifact-drawer-details"
+      onClick={() =>
+        toggleDrawer({
+          kind: 'artifact',
+          sessionId,
+          payload: { artifactId, tab: openTab ?? lastTab.current },
+        })
+      }
+    >
+      <PanelRight size={ICON_SIZE.row} aria-hidden />
+      Details
+    </Button>
   );
 };

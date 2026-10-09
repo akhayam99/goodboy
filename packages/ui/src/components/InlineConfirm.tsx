@@ -3,6 +3,7 @@ import { cn } from '../cn';
 import { formatError } from '../formatError';
 import { tintClasses, type Tone } from '../tint';
 import { Button, type ButtonVariant } from './Button';
+import { ToneBar } from './ToneBar';
 
 export type ConfirmRole = 'primary' | 'alert' | 'danger';
 
@@ -66,7 +67,8 @@ export const InlineConfirm = ({
 }: Props) => {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tint = tintClasses(ROLE_TONE[role]);
+  const tone = ROLE_TONE[role];
+  const tint = tintClasses(tone);
   const busy = isBusy || isRunning;
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
@@ -98,10 +100,13 @@ export const InlineConfirm = ({
       data-surface={surface}
       className={cn(
         'flex min-w-0 flex-col gap-2 text-meta',
-        surface === 'card' ? cn('rounded-lg border p-3', tint.border, tint.bg) : 'p-3',
+        surface === 'card'
+          ? 'relative rounded-lg border border-border-soft bg-subtle py-3 pr-3 pl-4'
+          : 'p-3',
         className,
       )}
     >
+      {surface === 'card' ? <ToneBar tone={tone} density="card" /> : null}
       <div className="flex min-w-0 items-start gap-2">
         <span className={cn('flex h-4 shrink-0 items-center', tint.icon)} aria-hidden>
           {icon}

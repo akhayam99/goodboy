@@ -17,7 +17,7 @@ Notes written before notes belonged to a branch wait in **Unassigned notes**: ea
 
 ### Refresh a session
 
-See pull requests made outside Goodboy without reloading. One an agent opened or you made in a terminal shows up when the turn ends or when you come back to the window. **Refresh**, the first icon at the top right of the session header, next to Archive and Delete, re-reads projects, branches and pull requests right away. While it runs longer than a moment, only the project rows, the pull request chips and the linked work turn to skeleton. **⌘⇧R** and the command palette do the same.
+See pull requests made outside Goodboy without reloading. One an agent opened or you made in a terminal shows up when the turn ends or when you come back to the window. **Refresh**, the first item of the `...` menu at the top right of the session header, re-reads projects, branches and pull requests right away. While it runs longer than a moment, only the project rows, the pull request chips and the linked work turn to skeleton. **⌘⇧R** and the command palette do the same.
 
 ### Activity
 

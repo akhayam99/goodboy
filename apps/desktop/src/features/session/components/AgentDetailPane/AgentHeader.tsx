@@ -1,14 +1,16 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 type Props = {
   readonly title: ReactNode;
   readonly meta: ReactNode;
   readonly tabs: ReactNode;
   readonly actions: ReactNode;
+  readonly below?: ReactNode;
+  readonly rootRef?: Ref<HTMLDivElement>;
 };
 
-export const AgentHeader = ({ title, meta, tabs, actions }: Props) => (
-  <div className="flex min-w-0 flex-col gap-2">
+export const AgentHeader = ({ title, meta, tabs, actions, below = null, rootRef }: Props) => (
+  <div ref={rootRef} className="flex min-w-0 flex-col gap-2">
     <div className="flex min-w-0 flex-col gap-1">
       <div
         data-testid="agent-header-title-row"
@@ -25,6 +27,7 @@ export const AgentHeader = ({ title, meta, tabs, actions }: Props) => (
         {meta}
       </div>
     </div>
+    {below}
     {tabs == null ? null : (
       <div data-testid="agent-header-tabs" className="flex min-w-0 items-center">
         {tabs}

@@ -33,7 +33,7 @@ type Seed = {
   readonly stage: 'proposed' | 'asking' | 'new';
 };
 
-const SEEDS: ReadonlyArray<Seed> = [
+export const SEEDS: ReadonlyArray<Seed> = [
   {
     threadId: 'PRRT_journey_typo',
     author: 'kenji-w',
@@ -216,7 +216,7 @@ const BATCH: ResolveBatch = {
   createdAt: 1,
 };
 
-const installComments = ({
+export const installComments = ({
   sessionId,
   seeds,
 }: {
@@ -299,11 +299,11 @@ const installComments = ({
 
 const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });
 
-const group = (name: string): HTMLElement => within(list()).getByRole('region', { name });
+export const group = (name: string): HTMLElement => within(list()).getByRole('region', { name });
 
 const nodeText = (node: HTMLElement): string => node.textContent ?? '';
 
-const openComments = async (ctx: Ctx): Promise<void> => {
+export const openComments = async (ctx: Ctx): Promise<void> => {
   await openCrumb(/^Branch/);
   await branchTab('pr')(ctx);
   await click(await screen.findByRole('tab', { name: /^Comments/ }));

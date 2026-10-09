@@ -433,6 +433,22 @@ rail; the choice is saved and peek never touches it. Settings is the one
 exception: it opens at the column's width over a folded sidebar, and ⌘B waits
 until Back to app (see Studios).
 
+**Header actions.** One grammar draws the actions of every page header and
+drawer header (`HeaderActions`): secondary controls, at most one secondary
+button, at most one filled primary, then the overflow `...`, all 28 tall, the
+last one on the column edge. The Session overview holds only the overflow
+(Refresh, Pin session, Archive session, Delete session...); Delete session...
+opens its confirm as a card under the title row, and Escape or Cancel gives
+focus back to the overflow. The Agent page keeps Interrupt, Close or Reopen as
+one ghost button with its word (it folds into the overflow below 560px) and
+`Delete agent` in the overflow. The artifact header reads
+`[Details] [secondary] [primary] [...]`, where Details opens the artifact drawer
+on its last tab. A branch reads `[Abort rebase] [one primary] [...]`, and while
+the push confirm or any action confirm is open the primary turns secondary so
+the confirm holds the one filled button. A plan drawer reads
+`[Edit] [Approve] [...]`. Scripts reads `[search] [New script]`. A page with no
+actions draws no `...`.
+
 **Legacy layout.** Settings > App > General > Legacy layout (setting
 `shell.classicBars`, off by default; the stored key kept its name when the
 setting was renamed) brings back the 0.20.0 frame: Board and Chat in the top
@@ -2136,8 +2152,8 @@ adds the diff's fixed height (`decisionChangeDetail`) to its item before
 `layoutTimelineRail`, so the rail and lanes run through it.
 
 The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
-or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;
-the drawer header switches between the two. It also closes when the focused
+or `chat`. The artifact shell opens it from its one `Details` button, on the
+tab last used; the drawer header switches between the two. It also closes when the focused
 artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 

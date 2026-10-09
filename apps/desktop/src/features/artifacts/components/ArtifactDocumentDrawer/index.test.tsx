@@ -113,7 +113,7 @@ describe('plan document drawer header', () => {
     expect(within(toolbar).getByTestId('plan-primary').textContent).toBe('Approve');
     expect(within(toolbar).getByRole('button', { name: 'Edit' })).toBeDefined();
     expect(within(toolbar).getByRole('button', { name: 'More plan actions' })).toBeDefined();
-    expect(toolbarButtons()).toEqual(['Approve', 'Edit', 'More plan actions']);
+    expect(toolbarButtons()).toEqual(['Edit', 'Approve', 'More plan actions']);
   });
 
   it('has exactly one filled button for a plan a run holds for', () => {
@@ -726,7 +726,7 @@ describe('editing the plan by hand in the drawer', () => {
     const version = screen.getByTestId('plan-drawer-version');
     expect(version.textContent).toBe('v2 · v3');
     expect(version.getAttribute('title')).toBe('Version 3 is available');
-    expect(toolbarButtons()).toEqual(['Save', 'Cancel', 'More plan actions']);
+    expect(toolbarButtons()).toEqual(['Cancel', 'Save', 'More plan actions']);
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(screen.getByTestId('plan-drawer-version').textContent).toBe('v2');

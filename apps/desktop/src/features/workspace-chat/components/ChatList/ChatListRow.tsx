@@ -1,8 +1,8 @@
 import { memo, useMemo, useState, type FocusEvent, type MouseEvent } from 'react';
-import { Ellipsis, Pin, PinOff } from 'lucide-react';
+import { Pin, PinOff } from 'lucide-react';
 import { IconButton, InteractiveRow, SelectionCheckbox, StatusDot, cn } from '@goodboy/ui';
 import type { ChatId, ChatModelUsed, EffortLevel, ProviderId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
@@ -238,8 +238,6 @@ const ChatListRowView = ({
                     label={`More actions for ${title}`}
                     tooltip="More"
                     anchorKey={anchorKey}
-                    trigger={<Ellipsis size={ICON_SIZE.row} aria-hidden />}
-                    triggerClassName="p-1"
                   />
                   {isRevealed ? (
                     <IconButton

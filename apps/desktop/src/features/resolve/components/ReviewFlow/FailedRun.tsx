@@ -107,10 +107,10 @@ export const FailedRun = ({
         {isRun ? (
           <>
             {!isHintOpen && (
-              <Button size="sm" variant="primary" isBusy={isBusy} onClick={onTryAgain}>
+              <Button size="sm" variant="secondary" isBusy={isBusy} onClick={onTryAgain}>
                 <RefreshCw size={ICON_SIZE.control} aria-hidden />
                 {FIX_RUN_THREAD_COPY.retry}
-                <KeyHint keys={shortcutGlyphs('review.fix')} onTone />
+                <KeyHint keys={shortcutGlyphs('review.fix')} />
               </Button>
             )}
             <Button size="sm" variant="ghost" isBusy={isBusy} onClick={onStartOver}>

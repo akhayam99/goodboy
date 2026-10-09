@@ -42,5 +42,5 @@ export const PlanDrawerMenu = ({
         ]),
   ];
 
-  return <OverflowMenu items={items} label="More plan actions" />;
+  return <OverflowMenu items={items} label="More plan actions" size="control" />;
 };

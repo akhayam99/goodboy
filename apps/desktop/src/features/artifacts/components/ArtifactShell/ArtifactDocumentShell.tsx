@@ -1,5 +1,13 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Button, InlineConfirm, Textarea, formatError, PaneShell } from '@goodboy/ui';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Button,
+  HeaderActions,
+  InlineConfirm,
+  Textarea,
+  formatError,
+  PaneShell,
+} from '@goodboy/ui';
+import { HeaderPanel } from '../../../../shared/components/HeaderPanel';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -63,6 +71,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const editor = usePlanEditor({ sessionId, plan, revision: artifact.revision });
   const [draft, setDraft] = useState<string | null>(null);
   const [armed, setArmed] = useState<Armed>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wireframeScreenId, setWireframeScreenId] = useState<string | null>(null);
@@ -166,22 +175,25 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const armedConfirm = armed?.action.confirm ?? null;
   const confirm =
     armed !== null && armedConfirm !== null ? (
-      <InlineConfirm
-        role={armedConfirm.role}
-        icon={<armed.action.icon size={ICON_SIZE.row} aria-hidden />}
-        title={armedConfirm.title}
-        description={armedConfirm.description}
-        confirmLabel={armedConfirm.confirmLabel}
-        autoDisarmMs={4000}
-        isBusy={planRun.isSpawning}
-        onConfirm={async () => {
-          await armed.run();
-          setArmed(null);
-        }}
-        onCancel={() => setArmed(null)}
-        className="shrink-0"
-      />
+      <HeaderPanel triggerWithin={headerRef} onClose={() => setArmed(null)}>
+        <InlineConfirm
+          role={armedConfirm.role}
+          icon={<armed.action.icon size={ICON_SIZE.row} aria-hidden />}
+          title={armedConfirm.title}
+          description={armedConfirm.description}
+          confirmLabel={armedConfirm.confirmLabel}
+          autoDisarmMs={4000}
+          isBusy={planRun.isSpawning}
+          onConfirm={async () => {
+            await armed.run();
+            setArmed(null);
+          }}
+          onCancel={() => setArmed(null)}
+        />
+      </HeaderPanel>
     ) : null;
+
+  const details = <ArtifactDrawerToggles sessionId={sessionId} artifactId={artifact.id} />;
 
   const readerActions = (
     <span className="flex min-w-0 items-center gap-2">
@@ -194,9 +206,16 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           exporter={exporter}
           screenId={wireframeScreenId}
           onArm={setArmed}
+          details={details}
+          isPrimaryYielding={armed !== null}
         />
       ) : (
-        <ArtifactShellActions target={target} onArm={setArmed} />
+        <ArtifactShellActions
+          target={target}
+          onArm={setArmed}
+          details={details}
+          isPrimaryYielding={armed !== null}
+        />
       )}
     </span>
   );
@@ -206,23 +225,27 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       return <PlanEditorActions editor={editor} />;
     }
     if (draft === null) {
-      return confirm ?? readerActions;
+      return readerActions;
     }
     return (
-      <span className="flex shrink-0 items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={() => setDraft(null)} disabled={isSaving}>
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => commit(draft)}
-          isBusy={isSaving}
-          data-testid="artifact-save"
-        >
-          Save
-        </Button>
-      </span>
+      <HeaderActions
+        button={
+          <Button variant="ghost" size="sm" onClick={() => setDraft(null)} disabled={isSaving}>
+            Cancel
+          </Button>
+        }
+        primary={
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => commit(draft)}
+            isBusy={isSaving}
+            data-testid="artifact-save"
+          >
+            Save
+          </Button>
+        }
+      />
     );
   };
   const actions = actionsNode();
@@ -257,7 +280,8 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           title={artifact.title}
           chip={chip}
           actions={actions}
-          toggles={<ArtifactDrawerToggles sessionId={sessionId} artifactId={artifact.id} />}
+          below={confirm}
+          rootRef={headerRef}
           meta={
             <ArtifactShellMeta
               artifact={artifact}

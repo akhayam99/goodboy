@@ -1,5 +1,5 @@
 import { ArrowRight, Check } from 'lucide-react';
-import { Button, HeaderBand, Notice, Tooltip, cn } from '@goodboy/ui';
+import { Button, HeaderActions, HeaderBand, Notice, Tooltip, cn } from '@goodboy/ui';
 import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import type {
   PrCheckRun,
@@ -35,6 +35,7 @@ type Props = {
   readonly fallbackTitle: string;
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
+  readonly isPrimaryYielding: boolean;
   readonly tab: BranchTab;
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
@@ -90,6 +91,7 @@ export const BranchHeader = ({
   fallbackTitle,
   controls,
   isPushBusy,
+  isPrimaryYielding,
   tab,
   isActive = true,
   canEditTitle,
@@ -118,7 +120,7 @@ export const BranchHeader = ({
     primary === null ? null : (
       <Button
         size="sm"
-        variant={primary.isSecondary ? 'secondary' : 'primary'}
+        variant={primary.isSecondary || isPrimaryYielding ? 'secondary' : 'primary'}
         data-branch-primary={primary.actionId}
         disabled={primary.blockedReason !== null}
         isBusy={primary.isBusy || isPushBusy}
@@ -222,29 +224,35 @@ export const BranchHeader = ({
           </div>
         }
         actions={
-          <>
-            {abort !== null && (
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={abort.blockedReason !== null}
-                onClick={() => controls.diffControls.trigger({ actionId: abort.id })}
-              >
-                {abort.shortLabel}
-              </Button>
-            )}
-            {primary !== null && primary.blockedReason !== null ? (
-              <Tooltip content={primary.blockedReason} anchorClassName="shrink-0">
-                <span className="inline-flex">{primaryButton}</span>
-              </Tooltip>
-            ) : (
-              primaryButton
-            )}
-            <BranchOverflow
-              diffControls={controls.diffControls}
-              pullRequestControls={controls.pullRequestControls}
-            />
-          </>
+          <HeaderActions
+            button={
+              abort === null ? null : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={abort.blockedReason !== null}
+                  onClick={() => controls.diffControls.trigger({ actionId: abort.id })}
+                >
+                  {abort.shortLabel}
+                </Button>
+              )
+            }
+            primary={
+              primary !== null && primary.blockedReason !== null ? (
+                <Tooltip content={primary.blockedReason} anchorClassName="shrink-0">
+                  <span className="inline-flex">{primaryButton}</span>
+                </Tooltip>
+              ) : (
+                primaryButton
+              )
+            }
+            overflow={
+              <BranchOverflow
+                diffControls={controls.diffControls}
+                pullRequestControls={controls.pullRequestControls}
+              />
+            }
+          />
         }
       />
       {titleEdit.error !== null && (

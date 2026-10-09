@@ -221,6 +221,13 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
 
   const capabilities = activeSource?.capabilities ?? REVIEW_SOURCE_CAPABILITIES[host];
+  const isPrimaryYielding =
+    push.phase.kind === 'confirm' ||
+    push.phase.kind === 'pushing' ||
+    push.phase.kind === 'sync_confirm' ||
+    controls.diffControls.confirming !== null ||
+    controls.pullRequestControls.confirming !== null;
+
   const hasEditAction = controls.pullRequestControls.actions.some(
     (action) => action.id === 'pullRequest.editDetails',
   );
@@ -355,6 +362,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                   fallbackTitle={identity.label}
                   controls={controls}
                   isPushBusy={isPushBusy}
+                  isPrimaryYielding={isPrimaryYielding}
                   tab={tab}
                   isActive={isActive}
                   canEditTitle={canEditTitle}

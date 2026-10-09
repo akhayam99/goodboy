@@ -10,7 +10,15 @@ vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render as renderPlain,
+  screen,
+  within,
+} from '@testing-library/react';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import type {
   AgentId,
   ArtifactId,
@@ -33,17 +41,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 
-vi.mock('./SessionDestructiveActions', () => ({
-  SessionDestructiveActions: () => (
-    <>
-      <button aria-label="Archive session" />
-      <button aria-label="Delete session" />
-    </>
-  ),
-}));
-vi.mock('./SessionRefreshAction', () => ({
-  SessionRefreshAction: () => <button aria-label="Refresh" />,
-}));
 vi.mock('./ArchivedRestore', () => ({ ArchivedRestore: () => <button>Restore</button> }));
 vi.mock('./ChatOriginRow', () => ({ ChatOriginRow: () => null }));
 vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
@@ -57,6 +54,8 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return { ...actual, Tooltip: ({ children }: { readonly children: ReactNode }) => children };
 });
+
+const render = (ui: ReactNode) => renderPlain(<ToastProvider>{ui}</ToastProvider>);
 
 let useAppStore: StoryStore;
 let HeaderBand: typeof import('./HeaderBand').HeaderBand;
@@ -202,22 +201,81 @@ describe('HeaderBand', () => {
     ).toEqual(['Context', 'Artifacts1', 'HAR-212', 'Link work']);
   });
 
-  it('keeps only refresh, archive and delete in the title action zone, in that order', () => {
+  it('draws only the overflow in the title row, with no archive or delete icon at rest', () => {
     render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
-    const refresh = screen.getByRole('button', { name: 'Refresh' });
-    const archive = screen.getByRole('button', { name: 'Archive session' });
-    screen.getByRole('button', { name: 'Delete session' });
-    expect(
-      refresh.compareDocumentPosition(archive) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    screen.getByRole('button', { name: 'More session actions' });
+    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Archive session' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete session' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /pin session/i })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mount a project' })).toBeNull();
   });
 
-  it('drops refresh from an archived session', () => {
+  it('holds refresh, pin, archive and delete in the overflow, delete last and destructive', () => {
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
+
+    const labels = screen
+      .getAllByRole('menuitem')
+      .map((item) => item.textContent?.replace(/[^A-Za-z. …]/g, '').trim());
+    expect(labels).toEqual([
+      expect.stringContaining('Refresh'),
+      expect.stringContaining('Pin session'),
+      expect.stringContaining('Archive session'),
+      expect.stringContaining('Delete session…'),
+    ]);
+  });
+
+  it('drops refresh and pin from an archived session and offers Unarchive', () => {
     render(<HeaderBand session={{ ...session, archivedAt: NOW }} onSelectLens={vi.fn()} />);
 
-    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
+
+    expect(screen.queryByRole('menuitem', { name: /Refresh/ })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /pin session/i })).toBeNull();
+    screen.getByRole('menuitem', { name: /Unarchive session/ });
+  });
+
+  it('shows the delete confirm inline under the title row, closes it on Escape and refocuses the overflow', () => {
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
+    const trigger = screen.getByRole('button', { name: 'More session actions' });
+
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('menuitem', { name: /Delete session…/ }));
+
+    const confirm = screen.getByRole('group', { name: 'Delete session?' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    const titleRow = document.querySelector('[data-slot="pane-title-row"]') as HTMLElement;
+    expect(
+      titleRow.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(titleRow.contains(confirm)).toBe(false);
+
+    fireEvent.keyDown(within(confirm).getByRole('button', { name: 'Cancel' }), { key: 'Escape' });
+
+    expect(screen.queryByRole('group', { name: 'Delete session?' })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('deletes the session once through the store when the inline confirm is accepted', async () => {
+    const deleteTask = vi.fn(async () => undefined);
+    useAppStore.setState({ deleteTask });
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Delete session…/ }));
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByRole('group', { name: 'Delete session?' })).getByRole('button', {
+          name: 'Delete',
+        }),
+      );
+    });
+
+    expect(deleteTask).toHaveBeenCalledTimes(1);
+    expect(deleteTask).toHaveBeenCalledWith(SESSION_ID);
   });
 
   it('reads the goal line before the facts and leaves the projects to the body', () => {
@@ -251,15 +309,14 @@ describe('HeaderBand', () => {
     screen.getByRole('button', { name: 'Untitled session' });
   });
 
-  it('pins the session from the title row through the pin action and unpins it again', () => {
+  it('pins the session from the overflow and unpins it again', () => {
     const pinSession = vi.fn(async () => undefined);
     const unpinSession = vi.fn(async () => undefined);
     useAppStore.setState({ pinSession, unpinSession });
     render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
-    const pin = screen.getByRole('button', { name: 'Pin session' });
-    expect(pin.getAttribute('aria-pressed')).toBe('false');
-    fireEvent.click(pin);
+    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Pin session/ }));
     expect(pinSession).toHaveBeenCalledWith(SESSION_ID);
 
     cleanup();
@@ -267,15 +324,8 @@ describe('HeaderBand', () => {
       sessionPins: { ['workspace-1' as WorkspaceId]: [{ id: SESSION_ID, at: 1 }] },
     });
     render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
-    const unpin = screen.getByRole('button', { name: 'Unpin session' });
-    expect(unpin.getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(unpin);
+    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Unpin session/ }));
     expect(unpinSession).toHaveBeenCalledWith(SESSION_ID);
-  });
-
-  it('has no pin toggle on an archived session', () => {
-    render(<HeaderBand session={{ ...session, archivedAt: NOW }} onSelectLens={vi.fn()} />);
-
-    expect(screen.queryByRole('button', { name: /pin session/i })).toBeNull();
   });
 });

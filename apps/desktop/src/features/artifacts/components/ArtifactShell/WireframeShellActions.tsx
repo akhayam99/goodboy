@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { cn, formatError } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -8,7 +8,8 @@ import { useWireframeFolderExport } from '../../../wireframes/useWireframeFolder
 import { folderExportNote } from '../../../wireframes/useWireframeFolderExport/folderExportNote';
 import { openWireframeInBrowser } from '../../../wireframes/openWireframeInBrowser';
 import type { WireframeFidelity } from '../../../wireframes/wireframeFidelity';
-import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
+import type { ArtifactActionTarget } from '../../../actions/types';
+import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { ArtifactShellActions } from './ArtifactShellActions';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
@@ -18,10 +19,9 @@ type Props = {
   readonly target: ArtifactActionTarget;
   readonly exporter: ArtifactExport;
   readonly screenId: string | null;
-  readonly onArm: (params: {
-    readonly action: ResolvedAction;
-    readonly run: () => Promise<void>;
-  }) => void;
+  readonly onArm: OnArm;
+  readonly details?: ReactNode;
+  readonly isPrimaryYielding?: boolean;
 };
 
 type Note = Readonly<{ text: string; isError: boolean }>;
@@ -33,6 +33,8 @@ export const WireframeShellActions = ({
   exporter,
   screenId,
   onArm,
+  details = null,
+  isPrimaryYielding = false,
 }: Props) => {
   const { fidelity, isRespawning, error, respawn } = useWireframeRespawn({ sessionId, artifact });
   const folderExport = useWireframeFolderExport({ artifact });
@@ -75,6 +77,8 @@ export const WireframeShellActions = ({
       )}
       <ArtifactShellActions
         onArm={onArm}
+        details={details}
+        isPrimaryYielding={isPrimaryYielding}
         target={{
           ...target,
           ports: {

@@ -77,6 +77,7 @@ export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
 export { MenuTriggerButton } from './components/MenuTriggerButton';
+export type { MenuTriggerSize } from './components/MenuTriggerButton';
 export { LineMark } from './components/LineMark';
 export { MenuItems } from './components/MenuItems';
 export { ContextMenu } from './components/ContextMenu/ContextMenu';
@@ -316,3 +317,4 @@ export {
   frameGeometryOf,
 } from './frameGeometry';
 export type { FrameGeometry, FramePage, FrameTitleLeft } from './frameGeometry';
+export { HeaderActions } from './components/HeaderActions';

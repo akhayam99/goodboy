@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { Ellipsis } from 'lucide-react';
 import { AnchoredPopover } from './AnchoredPopover';
 import { MenuTriggerButton, type MenuTriggerSize } from './MenuTriggerButton';
 import { useDropdown } from '../useDropdown';
@@ -33,6 +33,10 @@ export const OverflowMenu = ({
     expectedHeight: 220,
   });
 
+  if (items.length === 0) {
+    return null;
+  }
+
   return (
     <AnchoredPopover
       dropdown={dropdown}
@@ -49,7 +53,7 @@ export const OverflowMenu = ({
           className={triggerClassName}
           onClick={dropdown.toggle}
         >
-          {trigger ?? <MoreVertical size={size === 'control' ? 14 : 13} aria-hidden />}
+          {trigger ?? <Ellipsis size={size === 'control' ? 14 : 12} aria-hidden />}
         </MenuTriggerButton>
       }
     >
