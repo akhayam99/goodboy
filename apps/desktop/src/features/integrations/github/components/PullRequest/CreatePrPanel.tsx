@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MountId, SessionExternalTask, SessionId } from '@goodboy/types';
 import {
   Button,
@@ -75,6 +75,16 @@ export const CreatePrPanel = ({
 
   const [mode, setMode] = useState<CreateMode>('manual');
   const [title, setTitle] = useState(defaultTitle);
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const field = titleRef.current;
+    if (field === null) {
+      return;
+    }
+    field.setSelectionRange(0, 0);
+    field.scrollLeft = 0;
+  }, []);
   const [body, setBody] = useState('');
   const [base, setBase] = useState('');
   const [branches, setBranches] = useState<ReadonlyArray<string>>([]);
@@ -270,11 +280,7 @@ export const CreatePrPanel = ({
                     disabled={busy !== null}
                     aria-label="Pull request title"
                     className="h-8 w-full text-body sm:w-96"
-                    onFocus={(event) => {
-                      if (event.currentTarget.value === defaultTitle) {
-                        event.currentTarget.setSelectionRange(0, 0);
-                      }
-                    }}
+                    ref={titleRef}
                     autoFocus
                   />
                 </FieldRow>
