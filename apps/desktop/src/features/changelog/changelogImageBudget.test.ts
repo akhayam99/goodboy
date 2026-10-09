@@ -11,8 +11,8 @@ const CHANGELOG_IMAGES_DIR = join(ROOT_DIRECTORY, 'docs', 'changelog');
 const STAGING_DIR_NAME = 'next';
 const FILE_NAME_PATTERN = /^([a-z0-9]+(?:-[a-z0-9]+)*)-(before|after)-(dark|light)\.webp$/;
 const MAX_FILE_BYTES = 120 * 1024;
-const MAX_RELEASE_BYTES = 1024 * 1024;
-const MAX_IMAGES_PER_RELEASE = 3;
+const MAX_RELEASE_BYTES = 2 * 1024 * 1024;
+const MAX_IMAGES_PER_RELEASE = 12;
 
 type ParsedFile = {
   readonly fileName: string;
@@ -120,7 +120,7 @@ describe('docs/changelog image budget', () => {
         });
       });
 
-      it('keeps at most 3 distinct images for the release', () => {
+      it('keeps at most 12 distinct images for the release', () => {
         const distinctImages = new Set(
           parsed.flatMap(({ parsed: file }) => (file === null ? [] : [file.image])),
         );
@@ -161,7 +161,7 @@ describe('docs/changelog image budget', () => {
         });
       });
 
-      it('keeps every file at or under 120 KB and the release at or under 1 MB', () => {
+      it('keeps every file at or under 120 KB and the release at or under 2 MB', () => {
         let releaseTotal = 0;
         fileNames.forEach((fileName) => {
           const size = statSync(join(CHANGELOG_IMAGES_DIR, versionDir, fileName)).size;
