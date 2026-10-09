@@ -156,10 +156,11 @@ order, each with one line of copy at most.
   hints are the ones the builder shows (`RUN_AUTONOMY_OPTIONS`)
 - **Spend cap**: a switch, the amount per run and what happens at the limit, pause
   or warn
-- **Providers**: one switch, **Use providers with room left**, and one sentence
-  that says where the next step goes. It lists no provider; the policy is in
-  Models, one **Open Models** button away. With no provider that reports its
-  limits (Claude or Codex) turned on, the switch is off and says why
+- **Providers**: a row **When a provider is out** with the policy in one line
+  ("Claude, Codex · Cursor as backup") and a link, **Open Providers & models**.
+  It holds no switch and lists no provider: the order and the **Send new steps
+  to the provider with the most room** option live in Settings > Providers &
+  models, the one home of the provider policy
 - **Guidance**: text every run starts with, with its own **Polish**
 
 ### Guidance
@@ -208,10 +209,12 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 - if dropping the _out_ providers empties the menu, the menu of today comes back
 
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
-with it off (m217); new workspaces start with it on. The Run defaults tab shows the
-switch and one sentence: with it off, "New steps follow the order set in
-Models."; with it on, where the next step goes and, when a provider is passed,
-how full it is (`nextStepPick`, `spreadSentence`).
+with it off (m217); new workspaces start with it on. The switch is the
+**Send new steps to the provider with the most room** option of the policy popover in
+Settings > Providers & models, with one sentence under it: with it off, "New
+steps follow the provider order."; with it on, where the next step goes and,
+when a provider is passed, how full it is (`nextStepPick`, `spreadSentence`).
+The Run defaults tab only links there.
 
 The builder opens filled from the rules and shows them in one **From your
 rules** line with **Edit**. A launch control that leaves the rules shows a dot

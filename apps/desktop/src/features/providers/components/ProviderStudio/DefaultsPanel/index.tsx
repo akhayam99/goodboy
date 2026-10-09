@@ -40,6 +40,7 @@ import { useAutoLimitContext } from '../../../hooks/useAutoLimitContext';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly scopeLabel?: string | null;
   readonly focusSection?: string;
 };
 
@@ -65,7 +66,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   defaultBranchTemplate: null,
 };
 
-export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
+export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: Props) => {
   const tasksRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (focusSection === undefined || !TASKS.some((task) => task.id === focusSection)) {
@@ -121,6 +122,7 @@ export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
       scroll="body"
       animationClassName={SETTINGS_PANE_ENTRY}
       title={NAMES.models}
+      meta={scopeLabel ?? undefined}
       actions={
         <OverflowMenu
           label="Models actions"

@@ -66,5 +66,6 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'review-diff-view', pattern: /\b[Ii]n the (?:Review|Diff) view\b/, use: NAMES.comments },
   { id: 'rebase-in-the-diff', pattern: /\bRebase in the Diff\b/, use: NAMES.branch },
   { id: 'in-review-page', pattern: /\bin Review\b(?! replies)/, use: NAMES.comments },
+  { id: 'review-replies', pattern: /\bReview replies\b/, use: NAMES.repliesAndCommits },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

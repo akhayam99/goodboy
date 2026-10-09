@@ -111,7 +111,10 @@ beforeEach(async () => {
   });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const renderPanel = (props: { primaryLabel?: string } = {}) => {
   const published: PublishFirstLapResult[] = [];
@@ -141,12 +144,13 @@ const storedRemote = async () => {
 describe('PublishPanel on GitHub', () => {
   it('needs an explicit visibility before it can publish, then creates the repository and links it', async () => {
     const { published } = renderPanel();
-    const publish = screen.getByRole('button', { name: 'Publish' });
     screen.getByText('Connected as dana-reyes');
-    expect(publish).toHaveProperty('disabled', true);
+    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
+    screen.getByRole('button', { name: 'Cancel' });
     screen.getByText('Pick who can see the repository. Goodboy does not choose for you.');
 
     fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
+    const publish = screen.getByRole('button', { name: 'Publish' });
     expect(publish).toHaveProperty('disabled', false);
     fireEvent.click(publish);
 
@@ -166,14 +170,23 @@ describe('PublishPanel on GitHub', () => {
     expect(wire.ghRuns[0]).toEqual(['repo', 'create', 'cascadia', '--public']);
   });
 
-  it('shows a name problem and blocks the button', () => {
+  it('shows a name problem and takes the button away until the name is valid', () => {
     renderPanel();
     fireEvent.click(screen.getByRole('radio', { name: 'Public' }));
 
     fireEvent.change(screen.getByLabelText('Repository name'), { target: { value: 'my game' } });
 
     screen.getByRole('alert');
-    expect(screen.getByRole('button', { name: 'Publish' })).toHaveProperty('disabled', true);
+    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('Repository name'), { target: { value: 'my-game' } });
+    screen.getByRole('button', { name: 'Publish' });
+  });
+
+  it('shows the visible heading Publish this project over the form', () => {
+    renderPanel();
+
+    expect(screen.getByRole('heading', { name: 'Publish this project' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Publish this project' })).toBeDefined();
   });
 
   it('says when GitHub is not signed in and offers the connect form', () => {
@@ -187,17 +200,105 @@ describe('PublishPanel on GitHub', () => {
     expect(screen.queryByLabelText('Repository name')).toBeNull();
   });
 
-  it('says when the command line tool is missing and still lets an address through', () => {
+  it('starts on the existing repository when the command line tool is missing', () => {
     useAppStore.setState({
       githubStatus: { available: false, mode: 'absent', scopes: [], scoped: false },
     });
     renderPanel();
 
-    screen.getByText(/command line tool isn't installed/);
-    fireEvent.click(screen.getByRole('tab', { name: 'Use an existing repository' }));
+    expect(
+      screen.getByRole('tab', { name: 'Use an existing repository' }).getAttribute('aria-selected'),
+    ).toBe('true');
     screen.getByLabelText('Repository address');
+    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
+    screen.getByRole('button', { name: 'Cancel' });
   });
 
+  it('starts on GitHub when the command line tool is there', () => {
+    renderPanel();
+
+    expect(
+      screen.getByRole('tab', { name: 'Create on GitHub' }).getAttribute('aria-selected'),
+    ).toBe('true');
+  });
+});
+
+describe('PublishPanel without the GitHub command line tool', () => {
+  const missing = () =>
+    useAppStore.setState({
+      githubStatus: { available: false, mode: 'absent', scopes: [], scoped: false },
+    });
+
+  const pickGithub = () => fireEvent.click(screen.getByRole('tab', { name: 'Create on GitHub' }));
+
+  it('shows the install command with Copy on macOS and puts it on the clipboard', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Macintosh; Mac OS X)');
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    missing();
+    renderPanel();
+    pickGithub();
+
+    const notice = screen.getByText("GitHub's command line tool isn't installed");
+    expect(notice).toBeDefined();
+    screen.getByText('brew install gh');
+    fireEvent.click(screen.getByRole('button', { name: 'Copy text' }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledExactlyOnceWith('brew install gh'));
+    expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
+    screen.getByRole('button', { name: 'Cancel' });
+  });
+
+  it('links the install page on the other platforms', () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (X11; Linux x86_64)');
+    missing();
+    renderPanel();
+    pickGithub();
+
+    expect(screen.queryByText('brew install gh')).toBeNull();
+    expect(screen.getByRole('link', { name: /Install gh/ }).getAttribute('href')).toBe(
+      'https://cli.github.com',
+    );
+  });
+
+  it('checks again once and shows the signed-in form when the tool is there', async () => {
+    const statusReads: number[] = [];
+    stubStoryInvoke({
+      gh_status: () => {
+        statusReads.push(1);
+        return connected;
+      },
+    });
+    missing();
+    renderPanel();
+    pickGithub();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+
+    await screen.findByText('Connected as dana-reyes');
+    expect(statusReads).toHaveLength(1);
+    screen.getByLabelText('Repository name');
+    expect(screen.queryByText("GitHub's command line tool isn't installed")).toBeNull();
+  });
+
+  it('stays on the help when the tool is still missing after checking again', async () => {
+    stubStoryInvoke({
+      gh_status: { available: false, mode: 'absent', scopes: [], scoped: false },
+    });
+    missing();
+    renderPanel();
+    pickGithub();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Check again' })).toHaveProperty('disabled', false),
+    );
+    screen.getByText("GitHub's command line tool isn't installed");
+  });
+});
+
+describe('PublishPanel status loading', () => {
   it('reads the status when it is not known yet', async () => {
     stubStoryInvoke({
       gh_status: { ...connected, user: 'mara-quint' },
@@ -211,6 +312,7 @@ describe('PublishPanel on GitHub', () => {
 
   it('labels the primary action when the work will move too', () => {
     renderPanel({ primaryLabel: 'Publish and move my work' });
+    fireEvent.click(screen.getByRole('radio', { name: 'Private' }));
 
     screen.getByRole('button', { name: 'Publish and move my work' });
   });
@@ -250,9 +352,12 @@ describe('PublishPanel with an address', () => {
     screen.getByText(
       /The repository exists at https:\/\/github.com\/dana-reyes\/cascadia and was not removed/,
     );
+    expect(screen.queryByText('remote: Permission denied')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    screen.getByText('remote: Permission denied');
     expect(published).toEqual([]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Publish again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(published).toHaveLength(1));
     expect(published[0]).toEqual({ kind: 'published', branch: 'main', remoteUrl: REPO_URL });
     expect(wire.linked).toEqual([REPO_URL, REPO_URL]);

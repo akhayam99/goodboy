@@ -7,7 +7,14 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, ResolveAttempt } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  MountId,
+  ProviderRunId,
+  ResolveAttempt,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -20,6 +27,7 @@ import {
   THREAD_IDS,
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import type { ScribeWork } from '../../../../store/slices/scribe/types';
 import { AgentHeaderStatus } from './AgentHeaderStatus';
 
 let useAppStore: StoryStore;
@@ -145,5 +153,84 @@ describe('the header status of an agent', () => {
     await show({ isResolver: true });
 
     expect(screen.getByText('Done')).toBeDefined();
+  });
+
+  describe('a scribe agent', () => {
+    const SCRIBE_ID = 'agent-status-scribe' as AgentId;
+    const SCRIBE: Agent = {
+      id: SCRIBE_ID,
+      sessionId: SESSION.id,
+      ordinal: 2,
+      name: 'Scribe',
+      kind: 'scribe',
+      status: 'completed',
+    };
+    const KEY = 'pr:mount-status-scribe';
+
+    const seedScribe = ({ work }: { readonly work: ScribeWork | null }) =>
+      useAppStore.setState({
+        transcripts: {
+          [SCRIBE_ID]: [
+            {
+              kind: 'assistant_text',
+              runId: 'run-status-scribe' as ProviderRunId,
+              delta: '<<pr-title>>\nGuard settlement postings\n<</pr-title>>',
+              at: '2026-10-05T10:12:00.000Z' as IsoDateTime,
+            },
+          ],
+        },
+        scribeAgents: { [SCRIBE_ID]: KEY },
+        scribeWork: work === null ? {} : { [KEY]: work },
+      });
+
+    const failedWork: ScribeWork = {
+      key: KEY,
+      sessionId: SESSION.id,
+      mountId: 'mount-status-scribe' as MountId,
+      agentId: SCRIBE_ID,
+      task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true, base: null },
+      status: 'failed',
+      output: null,
+      error: "Couldn't push fix/ledger-postings: denied",
+      pullRequest: null,
+      updatedAt: 0,
+    };
+
+    const showScribe = async (): Promise<void> => {
+      render(
+        <AgentHeaderStatus
+          session={SESSION}
+          agent={SCRIBE}
+          isResolver={false}
+          status="completed"
+        />,
+      );
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      });
+    };
+
+    it('says Failed, not Done, when its pull request text failed', async () => {
+      seedScribe({ work: failedWork });
+      await showScribe();
+
+      expect(screen.getByText('Failed')).toBeDefined();
+      expect(screen.queryByText('Done')).toBeNull();
+    });
+
+    it('keeps Done while the pull request text has not failed', async () => {
+      seedScribe({ work: { ...failedWork, status: 'creating', error: null } });
+      await showScribe();
+
+      expect(screen.getByText('Done')).toBeDefined();
+      expect(screen.queryByText('Failed')).toBeNull();
+    });
+
+    it('keeps Done for a scribe with no work recorded', async () => {
+      seedScribe({ work: null });
+      await showScribe();
+
+      expect(screen.getByText('Done')).toBeDefined();
+    });
   });
 });

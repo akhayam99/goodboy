@@ -11,6 +11,8 @@ import { orderProviders } from '../../orderProviders';
 import { MODELS_SECTION } from './ProviderPage/ModelsGroup/constants';
 import { USAGE_SECTION } from './ProviderPage/UsageGroup/usageSectionId';
 
+const ALL_WORKSPACES = 'All workspaces';
+
 type Props = {
   readonly workspaceId: WorkspaceId | null;
   readonly initialFocus?: ProviderId | null;
@@ -27,6 +29,10 @@ export const ProviderSettingsScope = ({
   frame,
 }: Props) => {
   const providers = useAppStore((s) => s.providers);
+  const workspaceName = useAppStore(
+    (s) => s.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null,
+  );
+  const scopeLabel = workspaceId === null ? ALL_WORKSPACES : workspaceName;
   const refreshProviders = useAppStore((s) => s.refreshProviders);
   const landing: ProviderId | 'defaults' =
     initialFocus ?? (workspaceId === null ? (PROVIDER_ORDER[0] ?? 'defaults') : 'defaults');
@@ -84,6 +90,7 @@ export const ProviderSettingsScope = ({
       focused === 'defaults' && workspaceId !== null ? (
         <DefaultsPanel
           workspaceId={workspaceId}
+          scopeLabel={scopeLabel}
           {...(initialSection !== undefined && { focusSection: initialSection })}
         />
       ) : (
@@ -92,6 +99,7 @@ export const ProviderSettingsScope = ({
           autoConnect={autoConnect && selected?.id === initialFocus}
           autoUpdate={autoUpdate && selected?.id === initialFocus}
           workspaceId={workspaceId}
+          scopeLabel={scopeLabel}
           focusModels={initialSection === MODELS_SECTION && selected?.id === initialFocus}
           isUsageFocused={initialSection === USAGE_SECTION && selected?.id === initialFocus}
         />

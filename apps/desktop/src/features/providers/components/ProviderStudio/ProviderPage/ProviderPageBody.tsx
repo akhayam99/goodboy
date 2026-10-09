@@ -22,21 +22,27 @@ type Props = {
   readonly autoUpdate: boolean;
   readonly focusModels: boolean;
   readonly workspaceId: WorkspaceId | null;
+  readonly scopeLabel: string | null;
 };
 
 type MetaParams = {
   readonly planLabel: string | null;
   readonly isApi: boolean;
+  readonly scopeLabel: string | null;
 };
 
-const metaLine = ({ planLabel, isApi }: MetaParams): string | undefined => {
+const kindLine = ({ planLabel, isApi }: Omit<MetaParams, 'scopeLabel'>): string | null => {
   if (isApi) {
     return 'Runs through the OpenCode runtime';
   }
-  if (planLabel === null) {
-    return undefined;
-  }
-  return `${planLabel} plan`;
+  return planLabel === null ? null : `${planLabel} plan`;
+};
+
+const metaLine = ({ planLabel, isApi, scopeLabel }: MetaParams): string | undefined => {
+  const parts = [scopeLabel, kindLine({ planLabel, isApi })].filter(
+    (part): part is string => part !== null,
+  );
+  return parts.length === 0 ? undefined : parts.join(' · ');
 };
 
 export const ProviderPageBody = ({
@@ -45,6 +51,7 @@ export const ProviderPageBody = ({
   autoUpdate,
   focusModels,
   workspaceId,
+  scopeLabel,
 }: Props) => {
   const id = info.id;
   const connectPhase = useAppStore((s) => s.providerConnect[id]?.phase ?? 'idle');
@@ -121,7 +128,7 @@ export const ProviderPageBody = ({
       scroll="body"
       animationClassName={SETTINGS_PANE_ENTRY}
       title={info.label}
-      meta={metaLine({ planLabel, isApi })}
+      meta={metaLine({ planLabel, isApi, scopeLabel })}
       actions={<OverflowMenu items={menuItems} label={`More ${info.label} actions`} />}
     >
       {isReady && !isApi ? <ProviderAttentionNotice providerId={id} /> : null}

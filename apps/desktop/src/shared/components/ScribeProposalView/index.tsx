@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Markdown } from '@goodboy/ui';
+import { Button, Markdown, Notice } from '@goodboy/ui';
 import { RotateCw } from 'lucide-react';
 import { ICON_SIZE } from '../conceptIcons';
 import type { ScribeProposal } from '../../utils/scribeProposal';
@@ -64,15 +64,28 @@ export const ScribeProposalView = ({
         </div>
       ) : null}
       {state?.kind === 'failed' ? (
-        <p role="alert" className="text-label text-danger">
-          {state.reason}
-        </p>
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title="Couldn't write the pull request text"
+          body="The text is kept, so you can try again."
+          detail={state.reason}
+          actions={
+            canRetry ? (
+              <Button variant="secondary" size="sm" onClick={onRetry}>
+                <RotateCw size={ICON_SIZE.row} aria-hidden />
+                Retry
+              </Button>
+            ) : undefined
+          }
+        />
       ) : null}
-      {canRetry ? (
+      {canRetry && state?.kind !== 'failed' ? (
         <div>
           <Button variant="secondary" size="sm" onClick={onRetry}>
             <RotateCw size={ICON_SIZE.row} aria-hidden />
-            {state?.kind === 'failed' ? 'Retry' : 'Create PR'}
+            Create PR
           </Button>
         </div>
       ) : null}

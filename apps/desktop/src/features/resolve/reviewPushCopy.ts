@@ -82,8 +82,8 @@ export const pushStyleNote = ({
   readonly commitStyle: ResolveCommitStyle;
 }): string =>
   commitStyle === 'fixup'
-    ? 'Commits are fixups of the commits they fix, set in Review replies.'
-    : 'Every fix is its own new commit, set in Review replies.';
+    ? 'Commits are fixups of the commits they fix, set in Replies and commits.'
+    : 'Every fix is its own new commit, set in Replies and commits.';
 
 type PushResultTone = 'done' | 'partial' | 'failed';
 

@@ -1,44 +1,26 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { Band, BandRow, Button, Switch } from '@goodboy/ui';
+import { Band, BandRow, Button } from '@goodboy/ui';
 import { openSettings } from '../../../settings/openSettings';
-import { useRulesProviders } from '../../hooks/useRulesProviders';
-import { canSpreadByHeadroom, nextStepPick } from '../../rulesHeadroom';
-import { spreadSentence } from './spreadSentence';
+import { usePolicySummary } from '../../hooks/usePolicySummary';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly spread: boolean;
-  readonly onSpread: (spread: boolean) => void;
 };
 
-export const RulesProvidersBand = ({ workspaceId, spread, onSpread }: Props) => {
-  const rooms = useRulesProviders({ workspaceId, isSpreadOn: spread });
-  const canSpread = canSpreadByHeadroom({ rooms });
-  const isSpreadOn = canSpread && spread;
-  const pick = nextStepPick({ rooms, spread: isSpreadOn });
+export const RulesProvidersBand = ({ workspaceId }: Props) => {
+  const summary = usePolicySummary({ workspaceId });
   return (
     <Band label="Providers" ariaLabel="Providers" headingLevel={3}>
       <BandRow>
-        <span className="min-w-0 flex-1 text-row text-foreground">
-          Use providers with room left
-        </span>
-        <Switch
-          label={<span className="sr-only">Use providers with room left</span>}
-          checked={isSpreadOn}
-          disabled={!canSpread}
-          onChange={onSpread}
-        />
-      </BandRow>
-      <BandRow>
+        <span className="min-w-0 shrink-0 text-row text-foreground">When a provider is out</span>
         <span
-          data-testid="rules-spread-sentence"
-          aria-live="polite"
-          className="min-w-0 flex-1 text-meta text-muted-foreground"
+          data-testid="rules-policy-summary"
+          className="min-w-0 flex-1 truncate text-meta text-muted-foreground"
         >
-          {spreadSentence({ canSpread, spread: isSpreadOn, pick })}
+          {summary}
         </span>
         <Button variant="ghost" size="sm" onClick={() => openSettings({ scope: 'providers' })}>
-          Open Models
+          Open Providers & models
         </Button>
       </BandRow>
     </Band>

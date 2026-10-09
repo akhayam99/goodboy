@@ -13,6 +13,7 @@ type Props = {
   readonly focusModels?: boolean;
   readonly isUsageFocused?: boolean;
   readonly workspaceId?: WorkspaceId | null;
+  readonly scopeLabel?: string | null;
 };
 
 export const ProviderPage = ({
@@ -22,6 +23,7 @@ export const ProviderPage = ({
   focusModels = false,
   isUsageFocused = false,
   workspaceId = null,
+  scopeLabel = null,
 }: Props) => {
   useEffect(() => {
     if (!isUsageFocused || info === null) {
@@ -50,6 +52,7 @@ export const ProviderPage = ({
       autoUpdate={autoUpdate}
       focusModels={focusModels}
       workspaceId={workspaceId}
+      scopeLabel={scopeLabel}
     />
   );
 };

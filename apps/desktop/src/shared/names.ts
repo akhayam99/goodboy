@@ -52,6 +52,7 @@ export const NAMES = {
   removeLink: 'Remove link',
   removeLinkFromSession: 'Remove link from this session',
   legacyLayout: 'Legacy layout',
+  repliesAndCommits: 'Replies and commits',
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -100,6 +101,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.overview]: ['Session'],
   [NAMES.comments]: ['Review'],
   [NAMES.files]: ['Diff'],
+  [NAMES.repliesAndCommits]: ['Review replies'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

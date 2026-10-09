@@ -49,7 +49,7 @@ Open any artifact as a folder, in your browser or your file manager. The folder 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/artifact-create-light.webp" alt="The Create wireframe form with a Brief, Attachments, Fidelity set to Repository styled wireframe, Target set to Phone and desktop, Read from payments-api and notify-relay, Based on a run and the Included context list">
 </picture>
 
-Describe the screen in a **Brief**, add **Attachments**, and choose the **Fidelity** (**Plain wireframe** or **Repository styled wireframe**) and the **Target** (**Phone**, **Desktop** or **Phone and desktop**). **Read from** picks the project branches the agent looks at, and **Included context** lists exactly what goes in the pack.
+Describe the screen in a **Brief**, add **Attachments**, and choose the **Fidelity** (**Plain wireframe** or **Repository styled wireframe**) and the **Target** (**Phone**, **Desktop** or **Phone and desktop**). When the pages cannot be drawn, the viewer says "Couldn't show the pages", keeps the raw message behind **Details** and offers **Retry**; the wireframe itself is saved. **Read from** picks the project branches the agent looks at, and **Included context** lists exactly what goes in the pack.
 
 ### Wireframes scouted first
 

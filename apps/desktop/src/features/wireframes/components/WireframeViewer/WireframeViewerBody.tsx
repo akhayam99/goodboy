@@ -6,7 +6,7 @@ import {
   type WireframeNode,
   type WireframeScreen,
 } from '@goodboy/core';
-import { Button, cn, Eyebrow, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
+import { Button, cn, Eyebrow, Notice, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { postToFrame, type FrameMessage } from '../../frame/frameMessage';
 import { useFrameMessages } from '../../useFrameMessages';
@@ -123,9 +123,10 @@ export const WireframeViewerBody = ({
   const stageKey = `${artifact.id}|${title}|${String(artifact.metadata.fidelity)}`;
   const stagedArtifact = useRef(artifact);
   stagedArtifact.current = { ...artifact, title };
+  const [stageAttempt, setStageAttempt] = useState(0);
   const files = useMemo(
     () => wireframeStageFiles({ artifact: stagedArtifact.current, document }),
-    [stageKey, document],
+    [stageKey, document, stageAttempt],
   );
   const pickingRef = useRef(isPicking);
   pickingRef.current = isPicking;
@@ -262,9 +263,19 @@ export const WireframeViewerBody = ({
       </div>
       {banner ?? null}
       {stage.status === 'failed' ? (
-        <span role="alert" className="text-meta text-danger">
-          The pages could not be shown: {stage.message}
-        </span>
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title="Couldn't show the pages"
+          body="The wireframe is saved, but its preview did not render."
+          detail={stage.message}
+          actions={
+            <Button variant="secondary" size="sm" onClick={() => setStageAttempt((n) => n + 1)}>
+              Retry
+            </Button>
+          }
+        />
       ) : null}
       {view === 'flow' ? (
         <>

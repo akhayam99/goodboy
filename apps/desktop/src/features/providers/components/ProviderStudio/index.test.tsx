@@ -7,6 +7,10 @@ import type { WorkspaceId } from '@goodboy/types';
 const { state } = vi.hoisted(() => ({
   state: {
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
+    workspaces: [{ id: 'workspace-1', name: 'Harborline' }] as ReadonlyArray<{
+      id: string;
+      name: string;
+    }>,
     cliRequirements: [] as ReadonlyArray<never>,
     refreshProviders: vi.fn(async () => undefined),
     providerConnect: {} as Record<string, { phase: string }>,
@@ -21,12 +25,26 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('./DefaultsPanel', () => ({
-  DefaultsPanel: () => <h1>Models</h1>,
+  DefaultsPanel: ({ scopeLabel }: { scopeLabel?: string | null }) => (
+    <>
+      <h1>Models</h1>
+      <span data-testid="scope">{scopeLabel ?? ''}</span>
+    </>
+  ),
 }));
 
 vi.mock('./ProviderPage', () => ({
-  ProviderPage: ({ info }: { info: { id: string } | null }) => (
-    <h1>{`detail ${info?.id ?? 'none'}`}</h1>
+  ProviderPage: ({
+    info,
+    scopeLabel,
+  }: {
+    info: { id: string } | null;
+    scopeLabel?: string | null;
+  }) => (
+    <>
+      <h1>{`detail ${info?.id ?? 'none'}`}</h1>
+      <span data-testid="scope">{scopeLabel ?? ''}</span>
+    </>
   ),
 }));
 
@@ -61,5 +79,32 @@ describe('ProviderSettingsScope', () => {
     expect(screen.queryByRole('button', { name: 'Models' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Models' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'detail anthropic' })).toBeDefined();
+  });
+
+  it('names the workspace as the scope of the Models page', () => {
+    render(<ProviderSettingsScope workspaceId={'workspace-1' as WorkspaceId} frame={plainFrame} />);
+
+    expect(screen.getByTestId('scope').textContent).toBe('Harborline');
+  });
+
+  it('names the workspace on a provider page too', () => {
+    state.providers = [{ id: 'anthropic', connection: 'connected' }];
+    render(
+      <ProviderSettingsScope
+        workspaceId={'workspace-1' as WorkspaceId}
+        initialFocus="anthropic"
+        frame={plainFrame}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'detail anthropic' })).toBeDefined();
+    expect(screen.getByTestId('scope').textContent).toBe('Harborline');
+  });
+
+  it('says All workspaces when there is no workspace scope', () => {
+    state.providers = [{ id: 'anthropic', connection: 'connected' }];
+    render(<ProviderSettingsScope workspaceId={null} frame={plainFrame} />);
+
+    expect(screen.getByTestId('scope').textContent).toBe('All workspaces');
   });
 });

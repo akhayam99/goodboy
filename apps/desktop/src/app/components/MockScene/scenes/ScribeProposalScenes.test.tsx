@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -44,19 +44,34 @@ describe('Scribe pull request text scenes', () => {
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
-  it('shows the reason and a Retry in the Brief when the push is refused', async () => {
+  it('names the failed action in a notice, keeps the reason behind Details and offers Retry', async () => {
     render(
       <ToastProvider>
         <ScribeProposalFailedScene />
       </ToastProvider>,
     );
 
-    expect((await screen.findByRole('alert')).textContent).toBe(
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't write the pull request text");
+    expect(alert.textContent).not.toContain('Permission to harborline');
+    fireEvent.click(within(alert).getByRole('button', { name: 'Details' }));
+    expect(alert.textContent).toContain(
       "Couldn't push fix/ledger-postings: remote: Permission to harborline/ledger-core.git denied",
     );
-    expect(screen.getByText('Failed')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(screen.getByText('Guard settlement postings against retries')).toBeDefined();
+  });
+
+  it('says Failed in the agent header too, not Done above a Failed section', async () => {
+    render(
+      <ToastProvider>
+        <ScribeProposalFailedScene />
+      </ToastProvider>,
+    );
+
+    await screen.findByRole('alert');
+    expect(screen.getAllByText('Failed').length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText('Done')).toBeNull();
   });
 
   it('draws the same text as a card in the transcript, without the raw blocks', async () => {

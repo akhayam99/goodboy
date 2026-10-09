@@ -1201,7 +1201,13 @@ The surface stays neutral, the title is `foreground` and the body is
 Every message shape in the desktop app renders through it. `ErrorStrip` is a
 thin `Notice placement="banner"` for a failed load with Retry. Budget alerts
 and the unpriced-turns warning are banners. Guide tips, the partial brief after a step,
-the branch switch confirmation and merge conflicts are `inline`. A page that
+the branch switch confirmation and merge conflicts are `inline`. So are three
+failures that used to print one red line: the wireframe viewer ("Couldn't show
+the pages", with Retry), the Scribe's pull request text ("Couldn't write the
+pull request text", with Retry) and the first-lap publish steps, each with the
+raw message behind Details. The publish panel's missing GitHub tool is an
+`inline` `warning` Notice that holds the install command with `CopyButton` as
+its children and **Check again** as its action. A page that
 cannot load its list is an `inline` `danger` Notice with `role="alert"`
 (Empty states, state 4), and the startup error screen is the same Notice. The
 sign-in prompt in the chat is `transcript`. Toasts are `floating`: the toast

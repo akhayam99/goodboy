@@ -18,6 +18,7 @@ const { state, frame, revisions } = vi.hoisted(() => ({
   frame: {
     staged: [] as Array<ReadonlyArray<Readonly<{ path: string; contents: string }>>>,
     released: [] as Array<string>,
+    failures: [] as Array<string>,
   },
 }));
 
@@ -33,6 +34,10 @@ vi.mock('../../../artifacts/artifacts', () => ({
 vi.mock('../../frame/frameInvoke', () => ({
   stageFrame: vi.fn(
     async ({ files }: { readonly files: ReadonlyArray<{ path: string; contents: string }> }) => {
+      const failure = frame.failures.shift();
+      if (failure !== undefined) {
+        throw new Error(failure);
+      }
       frame.staged.push(files);
       return `stage-${frame.staged.length}`;
     },
@@ -128,6 +133,7 @@ const postFromFrame = ({ source, data }: { readonly source: unknown; readonly da
 beforeEach(() => {
   frame.staged = [];
   frame.released = [];
+  frame.failures = [];
   revisions.rows = [];
   state.wireframeDrafts = {};
   state.requestWireframeChange.mockClear();
@@ -436,5 +442,25 @@ describe('WireframeViewer', () => {
     expect(screen.queryByTestId('wireframe-frame')).toBeNull();
     expect(frame.staged).toHaveLength(0);
     expect(screen.getByTestId('wireframe-repair')).toBeDefined();
+  });
+
+  it('names the failed action in a notice, keeps the raw message behind Details and retries the stage', async () => {
+    frame.failures = ['Cannot read properties of undefined (reading path)'];
+    renderViewer();
+
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText("Couldn't show the pages")).toBeDefined();
+    expect(
+      within(alert).getByText('The wireframe is saved, but its preview did not render.'),
+    ).toBeDefined();
+    expect(alert.textContent).not.toContain('Cannot read properties');
+    fireEvent.click(within(alert).getByRole('button', { name: 'Details' }));
+    expect(alert.textContent).toContain('Cannot read properties of undefined (reading path)');
+
+    fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => expect(frame.staged).toHaveLength(1));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(screen.getAllByTestId('wireframe-grid-item')).toHaveLength(2);
   });
 });

@@ -1,4 +1,4 @@
-import type { RulesPick } from '../../rulesHeadroom';
+import type { RulesPick } from './rulesHeadroom';
 
 type Params = {
   readonly canSpread: boolean;
@@ -11,7 +11,7 @@ export const spreadSentence = ({ canSpread, spread, pick }: Params): string => {
     return 'Needs a provider that reports limits';
   }
   if (!spread || pick === null) {
-    return 'New steps follow the order set in Models.';
+    return 'New steps follow the provider order.';
   }
   switch (pick.reason.kind) {
     case 'passed-tight':

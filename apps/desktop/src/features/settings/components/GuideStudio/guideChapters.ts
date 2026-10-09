@@ -399,7 +399,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: 'Open Review replies',
+        label: 'Open Replies and commits',
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'review-replies' } },
@@ -544,7 +544,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'App and workspace',
-        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Review replies, Permissions and Skills are pages of a workspace.',
+        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Replies and commits, Permissions and Skills are pages of a workspace.',
       },
       {
         term: 'Copy and restore',

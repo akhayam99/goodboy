@@ -1367,7 +1367,7 @@ one is open at a time.
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
   the pointer. The Workspace pages (Projects, About you, New sessions, After
-  merge, Review replies, Permissions) sit the same way under the
+  merge, Replies and commits, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
   shows one item at a time. Providers & models nests
   Models and one row per provider, and Integrations nests one row per tool. Those
@@ -1378,16 +1378,27 @@ one is open at a time.
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
+- **Providers & models names its scope in the page header.** Every page of
+  the scope (Models and each provider) carries the scope as the meta line of
+  its title: the workspace name when one is open, `All workspaces` when there
+  is none (`ProviderSettingsScope` passes `scopeLabel`). The legacy trail
+  reads `Workspace` and `Providers & models` without a name, so the name
+  appears once per page.
 - **Workspace settings is one page per area, each part in a card.** A
-  workspace page carries the page title, the workspace name and one line of
+  workspace page carries the page title and one line of
   help; every part is a `Band` with one heading style (eyebrow, icon, hint
   under it) and help written under each field, never in a tooltip. Only the
-  page on screen mounts, so Permissions and Review replies compute nothing
+  page on screen mounts, so Permissions and Replies and commits compute nothing
   while another page is open. The old anchors (`projects`, `profile`,
   `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
   pick a page (`workspacePageOf`); `dev-project` lands on Projects with the
-  conversion open. The workspace is renamed from the Projects page. The
-  attribution line lives on New sessions only, and Review replies links to it.
+  conversion open. The workspace is renamed from the `Name` field of the
+  Projects page, and its name is written once on that page, in the top bar
+  (the disconnect row says `Disconnect this workspace`). The attribution line
+  lives on New sessions only, and Replies and commits links to it. Replies
+  and commits holds the reply voice and templates, `Mark thread as resolved`
+  and the commit style (`review-replies` stays its page id and anchor); Run
+  defaults live under Workflows.
   Turning a plain folder into a dev project is an inline flow in the Projects
   page (`ConvertWorkspaceFlow`), never a dialog: linking a plain folder opens
   Settings there once the add workspace studio has closed. Skills stays

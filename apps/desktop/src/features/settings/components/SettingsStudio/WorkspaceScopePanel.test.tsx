@@ -266,7 +266,7 @@ describe('restore defaults', () => {
     renderPage({ section: 'review-replies' });
 
     fireEvent.click(
-      within(pageMenu('Review replies')).getByRole('menuitem', { name: /Restore defaults/ }),
+      within(pageMenu('Replies and commits')).getByRole('menuitem', { name: /Restore defaults/ }),
     );
     const flow = screen.getByRole('region', { name: 'Restore defaults' });
     expect(flow.textContent).toContain('Goes back to the default: 2 settings on 1 page.');
@@ -303,7 +303,7 @@ describe('copy from another workspace', () => {
     renderPage({ section: 'review-replies' });
 
     fireEvent.click(
-      within(pageMenu('Review replies')).getByRole('menuitem', { name: /Copy from/ }),
+      within(pageMenu('Replies and commits')).getByRole('menuitem', { name: /Copy from/ }),
     );
     const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
     fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
@@ -344,7 +344,7 @@ describe('copy from another workspace', () => {
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
 
     expect(flow.textContent).toContain('Will change 3 settings on 3 pages.');
-    ['New sessions', 'After merge', 'Review replies'].forEach((page) =>
+    ['New sessions', 'After merge', 'Replies and commits'].forEach((page) =>
       within(flow).getByRole('checkbox', { name: `Include ${page}` }),
     );
     fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include After merge' }));

@@ -965,7 +965,7 @@ N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
 for this session`, else `Resolver default`); launching does not turn the
   default into a pick. A retry (Redraft, Answer, Retry) continues the same fix
   run on the model it started with and keeps its commit style and hint (and
-  the commit style set in Review replies, so with fixup set the second round is
+  the commit style set in Replies and commits, so with fixup set the second round is
   a fixup too). Only a model picked for the session that differs from the one
   the run used starts the comment over as a new fix run on that model. The hint
   you type before a retry lands in the prompt's operator notes
@@ -998,7 +998,7 @@ now` beside its note posts it at once. `Push N` in the Review header is the
 way out for every accepted comment at once. It
 confirms inline under the header with exactly what goes out (`Push 2 to
 hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
-resolved on GitHub.`), naming the commit style set in Review replies. A
+resolved on GitHub.`), naming the commit style set in Replies and commits. A
 blocker (uncommitted changes, a commit nobody approved, a fix still running)
 replaces the confirm with its reason and the one move that clears it. The
 result stays on the layer in one line with its commit; a partial push says how
@@ -1016,7 +1016,7 @@ was. ⌘↵ with the list focused pushes too. Behind it runs a
 3. Posts each reply, then resolves each thread on GitHub when you are allowed
    to resolve it there. Otherwise the thread stays open for the reviewer.
 
-How a reply reads is set in Settings, Workspace, **Review replies**:
+How a reply reads is set in Settings, Workspace, **Replies and commits**:
 
 - **Voice**: Terse (the default), Friendly, Formal, or Your replies, which
   follows a style note you can edit. **Learn from my replies** reads your last
