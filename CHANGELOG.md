@@ -86,6 +86,9 @@ The door, the bell and the palette say Tasks. Each job has one verb: Start for a
 - Summaries, titles and orchestrator replies that fail retry on the other models you allow, and you get one notice only when every model failed. <!-- gb area=providers -->
 - The agent page opens on its Brief from every door. Transcript opens only from a link to a message, and an agent remembers the tab you picked. <!-- gb area=agents -->
 - The agent header shows elapsed time instead of longer than usual, and the Brief no longer reads 0 turns or ready on a running agent. <!-- gb area=agents -->
+- A run on its own no longer sits idle when it starts or between two steps. A run that cannot go on stops and says why. <!-- gb area=workflows -->
+- A step the orchestrator could not create stops the run with a notice instead of leaving it hanging. <!-- gb area=workflows -->
+- A step waiting on your answer says so in the run bar, with the step that asked and Answer. <!-- gb area=workflows -->
 - Accepting a fix that hits a conflict keeps the note open, so you can fix it again. <!-- gb area=review -->
 - A note opened from another branch of a multi-project session switches to that branch first. <!-- gb area=review -->
 - Back after a click on a branch row returns to the branch you left, with its own files and pull request. <!-- gb area=sessions -->
