@@ -29,6 +29,7 @@ type Props = {
   readonly request: ReviewerRequest;
   readonly canEdit: boolean;
   readonly behind: number | null;
+  readonly distanceBase?: string | null;
   readonly onRebase: (() => void) | null;
   readonly onOpenChecks: () => void;
   readonly onOpenFiles: (path: string | null) => void;
@@ -45,11 +46,13 @@ export const PullRequestProperties = ({
   request,
   canEdit,
   behind,
+  distanceBase = null,
   onRebase,
   onOpenChecks,
   onOpenFiles,
   onMutated,
 }: Props) => {
+  const isOtherBase = distanceBase !== null && distanceBase !== pr.baseBranch;
   const matched = detail !== null && detail.prNumber === pr.number ? detail : null;
   const checks = checksPropertyWord({
     read: matched?.checksRead ?? view?.checks.read ?? 'ok',
@@ -132,18 +135,20 @@ export const PullRequestProperties = ({
             tone="faint"
           />
         </div>
-        <div className="flex min-h-6 min-w-0 flex-wrap items-center gap-x-2 text-meta text-muted-foreground">
-          <span>
-            {behind === null || behind === 0
-              ? `Up to date with ${pr.baseBranch}`
-              : `${behind} behind ${pr.baseBranch}`}
-          </span>
-          {behind !== null && behind > 0 && onRebase !== null && (
-            <Button size="xs" variant="ghost" onClick={onRebase}>
-              Rebase on {pr.baseBranch}
-            </Button>
-          )}
-        </div>
+        {isOtherBase ? null : (
+          <div className="flex min-h-6 min-w-0 flex-wrap items-center gap-x-2 text-meta text-muted-foreground">
+            <span>
+              {behind === null || behind === 0
+                ? `Up to date with ${pr.baseBranch}`
+                : `${behind} behind ${pr.baseBranch}`}
+            </span>
+            {behind !== null && behind > 0 && onRebase !== null && (
+              <Button size="xs" variant="ghost" onClick={onRebase}>
+                Rebase on {pr.baseBranch}
+              </Button>
+            )}
+          </div>
+        )}
       </PropertyBlock>
 
       <PropertyBlock label="Files changed">

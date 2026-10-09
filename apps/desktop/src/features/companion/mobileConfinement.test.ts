@@ -96,7 +96,6 @@ const factsOf = ({
     state: {
       sessionGithub: { [sid('s1')]: githubOf({ pr, checks }) },
       sessionResolveThreads: { [sid('s1')]: threads },
-      sessionResolveAttempts: {},
     },
     sessionId: sid('s1'),
   });

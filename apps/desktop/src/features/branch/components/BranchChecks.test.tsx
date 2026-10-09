@@ -374,6 +374,7 @@ describe('Checks tab on a host that reads its own checks', () => {
   const viewEntry = (view: PullRequestView | null) => ({
     [SESSION.id]: {
       prNumber: 57,
+      mountId: null,
       view,
       isLoading: false,
       error: null,

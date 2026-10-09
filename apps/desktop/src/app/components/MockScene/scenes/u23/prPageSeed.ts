@@ -490,6 +490,7 @@ export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }
         : {
             [SESSION_ID]: {
               prNumber: view.number,
+              mountId: MOUNT_ID,
               view,
               isLoading: false,
               error: null,

@@ -22,6 +22,7 @@ export type PullRequestPageProps = {
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
   readonly behind: number | null;
+  readonly distanceBase?: string | null;
   readonly onRebase: (() => void) | null;
   readonly onMutated: () => void;
   readonly onReload: () => void;
@@ -41,6 +42,7 @@ export const PullRequestPage = ({
   canEdit,
   request,
   behind,
+  distanceBase = null,
   onRebase,
   onMutated,
   onReload,
@@ -69,6 +71,7 @@ export const PullRequestPage = ({
         request={request}
         canEdit={canEdit}
         behind={behind}
+        distanceBase={distanceBase}
         onRebase={onRebase}
         onOpenChecks={() => onSelectTab('checks')}
         onOpenFiles={onOpenFiles}

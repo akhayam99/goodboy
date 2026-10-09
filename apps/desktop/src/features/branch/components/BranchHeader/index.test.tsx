@@ -171,6 +171,7 @@ type HarnessProps = {
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly detail?: PrDetail | null;
   readonly canEditTitle?: boolean;
+  readonly isActive?: boolean;
   readonly onMutated?: () => void;
 };
 
@@ -202,7 +203,15 @@ const diffOf = (): SessionDiff => ({
   clearFocus: vi.fn(),
 });
 
-const Harness = ({ pr, review, checks, detail, canEditTitle = false, onMutated }: HarnessProps) => {
+const Harness = ({
+  pr,
+  review,
+  checks,
+  detail,
+  canEditTitle = false,
+  isActive = true,
+  onMutated,
+}: HarnessProps) => {
   const controls = useBranchControls({
     sessionId: SESSION_ID,
     worktreePath: MOUNT.worktreePath,
@@ -223,6 +232,7 @@ const Harness = ({ pr, review, checks, detail, canEditTitle = false, onMutated }
       controls={controls}
       isPushBusy={false}
       tab="pr"
+      isActive={isActive}
       canEditTitle={canEditTitle}
       createdAt={null}
       onMutated={onMutated ?? vi.fn()}
@@ -236,6 +246,7 @@ const renderHeader = ({
   checks = NO_CHECKS,
   detail,
   canEditTitle,
+  isActive,
   onMutated,
 }: Partial<HarnessProps> = {}) =>
   render(
@@ -246,6 +257,7 @@ const renderHeader = ({
         checks={checks}
         detail={detail}
         canEditTitle={canEditTitle}
+        isActive={isActive}
         onMutated={onMutated}
       />
     </ToastProvider>,
@@ -744,6 +756,7 @@ describe('BranchHeader title editing', () => {
     expect(editPr).toHaveBeenCalledWith(SESSION_ID, 318, {
       title: 'Ledger export, with retries',
       isQuiet: true,
+      mountId: MOUNT.mountId,
     });
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
   });
@@ -757,6 +770,14 @@ describe('BranchHeader title editing', () => {
     fireEvent.keyDown(window, { code: 'Escape', key: 'Escape' });
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
     expect(editPr).not.toHaveBeenCalled();
+  });
+
+  it('ignores the E key while the session sits hidden behind another one', () => {
+    renderHeader({ pr: PR, canEditTitle: true, isActive: false });
+
+    fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
+
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
   });
 
   it('ignores the E key when the title cannot be edited', () => {

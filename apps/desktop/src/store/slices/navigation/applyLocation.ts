@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
+import { selectActiveMount, selectWritableMounts } from '../project-mounts/selectors';
 import type { BranchTab, GetFn, Location, SessionView, SetFn } from './types';
 
 type TabsParams = {
@@ -108,6 +109,27 @@ const surfaceChanges = ({
   };
 };
 
+type ActiveMountParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly view: SessionView;
+};
+
+const syncActiveMount = ({ get, sessionId, view }: ActiveMountParams): void => {
+  const target = view.target;
+  if (target?.kind !== 'branch' || target.mountPath === null) {
+    return;
+  }
+  const state = get();
+  const shown = selectWritableMounts({ state, sessionId }).find(
+    (mount) => mount.worktreePath === target.mountPath,
+  );
+  if (shown === undefined || shown.mountId === selectActiveMount({ state, sessionId })?.mountId) {
+    return;
+  }
+  void state.setSessionActiveMount({ sessionId, mountId: shown.mountId }).catch(() => undefined);
+};
+
 type Params = {
   readonly set: SetFn;
   readonly get: GetFn;
@@ -145,6 +167,9 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
     drawer,
     openSessionDraftWorkspaceId: null,
   }));
+  if (isRestore) {
+    syncActiveMount({ get, sessionId, view: resolved });
+  }
   if (resolved.agentId !== null && resolved.studio === null) {
     void get()
       .selectAgent(sessionId, resolved.agentId)

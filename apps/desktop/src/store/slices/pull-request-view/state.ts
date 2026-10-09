@@ -1,4 +1,4 @@
-import type { IsoDateTime, PullRequestView, SessionId } from '@goodboy/types';
+import type { IsoDateTime, MountId, PullRequestView, SessionId } from '@goodboy/types';
 
 export type PullRequestEdit = Readonly<{
   what: 'title' | 'description';
@@ -7,6 +7,7 @@ export type PullRequestEdit = Readonly<{
 
 export type PullRequestViewEntry = Readonly<{
   prNumber: number;
+  mountId: MountId | null;
   view: PullRequestView | null;
   isLoading: boolean;
   error: string | null;

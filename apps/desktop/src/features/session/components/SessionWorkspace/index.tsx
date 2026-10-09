@@ -172,7 +172,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                 <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}
               {lens === 'pr' ? <PrPane session={session} /> : null}
-              {lens === 'branch' ? <BranchPage session={session} workingDir={workingDir} /> : null}
+              {lens === 'branch' ? (
+                <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
+              ) : null}
               {lens === 'linear' ? (
                 <IntegrationPane
                   sessionId={sessionId}

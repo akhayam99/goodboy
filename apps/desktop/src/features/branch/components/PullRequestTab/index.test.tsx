@@ -30,8 +30,10 @@ beforeAll(async () => {
 
 const COLLABORATORS = 'omar-t\t\nkenji-w\t\nrio-k\thttps://avatars.example/rio\n';
 
+let behindMain = 0;
+
 const answer = async (command: string, args: unknown): Promise<unknown> => {
-  const handlers = prPageHandlers({ behind: 0 });
+  const handlers = prPageHandlers({ behind: behindMain });
   const handler = handlers[command];
   if (handler !== undefined) {
     return handler(undefined);
@@ -57,6 +59,7 @@ let stubs: Stubs;
 
 beforeEach(async () => {
   await resetStoryStore();
+  behindMain = 0;
   vi.mocked(invoke).mockImplementation(answer);
   stubs = {
     editPr: vi.fn<StoreState['editPr']>(async () => undefined),
@@ -101,9 +104,33 @@ describe('the description', () => {
     expect(stubs.editPr).toHaveBeenCalledWith(SESSION.id, 318, {
       body: 'Retried deliveries no longer post a second credit.',
       isQuiet: true,
+      mountId: useAppStore.getState().sessionProjectMounts[SESSION.id]?.[0]?.mountId,
     });
     expect(await screen.findByText('Saved to GitHub')).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Description, markdown' })).toBeNull();
+  });
+
+  it('closes the editor when the session moves to the same number in another repository', async () => {
+    await show();
+    startEditing();
+    typeBody('Half written.');
+    expect(screen.getByRole('textbox', { name: 'Description, markdown' })).toBeDefined();
+
+    const [first] = useAppStore.getState().sessionProjectMounts[SESSION.id] ?? [];
+    if (first === undefined) {
+      throw new Error('the scene seeds a mount');
+    }
+    const other = { ...first, mountId: 'mount-notify-relay' as typeof first.mountId };
+    act(() => {
+      useAppStore.setState({
+        sessionProjectMounts: { [SESSION.id]: [first, other] },
+        sessionActiveMount: { [SESSION.id]: other.mountId },
+      });
+    });
+
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'Description, markdown' })).toBeNull(),
+    );
   });
 
   it('shows the edit in the activity once it is saved', async () => {
@@ -205,6 +232,34 @@ describe('the description', () => {
     expect(screen.queryByRole('button', { name: 'Request review' })).toBeNull();
     fireEvent.click(within(description()).getByText(/guard keyed on the delivery id/));
     expect(screen.queryByRole('textbox', { name: 'Description, markdown' })).toBeNull();
+  });
+});
+
+describe('the branch row', () => {
+  it('says how far behind the base the branch is and offers the rebase', async () => {
+    behindMain = 3;
+    await show();
+
+    const row = (await screen.findByText('3 behind main')).parentElement as HTMLElement;
+    expect(within(row).getByRole('button', { name: 'Rebase on main' })).toBeDefined();
+  });
+
+  it('says nothing about the distance when the pull request targets another base than the one measured', async () => {
+    behindMain = 3;
+    await show();
+    const row = (await screen.findByText('3 behind main')).parentElement as HTMLElement;
+    const [first] = useAppStore.getState().sessionProjectMounts[SESSION.id] ?? [];
+    if (first === undefined) {
+      throw new Error('the scene seeds a mount');
+    }
+    act(() => {
+      useAppStore.setState({
+        sessionProjectMounts: { [SESSION.id]: [{ ...first, baseBranch: 'release' }] },
+      });
+    });
+
+    await waitFor(() => expect(screen.queryByText('3 behind main')).toBeNull());
+    expect(row.isConnected).toBe(false);
   });
 });
 

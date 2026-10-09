@@ -249,4 +249,48 @@ describe('the pull request view slice', () => {
     expect(useAppStore.getState().pullRequestViews[SESSION_ID]?.edits).toHaveLength(1);
     expect(useAppStore.getState().pullRequestViews[SESSION_ID]?.view?.number).toBe(318);
   });
+
+  it('drops a late answer for a pull request the session has moved off', async () => {
+    let open: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    h.run.mockImplementation(async (args) => {
+      if (args.includes('318')) {
+        await gate;
+      }
+      return answer(args);
+    });
+    const slow = load();
+
+    useAppStore.setState({
+      sessionGithub: { [SESSION_ID]: { ...GITHUB, pr: { ...PR, number: 319 } } },
+    });
+    await load();
+    open();
+    await slow;
+
+    const entry = useAppStore.getState().pullRequestViews[SESSION_ID];
+    expect(entry?.prNumber).toBe(319);
+    expect(entry?.isLoading).toBe(false);
+  });
+
+  it('never serves the view of one repository for the same number in another mount', async () => {
+    await load();
+    const other = {
+      ...MOUNT,
+      mountId: 'mount-notify-relay' as MountId,
+      worktreePath: '/worktrees/notify-relay',
+    };
+    useAppStore.setState({
+      sessionActiveMount: { [SESSION_ID]: other.mountId },
+      sessionProjectMounts: { [SESSION_ID]: [MOUNT, other] },
+    });
+    const before = viewCalls();
+
+    await load();
+
+    expect(viewCalls()).toBe(before + 1);
+    expect(useAppStore.getState().pullRequestViews[SESSION_ID]?.mountId).toBe(other.mountId);
+  });
 });

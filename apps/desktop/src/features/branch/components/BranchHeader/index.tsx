@@ -28,6 +28,7 @@ type Props = {
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
   readonly tab: BranchTab;
+  readonly isActive?: boolean;
   readonly canEditTitle: boolean;
   readonly createdAt: string | null;
   readonly onMutated: () => void;
@@ -79,6 +80,7 @@ export const BranchHeader = ({
   controls,
   isPushBusy,
   tab,
+  isActive = true,
   canEditTitle,
   createdAt,
   onMutated,
@@ -88,7 +90,7 @@ export const BranchHeader = ({
     sessionId,
     pr,
     canEdit: canEditTitle,
-    isKeyActive: tab === 'pr',
+    isKeyActive: isActive && tab === 'pr',
     onSaved: onMutated,
   });
   const now = useNow(60_000);

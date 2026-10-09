@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
 import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';
+import { entryMountIdOf } from './entryMountId';
 import type { PullRequestViewEntry } from './state';
 import type { GetFn, LoadPullRequestViewParams, SetFn } from './types';
 
@@ -28,8 +29,12 @@ export const loadPullRequestView = async ({
   if (number === null) {
     return;
   }
+  const entryMount = entryMountIdOf({ state: get(), sessionId, mountId });
   const current = get().pullRequestViews[sessionId];
-  const same = current !== undefined && current.prNumber === number ? current : null;
+  const same =
+    current !== undefined && current.prNumber === number && current.mountId === entryMount
+      ? current
+      : null;
   if (same !== null) {
     const age =
       same.fetchedAt === null ? Number.POSITIVE_INFINITY : Date.now() - Date.parse(same.fetchedAt);
@@ -50,16 +55,25 @@ export const loadPullRequestView = async ({
     set((state) => ({ pullRequestViews: { ...state.pullRequestViews, [sessionId]: entry } }));
   patch({
     prNumber: number,
+    mountId: entryMount,
     view: same?.view ?? null,
     isLoading: true,
     error: null,
     fetchedAt: same?.fetchedAt ?? null,
     edits: same?.edits ?? [],
   });
+  const isStale = (): boolean => {
+    const latest = get().pullRequestViews[sessionId];
+    return latest?.prNumber !== number || latest.mountId !== entryMount;
+  };
   try {
     const view = await port.read();
+    if (isStale()) {
+      return;
+    }
     patch({
       prNumber: number,
+      mountId: entryMount,
       view,
       isLoading: false,
       error: null,
@@ -67,8 +81,12 @@ export const loadPullRequestView = async ({
       edits: same?.edits ?? [],
     });
   } catch (error) {
+    if (isStale()) {
+      return;
+    }
     patch({
       prNumber: number,
+      mountId: entryMount,
       view: same?.view ?? null,
       isLoading: false,
       error: formatError(error),

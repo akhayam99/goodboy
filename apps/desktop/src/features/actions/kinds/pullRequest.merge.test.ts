@@ -134,10 +134,13 @@ describe('the merge confirm choice', () => {
     expect(choice?.defaultId).toBe('merge');
   });
 
+  const loadPullRequestView = vi.fn(async () => undefined);
+
   const runMerge = async (choice: string | null, state: PullRequestFacts = facts()) => {
     const mergePr = vi.fn(async () => undefined);
     useAppStore.setState({
       mergePr,
+      loadPullRequestView,
       refreshSessionPr: vi.fn(async () => undefined),
       refreshSessionPrDetail: vi.fn(async () => undefined),
     });
@@ -154,5 +157,11 @@ describe('the merge confirm choice', () => {
   it('falls back to the default method when nothing was chosen', async () => {
     expect(await runMerge(null)).toHaveBeenCalledWith(SESSION, 318, 'squash');
     expect(await runMerge('fast-forward')).toHaveBeenCalledWith(SESSION, 318, 'squash');
+  });
+
+  it('reads the activity again once the merge is done', async () => {
+    loadPullRequestView.mockClear();
+    await runMerge('squash');
+    expect(loadPullRequestView).toHaveBeenCalledWith({ sessionId: SESSION, force: true });
   });
 });

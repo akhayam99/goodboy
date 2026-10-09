@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { FLOATING_SURFACE, cn, useEscapeLayer } from '@goodboy/ui';
+import { FLOATING_SURFACE, ScrollFade, cn, useEscapeLayer } from '@goodboy/ui';
 import type { RailFlyoutTarget } from './useRailFlyout';
 
 const FLYOUT_WIDTH = 288;
@@ -70,7 +70,9 @@ export const RailFlyout = ({
     const rows = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(BUTTONS));
     const index = rows.findIndex((row) => row === document.activeElement);
     const step = event.key === 'ArrowDown' ? 1 : -1;
-    rows[Math.max(0, Math.min(rows.length - 1, index + step))]?.focus();
+    const next = rows[Math.max(0, Math.min(rows.length - 1, index + step))];
+    next?.focus();
+    next?.scrollIntoView({ block: 'nearest' });
   };
 
   return createPortal(
@@ -88,17 +90,25 @@ export const RailFlyout = ({
       style={{
         position: 'fixed',
         width: FLYOUT_WIDTH,
+        maxHeight: window.innerHeight - 2 * EDGE,
         top: place?.top ?? 0,
         left: place?.left ?? 0,
         visibility: place === null ? 'hidden' : 'visible',
       }}
       className={cn(
         FLOATING_SURFACE,
-        'z-popover flex flex-col gap-1 p-2 text-label',
+        'z-popover flex flex-col p-2 text-label',
         place !== null && 'motion-safe:animate-popover-in',
       )}
     >
-      {children}
+      <ScrollFade
+        className="max-h-[inherit]"
+        viewportClassName="flex flex-col gap-1"
+        fadeFrom="floating"
+        fadeSize={16}
+      >
+        {children}
+      </ScrollFade>
     </div>,
     document.body,
   );

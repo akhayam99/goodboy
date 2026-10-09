@@ -14,6 +14,7 @@ import type { PullRequestState, SessionId, WorkspaceId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isInteractiveClick } from '../../../../shared/utils/isInteractiveClick';
 import { useAppStore } from '../../../../store';
+import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';
 import { embedImageUrl } from './embedImageUrl';
 import { RenderedBody } from './RenderedBody';
 
@@ -43,6 +44,7 @@ export const PullRequestDescription = ({
 }: Props) => {
   const editPr = useAppStore((state) => state.editPr);
   const notePullRequestEdit = useAppStore((state) => state.notePullRequestEdit);
+  const mountId = useAppStore((state) => entryMountIdOf({ state, sessionId }));
   const [isEditing, setIsEditing] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [draft, setDraft] = useState(pr.body);
@@ -54,7 +56,7 @@ export const PullRequestDescription = ({
     setIsEditing(false);
     setError(null);
     setIsSaved(false);
-  }, [pr.number]);
+  }, [mountId, pr.number]);
 
   useEffect(() => {
     if (!isSaved) {
@@ -97,8 +99,17 @@ export const PullRequestDescription = ({
     setError(null);
     void (async () => {
       try {
-        await editPr(sessionId, pr.number, { body: draft, isQuiet: true });
-        notePullRequestEdit({ sessionId, prNumber: pr.number, what: 'description' });
+        await editPr(sessionId, pr.number, {
+          body: draft,
+          isQuiet: true,
+          ...(mountId === null ? {} : { mountId }),
+        });
+        notePullRequestEdit({
+          sessionId,
+          prNumber: pr.number,
+          what: 'description',
+          ...(mountId === null ? {} : { mountId }),
+        });
         setIsEditing(false);
         setIsSaved(true);
         onSaved();

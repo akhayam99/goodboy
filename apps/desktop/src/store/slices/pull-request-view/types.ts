@@ -12,6 +12,7 @@ export type LoadPullRequestViewParams = Readonly<{
 export type NotePullRequestEditParams = Readonly<{
   sessionId: SessionId;
   prNumber: number;
+  mountId?: MountId;
   what: PullRequestEdit['what'];
 }>;
 

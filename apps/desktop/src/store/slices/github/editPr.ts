@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
 import type { GetFn, SetFn } from './types';
@@ -9,6 +9,7 @@ export type EditPrOptions = {
   title?: string;
   body?: string;
   isQuiet?: boolean;
+  mountId?: MountId;
 };
 
 export const editPr = (_set: SetFn, get: GetFn) => {
@@ -17,6 +18,7 @@ export const editPr = (_set: SetFn, get: GetFn) => {
       get,
       sessionId,
       prNumber,
+      ...(opts.mountId === undefined ? {} : { mountId: opts.mountId }),
       failureTitle: () => EDIT_FAILURE_TITLE,
     });
 

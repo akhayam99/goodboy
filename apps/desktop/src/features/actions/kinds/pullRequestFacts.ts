@@ -6,13 +6,12 @@ import type {
   PrReview,
   PullRequestState,
   PullRequestView,
-  ResolveAttempt,
   ResolveThread,
   SessionId,
 } from '@goodboy/types';
 import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
 import type { SessionGithubState } from '../../../store/types';
-import { resolveAttentionOf } from '../../../store/slices/resolve/resolveAttention';
+import { reviewNeedsYouOfThreads } from '../../resolve/reviewTally';
 
 type PullRequestPhase = 'none' | 'draft' | 'open' | 'queued' | 'merged' | 'closed';
 
@@ -48,12 +47,10 @@ type FixSignals = {
 
 export const fixSignalsOf = ({
   threads,
-  attempts,
 }: {
   readonly threads: ReadonlyArray<ResolveThread>;
-  readonly attempts: ReadonlyArray<ResolveAttempt>;
 }): FixSignals => ({
-  commentsNeedYou: resolveAttentionOf({ threads, attempts }).needsYou,
+  commentsNeedYou: reviewNeedsYouOfThreads({ threads }),
   isFixRunLive: threads.some(
     (thread) => thread.originKind !== 'diff_comment' && thread.state === 'working',
   ),
@@ -184,7 +181,6 @@ type SessionMergeParams = {
   readonly sessionId: SessionId;
   readonly github: Pick<SessionGithubState, 'pr' | 'detail'> | null;
   readonly threads: ReadonlyArray<ResolveThread>;
-  readonly attempts: ReadonlyArray<ResolveAttempt>;
   readonly mergeView?: PullRequestView | null;
 };
 
@@ -192,7 +188,6 @@ export const sessionMergeFacts = ({
   sessionId,
   github,
   threads,
-  attempts,
   mergeView = null,
 }: SessionMergeParams): PullRequestFacts => {
   const pr = github?.pr ?? null;
@@ -208,7 +203,7 @@ export const sessionMergeFacts = ({
     viewer: null,
     writeInFlight: null,
     isDraftAgentRunning: false,
-    ...fixSignalsOf({ threads, attempts }),
+    ...fixSignalsOf({ threads }),
     ...(mergeView === null
       ? {}
       : {

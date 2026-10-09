@@ -285,6 +285,20 @@ describe('the pinned sessions on the rail', () => {
     expect(rows.map((row) => row.textContent)).toContain('Pinned work 9');
   });
 
+  it('bounds the flyout to the window and scrolls to the row the arrows reach', () => {
+    const scrollIntoView = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    mountRail({ pinned: pinnedSessions(30) });
+    fireEvent.click(document.querySelector<HTMLElement>('[data-rail-more]') as HTMLElement);
+    const card = flyout() as HTMLElement;
+    expect(card.style.maxHeight).toBe(`${window.innerHeight - 16}px`);
+    expect(card.querySelector('.overflow-y-auto')).not.toBeNull();
+    const first = within(card).getAllByRole('button')[0] as HTMLElement;
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowDown' });
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+  });
+
   it('shows no +N for seven pins or fewer', () => {
     mountRail({ pinned: pinnedSessions(7) });
     expect(document.querySelector('[data-rail-more]')).toBeNull();

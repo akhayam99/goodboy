@@ -6,6 +6,7 @@ import type { ResolveStage } from '@goodboy/types';
 import type { ResolveWord } from './commentProjection';
 import {
   fixableThreadIdsOf,
+  reviewNeedsYouOfThreads,
   reviewTallyOf,
   reviewTallyOfWords,
   reviewTallyParts,
@@ -98,6 +99,32 @@ describe('reviewTallyOf', () => {
     const rows = rowsOf(['proposed', 'proposed', 'proposed', 'asking']);
 
     expect(reviewTallyOf({ rows }).toReview).toBe(3);
+  });
+});
+
+describe('reviewNeedsYouOfThreads', () => {
+  it('counts the same comments as the tally, so the merge caveat and the Comments tab agree', () => {
+    const rows = [
+      queueRowAt({ stage: 'asking', threadId: 'PRRT_asking' }),
+      queueRowAt({ stage: 'proposed', threadId: 'PRRT_proposed' }),
+      queueRowAt({ stage: 'proposed', threadId: 'PRRT_proposed_2' }),
+      queueRowAt({ stage: 'failed', failedStep: 'push', threadId: 'PRRT_push' }),
+      queueRowAt({ stage: 'failed', failedStep: 'run', threadId: 'PRRT_run' }),
+      queueRowAt({ stage: 'working', threadId: 'PRRT_working' }),
+      queueRowAt({ stage: 'new', threadId: 'PRRT_new' }),
+      queueRowAt({ stage: 'resolved', deliveredAt: 5, threadId: 'PRRT_done' }),
+    ];
+
+    const count = reviewNeedsYouOfThreads({ threads: rows.map((row) => row.thread) });
+
+    expect(count).toBe(5);
+    expect(count).toBe(reviewTallyOf({ rows }).needsYou);
+  });
+
+  it('leaves the notes out, they never sit in the pull request tally', () => {
+    const note = queueRowAt({ stage: 'asking', originKind: 'diff_comment' });
+
+    expect(reviewNeedsYouOfThreads({ threads: [note.thread] })).toBe(0);
   });
 });
 

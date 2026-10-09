@@ -3,6 +3,7 @@ import { formatError, useEscapeLayer } from '@goodboy/ui';
 import type { PullRequestState, SessionId } from '@goodboy/types';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useAppStore } from '../../../../store';
+import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';
 import { PR_EDIT_DETAILS_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 
 type Params = {
@@ -38,6 +39,7 @@ export const usePullRequestTitleEdit = ({
   const [isBusy, setIsBusy] = useState(false);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const mountId = useAppStore((state) => entryMountIdOf({ state, sessionId }));
   const number = pr?.number ?? null;
   const title = pr?.title ?? '';
   const isAllowed = canEdit && number !== null;
@@ -73,8 +75,17 @@ export const usePullRequestTitleEdit = ({
     setError(null);
     void (async () => {
       try {
-        await editPr(sessionId, number, { title: next, isQuiet: true });
-        notePullRequestEdit({ sessionId, prNumber: number, what: 'title' });
+        await editPr(sessionId, number, {
+          title: next,
+          isQuiet: true,
+          ...(mountId === null ? {} : { mountId }),
+        });
+        notePullRequestEdit({
+          sessionId,
+          prNumber: number,
+          what: 'title',
+          ...(mountId === null ? {} : { mountId }),
+        });
         setIsEditing(false);
         onSaved();
       } catch (caught) {
@@ -83,12 +94,12 @@ export const usePullRequestTitleEdit = ({
         setIsBusy(false);
       }
     })();
-  }, [draft, editPr, isBusy, notePullRequestEdit, number, onSaved, sessionId, title]);
+  }, [draft, editPr, isBusy, mountId, notePullRequestEdit, number, onSaved, sessionId, title]);
 
   useEffect(() => {
     setIsEditing(false);
     setError(null);
-  }, [number]);
+  }, [mountId, number]);
 
   useEffect(() => {
     if (!isAllowed) {

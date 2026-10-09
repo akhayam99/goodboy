@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import type { PullRequestView, SessionId } from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import { useAppStore } from '../../../../store';
+import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -28,19 +29,20 @@ export const usePullRequestView = ({
   const load = useAppStore((state) => state.loadPullRequestView);
   const githubNumber = useAppStore((state) => state.sessionGithub[sessionId]?.pr?.number ?? null);
   const prNumber = githubNumber ?? fallbackNumber;
+  const mountId = useAppStore((state) => entryMountIdOf({ state, sessionId }));
 
   useEffect(() => {
     if (!isEnabled || prNumber === null) {
       return;
     }
     void load({ sessionId });
-  }, [isEnabled, load, prNumber, sessionId]);
+  }, [isEnabled, load, mountId, prNumber, sessionId]);
 
   const reload = useCallback(() => {
     void load({ sessionId, force: true });
   }, [load, sessionId]);
 
-  const isCurrent = entry !== null && entry.prNumber === prNumber;
+  const isCurrent = entry !== null && entry.prNumber === prNumber && entry.mountId === mountId;
   return {
     view: isCurrent ? entry.view : null,
     isLoading: isCurrent && entry.isLoading,

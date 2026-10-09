@@ -30,17 +30,13 @@ export const mobileMergeFacts = ({
   state,
   sessionId,
 }: {
-  readonly state: Pick<
-    AppStore,
-    'sessionGithub' | 'sessionResolveThreads' | 'sessionResolveAttempts'
-  >;
+  readonly state: Pick<AppStore, 'sessionGithub' | 'sessionResolveThreads'>;
   readonly sessionId: SessionId;
 }): PullRequestFacts =>
   sessionMergeFacts({
     sessionId,
     github: state.sessionGithub[sessionId] ?? null,
     threads: state.sessionResolveThreads?.[sessionId] ?? [],
-    attempts: state.sessionResolveAttempts?.[sessionId] ?? [],
   });
 
 type MobileMergeParams = {

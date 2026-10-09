@@ -19,6 +19,7 @@ type Props = {
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
   readonly behind: number | null;
+  readonly distanceBase?: string | null;
   readonly isConnected: boolean;
   readonly onRebase: (() => void) | null;
   readonly onMutated: () => void;
@@ -41,6 +42,7 @@ export const PullRequestTab = ({
   canEdit,
   request,
   behind,
+  distanceBase = null,
   isConnected,
   onRebase,
   onMutated,
@@ -76,6 +78,7 @@ export const PullRequestTab = ({
       canEdit={canEdit}
       request={request}
       behind={behind}
+      distanceBase={distanceBase}
       onRebase={onRebase}
       onMutated={onMutated}
       onReload={onReload}

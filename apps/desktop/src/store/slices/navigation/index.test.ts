@@ -1,12 +1,14 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
 import type {
   Agent,
   AgentId,
   ArtifactId,
+  MountId,
   ResolveAttempt,
   SessionId,
+  SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
@@ -869,6 +871,43 @@ describe('Branch page', () => {
     });
     expect(store.getState().drawer).toBeNull();
     expect(store.getState().branchThreadId[S1]).toBe('thread-9');
+  });
+
+  it('brings the write destination back to the branch Back returns to', () => {
+    const mountOn = ({ id, path }: { readonly id: string; readonly path: string }) =>
+      ({
+        mountId: id as MountId,
+        sessionId: S1,
+        projectId: 'project-payments-api',
+        mountName: 'payments-api',
+        worktreePath: path,
+        lastWorktreePath: null,
+        repoRoot: '/w/payments-api',
+        branch: path,
+        baseBranch: 'main',
+        parallelIndex: 0,
+        isAttached: true,
+        diskState: 'present',
+        revision: 1,
+      }) as SessionProjectMount;
+    const store = makeStore();
+    const setSessionActiveMount = vi.fn(async () => undefined);
+    store.setState({
+      sessionProjectMounts: {
+        [S1]: [
+          mountOn({ id: 'mount-a', path: '/w/branch-a' }),
+          mountOn({ id: 'mount-b', path: '/w/branch-b' }),
+        ],
+      },
+      sessionActiveMount: { [S1]: 'mount-a' as MountId },
+      setSessionActiveMount,
+    });
+    store.getState().navigate({ to: branchPlace({ sessionId: S1, mountPath: '/w/branch-a' }) });
+    store.setState({ sessionActiveMount: { [S1]: 'mount-b' as MountId } });
+    store.getState().navigate({ to: branchPlace({ sessionId: S1, mountPath: '/w/branch-b' }) });
+    expect(setSessionActiveMount).not.toHaveBeenCalled();
+    store.getState().back();
+    expect(setSessionActiveMount).toHaveBeenCalledWith({ sessionId: S1, mountId: 'mount-a' });
   });
 
   it('switches tabs in place so Back does not walk them', () => {

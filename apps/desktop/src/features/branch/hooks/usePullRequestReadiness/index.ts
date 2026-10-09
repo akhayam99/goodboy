@@ -16,14 +16,13 @@ export type PullRequestReadiness = {
 export const usePullRequestReadiness = ({ sessionId }: Params): PullRequestReadiness => {
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
   const threads = useAppStore((state) => state.sessionResolveThreads?.[sessionId] ?? EMPTY_ARRAY);
-  const attempts = useAppStore((state) => state.sessionResolveAttempts?.[sessionId] ?? EMPTY_ARRAY);
   const entry = useAppStore((state) => state.pullRequestViews[sessionId] ?? null);
   const view = entry !== null && entry.prNumber === github?.pr?.number ? entry.view : null;
   return useMemo(() => {
-    const facts = sessionMergeFacts({ sessionId, github, threads, attempts, mergeView: view });
+    const facts = sessionMergeFacts({ sessionId, github, threads, mergeView: view });
     return {
       readiness: evaluatePrMergeReadiness({ facts }),
       commentsNeedYou: facts.commentsNeedYou,
     };
-  }, [attempts, github, sessionId, threads, view]);
+  }, [github, sessionId, threads, view]);
 };

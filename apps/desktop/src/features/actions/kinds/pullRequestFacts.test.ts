@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrCheckRun, PullRequestState, SessionId } from '@goodboy/types';
-import { pullRequestFacts } from './pullRequestFacts';
+import { queueRowAt } from '../../resolve/testing/queueRow';
+import { fixSignalsOf, pullRequestFacts } from './pullRequestFacts';
 
 const SESSION = 'session-harborline' as SessionId;
 
@@ -68,5 +69,19 @@ describe('pullRequestFacts checks phase', () => {
 
   it('trusts the runs when the detail read of the checks is ok', () => {
     expect(factsOf({ checks: [RUN('success')], checksRead: 'ok' }).checks).toBe('green');
+  });
+});
+
+describe('fixSignalsOf', () => {
+  it('counts the proposals and the failed pushes that wait for you, like the Comments tab', () => {
+    const rows = [
+      queueRowAt({ stage: 'proposed', threadId: 'PRRT_a' }),
+      queueRowAt({ stage: 'proposed', threadId: 'PRRT_b' }),
+      queueRowAt({ stage: 'proposed', threadId: 'PRRT_c' }),
+      queueRowAt({ stage: 'failed', failedStep: 'push', threadId: 'PRRT_push' }),
+      queueRowAt({ stage: 'working', threadId: 'PRRT_working' }),
+    ];
+
+    expect(fixSignalsOf({ threads: rows.map((row) => row.thread) }).commentsNeedYou).toBe(4);
   });
 });

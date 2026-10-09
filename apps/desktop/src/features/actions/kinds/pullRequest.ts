@@ -130,6 +130,7 @@ const refresh = ({ env, facts }: { readonly env: ActionEnv; readonly facts: Pull
   const state = env.getState();
   void state.refreshSessionPr(facts.sessionId, { force: true });
   void state.refreshSessionPrDetail(facts.sessionId, { force: true });
+  void state.loadPullRequestView({ sessionId: facts.sessionId, force: true });
 };
 
 const write = async ({
@@ -450,7 +451,6 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
     const agents = state.sessionPhaseRuns[target.sessionId] ?? null;
     const signals = fixSignalsOf({
       threads: state.sessionResolveThreads?.[target.sessionId] ?? [],
-      attempts: state.sessionResolveAttempts?.[target.sessionId] ?? [],
     });
     const entry = state.pullRequestViews?.[target.sessionId] ?? null;
     const view = pr !== null && entry?.prNumber === pr.number ? entry.view : null;

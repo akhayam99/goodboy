@@ -1,3 +1,4 @@
+import type { ResolveStage, ResolveThread } from '@goodboy/types';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 import { resolveWordOfState, type ResolveWord } from './commentProjection';
 import { isPushFailure, reviewCommentStateOf } from './reviewCommentState';
@@ -66,6 +67,17 @@ export const reviewTallyOf = ({
 }: {
   readonly rows: ReadonlyArray<ResolveQueueRow>;
 }): ReviewTally => reviewTallyOfWords({ words: rows.map((row) => resolveWordOfRow({ row })) });
+
+const NEEDS_YOU_STAGES: ReadonlySet<ResolveStage> = new Set(['asking', 'proposed', 'failed']);
+
+export const reviewNeedsYouOfThreads = ({
+  threads,
+}: {
+  readonly threads: ReadonlyArray<Pick<ResolveThread, 'stage' | 'originKind'>>;
+}): number =>
+  threads.filter(
+    (thread) => thread.originKind !== 'diff_comment' && NEEDS_YOU_STAGES.has(thread.stage),
+  ).length;
 
 export const reviewTallyParts = ({
   tally,

@@ -40,9 +40,10 @@ import { TabActionsSlotContext } from '../../../../shared/components/TabActions/
 type Props = {
   readonly session: Session;
   readonly workingDir: string | null;
+  readonly isActive?: boolean;
 };
 
-export const BranchPage = ({ session, workingDir }: Props) => {
+export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const sessionId = session.id as SessionId;
   const identity = useBranchIdentity({ sessionId });
   const tab = useBranchTab({ sessionId, mountPath: identity.mountPath });
@@ -252,6 +253,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
             canEdit={canEditBody}
             request={request}
             behind={behind}
+            distanceBase={identity.mount?.baseBranch ?? null}
             isConnected={isGithubConnected}
             onRebase={onRebase}
             onMutated={onMutated}
@@ -319,6 +321,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
                   controls={controls}
                   isPushBusy={isPushBusy}
                   tab={tab}
+                  isActive={isActive}
                   canEditTitle={canEditTitle}
                   createdAt={pullRequestView.view?.createdAt ?? null}
                   onMutated={onMutated}
