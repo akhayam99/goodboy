@@ -9,6 +9,7 @@ export const notificationActionIcon = ({ kind }: ActionIconParams): LucideIcon =
   switch (kind) {
     case 'retry-summarizer':
     case 'retry-step-summary':
+    case 'retry-orchestrator':
     case 'retry-publication':
     case 'retry-update':
       return RotateCcw;

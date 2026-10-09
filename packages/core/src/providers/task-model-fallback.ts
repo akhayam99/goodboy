@@ -23,21 +23,18 @@ type Params = {
   readonly hidden?: HiddenModels | null;
 };
 
-export const planTaskModelFallback = ({
-  failure,
+type AlternateParams = Pick<
+  Params,
+  'taskModel' | 'connectedProviders' | 'enabledProviders' | 'coolingDownProviders' | 'hidden'
+>;
+
+export const planAlternateTaskModel = ({
   taskModel,
-  attempt,
   connectedProviders,
   enabledProviders,
   coolingDownProviders,
   hidden,
-}: Params): TaskModelPreference | null => {
-  if (attempt >= MAX_TASK_MODEL_PROVIDER_ATTEMPTS) {
-    return null;
-  }
-  if (!FALLBACK_FAILURES.includes(failure)) {
-    return null;
-  }
+}: AlternateParams): TaskModelPreference | null => {
   const pool = taskModelProviderPool({
     provider: taskModel.providerId,
     connectedProviders,
@@ -55,4 +52,28 @@ export const planTaskModelFallback = ({
     return null;
   }
   return { providerId: plan.provider, model: plan.model };
+};
+
+export const planTaskModelFallback = ({
+  failure,
+  taskModel,
+  attempt,
+  connectedProviders,
+  enabledProviders,
+  coolingDownProviders,
+  hidden,
+}: Params): TaskModelPreference | null => {
+  if (attempt >= MAX_TASK_MODEL_PROVIDER_ATTEMPTS) {
+    return null;
+  }
+  if (!FALLBACK_FAILURES.includes(failure)) {
+    return null;
+  }
+  return planAlternateTaskModel({
+    taskModel,
+    connectedProviders,
+    enabledProviders,
+    coolingDownProviders,
+    ...(hidden != null && { hidden }),
+  });
 };

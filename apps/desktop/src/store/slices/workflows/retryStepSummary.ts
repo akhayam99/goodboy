@@ -6,6 +6,7 @@ import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { summarizeAgentOutput } from './summarizeAgentOutput';
+import { notifyStepSummaryFailed, resolveStepSummaryNotice } from './stepSummaryNotice';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
@@ -18,7 +19,7 @@ type Params = {
   readonly taskModelOverride?: TaskModelPreference;
 };
 
-export const retryStepSummary = (set: SetFn, get: GetFn) => {
+const retryOneStepSummary = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, agentId, taskModelOverride }: Params): Promise<void> => {
     const session = sessionById(get().sessions, sessionId);
     const agents = get().sessionPhaseRuns[sessionId] ?? [];
@@ -59,14 +60,7 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       });
 
     if (taskModel == null) {
-      void get().emitNotification({
-        kind: 'summarizer-degraded',
-        severity: 'warning',
-        title: "Step summary retry isn't available",
-        body: 'every summarizer provider is cooling down',
-        sessionId,
-        action: { kind: 'retry-step-summary', sessionId, agentId },
-      });
+      notifyStepSummaryFailed({ get, sessionId, agent, attempts: [] });
       return;
     }
 
@@ -82,6 +76,8 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       })?.expectedOutput ?? '';
     const result = await summarizeAgentOutput({
       set,
+      get,
+      sessionId,
       agentId,
       output: assistantText,
       taskModel,
@@ -89,14 +85,7 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       ...(expectedOutput !== '' && { expectedOutput }),
     });
     if (result.degraded) {
-      void get().emitNotification({
-        kind: 'summarizer-degraded',
-        severity: 'warning',
-        title: "Couldn't retry the step summary",
-        body: result.error ?? 'summarization failed',
-        sessionId,
-        action: { kind: 'retry-step-summary', sessionId, agentId },
-      });
+      notifyStepSummaryFailed({ get, sessionId, agent, attempts: result.attempts });
       return;
     }
     await invokeAgentUpdateStatus(agentId, { status: 'completed', outputSummary: result.summary });
@@ -109,5 +98,20 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
         ),
       },
     }));
+  };
+};
+
+export const retryStepSummary = (set: SetFn, get: GetFn) => {
+  const retryOne = retryOneStepSummary(set, get);
+  return async (params: Params): Promise<void> => {
+    await retryOne(params);
+    const degraded = get().stepSummaryDegraded;
+    const siblings = (get().sessionPhaseRuns[params.sessionId] ?? []).filter(
+      (candidate) => candidate.id !== params.agentId && degraded[candidate.id] === true,
+    );
+    for (const sibling of siblings) {
+      await retryOne({ sessionId: params.sessionId, agentId: sibling.id });
+    }
+    resolveStepSummaryNotice({ get, sessionId: params.sessionId });
   };
 };

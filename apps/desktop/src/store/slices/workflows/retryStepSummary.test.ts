@@ -74,6 +74,8 @@ type State = {
   providers: ReadonlyArray<{ id: ProviderId; connection: 'connected' }>;
   providerCooldowns: Readonly<Partial<Record<ProviderId, number>>>;
   emitNotification: ReturnType<typeof vi.fn>;
+  resolveNotifications: ReturnType<typeof vi.fn>;
+  helperProviderFailures: Readonly<Partial<Record<ProviderId, number>>>;
   stepSummaryDegraded?: Record<string, boolean>;
   degradedStepOutputs?: Record<string, string>;
 };
@@ -102,12 +104,17 @@ const buildHarness = (stateOverrides: Partial<State> = {}) => {
     providers: CONNECTED_PROVIDERS,
     providerCooldowns: {},
     emitNotification: vi.fn(async () => undefined),
+    resolveNotifications: vi.fn(async () => undefined),
+    helperProviderFailures: {},
     stepSummaryDegraded: {},
     degradedStepOutputs: {},
     ...stateOverrides,
   };
-  const set = vi.fn();
-  const get = (() => state) as unknown as Parameters<ReturnType<typeof retryStepSummary>>[0];
+  const set = vi.fn((update: unknown) => {
+    const patch = typeof update === 'function' ? update(state) : update;
+    Object.assign(state, patch);
+  });
+  const get = () => state;
   return retryStepSummary(
     set as unknown as Parameters<typeof retryStepSummary>[0],
     get as unknown as Parameters<typeof retryStepSummary>[1],
@@ -154,6 +161,8 @@ describe('retryStepSummary', () => {
       providers: CONNECTED_PROVIDERS,
       providerCooldowns: {},
       emitNotification: vi.fn(async () => undefined),
+      resolveNotifications: vi.fn(async () => undefined),
+      helperProviderFailures: {},
       stepSummaryDegraded: {},
       degradedStepOutputs: {},
     };
@@ -185,10 +194,24 @@ describe('retryStepSummary', () => {
 
   it('re-summarizes the output the degraded attempt used, not the current transcript', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    summarizeStepOutputSpy.mockRejectedValueOnce(new Error('provider unavailable'));
-    const recorded: Pick<State, 'stepSummaryDegraded' | 'degradedStepOutputs'> = {
+    summarizeStepOutputSpy
+      .mockRejectedValueOnce(new Error('provider unavailable'))
+      .mockRejectedValueOnce(new Error('provider unavailable'));
+    const recorded: Pick<
+      State,
+      | 'stepSummaryDegraded'
+      | 'degradedStepOutputs'
+      | 'sessions'
+      | 'providers'
+      | 'providerCooldowns'
+      | 'helperProviderFailures'
+    > = {
       stepSummaryDegraded: {},
       degradedStepOutputs: {},
+      sessions: [session],
+      providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' as const }],
+      providerCooldowns: {},
+      helperProviderFailures: {},
     };
     const recordSet = (update: unknown) => {
       const patch = typeof update === 'function' ? update(recorded) : update;
@@ -196,6 +219,8 @@ describe('retryStepSummary', () => {
     };
     const degraded = await summarizeAgentOutput({
       set: recordSet as unknown as Parameters<typeof retryStepSummary>[0],
+      get: (() => recorded) as unknown as Parameters<typeof retryStepSummary>[1],
+      sessionId: SESSION_ID,
       agentId: AGENT_ID,
       output: 'the text the first attempt received',
       taskModel: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
@@ -203,7 +228,10 @@ describe('retryStepSummary', () => {
     expect(degraded.degraded).toBe(true);
 
     summarizeStepOutputSpy.mockResolvedValueOnce('retried summary');
-    const retry = buildHarness(recorded);
+    const retry = buildHarness({
+      stepSummaryDegraded: recorded.stepSummaryDegraded,
+      degradedStepOutputs: recorded.degradedStepOutputs,
+    });
     await retry({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     expect(summarizeStepOutputSpy).toHaveBeenLastCalledWith(
@@ -263,5 +291,47 @@ describe('retryStepSummary', () => {
     await retry({ sessionId: SESSION_ID, agentId: AGENT_ID });
 
     expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+  });
+
+  it('retries the other degraded steps of the session and then clears the notice', async () => {
+    summarizeStepOutputSpy.mockResolvedValue('fresh summary');
+    const sibling: Agent = { ...agent, id: 'agent-2' as AgentId, ordinal: 1, name: 'Verify' };
+    const resolveNotifications = vi.fn(async () => undefined);
+    const retry = buildHarness({
+      sessionPhaseRuns: { [SESSION_ID]: [agent, sibling] },
+      transcripts: {
+        [AGENT_ID]: [{ kind: 'assistant_text', delta: 'implemented' }],
+        'agent-2': [{ kind: 'assistant_text', delta: 'verified' }],
+      },
+      stepSummaryDegraded: { [AGENT_ID]: true, 'agent-2': true },
+      resolveNotifications,
+    });
+
+    await retry({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(invokeAgentUpdateStatusSpy.mock.calls.map((call) => call[0])).toEqual([
+      AGENT_ID,
+      'agent-2',
+    ]);
+    expect(resolveNotifications).toHaveBeenCalledWith([`step-summary-degraded:${SESSION_ID}`]);
+  });
+
+  it('keeps the notice when the retry fails again, with one notice for the session', async () => {
+    summarizeStepOutputSpy.mockRejectedValue(new Error('Claude usage limit reached'));
+    const emitNotification = vi.fn(async () => undefined);
+    const resolveNotifications = vi.fn(async () => undefined);
+    const retry = buildHarness({ emitNotification, resolveNotifications });
+
+    await retry({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+    expect(emitNotification).toHaveBeenCalledTimes(1);
+    expect(emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Step summary unavailable',
+        coalesceKey: `step-summary-degraded:${SESSION_ID}`,
+        isOnce: true,
+      }),
+    );
   });
 });

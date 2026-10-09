@@ -42,7 +42,7 @@ describe('the summarizer failed scene', () => {
     expect(Object.keys(U23_SUMMARIZER_FAILED_SCENES)).toEqual(['summarizer-failed']);
   });
 
-  it('lists each failure in plain words with no raw cli line', async () => {
+  it('shows one plain notice per kind once every model failed, with no raw cli line', async () => {
     const Scene = U23_SUMMARIZER_FAILED_SCENES['summarizer-failed'];
     if (Scene === undefined) {
       throw new Error('no summarizer-failed scene');
@@ -56,12 +56,15 @@ describe('the summarizer failed scene', () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
 
-    expect(screen.getAllByText('Summarizer failed').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Summarizer failed')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: /^Open all/ }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
     expect(document.body.textContent).toContain('Cursor reached the usage limit for this account.');
+    expect(document.body.textContent).toContain('Step summary unavailable');
+    expect(document.body.textContent).toContain("Couldn't read the orchestrator's reply");
+    expect(document.body.textContent).toContain('Orchestrated run blocked');
     expect(document.body.textContent).not.toContain('exited with code');
   });
 });

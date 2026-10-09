@@ -247,6 +247,7 @@ const baseState = (): State => {
     loadSessionTelemetry: vi.fn(async () => undefined),
     appendTurnEvent: vi.fn(),
     activateWorkflowAgent: vi.fn(async () => undefined),
+    resolveNotifications: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
     maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
   };
@@ -285,6 +286,12 @@ const modelMenuIdentities = (): ReadonlyArray<string> =>
   (decideSpy.mock.calls[0]![0].modelMenu as ReadonlyArray<{ provider: string; model: string }>).map(
     (option) => `${option.provider}/${option.model}`,
   );
+
+const rejectDecisions = (error: Error, times: number): void => {
+  for (let index = 0; index < times; index += 1) {
+    decideSpy.mockRejectedValueOnce(error);
+  }
+};
 
 const anthropicReply = (text: string): string =>
   JSON.stringify({
@@ -1285,6 +1292,9 @@ describe('orchestrateNextStep', () => {
         title: 'Orchestrated run blocked',
         body: 'A product choice is required.',
         sessionId: SESSION_ID,
+        action: { kind: 'open-agent', sessionId: SESSION_ID, agentId: AGENT_ID },
+        coalesceKey: `orchestrator-blocked:${WORKFLOW_RUN_ID}`,
+        isOnce: true,
       }),
     );
     expect(updateOutcomeSpy).toHaveBeenCalledWith(
@@ -1298,13 +1308,14 @@ describe('orchestrateNextStep', () => {
   });
 
   it('recovers from a client failure without persisting an outcome', async () => {
-    decideSpy.mockRejectedValueOnce(new Error('orchestrator decision timed out'));
+    rejectDecisions(new Error('orchestrator decision timed out'), 2);
     const state = baseState();
     const { set, get } = harness(state);
     const orchestrate = orchestrateNextStep(set, get);
 
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
+    expect(state['emitNotification']).toHaveBeenCalledTimes(1);
     expect(state['emitNotification']).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'error',
@@ -1312,6 +1323,13 @@ describe('orchestrateNextStep', () => {
         title: 'The orchestrator failed',
         body: expect.stringContaining('the orchestrator timed out after 120s'),
         sessionId: SESSION_ID,
+        action: {
+          kind: 'retry-orchestrator',
+          sessionId: SESSION_ID,
+          workflowRunId: WORKFLOW_RUN_ID,
+        },
+        coalesceKey: `orchestrator-failed:${WORKFLOW_RUN_ID}`,
+        isOnce: true,
       }),
     );
     expect(state['appendTurnEvent']).toHaveBeenCalledWith(
@@ -1333,8 +1351,13 @@ describe('orchestrateNextStep', () => {
     });
     await orchestrate(SESSION_ID, WORKFLOW_RUN_ID);
 
-    expect(decideSpy).toHaveBeenCalledTimes(2);
+    expect(decideSpy).toHaveBeenCalledTimes(3);
     expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done', expect.any(String));
+    expect(state['resolveNotifications']).toHaveBeenCalledWith([
+      `orchestrator-unreadable:${WORKFLOW_RUN_ID}`,
+      `orchestrator-failed:${WORKFLOW_RUN_ID}`,
+      `orchestrator-blocked:${WORKFLOW_RUN_ID}`,
+    ]);
   });
 
   it('targets the run latest agent over the session selection for decision events', async () => {
@@ -1411,16 +1434,44 @@ describe('orchestrateNextStep', () => {
       SESSION_ID,
       expect.objectContaining({ action: 'blocked' }),
     );
+    expect(decideSpy).toHaveBeenCalledTimes(4);
+    expect(state['emitNotification']).toHaveBeenCalledTimes(1);
     expect(state['emitNotification']).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
         title: "Couldn't read the orchestrator's reply",
-        body: 'the decision could not be parsed, use next step to retry',
+        body: 'Claude, Codex replied with something that is not a decision. Retry to ask again.',
         sessionId: SESSION_ID,
+        action: {
+          kind: 'retry-orchestrator',
+          sessionId: SESSION_ID,
+          workflowRunId: WORKFLOW_RUN_ID,
+        },
+        coalesceKey: `orchestrator-unreadable:${WORKFLOW_RUN_ID}`,
+        isOnce: true,
       }),
     );
-    expect(insertTelemetrySpy).toHaveBeenCalledTimes(1);
+    expect(insertTelemetrySpy).toHaveBeenCalledTimes(4);
+  });
+
+  it('reads the reply again on another model before telling the owner', async () => {
+    decideSpy
+      .mockResolvedValueOnce({ decision: null, usage: BILLED_USAGE, model: 'claude-haiku-4-5' })
+      .mockResolvedValueOnce({ decision: null, usage: BILLED_USAGE, model: 'claude-haiku-4-5' })
+      .mockResolvedValueOnce({
+        decision: { action: 'done', reason: 'All required tests pass.' },
+        usage: NO_USAGE,
+        model: 'gpt-5.6-terra',
+      });
+    const state = baseState();
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(OrchestratorClient).toHaveBeenCalledTimes(3);
+    expect(updateOutcomeSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, 'done', expect.any(String));
+    expect(state['emitNotification']).not.toHaveBeenCalled();
   });
 
   it('guards re-entrant decisions for the same run', async () => {
@@ -1444,11 +1495,12 @@ describe('orchestrateNextStep', () => {
     expect(decideSpy).toHaveBeenCalledTimes(1);
   });
   it('names the cli cause instead of a bare exit code', async () => {
-    decideSpy.mockRejectedValueOnce(
+    rejectDecisions(
       new OrchestratorClientSpawnError(
         1,
         'Reading additional input from stdin...\nNot inside a trusted directory and --skip-git-repo-check was not specified.\n',
       ),
+      4,
     );
     const state = baseState();
     const { set, get } = harness(state);
@@ -1463,7 +1515,7 @@ describe('orchestrateNextStep', () => {
     });
   });
   it('persists the failure so the run can explain itself, and clears it on the next decision', async () => {
-    decideSpy.mockRejectedValueOnce(new Error('usage limit reached'));
+    rejectDecisions(new Error('usage limit reached'), 2);
     const state = baseState();
     const { set, get } = harness(state);
     const orchestrate = orchestrateNextStep(set, get);
@@ -1476,7 +1528,7 @@ describe('orchestrateNextStep', () => {
     });
     const failed = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(failed.orchestrationStop?.kind).toBe('failure');
-    expect(failed.orchestrationStop?.message).toContain('anthropic');
+    expect(failed.orchestrationStop?.message).toContain('codex');
 
     decideSpy.mockResolvedValueOnce({
       decision: { action: 'done', reason: 'all set' },

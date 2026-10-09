@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Notification } from '@goodboy/db';
-import type { IsoDateTime, SessionId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { seedBoardScene, WORKSPACE_ID } from '../BoardScene';
 import { AppFrame } from '../audit/AppFrame';
@@ -12,39 +12,83 @@ const STUDIO_CLICKS: ReadonlyArray<string> = ['Open all'];
 const SESSION_ID = 'mock-summarizer-failed-session-refunds' as SessionId;
 const NOW_MS = Date.parse('2026-09-07T13:15:00.000Z');
 
-type FailureParams = {
+const RUN_ID = 'mock-run-refunds-1' as WorkflowRunId;
+const AGENT_ID = 'mock-agent-refunds-implement' as AgentId;
+
+type NoticeParams = {
   readonly id: string;
   readonly minutesAgo: number;
+  readonly kind: Notification['kind'];
+  readonly title: string;
   readonly body: string;
+  readonly severity: Notification['severity'];
+  readonly action: Notification['action'];
   readonly coalesceKey: string;
 };
 
-const summarizerFailure = ({ id, minutesAgo, body, coalesceKey }: FailureParams): Notification => ({
+const notice = ({
+  id,
+  minutesAgo,
+  kind,
+  title,
+  body,
+  severity,
+  action,
+  coalesceKey,
+}: NoticeParams): Notification => ({
   id,
   ts: new Date(NOW_MS - minutesAgo * 60_000).toISOString() as IsoDateTime,
-  kind: 'error',
-  title: 'Summarizer failed',
+  kind,
+  title,
   body,
-  severity: 'error',
+  severity,
   sessionId: SESSION_ID,
   workspaceId: WORKSPACE_ID,
   read: false,
-  action: { kind: 'retry-summarizer', sessionId: SESSION_ID },
+  action,
   coalesceKey,
 });
 
 const NOTIFICATIONS: ReadonlyArray<Notification> = [
-  summarizerFailure({
-    id: 'mock-summarizer-failed-limit',
+  notice({
+    id: 'mock-summarizer-failed',
     minutesAgo: 4,
+    kind: 'error',
+    title: 'Summarizer failed',
     body: 'Cursor reached the usage limit for this account.',
-    coalesceKey: 'summarizer-failed:cursor:usage_limit',
+    severity: 'error',
+    action: { kind: 'retry-summarizer', sessionId: SESSION_ID },
+    coalesceKey: `summarizer-failed:${SESSION_ID}`,
   }),
-  summarizerFailure({
-    id: 'mock-summarizer-failed-other',
-    minutesAgo: 31,
-    body: 'Claude stopped before it could summarize this session. Retry, or pick another summarizer model in Providers.',
-    coalesceKey: 'summarizer-failed:anthropic:other',
+  notice({
+    id: 'mock-step-summary-unavailable',
+    minutesAgo: 9,
+    kind: 'summarizer-degraded',
+    title: 'Step summary unavailable',
+    body: 'Every summarizer model failed (Cursor, Claude, Codex), so the output of Implement refunds was carried over unsummarized. Retry once a provider is back.',
+    severity: 'warning',
+    action: { kind: 'retry-step-summary', sessionId: SESSION_ID, agentId: AGENT_ID },
+    coalesceKey: `step-summary-degraded:${SESSION_ID}`,
+  }),
+  notice({
+    id: 'mock-orchestrator-unreadable',
+    minutesAgo: 14,
+    kind: 'error',
+    title: "Couldn't read the orchestrator's reply",
+    body: 'Claude, Codex replied with something that is not a decision. Retry to ask again.',
+    severity: 'warning',
+    action: { kind: 'retry-orchestrator', sessionId: SESSION_ID, workflowRunId: RUN_ID },
+    coalesceKey: `orchestrator-unreadable:${RUN_ID}`,
+  }),
+  notice({
+    id: 'mock-orchestrator-blocked',
+    minutesAgo: 22,
+    kind: 'error',
+    title: 'Orchestrated run blocked',
+    body: 'The refunds export needs a decision: keep the Northwind schema or move to the Harborline one.',
+    severity: 'warning',
+    action: { kind: 'open-agent', sessionId: SESSION_ID, agentId: AGENT_ID },
+    coalesceKey: `orchestrator-blocked:${RUN_ID}`,
   }),
 ];
 

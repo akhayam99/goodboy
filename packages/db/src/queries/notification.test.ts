@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   NOTIFICATION_LIST_LIMIT,
   clearAllNotifications,
+  clearResolvedHelperNotifications,
   countNotifications,
   deleteNotification,
+  deleteNotificationsByCoalesceKey,
   insertNotification,
   listNotifications,
   markAllNotificationsRead,
@@ -231,5 +233,142 @@ describe('notification queries', () => {
     const db = await seed({});
 
     expect(await countNotifications({ db, workspaceId: null })).toEqual([]);
+  });
+
+  it('deletes every notification of the given coalesce keys and keeps the rest', async () => {
+    const db = await seed({});
+    await insertNotification(db, buildNotification({ id: 'a', coalesceKey: 'k1' }));
+    await insertNotification(db, buildNotification({ id: 'b', coalesceKey: 'k1' }));
+    await insertNotification(db, buildNotification({ id: 'c', coalesceKey: 'k2' }));
+    await insertNotification(db, buildNotification({ id: 'd', coalesceKey: null }));
+
+    await deleteNotificationsByCoalesceKey({ db, coalesceKeys: ['k1'] });
+    await deleteNotificationsByCoalesceKey({ db, coalesceKeys: [] });
+
+    const rows = await listNotifications({ db, workspaceId: null });
+    expect(rows.map((row) => row.id).sort()).toEqual(['c', 'd']);
+  });
+
+  describe('clearResolvedHelperNotifications', () => {
+    const SESSION = SESSION_B;
+    const FAILED_AT = '2026-10-09T10:00:00.000Z' as IsoDateTime;
+    const LATER_MS = Date.parse('2026-10-09T10:05:00.000Z');
+
+    const insertSummarizerRun = async (db: Awaited<ReturnType<typeof seed>>, at: number) => {
+      await db.execute(
+        "INSERT INTO provider_runs (id, session_id, provider, model, status_kind, created_at) VALUES ('run-1', ?, 'anthropic', 'claude-sonnet-4-5', 'succeeded', ?)",
+        [SESSION, at],
+      );
+      await db.execute(
+        "INSERT INTO telemetry_records (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, estimated_cost_usd, recorded_at) VALUES ('t1', 'run-1', ?, 'summarizer', 'anthropic', 'claude-sonnet-4-5', 1, 1, 0, ?)",
+        [SESSION, at],
+      );
+    };
+
+    const ids = async (db: Awaited<ReturnType<typeof seed>>) =>
+      (await listNotifications({ db, workspaceId: null })).map((row) => row.id).sort();
+
+    it('drops a summarizer failure once a later summarizer run landed in the session', async () => {
+      const db = await seed({});
+      await insertNotification(
+        db,
+        buildNotification({
+          id: 'failed',
+          ts: FAILED_AT,
+          title: 'Summarizer failed',
+          sessionId: SESSION,
+        }),
+      );
+      await insertSummarizerRun(db, LATER_MS);
+
+      await clearResolvedHelperNotifications({ db });
+
+      expect(await ids(db)).toEqual([]);
+    });
+
+    it('keeps a summarizer failure while no later summarizer run exists', async () => {
+      const db = await seed({});
+      await insertNotification(
+        db,
+        buildNotification({
+          id: 'failed',
+          ts: FAILED_AT,
+          title: 'Summarizer failed',
+          sessionId: SESSION,
+        }),
+      );
+      await insertSummarizerRun(db, Date.parse(FAILED_AT) - 60_000);
+
+      await clearResolvedHelperNotifications({ db });
+
+      expect(await ids(db)).toEqual(['failed']);
+    });
+
+    it('drops a degraded step summary once the agent summary is a real one', async () => {
+      const db = await seed({});
+      await db.execute(
+        "INSERT INTO agents (id, session_id, ordinal, name, status, output_summary) VALUES ('fixed', ?, 0, 'Implement', 'completed', 'Wrote the refunds export.'), ('still', ?, 1, 'Verify', 'completed', '[unsummarized step output, carried whole]\nraw')",
+        [SESSION, SESSION],
+      );
+      const degraded = (id: string, agentId: string) =>
+        buildNotification({
+          id,
+          ts: FAILED_AT,
+          kind: 'summarizer-degraded',
+          title: 'Step summary unavailable',
+          sessionId: SESSION,
+          coalesceKey: `step-summary-degraded:${id}`,
+          action: { kind: 'retry-step-summary', sessionId: SESSION, agentId: agentId as AgentId },
+        });
+      await insertNotification(db, degraded('n-fixed', 'fixed'));
+      await insertNotification(db, degraded('n-still', 'still'));
+
+      await clearResolvedHelperNotifications({ db });
+
+      expect(await ids(db)).toEqual(['n-still']);
+    });
+
+    it('drops an orchestrator notice once an agent of the session started after it', async () => {
+      const db = await seed({});
+      await db.execute(
+        "INSERT INTO agents (id, session_id, ordinal, name, status, started_at) VALUES ('next', ?, 0, 'Implement', 'running', ?)",
+        [SESSION, LATER_MS],
+      );
+      for (const title of [
+        "Couldn't read the orchestrator's reply",
+        'The orchestrator failed',
+        'Orchestrated run blocked',
+      ]) {
+        await insertNotification(
+          db,
+          buildNotification({ id: title, ts: FAILED_AT, title, sessionId: SESSION }),
+        );
+      }
+      await insertNotification(
+        db,
+        buildNotification({ id: 'unrelated', ts: FAILED_AT, title: 'Pull request created' }),
+      );
+
+      await clearResolvedHelperNotifications({ db });
+
+      expect(await ids(db)).toEqual(['unrelated']);
+    });
+
+    it('keeps an orchestrator notice while the session has nothing newer', async () => {
+      const db = await seed({});
+      await insertNotification(
+        db,
+        buildNotification({
+          id: 'blocked',
+          ts: FAILED_AT,
+          title: 'Orchestrated run blocked',
+          sessionId: SESSION,
+        }),
+      );
+
+      await clearResolvedHelperNotifications({ db });
+
+      expect(await ids(db)).toEqual(['blocked']);
+    });
   });
 });
