@@ -607,6 +607,9 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/preSpawnWorkflowAgents.ts`: creates the run's agents when a workflow is added
 - `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: sends the blocked notification
 - `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: asks the orchestrator for one decision
+- `apps/desktop/src/store/slices/workflows/nextRunMove.ts`: `nextRunMove`, the one rule for what a run owes next (start a pending step, decide, or nothing). `maybeAutoAdvanceWorkflow` and the watchdog both read it
+- `apps/desktop/src/store/slices/workflows/findIdleRuns.ts` and `sweepIdleRuns.ts`: the watchdog over orchestrated runs. `apps/desktop/src/features/workflows/hooks/useRunWatchdog/` drives it from `App`
+- `apps/desktop/src/store/slices/workflows/summarizerGate.ts`: `waitForSessionSummarizer`, the 60s wait on the session summarizer
 - `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to
 - `apps/desktop/src/features/workflows/components/WorkflowBuilderView/`: the builder. It draws the plan with the shared step tree
 - `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
@@ -962,7 +965,33 @@ and `blocked` sends a notification. Every decision lands in the transcript as
 an `orchestrator_decision` event, and its spend is recorded against the run.
 
 - **One decision at a time.** A request that comes in while the run is
-  deciding waits in a queue and runs once the current decision settles.
+  deciding waits in a queue and runs once the current decision settles. A run
+  reads as deciding from the first request to the moment the step it chose
+  exists, never through that step's first turn (`orchestratingWorkflowRuns`
+  turns off before `activateWorkflowAgent`, while `orchestrationInFlight` keeps
+  the queue closed until the turn ends).
+- **The summarizer wait overlaps the decision.** The session context summarizer
+  must finish before the orchestrator acts on a decision, so the next step reads
+  fresh context and a run never reports done while the summarizer still writes.
+  The wait (`waitForSessionSummarizer`, 60s at most, gone when the decision is
+  thrown away) starts together with the decision call and the result is held
+  until it ends, so a step costs the longer of the two, not their sum. Before
+  this a step end waited on the summarizer twice (in `maybeAutoAdvanceWorkflow`
+  and again in `orchestrateNextStep`) and then asked, so a slow or retrying
+  summarizer put two minutes in front of a call that takes 20s.
+  `maybeAutoAdvanceWorkflow` now waits only when a static run is on autorun. A
+  forced skip (`bypassGate`) waits on nothing.
+- **A lost wake is recovered.** `sweepIdleRuns` runs every 15s and when the
+  window comes back to the front (`useRunWatchdog`). It looks for an orchestrated
+  autorun run that is started, has no outcome and no stop, is not deciding, has
+  no open question and whose session is not advancing, and that has a step to
+  decide or to start (`findIdleRuns`, built on `nextRunMove`, the same rule
+  `maybeAutoAdvanceWorkflow` uses). After 45s of that it calls
+  `maybeAutoAdvanceWorkflow`, at most once per 90s and three times per idle
+  stretch (`runIdleEpisodes`). A run still idle after the third try gets a
+  `failure` stop, "Nothing picked this run up after three tries", and one
+  notification, so the run bar says so with **Retry**. A run that waits on an
+  answer is never nudged; once the answer is in, the next sweep wakes it.
 - **Stops are saved, with a kind.** Before the call, the orchestrator checks
   for a session paused by its spend cap (`sessionBudgetBlockAfterLoad`,
   which reads `session_budgets.on_exceed` first), the run's spend cap in

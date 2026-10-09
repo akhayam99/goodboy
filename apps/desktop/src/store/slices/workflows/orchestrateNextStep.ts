@@ -355,6 +355,13 @@ const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams):
   return kind === 'operator' || kind === 'closed' || kind === 'paused';
 };
 
+const isRunClosedOut = ({ get, sessionId, workflowRunId }: OperatorStopParams): boolean => {
+  const current = sessionById(get().sessions, sessionId)?.workflowRuns.find(
+    (candidate) => candidate.id === workflowRunId,
+  );
+  return current == null || current.discardedAt != null || current.orchestrationOutcome != null;
+};
+
 export const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
   resolveStoredModelSelection({ provider: providerId, id: model }).report?.kind !== 'unknown';
 
@@ -540,6 +547,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       return;
     }
     orchestrationInFlight.add(workflowRunId);
+    let isSummarizerGateCancelled = false;
     try {
       setDeciding({ set, workflowRunId, isDeciding: true });
       const session = sessionById(get().sessions, sessionId);
@@ -603,19 +611,14 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           return;
         }
       }
-      if (options?.bypassGate !== true) {
-        await waitForSessionSummarizer({ get, sessionId });
-        const settled = sessionById(get().sessions, sessionId)?.workflowRuns.find(
-          (candidate) => candidate.id === workflowRunId,
-        );
-        if (
-          settled == null ||
-          settled.discardedAt != null ||
-          settled.orchestrationOutcome != null
-        ) {
-          return;
-        }
-      }
+      const summarizerSettled: Promise<void> =
+        options?.bypassGate === true
+          ? Promise.resolve()
+          : waitForSessionSummarizer({
+              get,
+              sessionId,
+              isCancelled: () => isSummarizerGateCancelled,
+            });
       const agents = [
         ...runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId),
       ].sort((left, right) => left.ordinal - right.ordinal);
@@ -799,6 +802,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         await discardWithUsage();
         return;
       }
+      await summarizerSettled;
+      if (isDecisionDiscarded() || isRunClosedOut({ get, sessionId, workflowRunId })) {
+        await discardWithUsage();
+        return;
+      }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
       if (readHintIds.size > 0) {
         await updateOrchestratorHints({
@@ -952,6 +960,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           model: result.model,
           usage: result.usage,
         });
+        setDeciding({ set, workflowRunId, isDeciding: false });
         try {
           await get().activateWorkflowAgent({
             sessionId,
@@ -1005,6 +1014,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         sessionId,
       });
     } finally {
+      isSummarizerGateCancelled = true;
       orchestrationInFlight.delete(workflowRunId);
       setDeciding({ set, workflowRunId, isDeciding: false });
       const pending = get().pendingOrchestrations?.[workflowRunId];
