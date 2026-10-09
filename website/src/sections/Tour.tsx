@@ -18,7 +18,7 @@ type Stop = {
 const STOPS: readonly Stop[] = [
   {
     id: 'inbox',
-    tab: 'Inbox',
+    tab: 'Tasks',
     title: 'Turn an issue into a task',
     text: 'Items from all your tools sit in one list. Open one and the task starts with its goal filled in.',
     href: '/features#tools',

@@ -24,6 +24,7 @@ const ROW_TOLERANCE_PX = 2;
 const SETTLE_MS = 500;
 const OPEN_ATTEMPTS = 3;
 const CALL_TIMEOUT_MS = 60_000;
+const CLOSE_GRACE_MS = 5_000;
 const FRAME_FALLBACK_MS = 100;
 const CLICK_PATIENCE_MS = 8000;
 
@@ -99,10 +100,27 @@ const browser = async () => {
     ],
     { stdio: 'ignore' },
   );
+  const exited = new Promise((resolvePromise) => {
+    child.once('exit', resolvePromise);
+  });
   const send = await connect(port);
-  const close = () => {
-    child.kill('SIGKILL');
-    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  const close = async () => {
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill('SIGTERM');
+      const patience = new Promise((resolvePromise) => {
+        setTimeout(() => resolvePromise(false), CLOSE_GRACE_MS).unref();
+      });
+      const isStopped = await Promise.race([exited.then(() => true), patience]);
+      if (!isStopped) {
+        child.kill('SIGKILL');
+        await exited;
+      }
+    }
+    try {
+      rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } catch {
+      console.warn(`validate-scenes: could not remove ${profile}`);
+    }
   };
   return { send, close };
 };
@@ -540,7 +558,7 @@ const main = async () => {
       console.log(`${target.scene}: workflow bottom ${result.reached ? 'reached' : 'not reached'}`);
     }
   } finally {
-    session.close();
+    await session.close();
   }
   if (failures.length > 0) {
     console.error(JSON.stringify(failures, null, 2));

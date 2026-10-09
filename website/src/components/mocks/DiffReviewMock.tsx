@@ -83,13 +83,13 @@ const LINES: readonly Line[] = [
 
 const SIGN: Record<LineKind, string> = { context: ' ', del: '-', add: '+' };
 
-const TABS = ['Comments', 'Files', 'Commits', 'Checks'] as const;
+const TABS = ['Pull request', 'Comments', 'Files', 'Commits', 'Checks'] as const;
 
 const BLOCKS: readonly ('add' | 'del')[] = ['add', 'add', 'add', 'del', 'del'];
 
 export const DiffReviewMock = ({ className }: Props) => (
   <MockStage
-    label="The Branch page for a payments-api branch, with the tabs Comments, Files, Commits and Checks. The Files tab shows a tree of the changed files with a reading progress, and a line changed to dedupe on the event id, with an open note under it."
+    label="The Branch page for a payments-api branch, with the tabs Pull request, Comments, Files, Commits and Checks. The Files tab shows a tree of the changed files with a reading progress, and a line changed to dedupe on the event id, with an open note under it."
     className={className}
   >
     <MockWindow className="dfrWin">
@@ -146,7 +146,6 @@ export const DiffReviewMock = ({ className }: Props) => (
                 <span>{'·'} 9m ago</span>
                 <Chip tone="primary" size="3xs" bordered={false} label="Open note" />
                 <span className="dfrThreadActions">
-                  <span>Fix</span>
                   <span>Close note</span>
                   <span>Delete</span>
                 </span>

@@ -230,7 +230,7 @@
         },
         {
           "title": "Sidebar",
-          "text": "One column on the left holds Board, Inbox, Chat, Workflows and your sessions, on every screen. Fold it with ⌘B and the icons stay.",
+          "text": "One column on the left holds Board, Tasks, Chat, Workflows and your sessions, on every screen. Fold it with ⌘B and the icons stay.",
           "group": "Search and navigation",
           "also": "sidebar"
         },
@@ -538,7 +538,7 @@
         },
         {
           "title": "Step handoff summary",
-          "text": "Each step starts from a short brief instead of the whole previous conversation. If the summary fails, the brief is marked degraded.",
+          "text": "Each step starts from a short brief instead of the whole previous conversation. A failed summary retries on your other models first. Only if all fail is the brief marked degraded.",
           "group": "Workflows",
           "also": "handoff summary"
         },
@@ -567,7 +567,7 @@
     {
       "id": "review",
       "title": "Review and branches",
-      "lead": "One Branch page with Comments, Files, Commits and Checks: reshape history, turn comments into commits, and push once.",
+      "lead": "One Branch page with Pull request, Comments, Files, Commits and Checks: reshape history, turn comments into commits, and push once.",
       "groups": ["Commits and history", "Review and resolve on the Branch page"],
       "mocks": ["diff"],
       "guides": [
@@ -654,20 +654,20 @@
         },
         {
           "title": "Bulk actions",
-          "text": "Fix every open comment, answer the agent's questions with its recommended answers, retry what could not be fixed and accept every Ready comment at once, with Undo.",
+          "text": "Fix every open comment, answer the agent's questions with its recommended answers, retry what could not be fixed and accept every fix waiting for you at once, with Undo.",
           "group": "Review and resolve on the Branch page",
           "also": "bulk actions"
         },
         {
           "title": "Review sources",
-          "text": "One picker covers GitHub, GitLab, Bitbucket and notes on your machine. Reading and replying work everywhere, and resolving works where the host allows it.",
+          "text": "Each comment says its host, GitHub, GitLab or Bitbucket. Your notes have their own drawer. Reading and replying work everywhere, and resolving works where the host allows it.",
           "group": "Review and resolve on the Branch page",
           "also": "review sources",
           "shown": true
         },
         {
           "title": "Comment states",
-          "text": "A comment in a fix run is working, needs you, ready, couldn't fix or done, and one not yet in a run is open. The list groups by those words. A line under the tabs counts them.",
+          "text": "A comment reads Question, To review, Push failed, Couldn't fix, Working, Ready, Done or Left open. One not in a fix run yet reads Open. The list groups them, and one tally counts what needs you.",
           "group": "Review and resolve on the Branch page",
           "also": "comment states",
           "shown": true
@@ -723,13 +723,13 @@
         },
         {
           "title": "Notes before a pull request",
-          "text": "Read your own code first in the Files tab. Leave notes on lines, hand them to an agent with Fix, and post the open ones to the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes, each with Move to and Discard.",
+          "text": "Read your own code first in the Files tab. Leave notes on lines, open them in the Notes drawer to hand them to an agent with Fix, and move the open ones to a review draft for the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes, each with Move to and Discard.",
           "group": "Review and resolve on the Branch page",
           "also": "notes before a PR"
         },
         {
           "title": "Pull request on the Branch page",
-          "text": "See in plain words whether a pull request can merge, with its checks. Merge, mark ready, draft or close it from the Branch page.",
+          "text": "See in plain words whether a pull request can merge, with its checks. It is the first tab of the Branch page on GitHub, GitLab and Bitbucket. Edit it in place and merge the ways the host allows.",
           "group": "Review and resolve on the Branch page",
           "also": "pull request page"
         },
@@ -1136,7 +1136,7 @@
         },
         {
           "title": "Tool call states",
-          "text": "Tell at a glance what a tool call did: running, done, failed, needs approval, stopped or denied.",
+          "text": "Tell at a glance what a tool call did: running, done, failed, needs permission, stopped or denied.",
           "group": "Agents",
           "also": "tool states"
         },
@@ -1193,7 +1193,7 @@
         },
         {
           "title": "Keyboard shortcuts, back and forward",
-          "text": "Drive Goodboy from the keyboard with 77 shortcuts. ⌘/ opens the list, and ⌘[ and ⌘] move through history.",
+          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts, and ⌘[ and ⌘] move through history.",
           "group": "Keyboard and terminal",
           "main": true
         },

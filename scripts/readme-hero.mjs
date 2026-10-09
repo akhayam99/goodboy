@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { appVersionOf, recordFigure } from './lib/figures.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/readme');
@@ -13,7 +14,9 @@ const HEIGHT = 1600;
 const SCALE = 2;
 const SETTLE_MS = 3500;
 const LAYOUT_MS = 1200;
-const WEBSITE = process.argv[2] ?? 'http://localhost:1499';
+const WEBSITE =
+  process.argv[2]?.startsWith('http') === true ? process.argv[2] : 'http://localhost:1499';
+const VERSION_ARGUMENT = process.argv.indexOf('--version');
 
 const pause = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 
@@ -177,6 +180,11 @@ try {
     const { outPath, pixels } = await shoot({ theme, workDirectory });
     console.log(`wrote ${outPath} (${pixels})`);
   }
+  const version = appVersionOf({
+    override: VERSION_ARGUMENT === -1 ? undefined : process.argv[VERSION_ARGUMENT + 1],
+  });
+  recordFigure({ key: 'readme/readme-hero', version, recipe: 'pnpm readme:hero' });
+  console.log(`figures.json: readme/readme-hero is Goodboy ${version}`);
 } finally {
   rmSync(workDirectory, { recursive: true, force: true });
 }

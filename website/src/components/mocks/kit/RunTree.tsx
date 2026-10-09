@@ -2,7 +2,7 @@ import './kit.css';
 import { AppButton } from './AppButton';
 import { AppRow } from './AppRow';
 import { GroupLabel } from './GroupLabel';
-import { KindChip } from './KindChip';
+import { KindGlyph } from './KindGlyph';
 import { Rail } from './Rail';
 import { RoutingCell } from './RoutingCell';
 import { WorkMeta } from './WorkMeta';
@@ -243,7 +243,7 @@ export const RunTree = ({
                   innerClassName="gkRunRowInner"
                 >
                   <span className="gkOrdinal">{row.stepLabel}</span>
-                  <KindChip kind={row.kind} className="gkRowKind" />
+                  <KindGlyph kind={row.kind} className="gkRowKind" />
                   <span className="gkRowMain">
                     <span
                       title={row.title}

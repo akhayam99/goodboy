@@ -162,8 +162,8 @@ results and its preview.
   issues and pull requests of the scope.
 - **Issue keys.** A key or a link (`HAR-231`, `#482`, a Linear or GitHub
   URL) that the index does not hold is looked up through
-  `useWorkspaceIssueLookup`, with the same sign in and retry rows as the
-  Inbox. A found issue opens in its provider.
+  `useWorkspaceIssueLookup`, with the same sign in and retry rows as
+  Tasks. A found issue opens in its provider.
 - **Preview and actions.** The selected hit shows its facts, the Open
   button named after where it lands, and the actions of its object from the
   action registry (`features/actions`), resolved on the live store so they

@@ -10,8 +10,10 @@ The **New session** draft has three tabs: **Pick up a task**, **Run a workflow**
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-light.webp" alt="New session with the Pick up a task tab selected, a Starred list of issues with HBL-412 Retried webhooks post a second credit highlighted, and below it Brief from HBL-412 titled Stop retried webhooks posting a second credit, with Done when criteria and the buttons Dismiss, Use issue text, Edit and Use brief">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-light.webp" alt="The New session page on Pick a task: the task HBL-412 Retried webhooks post a second credit with Dismiss, then one block titled Brief from HBL-412 with its title ready to edit, and under it the tabs Run a workflow and Ask an agent with the Orchestrated workflow and its brief in a Write and Preview editor">
 </picture>
+
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 Turn an issue into a briefed session in one pick. Pick HBL-412 and the draft shows one block: **Brief from HBL-412** with the title Goodboy drafted, ready to edit, then **How to work on it**: the project it works in, **Run a workflow** or **Ask an agent**, and the goal under it. The goal starts as the issue text and becomes the drafted brief with its **Done when** criteria as soon as it is written, unless you already edited it. **Use the issue text** puts the plain issue back and **Use brief** brings the draft back. **Dismiss** returns to the list. A Sentry error or a GitHub issue opens in the project it belongs to, and one **Start from HBL-412** links the issue, creates the session and starts the work, with a **Follow** toast.
 
@@ -28,6 +30,8 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-light.webp" alt="New session with the Run a workflow tab selected: an Orchestrated workflow with the goal Stop retried webhooks posting a second credit, the Orchestrated, Custom and Preset switch, the Plan with an Orchestrator row and example steps Scout, Planner and Implementer, and the Starts Now, Autorun and Spend cap None controls next to Start workflow">
 </picture>
 
+<sub>Screenshot from Goodboy 0.15.2</sub>
+
 The full workflow builder, right in the kickoff. Write the goal, pick **Orchestrated**, **Describe steps** or **Pick a workflow**, and read the **Plan** you will run. Under the plan, set **Starts**, when to ask and a **Spend cap**. **Start run** creates the session and starts the run in one step.
 
 ### Ask an agent
@@ -36,6 +40,8 @@ The full workflow builder, right in the kickoff. Write the goal, pick **Orchestr
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-ask-agent-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-ask-agent-light.webp" alt="New session with the Ask an agent tab selected: a question field reading How does a retried webhook reach the ledger?, the Scout, Auto and payments-api choosers, the note Scout only reads. It changes nothing., and the Start Scout button">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 Map an unfamiliar repo before you plan. **Scout** is the default and only reads, so it changes nothing. Type an area, a file or a question, choose the model and the project, and press **Start Scout**. With an empty field it runs on the whole project. On a broad question the scout can split the search by area, and one report merges what the child scouts found.
 
