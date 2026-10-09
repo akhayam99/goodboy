@@ -1,5 +1,5 @@
 import { CheckCheck } from 'lucide-react';
-import { FilledEmptyState } from '@goodboy/ui';
+import { EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { NoPullRequestState } from './NoPullRequestState';
 
@@ -12,5 +12,10 @@ export const ReviewEmptyState = ({ sessionId, provider }: Props) =>
   provider === null ? (
     <NoPullRequestState sessionId={sessionId} />
   ) : (
-    <FilledEmptyState icon={CheckCheck} tone="neutral" title={`No open comments on ${provider}`} />
+    <EmptyState
+      size="section"
+      icon={CheckCheck}
+      tone="neutral"
+      title={`No open comments on ${provider}`}
+    />
   );

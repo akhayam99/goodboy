@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Chip, FormPage, Notice, Switch, formatError, FilledEmptyState } from '@goodboy/ui';
+import {
+  EmptyLine,
+  Button,
+  Chip,
+  FormPage,
+  Notice,
+  Switch,
+  formatError,
+  EmptyState,
+} from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   PROVIDER_CAPABILITIES,
@@ -1189,7 +1198,8 @@ export const WorkflowBuilderView = (props: Props) => {
     }
     if (mode === 'preset' && presets.length === 0) {
       return (
-        <FilledEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.workflows}
           icon={CONCEPT_ICONS.workflows}
           title="No presets in this workspace yet"
@@ -1198,7 +1208,7 @@ export const WorkflowBuilderView = (props: Props) => {
             <Chip
               as="button"
               tone="primary"
-              size="control"
+              kind="reference"
               shape="badge"
               label="Describe your own"
               onClick={() => setMode('custom')}
@@ -1332,7 +1342,7 @@ export const WorkflowBuilderView = (props: Props) => {
             tools={guidanceTools}
             recipients={
               guidance.trim() === '' ? (
-                <span className="text-meta text-faint-foreground">Nothing to send.</span>
+                <EmptyLine className="text-meta text-faint-foreground">Nothing to send.</EmptyLine>
               ) : (
                 <>
                   <GuidanceRecipients

@@ -99,7 +99,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
         )}
         <span className="font-medium text-foreground">{thread.author}</span>
         <span>· {formatAge({ from: thread.createdAt, now })}</span>
-        <Chip tone={thread.tone} size="3xs" bordered={false} label={thread.statusLabel} />
+        <Chip tone={thread.tone} kind="state" bordered={false} label={thread.statusLabel} />
         <span className="ml-auto flex shrink-0 items-center gap-1">
           {(thread.actions ?? []).map((action) => (
             <ThreadActionButton key={action.id} action={action} />

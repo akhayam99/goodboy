@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Chip, Skeleton, SkeletonChip } from '@goodboy/ui';
+import { EmptyLine, Chip, Skeleton, SkeletonChip } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -165,13 +165,13 @@ export const ProjectMountRow = ({
             <>
               <MountRequestLink sessionId={sessionId} row={row} label={label} />
               {row.request === null && isRepo && !row.isCompleted && !row.isMainCheckout ? (
-                <span className="px-2 text-label text-faint-foreground">No PR yet</span>
+                <EmptyLine className="px-2 text-label text-faint-foreground">No PR yet</EmptyLine>
               ) : null}
             </>
           ) : (
             <Chip
               tone="neutral"
-              size="3xs"
+              kind="state"
               bordered={false}
               icon={<CONCEPT_ICONS.worktree size={9} aria-hidden />}
               label={row.isOnDisk ? 'Files kept' : 'Files gone'}

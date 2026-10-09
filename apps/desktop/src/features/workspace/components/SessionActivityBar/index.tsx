@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Eyebrow,
-  FilledEmptyState,
+  EmptyState,
   PANE_RHYTHM,
   ROW_INTERACTIVE,
   cn,
@@ -361,7 +361,8 @@ export const SessionActivityBar = ({
           ) : null}
 
           {total === 0 && shownArchived.length === 0 ? (
-            <FilledEmptyState
+            <EmptyState
+              size="section"
               icon={CONCEPT_ICONS.sessions}
               tone={CONCEPT_TONE.sessions}
               title="No sessions yet"

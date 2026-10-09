@@ -1,7 +1,7 @@
 import { useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { PencilLine } from 'lucide-react';
-import { Button, ErrorStrip, LensEmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
+import { Button, ErrorStrip, EmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
@@ -202,7 +202,8 @@ export const SessionDiffPane = ({
     />
   ) : isFilteredOut ? (
     <PageColumn>
-      <LensEmptyState
+      <EmptyState
+        size="section"
         tone={CONCEPT_TONE.diff}
         icon={CONCEPT_ICONS.diff}
         title="No files match"

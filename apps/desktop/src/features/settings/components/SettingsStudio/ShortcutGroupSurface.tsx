@@ -7,7 +7,7 @@ import {
   PanelsTopLeft,
   type LucideIcon,
 } from 'lucide-react';
-import { KbdPill, Band } from '@goodboy/ui';
+import { KeyHint, Band } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
 import { shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
@@ -65,7 +65,7 @@ export const ShortcutGroupSurface = ({ group }: Props) => {
               ) : null}
             </span>
             <span className="shrink-0">
-              <KbdPill>{shortcutRangeGlyphs({ first: row.first, last: row.last })}</KbdPill>
+              <KeyHint keys={shortcutRangeGlyphs({ first: row.first, last: row.last })} />
             </span>
           </li>
         ))}

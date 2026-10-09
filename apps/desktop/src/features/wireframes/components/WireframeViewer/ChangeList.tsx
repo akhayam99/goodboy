@@ -1,4 +1,4 @@
-import { Eyebrow, SelectableRow } from '@goodboy/ui';
+import { EmptyLine, Eyebrow, SelectableRow } from '@goodboy/ui';
 import type { WireframeNodeChange } from '@goodboy/core';
 import { CHANGE_GLYPH, CHANGE_WORD } from './changePresentation';
 
@@ -17,7 +17,9 @@ export const ChangeList = ({ changes, onReveal }: Props) => (
       <Eyebrow label={`Changes on this screen · ${changes.length}`} />
     </h3>
     {changes.length === 0 ? (
-      <p className="text-meta text-muted-foreground">Nothing changed on this screen.</p>
+      <EmptyLine className="text-meta text-muted-foreground">
+        Nothing changed on this screen.
+      </EmptyLine>
     ) : (
       <ul className="flex min-w-0 flex-col gap-0.5">
         {changes.map(({ change, text }) => (

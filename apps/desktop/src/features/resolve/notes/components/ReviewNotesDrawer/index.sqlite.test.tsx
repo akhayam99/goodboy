@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 
 const h = vi.hoisted(() => ({
-  startNoteFix: vi.fn(async (_params: unknown) => ({})),
+  startNoteFix: vi.fn(async (_params: unknown) => ({
+    batchId: 'notes-batch',
+    launchId: 'notes-launch',
+    agentId: 'notes-agent',
+  })),
 }));
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -188,6 +192,7 @@ describe('the review notes drawer on sqlite', () => {
     });
 
     expect(h.startNoteFix).toHaveBeenCalledTimes(1);
+    screen.getByRole('button', { name: 'Follow' });
     const [params] = h.startNoteFix.mock.calls[0] ?? [];
     expect(params).toMatchObject({ sessionId: SESSION });
     const ids = (params as { readonly threadIds: ReadonlyArray<string> }).threadIds;

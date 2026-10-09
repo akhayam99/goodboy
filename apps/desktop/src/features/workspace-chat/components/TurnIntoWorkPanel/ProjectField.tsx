@@ -54,7 +54,7 @@ export const ProjectField = ({ projects, value, onChange }: Props) => {
               as="button"
               tone="neutral"
               shape="badge"
-              size="control"
+              kind="reference"
               label={project.name}
               ariaLabel={`Remove ${project.name}`}
               trailing={<X size={ICON_SIZE.row} aria-hidden />}

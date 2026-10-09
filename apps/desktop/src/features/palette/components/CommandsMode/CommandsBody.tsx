@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { ChevronRight, List } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { Divider, Eyebrow, ScrollFade, FilledEmptyState } from '@goodboy/ui';
+import { Divider, Eyebrow, ScrollFade, EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { parseQuery } from '../../../quick-actions/grammar';
 import {
@@ -751,7 +751,8 @@ export const CommandsBody = ({
               >
                 {rows.length === 0 ? (
                   <li role="presentation">
-                    <FilledEmptyState
+                    <EmptyState
+                      size="section"
                       icon={CONCEPT_ICONS.search}
                       tone={CONCEPT_TONE.search}
                       title={

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Hand, ShieldCheck } from 'lucide-react';
 import {
+  ROW_INTERACTIVE,
+  cn,
   AnchoredPopover,
   Button,
   IconButton,
@@ -266,7 +268,10 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={handleAllowSession}
-                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className={cn(
+                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                    ROW_INTERACTIVE,
+                  )}
                 >
                   Allow all commands in this session
                 </button>
@@ -275,7 +280,10 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={() => setOverflowView('confirmGlobal')}
-                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className={cn(
+                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                    ROW_INTERACTIVE,
+                  )}
                 >
                   {rule.label} everywhere
                 </button>
@@ -284,7 +292,10 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={() => setOverflowView('denyReason')}
-                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className={cn(
+                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                    ROW_INTERACTIVE,
+                  )}
                 >
                   Deny and tell {providerLabel ?? 'the agent'} why…
                 </button>

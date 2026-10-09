@@ -9,6 +9,14 @@ const SESSION_BAR = 'apps/desktop/src/features/workspace/components/SessionActiv
 const CHANGE_TREE = 'apps/desktop/src/features/diff/components/ChangeTree';
 
 const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
+  'apps/desktop/src/app/components/AppFooter/IntegrationAddRow.tsx',
+  'apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx',
+  'apps/desktop/src/app/components/GoodboyChip/MenuRow.tsx',
+  'apps/desktop/src/features/onboarding/SetupChecklist/StepRow.tsx',
+  'apps/desktop/src/features/resolve/components/ReviewFlow/LaunchPanel/LaunchPanelRow.tsx',
+  'apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowList/WorkflowListRow.tsx',
+  'apps/desktop/src/shared/components/Conversation/ResolvedThreadRow.tsx',
+  'apps/desktop/src/shared/components/ProjectLinkList/ProjectLinkCompactRow.tsx',
   'packages/ui/src/components/InteractiveRow.tsx',
   'packages/ui/src/components/SelectableRow.tsx',
   `${TIMELINE}/TimelineStreamRow.tsx`,

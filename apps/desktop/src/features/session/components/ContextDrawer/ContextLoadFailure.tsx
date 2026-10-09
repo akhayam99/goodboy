@@ -1,5 +1,5 @@
 import { RotateCcw, TriangleAlert } from 'lucide-react';
-import { Button, LensEmptyState } from '@goodboy/ui';
+import { Button, EmptyState } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -9,7 +9,8 @@ type Props = {
 
 export const ContextLoadFailure = ({ title, onRetry }: Props) => {
   return (
-    <LensEmptyState
+    <EmptyState
+      size="section"
       icon={TriangleAlert}
       tone="warning"
       title={`${title} did not load`}

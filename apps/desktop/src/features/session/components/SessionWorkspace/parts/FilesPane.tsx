@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { LensEmptyState, PaneShell } from '@goodboy/ui';
+import { EmptyState, PaneShell } from '@goodboy/ui';
 import { FileVersionsPane } from './FileVersionsPane';
 
 type Props = {
@@ -13,7 +13,8 @@ export const FilesPane = ({ sessionId, sessionDir, onClose }: Props) => {
   if (sessionDir == null) {
     return (
       <PaneShell title="File versions">
-        <LensEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="Session directory missing"

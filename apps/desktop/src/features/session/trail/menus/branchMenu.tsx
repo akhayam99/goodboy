@@ -6,6 +6,7 @@ import type {
   CrumbMenuRow,
   CrumbState,
 } from '@goodboy/ui';
+import { EmptyLine } from '@goodboy/ui';
 import {
   ArrowDown,
   Cloud,
@@ -127,7 +128,7 @@ export const branchMenuGroups = ({
         stat === null ? null : hasChanges ? (
           <DiffStat additions={stat.additions} deletions={stat.deletions} />
         ) : (
-          <span className="text-faint-foreground">No changes</span>
+          <EmptyLine className="text-faint-foreground">No changes</EmptyLine>
         ),
       state: branchStateOf({
         status: statusOf(mount),

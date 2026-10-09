@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Search, SquarePen } from 'lucide-react';
-import { Button, ScrollFade } from '@goodboy/ui';
+import {
+  ROW_INTERACTIVE,
+  cn,
+  Button,
+  EmptyLine,
+  EmptyState,
+  Notice,
+  SkeletonRow,
+  ScrollFade,
+} from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
@@ -12,6 +21,7 @@ import { useAppStore } from '../../../../store';
 import { selectChatGroups } from '../../../../store/slices/chats/selectChatGroups';
 import type { ObjectTarget } from '../../../actions/types';
 import { useActionControls } from '../../../actions/useActionControls';
+import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import { chatRowTime } from '../../chatRowTime';
 import { ChatArchivedView } from './ChatArchivedView';
 import { ChatListGroup, type ChatListGroupRow } from './ChatListGroup';
@@ -87,6 +97,10 @@ export const ChatList = ({
   onArchived,
   onDeleted,
 }: Props) => {
+  const hasLoaded = useAppStore((state) => state.chatsByWorkspace[workspaceId] !== undefined);
+  const error = useAppStore((state) => state.chatLoadErrors?.[workspaceId] ?? null);
+  const loadChats = useAppStore((state) => state.loadChats);
+  const loadState = loadStateOf({ hasLoaded, isLoading: !hasLoaded, error, count: chats.length });
   const archiveChats = useAppStore((state) => state.archiveChats);
   const archiveIdleChats = useAppStore((state) => state.archiveIdleChats);
   const restoreChats = useAppStore((state) => state.restoreChats);
@@ -358,10 +372,49 @@ export const ChatList = ({
             }
             footer={archived !== null && archived.isIdle ? undoRow : null}
           />
-          {isEmpty && archived === null ? (
-            <p className="px-2 py-4 text-label text-faint-foreground">
-              {needle === '' ? 'No chats yet' : 'No chats match'}
-            </p>
+          {loadState === 'loading' ? (
+            <div aria-busy="true" className="flex flex-col gap-3">
+              {[0, 1, 2].map((index) => (
+                <SkeletonRow key={index} label="Loading chats" />
+              ))}
+            </div>
+          ) : loadState === 'error' ? (
+            <Notice
+              tone="danger"
+              placement="inline"
+              role="alert"
+              title="Could not load chats"
+              detail={error}
+              actions={
+                <Button size="sm" onClick={() => void loadChats({ workspaceId })}>
+                  Retry
+                </Button>
+              }
+            />
+          ) : isEmpty && archived === null ? (
+            needle === '' ? (
+              <EmptyState
+                size="page"
+                icon={CONCEPT_ICONS.chat}
+                title="No chats yet"
+                description="Start a chat to explore an idea with an agent."
+                action={
+                  <Button size="sm" onClick={onNew}>
+                    Start a chat
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyLine
+                action={
+                  <Button size="sm" variant="ghost" onClick={() => setQuery('')}>
+                    Clear filter
+                  </Button>
+                }
+              >
+                No chats match this filter.
+              </EmptyLine>
+            )
           ) : null}
         </nav>
       </ScrollFade>
@@ -382,7 +435,10 @@ export const ChatList = ({
           <button
             type="button"
             onClick={() => setIsArchivedView(true)}
-            className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className={cn(
+              'flex h-8 w-full items-center gap-2 rounded-md px-2 text-label text-muted-foreground hover:text-foreground',
+              ROW_INTERACTIVE,
+            )}
           >
             <CONCEPT_ICONS.archive size={ICON_SIZE.control} aria-hidden />
             <span className="min-w-0 flex-1 truncate text-left">

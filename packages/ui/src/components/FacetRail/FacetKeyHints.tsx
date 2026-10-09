@@ -1,5 +1,5 @@
 import { Eyebrow } from '../Eyebrow';
-import { KbdPill } from '../KbdPill';
+import { Kbd } from '../Kbd';
 
 export type FacetKeyHint = {
   readonly keys: ReadonlyArray<string>;
@@ -19,7 +19,9 @@ export const FacetKeyHints = ({ hints }: Props) => (
           <dt className="text-muted-foreground">{hint.label}</dt>
           <dd className="flex items-center gap-1">
             {hint.keys.map((key) => (
-              <KbdPill key={key}>{key}</KbdPill>
+              <Kbd look="cap" key={key}>
+                {key}
+              </Kbd>
             ))}
           </dd>
         </div>

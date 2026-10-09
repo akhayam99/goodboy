@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 
-import { act, cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import { useImpactMetrics } from './index';
 import {
+  injectDbFault,
   importStore,
   openStorySqlite,
   resetStoryStore,
@@ -82,5 +83,23 @@ describe('impact refresh of open pull requests of deleted sessions', () => {
     });
 
     expect(refresh).toHaveBeenCalledExactlyOnceWith(WORKSPACE_ID);
+  });
+});
+
+describe('Impact keeps the last completed read', () => {
+  it('keeps its overview while refreshing and after a failed refresh', async () => {
+    const { result } = renderHook(() =>
+      useImpactMetrics({ workspaceId: WORKSPACE_ID, windowId: 'all' }),
+    );
+    await waitFor(() => expect(result.current.loading.overview).toBe(false));
+    const overview = result.current.overview.data;
+    expect(overview).not.toBeNull();
+    injectDbFault({ match: /orchestrated_sessions/, message: 'database is locked' });
+    act(() => result.current.retry('overview'));
+    expect(result.current.overview.data).toBe(overview);
+    await waitFor(() =>
+      expect(result.current.overview.error?.message).toContain('database is locked'),
+    );
+    expect(result.current.overview.data).toBe(overview);
   });
 });

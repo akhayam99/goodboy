@@ -1,6 +1,6 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { StatCard, PaneShell, FilledEmptyState } from '@goodboy/ui';
+import { StatCard, PaneShell, EmptyState } from '@goodboy/ui';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -97,7 +97,8 @@ export const FlowPanel = ({
               </div>
             ))}
             {agents !== null && agents.byKind.length === 0 ? (
-              <FilledEmptyState
+              <EmptyState
+                size="section"
                 icon={CONCEPT_ICONS.agents}
                 tone={CONCEPT_TONE.agents}
                 title="No completed agents in this window"

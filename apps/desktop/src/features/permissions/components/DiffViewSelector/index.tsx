@@ -420,7 +420,7 @@ export const DiffViewSelector = ({
                           {row.commit.pushed && (
                             <Chip
                               tone="neutral"
-                              size="3xs"
+                              kind="state"
                               bordered={false}
                               label="pushed"
                               className="shrink-0"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { ErrorStrip, LensEmptyState, PageColumn, Skeleton } from '@goodboy/ui';
+import { ErrorStrip, EmptyState, PageColumn, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -97,7 +97,8 @@ export const WriteReview = ({ session }: Props) => {
   if (files.length === 0) {
     return (
       <PageColumn>
-        <LensEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No changes in this pull request"

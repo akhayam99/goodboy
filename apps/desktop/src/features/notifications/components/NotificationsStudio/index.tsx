@@ -194,7 +194,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                 icon={CONCEPT_ICONS.notifications}
                 tone={CONCEPT_TONE.notifications}
                 title="No notifications"
-                size="lg"
+                size="page"
                 headingLevel={2}
               />
             )}
@@ -219,7 +219,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                     </button>
                   ) : undefined
                 }
-                size="lg"
+                size="page"
                 headingLevel={2}
               />
             )}

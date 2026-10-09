@@ -1,32 +1,4 @@
 {
-  "apps/desktop/src/features/budget/components/SessionSpendPopover/AgentSpendList.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/budget/components/SessionSpendPopover/SpendLimitRow.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/changelog/components/ChangelogStudio/ChangelogRail.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/history/components/CommitsHistory/HistoryBackups.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/integrations/jira/AssigneePicker.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/permissions/components/PermissionsSettings/index.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/permissions/components/PermissionsSettings/RecentDecisions.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
   "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": {
     "notices": 1,
     "emptyLines": 0
@@ -39,43 +11,7 @@
     "notices": 1,
     "emptyLines": 0
   },
-  "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/session/components/ContextDrawer/DecisionsSection.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/session/components/ContextDrawer/LearnedTab.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/session/components/ContextDrawer/SummaryBlock.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/settings/components/GuideStudio/parts/GuideRail.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/storage/components/BranchesPage/RecentlyDeletedBranches.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/storage/components/StoragePage/ArtifactBulkDeleteBar.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/storage/components/StoragePage/BulkRemoveBar.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/wireframes/components/WireframeViewer/ChangeList.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/shared/components/RoutingPicker/NoConnectedProviders.tsx": {
+  "apps/desktop/src/features/session/components/SessionKickoff/TaskStart.tsx": {
     "notices": 0,
     "emptyLines": 1
   },

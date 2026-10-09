@@ -113,3 +113,6 @@ Let two helpers work on your history and your pull request text without the powe
 Get agents and summaries in the language of your goal.
 
 Archiving a chat offers the shared Undo toast and Cmd+Z outside text fields. Both undo the latest app operation.
+
+An unread chat list shows loading rows. Its first empty state offers Start a chat;
+a search with no matches offers Clear filter. Failed reads offer Retry and Details.

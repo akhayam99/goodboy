@@ -4,7 +4,7 @@ import type {
   NudgeOutcomeCount,
   TurnBucket,
 } from '@goodboy/db';
-import { SectionHeader, StatCard, formatTokens, FilledEmptyState } from '@goodboy/ui';
+import { SectionHeader, StatCard, formatTokens, EmptyState } from '@goodboy/ui';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -105,7 +105,8 @@ export const EfficiencySection = ({
           {stats !== null && turnData !== null ? (
             <TurnHistogram buckets={turnData} median={stats.median} maxAgents={stats.maxAgents} />
           ) : (
-            <FilledEmptyState
+            <EmptyState
+              size="section"
               icon={CONCEPT_ICONS.impact}
               tone={CONCEPT_TONE.impact}
               title="No turns in this window"

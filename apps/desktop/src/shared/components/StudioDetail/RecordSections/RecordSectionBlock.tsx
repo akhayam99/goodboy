@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Eyebrow, FOCUS_RING, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, Eyebrow, FOCUS_RING, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../conceptIcons';
 import type { RecordSection } from './types';
 
@@ -46,7 +46,8 @@ export const RecordSectionBlock = ({ section }: Props) => {
         aria-controls={panelId}
         onClick={() => setIsOpen((open) => !open)}
         className={cn(
-          'flex h-8 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left hover:bg-hover',
+          'flex h-8 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left',
+          ROW_INTERACTIVE,
           FOCUS_RING,
         )}
       >

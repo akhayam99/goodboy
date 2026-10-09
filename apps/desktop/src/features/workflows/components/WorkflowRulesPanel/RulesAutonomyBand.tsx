@@ -1,6 +1,6 @@
 import { Circle, CircleDot } from 'lucide-react';
 import type { WorkflowAutonomy } from '@goodboy/types';
-import { Band, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, Band, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { RUN_AUTONOMY_HEADER, RUN_AUTONOMY_OPTIONS } from '../../runAutonomy';
 
@@ -23,7 +23,8 @@ export const RulesAutonomyBand = ({ autonomy, onChange }: Props) => (
             aria-checked={isChecked}
             onClick={() => onChange(option.key)}
             className={cn(
-              'flex min-h-9 w-full items-center gap-2 rounded-sm px-2 py-1 text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'flex min-h-9 w-full items-center gap-2 rounded-sm px-2 py-1 text-left',
+              ROW_INTERACTIVE,
               isChecked && 'bg-hover',
             )}
           >

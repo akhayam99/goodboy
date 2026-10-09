@@ -9,7 +9,7 @@ import { Button, Divider, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
+import { EmptyState } from '@goodboy/ui';
 import {
   LazyGenericTerminalPanel,
   type TerminalDriver,
@@ -134,10 +134,11 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
   if (tabs.length === 0) {
     return (
       <PaneShell title="Terminal">
-        <LensEmptyState
+        <EmptyState
+          size="page"
           tone={CONCEPT_TONE.terminal}
           icon={CONCEPT_ICONS.terminal}
-          title="No terminal"
+          title="No terminal yet"
           description="Open a terminal to run commands in this worktree."
           action={
             <Button size="sm" variant="secondary" onClick={() => addTerminalTab(sessionId, cwd)}>

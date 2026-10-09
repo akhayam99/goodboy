@@ -1,4 +1,4 @@
-import { Skeleton, cn, FilledEmptyState } from '@goodboy/ui';
+import { Skeleton, cn, EmptyState } from '@goodboy/ui';
 import type { SentryStackFrame } from './client';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 
@@ -29,7 +29,8 @@ export const SentryStackTrace = ({ frames, isLoading, error }: Props) => {
 
   if (frames.length === 0) {
     return (
-      <FilledEmptyState
+      <EmptyState
+        size="section"
         icon={CONCEPT_ICONS.sentry}
         tone={CONCEPT_TONE.sentry}
         title="No stack trace available"

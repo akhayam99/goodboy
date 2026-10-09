@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Plus, type LucideIcon } from 'lucide-react';
-import { CardAction, CardActionSlot } from '@goodboy/ui';
+import { EmptyLine, CardAction, CardActionSlot } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
 import { ContextBlock } from './ContextBlock';
 import { KeyLineList } from './KeyLineList';
@@ -70,7 +70,7 @@ export const SummaryBlock = ({ title, body, icon, isLocked, onCommit }: Props) =
       ) : hasBody ? (
         <KeyLineList items={items} label={title} />
       ) : (
-        <p className="text-meta text-faint-foreground">Nothing yet.</p>
+        <EmptyLine className="text-meta text-faint-foreground">Nothing yet.</EmptyLine>
       )}
     </ContextBlock>
   );

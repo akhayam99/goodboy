@@ -59,7 +59,7 @@ export const ReleaseRow = ({ release, isActive, installedVersion, onSelect }: Pr
         {oneWayMark !== null ? (
           <Chip
             tone="warning"
-            size="sm"
+            kind="state"
             icon={<oneWayMark.icon size={ICON_SIZE.row} aria-hidden />}
             ariaLabel={oneWayMark.label}
             title={oneWayMark.label}

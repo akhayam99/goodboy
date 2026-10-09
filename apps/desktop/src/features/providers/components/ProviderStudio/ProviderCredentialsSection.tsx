@@ -8,7 +8,7 @@ import {
   Tooltip,
   cn,
   tintClasses,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { type CredentialId, type ProviderId } from '@goodboy/types';
@@ -97,7 +97,8 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
       />
 
       {mine.length === 0 && !adding ? (
-        <FilledEmptyState
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.providers}
           tone={CONCEPT_TONE.providers}
           title="No API keys yet"

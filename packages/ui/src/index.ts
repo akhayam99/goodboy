@@ -157,7 +157,7 @@ export { Divider } from './components/Divider';
 export type { DividerProps } from './components/Divider';
 export { DogMascot } from './components/DogMascot';
 export { EmptyLine } from './components/EmptyLine';
-export { EmptyState, FilledEmptyState, LensEmptyState } from './components/EmptyState';
+export { EmptyState, FilledEmptyState } from './components/EmptyState';
 export type { EmptyStateProps } from './components/EmptyState';
 export { Eyebrow } from './components/Eyebrow';
 export type { EyebrowProps } from './components/Eyebrow';

@@ -68,7 +68,7 @@ export const ContextChip = ({ sessionId }: Props) => {
         as="button"
         tone="neutral"
         shape="badge"
-        size="control"
+        kind="reference"
         ariaPressed={isOpen}
         testId="context-chip"
         onClick={() =>

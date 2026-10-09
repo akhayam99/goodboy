@@ -1,0 +1,42 @@
+name: scene measures
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/desktop/src/**'
+      - 'packages/ui/**'
+
+permissions:
+  contents: read
+
+jobs:
+  scenes:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 20
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+      - name: setup pnpm
+        uses: pnpm/action-setup@v6
+      - name: setup node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: scene measures
+        run: |
+          VITE_GOODBOY_MOCK=1 pnpm --filter @goodboy/desktop exec vite --port 5230 --strictPort &
+          app_pid=$!
+          trap 'kill "$app_pid"' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:5230 > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:5230 > /dev/null
+          VALIDATE_CHROME="$(command -v google-chrome)" node scripts/validate-scenes.mjs

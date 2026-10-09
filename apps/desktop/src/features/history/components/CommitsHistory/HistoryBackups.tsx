@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Eyebrow, InlineConfirm } from '@goodboy/ui';
+import { EmptyLine, Button, Eyebrow, InlineConfirm } from '@goodboy/ui';
 import type { HistoryBackup } from '@goodboy/types';
 import { listHistoryBackups } from '../../historyEngine';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -52,9 +52,9 @@ export const HistoryBackups = ({
         </Button>
       </div>
       {backups !== null && backups.length === 0 ? (
-        <p className="px-2 text-meta text-muted-foreground">
+        <EmptyLine className="px-2 text-meta text-muted-foreground">
           No backups yet. Every rewrite saves one here for 30 days.
-        </p>
+        </EmptyLine>
       ) : null}
       <ul className="flex flex-col">
         {(backups ?? []).map((backup) => (

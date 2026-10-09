@@ -110,6 +110,7 @@ export const SESSION_EVICTION = [
   { key: 'artifactFilter', keyedBy: 'session', evictOn: 'archive' },
   { key: 'artifactConversationAgentId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'artifactCreation', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'artifactLoadErrors', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedGithubIssueNumber', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedExternalTask', keyedBy: 'session', evictOn: 'archive' },
   { key: 'agentPane', keyedBy: 'session', evictOn: 'archive' },

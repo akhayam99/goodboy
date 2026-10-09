@@ -1,55 +1,27 @@
 // @vitest-environment node
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 const SRC = join(__dirname, '..', '..');
 const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules']);
 const HAND_ROLLED_INLINE = /size="inline"/;
-const HAND_WRITTEN_NONE = /<([A-Za-z][\w.]*)((?:[^<>]|=>)*?)>\s*(?:No [a-z]|Nothing\b|None\b)/g;
 const WRAPPERS: ReadonlySet<string> = new Set([
   'EmptyLine',
   'EmptyState',
-  'LensEmptyState',
   'FilledEmptyState',
+  'Notice',
 ]);
 
 const ALLOWED: Readonly<Record<string, number>> = {
-  'features/budget/components/SessionSpendPopover/AgentSpendList.tsx': 1,
-  'features/budget/components/SessionSpendPopover/SpendLimitRow.tsx': 1,
-  'features/changelog/components/ChangelogStudio/ChangelogRail.tsx': 1,
   'features/context/components/ContextPanel/strips/BitbucketPrStrip.tsx': 1,
-  'features/diff/components/ChangeTree/index.tsx': 1,
-  'features/history/components/CommitsHistory/HistoryBackups.tsx': 1,
+  'features/context/components/ContextPanel/strips/GitlabMrStrip.tsx': 1,
   'features/history/components/CommitsHistory/HistoryPlannedChanges.tsx': 1,
-  'features/history/components/CommitsHistory/HistoryResult.tsx': 1,
-  'features/integrations/github/components/PullRequest/PrOverview.tsx': 1,
-  'features/integrations/jira/AssigneePicker.tsx': 1,
-  'features/permissions/components/PermissionsSettings/RecentDecisions.tsx': 1,
-  'features/permissions/components/PermissionsSettings/index.tsx': 1,
-  'features/session/components/AgentTree/WorkflowRow.tsx': 1,
-  'features/session/components/AgentTree/WorkflowRunAsk.tsx': 1,
-  'features/session/components/ContextDrawer/ContextUpdates.tsx': 1,
-  'features/session/components/ContextDrawer/DecisionsSection.tsx': 1,
-  'features/session/components/ContextDrawer/LearnedTab.tsx': 1,
-  'features/session/components/ContextDrawer/SummaryBlock.tsx': 1,
+  'features/history/components/CommitsHistory/HistoryResult.tsx': 2,
   'features/session/components/SessionKickoff/IssueBriefProposal/BriefVerbatim.tsx': 1,
   'features/session/components/SessionKickoff/TaskStart.tsx': 1,
-  'features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx': 1,
-  'features/session/components/SessionWorkspace/parts/QuestionsPane.tsx': 1,
-  'features/session/trail/menus/branchMenu.tsx': 1,
-  'features/settings/components/GuideStudio/parts/GuideRail.tsx': 1,
-  'features/settings/components/SettingsStudio/SecurityFindingsSection.tsx': 1,
   'features/settings/components/SettingsStudio/WorkspaceSettingsFlow.tsx': 1,
-  'features/storage/components/BranchesPage/RecentlyDeletedBranches.tsx': 1,
-  'features/storage/components/StoragePage/ArtifactBulkDeleteBar.tsx': 1,
-  'features/storage/components/StoragePage/ArtifactRow.tsx': 1,
-  'features/storage/components/StoragePage/BulkRemoveBar.tsx': 1,
-  'features/wireframes/components/WireframeViewer/ChangeList.tsx': 1,
-  'features/workflows/components/AddStepMenu/index.tsx': 1,
-  'features/workflows/components/WorkflowBuilderView/index.tsx': 1,
-  'shared/components/PromptField/PromptPreview.tsx': 1,
-  'shared/components/RoutingPicker/NoConnectedProviders.tsx': 1,
 };
 
 const listSourceFiles = ({ dir }: { readonly dir: string }): ReadonlyArray<string> =>
@@ -71,9 +43,41 @@ type TextParams = {
   readonly text: string;
 };
 
-const countHandWrittenNone = ({ text }: TextParams): number =>
-  Array.from(text.matchAll(HAND_WRITTEN_NONE)).filter((match) => !WRAPPERS.has(match[1] ?? ''))
-    .length;
+type NodeParams = { readonly node: ts.Node };
+
+const isWrapped = ({ node }: NodeParams): boolean => {
+  const parent = node.parent;
+  if (parent === undefined) {
+    return false;
+  }
+  if (ts.isJsxElement(parent) && WRAPPERS.has(parent.openingElement.tagName.getText())) {
+    return true;
+  }
+  return isWrapped({ node: parent });
+};
+
+const countHandWrittenNone = ({ text }: TextParams): number => {
+  const source = ts.createSourceFile(
+    'empty.tsx',
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  let count = 0;
+  const visit = ({ node }: NodeParams): void => {
+    if (
+      ts.isJsxText(node) &&
+      /^(?:No\s|Nothing\b|None\b)/.test(node.text.trim()) &&
+      !isWrapped({ node })
+    ) {
+      count += 1;
+    }
+    ts.forEachChild(node, (child) => visit({ node: child }));
+  };
+  visit({ node: source });
+  return count;
+};
 
 const toPath = (full: string): string => relative(SRC, full).split(sep).join('/');
 
@@ -88,7 +92,7 @@ const measure = (): Record<string, number> =>
   );
 
 describe('inline empty states', () => {
-  it('go through FilledEmptyState or LensEmptyState, never a hand-rolled EmptyState size="inline"', () => {
+  it('use EmptyState page or section, never the retired inline size', () => {
     const offenders = listSourceFiles({ dir: SRC })
       .filter((file) => HAND_ROLLED_INLINE.test(readFileSync(file, 'utf8')))
       .map(toPath);

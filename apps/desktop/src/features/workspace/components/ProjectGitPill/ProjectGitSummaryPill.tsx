@@ -10,7 +10,15 @@ import {
   GitBranch,
   RefreshCw,
 } from 'lucide-react';
-import { AnchoredPopover, Button, IconButton, PopoverBody, cn, useDropdown } from '@goodboy/ui';
+import {
+  ROW_INTERACTIVE,
+  AnchoredPopover,
+  Button,
+  IconButton,
+  PopoverBody,
+  cn,
+  useDropdown,
+} from '@goodboy/ui';
 import type { ProjectId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../shared/components/Toast';
@@ -301,7 +309,10 @@ export const ProjectGitSummaryPill = ({ entries, isQuiet = false }: Props) => {
                   key={entry.project.id}
                   type="button"
                   onClick={() => setSelectedProjectId(entry.project.id)}
-                  className="flex h-9 w-full items-center gap-2 px-3 text-left transition-colors hover:bg-hover"
+                  className={cn(
+                    'flex h-9 w-full items-center gap-2 px-3 text-left transition-colors',
+                    ROW_INTERACTIVE,
+                  )}
                 >
                   <span className="min-w-0 flex-1 truncate text-label font-medium">
                     {entry.project.name}

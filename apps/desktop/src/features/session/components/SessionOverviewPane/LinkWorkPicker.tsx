@@ -4,7 +4,7 @@ import {
   Divider,
   EmptyLine,
   Eyebrow,
-  KbdPill,
+  Kbd,
   ScrollFade,
   SegmentedTabs,
   SkeletonRow,
@@ -306,15 +306,15 @@ export const LinkWorkPicker = ({
       <Divider />
       <div className="flex items-center gap-4 bg-muted px-3 py-2 text-label text-faint-foreground">
         <span className="flex items-center gap-2">
-          <KbdPill>↑↓</KbdPill>
+          <Kbd look="cap">↑↓</Kbd>
           move
         </span>
         <span className="flex items-center gap-2">
-          <KbdPill>Enter</KbdPill>
+          <Kbd look="cap">Enter</Kbd>
           link
         </span>
         <span className="flex items-center gap-2">
-          <KbdPill>Esc</KbdPill>
+          <Kbd look="cap">Esc</Kbd>
           close
         </span>
       </div>

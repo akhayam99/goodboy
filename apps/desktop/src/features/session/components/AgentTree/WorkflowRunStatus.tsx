@@ -197,7 +197,7 @@ export const WorkflowRunStatus = ({
       <Chip
         as="button"
         tone="warning"
-        size="control"
+        kind="reference"
         emphasis="subtle"
         testId="workflow-run-needs-you"
         ariaLabel={label}

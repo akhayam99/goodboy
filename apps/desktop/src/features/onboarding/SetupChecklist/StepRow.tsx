@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, tintClasses } from '@goodboy/ui';
 import { openWizardStep, type OnboardingStepId } from '../onboarding-store';
 
 type Props = {
@@ -57,7 +57,10 @@ export const StepRow = ({ id, title, why, done }: Props) => {
           onClick={activate}
           title={why}
           aria-label={`Set up ${title}`}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-chip text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className={cn(
+            'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-chip text-foreground focus-visible:ring-primary',
+            ROW_INTERACTIVE,
+          )}
         >
           <span
             aria-hidden

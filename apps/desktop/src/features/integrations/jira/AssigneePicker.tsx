@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Check, UserRound } from 'lucide-react';
 import {
+  EmptyLine,
   AnchoredPopover,
   Button,
   cn,
@@ -138,7 +139,9 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           </p>
         )}
         {!isLoading && error == null && filtered.length === 0 && (
-          <p className="px-2 py-1 text-meta text-muted-foreground">No one matches that name</p>
+          <EmptyLine className="px-2 py-1 text-meta text-muted-foreground">
+            No one matches that name
+          </EmptyLine>
         )}
       </ScrollFade>
       {error != null && (

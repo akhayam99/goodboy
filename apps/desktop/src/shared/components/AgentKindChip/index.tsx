@@ -57,7 +57,7 @@ export const AgentKindChip = ({
   return (
     <Chip
       tone="neutral"
-      size="3xs"
+      kind="state"
       icon={<Icon size={KIND_ICON_SIZE} aria-hidden className="shrink-0" />}
       label={text}
       title={title}

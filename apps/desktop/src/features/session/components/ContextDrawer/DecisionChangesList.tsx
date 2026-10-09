@@ -1,5 +1,5 @@
 import { Minus, Pencil, Plus, type LucideIcon } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { SessionDecision } from '@goodboy/types';
 import type { DecisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -59,7 +59,10 @@ export const DecisionChangesList = ({ changes, onJump }: Props) => {
                 data-change={row.kind}
                 aria-label={`${verb}: decision ${row.decision.number}`}
                 onClick={() => onJump(row.decision.number)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left',
+                  ROW_INTERACTIVE,
+                )}
               >
                 <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', mark.className)} />
                 <span className="shrink-0 text-meta tabular-nums text-muted-foreground">

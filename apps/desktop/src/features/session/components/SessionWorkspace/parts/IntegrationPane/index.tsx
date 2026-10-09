@@ -7,7 +7,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { cn, CountToggle, formatError, PaneShell, PaneActionsContext } from '@goodboy/ui';
-import { LensEmptyState } from '@goodboy/ui';
+import { EmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { selectActiveProjectPrs } from '../../../../../../store/slices/github/activeProjectPrs';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
@@ -216,7 +216,8 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         <ConnectIntegrationEmptyState provider={provider} workspaceId={workspaceId} compact />
       ) : null}
       {connection.isConnected && !hasTasks ? (
-        <LensEmptyState
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.integrations}
           tone={CONCEPT_TONE.integrations}
           title={`No ${meta.label} ${meta.nounPlural} linked`}

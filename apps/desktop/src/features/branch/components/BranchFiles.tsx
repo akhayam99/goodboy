@@ -1,5 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
-import { LensEmptyState, PageColumn } from '@goodboy/ui';
+import { EmptyState, PageColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
@@ -24,7 +24,8 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
   if (worktreePath === null) {
     return (
       <PageColumn width="column">
-        <LensEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No worktree for this session"

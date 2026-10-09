@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { ClampedProse, Markdown, SectionHeader } from '@goodboy/ui';
+import { EmptyLine, ClampedProse, Markdown, SectionHeader } from '@goodboy/ui';
 
 type Props = {
   readonly goal: string;
@@ -20,7 +20,9 @@ export const WorkflowRunAsk = ({ goal, processText }: Props) => {
       {goal !== '' ? (
         <ClampedProse text={goal} lines={2} className="text-label text-foreground" />
       ) : (
-        <p className="text-label italic text-faint-foreground">No goal was set for this run.</p>
+        <EmptyLine className="text-label italic text-faint-foreground">
+          No goal was set for this run.
+        </EmptyLine>
       )}
       {processText !== '' ? (
         <>

@@ -88,3 +88,6 @@ Bring back an earlier plan, report or wireframe as a new revision, with its auth
 ### Save a copy and New variant
 
 Export a wireframe as a folder of pages, or redraw it at the other fidelity.
+
+An unread Artifacts list shows loading rows under its heading. A failed initial
+read offers Retry and Details. Refreshing keeps the last loaded artifacts.

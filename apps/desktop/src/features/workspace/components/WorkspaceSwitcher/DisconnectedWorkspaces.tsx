@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
-import { Button } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, Button } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { workspaceAccent } from '../../color';
@@ -25,7 +25,10 @@ export const DisconnectedWorkspaces = ({ workspaces, onReconnect }: Props) => {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground"
+        className={cn(
+          'flex w-full items-center gap-2 rounded-md px-3 py-2 text-label text-muted-foreground hover:text-foreground',
+          ROW_INTERACTIVE,
+        )}
       >
         {open ? (
           <ChevronDown size={ICON_SIZE.control} aria-hidden />

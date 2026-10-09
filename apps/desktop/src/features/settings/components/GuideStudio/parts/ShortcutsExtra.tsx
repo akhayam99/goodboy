@@ -1,4 +1,4 @@
-import { KbdPill } from '@goodboy/ui';
+import { KeyHint } from '@goodboy/ui';
 import {
   SHORTCUTS,
   shortcutGlyphs,
@@ -25,7 +25,7 @@ export const ShortcutsExtra = ({}: Props) => (
       {GUIDE_SHORTCUTS.map((id) => (
         <li key={id} className="flex items-center justify-between gap-3">
           <span className="text-body text-muted-foreground">{SHORTCUTS[id].label}</span>
-          <KbdPill>{shortcutGlyphs(id)}</KbdPill>
+          <KeyHint keys={shortcutGlyphs(id)} />
         </li>
       ))}
     </ul>

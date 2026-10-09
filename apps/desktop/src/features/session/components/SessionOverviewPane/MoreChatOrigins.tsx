@@ -1,4 +1,4 @@
-import { AnchoredPopover, FOCUS_RING, cn, useDropdown } from '@goodboy/ui';
+import { ROW_INTERACTIVE, AnchoredPopover, FOCUS_RING, cn, useDropdown } from '@goodboy/ui';
 import type { ChatOrigin } from '../../../../store/slices/chats/selectChatOrigins';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -41,7 +41,8 @@ export const MoreChatOrigins = ({ origins, onOpen, labelOf }: Props) => {
                 onOpen(origin);
               }}
               className={cn(
-                'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-label text-muted-foreground hover:bg-hover hover:text-foreground',
+                'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-label text-muted-foreground hover:text-foreground',
+                ROW_INTERACTIVE,
                 FOCUS_RING,
               )}
             >

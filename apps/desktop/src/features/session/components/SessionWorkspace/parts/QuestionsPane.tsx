@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { CircleCheck } from 'lucide-react';
-import { EmptyState, PageColumn, ScrollFade, Skeleton, PaneShell } from '@goodboy/ui';
+import { EmptyLine, EmptyState, PageColumn, ScrollFade, Skeleton, PaneShell } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -241,7 +241,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
             {question === null || selectedRow === null ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
                 <CircleCheck size={ICON_SIZE.control} aria-hidden className="text-success" />
-                <span className="text-heading text-foreground">No questions</span>
+                <EmptyLine className="text-heading text-foreground">No questions</EmptyLine>
               </div>
             ) : (
               <div className="px-6 py-6">

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { KbdPill, SearchField } from '@goodboy/ui';
+import { Kbd, SearchField } from '@goodboy/ui';
 import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
 
 type Props = {
@@ -40,7 +40,7 @@ export const ScriptsFilterInput = ({ value, onChange }: Props) => {
       }}
       ariaLabel="Filter scripts"
       placeholder="Filter scripts"
-      hint={<KbdPill>/</KbdPill>}
+      hint={<Kbd look="cap">/</Kbd>}
       className="w-52"
     />
   );

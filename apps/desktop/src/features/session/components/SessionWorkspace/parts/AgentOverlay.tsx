@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { Button, LensEmptyState, Skeleton, SkeletonText, PaneShell } from '@goodboy/ui';
+import { Button, EmptyState, Skeleton, SkeletonText, PaneShell } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
 import { AgentHeader } from '../../AgentDetailPane/AgentHeader';
@@ -36,7 +36,8 @@ export const AgentOverlay = ({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {selectedAgent === null && runsLoaded ? (
           <PaneShell header={<AgentHeader title="Agent" meta={null} tabs={null} actions={null} />}>
-            <LensEmptyState
+            <EmptyState
+              size="section"
               icon={CONCEPT_ICONS.agents}
               title="This agent is no longer in this session"
               description="It was deleted or moved. Go back to the session to pick another agent."

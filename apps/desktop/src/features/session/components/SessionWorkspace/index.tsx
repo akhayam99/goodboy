@@ -37,7 +37,7 @@ import { resolveActiveMountPath } from '../../../../store/slices/worktrees/resol
 import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface } from '../../lens-surface';
-import { LensEmptyState } from '@goodboy/ui';
+import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type SessionWorkspaceProps = {
@@ -213,7 +213,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   />
                 ) : (
                   <PaneShell title="GitHub issue">
-                    <LensEmptyState
+                    <EmptyState
+                      size="section"
                       icon={CONCEPT_ICONS.github}
                       tone={CONCEPT_TONE.github}
                       title="No GitHub issue linked"

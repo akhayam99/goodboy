@@ -59,7 +59,7 @@ export const askButtons = ({ answer, facts }: Params): ReadonlyArray<AskButton> 
     });
   }
   if (facts.readyCount > 0 && answer.cited.some(isReviewCitation)) {
-    buttons.push({ kind: 'review', key: 'review', label: `Review ${facts.readyCount} to review` });
+    buttons.push({ kind: 'review', key: 'review', label: `Review ${facts.readyCount}` });
   }
   const agentTargets = [
     ...(suggested?.kind === 'agent' ? [suggested.agentId] : []),

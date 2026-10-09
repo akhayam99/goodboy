@@ -132,7 +132,7 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 
 | role           | measure                       | used for                                                                               |
 | -------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `text-display` | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
+| `text-display` | 24/32, 600, -0.01em           | onboarding titles and the Impact title                                                 |
 | `text-title`   | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
 | `text-heading` | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
 | `text-row`     | 13/20, 500                    | a top-level row label, a card title                                                    |
@@ -1836,8 +1836,8 @@ drawn as an empty list.
 
 1. **Loading.** Never empty and never "Nothing yet" while loading. Keep the
    last known content, or show the section's heading with a muted "Loading"
-   line. A part that reloads keeps its place with a skeleton of its own height
-   (below). Skeletons on every page are for the next round.
+   line. Unread lists show three SkeletonRow rows with accessible loading names
+   and aria-busy. A part that reloads keeps its last known content.
 2. **First time.** Something will be here, and nothing has made it yet.
    `EmptyState size="page"`: a bare 18px icon in `text-muted-foreground` (no
    circle, no fill, no border), a title that says what will be here, one
@@ -1859,17 +1859,13 @@ drawn as an empty list.
 
 ### The primitives
 
-`EmptyState` takes `size: 'page' | 'section'`. The old sizes keep working and
-map onto the two: `lg` and `xl` to `page`, `sm` and `inline` to `section`, and a
-`bordered` state with no size to `page` without the border. The tinted circle
-and the dashed border are gone in every size, and `tone` no longer colours the
-icon: the glyph is the concept, the colour is not a state. A `page` state is an
-`h2` unless `headingLevel` says another level; a `section` state is no heading,
-so it adds nothing to the outline. `LensEmptyState` and `FilledEmptyState` are
-thin wrappers over `size="section"` with the same props, kept until every
-caller names the size itself. Nothing hand-rolls the shape: a caller passes
-only layout (`justify-center`, `basis-full`) or an inset (`px-3`), never a fill,
-a border or a circle.
+`EmptyState` takes `size: 'page' | 'section'`. Retired sizes are removed. A
+`bordered` state with no size still maps to `page` without a border. The glyph
+is muted, without a tinted circle. A `page` state is an `h2` unless
+`headingLevel` chooses another level; a `section` state has no heading.
+`FilledEmptyState` remains a thin section wrapper only for host callers awaiting
+integration. Owned callers name the section size directly. A caller passes only
+layout or an inset, never a fill, border or circle.
 
 An empty line inside a section ("No scripts match "tset".") is `EmptyLine`: one
 faint sentence, an optional glyph before it and an optional action after it. It
@@ -1888,7 +1884,7 @@ old shape, and the next round moves it.
 | -------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
 | Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Start a run. `section`: No runs in progress                                  | N/A                                                      | N/A                                                                 | N/A                                       |
 | Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                                | N/A                                                      | N/A                                                                 | N/A                                       |
-| Artifacts      | 0.22.1                                   | `page`: No artifacts yet, New artifact                                                            | `EmptyLine`: No plans in this session, Clear filter      | 0.22.1                                                              | N/A                                       |
+| Artifacts      | Three skeleton rows                      | `page`: No artifacts yet, New artifact                                                            | `EmptyLine`: No plans in this session, Clear filter      | `Notice` danger: Could not load artifacts, Retry and Details        | N/A                                       |
 | Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add project. `section`: No scripts in a project, Pin a script, New script | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |
 | Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                                              | N/A                                                      | 0.22.1                                                              | N/A                                       |
 | Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries                          | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
@@ -1897,9 +1893,9 @@ old shape, and the next round moves it.
 | Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                                        | N/A                                                      | N/A                                                                 | N/A                                       |
 | Checks         | A muted Loading line                     | `section`: No checks have reported yet                                                            | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
 | Comments       | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
-| Commits        | 0.22.1                                   | 0.22.1                                                                                            | N/A                                                      | 0.22.1                                                              | N/A                                       |
-| Impact         | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | N/A                                       |
-| Chat           | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
+| Commits        | Three skeleton rows                      | `section`: No commits yet on this branch                                                          | N/A                                                      | `Notice` danger: Could not load commits, Retry and Details          | N/A                                       |
+| Impact         | Skeleton cards                           | `page`: Impact fills in as sessions finish, spend line                                            | N/A                                                      | `Notice` danger: Retry and Details                                  | N/A                                       |
+| Chat           | Three skeleton rows                      | `page`: No chats yet, Start a chat                                                                | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
 | Settings lists | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
 
 The new session draft is the kickoff. It asks "How do you want to
@@ -2134,3 +2130,12 @@ width follows its content breaks the column for every row under it.
   sits nearest the edge must be constant-width, or it wanders from row to row.
   In a left-aligned cluster the glyph comes first. The test is where the group
   is anchored, not what looks tidy in one row.
+
+Compatibility empty-state and keyboard aliases remain only while callers owned by
+parallel units are migrated during integration. New callers name EmptyState section
+and Kbd inline or cap directly.
+
+The Terminal first-time page offers New terminal. Loading the terminal view
+announces Starting the shell. Permission rules and recent decisions use section
+states that explain when rows are added. Other Settings scope lists retain their
+existing states until their separate loading contracts are covered.

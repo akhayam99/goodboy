@@ -52,7 +52,7 @@ export const FixRunThreads = ({ sessionId, mountId, threads, batchThreadIds, onO
             <button type="button" className={ROW_CLASS} onClick={() => onOpen(threadId)}>
               <Chip
                 tone={STATE_CHIP_TONE[entry.state]}
-                size="3xs"
+                kind="state"
                 bordered={false}
                 label={entry.word}
                 className="shrink-0"

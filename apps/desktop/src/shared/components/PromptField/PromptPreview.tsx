@@ -1,4 +1,4 @@
-import { Markdown } from '@goodboy/ui';
+import { EmptyLine, Markdown } from '@goodboy/ui';
 
 type Props = {
   readonly text: string;
@@ -12,7 +12,7 @@ export const PromptPreview = ({ text, minHeight }: Props) => (
     style={{ minHeight }}
   >
     {text.trim() === '' ? (
-      <span className="text-faint-foreground">Nothing to preview</span>
+      <EmptyLine className="text-faint-foreground">Nothing to preview</EmptyLine>
     ) : (
       <Markdown text={text} />
     )}

@@ -71,3 +71,6 @@ Rebase on main with the same engine, and bring in an agent only when there is a 
 ### After a pull request merges
 
 Decide what happens to a merged branch, **Ask first**, **Delete on this Mac** or **Also on origin**, per workspace or project, with 14 days to restore it. A branch with later commits, uncommitted changes, or one Goodboy did not create is left alone.
+
+Unread commits show loading rows. An empty branch says it has no commits yet;
+a failed read offers Retry and Details. Refreshes keep the last known commits.

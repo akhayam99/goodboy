@@ -9,7 +9,7 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../../shared/components/conceptIcons';
-import { LensEmptyState } from '@goodboy/ui';
+import { EmptyState } from '@goodboy/ui';
 import { fileVersionGroups } from './fileVersionGroups';
 import { PathSummaryList } from './pathSummaryList';
 import { VersionHistoryList } from './versionHistoryList';
@@ -161,7 +161,8 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
           </div>
         </div>
       ) : (
-        <LensEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No versions yet"

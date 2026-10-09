@@ -897,3 +897,38 @@ describe('CommitsHistory on a long branch', () => {
     expect(renders.mock.calls.length).toBeLessThanOrEqual(2);
   });
 });
+
+describe('CommitsHistory initial read states', () => {
+  it('shows skeleton rows before the draft has been read', () => {
+    seed();
+    h.state.historyDrafts = {};
+    render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    expect(screen.getAllByRole('status', { name: 'Loading commits' })).toHaveLength(3);
+    expect(screen.queryByText('No commits yet on this branch')).toBeNull();
+  });
+
+  it('shows the branch empty state after a successful empty read', () => {
+    setup({ commits: [] });
+    screen.getByText('No commits yet on this branch');
+    expect(screen.queryByRole('status', { name: 'Loading commits' })).toBeNull();
+  });
+
+  it('offers Retry and Details after the initial read fails', () => {
+    const actions = seed({ commits: [] });
+    const drafts = h.state.historyDrafts;
+    if (typeof drafts !== 'object' || drafts === null) {
+      throw new Error('Missing drafts');
+    }
+    const draft: unknown = Reflect.get(drafts, MOUNT_ID);
+    if (typeof draft !== 'object' || draft === null) {
+      throw new Error('Missing draft');
+    }
+    h.state.historyDrafts = { [MOUNT_ID]: { ...draft, loadError: 'Could not read the branch' } };
+    render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
+    screen.getByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(actions.loadHistoryDraft).toHaveBeenCalled();
+    screen.getByRole('button', { name: 'Details' });
+    expect(screen.queryByText('No commits yet on this branch')).toBeNull();
+  });
+});

@@ -1,5 +1,5 @@
 import { AppWindow } from 'lucide-react';
-import { Chip, KbdPill, Tooltip, cn, Kbd } from '@goodboy/ui';
+import { Chip, Kbd, Tooltip, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
@@ -63,7 +63,7 @@ export const OtherWorkspaceRow = ({
               {projectsLabel} · {lastSeen || 'never opened'}
             </>
           )}
-          {hasUnread ? <Chip tone="warning" size="3xs" bordered={false} label="unread" /> : null}
+          {hasUnread ? <Chip tone="warning" kind="state" bordered={false} label="unread" /> : null}
         </span>
       </button>
       {digitShortcut === null ? null : (
@@ -77,7 +77,7 @@ export const OtherWorkspaceRow = ({
         className="hidden shrink-0 items-center gap-2 rounded-md px-2 py-1 text-label text-foreground hover:bg-hover focus-visible:flex group-hover:flex group-focus-within:flex"
       >
         Open
-        <KbdPill>↵</KbdPill>
+        <Kbd look="cap">↵</Kbd>
       </button>
       <Tooltip content={`Open in new window (${shortcutGlyphs('composer.submit')})`}>
         <button

@@ -1,3 +1,4 @@
+import { cn, ROW_INTERACTIVE } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import { classifyStep } from '../../../../session/agent-kind';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
@@ -41,7 +42,10 @@ export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
         type="button"
         onClick={onOpen}
         aria-label={`Open ${workflow.name}`}
-        className="group flex h-9 w-full min-w-0 items-center gap-3 rounded-md px-2 text-left transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        className={cn(
+          'group flex h-9 w-full min-w-0 items-center gap-3 rounded-md px-2 text-left transition-colors',
+          ROW_INTERACTIVE,
+        )}
       >
         <CONCEPT_ICONS.workflows
           size={ICON_SIZE.control}

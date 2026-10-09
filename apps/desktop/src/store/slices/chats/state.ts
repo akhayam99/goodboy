@@ -21,6 +21,7 @@ export type PendingChatLink = {
 };
 
 export type ChatsState = {
+  readonly chatLoadErrors: Readonly<Record<WorkspaceId, string | null>>;
   readonly chatsByWorkspace: Readonly<Record<WorkspaceId, ReadonlyArray<ChatSummary>>>;
   readonly archivedChatsByWorkspace: Readonly<Record<WorkspaceId, ReadonlyArray<ChatSummary>>>;
   readonly chatLinks: Readonly<Record<ChatId, ReadonlyArray<ChatSessionLink>>>;
@@ -32,6 +33,7 @@ export type ChatsState = {
 };
 
 export const chatsInitialState: ChatsState = {
+  chatLoadErrors: {},
   chatsByWorkspace: {},
   archivedChatsByWorkspace: {},
   chatLinks: {},

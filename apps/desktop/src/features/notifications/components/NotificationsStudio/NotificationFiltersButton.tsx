@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ListFilter } from 'lucide-react';
-import { AnchoredPopover, KbdPill, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Chip, cn, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -28,7 +28,7 @@ export const NotificationFiltersButton = ({ activeCount, facets }: Props) => {
         >
           <ListFilter size={ICON_SIZE.row} aria-hidden />
           Filters
-          {activeCount > 0 ? <KbdPill>{activeCount}</KbdPill> : null}
+          {activeCount > 0 ? <Chip kind="count" tone="neutral" label={activeCount} /> : null}
         </button>
       }
     >

@@ -271,7 +271,7 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
                   New session
                 </Button>
               }
-              size="lg"
+              size="page"
               headingLevel={2}
               className="max-w-md"
             />
@@ -297,7 +297,7 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
                   Open workspace settings
                 </Button>
               }
-              size="lg"
+              size="page"
               headingLevel={2}
               className="max-w-md"
             />

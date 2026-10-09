@@ -1,7 +1,7 @@
 import type { ImpactSession } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { FilledEmptyState, InlineMarkdown, STRIPED_LIST, STRIPED_MIN_ROWS, cn } from '@goodboy/ui';
+import { EmptyState, InlineMarkdown, STRIPED_LIST, STRIPED_MIN_ROWS, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { DeletedSessionTag } from '../../../../shared/components/DeletedSessionTag';
 
@@ -17,7 +17,8 @@ const ROW = 'flex items-center gap-3 rounded-sm px-2 py-2 text-left text-label';
 export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }: Props) => {
   if (sessions.length === 0) {
     return (
-      <FilledEmptyState
+      <EmptyState
+        size="section"
         icon={CONCEPT_ICONS.impact}
         tone={CONCEPT_TONE.impact}
         title="No sessions in this window"

@@ -2,6 +2,7 @@ import { NAMES } from '../../../../shared/names';
 import { useEffect, useRef, useState } from 'react';
 import { Bell, ChevronRight } from 'lucide-react';
 import {
+  ROW_INTERACTIVE,
   AnchoredPopover,
   cn,
   Divider,
@@ -225,7 +226,10 @@ export const NotificationCenter = () => {
             close();
             openNotificationsStudio();
           }}
-          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-meta text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+          className={cn(
+            'flex w-full items-center justify-between gap-2 px-3 py-2 text-meta text-muted-foreground hover:text-foreground',
+            ROW_INTERACTIVE,
+          )}
         >
           Open all notifications
           <ChevronRight size={ICON_SIZE.row} aria-hidden />

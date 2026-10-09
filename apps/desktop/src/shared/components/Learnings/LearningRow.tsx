@@ -31,7 +31,7 @@ export const LearningRow = ({
       <div className="flex flex-col gap-1 rounded-md px-2 py-2">
         <span className="truncate text-label text-faint-foreground line-through">{item.title}</span>
         <div className="flex items-center gap-2">
-          <Chip tone="neutral" size="3xs" label="Dismissed" />
+          <Chip tone="neutral" kind="state" label="Dismissed" />
           <span className="flex-1" />
           <Button
             variant="ghost"
@@ -65,7 +65,7 @@ export const LearningRow = ({
         )}
       >
         {!isWorkspace && item.topic !== null ? (
-          <Chip tone="neutral" size="3xs" label={item.topic} />
+          <Chip tone="neutral" kind="state" label={item.topic} />
         ) : null}
         <span
           className={cn(

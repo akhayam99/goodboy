@@ -18,7 +18,7 @@ export const ArchivedRestore = ({ session }: Props) => {
       <Chip
         tone="neutral"
         shape="badge"
-        size="control"
+        kind="reference"
         icon={<CONCEPT_ICONS.archive size={ICON_SIZE.row} aria-hidden />}
         label="Archived"
       />

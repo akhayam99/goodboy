@@ -6,7 +6,7 @@ import {
   formatTokens,
   formatUsd,
   formatUsdPrecise,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { CoverageChip } from './CoverageChip';
@@ -21,7 +21,8 @@ type Props = {
 export const ModelTable = ({ entries, formatSpent = formatUsd }: Props) => {
   if (entries.length === 0) {
     return (
-      <FilledEmptyState
+      <EmptyState
+        size="section"
         icon={CONCEPT_ICONS.budget}
         tone={CONCEPT_TONE.budget}
         title="No model usage recorded yet"

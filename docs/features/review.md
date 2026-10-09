@@ -133,3 +133,6 @@ Review someone else's pull request from the diff, opened with **Write review** o
 | Written by Goodboy | Comments Goodboy posts end with a line that says so, and a setting turns it off                      |
 | Resolve again      | Rereads a comment and tries the fix once more                                                        |
 | Checks             | The checks with durations, or why they can't be read, and a failed one becomes a **Next** suggestion |
+
+Starting a fix from the notes drawer announces the run with a Follow action to
+its transcript, including queued runs.

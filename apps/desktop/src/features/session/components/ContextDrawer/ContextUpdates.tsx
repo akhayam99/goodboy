@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { Button, Collapsible, Notice } from '@goodboy/ui';
+import { EmptyLine, Button, Collapsible, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -122,7 +122,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
                 <dt className={TERM}>Changed</dt>
                 <dd aria-label="Changed" className={VALUE}>
                   {changes.length === 0 ? (
-                    <span className="text-muted-foreground">Nothing changed</span>
+                    <EmptyLine className="text-muted-foreground">Nothing changed</EmptyLine>
                   ) : (
                     <span className="min-w-0">
                       {changes.map((change, index) => (

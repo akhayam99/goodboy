@@ -15,31 +15,15 @@ type IllustrationProps =
 
 type Layout = 'page' | 'section';
 
-type Size = Layout | 'inline' | 'sm' | 'lg' | 'xl';
+type Size = Layout;
 
 const HEADING_TAG = { 2: 'h2', 3: 'h3' } as const;
-
-const LAYOUT_OF_SIZE = {
-  page: 'page',
-  section: 'section',
-  lg: 'page',
-  xl: 'page',
-  sm: 'section',
-  inline: 'section',
-} satisfies Record<Size, Layout>;
 
 const PAGE_CLASSES = {
   root: 'flex flex-col items-center gap-4 px-6 py-10 text-center',
   content: 'flex flex-col items-center gap-1',
   title: 'text-heading text-foreground',
   description: 'max-w-sm text-prose text-muted-foreground',
-} as const;
-
-const HERO_CLASSES = {
-  root: 'flex flex-col items-center gap-6 px-10 py-14 text-center',
-  content: 'flex flex-col items-center gap-3',
-  title: 'text-display text-foreground',
-  description: 'max-w-md text-prose text-muted-foreground',
 } as const;
 
 const SECTION_CLASSES = {
@@ -70,7 +54,7 @@ type LayoutParams = {
 
 const layoutOf = ({ size, bordered }: LayoutParams): Layout => {
   if (size !== undefined) {
-    return LAYOUT_OF_SIZE[size];
+    return size;
   }
   return bordered ? 'page' : 'section';
 };
@@ -114,7 +98,7 @@ export const EmptyState = ({
     );
   }
 
-  const classes = size === 'xl' ? HERO_CLASSES : PAGE_CLASSES;
+  const classes = PAGE_CLASSES;
 
   return (
     <div className={cn(classes.root, className)}>
@@ -133,13 +117,6 @@ export const EmptyState = ({
     </div>
   );
 };
-
-type LensEmptyStateProps = IllustrationProps &
-  Omit<EmptyStateProps, keyof IllustrationProps | 'bordered' | 'size'>;
-
-export const LensEmptyState = (props: LensEmptyStateProps) => (
-  <EmptyState {...props} size="section" />
-);
 
 type FilledEmptyStateProps = IllustrationProps &
   Omit<EmptyStateProps, keyof IllustrationProps | 'bordered' | 'size'> & {

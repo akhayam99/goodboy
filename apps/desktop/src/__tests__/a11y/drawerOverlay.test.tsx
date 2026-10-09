@@ -58,6 +58,9 @@ const mount = async ({
 }) => {
   stubDrawerColumnWidth(width);
   const Scene = MOCK_SCENES[scene];
+  if (Scene === undefined) {
+    throw new Error(`${scene} is not a registered scene`);
+  }
   const { container } = render(
     <ToastProvider>
       <Scene />

@@ -8,7 +8,7 @@ import {
   formatError,
   IconButton,
   Input,
-  KbdPill,
+  Kbd,
   Notice,
   ScrollFade,
   SegmentedTabs,
@@ -443,7 +443,9 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
             </Button>
             <Button size="sm" disabled={!canStart} isBusy={isStarting} onClick={() => void start()}>
               {MODE_COPY[mode].action}
-              <KbdPill aria-hidden>{shortcutGlyphs('composer.submit')}</KbdPill>
+              <Kbd look="inline" aria-hidden>
+                {shortcutGlyphs('composer.submit')}
+              </Kbd>
             </Button>
           </FormActions>
         </div>

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
-import { Button, cn, Skeleton, Tooltip, PaneShell, FilledEmptyState } from '@goodboy/ui';
+import { Button, cn, Skeleton, Tooltip, PaneShell, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { exploreList, exploreOpen, type ExploreEntry } from '../../explore';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { LensEmptyState, RefreshIconButton } from '@goodboy/ui';
+import { RefreshIconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';
@@ -227,14 +227,16 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     <Skeleton className="h-6 w-10/12 rounded-md" />
                   </>
                 ) : childError != null ? (
-                  <FilledEmptyState
+                  <EmptyState
+                    size="section"
                     icon={CONCEPT_ICONS.errors}
                     tone={CONCEPT_TONE.errors}
                     title="Couldn't read this folder"
                     description={childError}
                   />
                 ) : children.length === 0 ? (
-                  <FilledEmptyState
+                  <EmptyState
+                    size="section"
                     icon={CONCEPT_ICONS.explore}
                     tone={CONCEPT_TONE.explore}
                     title="This folder is empty"
@@ -295,7 +297,8 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
             <Skeleton className="h-6 w-10/12 rounded-md" />
           </>
         ) : rootError != null ? (
-          <LensEmptyState
+          <EmptyState
+            size="section"
             tone={CONCEPT_TONE.explore}
             icon={CONCEPT_ICONS.explore}
             title="Couldn't read this session folder"
@@ -311,7 +314,8 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
             }
           />
         ) : rootEntries.length === 0 ? (
-          <LensEmptyState
+          <EmptyState
+            size="section"
             tone={CONCEPT_TONE.explore}
             icon={CONCEPT_ICONS.explore}
             title="No new files"

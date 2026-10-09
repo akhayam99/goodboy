@@ -1,5 +1,5 @@
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { LensEmptyState, PaneShell } from '@goodboy/ui';
+import { EmptyState, PaneShell } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SlackThreadDetail } from '../../../../../integrations/slack/SlackThreadDetail';
 import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
@@ -19,7 +19,8 @@ export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
         title={task.title}
         meta={<span className="font-mono">{task.identifier}</span>}
       >
-        <LensEmptyState
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.slack}
           tone={CONCEPT_TONE.slack}
           title="This link no longer points at a thread"

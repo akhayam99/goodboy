@@ -26,7 +26,7 @@ export const ProjectLinkRow = ({ project, busy, onUnlink }: Props) => {
             <span className="truncate text-row text-foreground">{project.name}</span>
             <Chip
               tone="neutral"
-              size="3xs"
+              kind="state"
               bordered={false}
               label={isRepo ? 'Repository' : 'Folder'}
               className="shrink-0"

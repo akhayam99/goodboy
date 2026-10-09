@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
-import { ErrorStrip, LensEmptyState, PageColumn, ScrollFade, Skeleton, cn } from '@goodboy/ui';
+import { Button, Notice, EmptyState, PageColumn, ScrollFade, SkeletonRow, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
+import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import { keptOrder } from '../../historyPlan';
 import { HistoryActions } from './HistoryActions';
 import { HistoryAfterColumn } from './HistoryAfterColumn';
@@ -139,7 +140,8 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
   if (mountId === null || mount === null || flow === null) {
     return (
       <PageColumn>
-        <LensEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.history}
           icon={CONCEPT_ICONS.history}
           title="This branch is not in the session"
@@ -195,24 +197,38 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
     />
   );
 
+  const loadState = loadStateOf({
+    hasLoaded: draft !== null,
+    isLoading: draft === null,
+    error: draft?.loadError,
+    count: commits.length,
+  });
   const body =
-    draft === null ? (
-      <div className="flex flex-col gap-2">
+    loadState === 'loading' ? (
+      <div aria-busy="true" className="flex flex-col gap-2">
         {[0, 1, 2].map((index) => (
-          <Skeleton key={index} className="h-12 w-full rounded-md" />
+          <SkeletonRow key={index} label="Loading commits" />
         ))}
       </div>
-    ) : draft.loadError !== null && commits.length === 0 ? (
-      <ErrorStrip
-        label="this branch's commits"
-        error={new Error(draft.loadError)}
-        onRetry={flow.refresh}
+    ) : loadState === 'error' ? (
+      <Notice
+        tone="danger"
+        placement="inline"
+        role="alert"
+        title="Could not load commits"
+        detail={draft?.loadError}
+        actions={
+          <Button size="sm" onClick={flow.refresh}>
+            Retry
+          </Button>
+        }
       />
     ) : commits.length === 0 ? (
-      <LensEmptyState
+      <EmptyState
+        size="section"
         tone={CONCEPT_TONE.history}
         icon={CONCEPT_ICONS.history}
-        title={`Nothing to rewrite on ${mount.branch}`}
+        title="No commits yet on this branch"
         description="This branch has no commits of its own yet."
       />
     ) : (
@@ -247,7 +263,7 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
               positions={positions}
               nodes={nodes}
               graph={graph}
-              baseSha={draft.baseSha}
+              baseSha={draft?.baseSha ?? ''}
               baseBranch={baseBranch}
               onto={onto}
               isInteractive={isInteractive}

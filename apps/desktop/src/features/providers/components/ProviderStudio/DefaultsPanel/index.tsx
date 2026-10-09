@@ -17,7 +17,7 @@ import {
   InlineConfirm,
   OverflowMenu,
   PaneShell,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
@@ -158,7 +158,8 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         <Eyebrow label="Providers" />
         {connectedProviderIds.length === 0 ? (
           <FieldRow label="When a provider is out">
-            <FilledEmptyState
+            <EmptyState
+              size="section"
               icon={CONCEPT_ICONS.providers}
               tone={CONCEPT_TONE.providers}
               title="No providers connected"

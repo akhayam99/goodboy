@@ -54,7 +54,7 @@ export const GuidanceRecipients = ({
                   key={choice.role}
                   as="button"
                   tone={isOn ? 'primary' : 'neutral'}
-                  size="sm"
+                  kind="state"
                   ariaPressed={isOn}
                   icon={isOn ? <Check size={ICON_SIZE.row} aria-hidden /> : undefined}
                   label={choice.label}

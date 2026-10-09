@@ -8,7 +8,7 @@ import {
   InlineConfirm,
   ScrollFade,
   Tooltip,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -129,7 +129,8 @@ export const WorkspaceLauncher = () => {
           <ul className="flex flex-col gap-0.5">
             {filtered.length === 0 ? (
               <li>
-                <FilledEmptyState
+                <EmptyState
+                  size="section"
                   icon={CONCEPT_ICONS.workspace}
                   tone={CONCEPT_TONE.workspace}
                   title="No workspaces found"

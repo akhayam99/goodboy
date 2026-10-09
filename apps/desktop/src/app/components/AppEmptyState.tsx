@@ -49,7 +49,7 @@ export const NoWorkspaceScreen = ({ onAddWorkspace, startOpen = false }: Props) 
               </Button>
             </div>
           }
-          size="xl"
+          size="page"
           headingLevel={2}
           className="relative max-w-2xl"
         />

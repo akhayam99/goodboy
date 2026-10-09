@@ -1,5 +1,12 @@
 import { worstLimitsChip, type LimitsChip } from '@goodboy/core';
-import { AnchoredPopover, FOCUS_RING, TOP_BAR_CONTROL, cn, useDropdown } from '@goodboy/ui';
+import {
+  ROW_INTERACTIVE,
+  AnchoredPopover,
+  FOCUS_RING,
+  TOP_BAR_CONTROL,
+  cn,
+  useDropdown,
+} from '@goodboy/ui';
 import { TriangleAlert } from 'lucide-react';
 import {
   PROVIDER_BRAND,
@@ -98,7 +105,10 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
                   close();
                   onOpen(chip);
                 }}
-                className="flex h-8 w-full items-center gap-2 rounded-sm px-2 text-label hover:bg-hover"
+                className={cn(
+                  'flex h-8 w-full items-center gap-2 rounded-sm px-2 text-label',
+                  ROW_INTERACTIVE,
+                )}
               >
                 <Glyph
                   size={ICON_SIZE.row}

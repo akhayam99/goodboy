@@ -1,10 +1,11 @@
 import { useMemo, useRef } from 'react';
-import { Button, EmptyLine, EmptyState, PaneShell } from '@goodboy/ui';
+import { Button, EmptyLine, EmptyState, PaneShell, Notice, SkeletonRow } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { WireframeImportNotice } from '../../../wireframes/components/WireframeImportNotice';
 import { useWireframeImport } from '../../../wireframes/useWireframeImport';
 import { useFileDropTarget } from '../../../../shared/hooks/useFileDropTarget';
 import { useAppStore } from '../../../../store';
+import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import type { ArtifactFilter } from '../../artifactCollection';
 import {
   groupArtifactRows,
@@ -45,6 +46,10 @@ export const ArtifactList = ({
   onOpen,
   onImported,
 }: Props) => {
+  const hasLoaded = useAppStore((state) => state.sessionArtifacts[sessionId] !== undefined);
+  const error = useAppStore((state) => state.artifactLoadErrors?.[sessionId] ?? null);
+  const loadSessionArtifacts = useAppStore((state) => state.loadSessionArtifacts);
+  const loadState = loadStateOf({ hasLoaded, isLoading: !hasLoaded, error, count: counts.all });
   const dropRef = useRef<HTMLDivElement>(null);
   const importWireframe = useAppStore((state) => state.importWireframe);
   const importer = useWireframeImport({
@@ -112,7 +117,26 @@ export const ArtifactList = ({
             {importer.error}
           </span>
         ) : null}
-        {rows.length === 0 && counts.all === 0 ? (
+        {loadState === 'loading' ? (
+          <div aria-busy="true" className="flex flex-col gap-3">
+            {[0, 1, 2].map((index) => (
+              <SkeletonRow key={index} label="Loading artifacts" />
+            ))}
+          </div>
+        ) : loadState === 'error' ? (
+          <Notice
+            tone="danger"
+            placement="inline"
+            role="alert"
+            title="Could not load artifacts"
+            detail={error}
+            actions={
+              <Button size="sm" onClick={() => void loadSessionArtifacts(sessionId)}>
+                Retry
+              </Button>
+            }
+          />
+        ) : rows.length === 0 && counts.all === 0 ? (
           <EmptyState
             size="page"
             icon={CONCEPT_ICONS.artifacts}

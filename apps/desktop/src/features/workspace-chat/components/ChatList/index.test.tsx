@@ -507,3 +507,49 @@ describe('ChatList', () => {
     });
   });
 });
+
+describe('ChatList initial read states', () => {
+  it('shows three loading rows before data arrives, then keeps the loaded list', async () => {
+    await renderList();
+    const chats = useAppStore.getState().chatsByWorkspace[CHAT_WORKSPACE_ID] ?? [];
+    act(() => useAppStore.setState({ chatsByWorkspace: {} }));
+    expect(screen.getAllByRole('status', { name: 'Loading chats' })).toHaveLength(3);
+    expect(screen.queryByText('No chats yet')).toBeNull();
+    act(() => useAppStore.setState({ chatsByWorkspace: { [CHAT_WORKSPACE_ID]: chats } }));
+    screen.getByRole('button', { name: 'Where is the consent step?' });
+    expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();
+  });
+
+  it('offers Start a chat only after the empty list has been read', async () => {
+    await renderList([]);
+    screen.getByRole('heading', { name: 'No chats yet' });
+    screen.getByRole('button', { name: 'Start a chat' });
+    expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();
+  });
+
+  it('clears a filter with no matches and restores the list', async () => {
+    await renderList();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search chats' }), {
+      target: { value: 'missing-harborline' },
+    });
+    screen.getByText('No chats match this filter.');
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }));
+    screen.getByRole('button', { name: 'Where is the consent step?' });
+    expect(screen.queryByText('No chats match this filter.')).toBeNull();
+  });
+
+  it('shows a failure with Retry and Details instead of the first-time state', async () => {
+    await renderList([]);
+    act(() =>
+      useAppStore.setState({
+        chatsByWorkspace: {},
+        chatLoadErrors: { [CHAT_WORKSPACE_ID]: 'Could not read the chat list' },
+      }),
+    );
+    screen.getByRole('alert');
+    screen.getByRole('button', { name: 'Retry' });
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    screen.getByText('Could not read the chat list');
+    expect(screen.queryByText('No chats yet')).toBeNull();
+  });
+});

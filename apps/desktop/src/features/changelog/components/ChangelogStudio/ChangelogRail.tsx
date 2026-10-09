@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronRight, History, Search } from 'lucide-react';
-import { Eyebrow, SelectableRow } from '@goodboy/ui';
+import { EmptyLine, Eyebrow, SelectableRow } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ChangelogCatchUp } from '../../changelogCatchUp';
 import type { ReleaseEntry } from '../../parseChangelog';
@@ -116,7 +116,9 @@ export const ChangelogRail = ({
         </SelectableRow>
       ) : null}
       {releases.length === 0 ? (
-        <p className="px-2 py-2 text-label text-faint-foreground">No release mentions "{query}".</p>
+        <EmptyLine className="px-2 py-2 text-label text-faint-foreground">
+          No release mentions "{query}".
+        </EmptyLine>
       ) : null}
       {groups.map((group) => {
         if (group.isOlder && !isSearching) {

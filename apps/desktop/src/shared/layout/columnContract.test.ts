@@ -146,7 +146,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     files: ['features/scripts/components/ScriptsPanel/index.tsx'],
   },
   LinkTicketPopover: { kind: 'helper', files: [] },
-  LensEmptyState: { kind: 'helper', files: [] },
+  EmptyState: { kind: 'helper', files: [] },
 };
 
 type PlaceRoots = Readonly<Record<string, ReadonlyArray<string>>>;

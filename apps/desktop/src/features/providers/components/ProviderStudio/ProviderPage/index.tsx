@@ -39,7 +39,7 @@ export const ProviderPage = ({
           tone={CONCEPT_TONE.providers}
           icon={CONCEPT_ICONS.providers}
           title="Select a provider"
-          size="lg"
+          size="page"
           headingLevel={2}
         />
       </div>

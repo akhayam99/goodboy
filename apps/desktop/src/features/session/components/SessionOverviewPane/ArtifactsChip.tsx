@@ -23,7 +23,7 @@ export const ArtifactsChip = ({ sessionId, onSelectLens }: Props) => {
         as="button"
         tone="neutral"
         shape="badge"
-        size="control"
+        kind="reference"
         onClick={() => onSelectLens('plans')}
         icon={<CONCEPT_ICONS.artifacts size={11} aria-hidden className="text-muted-foreground" />}
         label="Artifacts"

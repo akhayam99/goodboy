@@ -225,3 +225,19 @@ an effect: the page, the store, an open popover or a write at the database bound
 An id that cannot reach its context sits in the exemption list of that file with its
 reason, and the list can only get shorter. Review and activity keys run on a seeded
 world of the same app (`bootWorld`).
+
+### Scene registry
+
+The registry smoke test renders every scene through the story store harness and
+checks the committed sorted scene list. Regenerate that list with
+`GOODBOY_UPDATE_BASELINE=1` when adding or removing scenes. Duplicate ids fail at
+module load with both file names; unknown ids render an alert instead of silently
+opening the workspace. The accessibility suite remains the owner of violation
+baselines.
+
+### Scene measures
+
+The scene measures workflow is advisory, with a job that can fail without
+blocking a pull request. It must never be configured as a required check. It
+starts the mock app on the runner and uses the runner's installed Chrome to run
+the existing measures. It uploads no artifacts.

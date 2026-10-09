@@ -1,5 +1,5 @@
 import { ChevronsUpDown } from 'lucide-react';
-import { AnchoredPopover, StatusDot, useDropdown } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, AnchoredPopover, StatusDot, useDropdown } from '@goodboy/ui';
 import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
 import { workspaceAccent } from '../../color';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
@@ -42,7 +42,10 @@ export const WorkspaceIdentityRow = () => {
             data-tauri-drag-region="false"
             aria-label={`Switch workspace: ${currentWorkspace.name}`}
             aria-expanded={dropdown.open}
-            className="group flex w-full min-w-0 items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-hover"
+            className={cn(
+              'group flex w-full min-w-0 items-center gap-2 rounded-md px-1 py-1 text-left transition-colors',
+              ROW_INTERACTIVE,
+            )}
             title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
           >
             <span

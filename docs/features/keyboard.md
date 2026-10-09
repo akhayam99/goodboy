@@ -36,3 +36,5 @@ Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim,
 </picture>
 
 Browse the session folder as a file tree, with a preview of the selected file beside it, **Open outside** and **Copy**. **Ask an agent about this file** starts an agent on it from the row.
+
+The terminal page offers New terminal when no shell has been opened yet.

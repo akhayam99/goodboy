@@ -12,7 +12,7 @@ import {
   Tooltip,
   cn,
   type SegmentedTabOption,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
@@ -78,7 +78,8 @@ export const TurnsTable = ({
   return (
     <StudioWidget label="turns" action={action}>
       {sorted.length === 0 ? (
-        <FilledEmptyState
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.budget}
           tone={CONCEPT_TONE.budget}
           title="No recorded turns yet"

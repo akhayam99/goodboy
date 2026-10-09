@@ -374,3 +374,9 @@ Task-link controls have three scenes: `task-links` for idle chips and visible
 branch placement, `task-links-hover` for keyboard focus revealing unlink, and
 `task-links-undo` for compound unlink with the Undo toast and Activity Re-link.
 They use the real overview, chip and placement components in both themes.
+
+The sorted scene list is committed at
+`apps/desktop/src/app/components/MockScene/scenes.txt`. The registry discovers
+scene maps exported from the numbered scene folders automatically. A duplicate
+id reports both source files. An unknown scene id shows an alert and nearby ids;
+omitting the scene parameter opens the workspace.

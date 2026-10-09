@@ -26,7 +26,7 @@ export const OverviewEmpty = ({ onStartSession }: Props) => {
         </Button>
       }
       bordered
-      size="lg"
+      size="page"
       headingLevel={2}
     />
   );

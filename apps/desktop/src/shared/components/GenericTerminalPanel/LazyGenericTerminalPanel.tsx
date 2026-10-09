@@ -8,7 +8,13 @@ const Panel = lazy(() =>
 type Props = ComponentProps<typeof Panel>;
 
 export const LazyGenericTerminalPanel = (props: Props) => (
-  <Suspense fallback={<div className="h-full w-full bg-background" aria-hidden />}>
+  <Suspense
+    fallback={
+      <p role="status" className="text-label text-muted-foreground">
+        Starting the shell
+      </p>
+    }
+  >
     <Panel {...props} />
   </Suspense>
 );

@@ -20,6 +20,7 @@ import {
   notesOpenCount,
   olderDraftsLine,
 } from '../../reviewNotesCopy';
+import { useFixStartedToast } from '../../../hooks/useFixStartedToast';
 import { startNoteFix } from '../../startNoteFix';
 import { useReviewNotes } from '../../useReviewNotes';
 import { ClosedNote } from './ClosedNote';
@@ -47,6 +48,7 @@ export const ReviewNotesDrawer = ({
   onClose,
 }: Props) => {
   const notes = useReviewNotes({ sessionId });
+  const announceStart = useFixStartedToast();
   const env = useActionEnv({ origin: 'button' });
   const reviewTarget = useMemo(() => ({ kind: 'review' as const, sessionId }), [sessionId]);
   const { actions, run } = useObjectActions({ target: reviewTarget, env });
@@ -104,7 +106,12 @@ export const ReviewNotesDrawer = ({
       setIsStarting(true);
       setStartError(null);
       try {
-        await startNoteFix({ getState: useAppStore.getState, sessionId, threadIds });
+        const started = await startNoteFix({
+          getState: useAppStore.getState,
+          sessionId,
+          threadIds,
+        });
+        announceStart({ sessionId, started, count: threadIds.length, noun: 'note' });
         setExcluded(NONE_EXCLUDED);
       } catch (caught) {
         if (!isReportedError(caught)) {
@@ -114,7 +121,7 @@ export const ReviewNotesDrawer = ({
         setIsStarting(false);
       }
     },
-    [isStarting, sessionId],
+    [announceStart, isStarting, sessionId],
   );
 
   useEffect(() => {

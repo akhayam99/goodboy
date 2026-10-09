@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Button, FormActions, KbdPill, Notice } from '@goodboy/ui';
+import { Button, FormActions, Kbd, Notice } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { commitCount } from '../../historyEditText';
 import type { HistoryEdit } from '../../historyEdits';
@@ -115,20 +115,20 @@ export const HistoryPlannedChanges = ({
             Drag a commit between two others to move it. Drop it onto a commit to fold it in.
           </span>
           <span className="inline-flex items-center gap-1">
-            <KbdPill>Alt ↑</KbdPill>
-            <KbdPill>Alt ↓</KbdPill> move
+            <Kbd look="inline">Alt ↑</Kbd>
+            <Kbd look="inline">Alt ↓</Kbd> move
           </span>
           <span className="inline-flex items-center gap-1">
-            <KbdPill>C</KbdPill> fold into the one below
+            <Kbd look="cap">C</Kbd> fold into the one below
           </span>
           <span className="inline-flex items-center gap-1">
-            <KbdPill>S</KbdPill> combine, keep both
+            <Kbd look="cap">S</Kbd> combine, keep both
           </span>
           <span className="inline-flex items-center gap-1">
-            <KbdPill>R</KbdPill> rename
+            <Kbd look="cap">R</Kbd> rename
           </span>
           <span className="inline-flex items-center gap-1">
-            <KbdPill>⌫</KbdPill> remove
+            <Kbd look="cap">⌫</Kbd> remove
           </span>
         </p>
       )}

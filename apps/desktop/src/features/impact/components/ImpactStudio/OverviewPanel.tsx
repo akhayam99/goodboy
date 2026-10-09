@@ -1,6 +1,15 @@
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { ErrorStrip, PanelLoading, SectionHeader, PaneShell } from '@goodboy/ui';
+import {
+  Button,
+  Notice,
+  formatError,
+  ErrorStrip,
+  SkeletonRow,
+  SectionHeader,
+  PaneShell,
+} from '@goodboy/ui';
+import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { ImpactTab } from '../../lib';
 import { formatHours } from '../../utils/formatHours';
@@ -50,6 +59,12 @@ export const OverviewPanel = ({
   onStartSession,
 }: Props) => {
   const data = overview.data;
+  const loadState = loadStateOf({
+    hasLoaded: data !== null,
+    isLoading,
+    error: overview.error,
+    count: data?.sessionCount ?? 0,
+  });
   const prs = pullRequests.data;
   const reviewData = reviews.data;
   const share =
@@ -70,17 +85,35 @@ export const OverviewPanel = ({
 
   return (
     <PaneShell scroll="body" {...frame}>
-      <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
+      {overview.error === null ? null : (
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title="Could not load impact metrics"
+          body={formatError(overview.error)}
+          detail={overview.error.message}
+          actions={
+            <Button size="sm" onClick={onRetryOverview}>
+              Retry
+            </Button>
+          }
+        />
+      )}
       <ErrorStrip
         label="pull request outcomes"
         error={pullRequests.error}
         onRetry={onRetryShipped}
       />
       <ErrorStrip label="review outcomes" error={reviews.error} onRetry={onRetryShipped} />
-      {isLoading && data === null ? <PanelLoading label="Loading impact metrics" /> : null}
-      {data !== null && data.sessionCount === 0 ? (
-        <OverviewEmpty onStartSession={onStartSession} />
+      {loadState === 'loading' ? (
+        <div aria-busy="true" className="grid grid-cols-3 gap-4">
+          {[0, 1, 2].map((index) => (
+            <SkeletonRow key={index} label="Loading impact metrics" />
+          ))}
+        </div>
       ) : null}
+      {loadState === 'empty' ? <OverviewEmpty onStartSession={onStartSession} /> : null}
       {data !== null && data.sessionCount > 0 ? (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">

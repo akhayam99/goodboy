@@ -219,7 +219,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
       {running !== null && diverges ? (
         <Chip
           tone="primary"
-          size="3xs"
+          kind="state"
           bordered={false}
           label={<span className="max-w-40 truncate">{`Next: ${nextLabel}`}</span>}
           title={`New turns start in ${nextDetail}.`}

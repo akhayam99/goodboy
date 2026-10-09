@@ -6,7 +6,7 @@ import { useEscapeLayer } from '../../useEscapeLayer';
 import { Button } from '../Button';
 import { CopyButton } from '../CopyButton';
 import { FormActions } from '../FormActions';
-import { KbdPill } from '../KbdPill';
+import { Kbd } from '../Kbd';
 import { KeyHint } from '../KeyHint';
 import { ScrollFade } from '../ScrollFade';
 import { Textarea } from '../Textarea';
@@ -168,7 +168,7 @@ export const ReportSheet = ({
             aria-label="Close report"
             className={cn('rounded-sm', FOCUS_RING)}
           >
-            <KbdPill>esc</KbdPill>
+            <Kbd look="cap">esc</Kbd>
           </button>
         ) : null}
       </header>

@@ -1,4 +1,4 @@
-import { Checkbox, cn, inlineMarkdownText } from '@goodboy/ui';
+import { ROW_INTERACTIVE, Checkbox, cn, inlineMarkdownText } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../../reviewLaunchCopy';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../../resolveQueueCopy';
 import { firstSentence } from '../firstSentence';
@@ -23,7 +23,7 @@ export const LaunchPanelRow = ({ entry, isIncluded, onToggle }: Props) => {
       checked={isIncluded}
       onChange={onToggle}
       ariaLabel={`${REVIEW_LAUNCH_LABEL.includeRow} ${note?.author ?? ''}`.trim()}
-      className="w-full gap-3 rounded-md px-2 py-1 hover:bg-hover motion-safe:transition-colors"
+      className={cn('w-full gap-3 rounded-md px-2 py-1', ROW_INTERACTIVE)}
       label={
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex min-w-0 items-baseline gap-2 text-meta">

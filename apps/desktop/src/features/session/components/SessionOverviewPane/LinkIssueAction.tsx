@@ -69,7 +69,7 @@ export const LinkIssueAction = ({ session }: Props) => {
             as="button"
             tone="neutral"
             shape="badge"
-            size="control"
+            kind="reference"
             ariaLabel="Link work"
             hasPopup="dialog"
             expanded={isOpen}

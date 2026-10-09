@@ -31,7 +31,7 @@ export const AgentResolverStatus = ({ session, agent, status }: Props) => {
   return (
     <Chip
       tone={RESOLVE_WORD_TONE[word]}
-      size="3xs"
+      kind="state"
       bordered={false}
       label={RESOLVE_WORD_LABEL[word]}
       className="shrink-0"

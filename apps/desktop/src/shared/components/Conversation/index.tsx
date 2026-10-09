@@ -1,4 +1,4 @@
-import { ErrorStrip, FilledEmptyState } from '@goodboy/ui';
+import { ErrorStrip, EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../conceptIcons';
 import { ConversationSkeleton } from './ConversationSkeleton';
 import { isContinuation } from './isContinuation';
@@ -39,7 +39,8 @@ export const Conversation = ({ source, model }: Props) => {
   return (
     <div className="flex min-w-0 flex-col gap-3">
       {model.threads.length === 0 ? (
-        <FilledEmptyState
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.comments}
           tone={CONCEPT_TONE.comments}
           title="No comments yet"

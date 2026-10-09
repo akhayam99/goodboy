@@ -1,4 +1,4 @@
-import { StatusDot } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, StatusDot } from '@goodboy/ui';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -20,7 +20,10 @@ export const IntegrationAddRow = ({ member, connected, onSelect }: Props) => {
         type="button"
         onClick={onSelect}
         aria-label={connected ? `Open ${label}` : member.connectLabel}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-hover"
+        className={cn(
+          'flex w-full items-center gap-2 px-3 py-2 text-left transition-colors',
+          ROW_INTERACTIVE,
+        )}
       >
         <IntegrationGlyph provider={member.provider} size="xs" useBrandColor={connected} />
         <span className="flex-1 truncate text-label text-foreground">{label}</span>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Check, ChevronRight, MessageSquare, MessageSquarePlus } from 'lucide-react';
 import {
+  EmptyLine,
   Button,
   FOCUS_RING,
   ROW_INTERACTIVE,
@@ -175,7 +176,7 @@ export const ChangeTree = ({
       <ScrollFade className="min-h-0 flex-1" fadeSize="h-6" viewportRef={viewportRef}>
         {rows.length === 0 && filter.isFiltering ? (
           <div className="flex flex-col items-start gap-2 px-3 py-2 text-meta text-muted-foreground">
-            <p>No files match.</p>
+            <EmptyLine>No files match.</EmptyLine>
             <Button size="sm" variant="ghost" onClick={filter.onClear}>
               Clear
             </Button>

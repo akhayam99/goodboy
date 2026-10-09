@@ -1,6 +1,6 @@
 import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { ErrorStrip, PaneShell, FilledEmptyState } from '@goodboy/ui';
+import { ErrorStrip, PaneShell, EmptyState } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
@@ -88,7 +88,8 @@ export const ShippedPanel = ({
               />
             ))}
             {prs !== null && prs.entries.length === 0 ? (
-              <FilledEmptyState
+              <EmptyState
+                size="section"
                 icon={CONCEPT_ICONS.pr}
                 tone={CONCEPT_TONE.pr}
                 title="No pull requests in this window"

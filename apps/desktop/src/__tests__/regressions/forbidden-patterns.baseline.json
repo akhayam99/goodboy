@@ -56,7 +56,6 @@
   },
   "extra-component-per-file": {
     "apps/desktop/src/app/components/AppOverlayRouter/index.tsx": 1,
-    "apps/desktop/src/app/components/MockScene/scenes/ActivityScenes.tsx": 2,
     "apps/desktop/src/app/components/MockScene/scenes/ArtifactCreationScenes.tsx": 2,
     "apps/desktop/src/app/components/MockScene/scenes/ArtifactScenes.tsx": 4,
     "apps/desktop/src/app/components/MockScene/scenes/BoardScene.tsx": 1,
@@ -75,15 +74,12 @@
     "apps/desktop/src/features/settings/components/SettingsStudio/AppScopePanel.tsx": 1,
     "apps/desktop/src/features/skills/components/SkillsPanel/index.tsx": 2,
     "apps/desktop/src/features/workflows/components/WorkflowRunSummary/index.tsx": 1,
-    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx": 2,
     "apps/desktop/src/features/workspace/components/StageBoard/index.tsx": 1,
-    "packages/ui/src/components/EmptyState.tsx": 2,
+    "packages/ui/src/components/EmptyState.tsx": 1,
     "packages/ui/src/components/Popover.tsx": 1,
     "packages/ui/src/components/Skeleton.tsx": 1
   },
-  "function-component": {
-    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx": 2
-  },
+  "function-component": {},
   "comment": {
     "apps/desktop/src-tauri/src/attachment.rs": 28,
     "apps/desktop/src-tauri/src/aux_spawn.rs": 5,
@@ -124,7 +120,6 @@
     "apps/desktop/src/features/wireframes/pinWireframeScoutRoot.ts": 1,
     "apps/desktop/src/features/worktree/worktree.ts": 3,
     "apps/desktop/src/shared/components/GenericTerminalPanel/terminal-theme.ts": 2,
-    "apps/desktop/src/store/slices/session-view/storage.ts": 1,
     "packages/core/src/artifacts/wireframe/validateWireframeDocument.ts": 1,
     "packages/db/src/migrations/m001-initial.ts": 1,
     "packages/db/src/migrations/m002-telemetry-kind.ts": 1,
@@ -296,17 +291,18 @@
     "packages/core/src/summarizer/issue-brief.ts": 1
   },
   "raw-font-weight": {
-    "apps/desktop/src/app/components/GoodboyChip/GoodboyChipLabel.tsx": 2,
-    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsTooltip.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": 4,
     "apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/SpendButton.tsx": 1,
     "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 1,
+    "apps/desktop/src/app/components/GoodboyChip/GoodboyChipLabel.tsx": 2,
+    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/ModelPickerScenes.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactChoiceRows.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactMountRows.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactScoutList.tsx": 1,
+    "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 2,
     "apps/desktop/src/features/budget/components/spend/ModelTable.tsx": 1,
     "apps/desktop/src/features/budget/components/spend/TurnsTable.tsx": 1,
     "apps/desktop/src/features/chat/components/ArtifactBlockCard/index.tsx": 2,
@@ -338,7 +334,6 @@
     "apps/desktop/src/features/notifications/components/NotificationCenter/index.tsx": 2,
     "apps/desktop/src/features/notifications/components/NotificationRow/index.tsx": 2,
     "apps/desktop/src/features/notifications/components/NotificationsStudio/index.tsx": 2,
-    "apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx": 1,
     "apps/desktop/src/features/permissions/components/PermissionDecisionCard/index.tsx": 1,
     "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderChip.tsx": 1,
@@ -372,10 +367,7 @@
     "apps/desktop/src/features/workspace/components/ProjectGitPill/InitGuide.tsx": 2,
     "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitPill.tsx": 1,
     "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx": 3,
-    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionActivityItem.tsx": 2,
-    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionRowMeta.tsx": 1,
-    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionRowNode.tsx": 1,
-    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx": 1,
+    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionActivityItem.tsx": 1,
     "apps/desktop/src/features/workspace/components/WorkspaceIdentityRow/index.tsx": 1,
     "apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx": 3,
     "apps/desktop/src/shared/components/Conversation/ConversationAvatar.tsx": 1,
@@ -410,18 +402,16 @@
     "packages/ui/src/components/Notice/index.tsx": 1,
     "packages/ui/src/components/OverlayHeader.tsx": 1,
     "packages/ui/src/components/RemoteImage/index.tsx": 1,
-    "packages/ui/src/components/SegmentedTabs.tsx": 2,
     "packages/ui/src/components/StatusRailItem.tsx": 1,
     "packages/ui/src/components/TermHint/index.tsx": 1,
     "packages/ui/src/components/Tooltip.tsx": 1,
     "packages/ui/src/components/WorkTree/WorkNodeCenter.tsx": 2,
-    "packages/ui/src/selectedRow.ts": 1,
-    "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 2
+    "packages/ui/src/selectedRow.ts": 1
   },
   "raw-leading": {
-    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 2,
-    "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactBasedOnField.tsx": 2,
+    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
+    "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactBasedOnField.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactBriefField.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactChoiceRows.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactContextDisclosure.tsx": 1,
@@ -445,7 +435,6 @@
     "apps/desktop/src/features/workflows/components/WorkflowNodeRouting/WorkflowNodeRoutingRow.tsx": 2,
     "apps/desktop/src/features/workflows/components/WorkflowRunSummary/index.tsx": 2,
     "apps/desktop/src/features/workspace/components/ProjectGitPill/InitGuide.tsx": 2,
-    "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionRowNode.tsx": 1,
     "packages/ui/src/components/Dialog.tsx": 1,
     "packages/ui/src/components/Eyebrow.tsx": 1,
     "packages/ui/src/components/FieldRow.tsx": 1,
@@ -502,9 +491,7 @@
     "apps/desktop/src/features/chat/components/TranscriptShell/index.tsx": 2,
     "apps/desktop/src/features/diff/components/DiffView/CommentComposer.tsx": 1,
     "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": 1,
-    "apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.tsx": 1,
-    "apps/desktop/src/features/workflows/components/NextActionStrip/index.tsx": 1,
-    "apps/desktop/src/features/workflows/components/OrchestratorStrip/index.tsx": 1
+    "apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.tsx": 1
   },
   "footer-cta-bar": {
     "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx": 1,
@@ -512,12 +499,13 @@
   },
   "half-step-spacing": {},
   "role-weight-override": {
-    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx": 1,
+    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/MockScene/scenes/ModelPickerScenes.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactChoiceRows.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactMountRows.tsx": 1,
+    "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 2,
     "apps/desktop/src/features/chat/components/ArtifactBlockCard/index.tsx": 2,
     "apps/desktop/src/features/chat/components/PlanChip/index.tsx": 1,
     "apps/desktop/src/features/chat/components/SkillInvocationCard/index.tsx": 1,
@@ -559,7 +547,6 @@
     "packages/ui/src/components/FieldRow.tsx": 2,
     "packages/ui/src/components/RemoteImage/index.tsx": 1,
     "packages/ui/src/components/TermHint/index.tsx": 1,
-    "packages/ui/src/components/Tooltip.tsx": 1,
-    "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 2
+    "packages/ui/src/components/Tooltip.tsx": 1
   }
 }

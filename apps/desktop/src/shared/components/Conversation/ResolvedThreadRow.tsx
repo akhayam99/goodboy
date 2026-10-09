@@ -1,5 +1,5 @@
 import { ChevronRight, CircleCheck } from 'lucide-react';
-import { FOCUS_RING, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ConversationThread } from './types';
 
 type Props = {
@@ -18,7 +18,8 @@ export const ResolvedThreadRow = ({ thread, isOpen, onToggle }: Props) => {
       aria-expanded={isOpen}
       onClick={onToggle}
       className={cn(
-        'flex h-8 w-full min-w-0 items-center gap-2 rounded-md bg-subtle px-2 text-left text-chip text-muted-foreground hover:bg-hover hover:text-foreground',
+        'flex h-8 w-full min-w-0 items-center gap-2 rounded-md bg-subtle px-2 text-left text-chip text-muted-foreground hover:text-foreground',
+        ROW_INTERACTIVE,
         FOCUS_RING,
       )}
     >

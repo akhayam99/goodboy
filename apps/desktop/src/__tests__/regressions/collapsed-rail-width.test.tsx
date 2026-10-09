@@ -27,7 +27,7 @@ const COLUMN_RAIL = readFileSync(
 afterEach(cleanup);
 
 const classNameContaining = ({ source, marker }: { source: string; marker: string }): string => {
-  const match = new RegExp(`className="([^"]*${marker}[^"]*)"`).exec(source);
+  const match = new RegExp(`(?:className="|')([^"']*${marker}[^"']*)(?:"|')`).exec(source);
   if (match === null) {
     throw new Error(`No className contains ${marker}`);
   }

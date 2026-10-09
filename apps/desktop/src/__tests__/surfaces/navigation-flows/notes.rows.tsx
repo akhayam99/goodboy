@@ -155,7 +155,7 @@ export const startFakeNoteFix = async ({
 }: {
   readonly sessionId: SessionId;
   readonly threadIds: ReadonlyArray<string>;
-}): Promise<Record<string, never>> => {
+}): Promise<{ readonly batchId: string; readonly launchId: string; readonly agentId: AgentId }> => {
   const mountPath =
     selectDisplayedMount({ state: useAppStore.getState(), sessionId })?.worktreePath ?? '';
   const attempts = threadIds.map((threadId, index) =>
@@ -194,7 +194,11 @@ export const startFakeNoteFix = async ({
           };
     },
   });
-  return {};
+  const first = attempts[0];
+  if (first === undefined) {
+    throw new Error('No notes selected');
+  }
+  return { batchId: MOUNT_PATH_BATCH, launchId: 'notes-launch', agentId: first.agentId };
 };
 
 const finishFakeRun = ({ sessionId }: Ctx): void => {

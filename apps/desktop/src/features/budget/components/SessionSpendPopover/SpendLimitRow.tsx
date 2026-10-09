@@ -1,4 +1,4 @@
-import { Button, cn, formatUsd, tintClasses } from '@goodboy/ui';
+import { EmptyLine, Button, cn, formatUsd, tintClasses } from '@goodboy/ui';
 import type { SessionBudget, SessionId } from '@goodboy/types';
 import { NAMES } from '../../../../shared/names';
 import { SPEND_LIMIT_BEHAVIOR_LABEL } from '../../spendLimitBehavior';
@@ -40,7 +40,7 @@ export const SpendLimitRow = ({
           onDone={() => onEditingChange(false)}
         />
       ) : limit === null ? (
-        <p className="text-meta text-muted-foreground">No limit</p>
+        <EmptyLine className="text-meta text-muted-foreground">No limit</EmptyLine>
       ) : (
         <div className="flex flex-col gap-2">
           <div
