@@ -145,7 +145,7 @@ type SessionRowData = {
 
 const DOORS = [
   { label: 'Board', Icon: SquareKanban },
-  { label: 'Inbox', Icon: Inbox },
+  { label: 'Tasks', Icon: Inbox },
   { label: 'Chat', Icon: MessageCircle },
   { label: 'Workflows', Icon: Waypoints },
 ] as const;

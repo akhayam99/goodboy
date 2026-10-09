@@ -35,6 +35,15 @@ export const ArrowRight = createIcon([
   ['path', { d: 'M5 12h14' }],
   ['path', { d: 'm12 5 7 7-7 7' }],
 ]);
+export const BookOpen = createIcon([
+  ['path', { d: 'M12 5v16' }],
+  [
+    'path',
+    {
+      d: 'M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z',
+    },
+  ],
+]);
 export const Bot = createIcon([
   ['path', { d: 'M12 8V4H8' }],
   ['rect', { width: '16', height: '12', x: '4', y: '8', rx: '2' }],
@@ -42,6 +51,22 @@ export const Bot = createIcon([
   ['path', { d: 'M20 14h2' }],
   ['path', { d: 'M15 13v2' }],
   ['path', { d: 'M9 13v2' }],
+]);
+export const BugPlay = createIcon([
+  ['path', { d: 'M10 19.655A6 6 0 0 1 6 14v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 3.97' }],
+  [
+    'path',
+    {
+      d: 'M14 15.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997a1 1 0 0 1-1.517-.86z',
+    },
+  ],
+  ['path', { d: 'M14.12 3.88 16 2' }],
+  ['path', { d: 'M21 5a4 4 0 0 1-3.55 3.97' }],
+  ['path', { d: 'M3 21a4 4 0 0 1 3.81-4' }],
+  ['path', { d: 'M3 5a4 4 0 0 0 3.55 3.97' }],
+  ['path', { d: 'M6 13H2' }],
+  ['path', { d: 'm8 2 1.88 1.88' }],
+  ['path', { d: 'M9 7.13V6a3 3 0 1 1 6 0v1.13' }],
 ]);
 export const Check = createIcon([['path', { d: 'M20 6 9 17l-5-5' }]]);
 export const ChevronDown = createIcon([['path', { d: 'm6 9 6 6 6-6' }]]);
@@ -65,6 +90,11 @@ export const CirclePlay = createIcon([
   ],
   ['circle', { cx: '12', cy: '12', r: '10' }],
 ]);
+export const CodeXml = createIcon([
+  ['path', { d: 'm18 16 4-4-4-4' }],
+  ['path', { d: 'm6 8-4 4 4 4' }],
+  ['path', { d: 'm14.5 4-5 16' }],
+]);
 export const Contrast = createIcon([
   ['circle', { cx: '12', cy: '12', r: '10' }],
   ['path', { d: 'M12 18a6 6 0 0 0 0-12v12z' }],
@@ -73,6 +103,38 @@ export const Database = createIcon([
   ['ellipse', { cx: '12', cy: '5', rx: '9', ry: '3' }],
   ['path', { d: 'M3 5V19A9 3 0 0 0 21 19V5' }],
   ['path', { d: 'M3 12A9 3 0 0 0 21 12' }],
+]);
+export const Feather = createIcon([
+  [
+    'path',
+    {
+      d: 'M14.086 18.412A2 2 0 0112.67 19H5v-7.672a2 2 0 01.586-1.414L11.75 3.75a6 6 0 118.49 8.49z',
+    },
+  ],
+  ['path', { d: 'M16 8 2 22' }],
+  ['path', { d: 'M17.488 15H9' }],
+]);
+export const FileText = createIcon([
+  [
+    'path',
+    {
+      d: 'M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z',
+    },
+  ],
+  ['path', { d: 'M14 2v5a1 1 0 0 0 1 1h5' }],
+  ['path', { d: 'M10 9H8' }],
+  ['path', { d: 'M16 13H8' }],
+  ['path', { d: 'M16 17H8' }],
+]);
+export const FlaskConical = createIcon([
+  [
+    'path',
+    {
+      d: 'M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2',
+    },
+  ],
+  ['path', { d: 'M6.453 15h11.094' }],
+  ['path', { d: 'M8.5 2h7' }],
 ]);
 export const FolderTree = createIcon([
   [
@@ -90,11 +152,26 @@ export const FolderTree = createIcon([
   ['path', { d: 'M3 5a2 2 0 0 0 2 2h3' }],
   ['path', { d: 'M3 3v13a2 2 0 0 0 2 2h3' }],
 ]);
+export const GitGraph = createIcon([
+  ['circle', { cx: '5', cy: '6', r: '3' }],
+  ['path', { d: 'M5 9v6' }],
+  ['circle', { cx: '5', cy: '18', r: '3' }],
+  ['path', { d: 'M12 3v18' }],
+  ['circle', { cx: '19', cy: '6', r: '3' }],
+  ['path', { d: 'M16 15.7A9 9 0 0 0 19 9' }],
+]);
 export const GitPullRequest = createIcon([
   ['circle', { cx: '18', cy: '18', r: '3' }],
   ['circle', { cx: '6', cy: '6', r: '3' }],
   ['path', { d: 'M13 6h3a2 2 0 0 1 2 2v7' }],
   ['line', { x1: '6', x2: '6', y1: '9', y2: '21' }],
+]);
+export const GitPullRequestArrow = createIcon([
+  ['circle', { cx: '5', cy: '6', r: '3' }],
+  ['path', { d: 'M5 9v12' }],
+  ['circle', { cx: '19', cy: '18', r: '3' }],
+  ['path', { d: 'm15 9-3-3 3-3' }],
+  ['path', { d: 'M12 6h5a2 2 0 0 1 2 2v7' }],
 ]);
 export const Inbox = createIcon([
   ['polyline', { points: '22 12 16 12 14 15 10 15 8 12 2 12' }],
@@ -105,6 +182,16 @@ export const Inbox = createIcon([
     },
   ],
 ]);
+export const MapIcon = createIcon([
+  [
+    'path',
+    {
+      d: 'M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z',
+    },
+  ],
+  ['path', { d: 'M15 5.764v15' }],
+  ['path', { d: 'M9 3.236v15' }],
+]);
 export const MessageCircle = createIcon([
   [
     'path',
@@ -113,10 +200,38 @@ export const MessageCircle = createIcon([
     },
   ],
 ]);
+export const MessageSquareReply = createIcon([
+  [
+    'path',
+    {
+      d: 'M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z',
+    },
+  ],
+  ['path', { d: 'm10 8-3 3 3 3' }],
+  ['path', { d: 'M17 14v-1a2 2 0 0 0-2-2H7' }],
+]);
 export const Minus = createIcon([['path', { d: 'M5 12h14' }]]);
+export const PanelsTopLeft = createIcon([
+  ['rect', { width: '18', height: '18', x: '3', y: '3', rx: '2' }],
+  ['path', { d: 'M3 9h18' }],
+  ['path', { d: 'M9 21V9' }],
+]);
 export const Plus = createIcon([
   ['path', { d: 'M5 12h14' }],
   ['path', { d: 'M12 5v14' }],
+]);
+export const ScanEye = createIcon([
+  ['path', { d: 'M3 7V5a2 2 0 0 1 2-2h2' }],
+  ['path', { d: 'M17 3h2a2 2 0 0 1 2 2v2' }],
+  ['path', { d: 'M21 17v2a2 2 0 0 1-2 2h-2' }],
+  ['path', { d: 'M7 21H5a2 2 0 0 1-2-2v-2' }],
+  ['circle', { cx: '12', cy: '12', r: '1' }],
+  [
+    'path',
+    {
+      d: 'M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0',
+    },
+  ],
 ]);
 export const Shield = createIcon([
   [
@@ -131,6 +246,25 @@ export const SquareKanban = createIcon([
   ['path', { d: 'M8 7v7' }],
   ['path', { d: 'M12 7v4' }],
   ['path', { d: 'M16 7v9' }],
+]);
+export const Telescope = createIcon([
+  [
+    'path',
+    {
+      d: 'm10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44',
+    },
+  ],
+  ['path', { d: 'm13.56 11.747 4.332-.924' }],
+  ['path', { d: 'm16 21-3.105-6.21' }],
+  [
+    'path',
+    {
+      d: 'M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z',
+    },
+  ],
+  ['path', { d: 'm6.158 8.633 1.114 4.456' }],
+  ['path', { d: 'm8 21 3.105-6.21' }],
+  ['circle', { cx: '12', cy: '13', r: '2' }],
 ]);
 export const TriangleAlert = createIcon([
   ['path', { d: 'm21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3' }],

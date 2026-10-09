@@ -160,12 +160,12 @@ const ItemRow = ({ item }: { readonly item: Item }) => (
 
 export const InboxMock = ({ className }: Props) => (
   <MockStage
-    label="Inbox with items from GitHub, Linear, Jira, Sentry and Slack in one list. Each row shows its source icon, id, title, state and age, grouped by day. CAS-231 is selected."
+    label="Tasks with items from GitHub, Linear, Jira, Sentry and Slack in one list. Each row shows its source icon, id, title, state and age, grouped by day. CAS-231 is selected."
     className={className}
   >
     <div className="ibxWin">
       <div className="ibxTop">
-        <span className="ibxTopTitle">Inbox</span>
+        <span className="ibxTopTitle">Tasks</span>
         <span className="ibxPulls">
           <span className="ibxPullsLabel" id="ibx-pulls-label">
             Pulls from
@@ -181,7 +181,7 @@ export const InboxMock = ({ className }: Props) => (
         </span>
       </div>
       <div className="ibxBody">
-        <nav className="ibxRail" aria-label="Filter the inbox">
+        <nav className="ibxRail" aria-label="Filter the tasks">
           <GroupLabel label="View" muted className="ibxRailLabel" />
           {VIEWS.map((view) => (
             <span key={view.label} className="ibxFacet" data-selected={view.isSelected}>

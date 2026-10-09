@@ -23,6 +23,7 @@
 }
 
 .gkKind,
+.gkKindGlyph,
 .gkChip,
 .gkBadge,
 .gkNode,
@@ -97,6 +98,18 @@
 .gkKindMuted {
   color: var(--g-faint-foreground);
   background: var(--g-fill);
+}
+
+.gkKindGlyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  color: var(--gk-kind);
+  background: color-mix(in oklab, var(--gk-kind) 12%, transparent);
 }
 
 .gkKindHug {
@@ -718,7 +731,7 @@
 .gkRunStacked .gkRunRowInner {
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   grid-template-rows: 20px 20px;
   align-content: start;
   gap: 0 8px;
@@ -747,9 +760,7 @@
 .gkRunStacked .gkRowKind {
   grid-column: 1;
   grid-row: 2;
-  width: 92px;
-  height: 20px;
-  padding: 0 4px;
+  align-self: center;
 }
 
 .gkRunStacked .gkStateLine {
