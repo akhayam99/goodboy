@@ -88,7 +88,7 @@ export const ReviewList = ({
   <nav
     aria-label={REVIEW_FLOW_LABEL.list}
     data-selecting={checked.size > 0}
-    className="group/select-list flex min-w-0 flex-col gap-5"
+    className="group/select-list flex min-w-0 flex-col gap-4"
   >
     {groups.map(({ group, entries }) => {
       const name = labelOf({ group, entries });

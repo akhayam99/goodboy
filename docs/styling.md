@@ -85,6 +85,15 @@ written one by one. Spacing takes whole steps of the 4px grid, never a half
 step. The roles and the ratchets that count the raw classes and the half steps
 are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
 
+Four more scales are ratcheted to zero by `scale-rules.test.ts` and
+`row-heights-on-the-scale.test.ts`: an icon is `ICON_SIZE.mark`, `row`, `control`
+or `hero` (10, 12, 14, 18), never a number; a gap is 4, 8, 12, 16, 24 or 32px
+(`gap-1`, `gap-2`, `gap-3`, `gap-4`, `gap-6`, `gap-8`, plus `gap-0.5`), never
+`gap-5`, `gap-7` or `gap-10`; a one-line row is 24, 28, 32, 36, 40 or 48px high;
+`font-mono` is code (a branch, a path, a command, a sha), and a number is sans
+with `tabular-nums`. Text colour follows `TEXT_ROLE` (label, secondary, hint,
+disabled). See [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#icon-ladder-and-row-scale).
+
 `no-token-bypass.test.ts` rejects any `text-[Npx]`, a display grade above `2xl`,
 `font-bold`, `rounded-xs` or `rounded-xl` and up, and an arbitrary `shadow-[`.
 The one standing exception for size is relative `em` sizing
@@ -331,7 +340,7 @@ header, the comment action bar under the Branch thread), and inside a
 floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 
-Inside content, separation comes from gap (the `gap-4/6/8` scale), from
+Inside content, separation comes from gap (the `gap-3/4/6/8` scale), from
 a band (`Band`, `bg-fill` inside its parent), or from a label
 that carries text (`Eyebrow`, `TimelineDayRule`). An unlabeled line inside
 content is a bug, not a style choice. A toolbar group or a dialog block that

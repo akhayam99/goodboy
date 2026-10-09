@@ -7,7 +7,7 @@
 One meaning, one glyph. The registry in
 [`apps/desktop/src/shared/components/conceptIcons.ts`](../apps/desktop/src/shared/components/conceptIcons.ts)
 is the contract. `CONCEPT_ICONS` maps a concept to its glyph. `CONCEPT_TONE`
-maps the same concept to its tone. `ICON_SIZE` gives the only three sizes the
+maps the same concept to its tone. `ICON_SIZE` gives the only four sizes the
 app draws icons at. This document is the readable version of that file. The
 code is right when they disagree: a change to the registry, `LENS_LABEL` or
 `LENS_ICON` updates this document in the same pull request.
@@ -30,10 +30,11 @@ Rules that hold everywhere:
 
 ## Sizes
 
-Three tokens, exported from `conceptIcons.ts`:
+Four tokens, exported from `conceptIcons.ts`:
 
 | Token               | px  | Use                                                    |
 | ------------------- | --- | ------------------------------------------------------ |
+| `ICON_SIZE.mark`    | 10  | A glyph inside a chip, a dot or an xs control          |
 | `ICON_SIZE.row`     | 12  | Leading and trailing glyphs inside list and table rows |
 | `ICON_SIZE.control` | 14  | Buttons, menu triggers, rail tabs, form adornments     |
 | `ICON_SIZE.hero`    | 18  | Empty states, studio headers, choice tiles             |
@@ -43,15 +44,15 @@ Every token is even. Badges and icon boxes are even (`size-5`, `size-9`,
 centre. `WorkNode` centres its glyph in a full-size flex box with no line
 height, and draws the svg as a block so it never sits on a text baseline.
 
-Sizes below the row token (8 to 11 px) stay as plain numbers. They belong to
-chips, badges and status dots, where the glyph is a mark inside a shape, not a
-row of its own.
-
-`apps/desktop/src/__tests__/regressions/icon-size-uses-a-token.test.ts` fails on
-any 12 to 18 px literal under `features/` and `app/`. Every feature area has
-already been moved to the tokens. The allowlist holds the one real exception
-(an HTML `input size` attribute, counted in characters). A new exception needs
-a reason in its allowlist entry, never a waiver for a whole directory.
+`mark` is the one rung below the row token: the glyph is a mark inside a shape
+(a chip, a badge, a status dot), not a row of its own. There is no 8, 9, 11 or
+13 px icon. A number on an icon is never written: `scale-rules.test.ts` counts
+every numeric `size=` on an icon tag (a brand mark such as `DogMascot` or
+`IntegrationGlyph`, and an HTML `input size`, are not icons) and
+`icon-size-uses-a-token.test.ts` fails on any 12 to 18 px literal under
+`features/` and `app/`. The allowlist holds the one real exception (an HTML
+`input size` attribute, counted in characters). A new exception needs a reason
+in its allowlist entry, never a waiver for a whole directory.
 
 ## Navigation lenses
 

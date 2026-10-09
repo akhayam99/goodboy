@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import { Button, FormActions, cn } from '@goodboy/ui';
+import { Button, FormActions, cn, Eyebrow } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
 import type { MountFailure } from './mountFailure';
@@ -22,8 +22,8 @@ type RowProps = {
 
 const PreflightRow = ({ label, value, isPending }: RowProps) => (
   <div className="flex min-w-0 items-baseline gap-2">
-    <dt className="w-12 shrink-0 text-meta uppercase tracking-eyebrow text-faint-foreground">
-      {label}
+    <dt className="w-12 shrink-0">
+      <Eyebrow label={label} muted />
     </dt>
     <dd
       className={cn(

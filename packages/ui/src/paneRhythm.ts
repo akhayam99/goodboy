@@ -7,10 +7,10 @@ export const PANE_RHYTHM = {
   header: 'px-6 py-5',
   body: 'px-6 py-5',
   dock: 'px-6 py-4',
-  stack: 'flex flex-col gap-5',
+  stack: 'flex flex-col gap-6',
   below: {
     title: 'pb-4',
-    section: 'pb-5',
+    section: 'pb-6',
   },
   prose: 'max-w-[var(--measure)]',
   proseBlocks: [
@@ -50,7 +50,7 @@ export const PANE_RHYTHM = {
     lanesFive: 'grid-cols-[repeat(5,minmax(13rem,20rem))]',
     lanesScroll: 'w-max grid-cols-[repeat(5,13rem)]',
     laneStack: 'gap-3',
-    halves: 'gap-5',
+    halves: 'gap-4',
     cardGap: 'gap-3',
   },
   sessionList: {

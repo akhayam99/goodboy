@@ -52,7 +52,7 @@ export const SlackSettings = ({ workspaceId, slack }: Props) => {
   const followed = new Set(config.followedChannels.map((channel) => channel.id));
 
   return (
-    <div className="flex min-w-0 flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-6">
       <IntegrationConnectedRow
         provider="slack"
         credentialId={slack.credentialId}

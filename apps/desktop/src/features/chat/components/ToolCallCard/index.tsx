@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { cn, tintClasses, WorkNode, type WorkNodeState } from '@goodboy/ui';
+import { cn, tintClasses, WorkNode, type WorkNodeState, Eyebrow } from '@goodboy/ui';
 import type { ProviderRunId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
@@ -78,11 +78,7 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
             <span className="flex min-w-0 items-center gap-2">
               <span className="truncate font-mono text-muted-foreground">{item.toolName}</span>
               {status === 'failed' && (
-                <span
-                  className={cn('shrink-0 text-meta uppercase tracking-eyebrow', dangerTint.text)}
-                >
-                  error
-                </span>
+                <Eyebrow label="error" className={cn('shrink-0', dangerTint.text)} />
               )}
             </span>
           }

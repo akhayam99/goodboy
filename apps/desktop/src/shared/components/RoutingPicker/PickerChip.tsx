@@ -1,6 +1,7 @@
 import { EyeOff } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { CHIP_ACTIVE } from './chipTone';
+import { ICON_SIZE } from '../conceptIcons';
 
 const HIDDEN_IN_PICKER = 'Hidden in the picker';
 
@@ -36,7 +37,7 @@ export const PickerChip = ({
     )}
   >
     {isHiddenInPicker ? (
-      <EyeOff size={11} aria-label={HIDDEN_IN_PICKER} className="shrink-0" />
+      <EyeOff size={ICON_SIZE.mark} aria-label={HIDDEN_IN_PICKER} className="shrink-0" />
     ) : null}
     <span className="truncate">{label}</span>
   </button>

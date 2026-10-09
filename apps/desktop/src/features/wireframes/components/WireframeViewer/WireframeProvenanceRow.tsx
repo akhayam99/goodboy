@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, Eyebrow } from '@goodboy/ui';
 import type { WireframeTheme } from '@goodboy/core';
 import type { WireframeFidelity } from '../../wireframeFidelity';
 
@@ -50,9 +50,10 @@ export const WireframeProvenanceRow = ({ fidelity, theme, designProfile }: Props
       data-testid="wireframe-provenance"
       className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground"
     >
-      <span className="shrink-0 rounded-sm bg-muted px-2 py-0.5 uppercase tracking-eyebrow">
-        {fidelity} fidelity
-      </span>
+      <Eyebrow
+        label={`${fidelity} fidelity`}
+        className="shrink-0 rounded-sm bg-muted px-2 py-0.5"
+      />
       <span className="shrink-0">theme {theme.name}</span>
       {commit === null ? null : <span className="shrink-0 tabular-nums">at {commit}</span>}
       {refs.length === 0 ? (

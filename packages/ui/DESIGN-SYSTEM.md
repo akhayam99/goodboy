@@ -18,6 +18,14 @@ Text uses four opaque semantic steps. `foreground` is primary content,
 placeholders and trailing hints. `disabled-foreground` is reserved for disabled
 controls. Opacity modifiers do not create additional text steps.
 
+The four steps are named by what the text does, in `TEXT_ROLE`
+(`packages/ui/src/textRoles.ts`): `label` is `foreground`, `secondary` is
+`muted-foreground`, `hint` (time, id, hint, separator) is `faint-foreground` and
+`disabled` is `disabled-foreground`. `MetaRow`, `Eyebrow` and a neutral `Chip`
+take their colour from the table, so a role changes in one place. A call site
+that picks a colour for a role the table names uses the role constant. The
+token values themselves are not part of the table.
+
 `faint-foreground` clears 4.5:1 on every surface step and on a `fill` chip sunk
 into `background`, `subtle` or `muted`, in both themes, and the syntax tokens
 clear 4.5:1 on the plain diff background and on an added or removed line, word
@@ -144,6 +152,13 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 | `text-chip`    | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
 | `text-code`    | mono 12/18                    | branch, path, command, inline code                                                     |
 | `document`     | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
+
+Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
+durations, percentages, ages and key letters are the sans stack with
+`tabular-nums` (`text-meta` and `text-chip` carry it already). A file whose
+`font-mono` is code is listed with a one-word reason in
+`regressions/scale-rules.mono-code.json`; any other `font-mono` fails
+`scale-rules.test.ts`.
 
 `document` is the one exception to "a role, never a size": it lives in
 `artifactDocument.css`'s own `--print-*` tokens, not `typeRoles.ts`, because
@@ -273,16 +288,41 @@ compositing layer and is drawn on the device pixel grid. So a fractional box
 snaps to whole pixels when the transition starts, and snaps back when it ends.
 That shows up as a one pixel bounce on every icon in the column.
 
+## Icon ladder and row scale
+
+An icon is one of four sizes, `ICON_SIZE` in `packages/ui/src/iconSize.ts`, and
+nothing else: no numeric `size=` on an icon.
+
+| token               | px  | used for                                                  |
+| ------------------- | --- | --------------------------------------------------------- |
+| `ICON_SIZE.mark`    | 10  | a glyph inside a chip, a dot, the xs and 3xs controls     |
+| `ICON_SIZE.row`     | 12  | the leading or trailing glyph of a row, a trigger chevron |
+| `ICON_SIZE.control` | 14  | buttons, menu triggers, rail tabs, form adornments        |
+| `ICON_SIZE.hero`    | 18  | empty states, studio headers, choice tiles                |
+
+A brand mark (`DogMascot`, `IntegrationGlyph`, `BrandGlyph`) takes its own pixel
+size and is not an icon here. A row, one line or a menu row, is 24, 28, 32, 36,
+40 or 48px high, and a resized row keeps its hover and focus states
+(`ROW_INTERACTIVE`). `row-heights-on-the-scale.test.ts` fails on a height between
+22 and 48px that is not on that list.
+
 ## Gap scale
 
-One limited scale where each step has a meaning. Never an arbitrary value.
+One limited scale where each step has a meaning. Never an arbitrary value, and
+never 20, 28 or 40px.
 
-| token   | separates                      |
-| ------- | ------------------------------ |
-| `gap-2` | a tight group: icon plus label |
-| `gap-4` | controls, or related blocks    |
-| `gap-6` | sections                       |
-| `gap-8` | a header zone from a body zone |
+| token   | px  | separates                                    |
+| ------- | --- | -------------------------------------------- |
+| `gap-1` | 4   | a tight group: icon plus label               |
+| `gap-2` | 8   | controls in a row, the parts of a chip       |
+| `gap-3` | 12  | rows in a list, the fields of a form         |
+| `gap-4` | 16  | controls, or related blocks                  |
+| `gap-6` | 24  | sections (`PANE_RHYTHM.stack`)               |
+| `gap-8` | 32  | a header zone from a body zone, page regions |
+
+`gap-0.5` (2px) stays for a hairline gap between stacked rows. `gap-5`, `gap-7`,
+`gap-10` and their `gap-x`, `gap-y`, `space-x` and `space-y` twins fail
+`scale-rules.test.ts`.
 
 ## Color and tone resolution
 
@@ -1111,13 +1151,16 @@ A selected card is a fill plus a check: never a ring, a border and a wash
 together. A focus ring appears on keyboard focus (`focus-visible`) only.
 
 Rules for new and changed code (the migration of old code is the sweep's):
-icons use `ICON_SIZE` (row 12, control 14, hero 18); mono is for branch, path,
-command, sha and code; money, counts and durations are sans with
+icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18); mono is for
+branch, path, command, sha and code; money, counts and durations are sans with
 `tabular-nums`; rows sit on 24, 28, 32, 36, 40 and 48; gaps sit on 4, 8, 12, 16,
 24 and 32 (no `gap-5`, `gap-7`, `gap-10`); uppercase goes through `Eyebrow`.
 `control-heights.test.ts`, `kbd-overrides.test.ts`,
-`hand-rolled-radio-groups.test.ts`, `switch-labels-name-the-setting.test.ts` and
-`scale-rules.test.ts` hold the line; each baseline only shrinks.
+`hand-rolled-radio-groups.test.ts`, `switch-labels-name-the-setting.test.ts`,
+`row-heights-on-the-scale.test.ts` and `scale-rules.test.ts` hold the line.
+`scale-rules` is at its end state: its baseline lists only the files a named unit
+still has to change, and a mock scene (`design-scale-ladders`, `design-controls-scale`)
+draws every step from the tokens.
 
 ## Listbox
 

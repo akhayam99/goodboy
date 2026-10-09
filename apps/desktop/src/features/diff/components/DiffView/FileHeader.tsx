@@ -63,7 +63,7 @@ export const FileHeader = ({
         <span
           aria-label={STATUS_WORD[file.status]}
           className={cn(
-            'flex size-4 shrink-0 items-center justify-center rounded-sm font-mono text-chip font-semibold',
+            'flex size-4 shrink-0 items-center justify-center rounded-sm text-chip font-semibold',
             tone.text,
             tone.bg,
           )}
@@ -126,7 +126,7 @@ export const FileHeader = ({
           )}
         >
           {isViewed ? (
-            <Check size={10} aria-hidden />
+            <Check size={ICON_SIZE.mark} aria-hidden />
           ) : (
             <span aria-hidden className="size-2.5 rounded-sm border border-border" />
           )}

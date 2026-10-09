@@ -28,7 +28,7 @@ const detailRow = ({
 }) => (
   <div key={label} className="flex items-baseline justify-between gap-3">
     <span className={indent ? 'pl-3 text-faint-foreground' : 'text-muted-foreground'}>{label}</span>
-    <span className="font-mono tabular-nums text-foreground">{value}</span>
+    <span className="tabular-nums text-foreground">{value}</span>
   </div>
 );
 

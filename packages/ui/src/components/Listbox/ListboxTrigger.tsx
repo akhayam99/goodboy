@@ -4,6 +4,7 @@ import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { chipClasses } from '../Chip';
 import type { ListboxSize, ListboxTriggerVariant } from './listboxTypes';
+import { ICON_SIZE } from '../../iconSize';
 
 export type ListboxTriggerProps = {
   readonly variant: ListboxTriggerVariant;
@@ -109,7 +110,7 @@ export const ListboxTrigger = ({
   >
     <span className="flex min-w-0 flex-1 items-center gap-2 truncate">{children}</span>
     <ChevronDown
-      size={12}
+      size={ICON_SIZE.row}
       aria-hidden
       className={cn(
         'shrink-0 text-muted-foreground motion-safe:transition-transform motion-safe:duration-120',

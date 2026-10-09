@@ -32,12 +32,12 @@ const listSourceFiles = (dir: string, acc: string[] = []): string[] => {
 const problemsIn = (source: string): ReadonlyArray<string> => {
   const problems: string[] = [];
   if (ARBITRARY_TRACKING.test(source)) {
-    problems.push('arbitrary tracking value; use tracking-eyebrow');
+    problems.push('arbitrary tracking value; use Eyebrow');
   }
   for (const match of source.matchAll(STRING_LITERAL)) {
     const tokens = (match[2] ?? '').split(/\s+/);
-    if (tokens.includes('uppercase') && tokens.includes('tracking-wide')) {
-      problems.push('uppercase with tracking-wide; use Eyebrow or tracking-eyebrow');
+    if (tokens.includes('uppercase') && tokens.some((token) => token.startsWith('tracking-'))) {
+      problems.push('uppercase with tracking; use Eyebrow');
     }
   }
   return problems;

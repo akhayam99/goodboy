@@ -88,7 +88,7 @@ export const WriteReviewForm = ({ sessionId, variant = 'page' }: Props) => {
       aria-label={WRITE_REVIEW_FORM_LABEL}
       className={
         variant === 'panel'
-          ? 'flex min-w-0 flex-col gap-5'
+          ? 'flex min-w-0 flex-col gap-4'
           : 'flex min-w-0 flex-col gap-8 pb-8 pt-10'
       }
     >

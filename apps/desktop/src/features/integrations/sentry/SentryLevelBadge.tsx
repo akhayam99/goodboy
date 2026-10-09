@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, Eyebrow } from '@goodboy/ui';
 import { levelTone } from './levelTone';
 
 type Props = {
@@ -8,14 +8,13 @@ type Props = {
 
 export const SentryLevelBadge = ({ level, density = 'default' }: Props) => {
   return (
-    <span
+    <Eyebrow
+      label={level ?? 'error'}
       className={cn(
-        'shrink-0 rounded-sm border font-semibold uppercase tracking-eyebrow',
-        density === 'compact' ? 'px-1 py-px text-chip leading-none' : 'px-2 py-0.5 text-meta',
+        'shrink-0 rounded-sm border',
+        density === 'compact' ? 'px-1 py-px leading-none' : 'px-2 py-0.5',
         levelTone({ level }),
       )}
-    >
-      {level ?? 'error'}
-    </span>
+    />
   );
 };

@@ -5,6 +5,7 @@ import { Eyebrow } from '../Eyebrow';
 import type { FilteredOption } from './filterOptions';
 import { ListboxOptionRow } from './ListboxOptionRow';
 import type { ListboxValue } from './listboxTypes';
+import { ICON_SIZE } from '../../iconSize';
 
 export type ListboxListProps<T extends ListboxValue> = {
   readonly id: string;
@@ -83,7 +84,7 @@ export const ListboxList = <T extends ListboxValue>({
         <ListboxOptionRow
           id={listboxOptionId({ id, index: createIndex })}
           label={createLabel}
-          leading={<Plus size={14} />}
+          leading={<Plus size={ICON_SIZE.control} />}
           isActive={createIndex === activeIndex}
           isSelected={false}
           hasLeadingSlot

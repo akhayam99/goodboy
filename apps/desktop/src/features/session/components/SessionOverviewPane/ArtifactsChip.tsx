@@ -2,7 +2,7 @@ import { Chip, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -25,9 +25,15 @@ export const ArtifactsChip = ({ sessionId, onSelectLens }: Props) => {
         shape="badge"
         kind="reference"
         onClick={() => onSelectLens('plans')}
-        icon={<CONCEPT_ICONS.artifacts size={11} aria-hidden className="text-muted-foreground" />}
+        icon={
+          <CONCEPT_ICONS.artifacts
+            size={ICON_SIZE.mark}
+            aria-hidden
+            className="text-muted-foreground"
+          />
+        }
         label="Artifacts"
-        trailing={<span className="font-mono tabular-nums text-foreground">{count}</span>}
+        trailing={<span className="tabular-nums text-foreground">{count}</span>}
       />
     </Tooltip>
   );

@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly icon: LucideIcon;
@@ -20,7 +21,7 @@ export const MessageAction = ({ icon: Icon, label, tooltip, isDisabled = false, 
         FOCUS_RING,
       )}
     >
-      <Icon size={12} aria-hidden />
+      <Icon size={ICON_SIZE.row} aria-hidden />
       {label}
     </button>
   </Tooltip>

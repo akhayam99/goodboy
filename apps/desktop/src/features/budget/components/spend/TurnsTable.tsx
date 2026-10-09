@@ -137,15 +137,15 @@ export const TurnsTable = ({
                         </span>
                       </td>
                     ) : null}
-                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                    <td className="px-2 py-2 text-right tabular-nums text-muted-foreground">
                       {formatTokens(record.inputTokens)}
                     </td>
-                    <td className="px-2 py-2 text-right font-mono tabular-nums text-muted-foreground">
+                    <td className="px-2 py-2 text-right tabular-nums text-muted-foreground">
                       {formatTokens(record.outputTokens)}
                     </td>
                     <td
                       title={formatUsdPrecise(record.estimatedCostUsd)}
-                      className="px-2 py-2 text-right font-mono tabular-nums font-medium text-foreground"
+                      className="px-2 py-2 text-right tabular-nums font-medium text-foreground"
                     >
                       {formatSpent(record.estimatedCostUsd)}
                     </td>

@@ -308,7 +308,7 @@ export const ChangeTree = ({
                   <Delta additions={row.file.additions} deletions={row.file.deletions} />
                   <span
                     aria-label={STATUS_WORD[row.file.status]}
-                    className={cn('w-3 shrink-0 text-center font-mono text-chip', tone.text)}
+                    className={cn('w-3 shrink-0 text-center text-chip', tone.text)}
                   >
                     {STATUS_LETTER[row.file.status]}
                   </span>

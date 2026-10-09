@@ -2,6 +2,7 @@ import { GitBranch } from 'lucide-react';
 import { Chip, type ChipSize } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../../../features/integrations/components/IntegrationGlyph';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly provider: SessionExternalTaskProvider;
@@ -47,7 +48,7 @@ export const TaskLinkChip = ({
       isOnBranch ? (
         <span className="flex items-center gap-1">
           <IntegrationGlyph provider={provider} size="xs" />
-          <GitBranch size={11} aria-label="Branch task" />
+          <GitBranch size={ICON_SIZE.mark} aria-label="Branch task" />
         </span>
       ) : (
         <IntegrationGlyph provider={provider} size="xs" />

@@ -315,7 +315,7 @@ export const StageBoardCard = memo(function StageBoardCard({
                 event.stopPropagation();
                 navigate({ to: branchPlace({ sessionId: id, tab: 'comments' }) });
               }}
-              icon={<MessageSquareDiff size={10} aria-hidden />}
+              icon={<MessageSquareDiff size={ICON_SIZE.mark} aria-hidden />}
               label={<span className="tabular-nums">{reviewDraftCount}</span>}
               trailing={<span>draft {reviewDraftCount === 1 ? 'comment' : 'comments'}</span>}
               className="shrink-0"

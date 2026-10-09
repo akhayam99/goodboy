@@ -5,6 +5,7 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { MOUNT_SWITCH_BRANCH_EVENT, mountEventName } from '../../../../actions/kinds/mount';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
 import { splitBranchLabel } from '../../../../../shared/utils/branchLabel';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -71,7 +72,7 @@ export const ProjectBranchChip = ({
         label={
           <Tooltip content={blockedReason ?? branch}>
             <span className={FACE_CLASS}>
-              <GitBranch size={11} aria-hidden />
+              <GitBranch size={ICON_SIZE.mark} aria-hidden />
               <BranchName branch={branch} />
             </span>
           </Tooltip>
@@ -103,7 +104,7 @@ export const ProjectBranchChip = ({
                 onClick={dropdown.toggle}
                 className={FACE_CLASS}
               >
-                <GitBranch size={11} aria-hidden />
+                <GitBranch size={ICON_SIZE.mark} aria-hidden />
                 <BranchName branch={branch} />
               </button>
             </Tooltip>

@@ -1,7 +1,7 @@
 import { Fragment, memo, useMemo, type ReactNode } from 'react';
 import { Square, SquareCheck, SquareMinus, type LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
-import { Eyebrow } from '../Eyebrow';
+import { EYEBROW_CLASS, Eyebrow } from '../Eyebrow';
 import { RemoteImage } from '../RemoteImage';
 import { LocalImage } from '../LocalImage';
 import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
@@ -14,6 +14,7 @@ import {
   type TaskState,
 } from './parseMarkdown';
 import { CodeBlockContent } from './CodeBlockContent';
+import { ICON_SIZE } from '../../iconSize';
 
 type MarkdownVariant = 'document' | 'preview';
 
@@ -23,8 +24,7 @@ type MarkdownProps = {
   readonly variant?: MarkdownVariant;
 };
 
-const CHIP_CLASS =
-  'mx-0.5 inline-flex items-center gap-1 rounded-sm px-2 py-0.5 align-baseline text-[0.7em] font-semibold uppercase tracking-eyebrow';
+const CHIP_CLASS = `mx-0.5 inline-flex items-center gap-1 rounded-sm px-2 py-0.5 align-baseline ${EYEBROW_CLASS}`;
 
 const INLINE_CODE_CLASS: Record<MarkdownVariant, string> = {
   document: 'rounded-md bg-muted px-1 py-0 font-mono text-[0.875em] text-foreground wrap-anywhere',
@@ -103,7 +103,7 @@ const renderInlineNodes = ({ nodes, keyPrefix, variant }: InlineRenderParams): R
           data-labelled={node.label !== null ? 'true' : undefined}
           className={cn(CHIP_CLASS, node.label !== null && 'normal-case', style.chipClass)}
         >
-          <Icon size={10} aria-hidden />
+          <Icon size={ICON_SIZE.mark} aria-hidden />
           {node.label ?? style.label}
         </span>
       );
@@ -200,7 +200,7 @@ const renderTaskMark = ({ task }: TaskMarkParams): ReactNode => {
   const Icon = TASK_ICON[task];
   return (
     <Icon
-      size={13}
+      size={ICON_SIZE.row}
       role="img"
       aria-label={TASK_LABEL[task]}
       data-block="task-mark"
@@ -409,7 +409,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
               data-color={style.tone}
               className={cn(CHIP_CLASS, style.chipClass)}
             >
-              <Icon size={10} aria-hidden />
+              <Icon size={ICON_SIZE.mark} aria-hidden />
               {label}
             </span>
             <span className="min-w-0 truncate text-muted-foreground">
@@ -435,7 +435,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
             data-block="callout-label"
             className="inline-flex items-center gap-2 text-eyebrow text-muted-foreground"
           >
-            <Icon size={11} aria-hidden className={style.iconClass} />
+            <Icon size={ICON_SIZE.mark} aria-hidden className={style.iconClass} />
             {label}
           </div>
           <div
@@ -457,7 +457,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         <dl
           key={key}
           data-block="facts"
-          className="grid grid-cols-[minmax(6rem,max-content)_1fr] gap-x-5 gap-y-2"
+          className="grid grid-cols-[minmax(6rem,max-content)_1fr] gap-x-4 gap-y-2"
         >
           {block.entries.map((entry, ei) => (
             <Fragment key={`${key}-f${ei}`}>
@@ -528,7 +528,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
                 data-block="timeline-dot"
                 className="absolute left-0 top-[0.55em] size-1.5 rounded-full bg-primary"
               />
-              <span className="font-mono text-[0.9em] text-muted-foreground tabular-nums">
+              <span className="text-[0.9em] text-muted-foreground tabular-nums">
                 {renderInline(entry.label, `${key}-t${ei}-l`, variant)}
               </span>
               <span className="min-w-0 text-prose text-foreground wrap-anywhere">
@@ -660,7 +660,7 @@ const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) 
   }
 
   return (
-    <div className={cn('flex flex-col gap-5 text-body text-foreground', className)}>
+    <div className={cn('flex flex-col gap-4 text-body text-foreground', className)}>
       {document.sections.map((section, si) => (
         <div key={`s-${si}`} className="flex flex-col gap-3">
           {section.map((block, bi) =>

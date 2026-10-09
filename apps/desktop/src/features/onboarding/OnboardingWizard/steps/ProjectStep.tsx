@@ -59,7 +59,7 @@ export const ProjectStep = ({
   const hasProjects = projects.length > 0;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <StepHeading
         title="Pick a project"
         line="A folder with code, or any folder with documents."

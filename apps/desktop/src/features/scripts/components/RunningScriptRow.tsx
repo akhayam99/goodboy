@@ -2,6 +2,7 @@ import { Square } from 'lucide-react';
 import { StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { formatDuration } from '../../../shared/utils/time/formatDuration';
 import type { RunningScript } from '../hooks/useRunningScripts';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly run: RunningScript;
@@ -38,7 +39,7 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
           'hover:text-danger',
         )}
       >
-        <Square size={11} aria-hidden />
+        <Square size={ICON_SIZE.row} aria-hidden />
       </button>
     </Tooltip>
   </li>

@@ -147,7 +147,7 @@ export const CapEditor = ({
               void save();
             }
           }}
-          className="max-w-40 font-mono tabular-nums"
+          className="max-w-40 tabular-nums"
           aria-label={label}
         />
         <Button variant="primary" size="sm" disabled={!canSave} onClick={() => void save()}>
@@ -182,7 +182,7 @@ export const CapEditor = ({
                     void saveThreshold();
                   }
                 }}
-                className="max-w-20 font-mono tabular-nums"
+                className="max-w-20 tabular-nums"
                 aria-label="alert threshold percent"
               />
               <span className="text-body text-muted-foreground">% of the cap</span>

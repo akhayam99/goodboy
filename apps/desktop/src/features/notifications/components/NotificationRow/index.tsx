@@ -190,7 +190,7 @@ export const NotificationRow = ({
           )}
           {context != null && (
             <span className="inline-flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
-              <CONCEPT_ICONS.sessions size={10} aria-hidden className="shrink-0" />
+              <CONCEPT_ICONS.sessions size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
               <span className="truncate">{context}</span>
             </span>
           )}

@@ -1,6 +1,7 @@
 import type { FocusEvent, MouseEvent, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
+import { TEXT_ROLE } from '../textRoles';
 import { tintClasses, type Tone } from '../tint';
 
 export type ChipKind = 'state' | 'reference' | 'id' | 'count';
@@ -89,7 +90,7 @@ export const chipClasses = ({
   return cn(
     'inline-flex items-center gap-1 font-medium',
     emphasis === 'subtle' ? tint.bgSoft : tint.bg,
-    tint.text,
+    tone === 'neutral' ? TEXT_ROLE.secondary : tint.text,
     CHIP_KIND_CLASSES[kind ?? KIND_BY_SIZE[size]],
     legacyShapeClass({ kind, shape }),
     width === 'auto' ? '' : widthClasses[width],

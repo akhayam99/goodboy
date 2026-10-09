@@ -11,6 +11,7 @@ import { openUrl } from '../../../../shared/lib/editor';
 import { useAppStore } from '../../../../store';
 import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
 import { selectSessionForPr } from '../../../../store/slices/github/selectSessionForPr';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly pr: LinearLinkedPr;
@@ -57,7 +58,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
         tint.text,
       )}
     >
-      <Icon size={11} aria-hidden />#{pr.number}
+      <Icon size={ICON_SIZE.mark} aria-hidden />#{pr.number}
       {presentation !== null ? (
         <span className="opacity-70">· {presentation.label.toLowerCase()}</span>
       ) : null}

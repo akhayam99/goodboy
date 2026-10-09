@@ -6,6 +6,7 @@ import { FLOATING_SURFACE } from '../../floatingSurface';
 import { ScrollFade } from '../ScrollFade';
 import { focusFirstMenuItem, isMenuNavigationKey, moveMenuFocus } from './menuKeys';
 import type { MenuChoice } from './menuTypes';
+import { ICON_SIZE } from '../../iconSize';
 
 const PANEL_WIDTH = 240;
 const EDGE = 8;
@@ -113,7 +114,7 @@ export const MenuChoicePanel = ({ label, choices, anchor, onChoose, onBack, onCl
           >
             <span className="min-w-0 flex-1 truncate">{choice.label}</span>
             {choice.isCurrent ? (
-              <Check size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+              <Check size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
             ) : null}
           </button>
         ))}

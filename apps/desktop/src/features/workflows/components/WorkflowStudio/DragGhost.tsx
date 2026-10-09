@@ -1,5 +1,6 @@
 import { cn, tintClasses } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly ghost: { label: string; x: number; y: number } | null;
@@ -18,7 +19,7 @@ export const DragGhost = ({ ghost }: Props) => {
       )}
       style={{ left: ghost.x + 12, top: ghost.y + 12 }}
     >
-      <Plus size={11} className="text-primary" aria-hidden />
+      <Plus size={ICON_SIZE.mark} className="text-primary" aria-hidden />
       {ghost.label}
     </div>
   );

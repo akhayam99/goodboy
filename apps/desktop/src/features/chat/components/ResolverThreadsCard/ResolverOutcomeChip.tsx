@@ -2,6 +2,7 @@ import { Ban, CheckCheck, CircleHelp, Lock, Search } from 'lucide-react';
 import { Chip, type Tone } from '@goodboy/ui';
 import type { ResolverThreadVerdictKind } from './resolverThreadVerdicts';
 import { RESOLVER_OUTCOME_LABEL, resolverOutcome } from './resolverOutcome';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly kind: ResolverThreadVerdictKind;
@@ -34,7 +35,7 @@ export const ResolverOutcomeChip = ({ kind, isClosed }: Props) => {
       width="md"
       emphasis="subtle"
       bordered={false}
-      icon={<Icon size={10} aria-hidden />}
+      icon={<Icon size={ICON_SIZE.mark} aria-hidden />}
       label={RESOLVER_OUTCOME_LABEL[resolverOutcome({ kind, isClosed })]}
       className="shrink-0"
     />

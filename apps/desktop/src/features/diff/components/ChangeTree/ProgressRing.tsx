@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly viewed: number;
@@ -21,7 +22,7 @@ export const ProgressRing = ({ viewed, total }: Props) => {
         className="flex shrink-0 items-center justify-center rounded-full bg-primary text-on-tone"
         style={{ width: SIZE, height: SIZE }}
       >
-        <Check size={10} strokeWidth={3} aria-hidden />
+        <Check size={ICON_SIZE.mark} strokeWidth={3} aria-hidden />
       </span>
     );
   }

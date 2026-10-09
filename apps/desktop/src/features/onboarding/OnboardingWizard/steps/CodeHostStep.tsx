@@ -69,7 +69,7 @@ export const CodeHostStep = ({
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <StepHeading
         title="Where does your code live?"
         line="Goodboy pushes branches and opens pull requests there."

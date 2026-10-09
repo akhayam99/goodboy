@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { cn, Eyebrow } from '@goodboy/ui';
 import type { AgentId, ArtifactId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ReportSourceLink } from '../../reportSourceLinks';
@@ -26,13 +26,11 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
       data-testid="report-provenance"
       className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground"
     >
-      <span className="shrink-0 rounded-sm bg-muted px-2 py-0.5 uppercase tracking-eyebrow">
-        {reportType}
-      </span>
+      <Eyebrow label={reportType} className="shrink-0 rounded-sm bg-muted px-2 py-0.5" />
       {links.length === 0 ? (
         <span className="shrink-0">no cited source maps to this session</span>
       ) : (
-        <span className="shrink-0 uppercase tracking-eyebrow">sources</span>
+        <Eyebrow label="sources" className="shrink-0" />
       )}
       {visible.map((link) => {
         const Glyph = link.kind === 'agent' ? CONCEPT_ICONS.agents : CONCEPT_ICONS.plans;

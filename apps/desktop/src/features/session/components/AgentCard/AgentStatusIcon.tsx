@@ -2,6 +2,7 @@ import { StatusDot, tintClasses } from '@goodboy/ui';
 import type { AgentStatus } from '@goodboy/types';
 import { describeAgentStatus } from '../../agent-status';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly status: AgentStatus;
@@ -22,7 +23,7 @@ export const AgentStatusIcon = ({ status }: Props) => {
       {status === 'running' ? (
         <StatusDot tone={presentation.tone} size="sm" pulsing />
       ) : (
-        <Icon size={10} className={tintClasses(presentation.tone).icon} aria-hidden />
+        <Icon size={ICON_SIZE.mark} className={tintClasses(presentation.tone).icon} aria-hidden />
       )}
     </span>
   );

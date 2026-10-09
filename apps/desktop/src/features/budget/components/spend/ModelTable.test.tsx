@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { STRIPED_ROW } from '@goodboy/ui';
 import { ModelTable } from './ModelTable';
 import type { ModelBreakdownEntry } from './lib';
@@ -30,6 +30,14 @@ describe('ModelTable', () => {
       expect(row.className).toContain(STRIPED_ROW);
     }
     expect(screen.getAllByRole('rowgroup')[1]?.className ?? '').not.toContain('divide-y');
+  });
+
+  it('reads the token and cost figures from their own cells', () => {
+    render(<ModelTable entries={[entry(2)]} />);
+
+    const cells = within(bodyRows()[0] as HTMLElement).getAllByRole('cell');
+    expect(cells.length).toBeGreaterThanOrEqual(3);
+    expect(cells.map((cell) => cell.textContent ?? '').some((text) => /\d/.test(text))).toBe(true);
   });
 
   it('leaves a short table unstriped', () => {

@@ -52,7 +52,7 @@ export const ChapterSection = ({ chapter, onOpen, children }: Props) => {
         <Notice tone="info" placement="inline" title={chapter.note.term} body={chapter.note.desc} />
       )}
       {chapter.points.length > 0 ? (
-        <dl className={cn('grid gap-x-8 gap-y-5', chapter.points.length > 1 && 'grid-cols-2')}>
+        <dl className={cn('grid gap-x-8 gap-y-4', chapter.points.length > 1 && 'grid-cols-2')}>
           {chapter.points.map((point) => (
             <div key={point.term} className="flex flex-col gap-1">
               <dt className="text-heading text-foreground">{point.term}</dt>

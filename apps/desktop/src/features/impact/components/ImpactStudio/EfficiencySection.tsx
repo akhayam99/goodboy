@@ -81,9 +81,7 @@ export const EfficiencySection = ({
               <div key={entry.provider} className="flex flex-col gap-1">
                 <div className="flex items-center gap-3 text-label">
                   <span className="min-w-0 flex-1 capitalize">{entry.provider}</span>
-                  <span className="font-mono tabular-nums">
-                    {Math.round(entry.hitRatio * 100)}%
-                  </span>
+                  <span className="tabular-nums">{Math.round(entry.hitRatio * 100)}%</span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
@@ -118,7 +116,7 @@ export const EfficiencySection = ({
             {nudgeData?.map((entry) => (
               <div key={entry.outcome ?? 'pending'} className="flex items-center gap-3 text-label">
                 <span className="min-w-0 flex-1 capitalize">{entry.outcome ?? 'pending'}</span>
-                <span className="font-mono tabular-nums">{entry.count}</span>
+                <span className="tabular-nums">{entry.count}</span>
               </div>
             ))}
           </div>

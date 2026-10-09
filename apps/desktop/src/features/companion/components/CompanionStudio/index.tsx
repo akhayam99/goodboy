@@ -115,7 +115,7 @@ export const CompanionStudio = ({ onClose }: Props) => {
           className="h-full min-h-0 w-full"
           viewportClassName="flex items-center justify-center"
         >
-          <div className="mx-auto flex w-full max-w-md flex-col items-center gap-7 px-8 py-10">
+          <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 px-8 py-10">
             {!isLoadingStatus && (
               <div className="flex flex-col items-center gap-2 text-center">
                 <h2 className="text-title text-foreground">

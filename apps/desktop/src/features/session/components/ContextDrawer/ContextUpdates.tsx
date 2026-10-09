@@ -21,6 +21,7 @@ import {
   roundUsage,
   type ContextUpdatePhase,
 } from './contextUpdateCopy';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -110,7 +111,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
                 className="inline-flex items-center gap-0.5 text-meta text-muted-foreground hover:text-foreground"
               >
                 Change model
-                <ArrowUpRight size={11} aria-hidden />
+                <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
               </button>
             </dd>
             {round === null ? null : (

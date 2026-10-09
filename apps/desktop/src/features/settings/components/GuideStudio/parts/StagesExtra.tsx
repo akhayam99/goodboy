@@ -3,6 +3,7 @@ import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-
 import type { StatePresentation } from '../../../../../shared/utils/statePresentation';
 import { Block } from './Block';
 import { DefinitionList } from './DefinitionList';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 const STAGE_ORDER: ReadonlyArray<SessionStage> = [
   'building',
@@ -28,7 +29,7 @@ export const StagesExtra = ({}: Props) => (
       rows={LANES.map(({ label, reason, tone, icon: Icon }) => ({
         term: label,
         desc: asSentence({ text: reason }),
-        icon: <Icon size={11} aria-hidden />,
+        icon: <Icon size={ICON_SIZE.row} aria-hidden />,
         tone,
       }))}
     />

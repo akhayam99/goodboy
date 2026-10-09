@@ -394,3 +394,5 @@ second home for them.
   a shape.
 
 Every pixel is intentional: if it carries no meaning, cut it.
+
+- Icons, rows, gaps and numbers sit on one ladder each (`ICON_SIZE`, 24 to 48px rows, 4/8/12/16/24/32 gaps, sans numbers with mono for code only), held by `scale-rules.test.ts` and `row-heights-on-the-scale.test.ts`; see [DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md#icon-ladder-and-row-scale).

@@ -126,7 +126,7 @@ export const ProjectMountGroup = ({
               )}
             />
             Completed
-            <span className="font-mono tabular-nums">{completedRows.length}</span>
+            <span className="tabular-nums">{completedRows.length}</span>
           </Button>
         </div>
       )}

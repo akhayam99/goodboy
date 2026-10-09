@@ -61,7 +61,7 @@ export const LapProjectRow = ({ sessionId, project, stage }: Props) => {
           tone="neutral"
           shape="badge"
           kind="reference"
-          icon={<CONCEPT_ICONS.branch size={11} aria-hidden />}
+          icon={<CONCEPT_ICONS.branch size={ICON_SIZE.mark} aria-hidden />}
           label={<span className="font-mono">{branch}</span>}
         />
         <span className="shrink-0 text-meta text-muted-foreground">

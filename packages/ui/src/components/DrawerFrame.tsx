@@ -7,6 +7,7 @@ import { lastFocusedElement } from '../useLastFocused';
 import { Divider } from './Divider';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
+import { ICON_SIZE } from '../iconSize';
 
 export type DrawerFrameProps = {
   readonly title: string;
@@ -103,7 +104,7 @@ export const DrawerFrame = ({
       <div className={cn('flex min-w-0 flex-1 gap-2', hasToolbar ? 'items-start' : 'items-center')}>
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">
-            <Icon size={14} aria-hidden className={iconClassName} />
+            <Icon size={ICON_SIZE.control} aria-hidden className={iconClassName} />
           </span>
         )}
         <h2

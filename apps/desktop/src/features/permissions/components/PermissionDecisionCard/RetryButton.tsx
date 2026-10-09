@@ -3,6 +3,7 @@ import { RotateCcw } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -54,7 +55,7 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
         disabled && 'cursor-not-allowed opacity-50',
       )}
     >
-      <RotateCcw size={10} aria-hidden />
+      <RotateCcw size={ICON_SIZE.mark} aria-hidden />
       retry {toolName}
     </button>
   );

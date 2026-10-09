@@ -1,5 +1,6 @@
 import { GitCommit } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sha: string;
@@ -13,7 +14,7 @@ export const ResolverCommitChip = ({ sha, onOpen }: Props) => {
   const shortSha = sha.slice(0, 7);
   const content = (
     <>
-      <GitCommit size={10} aria-hidden />
+      <GitCommit size={ICON_SIZE.mark} aria-hidden />
       {shortSha}
     </>
   );

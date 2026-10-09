@@ -27,7 +27,7 @@ export const NewerDatabaseScreen = ({ restorableSnapshot, onRestore, onQuit }: P
   }, [onRestore]);
 
   return (
-    <div className="relative flex h-screen flex-col items-center justify-center gap-10 bg-background px-4 text-foreground">
+    <div className="relative flex h-screen flex-col items-center justify-center gap-8 bg-background px-4 text-foreground">
       <BootBrand />
       <div
         role="alert"

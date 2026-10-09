@@ -66,7 +66,7 @@ export const ReleaseBody = ({
   const metaLine = releaseHeaderMeta({ release, dateLabel });
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       {eyebrowLabel !== null || metaLine !== '' || showPrInMeta ? (
         <div className="flex items-center gap-2">
           {eyebrowLabel !== null ? <Eyebrow label={eyebrowLabel} /> : null}

@@ -33,7 +33,7 @@ export const GithubPrStrip = ({ sessionId, pullRequest }: Props) => {
     >
       <span className="inline-flex min-w-0 items-center gap-2">
         <span className="inline-flex items-center gap-1 font-medium">
-          <GitFork size={11} aria-hidden />#{pullRequest.number}
+          <GitFork size={ICON_SIZE.row} aria-hidden />#{pullRequest.number}
         </span>
         <span className={cn('text-meta', meta.textClass)}>{meta.label}</span>
       </span>

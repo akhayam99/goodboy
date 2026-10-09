@@ -23,7 +23,7 @@ export const HistoryMenu = ({ items, onJump }: Props) => (
         aria-checked={item.isCurrent}
         onClick={() => onJump(item.index)}
         className={cn(
-          'flex h-7.5 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-label transition-colors',
+          'flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-label transition-colors',
           item.isCurrent
             ? 'bg-overlay-selected text-foreground'
             : 'text-muted-foreground hover:bg-hover hover:text-foreground',

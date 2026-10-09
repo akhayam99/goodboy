@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { CONCEPT_ICONS } from '../conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../conceptIcons';
 import { cn } from '@goodboy/ui';
 import { PROVIDER_BRAND } from '../../../features/providers/components/provider-brand';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
@@ -48,13 +48,13 @@ export const RecommendationRow = ({
         <span className="flex shrink-0 items-center gap-2">
           {isAuto ? (
             <CONCEPT_ICONS.autoRouting
-              size={12}
+              size={ICON_SIZE.row}
               className="shrink-0 text-muted-foreground"
               aria-hidden
             />
           ) : (
             <Check
-              size={12}
+              size={ICON_SIZE.row}
               aria-hidden
               className={cn('shrink-0 text-primary', active ? 'opacity-100' : 'opacity-0')}
             />
@@ -66,7 +66,11 @@ export const RecommendationRow = ({
             <span className="truncate text-faint-foreground">Now: {summary}</span>
           ) : routing.label === null ? (
             <>
-              <ProviderGlyph size={12} className="shrink-0 text-muted-foreground" aria-hidden />
+              <ProviderGlyph
+                size={ICON_SIZE.row}
+                className="shrink-0 text-muted-foreground"
+                aria-hidden
+              />
               <span className="truncate text-muted-foreground">
                 {PROVIDER_LABEL[routing.provider]}
               </span>

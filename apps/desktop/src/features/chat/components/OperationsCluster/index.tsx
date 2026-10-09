@@ -223,9 +223,7 @@ const OperationsClusterView = ({
               <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate font-mono">{runningTool!.toolName}</span>
                 {duration != null && (
-                  <span className="shrink-0 font-mono tabular-nums text-faint-foreground">
-                    {duration}
-                  </span>
+                  <span className="shrink-0 tabular-nums text-faint-foreground">{duration}</span>
                 )}
               </span>
             ) : state === 'stopped' ? (

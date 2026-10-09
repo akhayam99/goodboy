@@ -4,6 +4,7 @@ import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 import { useGithubConnection } from './useGithubConnection';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
@@ -58,7 +59,7 @@ export const GithubFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
               rel="noreferrer"
               className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-foreground"
             >
-              configure SSO <ExternalLink size={10} aria-hidden />
+              configure SSO <ExternalLink size={ICON_SIZE.mark} aria-hidden />
             </a>{' '}
             if your org requires it. The key is stored encrypted in your operating system keychain
             and sent directly to GitHub over HTTPS; it never touches Goodboy&apos;s own servers.

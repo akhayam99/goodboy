@@ -16,6 +16,7 @@ import { Tooltip } from '@goodboy/ui';
 import { terminalFindKey } from './terminalFindKey';
 import { terminalFindOptions } from './terminalFindDecorations';
 import { TerminalFindBar, type TerminalFindController } from './TerminalFindBar';
+import { ICON_SIZE } from '../conceptIcons';
 
 export type TerminalDriver = {
   write(data: string): void;
@@ -281,7 +282,7 @@ export const GenericTerminalPanel = ({
             aria-label="Restart shell"
             className="absolute right-2 top-2 z-10 rounded-sm bg-background p-1 text-muted-foreground backdrop-blur hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
-            <RotateCcw size={12} aria-hidden />
+            <RotateCcw size={ICON_SIZE.row} aria-hidden />
           </button>
         </Tooltip>
       ) : null}

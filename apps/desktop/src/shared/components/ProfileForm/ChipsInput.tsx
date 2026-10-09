@@ -10,6 +10,7 @@ import {
   useDropdown,
 } from '@goodboy/ui';
 import { chipsInputOptions, type ChipSuggestion } from './chipsInputOptions';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly label: string;
@@ -140,7 +141,7 @@ export const ChipsInput = ({
                   }}
                   className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-hover hover:text-foreground"
                 >
-                  <X size={11} aria-hidden />
+                  <X size={ICON_SIZE.mark} aria-hidden />
                 </button>
               </Tooltip>
             </span>
@@ -185,7 +186,7 @@ export const ChipsInput = ({
               value: option.key,
               label: option.label,
               group: option.group,
-              leading: option.isCustom ? <Plus size={14} /> : undefined,
+              leading: option.isCustom ? <Plus size={ICON_SIZE.control} /> : undefined,
             },
             match: [],
           }))}

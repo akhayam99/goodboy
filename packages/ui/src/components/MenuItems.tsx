@@ -97,7 +97,7 @@ export const MenuItems = ({ items, onClose }: Props) => (
             <span className="flex-1 truncate">{item.label}</span>
           )}
           {item.hint != null ? (
-            <kbd className="font-mono text-meta text-faint-foreground">{item.hint}</kbd>
+            <kbd className="text-meta text-faint-foreground">{item.hint}</kbd>
           ) : null}
         </button>
       );

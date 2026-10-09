@@ -1,7 +1,7 @@
 import { Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useChatOrigins } from '../hooks/useChatOrigins';
-import { CONCEPT_ICONS } from './conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from './conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -24,7 +24,7 @@ export const ChatOriginGlyph = ({ sessionId }: Props) => {
         return (
           <Tooltip key={origin.chatId} content={label} anchorClassName="flex">
             <span role="img" aria-label={label} className="flex">
-              <CONCEPT_ICONS.chat size={12} aria-hidden />
+              <CONCEPT_ICONS.chat size={ICON_SIZE.row} aria-hidden />
             </span>
           </Tooltip>
         );

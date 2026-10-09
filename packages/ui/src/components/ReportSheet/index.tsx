@@ -11,6 +11,7 @@ import { KeyHint } from '../KeyHint';
 import { ScrollFade } from '../ScrollFade';
 import { Textarea } from '../Textarea';
 import { AttachmentChip, type ReportSheetAttachment } from './AttachmentChip';
+import { ICON_SIZE } from '../../iconSize';
 
 export type { ReportSheetAttachment } from './AttachmentChip';
 
@@ -196,7 +197,7 @@ export const ReportSheet = ({
         ) : null}
         {duplicate != null ? (
           <div className="flex items-center gap-2 rounded-md bg-fill px-2 py-1 text-chip">
-            <Search size={12} aria-hidden className="shrink-0 text-info" />
+            <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-info" />
             <span className="min-w-0 flex-1 truncate text-muted-foreground">
               Looks like{' '}
               <span className="text-foreground">
@@ -239,20 +240,20 @@ export const ReportSheet = ({
               )}
             >
               <ChevronRight
-                size={12}
+                size={ICON_SIZE.row}
                 aria-hidden
                 className={cn(
                   'shrink-0 motion-safe:transition-transform motion-safe:duration-120',
                   isPreviewOpen ? 'rotate-90' : '',
                 )}
               />
-              <ShieldCheck size={12} aria-hidden className="shrink-0 text-success" />
+              <ShieldCheck size={ICON_SIZE.row} aria-hidden className="shrink-0 text-success" />
               <span className="text-foreground">What gets sent</span>
               <span className="truncate text-faint-foreground">· {previewSummary}</span>
             </button>
             <span className="flex-1" />
             {isPreviewOpen ? (
-              <CopyButton value={preview} label="Copy what gets sent" size={12} />
+              <CopyButton value={preview} label="Copy what gets sent" size={ICON_SIZE.row} />
             ) : null}
           </div>
           {isPreviewOpen ? (

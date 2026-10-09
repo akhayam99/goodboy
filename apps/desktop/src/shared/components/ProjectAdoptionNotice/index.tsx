@@ -1,6 +1,7 @@
 import { FolderGit2 } from 'lucide-react';
 import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly conflict: ProjectAttachConflict;
@@ -22,7 +23,7 @@ export const ProjectAdoptionNotice = ({ conflict, busy, onMove, onKeep }: Props)
         'px-3 py-2 text-left',
       )}
     >
-      <FolderGit2 size={16} aria-hidden className="shrink-0 text-primary" />
+      <FolderGit2 size={ICON_SIZE.control} aria-hidden className="shrink-0 text-primary" />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-row text-foreground">{project.name}</span>
         <span className="block text-label text-muted-foreground">

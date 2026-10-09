@@ -61,7 +61,7 @@ export const SpendLimitRow = ({
               style={{ width: `${fill}%` }}
             />
           </div>
-          <p className="font-mono text-meta tabular-nums text-muted-foreground">
+          <p className="text-meta tabular-nums text-muted-foreground">
             {`${formatUsd(totalUsd)} of ${formatUsd(limit.softCapUsd)} · ${SPEND_LIMIT_BEHAVIOR_LABEL[limit.onExceed]}`}
           </p>
         </div>

@@ -5,7 +5,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { selectHasContextChange } from '../../../../store/slices/contextDrawer/selectHasContextChange';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
 
 type Props = {
@@ -57,9 +57,9 @@ export const ContextChip = ({ sessionId }: Props) => {
     status === 'running' ? (
       <StatusDot tone="info" size="sm" pulsing ariaLabel="Updating context" />
     ) : status === 'error' ? (
-      <AlertTriangle size={11} aria-hidden className="text-danger" />
+      <AlertTriangle size={ICON_SIZE.mark} aria-hidden className="text-danger" />
     ) : (
-      <CONCEPT_ICONS.context size={11} aria-hidden className="text-primary" />
+      <CONCEPT_ICONS.context size={ICON_SIZE.mark} aria-hidden className="text-primary" />
     );
 
   return (

@@ -6,6 +6,7 @@ import {
   IntegrationGlyph,
   type IntegrationGlyphProvider,
 } from '../../../features/integrations/components/IntegrationGlyph';
+import { ICON_SIZE } from '../conceptIcons';
 
 type IconLeading = {
   readonly kind: 'icon';
@@ -53,7 +54,7 @@ export const LinkedWorkRow = ({
         aria-label={leading.label}
         className={cn('shrink-0', tintClasses(leading.tone).icon)}
       >
-        <leading.icon size={14} aria-hidden />
+        <leading.icon size={ICON_SIZE.control} aria-hidden />
       </span>
     ) : (
       <IntegrationGlyph provider={leading.provider} size="sm" />
@@ -89,13 +90,13 @@ export const LinkedWorkRow = ({
         {attribution}
         {navigation === 'internal' ? (
           <ArrowRight
-            size={14}
+            size={ICON_SIZE.control}
             aria-hidden
             className="shrink-0 text-faint-foreground motion-safe:transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground"
           />
         ) : (
           <ArrowUpRight
-            size={14}
+            size={ICON_SIZE.control}
             aria-hidden
             className="shrink-0 text-faint-foreground group-hover:text-muted-foreground"
           />

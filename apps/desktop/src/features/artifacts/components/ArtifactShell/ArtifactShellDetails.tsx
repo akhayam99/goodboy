@@ -27,7 +27,7 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
   const savedCopy = useArtifactSavedCopy({ sessionId, artifact });
 
   return (
-    <div data-testid="artifact-details" className="flex min-w-0 flex-col gap-5">
+    <div data-testid="artifact-details" className="flex min-w-0 flex-col gap-6">
       <section aria-label="Made by" className="flex min-w-0 flex-col gap-2">
         <SectionHeader label="Made by" />
         <MetaRow

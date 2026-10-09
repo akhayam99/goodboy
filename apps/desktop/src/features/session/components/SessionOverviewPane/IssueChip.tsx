@@ -17,6 +17,6 @@ export const IssueChip = ({ issue, onOpen }: Props) => (
     title={issue.title ?? `Open issue #${issue.number}`}
     ariaLabel={`Open issue #${issue.number}`}
     icon={<IntegrationGlyph provider="github" size="xs" />}
-    label={<span className="font-mono">#{issue.number}</span>}
+    label={<span className="tabular-nums">#{issue.number}</span>}
   />
 );

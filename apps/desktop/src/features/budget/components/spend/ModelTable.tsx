@@ -55,15 +55,15 @@ export const ModelTable = ({ entries, formatSpent = formatUsd }: Props) => {
                 <CoverageChip coverage={entry.coverage} />
               </span>
             </td>
-            <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+            <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
               {formatTokens(entry.tokensIn)}
             </td>
-            <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+            <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
               {formatTokens(entry.tokensOut)}
             </td>
             <td
               title={formatUsdPrecise(entry.spentUsd)}
-              className="px-3 py-2 text-right font-mono tabular-nums font-medium text-foreground"
+              className="px-3 py-2 text-right tabular-nums font-medium text-foreground"
             >
               {formatSpent(entry.spentUsd)}
             </td>

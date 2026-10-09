@@ -7,6 +7,7 @@ import { Tooltip } from '../Tooltip';
 import type { TrailSegmentModel } from './types';
 import { TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS } from './trailClasses';
 import { TrailSeparator } from './TrailSeparator';
+import { ICON_SIZE } from '../../iconSize';
 
 type Props = {
   readonly segments: ReadonlyArray<TrailSegmentModel>;
@@ -38,7 +39,7 @@ export const TrailFold = ({ segments }: Props) => {
               aria-expanded={open}
               className={cn(TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS)}
             >
-              <Ellipsis size={12} aria-hidden />
+              <Ellipsis size={ICON_SIZE.row} aria-hidden />
             </button>
           </Tooltip>
         }
@@ -57,10 +58,10 @@ export const TrailFold = ({ segments }: Props) => {
                     close();
                     segment.onSelect?.();
                   }}
-                  className="flex h-7.5 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:hover:bg-transparent"
+                  className="flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:hover:bg-transparent"
                 >
                   <Icon
-                    size={12}
+                    size={ICON_SIZE.row}
                     aria-hidden
                     className={cn('shrink-0', segment.iconClassName ?? 'text-faint-foreground')}
                   />

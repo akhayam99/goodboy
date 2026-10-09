@@ -3,6 +3,7 @@ import { Pencil } from 'lucide-react';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { OpenQuestionSelectMode } from '@goodboy/types';
 import { AnswerOptionRow } from '../../../../../shared/components/AnswerOptionRow';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly value: string;
@@ -40,7 +41,7 @@ export const CustomAnswerField = ({
   return (
     <AnswerOptionRow
       label="Something else"
-      keyHint={<Pencil size={11} aria-hidden />}
+      keyHint={<Pencil size={ICON_SIZE.row} aria-hidden />}
       selected={open}
       mode={mode}
       dimmed={dimmed}

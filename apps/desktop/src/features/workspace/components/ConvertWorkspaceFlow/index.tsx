@@ -282,7 +282,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
 
             {isConnected ? (
               <span className="flex items-center gap-2 text-label text-success">
-                <Check size={11} aria-hidden />
+                <Check size={ICON_SIZE.row} aria-hidden />
                 {HOST_NAME[host]} is connected
               </span>
             ) : (
@@ -404,7 +404,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
               <span className="text-row text-foreground">What happens</span>
               <ul className="flex flex-col gap-1 text-meta text-muted-foreground">
                 <li className="flex items-center gap-2">
-                  <GitBranch size={11} aria-hidden className="shrink-0" />
+                  <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                   Git starts tracking {project.rootPath}
                 </li>
                 <li>The first commit holds a .gitignore and nothing else.</li>

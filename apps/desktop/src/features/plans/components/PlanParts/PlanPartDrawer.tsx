@@ -36,7 +36,7 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
       iconClassName="text-muted-foreground"
       onClose={onClose}
     >
-      <div data-testid="plan-part-drawer" className="flex min-w-0 flex-col gap-5">
+      <div data-testid="plan-part-drawer" className="flex min-w-0 flex-col gap-6">
         <div className="flex min-w-0 flex-col gap-1">
           <h3 className="text-title text-foreground">{row.title}</h3>
           {carrier === null ? (

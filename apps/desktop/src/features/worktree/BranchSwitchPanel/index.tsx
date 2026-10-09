@@ -18,6 +18,7 @@ import { branchChoiceOrigin } from '../branchChoices';
 import { useBranchChoices } from '../useBranchChoices';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { selectMountById } from '../../../store/slices/project-mounts/selectors';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -115,7 +116,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
 
       {branch === null ? null : (
         <div className="flex min-w-0 items-center gap-2 rounded-md bg-muted px-2 py-1 text-label text-muted-foreground">
-          <GitBranch size={11} aria-hidden className="shrink-0" />
+          <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span title={branch} className="min-w-0 flex-1 truncate font-mono text-foreground">
             {branch}
           </span>

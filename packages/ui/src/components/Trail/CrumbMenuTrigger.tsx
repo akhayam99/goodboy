@@ -14,6 +14,7 @@ import {
   TRAIL_LINK_CLASS,
   TRAIL_TAIL_CLASS,
 } from './trailClasses';
+import { ICON_SIZE } from '../../iconSize';
 
 const WIDTH: Record<CrumbMenuModel['width'], { readonly className: string; readonly px: number }> =
   {
@@ -63,14 +64,14 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
       </span>
     ) : (
       <Icon
-        size={12}
+        size={ICON_SIZE.row}
         aria-hidden
         className={cn('shrink-0', segment.iconClassName ?? 'text-faint-foreground')}
       />
     );
   const chevron = (
     <ChevronDown
-      size={11}
+      size={ICON_SIZE.row}
       aria-hidden
       className={cn('shrink-0 transition-transform', open && 'rotate-180')}
     />
@@ -156,7 +157,7 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
           )}
         >
           <ChevronRight
-            size={12}
+            size={ICON_SIZE.row}
             aria-hidden
             className={cn(
               'shrink-0 motion-safe:transition-transform motion-safe:duration-150',

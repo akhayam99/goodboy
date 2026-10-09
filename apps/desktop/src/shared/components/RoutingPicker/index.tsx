@@ -12,6 +12,7 @@ import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { RoutingPickerBody, type EffortSetting } from './RoutingPickerBody';
+import { ICON_SIZE } from '../conceptIcons';
 
 export type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -197,7 +198,7 @@ export const RoutingPicker = ({
                 aria-label={resetAriaLabel}
                 className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
-                <X size={10} aria-hidden />
+                <X size={ICON_SIZE.mark} aria-hidden />
               </button>
             </Tooltip>
           )}
@@ -255,7 +256,7 @@ export const RoutingPicker = ({
                 {budget}
               </span>
               <ChevronDown
-                size={11}
+                size={ICON_SIZE.row}
                 aria-hidden
                 className={cn(
                   'shrink-0 text-muted-foreground transition-transform',

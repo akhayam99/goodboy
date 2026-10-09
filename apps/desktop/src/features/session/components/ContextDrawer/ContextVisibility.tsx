@@ -24,7 +24,7 @@ export const ContextVisibility = ({ visibility }: Props) => {
         <span>Visible to</span>
         <span className="min-w-0 truncate text-muted-foreground">{visibility.summary}</span>
         <ChevronRight
-          size={11}
+          size={ICON_SIZE.row}
           aria-hidden
           className={cn('shrink-0 motion-safe:transition-transform', isOpen && 'rotate-90')}
         />
@@ -33,7 +33,7 @@ export const ContextVisibility = ({ visibility }: Props) => {
         <div className="flex flex-wrap gap-2">
           {visibility.hasYou ? (
             <span className={cn(CHIP, 'bg-subtle text-foreground')}>
-              <Check size={11} aria-hidden className="text-success" />
+              <Check size={ICON_SIZE.mark} aria-hidden className="text-success" />
               You
             </span>
           ) : null}
@@ -47,9 +47,9 @@ export const ContextVisibility = ({ visibility }: Props) => {
               )}
             >
               {chip.isReading ? (
-                <Check size={11} aria-hidden className="text-success" />
+                <Check size={ICON_SIZE.mark} aria-hidden className="text-success" />
               ) : (
-                <Minus size={11} aria-hidden />
+                <Minus size={ICON_SIZE.mark} aria-hidden />
               )}
               {chip.label}
             </span>

@@ -1,4 +1,4 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, Eyebrow } from '@goodboy/ui';
 import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId } from '@goodboy/types';
@@ -7,6 +7,7 @@ import { EMPTY_ARRAY, agentHasUnread } from '../../../../store';
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import type { AgentAggregate } from '../AgentMetrics';
 import { ClusterChildRow } from './ClusterChildRow';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly containerId: AgentId;
@@ -63,17 +64,17 @@ export const ScoutSubtree = ({
         aria-expanded={expanded}
         aria-label={`${expanded ? 'collapse' : 'expand'} ${groupLabel}`}
         className={cn(
-          'flex items-center gap-1 px-2 py-0.5 text-meta uppercase tracking-eyebrow',
+          'flex items-center gap-1 px-2 py-0.5',
           tintClasses('info').text,
           'transition-colors hover:text-info',
         )}
       >
         {expanded ? (
-          <ChevronDown size={10} aria-hidden className="shrink-0" />
+          <ChevronDown size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
         ) : (
-          <ChevronRight size={10} aria-hidden className="shrink-0" />
+          <ChevronRight size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
         )}
-        {groupLabel} {doneCount}/{children.length}
+        <Eyebrow label={`${groupLabel} ${doneCount}/${children.length}`} className="text-inherit" />
         {!expanded && unreadCount > 0 ? (
           <span
             className={cn(

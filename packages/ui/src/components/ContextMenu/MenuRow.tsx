@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { cn } from '../../cn';
 import { tintClasses } from '../../tint';
 import type { MenuItemEntry } from './menuTypes';
+import { ICON_SIZE } from '../../iconSize';
 
 const dangerTint = tintClasses('danger');
 
@@ -48,7 +49,7 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
       <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden>
         {Icon === undefined ? null : (
           <Icon
-            size={12}
+            size={ICON_SIZE.row}
             aria-hidden
             className={cn(
               isBlocked
@@ -65,10 +66,10 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
         {detail === null ? null : <span className="text-meta text-faint-foreground">{detail}</span>}
       </span>
       {entry.hint == null ? null : (
-        <kbd className="shrink-0 font-mono text-meta text-faint-foreground">{entry.hint}</kbd>
+        <kbd className="shrink-0 text-meta text-faint-foreground">{entry.hint}</kbd>
       )}
       {hasChoices ? (
-        <ChevronRight size={12} aria-hidden className="shrink-0 text-faint-foreground" />
+        <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
       ) : null}
     </button>
   );

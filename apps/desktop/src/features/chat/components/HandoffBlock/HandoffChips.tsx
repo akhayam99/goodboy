@@ -3,6 +3,7 @@ import { Chip, cn } from '@goodboy/ui';
 import type { HandoffSection, HandoffSectionKind } from '@goodboy/types';
 import { handoffChipLabel } from '../../utils/handoffLabels';
 import type { HandoffActive } from './useHandoffDisclosure';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sections: ReadonlyArray<HandoffSection>;
@@ -38,7 +39,7 @@ export const HandoffChips = ({ sections, active, onToggleSection, onShowAll }: P
             label={handoffChipLabel({ section })}
             trailing={
               <ChevronDown
-                size={10}
+                size={ICON_SIZE.mark}
                 aria-hidden
                 className={cn('motion-safe:transition-transform', isPressed && 'rotate-180')}
               />

@@ -345,7 +345,11 @@ export const DiffViewSelector = ({
           ) : countLabel === null ? null : (
             <span className="shrink-0 text-faint-foreground tabular-nums">· {countLabel}</span>
           )}
-          <ChevronDown size={11} aria-hidden className="shrink-0 text-faint-foreground" />
+          <ChevronDown
+            size={ICON_SIZE.row}
+            aria-hidden
+            className="shrink-0 text-faint-foreground"
+          />
         </button>
       }
     >

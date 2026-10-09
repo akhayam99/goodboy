@@ -34,7 +34,7 @@ export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }
           <InlineMarkdown text={session.goal} className="min-w-0 flex-1 truncate text-foreground" />
         );
         const value = (
-          <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
+          <span className="shrink-0 tabular-nums text-muted-foreground">
             {formatValue(session.value)} {valueLabel}
           </span>
         );

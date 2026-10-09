@@ -4,7 +4,7 @@ import type { ProviderId } from '@goodboy/types';
 import { openCommandInExternalTerminal } from '../../external-terminal';
 import { useAppStore } from '../../../../store';
 import { CopyButton } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly command: string;
@@ -97,7 +97,7 @@ export const EscapeHatch = ({ command, providerId }: Props) => {
             disabled={launching}
             onClick={() => void onLaunch()}
           >
-            <CONCEPT_ICONS.terminal size={11} aria-hidden />
+            <CONCEPT_ICONS.terminal size={ICON_SIZE.row} aria-hidden />
             <span>Run in terminal</span>
           </Button>
         </Tooltip>

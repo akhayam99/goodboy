@@ -17,6 +17,7 @@ import { CopyButton } from '@goodboy/ui';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { ClampedText } from '../../../../shared/components/ClampedText';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type MessageAttachmentChipProps = {
   readonly attachment: MessageAttachment;
@@ -104,7 +105,7 @@ export const UserText = ({
           items={[
             provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
             sentVia ? <span key="sent-via">{SENT_VIA_LABEL[sentVia]}</span> : null,
-            <span key="time" className="font-mono">
+            <span key="time" className="tabular-nums">
               {formatClock({ at })}
             </span>,
           ]}
@@ -135,7 +136,7 @@ const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
       className="inline-flex items-center gap-1"
       title={`Sent to ${label}${model ? ` · ${modelLabel(model, provider)}` : ''}`}
     >
-      <Icon size={11} className="text-muted-foreground" aria-hidden />
+      <Icon size={ICON_SIZE.row} className="text-muted-foreground" aria-hidden />
       <span>{label}</span>
     </span>
   );

@@ -52,7 +52,7 @@ export const PropertyRow = ({ fact }: Props) => {
           <span className={LABEL}>{fact.label}</span>
           {value}
           <ChevronDown
-            size={12}
+            size={ICON_SIZE.row}
             aria-hidden
             className={cn(
               'shrink-0 text-faint-foreground opacity-0 group-hover/property:opacity-100 group-focus-visible/property:opacity-100',

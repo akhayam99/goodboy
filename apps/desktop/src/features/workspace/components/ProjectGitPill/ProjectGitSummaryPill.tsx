@@ -64,17 +64,17 @@ const rowTierOf = (entry: SummaryEntry): number => {
 const rowGlyphOf = ({ kind }: RowGlyphParams) => {
   switch (kind) {
     case 'behind':
-      return <ArrowDown size={11} aria-hidden className="text-info" />;
+      return <ArrowDown size={ICON_SIZE.mark} aria-hidden className="text-info" />;
     case 'up-to-date':
-      return <Check size={11} aria-hidden className="text-faint-foreground" />;
+      return <Check size={ICON_SIZE.mark} aria-hidden className="text-faint-foreground" />;
     case 'uncommitted':
-      return <Circle size={8} aria-hidden className="fill-current text-warning" />;
+      return <Circle size={ICON_SIZE.mark} aria-hidden className="fill-current text-warning" />;
     case 'diverged':
-      return <ArrowUpDown size={11} aria-hidden className="text-warning" />;
+      return <ArrowUpDown size={ICON_SIZE.mark} aria-hidden className="text-warning" />;
     case 'rebase-stopped':
-      return <AlertTriangle size={11} aria-hidden className="text-warning" />;
+      return <AlertTriangle size={ICON_SIZE.mark} aria-hidden className="text-warning" />;
     case 'cant-read':
-      return <AlertTriangle size={11} aria-hidden className="text-danger" />;
+      return <AlertTriangle size={ICON_SIZE.mark} aria-hidden className="text-danger" />;
     case 'no-upstream':
     case 'detached':
       return null;
@@ -249,7 +249,7 @@ export const ProjectGitSummaryPill = ({ entries, isQuiet = false }: Props) => {
               data-testid="project-git-summary-warning"
               className="flex items-center text-warning"
             >
-              <AlertTriangle size={10} aria-hidden />
+              <AlertTriangle size={ICON_SIZE.mark} aria-hidden />
             </span>
           ) : uncommittedCount > 0 ? (
             <span
@@ -325,7 +325,7 @@ export const ProjectGitSummaryPill = ({ entries, isQuiet = false }: Props) => {
                       <span className="text-muted-foreground">Updating…</span>
                     ) : result?.kind === 'updated' ? (
                       <span className="flex items-center gap-1 text-success">
-                        <Check size={11} aria-hidden />
+                        <Check size={ICON_SIZE.mark} aria-hidden />
                         {`Updated · ${result.commits} ${result.commits === 1 ? 'commit' : 'commits'}`}
                       </span>
                     ) : result?.kind === 'failed' ? (
@@ -341,7 +341,11 @@ export const ProjectGitSummaryPill = ({ entries, isQuiet = false }: Props) => {
                         {entry.rowStatus.label}
                       </span>
                     ) : entry.isWarning ? (
-                      <AlertTriangle size={11} aria-label="Warning" className="text-warning" />
+                      <AlertTriangle
+                        size={ICON_SIZE.mark}
+                        aria-label="Warning"
+                        className="text-warning"
+                      />
                     ) : entry.uncommittedCount > 0 ? (
                       <span className="tabular-nums text-warning">
                         {entry.uncommittedCount} uncommitted

@@ -4,6 +4,7 @@ import { Button, cn, EmptyLine, Markdown, Textarea } from '@goodboy/ui';
 import { useInlineProseEdit } from '../../hooks/useInlineProseEdit';
 import { isInteractiveClick } from '../../utils/isInteractiveClick';
 import { StudioWidget } from '@goodboy/ui';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly text: string;
@@ -87,7 +88,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
           <div className="flex items-center gap-2">
             {edit.isDirty ? <span className="text-meta text-warning">Unsaved edits</span> : null}
             <Button size="sm" variant="ghost" onClick={edit.start}>
-              <Pencil size={12} aria-hidden />
+              <Pencil size={ICON_SIZE.row} aria-hidden />
               Edit
             </Button>
           </div>

@@ -72,7 +72,7 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
         />
       }
     >
-      <div data-testid="artifact-run-detail" className="flex min-w-0 flex-col gap-5">
+      <div data-testid="artifact-run-detail" className="flex min-w-0 flex-col gap-6">
         {questions.length > 0 ? (
           <div data-testid="artifact-run-questions" className="flex min-w-0 flex-col gap-2">
             <SectionHeader label="Answer this before it can produce" />

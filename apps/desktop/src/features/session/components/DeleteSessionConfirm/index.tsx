@@ -63,7 +63,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className, surface }: P
       {...(session.archivedAt == null && {
         altAction: {
           label: 'Archive instead',
-          icon: <CONCEPT_ICONS.archive size={11} aria-hidden />,
+          icon: <CONCEPT_ICONS.archive size={ICON_SIZE.row} aria-hidden />,
           onClick: () => void onArchiveInstead(),
         },
       })}

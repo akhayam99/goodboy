@@ -194,7 +194,7 @@ export const DecisionRowItem = ({
         </div>
         {reworded === null ? null : (
           <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
-            <RewordIcon size={10} aria-hidden className="shrink-0" />
+            <RewordIcon size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
             {`Reworded by Goodboy · ${reworded.age}`}
             <button
               type="button"

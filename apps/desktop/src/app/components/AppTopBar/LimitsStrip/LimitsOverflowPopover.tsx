@@ -86,7 +86,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
           </span>
           {worst === null ? null : (
             <TriangleAlert
-              size={10}
+              size={ICON_SIZE.mark}
               aria-hidden
               className={worst.state === 'out' ? 'text-danger' : 'text-warning'}
             />

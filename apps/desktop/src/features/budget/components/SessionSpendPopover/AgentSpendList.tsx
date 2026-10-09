@@ -31,7 +31,7 @@ export const AgentSpendList = ({ agents }: Props) => {
                 <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
                   {agent.model}
                 </span>
-                <span className="shrink-0 font-mono text-meta tabular-nums text-foreground">
+                <span className="shrink-0 text-meta tabular-nums text-foreground">
                   {formatUsd(agent.costUsd)}
                 </span>
               </div>

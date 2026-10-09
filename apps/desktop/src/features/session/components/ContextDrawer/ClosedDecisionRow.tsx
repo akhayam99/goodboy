@@ -49,7 +49,7 @@ export const ClosedDecisionRow = ({
             onClick={() => onJump(byline.target ?? number)}
             className="inline-flex items-center gap-0.5 rounded-sm text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
-            <ArrowRight size={10} aria-hidden />
+            <ArrowRight size={ICON_SIZE.mark} aria-hidden />
             {byline.target}
           </button>
         )}

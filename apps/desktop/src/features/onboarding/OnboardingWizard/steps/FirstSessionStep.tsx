@@ -104,7 +104,7 @@ export const FirstSessionStep = ({
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <StepHeading
         title="Give your first agent something to do"
         line="Three ways to start any session."

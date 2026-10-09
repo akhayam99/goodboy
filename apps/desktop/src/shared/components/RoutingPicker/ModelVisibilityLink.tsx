@@ -3,6 +3,7 @@ import type { ProviderId } from '@goodboy/types';
 import { Tooltip } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { MODELS_SECTION } from '../../../features/providers/components/ProviderStudio/ProviderPage/ModelsGroup/constants';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly provider: ProviderId;
@@ -26,7 +27,7 @@ export const ModelVisibilityLink = ({ provider, onNavigate }: Props) => {
         }}
         className="inline-flex size-5 items-center justify-center rounded-sm text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
       >
-        <Settings2 size={14} aria-hidden />
+        <Settings2 size={ICON_SIZE.control} aria-hidden />
       </button>
     </Tooltip>
   );

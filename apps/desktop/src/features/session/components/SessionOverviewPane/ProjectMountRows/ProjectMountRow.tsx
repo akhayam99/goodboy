@@ -5,7 +5,7 @@ import type { MountDiffStat } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { selectTurnMountCount } from '../../../../../store/slices/project-mounts/selectors';
 import { useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
 import { useActionControls } from '../../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
@@ -173,7 +173,7 @@ export const ProjectMountRow = ({
               tone="neutral"
               kind="state"
               bordered={false}
-              icon={<CONCEPT_ICONS.worktree size={9} aria-hidden />}
+              icon={<CONCEPT_ICONS.worktree size={ICON_SIZE.mark} aria-hidden />}
               label={row.isOnDisk ? 'Files kept' : 'Files gone'}
               title={
                 row.isOnDisk

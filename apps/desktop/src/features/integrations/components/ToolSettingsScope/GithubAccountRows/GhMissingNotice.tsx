@@ -12,7 +12,7 @@ export const GhMissingNotice = () => (
         rel="noreferrer"
         className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-foreground"
       >
-        Install gh <ExternalLink size={10} aria-hidden />
+        Install gh <ExternalLink size={ICON_SIZE.mark} aria-hidden />
       </a>
     </span>
   </p>

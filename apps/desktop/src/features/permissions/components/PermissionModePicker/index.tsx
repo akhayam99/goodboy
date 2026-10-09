@@ -83,7 +83,9 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             />
           }
           label={<span className="text-foreground">{current.label}</span>}
-          trailing={<ChevronDown size={11} aria-hidden className="text-faint-foreground" />}
+          trailing={
+            <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
+          }
         />
       }
     >
@@ -141,7 +143,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
               </span>
               {isUnavailable ? (
                 <span className="flex items-center gap-1 text-meta text-muted-foreground">
-                  <X size={10} aria-hidden />
+                  <X size={ICON_SIZE.mark} aria-hidden />
                   {reason}
                 </span>
               ) : null}

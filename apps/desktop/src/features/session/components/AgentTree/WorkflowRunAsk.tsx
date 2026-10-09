@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { EmptyLine, ClampedProse, Markdown, SectionHeader } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly goal: string;
@@ -33,9 +34,9 @@ export const WorkflowRunAsk = ({ goal, processText }: Props) => {
             className="flex items-center gap-1 self-start rounded-md text-meta text-muted-foreground transition-colors hover:text-foreground"
           >
             {processOpen ? (
-              <ChevronDown size={11} aria-hidden className="shrink-0" />
+              <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             ) : (
-              <ChevronRight size={11} aria-hidden className="shrink-0" />
+              <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             )}
             How you described the process
           </button>

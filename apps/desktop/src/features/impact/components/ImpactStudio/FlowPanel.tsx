@@ -88,10 +88,10 @@ export const FlowPanel = ({
                 className="grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-md px-2 py-2 text-label"
               >
                 <span className="capitalize text-foreground">{entry.kind}</span>
-                <span className="font-mono tabular-nums text-muted-foreground">
+                <span className="tabular-nums text-muted-foreground">
                   median {formatHours({ hours: entry.medianHours })}
                 </span>
-                <span className="font-mono tabular-nums text-muted-foreground">
+                <span className="tabular-nums text-muted-foreground">
                   p90 {formatHours({ hours: entry.p90Hours })}
                 </span>
               </div>
@@ -110,21 +110,17 @@ export const FlowPanel = ({
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-label">Waiting on open questions</span>
-              <span className="font-mono text-body tabular-nums">
+              <span className="text-body tabular-nums">
                 {countOrUnknown(health?.questionBlockedSessions)}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-label">Failed run agents</span>
-              <span className="font-mono text-body tabular-nums">
-                {countOrUnknown(health?.failedAgents)}
-              </span>
+              <span className="text-body tabular-nums">{countOrUnknown(health?.failedAgents)}</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-label">Undismissed budget alerts</span>
-              <span className="font-mono text-body tabular-nums">
-                {countOrUnknown(health?.budgetAlerts)}
-              </span>
+              <span className="text-body tabular-nums">{countOrUnknown(health?.budgetAlerts)}</span>
             </div>
           </div>
         </StudioWidget>

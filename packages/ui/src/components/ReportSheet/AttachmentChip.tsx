@@ -4,6 +4,7 @@ import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
 import { tintClasses } from '../../tint';
 import { Tooltip } from '../Tooltip';
+import { ICON_SIZE } from '../../iconSize';
 
 export type ReportSheetAttachment = {
   readonly id: string;
@@ -32,7 +33,7 @@ export const AttachmentChip = ({ attachment, onToggle }: Props) => {
           FOCUS_RING,
         )}
       >
-        <Plus size={12} aria-hidden />
+        <Plus size={ICON_SIZE.row} aria-hidden />
         <span className="max-w-60 truncate line-through">{attachment.label}</span>
       </button>
     );
@@ -64,7 +65,7 @@ export const AttachmentChip = ({ attachment, onToggle }: Props) => {
             FOCUS_RING,
           )}
         >
-          <X size={12} aria-hidden />
+          <X size={ICON_SIZE.row} aria-hidden />
         </button>
       </Tooltip>
     </span>

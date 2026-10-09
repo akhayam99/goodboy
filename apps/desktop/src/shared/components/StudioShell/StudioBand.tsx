@@ -8,7 +8,7 @@ import {
   type Tone,
 } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
-import { CONCEPT_ICONS } from '../conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly crumbKey: string;
@@ -72,7 +72,7 @@ export const StudioBand = ({
         {accessory}
         {isClosable ? (
           <Button variant="ghost" size="sm" onClick={onClose} aria-label={closeLabel}>
-            <X size={13} aria-hidden /> Close
+            <X size={ICON_SIZE.control} aria-hidden /> Close
           </Button>
         ) : null}
       </PageColumn>

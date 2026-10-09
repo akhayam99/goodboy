@@ -147,7 +147,7 @@ export const StandaloneAgentsLane = ({
       footer={error}
     >
       {agents.length > 0 || filedToggle != null ? (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           {lane.activeAgents.length > 0 ? renderList(lane.activeAgents, false) : null}
           {filedToggle}
           {showCompleted ? (

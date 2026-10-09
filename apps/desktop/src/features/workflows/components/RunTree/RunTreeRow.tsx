@@ -35,6 +35,7 @@ import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { rowSlotWidth } from './rowSlotWidth';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type RunTreeRouting = {
   readonly stepById: ReadonlyMap<string, Step>;
@@ -208,7 +209,7 @@ export const RunTreeRow = ({
                           tintClasses('info').text,
                         )}
                       >
-                        <SlidersHorizontal size={11} aria-hidden />
+                        <SlidersHorizontal size={ICON_SIZE.mark} aria-hidden />
                         Guidance
                       </span>
                     </Tooltip>

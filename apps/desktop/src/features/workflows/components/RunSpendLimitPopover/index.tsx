@@ -16,6 +16,7 @@ import { OrchestratorAction } from '../OrchestratorStrip/OrchestratorAction';
 import { SpendLimitFields } from '../../../budget/components/SpendLimitFields';
 import { parseSpendLimit } from '../../../budget/parseSpendLimit';
 import { behaviorOfRunMode, runModeOfBehavior } from '../../../budget/spendLimitBehavior';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -82,7 +83,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
-            <CircleDollarSign size={11} aria-hidden className="shrink-0" />
+            <CircleDollarSign size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             {metaLabel}
           </button>
         ) : (

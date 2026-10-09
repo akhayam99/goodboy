@@ -21,6 +21,7 @@ import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly assistantText: string;
@@ -181,7 +182,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
               'disabled:cursor-not-allowed disabled:opacity-60',
             )}
           >
-            <ArrowRight size={10} aria-hidden />
+            <ArrowRight size={ICON_SIZE.mark} aria-hidden />
             <span className={cn(isPending && 'text-shimmer')}>
               {isPending
                 ? `Starting ${roleLabel.toLowerCase()}`

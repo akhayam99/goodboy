@@ -38,6 +38,7 @@ import { recommendationSummary } from '../../../../shared/components/RoutingPick
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
@@ -216,7 +217,7 @@ export const CreateAgentPopover = ({
                 )}
               </span>
               <ChevronDown
-                size={11}
+                size={ICON_SIZE.row}
                 aria-hidden
                 className={cn(
                   'shrink-0 text-muted-foreground motion-safe:transition-transform',

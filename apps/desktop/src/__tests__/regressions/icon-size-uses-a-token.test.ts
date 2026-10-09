@@ -64,7 +64,7 @@ describe('icon sizing', () => {
     }
     expect(
       offenders,
-      `Icon sizes ${TOKENIZED_RANGE} come from ICON_SIZE (row, control, hero) in shared/components/conceptIcons.ts; smaller marks inside chips and dots stay literal. Replace the literal in:\n${offenders.join('\n')}`,
+      `Icon sizes ${TOKENIZED_RANGE} come from ICON_SIZE (mark, row, control, hero) in shared/components/conceptIcons.ts, and scale-rules.test.ts holds the smaller sizes. Replace the literal in:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 

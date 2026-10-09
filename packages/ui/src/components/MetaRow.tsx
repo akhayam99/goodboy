@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { cn } from '../cn';
+import { TEXT_ROLE } from '../textRoles';
 
 export type MetaRowProps = {
   readonly items: ReadonlyArray<ReactNode>;
@@ -14,12 +15,12 @@ export const MetaRow = ({ items, className }: MetaRowProps) => {
 
   return (
     <span
-      className={cn('flex flex-wrap items-center gap-1 text-meta text-muted-foreground', className)}
+      className={cn('flex flex-wrap items-center gap-1 text-meta', TEXT_ROLE.secondary, className)}
     >
       {kept.map((item, index) => (
         <Fragment key={index}>
           {index > 0 ? (
-            <span aria-hidden className="text-faint-foreground">
+            <span aria-hidden className={TEXT_ROLE.hint}>
               ·
             </span>
           ) : null}

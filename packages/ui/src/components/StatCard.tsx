@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 import { Eyebrow } from './Eyebrow';
+import { ICON_SIZE } from '../iconSize';
 
 export type StatCardProps = {
   readonly value: string;
@@ -58,12 +59,7 @@ export const StatCard = ({
         <div data-stat-label="" className="min-w-0">
           <Eyebrow label={label} className="line-clamp-2" />
         </div>
-        <span
-          className={cn(
-            'mt-auto font-mono tabular-nums text-foreground',
-            valueSizeClasses[valueSize],
-          )}
-        >
+        <span className={cn('mt-auto tabular-nums text-foreground', valueSizeClasses[valueSize])}>
           {value}
         </span>
         {hint || status || reservesDeltaRow ? (
@@ -79,7 +75,9 @@ export const StatCard = ({
           </div>
         ) : null}
       </div>
-      {onClick ? <ArrowRight size={14} aria-hidden className="text-muted-foreground" /> : null}
+      {onClick ? (
+        <ArrowRight size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
+      ) : null}
     </>
   );
 

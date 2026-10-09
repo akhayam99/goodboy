@@ -20,6 +20,7 @@ describe('StatCard layout', () => {
     const figure = screen.getByText('38');
     expect(figure.className).toContain('mt-auto');
     expect(figure.className).toContain('tabular-nums');
+    expect(figure.className).not.toContain('font-mono');
   });
 
   it('puts the delta on its own row below the figure, never beside the label', () => {

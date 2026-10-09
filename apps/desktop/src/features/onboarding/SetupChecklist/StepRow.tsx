@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import { ROW_INTERACTIVE, cn, tintClasses } from '@goodboy/ui';
 import { openWizardStep, type OnboardingStepId } from '../onboarding-store';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly id: OnboardingStepId;
@@ -47,7 +48,7 @@ export const StepRow = ({ id, title, why, done }: Props) => {
                 : 'border-border-soft bg-transparent',
             )}
           >
-            {done ? <Check size={9} aria-hidden /> : null}
+            {done ? <Check size={ICON_SIZE.mark} aria-hidden /> : null}
           </span>
           <span className={cn('truncate', done && 'line-through decoration-1')}>{title}</span>
         </span>

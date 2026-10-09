@@ -158,7 +158,7 @@ export const WorkflowNextStepCta = ({
             />
             {consumesActivePlan ? (
               <span className="shrink-0" title="Advancing will consume the active plan">
-                <CONCEPT_ICONS.plans size={11} aria-hidden className={planTint.icon} />
+                <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden className={planTint.icon} />
               </span>
             ) : null}
           </button>

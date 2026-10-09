@@ -74,7 +74,7 @@ export const BootSplash = ({
   if (hasError) {
     const isDatabaseFailure = error === DATABASE_UNAVAILABLE_MESSAGE;
     return (
-      <div className="relative flex h-screen flex-col items-center justify-center gap-10 bg-background text-foreground">
+      <div className="relative flex h-screen flex-col items-center justify-center gap-8 bg-background text-foreground">
         <BootBrand />
         <BootErrorRecovery
           error={error}
