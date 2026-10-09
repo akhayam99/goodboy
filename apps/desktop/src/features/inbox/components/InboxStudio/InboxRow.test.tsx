@@ -49,6 +49,22 @@ describe('InboxRow', () => {
     expect(screen.queryByText('Linear')).toBeNull();
   });
 
+  it('keeps the age on one line in a column wide enough for 50m ago', () => {
+    const { container } = render(
+      <InboxRow
+        record={{ ...record, updatedAt: new Date(Date.now() - 50 * 60 * 1000).toISOString() }}
+        selected={false}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    const age = screen.getByText('50m ago');
+    expect(age.className).toContain('whitespace-nowrap');
+    const row = container.querySelector<HTMLElement>('[data-inbox-key]');
+    expect(row?.className).toContain('_56px]');
+    expect(row?.className).not.toContain('_48px]');
+  });
+
   it('exposes the row as a selectable option', () => {
     render(<InboxRow record={record} selected onSelect={vi.fn()} />);
 
