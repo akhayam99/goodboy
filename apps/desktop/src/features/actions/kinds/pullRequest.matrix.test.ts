@@ -138,7 +138,7 @@ const STATES: ReadonlyArray<{
     expected: [
       'pullRequest.openOnGithub secondary',
       'pullRequest.checkLog hover',
-      'pullRequest.merge secondary (Conflicts with main. Rebase in the Diff.)',
+      'pullRequest.merge secondary (Conflicts with main. Rebase on main from the Branch header.)',
       ...OWN_LIVE_TAIL,
       'pullRequest.convertToDraft menu',
       ...COPIES,

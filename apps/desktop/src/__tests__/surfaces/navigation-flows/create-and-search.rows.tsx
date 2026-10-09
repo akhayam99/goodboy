@@ -15,7 +15,7 @@ import {
   clickFirstButton,
   heading,
   lens,
-  openCrumb,
+  openBranchFiles,
   settle,
   useAppStore,
   visible,
@@ -213,7 +213,7 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     name: 'back arrow history menu jumps to an entry',
     covers: ['goToHistory'],
     open: async () => {
-      await openCrumb(/^Diff/);
+      await openBranchFiles();
       fireEvent.contextMenu(await screen.findByRole('button', { name: /^Back/ }));
       await settle();
       const entries = await screen.findAllByRole('menuitemradio');

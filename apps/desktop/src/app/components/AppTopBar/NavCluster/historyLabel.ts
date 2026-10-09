@@ -1,6 +1,7 @@
 import type { Session } from '@goodboy/types';
 import type { NavigationLocation } from '../../../../store';
 import { LENS_LABEL } from '../../../../features/session/lens-labels';
+import { NAMES } from '../../../../shared/names';
 import { sessionTitle } from '../../../../features/session/sessionTitle';
 import { STUDIO_META } from '../../StudioFrame/studioMeta';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -29,7 +30,7 @@ export const historyLabel = ({ location, sessions }: Params): HistoryLabel => {
   const session = sessionById(sessions, place.sessionId) ?? null;
   const lens = place.view.lens;
   return {
-    label: lens === null ? 'Session' : LENS_LABEL[lens],
+    label: lens === null ? NAMES.overview : LENS_LABEL[lens],
     context: session === null ? null : sessionTitle({ session }),
   };
 };

@@ -1,18 +1,17 @@
 import type { CrumbMenuAction, CrumbMenuGroup, CrumbMenuModel, CrumbMenuRow } from '@goodboy/ui';
 import type { LensKind } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { LensDestination } from '../../lens-destinations';
-import { LENS_ICON, lensIconClass, lensLabelFor } from '../../lens-labels';
-
-export type PageSummaries = Partial<Record<LensKind, string>>;
+import { lensIconClass } from '../../lens-labels';
+import type { PageSummaries } from '../../pageCountWord';
+import { pagesOf, type Page } from '../../pageRegistry';
 
 type SummaryParams = {
   readonly summaries: PageSummaries;
-  readonly lens: LensKind | null;
+  readonly page: Page;
 };
 
-export const pageSummaryOf = ({ summaries, lens }: SummaryParams): string | null =>
-  lens === null ? null : (summaries[lens] ?? null);
+export const pageSummaryOf = ({ summaries, page }: SummaryParams): string | null =>
+  page.count === null ? null : (summaries[page.count] ?? null);
 
 type Params = {
   readonly destinations: ReadonlyArray<LensDestination>;
@@ -24,23 +23,6 @@ type Params = {
   readonly onSelect: (lens: LensKind | null) => void;
 };
 
-const TOOLS = new Set<LensKind>(['scripts', 'terminal', 'explore']);
-const LINKED = new Set<LensKind>([
-  'linear',
-  'gitlab_issues',
-  'jira_issues',
-  'slack_threads',
-  'github_issue',
-]);
-
-const isCurrentLens = ({
-  lens,
-  activeLens,
-}: {
-  readonly lens: LensKind | null;
-  readonly activeLens: LensKind | null;
-}): boolean => lens === activeLens;
-
 export const pageMenu = ({
   destinations,
   activeLens,
@@ -50,36 +32,39 @@ export const pageMenu = ({
   actions,
   onSelect,
 }: Params): CrumbMenuModel => {
-  const rowOf = (lens: LensKind | null): CrumbMenuRow => ({
-    id: lens ?? 'overview',
-    lead:
-      lens === null
-        ? { kind: 'icon', icon: CONCEPT_ICONS.timeline }
-        : {
-            kind: 'icon',
-            icon: LENS_ICON[lens],
-            className: lensIconClass({
-              lens,
-              isQuiet: lens === 'questions' && summaries.questions === undefined,
-            }),
-          },
-    label: lens === null ? 'Session' : lensLabelFor({ lens, isBranchless }),
+  const rowOf = (page: Page): CrumbMenuRow => ({
+    id: page.id,
+    lead: {
+      kind: 'icon',
+      icon: page.icon,
+      ...(page.tint !== null && { className: lensIconClass({ lens: page.tint }) }),
+    },
+    label: page.label,
     secondary: null,
-    metaA: pageSummaryOf({ summaries, lens }),
+    metaA: pageSummaryOf({ summaries, page }),
     state: null,
-    isCurrent: isCurrentLens({ lens, activeLens }),
+    isCurrent: page.currentLenses.includes(activeLens),
     isDisabled: false,
     indent: 0,
-    onSelect: () => onSelect(lens),
+    onSelect: () => onSelect(page.lens),
   });
-  const lenses = destinations.map((destination) => destination.lens);
-  const main = lenses.filter((lens) => lens === null || (!TOOLS.has(lens) && !LINKED.has(lens)));
-  const tools = lenses.filter((lens): lens is LensKind => lens !== null && TOOLS.has(lens));
-  const linked = lenses.filter((lens): lens is LensKind => lens !== null && LINKED.has(lens));
+  const pages = pagesOf({
+    isBranchless,
+    destinations,
+    hasOpenQuestions: summaries.questions !== undefined,
+  });
   const groups: ReadonlyArray<CrumbMenuGroup> = [
-    { id: 'pages', label: null, rows: main.map(rowOf) },
-    { id: 'tools', label: 'Tools', rows: tools.map(rowOf) },
-    { id: 'linked', label: 'Linked', rows: linked.map(rowOf) },
+    { id: 'pages', label: null, rows: pages.filter((page) => page.group === 'work').map(rowOf) },
+    {
+      id: 'tools',
+      label: 'Tools',
+      rows: pages.filter((page) => page.group === 'tools').map(rowOf),
+    },
+    {
+      id: 'linked',
+      label: 'Linked',
+      rows: pages.filter((page) => page.group === 'linked').map(rowOf),
+    },
   ].filter((group) => group.rows.length > 0);
 
   return {

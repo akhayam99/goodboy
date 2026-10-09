@@ -1,6 +1,6 @@
 import type { LensKind } from '../../store';
 import type { ShortcutId } from '../../shared/keyboard/registry';
-import { LENS_LABEL, SIMPLE_LENSES, lensLabelFor } from './lens-labels';
+import { SIMPLE_LENSES } from './lens-labels';
 
 export type LensDestination = {
   readonly lens: LensKind | null;
@@ -58,36 +58,3 @@ export const lensDestinations = ({
     const tool = TOOL_OF_LENS[lens];
     return tool === undefined || connectedTools[tool];
   });
-
-export type SessionPageId = 'overview' | 'branch' | 'runs' | 'agents' | 'artifacts';
-
-export type SessionPage = {
-  readonly id: SessionPageId;
-  readonly label: string;
-  readonly lens: LensKind | null;
-  readonly currentLenses: ReadonlyArray<LensKind | null>;
-};
-
-type PagesParams = {
-  readonly isBranchless: boolean;
-};
-
-export const sessionPages = ({ isBranchless }: PagesParams): ReadonlyArray<SessionPage> => [
-  { id: 'overview', label: 'Overview', lens: null, currentLenses: [null] },
-  isBranchless
-    ? {
-        id: 'branch',
-        label: lensLabelFor({ lens: 'files', isBranchless }),
-        lens: 'files',
-        currentLenses: ['files'],
-      }
-    : {
-        id: 'branch',
-        label: LENS_LABEL.branch,
-        lens: 'review',
-        currentLenses: ['branch', 'review', 'pr', 'files'],
-      },
-  { id: 'runs', label: LENS_LABEL.workflows, lens: 'workflows', currentLenses: ['workflows'] },
-  { id: 'agents', label: LENS_LABEL.agents, lens: 'agents', currentLenses: ['agents'] },
-  { id: 'artifacts', label: LENS_LABEL.plans, lens: 'plans', currentLenses: ['plans'] },
-];

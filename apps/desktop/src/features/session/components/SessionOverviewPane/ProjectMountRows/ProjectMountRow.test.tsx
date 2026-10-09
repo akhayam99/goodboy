@@ -300,7 +300,7 @@ describe('ProjectMountRow layer links', () => {
     };
     renderRow({ row: REQUEST_ROW });
 
-    const link = screen.getByRole('button', { name: 'Open Review for API, 2 to resolve' });
+    const link = screen.getByRole('button', { name: 'Open Comments for API, 2 to resolve' });
     expect(link.textContent).toBe('2 to resolve');
     fireEvent.click(link);
 

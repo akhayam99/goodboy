@@ -125,7 +125,11 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
       await openBranchPage();
       await branchTab('comments')(ctx);
       await visitTab(/^Files/);
-      const chip = await screen.findByRole('button', { name: /^Branch (?!actions)/ }, WAIT);
+      const chip = await screen.findByRole(
+        'button',
+        { name: /^Branch (?!actions|\d+ branches)/ },
+        WAIT,
+      );
       expect(chip.querySelector('[data-slot="switcher-chevron"]')).not.toBeNull();
       await click(chip);
       const rows = await screen.findAllByRole('menuitemradio', undefined, WAIT);

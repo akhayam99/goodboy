@@ -19,6 +19,7 @@ import type {
   SessionActionTarget,
 } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { NAMES } from '../../../shared/names';
 
 export type SessionFacts = {
   readonly session: Session;
@@ -182,7 +183,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.review',
-    label: 'Review',
+    label: NAMES.comments,
     icon: CONCEPT_ICONS.review,
     group: 'open',
     shortcut: 'lens.review',
@@ -191,7 +192,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.diff',
-    label: 'Diff',
+    label: NAMES.files,
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',

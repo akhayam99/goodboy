@@ -866,7 +866,7 @@ row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Accept 3` accepts the ready pick, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
-`…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
+`…` also offers Stop drafting, Resolve without a reply, Open in Files, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
 next open comment. Accept never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the

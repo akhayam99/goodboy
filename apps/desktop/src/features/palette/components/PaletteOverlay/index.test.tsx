@@ -88,7 +88,7 @@ describe('PaletteOverlay, the commands mode', () => {
     expect(screen.getByText('For this session')).toBeDefined();
     expect(optionNames().slice(0, 3)).toEqual([
       'Message Stream the export instead of building it in memory',
-      'Open Diff',
+      'Open Files',
       'Open Terminal',
     ]);
     expect(optionNames()).toContain('All actions for this session');
@@ -263,7 +263,7 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     type(input, 'archive');
     expect(optionNames()).not.toContain('Archive');
     type(input, 'review');
-    expect(optionNames()).not.toContain('Open Review');
+    expect(optionNames()).not.toContain('Open Comments');
   });
 
   it('hides a blocked verb until it is searched, then shows it with its reason', () => {

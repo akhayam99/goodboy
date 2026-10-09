@@ -167,7 +167,7 @@ opens it on a mode. Commands is the first mode.
      (New session, Settings, Switch theme, Connect a provider, Pair your iPhone,
      Report a bug) and **Help**.
      On the Board the first section is **Needs you**: the sessions the Now chip
-     lists, each opening its `attentionPlace`. The session pages (Open Session,
+     lists, each opening its `attentionPlace`. The session pages (Open Overview,
      Questions, Artifacts and the rest), Run defaults, Impact: Spend, Start a new
      project and Open a folder stay out of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:
@@ -190,8 +190,12 @@ opens it on a mode. Commands is the first mode.
   only when searched by name (every word a word prefix of its label), dimmed
   with its reason, and Enter does nothing. Delete and the other confirmed verbs
   swap the list for an InlineConfirm; Archive runs at once with Undo. The
-  registry owns Review, Diff and Terminal of a session in scope, so the lens
-  rows with the same names step aside.
+  registry owns Comments, Files and Terminal of a session in scope, so the lens
+  rows with the same names step aside. The lens rows read their labels from
+  the shortcut registry, which reads `NAMES` (`Overview`, `Comments`, `Files`,
+  `Pull request`), so the palette, the page menu and the shortcut sheet cannot
+  disagree; `Review`, `Diff` and `Session` still answer to a query as former
+  names.
 - **Keys.** ↑↓ move, ↵ runs the row (an object row opens it), → opens every
   verb of an object row, grouped Open, Act, Copy and export, Danger, and ← or
   Backspace goes back. A verb with choices, such as Change model, opens them as
@@ -237,6 +241,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
+  `s/{session}/branch/pr` (the Pull request tab, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
   `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
@@ -249,9 +254,17 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   `setSessionStudio`.
 - **Aliases live in `canonicalLocation`, and only there.** An agent resolves
   to its home lens (an unknown agent to Agents), before it is recorded, so no
-  view redirects after it mounts. The pull request and Review are two lenses
+  view redirects after it mounts. The pull request and Comments are two lenses
   and never alias each other: a door to the pull request lands on `pr`, a door
-  to comments lands on `review`.
+  to comments lands on `review`. On a code-host branch both are rewritten to a
+  Branch tab. The Branch tabs are addresses and have one registry,
+  `BRANCH_TAB_REGISTRY` in `features/branch/branchTabs.ts` (id, label, address
+  token, shortcut, availability), with `branchTabsOf({ hasPullRequest,
+provider })` returning the tabs the page shows in order. `BranchTab` includes
+  `pr`; while `pr` is not available the `pr` address parses and prints but
+  `canonicalLocation` lands it, and the pull request page request, on
+  `comments` (a review being written still lands on `files`), so a pasted or
+  restored `pr` address never errors.
 - **Push, amend, replace.** A new place pushes: board and session, session to
   session, lens, a child, a sibling from a switcher, a session studio. Pushing
   the place you are on replaces it. Page state amends the current entry and
@@ -318,7 +331,7 @@ never exists on one surface only.
   `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
   outside the registry, against a shrinking list of menus that are not objects
   (creation pickers, property pickers, page chrome).
-- **What each object offers.** A session: Open, Review, Diff, Terminal, Open in
+- **What each object offers.** A session: Open, Comments, Files, Terminal, Open in
   editor; Rename (inline, in the row that opened the menu), Start agent, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
   Delete with its confirm (Restore once archived). Several sessions: Copy
@@ -472,7 +485,13 @@ mode. The sidebar lists the workspace's sessions in one list, and the open
 session tells its own story in the main pane. Its five work pages nest under
 its row: Overview, Branch, Runs, Agents and Artifacts. They are the same pages
 as the first five rows of the trail's page menu, with the same count words from
-one selector (`usePageSummaries`), so the two doors never disagree. The open
+one selector (`usePageSummaries`), so the two doors never disagree. Both read
+one page registry (`features/session/pageRegistry.ts`: id, label, icon, shortcut,
+count word, group), and `pageRegistry.test.ts` states the claim: the column rows
+equal the first five menu rows in label, order, icon and shortcut. The branch
+child rows that wave 2 nests under Branch are not menu rows. The menu never
+lists `Review`, `Diff` or `Pull request` (they are Branch tabs), starts with
+`Overview`, and shows Questions, warning-toned, only while one is open. The open
 session and its pages sit in one card (`data-session-card`, the elevated surface with
 a hairline, so it reads against the column in light too), so it is plain that the pages belong to that session; every
 other session stays a flat row. The nesting is not a mode: the list stays the
@@ -791,8 +810,13 @@ running.` on Merge, reads in the meta line as well as in the tooltip) over
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
   to that thing. The page segment (depth one, or `Session` when it is alone)
-  lists the session's pages with a count that names what it counts
-  (`3 need you`, `2 running`), grouped as pages, Tools and Linked; `Session`
+  lists the session's pages with a count that names what it counts,
+  grouped as pages, Tools and Linked. One pure table, `pageCountWordOf`
+  (`features/session/pageCountWord.ts`), reads noun last and empty at zero:
+  Branch `5 need you` (else `3 branches` with more than one mount), Runs
+  `2 running` (else `4 runs`), Agents `1 running` (else `3 agents`), Artifacts
+  `4 artifacts`, Questions `2 open`. The sidebar row and the menu read it
+  through `usePageSummaries`; `Session`
   has no menu once it has children. A run lists the session's runs (Running,
   Finished, a chained run indented under its own with `after ...`); a step
   lists every step of its run in order, the ones not started switched off; an
@@ -804,20 +828,20 @@ running.` on Merge, reads in the meta line as well as in the tooltip) over
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
   artifact. An attempt offers `Resolve again` once no attempt on that comment
   is queued or running: it starts a new attempt with the Branch page's default
-  instruction, through the same `useResolveAgain` hook Review uses.
-- **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
+  instruction, through the same `useResolveAgain` hook the Comments tab uses.
+- **The Branch page ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
   that applies of `Rebase stopped` (or `Rebasing on main` while the rewriter
   works), `Merged`, `Gone on origin`, `Local only`, `Diverged from origin`,
   `Behind main by N` and `On origin` (`branchPriorityOf`), and `All branches in
 Overview`. `Local only` and `Diverged from origin` read the branch's own
-  remote copy (`branchPushStateOf`), never the base it was cut from. The Diff
+  remote copy (`branchPushStateOf`), never the base it was cut from. The Branch
   header reads the same word, so a stopped rebase never reads `On origin`
   next to Open terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the menu and in the Branch header alike
   (`isMountRequestMerged`). It never
-  turns into an icon. A Diff opened without a branch lands on the active mount.
+  turns into an icon. The Files tab opened without a branch lands on the active mount.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
 - **In the legacy layout, Settings claims its studio band** with Settings, the
@@ -868,7 +892,7 @@ covered.
 - Left: workspace identity. It has a 200px limit and truncates, with the full
   name in its tooltip. The sidebar toggle lives in the column, not here.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
-  (24px icons) name their destination in the tooltip (`Back to Review ·
+  (24px icons) name their destination in the tooltip (`Back to Comments ·
 {session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
   Chat left the bar for the column (under Legacy layout they come back here, in
@@ -1120,14 +1144,15 @@ open, and when something below already claimed the event. A surface registers
 its plain keys with `useShortcut` and an enabled flag, never with its own
 window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
-Navigate, Session, Views, Lists, Review, Diff, Window), and Settings > App > Shortcuts lists the
+Navigate, Session, Views, Lists, Comments, Files, Window; ids stay `review` and
+`diff`), and Settings > App > Shortcuts lists the
 groups in that order, read top to bottom per column. An entry that works only in
 one place carries a `scope` (the Inbox and Notifications lists, the Branch page,
 the terminal, a chat composer, an activity row, a workspace
 open, a code or an explore session). The page prints the place under the group
 name when the whole group shares it, or under the row when it does not. A scope
 also lets two surfaces use the same plain key: J, K, R, S and E mean other
-things in a list than in Review, and the registry test only asks the combos to
+things in a list than on the Comments tab, and the registry test only asks the combos to
 be unique inside one scope and never to shadow a global one. Entries that share a
 `family` (only the nine workspace digits today) render as one row, "Go to
 workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A

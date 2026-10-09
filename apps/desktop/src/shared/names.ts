@@ -15,7 +15,10 @@ export const NAMES = {
   questions: 'Questions',
   agents: 'Agents',
   runs: 'Runs',
-  review: 'Review',
+  overview: 'Overview',
+  branch: 'Branch',
+  comments: 'Comments',
+  pullRequest: 'Pull request',
   artifacts: 'Artifacts',
   scripts: 'Scripts',
   terminal: 'Terminal',
@@ -94,7 +97,9 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.retry]: ['Try again'],
   [NAMES.removeLink]: ['Unlink'],
   [NAMES.removeLinkFromSession]: ['Unlink from this session'],
-  Session: ['Overview'],
+  [NAMES.overview]: ['Session'],
+  [NAMES.comments]: ['Review'],
+  [NAMES.files]: ['Diff'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

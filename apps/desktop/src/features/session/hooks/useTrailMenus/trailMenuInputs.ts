@@ -15,7 +15,7 @@ import type { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWork
 import type { ResolveQueueRow } from '../../../resolve/buildResolveQueueRows';
 import type { AgentLifecycleSignals } from '../useAgentLifecycleSignals';
 import type { LensDestination } from '../../lens-destinations';
-import type { PageSummaries } from '../../trail/menus/pageMenu';
+import type { PageSummaries } from '../../pageCountWord';
 import type { SelectedWorkflowRun } from '../useSelectedWorkflowRun';
 import type { useWorktreeStatuses } from '../useWorktreeStatuses';
 

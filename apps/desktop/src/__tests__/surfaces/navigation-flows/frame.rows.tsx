@@ -2,6 +2,7 @@ import { expect } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { frameGeometryOf, type FramePage } from '@goodboy/ui';
 import {
+  CRUMB_ROWS,
   type Row,
   WAIT,
   band,
@@ -14,6 +15,8 @@ import {
   openPalette,
   settle,
 } from './harness';
+
+const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
 
 const titleRowOf = (title: HTMLElement): HTMLElement | null =>
   title.closest<HTMLElement>('[data-slot="pane-title-row"]');
@@ -101,7 +104,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     name: 'frame: the Branch title sits on the grid at every tab',
     covers: ['navigate'],
     open: async () => {
-      await openCrumb(/^Review/);
+      await openCrumb(/^Branch/);
     },
     lands: async (ctx) => {
       await branchTab('comments')(ctx);
@@ -131,7 +134,9 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'frame: the Questions title sits on the grid',
     covers: ['navigate'],
-    open: async () => {
+    open: async (ctx) => {
+      QUESTIONS_ROW?.beforeOpen?.(ctx);
+      await settle();
       await openCrumb(/^Questions/);
     },
     lands: landsOnSessionPage({ page: 'questions', title: 'Questions' }),

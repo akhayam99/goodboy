@@ -1,3 +1,6 @@
+import { BRANCH_TAB_REGISTRY } from '../../branch/branchTabs';
+import { NAMES } from '../../../shared/names';
+
 const SEPARATOR = ' › ';
 
 const STUDIO_JOINER = ' · ';
@@ -8,13 +11,14 @@ const LENS_LABELS: Readonly<Record<string, string>> = {
   questions: 'Questions',
   agents: 'Agents',
   workflows: 'Runs',
-  review: 'Review',
+  review: NAMES.comments,
+  branch: NAMES.branch,
   artifacts: 'Artifacts',
   scripts: 'Scripts',
   terminal: 'Terminal',
   context: 'Context',
-  pr: 'Pull request',
-  diff: 'Diff',
+  pr: NAMES.pullRequest,
+  diff: NAMES.files,
   explore: 'Explore',
   linear: 'Linear',
   gitlab: 'GitLab',
@@ -22,6 +26,10 @@ const LENS_LABELS: Readonly<Record<string, string>> = {
   'github-issue': 'GitHub issue',
   slack: 'Slack',
 };
+
+const BRANCH_TAB_LABELS: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.values(BRANCH_TAB_REGISTRY).map((tab) => [tab.address, tab.label]),
+);
 
 const CONTEXT_TAB_LABELS: Readonly<Record<string, string>> = {
   goal: 'Goal',
@@ -85,9 +93,15 @@ const sessionLabels = ({ segments }: SegmentsParams): ReadonlyArray<string> => {
   const lens = lookup({ labels: LENS_LABELS, token: segments[2] });
   const contextTab =
     segments[2] === 'context' ? lookup({ labels: CONTEXT_TAB_LABELS, token: segments[3] }) : null;
+  const branchTab =
+    segments[2] === 'branch'
+      ? lookup({ labels: BRANCH_TAB_LABELS, token: segments[3]?.split(/[:@#]/)[0] })
+      : null;
   const studio =
     segments.length > 2 ? lookup({ labels: SESSION_STUDIO_LABELS, token: segments.at(-1) }) : null;
-  return ['Session', lens, contextTab, studio].filter((label): label is string => label !== null);
+  return ['Session', lens, contextTab, branchTab, studio].filter(
+    (label): label is string => label !== null,
+  );
 };
 
 const placeLabels = ({ segments }: SegmentsParams): ReadonlyArray<string> => {

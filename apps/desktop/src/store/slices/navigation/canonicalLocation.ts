@@ -7,7 +7,8 @@ import { resolverThread } from './resolverThread';
 import { resolveActiveMountPath } from '../worktrees/resolveActiveMountPath';
 import { CONTEXT_LENS_TAB } from './contextLensTab';
 import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
-import type { CanonicalPlace, Place, PlaceRequest } from './types';
+import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
+import type { BranchTab, CanonicalPlace, Place, PlaceRequest } from './types';
 
 type SessionPlace = Extract<Place, { readonly at: 'session' }>;
 
@@ -107,6 +108,21 @@ const isCodeHostBranch = ({
   (state.sessionGitlabMr?.[sessionId]?.mr ?? null) === null &&
   (state.sessionBitbucketPr?.[sessionId]?.pr ?? null) === null;
 
+const prLensTab = ({ mode }: { readonly mode: string }): BranchTab => {
+  if (mode === 'write_review') {
+    return 'files';
+  }
+  return isBranchTabAvailable('pr') ? 'pr' : 'comments';
+};
+
+const unavailableBranchTab = ({ request }: { readonly request: SessionPlace }): SessionPlace => {
+  const { view } = request;
+  if (view.target?.kind !== 'branch' || isBranchTabAvailable(view.target.tab)) {
+    return request;
+  }
+  return { ...request, view: { ...view, target: { ...view.target, tab: 'comments' } } };
+};
+
 const formerBranchPlace = ({
   state,
   request,
@@ -144,16 +160,17 @@ const formerBranchPlace = ({
     return branchPlace({
       sessionId,
       mountPath: preferred ?? activeMountPath({ state, sessionId }),
-      tab: mode === 'write_review' ? 'files' : 'comments',
+      tab: prLensTab({ mode }),
     });
   }
   return null;
 };
 
-const canonicalPlace = ({ state, request }: PlaceParams): Place => {
-  if (request.at === 'board' || request.at === 'session-draft') {
-    return request;
+const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
+  if (asked.at === 'board' || asked.at === 'session-draft') {
+    return asked;
   }
+  const request = unavailableBranchTab({ request: asked });
   const { view, sessionId } = request;
   const branch = formerBranchPlace({ state, request });
   if (branch !== null) {

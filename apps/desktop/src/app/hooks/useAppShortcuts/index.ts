@@ -8,8 +8,10 @@ import { useAppStore, useCurrentWorkspace, useWorkspaces, type LensKind } from '
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
 import { isLensReachable } from '../../../features/session/isLensReachable';
+import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
 import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
 import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
+import type { BranchTab } from '../../../store/slices/navigation/types';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
@@ -34,6 +36,13 @@ type LensParams = {
 
 type ContextParams = {
   readonly tab?: ContextDrawerTab;
+};
+
+const doorTabOf = ({ kind }: { readonly kind: LensKind | null }): BranchTab => {
+  if (kind === 'files') {
+    return 'files';
+  }
+  return kind === 'pr' && isBranchTabAvailable('pr') ? 'pr' : 'comments';
 };
 
 export const useAppShortcuts = ({
@@ -86,7 +95,7 @@ export const useAppShortcuts = ({
     const isBranchDoor =
       active === 'branch' &&
       (kind === 'review' || kind === 'pr' || kind === 'files') &&
-      (state.branchTab[sessionId] ?? 'comments') === (kind === 'files' ? 'files' : 'comments');
+      (state.branchTab[sessionId] ?? 'comments') === doorTabOf({ kind });
     openLens({
       sessionId,
       lens: kind != null && (active === kind || isBranchDoor) ? null : kind,

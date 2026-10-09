@@ -16,7 +16,7 @@ describe('names', () => {
     expect(LENS_LABEL.questions).toBe(NAMES.questions);
     expect(LENS_LABEL.agents).toBe(NAMES.agents);
     expect(LENS_LABEL.workflows).toBe(NAMES.runs);
-    expect(LENS_LABEL.review).toBe(NAMES.review);
+    expect(LENS_LABEL.review).toBe(NAMES.comments);
     expect(LENS_LABEL.plans).toBe(NAMES.artifacts);
     expect(LENS_LABEL.scripts).toBe(NAMES.scripts);
     expect(LENS_LABEL.terminal).toBe(NAMES.terminal);

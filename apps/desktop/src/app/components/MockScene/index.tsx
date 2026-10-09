@@ -208,6 +208,7 @@ import { U21_PLAN_DRAWER_SCENES } from './scenes/u21/plan-drawer';
 import { U23_CONTROLS_SCENES } from './scenes/u23/controls';
 import { U23_DRAWER_CHROME_SCENES } from './scenes/u23/drawer-chrome';
 import { U23_FRAME_SCENES } from './scenes/u23/frame';
+import { U23_PAGES_SCENES } from './scenes/u23/pages';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -417,6 +418,7 @@ export const MOCK_SCENES = {
   ...U23_CONTROLS_SCENES,
   ...U23_DRAWER_CHROME_SCENES,
   ...U23_FRAME_SCENES,
+  ...U23_PAGES_SCENES,
 };
 
 export const MockScene = () => {

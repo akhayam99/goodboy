@@ -38,7 +38,7 @@ export const switchToReplyOnly = async ({
     (entry) => entry.thread.threadId === threadId,
   );
   if (target === undefined) {
-    throw new Error('This comment is no longer in Review');
+    throw new Error('This comment is no longer in Comments');
   }
   if (target.item.approvalState !== 'none') {
     throw new Error('Undo the decision on this comment first');

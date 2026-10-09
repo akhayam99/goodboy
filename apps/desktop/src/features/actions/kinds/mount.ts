@@ -126,7 +126,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openDiff',
-    label: 'Open diff',
+    label: `Open ${NAMES.files}`,
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',
@@ -140,7 +140,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openReview',
-    label: 'Open Review',
+    label: `Open ${NAMES.comments}`,
     shortLabel: ({ facts }) => `${facts.comments} to resolve`,
     icon: CONCEPT_ICONS.review,
     group: 'open',

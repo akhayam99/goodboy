@@ -243,7 +243,9 @@ describe('main flows on the real store', () => {
     await mountFlow(<KeepAliveWorkSurface sessionId={sessionId} isActive />);
     expect(screen.queryByRole('tab', { name: /^Files/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Session/ }));
-    fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Diff/ }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Branch/ }));
+    await settle();
+    fireEvent.click(await screen.findByRole('tab', { name: /^Files/ }));
     await settle();
 
     expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');

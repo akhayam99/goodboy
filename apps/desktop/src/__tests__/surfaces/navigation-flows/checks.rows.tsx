@@ -7,7 +7,7 @@ import {
   both,
   branchTab,
   click,
-  openCrumb,
+  openBranchFiles,
   useAppStore,
 } from './harness';
 import { setGhChecksMode } from './checks.runner';
@@ -35,7 +35,7 @@ const activateFirstMount = ({ sessionId }: Ctx): void => {
 
 const openChecks = async (ctx: Ctx): Promise<void> => {
   activateFirstMount(ctx);
-  await openCrumb(/^Diff/);
+  await openBranchFiles();
   await click(await screen.findByRole('tab', { name: /^Checks/ }));
 };
 

@@ -248,16 +248,14 @@ describe('counts on the pages and in the page menu', () => {
     );
   };
 
-  it.each([
-    ['runs', 'workflows'],
-    ['agents', 'agents'],
-    ['artifacts', 'plans'],
-    ['branch', 'review'],
-  ])('shows on the %s page the same count as the %s row of the page menu', (pageId, lens) => {
-    mountBoth();
-    renderBar();
-    expect(nestedCount(pageId)).toBe(menuCount(lens));
-  });
+  it.each(['runs', 'agents', 'artifacts', 'branch'])(
+    'shows on the %s page the same count as its row of the page menu',
+    (pageId) => {
+      mountBoth();
+      renderBar();
+      expect(nestedCount(pageId)).toBe(menuCount(pageId));
+    },
+  );
 
   it('counts the runs and the running agents in words', () => {
     mountBoth();

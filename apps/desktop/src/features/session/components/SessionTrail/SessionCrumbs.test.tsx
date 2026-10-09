@@ -335,7 +335,7 @@ describe('SessionCrumbs', () => {
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
     expect(menu.textContent).toContain('Artifacts');
-    expect(menu.textContent).toContain('Review');
+    expect(menu.textContent).toContain('Branch');
     expect(menu.textContent).toContain('Scripts');
     expect(
       within(menu)
@@ -343,7 +343,7 @@ describe('SessionCrumbs', () => {
         .getAttribute('aria-checked'),
     ).toBe('true');
 
-    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Review/ }));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Branch/ }));
     expect(h.navigate).toHaveBeenCalledWith({
       to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
     });
@@ -364,9 +364,9 @@ describe('SessionCrumbs', () => {
     expect(toPlans).not.toHaveBeenCalled();
 
     const menu = screen.getByRole('menu', { name: 'Switch page' });
-    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Questions/ }));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Runs/ }));
     expect(h.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'questions' }),
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'workflows' }),
     });
   });
 
@@ -407,9 +407,9 @@ describe('SessionCrumbs', () => {
       .getAllByRole('menuitemradio')
       .filter((row) => row.getAttribute('aria-checked') === 'true');
 
-    expect(menu.textContent).not.toContain('Review');
+    expect(menu.textContent).not.toContain('Branch');
     expect(current).toHaveLength(1);
-    expect(current[0]?.textContent).toContain('Session');
+    expect(current[0]?.textContent).toContain('Overview');
   });
 
   it('offers overview as a destination of its own', () => {
@@ -422,7 +422,7 @@ describe('SessionCrumbs', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
-    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Session/ }));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Overview/ }));
 
     expect(h.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: SESSION_ID, lens: null }),

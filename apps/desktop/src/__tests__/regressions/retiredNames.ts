@@ -61,5 +61,10 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'try-again', pattern: /^Try again(?: on [\w .-]+| with the hint)?$/, use: NAMES.retry },
   { id: 'your-roles', pattern: /\bYour roles\b/, use: NAMES.yourJob },
   { id: 'classic-bars', pattern: /\bClassic bars\b/, use: NAMES.legacyLayout },
+  { id: 'open-review', pattern: /\bOpen Review\b(?! replies)/, use: NAMES.comments },
+  { id: 'open-diff', pattern: /\bOpen diff\b/i, use: NAMES.files },
+  { id: 'review-diff-view', pattern: /\b[Ii]n the (?:Review|Diff) view\b/, use: NAMES.comments },
+  { id: 'rebase-in-the-diff', pattern: /\bRebase in the Diff\b/, use: NAMES.branch },
+  { id: 'in-review-page', pattern: /\bin Review\b(?! replies)/, use: NAMES.comments },
   { id: 'defaults-page', pattern: /\b(?:in|then|Open) Defaults\b/, use: NAMES.models },
 ];

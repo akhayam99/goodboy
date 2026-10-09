@@ -414,7 +414,7 @@ describe('useTrailMenus page crumb', () => {
 
   it('clears the focused run and artifact when a page is picked', () => {
     const menu = menuOf(anyPage('agents'), 'x');
-    rowById(menu, 'workflows').onSelect();
+    rowById(menu, 'runs').onSelect();
     expect(setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, null);
     expect(setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, null);
     expect(h.openLens).toHaveBeenCalledWith({ sessionId: SESSION_ID, lens: 'workflows' });

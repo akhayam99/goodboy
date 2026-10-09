@@ -11,14 +11,24 @@ import { conversationsWaiting } from '../../../resolve/conversationsWaiting';
 import { selectOpenQuestions } from '../../components/SessionOverviewPane/lib';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
 import { isStandaloneAgent } from '../../agent-kind';
-import type { PageSummaries } from '../../trail/menus/pageMenu';
+import {
+  COUNTED_PAGE_IDS,
+  pageCountWordOf,
+  type PageCountFacts,
+  type PageSummaries,
+} from '../../pageCountWord';
 
 type Params = {
   readonly session: Session;
 };
 
-const plural = ({ count, noun }: { readonly count: number; readonly noun: string }) =>
-  `${count} ${noun}${count === 1 ? '' : 's'}`;
+const summariesOf = ({ facts }: { readonly facts: PageCountFacts }): PageSummaries =>
+  Object.fromEntries(
+    COUNTED_PAGE_IDS.flatMap((page) => {
+      const word = pageCountWordOf({ page, facts });
+      return word === null ? [] : [[page, word] as const];
+    }),
+  );
 
 export const usePageSummaries = ({ session }: Params): PageSummaries => {
   const sessionId = session.id as SessionId;
@@ -33,27 +43,27 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
   const kindOverride = useAppStore((s) => s.agentKindOverride);
 
   return useMemo(() => {
-    const waiting = conversationsWaiting({ rows });
-    const questions = selectOpenQuestions(openQuestions).length;
     const resolvers = selectResolverAgentIds({ agents, kindOverride });
     const standalone = agents.filter(
       (agent) => isStandaloneAgent({ agent }) && !resolvers.has(agent.id),
     );
-    const runningAgents = standalone.filter((agent) => agent.status === 'running').length;
-    const liveRuns = session.workflowRuns.filter((run) => run.discardedAt == null).length;
-    const artifactCount = Math.max(artifacts.length, plans.length);
-    const summaries: PageSummaries = {
-      ...(waiting > 0 && { review: `${waiting} need you` }),
-      ...(questions > 0 && { questions: `${questions} open` }),
-      ...(runningAgents > 0
-        ? { agents: `${runningAgents} running` }
-        : standalone.length > 0 && { agents: plural({ count: standalone.length, noun: 'agent' }) }),
-      ...(liveRuns > 0 && { workflows: plural({ count: liveRuns, noun: 'run' }) }),
-      ...(artifactCount > 0 && { plans: String(artifactCount) }),
-      ...(mounts.length > 1 && {
-        files: `${mounts.length} branches`,
-      }),
-    };
-    return summaries;
+    const liveRuns = session.workflowRuns.filter((run) => run.discardedAt == null);
+    const runningRunIds = new Set(
+      agents.flatMap((agent) =>
+        agent.status === 'running' && agent.workflowRunId != null ? [agent.workflowRunId] : [],
+      ),
+    );
+    return summariesOf({
+      facts: {
+        waiting: conversationsWaiting({ rows }),
+        mounts: mounts.length,
+        runs: liveRuns.length,
+        runningRuns: liveRuns.filter((run) => runningRunIds.has(run.id)).length,
+        agents: standalone.length,
+        runningAgents: standalone.filter((agent) => agent.status === 'running').length,
+        artifacts: Math.max(artifacts.length, plans.length),
+        openQuestions: selectOpenQuestions(openQuestions).length,
+      },
+    });
   }, [rows, openQuestions, agents, kindOverride, session.workflowRuns, artifacts, plans, mounts]);
 };

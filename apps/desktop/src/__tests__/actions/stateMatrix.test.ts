@@ -924,7 +924,7 @@ const UX5_PR_STATES: ReadonlyArray<
     [
       'pullRequest.openOnGithub secondary',
       'pullRequest.checkLog hover',
-      'pullRequest.merge secondary (Conflicts with main. Rebase in the Diff.)',
+      'pullRequest.merge secondary (Conflicts with main. Rebase on main from the Branch header.)',
       ...PR_OWN_TAIL,
       'pullRequest.convertToDraft menu',
       ...PR_COPIES,

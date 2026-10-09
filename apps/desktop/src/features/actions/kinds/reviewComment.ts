@@ -41,6 +41,7 @@ import type {
 import { requestReview, type ReviewComposeMode } from '../../review/reviewRequest';
 import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
+import { NAMES } from '../../../shared/names';
 
 export type ReviewCommentFacts = {
   readonly sessionId: SessionId;
@@ -236,7 +237,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
   actions: [
     {
       id: 'reviewComment.openInDiff',
-      label: 'Open in diff',
+      label: `Open in ${NAMES.files}`,
       icon: FileCode,
       group: 'open',
       when: ({ facts }) => facts.path !== null,

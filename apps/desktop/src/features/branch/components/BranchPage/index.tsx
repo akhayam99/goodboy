@@ -25,6 +25,7 @@ import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { useBranchIdentity } from '../../hooks/useBranchIdentity';
 import type { BranchReviewCounts } from '../../branchPrimary';
+import { branchTabsOf } from '../../branchTabs';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchDescription } from '../BranchDescription';
@@ -37,15 +38,6 @@ type Props = {
   readonly session: Session;
   readonly workingDir: string | null;
 };
-
-const TAB_LABEL = {
-  comments: 'Comments',
-  files: 'Files',
-  commits: 'Commits',
-  checks: 'Checks',
-} as const satisfies Readonly<Record<BranchTab, string>>;
-
-const TAB_ORDER: ReadonlyArray<BranchTab> = ['comments', 'files', 'commits', 'checks'];
 
 export const BranchPage = ({ session, workingDir }: Props) => {
   const sessionId = session.id as SessionId;
@@ -85,6 +77,10 @@ export const BranchPage = ({ session, workingDir }: Props) => {
   });
 
   const { pr } = identity;
+  const tabs = branchTabsOf({
+    hasPullRequest: pr !== null,
+    provider: activeSource?.kind ?? 'local',
+  });
   const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
   const isPushBusy =
     push.phase.kind === 'preparing' ||
@@ -306,9 +302,9 @@ export const BranchPage = ({ session, workingDir }: Props) => {
                     className="w-fit"
                     value={tab}
                     onChange={selectTab}
-                    options={TAB_ORDER.map((value) => ({
+                    options={tabs.map(({ id: value, label }) => ({
                       value,
-                      label: TAB_LABEL[value],
+                      label,
                       badge:
                         value === 'comments' ? (
                           <TabCount count={commentsCount} />

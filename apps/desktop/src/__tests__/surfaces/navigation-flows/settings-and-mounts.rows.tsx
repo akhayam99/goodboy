@@ -10,7 +10,7 @@ import {
   clickFirstButton,
   heading,
   lens,
-  openCrumb,
+  openBranchFiles,
   visible,
 } from './harness';
 
@@ -110,7 +110,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     name: 'back arrow returns to the overview',
     covers: ['back'],
     open: async () => {
-      await openCrumb(/^Diff/);
+      await openBranchFiles();
       await clickButton(/^Back/);
     },
     lands: lens(null),
@@ -119,7 +119,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     name: 'forward arrow returns to the diff',
     covers: ['back', 'forward'],
     open: async () => {
-      await openCrumb(/^Diff/);
+      await openBranchFiles();
       await clickButton(/^Back/);
       await clickButton(/^Forward/);
     },

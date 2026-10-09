@@ -151,7 +151,7 @@ describe('collectReportContext', () => {
       version: '0.11.1',
       build: 'fc2f08994a1b',
       system: 'macOS 15.1 arm64',
-      screen: 'Session › Review',
+      screen: 'Session › Comments',
       cliVersions: 'Claude CLI 2.1.260',
     });
     expect(Object.values(context).join('\n')).not.toContain(SESSION_ID);

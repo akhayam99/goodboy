@@ -24,6 +24,7 @@ import {
   pushStyleNote,
 } from '../../reviewPushCopy';
 import type { ReviewPush } from './useReviewPush';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -31,7 +32,7 @@ type Props = {
 };
 
 const RECOVERY_LABEL = {
-  open_diff: 'Open diff',
+  open_diff: `Open ${NAMES.files}`,
   view_work: 'View the agent',
   see_missing: 'See the comment',
   sync: SYNC_COPY.action,

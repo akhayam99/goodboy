@@ -73,7 +73,7 @@ const mergeBlock = ({ facts }: FactsOnly): string | null => {
     return 'GitHub is already set to merge this pull request.';
   }
   if (facts.hasConflicts) {
-    return `Conflicts with ${baseOf({ facts })}. Rebase in the Diff.`;
+    return `Conflicts with ${baseOf({ facts })}. Rebase on ${baseOf({ facts })} from the Branch header.`;
   }
   if (facts.checks === 'unknown') {
     return 'Checks unknown.';

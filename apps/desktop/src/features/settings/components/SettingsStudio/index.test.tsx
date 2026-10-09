@@ -399,6 +399,11 @@ describe('SettingsStudio', () => {
     for (const group of ['General', 'Workspaces', 'Navigate', 'Session', 'Views', 'Window']) {
       expect(screen.getByRole('heading', { name: group })).toBeDefined();
     }
+    for (const group of ['Comments', 'Files']) {
+      expect(screen.getByRole('heading', { name: group })).toBeDefined();
+    }
+    expect(screen.queryByRole('heading', { name: 'Review' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Diff' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Lens' })).toBeNull();
     expect(screen.getByText('Go to workspace 1 to 9')).toBeDefined();
     expect(

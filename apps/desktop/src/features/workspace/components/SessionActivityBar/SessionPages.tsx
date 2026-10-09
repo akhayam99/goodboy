@@ -1,44 +1,21 @@
 import { useMemo } from 'react';
-import type { LucideIcon } from 'lucide-react';
 import { SelectableRow, cn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore, type LensKind } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
-import {
-  sessionPages,
-  type SessionPage,
-  type SessionPageId,
-} from '../../../session/lens-destinations';
-import { LENS_ICON, lensIconClass } from '../../../session/lens-labels';
+import { lensIconClass } from '../../../session/lens-labels';
 import { openLens } from '../../../session/openLens';
 import { usePageSummaries } from '../../../session/hooks/usePageSummaries';
+import { columnPagesOf, type Page } from '../../../session/pageRegistry';
 import { pageSummaryOf } from '../../../session/trail/menus/pageMenu';
 
 type Props = {
   readonly session: Session;
 };
 
-const PAGE_ICON: Record<SessionPageId, LucideIcon> = {
-  overview: CONCEPT_ICONS.timeline,
-  branch: LENS_ICON.branch,
-  runs: LENS_ICON.workflows,
-  agents: LENS_ICON.agents,
-  artifacts: LENS_ICON.plans,
-};
-
-const PAGE_TINT: Record<SessionPageId, LensKind | null> = {
-  overview: null,
-  branch: 'branch',
-  runs: 'workflows',
-  agents: 'agents',
-  artifacts: 'plans',
-};
-
-const iconClassOf = ({ page }: { readonly page: SessionPage }): string => {
-  const lens = PAGE_TINT[page.id];
-  return lens === null ? 'text-muted-foreground' : lensIconClass({ lens });
-};
+const iconClassOf = ({ page }: { readonly page: Page }): string =>
+  page.tint === null ? 'text-muted-foreground' : lensIconClass({ lens: page.tint });
 
 export const SessionPages = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
@@ -47,9 +24,9 @@ export const SessionPages = ({ session }: Props) => {
   );
   const activeLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
   const summaries = usePageSummaries({ session });
-  const pages = useMemo(() => sessionPages({ isBranchless }), [isBranchless]);
+  const pages = useMemo(() => columnPagesOf({ isBranchless }), [isBranchless]);
 
-  const openPage = (page: SessionPage) => {
+  const openPage = (page: Page) => {
     openLens({ sessionId, lens: page.lens });
     const state = useAppStore.getState();
     state.setFocusedArtifactId(sessionId, null);
@@ -63,9 +40,9 @@ export const SessionPages = ({ session }: Props) => {
       data-testid="session-pages"
     >
       {pages.map((page) => {
-        const Icon = PAGE_ICON[page.id];
+        const Icon = page.icon;
         const isCurrent = page.currentLenses.includes(activeLens);
-        const count = pageSummaryOf({ summaries, lens: page.lens });
+        const count = pageSummaryOf({ summaries, page });
         return (
           <li key={page.id}>
             <SelectableRow
