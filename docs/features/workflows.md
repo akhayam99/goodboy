@@ -112,7 +112,7 @@ See why each step was picked, with a short **Recap** of what is done and what is
 
 ### Step handoff summary
 
-Start each step from a short brief instead of the whole previous chat. If the summary fails, Goodboy keeps the start and end of the chat and marks the brief as degraded.
+Start each step from a short brief instead of the whole previous chat. If the summary fails, Goodboy tries the other models you allow first. Only when every one fails does it keep the start and end of the chat and mark the brief as degraded, with one notice and Retry.
 
 ### Open questions
 

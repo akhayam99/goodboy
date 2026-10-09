@@ -194,7 +194,7 @@ README images always show the app around the feature. Two frames wrap them:
 - `ShellFrame` in `scenes/shellChrome.tsx` (top bar, sessions sidebar, crumb
   bar, footer) is for anything inside a session. Fill it with `seedShellChrome`.
 - `StudioFrame` in `scenes/StudioFrame.tsx` (top bar and footer) is for studios
-  such as Settings, Impact and the Inbox. Fill it with `seedStudioChrome`.
+  such as Settings, Impact and Tasks. Fill it with `seedStudioChrome`.
 
 Every frame (these two, `audit/WorkspaceFrame` and the board shell) takes its
 column actions, studio and overlay layers from `scenes/useSceneShell`, which

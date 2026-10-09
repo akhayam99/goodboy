@@ -1,6 +1,6 @@
 # Review and resolve on the Branch page
 
-One Branch page per branch holds the Comments, Files, Commits and Checks tabs. Turn review comments into commits with a Fix run, push them back with one Push, and read your own diff and notes before anyone else does.
+One Branch page per branch holds the Pull request, Comments, Files, Commits and Checks tabs. Edit the pull request in place, merge it your way, turn review comments into commits with a Fix run, push them back with one Push, and read your own diff and notes before anyone else does. On GitLab the same page reads Merge request, MR !42 and Open on GitLab: you edit it, ask reviewers, mark it ready, merge it the ways the project allows and read the jobs of its pipeline. On Bitbucket it works the same on a pull request.
 
 ### Resolve
 

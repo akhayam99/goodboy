@@ -728,7 +728,7 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   calls at a time); a short id resolves across the Sentry organization
   (`sentry_resolve_short_id`). While a lookup is in flight, the row names the
   trackers it asked (`Looking up CAS-231 in Linear and Jira`). Hits sit in a
-  `Not in your inbox` group above the list (`InboxLookupGroup`) and open or
+  `Not in Tasks` group above the list (`InboxLookupGroup`) and open or
   pick up like any other issue, with a second line showing `Assigned to
 <name>` for a Linear or Jira hit with a known assignee, the project/repo
   context otherwise; a miss is one row in that group that says why (not
@@ -747,7 +747,7 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   any tracker answers; a row not refreshed since app start opens the detail
   panel from that snapshot (`placeholderRecordOf`), not the tool's URL, and
   gets replaced once the refresh lands a real record. In Tasks it sits
-  under `Not in your inbox` and above the days, and a starred issue leaves
+  under `Not in Tasks` and above the days, and a starred issue leaves
   the days; open ones come first, closed ones at the bottom with `Unstar
 closed` and `Undo`, and one the tracker no longer returns reads `Can't
 reach NW-230 anymore`. Pick up a task shows only the open starred issues,
@@ -1819,9 +1819,9 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   the choice is remembered for that agent only, never for every agent. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
-  `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
-  the review source to the local notes, so it lands on your notes even with a
-  pull request open. Back, or Up when
+  `{ kind: 'notes', threadIds }`, like a `threads` set made only of notes,
+  opens the Files tab of the branch with the Notes drawer on the first note, so
+  it lands on your notes even with a pull request open. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and a fix run transcript come back through Back.

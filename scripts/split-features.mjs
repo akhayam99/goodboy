@@ -39,7 +39,7 @@ const AREAS = [
   ],
   ['board', 'The board', ['Stage board', 'Session card']],
   ['workflows', 'Workflows', ['Workflow builder', 'Orchestrated', 'Workflow run', 'Spend cap']],
-  ['inbox', 'Inbox and your tools', ['Inbox', 'Trackers', 'Code hosts', 'Start from any item']],
+  ['inbox', 'Tasks and your tools', ['Tasks', 'Trackers', 'Code hosts', 'Start from any item']],
   ['artifacts', 'Plans, reports and wireframes', ['Artifacts', 'Create a wireframe', 'Compare']],
   ['context', 'Shared context', ['Decisions', 'Running summary', 'Context drawer']],
   [
