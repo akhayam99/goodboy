@@ -1,5 +1,5 @@
 import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
-import { Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, TOP_BAR_CONTROL, Tooltip, cn } from '@goodboy/ui';
 import {
   PROVIDER_BRAND,
   brandColor,
@@ -32,7 +32,10 @@ export const LimitsChip = ({ chip, nowMs, isPressed, className, onOpen }: Props)
         aria-label={`${PROVIDER_LABEL[chip.providerId]} limits. ${headline}`}
         onClick={() => onOpen(chip)}
         className={cn(
-          'flex h-6 shrink-0 items-center gap-2 rounded-md px-2 motion-safe:transition-colors',
+          TOP_BAR_CONTROL.height,
+          TOP_BAR_CONTROL.radius,
+          FOCUS_RING,
+          'flex shrink-0 items-center gap-2 px-2 motion-safe:transition-colors',
           isPressed ? 'bg-muted' : 'hover:bg-hover',
           className,
         )}

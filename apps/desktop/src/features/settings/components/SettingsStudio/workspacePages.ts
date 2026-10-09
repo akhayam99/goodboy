@@ -49,9 +49,9 @@ const ALL_WORKSPACE_PAGES = [
   },
   {
     id: REVIEW_REPLIES_SECTION_ID,
-    label: 'Review replies',
+    label: NAMES.repliesAndCommits,
     concept: 'resolve',
-    hint: 'How replies to review comments are drafted.',
+    hint: 'How replies are written and how fixes are committed.',
   },
   {
     id: PERMISSIONS_SECTION_ID,

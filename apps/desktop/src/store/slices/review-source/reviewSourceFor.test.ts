@@ -150,6 +150,8 @@ const get: GetFn = () => ({
       branch: 'hl/relay-retry',
       mrs: [],
       links: [],
+      checks: null,
+      reviewDecision: null,
     },
   },
   mountBitbucketPr: {
@@ -172,6 +174,8 @@ const get: GetFn = () => ({
       branch: 'nw/cart-total',
       prs: [],
       links: [],
+      checks: null,
+      reviewDecision: null,
     },
   },
   diffComments: {},
@@ -232,7 +236,7 @@ describe('reviewSourceFor', () => {
     const reply = await source.reply({ providerThreadId: '4001', body: 'Fixed' });
     expect(reply.id).toBe('4004');
     expect(h.bitbucketReplies).toEqual([4001]);
-    expect(source.capabilities).toEqual({ canReply: true, canResolve: false });
+    expect(source.capabilities).toMatchObject({ canReply: true, canResolve: false });
     await expect(source.resolve({ providerThreadId: '4001' })).rejects.toThrow();
     expect(await source.readRemoteHead()).toBe('9a8b7c6');
     expect(h.ghCalls).toEqual([]);

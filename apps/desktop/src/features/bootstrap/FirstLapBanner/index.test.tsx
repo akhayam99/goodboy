@@ -94,20 +94,27 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('FirstLapBanner', () => {
-  it('says where the session works and leaves Publish to the Projects row', () => {
-    render(<FirstLapBanner sessionId={session.id} />);
+  it('says where the session works in one notice and leaves Publish to the Projects row', () => {
+    const { container } = render(<FirstLapBanner sessionId={session.id} />);
 
-    screen.getByText('cascadia · This session works in your project folder');
-    screen.getByText('Nothing is published yet.');
+    const notice = container.querySelector('[data-placement]');
+    expect(notice?.getAttribute('data-tone')).toBe('info');
+    expect(container.firstElementChild).toBe(notice?.parentElement);
+    expect(
+      screen.getAllByText('Your work is in the project folder. Nothing is published yet.'),
+    ).toHaveLength(1);
+    expect(screen.queryByText('Nothing is published yet.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Publish' })).toBeNull();
   });
 
-  it('shows the move card once main is on the remote', () => {
+  it('shows the move notice once main is on the remote', () => {
     seed({ probe: { kind: 'main-present', branch: 'main', sha: 'abc' } });
-    render(<FirstLapBanner sessionId={session.id} />);
+    const { container } = render(<FirstLapBanner sessionId={session.id} />);
 
-    screen.getByText('cascadia · main is on the remote now.');
+    screen.getByText('Main is on the remote now. Move your work into a session called bootstrap');
     screen.getByRole('button', { name: 'Move my work' });
+    expect(screen.queryByText(/Your work is in the project folder/)).toBeNull();
+    expect(container.querySelectorAll('[data-placement]')).toHaveLength(1);
   });
 
   it('holds a placeholder while it checks a remote it has not read yet', () => {

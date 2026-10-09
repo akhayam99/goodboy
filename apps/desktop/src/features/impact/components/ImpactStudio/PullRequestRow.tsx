@@ -23,7 +23,7 @@ export const PullRequestRow = ({ entry, onOpenSession }: Props) => {
       {entry.spendUsd === null ? null : (
         <span
           title={formatUsdPrecise(entry.spendUsd)}
-          className="shrink-0 font-mono tabular-nums text-muted-foreground"
+          className="shrink-0 tabular-nums text-muted-foreground"
         >
           {formatUsd(entry.spendUsd)}
         </span>

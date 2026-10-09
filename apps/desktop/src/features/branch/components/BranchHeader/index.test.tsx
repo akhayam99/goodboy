@@ -41,6 +41,7 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
+import { branchLandingTabOf } from '../../branchLandingTab';
 import type { BranchReviewCounts } from '../../branchPrimary';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { BranchHeader } from './index';
@@ -169,6 +170,10 @@ type HarnessProps = {
   readonly review: BranchReviewCounts;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly detail?: PrDetail | null;
+  readonly canEditTitle?: boolean;
+  readonly isActive?: boolean;
+  readonly isPrimaryYielding?: boolean;
+  readonly onMutated?: () => void;
 };
 
 const detailOf = ({
@@ -199,7 +204,16 @@ const diffOf = (): SessionDiff => ({
   clearFocus: vi.fn(),
 });
 
-const Harness = ({ pr, review, checks, detail }: HarnessProps) => {
+const Harness = ({
+  pr,
+  review,
+  checks,
+  detail,
+  canEditTitle = false,
+  isActive = true,
+  isPrimaryYielding = false,
+  onMutated,
+}: HarnessProps) => {
   const controls = useBranchControls({
     sessionId: SESSION_ID,
     worktreePath: MOUNT.worktreePath,
@@ -219,6 +233,12 @@ const Harness = ({ pr, review, checks, detail }: HarnessProps) => {
       fallbackTitle="feat/export"
       controls={controls}
       isPushBusy={false}
+      isPrimaryYielding={isPrimaryYielding}
+      tab="pr"
+      isActive={isActive}
+      canEditTitle={canEditTitle}
+      createdAt={null}
+      onMutated={onMutated ?? vi.fn()}
     />
   );
 };
@@ -228,10 +248,23 @@ const renderHeader = ({
   review = NO_REVIEW,
   checks = NO_CHECKS,
   detail,
+  canEditTitle,
+  isActive,
+  isPrimaryYielding,
+  onMutated,
 }: Partial<HarnessProps> = {}) =>
   render(
     <ToastProvider>
-      <Harness pr={pr} review={review} checks={checks} detail={detail} />
+      <Harness
+        pr={pr}
+        review={review}
+        checks={checks}
+        detail={detail}
+        canEditTitle={canEditTitle}
+        isActive={isActive}
+        isPrimaryYielding={isPrimaryYielding}
+        onMutated={onMutated}
+      />
     </ToastProvider>,
   );
 
@@ -246,7 +279,6 @@ describe('BranchHeader identity', () => {
       ],
     });
 
-    expect(screen.getByText('#318')).toBeDefined();
     expect(screen.getByText('Ledger export')).toBeDefined();
     const meta = screen.getByText('Draft').closest('div') as HTMLElement;
     expect(meta.textContent).toContain('payments-api');
@@ -268,7 +300,7 @@ describe('BranchHeader identity', () => {
     renderHeader({ pr: PR });
     const withPr = screen.getAllByRole('heading', { level: 1 });
     expect(withPr).toHaveLength(1);
-    expect(withPr[0]?.textContent).toBe('#318Ledger export');
+    expect(withPr[0]?.textContent).toBe('Ledger export');
     cleanup();
 
     renderHeader();
@@ -419,7 +451,7 @@ const withMounts = (mounts: ReadonlyArray<SessionProjectMount>): void => {
 const chipOf = (): HTMLElement => screen.getByRole('button', { name: /^Branch feat\/export$/ });
 
 describe('BranchHeader branch switcher', () => {
-  it('lists the session branches with their pull request and moves the page to the one picked', async () => {
+  it('lists the session branches with their pull request and moves the page to the landing tab of the one picked', async () => {
     const navigate = vi.fn();
     const setSessionActiveMount = vi.fn<StoreState['setSessionActiveMount']>(async () => undefined);
     useAppStore.setState({ navigate, setSessionActiveMount });
@@ -449,7 +481,7 @@ describe('BranchHeader branch switcher', () => {
         to: branchPlace({
           sessionId: SESSION_ID,
           mountPath: MOUNT_FIX.worktreePath,
-          tab: 'files',
+          tab: branchLandingTabOf({ hasPullRequest: true, deepLink: null }),
         }),
         mode: 'replace',
       }),
@@ -505,7 +537,7 @@ describe('BranchHeader branch switcher', () => {
         to: branchPlace({
           sessionId: SESSION_ID,
           mountPath: MOUNT_FIX.worktreePath,
-          tab: 'comments',
+          tab: branchLandingTabOf({ hasPullRequest: true, deepLink: null }),
         }),
         mode: 'replace',
       }),
@@ -584,7 +616,7 @@ describe('BranchHeader one primary by state', () => {
     cleanup();
 
     renderHeader({ pr: PR, review: { accepted: 0, replies: 0, failed: 1, isPushing: false } });
-    expect(screen.getByRole('button', { name: /Retry 1/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry push' })).toBeDefined();
   });
 
   it('keeps Abort rebase as the secondary of a stopped rebase and confirms it inline', () => {
@@ -666,8 +698,25 @@ describe('BranchHeader action row', () => {
     expect(more.getAttribute('data-size')).toBe('control');
     expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(primary.closest('h1')).toBeNull();
-    const row = more.closest('[class*="shrink-0"][class*="gap-2"]');
-    expect(row?.contains(primary)).toBe(true);
+    expect(more.closest('[data-slot="header-actions"]')?.contains(primary)).toBe(true);
+  });
+
+  it('turns the primary into a secondary while its own confirm is open and back when it closes', () => {
+    withMountPr();
+    status = statusOf({});
+    const review = { accepted: 3, replies: 0, failed: 0, isPushing: false };
+    renderHeader({ pr: PR, review, isPrimaryYielding: true });
+    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
+      'secondary',
+    );
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
+    cleanup();
+
+    renderHeader({ pr: PR, review, isPrimaryYielding: false });
+    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
+      'primary',
+    );
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
   });
 
   it('keeps Abort rebase first, then the one primary, then Branch actions', () => {
@@ -695,5 +744,103 @@ describe('BranchHeader overflow', () => {
     expect(labels.some((label) => label.startsWith('Change base branch'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Copy branch name'))).toBe(true);
     expect(labels.some((label) => /Rewrite history|Restore a backup/.test(label))).toBe(false);
+  });
+});
+
+describe('BranchHeader title editing', () => {
+  const editPr = vi.fn<StoreState['editPr']>(async () => undefined);
+
+  beforeEach(() => {
+    editPr.mockReset();
+    editPr.mockResolvedValue(undefined);
+    useAppStore.setState({ editPr });
+    status = statusOf({});
+  });
+
+  it('shows the title as a plain heading when the pull request is not yours', () => {
+    renderHeader({ pr: PR, canEditTitle: false });
+
+    expect(screen.queryByRole('button', { name: 'Ledger export' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ledger export');
+  });
+
+  it('turns the title into an input on a click and saves on Enter', async () => {
+    const onMutated = vi.fn();
+    renderHeader({ pr: PR, canEditTitle: true, onMutated });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
+    const input = screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement;
+    expect(input.value).toBe('Ledger export');
+    fireEvent.change(input, { target: { value: 'Ledger export, with retries' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(onMutated).toHaveBeenCalledTimes(1));
+    expect(editPr).toHaveBeenCalledWith(SESSION_ID, 318, {
+      title: 'Ledger export, with retries',
+      isQuiet: true,
+      mountId: MOUNT.mountId,
+    });
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+  });
+
+  it('opens on the E key and cancels on Escape without writing', () => {
+    renderHeader({ pr: PR, canEditTitle: true });
+
+    fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
+    expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+
+    fireEvent.keyDown(window, { code: 'Escape', key: 'Escape' });
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+    expect(editPr).not.toHaveBeenCalled();
+  });
+
+  it('ignores the E key while the session sits hidden behind another one', () => {
+    renderHeader({ pr: PR, canEditTitle: true, isActive: false });
+
+    fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
+
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+  });
+
+  it('ignores the E key when the title cannot be edited', () => {
+    renderHeader({ pr: PR, canEditTitle: false });
+
+    fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
+
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+  });
+
+  it('keeps the draft, names the failure under the title and retries', async () => {
+    editPr.mockRejectedValueOnce(new Error('Resource not accessible by personal access token'));
+    renderHeader({ pr: PR, canEditTitle: true });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
+    const input = screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Ledger export v2' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't save the title");
+    expect(alert.textContent).toContain('Resource not accessible');
+    const kept = screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement;
+    expect(kept.value).toBe('Ledger export v2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(editPr).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull(),
+    );
+  });
+
+  it('does not write when the title did not change', async () => {
+    renderHeader({ pr: PR, canEditTitle: true });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Pull request title' }), {
+      key: 'Enter',
+    });
+
+    await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
+    expect(editPr).not.toHaveBeenCalled();
   });
 });

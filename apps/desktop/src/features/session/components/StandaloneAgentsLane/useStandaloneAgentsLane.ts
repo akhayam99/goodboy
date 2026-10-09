@@ -7,7 +7,7 @@ import { classifyAgent, isStandaloneAgent, type AgentKind } from '../../agent-ki
 import { isAgentFinished } from '../../agent-lifecycle';
 import { useAgentLifecycleSignals } from '../../hooks/useAgentLifecycleSignals';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
-import { openAgentRevealEvent } from '../AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 type Params = {
   readonly session: Session;

@@ -276,9 +276,7 @@ describe('ImpactStudio on the real database', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Spend' }));
 
     await waitFor(() => expect(screen.getAllByText('$5.50').length).toBeGreaterThanOrEqual(3));
-    within(screen.getByRole('button', { name: /Spent today, counted by Goodboy/ })).getByText(
-      '$5.50',
-    );
+    within(screen.getByRole('button', { name: /^Spend today/ })).getByText('$5.50');
   });
 
   it('opens a live session from its row and closes the studio', async () => {

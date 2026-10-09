@@ -18,6 +18,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
+import { WORK_META_COLUMN } from '@goodboy/ui';
+import { carriesSpec } from '../../../../../../test/classTokens';
 import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 
 type Worktree = {
@@ -107,6 +109,9 @@ vi.mock('../../../../../../store', async () => {
 });
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => null,
+}));
+vi.mock('../../../SessionOverviewPane/SessionCostChip', () => ({
+  SessionCostChip: () => <span>$3.47</span>,
 }));
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
@@ -518,6 +523,44 @@ describe('TimelinePane loading', () => {
 });
 
 describe('TimelinePane unread affordance', () => {
+  const COMPLETED_AGENT = {
+    id: 'agent-1',
+    sessionId: 'session-1',
+    ordinal: 1,
+    name: 'scout',
+    status: 'completed',
+    startedAt: '2026-08-20T10:00:00.000Z',
+  };
+
+  it('keeps the session cost in the Activity header, next to the tabs', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    const views = within(activity).getByRole('tablist', { name: 'Activity view' });
+    expect(within(activity).getByText('$3.47')).toBeDefined();
+    expect(views.parentElement?.contains(within(activity).getByText('$3.47'))).toBe(true);
+  });
+
+  it('puts Mark all seen in the Activity menu, only while an agent is unseen', () => {
+    storeState.sessionPhaseRuns = { 'session-1': [COMPLETED_AGENT] };
+    unread.current = true;
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const activity = screen.getByRole('region', { name: 'Activity' });
+
+    expect(within(activity).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+    fireEvent.click(within(activity).getByRole('button', { name: 'Activity actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Mark all seen' }));
+
+    expect(storeState.markAllAgentsSeen).toHaveBeenCalledWith('session-1');
+  });
+
+  it('drops the Activity menu when nothing is unseen', () => {
+    storeState.sessionPhaseRuns = { 'session-1': [COMPLETED_AGENT] };
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.queryByRole('button', { name: 'Activity actions' })).toBeNull();
+  });
+
   it('hides the CTA once nothing is unread', () => {
     storeState.sessionPhaseRuns = {
       'session-1': [
@@ -692,7 +735,11 @@ describe('TimelinePane run waiting on an answer', () => {
     fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: 'session-1' as SessionId, agentId: 'agent-step' as AgentId }),
+      to: agentPlace({
+        sessionId: 'session-1' as SessionId,
+        agentId: 'agent-step' as AgentId,
+        pane: 'brief',
+      }),
     });
     expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: 'agent-step',
@@ -732,6 +779,19 @@ describe('TimelinePane run waiting on an answer', () => {
     expect(amber.every((element) => agentRow.contains(element))).toBe(true);
   });
 
+  it('answers from the Needs you card only: the agent row has no second Answer', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
+    questions.open = [STEP_QUESTION];
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    const block = screen.getByRole('region', { name: 'Needs you' });
+
+    expect(within(block).getAllByRole('button', { name: /^Open/ })).toHaveLength(1);
+    expect(within(activity).queryAllByRole('button', { name: 'Answer' })).toHaveLength(0);
+  });
+
   it('jumps from the Needs you row of the run to the asking agent behind a closed step', () => {
     const child = {
       ...STEP,
@@ -749,7 +809,11 @@ describe('TimelinePane run waiting on an answer', () => {
     fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: 'session-1' as SessionId, agentId: 'agent-child' as AgentId }),
+      to: agentPlace({
+        sessionId: 'session-1' as SessionId,
+        agentId: 'agent-child' as AgentId,
+        pane: 'brief',
+      }),
     });
     expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: 'agent-child',
@@ -1230,6 +1294,22 @@ describe('TimelinePane row meta', () => {
     expect(meta.querySelector('[data-meta-column="cost"]')).toBeNull();
   });
 
+  it('puts the model and the effort of a step on the shared meta columns', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
+    const model = meta.querySelector('[data-meta-column="model"]');
+
+    expect(carriesSpec({ element: model ?? null, spec: WORK_META_COLUMN.model })).toBe(true);
+    expect(
+      carriesSpec({
+        element: meta.querySelector('[data-meta-column="stack"]'),
+        spec: WORK_META_COLUMN.stack,
+      }),
+    ).toBe(true);
+    expect(model?.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
+    expect(model?.querySelector('[data-routing-part="detail"]')?.textContent).toBe('High');
+  });
+
   it('opens the identity card of a step on the role glyph after the pointer rests', () => {
     vi.useFakeTimers();
     try {
@@ -1314,7 +1394,7 @@ describe('TimelinePane row meta', () => {
   it('names the run, its role and its model on the row for assistive tech', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(screen.getByRole('button', { name: /Planner, Opus 4\.5, High/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Planner.*Opus 4\.5, High/ })).toBeDefined();
   });
 
   it('puts the run row on the same columns, with the total spend and no step counter', () => {
@@ -1533,7 +1613,9 @@ describe('TimelinePane row meta', () => {
 
       const row = rowOf('Build the fix');
       expect(within(row).getByTestId('work-time').textContent).toBe('11m');
-      expect(within(row).getByTestId('timeline-row-state').textContent).toBe('Longer than usual');
+      expect(within(row).getByTestId('work-time').getAttribute('data-note')).toBe('true');
+      expect(within(row).getByText('Longer than usual')).toBeDefined();
+      expect(within(row).queryByTestId('timeline-row-state')).toBeNull();
     });
 
     it('keeps the longer than usual note off a finished step that ran past its range', () => {
@@ -1695,7 +1777,7 @@ describe('TimelinePane fix run', () => {
 
     const owners = screen.getAllByTestId('needs-you-owner');
     expect(owners).toHaveLength(1);
-    expect(owners[0]?.textContent).toContain('#318 · 1 question · 1 to review');
+    expect(owners[0]?.textContent).toContain('#318 · 2 need you · 1 to review · 1 question');
   });
 });
 

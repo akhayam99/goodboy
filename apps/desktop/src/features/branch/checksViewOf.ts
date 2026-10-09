@@ -1,6 +1,8 @@
-import type { PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
+import type { PrCheckRun, PrDetail, PullRequestChecksView, PullRequestState } from '@goodboy/types';
 
 export type ChecksHost = 'gitlab' | 'bitbucket';
+
+export type ChecksHostKind = 'github' | ChecksHost | 'local';
 
 type ChecksView =
   | { readonly kind: 'host'; readonly host: ChecksHost; readonly url: string | null }
@@ -11,13 +13,47 @@ type ChecksView =
   | { readonly kind: 'ready'; readonly checks: ReadonlyArray<PrCheckRun> };
 
 type Params = {
-  readonly hostKind: 'github' | 'gitlab' | 'bitbucket' | 'local';
+  readonly hostKind: ChecksHostKind;
   readonly hostUrl: string | null;
   readonly pr: PullRequestState | null;
   readonly detail: PrDetail | null;
   readonly isDetailLoading: boolean;
   readonly detailError: string | null;
   readonly hasFetchedDetail: boolean;
+  readonly canReadChecks: boolean;
+  readonly portChecks: PullRequestChecksView | null;
+  readonly portReadFailure?: PortReadFailure | null;
+};
+
+type PortReadFailure = {
+  readonly kind: 'denied' | 'failed';
+  readonly error: string | null;
+};
+
+const portViewOf = ({
+  host,
+  url,
+  portChecks,
+  portReadFailure,
+}: {
+  readonly host: ChecksHost;
+  readonly url: string | null;
+  readonly portChecks: PullRequestChecksView | null;
+  readonly portReadFailure: PortReadFailure | null;
+}): ChecksView => {
+  if (portChecks === null) {
+    return portReadFailure === null ? { kind: 'loading' } : portReadFailure;
+  }
+  if (portChecks.read === 'denied') {
+    return { kind: 'denied', error: portChecks.error };
+  }
+  if (portChecks.read === 'failed') {
+    return { kind: 'failed', error: portChecks.error };
+  }
+  if (portChecks.read === 'unsupported') {
+    return { kind: 'host', host, url };
+  }
+  return { kind: 'ready', checks: portChecks.runs };
 };
 
 export const checksViewOf = ({
@@ -28,9 +64,14 @@ export const checksViewOf = ({
   isDetailLoading,
   detailError,
   hasFetchedDetail,
+  canReadChecks,
+  portChecks,
+  portReadFailure = null,
 }: Params): ChecksView => {
   if (hostKind === 'gitlab' || hostKind === 'bitbucket') {
-    return { kind: 'host', host: hostKind, url: hostUrl };
+    return canReadChecks
+      ? portViewOf({ host: hostKind, url: hostUrl, portChecks, portReadFailure })
+      : { kind: 'host', host: hostKind, url: hostUrl };
   }
   if (pr === null) {
     return { kind: 'no-pr' };

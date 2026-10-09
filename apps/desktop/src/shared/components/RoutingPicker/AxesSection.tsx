@@ -1,7 +1,6 @@
 import type { CliGate } from '@goodboy/core';
 import type { EffortLevel, ModelAxes, ModelKey } from '@goodboy/types';
 import { EFFORT_LABEL } from '../../../features/chat/utils/chat-constants';
-import { toggleTone } from './chipTone';
 import { AxisRow } from './AxisRow';
 import { CliGateLine } from '../../../features/providers/components/CliGateLine';
 import { EffortChips } from './EffortChips';
@@ -101,7 +100,6 @@ export const AxesSection = ({
                 key={toggle.id}
                 label={toggle.label}
                 active={toggle.active}
-                tone={toggleTone(toggle.id)}
                 disabled={toggle.canToggle === false}
                 title={
                   toggle.canToggle === false

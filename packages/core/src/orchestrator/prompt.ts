@@ -33,7 +33,7 @@ Flow rules, in this order of precedence:
 4. One review or test pass per implementation. Wanting a second review of the same work means the run should end.
 5. Return done when the goal and the operator process are satisfied, when what is left needs the operator to decide, or when the process says to stop. Return blocked only when progress requires a human decision, never because you lack repository access.
 
-Roles are limited to: ${ORCHESTRATOR_ROLE_VOCABULARY}. Use docs only for repository documentation, never for reports. Use resolver only when the goal supplies concrete review threads.
+Roles are limited to: ${ORCHESTRATOR_ROLE_VOCABULARY}. Use docs only for repository documentation, never for reports. Fixing review findings is implementer work.
 
 For a next step, promptPrefix is the instruction the step agent starts from and expectedOutput tells the post-step summarizer exactly what to extract.
 

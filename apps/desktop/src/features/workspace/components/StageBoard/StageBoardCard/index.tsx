@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo } from 'react';
-import { ChevronRight, MessageSquareDiff } from 'lucide-react';
+import { ChevronRight, MessageSquareDiff, Pin } from 'lucide-react';
 import {
   Chip,
   cn,
@@ -11,7 +11,7 @@ import {
   inlineMarkdownText,
   ToneBar,
 } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPrFetchState } from '../../../../../store';
 import { useSessionSummary } from '../../../hooks/useSessionSummary';
 import { SessionProgress } from '../../SessionProgress';
@@ -25,7 +25,7 @@ import {
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
-import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
+import { branchPlace } from '../../../../../store/slices/navigation/place';
 import { NAMES } from '../../../../../shared/names';
 import { sessionDisplayTitle } from '../../../../session/sessionTitle';
 import { ChatOriginGlyph } from '../../../../../shared/components/ChatOriginGlyph';
@@ -93,6 +93,11 @@ export const StageBoardCard = memo(function StageBoardCard({
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[id]?.mr ?? null);
   const agentCountLabel = `${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`;
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
+  const isPinned = useAppStore((s) =>
+    (s.sessionPins?.[session.workspaceId as WorkspaceId] ?? EMPTY_ARRAY).some(
+      (pin) => pin.id === id,
+    ),
+  );
   const workspaceProjectCount = useAppStore(
     (s) =>
       (s.projects ?? EMPTY_ARRAY).filter((project) => project.workspaceId === session.workspaceId)
@@ -104,7 +109,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
   const reviewDrafts = useAppStore((s) => s.reviewDrafts[id]);
   const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
-  const openSession = useOpenSession();
+  const navigate = useAppStore((s) => s.navigate);
 
   useEffect(() => {
     if (!isPrReview || reviewDrafts != null) {
@@ -139,18 +144,6 @@ export const StageBoardCard = memo(function StageBoardCard({
   const isGitlab = mergeRequest != null && pullRequest == null;
   const handlePrClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (mergeRequest != null && pullRequest == null) {
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-inbox', {
-          detail: {
-            provider: 'gitlab',
-            kind: 'mr',
-            recordKey: `gitlab:mr:${mergeRequest.id}`,
-          },
-        }),
-      );
-      return;
-    }
     nav.openPullRequest(session);
   };
 
@@ -284,6 +277,11 @@ export const StageBoardCard = memo(function StageBoardCard({
 
       <span className="col-span-2 col-start-1 row-start-2 flex h-5 min-w-0 items-center gap-2">
         <span className="flex min-w-0 items-center gap-2 overflow-hidden">
+          {isPinned && !archived ? (
+            <span role="img" aria-label="Pinned" className="inline-flex shrink-0">
+              <Pin size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
+            </span>
+          ) : null}
           {agentCount > 0 && (
             <Tooltip content={agentCountLabel} side="top">
               <span
@@ -303,9 +301,9 @@ export const StageBoardCard = memo(function StageBoardCard({
               ariaLabel={`Review ${reviewDraftCount} draft ${reviewDraftCount === 1 ? 'comment' : 'comments'}`}
               onClick={(event) => {
                 event.stopPropagation();
-                openSession({ sessionId: id, lens: 'review' });
+                navigate({ to: branchPlace({ sessionId: id, tab: 'comments' }) });
               }}
-              icon={<MessageSquareDiff size={10} aria-hidden />}
+              icon={<MessageSquareDiff size={ICON_SIZE.mark} aria-hidden />}
               label={<span className="tabular-nums">{reviewDraftCount}</span>}
               trailing={<span>draft {reviewDraftCount === 1 ? 'comment' : 'comments'}</span>}
               className="shrink-0"

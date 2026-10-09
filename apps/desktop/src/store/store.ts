@@ -88,6 +88,8 @@ import { createHistorySlice, historyInitialState } from './slices/history';
 import { createScribeSlice, scribeInitialState } from './slices/scribe';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
+import { createPullRequestViewSlice } from './slices/pull-request-view';
+import { pullRequestViewInitialState } from './slices/pull-request-view/state';
 import { prWritesInitialState } from './slices/pr-writes/state';
 import { createSessionSyncSlice } from './slices/session-sync';
 import { sessionSyncInitialState } from './slices/session-sync/state';
@@ -128,6 +130,7 @@ import { initialSessionDraftState } from './slices/sessionDraft/state';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
 import { initialNavigationState } from './slices/navigation/types';
+import { askInitialState } from './slices/ask/state';
 import { initialDrawerState } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { ProviderSpendEntry } from './slices/budget';
@@ -205,6 +208,7 @@ export type AppStore = AppState &
   ReturnType<typeof createReviewSelectionSlice> &
   ReturnType<typeof createReviewSourceSlice> &
   ReturnType<typeof createPrWritesSlice> &
+  ReturnType<typeof createPullRequestViewSlice> &
   ReturnType<typeof createSessionSyncSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
@@ -291,6 +295,7 @@ export const initialState: AppState = {
   ...initialContextDrawerState,
   ...initialContextItemsState,
   ...initialDecisionsState,
+  ...askInitialState,
   ...initialDrawerState,
   ...initialNavigationState,
   ...initialScriptsState,
@@ -319,6 +324,7 @@ export const initialState: AppState = {
   ...scribeInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
+  ...pullRequestViewInitialState,
   ...sessionSyncInitialState,
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
@@ -431,6 +437,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createScribeSlice({ set, get }),
   ...createPrSeriesSlice({ set, get }),
   ...createPrWritesSlice({ set, get }),
+  ...createPullRequestViewSlice({ set, get }),
   ...createSessionSyncSlice({ set, get }),
   ...createIssueBriefsSlice({ set, get }),
   ...createDurationEstimatesSlice({ set, get }),

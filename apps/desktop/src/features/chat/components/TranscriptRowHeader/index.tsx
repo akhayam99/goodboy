@@ -41,9 +41,7 @@ export const TranscriptRowHeader = ({
       <span className={cn('shrink-0 text-eyebrow', tint.text)}>{eyebrow}</span>
       {badge}
       <span className="min-w-0 flex-1 truncate text-label text-muted-foreground">{preview}</span>
-      {meta != null && (
-        <span className="shrink-0 font-mono text-meta text-muted-foreground">{meta}</span>
-      )}
+      {meta != null && <span className="shrink-0 text-meta text-muted-foreground">{meta}</span>}
     </>
   );
 

@@ -1,5 +1,5 @@
 import { ArrowUp, Square } from 'lucide-react';
-import { Button, cn, KbdPill, Tooltip, tintClasses } from '@goodboy/ui';
+import { Button, cn, Tooltip, tintClasses, KeyHint } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { formatCombo, shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 
@@ -27,17 +27,15 @@ export const SendControl = ({
   if (isRunning && isEmpty) {
     return (
       <Tooltip content="Stop the turn">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onCancel}
-          aria-label="Stop"
-          className={cn(
-            'inline-flex h-7 w-7 items-center justify-center rounded-md text-danger transition-colors',
-            tintClasses('danger').hoverBg,
-          )}
+          className={cn(tintClasses('danger').text, tintClasses('danger').hoverBg)}
         >
-          <Square size={ICON_SIZE.control} aria-hidden fill="currentColor" />
-        </button>
+          <Square size={ICON_SIZE.row} aria-hidden fill="currentColor" />
+          Stop
+        </Button>
       </Tooltip>
     );
   }
@@ -46,16 +44,12 @@ export const SendControl = ({
     return (
       <>
         <Button variant="ghost" size="sm" onClick={onSend}>
-          Queue{' '}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-meta">
-            {formatCombo('Enter')}
-          </KbdPill>
+          Queue
+          <KeyHint keys={formatCombo('Enter')} />
         </Button>
         <Button variant="primary" size="sm" onClick={onSendNow}>
-          Send now{' '}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-meta">
-            {shortcutGlyphs('composer.submit')}
-          </KbdPill>
+          Send now
+          <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
         </Button>
       </>
     );

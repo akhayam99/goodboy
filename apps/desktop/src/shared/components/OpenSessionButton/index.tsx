@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { Button, type ButtonSize, type ButtonVariant } from '@goodboy/ui';
 import { MessagesSquare } from 'lucide-react';
 import { useOpenSession } from '../../hooks/useOpenSession';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -21,7 +22,7 @@ export const OpenSessionButton = ({
   const openSession = useOpenSession();
   return (
     <Button size={size} variant={variant} onClick={() => openSession({ sessionId, onOpened })}>
-      <MessagesSquare size={14} aria-hidden />
+      <MessagesSquare size={ICON_SIZE.control} aria-hidden />
       {label}
     </Button>
   );

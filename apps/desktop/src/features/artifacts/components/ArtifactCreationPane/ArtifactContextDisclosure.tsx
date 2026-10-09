@@ -5,6 +5,7 @@ import { ArtifactContextRow } from './ArtifactContextRow';
 type Props = {
   readonly rows: ReadonlyArray<ArtifactContextInventoryRow>;
   readonly truncations: ReadonlyArray<string>;
+  readonly repoLine: string;
   readonly isCollecting: boolean;
   readonly isOpen: boolean;
   readonly onOpenChange: (open: boolean) => void;
@@ -28,6 +29,7 @@ const triggerSummary = ({
 export const ArtifactContextDisclosure = ({
   rows,
   truncations,
+  repoLine,
   isCollecting,
   isOpen,
   onOpenChange,
@@ -45,6 +47,7 @@ export const ArtifactContextDisclosure = ({
     }
   >
     <div className="flex min-w-0 flex-col gap-3 px-2 pb-2">
+      <span className="text-meta text-muted-foreground">{repoLine}</span>
       <ul className="flex min-w-0 flex-col gap-2">
         {rows.map((row) => (
           <ArtifactContextRow key={row.id} row={row} />
@@ -61,7 +64,7 @@ export const ArtifactContextDisclosure = ({
         </div>
       )}
       <span className="text-meta text-faint-foreground">
-        collected when this pane opened. Generate collects again.
+        Collected when this pane opened. Generate collects again.
       </span>
     </div>
   </Collapsible>

@@ -1,14 +1,11 @@
 import type { MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/types';
 import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
-import { isOpenNote } from '../../../features/resolve/notes/noteThread';
 import type { AppState } from '../../types';
 import type { MountBitbucketPrState } from '../bitbucket-pr/state';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { openReviewThreadIds } from '../resolve/openReviewThreadIds';
-import { LOCAL_SOURCE_KEY, type ReviewSourceEntry } from './types';
-
-const LOCAL_SOURCE_LABEL = 'Notes on this machine';
+import type { ReviewSourceEntry } from './types';
 
 type State = Pick<
   AppState,
@@ -22,7 +19,6 @@ type State = Pick<
   | 'mountGithub'
   | 'mountGitlabMr'
   | 'mountBitbucketPr'
-  | 'diffComments'
   | 'reviewSourceThreads'
 >;
 
@@ -285,16 +281,5 @@ export const reviewSourceEntriesOf = ({
       }),
     );
   }
-  entries.push({
-    key: LOCAL_SOURCE_KEY,
-    kind: 'local',
-    mountId: null,
-    projectId: null,
-    number: null,
-    label: LOCAL_SOURCE_LABEL,
-    url: null,
-    openCount: (state.diffComments?.[sessionId] ?? []).filter((note) => isOpenNote({ note }))
-      .length,
-  });
   return entries;
 };

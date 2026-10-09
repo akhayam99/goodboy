@@ -10,11 +10,11 @@ import type { ReviewSourceCapabilities } from '@goodboy/core';
 
 export type { GetFn, SetFn } from '../../slice-types';
 
-export const LOCAL_SOURCE_KEY = 'local';
+type RemoteReviewKind = Exclude<ResolveSourceKind, 'local'>;
 
 export type ReviewSourceEntry = Readonly<{
   key: string;
-  kind: ResolveSourceKind;
+  kind: RemoteReviewKind;
   mountId: MountId | null;
   projectId: ProjectId | null;
   number: number | null;

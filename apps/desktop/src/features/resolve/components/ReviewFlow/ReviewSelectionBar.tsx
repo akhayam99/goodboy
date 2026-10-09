@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { SelectionBar, type SelectionVerb } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { acceptCountLabel } from '../../reviewBulkCopy';
-import { REVIEW_LAUNCH_LABEL, fixSelectedLabel } from '../../reviewLaunchCopy';
+import { REVIEW_LAUNCH_LABEL, fixLabel } from '../../reviewLaunchCopy';
 
 type Props = {
   readonly count: number;
@@ -37,7 +37,7 @@ export const ReviewSelectionBar = ({
       : [
           {
             id: 'fix',
-            label: fixSelectedLabel({ count: fixCount }),
+            label: fixLabel({ count: fixCount }),
             tone: 'primary' as const,
             hint: shortcutGlyphs('review.fix'),
             onRun: onFix,

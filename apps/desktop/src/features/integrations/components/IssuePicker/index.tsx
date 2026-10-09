@@ -12,7 +12,7 @@ import {
   splitErrorMessage,
   useDropdown,
   useListboxKeyboard,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
@@ -296,7 +296,8 @@ export const IssuePicker = ({
 
           {isEmptyState && (
             <div className="px-3 py-2 text-label text-muted-foreground">
-              <FilledEmptyState
+              <EmptyState
+                size="section"
                 icon={CONCEPT_ICONS.search}
                 tone={CONCEPT_TONE.search}
                 title={

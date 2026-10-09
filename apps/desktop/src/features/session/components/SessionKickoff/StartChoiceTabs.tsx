@@ -1,5 +1,6 @@
 import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { WORKFLOW_CHOICE_LINE } from '../../../../shared/lib/startCopy';
 import { START_CHOICES, type StartChoice } from './startChoice';
 
 type ChoiceOption = {
@@ -16,7 +17,7 @@ const START_OPTIONS: Readonly<Record<StartChoice, ChoiceOption>> = {
   },
   workflow: {
     title: 'Run a workflow',
-    line: 'Orchestrated, custom or preset.',
+    line: WORKFLOW_CHOICE_LINE,
     icon: CONCEPT_ICONS.workflows,
   },
   scout: {

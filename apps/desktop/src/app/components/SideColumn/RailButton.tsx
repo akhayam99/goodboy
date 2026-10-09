@@ -14,8 +14,16 @@ type Props = {
   readonly onSelect: () => void;
 };
 
-const RAIL_BUTTON =
-  'relative flex size-8 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+const RAIL_BUTTON_BASE =
+  'relative flex shrink-0 items-center justify-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+
+export const RAIL_BUTTON_CURRENT = 'cursor-default bg-selected text-foreground';
+
+export const RAIL_BUTTON_IDLE = 'text-muted-foreground hover:bg-hover hover:text-foreground';
+
+export const RAIL_NODE_BUTTON = cn('size-7', RAIL_BUTTON_BASE);
+
+const RAIL_BUTTON = cn('size-8', RAIL_BUTTON_BASE);
 
 export const RailButton = ({
   id,
@@ -39,13 +47,7 @@ export const RailButton = ({
         }
         onSelect();
       }}
-      className={cn(
-        RAIL_BUTTON,
-        isCurrent
-          ? 'cursor-default bg-selected text-foreground'
-          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
-        className,
-      )}
+      className={cn(RAIL_BUTTON, isCurrent ? RAIL_BUTTON_CURRENT : RAIL_BUTTON_IDLE, className)}
     >
       <Icon size={ICON_SIZE.control} aria-hidden />
       {badge}

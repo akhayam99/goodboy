@@ -32,7 +32,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   gets `<prefix>/<slug>`. The task id only enters when the session starts from a
   task: a task linked later never renames the branch. The prefix may hold `/`
   (`team/ak`); the worktree folder stays flat because `/` becomes `-`.
-- A name an agent or the New worktree form asks for goes through the same
+- A name an agent or the New branch form asks for goes through the same
   prefix (project, then workspace, then the default). A name that already
   starts with `<prefix>/` stays as it is, `feat/x` becomes `<prefix>/feat-x`
   and a bare `x` becomes `<prefix>/x` (`prefixedBranchName` in
@@ -308,6 +308,17 @@ commits` (`branchPresenceOf`, `openRequest`); on the request's head it reads
   past its `merged_head_sha` stays open instead and reads `Merged, then N
 new commits` (`checkMergedThen`, one git check per tip, kept in
   `mergedThen` by mount).
+- **A GitLab row reads the same facts as a GitHub one.** `refreshSessionMr`
+  fills `mountGitlabMr` per mount and, for an open merge request only, reads it
+  once more (`gitlab_get_mr`: the head pipeline and the merge status) with its
+  approvals (`gitlab_mr_approval_state`), at the cadence of the refresh and in
+  no loop of its own. `mapMrToPullRequestState` turns them into `checks`
+  (`success`, `failure`, `pending`, or null with no pipeline), `mergeable`
+  (false on conflicts, null while GitLab is still checking) and
+  `reviewDecision` (`approved` once approvals are met, otherwise
+  `review_required`; GitLab has no changes requested), so the sidebar glyphs,
+  the readiness and the Board read a real state. A failed extra read leaves the
+  fields null and never fails the refresh.
 - **Requests are created per mount.** Creation refreshes the provider first,
   so a retry after the remote accepted a request attaches the existing one
   instead of opening a duplicate. GitHub and GitLab requests open as drafts
@@ -376,7 +387,11 @@ origin`. A repo project can override it from its row editor
   unmounts cleanly. Polling stores the head at merge on the request link
   (`mount_pr_links.merged_head_sha` and `merged_at`: GitHub `headRefOid`
   and `mergedAt`, GitLab `sha` and `merged_at`, Bitbucket the source
-  commit), and a later poll without it keeps the stored one. A squash merge
+  commit), and a later poll without it keeps the stored one. A Bitbucket mount
+  also keeps the `checks` and `reviewDecision` of its open pull request in the
+  mount slice, refreshed with the request (one extra statuses call per refresh,
+  open requests only), so the sidebar, the Board and the Now chip see a failed
+  status or a requested change. A squash merge
   is read only from that record: its `merged_head_sha` is merged when the local tip (and
   `origin/<branch>`, if any) is an ancestor of it, and `Merged, then N new
 commits` otherwise. Without a record, only a merge commit or a rebase
@@ -398,8 +413,8 @@ commits` otherwise. Without a record, only a merge commit or a rebase
 
 ## Branches that are not the owner's
 
-The branch pickers (Switch branch `Pick existing`, New worktree `Existing
-branch`, New worktree for a task) list three groups from `useBranchChoices`:
+The branch pickers (Switch branch `Pick existing`, New branch `Existing
+branch`, New branch for a task) list three groups from `useBranchChoices`:
 `On this Mac` (local branches), `Open pull requests` (open requests of the
 repository, from `gh pr list`, fork heads left out) and `On origin` (remote
 branches nobody has locally, from `worktree_list_remote_branches`). Each entry
@@ -469,7 +484,7 @@ the `mount` kind of the action registry
 (`features/actions/kinds/mount.ts`). The action cell shows the one action
 the state calls for, picked by its `inline` slot: `Rebase on main` when main
 moved, `Push N commits` when commits wait on a branch with a pull request,
-`Create PR` when the branch has commits and no pull request, `Remove worktree`
+`Create PR` when the branch has commits and no pull request, `Close branch`
 once the pull request merged, `Reopen` on a closed row. A blocked action stays
 visible, disabled, with its reason in the tooltip. The always visible row menu
 (`⋯`, also on right click) lists every available action of the worktree: open
@@ -478,7 +493,7 @@ of detected editors), scripts, Rebase, Push, Rewrite history, Switch branch,
 Start new turns here (only with two or more mounts), the copies, then Close
 worktree, or Remove from session on a closed row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
-and Abort rebase forward. Below a 28rem container New worktree shows its icon
+and Abort rebase forward. Below a 28rem container New branch shows its icon
 only. The project menu (`MountActionsMenu`, the `project` kind) holds Remove from session
 and renders nothing when the project has no mount to remove.
 
@@ -495,7 +510,7 @@ tooltip. Copy branch name lives in the row menu.
 
 A branch row shows the tasks linked to that branch as chips (`LinkedTaskChip`, the
 `task` kind). The visible **Put on a branch** action opens an anchored picker for a linked
-task, with **Link work** for another task and **New worktree for** to give a
+task, with **Link work** for another task and **New branch for** to give a
 task its own branch. A task already on the session moves with
 `assignSessionExternalTask`: it links the branch row, then drops the session row.
 `takeOffSessionExternalTask` reverses it, and taking a task off its last branch

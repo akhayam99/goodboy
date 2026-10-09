@@ -64,11 +64,6 @@ export const useSessionSurfaceEvents = ({
           clearCurrentSessionStudio();
         },
       ],
-      ['goodboy:open-gitlab-mr', (event) => openSessionStudio({ event, studio: { kind: 'mr' } })],
-      [
-        'goodboy:open-bitbucket-pr',
-        (event) => openSessionStudio({ event, studio: { kind: 'bitbucket' } }),
-      ],
       [
         'goodboy:open-workflow-builder',
         (event) => openSessionStudio({ event, studio: { kind: 'workflow' } }),

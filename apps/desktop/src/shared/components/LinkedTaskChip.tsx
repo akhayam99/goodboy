@@ -65,15 +65,20 @@ export const LinkedTaskChip = ({ sessionId, task, branch, branches, size = 'cont
           }
           onClick={() => openExternalTaskLens(sessionId, task)}
         />
-        <IconButton
-          icon={X}
-          iconSize={11}
-          variant="ghost"
-          label={`Unlink ${task.identifier}${branch === null ? ' from session' : ` from ${branch}`}`}
-          tooltip="Unlink"
-          onClick={() => void unlink()}
-          className="pointer-events-none absolute right-0.5 top-1/2 size-4 -translate-y-1/2 bg-hover p-0 opacity-0 group-hover/task-link:pointer-events-auto group-hover/task-link:opacity-100 group-focus-within/task-link:pointer-events-auto group-focus-within/task-link:opacity-100 hover:text-danger"
-        />
+        <span
+          data-slot="unlink-slot"
+          className="relative flex size-4 shrink-0 items-center justify-center"
+        >
+          <IconButton
+            size="xs"
+            icon={X}
+            variant="ghost"
+            label={`Unlink ${task.identifier}${branch === null ? ' from session' : ` from ${branch}`}`}
+            tooltip="Unlink"
+            onClick={() => void unlink()}
+            className="pointer-events-none bg-hover opacity-0 group-hover/task-link:pointer-events-auto group-hover/task-link:opacity-100 group-focus-within/task-link:pointer-events-auto group-focus-within/task-link:opacity-100 hover:text-danger"
+          />
+        </span>
       </span>
     </ObjectMenuArea>
   );

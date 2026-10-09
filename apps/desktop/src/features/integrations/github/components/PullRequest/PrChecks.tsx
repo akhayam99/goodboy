@@ -1,5 +1,6 @@
 import type { PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
 import {
+  ROW_INTERACTIVE,
   Button,
   EmptyState,
   Eyebrow,
@@ -106,7 +107,8 @@ export const PrChecks = ({
                   onClick={() => onOpenUrl(check.detailsUrl ?? fallbackUrl)}
                   title={check.detailsUrl ?? check.name}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-body transition-colors hover:bg-hover',
+                    'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-body transition-colors',
+                    ROW_INTERACTIVE,
                     FOCUS_RING,
                   )}
                 >

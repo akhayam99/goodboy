@@ -1,6 +1,7 @@
 import type { IntegrationCredential } from '@goodboy/types';
 import { IconButton } from '@goodboy/ui';
 import { Check, Trash2 } from 'lucide-react';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly credential: IntegrationCredential;
@@ -39,7 +40,7 @@ export const CredentialRow = ({
         className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:opacity-50"
       >
         <span className="flex size-4 shrink-0 items-center justify-center rounded-full border border-border-soft text-primary">
-          {isSelected ? <Check size={10} aria-hidden /> : null}
+          {isSelected ? <Check size={ICON_SIZE.mark} aria-hidden /> : null}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="truncate text-label font-semibold text-foreground">

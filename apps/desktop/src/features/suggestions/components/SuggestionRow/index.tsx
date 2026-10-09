@@ -47,7 +47,6 @@ export const SuggestionRow = ({
       <Button
         size="sm"
         variant="secondary"
-        emphasis="outline"
         disabled={isDisabled}
         isBusy={isBusy}
         onClick={onAction}

@@ -1,3 +1,4 @@
+import { startSentence } from '../../startSentence';
 import { useRef, type KeyboardEvent } from 'react';
 import { SelectableRow } from '@goodboy/ui';
 import type { ArtifactChoiceOption } from '../../artifactCreationAdapter';
@@ -83,7 +84,7 @@ export const ArtifactChoiceRows = ({ ariaLabel, options, value, onChange }: Prop
           data-testid="artifact-choice-hint"
           className="text-meta leading-relaxed text-muted-foreground"
         >
-          {hint}
+          {startSentence({ text: hint })}
         </span>
       )}
     </div>

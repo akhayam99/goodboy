@@ -100,10 +100,7 @@ export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
   lastRouting: null,
 };
 
-export type SessionStudio =
-  | { readonly kind: 'workflow' }
-  | { readonly kind: 'mr'; readonly mountId?: MountId }
-  | { readonly kind: 'bitbucket'; readonly mountId?: MountId };
+export type SessionStudio = { readonly kind: 'workflow' };
 
 export const DEFAULT_PREFS: SessionViewPrefs = {
   sort: 'needsYou',
@@ -191,6 +188,7 @@ type SessionViewSliceState = {
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
+  readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
@@ -201,6 +199,7 @@ type SessionViewSliceState = {
   >;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
+  readonly sessionPagesFolded: Readonly<Record<SessionId, boolean>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
@@ -208,11 +207,16 @@ type SessionViewSliceState = {
 };
 
 type SessionViewSliceActions = {
+  setAgentTab(params: { readonly agentId: AgentId; readonly pane: AgentPane }): void;
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionViewPrefs(params: SetSessionViewPrefsParams): void;
   markSessionOpened(params: { readonly sessionId: SessionId }): void;
   toggleSessionGroup(params: { readonly key: string }): void;
+  setSessionPagesFolded(params: {
+    readonly sessionId: SessionId;
+    readonly isFolded: boolean;
+  }): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;

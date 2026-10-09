@@ -5,6 +5,7 @@ import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { asWireframeFidelity, type WireframeFidelity } from '../wireframeFidelity';
 import { deriveWireframeTarget, type WireframeTarget } from '../wireframeTarget';
+import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 
 type Params = Readonly<{
   sessionId: SessionId;
@@ -51,7 +52,7 @@ export const useWireframeRespawn = ({ sessionId, artifact }: Params): WireframeR
         attachments: [],
         ...(next === fidelity && kickoff !== null ? { evidence: kickoff } : {}),
       });
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      window.dispatchEvent(openAgentRevealEvent());
     } catch (cause) {
       setError(formatError(cause));
     } finally {

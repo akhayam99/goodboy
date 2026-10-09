@@ -1,8 +1,11 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest';
 import type {
+  IsoDateTime,
+  PrCheckRun,
   ProjectId,
   PullRequestState,
+  ResolveThread,
   SessionId,
   WorkflowId,
   WorkspaceId,
@@ -13,7 +16,10 @@ import {
   evaluateMobileMerge,
   evaluateMobileSpawnWorkflow,
   isMergeMethod,
+  mobileMergeFacts,
 } from './mobileConfinement';
+import type { PullRequestFacts } from '../actions/kinds/pullRequestFacts';
+import type { SessionGithubState } from '../../store/types';
 
 const sid = (s: string): SessionId => s as SessionId;
 
@@ -46,77 +52,180 @@ describe('isMergeMethod', () => {
   });
 });
 
+const NOW = '2026-10-07T08:00:00.000Z' as IsoDateTime;
+
+const githubOf = ({
+  pr,
+  checks,
+}: {
+  readonly pr: PullRequestState | null;
+  readonly checks: ReadonlyArray<PrCheckRun> | null;
+}): SessionGithubState => ({
+  pr,
+  linkedIssues: [],
+  fetchedAt: NOW,
+  failedAt: null,
+  loading: false,
+  error: null,
+  detail:
+    checks === null
+      ? null
+      : {
+          prNumber: pr?.number ?? 0,
+          comments: [],
+          reviews: [],
+          reviewRequests: [],
+          checks,
+          checksRead: 'ok',
+        },
+  detailFetchedAt: checks === null ? null : NOW,
+  detailLoading: false,
+  detailError: null,
+});
+
+const factsOf = ({
+  pr = eligiblePr(),
+  checks = null,
+  threads = [],
+}: {
+  readonly pr?: PullRequestState | null;
+  readonly checks?: ReadonlyArray<PrCheckRun> | null;
+  readonly threads?: ReadonlyArray<ResolveThread>;
+} = {}): PullRequestFacts =>
+  mobileMergeFacts({
+    state: {
+      sessionGithub: { [sid('s1')]: githubOf({ pr, checks }) },
+      sessionResolveThreads: { [sid('s1')]: threads },
+    },
+    sessionId: sid('s1'),
+  });
+
+const run = (name: PrCheckRun['name'], conclusion: PrCheckRun['conclusion']): PrCheckRun => ({
+  name,
+  conclusion,
+  detailsUrl: null,
+  durationMs: null,
+});
+
+const thread = (state: ResolveThread['state']): ResolveThread => ({
+  id: `thread-${state}`,
+  sessionId: sid('s1'),
+  projectId: null,
+  prNumber: 7,
+  threadId: `PRT_${state}`,
+  originKind: 'review_comment',
+  diffCommentId: null,
+  state,
+  stage: state === 'working' ? 'working' : 'asking',
+  stateReason: null,
+  revision: 1,
+  generation: 1,
+  reopenedFromThreadId: null,
+  activeAttemptId: null,
+  disposition: null,
+  replyDraft: null,
+  commitShas: null,
+  fixupOfSha: null,
+  replacesSha: null,
+  question: null,
+  replyPostedAt: null,
+  replyId: null,
+  githubResolved: null,
+  closedAt: null,
+  closedSource: null,
+  createdAt: 1,
+  updatedAt: 1,
+});
+
 describe('evaluateMobileMerge', () => {
   it('permits an approved, green, mergeable PR with every supported method', () => {
-    const pr = eligiblePr();
-    expect(evaluateMobileMerge({ pr, method: 'squash' })).toEqual({
+    const facts = factsOf();
+    expect(evaluateMobileMerge({ facts, method: 'squash' })).toEqual({
       ok: true,
-      pr,
+      pr: facts.pr,
       method: 'squash',
     });
-    expect(evaluateMobileMerge({ pr, method: 'merge' }).ok).toBe(true);
-    expect(evaluateMobileMerge({ pr, method: 'rebase' }).ok).toBe(true);
+    expect(evaluateMobileMerge({ facts, method: 'merge' }).ok).toBe(true);
+    expect(evaluateMobileMerge({ facts, method: 'rebase' }).ok).toBe(true);
   });
 
   it('permits a repo with no required review and no CI', () => {
     const gate = evaluateMobileMerge({
-      pr: eligiblePr({ reviewDecision: null, checks: null }),
+      facts: factsOf({ pr: eligiblePr({ reviewDecision: null, checks: null }) }),
       method: 'squash',
     });
     expect(gate.ok).toBe(true);
   });
 
   it('refuses an unsupported method even when the PR is eligible', () => {
-    expect(evaluateMobileMerge({ pr: eligiblePr(), method: 'fast-forward' })).toEqual({
+    expect(evaluateMobileMerge({ facts: factsOf(), method: 'fast-forward' })).toEqual({
       ok: false,
       reason: 'unsupported merge method: fast-forward',
     });
   });
 
   it('refuses when there is no PR for the session', () => {
-    expect(evaluateMobileMerge({ pr: null, method: 'squash' }).ok).toBe(false);
-    expect(evaluateMobileMerge({ pr: undefined, method: 'squash' }).ok).toBe(false);
+    expect(evaluateMobileMerge({ facts: factsOf({ pr: null }), method: 'squash' }).ok).toBe(false);
+    expect(evaluateMobileMerge({ facts: null, method: 'squash' }).ok).toBe(false);
+    expect(evaluateMobileMerge({ facts: undefined, method: 'squash' }).ok).toBe(false);
   });
 
-  it('refuses a blocked PR with the desktop reason', () => {
-    const cases = [
-      [{ isDraft: true }, 'Mark this pull request ready before merging'],
-      [{ state: 'merged' }, 'This pull request is already merged'],
-      [{ state: 'closed' }, 'Reopen this pull request before merging'],
-      [{ state: 'queued' }, 'GitHub is already set to merge this pull request'],
-      [{ mergeable: false }, 'Resolve the conflicts with main first'],
-    ] as const satisfies ReadonlyArray<readonly [Partial<PullRequestState>, string]>;
-    for (const [over, reason] of cases) {
-      expect(evaluateMobileMerge({ pr: eligiblePr(over), method: 'squash' })).toEqual({
-        ok: false,
-        reason,
-      });
-    }
-  });
+  it.each([
+    [{ isDraft: true }, 'Mark this pull request ready before merging.'],
+    [{ state: 'merged' }, 'This pull request is already merged.'],
+    [{ state: 'closed' }, 'Reopen this pull request before merging.'],
+    [{ state: 'queued' }, 'GitHub is already set to merge this pull request.'],
+    [{ mergeable: false }, 'Conflicts with main. Rebase on main from the Branch header.'],
+    [{ reviewDecision: 'review_required' }, 'Needs an approving review.'],
+    [{ reviewDecision: 'changes_requested' }, 'A reviewer asked for changes.'],
+    [{ checks: 'failure' }, '1 check failing.'],
+    [{ checks: 'pending' }, 'Checks are still running.'],
+  ] as const satisfies ReadonlyArray<readonly [Partial<PullRequestState>, string]>)(
+    'refuses %j with the desktop reason',
+    (over, reason) => {
+      const facts = factsOf({ pr: eligiblePr(over) });
+      const gate = evaluateMobileMerge({ facts, method: 'squash' });
+      expect(gate).toEqual({ ok: false, reason });
+    },
+  );
 
   it('refuses while GitHub has not finished checking mergeability', () => {
-    expect(evaluateMobileMerge({ pr: eligiblePr({ mergeable: null }), method: 'squash' })).toEqual({
+    expect(
+      evaluateMobileMerge({
+        facts: factsOf({ pr: eligiblePr({ mergeable: null }) }),
+        method: 'squash',
+      }),
+    ).toEqual({
       ok: false,
-      reason: 'GitHub has not finished checking whether this branch merges',
+      reason: 'GitHub has not finished checking whether this branch merges.',
     });
   });
 
-  it('refuses on every desktop caveat, naming each one', () => {
+  it('names the failing and the running checks the way the desktop does', () => {
     expect(
       evaluateMobileMerge({
-        pr: eligiblePr({ reviewDecision: 'review_required' }),
+        facts: factsOf({ checks: [run('unit tests', 'failure'), run('lint', 'success')] }),
         method: 'squash',
       }),
-    ).toEqual({ ok: false, reason: 'A review is still requested' });
+    ).toEqual({ ok: false, reason: '1 check failing: unit tests.' });
     expect(
       evaluateMobileMerge({
-        pr: eligiblePr({ reviewDecision: 'changes_requested', checks: 'failure' }),
+        facts: factsOf({ checks: [run('unit tests', 'pending'), run('lint', 'pending')] }),
         method: 'squash',
       }),
-    ).toEqual({ ok: false, reason: 'A reviewer asked for changes; Checks are failing' });
+    ).toEqual({ ok: false, reason: '2 checks still running.' });
+  });
+
+  it('refuses while comments wait for the owner or a fix run is live', () => {
     expect(
-      evaluateMobileMerge({ pr: eligiblePr({ checks: 'pending' }), method: 'squash' }),
-    ).toEqual({ ok: false, reason: 'Checks are still running' });
+      evaluateMobileMerge({
+        facts: factsOf({ threads: [thread('needs_answer'), thread('needs_answer')] }),
+        method: 'squash',
+      }),
+    ).toEqual({ ok: false, reason: '2 comments need you' });
+    expect(
+      evaluateMobileMerge({ facts: factsOf({ threads: [thread('working')] }), method: 'squash' }),
+    ).toEqual({ ok: false, reason: 'A run is live on this branch' });
   });
 });
 

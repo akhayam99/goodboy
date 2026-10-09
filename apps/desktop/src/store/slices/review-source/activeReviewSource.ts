@@ -3,7 +3,7 @@ import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import type { AppState } from '../../types';
 import { selectActiveMountId } from '../project-mounts/selectors';
 import { openBitbucketPullRequestsOf, reviewSourceEntriesOf } from './reviewSourceEntries';
-import { LOCAL_SOURCE_KEY, type ActiveReviewSource, type ReviewSourceEntry } from './types';
+import type { ActiveReviewSource, ReviewSourceEntry } from './types';
 
 export type ReviewSourceSelectionState = Parameters<typeof reviewSourceEntriesOf>[0]['state'] &
   Pick<AppState, 'sessionActiveMount' | 'reviewSourceKeys' | 'sessionBitbucketPr'>;
@@ -24,13 +24,12 @@ const isOnActiveMount = ({
   readonly activeMountId: string | null;
 }): boolean => entry.mountId === null || entry.mountId === activeMountId;
 
-export const selectedReviewEntryOf = ({ state, sessionId }: Params): ReviewSourceEntry => {
+export const selectedReviewEntryOf = ({ state, sessionId }: Params): ReviewSourceEntry | null => {
   const entries = reviewSourceEntriesOf({ state, sessionId });
   const activeMountId = selectActiveMountId({ state, sessionId });
   const key = state.reviewSourceKeys?.[sessionId] ?? null;
   const picked = entries.find(
-    (entry) =>
-      entry.key === key && (entry.kind === 'local' || isOnActiveMount({ entry, activeMountId })),
+    (entry) => entry.key === key && isOnActiveMount({ entry, activeMountId }),
   );
   if (picked !== undefined) {
     return picked;
@@ -38,29 +37,22 @@ export const selectedReviewEntryOf = ({ state, sessionId }: Params): ReviewSourc
   const github = state.sessionGithub?.[sessionId]?.pr ?? null;
   const gitlab = state.sessionGitlabMr?.[sessionId]?.mr ?? null;
   const bitbucket = state.sessionBitbucketPr?.[sessionId]?.pr ?? null;
-  const remote = entries.filter((entry) => entry.kind !== 'local');
-  const onActive = remote.filter((entry) => isOnActiveMount({ entry, activeMountId }));
+  const onActive = entries.filter((entry) => isOnActiveMount({ entry, activeMountId }));
   return (
     onActive.find((entry) => entry.kind === 'github' && entry.number === github?.number) ??
     onActive.find((entry) => entry.kind === 'gitlab' && entry.number === gitlab?.iid) ??
     onActive.find((entry) => entry.kind === 'bitbucket' && entry.number === bitbucket?.id) ??
     onActive[0] ??
-    remote[0] ??
-    entries.find((entry) => entry.key === LOCAL_SOURCE_KEY) ?? {
-      key: LOCAL_SOURCE_KEY,
-      kind: 'local',
-      mountId: null,
-      projectId: null,
-      number: null,
-      label: '',
-      url: null,
-      openCount: null,
-    }
+    entries[0] ??
+    null
   );
 };
 
 export const activeReviewSourceOf = ({ state, sessionId }: Params): ActiveReviewSource | null => {
   const entry = selectedReviewEntryOf({ state, sessionId });
+  if (entry === null) {
+    return null;
+  }
   if (entry.kind === 'github' && entry.number !== null) {
     const github = state.sessionGithub?.[sessionId] ?? null;
     const pr = github?.pr ?? null;

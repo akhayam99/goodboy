@@ -2,7 +2,7 @@ import { ChevronDown } from 'lucide-react';
 import { clampEffortForModel } from '@goodboy/core';
 import { AnchoredPopover, PopoverBody, SelectableRow, cn, useDropdown } from '@goodboy/ui';
 import type { AgentEffort, Project, ProjectId, ProviderId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { RoutingLabel } from '../../../shared/components/RoutingLabel';
 import { RoutingPickerBody } from '../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { PickerSection } from '../../../shared/components/RoutingPicker/PickerSection';
@@ -70,7 +70,11 @@ export const AgentStartFields = ({
           >
             <span className={cn('size-1.5 shrink-0 rounded-full', palette.bg)} aria-hidden />
             {AGENT_KIND_META[kind].noun}
-            <ChevronDown size={11} aria-hidden className="shrink-0 text-muted-foreground" />
+            <ChevronDown
+              size={ICON_SIZE.mark}
+              aria-hidden
+              className="shrink-0 text-muted-foreground"
+            />
           </button>
         }
       >
@@ -95,7 +99,7 @@ export const AgentStartFields = ({
         trigger={
           <button type="button" onClick={modelDropdown.toggle} className={chipClassName}>
             <CONCEPT_ICONS.autoRouting
-              size={11}
+              size={ICON_SIZE.mark}
               aria-hidden
               className="shrink-0 text-muted-foreground"
             />
@@ -108,7 +112,11 @@ export const AgentStartFields = ({
                 effort={effective.effort}
               />
             )}
-            <ChevronDown size={11} aria-hidden className="shrink-0 text-muted-foreground" />
+            <ChevronDown
+              size={ICON_SIZE.row}
+              aria-hidden
+              className="shrink-0 text-muted-foreground"
+            />
           </button>
         }
       >
@@ -161,7 +169,11 @@ export const AgentStartFields = ({
               aria-label={`Project: ${selectedProject?.name ?? 'none'}`}
             >
               {selectedProject?.name ?? 'Project'}
-              <ChevronDown size={11} aria-hidden className="shrink-0 text-muted-foreground" />
+              <ChevronDown
+                size={ICON_SIZE.mark}
+                aria-hidden
+                className="shrink-0 text-muted-foreground"
+              />
             </button>
           }
         >

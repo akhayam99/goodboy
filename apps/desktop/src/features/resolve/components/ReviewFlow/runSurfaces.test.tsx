@@ -80,9 +80,9 @@ describe('Fix run status line', () => {
 
     const status = within(screen.getByTestId('resolve-run-status'));
     expect(status.getByText('Fixing 4 comments')).toBeDefined();
-    expect(status.getByRole('button', { name: '2 ready' })).toBeDefined();
-    expect(status.getByRole('button', { name: '1 needs you' })).toBeDefined();
+    expect(status.getByRole('button', { name: '3 need you' })).toBeDefined();
     expect(status.getByRole('button', { name: '1 working' })).toBeDefined();
+    expect(status.queryByRole('button', { name: /ready to push/ })).toBeNull();
     expect(status.queryByRole('button', { name: /couldn't fix/ })).toBeNull();
     expect(status.getByText('Sonnet 5 · Medium')).toBeDefined();
     expect(status.getByRole('button', { name: 'Open transcript' })).toBeDefined();
@@ -105,13 +105,13 @@ describe('Fix run status line', () => {
     await mount({ threadId: null });
     const status = within(screen.getByTestId('resolve-run-status'));
 
-    fireEvent.click(status.getByRole('button', { name: '1 needs you' }));
+    fireEvent.click(status.getByRole('button', { name: '3 need you' }));
     expect(within(list()).getByRole('region', { name: 'Needs you' })).toBeDefined();
-    expect(within(list()).queryByRole('region', { name: 'Ready' })).toBeNull();
+    expect(within(list()).queryByRole('region', { name: 'Ready to push' })).toBeNull();
     expect(within(list()).queryByRole('region', { name: 'Working' })).toBeNull();
 
-    fireEvent.click(status.getByRole('button', { name: '1 needs you' }));
-    expect(within(list()).getByRole('region', { name: 'Ready' })).toBeDefined();
+    fireEvent.click(status.getByRole('button', { name: '3 need you' }));
+    expect(within(list()).getByRole('region', { name: 'Ready to push' })).toBeDefined();
   });
 
   it('stops the run from the status line', async () => {
@@ -122,6 +122,8 @@ describe('Fix run status line', () => {
     fireEvent.click(
       within(screen.getByTestId('resolve-run-status')).getByRole('button', { name: 'Stop' }),
     );
+    const confirm = await screen.findByRole('dialog', { name: 'Stop this fix run?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Stop' }));
 
     expect(forceCloseResolver).toHaveBeenCalledWith(SESSION.id, 'mock-resolve-agent-idempotency');
   });

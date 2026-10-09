@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ScriptActionTarget } from '../../../actions/types';
-import { Plus } from 'lucide-react';
+import { Pin, Plus } from 'lucide-react';
 import {
   Button,
   EmptyLine,
@@ -10,9 +10,10 @@ import {
   splitErrorMessage,
   useCopyLink,
   PaneShell,
+  HeaderActions,
 } from '@goodboy/ui';
 import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
@@ -24,7 +25,6 @@ import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsed
 import { useScriptPins } from '../../hooks/useScriptPins';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
 import { scriptPinId } from '../../scriptPinId';
-import { openSettings } from '../../../settings/openSettings';
 import { useNow } from '../../../../shared/hooks/useNow';
 import {
   readPackagesCollapsedOverrides,
@@ -40,6 +40,7 @@ import { PinnedScriptsStrip, type PinnedScriptEntry } from './PinnedScriptsStrip
 import { ScriptGroupSection } from './ScriptGroupSection';
 import { ScriptPackageSection } from './ScriptPackageSection';
 import { ScriptSavedSection } from './ScriptSavedSection';
+import { ScriptPinPicker } from './ScriptPinPicker';
 import { ScriptsFilterInput } from './ScriptsFilterInput';
 import { UnmountedScriptsNote, type UnmountedScriptsEntry } from './UnmountedScriptsNote';
 import { useScriptDraft } from './useScriptDraft';
@@ -116,6 +117,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   );
   const [scopedProjectId] = useState(() => scriptsLensScope?.projectId ?? null);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [pickerMountId, setPickerMountId] = useState<MountId | null>(null);
   const draft = useScriptDraft({ workspaceId });
   const { copy } = useCopyLink();
 
@@ -146,10 +148,18 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   const pins = useScriptPins({ projectIds: groups.map((group) => group.projectId) });
   const isPinned = ({ group, script }: RowParams): boolean =>
     (pins[group.projectId] ?? []).includes(scriptPinId(script));
-  const togglePin = ({ group, script }: RowParams) =>
-    void toggleScriptPin({ projectId: group.projectId, pinId: scriptPinId(script) }).catch(
-      (error: unknown) => reportError({ title: "Couldn't pin the script", error }),
+  const togglePinId = ({
+    group,
+    pinId,
+  }: {
+    readonly group: SessionScriptGroup;
+    readonly pinId: string;
+  }) =>
+    void toggleScriptPin({ projectId: group.projectId, pinId }).catch((error: unknown) =>
+      reportError({ title: "Couldn't pin the script", error }),
     );
+  const togglePin = ({ group, script }: RowParams) =>
+    togglePinId({ group, pinId: scriptPinId(script) });
   const activeGroup =
     groups.find((group) => group.projectId === scopedProjectId) ??
     groups.find((group) => group.projectId === activeProjectId) ??
@@ -339,8 +349,19 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     );
 
   const groupNote = ({ group }: { readonly group: SessionScriptGroup }) => {
+    const manifest = discovered?.[group.worktreePath] ?? [];
+    const picker =
+      pickerMountId === group.mountId && group.isReady ? (
+        <ScriptPinPicker
+          projectName={group.projectName}
+          groups={manifest}
+          pins={pins[group.projectId] ?? []}
+          onTogglePin={(pinId) => togglePinId({ group, pinId })}
+          onClose={() => setPickerMountId(null)}
+        />
+      ) : null;
     if (group.scripts.length > 0) {
-      return null;
+      return picker;
     }
     if (!group.isReady) {
       return (
@@ -384,34 +405,42 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     if (draft.draft?.mountId === group.mountId) {
       return null;
     }
+    const hasManifestScripts = manifest.some((entry) => entry.scripts.length > 0);
     return (
-      <EmptyState
-        size="section"
-        className="px-2"
-        icon={CONCEPT_ICONS.scripts}
-        title="No pinned scripts"
-        action={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="xs"
-              aria-label={`Pin scripts of ${group.projectName} in Settings`}
-              onClick={() => openSettings({ scope: 'workspace', section: 'projects' })}
-            >
-              Pin in Settings
-            </Button>
-            <Button
-              variant="ghost"
-              size="xs"
-              aria-label={`New script in ${group.projectName}`}
-              onClick={() => openNew({ group })}
-            >
-              <Plus size={ICON_SIZE.row} aria-hidden />
-              New script
-            </Button>
-          </div>
-        }
-      />
+      <>
+        <EmptyState
+          size="section"
+          className="px-2"
+          icon={CONCEPT_ICONS.scripts}
+          title={`No scripts in ${group.projectName}`}
+          action={
+            <div className="flex items-center gap-2">
+              {hasManifestScripts ? (
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  aria-label={`Pin a script of ${group.projectName}`}
+                  aria-expanded={picker !== null}
+                  onClick={() => setPickerMountId(picker === null ? group.mountId : null)}
+                >
+                  <Pin size={ICON_SIZE.row} aria-hidden />
+                  Pin a script
+                </Button>
+              ) : null}
+              <Button
+                variant="ghost"
+                size="xs"
+                aria-label={`New script in ${group.projectName}`}
+                onClick={() => openNew({ group })}
+              >
+                <Plus size={ICON_SIZE.row} aria-hidden />
+                New script
+              </Button>
+            </div>
+          }
+        />
+        {picker}
+      </>
     );
   };
 
@@ -545,25 +574,21 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
 
   const actions =
     groups.length === 0 ? null : (
-      <div className="flex items-center gap-2">
-        <ScriptsFilterInput value={query} onChange={setQuery} />
-        {activeGroup === null ? null : (
-          <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
-            <Plus size={ICON_SIZE.row} aria-hidden />
-            New script
-          </Button>
-        )}
-      </div>
+      <HeaderActions
+        secondary={<ScriptsFilterInput value={query} onChange={setQuery} />}
+        button={
+          activeGroup === null ? null : (
+            <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
+              <Plus size={ICON_SIZE.row} aria-hidden />
+              New script
+            </Button>
+          )
+        }
+      />
     );
 
   return (
-    <PaneShell
-      title="Scripts"
-      icon={CONCEPT_ICONS.scripts}
-      tone={CONCEPT_TONE.scripts}
-      meta={groups.length === 0 ? undefined : meta}
-      actions={actions}
-    >
+    <PaneShell title="Scripts" meta={groups.length === 0 ? undefined : meta} actions={actions}>
       {groups.length === 0 ? (
         <EmptyState
           size="page"
@@ -591,7 +616,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           onCancel={draft.keepEditing}
         />
       ) : null}
-      {groups.length === 0 ? null : <PinnedScriptsStrip entries={pinnedEntries} />}
+      {projectCount < 2 ? null : <PinnedScriptsStrip entries={pinnedEntries} />}
       {query.trim() !== '' && visibleGroups.length === 0 ? (
         <EmptyLine
           action={

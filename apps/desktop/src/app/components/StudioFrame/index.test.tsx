@@ -4,6 +4,7 @@ import { lazy } from 'react';
 import { Workflow } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { PaneShell } from '@goodboy/ui';
 import { StudioShell } from '../../../shared/components/StudioShell';
 import { StudioTrail } from '../../../shared/components/StudioShell/StudioTrail';
 import { StudioFrame } from './index';
@@ -20,8 +21,8 @@ type BodyProps = {
 
 const Body = ({ subtitle, isEscapeEnabled = true }: BodyProps) => (
   <StudioShell
-    title="Inbox"
-    closeLabel="Close inbox"
+    title="Tasks"
+    closeLabel="Close tasks"
     {...(subtitle !== undefined && { subtitle })}
     isEscapeEnabled={isEscapeEnabled}
     headerAccessory={<button type="button">Refresh</button>}
@@ -100,9 +101,9 @@ describe('StudioFrame', () => {
       </StudioFrame>,
     );
 
-    const band = screen.getByRole('banner', { name: 'Inbox' });
+    const band = screen.getByRole('banner', { name: 'Tasks' });
     const trail = within(band).getByRole('navigation', { name: 'Breadcrumb' });
-    expect(within(trail).getByText('Inbox').getAttribute('aria-current')).toBe('page');
+    expect(within(trail).getByText('Tasks').getAttribute('aria-current')).toBe('page');
   });
 
   it('lets a studio body carry its own trail into the band, in place of the root', () => {
@@ -201,11 +202,87 @@ describe('StudioFrame', () => {
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close tasks' }));
     act(() => {
       vi.advanceTimersByTime(300);
     });
 
     expect(onClose).toHaveBeenCalledOnce();
+  });
+});
+
+describe('StudioFrame grid', () => {
+  const columnOf = (node: HTMLElement) => node.closest('[data-page-column]') as HTMLElement | null;
+
+  it.each(['inbox', 'workflow', 'impact', 'guide', 'changelog', 'notifications'] as const)(
+    'draws the %s band inside the page column, like the title under it',
+    (kind) => {
+      render(
+        <StudioFrame kind={kind} onClose={() => undefined}>
+          <PaneShell title="Studio title">
+            <p>body</p>
+          </PaneShell>
+        </StudioFrame>,
+      );
+
+      const band = screen.getByRole('banner');
+      const bandColumn = band.querySelector('[data-page-column]') as HTMLElement;
+      expect(bandColumn.getAttribute('data-width')).toBe('column');
+      expect(columnOf(screen.getByRole('heading', { level: 1 }))?.getAttribute('data-width')).toBe(
+        'column',
+      );
+    },
+  );
+
+  it('lines the chat band up with the 24px gutter beside its rail', () => {
+    render(
+      <StudioFrame kind="chat" onClose={() => undefined}>
+        <p>chat body</p>
+      </StudioFrame>,
+    );
+
+    const band = screen.getByRole('banner');
+    expect(
+      (band.querySelector('[data-page-column]') as HTMLElement).getAttribute('data-width'),
+    ).toBe('full');
+  });
+
+  it('keeps Close at the right edge of the same column as the crumb', () => {
+    render(
+      <StudioFrame kind="impact" onClose={() => undefined}>
+        <p>body</p>
+      </StudioFrame>,
+    );
+
+    const column = screen.getByRole('banner').querySelector('[data-page-column]') as HTMLElement;
+    expect(column.contains(screen.getByRole('navigation', { name: 'Breadcrumb' }))).toBe(true);
+    expect(column.contains(screen.getByRole('button', { name: 'Close impact' }))).toBe(true);
+  });
+
+  it('sits the studio title right under the band, with no extra top inset', () => {
+    const { container } = render(
+      <StudioFrame kind="workflow" onClose={() => undefined}>
+        <PaneShell title="Workflows">
+          <p>body</p>
+        </PaneShell>
+      </StudioFrame>,
+    );
+
+    const header = container.querySelector('[data-slot="pane-header"]') as HTMLElement;
+    expect(header.hasAttribute('data-under-trail')).toBe(true);
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
+  it('keeps the top inset of a frame that draws no band', () => {
+    const { container } = render(
+      <StudioFrame kind="settings" placement="content" hasBand={false} onClose={() => undefined}>
+        <PaneShell title="Settings">
+          <p>body</p>
+        </PaneShell>
+      </StudioFrame>,
+    );
+
+    const header = container.querySelector('[data-slot="pane-header"]') as HTMLElement;
+    expect(header.hasAttribute('data-under-trail')).toBe(false);
   });
 });

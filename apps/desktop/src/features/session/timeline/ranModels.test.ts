@@ -268,6 +268,15 @@ describe('modelsSummary', () => {
     ).toBe('Sonnet 5.5');
   });
 
+  it('carries the effort of a single model and drops it for a chain and for a run', () => {
+    const single = { ...route({ name: 'Opus 5.5', provider: 'anthropic' }), effort: 'High' };
+    const other = { ...route({ name: 'Kimi K3', provider: 'moonshot' }), effort: 'Low' };
+
+    expect(modelsSummary({ models: [single] })?.effort).toBe('High');
+    expect(modelsSummary({ models: [single, other] })?.effort).toBeNull();
+    expect(modelsSummary({ models: [single], isRun: true })?.effort).toBeNull();
+  });
+
   it('prints a fallback as an arrow in the order the models ran', () => {
     const summary = modelsSummary({
       models: [

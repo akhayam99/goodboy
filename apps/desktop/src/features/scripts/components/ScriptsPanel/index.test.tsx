@@ -112,6 +112,7 @@ const { state } = vi.hoisted(() => ({
     runDiscoveredScript: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })),
     openDrawer: vi.fn(),
     toggleDrawer: vi.fn(),
+    toggleScriptPin: vi.fn(async () => undefined),
   },
 }));
 
@@ -173,7 +174,7 @@ vi.mock('../../../../store', () => {
     toggleDrawer: state.toggleDrawer,
     settings: settingsOf(),
     loadScriptPins: noPins,
-    toggleScriptPin: noPins,
+    toggleScriptPin: state.toggleScriptPin,
     reportError: noPins,
   });
   const useAppStore = <T,>(selector: (storeState: ReturnType<typeof getStoreState>) => T) =>
@@ -215,6 +216,7 @@ beforeEach(() => {
     state.runDiscoveredScript,
     state.openDrawer,
     state.toggleDrawer,
+    state.toggleScriptPin,
   ]) {
     fn.mockClear();
   }
@@ -241,6 +243,18 @@ describe('ScriptsPanel', () => {
     expect(within(settlement).getByText('Saved')).toBeDefined();
     expect(within(settlement).getAllByText('package.json')).toHaveLength(2);
     expect(within(rounding).getByText('Replay settlement batch')).toBeDefined();
+  });
+
+  it('gives each project one refresh and one overflow per row', () => {
+    renderPanel();
+
+    for (const name of ['ledger-core · nw/settlement', 'notify-relay · nw/retry-backoff']) {
+      expect(within(group(name)).getAllByRole('button', { name: /scripts again$/ })).toHaveLength(
+        1,
+      );
+    }
+    const settlement = group('ledger-core · nw/settlement');
+    expect(within(settlement).getAllByRole('button', { name: /^More for / })).toHaveLength(3);
   });
 
   it('splits a monorepo into its packages, root first, and runs each in its folder', () => {
@@ -386,11 +400,10 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     const relay = group('notify-relay · nw/retry-backoff');
-    expect(within(relay).getByText('No pinned scripts')).toBeDefined();
+    expect(within(relay).getByText('No scripts in notify-relay')).toBeDefined();
     expect(within(relay).queryByText('0')).toBeNull();
-    expect(
-      within(relay).getByRole('button', { name: 'Pin scripts of notify-relay in Settings' }),
-    ).toBeDefined();
+    expect(within(relay).queryByRole('button', { name: /Pin a script/ })).toBeNull();
+    expect(within(relay).getByRole('button', { name: 'New script in notify-relay' })).toBeDefined();
     cleanup();
 
     state.mounts = [];
@@ -568,7 +581,7 @@ describe('ScriptsPanel', () => {
     expect(
       within(group('notify-relay · nw/retry-backoff')).getByRole('button', { expanded: false }),
     ).toBeDefined();
-    expect(screen.queryByText('No pinned scripts')).toBeNull();
+    expect(screen.queryByText('No scripts in notify-relay')).toBeNull();
   });
 
   it('lists only the scripts pinned for the project when it has more discovered ones', () => {
@@ -621,7 +634,7 @@ describe('ScriptsPanel', () => {
     );
   });
 
-  it('shows one quiet line and a Settings link when no script is pinned', () => {
+  it('names the empty project and opens its scripts inline to pin one', () => {
     state.mounts = [RELAY_MOUNT];
     state.saved = [];
     state.discovered = {
@@ -631,19 +644,44 @@ describe('ScriptsPanel', () => {
       ]),
     };
     state.pins = {};
-    const opened: Array<unknown> = [];
-    const listener = (event: Event) => opened.push((event as CustomEvent).detail);
-    window.addEventListener('goodboy:open-settings', listener);
     renderPanel();
 
     const relay = group('notify-relay · nw/retry-backoff');
-    expect(within(relay).getByText('No pinned scripts')).toBeDefined();
+    expect(within(relay).getByText('No scripts in notify-relay')).toBeDefined();
     expect(within(relay).queryByRole('button', { name: /^Show .* output$/ })).toBeNull();
-    fireEvent.click(
-      within(relay).getByRole('button', { name: 'Pin scripts of notify-relay in Settings' }),
-    );
-    window.removeEventListener('goodboy:open-settings', listener);
+    expect(within(relay).queryByRole('button', { name: /Settings/ })).toBeNull();
+    expect(within(relay).queryByRole('region', { name: 'Scripts of notify-relay' })).toBeNull();
 
-    expect(opened).toEqual([{ scope: 'workspace', section: 'projects' }]);
+    fireEvent.click(within(relay).getByRole('button', { name: 'Pin a script of notify-relay' }));
+
+    const picker = within(relay).getByRole('region', { name: 'Scripts of notify-relay' });
+    expect(within(picker).getByRole('button', { name: 'Pin dev' })).toBeDefined();
+    fireEvent.click(within(picker).getByRole('button', { name: 'Pin test' }));
+
+    expect(state.toggleScriptPin).toHaveBeenCalledWith({
+      projectId: RELAY.id,
+      pinId: pinIdOf({ relDir: '', name: 'test' }),
+    });
+  });
+
+  it('shows the pinned strip only when the session has more than one project', () => {
+    state.pins = {
+      [LEDGER.id]: [pinIdOf({ relDir: '', name: 'test' })],
+    };
+    renderPanel();
+
+    const strip = screen.getByRole('region', { name: 'Pinned scripts' });
+    expect(within(strip).getByRole('button', { name: 'Run test in ledger-core' })).toBeDefined();
+    cleanup();
+
+    state.mounts = [SETTLEMENT];
+    renderPanel();
+
+    expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
+    expect(
+      within(group('ledger-core · nw/settlement')).getByRole('button', {
+        name: 'Show test output',
+      }),
+    ).toBeDefined();
   });
 });

@@ -35,31 +35,26 @@ export const MoveReport = ({ sessionId }: Props) => {
   ].filter((note): note is string => note !== null);
 
   return (
-    <div className="flex flex-col px-4 py-3">
-      <Notice
-        tone="success"
-        placement="inline"
-        role="status"
-        title={`Moved ${report.movedCount} ${plural(report.movedCount)} into this session`}
-        body="The project folder is clean on main. Everything from now on starts from the published main."
-        actions={
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => dismiss({ projectId: report.projectId })}
-          >
-            Dismiss
-          </Button>
-        }
-      >
-        {notes.length > 0 ? (
-          <ul className="flex flex-col gap-1 text-meta text-muted-foreground">
-            {notes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-        ) : null}
-      </Notice>
-    </div>
+    <Notice
+      tone="success"
+      placement="inline"
+      className="bg-transparent"
+      role="status"
+      title={`Moved ${report.movedCount} ${plural(report.movedCount)} into this session`}
+      body="The project folder is clean on main. Everything from now on starts from the published main."
+      actions={
+        <Button size="sm" variant="ghost" onClick={() => dismiss({ projectId: report.projectId })}>
+          Dismiss
+        </Button>
+      }
+    >
+      {notes.length > 0 ? (
+        <ul className="flex flex-col gap-1 text-meta text-muted-foreground">
+          {notes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+      ) : null}
+    </Notice>
   );
 };

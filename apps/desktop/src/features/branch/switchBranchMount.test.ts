@@ -14,6 +14,8 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 import { branchPlace } from '../../store/slices/navigation/place';
+import { ledgerCore, mountGithubOf, mountOf, sessionOf } from '../workspace/testing/sessionColumn';
+import { branchLandingTabOf } from './branchLandingTab';
 import { switchBranchMount } from './switchBranchMount';
 
 type StoreState = ReturnType<StoryStore['getState']>;
@@ -21,6 +23,12 @@ type StoreState = ReturnType<StoryStore['getState']>;
 const SESSION = 'session-ledger-export' as SessionId;
 const MOUNT = 'mount-ledger-core-fix' as MountId;
 const PATH = '/work/ledger-core-fix';
+
+const TARGET_MOUNT = {
+  ...mountOf({ session: sessionOf({ goal: 'Ledger export' }), project: ledgerCore }),
+  mountId: MOUNT,
+  worktreePath: PATH,
+};
 
 let useAppStore: StoryStore;
 
@@ -33,7 +41,7 @@ beforeEach(async () => {
 });
 
 describe('switchBranchMount', () => {
-  it('makes the mount the write destination, then opens its branch page on the same tab', async () => {
+  it('makes the mount the write destination, then opens its branch page on the landing tab', async () => {
     const navigate = vi.fn<StoreState['navigate']>();
     const setSessionActiveMount = vi.fn<StoreState['setSessionActiveMount']>(async () => undefined);
     useAppStore.setState({ navigate, setSessionActiveMount, branchTab: { [SESSION]: 'files' } });
@@ -42,8 +50,60 @@ describe('switchBranchMount', () => {
 
     expect(setSessionActiveMount).toHaveBeenCalledWith({ sessionId: SESSION, mountId: MOUNT });
     expect(navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION, mountPath: PATH, tab: 'files' }),
+      to: branchPlace({
+        sessionId: SESSION,
+        mountPath: PATH,
+        tab: branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
+      }),
       mode: 'replace',
+    });
+  });
+
+  it('lands on the pull request landing tab when the target mount has one', async () => {
+    const navigate = vi.fn<StoreState['navigate']>();
+    useAppStore.setState({
+      navigate,
+      setSessionActiveMount: vi.fn<StoreState['setSessionActiveMount']>(async () => undefined),
+      mountGithub: { [MOUNT]: mountGithubOf({ mount: TARGET_MOUNT, number: 12 }) },
+    });
+
+    await switchBranchMount({ sessionId: SESSION, mountId: MOUNT, worktreePath: PATH });
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: branchPlace({
+        sessionId: SESSION,
+        mountPath: PATH,
+        tab: branchLandingTabOf({ hasPullRequest: true, deepLink: null }),
+      }),
+      mode: 'replace',
+    });
+  });
+
+  it('never carries the tab, the thread or the focus of the branch it leaves', async () => {
+    const navigate = vi.fn<StoreState['navigate']>();
+    useAppStore.setState({
+      navigate,
+      setSessionActiveMount: vi.fn<StoreState['setSessionActiveMount']>(async () => undefined),
+      branchTab: { [SESSION]: 'checks' },
+      branchThreadId: { [SESSION]: 'thread-1' },
+    });
+
+    await switchBranchMount({
+      sessionId: SESSION,
+      mountId: MOUNT,
+      worktreePath: PATH,
+      mode: 'push',
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: branchPlace({
+        sessionId: SESSION,
+        mountPath: PATH,
+        tab: branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
+        threadId: null,
+        focus: null,
+      }),
+      mode: 'push',
     });
   });
 

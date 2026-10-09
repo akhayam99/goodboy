@@ -25,7 +25,7 @@ type Props = {
   readonly onActed?: () => void;
 };
 
-const ICON_BUTTON = 'flex size-5.5 items-center justify-center rounded-sm text-muted-foreground';
+const ICON_BUTTON = 'flex size-6 items-center justify-center rounded-sm text-muted-foreground';
 
 export const NotificationRow = ({
   notifications,
@@ -71,7 +71,7 @@ export const NotificationRow = ({
   const count =
     notifications.length > 1 ? (
       <span
-        aria-label={`${notifications.length} notifications`}
+        aria-label={`${notifications.length} similar notifications`}
         className="shrink-0 rounded-full bg-muted px-2 text-chip text-muted-foreground"
       >
         {notifications.length}
@@ -190,7 +190,7 @@ export const NotificationRow = ({
           )}
           {context != null && (
             <span className="inline-flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
-              <CONCEPT_ICONS.sessions size={10} aria-hidden className="shrink-0" />
+              <CONCEPT_ICONS.sessions size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
               <span className="truncate">{context}</span>
             </span>
           )}
@@ -200,7 +200,7 @@ export const NotificationRow = ({
             <button
               type="button"
               onClick={runAction}
-              className="inline-flex h-5.5 items-center whitespace-nowrap rounded-sm px-2 text-chip text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
+              className="inline-flex h-6 items-center whitespace-nowrap rounded-sm px-2 text-chip text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
             >
               {action.label}
             </button>

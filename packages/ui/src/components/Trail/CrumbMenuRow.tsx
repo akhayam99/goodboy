@@ -3,6 +3,7 @@ import { cn } from '../../cn';
 import { tintClasses } from '../../tint';
 import type { CrumbMenuRow as CrumbMenuRowModel } from './crumbMenuTypes';
 import { CrumbMenuLead } from './CrumbMenuLead';
+import { ICON_SIZE } from '../../iconSize';
 
 type Props = {
   readonly row: CrumbMenuRowModel;
@@ -34,7 +35,7 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
       disabled={row.isDisabled}
       onClick={() => onActivate(row)}
       className={cn(
-        'flex h-7.5 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2 text-left outline-none transition-colors',
+        'flex min-h-7 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2 text-left outline-none transition-colors',
         'focus-visible:ring-2 focus-visible:ring-focus-ring',
         row.indent === 1 && 'pl-7',
         'hover:bg-hover focus:bg-hover',
@@ -74,7 +75,7 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
             <>
               {StateGlyph != null ? (
                 <StateGlyph
-                  size={12}
+                  size={ICON_SIZE.row}
                   aria-hidden
                   className={cn('shrink-0', tintClasses(row.state.tone).icon)}
                 />
@@ -90,7 +91,9 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
         </span>
       ) : null}
       <span className="flex w-3.5 shrink-0 items-center justify-center">
-        {row.isCurrent ? <Check size={14} aria-hidden className="text-foreground" /> : null}
+        {row.isCurrent ? (
+          <Check size={ICON_SIZE.control} aria-hidden className="text-foreground" />
+        ) : null}
       </span>
     </button>
   );

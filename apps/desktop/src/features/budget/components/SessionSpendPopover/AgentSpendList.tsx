@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, formatUsd } from '@goodboy/ui';
+import { EmptyLine, Button, formatUsd } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import type { AgentSpend } from '../../sessionSpendByAgent';
 
@@ -18,7 +18,9 @@ export const AgentSpendList = ({ agents }: Props) => {
     <section aria-label="By agent" className="flex flex-col gap-2">
       <span className="text-row text-foreground">By agent</span>
       {agents.length === 0 ? (
-        <p className="text-meta text-muted-foreground">No agent has spent anything yet.</p>
+        <EmptyLine className="text-meta text-muted-foreground">
+          No agent has spent anything yet.
+        </EmptyLine>
       ) : (
         <ul className="flex flex-col gap-2">
           {visible.map((agent) => (
@@ -29,7 +31,7 @@ export const AgentSpendList = ({ agents }: Props) => {
                 <span className="min-w-0 flex-1 truncate text-meta text-faint-foreground">
                   {agent.model}
                 </span>
-                <span className="shrink-0 font-mono text-meta tabular-nums text-foreground">
+                <span className="shrink-0 text-meta tabular-nums text-foreground">
                   {formatUsd(agent.costUsd)}
                 </span>
               </div>

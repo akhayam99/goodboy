@@ -1,4 +1,4 @@
-import { Band, KbdPill } from '@goodboy/ui';
+import { Band, KeyHint } from '@goodboy/ui';
 import {
   COMPOSER_PREFIX_GROUPS,
   PALETTE_PREFIX_GROUPS,
@@ -75,7 +75,7 @@ export const ListensExtra = () => (
             <dd className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
               {kind.keys.map((key) => (
                 <span key={key.does} className="flex items-center gap-2">
-                  <KbdPill>{key.glyph}</KbdPill>
+                  <KeyHint keys={key.glyph} />
                   {key.does}
                 </span>
               ))}
@@ -88,14 +88,14 @@ export const ListensExtra = () => (
       </p>
     </Band>
 
-    <Band inset="content" label="In the Inbox and Notifications" headingLevel={3}>
+    <Band inset="content" label="In Tasks and Notifications" headingLevel={3}>
       <ul className="flex flex-col gap-2">
         {shortcutRows({ group: 'lists' }).map((row) => (
           <li key={row.key} className="flex items-center justify-between gap-3 text-label">
             <span className="truncate text-muted-foreground">{row.label}</span>
-            <KbdPill className="shrink-0">
-              {shortcutRangeGlyphs({ first: row.first, last: row.last })}
-            </KbdPill>
+            <span className="shrink-0">
+              <KeyHint keys={shortcutRangeGlyphs({ first: row.first, last: row.last })} />
+            </span>
           </li>
         ))}
       </ul>

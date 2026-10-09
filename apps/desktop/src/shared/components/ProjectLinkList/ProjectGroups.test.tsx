@@ -100,6 +100,40 @@ describe('ProjectGroups', () => {
     expect(screen.getByText('Starred')).toBeDefined();
   });
 
+  it('calls the unstarred group Other projects once a Starred group is shown', () => {
+    render(
+      <ProjectGroups
+        workspaceId={WORKSPACE_ID}
+        projects={[
+          project({ id: 'p-a', name: 'admin-console', starred: true }),
+          project({ id: 'p-b', name: 'billing-worker' }),
+        ]}
+        busy={false}
+        query=""
+        onUnlink={vi.fn(async () => undefined)}
+      />,
+    );
+
+    expect(screen.getByText('Starred')).toBeDefined();
+    expect(screen.getByText('Other projects')).toBeDefined();
+    expect(screen.queryByText('All projects')).toBeNull();
+  });
+
+  it('keeps All projects when nothing is starred and every project is listed', () => {
+    render(
+      <ProjectGroups
+        workspaceId={WORKSPACE_ID}
+        projects={[project({ id: 'p-a', name: 'admin-console' })]}
+        busy={false}
+        query=""
+        onUnlink={vi.fn(async () => undefined)}
+      />,
+    );
+
+    expect(screen.getByText('All projects')).toBeDefined();
+    expect(screen.queryByText('Other projects')).toBeNull();
+  });
+
   it('shows the first 8 of All and reveals the rest on Show more', () => {
     const projects = Array.from({ length: 9 }, (_, index) =>
       project({ id: `p-${index}`, name: `project-${index}` }),

@@ -45,6 +45,7 @@ import {
   seedChats,
   type ChatSeed,
 } from '../../../../__tests__/helpers/chatListFixtures';
+import userEvent from '@testing-library/user-event';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -54,6 +55,7 @@ import {
 } from '../../../../store/storyHarness';
 import type { ChatBackend } from '../../chatBackend';
 import { chatModelLabel } from '../../chatModelLabel';
+import { ageTokenOf } from './ageToken';
 import { ChatList } from './index';
 
 vi.useFakeTimers({ toFake: ['Date'] });
@@ -163,7 +165,41 @@ describe('ChatList', () => {
     await renderList();
 
     expect(rowOf('lunch').getAttribute('data-idle')).toBe('true');
-    expect(rowOf('lunch').textContent).toContain('idle 9d');
+    expect(rowOf('lunch').textContent?.replaceAll('\u00a0', ' ')).toContain('idle 9d');
+  });
+
+  it('keeps the age in one non-wrapping token', async () => {
+    await renderList();
+
+    const age = within(rowOf('lunch')).getByText('idle 9d');
+    expect(age.textContent).toBe('idle\u00a09d');
+    expect(age.textContent?.includes(' ')).toBe(false);
+    expect(ageTokenOf({ time: 'idle 14d' })).toBe('idle\u00a014d');
+    expect(ageTokenOf({ time: '09:41' })).toBe('09:41');
+  });
+
+  it('keeps the delete button out of the row at rest and shows it on hover and focus', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await renderList();
+    const row = rowOf('lunch');
+    const deleteName = 'Delete Lunch ideas near the office';
+
+    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
+
+    await user.hover(row);
+    expect(within(row).getByRole('button', { name: deleteName })).toBeDefined();
+
+    await user.unhover(row);
+    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
+
+    const opener = within(row).getByRole('button', { name: 'Lunch ideas near the office' });
+    act(() => opener.focus());
+    const reached = within(row).getByRole('button', { name: deleteName });
+    expect(reached.tabIndex).not.toBe(-1);
+    act(() => reached.focus());
+    expect(document.activeElement).toBe(reached);
+    act(() => reached.blur());
+    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
   });
 
   it('archives the idle chats with an undo', async () => {
@@ -469,5 +505,51 @@ describe('ChatList', () => {
       });
       expect(fresh.querySelectorAll('svg')).toHaveLength(1);
     });
+  });
+});
+
+describe('ChatList initial read states', () => {
+  it('shows three loading rows before data arrives, then keeps the loaded list', async () => {
+    await renderList();
+    const chats = useAppStore.getState().chatsByWorkspace[CHAT_WORKSPACE_ID] ?? [];
+    act(() => useAppStore.setState({ chatsByWorkspace: {} }));
+    expect(screen.getAllByRole('status', { name: 'Loading chats' })).toHaveLength(3);
+    expect(screen.queryByText('No chats yet')).toBeNull();
+    act(() => useAppStore.setState({ chatsByWorkspace: { [CHAT_WORKSPACE_ID]: chats } }));
+    screen.getByRole('button', { name: 'Where is the consent step?' });
+    expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();
+  });
+
+  it('offers Start a chat only after the empty list has been read', async () => {
+    await renderList([]);
+    screen.getByRole('heading', { name: 'No chats yet' });
+    screen.getByRole('button', { name: 'Start a chat' });
+    expect(screen.queryByRole('status', { name: 'Loading chats' })).toBeNull();
+  });
+
+  it('clears a filter with no matches and restores the list', async () => {
+    await renderList();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search chats' }), {
+      target: { value: 'missing-harborline' },
+    });
+    screen.getByText('No chats match this filter.');
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }));
+    screen.getByRole('button', { name: 'Where is the consent step?' });
+    expect(screen.queryByText('No chats match this filter.')).toBeNull();
+  });
+
+  it('shows a failure with Retry and Details instead of the first-time state', async () => {
+    await renderList([]);
+    act(() =>
+      useAppStore.setState({
+        chatsByWorkspace: {},
+        chatLoadErrors: { [CHAT_WORKSPACE_ID]: 'Could not read the chat list' },
+      }),
+    );
+    screen.getByRole('alert');
+    screen.getByRole('button', { name: 'Retry' });
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    screen.getByText('Could not read the chat list');
+    expect(screen.queryByText('No chats yet')).toBeNull();
   });
 });

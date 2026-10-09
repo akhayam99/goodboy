@@ -28,7 +28,7 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
   const state = pullRequestKindOf({ state: request.state, isDraft: request.isDraft });
 
   return (
-    <span className="flex min-w-0 shrink-0 items-center gap-1">
+    <span className="flex min-w-0 items-center gap-1">
       <button
         type="button"
         aria-label={`Open ${request.label} of ${label}`}
@@ -49,7 +49,7 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
             }
           });
         }}
-        className="flex min-w-0 shrink-0 items-center gap-2 rounded-md px-2 py-1 text-label hover:bg-hover"
+        className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label hover:bg-hover"
       >
         <PullRequestChip state={state} iconSize={ICON_SIZE.row} />
         <span className="shrink-0 text-foreground tabular-nums">{request.label}</span>

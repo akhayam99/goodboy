@@ -80,6 +80,8 @@ const BRIEF_GOAL = [
   'Issue: acme/web#7 https://gitlab.com/acme/web/-/issues/7',
 ].join('\n\n');
 
+const START_LABEL = 'Start from acme/web#7';
+
 const renderPanel = (briefSource: IssueBriefSource | null = null) =>
   render(
     <LaunchSessionPanel
@@ -87,6 +89,7 @@ const renderPanel = (briefSource: IssueBriefSource | null = null) =>
       linkedSessionId={null}
       goalSeed="Fix the flake"
       externalTask={EXTERNAL_TASK}
+      startLabel={START_LABEL}
       briefSource={briefSource}
       onClose={vi.fn()}
     />,
@@ -106,7 +109,7 @@ describe('LaunchSessionPanel', () => {
   it('launches without a project and omits project configuration', async () => {
     renderPanel();
 
-    const launchButton = screen.getByRole('button', { name: /Launch session/i });
+    const launchButton = screen.getByRole('button', { name: /Start from acme\/web#7/i });
     expect(launchButton.getAttribute('disabled')).toBeNull();
     expect(screen.queryByText('Which project?')).toBeNull();
 
@@ -123,7 +126,7 @@ describe('LaunchSessionPanel', () => {
   it('offers Follow to the new session as one info toast, never a success toast', async () => {
     renderPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Start from acme\/web#7/i }));
 
     await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
     const toast = h.showToast.mock.calls[0]?.[0] as {
@@ -158,7 +161,7 @@ describe('LaunchSessionPanel', () => {
     h.createSession.mockRejectedValueOnce(new Error('worktree is locked'));
     renderPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Start from acme\/web#7/i }));
 
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toContain('worktree is locked'),
@@ -184,9 +187,9 @@ describe('LaunchSessionPanel', () => {
       target: { value: '   ' },
     });
 
-    expect(screen.getByRole('button', { name: /Launch session/i }).getAttribute('disabled')).toBe(
-      '',
-    );
+    expect(
+      screen.getByRole('button', { name: /Start from acme\/web#7/i }).getAttribute('disabled'),
+    ).toBe('');
   });
 
   it('asks for a brief once and launches with the verbatim text while it loads', async () => {
@@ -202,7 +205,7 @@ describe('LaunchSessionPanel', () => {
     });
     expect(screen.getByRole('status').textContent).toBe('Writing a brief');
 
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Start from acme\/web#7/i }));
 
     await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
     expect(h.createSession.mock.calls[0]?.[0]).toEqual({
@@ -220,7 +223,7 @@ describe('LaunchSessionPanel', () => {
     expect(field.value).toBe(BRIEF_GOAL);
     expect(screen.getByText('Brief ready')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Start from acme\/web#7/i }));
 
     await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
     expect(h.createSession.mock.calls[0]?.[0]).toEqual({
@@ -244,6 +247,7 @@ describe('LaunchSessionPanel', () => {
         linkedSessionId={null}
         goalSeed="Fix the flake"
         externalTask={EXTERNAL_TASK}
+        startLabel={START_LABEL}
         briefSource={BRIEF_SOURCE}
         onClose={vi.fn()}
       />,
@@ -260,7 +264,7 @@ describe('LaunchSessionPanel', () => {
 
     const field = screen.getByRole('textbox', { name: 'Session goal' }) as HTMLTextAreaElement;
     expect(field.value).toBe('Fix the flake');
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Start from acme\/web#7/i }));
 
     await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
     expect(h.createSession.mock.calls[0]?.[0]).not.toHaveProperty('title');
@@ -309,6 +313,7 @@ describe('LaunchSessionPanel mount', () => {
         linkedSessionId={null}
         goalSeed="Fix the flake"
         externalTask={EXTERNAL_TASK}
+        startLabel={START_LABEL}
         briefSource={null}
         onClose={vi.fn()}
         mount={MOUNT}
@@ -322,7 +327,7 @@ describe('LaunchSessionPanel mount', () => {
       'Works in payments-api',
     );
     expect(screen.getByText('from Sentry project payments-api')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Start from acme\/web#7/ }));
 
     await waitFor(() =>
       expect(h.createSession).toHaveBeenCalledWith(
@@ -346,7 +351,7 @@ describe('LaunchSessionPanel mount', () => {
     fireEvent.click(screen.getByRole('combobox', { name: 'Project to work in' }));
     fireEvent.click(await screen.findByRole('option', { name: /No project/ }));
     expect(screen.queryByText('from Sentry project payments-api')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Start from acme\/web#7/ }));
 
     await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
     expect(h.createSession.mock.calls[0]?.[0]).not.toHaveProperty('projectId');

@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefCallback,
 } from 'react';
-import { Button, cn, type DiffLayoutMode, FilledEmptyState } from '@goodboy/ui';
+import { Button, cn, type DiffLayoutMode, EmptyState } from '@goodboy/ui';
 import type { DiffCommentAnchor, DiffCommentSide, FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useDiffTokens } from '../../hooks/useDiffTokens';
@@ -325,7 +325,8 @@ const DiffFileView = ({
             </div>
           ) : null}
           {file.binary || file.hunks.length === 0 ? (
-            <FilledEmptyState
+            <EmptyState
+              size="section"
               icon={CONCEPT_ICONS.diff}
               tone={CONCEPT_TONE.diff}
               title={file.binary ? 'Binary file, no diff' : 'No changes'}

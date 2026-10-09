@@ -85,7 +85,7 @@ export const AnswerCard = ({
               </span>
               <span className="min-w-0 flex-1 text-label text-foreground">{option.answer}</span>
               {option.isRecommended && (
-                <Chip tone="primary" size="3xs" label={REVIEW_BULK_LABEL.recommended} />
+                <Chip tone="primary" kind="state" label={REVIEW_BULK_LABEL.recommended} />
               )}
             </button>
           );

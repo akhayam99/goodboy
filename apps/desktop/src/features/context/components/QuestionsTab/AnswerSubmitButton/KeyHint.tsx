@@ -1,4 +1,4 @@
-import { KbdPill } from '@goodboy/ui';
+import { Kbd } from '@goodboy/ui';
 import type { AnswerInputMode } from './answerInputMode';
 
 type Props = {
@@ -10,20 +10,20 @@ export const KeyHint = ({ inputMode, optionCount }: Props) => {
   if (inputMode === 'text') {
     return (
       <>
-        <KbdPill>Enter</KbdPill>
+        <Kbd look="cap">Enter</Kbd>
         <span>to answer</span>
         <span aria-hidden>·</span>
-        <KbdPill>Shift Enter</KbdPill>
+        <Kbd look="inline">Shift Enter</Kbd>
         <span>for a new line</span>
       </>
     );
   }
   return (
     <>
-      <KbdPill>{optionCount > 1 ? `1-${optionCount}` : '1'}</KbdPill>
+      <Kbd look="cap">{optionCount > 1 ? `1-${optionCount}` : '1'}</Kbd>
       <span>{inputMode === 'many' ? 'to toggle' : 'to pick'}</span>
       <span aria-hidden>·</span>
-      <KbdPill>Enter</KbdPill>
+      <Kbd look="cap">Enter</Kbd>
       <span>to answer</span>
     </>
   );

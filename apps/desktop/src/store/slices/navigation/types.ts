@@ -12,7 +12,7 @@ export type { SetFn, GetFn } from '../../slice-types';
 
 export type AgentPane = 'brief' | 'transcript';
 
-export type BranchTab = 'comments' | 'files' | 'commits' | 'checks';
+export type BranchTab = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 export type SessionTarget =
   | { readonly kind: 'artifact'; readonly artifactId: ArtifactId }
@@ -33,7 +33,8 @@ export type SessionTarget =
       readonly focus: DiffFocus | null;
     }
   | { readonly kind: 'terminal'; readonly mountPath: string }
-  | { readonly kind: 'thread'; readonly threadId: string; readonly pane?: AgentPane };
+  | { readonly kind: 'thread'; readonly threadId: string; readonly pane?: AgentPane }
+  | { readonly kind: 'agent'; readonly pane: AgentPane };
 
 export type SessionView = {
   readonly lens: LensKind | null;

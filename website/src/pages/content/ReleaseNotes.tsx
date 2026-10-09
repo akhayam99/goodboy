@@ -14,21 +14,10 @@ type Props = {
   readonly older: ReleaseSummary | null;
 };
 
-const pagerLink = (
-  label: string,
-  direction: PagerLink['direction'],
-  release: ReleaseSummary | null,
-): readonly PagerLink[] =>
+const pagerLink = (label: string, release: ReleaseSummary | null): readonly PagerLink[] =>
   release === null
     ? []
-    : [
-        {
-          label,
-          direction,
-          title: `Goodboy ${release.version}`,
-          href: SITE.release(release.version),
-        },
-      ];
+    : [{ label, title: `Goodboy ${release.version}`, href: SITE.release(release.version) }];
 
 export const ReleaseNotes = ({ crumbs, release, notesHtml, newer, older }: Props) => (
   <ContentPage
@@ -49,7 +38,7 @@ export const ReleaseNotes = ({ crumbs, release, notesHtml, newer, older }: Props
     {notesHtml === '' ? null : <Prose html={notesHtml} />}
     <Pager
       label="More releases"
-      links={[...pagerLink('Older', 'back', older), ...pagerLink('Newer', 'forward', newer)]}
+      links={[...pagerLink('Older', older), ...pagerLink('Newer', newer)]}
     />
   </ContentPage>
 );

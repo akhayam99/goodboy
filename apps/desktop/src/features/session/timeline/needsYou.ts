@@ -24,6 +24,7 @@ type FixRunTarget = {
 type FixRunOwed = {
   readonly questions: number;
   readonly toReview: number;
+  readonly pushFailed: number;
   readonly couldntFix: number;
   readonly target: FixRunTarget | null;
 };
@@ -51,12 +52,14 @@ const plural = ({
 }): string => `${count} ${count === 1 ? one : many}`;
 
 const RANK_QUESTION = 0;
-const RANK_REVIEW = 1;
-const RANK_FAILED = 2;
+const RANK_PUSH_FAILED = 1;
+const RANK_REVIEW = 2;
+const RANK_FAILED = 3;
 
 const owedOf = ({ facts }: { readonly facts: ResolveActivityFacts }): FixRunOwed | null => {
   let questions = 0;
   let toReview = 0;
+  let pushFailed = 0;
   let couldntFix = 0;
   let target: FixRunTarget | null = null;
   const aim = ({ threadId, rank }: { readonly threadId: string; readonly rank: number }): void => {
@@ -77,6 +80,11 @@ const owedOf = ({ facts }: { readonly facts: ResolveActivityFacts }): FixRunOwed
         aim({ threadId: thread.threadId, rank: RANK_REVIEW });
         break;
       case 'failed':
+        if (thread.isPushFailure === true) {
+          pushFailed += 1;
+          aim({ threadId: thread.threadId, rank: RANK_PUSH_FAILED });
+          break;
+        }
         couldntFix += 1;
         aim({ threadId: thread.threadId, rank: RANK_FAILED });
         break;
@@ -94,9 +102,9 @@ const owedOf = ({ facts }: { readonly facts: ResolveActivityFacts }): FixRunOwed
       }
     }
   }
-  return questions + toReview + couldntFix === 0
+  return questions + toReview + pushFailed + couldntFix === 0
     ? null
-    : { questions, toReview, couldntFix, target };
+    : { questions, toReview, pushFailed, couldntFix, target };
 };
 
 const owedText = ({
@@ -108,10 +116,12 @@ const owedText = ({
 }): string =>
   [
     prNumber === null ? 'Fix run' : `#${prNumber}`,
+    `${owed.questions + owed.toReview + owed.pushFailed + owed.couldntFix} need you`,
+    ...(owed.toReview === 0 ? [] : [`${owed.toReview} to review`]),
     ...(owed.questions === 0
       ? []
       : [plural({ count: owed.questions, one: 'question', many: 'questions' })]),
-    ...(owed.toReview === 0 ? [] : [`${owed.toReview} to review`]),
+    ...(owed.pushFailed === 0 ? [] : [`${owed.pushFailed} push failed`]),
     ...(owed.couldntFix === 0 ? [] : [`${owed.couldntFix} couldn't fix`]),
   ].join(' · ');
 
@@ -143,6 +153,7 @@ const mergeFixRunOwners = ({
       (total, member) => ({
         questions: total.questions + (member.owed?.questions ?? 0),
         toReview: total.toReview + (member.owed?.toReview ?? 0),
+        pushFailed: total.pushFailed + (member.owed?.pushFailed ?? 0),
         couldntFix: total.couldntFix + (member.owed?.couldntFix ?? 0),
         target:
           member.owed?.target != null &&
@@ -150,7 +161,7 @@ const mergeFixRunOwners = ({
             ? member.owed.target
             : total.target,
       }),
-      { questions: 0, toReview: 0, couldntFix: 0, target: null },
+      { questions: 0, toReview: 0, pushFailed: 0, couldntFix: 0, target: null },
     );
     return [{ ...owner, owed, text: owedText({ prNumber: owner.prNumber, owed }) }];
   });

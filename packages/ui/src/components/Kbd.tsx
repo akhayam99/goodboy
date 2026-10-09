@@ -5,6 +5,7 @@ export type KbdLook = 'inline' | 'cap';
 
 export type KbdProps = ComponentProps<'kbd'> & {
   readonly look?: KbdLook;
+  readonly isOnTone?: boolean;
 };
 
 const LOOK_CLASSES = {
@@ -12,6 +13,22 @@ const LOOK_CLASSES = {
   cap: 'inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-border bg-muted px-1 text-code text-muted-foreground',
 } as const satisfies Record<KbdLook, string>;
 
-export const Kbd = ({ look = 'inline', className, ...rest }: KbdProps) => {
-  return <kbd data-look={look} className={cn(LOOK_CLASSES[look], className)} {...rest} />;
+const ON_TONE_CLASSES = {
+  inline: 'text-on-tone',
+  cap: 'border-on-tone/30 bg-on-tone/15 text-on-tone',
+} as const satisfies Record<KbdLook, string>;
+
+const CHORD_GLYPHS = /[⌘⌃⌥⇧+]/;
+
+export const isChordHint = (glyphs: string): boolean => CHORD_GLYPHS.test(glyphs);
+
+export const Kbd = ({ look = 'inline', isOnTone = false, className, ...rest }: KbdProps) => {
+  return (
+    <kbd
+      data-look={look}
+      data-on-tone={isOnTone ? 'true' : undefined}
+      className={cn(LOOK_CLASSES[look], isOnTone && ON_TONE_CLASSES[look], className)}
+      {...rest}
+    />
+  );
 };

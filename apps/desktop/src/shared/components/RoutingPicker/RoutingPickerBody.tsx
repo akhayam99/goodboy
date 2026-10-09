@@ -24,7 +24,6 @@ import { useProviderStanding } from '../../../features/providers/hooks/useProvid
 import { ModelVisibilityLink } from './ModelVisibilityLink';
 import { ProviderInlineConnect } from '../../../features/providers/components/ProviderInlineConnect';
 import { AxesSection } from './AxesSection';
-import { verbosityTone } from './chipTone';
 import { PickerChip } from './PickerChip';
 import { PickerSection } from './PickerSection';
 import { ProviderGrid } from './ProviderGrid';
@@ -448,7 +447,6 @@ export const RoutingPickerBody = ({
                     key={level}
                     label={VERBOSITY_LABEL[level]}
                     active={verbosity === level}
-                    tone={verbosityTone(level)}
                     onSelect={() => onVerbosity(level)}
                   />
                 ))}

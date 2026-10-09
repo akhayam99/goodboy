@@ -104,7 +104,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Refresh session',
     covers: ['resyncSession', 'palette:Refresh session'],
     open: () => openPalette(/^Refresh session/, 'refresh session'),
-    lands: () => visible('button', /^Refresh(ing)?$/),
+    lands: () => visible('button', 'More session actions'),
   },
   {
     name: 'palette: Board',
@@ -207,11 +207,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       ),
   },
   {
-    name: 'palette: Inbox',
-    covers: ['openStudio', 'studio:inbox', 'palette:Inbox'],
-    open: () => openPalette(/^Inbox$/),
+    name: 'palette: Tasks',
+    covers: ['openStudio', 'studio:inbox', 'palette:Tasks'],
+    open: () => openPalette(/^Tasks$/),
     lands: both(
-      () => band('Inbox'),
+      () => band('Tasks'),
       () => heading('All items'),
     ),
   },
@@ -347,7 +347,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
           expect(state.openSessionDraftWorkspaceId).toBeNull();
         }, WAIT);
       },
-      () => visible('button', /Untitled session/),
+      () => visible('button', /^Untitled session$/),
       async () => expect(await screen.findByTestId('context-chip')).toBeDefined(),
     ),
   },

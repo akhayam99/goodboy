@@ -7,6 +7,7 @@ import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { Avatar } from '@goodboy/ui';
 import { ThreadBody } from './ThreadBody';
 import { useNow } from '../../../../../shared/hooks/useNow';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly replies: ReadonlyArray<PrComment>;
@@ -37,7 +38,7 @@ export const ThreadReplies = ({ replies }: Props) => {
             className="inline-flex w-fit items-center gap-1 rounded-sm text-chip text-muted-foreground transition-colors hover:text-foreground"
           >
             <ChevronRight
-              size={11}
+              size={ICON_SIZE.mark}
               aria-hidden
               className={cn('motion-safe:transition-transform', expanded && 'rotate-90')}
             />

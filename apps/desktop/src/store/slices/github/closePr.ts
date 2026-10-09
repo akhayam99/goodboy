@@ -1,20 +1,20 @@
 import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
+import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { prWriteContext } from './prWriteContext';
 import { prEventPayload } from './prEventPayload';
+import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
-import { ReportedError } from '../notifications/reportedError';
 
 export const closePr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number) => {
-    const { num, session, repo } = prWriteContext({
+    const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
       prNumber,
-      failureTitle: ({ prNumber: target }) =>
-        prLifecycleFailureTitle({ action: 'close', prNumber: target }),
+      failureTitle: ({ prNumber: target, nouns }) =>
+        prLifecycleFailureTitle({ action: 'close', prNumber: target, nouns }),
     });
     await withPrWriteClaim({
       get,
@@ -22,24 +22,14 @@ export const closePr = (_set: SetFn, get: GetFn) => {
       prNumber: num,
       action: 'close',
       run: async () => {
-        const res = await tauriGhRunner.run(['pr', 'close', String(num)], {
-          cwd: repo.repoRoot,
+        await runPortWrite({
+          get,
+          sessionId,
           workspaceId: session.workspaceId,
-          projectId: repo.projectId,
+          title: prLifecycleFailureTitle({ action: 'close', prNumber: num, nouns: port.nouns }),
+          run: () => port.close(),
         });
-        if (res.exitCode !== 0) {
-          const errMsg = res.stderr.trim() || `gh pr close exited with ${res.exitCode}`;
-          void get().emitNotification({
-            kind: 'error',
-            severity: 'error',
-            title: `Couldn't close #${num}`,
-            body: errMsg,
-            sessionId,
-            workspaceId: session.workspaceId,
-          });
-          throw new ReportedError(errMsg);
-        }
-        await get().refreshSessionPr(sessionId, { force: true });
+        await refreshActiveRequest({ get, sessionId });
         await get().recordSessionEventOnce({
           sessionId,
           kind: 'pr_closed',

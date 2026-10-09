@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../../shared/names';
 import { useState } from 'react';
 import { GitFork } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -56,7 +57,7 @@ export const NewBranchMountAction = ({
       dropdown.close();
     } catch (error) {
       void reportError({
-        title: `Couldn't create a new worktree of ${projectName}`,
+        title: `Couldn't create a new branch in ${projectName}`,
         error,
         sessionId,
       });
@@ -69,12 +70,12 @@ export const NewBranchMountAction = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={`New worktree in ${projectName}`}
+      ariaLabel={`${NAMES.newBranch} in ${projectName}`}
       trigger={
-        <Tooltip content={`Add another worktree of ${projectName} on its own branch`}>
+        <Tooltip content={`Add another line of work on ${projectName}, on its own branch`}>
           <button
             type="button"
-            aria-label={`New worktree in ${projectName}`}
+            aria-label={`${NAMES.newBranch} in ${projectName}`}
             aria-haspopup="dialog"
             aria-expanded={dropdown.open}
             onClick={() => dropdown.toggle()}
@@ -85,7 +86,7 @@ export const NewBranchMountAction = ({
           >
             <GitFork size={ICON_SIZE.row} aria-hidden />
             {presentation === 'button' ? (
-              <span className="@max-md:hidden">New worktree</span>
+              <span className="@max-md:hidden">{NAMES.newBranch}</span>
             ) : null}
           </button>
         </Tooltip>
@@ -94,11 +95,10 @@ export const NewBranchMountAction = ({
       <div className="flex flex-col gap-3 p-3">
         <div className="flex flex-col gap-1">
           <span className="text-label font-medium text-foreground">
-            {`New worktree in ${projectName}`}
+            {`${NAMES.newBranch} in ${projectName}`}
           </span>
           <span className="text-meta text-muted-foreground">
-            It gets its own branch. The worktrees already here keep their branches and pull
-            requests.
+            It gets its own branch. The branches already here keep their pull requests.
           </span>
         </div>
         <SegmentedTabs
@@ -151,7 +151,7 @@ export const NewBranchMountAction = ({
             disabled={isBusy || (mode === 'existing' && branch.trim() === '')}
             onClick={() => void create()}
           >
-            {isBusy ? 'Creating…' : 'Create worktree'}
+            {isBusy ? 'Creating…' : 'Create branch'}
           </Button>
         </div>
       </div>

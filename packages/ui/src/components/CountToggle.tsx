@@ -1,5 +1,6 @@
 import { Check, type LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
+import { ICON_SIZE } from '../iconSize';
 
 export type Props = {
   readonly label: string;
@@ -32,9 +33,9 @@ export const CountToggle = ({ label, count, isShown, icon, onChange, isFilter = 
           : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
-      <Icon size={10} aria-hidden />
+      <Icon size={ICON_SIZE.mark} aria-hidden />
       {text}
-      {isFilter && isShown ? <Check size={10} aria-hidden /> : null}
+      {isFilter && isShown ? <Check size={ICON_SIZE.mark} aria-hidden /> : null}
     </button>
   );
 };

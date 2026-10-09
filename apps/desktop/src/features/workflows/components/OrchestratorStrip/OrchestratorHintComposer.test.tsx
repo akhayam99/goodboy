@@ -63,7 +63,7 @@ describe('OrchestratorHintComposer', () => {
   it('sends a pasted image with the hint and says where images go', async () => {
     const drafts = mount();
     fireEvent.focus(field());
-    expect(screen.getByText('Images go to the next agent')).toBeDefined();
+    expect(screen.getByText('Files go to the next agent')).toBeDefined();
     fireEvent.change(field(), { target: { value: 'the trace is attached' } });
     await pasteImage('checkout-trace.png');
     expect(screen.getByRole('button', { name: 'Remove checkout-trace.png' })).toBeDefined();
@@ -109,7 +109,7 @@ describe('OrchestratorHintComposer', () => {
       expect(screen.queryByRole('tab', { name: 'Preview' })).toBeNull();
       expect(screen.queryByTestId('orchestrator-hint-queue')).toBeNull();
       expect(screen.queryByTestId('orchestrator-hint-now')).toBeNull();
-      expect(screen.queryByText('Images go to the next agent')).toBeNull();
+      expect(screen.queryByText('Files go to the next agent')).toBeNull();
       expect(screen.getByRole('button', { name: 'Attach files' })).toBeDefined();
     });
 

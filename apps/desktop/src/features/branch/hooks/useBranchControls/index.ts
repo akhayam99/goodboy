@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ProjectId, PullRequestState, SessionId } from '@goodboy/types';
+import type { ProjectId, PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
@@ -21,6 +21,7 @@ type Params = {
   readonly pr: PullRequestState | null;
   readonly diff: SessionDiff;
   readonly review: BranchReviewCounts;
+  readonly remoteHost?: PullRequestHost;
 };
 
 export type BranchControls = {
@@ -42,6 +43,7 @@ export const useBranchControls = ({
   pr,
   diff,
   review,
+  remoteHost,
 }: Params): BranchControls => {
   const mountId = useAppStore((s) =>
     worktreePath === null
@@ -95,8 +97,13 @@ export const useBranchControls = ({
     [conflictCount, diff.patch, diff.status, remoteKind, sessionId, worktreePath],
   );
   const pullRequestTarget = useMemo<PullRequestActionTarget>(
-    () => ({ kind: 'pullRequest', sessionId, prNumber: pr?.number ?? null }),
-    [pr?.number, sessionId],
+    () => ({
+      kind: 'pullRequest',
+      sessionId,
+      prNumber: pr?.number ?? null,
+      ...(remoteHost === undefined ? {} : { host: remoteHost }),
+    }),
+    [pr?.number, remoteHost, sessionId],
   );
   const diffControls = useActionControls({ target: diffTarget });
   const pullRequestControls = useActionControls({ target: pullRequestTarget });

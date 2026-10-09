@@ -1,8 +1,10 @@
-import type { MouseEvent, ReactNode } from 'react';
+import type { FocusEvent, MouseEvent, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
+import { TEXT_ROLE } from '../textRoles';
 import { tintClasses, type Tone } from '../tint';
 
+export type ChipKind = 'state' | 'reference' | 'id' | 'count';
 export type ChipSize = '3xs' | 'xs' | 'sm' | 'md' | 'control';
 export type ChipEmphasis = 'subtle' | 'soft' | 'strong';
 
@@ -11,6 +13,7 @@ export type ChipProps = {
   readonly label?: ReactNode;
   readonly icon?: ReactNode;
   readonly trailing?: ReactNode;
+  readonly kind?: ChipKind;
   readonly size?: ChipSize;
   readonly width?: 'auto' | 'sm' | 'md' | 'lg';
   readonly shape?: 'pill' | 'badge';
@@ -26,15 +29,28 @@ export type ChipProps = {
   readonly expanded?: boolean;
   readonly hasPopup?: 'dialog' | 'menu' | 'listbox' | 'true';
   readonly className?: string;
+  readonly ref?: Ref<HTMLElement>;
+  readonly onMouseEnter?: (event: MouseEvent<HTMLElement>) => void;
+  readonly onMouseMove?: (event: MouseEvent<HTMLElement>) => void;
+  readonly onMouseLeave?: (event: MouseEvent<HTMLElement>) => void;
+  readonly onFocus?: (event: FocusEvent<HTMLElement>) => void;
+  readonly onBlur?: (event: FocusEvent<HTMLElement>) => void;
 };
 
-const sizeClasses: Record<ChipSize, string> = {
-  '3xs': 'px-2 py-0.5 text-chip',
-  xs: 'px-2 py-0.5 text-meta',
-  sm: 'text-meta px-2 py-0.5',
-  md: 'text-label px-2 py-1',
-  control: 'h-6 shrink-0 gap-1 px-2 text-meta',
-};
+export const CHIP_KIND_CLASSES = {
+  state: 'h-5 shrink-0 rounded-full px-2 text-chip',
+  reference: 'h-6 shrink-0 gap-1 rounded-md px-2 text-meta',
+  id: 'h-5 shrink-0 rounded-sm px-1 font-mono text-chip',
+  count: 'h-4 min-w-4 shrink-0 justify-center rounded-full px-1 text-chip tabular-nums',
+} as const satisfies Record<ChipKind, string>;
+
+const KIND_BY_SIZE = {
+  '3xs': 'state',
+  xs: 'state',
+  sm: 'state',
+  md: 'reference',
+  control: 'reference',
+} as const satisfies Record<ChipSize, ChipKind>;
 
 const widthClasses: Record<'sm' | 'md' | 'lg', string> = {
   sm: 'min-w-16 justify-center',
@@ -44,6 +60,7 @@ const widthClasses: Record<'sm' | 'md' | 'lg', string> = {
 
 export type ChipClassParams = {
   readonly tone: Tone;
+  readonly kind?: ChipKind;
   readonly size?: ChipSize;
   readonly width?: 'auto' | 'sm' | 'md' | 'lg';
   readonly shape?: 'pill' | 'badge';
@@ -52,11 +69,19 @@ export type ChipClassParams = {
   readonly isInteractive?: boolean;
 };
 
+const legacyShapeClass = ({ kind, shape }: Pick<ChipClassParams, 'kind' | 'shape'>): string => {
+  if (kind !== undefined || shape === undefined) {
+    return '';
+  }
+  return shape === 'pill' ? 'rounded-full' : 'rounded-md';
+};
+
 export const chipClasses = ({
   tone,
+  kind,
   size = 'xs',
   width = 'auto',
-  shape = 'pill',
+  shape,
   bordered = true,
   emphasis = 'soft',
   isInteractive = false,
@@ -64,10 +89,10 @@ export const chipClasses = ({
   const tint = tintClasses(tone);
   return cn(
     'inline-flex items-center gap-1 font-medium',
-    shape === 'pill' ? 'rounded-full' : 'rounded-md',
     emphasis === 'subtle' ? tint.bgSoft : tint.bg,
-    tint.text,
-    sizeClasses[size],
+    tone === 'neutral' ? TEXT_ROLE.secondary : tint.text,
+    CHIP_KIND_CLASSES[kind ?? KIND_BY_SIZE[size]],
+    legacyShapeClass({ kind, shape }),
     width === 'auto' ? '' : widthClasses[width],
     bordered ? 'ring-1' : '',
     bordered ? (emphasis === 'strong' ? tint.ringStrong : tint.ring) : '',
@@ -87,9 +112,10 @@ export const Chip = ({
   label,
   icon,
   trailing,
+  kind,
   size = 'xs',
   width = 'auto',
-  shape = 'pill',
+  shape,
   bordered = true,
   emphasis = 'soft',
   as = 'span',
@@ -102,11 +128,18 @@ export const Chip = ({
   expanded,
   hasPopup,
   className,
+  ref,
+  onMouseEnter,
+  onMouseMove,
+  onMouseLeave,
+  onFocus,
+  onBlur,
 }: ChipProps) => {
   const isButton = as === 'button' || onClick !== undefined;
   const classes = cn(
     chipClasses({
       tone,
+      kind,
       size,
       width,
       shape,
@@ -125,9 +158,13 @@ export const Chip = ({
     </>
   );
 
+  const hoverProps = { onMouseEnter, onMouseMove, onMouseLeave, onFocus, onBlur };
+
   if (isButton) {
     return (
       <button
+        ref={ref as Ref<HTMLButtonElement>}
+        {...hoverProps}
         type="button"
         title={title}
         aria-label={ariaLabel}
@@ -146,6 +183,8 @@ export const Chip = ({
 
   return (
     <span
+      ref={ref as Ref<HTMLSpanElement>}
+      {...hoverProps}
       title={title}
       role={ariaLabel == null ? undefined : 'img'}
       aria-label={ariaLabel}

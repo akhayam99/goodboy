@@ -51,7 +51,7 @@ describe('InboxLookupGroup', () => {
       />,
     );
 
-    expect(screen.getByText('Not in your inbox')).toBeDefined();
+    expect(screen.getByText('Not in Tasks')).toBeDefined();
     expect(screen.getByText('Looking up CAS-231')).toBeDefined();
   });
 

@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { clampEffortForModel } from '@goodboy/core';
 import {
+  ROW_INTERACTIVE,
   AnchoredPopover,
   Button,
   cn,
@@ -37,6 +38,8 @@ import { recommendationSummary } from '../../../../shared/components/RoutingPick
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
@@ -156,7 +159,7 @@ export const CreateAgentPopover = ({
       if (onSpawned != null) {
         onSpawned();
       }
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      window.dispatchEvent(openAgentRevealEvent());
     } catch (err) {
       setSpawnError(formatError(err));
     } finally {
@@ -198,7 +201,10 @@ export const CreateAgentPopover = ({
               aria-expanded={isRoutingOpen}
               aria-controls={ROUTING_PANEL_ID}
               aria-label={`${AGENT_FORM_GRAMMAR.routing.ariaLabel}: ${routingSummary}`}
-              className="flex w-full items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:border-border hover:bg-hover"
+              className={cn(
+                'flex w-full items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 py-2 text-left text-label text-foreground hover:border-border',
+                ROW_INTERACTIVE,
+              )}
             >
               <span className="flex min-w-0 flex-1">
                 {effective.model == null ? (
@@ -212,7 +218,7 @@ export const CreateAgentPopover = ({
                 )}
               </span>
               <ChevronDown
-                size={11}
+                size={ICON_SIZE.row}
                 aria-hidden
                 className={cn(
                   'shrink-0 text-muted-foreground motion-safe:transition-transform',

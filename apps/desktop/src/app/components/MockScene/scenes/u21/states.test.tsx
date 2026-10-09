@@ -132,14 +132,14 @@ describe('the u21 page-state scenes', () => {
     expect(screen.queryByRole('tab', { name: 'All' })).toBeNull();
   });
 
-  it('shows the Inbox first-time state', async () => {
+  it('shows the Tasks first-time state', async () => {
     renderScene('inbox-empty');
 
     expect(await screen.findByRole('heading', { level: 2, name: 'No items yet' })).toBeDefined();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('shows the Inbox load failure as an alert with Retry and the reason behind Details', async () => {
+  it('shows the Tasks load failure as an alert with Retry and the reason behind Details', async () => {
     renderScene('inbox-error');
 
     const alert = await screen.findByRole('alert');

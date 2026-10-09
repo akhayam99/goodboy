@@ -52,7 +52,7 @@ export const ReportStudio = ({ sessionId, artifact }: Props) => {
     <div
       ref={layoutRef}
       data-testid="report-studio"
-      className={cn('flex min-w-0', hasOutline && isOutlineAside ? 'gap-10' : 'flex-col gap-3')}
+      className={cn('flex min-w-0', hasOutline && isOutlineAside ? 'gap-8' : 'flex-col gap-3')}
     >
       {hasOutline && isOutlineAside ? (
         <aside

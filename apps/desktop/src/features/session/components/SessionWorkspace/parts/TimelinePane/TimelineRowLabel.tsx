@@ -1,5 +1,5 @@
 import { ValueToken, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayName';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
@@ -185,7 +185,7 @@ const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
   }
   return (
     <span className="inline-flex shrink-0 items-center gap-1 self-center">
-      <CONCEPT_ICONS.chain size={10} aria-hidden className="text-faint-foreground" />
+      <CONCEPT_ICONS.chain size={ICON_SIZE.mark} aria-hidden className="text-faint-foreground" />
       {glyph}
     </span>
   );

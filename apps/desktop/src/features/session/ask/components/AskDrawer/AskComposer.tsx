@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { ArrowUp, Eye, Square } from 'lucide-react';
 import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
+import { askDraftKeyOf } from '../../../../../store/slices/ask/askDraftKeyOf';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import { useToastLift } from '../../../../../shared/components/Toast';
@@ -25,7 +27,12 @@ const ROUND_BUTTON =
   'flex size-6 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop }: Props) => {
-  const [text, setText] = useState('');
+  const threadId = useAppStore((state) => state.askThreadId[sessionId] ?? null);
+  const text = useAppStore(
+    (state) => state.askDrafts[askDraftKeyOf({ sessionId, threadId })] ?? '',
+  );
+  const setAskDraft = useAppStore((state) => state.setAskDraft);
+  const setText = (next: string): void => setAskDraft({ sessionId, threadId, text: next });
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const canSend = text.trim() !== '' && !isStreaming;
   useToastLift({ ref: fieldRef });
@@ -47,7 +54,12 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
       if (isSent) {
         return;
       }
-      setText((current) => (current === '' ? sent : current));
+      const { askThreadId, askDrafts } = useAppStore.getState();
+      const now = askThreadId[sessionId] ?? null;
+      if ((askDrafts[askDraftKeyOf({ sessionId, threadId: now })] ?? '') !== '') {
+        return;
+      }
+      setAskDraft({ sessionId, threadId: now, text: sent });
     });
   };
 
@@ -71,7 +83,7 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
           <AskRoutingPicker sessionId={sessionId} />
           <span className="flex items-center gap-1 text-meta text-faint-foreground">
             <Eye size={ICON_SIZE.row} aria-hidden />
-            Read only
+            Read-only
           </span>
         </span>
       }

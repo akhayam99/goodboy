@@ -1,0 +1,12 @@
+{
+  "apps/desktop/src/features/bootstrap/PublishPanel/index.tsx": 1,
+  "apps/desktop/src/features/permissions/components/PermissionsSettings/DefaultModeCards.tsx": 1,
+  "apps/desktop/src/features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": 1,
+  "apps/desktop/src/features/settings/components/SettingsStudio/BranchTemplateField/BranchTemplateOption.tsx": 1,
+  "apps/desktop/src/features/settings/components/SettingsStudio/FlowSourcePicker.tsx": 1,
+  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/AutonomyChip.tsx": 1,
+  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/StartsChip.tsx": 1,
+  "apps/desktop/src/features/workflows/components/WorkflowRulesPanel/RulesAutonomyBand.tsx": 1,
+  "apps/desktop/src/features/workspace/components/ConvertWorkspaceFlow/index.tsx": 1,
+  "apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx": 1
+}

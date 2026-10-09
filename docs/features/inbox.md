@@ -1,10 +1,10 @@
-# Inbox and your tools
+# Tasks and your tools
 
-Connect your trackers, code hosts and Slack once. Their work lands in one Inbox, and agents can read and act on it.
+Connect your trackers, code hosts and Slack once. Their work lands in one list called Tasks, and agents can read and act on it.
 
 ### Supported tools
 
-Connect the ones you use in **Settings**, **Integrations**. Each one feeds the Inbox and can start a session with its brief drafted.
+Connect the ones you use in **Settings**, **Integrations**. Each one feeds Tasks and can start a session with its brief drafted.
 
 - **GitHub**: issues and pull requests, review comments you resolve with an agent, and the Branch page
 - **GitLab**: issues and merge requests, with threaded discussions, replies, approvals and merge
@@ -18,14 +18,14 @@ Connect the ones you use in **Settings**, **Integrations**. Each one feeds the I
 
 Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack, as far as you connected them, without handing them your keys. The agent asks Goodboy over a local socket only your user can open, and Goodboy makes the call.
 
-### Inbox
+### Tasks
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Inbox listing 10 items from Linear, GitHub, Jira, Sentry and Slack in Today, Yesterday and Older groups, with the View, Type, Source and Project filters and the key hints on the left, and Linear issue CAS-231 open on the right with Launch session and Link to a session">
 </picture>
 
-Work from one list instead of seven tabs. Issues, Slack threads and Sentry errors from your connected tools sit together, grouped by day, next to pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket. Narrow the list by **View**, **Type**, **Source** and **Project**, and move with **j** and **k**. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list.
+Work from one list instead of seven tabs. Issues, Slack threads and Sentry errors from your connected tools sit together, grouped by day, next to pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket. Narrow the list by **View**, **Type**, **Source** and **Project**, and move with **j** and **k**. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list. A row shows its status word only when the list mixes states, so a list of open items does not repeat Open on every row.
 
 ### Find any issue by code or link
 
@@ -34,29 +34,19 @@ Work from one list instead of seven tabs. Issues, Slack threads and Sentry error
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-lookup-light.webp" alt="The Inbox search box holding HBL-412, with the Linear issue Retried webhooks post a second credit listed under Not in your inbox, Assigned to Dana R., and its details open on the right">
 </picture>
 
-Paste `HBL-412`, `#318` or a link in the search box and open the issue, even when it is not assigned to you. It appears under **Not in your inbox** with its full details beside it. An unknown prefix is tried on Linear and Jira at once.
+Paste `HBL-412`, `#318` or a link in the search box and open the issue, even when it is not assigned to you. It appears under **Not in Tasks** with its full details beside it. An unknown prefix is tried on Linear and Jira at once.
 
 ### Starred issues
 
-Star an issue to keep it on top of the Inbox and of **Pick up a task**. In the search result above, the **Starred** group holds the GitHub issue #211.
+Star an issue to keep it on top of Tasks and of **Pick up a task**. In the search result above, the **Starred** group holds the GitHub issue #211.
 
-### Launch a session from any item
+### Start from any item
 
-Press **Launch session** on an issue, a Slack thread or an error to start a session with the brief already drafted. A Sentry error or a GitHub or GitLab item opens in its project, and the popover says why.
+Press **Start from HBL-412** on an issue or an error and the New session draft opens with the issue picked and its brief being written. Pick how to work on it and press Start again: the session, the run and a **Follow** toast come in one step. A Slack thread, a merge request or a pull request of yours opens a short panel instead, with the same **Start from #318**, and a Sentry error or a GitHub or GitLab item opens in its project, and the panel says why. **Review pull request** replaces Start on a pull request waiting for your review: it starts a read-only PR reviewer and opens the **Pull request** tab. Press **Enter** on a row to do the same without the mouse.
 
 ### Link an item to a session
 
-Attach an inbox item to work that already exists.
-
-**Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or **L**, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link. Under the search, pick where the link lives: **This session** (the default) or **Whole workspace**.
-
-A session link closes the task when its pull request merges; the line under the preview says so ("Will close ENG-412 when merged") and **Don’t close** turns it into "Part of ENG-412" in the pull request body instead. A whole-workspace task never closes from a pull request: it shows under **Ongoing** on the Board, not on any session until you link it there.
-
-A task you already linked stays in the list with where it lives, such as "Linked to this session", so you can add it to the workspace too; the scope it already has never links twice. A linked task shows once on the session header, the Board card and the sidebar row, with a **+N** for more tasks. To put it on a branch afterwards, use **Put on a branch** on the branch row: choose a linked task, or **New worktree for** the task to give it a branch named after the task.
-
-The task chip opens the task directly. Its **✕** appears on hover or keyboard focus: on a branch it takes off that placement, while on the session it removes every placement. These removals act immediately, with **Unlinked NW-142 · Undo** for about 10 seconds; **Cmd+Z** undoes the latest app operation outside text fields. **Stop tracking** on the Board and **Take off this branch** use the same Undo.
-
-Undo restores the complete snapshot atomically and leaves a task that was re-linked meanwhile alone. **Re-link** on the unlink event restores its saved placements; an older event opens **Link work** prefilled. A task linked from several sessions lists every one of them on its inbox record.
+Attach a Tasks item to work that already exists. **Link to a session** sits next to **Start from HBL-412** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or **L**, opens one search across every connected tracker, with your recent Tasks items on top. Filter by source, type an issue code, or paste a link. Under the search, pick where the link lives: **This session** (the default) or **Whole workspace**. A session link closes the task when its pull request merges; the line under the preview says so ("Will close ENG-412 when merged") and **Don’t close** turns it into "Part of ENG-412" in the pull request body instead. A whole-workspace task never closes from a pull request: it shows under **Ongoing** on the Board, not on any session until you link it there. A task you already linked stays in the list with where it lives, such as "Linked to this session", so you can add it to the workspace too; the scope it already has never links twice. A linked task shows once on the session header, the Board card and the sidebar row, with a **+N** for more tasks. To put it on a branch afterwards, use **Put on a branch** on the branch row: choose a linked task, or **New worktree for** the task to give it a branch named after the task. The task chip opens the task directly. Its **✕** appears on hover or keyboard focus: on a branch it takes off that placement, while on the session it removes every placement. These removals act immediately, with **Unlinked NW-142 · Undo** for about 10 seconds; **Cmd+Z** undoes the latest app operation outside text fields. **Stop tracking** on the Board and **Take off this branch** use the same Undo. Undo restores the complete snapshot atomically and leaves a task that was re-linked meanwhile alone. **Re-link** on the unlink event restores its saved placements; an older event opens **Link work** prefilled. A task linked from several sessions lists every one of them on its Tasks record.
 
 ### Trackers
 

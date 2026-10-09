@@ -13,6 +13,7 @@ import {
   isAgentRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,
+  normalizeWorkflowRole,
   presentationKeyForRole,
 } from './roles';
 
@@ -259,5 +260,25 @@ describe('roleSplitLimits', () => {
   it('has no limits for a role that never splits', () => {
     expect(roleSplitLimits('planner')).toBeNull();
     expect(roleSplitLimits('custom')).toBeNull();
+  });
+});
+
+describe('workflow roles', () => {
+  it('keeps the Resolve agent out of workflows and still in the lane', () => {
+    expect(ROLE_REGISTRY.resolver.workflowEligible).toBe(false);
+    expect(ROLE_REGISTRY.resolver.selectionEligible).toBe(true);
+    expect(ROLE_REGISTRY.resolver.pickerEligible).toBe(true);
+  });
+
+  it('runs a step that names resolver as an implementer step', () => {
+    expect(normalizeWorkflowRole({ role: 'resolver' })).toBe('implementer');
+    expect(normalizeWorkflowRole({ role: 'Resolver' })).toBe('implementer');
+  });
+
+  it('leaves every other workflow role as it is', () => {
+    for (const role of ['scout', 'planner', 'implementer', 'reviewer', 'tester', 'docs'] as const) {
+      expect(normalizeWorkflowRole({ role })).toBe(role);
+    }
+    expect(normalizeWorkflowRole({ role: 'rewriter' })).toBe('custom');
   });
 });

@@ -1,12 +1,14 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
 import type {
   Agent,
   AgentId,
   ArtifactId,
+  MountId,
   ResolveAttempt,
   SessionId,
+  SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
@@ -255,7 +257,7 @@ describe('navigation slice', () => {
 
     store.getState().forward();
     store.getState().forward();
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/files`);
   });
 
   it('truncates the forward entries on a new push', () => {
@@ -325,19 +327,19 @@ describe('navigation slice', () => {
     expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('opens the pull request as the Branch, with its Comments, and Back leaves it', () => {
+  it('opens the pull request as the Branch, on its Pull request tab, and Back leaves it', () => {
     const store = makeStore();
     store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'linear' }) });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
     expect(store.getState().activeLens[S1]).toBe('branch');
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/pr`);
 
     store.getState().back();
     expect(store.getState().activeLens[S1]).toBe('linear');
   });
 
-  it('keeps the pull request page for a GitLab merge request', () => {
+  it('lands the pull request lens on the Branch page for a GitLab merge request', () => {
     const store = makeStore();
     store.setState({
       sessionGitlabMr: {
@@ -364,7 +366,7 @@ describe('navigation slice', () => {
       },
     });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    expect(store.getState().activeLens[S1]).toBe('pr');
+    expect(store.getState().activeLens[S1]).toBe('branch');
   });
 
   const transcriptOf = (agentId: AgentId) => ({
@@ -450,6 +452,54 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
   });
 
+  it('lands an agent on the tab a door asks for and on no tab otherwise', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+    expect(store.getState().agentPane[S1]).toBeNull();
+    expect(store.getState().selectedAgentId[S1]).toBe(AGENT);
+
+    store
+      .getState()
+      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'transcript' }) });
+    expect(store.getState().agentPane[S1]).toBe('transcript');
+    expect(keyOf(store)).toBe(`s/${S1}/agents/pane/transcript/agent/${AGENT}`);
+
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+    expect(store.getState().agentPane[S1]).toBeNull();
+  });
+
+  it('brings the tab a door asked for back with Back and Forward', () => {
+    const store = makeStore();
+    store
+      .getState()
+      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'transcript' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    expect(store.getState().agentPane[S1]).toBeNull();
+
+    store.getState().back();
+    expect(store.getState().agentPane[S1]).toBe('transcript');
+    expect(store.getState().selectedAgentId[S1]).toBe(AGENT);
+
+    store.getState().forward();
+    expect(store.getState().agentPane[S1]).toBeNull();
+  });
+
+  it('brings the tab back after a window restore', () => {
+    const before = makeStore();
+    before
+      .getState()
+      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'brief' }) });
+    const saved = parseLocation({
+      value: JSON.parse(JSON.stringify(captureWindowLocation({ state: before.getState() }))),
+    });
+
+    const after = makeStore();
+    after.getState().restoreLocation({ location: saved! });
+
+    expect(after.getState().agentPane[S1]).toBe('brief');
+    expect(after.getState().selectedAgentId[S1]).toBe(AGENT);
+  });
+
   it('closes the transcript drawer on the next page and brings it back on Back', () => {
     const store = makeStore();
     withAttempt(store);
@@ -503,7 +553,12 @@ describe('navigation slice', () => {
       to: sessionPlace({ sessionId: S1, lens: 'workflows', studio: { kind: 'workflow' } }),
     });
     store.getState().navigate({
-      to: sessionPlace({ sessionId: S1, lens: 'workflows', studio: { kind: 'mr' } }),
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'workflows',
+        studio: { kind: 'workflow' },
+        target: null,
+      }),
     });
     store.getState().up();
     const stack = store.getState().navigation[WS];
@@ -525,14 +580,14 @@ describe('navigation slice', () => {
       },
     });
     store.getState().openStudio({ studio: { kind: 'workflow' } });
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments+workflows`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/files+workflows`);
 
     store.getState().back();
     expect(store.getState().appStudio).toEqual({
       kind: 'inbox',
       focus: { provider: 'linear', kind: null, recordKey: 'NW-214', sessionId: null },
     });
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments+inbox/linear/NW-214`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/files+inbox/linear/NW-214`);
 
     store.getState().back();
     expect(store.getState().appStudio).toBeNull();
@@ -797,8 +852,8 @@ const depthOf = (store: ReturnType<typeof makeStore>): number =>
 describe('Branch page', () => {
   it('opens the canonical Branch address from every former door', () => {
     const doors = [
-      { request: sessionPlace({ sessionId: S1, lens: 'review' }), tab: 'comments' },
-      { request: sessionPlace({ sessionId: S1, lens: 'pr' }), tab: 'comments' },
+      { request: sessionPlace({ sessionId: S1, lens: 'review' }), tab: 'files' },
+      { request: sessionPlace({ sessionId: S1, lens: 'pr' }), tab: 'pr' },
       {
         request: sessionPlace({
           sessionId: S1,
@@ -824,9 +879,30 @@ describe('Branch page', () => {
     }
   });
 
+  it('lands the Branch door on the pull request once the branch has one', () => {
+    const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    expect(branchOf(store)?.tab).toBe('pr');
+  });
+
+  it('keeps a comment link on Comments whether or not the branch has a pull request', () => {
+    const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
+    store.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'review',
+        target: { kind: 'thread', threadId: 'gh:PRRT_42' },
+      }),
+    });
+    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: 'gh:PRRT_42' });
+  });
+
   it('reads the same trail whichever door opened it', () => {
     const keys = (['review', 'pr'] as const).map((lens) => {
       const store = makeStore();
+      store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
       store.getState().navigate({ to: BOARD_PLACE });
       store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
       store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens }) });
@@ -848,6 +924,43 @@ describe('Branch page', () => {
     });
     expect(store.getState().drawer).toBeNull();
     expect(store.getState().branchThreadId[S1]).toBe('thread-9');
+  });
+
+  it('brings the write destination back to the branch Back returns to', () => {
+    const mountOn = ({ id, path }: { readonly id: string; readonly path: string }) =>
+      ({
+        mountId: id as MountId,
+        sessionId: S1,
+        projectId: 'project-payments-api',
+        mountName: 'payments-api',
+        worktreePath: path,
+        lastWorktreePath: null,
+        repoRoot: '/w/payments-api',
+        branch: path,
+        baseBranch: 'main',
+        parallelIndex: 0,
+        isAttached: true,
+        diskState: 'present',
+        revision: 1,
+      }) as SessionProjectMount;
+    const store = makeStore();
+    const setSessionActiveMount = vi.fn(async () => undefined);
+    store.setState({
+      sessionProjectMounts: {
+        [S1]: [
+          mountOn({ id: 'mount-a', path: '/w/branch-a' }),
+          mountOn({ id: 'mount-b', path: '/w/branch-b' }),
+        ],
+      },
+      sessionActiveMount: { [S1]: 'mount-a' as MountId },
+      setSessionActiveMount,
+    });
+    store.getState().navigate({ to: branchPlace({ sessionId: S1, mountPath: '/w/branch-a' }) });
+    store.setState({ sessionActiveMount: { [S1]: 'mount-b' as MountId } });
+    store.getState().navigate({ to: branchPlace({ sessionId: S1, mountPath: '/w/branch-b' }) });
+    expect(setSessionActiveMount).not.toHaveBeenCalled();
+    store.getState().back();
+    expect(setSessionActiveMount).toHaveBeenCalledWith({ sessionId: S1, mountId: 'mount-a' });
   });
 
   it('switches tabs in place so Back does not walk them', () => {

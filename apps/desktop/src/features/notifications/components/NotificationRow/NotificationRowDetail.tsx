@@ -14,7 +14,7 @@ type Props = {
 };
 
 const GHOST =
-  'inline-flex h-5.5 items-center gap-1 rounded-sm px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground';
+  'inline-flex h-6 items-center gap-1 rounded-sm px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground';
 
 export const NotificationRowDetail = ({ notifications }: Props) => {
   const now = useNow(30_000);
@@ -44,7 +44,7 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
             <li
               key={entry.id}
               className={cn(
-                'relative flex h-5.5 items-center justify-between gap-3 pl-4 text-meta text-muted-foreground',
+                'relative flex h-6 items-center justify-between gap-3 pl-4 text-meta text-muted-foreground',
                 'before:absolute before:left-0 before:top-0 before:h-1/2 before:w-2.5 before:rounded-bl-md before:border-b before:border-l before:border-border',
                 index < older.length - 1 &&
                   'after:absolute after:left-0 after:top-0 after:h-full after:border-l after:border-border',

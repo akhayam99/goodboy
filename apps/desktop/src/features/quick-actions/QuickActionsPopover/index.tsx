@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollFade, useEscapeLayer, FilledEmptyState } from '@goodboy/ui';
+import { ScrollFade, useEscapeLayer, EmptyState, Eyebrow } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { QuickActionItem } from '../types';
@@ -49,7 +49,8 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
   return (
     <div className="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-floating shadow-lg">
       {items.length === 0 ? (
-        <FilledEmptyState
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.search}
           tone={CONCEPT_TONE.search}
           title={emptyHint}
@@ -83,9 +84,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
                   <AgentKindChip kind={item.trailing.kind} label={item.trailing.label} />
                 ) : null}
                 {item.trailing !== undefined && item.trailing.kind === undefined ? (
-                  <span className="shrink-0 text-meta uppercase tracking-eyebrow text-muted-foreground">
-                    {item.trailing.label}
-                  </span>
+                  <Eyebrow label={item.trailing.label} className="shrink-0" />
                 ) : null}
               </li>
             ))}

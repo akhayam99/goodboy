@@ -15,6 +15,7 @@ import { type ExploreEntry } from '../../explore';
 import { buildExploreSpawnPrompt } from '../../buildExploreSpawnPrompt';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -33,7 +34,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
     align: 'end',
     expectedHeight: 420,
     expectedWidth: 420,
-    width: 'w-[26rem] max-w-[calc(100vw-2rem)]',
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
   });
   const { open, close, toggle } = dropdown;
   const spawnAgent = useAppStore((state) => state.spawnAgent);
@@ -93,7 +94,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
         message: `An agent is working on ${entry.name}.`,
         target: { place: agentPlace({ sessionId, agentId }) },
         startKey: agentId,
-        onFollow: () => window.dispatchEvent(new CustomEvent('goodboy:reveal-chat')),
+        onFollow: () => window.dispatchEvent(openAgentRevealEvent()),
       });
     } catch (error) {
       setSpawnError(toErrorMessage({ error }));

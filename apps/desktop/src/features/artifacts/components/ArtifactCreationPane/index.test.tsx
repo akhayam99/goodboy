@@ -188,9 +188,9 @@ describe('ArtifactCreationPane', () => {
 
   it('shows the default request under an empty brief and hides it once typed', () => {
     renderPane();
-    screen.getByText(/with no brief the agent is asked to/);
+    screen.getByText(/With no brief the agent is asked to/);
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'the rounding' } });
-    expect(screen.queryByText(/with no brief the agent is asked to/)).toBeNull();
+    expect(screen.queryByText(/With no brief the agent is asked to/)).toBeNull();
   });
 
   it('inserts the session goal without overwriting what was typed', () => {
@@ -279,10 +279,10 @@ describe('ArtifactCreationPane', () => {
       'Session summary',
     );
     const hint = () => screen.getByTestId('artifact-choice-hint').textContent ?? '';
-    expect(hint()).toContain('what the session set out to do');
+    expect(hint()).toContain('What the session set out to do');
     fireEvent.click(screen.getByRole('option', { name: /Local change report/ }));
     expect(hint()).toContain('as a reviewer reads it');
-    expect(hint()).not.toContain('what the session set out to do');
+    expect(hint()).not.toContain('What the session set out to do');
   });
 
   it('keeps the options on one wrapping row instead of a card each', () => {
@@ -342,7 +342,20 @@ describe('ArtifactCreationPane', () => {
     screen.getByText(
       'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
     );
+    expect(
+      screen.queryByText('No project in this session, so no local change evidence.'),
+    ).toBeNull();
+    fireEvent.click(screen.getByText('Included context'));
     screen.getByText('No project in this session, so no local change evidence.');
+  });
+
+  it('keeps one help line under Based on and the repository line behind Included context', () => {
+    renderPane();
+    const basedOn = screen.getByTestId('artifact-based-on').closest('section');
+    expect(basedOn?.querySelectorAll('span.text-meta')).toHaveLength(1);
+    expect(screen.queryByText(/No project in this session/)).toBeNull();
+    fireEvent.click(screen.getByText('Included context'));
+    expect(screen.getByText(/No project in this session/)).toBeDefined();
   });
 
   it('lists what the pack carries and what it cuts short', async () => {
@@ -350,8 +363,8 @@ describe('ArtifactCreationPane', () => {
     await settle();
     fireEvent.click(screen.getByText('Included context'));
     const labels = screen.getAllByTestId('artifact-context-row').map((row) => row.textContent);
-    expect(labels.some((text) => text?.startsWith('brief'))).toBe(true);
-    expect(labels.some((text) => text?.includes('no mounted project'))).toBe(true);
+    expect(labels.some((text) => text?.startsWith('Brief'))).toBe(true);
+    expect(labels.some((text) => text?.includes('No mounted project'))).toBe(true);
     expect(labels.some((text) => text?.includes('tool calls, tool output, transcripts'))).toBe(
       true,
     );
@@ -519,7 +532,7 @@ describe('ArtifactCreationPane', () => {
     fireEvent.paste(brief, {
       clipboardData: { getData: () => 'y'.repeat(100) },
     });
-    expect(screen.getByRole('status').textContent).toBe('pasted text was cut at 2,000 characters');
+    expect(screen.getByRole('status').textContent).toBe('Pasted text was cut at 2,000 characters');
     fireEvent.change(brief, { target: { value: 'x'.repeat(1_991) } });
     expect(screen.queryByRole('status')).toBeNull();
   });

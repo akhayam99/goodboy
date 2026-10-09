@@ -66,7 +66,7 @@ const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
 };
 
 const press = async (id: ShortcutId): Promise<void> => {
-  const anchor = await screen.findByRole('button', { name: /^Search or ask/ });
+  const anchor = await screen.findByRole('button', { name: /^Search \(/ });
   anchor.focus();
   pressShortcut({ id });
   await settle();
@@ -462,7 +462,7 @@ const openAgentTranscript = async (sessionId: SessionId): Promise<void> => {
   if (agent === undefined) {
     throw new Error('the seeded session has no standalone agent');
   }
-  state.navigate({ to: agentPlace({ sessionId, agentId: agent.id }) });
+  state.navigate({ to: agentPlace({ sessionId, agentId: agent.id, pane: 'transcript' }) });
   await settle();
   await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT);
 };
@@ -514,7 +514,7 @@ describe('moving across every place keeps one frame', () => {
         [() => door('inbox'), 'inbox'],
         [() => door('chat'), 'chat'],
         [() => door('workflows'), 'workflow'],
-        [() => screen.getByRole('button', { name: 'Impact' }), 'impact'],
+        [() => screen.getByRole('button', { name: /^Spend today/ }), 'impact'],
       ];
       for (const [control, kind] of doors) {
         await click(control());
@@ -868,7 +868,7 @@ describe('moving across every place keeps one frame', () => {
       expect(studio()).toBe('chat');
       expectOneRail({
         place: 'Chat',
-        layers: { header: shown('header h2'), composer: shown('textarea') },
+        layers: { header: shown('header h1'), composer: shown('textarea') },
         rail: COLUMN_RAIL,
       });
 
@@ -899,7 +899,8 @@ describe('moving across every place keeps one frame', () => {
 
       await click(sessionRow(sessionId));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      expect(sessionRow(sessionId).getAttribute('aria-current')).toBe('true');
+      expect(sessionRow(sessionId).getAttribute('aria-current')).toBeNull();
+      expect(sessionRow(sessionId).getAttribute('data-current-sign')).toBe('overview');
       expect(currentPage()).toBe('Overview');
 
       for (const [page, lens] of SESSION_PAGES) {
@@ -960,7 +961,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      expect(sessionRow(other).getAttribute('aria-current')).toBe('true');
+      expect(sessionRow(other).getAttribute('data-current-sign')).toBe('overview');
 
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
@@ -975,8 +976,8 @@ describe('moving across every place keeps one frame', () => {
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
       expect(
-        peek.querySelector(`[data-select-id="${sessionId}"]`)?.getAttribute('aria-current'),
-      ).toBe('true');
+        peek.querySelector(`[data-select-id="${sessionId}"]`)?.getAttribute('data-current-sign'),
+      ).toBe('branch');
       await click(peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) as HTMLElement);
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
       await click(historyButton('Back'));
@@ -1015,7 +1016,7 @@ describe('moving across every place keeps one frame', () => {
       expect(
         (await within(page).findAllByText(/Ship a fix/, undefined, WAIT)).length,
       ).toBeGreaterThan(0);
-      expect(pageRow('Runs').textContent).toMatch(/\d/);
+      expect(pageRow('Runs').textContent).toBe('Runs');
       expect(screen.queryByText(/workflow run/i)).toBeNull();
 
       const startedRun = currentSession(sessionId).workflowRuns.at(-1)?.id ?? null;
@@ -1048,7 +1049,7 @@ describe('moving across every place keeps one frame', () => {
     async () => {
       await boot({ seed: 'pr' });
 
-      await openPalette(/^Inbox$/, 'Inbox');
+      await openPalette(/^Tasks$/, 'Tasks');
       expect(studio()).toBe('inbox');
       expect(currentDoors()).toEqual(['inbox']);
       expectColumnBesideStudio();

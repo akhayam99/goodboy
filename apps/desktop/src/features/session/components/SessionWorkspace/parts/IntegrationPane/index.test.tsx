@@ -57,10 +57,6 @@ vi.mock('../../../../../../shared/lib/editor', () => ({
   openUrl: h.openUrl,
 }));
 
-vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
-  useRemoteHostKind: () => 'github',
-}));
-
 vi.mock('./LinearTaskDetail', () => ({
   LinearTaskDetail: ({ task }: TaskDetailProps) => (
     <div data-testid="task-detail">

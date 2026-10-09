@@ -163,7 +163,7 @@ export const lookupStatuses = ({
   ];
 };
 
-export const ISSUE_SEARCH_PLACEHOLDER = 'Search, or paste CAS-231, #482 or a link';
+export const ISSUE_SEARCH_PLACEHOLDER = 'Search or paste a link';
 
 const assigneeNameOf = (record: InboxRecord): string | null => {
   const { payload } = record;

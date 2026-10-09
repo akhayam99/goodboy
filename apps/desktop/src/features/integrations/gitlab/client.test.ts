@@ -1,13 +1,20 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import {
   gitlabFetchIssue,
+  gitlabGetMr,
   gitlabListIssueDiscussions,
+  gitlabMergeMr,
+  gitlabMrCommits,
+  gitlabMrPipelineJobs,
+  gitlabProjectMergeMethods,
   gitlabReplyToIssueDiscussion,
   gitlabResolveMrDiscussion,
+  gitlabSearchProjectUsers,
   gitlabUpdateIssueDescription,
+  gitlabUpdateMr,
   issueIdentifier,
   type GitlabIssue,
   type GitlabMrDiscussion,
@@ -182,6 +189,115 @@ describe('gitlab issue discussions', () => {
       issueIid: 7,
       discussionId: 'd-1',
       body: 'Agreed',
+    });
+  });
+});
+
+const MR_TARGET = {
+  workspaceId: 'ws-1' as WorkspaceId,
+  host: 'https://gitlab.com',
+  projectPath: 'harborline/payments-api',
+  mrIid: 42,
+};
+
+const PROJECT_TARGET = {
+  workspaceId: 'ws-1' as WorkspaceId,
+  host: 'https://gitlab.com',
+  projectPath: 'harborline/payments-api',
+};
+
+describe('gitlabMergeMr', () => {
+  it('sends no method when none is chosen, as the companion does', async () => {
+    mockInvoke.mockResolvedValueOnce({});
+    await gitlabMergeMr('ws-1' as WorkspaceId, 'https://gitlab.com', 'harborline/payments-api', 42);
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_merge_mr', {
+      workspaceId: 'ws-1',
+      host: 'https://gitlab.com',
+      projectPath: 'harborline/payments-api',
+      mrIid: 42,
+    });
+  });
+
+  it('sends the method and the project binding when given', async () => {
+    mockInvoke.mockResolvedValueOnce({});
+    await gitlabMergeMr(
+      'ws-1' as WorkspaceId,
+      'https://gitlab.com',
+      'harborline/payments-api',
+      42,
+      'project-1' as ProjectId,
+      'squash',
+    );
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_merge_mr', {
+      workspaceId: 'ws-1',
+      projectId: 'project-1',
+      host: 'https://gitlab.com',
+      projectPath: 'harborline/payments-api',
+      mrIid: 42,
+      method: 'squash',
+    });
+  });
+});
+
+describe('gitlab merge request calls', () => {
+  it('reads one merge request by its number', async () => {
+    mockInvoke.mockResolvedValueOnce({ iid: 42 });
+    await gitlabGetMr(MR_TARGET);
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_get_mr', MR_TARGET);
+  });
+
+  it('updates only what is supplied and keeps an empty reviewer list', async () => {
+    mockInvoke.mockResolvedValue({ iid: 42 });
+    await gitlabUpdateMr({ ...MR_TARGET, description: 'New body' });
+    expect(mockInvoke).toHaveBeenLastCalledWith('gitlab_update_mr', {
+      ...MR_TARGET,
+      description: 'New body',
+    });
+    await gitlabUpdateMr({ ...MR_TARGET, title: 'New title', reviewerIds: [] });
+    expect(mockInvoke).toHaveBeenLastCalledWith('gitlab_update_mr', {
+      ...MR_TARGET,
+      title: 'New title',
+      reviewerIds: [],
+    });
+  });
+
+  it('carries the project binding only when there is one', async () => {
+    mockInvoke.mockResolvedValue({ iid: 42 });
+    await gitlabUpdateMr({ ...MR_TARGET, projectId: 'project-1' as ProjectId, title: 'T' });
+    expect(mockInvoke).toHaveBeenLastCalledWith('gitlab_update_mr', {
+      ...MR_TARGET,
+      projectId: 'project-1',
+      title: 'T',
+    });
+    await gitlabGetMr({ ...MR_TARGET, projectId: undefined });
+    expect(mockInvoke).toHaveBeenLastCalledWith('gitlab_get_mr', MR_TARGET);
+  });
+
+  it('reads the pipeline jobs and the commits of a merge request', async () => {
+    mockInvoke.mockResolvedValueOnce({ pipeline: null, jobs: [] });
+    expect(await gitlabMrPipelineJobs(MR_TARGET)).toEqual({ pipeline: null, jobs: [] });
+    expect(mockInvoke).toHaveBeenLastCalledWith('gitlab_mr_pipeline_jobs', MR_TARGET);
+    mockInvoke.mockResolvedValueOnce(null);
+    expect(await gitlabMrPipelineJobs(MR_TARGET)).toBeNull();
+    mockInvoke.mockResolvedValueOnce([]);
+    await gitlabMrCommits(MR_TARGET);
+    expect(mockInvoke).toHaveBeenLastCalledWith('gitlab_mr_commits', MR_TARGET);
+  });
+});
+
+describe('gitlab project calls', () => {
+  it('reads the merge rules of the project', async () => {
+    mockInvoke.mockResolvedValueOnce({ mergeMethod: 'merge' });
+    await gitlabProjectMergeMethods(PROJECT_TARGET);
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_project_merge_methods', PROJECT_TARGET);
+  });
+
+  it('searches the users of the project', async () => {
+    mockInvoke.mockResolvedValueOnce([]);
+    await gitlabSearchProjectUsers({ ...PROJECT_TARGET, query: 'ken' });
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_search_project_users', {
+      ...PROJECT_TARGET,
+      query: 'ken',
     });
   });
 });

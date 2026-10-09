@@ -16,7 +16,7 @@ import { fireEvent, screen } from '@testing-library/react';
 import { APP_SECTIONS } from '../../../features/settings/components/SettingsStudio/appSections';
 import {
   type BridgeArgs,
-  LENS_ROWS,
+  CRUMB_ROWS,
   type Row,
   SRC,
   STORE_ACTIONS,
@@ -176,12 +176,12 @@ describe('navigation flow table ratchet', () => {
     await clickButton(/^Session/);
     const crumbs = screen.getAllByRole('menuitemradio').map((item) => {
       const text = (item.textContent ?? '').trim();
-      const known = LENS_ROWS.find((row) => text.startsWith(row.label));
+      const known = CRUMB_ROWS.find((row) => text.startsWith(row.label));
       return `crumb:${known?.label ?? text}`;
     });
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     await settle();
-    await clickButton(/^Search .+ \(/);
+    await clickButton(/^Search \(/);
     const sessionGoals = new Set(useAppStore.getState().sessions.map((session) => session.goal));
     const workspaceNames = new Set(useAppStore.getState().workspaces.map((ws) => ws.name));
     const agentNames = new Set(

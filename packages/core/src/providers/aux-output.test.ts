@@ -110,6 +110,15 @@ describe('extractAuxOutput, cursor stream-json', () => {
     expect(out.errorMessage).toBe('model failed');
   });
 
+  it('reports the result text of a failed result event that has no error field', () => {
+    const stdout =
+      '{"type":"result","subtype":"error","is_error":true,"result":"You have hit your usage limit"}';
+    const out = extractAuxOutput({ providerId: 'cursor', stdout });
+
+    expect(out.isError).toBe(true);
+    expect(out.errorMessage).toBe('You have hit your usage limit');
+  });
+
   it('passes plain stdout through untouched', () => {
     const out = extractAuxOutput({ providerId: 'cursor', stdout: 'Implemented auth flow.' });
 

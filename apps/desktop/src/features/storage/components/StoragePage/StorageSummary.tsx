@@ -121,7 +121,7 @@ export const StorageSummary = ({ scope, onScopeToAll }: Props) => {
           ),
         )}
       </div>
-      <div className="grid grid-cols-1 gap-x-7 gap-y-2 @min-[560px]:grid-cols-3">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-2 @min-[560px]:grid-cols-3">
         {segments.map((segment) => (
           <StorageLegendItem key={segment.key} segment={segment} />
         ))}

@@ -500,7 +500,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                       <span className="truncate text-row text-foreground">{project.name}</span>
                       <Chip
                         tone="neutral"
-                        size="3xs"
+                        kind="state"
                         bordered={false}
                         label={project.kind === 'repo' ? 'Repository' : 'Folder'}
                         className="shrink-0"

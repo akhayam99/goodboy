@@ -1,5 +1,11 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { cn, readStudioRailWidth, SHEET_CLASSES, useEscapeLayer } from '@goodboy/ui';
+import {
+  cn,
+  readStudioRailWidth,
+  SHEET_CLASSES,
+  UnderTrailContext,
+  useEscapeLayer,
+} from '@goodboy/ui';
 import { StudioBand } from '../../../shared/components/StudioShell/StudioBand';
 import {
   StudioFrameContext,
@@ -86,6 +92,7 @@ export const StudioFrame = ({
             icon={band.icon}
             {...('tone' in band && band.tone !== undefined && { tone: band.tone })}
             {...(chrome?.glyph !== undefined && { glyph: chrome.glyph })}
+            width={meta.tier}
             title={band.title}
             {...(chrome?.subtitle !== undefined && { subtitle: chrome.subtitle })}
             closeLabel={band.closeLabel}
@@ -115,7 +122,11 @@ export const StudioFrame = ({
               />
             }
           >
-            {children}
+            {hasBand ? (
+              <UnderTrailContext.Provider value>{children}</UnderTrailContext.Provider>
+            ) : (
+              children
+            )}
           </Suspense>
         </div>
       </div>

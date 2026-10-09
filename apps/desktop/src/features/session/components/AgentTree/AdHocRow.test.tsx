@@ -97,7 +97,7 @@ describe('AdHocRow delegation state', () => {
     });
 
     expect(screen.getByText('delegated · 2/3 running')).toBeDefined();
-    expect(screen.queryByText('Model not chosen yet')).toBeNull();
+    expect(screen.queryByText('Model unknown')).toBeNull();
   });
 
   it('shows delegated done when every child is terminal', () => {
@@ -115,7 +115,7 @@ describe('AdHocRow delegation state', () => {
     renderRow();
 
     expect(screen.getByText('not started')).toBeDefined();
-    expect(screen.getByText('Model not chosen yet')).toBeDefined();
+    expect(screen.getByText('Model unknown')).toBeDefined();
   });
 });
 

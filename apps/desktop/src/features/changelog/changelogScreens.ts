@@ -1,7 +1,9 @@
+import { NAMES } from '../../shared/names';
+
 export const CHANGELOG_SCREENS = {
   workflows: 'Workflows',
   'workflows/steps': 'Workflow steps',
-  inbox: 'Inbox',
+  inbox: NAMES.tasks,
   notifications: 'Notifications',
   impact: 'Impact',
   'settings/app': 'Settings',
@@ -9,7 +11,7 @@ export const CHANGELOG_SCREENS = {
   'settings/providers': 'Providers',
   'settings/tools': 'Integrations',
   'settings/workspace/projects': 'Projects',
-  'settings/workspace/review-replies': 'Review replies',
+  'settings/workspace/review-replies': 'Replies and commits',
 } as const satisfies Record<string, string>;
 
 export type ChangelogScreen = keyof typeof CHANGELOG_SCREENS;

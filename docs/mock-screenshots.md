@@ -198,7 +198,7 @@ README images always show the app around the feature. Two frames wrap them:
 
 Every frame (these two, `audit/WorkspaceFrame` and the board shell) takes its
 column actions, studio and overlay layers from `scenes/useSceneShell`, which
-runs the app's own `useAppOverlays`: Board, Inbox, Chat, Workflows and Settings
+runs the app's own `useAppOverlays`: Board, Tasks, Chat, Workflows and Settings
 in the column work as in the app, Settings swaps the column and **Back to app**
 returns. A scene that installs its own IPC answers goes through
 `scenes/mockSceneIpc.ts`, which answers editor and browser detection, `db_select`,
@@ -362,7 +362,7 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   the version numbers renames the `next` folder to `docs/changelog/<version>/` and sets
   `image=<name>` on the entry. `changelogImageBudget.test.ts` then checks
   names, complete dark/light pairs, that a `before` has a matching `after`,
-  at most 3 images and 1 MB per release, and no orphan file.
+  at most 12 images and 2 MB per release, and no orphan file.
 - **Retroactive from the release's own code.** A release that already
   shipped can gain pictures, but never capture today's app under an old
   entry's name: the picture would show a screen the release never had.
@@ -374,3 +374,9 @@ Task-link controls have three scenes: `task-links` for idle chips and visible
 branch placement, `task-links-hover` for keyboard focus revealing unlink, and
 `task-links-undo` for compound unlink with the Undo toast and Activity Re-link.
 They use the real overview, chip and placement components in both themes.
+
+The sorted scene list is committed at
+`apps/desktop/src/app/components/MockScene/scenes.txt`. The registry discovers
+scene maps exported from the numbered scene folders automatically. A duplicate
+id reports both source files. An unknown scene id shows an alert and nearby ids;
+omitting the scene parameter opens the workspace.

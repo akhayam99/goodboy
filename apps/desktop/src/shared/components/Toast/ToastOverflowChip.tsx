@@ -1,5 +1,6 @@
 import { Bell } from 'lucide-react';
 import { cn } from '@goodboy/ui';
+import { ICON_SIZE } from '../conceptIcons';
 
 type ToastOverflowChipProps = {
   readonly count: number;
@@ -16,7 +17,7 @@ export const ToastOverflowChip = ({ count, onOpen }: ToastOverflowChipProps) => 
       'hover:bg-hover hover:text-foreground motion-safe:transition-colors',
     )}
   >
-    <Bell size={11} aria-hidden />
+    <Bell size={ICON_SIZE.mark} aria-hidden />
     <span className="tabular-nums">+{count} more in notifications</span>
   </button>
 );

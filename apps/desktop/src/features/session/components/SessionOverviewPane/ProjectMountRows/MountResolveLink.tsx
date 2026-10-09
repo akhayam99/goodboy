@@ -6,6 +6,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conce
 import { eligibleReviewThreadCount } from '../../../../suggestions/eligibleThreads';
 import { REVIEW_TARGET_REASON_COPY } from '../../../../review/reviewTargetCopy';
 import { mountReviewGithub } from '../../../../review/mountReviewGithub';
+import { NAMES } from '../../../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -39,10 +40,10 @@ export const MountResolveLink = ({ sessionId, row, label }: Props) => {
   const Icon = CONCEPT_ICONS.comments;
 
   return (
-    <span className="flex min-w-0 shrink-0 items-center gap-1">
+    <span className="flex shrink-0 items-center gap-1">
       <button
         type="button"
-        aria-label={`Open Review for ${label}, ${count} to resolve`}
+        aria-label={`Open ${NAMES.comments} for ${label}, ${count} to resolve`}
         onClick={() => {
           setError(null);
           void openReviewTarget({

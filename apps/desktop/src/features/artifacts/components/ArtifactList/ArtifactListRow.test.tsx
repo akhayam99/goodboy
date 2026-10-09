@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PlanWithCount, ProviderRunId } from '@goodboy/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { PLAN_FIXTURE_AT, PLAN_FIXTURE_SESSION } from '../../../../test/planFixtures';
@@ -84,5 +84,43 @@ describe('the primary of a plan row follows the plan rule', () => {
 
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
+  });
+});
+
+const visibleButtons = (): ReadonlyArray<string> =>
+  screen
+    .getAllByRole('button', { hidden: true })
+    .filter((button) => button.closest('[data-reveal="hover"]') === null)
+    .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '');
+
+describe('an artifact row shows one action', () => {
+  it('shows the open control, the state-driven primary and the overflow, nothing else', () => {
+    renderRow({ run: 'held' });
+
+    expect(visibleButtons()).toEqual([
+      expect.stringMatching(/^Plan /),
+      'Approve',
+      expect.stringMatching(/^More for /),
+    ]);
+  });
+
+  it('has no Delete button on the row', () => {
+    renderRow({ run: 'none' });
+
+    expect(screen.queryByRole('button', { name: /^Delete/ })).toBeNull();
+  });
+
+  it('keeps Delete in the row overflow menu', () => {
+    renderRow({ run: 'none' });
+
+    fireEvent.click(screen.getByRole('button', { name: /^More for / }));
+
+    expect(screen.getByRole('menuitem', { name: /^Delete\b/ })).toBeDefined();
+  });
+
+  it('names the kind in its own column', () => {
+    renderRow({ run: 'none' });
+
+    expect(screen.getByTestId('artifact-row-kind').textContent).toBe('Plan');
   });
 });

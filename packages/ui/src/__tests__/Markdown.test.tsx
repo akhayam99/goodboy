@@ -118,7 +118,7 @@ describe('Markdown document rhythm', () => {
       <Markdown text={['# One', 'body one', '## Two', 'body two'].join('\n')} />,
     );
     const root = container.firstElementChild;
-    expect(root?.className).toContain('gap-5');
+    expect(root?.className).toContain('gap-4');
     expect(root?.children).toHaveLength(2);
     expect(root?.children[0]?.className).toContain('gap-3');
     expect(root?.children[0]?.children).toHaveLength(2);
@@ -366,7 +366,7 @@ describe('Markdown preview variant', () => {
     const { container } = render(<Markdown variant="preview" text={'# Title\nbody'} />);
     const root = container.firstElementChild;
     expect(root?.className).toContain('gap-1');
-    expect(root?.className).not.toContain('gap-5');
+    expect(root?.className).not.toContain('gap-4');
     const heading = container.querySelector('h1');
     expect(heading?.className).toContain('font-semibold');
     expect(heading?.className).not.toContain('text-lg');

@@ -5,6 +5,7 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { MOUNT_SWITCH_BRANCH_EVENT, mountEventName } from '../../../../actions/kinds/mount';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
 import { splitBranchLabel } from '../../../../../shared/utils/branchLabel';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -14,7 +15,7 @@ type Props = {
   readonly blockedReason: string | null;
 };
 
-const CHIP_CLASS = 'min-w-0 max-w-full shrink-0 gap-0 px-0';
+const CHIP_CLASS = 'min-w-0 max-w-full shrink gap-0 px-0';
 const FACE_CLASS = cn('inline-flex h-full min-w-0 items-center gap-2 rounded-md px-2', FOCUS_RING);
 
 type NameParams = {
@@ -66,12 +67,12 @@ export const ProjectBranchChip = ({
         as="span"
         tone="neutral"
         shape="badge"
-        size="control"
+        kind="reference"
         className={CHIP_CLASS}
         label={
           <Tooltip content={blockedReason ?? branch}>
             <span className={FACE_CLASS}>
-              <GitBranch size={11} aria-hidden />
+              <GitBranch size={ICON_SIZE.mark} aria-hidden />
               <BranchName branch={branch} />
             </span>
           </Tooltip>
@@ -85,13 +86,13 @@ export const ProjectBranchChip = ({
       dropdown={dropdown}
       role="dialog"
       ariaLabel="Switch branch"
-      anchorClassName="flex min-w-0 max-w-full shrink-0"
+      anchorClassName="flex min-w-0 max-w-full shrink"
       trigger={
         <Chip
           as="span"
           tone="neutral"
           shape="badge"
-          size="control"
+          kind="reference"
           className={cn(CHIP_CLASS, 'hover:bg-hover hover:text-foreground')}
           label={
             <Tooltip content="Switch the branch of this worktree">
@@ -103,7 +104,7 @@ export const ProjectBranchChip = ({
                 onClick={dropdown.toggle}
                 className={FACE_CLASS}
               >
-                <GitBranch size={11} aria-hidden />
+                <GitBranch size={ICON_SIZE.mark} aria-hidden />
                 <BranchName branch={branch} />
               </button>
             </Tooltip>

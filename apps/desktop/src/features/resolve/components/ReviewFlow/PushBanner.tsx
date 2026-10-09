@@ -1,6 +1,7 @@
 import { AlertCircle, ArrowUp, Check, GitMerge, X, type LucideIcon } from 'lucide-react';
 import {
   Button,
+  FOCUS_RING,
   GhostActionButton,
   IconButton,
   InlineConfirm,
@@ -24,6 +25,7 @@ import {
   pushStyleNote,
 } from '../../reviewPushCopy';
 import type { ReviewPush } from './useReviewPush';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -31,7 +33,7 @@ type Props = {
 };
 
 const RECOVERY_LABEL = {
-  open_diff: 'Open diff',
+  open_diff: `Open ${NAMES.files}`,
   view_work: 'View the agent',
   see_missing: 'See the comment',
   sync: SYNC_COPY.action,
@@ -153,6 +155,8 @@ export const PushBanner = ({ sessionId, push }: Props) => {
     );
   }
 
+  const styleNote = pushStyleNote({ commitStyle });
+
   return (
     <InlineConfirm
       role="primary"
@@ -191,9 +195,21 @@ export const PushBanner = ({ sessionId, push }: Props) => {
             </div>
           )}
           <p className="text-muted-foreground">
-            {[drift, excluded, pushStyleNote({ commitStyle })]
+            {[drift, excluded]
               .flatMap((line) => (line === null ? [] : [line.endsWith('.') ? line : `${line}.`]))
-              .join(' ')}
+              .join(' ')}{' '}
+            {styleNote.text}{' '}
+            <button
+              type="button"
+              onClick={styleNote.onOpen}
+              className={cn(
+                'rounded-sm text-foreground underline-offset-2 hover:underline',
+                FOCUS_RING,
+              )}
+            >
+              {styleNote.linkLabel}
+            </button>
+            .
           </p>
         </div>
       }

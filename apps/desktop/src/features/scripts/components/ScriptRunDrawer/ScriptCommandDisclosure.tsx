@@ -32,7 +32,7 @@ export const ScriptCommandDisclosure = ({ command }: Props) => {
         </span>
       </button>
       <Reveal open={isOpen} id={panelId}>
-        <pre className="whitespace-pre-wrap break-all rounded-md bg-subtle px-3 py-2 font-mono text-chip text-foreground">
+        <pre className="whitespace-pre-wrap break-words rounded-md bg-subtle px-3 py-2 font-mono text-chip text-foreground">
           {command}
         </pre>
       </Reveal>

@@ -181,7 +181,7 @@ describe('PermissionRequestCard', () => {
         agentId={'agent' as never}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'More approval actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Allow all commands in this session',
       'Always allow "pnpm test" everywhere',
@@ -197,7 +197,7 @@ describe('PermissionRequestCard', () => {
         agentId={'agent' as never}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'More approval actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('menuitem', { name: 'Allow all commands in this session' }));
     });
@@ -212,7 +212,7 @@ describe('PermissionRequestCard', () => {
         agentId={'agent' as never}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'More approval actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Always allow "pnpm test" everywhere' }));
 
     expect(resolveMock).not.toHaveBeenCalled();
@@ -238,12 +238,12 @@ describe('PermissionRequestCard', () => {
         agentId={'agent' as never}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'More approval actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More permission actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Deny and tell Claude why…' }));
     fireEvent.change(screen.getByPlaceholderText('Say why, so it does not try again this way'), {
       target: { value: 'this touches production data' },
     });
-    const dialog = screen.getByRole('dialog', { name: 'More approval actions' });
+    const dialog = screen.getByRole('dialog', { name: 'More permission actions' });
     await act(async () => {
       fireEvent.click(within(dialog).getByRole('button', { name: 'Deny' }));
     });

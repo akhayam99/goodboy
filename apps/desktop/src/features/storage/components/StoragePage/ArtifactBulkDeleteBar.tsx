@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
+import { EmptyLine, Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -52,7 +52,9 @@ export const ArtifactBulkDeleteBar = ({
   if (selected.size === 0) {
     if (suggested.length === 0) {
       return (
-        <p className="px-2 text-meta text-faint-foreground">Nothing unused to delete. {rule}</p>
+        <EmptyLine className="px-2 text-meta text-faint-foreground">
+          Nothing unused to delete. {rule}
+        </EmptyLine>
       );
     }
     return (

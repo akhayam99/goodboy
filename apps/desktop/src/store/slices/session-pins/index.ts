@@ -1,7 +1,7 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { sessionById } from '../sessions/sessionIndex';
 import { changeSessionPins, type PinsChange } from './changeSessionPins';
-import { addPin, removePin } from './pinsChanges';
+import { addPin, movePin, removePin } from './pinsChanges';
 import { readSessionPins } from './readSessionPins';
 import { sessionPinsInitialState, type SessionPin } from './state';
 import type { GetFn, SessionPinsSlice, SetFn } from './types';
@@ -102,6 +102,12 @@ export const createSessionPinsSlice = ({ set, get }: SliceDeps): SessionPinsSlic
         sessionId,
         change: () => removePin({ sessionId }),
         failureTitle: "Couldn't unpin the session",
+      }),
+    moveSessionPin: ({ sessionId, direction }) =>
+      apply({
+        sessionId,
+        change: () => movePin({ sessionId, direction }),
+        failureTitle: "Couldn't move the pinned session",
       }),
   };
 };

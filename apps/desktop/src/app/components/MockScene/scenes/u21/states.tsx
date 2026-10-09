@@ -195,7 +195,7 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   ),
   'inbox-empty': () => (
     <StateScene lens="plans">
-      <PaneShell title="Inbox">
+      <PaneShell title="Tasks">
         <InboxList
           days={[]}
           totalCount={0}
@@ -214,7 +214,7 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   ),
   'inbox-error': () => (
     <StateScene lens="plans">
-      <PaneShell title="Inbox">
+      <PaneShell title="Tasks">
         <InboxList
           days={[]}
           totalCount={0}

@@ -87,7 +87,7 @@ export const DesignScaleScene = () => (
         </div>
         <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-elevated p-3">
           <span className="text-title text-foreground">Board card title</span>
-          <Chip tone="neutral" label="Needs you" size="3xs" />
+          <Chip tone="neutral" label="Needs you" kind="state" />
         </div>
       </div>
     </section>

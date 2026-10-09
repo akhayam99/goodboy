@@ -51,6 +51,8 @@ const workflow: Workflow = {
 
 type State = {
   sessions: ReadonlyArray<Session>;
+  providers: ReadonlyArray<never>;
+  providerCooldowns: Record<string, number>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   workspaceOverrides: Record<string, unknown>;
   phaseTemplates: Record<WorkspaceId, ReadonlyArray<Workflow>>;
@@ -61,6 +63,8 @@ const buildHarness = (stateOverrides: Partial<State> = {}) => {
   const state: State = {
     sessions: [session],
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+    providers: [],
+    providerCooldowns: {},
     workspaceOverrides: {},
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
     emitNotification: vi.fn(async () => undefined),

@@ -12,6 +12,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { useChatSessions } from '../../hooks/useChatSessions';
 import { chatSuggestions } from '../../chatSuggestions';
@@ -186,7 +187,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
                 onClick={() => openWork(null)}
               >
                 <Play size={ICON_SIZE.row} aria-hidden />
-                Start work
+                {NAMES.startWorkFromChat}
               </Button>
               <ChatHeaderDelete chat={chat} onRemoved={onRemoved} />
             </>

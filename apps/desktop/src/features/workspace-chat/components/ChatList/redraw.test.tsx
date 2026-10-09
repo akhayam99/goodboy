@@ -155,7 +155,7 @@ describe('ChatList cost at 500 chats', () => {
     expect(renders).toEqual([chatIdOf({ key: 'n8' })]);
   });
 
-  it('redraws only the rows whose state changed when the selection is cleared', async () => {
+  it('redraws only the rows whose state changed and the first row taking focus back when the selection is cleared', async () => {
     await mount();
     fireEvent.click(boxOf(7));
     fireEvent.click(boxOf(8));
@@ -163,7 +163,11 @@ describe('ChatList cost at 500 chats', () => {
 
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
-    const ids: ReadonlyArray<ChatId> = [chatIdOf({ key: 'n7' }), chatIdOf({ key: 'n8' })];
+    const ids: ReadonlyArray<ChatId> = [
+      chatIdOf({ key: 'n0' }),
+      chatIdOf({ key: 'n7' }),
+      chatIdOf({ key: 'n8' }),
+    ];
     expect([...renders].sort()).toEqual([...ids].sort());
   });
 });

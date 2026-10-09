@@ -1,5 +1,6 @@
 import type { CSSProperties, KeyboardEventHandler, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
+import { FLOATING_SURFACE } from '../floatingSurface';
 import { ScrollFade } from './ScrollFade';
 
 export type PopoverProps = {
@@ -37,7 +38,8 @@ export const Popover = ({
       onKeyDown={onKeyDown}
       style={style}
       className={cn(
-        'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-floating text-label shadow-lg',
+        FLOATING_SURFACE,
+        'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto text-label',
         className,
       )}
     >

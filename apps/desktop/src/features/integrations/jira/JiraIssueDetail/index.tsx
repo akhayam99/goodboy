@@ -4,7 +4,7 @@ import { RecordSections } from '../../../../shared/components/StudioDetail/Recor
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { StateBadge, PaneShell } from '@goodboy/ui';
+import { Chip, PaneShell } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
 import { jiraIssueFields, recordByline, resolveFacts } from '../../../../shared/detail-fields';
@@ -79,7 +79,7 @@ export const JiraIssueDetail = ({
           state={{ label: live.status, tone }}
         />
       ) : (
-        <StateBadge tone={tone}>{live.status}</StateBadge>
+        <Chip kind="state" tone={tone} label={live.status} />
       ),
   };
   const withPicker =

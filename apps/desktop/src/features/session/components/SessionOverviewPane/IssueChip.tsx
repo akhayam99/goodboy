@@ -12,11 +12,11 @@ export const IssueChip = ({ issue, onOpen }: Props) => (
     as="button"
     tone="neutral"
     shape="badge"
-    size="control"
+    kind="reference"
     onClick={onOpen}
     title={issue.title ?? `Open issue #${issue.number}`}
     ariaLabel={`Open issue #${issue.number}`}
     icon={<IntegrationGlyph provider="github" size="xs" />}
-    label={<span className="font-mono">#{issue.number}</span>}
+    label={<span className="tabular-nums">#{issue.number}</span>}
   />
 );

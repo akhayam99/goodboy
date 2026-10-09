@@ -5,7 +5,6 @@ import { isBulkAcceptable, isUndoableAccept } from '../../../features/resolve/bu
 import { postReplyWhenNothingWaits } from '../../../features/resolve/replyDelivery';
 import { remoteOf } from '../../../features/resolve/reviewRemote';
 import { replyOf, launchRowsOf, rowStateOf } from '../../../features/resolve/reviewRows';
-import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 import type { SliceDeps } from '../../slice-types';
 import type { ReviewBulkAcceptResult, ReviewBulkFailure } from './types';
 import { undoAcceptedItems } from './undoAcceptedItems';
@@ -54,12 +53,9 @@ export const acceptReviewComments = async ({
       await acceptReviewItem({
         state,
         sessionId,
-        threadId,
         itemId: row.item.id,
         revision: row.thread.revision,
         reply: replyOf({ draft: state.resolveItemDrafts[sessionId]?.[threadId], row }),
-        isNote: row.thread.originKind === 'diff_comment',
-        hasPr: activeReviewSourceOf({ state, sessionId }) !== null,
       });
       accepted.push(threadId);
     } catch (error) {

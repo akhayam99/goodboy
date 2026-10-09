@@ -15,7 +15,6 @@ import {
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';
 import { selectSelectedMountId } from '../../../../store/slices/project-mounts/selectedMountId';
-import { LENS_ICON } from '../../../session/lens-labels';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../../../../store/slices/providerLimits/workspacePolicyAvailability';
@@ -249,7 +248,6 @@ export const ArtifactCreationPane = ({
     <PaneShell
       scroll="self"
       title={adapter.crumbLabel}
-      icon={LENS_ICON.plans}
       actions={
         <Button variant="ghost" size="sm" onClick={onClose}>
           <ArrowLeft size={ICON_SIZE.row} aria-hidden />
@@ -326,12 +324,12 @@ export const ArtifactCreationPane = ({
               scopeLine={
                 basedOn.kind === 'workflow-run' ? adapter.scopeCopy.run : adapter.scopeCopy.session
               }
-              repoLine={adapter.repoLine({ choice, repo })}
               onChange={setBasedOn}
             />
             <ArtifactContextDisclosure
               rows={inventory}
               truncations={preview.truncations}
+              repoLine={adapter.repoLine({ choice, repo })}
               isCollecting={preview.status === 'collecting'}
               isOpen={isContextOpen}
               onOpenChange={setIsContextOpen}

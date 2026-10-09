@@ -47,7 +47,6 @@ export const ArtifactShellDrawer = ({ sessionId, artifactId, tab, onClose }: Pro
       title={artifact.title}
       icon={CONCEPT_ICONS[ARTIFACT_KIND_CONCEPT[artifact.kind]]}
       iconClassName="text-muted-foreground"
-      closeLabel="Close the artifact panel"
       onClose={onClose}
       scroll={tab === 'chat' ? 'self' : 'frame'}
       action={

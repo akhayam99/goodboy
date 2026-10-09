@@ -76,6 +76,19 @@ describe('UnassignedNotes', () => {
     expect(screen.queryByRole('region', { name: 'Unassigned notes' })).toBeNull();
   });
 
+  it('titles the section with a level 2 heading and its count, never a bespoke h2', () => {
+    useAppStore.setState({
+      diffComments: { [SESSION]: [note('a'), note('c')] },
+      loadDiffComments: async () => undefined,
+    });
+    render(<UnassignedNotes sessionId={SESSION} />);
+
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading.textContent).toBe('Unassigned notes');
+    const region = screen.getByRole('region', { name: 'Unassigned notes' });
+    expect(within(region).getByText('2')).toBeDefined();
+  });
+
   it('reads each unassigned note in full and moves one to the active branch', () => {
     const assign = vi.fn(async () => undefined);
     useAppStore.setState({
@@ -166,6 +179,20 @@ describe('UnassignedNotes', () => {
   });
 
   describe('discard', () => {
+    it('keeps Move to on the row and Discard in its menu', () => {
+      useAppStore.setState({
+        diffComments: { [SESSION]: [note('a')] },
+        sessionProjectMounts: { [SESSION]: [mount] },
+        loadDiffComments: async () => undefined,
+      });
+      render(<UnassignedNotes sessionId={SESSION} />);
+
+      expect(screen.getByRole('button', { name: /^Move to/ })).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Note actions' }));
+      expect(screen.getByRole('menuitem', { name: 'Discard' })).toBeDefined();
+    });
+
     const arrange = (notes: ReadonlyArray<DiffComment>) => {
       const discard = vi.fn(async () => undefined);
       useAppStore.setState({
@@ -181,7 +208,9 @@ describe('UnassignedNotes', () => {
     it('discards one note at once, with no confirmation', () => {
       const discard = arrange([note('a'), note('c')]);
 
-      fireEvent.click(screen.getAllByRole('button', { name: 'Discard' })[1]!);
+      expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
+      fireEvent.click(screen.getAllByRole('button', { name: 'Note actions' })[1]!);
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Discard' }));
 
       expect(discard).toHaveBeenCalledWith({ sessionId: SESSION, ids: ['c'] });
       expect(screen.queryByRole('dialog')).toBeNull();
@@ -198,7 +227,7 @@ describe('UnassignedNotes', () => {
     it('has no Discard all for a single note', () => {
       arrange([note('a')]);
 
-      expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Note actions' })).toBeDefined();
       expect(screen.queryByRole('button', { name: 'Discard all' })).toBeNull();
     });
 
@@ -213,7 +242,8 @@ describe('UnassignedNotes', () => {
       render(<UnassignedNotes sessionId={SESSION} />);
 
       expect(screen.queryByRole('button', { name: /Move to/ })).toBeNull();
-      fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Note actions' }));
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Discard' }));
 
       expect(discard).toHaveBeenCalledWith({ sessionId: SESSION, ids: ['a'] });
     });

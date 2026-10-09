@@ -269,7 +269,7 @@ export const ContextDrawer = ({
       title="Context"
       icon={CONCEPT_ICONS.context}
       iconClassName="text-muted-foreground"
-      closeLabel="Close context"
+      closeLabel={view === 'versions' ? 'Back to current' : 'Close'}
       onClose={
         view === 'versions' ? () => openContextDrawer({ sessionId, tab, view: 'current' }) : onClose
       }
@@ -281,6 +281,7 @@ export const ContextDrawer = ({
             value={brief}
             label={NAMES.copyContext}
             size={ICON_SIZE.row}
+            className="size-7 justify-center p-0"
           />
         )
       }

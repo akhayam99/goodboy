@@ -214,7 +214,7 @@ export const BranchTemplateField = ({ workspaceId }: Props) => {
                 as="button"
                 tone="neutral"
                 shape="badge"
-                size="control"
+                kind="reference"
                 ariaLabel={`Add {${placeholder}}`}
                 onClick={() => insertPlaceholder(placeholder)}
                 label={<span className="font-mono">{`{${placeholder}}`}</span>}

@@ -1,4 +1,4 @@
-import { KbdPill } from '@goodboy/ui';
+import { KeyHint } from '@goodboy/ui';
 
 type Hint = {
   readonly keys: string;
@@ -23,7 +23,7 @@ export const SearchFooter = ({ progress }: Props) => (
     <ul className="flex flex-1 flex-wrap items-center gap-4" aria-label="Keys">
       {HINTS.map((hint) => (
         <li key={hint.label} className="flex items-center gap-1 text-meta text-faint-foreground">
-          <KbdPill>{hint.keys}</KbdPill>
+          <KeyHint keys={hint.keys} />
           {hint.label}
         </li>
       ))}

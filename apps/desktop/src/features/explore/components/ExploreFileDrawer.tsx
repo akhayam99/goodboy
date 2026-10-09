@@ -39,7 +39,6 @@ export const ExploreFileDrawer = ({ sessionDir, entry, onClose }: Props) => {
       title={entry.name}
       icon={File}
       iconClassName="text-muted-foreground"
-      closeLabel={`Close preview for ${entry.name}`}
       onClose={onClose}
     >
       <ExplorePreviewPanel

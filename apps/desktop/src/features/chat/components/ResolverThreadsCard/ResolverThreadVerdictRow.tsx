@@ -7,6 +7,7 @@ import { TranscriptShell } from '../TranscriptShell';
 import { TRANSCRIPT_ROW_HOVER } from '../transcript-row-hover';
 import { ResolverCommitChip } from './ResolverCommitChip';
 import type { ResolverThreadVerdict } from './resolverThreadVerdicts';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly verdict: ResolverThreadVerdict;
@@ -57,7 +58,7 @@ export const ResolverThreadVerdictRow = ({
   const onHeaderClick = isExpandable ? () => setOpen((value) => !value) : onOpen;
   const headerLabel = isExpandable
     ? `${open ? 'Collapse' : 'Expand'} thread ${position}`
-    : `Open thread ${position} in Review`;
+    : `Open thread ${position} in ${NAMES.comments}`;
 
   const header = (
     <div className="flex min-w-0 items-center gap-2 pr-2">

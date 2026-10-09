@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, FormActions, KbdPill, formatError, useEscapeLayer } from '@goodboy/ui';
+import { Button, FormActions, formatError, useEscapeLayer, KeyHint } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
@@ -91,9 +91,7 @@ export const AnswersPanel = ({ sessionId, run, questions, onClose, onContinued }
       <FormActions error={error}>
         <Button size="sm" variant="ghost" onClick={onClose}>
           {REVIEW_BULK_LABEL.cancel}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-chip">
-            Esc
-          </KbdPill>
+          <KeyHint keys="Esc" />
         </Button>
         <Button
           size="sm"

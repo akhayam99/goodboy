@@ -7,12 +7,16 @@ import {
   type BitbucketReviewTransport,
 } from '../bitbucketReviewSource';
 import { githubReviewSource } from '../githubReviewSource';
+import { fakeBitbucketTransport } from './bitbucketPullRequestFixture';
+import { PULL_REQUEST_CAPABILITY_METHODS, type PullRequestCapability } from '../pullRequestPort';
+import { PR_VIEW_JSON } from './githubPullRequestFixture';
+import { fakeGitlabTransport } from './gitlabPullRequestFixture';
 import {
   gitlabReviewSource,
   type GitlabReviewDiscussion,
   type GitlabReviewTransport,
 } from '../gitlabReviewSource';
-import type { ReviewSource } from '../types';
+import { REVIEW_SOURCE_CAPABILITIES, type ReviewSource } from '../types';
 
 const jsonOk = (data: unknown): GhResult => ({
   stdout: JSON.stringify(data),
@@ -96,8 +100,17 @@ const githubFake = (): Fake => {
           },
         });
       }
+      if (args[0] === 'pr' && args[1] === 'view' && joined.includes('closingIssuesReferences')) {
+        return jsonOk(PR_VIEW_JSON);
+      }
       if (args[0] === 'pr' && args[1] === 'view' && joined.includes('headRefOid')) {
         return jsonOk({ headRefOid: 'abc1234' });
+      }
+      if (args[0] === 'repo') {
+        return jsonOk({ squashMergeAllowed: true });
+      }
+      if (args[0] === 'pr') {
+        return { stdout: '', stderr: '', exitCode: 0 };
       }
       return jsonOk({ reviews: [], reviewRequests: [], statusCheckRollup: [] });
     }),
@@ -188,6 +201,7 @@ const gitlabFake = (): Fake => {
     source: gitlabReviewSource({
       transport,
       mrUrl: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57',
+      pullRequestTransport: fakeGitlabTransport().transport,
     }),
     openThreadId: 'gitlab:d41',
     providerThreadId: 'd41',
@@ -226,6 +240,7 @@ const bitbucketFake = (): Fake => {
       return 4004;
     },
     readHeadSha: async () => '9a8b7c6',
+    pullRequest: fakeBitbucketTransport().transport,
   };
   return {
     source: bitbucketReviewSource({
@@ -296,6 +311,48 @@ describe.each(SOURCES)('review source contract on %s', (_name, build) => {
 
   it('states what it can do', () => {
     const fake = build();
-    expect(fake.source.capabilities).toEqual({ canReply: true, canResolve: fake.canResolve });
+    expect(fake.source.capabilities).toEqual(REVIEW_SOURCE_CAPABILITIES[fake.source.kind]);
+    expect(fake.source.capabilities.canResolve).toBe(fake.canResolve);
+  });
+
+  it('backs every pull request flag that is true with a port method it can run', async () => {
+    const { source } = build();
+    const flags = Object.keys(
+      PULL_REQUEST_CAPABILITY_METHODS,
+    ) as ReadonlyArray<PullRequestCapability>;
+    const claimed = flags.filter((flag) => source.capabilities[flag]);
+    if (claimed.length > 0) {
+      expect(source.pullRequest).not.toBeNull();
+    }
+    for (const flag of claimed) {
+      const port = source.pullRequest;
+      if (port === null) {
+        continue;
+      }
+      const calls: Readonly<Record<PullRequestCapability, () => Promise<unknown>>> = {
+        canEditTitle: () => port.updateTitle({ title: 'Retitled' }),
+        canEditBody: () => port.updateBody({ body: 'Rewritten' }),
+        canRequestReviewers: () => port.requestReviewers({ logins: ['kenji-w'] }),
+        canSetDraft: () => port.setDraft({ isDraft: false }),
+        canReadChecks: async () => (await port.read()).checks,
+        canChooseMergeMethod: () => port.merge({ method: 'squash' }),
+        canClose: () => port.close(),
+        canReopen: () => port.reopen(),
+      };
+      await expect(calls[flag]()).resolves.not.toThrow();
+      expect(typeof port[PULL_REQUEST_CAPABILITY_METHODS[flag]]).toBe('function');
+    }
+  });
+
+  it('has no port to write with when it claims nothing', () => {
+    const { source } = build();
+    const flags = Object.keys(
+      PULL_REQUEST_CAPABILITY_METHODS,
+    ) as ReadonlyArray<PullRequestCapability>;
+    if (flags.every((flag) => !source.capabilities[flag])) {
+      expect(source.pullRequest === null || typeof source.pullRequest.read === 'function').toBe(
+        true,
+      );
+    }
   });
 });

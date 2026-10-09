@@ -194,6 +194,7 @@ function resetMockStore() {
 vi.mock('../../../../store', () => ({
   useAppStore: mockStore,
   EMPTY_ARRAY: [] as never[],
+  useExecutedAgentRouting: () => null,
   useSessionCost: (sessionId: string) => {
     const records = mockStore.getState().sessionTelemetry[sessionId] ?? [];
     return records.reduce(

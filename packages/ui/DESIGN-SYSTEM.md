@@ -18,6 +18,14 @@ Text uses four opaque semantic steps. `foreground` is primary content,
 placeholders and trailing hints. `disabled-foreground` is reserved for disabled
 controls. Opacity modifiers do not create additional text steps.
 
+The four steps are named by what the text does, in `TEXT_ROLE`
+(`packages/ui/src/textRoles.ts`): `label` is `foreground`, `secondary` is
+`muted-foreground`, `hint` (time, id, hint, separator) is `faint-foreground` and
+`disabled` is `disabled-foreground`. `MetaRow`, `Eyebrow` and a neutral `Chip`
+take their colour from the table, so a role changes in one place. A call site
+that picks a colour for a role the table names uses the role constant. The
+token values themselves are not part of the table.
+
 `faint-foreground` clears 4.5:1 on every surface step and on a `fill` chip sunk
 into `background`, `subtle` or `muted`, in both themes, and the syntax tokens
 clear 4.5:1 on the plain diff background and on an added or removed line, word
@@ -132,7 +140,7 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 
 | role           | measure                       | used for                                                                               |
 | -------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `text-display` | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
+| `text-display` | 24/32, 600, -0.01em           | onboarding titles and the Impact title                                                 |
 | `text-title`   | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
 | `text-heading` | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
 | `text-row`     | 13/20, 500                    | a top-level row label, a card title                                                    |
@@ -144,6 +152,13 @@ stylesheet loads, and the exported report embeds the same file as a data URI.
 | `text-chip`    | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
 | `text-code`    | mono 12/18                    | branch, path, command, inline code                                                     |
 | `document`     | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
+
+Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
+durations, percentages, ages and key letters are the sans stack with
+`tabular-nums` (`text-meta` and `text-chip` carry it already). A file whose
+`font-mono` is code is listed with a one-word reason in
+`regressions/scale-rules.mono-code.json`; any other `font-mono` fails
+`scale-rules.test.ts`.
 
 `document` is the one exception to "a role, never a size": it lives in
 `artifactDocument.css`'s own `--print-*` tokens, not `typeRoles.ts`, because
@@ -178,6 +193,19 @@ reads `paneRhythm.ts`, `timelineRhythm.ts` and `workMetaSpec.ts` and fails on a
 half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
 row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px). A session
 row in the left column is 28px, and so are the pages nested under it.
+
+The Sessions block shares one left edge and one gap. The `Sessions` eyebrow
+(`sessionList.headerInset`, 16px), the door icons (`navRail.inset` plus
+`navRail.door`) and the session row icons (`sessionList.pad` plus
+`sessionList.rowInset`) all start at 16px, and the doors and the session rows
+share one vertical gap (`navRail.doorGap` equals `sessionList.rowGap`). The view
+menu trigger is a 28px target (`sessionList.menuTrigger`). `paneRhythm.test.ts`
+holds the three edges and the gap.
+
+A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
+the bottom of the card with `mt-auto`, and puts the delta and the hint on their
+own row under the figure, never beside the label. A row of cards that carry
+deltas passes `reservesDeltaRow` so the figures sit on one baseline.
 
 The `html` root stays 15px while any `rem` remains. `body` and `#root` are
 14/20, so text with no class lands on the body role instead of 15/23.25.
@@ -232,6 +260,21 @@ together, and there is no arbitrary shadow.
 A drawer over the page is flush with the sheet (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
+**One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
+(`rounded-lg border border-border bg-floating shadow-lg`, from
+`packages/ui/src/floatingSurface.ts`). `Popover`, `ContextMenu`,
+`MenuChoicePanel`, the crumb menu, the history arrow menu, the session hover
+card, the session switcher, the update arrival card and the delete confirm
+take it as it is; a site adds layout and padding only, never a border, a fill or
+a shadow of its own.
+
+**One width scale.** A floating surface is 240px wide when it is a menu (never
+under 200), 320 or 384 when it is a popover, 360 when it is a toast, 320 when
+it is the hover card and 420 when it is the session switcher. Nothing else:
+224, 260, 300 and 368 are retired. A wider panel (a form in a popover) is the
+exception, listed in `regressions/popover-widths.baseline.json`, which counts
+the off-scale widths per file and never lets one grow.
+
 ## Spacing scale
 
 The base is `4px`, set in px and never in rem. Every utility comes out as
@@ -245,16 +288,41 @@ compositing layer and is drawn on the device pixel grid. So a fractional box
 snaps to whole pixels when the transition starts, and snaps back when it ends.
 That shows up as a one pixel bounce on every icon in the column.
 
+## Icon ladder and row scale
+
+An icon is one of four sizes, `ICON_SIZE` in `packages/ui/src/iconSize.ts`, and
+nothing else: no numeric `size=` on an icon.
+
+| token               | px  | used for                                                  |
+| ------------------- | --- | --------------------------------------------------------- |
+| `ICON_SIZE.mark`    | 10  | a glyph inside a chip, a dot, the xs and 3xs controls     |
+| `ICON_SIZE.row`     | 12  | the leading or trailing glyph of a row, a trigger chevron |
+| `ICON_SIZE.control` | 14  | buttons, menu triggers, rail tabs, form adornments        |
+| `ICON_SIZE.hero`    | 18  | empty states, studio headers, choice tiles                |
+
+A brand mark (`DogMascot`, `IntegrationGlyph`, `BrandGlyph`) takes its own pixel
+size and is not an icon here. A row, one line or a menu row, is 24, 28, 32, 36,
+40 or 48px high, and a resized row keeps its hover and focus states
+(`ROW_INTERACTIVE`). `row-heights-on-the-scale.test.ts` fails on a height between
+22 and 48px that is not on that list.
+
 ## Gap scale
 
-One limited scale where each step has a meaning. Never an arbitrary value.
+One limited scale where each step has a meaning. Never an arbitrary value, and
+never 20, 28 or 40px.
 
-| token   | separates                      |
-| ------- | ------------------------------ |
-| `gap-2` | a tight group: icon plus label |
-| `gap-4` | controls, or related blocks    |
-| `gap-6` | sections                       |
-| `gap-8` | a header zone from a body zone |
+| token   | px  | separates                                    |
+| ------- | --- | -------------------------------------------- |
+| `gap-1` | 4   | a tight group: icon plus label               |
+| `gap-2` | 8   | controls in a row, the parts of a chip       |
+| `gap-3` | 12  | rows in a list, the fields of a form         |
+| `gap-4` | 16  | controls, or related blocks                  |
+| `gap-6` | 24  | sections (`PANE_RHYTHM.stack`)               |
+| `gap-8` | 32  | a header zone from a body zone, page regions |
+
+`gap-0.5` (2px) stays for a hairline gap between stacked rows. `gap-5`, `gap-7`,
+`gap-10` and their `gap-x`, `gap-y`, `space-x` and `space-y` twins fail
+`scale-rules.test.ts`.
 
 ## Color and tone resolution
 
@@ -559,7 +627,7 @@ Each action has one colour, read only through `HISTORY_ACTION_CLASSES` in
 | Move                        | reorder  | violet     | `--color-history-move`     |
 | Rename                      | reword   | neutral    | `--color-muted-foreground` |
 | Remove                      | drop     | red        | `--color-danger`           |
-| Start from today's main     | rebase   | trunk grey | `--color-idle`             |
+| Rebase on the base branch   | rebase   | trunk grey | `--color-idle`             |
 
 The colour shows on the change mark (a 12% wash, a 40% border and the colour
 as text), on the node and the outer ring of a commit that takes others in, on
@@ -764,7 +832,7 @@ the check and the half-filled core of the queue.
 | `ci-failed`         | `failed`, `!`        | danger  | Checks failing                           |
 | `open-question`     | `question`, `?`      | warning | 1 question for you (plural by the count) |
 | `fix-needs-you`     | `question`, `?`      | warning | 3 comments need you                      |
-| `needs-approval`    | `approval`, shield   | warning | Waiting for your approval                |
+| `needs-approval`    | `approval`, shield   | warning | Waiting for your permission              |
 | `plan-approval`     | `approval`, shield   | warning | Plan v2 waits for your approval          |
 | `changes-requested` | `alert`, `!`         | warning | Changes requested                        |
 | `fix-couldnt-fix`   | `alert`, `!`         | warning | 2 comments it couldn't fix               |
@@ -806,14 +874,26 @@ rank below running, because an agent may be working on exactly that.
 
 The title is `text-row`. Needs you and running read in `foreground`, idle, done
 and archived in `muted-foreground`. The open session is medium weight, and its
-row has no fill while its pages are nested under it. The pages are five 28px
-child rows in a `SelectableRow`, with no indent of their own because the card
+row has no fill while its pages are nested under it. The pages are 28px
+child rows in a `SelectableRow` (the five work pages, and Questions while one is
+open, warning-toned), with no indent of their own because the card
 groups them (see The left column): the page icon in its concept tone, centred
 in a 14px box so it sits in the node's column, then its word starting at the
-title's x, and its count word in `faint-foreground`. The current page takes
-`bg-selected` and `aria-current="page"`, and the session row then carries
-`aria-current="true"`. The row and the page rows take their hover wash and
-focus ring from `ROW_INTERACTIVE`, never a copy.
+title's x, and its count word in `faint-foreground`. There is one current sign,
+from `currentSignOf`: the page that matches takes `bg-selected` and
+`aria-current="page"` alone; where no row matches (Tools, linked records) or
+the pages are folded, the session row takes `bg-selected` and
+`aria-current="page"`; while a studio sits over it the session row keeps medium
+weight and `text-foreground` with no fill and no `aria-current` (`remembered`).
+The row carries `data-current-sign`. A 16px chevron button sits at the right end
+of the open row (visible on hover and focus, always visible while folded,
+`aria-expanded`), and a 20px ghost pin button in the same slot on hover and
+focus of any live row (the checkbox owns the left slot). With two or more
+branches the card nests a 28px row per branch under the Branch page while it
+is current, at the page indent, up to five and then `All branches`: the repo
+glyph, the branch cut in the middle in `text-code`, and the pull request glyph;
+the current branch reads in `foreground`. Every row and button takes its hover
+wash and focus ring from `ROW_INTERACTIVE`, never a copy.
 
 The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
 at `z-popover`, 8px to the right of the column and aligned to its row, with a
@@ -828,10 +908,30 @@ age in `faint-foreground`, and one `GhostActionButton` when the session needs
 you. It opens after a 500ms rest or keyboard focus, swaps at once between rows,
 and enters with `popover-in` once, never on a swap.
 
-The switcher is the palette frame (`z-command-palette`, a scrim, `bg-floating`
-on a `rounded-lg border` with `shadow-lg`) at `max-w-105`. Its rows are 36px
-`SelectableRow` options: node, title and age. It stays hidden for the first
-120ms of a hold, so a quick tap flips sessions without drawing it.
+The switcher is the palette frame (`z-command-palette`, a scrim, the floating
+surface) at `max-w-105`. Its rows are 36px `SelectableRow` options: node, title
+and age. Its foot shows two gestures, `⌃Tab next` (the real control glyph from
+`shortcutGlyphs('session.switcher')`) and `Release to open`; back and Esc still
+work and live in the Shortcuts list. It stays hidden for the first
+120ms of a hold, so a quick tap flips sessions without drawing it. With pins it
+adds a `Pinned` eyebrow and listbox of up to eight sessions above `Recent
+sessions`; the first `Tab` still selects the previous session wherever it sits.
+
+### Rail
+
+The 44px rail (`ColumnRail`) keeps its 32px door buttons and adds 28px node
+buttons (`RAIL_NODE_BUTTON` in `RailButton.tsx`) under the doors, in the
+workspace scope only: the open session (the row's `SessionStateNode`, current
+fill on its page, no fill and `text-foreground` while a studio sits over it),
+then up to seven pinned sessions with the title and the stage words in a
+tooltip, then `+N` in `text-meta`. The open session and `+N` open a flyout
+instead of a tooltip: the floating surface, 288px wide, `z-popover`, 8px to the
+right of the button, holding the title and stage words, the pages list (the
+same `SessionPages`), the branches and a `Pinned` eyebrow with one row per pin.
+It opens after a 150ms rest or keyboard focus, closes 180ms after the pointer
+leaves, and Esc closes it and returns focus to the button. `New` shows a 6px
+primary dot (`data-slot="draft-dot"`) while a written draft waits, and its label
+and tooltip read `New session, draft in progress`.
 
 ### Work meta
 
@@ -841,16 +941,22 @@ The right end of a work row is `WorkMeta` in
 `$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
 running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                                                                     | in a narrow row                                |
-| ---------- | ----- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; lists other than Activity only | glyph only under 840px, gone under 360px       |
-| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                               | "left" goes under 640px, gone under 500px      |
-| cost       | 48px  | what the row has spent, empty before anything is spent                                                    | under 620px it leaves the row                  |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                              | under 620px it leaves the row                  |
-| model      | 152px | Activity only: the provider glyphs and the models that ran, in run order                                  | glyphs only under 640px                        |
-| stack      | 72px  | Activity only: duration on top (meta size, muted), cost under it (chip size, faint)                       | cost leaves under 620px, all of it under 500px |
-| action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                                    |
-| menu       | 24px  | the row menu, like Stop run on a run row                                                                  | never drops                                    |
+| column     | width | holds                                                                                                               | in a narrow row                                |
+| ---------- | ----- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; the workflow builder and plan parts only | glyph only under 840px, gone under 360px       |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                         | "left" goes under 640px, gone under 500px      |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                              | under 620px it leaves the row                  |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                        | under 620px it leaves the row                  |
+| model      | 176px | Activity and Runs: the provider glyphs, the models that ran in run order and the effort (`Opus 5.5 · High`)         | glyphs only under 640px                        |
+| stack      | 72px  | Activity and Runs: duration on top (meta size, muted), cost under it (chip size, faint)                             | cost leaves under 620px, all of it under 500px |
+| action     | 76px  | the one visible action, reserved for the tree of a live run                                                         | never drops                                    |
+| menu       | 24px  | the row menu, like Stop run on a run row                                                                            | never drops                                    |
+
+The state slot of a work row (`WORK_ROW.stateSlot`) is not a column: it is
+`min-w-28 max-w-64` (112 to 256px), so a long state such as "3 ready · 4
+working · 1 couldn't fix" shows whole when the row has room, and the title is
+what truncates first. Under 790px of row it narrows to 96px, under 320px it
+leaves.
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
@@ -859,12 +965,26 @@ drops it, as the builder does for a plan with no measured estimate yet. A
 run row has no routing column: it takes the time column and the cost column
 like any other row.
 
-The activity timeline uses two other columns, in this order after the state
+The step rows of the activity timeline and of the run tree (Runs, the run page
+and a Brief's Subagents) are one grammar: role icon, step title, model with
+effort, then time over cost. Both draw it from the same pieces, so they cannot
+drift: `TimelineRoleGlyph` for the icon, `AgentRowMeta` for the right side
+(`TimelineModelCell` and the stacked `TimelineRowMeta`), `agentRowIdentity` for
+the card and the accessible name, and `useRowCard` for when the card opens.
+The role is an icon only, never a coloured role-name pill: the 18px glyph has
+the role as its accessible name (`role="img"`) and in the card header. The
+workflow builder keeps its role pill because the role is a field there.
+
+The right side uses two columns, in this order after the state
 word: the model cell (`TimelineModelCell`) and the stacked time and cost column
-(`TimelineRowMeta`). The model cell holds the provider glyph and the model that
-actually ran, read from the turn spans of the agent in run order. When several
+(`TimelineRowMeta`). The model cell holds the provider glyph, the model that
+actually ran, read from the turn spans of the agent in run order, and its effort
+after a dot (`Opus 5.5 · High`, effort in faint). When several
 ran (a fallback, a retry, a routing change) it holds one glyph per provider and
-the names joined by an arrow ("Kimi K3 → Sonnet 5.5"), or "3 models" past two. A
+the names joined by an arrow ("Kimi K3 → Sonnet 5.5"), or "3 models" past two,
+with no effort (the card lists each one with its own). The name truncates before
+the effort does, and the title always truncates before the model cell does: the
+cell only drops to its glyphs under 640px. A
 live agent ends on its current routing; an agent that has not started shows its
 planned model in faint. A run row shows the distinct models of its steps ("Sonnet
 5.5 + 2", glyphs side by side). Every row holds both columns, empty when it has
@@ -875,9 +995,13 @@ The role glyph before the title and the model cell are the only two hover
 targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`),
 on the `Tooltip` `card` variant with `restDelayMs` set to 800: the pointer has to
 rest, every move restarts the wait, the card closes as it leaves and a card
-never opens because another one just closed. `i` on a focused row opens the
-identity card. Nothing is only in a card: the Brief has the same facts and the
-accessible name of the row reads "Implementer, Sonnet 5.5, High".
+never opens because another one just closed. The run tree opens the same cards
+with the same delay: its glyph and meta sit above the row's click layer
+(`WORK_ROW.pointerLayer`) and a click on them still opens the step. Keyboard
+focus on a row opens the identity card after the same 800ms (a click never
+does), blur and Escape close it, and `i` on a focused row toggles it at once
+(`useRowCard`). Nothing is only in a card: the Brief has the same facts and the
+accessible name of a feed row reads "Implementer", then "Sonnet 5.5, High".
 
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
@@ -900,7 +1024,10 @@ drops the time gutter; the day and Now labels move beside the rail. Label segmen
 leading words and tokens whole ("Opened #612:") and only the last segment
 truncates. A row carries no hover hint on its right; the open target and the
 keys are read by screen readers (`aria-description`, `aria-keyshortcuts`).
-"Longer than usual" shows only on a running step, never on a finished one.
+"Longer than usual" shows only on a running step, never on a finished one, and
+it is not a word in the row: the duration turns to the warning tone, the note
+leads its tooltip and screen readers hear it after the time, so it never pushes
+the model column.
 What leaves the row stays in the routing tooltip, which
 always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
 is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
@@ -988,6 +1115,53 @@ list in a doc goes stale, `src/index.ts` cannot. If a register needs a shape
 the family does not have, add it to the family. A register never keeps a
 private one.
 
+## Control scale
+
+One ladder of control heights runs through every register: **24** (`xs`),
+**28** (`sm`, the default), **32** (`md`). Nothing else is a control height.
+
+| Primitive                            | Sizes                                                                                                           | Notes                                                                                                                                                                                                                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`                             | `xs` 24 (icon 12, gap 4), `sm` 28 (icon 12, gap 8), `md` 32 (icon 14, gap 8)                                    | Variants `primary`, `secondary`, `ghost`, `quiet` (a ghost with muted text), `danger`, `ghost-danger`. Solid `danger` is the confirm button of `InlineConfirm` only: no other first click is solid red. Disabled is the `fill` background with the `disabled-foreground` label, never `opacity-50`. |
+| `IconButton`                         | `xs` 24, `sm` 28, `md` 32 squares, `rounded-md`, glyph 12, 14, 14                                               | Ghost by default. A border only for `variant="outline"`. A smaller glyph sits inside the 24 target. Every icon-only control keeps its tooltip.                                                                                                                                                      |
+| `Chip`                               | `kind="state"` pill 20 (11/16), `reference` badge 24 (12/16, clickable), `id` 4px mono badge 20, `count` dot 16 | The kind is the meaning; the old `size` and `shape` props map onto it until the sweep. `StateBadge` is `Chip kind="state"`. A routing chip (effort, reply length, mode) is neutral and selected by fill.                                                                                            |
+| `SegmentedTabs`                      | `xs` frame 28 (inside a title row that also holds actions), `sm` frame 32 (page-level tabs on their own row)    | The tab keeps one weight selected or not; selection is a fill. A group of two to four choices is `SegmentedTabs`; a group of cards with a description is `ChoiceCards`.                                                                                                                             |
+| `Input`, `Textarea`, `Listbox` field | `sm` 28 (default), `md` 32                                                                                      | 12px text, `rounded-md`. `SearchField` (28, search icon, clear button, `ariaLabel` required) is the one search input; it takes a `hint` for a registered shortcut.                                                                                                                                  |
+| `Checkbox`                           | 16 box, 4px radius, inside a 24 hit area                                                                        |                                                                                                                                                                                                                                                                                                     |
+| `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`. The Legacy layout row keeps its state word on purpose.                                                                                                                                                       |
+
+A bar has one control height. Every control in the top bar is 28 and
+`rounded-md`: the history arrows, Board, Chat, the command centre, the bell,
+Spend, the Limits chips and the Now chip all take
+`TOP_BAR_CONTROL` (height `h-7`, square `size-7`, radius `rounded-md`) and
+`FOCUS_RING`. The bar container stays `h-9`. The right cluster reads Now, Limits,
+Spend, the bell, and Spend is the one door to Impact (`Spend today. Open
+Impact`): there is no Impact icon and no theme toggle in the bar. The command
+centre says `Search` with its chord as bare text; the workspace name lives in its
+tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
+number. The trail keeps the first crumb's word until every other ancestor has
+shrunk to an icon and folded (`compactTrail`). The bell's count badge sits 2px
+inside the bell's box. The session trail band keeps its 24 controls, and trail,
+rail and tree-row buttons are 24.
+
+A task chip reserves a 16px trailing slot that shows the unlink on hover, so
+the button never covers the last character of the label.
+
+A selected card is a fill plus a check: never a ring, a border and a wash
+together. A focus ring appears on keyboard focus (`focus-visible`) only.
+
+Rules for new and changed code (the migration of old code is the sweep's):
+icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18); mono is for
+branch, path, command, sha and code; money, counts and durations are sans with
+`tabular-nums`; rows sit on 24, 28, 32, 36, 40 and 48; gaps sit on 4, 8, 12, 16,
+24 and 32 (no `gap-5`, `gap-7`, `gap-10`); uppercase goes through `Eyebrow`.
+`control-heights.test.ts`, `kbd-overrides.test.ts`,
+`hand-rolled-radio-groups.test.ts`, `switch-labels-name-the-setting.test.ts`,
+`row-heights-on-the-scale.test.ts` and `scale-rules.test.ts` hold the line.
+`scale-rules` is at its end state: its baseline lists only the files a named unit
+still has to change, and a mock scene (`design-scale-ladders`, `design-controls-scale`)
+draws every step from the tokens.
+
 ## Listbox
 
 `Listbox` is the one control for picking a value from a list. There is no
@@ -995,7 +1169,8 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 `no-token-bypass.test.ts` fails on `<select` and on any import of `Select`.
 
 - **Trigger**: `field` in forms and Settings (hairline `border`, the
-  container's fill, 28px `sm` or 32px `md`, `rounded-md`), `quiet` for a value
+  container's fill, 28px `sm` (the default) or 32px `md`, 12px text,
+  `rounded-md`), `quiet` for a value
   inside a row (muted text, `bg-hover` on hover), `chip` inside cards and steps
   (`chipClasses`). Open, the border goes to `border-strong` and the chevron
   turns 180 degrees in 120ms. Disabled, the text is `disabled-foreground` and
@@ -1054,7 +1229,8 @@ places it at the pointer, and an overflow trigger places it in an
 `AnchoredPopover`. The desktop feeds both from the action registry, so the two
 never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
 
-- **Surface**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
+- **Surface**: level 4 (`FLOATING_SURFACE`: `floating`, `shadow-lg`, `border`,
+  `rounded-lg`), 240px wide with a 200px floor,
   padding 4, rows at `rounded-sm`, scrolling in a `ScrollFade`. It enters with
   `animate-popover-in` (120ms, opacity and a 0.98 scale). `ContextMenu` opens
   at the pointer and flips left or up to stay 8px inside the window
@@ -1094,10 +1270,15 @@ two looks.
   as part of the label. The shortcut sheet and the Esc of a sheet header take it
   too.
 
-Inside a filled button an inline hint uses the button's `on-tone` text at weight
-400, never an opacity step. `KbdPill` stays as `Kbd look="cap"` with the same
-props until the cap sites are swept. `Kbd` sets `data-look` so a test names the
-look without reading a class.
+Inside a filled button a hint takes the button's `on-tone` text (`isOnTone` on
+`Kbd`, `KeyHint` and `KbdPill`), never an opacity step. `KeyHint` is the one
+component for a hint inside a control: a chord (`⌘↵`) is drawn bare, a single
+key (`F`, `Esc`) is drawn as the small cap, and the hint is `aria-hidden`.
+`KbdPill` is `Kbd look="cap"` and takes no `className`; `kbd-overrides.test.ts`
+holds it. A hint shows only on a control whose shortcut is registered. A control
+that lists a shortcut in its tooltip (the Link work chip) does not repeat it as a
+cap. `Kbd` sets `data-look` and, on a filled button, `data-on-tone`, so a test names the look
+without reading a class.
 
 ## Notices
 
@@ -1140,7 +1321,13 @@ The surface stays neutral, the title is `foreground` and the body is
 Every message shape in the desktop app renders through it. `ErrorStrip` is a
 thin `Notice placement="banner"` for a failed load with Retry. Budget alerts
 and the unpriced-turns warning are banners. Guide tips, the partial brief after a step,
-the branch switch confirmation and merge conflicts are `inline`. A page that
+the branch switch confirmation and merge conflicts are `inline`. So are three
+failures that used to print one red line: the wireframe viewer ("Couldn't show
+the pages", with Retry), the Scribe's pull request text ("Couldn't write the
+pull request text", with Retry) and the first-lap publish steps, each with the
+raw message behind Details. The publish panel's missing GitHub tool is an
+`inline` `warning` Notice that holds the install command with `CopyButton` as
+its children and **Check again** as its action. A page that
 cannot load its list is an `inline` `danger` Notice with `role="alert"`
 (Empty states, state 4), and the startup error screen is the same Notice. The
 sign-in prompt in the chat is `transcript`. Toasts are `floating`: the toast
@@ -1194,7 +1381,7 @@ what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surface
 | foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                       |
 | rail button | a size-8 icon button with the word and shortcut in a right-side `Tooltip`                              |
 
-Rows sit 2px apart (`gap-0.5`); the doors start 4px under New session. The
+Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
 column swaps its content only for Settings, as two layers in place that
 cross-fade (opacity and a 6px slide, 160ms, `motion-safe` only); the hidden
 layer is `inert`. Settings takes the column in both sidebar states: over the
@@ -1239,29 +1426,39 @@ The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`
 and `Divider`, and the pane frame built from them. `PaneShell` lives at
 `packages/ui/src/components/PaneShell/` and is the one wrapper every main pane uses. It is a scroll region whose
 header and body share one `PageColumn` with the session trail band above it. It has one `h1` per surface.
-`meta` holds counts and totals in `tabular-nums`, never a control. The header
-row wraps, so actions drop under the title instead of squeezing it. The pane
+`meta` holds counts and totals in `tabular-nums` on one muted line 4px under the
+title row, never a control. The title row is fixed (`h-8`, centred, no wrap): a long
+title truncates and the actions never drop under it. The pane
 owns the gap below the header, and children add no top margins. The root is
 `@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
 `StudioShell` it fills the pane and `PageColumn` centres the column inside it.
 
-**One title grade, one header height.** Every lens pane and studio detail gets
-its title from `PaneShell`: an `h1` at `text-lg` with `meta` inline and
-actions on the right (32px), 16px below. Inside a session the `Trail` band
-(40px: 12 above, a 24px row, 4 below) sits above it and the header adds no top
-padding; outside a session the header keeps 12px above. 92px in all, 128px
-with the optional `tabs` row.
+**One header grid.** Every page, sub-page, studio and the Board uses the same
+three rows. A 40px band (the `Trail` or the studio band: the crumb at the column's
+left, Ask or Close at its right edge), a 32px title row directly under it with the
+page's `h1` at `text-title` and the actions at its right, and an optional 12px muted
+meta line 4px under the row. The title's centre is therefore 56px under the pane top
+and its left edge is the column's content edge on every page; `frameGeometryOf`
+(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Inside
+a session the band is the `TrailBar`, and in a studio `StudioFrame` draws it inside a
+`PageColumn` of the studio's tier and hands its body `UnderTrailContext`, so the header
+adds no top padding; outside both, a bare page keeps 12px above. The Board has an
+empty 40px band above its title row to land on the same 56px. Optional `tabs` sit on
+their own row under the meta line, at the column's left. A glyph never indents the
+title: `PaneShell` has no `icon`, `glyph` or `tone`, the concept lives in the crumb. The
+crumb names the structure and the `h1` the object, and a report's document title is an
+`h2`.
 There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
-`icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
-its own header row passes `HeaderBand` (also an `h1`) through the custom
-`header` slot. The agent detail passes `AgentHeader` instead: a 32px title row
-with the one-line title (full name on hover), the Brief and Transcript tabs
-(`SegmentedTabs` `xs`, 28px) and the actions (lifecycle button, Delete as an
-icon with an anchored `ConfirmPopover`, the overflow menu), then one 18px meta
-line with role, status, time and model. That is 70px with the 16px below, no
-separate tabs row, and the transcript under it starts 8px down (`ChatView`
-`topInset="tight"`). The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
+A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
+fixed `h-8` row) through the custom `header` slot. The agent detail passes
+`AgentHeader` instead: the 32px title row with the one-line title (full name on hover)
+and the actions (lifecycle button, Delete as an icon with an anchored `ConfirmPopover`,
+the overflow menu), then one meta line with role, status, time and model, then the Brief
+and Transcript tabs (`SegmentedTabs` `xs`, 28px) on their own row, and the transcript
+under it starts 8px down (`ChatView` `topInset="tight"`). A page that must show a banner
+under its title (the first lap) receives it through `PaneBannerContext` and `PaneShell`
+draws it as the first body block on the column, once, so the title never moves. The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
 there is none, then one row of facts: `Context`, `Artifacts`, linked work, `Link work` and the cost. Goal, decisions and summary
@@ -1303,6 +1500,19 @@ page under it is `inert`, a click on the scrim dismisses the top escape layer
 like Esc, and focus moves into the card on open and back to the trigger on
 close.
 
+**The drawer card.** `DrawerFrame` is the card's one frame: a 44px header, a
+divider, a body and an optional `dock`. The title row reads icon, title, count
+(a number or a version, never a session title), at most one labelled action,
+then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px
+glyph); every utility in the header (copy, open on its page, expand) is a 28px
+icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
+composer, a transcript reply field and a script run's status line. The first
+control takes focus when the drawer opens (the composer of the dock when it has
+one, `Close` otherwise); Esc blurs a non-empty text field first and closes on
+the next press, and a click on the scrim does the same through the escape
+stack. A toast beside a pushing drawer stops at the card's left edge less the
+12px gutter.
+
 **A form opens where you clicked.** One placement rule for every inline form:
 
 | The form acts on             | It opens                                                                   |
@@ -1324,7 +1534,7 @@ draws unified and the toolbar says `Split needs a wider window`, and the
 choice comes back with room.
 
 **Work panes use the full width.** A pane whose body is a working surface (the
-terminal, an inbox list, the Board) passes `width="full"` to `PaneShell`, and to
+terminal, a Tasks list, the Board) passes `width="full"` to `PaneShell`, and to
 the `PageColumn` of its tabs. It keeps the 24px gutter (16px under 720px) and
 drops the 960px cap, so the header and the body share one left edge on any
 pane, from the pane's own edge. The Branch page is not one of them: every tab
@@ -1365,15 +1575,19 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. The less frequent starts sit behind an `OverflowMenu`. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon, and `OverflowMenu` renders the items through `MenuItems`.
 - The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
-- The session overview's actions carry a second exception: a frequent alternative to the primary sits as one secondary button beside it, not folded into the menu. `OverviewActions` shows a secondary Run workflow (Open run once one is active) next to the primary Start agent, with `OverflowMenu` labeled Create holding only the rarer starts (Report, Wireframe). Still one primary; the secondary is the one alternative common enough to earn its own button.
+- The session overview's actions are one secondary `New` button that opens a menu of every start: Start a run (Open run once one is active), Start agent, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Run on its own uses it everywhere (`WorkflowAutorunToggle`).
+
+**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with no items draws nothing, so a page with no actions shows no lone `...`. Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete opens its `InlineConfirm` card directly under the title row (`HeaderPanel`: focus lands on Cancel, Escape and Cancel close it and give focus back to the overflow trigger). A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
+
+**One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` is a neutral card (`bg-subtle`, `border-border-soft`) with a `ToneBar` in the role's tone as its inner line: the card never takes a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
 
 **Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
 
 | Place     | What goes there                                                      | Shape                                              |
 | --------- | -------------------------------------------------------------------- | -------------------------------------------------- |
-| Primary   | Launch session, or Open session once one is linked                   | one filled button, first in the action row         |
+| Primary   | Start from HBL-412, Review pull request, or Open session once linked | one filled button, first in the action row         |
 | Secondary | at most two tool verbs that move the record forward, picked by state | neutral `secondary` buttons, tone only in the icon |
 | Overflow  | rare tool verbs, Refresh and Copy link                               | the `⋯` menu on the identity line                  |
 | Utilities | Open in the tool, `⋯`, close                                         | icon buttons at the end of the identity line       |
@@ -1385,9 +1599,10 @@ A verb blocked for a moment stays visible with its reason in the tooltip; a verb
 - **Row swap**: a trigger inside a row with width (a `FieldRow`, a section footer) is replaced in the same slot by the `card` surface.
 - **Anchored**: a small trigger (icon button, sidebar row action, header action, rail row) opens `ConfirmPopover`, which shows the `plain` surface in an `AnchoredPopover`. Escape and a click outside cancel. The popover stays open and busy while the confirm runs.
 - **Menu swap**: a destructive item in an open menu or popover replaces the menu body with `InlineConfirm surface="plain"` in the same popover.
+- **Under the header**: a destructive or one-shot verb of a page header (Delete session, Delete agent, a plan's Run again) arms a card `InlineConfirm` in `HeaderPanel` directly under the title row, in place, with no modal and no popover over the control.
 - **Above the selection bar**: a destructive verb of a selection confirms in `SelectionConfirm`, a card `InlineConfirm` that sits directly above `SelectionBar`, because the verb lives in the bar and the confirmation must stay with it.
 
-A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
+A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The card is neutral: `bg-subtle` with a soft border and a `ToneBar` in the tone of its role (primary, warning for `alert`, danger), never a tinted fill. The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
 When confirmation fails, `InlineConfirm` stays open and shows the formatted reason with `role="alert"`. The same controls become available for a retry. An automatic disarm pauses until the error is cancelled or a retry succeeds.
 
 **Selection bar.** `SelectionBar` is the one bar of every list that can pick rows (Board, session list, Review, Branches, Storage). It is a `floating` surface (level 4) of `rounded-lg` that sits at the bottom centre of the surface that owns the selection: `placement="overlay"` inside a `relative` region, `"sticky"` inside a scrolling page, `"flow"` where neither fits. Left to right it holds the X (Clear, tooltip with Esc), the count, `Select all N` while some rows are left, and the verbs as ghost buttons. A verb that undoes runs at once; a verb that does not passes a `confirm` node, which renders above the bar, takes focus on Cancel and gives it back to the verb when it closes. Escape closes the confirmation first, then clears the selection, through the escape stack. Rows carry `SelectionCheckbox`: a 16px box in a 20px target, revealed by `group/select-row` hover or focus and on every row once the list carries `group/select-list` with `data-selecting`, never a tab stop (the keys are X, Cmd+A, Esc and Delete, in the `selection` group of the shortcut registry). On a Board card the box sits out of the title row (`absolute`) in a 28px left gutter (`pl-7`), 6px from the card edge and from the title, and the tone rail starts below it (`top-9`) whenever the box shows, so the title lines up with the meta line and nothing moves when the box appears. The row element carries `data-select-id` so the lasso and the keys find it, and the scroller takes `pb-24` while something is selected, so the bar never covers the last row. A list whose bar can grow taller than that (a narrow column wraps it, a note stacks above it) passes `onHeightChange` and ends its scroll content with a spacer of that height plus 24px, so the last row always scrolls clear. A surface fed by the action registry renders `ObjectSelectionBar`, so the bar's words are the menu's words.
@@ -1437,6 +1652,8 @@ under their own key, and hold the row's other controls while one runs.
 
 `PANE_RHYTHM.stack` separates peer sections. `Divider` separates app chrome from content, never content from content: [docs/styling.md](../../docs/styling.md) owns the rule. Section children do not add margins. `SectionHeader` is the standard section heading, with an optional description. The eyebrow size is the default for every surface. `size="page"` is only for a document whose body is prose the reader came for, such as the guide or a creation flow's form sections. Description copy comes only through `hint`, so its size and muted tone stay matched to the heading grade.
 
+**One page, one section header.** The sections of a page (the Overview's Projects, Next and Unassigned notes) all open with `SectionHeader` at `headingLevel={2}`: the eyebrow, an optional count in `meta`, the section's one control in `action` and its one line of explanation in `hint`. A section never builds its own heading from a `h2` and type classes.
+
 **The outline is independent of the grade.** `headingLevel` turns an eyebrow-grade label into an `h2` or `h3`. So a pane section keeps its place in the document outline without taking the page grade. A section that needs a heading does not need bigger type because of that.
 
 **A group of rows that belong together under one name is a `Band`.** The band
@@ -1454,7 +1671,7 @@ Bands of one block stack 8px apart (`BandStack`), sections 24px.
 
 Use a band where something is configured in groups: defaults, the provider
 page, settings, a tool's detail, skills. Never on a navigation or selection
-list (sidebar, inbox, facet rail, popover, palette: there the background means
+list (sidebar, Tasks, facet rail, popover, palette: there the background means
 hover and selection), never in a creation flow, never in a card or in another
 band (`Band` throws when nested), never together with a border or a divider.
 
@@ -1504,6 +1721,17 @@ lighter amber in light), because the text amber reads brick red as a line. Icon 
 hover slot keeps its width at rest: it fades with `opacity-0
 group-hover:opacity-100 group-focus-within:opacity-100`, never `hidden
 group-hover:flex`, and the row's primary action stays outside it, visible.
+
+**A list row shows one action at rest.** A row in a list (the Artifacts list, the
+Scripts list) keeps its state-driven primary visible, plus the open control, and
+nothing else: no trash column, no second text button. Secondary actions
+(Edit, Copy, Pin, Run) appear on hover and focus inside one element marked
+`data-reveal="hover"`, which hides itself with `invisible` as well as `opacity-0`
+so it is out of the accessibility tree at rest and a test counts visible buttons
+by what sits outside it. Destructive and rare actions (Delete, Rename) live in
+the row's overflow menu, drawn as a horizontal `Ellipsis`. A running Stop is the
+exception: it stays visible. Every control of a list, row actions and group
+header refresh alike, sits in a 28px slot on the same right edge.
 
 **A header row has one control height.** Title row, trail band and page header
 rows that hold several controls draw them all at 28px: `SegmentedTabs` `xs`,
@@ -1652,8 +1880,8 @@ drawn as an empty list.
 
 1. **Loading.** Never empty and never "Nothing yet" while loading. Keep the
    last known content, or show the section's heading with a muted "Loading"
-   line. A part that reloads keeps its place with a skeleton of its own height
-   (below). Skeletons on every page are for the next round.
+   line. Unread lists show three SkeletonRow rows with accessible loading names
+   and aria-busy. A part that reloads keeps its last known content.
 2. **First time.** Something will be here, and nothing has made it yet.
    `EmptyState size="page"`: a bare 18px icon in `text-muted-foreground` (no
    circle, no fill, no border), a title that says what will be here, one
@@ -1671,21 +1899,17 @@ drawn as an empty list.
    never shown while a load failed.
 5. **Not connected.** The tool behind the page is not connected. The
    `ConnectIntegrationEmptyState` pattern for one tool, a `page` state with
-   `Connect a tool` where several tools feed the page (the Inbox).
+   `Connect a tool` where several tools feed the page (Tasks).
 
 ### The primitives
 
-`EmptyState` takes `size: 'page' | 'section'`. The old sizes keep working and
-map onto the two: `lg` and `xl` to `page`, `sm` and `inline` to `section`, and a
-`bordered` state with no size to `page` without the border. The tinted circle
-and the dashed border are gone in every size, and `tone` no longer colours the
-icon: the glyph is the concept, the colour is not a state. A `page` state is an
-`h2` unless `headingLevel` says another level; a `section` state is no heading,
-so it adds nothing to the outline. `LensEmptyState` and `FilledEmptyState` are
-thin wrappers over `size="section"` with the same props, kept until every
-caller names the size itself. Nothing hand-rolls the shape: a caller passes
-only layout (`justify-center`, `basis-full`) or an inset (`px-3`), never a fill,
-a border or a circle.
+`EmptyState` takes `size: 'page' | 'section'`. Retired sizes are removed. A
+`bordered` state with no size still maps to `page` without a border. The glyph
+is muted, without a tinted circle. A `page` state is an `h2` unless
+`headingLevel` chooses another level; a `section` state has no heading.
+`FilledEmptyState` remains a thin section wrapper only for host callers awaiting
+integration. Owned callers name the section size directly. A caller passes only
+layout or an inset, never a fill, border or circle.
 
 An empty line inside a section ("No scripts match "tset".") is `EmptyLine`: one
 faint sentence, an optional glyph before it and an optional action after it. It
@@ -1700,23 +1924,23 @@ A cell names the shape that page uses. N/A means the state cannot happen
 there. `0.22.1` marks a page the sweep has not reached yet: it still shows its
 old shape, and the next round moves it.
 
-| Page           | Loading                                  | First time                                                                         | Nothing matches                                          | Can't load                                                          | Not connected                             |
-| -------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
-| Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Start a run. `section`: No runs in progress                   | N/A                                                      | N/A                                                                 | N/A                                       |
-| Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                 | N/A                                                      | N/A                                                                 | N/A                                       |
-| Artifacts      | 0.22.1                                   | `page`: No artifacts yet, New artifact                                             | `EmptyLine`: No plans in this session, Clear filter      | 0.22.1                                                              | N/A                                       |
-| Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add project. `section`: No pinned scripts, Pin in Settings | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |
-| Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                               | N/A                                                      | 0.22.1                                                              | N/A                                       |
-| Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries           | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
-| Notifications  | Skeleton rows                            | `section`: No notifications yet, one line and no Unread or All tabs                | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                       |
-| Inbox          | Skeleton rows                            | `page`: No items yet                                                               | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
-| Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                         | N/A                                                      | N/A                                                                 | N/A                                       |
-| Checks         | A muted Loading line                     | `section`: No checks have reported yet                                             | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
-| Comments       | 0.22.1                                   | 0.22.1                                                                             | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
-| Commits        | 0.22.1                                   | 0.22.1                                                                             | N/A                                                      | 0.22.1                                                              | N/A                                       |
-| Impact         | 0.22.1                                   | 0.22.1                                                                             | 0.22.1                                                   | 0.22.1                                                              | N/A                                       |
-| Chat           | 0.22.1                                   | 0.22.1                                                                             | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
-| Settings lists | 0.22.1                                   | 0.22.1                                                                             | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
+| Page           | Loading                                  | First time                                                                                        | Nothing matches                                          | Can't load                                                          | Not connected                             |
+| -------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Start a run. `section`: No runs in progress                                  | N/A                                                      | N/A                                                                 | N/A                                       |
+| Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                                | N/A                                                      | N/A                                                                 | N/A                                       |
+| Artifacts      | Three skeleton rows                      | `page`: No artifacts yet, New artifact                                                            | `EmptyLine`: No plans in this session, Clear filter      | `Notice` danger: Could not load artifacts, Retry and Details        | N/A                                       |
+| Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add project. `section`: No scripts in a project, Pin a script, New script | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |
+| Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                                              | N/A                                                      | 0.22.1                                                              | N/A                                       |
+| Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries                          | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
+| Notifications  | Skeleton rows                            | `section`: No notifications yet, one line and no Unread or All tabs                               | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                       |
+| Tasks          | Skeleton rows                            | `page`: No items yet                                                                              | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
+| Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                                        | N/A                                                      | N/A                                                                 | N/A                                       |
+| Checks         | A muted Loading line                     | `section`: No checks have reported yet                                                            | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
+| Comments       | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
+| Commits        | Three skeleton rows                      | `section`: No commits yet on this branch                                                          | N/A                                                      | `Notice` danger: Could not load commits, Retry and Details          | N/A                                       |
+| Impact         | Skeleton cards                           | `page`: Impact fills in as sessions finish, spend line                                            | N/A                                                      | `Notice` danger: Retry and Details                                  | N/A                                       |
+| Chat           | Three skeleton rows                      | `page`: No chats yet, Start a chat                                                                | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
+| Settings lists | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
 
 The new session draft is the kickoff. It asks "How do you want to
 start?" and answers with a single-select list of three rows, each a concept
@@ -1756,11 +1980,42 @@ discarded read as three answers instead of one long list.
 What "empty" means, and the copy rule for it, are product rules and live in
 [DESIGN.md](../../DESIGN.md).
 
+## Pull request page
+
+The Pull request tab of the Branch page is a document on the 960px column with
+a properties column: Linear's pull request page in our register. The main column
+is the description (`SectionHeader` with `Edit` beside it, a markdown editor with
+Write and Preview and `Save`, `Cancel` at its end) and the Activity: plain rows
+of a 20px glyph, one muted line with the person in `text-row`, and the age at the
+right in `tabular-nums`; a row that opens something takes `ROW_INTERACTIVE` and
+says what it opens (`Open Comments`, `View checks`), a row that opens nothing has
+no hover. The title is the page's `h1` in the fixed 32px title row
+(`PaneTitleRow`): editing swaps its content for an input of the same height, so
+the page never jumps. The properties column is 280px from 928px of pane
+(`@container` query, not the window) and a two-column compact grid above the
+description below it. Each block is a faint label, one value row of 28px or
+more and nothing else: Status carries the state word and the one readiness word
+(a `StatusDot` only where the tone says something: danger for a failing check or
+a conflict, warning for changes requested or comments that wait, info for a live
+run, a check for ready). Labels are not headings, so the outline reads `h1`, then
+the `h2`s of Description and Activity.
+
+**The capability rule.** The page never branches on the host. It reads the
+`ReviewSourceCapabilities` of the active source: a control the host cannot do on
+an object that exists is shown disabled with its reason in words (`Bitbucket has
+no draft pull requests`, `Turned off in payments-api`, `Set by the project`), a
+control for a concept the host does not have is left out. The merge
+confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`):
+the option cards carry the effect sentence, draw no icon tile when they have no
+icon, and a forbidden one is disabled with its reason. States follow the five of Empty states: no pull request is a page
+`EmptyState` over the create form, the activity loads as a `SkeletonRow`, a
+failed read is an inline danger `Notice` with Retry.
+
 ## Workspace chat
 
 The chat page (`features/workspace-chat/components/ChatStudio`) is a studio
 on `StudioRailLayout`: the chat list is the rail on `chrome`, one
-conversation is the wrapped sheet, and "Turn into work" is the
+conversation is the wrapped sheet, and "Start work from chat" is the
 `DrawerColumn` drawer beside it, never a dialog.
 
 - **List rows** are `InteractiveRow`s: title `text-label`, the last answer
@@ -1778,7 +2033,7 @@ conversation is the wrapped sheet, and "Turn into work" is the
   `Markdown` in `text-prose` with no bubble. Under it, in order: `Read N files`
   (a quiet
   disclosure listing paths in `text-code`), then one `h-7` row. Copy
-  (`CopyButton` with `tone="faint"`) and "Start work from here" sit on the
+  (`CopyButton` with `tone="faint"`) and "Start work from chat" sit on the
   left, quiet `text-meta` actions that show on hover or keyboard focus of
   the answer (`group/answer`, `opacity-0` at rest so the row never shifts);
   the model and effort that wrote the answer sit on the right as faint
@@ -1819,9 +2074,9 @@ A theme switch is one paint, a class swap on `<html>` and nothing else:
 `applyDocumentTheme` writes the `light` or `dark` class, `data-theme` and
 `color-scheme` once each in a single task, and the CSS variables repaint the
 page in that frame. There is no React state for it (the zustand store keeps
-only the preference, set in the same call, so the toggle, the Settings field
+only the preference, set in the same call, so the palette, the Settings field
 and the footer chip commit once together). Every route into a switch (the
-toggle, Settings, the palette, the system, another window) goes through that
+palette, Settings, the system, another window) goes through that
 one function, and it writes nothing when the resolved theme is already
 applied. `html[data-theme-switching]` turns every element transition off from
 before the swap until two painted frames later (a timer guards a window that
@@ -1835,10 +2090,8 @@ against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames
 with a 500ms freeze on a large diff, against 80 frames with the swap alone),
 and a window that repaints for a fade reads as the UI flickering, worst on
 the busiest pages. A circular reveal and a cross-fade were both tried and
-dropped for that reason. The toggle icon alone turns in (`theme-icon-in`,
-420ms, transform and opacity only) when its sun or moon swaps. The few things
-that paint with JS colors (the xterm terminal, the changelog image, the theme
-toggle icon) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
+dropped for that reason. The few things
+that paint with JS colors (the xterm terminal, the changelog image) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 
 - `spin-border`: working, on an element whose own edge carries the signal
@@ -1921,3 +2174,12 @@ width follows its content breaks the column for every row under it.
   sits nearest the edge must be constant-width, or it wanders from row to row.
   In a left-aligned cluster the glyph comes first. The test is where the group
   is anchored, not what looks tidy in one row.
+
+Compatibility empty-state and keyboard aliases remain only while callers owned by
+parallel units are migrated during integration. New callers name EmptyState section
+and Kbd inline or cap directly.
+
+The Terminal first-time page offers New terminal. Loading the terminal view
+announces Starting the shell. Permission rules and recent decisions use section
+states that explain when rows are added. Other Settings scope lists retain their
+existing states until their separate loading contracts are covered.

@@ -70,8 +70,8 @@ vi.mock('./ProjectBranchChip', () => ({
 }));
 vi.mock('./RemoveWorktreeAction', () => ({
   RemoveWorktreeAction: ({ label }: RemoveWorktreeProps) => (
-    <button type="button" aria-label={`Remove the worktree for ${label}`}>
-      Remove worktree
+    <button type="button" aria-label={`Close branch for ${label}`}>
+      Close branch
     </button>
   ),
 }));
@@ -300,7 +300,7 @@ describe('ProjectMountRow layer links', () => {
     };
     renderRow({ row: REQUEST_ROW });
 
-    const link = screen.getByRole('button', { name: 'Open Review for API, 2 to resolve' });
+    const link = screen.getByRole('button', { name: 'Open Comments for API, 2 to resolve' });
     expect(link.textContent).toBe('2 to resolve');
     fireEvent.click(link);
 
@@ -436,7 +436,7 @@ describe('ProjectMountRow one action by state', () => {
     );
   });
 
-  it('says a failed push under the control', async () => {
+  it('raises a notice row under a failed push and runs it again on Retry', async () => {
     store.pushSessionBranch.mockResolvedValueOnce({
       ok: false,
       error: 'rejected by origin',
@@ -448,7 +448,14 @@ describe('ProjectMountRow one action by state', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Push 2 commits for API' }));
 
-    expect((await screen.findByRole('status')).textContent).toBe('rejected by origin');
+    const notice = await screen.findByRole('alert');
+    expect(notice.textContent).toContain("Couldn't push API");
+    expect(notice.textContent).toContain('Nothing was pushed.');
+    fireEvent.click(within(notice).getByRole('button', { name: 'Details' }));
+    expect(within(notice).getByText('rejected by origin')).toBeDefined();
+
+    fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(store.pushSessionBranch).toHaveBeenCalledTimes(2));
   });
 });
 
@@ -469,6 +476,26 @@ describe('ProjectMountRow availability', () => {
     await waitFor(() =>
       expect(store.attachMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
     );
+  });
+
+  it('puts a failed Reopen in a notice row and leaves the cells of the row alone', async () => {
+    store.attachMount.mockRejectedValueOnce(new Error('worktree path is already in use'));
+    renderRow({ row: detached });
+    const cells = screen.getByTestId('project-mount-cells');
+    const before = cells.innerHTML;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen for API' }));
+
+    const notice = await screen.findByRole('alert');
+    expect(notice.textContent).toContain("Couldn't reopen API");
+    expect(cells.innerHTML).toBe(before);
+    expect(cells.nextElementSibling?.contains(notice)).toBe(true);
+    expect(within(cells).queryByRole('alert')).toBeNull();
+    expect(cells.getAttribute('data-row-height')).toBe('36');
+
+    fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(store.attachMount).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 
   it('keeps the worktree tools out of the menu of a closed row', () => {
@@ -524,6 +551,46 @@ describe('ProjectMountRow availability', () => {
     expect(within(webItem).queryByRole('button', { name: `Open NW-41 on ${shared}` })).toBeNull();
   });
 
+  it('keeps the tasks of a branch on one line: the first chip and a +N popover for the rest', () => {
+    const taskOf = ({ externalId, identifier }: { externalId: string; identifier: string }) => ({
+      sessionId,
+      projectId: 'api',
+      branch: 'feat/api',
+      scope: 'branch',
+      provider: 'linear',
+      externalId,
+      identifier,
+      url: `https://linear.example/${identifier}`,
+      title: `Task ${identifier}`,
+      createdAt: '2026-09-27T10:00:00.000Z',
+    });
+    store.projects = [{ id: 'api', kind: 'repo', baseBranch: 'main' }];
+    store.sessionExternalTasks = {
+      [sessionId]: [
+        taskOf({ externalId: 'e1', identifier: 'NW-41' }),
+        taskOf({ externalId: 'e2', identifier: 'NW-42' }),
+        taskOf({ externalId: 'e3', identifier: 'NW-43' }),
+      ],
+    };
+    renderRow({ row: baseRow });
+
+    const row = screen.getByRole('listitem', { name: 'API' });
+    expect(within(row).getByRole('button', { name: 'Open NW-41 on feat/api' })).toBeDefined();
+    expect(within(row).queryByRole('button', { name: 'Open NW-42 on feat/api' })).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: 'More tasks on feat/api' }));
+    expect(screen.getByText('+2')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open NW-42 on feat/api' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open NW-43 on feat/api' })).toBeDefined();
+  });
+
+  it('keeps room at the end of the branch cell for the put on branch button', () => {
+    renderRow({ row: { ...baseRow } });
+    expect(screen.getByTestId('project-mount-branch-cell').dataset.keepsActionRoom).toBe('true');
+    cleanup();
+    renderRow({ row: { ...baseRow, isAttached: false } });
+    expect(screen.getByTestId('project-mount-branch-cell').dataset.keepsActionRoom).toBeUndefined();
+  });
+
   it('names the row and its action menu after the mount label', () => {
     renderRow({ row: { ...baseRow }, label: 'API on feat/api' });
 
@@ -550,18 +617,18 @@ describe('ProjectMountRow availability', () => {
     expect(screen.getByTestId('branch-decision')).toBeDefined();
   });
 
-  it('offers Remove worktree only once the pull request merged', () => {
+  it('offers Close branch only once the pull request merged', () => {
     renderRow({
       worktreeStatus: statusWith({ mainDistance: { kind: 'known', ahead: 0, behind: 0 } }),
       row: { ...baseRow, isCompleted: true, request: { ...openRequest, state: 'merged' } },
     });
 
-    expect(screen.getByRole('button', { name: 'Remove the worktree for API' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Close branch for API' })).toBeDefined();
     cleanup();
     store.sessionMounts = {};
     store.mountGithub = {};
     renderRow({});
-    expect(screen.queryByRole('button', { name: 'Remove the worktree for API' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close branch for API' })).toBeNull();
   });
 });
 
@@ -577,7 +644,7 @@ describe('ProjectMountRow menu', () => {
     expect(labels.some((label) => label.startsWith('Open scripts'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Rewrite history'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Copy path'))).toBe(true);
-    expect(labels.some((label) => label.startsWith('Close worktree'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Close branch'))).toBe(true);
   });
 
   it('opens rewrite history for this worktree from the row menu', async () => {

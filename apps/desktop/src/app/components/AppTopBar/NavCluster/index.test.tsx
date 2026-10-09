@@ -195,9 +195,9 @@ describe('NavCluster', () => {
     cleanup();
     store.navigation = { 'ws-1': { entries: [sessionView('review'), BOARD_ENTRY], index: 1 } };
     render(<NavCluster hasDoors />);
-    const live = screen.getByRole('button', { name: 'Back to Review' });
+    const live = screen.getByRole('button', { name: 'Back to Comments' });
     expect(live.parentElement?.getAttribute('data-tooltip')).toContain(
-      'Back to Review · Retry failed webhook deliveries',
+      'Back to Comments · Retry failed webhook deliveries',
     );
     fireEvent.click(live);
     expect(store.back).toHaveBeenCalledOnce();
@@ -209,12 +209,12 @@ describe('NavCluster', () => {
     };
     render(<NavCluster hasDoors />);
 
-    fireEvent.contextMenu(screen.getByRole('button', { name: 'Back to Review' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Back to Comments' }));
     const items = screen.getAllByRole('menuitemradio');
     expect(items.map((item) => item.textContent)).toEqual([
       'Board',
-      'ReviewRetry failed webhook deliveries',
-      'SessionRetry failed webhook deliveries',
+      'CommentsRetry failed webhook deliveries',
+      'OverviewRetry failed webhook deliveries',
     ]);
     expect(items[0]?.getAttribute('aria-checked')).toBe('true');
     fireEvent.click(items[2] as HTMLElement);

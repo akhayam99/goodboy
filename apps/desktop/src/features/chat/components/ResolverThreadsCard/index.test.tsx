@@ -146,7 +146,7 @@ describe('ResolverThreadsCard', () => {
     expect(screen.queryByRole('button', { name: /Expand thread/ })).toBeNull();
   });
 
-  it('sends a verdict line to that conversation in Review', () => {
+  it('sends a verdict line to that conversation in Comments', () => {
     h.resolved.mockReturnValue([{ threadId: 'PRRT_1', commitSha: 'abcdef1234567890' }]);
     h.wontfix.mockReturnValue([{ threadId: 'PRRT_2', reason: 'already covered upstream' }]);
 
@@ -158,7 +158,7 @@ describe('ResolverThreadsCard', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /Expand resolve findings/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Open thread 2 in Review' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open thread 2 in Comments' }));
 
     expect(h.openReviewThread).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
   });
@@ -169,7 +169,7 @@ describe('ResolverThreadsCard', () => {
 
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
     fireEvent.click(screen.getByRole('button', { name: /Expand resolve findings/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Open thread 2 in Review' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open thread 2 in Comments' }));
 
     expect(h.openReviewThread).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
     expect(h.openReviewThread).not.toHaveBeenCalledWith({
@@ -183,7 +183,7 @@ describe('ResolverThreadsCard', () => {
     render(<ResolverThreadsCard assistantText="x" sessionId={'s' as never} />);
 
     const row = screen.getByTestId('resolver-thread-verdict');
-    fireEvent.click(within(row).getByRole('button', { name: 'Open thread 1 in Review' }));
+    fireEvent.click(within(row).getByRole('button', { name: 'Open thread 1 in Comments' }));
 
     expect(h.openReviewThread).toHaveBeenCalledWith({ sessionId: 's', threadId: 'PRRT_2' });
   });

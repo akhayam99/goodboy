@@ -4,6 +4,7 @@ import type {
   ArtifactId,
   MountId,
   ProjectId,
+  PullRequestHost,
   SessionExternalTaskProvider,
   SessionId,
   WorkflowRunId,
@@ -44,6 +45,19 @@ export type ActionSlot = (typeof ACTION_SLOTS)[number];
 
 type ActionConfirmRole = 'primary' | 'alert' | 'danger';
 
+export type ActionConfirmOption = {
+  readonly id: string;
+  readonly label: string;
+  readonly detail: string;
+  readonly disabledReason: string | null;
+};
+
+type ActionConfirmChoice = {
+  readonly label: string;
+  readonly options: ReadonlyArray<ActionConfirmOption>;
+  readonly defaultId: string;
+};
+
 export type ActionConfirm = {
   readonly title: string;
   readonly description: string;
@@ -54,6 +68,7 @@ export type ActionConfirm = {
   readonly goes?: string;
   readonly stays?: string;
   readonly items?: ReadonlyArray<string>;
+  readonly choice?: ActionConfirmChoice;
 };
 
 export type ActionChoice = {
@@ -220,6 +235,7 @@ export type PullRequestActionTarget = {
   readonly kind: 'pullRequest';
   readonly sessionId: SessionId;
   readonly prNumber: number | null;
+  readonly host?: PullRequestHost;
 };
 
 export type DiffActionTarget = {

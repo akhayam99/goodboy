@@ -31,7 +31,7 @@ export const LearningRow = ({
       <div className="flex flex-col gap-1 rounded-md px-2 py-2">
         <span className="truncate text-label text-faint-foreground line-through">{item.title}</span>
         <div className="flex items-center gap-2">
-          <Chip tone="neutral" size="3xs" label="Dismissed" />
+          <Chip tone="neutral" kind="state" label="Dismissed" />
           <span className="flex-1" />
           <Button
             variant="ghost"
@@ -65,7 +65,7 @@ export const LearningRow = ({
         )}
       >
         {!isWorkspace && item.topic !== null ? (
-          <Chip tone="neutral" size="3xs" label={item.topic} />
+          <Chip tone="neutral" kind="state" label={item.topic} />
         ) : null}
         <span
           className={cn(
@@ -83,14 +83,14 @@ export const LearningRow = ({
           <p className="text-meta text-muted-foreground">{item.text}</p>
           <div className="-mx-2 flex flex-wrap items-center gap-1">
             <span className={cn(META, 'inline-flex items-center gap-1 px-2')}>
-              {isWorkspace ? null : <Eye size={11} aria-hidden />}
+              {isWorkspace ? null : <Eye size={ICON_SIZE.mark} aria-hidden />}
               {isWorkspace ? learningSourceLine({ item, now }) : 'Visible to you only'}
             </span>
             <span className="flex-1" />
             {isWorkspace && !item.isSessionDeleted && onOpenSession !== undefined ? (
               <Button variant="ghost" size="sm" onClick={onOpenSession}>
                 Open session
-                <ArrowUpRight size={11} aria-hidden />
+                <ArrowUpRight size={ICON_SIZE.mark} aria-hidden />
               </Button>
             ) : null}
             <Button variant="ghost" size="sm" onClick={onDismiss}>

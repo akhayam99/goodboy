@@ -354,20 +354,29 @@ describe('ChatList selection', () => {
   });
 });
 
+const revealDelete = (): void => {
+  fireEvent.mouseEnter(rowOf('lunch'));
+};
+
 describe('ChatList delete on the row', () => {
-  it('keeps a Delete button on every row without any hover', async () => {
+  it('keeps Delete off every row at rest and gives it to the hovered row only', async () => {
     await renderList();
 
     for (const seed of SEEDS) {
       expect(
-        within(rowOf(seed.key)).getByRole('button', { name: `Delete ${seed.title}` }),
-      ).toBeDefined();
+        within(rowOf(seed.key)).queryByRole('button', { name: `Delete ${seed.title}` }),
+      ).toBeNull();
     }
+    fireEvent.mouseEnter(rowOf('lunch'));
+    expect(screen.getAllByRole('button', { name: /^Delete / })).toHaveLength(1);
+    fireEvent.mouseLeave(rowOf('lunch'));
+    expect(screen.queryByRole('button', { name: /^Delete / })).toBeNull();
   });
 
   it('asks in the row after one click, then deletes with the second', async () => {
     const { onDeleted } = await renderList();
 
+    revealDelete();
     fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
 
     const confirm = within(rowOf('lunch'));
@@ -382,6 +391,7 @@ describe('ChatList delete on the row', () => {
 
   it('gives the row back on Cancel without deleting anything', async () => {
     const { onDeleted } = await renderList();
+    revealDelete();
     fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
 
     fireEvent.click(within(rowOf('lunch')).getByRole('button', { name: 'Cancel' }));
@@ -392,6 +402,7 @@ describe('ChatList delete on the row', () => {
 
   it('archives from the row confirmation and keeps the chat', async () => {
     const { onArchived } = await renderList();
+    revealDelete();
     fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
 
     fireEvent.click(within(rowOf('lunch')).getByRole('button', { name: 'Archive instead' }));

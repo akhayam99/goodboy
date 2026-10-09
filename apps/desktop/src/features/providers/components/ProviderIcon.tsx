@@ -1,6 +1,7 @@
 import { PROVIDER_IDS } from '@goodboy/types';
 import { BrandGlyph } from '@goodboy/ui';
 import { PROVIDER_BRAND } from './provider-brand';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: string | null | undefined;
@@ -24,7 +25,7 @@ export const ProviderIcon = ({ provider, size = 14, muted, variant = 'icon' }: P
       <BrandGlyph
         icon={brand.icon}
         cssVar={brand.cssVar}
-        size={11}
+        size={ICON_SIZE.row}
         className={muted === true ? 'opacity-40' : undefined}
       />
     );

@@ -1,6 +1,7 @@
 import { ChevronRight, CircleCheck } from 'lucide-react';
-import { FOCUS_RING, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, FOCUS_RING, cn } from '@goodboy/ui';
 import type { ConversationThread } from './types';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly thread: ConversationThread;
@@ -18,16 +19,17 @@ export const ResolvedThreadRow = ({ thread, isOpen, onToggle }: Props) => {
       aria-expanded={isOpen}
       onClick={onToggle}
       className={cn(
-        'flex h-8 w-full min-w-0 items-center gap-2 rounded-md bg-subtle px-2 text-left text-chip text-muted-foreground hover:bg-hover hover:text-foreground',
+        'flex h-8 w-full min-w-0 items-center gap-2 rounded-md bg-subtle px-2 text-left text-chip text-muted-foreground hover:text-foreground',
+        ROW_INTERACTIVE,
         FOCUS_RING,
       )}
     >
-      <CircleCheck size={12} aria-hidden className="shrink-0 text-success" />
+      <CircleCheck size={ICON_SIZE.row} aria-hidden className="shrink-0 text-success" />
       <span className="min-w-0 flex-1 truncate">
         {`Resolved thread · ${thread.head.author.name}${replies > 0 ? ` · ${replyLabel}` : ''}`}
       </span>
       <ChevronRight
-        size={12}
+        size={ICON_SIZE.row}
         aria-hidden
         className={cn('shrink-0 motion-safe:transition-transform', isOpen && 'rotate-90')}
       />

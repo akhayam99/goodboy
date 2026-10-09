@@ -4,7 +4,11 @@ import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineRowItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { needsYouOwners } from './needsYou';
-import { resolveFactsByAgentId, type ResolveActivityFacts } from './resolveActivity';
+import {
+  resolveFactsByAgentId,
+  withoutWorkflowStepAttempts,
+  type ResolveActivityFacts,
+} from './resolveActivity';
 import { rowStateNode, rowStateSentence, rowStateTone } from '../../workTreeModel/rowStateCopy';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -89,8 +93,8 @@ describe('resolver rows read the state of the comment', () => {
       return row && rowStateNode({ state: row.rowState }).state;
     });
 
-    expect(tones).toEqual(['warning', 'info', 'success', 'danger']);
-    expect(nodes).toEqual(['ready', 'running', 'done', 'failed']);
+    expect(tones).toEqual(['warning', 'info', 'neutral', 'warning']);
+    expect(nodes).toEqual(['ready', 'running', 'done', 'alert']);
   });
 
   it('counts a ready fix and a failed draft as needing you', () => {
@@ -141,31 +145,32 @@ describe('resolveFactsByAgentId', () => {
     expect(facts.get('a3')).toMatchObject({ state: 'pushed', word: 'Pushed' });
   });
 
-  it('counts the comments of one agent, not the agent, in five words', () => {
+  it('counts the comments of one agent, not the agent, by delivery', () => {
     const facts = resolveFactsByAgentId({
       attempts: [
         attempt({
           agentId: 'a1',
-          threadIds: ['t1', 't2', 't3', 't4', 't5', 't6'],
+          threadIds: ['t1', 't2', 't3', 't4', 't5', 't6', 't7'],
           phase: 'running',
           createdAt: 1,
         }),
       ],
       reviews: [
-        { threadId: 't1', state: 'ready', word: 'Ready' },
-        { threadId: 't2', state: 'ready', word: 'Ready' },
-        { threadId: 't3', state: 'edited', word: 'Ready' },
-        { threadId: 't4', state: 'needs', word: 'Needs you' },
+        { threadId: 't1', state: 'ready', word: 'To review' },
+        { threadId: 't2', state: 'ready', word: 'To review' },
+        { threadId: 't3', state: 'edited', word: 'To review' },
+        { threadId: 't4', state: 'needs', word: 'Question' },
         { threadId: 't5', state: 'drafting', word: 'Working' },
-        { threadId: 't6', state: 'failed', word: "Couldn't fix" },
+        { threadId: 't6', state: 'failed', word: 'Push failed', isPushFailure: true },
+        { threadId: 't7', state: 'accepted', word: 'Ready' },
       ],
     });
 
     expect(facts.get('a1')).toMatchObject({
       state: 'ready',
-      word: "3 ready · 1 needs you · 1 working · 1 couldn't fix",
+      word: '5 need you · 1 working · 1 ready to push',
     });
-    expect(facts.get('a1')?.threads).toHaveLength(6);
+    expect(facts.get('a1')?.threads).toHaveLength(7);
   });
 
   it('falls back to the attempt phase when Review has no row for the thread', () => {
@@ -185,10 +190,54 @@ describe('resolveFactsByAgentId', () => {
       ],
       reviews: [
         { threadId: 't1', state: 'pushed', word: 'Pushed' },
-        { threadId: 't2', state: 'needs', word: 'Needs you' },
+        { threadId: 't2', state: 'needs', word: 'Question' },
       ],
     });
 
-    expect(facts.get('a1')).toMatchObject({ state: 'needs', word: '1 needs you' });
+    expect(facts.get('a1')).toMatchObject({ state: 'needs', word: '1 need you' });
+  });
+});
+
+describe('a workflow step that once ran the Resolve agent', () => {
+  const failedAttemptWithoutThreads = {
+    agentId: 'step-fix',
+    batchId: null,
+    prNumber: null,
+    threadIds: [],
+    phase: 'failed',
+    createdAt: 1,
+  } as const;
+  const laneAttempt = { ...failedAttemptWithoutThreads, agentId: 'lane-fix', threadIds: ['t1'] };
+  const stepAgent = {
+    id: 'step-fix' as AgentId,
+    workflowRunId: 'run-1' as Agent['workflowRunId'],
+    stepId: 'step-1' as Agent['stepId'],
+  };
+  const laneAgent = { id: 'lane-fix' as AgentId };
+
+  it('shows the red Draft failed mark when the attempt is read as a review fix', () => {
+    const facts = resolveFactsByAgentId({
+      attempts: [failedAttemptWithoutThreads],
+      reviews: [],
+    });
+
+    expect(facts.get('step-fix')).toMatchObject({ state: 'failed' });
+  });
+
+  it('is left out of the review facts, so the workflow reports the step itself', () => {
+    const attempts = withoutWorkflowStepAttempts({
+      attempts: [failedAttemptWithoutThreads, laneAttempt],
+      agents: [stepAgent, laneAgent],
+    });
+    const facts = resolveFactsByAgentId({ attempts, reviews: [] });
+
+    expect(facts.has('step-fix')).toBe(false);
+    expect(facts.has('lane-fix')).toBe(true);
+  });
+
+  it('keeps every attempt while the agents are not loaded yet', () => {
+    expect(
+      withoutWorkflowStepAttempts({ attempts: [laneAttempt], agents: undefined }),
+    ).toHaveLength(1);
   });
 });

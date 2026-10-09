@@ -22,7 +22,6 @@ export const ArtifactReadingDrawer = ({ sessionId, artifactId, onClose }: Props)
   if (artifact === null) {
     return null;
   }
-  const kindWord = artifact.kind === 'report' ? 'report' : 'wireframe';
 
   return (
     <DrawerFrame
@@ -30,7 +29,6 @@ export const ArtifactReadingDrawer = ({ sessionId, artifactId, onClose }: Props)
       icon={CONCEPT_ICONS.artifacts}
       iconClassName="text-muted-foreground"
       count={`v${artifact.revision}`}
-      closeLabel={`Close the ${kindWord}`}
       onClose={onClose}
       action={
         <span className="flex min-w-0 items-center gap-2">

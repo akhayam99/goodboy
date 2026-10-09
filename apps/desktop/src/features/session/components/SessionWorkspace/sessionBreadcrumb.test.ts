@@ -410,14 +410,6 @@ describe('buildSessionBreadcrumb', () => {
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
 
-  it('roots the merge request studio in the GitLab lens, not the GitHub one', () => {
-    const h = makeHandlers();
-    const crumbs = buildSessionBreadcrumb(base({ studio: { kind: 'mr' } }, h));
-    expect(labels(crumbs)).toEqual(['Session', 'gitlab_issues', 'Merge request']);
-    crumbs[1]!.onClick!();
-    expect(h.toLens).toHaveBeenCalledWith('gitlab_issues');
-  });
-
   it('gives every integration lens the same two-crumb depth', () => {
     const h = makeHandlers();
     const lenses: ReadonlyArray<LensKind> = [

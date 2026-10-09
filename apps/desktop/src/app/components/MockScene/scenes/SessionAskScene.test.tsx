@@ -47,11 +47,11 @@ describe('the session Ask scene', () => {
     const trigger = await renderState('rightnow');
     expect(trigger.getAttribute('aria-pressed')).toBe('true');
     const rightNow = within(screen.getByTestId('ask-right-now'));
-    expect(rightNow.getByText('instant, no model')).toBeDefined();
+    expect(rightNow.queryByText('instant, no model')).toBeNull();
     expect(rightNow.getByText(/in this session$/)).toBeDefined();
     expect(rightNow.getByText('Try asking')).toBeDefined();
     expect(screen.getByPlaceholderText('Ask about this session…')).toBeDefined();
-    expect(within(askDrawer()).getByText('Read only')).toBeDefined();
+    expect(within(askDrawer()).getByText('Read-only')).toBeDefined();
   });
 
   it('closes and reopens from the trail button', async () => {

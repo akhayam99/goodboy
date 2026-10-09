@@ -24,6 +24,7 @@ const needing = (attention: SessionAttentionReason, over: NodeOver = {}) =>
 describe('the node of a session that needs you', () => {
   it.each<[SessionAttentionReason, string]>([
     ['agent-error', 'failed'],
+    ['push-failed', 'failed'],
     ['ci-failed', 'failed'],
     ['open-question', 'question'],
     ['fix-needs-you', 'question'],
@@ -42,10 +43,10 @@ describe('the node of a session that needs you', () => {
     expect(needing(attention).tone).toBe(ATTENTION_REASON_META[attention].tone);
   });
 
-  it('says danger only for an agent error and failing checks', () => {
+  it('says danger only for an agent error, a push that failed and failing checks', () => {
     const danger = REASONS.filter((attention) => needing(attention).tone === 'danger');
 
-    expect(danger).toEqual(['agent-error', 'ci-failed']);
+    expect(danger).toEqual(['agent-error', 'push-failed', 'ci-failed']);
   });
 
   it('draws a pull request waiting to merge as a solid approval, never as a failure', () => {

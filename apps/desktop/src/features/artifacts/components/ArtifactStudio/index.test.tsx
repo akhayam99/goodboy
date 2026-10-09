@@ -243,6 +243,7 @@ describe('ArtifactStudio list', () => {
   });
 
   it('says there is nothing yet when the session has no artifact', () => {
+    state.sessionArtifacts = { 'sess-1': [] };
     renderStudio();
     expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
     expect(screen.getByText('No artifacts yet')).toBeDefined();
@@ -464,7 +465,9 @@ describe('ArtifactStudio shell', () => {
     expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId('artifact-action-runAgain'));
     expect(state.runPlan).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Run again' }));
+    const confirm = screen.getByRole('group', { name: 'Run this plan again?' });
+    expect(confirm.getAttribute('data-surface')).toBe('card');
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Run again' }));
     await waitFor(() => expect(state.runPlan).toHaveBeenCalledWith('sess-1', 'plan-1'));
   });
 

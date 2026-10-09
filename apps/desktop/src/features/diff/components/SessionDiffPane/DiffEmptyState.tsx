@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button, LensEmptyState, PageColumn } from '@goodboy/ui';
+import { Button, EmptyState, PageColumn } from '@goodboy/ui';
 import type { DiffView } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import type { DiffAlternate } from '../../hooks/useSessionDiff';
@@ -70,7 +70,8 @@ export const DiffEmptyState = ({ view, baseBranch, alternate, onChange, selector
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center pb-12">
       <PageColumn>
-        <LensEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title={titleOf({ view, baseBranch, alternate })}

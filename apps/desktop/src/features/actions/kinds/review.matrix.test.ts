@@ -8,6 +8,7 @@ const BASE: ReviewFacts = {
   sessionId: 'session' as SessionId,
   prNumber: 318,
   sourceKind: 'github',
+  reviewTarget: { provider: 'github', repo: 'harborline/ledger-core', prNumber: 318 },
   open: 0,
   ready: 0,
   accepted: 0,
@@ -69,7 +70,12 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'PR with open notes',
     facts: { notes: 2 },
-    expected: ['review.postNotes menu Post open notes to the PR'],
+    expected: ['review.postNotes menu Move 2 to review draft'],
+  },
+  {
+    name: 'open notes on a pull request that cannot take a draft',
+    facts: { notes: 2, reviewTarget: null },
+    expected: [],
   },
   {
     name: 'loading',

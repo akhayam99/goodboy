@@ -14,7 +14,7 @@ export const AgentStatusBadge = ({ status }: Props) => {
       <span className="inline-flex shrink-0 items-center">
         <Chip
           tone={presentation.tone}
-          size="3xs"
+          kind="state"
           bordered={false}
           label={presentation.label}
           className={status === 'skipped' ? 'shrink-0 opacity-70' : 'shrink-0'}

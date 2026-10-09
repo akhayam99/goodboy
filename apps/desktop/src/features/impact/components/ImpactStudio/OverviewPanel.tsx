@@ -1,25 +1,27 @@
-import type { ReactElement } from 'react';
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import {
   Button,
-  EmptyState,
+  Notice,
+  formatError,
   ErrorStrip,
-  PanelLoading,
+  SkeletonRow,
   SectionHeader,
   PaneShell,
 } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { loadStateOf } from '../../../../shared/lib/loadStateOf';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { ImpactTab } from '../../lib';
 import { formatHours } from '../../utils/formatHours';
 import { impactDelta } from '../../utils/impactDelta';
 import { shippedSessions } from '../../utils/shippedSessions';
 import { KpiTile } from './KpiTile';
+import { OverviewEmpty } from './OverviewEmpty';
 import { ShippedSessionRows } from './ShippedSessionRows';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 type Props = {
-  readonly header: ReactElement;
+  readonly frame: PaneFrame;
   readonly overview: QueryResult<ImpactOverview>;
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
@@ -45,7 +47,7 @@ const shareOf = ({ sessions, orchestrated }: ShareParams): number | null =>
   sessions === null || sessions === 0 ? null : (orchestrated ?? 0) / sessions;
 
 export const OverviewPanel = ({
-  header,
+  frame,
   overview,
   pullRequests,
   reviews,
@@ -57,6 +59,12 @@ export const OverviewPanel = ({
   onStartSession,
 }: Props) => {
   const data = overview.data;
+  const loadState = loadStateOf({
+    hasLoaded: data !== null,
+    isLoading,
+    error: overview.error,
+    count: data?.sessionCount ?? 0,
+  });
   const prs = pullRequests.data;
   const reviewData = reviews.data;
   const share =
@@ -76,30 +84,36 @@ export const OverviewPanel = ({
       : shippedSessions({ entries: prs.entries, durations: data.sessions, limit: SHIPPED_LIMIT });
 
   return (
-    <PaneShell scroll="body" header={header}>
-      <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
+    <PaneShell scroll="body" {...frame}>
+      {overview.error === null ? null : (
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title="Could not load impact metrics"
+          body={formatError(overview.error)}
+          detail={overview.error.message}
+          actions={
+            <Button size="sm" onClick={onRetryOverview}>
+              Retry
+            </Button>
+          }
+        />
+      )}
       <ErrorStrip
         label="pull request outcomes"
         error={pullRequests.error}
         onRetry={onRetryShipped}
       />
       <ErrorStrip label="review outcomes" error={reviews.error} onRetry={onRetryShipped} />
-      {isLoading && data === null ? <PanelLoading label="Loading impact metrics" /> : null}
-      {data !== null && data.sessionCount === 0 ? (
-        <EmptyState
-          icon={CONCEPT_ICONS.impact}
-          tone={CONCEPT_TONE.impact}
-          title="Impact fills in as sessions finish"
-          action={
-            <Button variant="secondary" size="sm" onClick={onStartSession}>
-              Start a session
-            </Button>
-          }
-          bordered
-          size="lg"
-          headingLevel={2}
-        />
+      {loadState === 'loading' ? (
+        <div aria-busy="true" className="grid grid-cols-3 gap-4">
+          {[0, 1, 2].map((index) => (
+            <SkeletonRow key={index} label="Loading impact metrics" />
+          ))}
+        </div>
       ) : null}
+      {loadState === 'empty' ? <OverviewEmpty onStartSession={onStartSession} /> : null}
       {data !== null && data.sessionCount > 0 ? (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">

@@ -42,6 +42,16 @@ describe('pageKeys', () => {
     });
   });
 
+  it('keeps the replies page id and names the page after what it holds', () => {
+    const page = WORKSPACE_PAGES.find((entry) => entry.id === 'review-replies');
+
+    expect(page?.label).toBe('Replies and commits');
+    expect(pageKeys({ page: 'review-replies' })).toEqual(
+      expect.arrayContaining(['replyVoice', 'resolveCommitStyle', 'resolveOnGithub']),
+    );
+    expect(WORKSPACE_PAGES.map((entry) => entry.label)).not.toContain('Review replies');
+  });
+
   it('owns nothing on Projects, so it is never copied', () => {
     expect(pageKeys({ page: 'projects' })).toEqual([]);
   });

@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { PageColumn, SegmentedTabs, PaneShell } from '@goodboy/ui';
+import { HeaderConfirm } from '../../../../shared/components/HeaderConfirm';
+import type { ArmedAction } from '../../../../shared/components/HeaderConfirm/armedAction';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { TriggerSeparator } from '../../../../shared/components/RoutingPicker/TriggerSeparator';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
-import { agentOpenTab, isOpenAgentReveal, type AgentTab } from './agentOpenTab';
+import { agentOpenTab, type AgentTab } from './agentOpenTab';
+import { isOpenAgentReveal } from '../../../../shared/utils/openAgentReveal';
 import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentHeaderStatus } from './AgentHeaderStatus';
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';
+import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
 import { AgentBrief } from './AgentBrief';
 import { AgentHeader } from './AgentHeader';
 import { AgentHeaderTime } from './AgentHeaderTime';
@@ -40,27 +44,23 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       (question) => question.createdByAgentId === agent.id,
     ),
   );
-  const areQuestionsLoaded = useAppStore(
-    (state) => state.sessionOpenQuestions[session.id] !== undefined,
-  );
   const status = effectiveAgentStatus({ agent, turnState });
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
   const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
-  const openTab = requestedPane ?? agentOpenTab({ hasOpenQuestions });
+  const rememberedTab = useAppStore((state) => state.agentTab[agent.id] ?? null);
+  const setAgentTab = useAppStore((state) => state.setAgentTab);
+  const openTab = agentOpenTab({ requested: requestedPane, remembered: rememberedTab });
   const openTabRef = useRef(openTab);
   openTabRef.current = openTab;
   const [tab, setTab] = useState<AgentTab>(openTab);
+  const [armed, setArmed] = useState<ArmedAction | null>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
   );
-  const modelOverride = useAppStore(
-    (state) => state.agentModelOverride[agent.id] ?? agent.modelOverride ?? null,
-  );
-  const effortOverride = useAppStore(
-    (state) => state.agentEffortOverride[agent.id] ?? agent.effort ?? null,
-  );
   const executed = useExecutedAgentRouting({ agent });
+  const routing = useAgentHeaderRouting({ session, agent });
   const time = useAgentDetailWorkTime({
     session,
     agent,
@@ -71,7 +71,11 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
 
   useEffect(() => {
     setTab(openTabRef.current);
-  }, [agent.id, areQuestionsLoaded, requestedPane]);
+  }, [agent.id, requestedPane]);
+
+  useEffect(() => {
+    setArmed(null);
+  }, [agent.id]);
 
   useEffect(() => {
     const reveal = (event: Event) =>
@@ -80,11 +84,11 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     return () => window.removeEventListener('goodboy:reveal-chat', reveal);
   }, []);
 
-  const planned =
-    modelOverride != null || providerOverride != null || effortOverride != null
-      ? { provider: providerOverride, model: modelOverride, effort: effortOverride }
-      : null;
-  const observedEffort = executed?.effort ?? null;
+  const pickTab = (next: AgentTab) => {
+    setTab(next);
+    setAgentTab({ agentId: agent.id, pane: next });
+  };
+
   const isTranscript = tab === 'transcript';
   const headerMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
@@ -108,6 +112,10 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       scroll={isTranscript ? 'self' : 'body'}
       header={
         <AgentHeader
+          rootRef={headerRef}
+          below={
+            <HeaderConfirm armed={armed} triggerWithin={headerRef} onClose={() => setArmed(null)} />
+          }
           title={
             <span
               className="flex min-w-0"
@@ -129,11 +137,12 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               {time == null ? null : <AgentHeaderTime time={time} />}
               <TriggerSeparator />
               <RoutingLabel
-                provider={executed?.provider ?? providerOverride}
-                model={executed?.model ?? modelOverride}
-                effort={observedEffort ?? effortOverride}
-                planned={planned}
-                isEffortObserved={observedEffort != null}
+                provider={routing.provider}
+                model={routing.model}
+                effort={routing.effort}
+                planned={routing.planned}
+                isEffortObserved={routing.isEffortObserved}
+                prefix={routing.isNextTurn ? 'Next turn:' : undefined}
               />
             </>
           }
@@ -142,7 +151,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               ariaLabel="Agent sections"
               options={TABS}
               value={tab}
-              onChange={setTab}
+              onChange={pickTab}
               size="xs"
             />
           }
@@ -151,6 +160,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               agent={agent}
               sessionId={session.id}
               allowInterrupt
+              onArm={setArmed}
               onDeleted={onBack}
             />
           }

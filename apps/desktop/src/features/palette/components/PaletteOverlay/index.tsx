@@ -7,6 +7,7 @@ import type { PaletteModeId } from '../../paletteModeTypes';
 import { focusedPaletteScope } from '../../heldPaletteScope';
 import { resolvePaletteScope } from '../../resolvePaletteScope';
 import type { PaletteScope } from '../../types';
+import { PALETTE_MIN_HEIGHT_PX } from '../CommandsMode/paletteBodyLayout';
 import { ModeSwitch } from './ModeSwitch';
 
 type Props = {
@@ -77,6 +78,7 @@ export const PaletteOverlay = ({ mode = 'commands', initialQuery = '', onClose }
           role="dialog"
           aria-modal="true"
           aria-label={active.label}
+          style={{ minHeight: PALETTE_MIN_HEIGHT_PX }}
           className={cn(
             'relative flex max-h-[calc(100vh-8rem)] w-full flex-col overflow-hidden rounded-lg border border-border bg-floating shadow-lg motion-safe:animate-studio-in',
             active.widthClass,

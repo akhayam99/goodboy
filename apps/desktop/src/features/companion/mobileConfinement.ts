@@ -11,7 +11,9 @@ import type {
   IntegrationBinding,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
-import { evaluatePrMergeReadiness } from '../review/prMergeReadiness';
+import { evaluatePrMergeReadiness, mergeIsClear } from '../review/prMergeReadiness';
+import { sessionMergeFacts, type PullRequestFacts } from '../actions/kinds/pullRequestFacts';
+import type { AppStore } from '../../store/store';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { projectById } from '../../store/slices/projects/projectIndex';
 
@@ -24,26 +26,39 @@ export type MergeGate =
   | { readonly ok: true; readonly pr: PullRequestState; readonly method: PrMergeMethod }
   | { readonly ok: false; readonly reason: string };
 
+export const mobileMergeFacts = ({
+  state,
+  sessionId,
+}: {
+  readonly state: Pick<AppStore, 'sessionGithub' | 'sessionResolveThreads'>;
+  readonly sessionId: SessionId;
+}): PullRequestFacts =>
+  sessionMergeFacts({
+    sessionId,
+    github: state.sessionGithub[sessionId] ?? null,
+    threads: state.sessionResolveThreads?.[sessionId] ?? [],
+  });
+
 type MobileMergeParams = {
-  readonly pr: PullRequestState | null | undefined;
+  readonly facts: PullRequestFacts | null | undefined;
   readonly method: string;
 };
 
-export const evaluateMobileMerge = ({ pr, method }: MobileMergeParams): MergeGate => {
+export const evaluateMobileMerge = ({ facts, method }: MobileMergeParams): MergeGate => {
   if (!isMergeMethod(method)) {
     return { ok: false, reason: `unsupported merge method: ${String(method)}` };
   }
-  if (pr === null || pr === undefined) {
+  if (facts === null || facts === undefined || facts.pr === null) {
     return { ok: false, reason: 'no PR is associated with this session' };
   }
-  const readiness = evaluatePrMergeReadiness({ pr });
-  if (readiness.status !== 'ready') {
+  const readiness = evaluatePrMergeReadiness({ facts });
+  if (readiness.status === 'blocked') {
     return { ok: false, reason: readiness.reason };
   }
-  if (readiness.caveats.length > 0) {
-    return { ok: false, reason: readiness.caveats.join('; ') };
+  if (!mergeIsClear({ readiness })) {
+    return { ok: false, reason: readiness.caveats.join('; ') || readiness.reason };
   }
-  return { ok: true, pr, method };
+  return { ok: true, pr: facts.pr, method };
 };
 
 const CREATE_SESSION_PROVIDERS: ReadonlySet<string> = new Set<WorkspaceIntegrationProvider>([

@@ -100,7 +100,7 @@ export const DecisionRowItem = ({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <Chip tone="neutral" size="3xs" label="Removed" />
+          <Chip tone="neutral" kind="state" label="Removed" />
           {isLocked ? null : (
             <Button
               variant="ghost"
@@ -163,7 +163,7 @@ export const DecisionRowItem = ({
         )}
         <div className="flex flex-wrap items-center gap-2">
           <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
-            {isNew ? <Chip tone="primary" size="3xs" label="New" /> : null}
+            {isNew ? <Chip tone="primary" kind="state" label="New" /> : null}
             {byline}
           </p>
           {isOpen && !isLocked ? (
@@ -194,7 +194,7 @@ export const DecisionRowItem = ({
         </div>
         {reworded === null ? null : (
           <p className="flex flex-wrap items-center gap-1 text-meta text-faint-foreground">
-            <RewordIcon size={10} aria-hidden className="shrink-0" />
+            <RewordIcon size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
             {`Reworded by Goodboy · ${reworded.age}`}
             <button
               type="button"

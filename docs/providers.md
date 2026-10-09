@@ -153,7 +153,14 @@ uses when you leave a model on **Auto**. It is one page in three parts.
   Backup only runs only when no On provider can work; Off never runs, not even for a
   role or task pinned to it. **Keep using after the limit** keeps the provider in the order at its limit. A
   provider connected later shows last as **New** and is unused until turned on.
-  **Reset** goes back to every connected provider On
+  **Reset** goes back to every connected provider On. Under the list the same
+  popover holds **Send new steps to the provider with the most room**, the
+  `spreadByHeadroom` rule of the workflow rules (`useSpreadByHeadroom`, written
+  through `patchWorkspaceOverrides` like the Run defaults tab used to); it is
+  disabled with "Needs a provider that reports limits" while no On provider
+  reports them. This is the one home of the provider policy: Run defaults shows
+  the summary and a link here. The page header names its scope: the workspace
+  name, or **All workspaces** when none is open
 - **Agents**: one row per role, grouped as Explore and plan, Build, Review and write,
   and Other. If you pin a model on an agent or a workflow step, that pin beats the role
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
@@ -576,7 +583,7 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   the 2.1.282 binary and `claude --help`; no real turn has exercised it
 - `turn.rs` starts Claude with `-p <prompt>` and no input stream, so no host
   exists: every call the mode doesn't allow is denied, the turn stops, and the
-  approval card takes it from there
+  permission card takes it from there
 - Cursor's help describes `--mode plan` as read-only planning with no edits.
   Goodboy passes it without `--force`. Whether read-only shell commands still
   run in that mode has not been checked on a real turn, so the table keeps
@@ -748,7 +755,7 @@ When a provider ships or retires a model, update these together:
   agents, the step estimate and the run time left. A provider set to Off is never
   offered or estimated there, even when it is the session default; the test also
   fails on a step routing call without its scope. Resolve, its next-step card, Start agent, the kickoff,
-  Explore and Start work from a chat now follow the workspace default provider
+  Explore and Start work from chat now follow the workspace default provider
 - **Runs on.** A one-click start of an expensive role (Implementer, Resolver,
   Reviewer, PR reviewer, Debugger) shows `Runs on Sonnet 5.5 · Medium · Change`
   under the button (`shared/components/RunsOn`). Change opens the routing picker

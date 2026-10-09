@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { Button, Collapsible, Notice } from '@goodboy/ui';
+import { EmptyLine, Button, Collapsible, Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -21,6 +21,7 @@ import {
   roundUsage,
   type ContextUpdatePhase,
 } from './contextUpdateCopy';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -110,7 +111,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
                 className="inline-flex items-center gap-0.5 text-meta text-muted-foreground hover:text-foreground"
               >
                 Change model
-                <ArrowUpRight size={11} aria-hidden />
+                <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
               </button>
             </dd>
             {round === null ? null : (
@@ -122,7 +123,7 @@ export const ContextUpdates = ({ sessionId }: Props) => {
                 <dt className={TERM}>Changed</dt>
                 <dd aria-label="Changed" className={VALUE}>
                   {changes.length === 0 ? (
-                    <span className="text-muted-foreground">Nothing changed</span>
+                    <EmptyLine className="text-muted-foreground">Nothing changed</EmptyLine>
                   ) : (
                     <span className="min-w-0">
                       {changes.map((change, index) => (

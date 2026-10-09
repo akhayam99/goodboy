@@ -14,13 +14,14 @@ export const ProjectScriptRow = ({ name, command, isPinned, onTogglePin }: Props
     <span className="truncate font-mono text-code text-foreground">{name}</span>
     <span className="truncate font-mono text-meta text-faint-foreground">{command}</span>
     <IconButton
+      size="xs"
       variant="ghost"
       icon={Pin}
       iconSize={ICON_SIZE.row}
       label={isPinned ? `Unpin ${name}` : `Pin ${name}`}
       aria-pressed={isPinned}
       tone={isPinned ? 'primary' : 'neutral'}
-      className="p-1"
+
       onClick={onTogglePin}
     />
   </div>

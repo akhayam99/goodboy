@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { DeletedBranch } from '@goodboy/types';
 import { DELETED_BRANCH_KEEP_DAYS } from '@goodboy/types';
-import { Band, cn } from '@goodboy/ui';
+import { EmptyLine, Band, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -87,9 +87,9 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
         {isOpen ? (
           <div id={bodyId} className="flex flex-col gap-1 pb-1">
             {entries.length === 0 ? (
-              <p className="px-2 py-2 text-label text-muted-foreground">
+              <EmptyLine className="px-2 py-2 text-label text-muted-foreground">
                 Nothing deleted in the last {DELETED_BRANCH_KEEP_DAYS} days.
-              </p>
+              </EmptyLine>
             ) : (
               <ul className="flex flex-col">
                 {entries.map((entry) => (

@@ -3,6 +3,7 @@ import type { IsoDateTime, Session, SessionId, StepId, Workflow, WorkflowId } fr
 import { useAppStore } from '../../../../../store';
 import {
   EMPTY_SESSION_DRAFT,
+  type SessionDraft,
   type StartChoice,
 } from '../../../../../store/slices/sessionDraft/state';
 import { NewSessionBridge } from '../../../../../features/session/components/NewSessionBridge';
@@ -118,7 +119,7 @@ const createInMemory = async ({
   return { session };
 };
 
-const seedStart = (): void => {
+export const seedSessionStart = (draft: Partial<SessionDraft> = {}): void => {
   const navigate = useAppStore.getState().navigate;
   seedWorkflowScene();
   seedWorkspaceChrome({ session: SESSION, siblings: WORKSPACE_SIBLINGS });
@@ -138,7 +139,7 @@ const seedStart = (): void => {
     spawnAgent: async () => undefined,
     workspaceIntegrations: {},
     starredIssues: {},
-    sessionDrafts: { [WORKSPACE_ID]: { ...EMPTY_SESSION_DRAFT, choice } },
+    sessionDrafts: { [WORKSPACE_ID]: { ...EMPTY_SESSION_DRAFT, choice, ...draft } },
     ...(isOpen && { currentSessionId: null, openSessionDraftWorkspaceId: WORKSPACE_ID }),
   } as never);
 };
@@ -147,7 +148,7 @@ export const SessionStartScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedStart();
+    seedSessionStart();
     setIsReady(true);
   }, []);
 

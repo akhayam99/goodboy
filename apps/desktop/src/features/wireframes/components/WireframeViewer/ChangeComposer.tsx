@@ -1,5 +1,5 @@
 import { Crosshair, X } from 'lucide-react';
-import { Button, Chip, KbdPill, SegmentedTabs } from '@goodboy/ui';
+import { Button, Chip, Kbd, SegmentedTabs } from '@goodboy/ui';
 import type { WireframeChangeScope, WireframePickedNode } from '../../buildWireframeChangeRequest';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -52,7 +52,7 @@ export const ChangeComposer = ({
             <Chip
               key={node.nodeId}
               tone="neutral"
-              size="sm"
+              kind="state"
               label={screenTitle === null ? node.label : `${screenTitle} › ${node.label}`}
               trailing={<X size={ICON_SIZE.row} aria-hidden />}
               as="button"
@@ -111,7 +111,7 @@ export const ChangeComposer = ({
             data-testid="wireframe-change-send"
           >
             Ask
-            <KbdPill>{shortcutGlyphs('composer.submit')}</KbdPill>
+            <Kbd look="inline">{shortcutGlyphs('composer.submit')}</Kbd>
           </Button>
         </span>
       </div>

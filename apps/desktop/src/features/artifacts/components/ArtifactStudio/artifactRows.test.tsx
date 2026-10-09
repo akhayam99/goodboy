@@ -161,6 +161,11 @@ const rowOf = (id: ArtifactId) =>
     name: new RegExp(`^(Plan|Report|Wireframe) ${titleOf(id)}(,|$)`),
   });
 
+const deleteFromMenu = ({ id }: { readonly id: ArtifactId }) => {
+  fireEvent.click(screen.getByRole('button', { name: `More for ${TITLES[id]}` }));
+  fireEvent.click(screen.getByRole('menuitem', { name: /^Delete\b/ }));
+};
+
 const groupButton = (name: RegExp) => screen.getByRole('button', { name });
 
 describe('artifact list rows', () => {
@@ -178,9 +183,20 @@ describe('artifact list rows', () => {
     mountList();
     await waitFor(() => expect(rowOf(WIREFRAME)).not.toBeNull());
     const states = screen.getAllByTestId('artifact-row-state').map((node) => node.textContent);
-    expect(states).toEqual(
-      expect.arrayContaining(['NewWireframe', 'ReadyReport', 'Ready to run1 part']),
-    );
+    expect(states).toEqual(expect.arrayContaining(['New', 'Ready', 'Ready to run1 part']));
+  });
+
+  it('puts the part count under the status and the kind in its own column', async () => {
+    mountList();
+    await waitFor(() => expect(rowOf(READY_PLAN)).not.toBeNull());
+    const frame = rowOf(READY_PLAN)?.closest('[data-testid="artifact-row-frame"]') as HTMLElement;
+    expect(within(frame).getByTestId('artifact-row-progress').textContent).toBe('1 part');
+    expect(within(frame).getByTestId('artifact-row-kind').textContent).toBe('Plan');
+    const wireframe = rowOf(WIREFRAME)?.closest(
+      '[data-testid="artifact-row-frame"]',
+    ) as HTMLElement;
+    expect(within(wireframe).queryByTestId('artifact-row-progress')).toBeNull();
+    expect(within(wireframe).getByTestId('artifact-row-kind').textContent).toBe('Wireframe');
   });
 
   it('does not flag an old unopened artifact as New on the real database', async () => {
@@ -196,14 +212,14 @@ describe('artifact list rows', () => {
       rowOf(id)
         ?.closest('[data-testid="artifact-row-frame"]')
         ?.querySelector('[data-testid="artifact-row-state"]')?.textContent;
-    expect(stateOf(OLD_REPORT)).toBe('ReadyReport');
-    expect(stateOf(WIREFRAME)).toBe('NewWireframe');
+    expect(stateOf(OLD_REPORT)).toBe('Ready');
+    expect(stateOf(WIREFRAME)).toBe('New');
   });
 
   it('deletes a report from its row, then Undo puts the row back', async () => {
     mountList();
     await waitFor(() => expect(rowOf(REPORT)).not.toBeNull());
-    fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES[REPORT]}` }));
+    deleteFromMenu({ id: REPORT });
     await waitFor(() => expect(rowOf(REPORT)).toBeNull());
     expect(
       await rowsOf<{ status: string }>({
@@ -224,7 +240,7 @@ describe('artifact list rows', () => {
     mountList();
     await waitFor(() => expect(rowOf(REPORT)).not.toBeNull());
     expect(screen.queryByRole('button', { name: 'Delete permanently' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES[REPORT]}` }));
+    deleteFromMenu({ id: REPORT });
     await waitFor(() => expect(rowOf(REPORT)).toBeNull());
     expect(screen.queryByRole('button', { name: 'Delete permanently' })).toBeNull();
     fireEvent.click(groupButton(/^Recently deleted 1$/));
@@ -247,7 +263,7 @@ describe('artifact list rows', () => {
   it('restores a deleted artifact from Recently deleted', async () => {
     mountList();
     await waitFor(() => expect(rowOf(WIREFRAME)).not.toBeNull());
-    fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES[WIREFRAME]}` }));
+    deleteFromMenu({ id: WIREFRAME });
     await waitFor(() => expect(rowOf(WIREFRAME)).toBeNull());
     fireEvent.click(groupButton(/^Recently deleted 1$/));
     fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));

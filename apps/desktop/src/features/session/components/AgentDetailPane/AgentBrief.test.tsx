@@ -281,6 +281,17 @@ describe('AgentBrief statistics', () => {
     expect(screen.getAllByRole('heading')).toHaveLength(1);
   });
 
+  it('drops the turn count instead of reading 0 turns when the agent has no prompt of its own', () => {
+    seedUsage();
+    agentMetrics.turnsByAgentId = new Map();
+    render(
+      <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
+    );
+
+    screen.getByText(/in ·/);
+    expect(screen.queryByText(/turns?$/u)).toBeNull();
+  });
+
   it('says nothing when the agent has not produced any usage yet', () => {
     render(
       <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
@@ -365,6 +376,70 @@ describe('AgentBrief type scale', () => {
 
     expect(screen.getByText('Now')).toBeDefined();
     expect(screen.getByText('thinking')).toBeDefined();
+  });
+
+  it('hides the Now block of a running agent whose turn is idle and nothing else runs', () => {
+    state.agentTurnState = {
+      [agentId]: { kind: 'idle', lastActivityAt: '2026-09-29T09:00:00.000Z' },
+    };
+    render(<AgentBrief session={session} agent={makeAgent({ status: 'running' })} />);
+
+    expect(screen.queryByText('Now')).toBeNull();
+    expect(screen.queryByText('ready')).toBeNull();
+  });
+
+  it('names the subagents a running agent waits on while its own turn is idle', () => {
+    state.agentTurnState = {
+      [agentId]: { kind: 'idle', lastActivityAt: '2026-09-29T09:00:00.000Z' },
+    };
+    state.sessionPhaseRuns = {
+      [sessionId]: [
+        makeAgent({ status: 'running' }),
+        makeAgent({
+          id: 'part-1' as AgentId,
+          ordinal: 1,
+          name: 'part one',
+          status: 'running',
+          parentAgentId: agentId,
+        }),
+        makeAgent({
+          id: 'part-2' as AgentId,
+          ordinal: 2,
+          name: 'part two',
+          status: 'completed',
+          parentAgentId: agentId,
+        }),
+      ],
+    };
+    render(<AgentBrief session={session} agent={makeAgent({ status: 'running' })} />);
+
+    expect(screen.getByText('Now')).toBeDefined();
+    expect(screen.getByText('Waiting on 1 subagent')).toBeDefined();
+    expect(screen.queryByText('ready')).toBeNull();
+  });
+
+  it('keeps the long-run hint when the Now block has no activity to name', () => {
+    state.agentTurnState = {
+      [agentId]: { kind: 'idle', lastActivityAt: '2026-09-29T09:00:00.000Z' },
+    };
+    render(
+      <AgentBrief
+        session={session}
+        agent={makeAgent({ status: 'running' })}
+        time={{
+          label: '19m',
+          detail: 'Running 19m. Most finish within 9m.',
+          progress: 1,
+          headline: '19m · longer than usual',
+          note: 'Longer than usual',
+          isMuchLonger: true,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Now')).toBeDefined();
+    screen.getByRole('button', { name: 'Check what it is doing in the transcript' });
+    expect(screen.queryByText('ready')).toBeNull();
   });
 
   it('leaves the time to the header and points at the transcript at twice the usual time', () => {

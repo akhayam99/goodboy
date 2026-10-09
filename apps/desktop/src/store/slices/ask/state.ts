@@ -34,6 +34,7 @@ export type AskState = {
   readonly askReplyMeta: Readonly<Record<ChatMessageId, AskReplyMeta>>;
   readonly askStreams: Readonly<Record<ChatId, AskStream>>;
   readonly askRouting: Readonly<Record<SessionId, AskRouting>>;
+  readonly askDrafts: Readonly<Record<string, string>>;
 };
 
 export const askInitialState: AskState = {
@@ -44,4 +45,5 @@ export const askInitialState: AskState = {
   askReplyMeta: {},
   askStreams: {},
   askRouting: {},
+  askDrafts: {},
 };

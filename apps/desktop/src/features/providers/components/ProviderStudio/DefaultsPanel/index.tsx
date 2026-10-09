@@ -17,7 +17,7 @@ import {
   InlineConfirm,
   OverflowMenu,
   PaneShell,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
@@ -40,6 +40,7 @@ import { useAutoLimitContext } from '../../../hooks/useAutoLimitContext';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly scopeLabel?: string | null;
   readonly focusSection?: string;
 };
 
@@ -65,7 +66,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   defaultBranchTemplate: null,
 };
 
-export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
+export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: Props) => {
   const tasksRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (focusSection === undefined || !TASKS.some((task) => task.id === focusSection)) {
@@ -121,6 +122,7 @@ export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
       scroll="body"
       animationClassName={SETTINGS_PANE_ENTRY}
       title={NAMES.models}
+      meta={scopeLabel ?? undefined}
       actions={
         <OverflowMenu
           label="Models actions"
@@ -156,7 +158,8 @@ export const DefaultsPanel = ({ workspaceId, focusSection }: Props) => {
         <Eyebrow label="Providers" />
         {connectedProviderIds.length === 0 ? (
           <FieldRow label="When a provider is out">
-            <FilledEmptyState
+            <EmptyState
+              size="section"
               icon={CONCEPT_ICONS.providers}
               tone={CONCEPT_TONE.providers}
               title="No providers connected"

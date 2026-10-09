@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Play, Square, SquareTerminal } from 'lucide-react';
+import { Square, SquareTerminal } from 'lucide-react';
 import { Button, DrawerFrame } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -10,6 +10,7 @@ import { resolveScriptTarget } from '../../resolveScriptTarget';
 import { ScriptCommandDisclosure } from './ScriptCommandDisclosure';
 import { ScriptRunDock } from './ScriptRunDock';
 import { ScriptRunLog } from './ScriptRunLog';
+import { RunButton } from './RunButton';
 import { ScriptRunMeta } from './ScriptRunMeta';
 import { runLogPlaceholder } from './runLogPlaceholder';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -68,16 +69,12 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, onClose }: Prop
       Stop
     </Button>
   ) : (
-    <Button
-      variant="secondary"
-      size="sm"
-      onClick={scriptRun.run}
-      disabled={!scriptRun.canRun}
-      title={scriptRun.canRun ? undefined : blockedReason}
-    >
-      <Play size={ICON_SIZE.row} aria-hidden />
-      {record === null ? 'Run' : 'Run again'}
-    </Button>
+    <RunButton
+      canRun={scriptRun.canRun}
+      blockedReason={blockedReason}
+      label={record === null ? 'Run' : 'Run again'}
+      onRun={scriptRun.run}
+    />
   );
 
   return (
@@ -85,7 +82,6 @@ export const ScriptRunDrawer = ({ sessionId, scriptKey, mountId, onClose }: Prop
       title={title}
       icon={SquareTerminal}
       iconClassName="text-faint-foreground"
-      closeLabel={`Close ${title} output`}
       action={action}
       onClose={onClose}
       dock={

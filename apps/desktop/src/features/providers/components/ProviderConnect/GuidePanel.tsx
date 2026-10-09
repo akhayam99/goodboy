@@ -1,6 +1,7 @@
 import { cn, tintClasses } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import type { ProviderGuide } from './guides';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly guide: ProviderGuide;
@@ -47,7 +48,7 @@ export const GuidePanel = ({ guide }: Props) => {
         className="mt-auto inline-flex items-center gap-1 text-meta text-muted-foreground transition-colors hover:text-foreground"
       >
         <span>{guide.docsLabel}</span>
-        <ExternalLink size={10} aria-hidden />
+        <ExternalLink size={ICON_SIZE.mark} aria-hidden />
       </a>
     </div>
   );

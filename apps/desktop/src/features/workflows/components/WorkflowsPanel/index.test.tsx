@@ -648,7 +648,8 @@ describe('WorkflowsPanel saved steps', () => {
     openSavedSteps();
 
     const builtin = screen.getByRole('region', { name: 'Built in' });
-    expect(within(builtin).getAllByRole('button')).toHaveLength(8);
+    expect(within(builtin).getAllByRole('button')).toHaveLength(7);
+    expect(within(builtin).queryByText('Resolve comments')).toBeNull();
     const workspace = screen.getByRole('region', { name: 'This workspace' });
     expect(within(workspace).getByText(/Based on Test/)).toBeDefined();
   });

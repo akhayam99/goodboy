@@ -26,8 +26,6 @@ import {
 import { DeleteSessionConfirm } from '.';
 
 const SESSION_ID = 'session-ledger-export' as SessionId;
-const KEPT =
-  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact.';
 
 let useAppStore: StoryStore;
 
@@ -47,23 +45,25 @@ afterEach(() => {
 const session = aSession({ id: SESSION_ID, goal: 'Reconcile the ledger export' });
 
 describe('DeleteSessionConfirm copy', () => {
-  it('says the cost and shipped work stay in Impact, and the branch stays in the repository', () => {
+  it('says in two short lines what is removed and what is kept, branches included', () => {
     useAppStore.setState({ sessionBranches: { [SESSION_ID]: 'mq/ledger-export' } });
 
     render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);
 
-    screen.getByText(new RegExp(`^${KEPT} The branch and its commits stay in the repository`));
+    screen.getByText('Removed: transcript, file versions, images.');
+    screen.getByText('Kept: branches, cost, uncommitted worktrees.');
     screen.getByText('This cannot be undone.');
     expect(screen.queryByText(/archive instead/i, { selector: 'p' })).toBeNull();
   });
 
-  it('says the same for a branchless session, without a branch to keep', () => {
+  it('keeps only the cost for a branchless session, without a branch to keep', () => {
     useAppStore.setState({ sessionBranches: { [SESSION_ID]: '' } });
 
     render(<DeleteSessionConfirm session={session} onClose={vi.fn()} />);
 
-    screen.getByText(KEPT);
-    expect(screen.queryByText(/The branch and its commits/)).toBeNull();
+    screen.getByText('Removed: transcript, file versions, images.');
+    screen.getByText('Kept: cost.');
+    expect(screen.queryByText(/branches/)).toBeNull();
   });
 });
 

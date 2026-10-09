@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react';
 import { FolderPlus } from 'lucide-react';
-import { AnchoredPopover, Button, IconButton, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  IconButton,
+  OverflowMenu,
+  useDropdown,
+  type OverflowMenuItem,
+} from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../../store';
@@ -15,17 +22,27 @@ type Props = {
   readonly presentation?: 'icon' | 'button';
 };
 
-const emptyPickerMessage = ({
-  hasWorkspaceProjects,
-}: {
-  readonly hasWorkspaceProjects: boolean;
-}): string =>
-  hasWorkspaceProjects
-    ? 'Every workspace project is already in this session.'
-    : 'Add a project in workspace settings to use it here.';
+const openWorkspaceProjects = () => {
+  window.dispatchEvent(
+    new CustomEvent('goodboy:open-settings', {
+      detail: { scope: 'workspace', section: 'projects' },
+    }),
+  );
+};
+
+const ADD_PROJECT_ITEMS: ReadonlyArray<OverflowMenuItem> = [
+  {
+    kind: 'item',
+    key: 'add-project',
+    label: 'Add project',
+    description: 'Every workspace project is already in this session.',
+    icon: FolderPlus,
+    onClick: openWorkspaceProjects,
+  },
+];
 
 export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
-  const dropdown = useDropdown({ width: 'w-80', expectedHeight: 320 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 320 });
   const [isComplete, setIsComplete] = useState(false);
   const availableProjects = useAppStore(
     useShallow((state) => {
@@ -47,6 +64,10 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
   );
   const label = 'Add project';
 
+  if (presentation === 'button' && hasWorkspaceProjects && availableProjects.length === 0) {
+    return <OverflowMenu label="Project actions" items={ADD_PROJECT_ITEMS} />;
+  }
+
   return (
     <AnchoredPopover
       dropdown={dropdown}
@@ -56,6 +77,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       trigger={
         presentation === 'icon' ? (
           <IconButton
+            size="xs"
             variant="ghost"
             icon={FolderPlus}
             iconSize={ICON_SIZE.row}
@@ -66,7 +88,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
               setIsComplete(false);
               dropdown.toggle();
             }}
-            className="size-6 shrink-0"
+            className="shrink-0"
           />
         ) : (
           <Button
@@ -89,18 +111,16 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       {availableProjects.length === 0 || isComplete ? (
         <div className="flex flex-col gap-2 px-3 py-2">
           <p className="text-label text-muted-foreground">
-            {emptyPickerMessage({ hasWorkspaceProjects })}
+            {hasWorkspaceProjects
+              ? 'Every workspace project is already in this session.'
+              : 'Add a project in workspace settings to use it here.'}
           </p>
           <Button
             variant="secondary"
             size="sm"
             onClick={() => {
               dropdown.close();
-              window.dispatchEvent(
-                new CustomEvent('goodboy:open-settings', {
-                  detail: { scope: 'workspace', section: 'projects' },
-                }),
-              );
+              openWorkspaceProjects();
             }}
           >
             Add workspace project

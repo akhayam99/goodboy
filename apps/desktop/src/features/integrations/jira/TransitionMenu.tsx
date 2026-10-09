@@ -12,6 +12,7 @@ import {
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useJiraTransitions } from './useJiraTransitions';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type CurrentState = {
   readonly label: string;
@@ -101,7 +102,7 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
           )}
         >
           {state.label}
-          <ChevronDown size={10} aria-hidden />
+          <ChevronDown size={ICON_SIZE.mark} aria-hidden />
         </button>
       }
     >

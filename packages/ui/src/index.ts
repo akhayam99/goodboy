@@ -11,6 +11,8 @@ export { useDropdown } from './useDropdown';
 export { PopoverPortalProvider } from './PopoverPortalContext';
 export type { DropdownController } from './useDropdown';
 export { ICON_SIZE } from './iconSize';
+export { TEXT_ROLE } from './textRoles';
+export type { TextRole } from './textRoles';
 export { BOARD_LANE_GAP_REM, BOARD_LANE_MIN_REM, PANE_RHYTHM } from './paneRhythm';
 export { TERMINAL_DIM } from './terminalDim';
 export { formatError } from './formatError';
@@ -77,6 +79,7 @@ export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
 export { MenuTriggerButton } from './components/MenuTriggerButton';
+export type { MenuTriggerSize } from './components/MenuTriggerButton';
 export { LineMark } from './components/LineMark';
 export { MenuItems } from './components/MenuItems';
 export { ContextMenu } from './components/ContextMenu/ContextMenu';
@@ -126,7 +129,7 @@ export {
   SlackIcon,
   XIcon,
 } from './components/brandIcons';
-export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
+export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
 export { SelectionCheckbox } from './components/SelectionCheckbox';
@@ -156,7 +159,7 @@ export { Divider } from './components/Divider';
 export type { DividerProps } from './components/Divider';
 export { DogMascot } from './components/DogMascot';
 export { EmptyLine } from './components/EmptyLine';
-export { EmptyState, FilledEmptyState, LensEmptyState } from './components/EmptyState';
+export { EmptyState, FilledEmptyState } from './components/EmptyState';
 export type { EmptyStateProps } from './components/EmptyState';
 export { Eyebrow } from './components/Eyebrow';
 export type { EyebrowProps } from './components/Eyebrow';
@@ -220,6 +223,7 @@ export {
   useInheritedPaneActions,
 } from './components/PaneShell/paneActionsContext';
 export { UnderTrailContext } from './components/PaneShell/underTrailContext';
+export { PaneBannerContext } from './components/PaneShell/paneBannerContext';
 export { PageColumn } from './components/PageColumn';
 export type { PageColumnWidth } from './components/PageColumn';
 export { FormActions } from './components/FormActions';
@@ -292,3 +296,27 @@ export type { KbdLook, KbdProps } from './components/Kbd';
 export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';
 export { drawerAsideWidthOf, drawerLayoutOf } from './drawerGeometry';
 export type { DrawerLayout } from './drawerGeometry';
+export type { ChipKind } from './components/Chip';
+export type { IconButtonSize } from './components/IconButton';
+export { SearchField } from './components/SearchField';
+export type { SearchFieldProps } from './components/SearchField';
+export { ChoiceCards } from './components/ChoiceCards';
+export type { ChoiceCardsProps } from './components/ChoiceCards';
+export type { FieldSize } from './components/Input';
+export type { SegmentedTabsSize } from './components/SegmentedTabs';
+export { isChordHint } from './components/Kbd';
+export { KeyHint } from './components/KeyHint';
+export type { KeyHintProps } from './components/KeyHint';
+export { TOP_BAR_CONTROL } from './topBarControl';
+export { lastFocusedElement, useLastFocused } from './useLastFocused';
+export { FLOATING_SURFACE } from './floatingSurface';
+
+export {
+  FRAME_BAND_PX,
+  FRAME_PAGES,
+  FRAME_TITLE_CENTRE_PX,
+  FRAME_TITLE_ROW_PX,
+  frameGeometryOf,
+} from './frameGeometry';
+export type { FrameGeometry, FramePage, FrameTitleLeft } from './frameGeometry';
+export { HeaderActions } from './components/HeaderActions';

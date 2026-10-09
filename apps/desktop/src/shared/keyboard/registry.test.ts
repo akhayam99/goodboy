@@ -150,10 +150,33 @@ describe('shortcut registry', () => {
     expect(shortcutGlyphs('terminal.newTab')).toBe('Ctrl+Shift+T');
   });
 
-  it('gives the review lens exactly one chord', () => {
+  it('names the Branch tab chords Comments, Files and Pull request, and the page Overview', () => {
+    expect(SHORTCUTS['lens.review'].label).toBe('Comments');
+    expect(SHORTCUTS['lens.files'].label).toBe('Files');
+    expect(SHORTCUTS['lens.pr'].label).toBe('Pull request');
+    expect(SHORTCUTS['lens.overview'].label).toBe('Overview');
+    expect(shortcutGlyphs('lens.review')).toBe('⌘⌥R');
+    expect(shortcutGlyphs('lens.files')).toBe('⌘⌥F');
+  });
+
+  it('scopes the review and diff keys to the Comments and Files tabs', () => {
+    expect(SHORTCUT_SCOPE_LABEL.review).toBe('On the Comments tab');
+    expect(SHORTCUT_SCOPE_LABEL.diff).toBe('On the Files tab');
+    expect(SHORTCUT_SCOPE_LABEL.pullRequest).toBe('On the Pull request tab');
+  });
+
+  it('retires no label that still names Review or Diff as a page', () => {
+    const labels = entries.map(([, entry]) => entry.label);
+    expect(labels.filter((label) => /^(Review|Diff)$/.test(label))).toEqual([]);
+    expect(
+      Object.values(SHORTCUT_SCOPE_LABEL).filter((label) => /Review view|Diff view/.test(label)),
+    ).toEqual([]);
+  });
+
+  it('gives the comments tab exactly one chord', () => {
     const reviewLensIds = entries
       .filter(([id, entry]) => entry.plane === 'lens' && id.startsWith('lens.'))
-      .filter(([, entry]) => entry.label === 'Review')
+      .filter(([, entry]) => entry.label === 'Comments')
       .map(([id]) => id);
 
     expect(reviewLensIds).toEqual(['lens.review']);

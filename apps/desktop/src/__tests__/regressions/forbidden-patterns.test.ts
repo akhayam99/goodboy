@@ -183,7 +183,7 @@ const countStringifiedCaughtErrors = (file: SourceFile): number => {
 
 const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade/index.tsx';
 const FOOTER_CTA_BAR =
-  /<footer\b|\bPopoverFooter\b|\bPANE_RHYTHM\.dock\b|\bdock=\{(?![^}]*\bconversation\.composer\b)/;
+  /<footer\b|\bPopoverFooter\b|\bPANE_RHYTHM\.dock\b|\bdock=\{(?![^}]*\bcomposer\b)/;
 
 type ClassLineParams = {
   readonly file: SourceFile;

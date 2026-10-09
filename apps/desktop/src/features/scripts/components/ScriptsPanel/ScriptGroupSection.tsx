@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { RefreshIconButton, cn } from '@goodboy/ui';
+import { ChevronRight, RefreshCw } from 'lucide-react';
+import { IconButton, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { SessionScriptGroup } from '../../buildSessionScripts';
 
@@ -34,7 +34,7 @@ export const ScriptGroupSection = ({
 
   return (
     <section aria-label={label} className="flex flex-col gap-1">
-      <header className="flex h-7 items-center gap-2 px-1">
+      <header className="flex h-8 items-center gap-2 px-2">
         <button
           type="button"
           aria-expanded={!isCollapsed}
@@ -67,11 +67,16 @@ export const ScriptGroupSection = ({
           )}
         </button>
         {group.isReady ? (
-          <RefreshIconButton
-            label={`Read ${group.projectName} scripts again`}
-            isLoading={isRefreshing}
-            onClick={onRefresh}
-          />
+          <span className="flex w-7 shrink-0 items-center justify-center">
+            <IconButton
+              variant="ghost"
+              icon={RefreshCw}
+              iconSize={ICON_SIZE.row}
+              label={`Read ${group.projectName} scripts again`}
+              busy={isRefreshing}
+              onClick={onRefresh}
+            />
+          </span>
         ) : null}
       </header>
       {isCollapsed ? null : (

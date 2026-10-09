@@ -62,6 +62,15 @@ describe('parseOrchestratorDecision', () => {
     });
   });
 
+  it('turns a resolver step into an implementer step', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"Fix the review findings","role":"resolver","promptPrefix":"x","expectedOutput":"x"}}<</orchestrator>>',
+    });
+
+    expect(parsed?.action === 'next' && parsed.step.role).toBe('implementer');
+  });
+
   it('falls back to custom for an unknown role', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const parsed = parseOrchestratorDecision({

@@ -124,7 +124,7 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
       onKeyDown={onKeyDown}
       className="flex min-h-0 flex-1 flex-col gap-1 p-1 motion-safe:animate-crumb-menu-in"
     >
-      <div className="flex h-6.5 shrink-0 items-center justify-between gap-2 px-2 text-meta text-faint-foreground">
+      <div className="flex h-6 shrink-0 items-center justify-between gap-2 px-2 text-meta text-faint-foreground">
         <span className="min-w-0 truncate">
           <span className="text-muted-foreground">{model.title}</span>
           {model.context != null ? ` · ${model.context}` : null}

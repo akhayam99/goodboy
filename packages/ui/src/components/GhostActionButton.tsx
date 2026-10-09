@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 import { StatusDot } from './StatusDot';
+import { ICON_SIZE } from '../iconSize';
 
 export type GhostActionButtonProps = {
   readonly icon: LucideIcon;
@@ -57,7 +58,7 @@ export const GhostActionButton = ({
       {isBusy ? (
         <StatusDot tone="neutral" size="sm" pulsing className="bg-current" />
       ) : (
-        <Icon size={14} aria-hidden />
+        <Icon size={ICON_SIZE.control} aria-hidden />
       )}
       {labelContent}
     </button>

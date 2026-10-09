@@ -1,14 +1,13 @@
 import { useContext, type ReactElement, type ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
 import { PANE_RHYTHM } from '../../paneRhythm';
-import { tintClasses, type Tone } from '../../tint';
 import { Divider } from '../Divider';
 import { PageColumn, type PageColumnWidth } from '../PageColumn';
 import { ScrollFade } from '../ScrollFade';
 import { PaneTitleRow } from './PaneTitleRow';
 import { UnderTrailContext } from './underTrailContext';
 import { PaneActionsContext, useInheritedPaneActions } from './paneActionsContext';
+import { PaneBannerContext } from './paneBannerContext';
 
 type BaseProps = {
   readonly animationClassName?: string;
@@ -22,9 +21,6 @@ type BaseProps = {
 
 type TitleHeaderProps = {
   readonly title: string;
-  readonly icon?: LucideIcon;
-  readonly glyph?: ReactNode;
-  readonly tone?: Tone;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
   readonly subheader?: ReactNode;
@@ -34,9 +30,6 @@ type TitleHeaderProps = {
 type CustomHeaderProps = {
   readonly header: ReactElement;
   readonly title?: undefined;
-  readonly icon?: undefined;
-  readonly glyph?: undefined;
-  readonly tone?: undefined;
   readonly meta?: undefined;
   readonly actions?: undefined;
   readonly subheader?: undefined;
@@ -56,8 +49,17 @@ export const PaneShell = (props: Props) => {
   } = props;
   const isUnderTrail = useContext(UnderTrailContext);
   const inheritedActions = useInheritedPaneActions();
+  const inheritedBanner = useContext(PaneBannerContext);
+  const banner =
+    inheritedBanner == null ? null : (
+      <div data-slot="pane-banner" className="min-w-0 shrink-0 empty:hidden">
+        {inheritedBanner}
+      </div>
+    );
   const children = (
-    <PaneActionsContext.Provider value={null}>{content}</PaneActionsContext.Provider>
+    <PaneActionsContext.Provider value={null}>
+      <PaneBannerContext.Provider value={null}>{content}</PaneBannerContext.Provider>
+    </PaneActionsContext.Provider>
   );
   const titleActions =
     inheritedActions == null ? (
@@ -69,23 +71,11 @@ export const PaneShell = (props: Props) => {
       </>
     );
 
-  const iconNode =
-    props.glyph != null ? (
-      <span aria-hidden className="flex shrink-0 translate-y-0.5">
-        {props.glyph}
-      </span>
-    ) : props.icon != null ? (
-      <props.icon
-        size={16}
-        aria-hidden
-        className={cn('shrink-0 translate-y-0.5', tintClasses(props.tone ?? 'neutral').icon)}
-      />
-    ) : null;
-
   const header = (
     <div
       data-slot="pane-header"
       data-rhythm={headerRhythm}
+      data-under-trail={isUnderTrail ? '' : undefined}
       className={cn(
         'flex min-w-0 shrink-0 flex-col',
         PANE_RHYTHM.below[headerRhythm],
@@ -97,12 +87,7 @@ export const PaneShell = (props: Props) => {
           props.header
         ) : (
           <>
-            <PaneTitleRow
-              title={props.title}
-              icon={iconNode}
-              meta={props.meta}
-              actions={titleActions}
-            />
+            <PaneTitleRow title={props.title} meta={props.meta} actions={titleActions} />
             {props.subheader ?? null}
           </>
         )}
@@ -130,6 +115,7 @@ export const PaneShell = (props: Props) => {
           <PageColumn width={width} className="flex flex-col pb-5">
             {header}
             <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
+              {banner}
               {children}
             </div>
           </PageColumn>
@@ -146,12 +132,21 @@ export const PaneShell = (props: Props) => {
       </div>
       {scroll === 'self' ? (
         <div data-slot="pane-body" className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {banner === null ? null : (
+            <PageColumn
+              width={width}
+              className="shrink-0 pb-3 has-[[data-slot=pane-banner]:empty]:hidden"
+            >
+              {banner}
+            </PageColumn>
+          )}
           {children}
         </div>
       ) : (
         <ScrollFade className="min-h-0 flex-1" fadeSize={24} edge="line">
           <PageColumn width={width} className="pb-5">
             <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
+              {banner}
               {children}
             </div>
           </PageColumn>

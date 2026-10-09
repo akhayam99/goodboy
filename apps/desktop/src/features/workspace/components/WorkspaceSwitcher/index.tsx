@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FolderGit2, FolderOpen, FolderPlus, Search } from 'lucide-react';
-import { Divider, FilledEmptyState, KbdPill, ScrollFade } from '@goodboy/ui';
+import { Divider, EmptyState, Kbd, ScrollFade } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -152,7 +152,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
           aria-label="Find a workspace or project"
           className="flex-1 bg-transparent text-label focus-visible:outline-none"
         />
-        <KbdPill>{shortcutGlyphs('workspace.switcher')}</KbdPill>
+        <Kbd look="inline">{shortcutGlyphs('workspace.switcher')}</Kbd>
       </div>
       <Divider />
       <ScrollFade
@@ -169,11 +169,12 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
             }}
           />
         ) : null}
-        {filtered.length === 0 ? (
-          <FilledEmptyState
+        {filtered.length === 0 && query.trim() !== '' ? (
+          <EmptyState
+            size="section"
             icon={CONCEPT_ICONS.workspace}
             tone={CONCEPT_TONE.workspace}
-            title="No workspaces"
+            title="No other workspaces match"
           />
         ) : (
           filtered.map((w, i) => (

@@ -1,7 +1,15 @@
 import { ISSUE_SEARCH_PLACEHOLDER } from '../../../integrations/issueCode/lookupCopy';
 import type { ReactNode, RefObject } from 'react';
-import { ListFilter, RefreshCw, Search, X } from 'lucide-react';
-import { AnchoredPopover, Chip, IconButton, KbdPill, cn, useDropdown } from '@goodboy/ui';
+import { ListFilter, RefreshCw, X } from 'lucide-react';
+import {
+  AnchoredPopover,
+  Chip,
+  IconButton,
+  KbdPill,
+  SearchField,
+  cn,
+  useDropdown,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
@@ -28,7 +36,7 @@ export const InboxListHeader = ({
   activeFilterCount,
   facets,
 }: Props) => {
-  const filters = useDropdown({ align: 'end', width: 'w-64', expectedHeight: 420 });
+  const filters = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 420 });
 
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -45,35 +53,31 @@ export const InboxListHeader = ({
           onClick={onClearSession}
         />
       ) : null}
-      <div className="flex h-7 w-[200px] min-w-0 items-center gap-2 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
-        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-        <input
-          ref={searchRef}
-          type="text"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== 'Escape') {
-              return;
-            }
-            event.preventDefault();
-            if (query === '') {
-              event.currentTarget.blur();
-              return;
-            }
-            onQueryChange('');
-          }}
-          placeholder={ISSUE_SEARCH_PLACEHOLDER}
-          aria-label="Search the inbox"
-          autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
-        />
-        <KbdPill>{shortcutGlyphs('list.search')}</KbdPill>
-      </div>
+      <SearchField
+        inputRef={searchRef}
+        value={query}
+        onChange={onQueryChange}
+        onKeyDown={(event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          event.preventDefault();
+          if (query === '') {
+            event.currentTarget.blur();
+            return;
+          }
+          onQueryChange('');
+        }}
+        placeholder={ISSUE_SEARCH_PLACEHOLDER}
+        ariaLabel="Search tasks"
+        autoComplete="off"
+        hint={<KbdPill>{shortcutGlyphs('list.search')}</KbdPill>}
+        className="w-[200px] min-w-0"
+      />
       <AnchoredPopover
         dropdown={filters}
         role="dialog"
-        ariaLabel="Inbox filters"
+        ariaLabel="Task filters"
         className="max-h-[70vh] py-1"
         trigger={
           <button

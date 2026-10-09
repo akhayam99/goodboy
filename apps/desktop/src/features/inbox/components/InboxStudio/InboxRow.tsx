@@ -10,6 +10,7 @@ import { openUrl } from '../../../../shared/lib/editor';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { recordSessionId } from '../../recordSessionId';
+import { startLabelOf } from '../../startFromRecord';
 import type { InboxRecord } from '../../types';
 import { InboxStateLabel } from '../InboxStateLabel';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -22,6 +23,7 @@ type Props = {
   readonly isStarred?: boolean;
   readonly onToggleStar?: (record: InboxRecord) => void;
   readonly onActivate?: (record: InboxRecord) => void;
+  readonly isStateShown?: boolean;
 };
 
 type OptionIdParams = {
@@ -38,6 +40,7 @@ const InboxRowView = ({
   isStarred,
   onToggleStar,
   onActivate,
+  isStateShown = true,
 }: Props) => {
   const now = useNow(30_000);
   const relativeTime = formatAge({ from: record.updatedAt, now });
@@ -60,6 +63,7 @@ const InboxRowView = ({
         sessionId,
         isStarred: star?.isStarred ?? null,
         onOpen: () => onSelect(record),
+        launchLabel: startLabelOf({ record }),
         onLaunch: onActivate === undefined ? null : () => onActivate(record),
         onToggleStar: star?.onToggle ?? null,
         onRefresh: null,
@@ -78,7 +82,10 @@ const InboxRowView = ({
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       className={cn(
-        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_48px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors @2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_48px]',
+        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_56px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors',
+        isStateShown
+          ? '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_56px]'
+          : '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_56px]',
         selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',
       )}
     >
@@ -114,11 +121,13 @@ const InboxRowView = ({
       <span className="pointer-events-none relative hidden truncate text-meta text-faint-foreground @2xl:block">
         {record.context}
       </span>
-      <InboxStateLabel
-        state={record.state}
-        label={record.stateLabel}
-        className="pointer-events-none relative hidden text-meta text-muted-foreground @2xl:flex"
-      />
+      {isStateShown ? (
+        <InboxStateLabel
+          state={record.state}
+          label={record.stateLabel}
+          className="pointer-events-none relative hidden text-meta text-muted-foreground @2xl:flex"
+        />
+      ) : null}
       <span className="relative flex h-5 items-center justify-end">
         {star === undefined ? null : (
           <StarToggle
@@ -136,7 +145,7 @@ const InboxRowView = ({
           dateTime={record.updatedAt}
           title={formatDateTime({ at: record.updatedAt, hasYear: true })}
           className={cn(
-            'pointer-events-none text-meta text-faint-foreground',
+            'pointer-events-none whitespace-nowrap text-meta text-faint-foreground',
             canOpen && 'group-hover:hidden',
             canOpen && selected && 'hidden',
           )}

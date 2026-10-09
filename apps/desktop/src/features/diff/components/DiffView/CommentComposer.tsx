@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, KbdPill, cn, tintClasses } from '@goodboy/ui';
+import { Button, Kbd, cn, tintClasses } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
 
 type Props = {
@@ -63,11 +63,10 @@ export const CommentComposer = ({
       />
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-auto flex items-center gap-1 text-meta text-faint-foreground">
-          <KbdPill>⌘</KbdPill>
-          <KbdPill>↵</KbdPill>
+          <Kbd look="inline">⌘↵</Kbd>
           <span>{submitLabel.toLowerCase()}</span>
           <span aria-hidden>·</span>
-          <KbdPill>esc</KbdPill>
+          <Kbd look="cap">esc</Kbd>
           <span>cancel</span>
         </span>
         <Button variant="ghost" size="sm" onClick={onCancel}>

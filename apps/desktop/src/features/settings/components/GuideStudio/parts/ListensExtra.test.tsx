@@ -52,7 +52,7 @@ describe('ListensExtra', () => {
 
   it('shows the list keys from the registry and the two kinds of field', () => {
     render(<ListensExtra />);
-    const lists = within(band('In the Inbox and Notifications'));
+    const lists = within(band('In Tasks and Notifications'));
 
     expect(lists.getByText('Next row')).toBeDefined();
     expect(lists.getByText('Star or unstar')).toBeDefined();

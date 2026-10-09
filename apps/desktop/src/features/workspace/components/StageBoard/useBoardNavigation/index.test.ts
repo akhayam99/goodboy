@@ -143,7 +143,7 @@ describe('useBoardNavigation', () => {
     result.current.openPullRequest(session);
     expect(navigateMock).toHaveBeenCalledTimes(1);
     expect(navigateMock).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'pr' }),
     });
     expect(openReviewTargetMock).not.toHaveBeenCalled();
   });

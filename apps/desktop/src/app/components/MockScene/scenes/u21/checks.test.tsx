@@ -37,13 +37,12 @@ const draw = ({ name }: { readonly name: SceneName }) => {
 };
 
 describe('the checks scenes', () => {
-  it('registers the seven scenes of the plan', () => {
+  it('registers the six scenes of the plan', () => {
     expect(Object.keys(U21_CHECKS_SCENES).sort()).toEqual([
       'branch-checks',
       'branch-checks-denied',
       'branch-checks-empty',
       'branch-checks-failing',
-      'branch-checks-gitlab',
       'branch-checks-loading',
       'branch-checks-no-pr',
     ]);
@@ -85,12 +84,6 @@ describe('the checks scenes', () => {
 
     expect(await screen.findByText('Checks run once the pull request exists')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
-  });
-
-  it('branch-checks-gitlab names the host it does not show yet', async () => {
-    draw({ name: 'branch-checks-gitlab' });
-
-    expect(await screen.findByText("Goodboy doesn't show GitLab pipelines yet")).toBeDefined();
   });
 
   it('branch-checks-loading reads the checks and stays there', async () => {

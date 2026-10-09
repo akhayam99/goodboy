@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, EmptyState, PageColumn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ExternalLink } from 'lucide-react';
@@ -14,7 +14,8 @@ import { useActionControls } from '../../actions/useActionControls';
 import { useGithubConnection } from '../../integrations/github/useGithubConnection';
 import { openToolSettings } from '../../integrations/openToolSettings';
 import { ChecksMode } from '../../review/components/ReviewPane/modes/ChecksMode';
-import { checksViewOf, type ChecksHost } from '../checksViewOf';
+import { checksViewOf, type ChecksHost, type ChecksHostKind } from '../checksViewOf';
+import { usePullRequestView } from '../hooks/usePullRequestView';
 import { repoNameOf } from '../repoNameOf';
 import { ChecksDeniedNotice } from './ChecksDeniedNotice';
 import { ChecksFailedNotice } from './ChecksFailedNotice';
@@ -49,16 +50,25 @@ export const BranchChecks = ({ sessionId }: Props) => {
   const host = useAppStore(
     useShallow((s) => {
       const entry = selectedReviewEntryOf({ state: s, sessionId });
-      return { kind: entry.kind, url: entry.url };
+      const kind: ChecksHostKind = entry?.kind ?? 'local';
+      return { kind, url: entry?.url ?? null, number: entry?.number ?? null };
     }),
   );
+  const canReadChecks = REVIEW_SOURCE_CAPABILITIES[host.kind].canReadChecks;
+  const portHost = host.kind === 'gitlab' || host.kind === 'bitbucket' ? host.kind : null;
+  const isPortHost = portHost !== null;
+  const portView = usePullRequestView({
+    sessionId,
+    isEnabled: isPortHost && canReadChecks,
+    fallbackNumber: host.number,
+  });
   const create = useActionControls({
     target: { kind: 'pullRequest', sessionId, prNumber: null },
   });
 
   const pr = github?.pr ?? null;
   const detail = github?.detail ?? null;
-  const isChecking = github?.detailLoading === true;
+  const isChecking = isPortHost ? portView.isLoading : github?.detailLoading === true;
   const prNumber = pr?.number ?? null;
   const hasDetail = detail !== null && detail.prNumber === prNumber;
 
@@ -69,9 +79,14 @@ export const BranchChecks = ({ sessionId }: Props) => {
     void refreshSessionPrDetail(sessionId);
   }, [hasDetail, prNumber, refreshSessionPrDetail, sessionId]);
 
+  const reloadPortView = portView.reload;
   const checkAgain = useCallback(() => {
+    if (isPortHost) {
+      reloadPortView();
+      return;
+    }
     void refreshSessionPrDetail(sessionId, { force: true });
-  }, [refreshSessionPrDetail, sessionId]);
+  }, [isPortHost, refreshSessionPrDetail, reloadPortView, sessionId]);
 
   const view = checksViewOf({
     hostKind: host.kind,
@@ -81,6 +96,12 @@ export const BranchChecks = ({ sessionId }: Props) => {
     isDetailLoading: isChecking,
     detailError: github?.detailError ?? null,
     hasFetchedDetail: (github?.detailFetchedAt ?? null) !== null,
+    canReadChecks,
+    portChecks: portView.view?.checks ?? null,
+    portReadFailure:
+      portView.isLoading || portView.view !== null || portView.error === null
+        ? null
+        : { kind: portView.errorKind === 'denied' ? 'denied' : 'failed', error: portView.error },
   });
 
   const createAction = create.actions.find((action) => action.id === CREATE_ACTION_ID);
@@ -106,7 +127,7 @@ export const BranchChecks = ({ sessionId }: Props) => {
         />
       );
     }
-    if (view.kind === 'no-pr' || pr === null) {
+    if (view.kind === 'no-pr' || (pr === null && !isPortHost)) {
       return (
         <EmptyState
           bordered
@@ -129,11 +150,12 @@ export const BranchChecks = ({ sessionId }: Props) => {
     if (view.kind === 'denied') {
       return (
         <ChecksDeniedNotice
-          repoName={repoNameOf({ url: pr.url })}
+          host={portHost ?? 'github'}
+          repoName={repoNameOf({ url: pr?.url ?? host.url ?? '' })}
           isTokenBound={connection.mode === 'pat' || hasBinding}
           isChecking={isChecking}
           error={view.error}
-          onOpenSettings={() => openToolSettings({ tool: 'github' })}
+          onOpenSettings={() => openToolSettings({ tool: portHost ?? 'github' })}
           onCheckAgain={checkAgain}
         />
       );
@@ -151,8 +173,8 @@ export const BranchChecks = ({ sessionId }: Props) => {
       {notice === null ? (
         <ChecksMode
           checks={view.kind === 'ready' ? view.checks : []}
-          fallbackUrl={pr?.url ?? ''}
-          hostLabel={REVIEW_SOURCE_LABEL.github}
+          fallbackUrl={pr?.url ?? host.url ?? ''}
+          hostLabel={REVIEW_SOURCE_LABEL[isPortHost ? host.kind : 'github']}
           isLoading={view.kind === 'loading'}
           pr={pr ?? undefined}
           detail={detail}

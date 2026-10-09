@@ -79,7 +79,7 @@ const MARKS: ReadonlyArray<Mark> = [
     title: 'Write the notify-relay digest',
     tone: 'warning',
     state: 'approval',
-    words: 'Waiting for your approval',
+    words: 'Waiting for your permission',
   },
   {
     title: 'Plan the Cascadia onboarding',
@@ -175,7 +175,7 @@ describe('the session marks scene', () => {
     expect(unseen.map((node) => node.getAttribute('aria-label'))).toEqual(['New reply, unseen']);
   });
 
-  it('keeps red for the error and failing checks only', async () => {
+  it('keeps red for the error, a push that failed and failing checks only', async () => {
     render(
       <ToastProvider>
         <SessionMarksScene />
@@ -189,6 +189,7 @@ describe('the session marks scene', () => {
     expect(red.sort()).toEqual(
       [
         'Billing export fails on large files',
+        'Send the Harborline ledger fixes',
         'Ship the refund webhook',
         'Stop notify-relay retries on a 409',
       ].sort(),

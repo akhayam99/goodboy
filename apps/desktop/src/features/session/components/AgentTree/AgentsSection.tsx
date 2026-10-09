@@ -32,7 +32,9 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
       {!forceExpanded && (
         <SectionHeader
           className={FIRST_HEADER_CLASS}
-          icon={<CONCEPT_ICONS.workflows size={11} aria-hidden className="text-primary" />}
+          icon={
+            <CONCEPT_ICONS.workflows size={ICON_SIZE.row} aria-hidden className="text-primary" />
+          }
           label="Runs"
           action={
             <SectionToggle

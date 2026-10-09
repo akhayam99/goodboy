@@ -14,11 +14,10 @@ type Props = {
   readonly runs: ReadonlyArray<ArtifactRunOption>;
   readonly value: ArtifactBasedOn;
   readonly scopeLine: string;
-  readonly repoLine: string;
   readonly onChange: (value: ArtifactBasedOn) => void;
 };
 
-export const ArtifactBasedOnField = ({ runs, value, scopeLine, repoLine, onChange }: Props) => {
+export const ArtifactBasedOnField = ({ runs, value, scopeLine, onChange }: Props) => {
   const fieldId = useId();
 
   return (
@@ -45,7 +44,6 @@ export const ArtifactBasedOnField = ({ runs, value, scopeLine, repoLine, onChang
           }}
         />
         <span className="text-meta leading-relaxed text-muted-foreground">{scopeLine}</span>
-        <span className="text-meta leading-relaxed text-muted-foreground">{repoLine}</span>
       </div>
     </section>
   );

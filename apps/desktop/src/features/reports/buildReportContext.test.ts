@@ -121,7 +121,7 @@ const wireframeArtifact = ({ sourceText }: WireframeArtifactParams): WireframeAr
       screens: [
         {
           id: 'inbox',
-          title: 'Inbox',
+          title: 'Tasks',
           viewport: 'desktop',
           root: { id: 'open', kind: 'button', label: 'Open Detail' },
         },
@@ -136,7 +136,7 @@ const wireframeArtifact = ({ sourceText }: WireframeArtifactParams): WireframeAr
             items: [
               {
                 id: 'back-inbox',
-                label: 'Inbox',
+                label: 'Tasks',
                 action: { type: 'navigate', toScreenId: 'inbox' },
               },
             ],
@@ -417,9 +417,9 @@ describe('buildReportContext', () => {
 
   it('describes wireframe screens and both declared and inline navigation without JSON', () => {
     const context = buildReportContext({ ...baseParams, artifacts: [wireframeArtifact({})] });
-    expect(context.text).toContain('screens: Inbox; Session Detail');
-    expect(context.text).toContain('Inbox to Session Detail');
-    expect(context.text).toContain('Session Detail to Inbox');
+    expect(context.text).toContain('screens: Tasks; Session Detail');
+    expect(context.text).toContain('Tasks to Session Detail');
+    expect(context.text).toContain('Session Detail to Tasks');
     expect(context.text).not.toContain('"version"');
     expect(context.inventory.find((row) => row.id === 'artifacts')?.detail).toEqual([
       'wireframe artifact-1: 2 screen titles, 2 of 2 transitions',

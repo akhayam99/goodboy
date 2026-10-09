@@ -2,7 +2,11 @@ import { useMemo } from 'react';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
-import { resolveFactsByAgentId, type ResolveActivityFacts } from '../../timeline/resolveActivity';
+import {
+  resolveFactsByAgentId,
+  withoutWorkflowStepAttempts,
+  type ResolveActivityFacts,
+} from '../../timeline/resolveActivity';
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
@@ -15,8 +19,13 @@ export const useResolveActivity = ({
 }: {
   readonly sessionId: SessionId;
 }): ResolveActivity => {
-  const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
-  const { entries } = useReviewEntries({ sessionId });
+  const allAttempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
+  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId]);
+  const attempts = useMemo(
+    () => withoutWorkflowStepAttempts({ attempts: allAttempts, agents }),
+    [allAttempts, agents],
+  );
+  const { entries } = useReviewEntries({ sessionId, scope: 'all' });
   return useMemo(
     () => ({
       factsByAgentId: resolveFactsByAgentId({
@@ -25,6 +34,7 @@ export const useResolveActivity = ({
           threadId: entry.threadId,
           state: entry.state,
           word: entry.word,
+          isPushFailure: entry.resolveWord === 'push_failed',
           path: entry.row.reviewerNote?.path ?? null,
           line: entry.row.reviewerNote?.line ?? null,
         })),

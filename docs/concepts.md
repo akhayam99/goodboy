@@ -89,7 +89,7 @@ in it.
 every turn running in the one it had, so opening a workspace only switches
 this window in place when nothing is running here. When agents are running,
 the workspace popover asks first and offers a new window, which keeps them
-going; a side door that used to switch silently (a notification, an inbox
+going; a side door that used to switch silently (a notification, a Tasks
 item, Open a folder) now opens that workspace's own window instead of
 touching this one. `⌘Enter` on a workspace row always opens a new window,
 no question asked.
@@ -122,13 +122,13 @@ the session. The stages are the columns of the board:
 - **done**
 
 "Running" has one meaning everywhere. An agent turn that is starting or
-running, an agent waiting for an approval, and a workflow run deciding its next
+running, an agent waiting for a permission, and a workflow run deciding its next
 step all count as live work. The top bar chip, the workspace switcher's "N
 running", the footer count, the update pill and the restart-when-idle check all
 read it, so a workspace with one agent waiting on a permission is never "idle".
 
 **Needs you** outranks running when what waits is a human input: an open
-question, a tool waiting for your approval, a comment the fix run needs you for,
+question, a tool waiting for your permission, a comment the fix run needs you for,
 or a plan waiting for your approval (a workflow run held at its plan). The
 session sits in needs you while its agents keep working, and the top bar chip,
 the board column, the palette and `⌥⌘↓` all count it there ("1 needs you",
@@ -142,7 +142,11 @@ Session stages under Identifiers).
 
 The board looks at the pull request or merge request of every mount, GitHub,
 GitLab or Bitbucket, and takes the worst one: failing CI, then changes
-requested, then approved. A session is done only when every request is merged
+requested, then approved. A Bitbucket mount reads its checks from the commit
+statuses of the open pull request (any failed or stopped status is failing, any
+status in progress is pending) and its review state from the reviewers (a
+requested change wins, then one approval, then reviewers who have not answered);
+a status it could not read keeps the last answer and never reads green. A session is done only when every request is merged
 or closed.
 
 ### Session lifecycle
@@ -224,7 +228,7 @@ its own worktree, its own current branch and its own pull request history.
   alone does not say what you wanted.
 
 **Unmount** takes one mount out of the session and keeps its history. The
-screen calls it **Close worktree**, and a closed row offers **Reopen**.
+screen calls it **Close branch**, and a closed row offers **Reopen**.
 **Cleanup** deletes the worktree and keeps its local branch. Goodboy does not
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
@@ -270,6 +274,7 @@ It includes:
 - The container and branches being created
 - Issues linked and unlinked
 - One pull request per project, from opened to merged or closed
+- Your edits of a pull request's title and description stay in the page's Activity until you leave the session (memory only, not a recorded event)
 - Runs started, stopped and archived
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
@@ -362,9 +367,9 @@ whether you clicked it on the board or in the session overview.
   Activity does not show, so it never sits above a question already in view.
   With one such question, **Answer** opens the agent that asked at that
   question (`useOpenAgentQuestion`); with more, it opens the questions view.
-- An approval has one place in the overview: the **Needs you** callout,
-  whose **Answer the approval** opens the blocked agent. The approve-tool
-  suggestion for that same agent stays out of Next steps; an approval the
+- A permission has one place in the overview: the **Needs you** callout,
+  whose button opens the blocked agent. The approve-tool
+  suggestion for that same agent stays out of Next steps; a permission the
   callout does not name (a second blocked agent) still shows there.
 - Eighteen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
@@ -411,11 +416,12 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   `planRunToast`; see `docs/navigation.md` Follow toasts) - the toast the
   standalone PlanReadySuggestion component used to show before the unified
   resolver replaced it in E7-5, restored here.
-- The resolve-threads card ("Draft fixes for N") never starts an agent: it
+- The resolve-threads card ("Fix N") never starts an agent: it
   sends a `fix` request (`requestReview`) with the fixable comments and opens
-  the launch panel on the Comments tab, pre-filled. The board card "Resolve N
-  comments" does the same. N and the comments come from `eligibleReviewThreads`,
-  which reads the one fixable predicate (`isFixableThread`).
+  the launch panel on the Comments tab, pre-filled. The board card "Fix N"
+  does the same. N and the comments come from the fixable part of `reviewTally`
+  (`useFixableThreadIds`) for the selected review source, so a GitLab or Bitbucket
+  pull request counts like a GitHub one.
 
 ## Agents
 
@@ -750,18 +756,20 @@ A **review conversation** is Goodboy's saved record of one review, issue or
 note. It keeps its state, its verdict, its draft reply and the commits that
 answer it.
 
-Review exists with or without a pull request. Without one, its header reads
-`No pull request yet` with `Open a pull request`, and the list holds the notes.
-With a pull request, the list mixes the GitHub threads and the notes. Every
-open note gets a conversation, and deleting or resolving the note closes it. An
-agent reviewer's comments on a branch without a pull request are kept as
-notes. When a pull request arrives the notes stay notes; `Post open notes to
-the PR` in the Review menu turns them into draft review comments, never on its
-own.
+Review exists with or without a pull request. Without one, Comments reads `No
+pull request yet` with `Create pull request`. On GitLab the words are `merge
+request`, `MR` and `!42` (`PULL_REQUEST_NOUNS`), and the Branch page, its
+header and its merge ask read them from the host. With a pull request, Comments holds
+the GitHub threads only. Your notes never mix with them: they live in the Notes
+drawer of the Files tab, where every open note gets a conversation, and deleting
+or resolving the note closes it. An agent reviewer's comments on a branch without
+a pull request are kept as notes. When a pull request arrives the notes stay
+notes; `Move N to review draft` in the drawer turns them into draft review
+comments (a note on a whole file too), never on its own.
 
 A note goes through the same flow with the same resolver, but there is no
-reply to write: without a pull request, `Accept` keeps the fix on the branch
-and closes the note, and `Close the note` closes it without a change.
+reply to write: `Accept` keeps the fix on the branch and closes the note, with
+or without a pull request, and `Close the note` closes it without a change.
 Reopening a closed note opens a new conversation generation instead of
 reviving the closed one, so the resolved history stays next to the reopened
 conversation.
@@ -857,16 +865,15 @@ fix can be answered without undoing its accepted decision. The git facts live in
 
 Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
-comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply` (R, a reply
-without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
+comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply only` (R, drops the change and sends a reply; `Reply`, which opens the text box, where there is no change to drop) and `Skip` (S), plus `Undo` (U, `Undo skip` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the launch panel. J and K move. A checkbox appears on hover on the comments you
-can fix (open, or couldn't fix) and on ready comments (X toggles the focused
+the launch panel. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
+can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
-opens the panel for the fixable pick and `Accept 3` accepts the ready pick, and
+opens the panel for the fixable pick and `Accept 3` accepts the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
-`…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
+`…` also offers Stop drafting, Resolve, Open in Files, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
 next open comment. Accept never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the
@@ -917,11 +924,11 @@ with a local commit and never pushes.
 
 - Every start goes through one path (`startBatch`): `Fix` on the row of a
   comment nobody started (hover) or in its detail, `F` on the focused row, the
-  `Fix N open comments` line (no run going), the Overview card or the board
+  `Fix N` line (no run going), the Overview card or the board
   card. Every door shares one set, the fixable comments: open plus couldn't fix
   (`isFixableThread`, `features/resolve/fixableComments.ts`); a comment that
   needs you is answered, never relaunched, and a failed push is retried from
-  the push. The header has no "Draft fixes" button: a batch is
+  the push. The header has no separate fix button: a batch is
   born from the comments you pick. Opening Review never starts an agent.
   `Fix` opens the **launch panel** in the right column of the Comments tab, in
   place of the thread (never above the columns, never a dialog): the page does
@@ -941,7 +948,7 @@ N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
   marker contract
 - Bulk actions on the Comments tab, each one a single store action. With no run
   (`fixRunOf` finds no launch with a live comment) the line under the
-  tabs is `N open comments · Fix N open comments ⌘A`, which opens the panel on
+  tabs is `N open comments · Fix N ⌘A`, which opens the panel on
   the fixable set. With a run, `RunStatusBulkActions` sits in the `actions`
   slot of the run status line (`ResolveRunStatus`, before the model) and
   `bulkRunOf` hands it the entries of that run:
@@ -965,7 +972,7 @@ N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
 for this session`, else `Resolver default`); launching does not turn the
   default into a pick. A retry (Redraft, Answer, Retry) continues the same fix
   run on the model it started with and keeps its commit style and hint (and
-  the commit style set in Review replies, so with fixup set the second round is
+  the commit style set in Replies and commits, so with fixup set the second round is
   a fixup too). Only a model picked for the session that differs from the one
   the run used starts the comment over as a new fix run on that model. The hint
   you type before a retry lands in the prompt's operator notes
@@ -975,7 +982,7 @@ for this session`, else `Resolver default`); launching does not turn the
   session pick or the role default); F is Retry in this run.
   `…` holds **Try another model** (the picker opens inline under the buttons,
   it sets the model of a new agent; the `reviewComment.anotherModel` verb, so
-  right click and the palette have it too), **Add a hint**, Reply yourself, Skip
+  right click and the palette have it too), **Add a hint**, Reply, Skip
   and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no
@@ -998,7 +1005,7 @@ now` beside its note posts it at once. `Push N` in the Review header is the
 way out for every accepted comment at once. It
 confirms inline under the header with exactly what goes out (`Push 2 to
 hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
-resolved on GitHub.`), naming the commit style set in Review replies. A
+resolved on GitHub.`), naming the commit style set in Replies and commits. A
 blocker (uncommitted changes, a commit nobody approved, a fix still running)
 replaces the confirm with its reason and the one move that clears it. The
 result stays on the layer in one line with its commit; a partial push says how
@@ -1016,7 +1023,7 @@ was. ⌘↵ with the list focused pushes too. Behind it runs a
 3. Posts each reply, then resolves each thread on GitHub when you are allowed
    to resolve it there. Otherwise the thread stays open for the reviewer.
 
-How a reply reads is set in Settings, Workspace, **Review replies**:
+How a reply reads is set in Settings, Workspace, **Replies and commits**:
 
 - **Voice**: Terse (the default), Friendly, Formal, or Your replies, which
   follows a style note you can edit. **Learn from my replies** reads your last
@@ -1092,8 +1099,8 @@ specific rule that fits wins.
   then says so (`Read only · Ask first isn't available on Codex`)
 - When a call is denied in a run with no one watching, the turn stops. The
   agent's row, its session card and the top bar's Needs you all read **Needs
-  approval**, not running, until you answer
-- The approval card's primary action, **Allow and continue**, grants that
+  permission**, not running, until you answer
+- The permission card's primary action, **Allow and continue**, grants that
   exact call once and resumes the turn by itself; the secondary "Always
   allow" actions write a rule (command-prefix for Bash, the whole tool for an
   edit) and need a manual retry
@@ -1172,25 +1179,28 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the new session draft, or opening Launch session on an
-inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
+Picking an issue in the new session draft, or pressing Start from HBL-412 on a
+tracker issue in Tasks, asks the **Issue briefs** task model for a brief: a title, a goal
 of one to three sentences and up to five "done when" criteria, in the issue's
 language. It reads the issue text, not its comments, and answers in checked
 JSON, so a reply with a preamble fails instead of leaking into the goal. The
-brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
-text or Dismiss, and a failure stays inline in the card with Retry. The first
-three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
-`SessionKickoff/`) underneath: Run a workflow (preselected, the full workflow
-builder with the goal filled in) or Ask an agent, precompiled with that goal
-and editable. Its own action links the issue, mounts the project the issue
-maps to (the same rule as Launch session in the Inbox), creates the session
-and starts the workflow or agent in the same gesture; nothing exists before
-that. In the
-Launch session popover the brief fills the goal only while you have not edited it, and
-Launch works with the issue text while the brief is still loading. Briefs are
+brief is only a proposal, and there is no gate to accept it. The draft opens one
+block (`PickedIssue`, `SessionKickoff/`) with the issue text as the title and goal, so
+Start is possible at once; when the brief lands it takes their place unless you
+already edited either, and Use the issue text or Use brief switches between the
+two. A failure stays inline with Retry. Under the title sits How to work on it
+(`HowToWorkOnIt`): Run a workflow (preselected, the full workflow builder with
+the goal filled in) or Ask an agent, precompiled with that goal and editable. Its
+one action, Start from HBL-412, links the issue, mounts the project the issue
+maps to (the same rule as Start in Tasks), creates the session
+and starts the workflow or agent in the same gesture, and raises one Follow
+toast; nothing exists before that. In the
+one-step panel of a Slack thread, a merge request or a pull request of yours the
+brief fills the goal only while you have not edited it, and
+Start works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
-connected provider free for the task, the card shows the issue text alone.
-Merge and pull requests launch with their text as it is.
+connected provider free for the task, the block shows the issue text alone.
+Merge and pull requests start with their text as it is.
 
 ### Each source
 
@@ -1202,8 +1212,10 @@ Merge and pull requests launch with their text as it is.
   confirmation first. Read, comment on and edit issues.
 - **Bitbucket**: pull requests from start to finish, with description, diff,
   build results in plain words and review threads. Eight actions: approve,
-  revoke, request changes, withdraw, comment, reply, merge, decline. Issues go
-  through Jira.
+  revoke, request changes, withdraw, comment, reply, merge, decline, and from the
+  Pull request tab rename, edit the description, add reviewers and merge with the
+  strategy you pick. Its nouns are `pull request`, `PR` and `#42`, and Bitbucket
+  has no draft. Issues go through Jira.
 - **Jira**: read full issues and act on them. Comment, assign, move to another
   status, edit the description.
 - **Linear**: read issues and turn them into sessions. The description and
@@ -1222,9 +1234,9 @@ from `sentry_list_organizations` and `sentry_list_projects`). Each field uses
 the tool's own name for the secret: API key on Linear, API token on Jira, auth
 token on Sentry. A key saved for another workspace can be picked instead.
 
-## Inbox
+## Tasks
 
-The inbox is the workspace's queue of incoming work from every connected
+Tasks is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
 record each, one line per record. Records are grouped by day (today,
 yesterday, this week, older) and ordered by time only, newest first. A facet
@@ -1236,16 +1248,16 @@ same one the record shows. A record opens in a drawer beside the list, with the
 same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
 the workspace with Link to a session, or open the session already linked to it.
 A record shows its session whichever way the link was made: launched from the
-inbox, picked there, or linked from the session's own link button, by search or
+Tasks, picked there, or linked from the session's own link button, by search or
 by pasted URL. The session link button searches the issues of every Sentry
 project linked to the workspace, not only the connected one. A code or link
-pasted there goes through the same lookup as the inbox search
+pasted there goes through the same lookup as the Tasks search
 (`useWorkspaceIssueLookup`, scoped to the picked tracker) and links the task
 `launchSpecFor` builds from the resolved record, so a Sentry short code such as
 `PAYMENTS-API-3` resolves and a Sentry link keeps its short id. A paste the
 lookup cannot resolve falls back to the fields read from the URL.
 
-Launch session mounts the item's project when it maps to one
+Start in Tasks mounts the item's project when it maps to one
 (`launchMountFor`). A Sentry error reads the projects linked to its Sentry
 project and the ones a Sentry code mapping points at; a GitHub or GitLab item
 reads the project whose remote is its repo. One match is mounted, several
@@ -1276,7 +1288,7 @@ project; its row shows the tracker's own project or team instead. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
-suggested from Sentry code mappings and wait for your Link. The inbox reads the
+suggested from Sentry code mappings and wait for your Link. Tasks reads the
 first page of every linked Sentry project besides the connected one, in one
 load that starts once the links are read. A Sentry call that hits a rate limit
 or a gateway error is retried up to twice, waiting what `Retry-After` asks for
@@ -1371,10 +1383,10 @@ task up again in Goodboy.
 
   | Internal word       | On screen                                         |
   | ------------------- | ------------------------------------------------- |
-  | mount, branch mount | worktree (repo), folder (folder project), project |
+  | mount, branch mount | branch (repo), folder (folder project), project   |
   | mount a project     | Add project                                       |
-  | fork a mount        | New worktree                                      |
-  | unmount             | Close worktree, and Reopen for a closed row       |
+  | fork a mount        | New branch                                        |
+  | unmount             | Close branch, and Reopen for a closed row         |
   | spawn               | Start (an agent, a reviewer, an implementer)      |
   | handoff             | Suggested next: Implementer, the next brief       |
   | cluster             | part (in a plan), subagent (once it runs)         |
@@ -1454,13 +1466,56 @@ task up again in Goodboy.
 - Integrations share the layout, never the logic. A Sentry issue and a GitHub
   pull request look alike because they use the same page layout component.
 
+### Words we use
+
+One verb per job, one noun per object. The registered names live in
+`shared/names.ts` (`NAMES`, with `FORMER_NAMES` for search) and
+`__tests__/regressions/retiredNames.ts` fails the old phrase, so check there
+before a change adds a word.
+
+- **Fix**: start fixing comments. The count is the comments a fix can start now
+  (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
+  the launch panel title. The panel's own button, **Start fixing 3**, stays.
+- **Reply**: answer a thread yourself. **Reply only** drops the code change and
+  keeps the reply. **Publish reply** sends a decided reply that did not go out.
+  **Resolve** ends a thread without a reply (a note says **Close**).
+- **Push**: sends commits (**Push 2**, **Retry push** after a failure).
+  **Publish 2 replies** sends replies without a push. **Sync and try again** is
+  about the remote branch that moved, not the base.
+- **Rebase on main**: brings the base in, with the base branch's own name.
+  **Update 2** is for local clones only.
+- **Branch**: the one noun for a line of work on a project. **New branch**
+  starts one (its worktree is created for it), **Switch branch** moves to
+  another, **Close branch** finishes it; the branch and its commits stay in the
+  repository.
+- **Start**: begin work from a thing, with the thing after it. **Start from
+  HBL-412** in Tasks, in the New session draft and in the one-step panel,
+  **Start from #318** for a pull request, **Start work from chat** in Chat.
+  **Review pull request** is the one exception: the review is the work. Pick the
+  issue first with **Pick HBL-412**. The old phrases (Launch session, Pick up
+  issue, Turn into work) are retired.
+- **Follow**: watch what a thing you started is doing. Anything you start
+  offers it in its toast.
+- **Approve**: accept a plan (**Approve** when the run waits for it, **Run
+  plan** when it does not). A tool that waits for you asks for **permission**
+  (Allow, Deny); only a plan waits for **approval**.
+- **Pin**: **Pin session** and **Unpin session** keep a session at the top of
+  the list, the rail and the switcher.
+- **Notes**: the one noun for comments you write on your own diff before they
+  become a review draft.
+- **Tasks**: the door that lists issues, pull requests, threads and errors from
+  your tools (it was Inbox). Its stored keys, events and scene ids keep the old
+  name `inbox`.
+- **Notifications**: the bell and its list, capitalised everywhere.
+
 ### Identifiers
 
 Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
 `review` (**in review**), `building`, `done`. A fix run raises `attention` too:
 a comment that **Needs you** gives the reason `fix-needs-you` (it opens the
 Comments tab) and a comment that **Couldn't fix** (not one you stopped, not a
-failed push) gives `fix-couldnt-fix`. Both also send one notification when the
+failed push) gives `fix-couldnt-fix`. A push that failed gives `push-failed`, in red, and
+sends its own notification. All of them also send one notification when the
 count rises (`projectResolveRows`), with an action that opens Activity, where
 the Needs you row waits.
 
@@ -1473,7 +1528,7 @@ closed or merged draft, so the flag alone never makes a word: a closed or merged
 pull request never reads Draft.
 
 Attention reasons, in `SessionAttentionReason`, rank in this order when several
-hold: `needs-approval`, `agent-error`, `plan-approval`, `open-question`,
+hold: `needs-approval`, `agent-error`, `push-failed`, `plan-approval`, `open-question`,
 `fix-needs-you`, `ci-failed`, `changes-requested`, `fix-couldnt-fix`,
 `pr-queued`, `pr-approved`, `unread-reply`. `attentionFactsOf` lists every reason
 that holds in that order, `deriveSessionStage` takes the first as `attention` and
@@ -1482,7 +1537,7 @@ needs you that an agent still works. `plan-approval` comes from a workflow run
 whose `orchestrationStop` is `plan-approval` (`isRunHeldForPlan`) and opens that
 run's page. `ATTENTION_REASON_META` gives each reason its mark, tone and words
 for the sidebar, the switcher, the hover card, the Board card, the Now chip and
-the palette; red is only an agent error and failing checks. `pr-queued` ("In
+the palette; red is only an agent error, a push that failed and failing checks. `pr-queued` ("In
 merge queue", a pull request GitHub is set to merge) is not a needs-you reason:
 when it wins, the stage is `review` and `attention` still carries it, so the
 marks and words read it while the session stays out of Needs you. A queued pull
@@ -1491,22 +1546,22 @@ never "CI".
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 
-| Kind          | Label            | Started from                    |
-| ------------- | ---------------- | ------------------------------- |
-| `planner`     | Plan             | spawn menu                      |
-| `scout`       | Scout            | spawn menu                      |
-| `implementer` | Implement        | spawn menu                      |
-| `debugger`    | Debug            | spawn menu                      |
-| `tester`      | Test             | spawn menu                      |
-| `reviewer`    | Review           | spawn menu                      |
-| `pr-reviewer` | PR reviewer      | PR review session               |
-| `docs`        | Docs             | spawn menu                      |
-| `report`      | Report           | workflow step                   |
-| `wireframe`   | Wireframe        | workflow step                   |
-| `resolver`    | Resolve          | Fix run on the Branch page      |
-| `rewriter`    | History rewriter | a history replay that conflicts |
-| `scribe`      | Scribe           | pull request panel              |
-| `generic`     | Generalist       | spawn menu                      |
+| Kind          | Label            | Started from                                      |
+| ------------- | ---------------- | ------------------------------------------------- |
+| `planner`     | Plan             | spawn menu                                        |
+| `scout`       | Scout            | spawn menu                                        |
+| `implementer` | Implement        | spawn menu                                        |
+| `debugger`    | Debug            | spawn menu                                        |
+| `tester`      | Test             | spawn menu                                        |
+| `reviewer`    | Review           | spawn menu                                        |
+| `pr-reviewer` | PR reviewer      | PR review session                                 |
+| `docs`        | Docs             | spawn menu                                        |
+| `report`      | Report           | workflow step                                     |
+| `wireframe`   | Wireframe        | workflow step                                     |
+| `resolver`    | Resolve          | Fix run on the Branch page, never a workflow step |
+| `rewriter`    | History rewriter | a history replay that conflicts                   |
+| `scribe`      | Scribe           | pull request panel                                |
+| `generic`     | Generalist       | spawn menu                                        |
 
 Other identifiers:
 

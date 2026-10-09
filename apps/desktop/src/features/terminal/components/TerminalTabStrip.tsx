@@ -62,7 +62,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
                 }}
                 className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
-                <X size={11} aria-hidden />
+                <X size={ICON_SIZE.row} aria-hidden />
               </button>
             </Tooltip>
           </div>

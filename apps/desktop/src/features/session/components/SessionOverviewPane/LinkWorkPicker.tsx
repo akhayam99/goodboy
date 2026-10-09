@@ -1,6 +1,15 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
-import { Divider, Eyebrow, KbdPill, ScrollFade, SegmentedTabs, SkeletonRow, cn } from '@goodboy/ui';
+import {
+  Divider,
+  EmptyLine,
+  Eyebrow,
+  Kbd,
+  ScrollFade,
+  SegmentedTabs,
+  SkeletonRow,
+  cn,
+} from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
@@ -39,7 +48,7 @@ type Props = {
 };
 
 const SECTION_TITLE: Readonly<Record<LinkWorkRow['section'], string>> = {
-  inbox: 'From your inbox',
+  inbox: 'From Tasks',
   results: 'Results',
   paste: 'Paste',
 };
@@ -216,7 +225,11 @@ export const LinkWorkPicker = ({
             {`Goodboy links ${Object.values(LINK_WORK_PROVIDER_LABEL).join(', ')} URLs.`}
           </p>
         ) : rows.length === 0 && isLoading ? (
-          <SkeletonRow label="Loading your inbox" />
+          <SkeletonRow label="Loading your tasks" />
+        ) : rows.length === 0 && query.trim() === '' ? (
+          <EmptyLine className="justify-center px-3 py-5 text-center">
+            Paste a link or search
+          </EmptyLine>
         ) : rows.length === 0 ? (
           <p className="flex flex-col items-center gap-0.5 px-3 py-5 text-center text-label text-muted-foreground">
             <span>{`Nothing in ${sourceName} matches.`}</span>
@@ -293,15 +306,15 @@ export const LinkWorkPicker = ({
       <Divider />
       <div className="flex items-center gap-4 bg-muted px-3 py-2 text-label text-faint-foreground">
         <span className="flex items-center gap-2">
-          <KbdPill>↑↓</KbdPill>
+          <Kbd look="cap">↑↓</Kbd>
           move
         </span>
         <span className="flex items-center gap-2">
-          <KbdPill>Enter</KbdPill>
+          <Kbd look="cap">Enter</Kbd>
           link
         </span>
         <span className="flex items-center gap-2">
-          <KbdPill>Esc</KbdPill>
+          <Kbd look="cap">Esc</Kbd>
           close
         </span>
       </div>

@@ -17,7 +17,7 @@ type Props = {
 
 type SelectParams = { readonly provider: IntegrationGlyphProvider };
 
-const PANEL_WIDTH = 224;
+const PANEL_WIDTH = 240;
 const PANEL_MAX_HEIGHT = 240;
 
 export const IntegrationAddPopover = ({
@@ -29,7 +29,7 @@ export const IntegrationAddPopover = ({
 }: Props) => {
   const dropdown = useDropdown({
     align: 'center',
-    width: 'w-56',
+    width: 'w-60',
     expectedWidth: PANEL_WIDTH,
     expectedHeight: PANEL_MAX_HEIGHT,
   });

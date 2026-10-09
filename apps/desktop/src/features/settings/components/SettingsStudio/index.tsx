@@ -257,7 +257,6 @@ export const SettingsStudio = ({
               scope: availableScope,
               appSection: appSectionOf({ section: focus.section }),
               workspacePage: workspacePageOf({ section: focus.section }),
-              workspaceName,
             })}
           />
           <div className="relative flex min-h-0 min-w-0 flex-1">

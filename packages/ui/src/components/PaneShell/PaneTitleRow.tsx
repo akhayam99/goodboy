@@ -2,22 +2,25 @@ import type { ReactNode } from 'react';
 
 type Props = {
   readonly title: string;
-  readonly icon: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
 };
 
-export const PaneTitleRow = ({ title, icon, meta, actions }: Props) => (
-  <div className="flex min-h-8 min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
-    <div className="flex min-w-0 items-baseline gap-2">
-      {icon}
+export const PaneTitleRow = ({ title, meta, actions }: Props) => (
+  <div data-slot="pane-title-block" className="flex min-w-0 flex-col gap-1">
+    <div data-slot="pane-title-row" className="flex h-8 min-w-0 items-center justify-between gap-3">
       <h1 className="min-w-0 truncate text-title text-foreground">{title}</h1>
-      {meta != null && meta !== '' ? (
-        <span className="shrink-0 text-meta tabular-nums text-muted-foreground">{meta}</span>
+      {actions != null ? (
+        <div className="flex shrink-0 items-center justify-end gap-2">{actions}</div>
       ) : null}
     </div>
-    {actions != null ? (
-      <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">{actions}</div>
+    {meta != null && meta !== '' ? (
+      <p
+        data-slot="pane-meta"
+        className="min-w-0 truncate text-meta tabular-nums text-muted-foreground"
+      >
+        {meta}
+      </p>
     ) : null}
   </div>
 );

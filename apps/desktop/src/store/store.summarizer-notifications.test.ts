@@ -99,6 +99,7 @@ describe('summarizer notifications', () => {
   beforeEach(() => {
     resetStorySpies();
     vi.clearAllMocks();
+    useAppStore.setState({ notifications: [], settings: {} });
     captureSummarizerFailures();
   });
 
@@ -182,8 +183,9 @@ describe('summarizer notifications', () => {
     expect(insertNotificationSpy).not.toHaveBeenCalled();
   });
 
-  it('failure notification body includes provider and error, carries retry action', async () => {
-    summarizeSpy.mockRejectedValue(new Error('model overloaded'));
+  it('failure notification says what failed in plain words and carries a retry action', async () => {
+    const { SummarizerSpawnError } = await import('@goodboy/core');
+    summarizeSpy.mockRejectedValue(new SummarizerSpawnError(1, '', 'b: [internal] stream closed'));
     const { enqueueSummarizer, summarizerQueues } = await import('./slices/turn/turnHelpers');
 
     summarizerQueues.delete(SESSION_ID);
@@ -252,8 +254,10 @@ describe('summarizer notifications', () => {
     const call = calls.find((c) => c[1].severity === 'error');
     expect(call).not.toBeUndefined();
     const n = call?.[1] ?? {};
-    expect(n.body as string).toContain('anthropic');
-    expect(n.body as string).toContain('model overloaded');
+    expect(n.body).toBe(
+      'Claude stopped before it could summarize this session. Retry, or pick another summarizer model in Providers.',
+    );
+    expect(n.coalesceKey).toBe(`summarizer-failed:${SESSION_ID}`);
     expect(n.action).toEqual({ kind: 'retry-summarizer', sessionId: SESSION_ID });
   });
 
@@ -355,6 +359,7 @@ const seedSummarizerState = async ({ connected, cooldowns }: SeedParams) => {
     sessionSlots: {},
     summarizerStatus: {},
     providerCooldowns: cooldowns ?? {},
+    helperProviderFailures: {},
     providers: connected.map((id) => ({
       id,
       label: id,
@@ -398,10 +403,20 @@ const coalesceKeys = (): ReadonlyArray<string | null | undefined> =>
     (args) => (args[1] as { coalesceKey?: string | null } | undefined)?.coalesceKey,
   );
 
+const seedHidden = (hidden: Readonly<Partial<Record<ProviderId, ReadonlyArray<string>>>>) => {
+  useAppStore.setState({
+    settings: {
+      ...useAppStore.getState().settings,
+      'providers.hiddenModels': JSON.stringify(hidden),
+    },
+  });
+};
+
 describe('summarizer provider fallback', () => {
   beforeEach(() => {
     resetStorySpies();
     vi.clearAllMocks();
+    useAppStore.setState({ notifications: [], settings: {} });
     summarizerRoutes.length = 0;
     captureSummarizerFailures();
   });
@@ -427,6 +442,33 @@ describe('summarizer provider fallback', () => {
     );
 
     expect(summarizerRoutes.map((route) => route.providerId)).toEqual(['anthropic', 'codex']);
+    expect(insertNotificationSpy).not.toHaveBeenCalled();
+  });
+
+  it('retries a generic cli exit on another provider without telling the owner', async () => {
+    const { SummarizerSpawnError } = await import('@goodboy/core');
+    summarizeSpy
+      .mockRejectedValueOnce(new SummarizerSpawnError(1, '', 'b: [internal] stream closed'))
+      .mockRejectedValueOnce(new SummarizerSpawnError(1, '', 'b: [internal] stream closed'))
+      .mockResolvedValue({
+        delta: { upserts: [], decisionOps: [] },
+        usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
+        model: 'gpt-5.6-terra',
+      });
+
+    const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
+    await enqueue();
+
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('idle'),
+      { timeout: 8000 },
+    );
+
+    expect(summarizerRoutes.map((route) => route.providerId)).toEqual([
+      'anthropic',
+      'anthropic',
+      'codex',
+    ]);
     expect(insertNotificationSpy).not.toHaveBeenCalled();
   });
 
@@ -502,7 +544,7 @@ describe('summarizer provider fallback', () => {
     expect(useAppStore.getState().providerCooldowns.anthropic).toBeGreaterThan(Date.now());
   });
 
-  it('stops at one provider switch and notifies once', async () => {
+  it('tries each allowed provider once, then notifies once', async () => {
     summarizeSpy.mockRejectedValue(new Error('Claude usage limit reached'));
 
     const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex', 'gemini'] });
@@ -513,7 +555,7 @@ describe('summarizer provider fallback', () => {
       { timeout: 5000 },
     );
 
-    expect(summarizeSpy).toHaveBeenCalledTimes(2);
+    expect(summarizeSpy).toHaveBeenCalledTimes(3);
     expect(insertNotificationSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -604,5 +646,151 @@ describe('summarizer provider fallback', () => {
     const keys = coalesceKeys();
     expect(keys[0]).toBe(keys[1]);
     expect(keys[0]).toContain(`summarizer-cooling:${SESSION_ID}:`);
+  });
+  it('falls back from a cursor exit whose stderr names a usage limit', async () => {
+    const { SummarizerSpawnError } = await import('@goodboy/core');
+    summarizeSpy
+      .mockRejectedValueOnce(
+        new SummarizerSpawnError(1, '', 'b: [resource_exhausted] You hit your usage limit'),
+      )
+      .mockResolvedValue({
+        delta: { upserts: [], decisionOps: [] },
+        usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
+        model: 'gpt-5.6-terra',
+      });
+
+    const useAppStore = await seedSummarizerState({ connected: ['cursor', 'codex'] });
+    useAppStore.setState({
+      sessions: useAppStore.getState().sessions.map((session) => ({
+        ...session,
+        providerPreference: { defaultProvider: 'cursor', allowTurnOverride: false },
+      })),
+    });
+    await enqueue();
+
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('idle'),
+      { timeout: 5000 },
+    );
+
+    expect(summarizerRoutes.map((route) => route.providerId)).toEqual(['cursor', 'codex']);
+    expect(insertNotificationSpy).not.toHaveBeenCalled();
+  });
+
+  it('never falls back to a hidden model and says the provider hit its limit', async () => {
+    const { PROVIDER_CAPABILITIES } = await import('@goodboy/core');
+    summarizeSpy.mockRejectedValue(new Error('Claude usage limit reached'));
+
+    const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
+    seedHidden({ codex: PROVIDER_CAPABILITIES.codex.models.map((model) => model.id) });
+    await enqueue();
+
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('error'),
+      { timeout: 5000 },
+    );
+
+    expect(summarizerRoutes.map((route) => route.providerId)).toEqual(['anthropic']);
+    expect(insertNotificationSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ body: 'Claude reached the usage limit for this account.' }),
+    );
+  });
+
+  it('shows one notice per session across repeated failures', async () => {
+    summarizeSpy.mockRejectedValue(new Error('Claude usage limit reached'));
+
+    const useAppStore = await seedSummarizerState({ connected: ['anthropic'] });
+    await enqueue();
+    await vi.waitFor(() => expect(insertNotificationSpy).toHaveBeenCalledTimes(1), {
+      timeout: 5000,
+    });
+    useAppStore.setState({ providerCooldowns: {} });
+    await enqueue();
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(2), { timeout: 5000 });
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('error'),
+      { timeout: 5000 },
+    );
+
+    expect(insertNotificationSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the failed notice once a later summary succeeds', async () => {
+    summarizeSpy.mockRejectedValueOnce(new Error('Claude usage limit reached')).mockResolvedValue({
+      delta: { upserts: [], decisionOps: [] },
+      usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
+      model: 'claude-haiku-4-5',
+    });
+    const useAppStore = await seedSummarizerState({ connected: ['anthropic'] });
+    await enqueue();
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('error'),
+      { timeout: 5000 },
+    );
+    expect(useAppStore.getState().notifications.map((n) => n.coalesceKey)).toEqual([
+      `summarizer-failed:${SESSION_ID}`,
+    ]);
+
+    useAppStore.setState({ providerCooldowns: {} });
+    await enqueue();
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('idle'),
+      { timeout: 5000 },
+    );
+
+    await vi.waitFor(() => expect(useAppStore.getState().notifications).toEqual([]));
+  });
+
+  it('tries the model the owner picked for the retry before any fallback', async () => {
+    const { enqueueSummarizer, summarizerQueues } = await import('./slices/turn/turnHelpers');
+    summarizeSpy.mockRejectedValueOnce(new Error('Codex usage limit reached')).mockResolvedValue({
+      delta: { upserts: [], decisionOps: [] },
+      usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
+      model: 'claude-haiku-4-5',
+    });
+    const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
+    summarizerQueues.delete(SESSION_ID);
+
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'user input',
+      turnOutput: 'agent output',
+      workingDir: null,
+      taskModelOverride: { providerId: 'codex', model: 'gpt-5.6-terra' },
+    });
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('idle'),
+      { timeout: 5000 },
+    );
+
+    expect(summarizerRoutes.map((route) => route.providerId)).toEqual(['codex', 'anthropic']);
+    expect(insertNotificationSpy).not.toHaveBeenCalled();
+  });
+
+  it('skips a provider that keeps failing for the next summaries of the window', async () => {
+    const exit = new Error('summarizer cli exited with code 1');
+    summarizeSpy
+      .mockRejectedValueOnce(exit)
+      .mockRejectedValueOnce(exit)
+      .mockResolvedValue({
+        delta: { upserts: [], decisionOps: [] },
+        usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
+        model: 'gpt-5.6-terra',
+      });
+    const useAppStore = await seedSummarizerState({ connected: ['anthropic', 'codex'] });
+    await enqueue();
+    await vi.waitFor(
+      () => expect(useAppStore.getState().summarizerStatus[SESSION_ID]?.status).toBe('idle'),
+      { timeout: 8000 },
+    );
+    summarizerRoutes.length = 0;
+
+    await enqueue();
+    await vi.waitFor(() => expect(summarizerRoutes).toHaveLength(1), { timeout: 5000 });
+
+    expect(summarizerRoutes.map((route) => route.providerId)).toEqual(['codex']);
   });
 });

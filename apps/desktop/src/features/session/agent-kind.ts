@@ -406,6 +406,12 @@ const AGENT_ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES.filter(
 
 export const visibleAgentRoles = (): ReadonlyArray<AgentRole> => AGENT_ROLES;
 
+const WORKFLOW_AGENT_ROLES: ReadonlyArray<AgentRole> = AGENT_ROLES.filter(
+  (role) => ROLE_REGISTRY[role].workflowEligible,
+);
+
+export const visibleWorkflowRoles = (): ReadonlyArray<AgentRole> => WORKFLOW_AGENT_ROLES;
+
 type KindForRoleParams = {
   readonly role: AgentRole;
 };
@@ -420,11 +426,14 @@ type ClassifyStepParams = {
   };
 };
 
+const workflowKindOf = ({ kind }: { readonly kind: AgentKind }): AgentKind =>
+  kind === 'resolver' ? 'implementer' : kind;
+
 export const classifyStep = ({ step }: ClassifyStepParams): AgentKind => {
   if (step.role != null) {
-    return kindForRole({ role: step.role });
+    return workflowKindOf({ kind: kindForRole({ role: step.role }) });
   }
-  return inferAgentKindFromName({ name: step.name });
+  return workflowKindOf({ kind: inferAgentKindFromName({ name: step.name }) });
 };
 
 export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
@@ -627,11 +636,11 @@ const inferAgentKindFromName = ({ name }: InferAgentKindFromNameParams): AgentKi
 };
 
 type ClassifyAgentParams = {
-  readonly agent: Pick<Agent, 'kind' | 'name'>;
+  readonly agent: Pick<Agent, 'kind' | 'name'> & Partial<Pick<Agent, 'workflowRunId' | 'stepId'>>;
   readonly override: AgentKind | null;
 };
 
-export const classifyAgent = ({ agent, override }: ClassifyAgentParams): AgentKind => {
+const classifyAgentRow = ({ agent, override }: ClassifyAgentParams): AgentKind => {
   if (override != null) {
     if (override === 'pr-reviewer') {
       return override;
@@ -645,6 +654,12 @@ export const classifyAgent = ({ agent, override }: ClassifyAgentParams): AgentKi
     return presentationKeyForRole({ role: agent.kind });
   }
   return inferAgentKindFromName({ name: agent.name });
+};
+
+export const classifyAgent = ({ agent, override }: ClassifyAgentParams): AgentKind => {
+  const kind = classifyAgentRow({ agent, override });
+  const isWorkflowStepAgent = agent.workflowRunId != null && agent.stepId != null;
+  return isWorkflowStepAgent ? workflowKindOf({ kind }) : kind;
 };
 
 type AgentParams = {

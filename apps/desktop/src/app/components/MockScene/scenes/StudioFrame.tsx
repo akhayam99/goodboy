@@ -36,14 +36,7 @@ export const StudioFrame = ({ target, main, columnPlace }: StudioFrameProps) => 
   return (
     <ToastProvider>
       <AppShell
-        topBar={
-          <AppTopBar
-            mode={arrangement.mode}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-            onOpenImpact={noop}
-          />
-        }
+        topBar={<AppTopBar mode={arrangement.mode} onOpenSpend={noop} onOpenScript={noop} />}
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.isLeftRail}
         leftSidebar={

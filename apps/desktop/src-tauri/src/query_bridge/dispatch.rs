@@ -910,6 +910,7 @@ async fn run_write(
                 config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
+                optional_text(args, "method"),
                 app.state(),
             )
             .await
@@ -1045,6 +1046,7 @@ async fn run_write(
                 unsigned(args, "id")?,
                 None,
                 optional_text(args, "message"),
+                optional_text(args, "strategy"),
                 app.state(),
             )
             .await

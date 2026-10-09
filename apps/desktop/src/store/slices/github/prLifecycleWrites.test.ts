@@ -18,6 +18,7 @@ import { editPr } from './editPr';
 import { markPrReady } from './markPrReady';
 import { mergePr } from './mergePr';
 import {
+  PR_WRITE_NO_PORT,
   PR_WRITE_NO_PULL_REQUEST,
   PR_WRITE_NO_REPO,
   PR_WRITE_NO_SESSION,
@@ -95,11 +96,15 @@ const makeState = (): State => ({
     ],
   },
   sessionGithub: {
-    [SESSION_ID]: { pr: { number: 12, title: 'Ledger change', url: 'https://example.test/12' } },
+    [SESSION_ID]: {
+      pr: { number: 12, title: 'Ledger change', url: 'https://example.test/12' },
+      detail: null,
+    },
   },
   mountGithub: {
     [RELAY_MOUNT_ID]: {
       pr: null,
+      detail: null,
       prs: [{ number: 44, title: 'Relay change', url: 'https://example.test/44' }],
     },
   },
@@ -309,3 +314,48 @@ describe.each(VERBS.filter(({ hasOptionalNumber }) => hasOptionalNumber))(
     });
   },
 );
+
+describe.each(VERBS)('$name when the host refuses', ({ title, call }) => {
+  it('reports the host text, keeps it on the error and skips the refresh', async () => {
+    const state = makeState();
+    h.run.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'Pull request is not mergeable\n' });
+
+    const error = await call({ state, prNumber: 12 }).then(
+      () => null,
+      (caught: unknown) => caught,
+    );
+
+    expect(isReportedError(error)).toBe(true);
+    expect((error as Error).message).toBe('Pull request is not mergeable');
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ title, body: 'Pull request is not mergeable', severity: 'error' }),
+    );
+    expect(state.refreshSessionPr).not.toHaveBeenCalled();
+  });
+});
+
+describe('pull request writes on a host without a port', () => {
+  it('fails loudly instead of running gh when GitLab is not connected', async () => {
+    const state = {
+      ...makeState(),
+      sessionGithub: {},
+      mountGithub: {},
+      sessionGitlabMr: {
+        [SESSION_ID]: {
+          mr: {
+            iid: 12,
+            state: 'opened',
+            webUrl: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/12',
+          },
+        },
+      },
+    };
+
+    await expectLoudFailure({
+      run: mergePr(vi.fn(), asGet(state))(SESSION_ID, 12),
+      state,
+      title: "Couldn't merge !12",
+      message: PR_WRITE_NO_PORT,
+    });
+  });
+});

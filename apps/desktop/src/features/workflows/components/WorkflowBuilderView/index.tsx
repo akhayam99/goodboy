@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Chip, FormPage, Notice, Switch, formatError, FilledEmptyState } from '@goodboy/ui';
+import {
+  EmptyLine,
+  Button,
+  Chip,
+  FormPage,
+  Notice,
+  Switch,
+  formatError,
+  EmptyState,
+} from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   PROVIDER_CAPABILITIES,
@@ -104,6 +113,7 @@ export type BuilderKickoff = {
   readonly lane?: KickoffLane;
   readonly goal: string;
   readonly goalPlaceholder: string;
+  readonly primaryLabel?: string;
   readonly onGoalChange: (goal: string) => void;
   readonly start: (run: (session: Session) => Promise<void>) => Promise<void>;
 };
@@ -850,7 +860,9 @@ export const WorkflowBuilderView = (props: Props) => {
     if (mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed) {
       await attachWorkflowToSession(target.id, selectedPreset.id, await attachOptions());
       writeLastWorkflowMode({ workspaceId, mode });
-      showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
+      if (kickoff === null) {
+        showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
+      }
       return;
     }
     const now = new Date().toISOString() as Workflow['createdAt'];
@@ -909,7 +921,9 @@ export const WorkflowBuilderView = (props: Props) => {
     }
     await attachWorkflowToSession(target.id, workflowId, await attachOptions());
     writeLastWorkflowMode({ workspaceId, mode });
-    showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
+    if (kickoff === null) {
+      showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
+    }
   };
 
   const onStart = async () => {
@@ -962,7 +976,6 @@ export const WorkflowBuilderView = (props: Props) => {
       <Button
         size="sm"
         variant={isPlannerOpen ? 'primary' : 'secondary'}
-        emphasis="outline"
         aria-pressed={isPlannerOpen}
         disabled={blocked}
         onClick={() => setIsPlannerOpen((open) => !open)}
@@ -1185,7 +1198,8 @@ export const WorkflowBuilderView = (props: Props) => {
     }
     if (mode === 'preset' && presets.length === 0) {
       return (
-        <FilledEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.workflows}
           icon={CONCEPT_ICONS.workflows}
           title="No presets in this workspace yet"
@@ -1194,7 +1208,7 @@ export const WorkflowBuilderView = (props: Props) => {
             <Chip
               as="button"
               tone="primary"
-              size="control"
+              kind="reference"
               shape="badge"
               label="Describe your own"
               onClick={() => setMode('custom')}
@@ -1328,7 +1342,7 @@ export const WorkflowBuilderView = (props: Props) => {
             tools={guidanceTools}
             recipients={
               guidance.trim() === '' ? (
-                <span className="text-meta text-faint-foreground">Nothing to send.</span>
+                <EmptyLine className="text-meta text-faint-foreground">Nothing to send.</EmptyLine>
               ) : (
                 <>
                   <GuidanceRecipients
@@ -1375,6 +1389,7 @@ export const WorkflowBuilderView = (props: Props) => {
           reason={startGate.reason}
           isStartDisabled={startGate.isDisabled}
           isStarting={busy}
+          label={kickoff?.primaryLabel ?? null}
           canDiscard={!draftEmpty}
           onDiscard={resetDraft}
           onStart={() => void onStart()}

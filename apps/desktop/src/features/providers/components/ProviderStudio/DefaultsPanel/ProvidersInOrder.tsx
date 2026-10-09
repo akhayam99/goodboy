@@ -6,13 +6,14 @@ import { ProviderGlyph } from '../../../../../shared/components/RoutingPicker/Pr
 import { useProviderPolicy } from '../../../hooks/useProviderPolicy';
 import { PROVIDER_LABEL } from '../../../providerLabel';
 import { ProviderPolicyList } from '../../ProviderPolicyList';
+import { SpreadByHeadroomRow } from './SpreadByHeadroomRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
 const PANEL_WIDTH = 500;
-const PANEL_HEIGHT = 360;
+const PANEL_HEIGHT = 430;
 
 export const ProvidersInOrder = ({ workspaceId }: Props) => {
   const { summary } = useProviderPolicy({ workspaceId });
@@ -63,6 +64,7 @@ export const ProvidersInOrder = ({ workspaceId }: Props) => {
           <span className="text-meta text-faint-foreground">This workspace</span>
         </div>
         <ProviderPolicyList workspaceId={workspaceId} hasReset />
+        <SpreadByHeadroomRow workspaceId={workspaceId} />
       </AnchoredPopover>
     </FieldRow>
   );

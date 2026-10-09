@@ -5,6 +5,7 @@ import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
 import { budgetPctUsed } from '../../../budget/providerBudgetView';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: ProviderId;
@@ -45,7 +46,7 @@ export const ProviderUsagePill = ({ provider }: Props) => {
         tone,
       )}
     >
-      <Gauge size={10} aria-hidden />
+      <Gauge size={ICON_SIZE.mark} aria-hidden />
       {pctRemaining}% left · {reset}
     </span>
   );

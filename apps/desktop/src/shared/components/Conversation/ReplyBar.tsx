@@ -1,6 +1,7 @@
 import { MessageSquareReply, TextQuote, X } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
 import type { ReplyTarget } from './useReplyTarget';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly target: ReplyTarget;
@@ -23,7 +24,7 @@ export const ReplyBar = ({ target, onClear }: Props) => {
       data-slot="reply-bar"
       className="flex min-w-0 items-center gap-1 rounded-t-lg bg-muted py-1 pl-3 pr-1 text-meta text-muted-foreground"
     >
-      <Icon size={12} aria-hidden className="shrink-0" />
+      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="shrink-0">
         {verb} <span className="font-semibold text-foreground">{target.message.author.name}</span>
       </span>

@@ -235,7 +235,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       out.push(
         {
           key: 'goto:inbox',
-          label: 'Inbox',
+          label: NAMES.tasks,
+          secondary: formerNamesOf(NAMES.tasks),
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.inbox,

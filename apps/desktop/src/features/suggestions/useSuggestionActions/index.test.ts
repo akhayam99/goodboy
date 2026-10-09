@@ -18,7 +18,7 @@ import type {
 import type { RunPlanResult } from '../../../store/slices/plans/types';
 import { SUGGESTION_KINDS, type SessionSuggestion, type SuggestionKind } from '../types';
 
-const { storeState, spies } = vi.hoisted(() => {
+const { storeState, spies, fixable } = vi.hoisted(() => {
   const ensureProjectMounted = vi.fn(async () => undefined);
   const recordSessionEvent = vi.fn(async () => undefined);
   const setSessionActiveProject = vi.fn(async () => undefined);
@@ -52,6 +52,7 @@ const { storeState, spies } = vi.hoisted(() => {
   const resumeStoppedAgents = vi.fn(async (_params: unknown) => 2);
   const requestReviewLaunch = vi.fn();
   return {
+    fixable: { ids: [] as ReadonlyArray<string> },
     spies: {
       requestReviewLaunch,
       ensureProjectMounted,
@@ -82,8 +83,6 @@ const { storeState, spies } = vi.hoisted(() => {
       })),
     },
     storeState: {
-      sessionGithub: {} as Record<string, unknown>,
-      sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
       mountGithub: {} as Record<string, unknown>,
       mountGitlabMr: {} as Record<string, unknown>,
@@ -142,9 +141,8 @@ vi.mock('../../session/hooks/useRebaseBranch', () => ({
 vi.mock('../../workflows/useAdvanceWorkflowAgent', () => ({
   useAdvanceWorkflowAgent: () => spies.advanceAgent,
 }));
-vi.mock('../../integrations/github/comment-threads', () => ({
-  groupThreads: (comments: ReadonlyArray<unknown>) =>
-    comments.map((comment) => ({ head: comment, replies: [] })),
+vi.mock('../../resolve/useFixableThreadIds', () => ({
+  useFixableThreadIds: () => fixable.ids,
 }));
 vi.mock('../../session/contextWindowFor', () => ({ contextWindowFor: () => null }));
 
@@ -187,8 +185,7 @@ const suggestionBase = {
 };
 
 beforeEach(() => {
-  storeState.sessionGithub = {};
-  storeState.sessionResolveThreads = {};
+  fixable.ids = [];
   storeState.sessionProjectMounts = {};
   storeState.mountGithub = {};
   storeState.mountGitlabMr = {};
@@ -218,31 +215,8 @@ describe('useSuggestionActions', () => {
     expect(spies.advanceAgent).toHaveBeenCalledWith({ agent: PENDING_AGENT });
   });
 
-  const reviewThread = ({ id, path }: { readonly id: string; readonly path: string }) => ({
-    id,
-    source: 'review',
-    resolved: false,
-    threadId: `thread-${id}`,
-    url: 'u',
-    body: 'rename it',
-    author: 'harbor-reviewer',
-    createdAt: '2026-01-01T00:00:00Z',
-    path,
-  });
-
-  it('opens the fix panel with every eligible thread and starts no agent', async () => {
-    storeState.sessionGithub = {
-      [SESSION_ID]: {
-        pr: { number: 12, headBranch: 'feature/retry' },
-        detail: {
-          comments: [
-            reviewThread({ id: '1', path: 'a.ts' }),
-            reviewThread({ id: '2', path: 'a.ts' }),
-            reviewThread({ id: '3', path: 'b.ts' }),
-          ],
-        },
-      },
-    };
+  it('opens the fix panel with every fixable comment of the source and starts no agent', async () => {
+    fixable.ids = ['gitlab:d-1', 'gitlab:d-2', 'thread-3'];
 
     const actions = actionsFor({
       suggestion: {
@@ -253,13 +227,13 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Draft fixes for 3');
+    expect(actions.primary?.label).toBe('Fix 3');
     expect(actions.primary?.runsOn).toBeUndefined();
     await actions.primary?.run();
 
     expect(spies.requestReviewLaunch).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      threadIds: ['thread-1', 'thread-2', 'thread-3'],
+      threadIds: ['gitlab:d-1', 'gitlab:d-2', 'thread-3'],
     });
     expect(spies.navigate).toHaveBeenCalledWith({
       to: branchPlace({ sessionId: SESSION_ID, tab: 'comments', threadId: null }),
@@ -267,41 +241,20 @@ describe('useSuggestionActions', () => {
     expect(spies.spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('leaves out a comment that needs an answer or is already worked', async () => {
-    storeState.sessionGithub = {
-      [SESSION_ID]: {
-        pr: { number: 12, headBranch: 'feature/retry' },
-        detail: {
-          comments: [
-            reviewThread({ id: '1', path: 'a.ts' }),
-            reviewThread({ id: '2', path: 'a.ts' }),
-            reviewThread({ id: '3', path: 'b.ts' }),
-          ],
-        },
-      },
-    };
-    storeState.sessionResolveThreads = {
-      [SESSION_ID]: [
-        { threadId: 'thread-2', state: 'needs_answer', stage: 'asking' },
-        { threadId: 'thread-3', state: 'failed', stage: 'failed', stateReason: 'provider_error' },
-      ],
-    };
+  it('opens nothing when no comment is fixable any more', async () => {
+    fixable.ids = [];
 
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
         id: 'resolve-threads:session-1',
         kind: 'resolve-threads',
-        payload: { eligibleThreadCount: 2 },
+        payload: { eligibleThreadCount: 1 },
       },
     });
     await actions.primary?.run();
 
-    expect(actions.primary?.label).toBe('Draft fixes for 2');
-    expect(spies.requestReviewLaunch).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      threadIds: ['thread-1', 'thread-3'],
-    });
+    expect(spies.requestReviewLaunch).not.toHaveBeenCalled();
   });
 
   it('rebases the mount the suggestion names without moving the write destination', async () => {
@@ -548,7 +501,7 @@ describe('useSuggestionActions', () => {
 
     expect(onSelectQuestions).not.toHaveBeenCalled();
     expect(spies.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID }),
+      to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID, pane: 'brief' }),
     });
     expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: AGENT_ID,
@@ -852,7 +805,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Close worktree');
+    expect(actions.primary?.label).toBe('Close branch');
     expect(actions.primary?.requiresConfirm).toBe(true);
     actions.primary?.run();
     expect(spies.resolveMountCleanup).toHaveBeenCalledWith({

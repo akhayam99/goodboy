@@ -13,6 +13,7 @@ import type { BitbucketPullRequest } from '../../../features/integrations/bitbuc
 const h = vi.hoisted(() => ({
   forBranch: vi.fn(),
   getPr: vi.fn(),
+  statuses: vi.fn(),
   approve: vi.fn(),
   remoteUrl: vi.fn(async (repoRoot: string) => `git@bitbucket.org:acme${repoRoot}.git`),
   links: [] as Array<MountPullRequestLink>,
@@ -21,6 +22,7 @@ const h = vi.hoisted(() => ({
 vi.mock('../../../features/integrations/bitbucket/client', () => ({
   bitbucketPullRequestForBranch: h.forBranch,
   bitbucketGetPullRequest: h.getPr,
+  bitbucketListPullRequestStatuses: h.statuses,
   bitbucketApprovePullRequest: h.approve,
 }));
 
@@ -104,11 +106,18 @@ const mountView = ({
 type PrParams = {
   readonly id: number;
   readonly branch: string;
+  readonly participants?: BitbucketPullRequest['participants'];
   readonly state?: BitbucketPullRequest['state'];
   readonly webUrl?: string | null;
 };
 
-const makePr = ({ id, branch, state = 'OPEN', webUrl = null }: PrParams): BitbucketPullRequest => ({
+const makePr = ({
+  id,
+  branch,
+  state = 'OPEN',
+  webUrl = null,
+  participants = [],
+}: PrParams): BitbucketPullRequest => ({
   id,
   title: `pull request ${id}`,
   description: '',
@@ -121,7 +130,7 @@ const makePr = ({ id, branch, state = 'OPEN', webUrl = null }: PrParams): Bitbuc
   destinationCommit: null,
   author: null,
   reviewers: [],
-  participants: [],
+  participants,
   closeSourceBranch: false,
   mergeCommit: null,
   commentCount: 0,
@@ -166,6 +175,8 @@ const mountPrOf = (state: Record<string, unknown>, mountId: MountId) =>
         prs: ReadonlyArray<BitbucketPullRequest>;
         repository: string | null;
         error: string | null;
+        checks: 'pending' | 'success' | 'failure' | null;
+        reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
       }
     >
   )[mountId];
@@ -175,6 +186,8 @@ beforeEach(() => {
   h.forBranch.mockReset();
   h.forBranch.mockResolvedValue(null);
   h.getPr.mockReset();
+  h.statuses.mockReset();
+  h.statuses.mockResolvedValue([]);
   h.approve.mockReset();
   h.remoteUrl.mockClear();
 });
@@ -297,6 +310,121 @@ describe('refreshSessionBitbucketPr across mounts', () => {
     await refreshSessionBitbucketPr(set, get)(SESSION_ID);
 
     expect(mountPrOf(state, M1)?.pr ?? null).toBeNull();
+  });
+});
+
+const statusOf = (key: string, state: 'SUCCESSFUL' | 'FAILED' | 'INPROGRESS' | 'STOPPED') => ({
+  key,
+  name: key,
+  state,
+  url: null,
+  description: null,
+  refname: null,
+  createdOn: '2026-09-01T10:00:00Z',
+  updatedOn: '2026-09-01T10:05:00Z',
+});
+
+const reviewer = (nickname: string, over: { approved?: boolean; state?: string | null }) => ({
+  user: {
+    uuid: `{${nickname}}`,
+    accountId: null,
+    nickname,
+    displayName: nickname,
+    avatarUrl: null,
+  },
+  role: 'REVIEWER',
+  approved: over.approved ?? false,
+  state: over.state ?? null,
+});
+
+describe('bitbucket stage facts of the mount request', () => {
+  const refreshed = async (pr: BitbucketPullRequest | null) => {
+    const { state, set, get } = harness([mountView({ id: M1, branch: 'ak/topic' })]);
+    h.forBranch.mockResolvedValue(pr);
+    await refreshSessionBitbucketPr(set, get)(SESSION_ID);
+    return { state, set, get };
+  };
+
+  it.each([
+    ['a failed status', ['SUCCESSFUL', 'FAILED'], 'failure'],
+    ['a stopped status', ['STOPPED'], 'failure'],
+    ['a status in progress', ['SUCCESSFUL', 'INPROGRESS'], 'pending'],
+    ['all green', ['SUCCESSFUL', 'SUCCESSFUL'], 'success'],
+    ['no statuses', [], null],
+  ] as const)('reads %s as the checks of an open request', async (_label, states, expected) => {
+    h.statuses.mockResolvedValue(states.map((state, index) => statusOf(`s${index}`, state)));
+
+    const { state } = await refreshed(makePr({ id: 11, branch: 'ak/topic' }));
+
+    expect(mountPrOf(state, M1)?.checks).toBe(expected);
+    expect(h.statuses).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [
+      'changes requested',
+      [reviewer('omar-t', { state: 'changes_requested' })],
+      'changes_requested',
+    ],
+    [
+      'an approval beside a pending reviewer',
+      [reviewer('kenji-w', { approved: true, state: 'approved' }), reviewer('priya-n', {})],
+      'approved',
+    ],
+    ['reviewers who have not answered', [reviewer('priya-n', {})], 'review_required'],
+    ['no reviewers', [], null],
+  ] as const)('reads %s as the review decision', async (_label, participants, expected) => {
+    const { state } = await refreshed(makePr({ id: 11, branch: 'ak/topic', participants }));
+
+    expect(mountPrOf(state, M1)?.reviewDecision).toBe(expected);
+  });
+
+  it('never reads statuses or a decision for a request that is not open', async () => {
+    const { state } = await refreshed(
+      makePr({
+        id: 11,
+        branch: 'ak/topic',
+        state: 'MERGED',
+        participants: [reviewer('kenji-w', { approved: true })],
+      }),
+    );
+
+    expect(h.statuses).not.toHaveBeenCalled();
+    expect(mountPrOf(state, M1)?.checks).toBeNull();
+    expect(mountPrOf(state, M1)?.reviewDecision).toBeNull();
+  });
+
+  it('keeps the previous checks when the statuses cannot be read, never writing success', async () => {
+    h.statuses.mockResolvedValue([statusOf('build', 'FAILED')]);
+    const { state, set, get } = await refreshed(makePr({ id: 11, branch: 'ak/topic' }));
+    expect(mountPrOf(state, M1)?.checks).toBe('failure');
+
+    h.statuses.mockRejectedValue(new Error('rate limited'));
+    await refreshSessionBitbucketPr(set, get)(SESSION_ID, { force: true });
+
+    expect(mountPrOf(state, M1)?.checks).toBe('failure');
+    expect(mountPrOf(state, M1)?.error).toBeNull();
+  });
+
+  it('leaves the checks empty when the very first statuses read fails', async () => {
+    h.statuses.mockRejectedValue(new Error('denied'));
+
+    const { state } = await refreshed(makePr({ id: 11, branch: 'ak/topic' }));
+
+    expect(mountPrOf(state, M1)?.checks).toBeNull();
+    expect(mountPrOf(state, M1)?.pr?.id).toBe(11);
+  });
+
+  it('does not carry the checks of one request over to another', async () => {
+    h.statuses.mockResolvedValue([statusOf('build', 'FAILED')]);
+    const { state, set, get } = await refreshed(makePr({ id: 11, branch: 'ak/topic' }));
+
+    h.forBranch.mockResolvedValue(makePr({ id: 12, branch: 'ak/topic' }));
+    h.statuses.mockRejectedValue(new Error('offline'));
+    await refreshSessionBitbucketPr(set, get)(SESSION_ID, { force: true });
+
+    expect(mountPrOf(state, M1)?.pr?.id).toBe(12);
+    expect(mountPrOf(state, M1)?.checks).toBeNull();
   });
 });
 

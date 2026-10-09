@@ -12,7 +12,12 @@ const AREAS = [
   [
     'start',
     'Start a task',
-    ['Pick up a task, with a drafted brief', 'Run a workflow', 'Ask an agent'],
+    [
+      'Pick up a task, with a drafted brief',
+      'Review a pull request',
+      'Run a workflow',
+      'Ask an agent',
+    ],
   ],
   ['overview', 'Overview and activity', ['Session overview', 'Activity', 'Next']],
   ['switching', 'Switch between tasks', ['Activity bar', 'Now chip', 'Notifications']],
@@ -34,11 +39,7 @@ const AREAS = [
   ],
   ['board', 'The board', ['Stage board', 'Session card']],
   ['workflows', 'Workflows', ['Workflow builder', 'Orchestrated', 'Workflow run', 'Spend cap']],
-  [
-    'inbox',
-    'Inbox and your tools',
-    ['Inbox', 'Trackers', 'Code hosts', 'Launch a session from any item'],
-  ],
+  ['inbox', 'Inbox and your tools', ['Inbox', 'Trackers', 'Code hosts', 'Start from any item']],
   ['artifacts', 'Plans, reports and wireframes', ['Artifacts', 'Create a wireframe', 'Compare']],
   ['context', 'Shared context', ['Decisions', 'Running summary', 'Context drawer']],
   [

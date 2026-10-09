@@ -525,7 +525,7 @@ the agent in `error` with a retryable error event.
 - An agent's active time is the union of its own spans, its subagents' spans and the turn running now (`agentTurnState` `running` since `startedAt`). Parallel subagents count once. A run's active time is the union over all its agents. `familyActiveTime` in `features/workTreeModel/workTimeSource.ts` computes it.
 - `buildDurationHistory` (`@goodboy/core`) turns spans into two units of sample. `steps`: one per root agent whose status is `completed`, keyed by the role, provider, model and effort of its last turn. `turns`: one per `succeeded` span of any agent, chat agents included, since a chat agent never completes but closes turns. It adds one sample per finished orchestrated run.
 - `estimateDuration` takes a `unit`: a workflow step row asks for `step`, any other agent row for `turn`, and a running turn row measures only the turn running now. It picks the first tier with enough samples: role, provider, model and effort (5), then without effort (5), then the same model and effort in every workspace (`modelAnyWorkspace`, 5, and the tooltip says `across your workspaces`), then role and provider (8), then role alone (8). These minimums are the only gate. It keeps the newest 50, caps them at the 95th percentile, and returns a band of time and cost (`lowMs`, `midMs`, `highMs`). An unsized step gets the 25th, 50th and 75th percentiles. A running row measures against the top of the band, so a typical run fills its arc without overflowing it; a queued row shows the band.
-- `workTime` (`features/workTreeModel/workTime.ts`) picks the label per phase: a queued row shows the band with `~`, a running row the time left against the band (`timeLeftLabel`), its elapsed time past the band with the note `Longer than usual`, and `isMuchLonger` at twice the top of the band. A waiting row freezes its elapsed time; a done row shows its active time and the same note when it ran past the band, though the timeline row prints the note only while it runs. `headline` joins elapsed time and time left for the agent header and the Brief's Now.
+- `workTime` (`features/workTreeModel/workTime.ts`) picks the label per phase: a queued row shows the band with `~`, a running row the time left against the band (`timeLeftLabel`), its elapsed time past the band with the note `Longer than usual`, and `isMuchLonger` at twice the top of the band. A waiting row freezes its elapsed time; a done row shows its active time and the same note when it ran past the band, though a step row (the timeline and the run tree) shows the note only while it runs, as a warm time with the note in its tooltip. `headline` joins elapsed time and time left for the agent header and the Brief's Now.
 - When no tier reaches its minimum, `estimateProgress` (`@goodboy/core`) returns the tier closest to it (`have` of `need`) and the tooltip says so ("No estimate yet: 3 of 5 finished ..."). The row never shows a number it cannot back.
 - `runTimeLeft` (`features/session/timeline/runTimeLeft.ts`) gives the workflow detail header the time a run has left: the running step's time left plus the usual time of each queued step, or the orchestrated-run band minus what the run has done. It returns nothing when any step left has no estimate or the running one is past its band. The Start agent footer (`useLaunchEstimate`) shows the usual first turn only when the agent starts on its own, with instructions.
 - `WorkTimeProvider` gives each panel (the activity feed, the workflow detail, the agent detail, a Brief's Subagents) one source and one 5 second clock (`useNow`), which ticks only while something runs. Rows read it with `useAgentWorkTime`; outside a provider a row shows no time column.
@@ -603,10 +603,21 @@ budget`).
   user changed meanwhile is never overwritten; the summarizer runs again on
   the new value. A slot that comes back over twice its budget gets one more
   pass.
-- An unparseable answer retries once. A usage, authentication or rate limit
-  cools that provider and falls back to another task model. Anything else
-  sets the error state and offers a retry. The turn itself never fails because
-  its summary did.
+- A failed pass retries on its own through the helper retry chain (below), for
+  any failure: a non-zero exit, a timeout, an empty or unparseable answer, a
+  usage, authentication or rate limit. The turn itself never fails because its
+  summary did.
+- A summarizer CLI that exits non-zero reports why. The error carries the
+  provider's own message: the `error` or `result` text of a failed stream-json
+  result event on stdout, else the last three lines of stderr (ANSI stripped, 400
+  characters at most), as `summarizer cli exited with code 1: <detail>`. Without
+  it a Cursor quota or sign-in failure read as a bare exit code.
+- **Summarizer failed** raises only when every allowed model failed. It names
+  the cause in plain words (`Cursor reached the usage limit for this account.`,
+  `Cursor is not signed in.`, a generic line for anything unclassified), never
+  the raw CLI line. The raw message stays in the session's summarizer status. It
+  raises once per session (`summarizer-failed:<sessionId>`): while one is unread
+  the same session adds no second one. A later successful pass clears it.
 - Its spend is recorded as summarizer telemetry, apart from turn spend.
 - Each finished pass stores its round in `summarizerRounds` (turns read,
   provider, model, effort, tokens, cost, which of goal, decisions and summary
@@ -736,8 +747,53 @@ its chip unmounts, and is read into base64 only when the message leaves. The
 agent queue keeps its stored data url format (`StoredAttachment`).
 
 A workflow agent's own handoff (`summarizeAgentOutput`) runs once per agent at
-a time with a 90 second timeout, and a failure falls back to the deterministic
-summary flagged `degraded`.
+a time with a 90 second timeout. A failure goes through the helper retry chain
+(below), and only when every allowed model failed does it fall back to the
+deterministic summary flagged `degraded`.
+
+### Helper retry chain
+
+Background model calls that nobody waits on retry on their own: the session
+summarizer, the workflow step summary, the titles (session, workflow, workflow
+run, suggested) and the orchestrator's decision. They all go through
+`runHelperTask` (`store/slices/providerLimits`), which wraps `runWithModelFallback`
+(`packages/core/src/providers/background-retry.ts`).
+
+- The task's own model goes first: an explicit task model setting, or the one a
+  retry with another model picked. Cooldown routing still moves a cooling provider
+  off the front.
+- A generic failure (non-zero exit, empty or unparseable output, network) retries
+  the same model once after 1.5 seconds. A timeout, a quota or rate limit, an
+  authentication or model error moves straight to the next provider.
+- Fallbacks are one aligned model per other provider, in pool order. They stay
+  inside the session's enabled providers, skip a provider that already failed in
+  this chain or is cooling down, and never pick a hidden model.
+- It is bounded: 4 attempts and 6 minutes. When the work is discarded meanwhile
+  (the orchestrator's restart or stop), it stops.
+- A provider that failed twice in one chain before another model answered is kept
+  off the front of later chains for 3 minutes (`helperProviderFailures`), so each
+  summary does not pay two failed spawns first. It is never written to
+  `providerCooldowns`, so turns are unaffected.
+- A usage, authentication or rate limit still records the provider cooldown.
+
+Nothing notifies while a chain runs or after it succeeds. Only a chain that ran
+out of models raises one notice, with Retry, and a later success clears it (rows
+that were resolved while the app was closed are cleared when notifications load):
+
+| Task                              | Notice                                 | Key                                 |
+| --------------------------------- | -------------------------------------- | ----------------------------------- |
+| Session summarizer                | Summarizer failed                      | `summarizer-failed:<sessionId>`     |
+| Step summary                      | Step summary unavailable               | `step-summary-degraded:<sessionId>` |
+| Orchestrator reply not a decision | Couldn't read the orchestrator's reply | `orchestrator-unreadable:<runId>`   |
+| Orchestrator call failed          | The orchestrator failed                | `orchestrator-failed:<runId>`       |
+
+The step summary notice is one per session, not per step. Its Retry retries every
+degraded step of the session. An orchestrator Retry asks the orchestrator again
+for that run. A model that is no longer available to the account still raises
+**Summarizer model ... is unavailable** once per model, because the setting needs
+fixing. **Orchestrated run blocked** is not a failure: the orchestrator chose to
+stop and needs you. It raises once per run with **Open agent**, and clears when
+the run moves on.
 
 ## Workspace chat turns
 
@@ -841,7 +897,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   `ChatSummary.modelsUsed` lists the distinct provider and model pairs of a
   chat's answers, oldest first, and `ChatSummary.messageCount` its messages.
   Both come from the one grouped read in `listChats`, so the chat list costs
-  a single scan however many chats there are. `chat_session_links` saves each Start work or
+  a single scan however many chats there are. `chat_session_links` saves each Start work from chat or
   Add to a session (`new` or `add`, the chat, the session and the message it
   started from). Deleting a chat deletes its messages and links, never its
   sessions; deleting a session deletes its links. Idle is derived: a chat with
@@ -853,7 +909,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   never starts above the mid cost tier. When the workspace default provider can run
   a chat (Claude or Codex) and is connected, the chat starts on its line instead; a
   Cursor or OpenCode default never reaches a chat. Picking Claude in Providers,
-  Models, Chat proposes the same model. **Start work** drafts its brief with the
+  Models, Chat proposes the same model. **Start work from chat** drafts its brief with the
   model and effort in **Drafted by**, remembered per workspace. The user can save a provider, model and effort
   per workspace in the `settings` table under `chat.default_model.<workspaceId>`
   (JSON, an empty string means cleared), from Providers, Models, Chat, or with
@@ -878,7 +934,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   Opening the chat, or archiving it, clears the mark. `unreadChatIds` lives in
   the chats slice and is saved in `localStorage` (`chat-unread:v1`), so it
   survives a reload without a migration.
-- **Turn into work.** "Start work" drafts a brief (title, goal, what we know,
+- **Start work from chat.** The button drafts a brief (title, goal, what we know,
   files, projects) with one `summarize_session` call through `runAuxOneShot`
   with no tools and no working folder (`summarizeChatForWork.ts`). **Drafted
   by** picks the model that writes it: a `RoutingPicker` pill limited to chat

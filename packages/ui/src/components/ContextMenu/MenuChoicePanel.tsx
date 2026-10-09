@@ -2,11 +2,13 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Check } from 'lucide-react';
 import { cn } from '../../cn';
+import { FLOATING_SURFACE } from '../../floatingSurface';
 import { ScrollFade } from '../ScrollFade';
 import { focusFirstMenuItem, isMenuNavigationKey, moveMenuFocus } from './menuKeys';
 import type { MenuChoice } from './menuTypes';
+import { ICON_SIZE } from '../../iconSize';
 
-const PANEL_WIDTH = 224;
+const PANEL_WIDTH = 240;
 const EDGE = 8;
 const GAP = 4;
 
@@ -85,7 +87,10 @@ export const MenuChoicePanel = ({ label, choices, anchor, onChoose, onBack, onCl
         width: PANEL_WIDTH,
         visibility: position === null ? 'hidden' : 'visible',
       }}
-      className="fixed z-popover flex max-h-80 flex-col rounded-lg border border-border bg-floating text-label shadow-lg motion-safe:animate-popover-in"
+      className={cn(
+        FLOATING_SURFACE,
+        'fixed z-popover flex max-h-80 flex-col text-label motion-safe:animate-popover-in',
+      )}
     >
       <ScrollFade
         className="flex min-h-0 flex-1 flex-col"
@@ -109,7 +114,7 @@ export const MenuChoicePanel = ({ label, choices, anchor, onChoose, onBack, onCl
           >
             <span className="min-w-0 flex-1 truncate">{choice.label}</span>
             {choice.isCurrent ? (
-              <Check size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+              <Check size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
             ) : null}
           </button>
         ))}

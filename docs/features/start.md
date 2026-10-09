@@ -13,7 +13,13 @@ The **New session** draft has three tabs: **Pick up a task**, **Run a workflow**
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-light.webp" alt="New session with the Pick up a task tab selected, a Starred list of issues with HBL-412 Retried webhooks post a second credit highlighted, and below it Brief from HBL-412 titled Stop retried webhooks posting a second credit, with Done when criteria and the buttons Dismiss, Use issue text, Edit and Use brief">
 </picture>
 
-Turn an issue into a briefed session in one pick. Pick HBL-412 and Goodboy drafts a short title, a goal and the **Done when** criteria under **Brief from HBL-412**, and the full issue stays linked to the session. Press **Use brief** to keep it, **Edit** to change it, or **Use issue text** to skip the draft. A Sentry error or a GitHub issue opens in the project it belongs to, and one Start links the issue, creates the session and starts the work.
+Turn an issue into a briefed session in one pick. Pick HBL-412 and the draft shows one block: **Brief from HBL-412** with the title Goodboy drafted, ready to edit, then **How to work on it**: the project it works in, **Run a workflow** or **Ask an agent**, and the goal under it. The goal starts as the issue text and becomes the drafted brief with its **Done when** criteria as soon as it is written, unless you already edited it. **Use the issue text** puts the plain issue back and **Use brief** brings the draft back. **Dismiss** returns to the list. A Sentry error or a GitHub issue opens in the project it belongs to, and one **Start from HBL-412** links the issue, creates the session and starts the work, with a **Follow** toast.
+
+From Tasks the same flow starts in one press: **Start from HBL-412** on a Linear, Jira, GitHub or GitLab issue or a Sentry error opens this draft with the issue picked and its brief already being written. A Slack thread, a merge request, a Bitbucket pull request or a pull request of yours keeps its one-step panel, with the same verb: **Start from #318**.
+
+### Review a pull request
+
+A pull request waiting on you in Tasks shows **Review pull request** in place of Start. It starts a session on the pull request, with a read-only PR reviewer and the pull request checked out, and opens the **Pull request** tab of the Branch page, where **Write review** waits. Paste a GitHub pull request link in the search box of **Pick up a task** and one row, **Review pull request #318**, does the same. GitLab and Bitbucket reviews are not started this way.
 
 ### Run a workflow
 
@@ -22,7 +28,7 @@ Turn an issue into a briefed session in one pick. Pick HBL-412 and Goodboy draft
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-light.webp" alt="New session with the Run a workflow tab selected: an Orchestrated workflow with the goal Stop retried webhooks posting a second credit, the Orchestrated, Custom and Preset switch, the Plan with an Orchestrator row and example steps Scout, Planner and Implementer, and the Starts Now, Autorun and Spend cap None controls next to Start workflow">
 </picture>
 
-The full workflow builder, right in the kickoff. Write the goal, pick **Orchestrated**, **Custom** or **Preset**, and read the **Plan** you will run. Under the plan, set **Starts**, when to ask and a **Spend cap**. **Start workflow** creates the session and starts the run in one step.
+The full workflow builder, right in the kickoff. Write the goal, pick **Orchestrated**, **Describe steps** or **Pick a workflow**, and read the **Plan** you will run. Under the plan, set **Starts**, when to ask and a **Spend cap**. **Start run** creates the session and starts the run in one step.
 
 ### Ask an agent
 

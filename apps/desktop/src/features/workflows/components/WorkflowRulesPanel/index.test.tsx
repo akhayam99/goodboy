@@ -141,7 +141,6 @@ describe('WorkflowRulesPanel', () => {
     expect(screen.getByRole('switch', { name: 'Spend cap' }).getAttribute('aria-checked')).toBe(
       'false',
     );
-    expect(screen.getByRole('switch', { name: 'Use providers with room left' })).toBeDefined();
     expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
   });
 
@@ -190,58 +189,28 @@ describe('WorkflowRulesPanel', () => {
     expect(savedRules()[0]).toMatchObject({ spendLimitUsd: 25, spendLimitMode: 'pause' });
   });
 
-  it('writes spreadByHeadroom when you flip the switch and says where the next step goes', async () => {
-    useAppStore.setState({ providerLimits: { anthropic: claudeAt({ used: 0.85 }) } });
-    withRules({ spreadByHeadroom: false });
-    panel();
-
-    expect(screen.getByTestId('rules-spread-sentence').textContent).toBe(
-      'New steps follow the order set in Models.',
-    );
-    fireEvent.click(screen.getByRole('switch', { name: 'Use providers with room left' }));
-
-    await waitFor(() => expect(savedRules().at(-1)?.spreadByHeadroom).toBe(true));
-    expect(screen.getByTestId('rules-spread-sentence').textContent).toBe(
-      'Claude is at 85%, so new steps go to Codex first.',
-    );
-    expect(
-      screen
-        .getByRole('switch', { name: 'Use providers with room left' })
-        .getAttribute('aria-checked'),
-    ).toBe('true');
-  });
-
-  it('disables the switch and says why when no provider reports limits', () => {
-    withPool([{ id: 'cursor', state: 'on' }]);
-    withRules({ spreadByHeadroom: true });
-    panel();
-
-    const toggle = screen.getByRole('switch', { name: 'Use providers with room left' });
-    expect(toggle.hasAttribute('disabled')).toBe(true);
-    expect(toggle.getAttribute('aria-checked')).toBe('false');
-    expect(screen.getByTestId('rules-spread-sentence').textContent).toBe(
-      'Needs a provider that reports limits',
-    );
-  });
-
-  it('opens the providers page in Models from the providers band', () => {
+  it('opens Providers & models from the providers band', () => {
     const received: Array<unknown> = [];
     const listener = (event: Event) => received.push((event as CustomEvent).detail);
     window.addEventListener('goodboy:open-settings', listener);
     panel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Models' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Providers & models' }));
     window.removeEventListener('goodboy:open-settings', listener);
 
     expect(received).toEqual([{ scope: 'providers', section: undefined }]);
   });
 
-  it('lists no provider in the providers band, only the switch and its sentence', () => {
+  it('shows the policy in one line and a link, with no switch and no provider list', () => {
     panel();
     const band = screen.getByRole('region', { name: 'Providers' });
 
-    expect(within(band).getAllByRole('switch')).toHaveLength(1);
-    expect(band.textContent).not.toMatch(/Cursor|Codex|backup/);
+    expect(within(band).queryAllByRole('switch')).toHaveLength(0);
+    expect(within(band).getByText('When a provider is out')).toBeDefined();
+    expect(screen.getByTestId('rules-policy-summary').textContent).toBe(
+      'Claude, Codex · Cursor as backup',
+    );
+    expect(band.textContent).not.toMatch(/most room|room left/);
   });
 
   it('saves guidance, polishes it into one rule per line and undoes the polish', async () => {

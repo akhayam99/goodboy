@@ -88,18 +88,6 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
       {action}
     </div>
   ),
-  LensEmptyState: ({
-    title,
-    action,
-  }: {
-    readonly title: string;
-    readonly action?: React.ReactNode;
-  }) => (
-    <div data-testid="workflow-empty">
-      {title}
-      {action}
-    </div>
-  ),
   MetaRow: ({ items }: MetaRowMockProps) => <span>{items}</span>,
   ResizeHandle: ({ ariaLabel }: ResizeHandleMockProps) => (
     <div role="separator" aria-label={ariaLabel} />

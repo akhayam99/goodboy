@@ -32,7 +32,7 @@ describe('openLens', () => {
   it('navigates to the lens as a history voice', () => {
     openLens({ sessionId: SESSION_ID, lens: 'review' });
     expect(state.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'files' }),
     });
   });
 

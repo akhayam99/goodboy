@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Hand, ShieldCheck } from 'lucide-react';
 import {
+  ROW_INTERACTIVE,
+  cn,
   AnchoredPopover,
   Button,
   IconButton,
@@ -39,7 +41,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const [busy, setBusy] = useState(false);
   const [overflowView, setOverflowView] = useState<OverflowView>('menu');
   const [denyReason, setDenyReason] = useState('');
-  const dropdown = useDropdown({ align: 'end', width: 'w-72', expectedWidth: 288 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedWidth: 320 });
   const { open, close, toggle } = dropdown;
 
   const session = useAppStore((s) =>
@@ -245,12 +247,12 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
           <AnchoredPopover
             dropdown={dropdown}
             role={overflowView === 'menu' ? 'menu' : 'dialog'}
-            ariaLabel="More approval actions"
+            ariaLabel="More permission actions"
             className={overflowView === 'menu' ? 'py-1' : undefined}
             trigger={
               <IconButton
                 icon={MoreIcon}
-                label="More approval actions"
+                label="More permission actions"
                 variant="ghost"
                 disabled={busy}
                 aria-haspopup="menu"
@@ -266,7 +268,10 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={handleAllowSession}
-                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className={cn(
+                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                    ROW_INTERACTIVE,
+                  )}
                 >
                   Allow all commands in this session
                 </button>
@@ -275,7 +280,10 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={() => setOverflowView('confirmGlobal')}
-                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className={cn(
+                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                    ROW_INTERACTIVE,
+                  )}
                 >
                   {rule.label} everywhere
                 </button>
@@ -284,7 +292,10 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={() => setOverflowView('denyReason')}
-                  className="flex w-full items-center px-3 py-2 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className={cn(
+                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                    ROW_INTERACTIVE,
+                  )}
                 >
                   Deny and tell {providerLabel ?? 'the agent'} why…
                 </button>
@@ -320,7 +331,12 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   <Button variant="ghost" size="sm" disabled={busy} onClick={closeOverflow}>
                     Cancel
                   </Button>
-                  <Button variant="danger" size="sm" disabled={busy} onClick={handleDenyWithReason}>
+                  <Button
+                    variant="ghost-danger"
+                    size="sm"
+                    disabled={busy}
+                    onClick={handleDenyWithReason}
+                  >
                     Deny
                   </Button>
                 </div>

@@ -171,9 +171,13 @@ const bitbucketPr: BitbucketPullRequest = {
 const bitbucketMount = ({
   mountId,
   projectId,
+  checks = null,
+  reviewDecision = null,
 }: {
   readonly mountId: MountId;
   readonly projectId: ProjectId;
+  readonly checks?: MountBitbucketPrState['checks'];
+  readonly reviewDecision?: MountBitbucketPrState['reviewDecision'];
 }): MountBitbucketPrState => ({
   mountId,
   projectId,
@@ -184,6 +188,8 @@ const bitbucketMount = ({
   branch: 'feat/retry-webhooks',
   prs: [bitbucketPr],
   links: [],
+  checks,
+  reviewDecision,
   pr: bitbucketPr,
   fetchedAt: AT,
   loading: false,
@@ -285,6 +291,79 @@ describe('live work across every mount of a session', () => {
     expect(view.stage().reason).toBe('PR #31 awaiting review');
     expect(view.columnOf()).toBe('review');
     expect(view.chipLabel()).toBeNull();
+  });
+
+  it('marks a Bitbucket session red on the board, the chip and the stage when a status failed', () => {
+    useAppStore.setState({
+      mountBitbucketPr: {
+        [MOUNT_TWO]: bitbucketMount({
+          mountId: MOUNT_TWO,
+          projectId: PROJECT_TWO,
+          checks: 'failure',
+        }),
+      },
+    });
+    const view = surfaces();
+
+    expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'ci-failed' });
+    expect(view.columnOf()).toBe('attention');
+    expect(view.chipLabel()).toBe('1 session needs you');
+  });
+
+  it('asks for the changes a Bitbucket reviewer requested', () => {
+    useAppStore.setState({
+      mountBitbucketPr: {
+        [MOUNT_TWO]: bitbucketMount({
+          mountId: MOUNT_TWO,
+          projectId: PROJECT_TWO,
+          checks: 'success',
+          reviewDecision: 'changes_requested',
+        }),
+      },
+    });
+    const view = surfaces();
+
+    expect(view.stage()).toMatchObject({
+      stage: 'attention',
+      attention: 'changes-requested',
+      reason: 'PR #31: changes requested',
+    });
+  });
+
+  it('calls a Bitbucket request approved once a reviewer approved and the statuses are green', () => {
+    useAppStore.setState({
+      mountBitbucketPr: {
+        [MOUNT_TWO]: bitbucketMount({
+          mountId: MOUNT_TWO,
+          projectId: PROJECT_TWO,
+          checks: 'success',
+          reviewDecision: 'approved',
+        }),
+      },
+    });
+    const view = surfaces();
+
+    expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'pr-approved' });
+  });
+
+  it('never lets a Bitbucket approval win over a failed status', () => {
+    useAppStore.setState({
+      mountBitbucketPr: {
+        [MOUNT_TWO]: bitbucketMount({
+          mountId: MOUNT_TWO,
+          projectId: PROJECT_TWO,
+          checks: 'failure',
+          reviewDecision: 'approved',
+        }),
+      },
+    });
+    const view = surfaces();
+
+    expect(view.stage()).toMatchObject({
+      attention: 'ci-failed',
+      reason: 'PR #31: checks failing',
+      otherReasons: ['pr-approved'],
+    });
   });
 
   it('takes the worst request of two mounts', () => {

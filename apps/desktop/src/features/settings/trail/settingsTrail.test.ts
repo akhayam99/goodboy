@@ -6,7 +6,6 @@ const trailOf = (scope: Parameters<typeof settingsTrail>[0]['scope']) =>
     scope,
     appSection: 'general',
     workspacePage: 'review-replies',
-    workspaceName: 'Harborline',
   });
 
 describe('settingsTrail', () => {
@@ -28,13 +27,13 @@ describe('settingsTrail', () => {
     expect(segments.map((segment) => segment.label)).toEqual(['Settings', 'App', 'General']);
   });
 
-  it('names the workspace and its page', () => {
+  it('names the workspace scope and its page, and leaves the workspace name to the top bar', () => {
     const segments = trailOf('workspace');
 
     expect(segments.map((segment) => segment.label)).toEqual([
       'Settings',
-      'Workspace · Harborline',
-      'Review replies',
+      'Workspace',
+      'Replies and commits',
     ]);
   });
 

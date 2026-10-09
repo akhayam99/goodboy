@@ -1,111 +1,80 @@
-import { useState } from 'react';
+import { Button, Input } from '@goodboy/ui';
 import type {
   IssueBriefEntry,
   IssueBriefSource,
 } from '../../../../../store/slices/issue-briefs/types';
-import { briefGoalText } from '../../../../integrations/shared/briefGoalText';
-import { BriefEditor } from './BriefEditor';
 import { BriefFailed } from './BriefFailed';
-import { BriefLoading } from './BriefLoading';
-import { BriefReady } from './BriefReady';
-import { BriefVerbatim } from './BriefVerbatim';
-
-type ApplyParams = {
-  readonly title: string;
-  readonly goal: string;
-};
+import { BriefHeader } from './BriefHeader';
+import { BriefMeta } from './BriefMeta';
 
 type Props = {
   readonly source: IssueBriefSource;
   readonly entry: IssueBriefEntry | null;
-  readonly verbatimGoal: string;
-  readonly isTitleLocked: boolean;
-  readonly onApply: (params: ApplyParams) => void;
-  readonly onUseTitle: (params: Pick<ApplyParams, 'title'>) => void;
+  readonly title: string;
+  readonly isBriefShown: boolean;
+  readonly hasBrief: boolean;
+  readonly onTitleChange: (title: string) => void;
+  readonly onUseBrief: () => void;
   readonly onUseIssueText: () => void;
   readonly onRetry: () => void;
-  readonly onDismiss: () => void;
 };
-
-const SURFACE = 'flex flex-col gap-2 rounded-md border border-border-soft bg-subtle p-3';
 
 export const IssueBriefProposal = ({
   source,
   entry,
-  verbatimGoal,
-  isTitleLocked,
-  onApply,
-  onUseTitle,
+  title,
+  isBriefShown,
+  hasBrief,
+  onTitleChange,
+  onUseBrief,
   onUseIssueText,
   onRetry,
-  onDismiss,
-}: Props) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const label = `Brief from ${source.identifier}`;
-
-  if (entry?.status === 'failed') {
-    return (
-      <section aria-label={label}>
-        <BriefFailed
-          source={source}
-          entry={entry}
-          onRetry={onRetry}
-          onUseIssueText={onUseIssueText}
-          onDismiss={onDismiss}
-        />
-      </section>
-    );
-  }
-
-  if (entry?.status === 'unavailable') {
-    return (
-      <section aria-label={label} className={SURFACE}>
-        <BriefVerbatim
-          source={source}
-          verbatimGoal={verbatimGoal}
-          onUseIssueText={onUseIssueText}
-          onDismiss={onDismiss}
-        />
-      </section>
-    );
-  }
-
-  if (entry?.status !== 'ready') {
-    return (
-      <section aria-label={label} aria-busy className={SURFACE}>
-        <BriefLoading source={source} onUseIssueText={onUseIssueText} onDismiss={onDismiss} />
-      </section>
-    );
-  }
-
-  const goal = briefGoalText({ brief: entry.brief, source });
-
-  if (isEditing) {
-    return (
-      <section aria-label={label} className={SURFACE}>
-        <BriefEditor
-          source={source}
-          initialTitle={entry.brief.title}
-          initialGoal={goal}
-          onSave={onApply}
-          onCancel={() => setIsEditing(false)}
-        />
-      </section>
-    );
-  }
-
-  return (
-    <section aria-label={label} className={SURFACE}>
-      <BriefReady
-        source={source}
-        entry={entry}
-        isTitleLocked={isTitleLocked}
-        onUseBrief={() => onApply({ title: entry.brief.title, goal })}
-        onUseTitle={() => onUseTitle({ title: entry.brief.title })}
-        onEdit={() => setIsEditing(true)}
-        onUseIssueText={onUseIssueText}
-        onDismiss={onDismiss}
-      />
-    </section>
-  );
-};
+}: Props) => (
+  <section
+    aria-label={`Brief from ${source.identifier}`}
+    aria-busy={entry?.status === 'loading'}
+    className="flex flex-col gap-2 rounded-md border border-border-soft bg-subtle p-3"
+  >
+    <BriefHeader
+      source={source}
+      label={`Brief from ${source.identifier}`}
+      trailing={
+        <>
+          {entry?.status === 'loading' && (
+            <span role="status" className="shrink-0 text-meta text-shimmer">
+              Writing a brief
+            </span>
+          )}
+          {entry?.status === 'ready' && (
+            <BriefMeta route={entry.route} durationMs={entry.durationMs} costUsd={entry.costUsd} />
+          )}
+          {hasBrief && isBriefShown && (
+            <Button variant="ghost" size="sm" onClick={onUseIssueText}>
+              Use the issue text
+            </Button>
+          )}
+          {hasBrief && !isBriefShown && (
+            <Button variant="ghost" size="sm" onClick={onUseBrief}>
+              Use brief
+            </Button>
+          )}
+        </>
+      }
+    />
+    <Input
+      value={title}
+      onChange={(event) => onTitleChange(event.target.value)}
+      aria-label="Brief title"
+      className="h-7 text-heading"
+    />
+    {entry?.status === 'failed' && <BriefFailed source={source} entry={entry} onRetry={onRetry} />}
+    {entry?.status === 'unavailable' && (
+      <p className="text-meta text-faint-foreground">
+        A brief needs a free model, so this is the {source.noun} text as it is.
+      </p>
+    )}
+    <p className="text-meta text-faint-foreground">
+      The full {source.noun} stays linked to this session.
+    </p>
+  </section>
+);

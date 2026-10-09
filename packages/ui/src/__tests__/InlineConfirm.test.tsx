@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Profiler } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { InlineConfirm } from '../components/InlineConfirm';
+import { InlineConfirm, type ConfirmRole } from '../components/InlineConfirm';
 
 afterEach(() => {
   cleanup();
@@ -216,7 +216,7 @@ describe('InlineConfirm', () => {
     expect(group.className).not.toContain('rounded-lg');
   });
 
-  it('maps each role to the kit button variant of the same tone', () => {
+  it('maps danger to the one solid red button and alert to the primary button', () => {
     const { rerender } = render(
       <InlineConfirm
         role="danger"
@@ -240,7 +240,8 @@ describe('InlineConfirm', () => {
         onCancel={vi.fn()}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-warning');
+    expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-primary');
+    expect(screen.getByRole('button', { name: 'Go' }).className).not.toContain('bg-warning');
 
     rerender(
       <InlineConfirm
@@ -253,5 +254,87 @@ describe('InlineConfirm', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-primary');
+  });
+});
+
+const card = (role: ConfirmRole) =>
+  render(
+    <InlineConfirm
+      role={role}
+      icon={<svg />}
+      title="Push 3 comments?"
+      confirmLabel="Push"
+      onConfirm={vi.fn()}
+      onCancel={vi.fn()}
+    />,
+  );
+
+describe('InlineConfirm card', () => {
+  it('is a neutral card: no tinted fill and no tinted border', () => {
+    card('primary');
+
+    const group = screen.getByRole('group', { name: 'Push 3 comments?' });
+    const classes = group.className.split(' ');
+    expect(classes).toEqual(expect.arrayContaining(['bg-subtle', 'border-border-soft']));
+    expect(group.className).not.toMatch(/\b(bg|border)-(primary|warning|danger)/);
+  });
+
+  it.each([
+    ['primary', 'primary'],
+    ['alert', 'warning'],
+    ['danger', 'danger'],
+  ] as const)('carries its %s tone as an inner line', (role, tone) => {
+    card(role);
+
+    const bar = screen.getByTestId('tone-bar');
+    expect(bar.getAttribute('data-tone')).toBe(tone);
+    expect(screen.getByRole('group').contains(bar)).toBe(true);
+  });
+
+  it('draws no tone line on the plain surface used inside a menu', () => {
+    render(
+      <InlineConfirm
+        role="danger"
+        icon={<svg />}
+        title="Delete?"
+        confirmLabel="Delete"
+        surface="plain"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId('tone-bar')).toBeNull();
+  });
+
+  it('makes the confirm button the one filled primary of a primary confirm', () => {
+    card('primary');
+
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Push' }).getAttribute('data-variant')).toBe(
+      'primary',
+    );
+    expect(screen.getByRole('button', { name: 'Cancel' }).getAttribute('data-variant')).toBe(
+      'secondary',
+    );
+  });
+
+  it('uses the danger variant for a danger confirm and calls back on click', () => {
+    const onConfirm = vi.fn();
+    render(
+      <InlineConfirm
+        role="danger"
+        icon={<svg />}
+        title="Delete?"
+        confirmLabel="Delete"
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const confirm = screen.getByRole('button', { name: 'Delete' });
+    expect(confirm.getAttribute('data-variant')).toBe('danger');
+    fireEvent.click(confirm);
+    expect(onConfirm).toHaveBeenCalledOnce();
   });
 });

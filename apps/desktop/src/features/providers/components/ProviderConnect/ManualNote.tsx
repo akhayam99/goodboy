@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly reason: string;
@@ -17,7 +18,7 @@ export const ManualNote = ({ reason, docsUrl, docsLabel }: Props) => {
         className="inline-flex items-center gap-1 text-meta text-muted-foreground transition-colors hover:text-foreground"
       >
         <span>{docsLabel}</span>
-        <ExternalLink size={10} aria-hidden />
+        <ExternalLink size={ICON_SIZE.mark} aria-hidden />
       </a>
     </div>
   );

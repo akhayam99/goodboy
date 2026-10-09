@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { Summarizer, SummarizerCliError, type SummarizerDeps } from './client';
+import {
+  Summarizer,
+  SummarizerCliError,
+  SummarizerSpawnError,
+  type SummarizerDeps,
+} from './client';
+import { cliFailureDetail } from './spawn-failure';
 import { SUMMARIZER_SYSTEM_PROMPT } from './prompt';
 
 describe('Summarizer client prompt', () => {
@@ -217,5 +223,77 @@ describe('Summarizer client transport', () => {
     const result = await summarizer.summarize({ prevSlots: [], turnInput: 'q', turnOutput: 'a' });
 
     expect(result.delta.upserts).toEqual([{ key: 'last_output_summary', value }]);
+  });
+});
+
+describe('Summarizer client failed exit', () => {
+  const invokeFailing =
+    (result: { stdout: string; stderr: string; exitCode: number }): SummarizerDeps['invokeFn'] =>
+    async <T>(): Promise<T> =>
+      result as T;
+
+  const failure = async (deps: SummarizerDeps): Promise<SummarizerSpawnError> => {
+    const error = await new Summarizer(deps)
+      .summarize({ prevSlots: [], turnInput: 'q', turnOutput: 'a' })
+      .catch((err: unknown) => err);
+    if (!(error instanceof SummarizerSpawnError)) {
+      throw new Error('expected a spawn error');
+    }
+    return error;
+  };
+
+  it('carries the last stderr lines in the message so the failure can be classified', async () => {
+    const error = await failure({
+      providerId: 'cursor',
+      invokeFn: invokeFailing({
+        stdout: '',
+        stderr:
+          '\u001b[31mwarning: slow start\u001b[0m\nb: [resource_exhausted] You have hit your usage limit\n',
+        exitCode: 1,
+      }),
+    });
+
+    expect(error.message).toBe(
+      'summarizer cli exited with code 1: warning: slow start b: [resource_exhausted] You have hit your usage limit',
+    );
+    expect(error.exitCode).toBe(1);
+  });
+
+  it('prefers the error a cursor result event reports on stdout', async () => {
+    const stdout = JSON.stringify({
+      type: 'result',
+      subtype: 'error',
+      is_error: true,
+      result: 'The model "composer-2.5" is not available for this account',
+    });
+    const error = await failure({
+      providerId: 'cursor',
+      invokeFn: invokeFailing({ stdout, stderr: 'noise', exitCode: 1 }),
+    });
+
+    expect(error.message).toContain('The model "composer-2.5" is not available for this account');
+    expect(error.message).not.toContain('noise');
+  });
+
+  it('keeps the bare message when the cli said nothing', async () => {
+    const error = await failure({
+      providerId: 'cursor',
+      invokeFn: invokeFailing({ stdout: '', stderr: '', exitCode: 1 }),
+    });
+
+    expect(error.message).toBe('summarizer cli exited with code 1');
+  });
+});
+
+describe('cliFailureDetail', () => {
+  it('caps a long stderr line', () => {
+    const detail = cliFailureDetail({
+      providerId: 'codex',
+      stdout: 'not json at all',
+      stderr: 'x'.repeat(2000),
+    });
+
+    expect(detail.length).toBeLessThan(500);
+    expect(detail.endsWith('...')).toBe(true);
   });
 });

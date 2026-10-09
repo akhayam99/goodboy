@@ -1,4 +1,5 @@
 import type { CrumbLead } from './crumbMenuTypes';
+import { ICON_SIZE } from '../../iconSize';
 
 type Props = {
   readonly lead: CrumbLead;
@@ -18,7 +19,11 @@ export const CrumbMenuLead = ({ lead }: Props) => {
   const Icon = lead.icon;
   return (
     <span className="flex size-5 shrink-0 items-center justify-center">
-      <Icon size={14} aria-hidden className={lead.className ?? 'text-faint-foreground'} />
+      <Icon
+        size={ICON_SIZE.control}
+        aria-hidden
+        className={lead.className ?? 'text-faint-foreground'}
+      />
     </span>
   );
 };

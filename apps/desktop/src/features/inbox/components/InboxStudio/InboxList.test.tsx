@@ -83,7 +83,7 @@ describe('InboxList', () => {
   it('groups rows by day with a count per day', () => {
     renderList();
 
-    const listbox = screen.getByRole('listbox', { name: 'Inbox items' });
+    const listbox = screen.getByRole('listbox', { name: 'Task items' });
     expect(
       within(within(listbox).getByRole('group', { name: 'Today' })).getByText('Today item'),
     ).toBeDefined();
@@ -92,10 +92,28 @@ describe('InboxList', () => {
     ).toBeDefined();
   });
 
+  it('shows no status word when every row reads the same', () => {
+    renderList();
+
+    expect(screen.queryByText('Todo')).toBeNull();
+  });
+
+  it('shows each row status word when the list mixes states', () => {
+    renderList({
+      records: [
+        record({ key: 'CAS-1', title: 'Today item', hoursAgo: 2 }),
+        { ...record({ key: 'CAS-2', title: 'Old item', hoursAgo: 24 * 30 }), stateLabel: 'Done' },
+      ],
+    });
+
+    expect(screen.getByText('Todo')).toBeDefined();
+    expect(screen.getByText('Done')).toBeDefined();
+  });
+
   it('points aria-activedescendant at the selected option', () => {
     renderList({ selectedKey: 'CAS-2' });
 
-    const listbox = screen.getByRole('listbox', { name: 'Inbox items' });
+    const listbox = screen.getByRole('listbox', { name: 'Task items' });
     const option = screen.getByRole('option', { name: /Old item/ });
     expect(listbox.getAttribute('aria-activedescendant')).toBe(option.id);
     expect(option.getAttribute('aria-selected')).toBe('true');
@@ -137,7 +155,7 @@ describe('InboxList', () => {
   it('shows skeleton rows only until the first row arrives', () => {
     renderList({ records: [], totalCount: 0, isLoading: true });
 
-    expect(screen.getByRole('status', { name: 'Loading the inbox' })).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Loading tasks' })).toBeDefined();
   });
 
   it('asks to connect a tool when none is connected', () => {

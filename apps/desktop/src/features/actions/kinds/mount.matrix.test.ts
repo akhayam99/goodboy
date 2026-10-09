@@ -226,11 +226,11 @@ describe.each(STATES)('mount, $name', ({ facts: state, expected }) => {
 });
 
 describe('mount, labels by state', () => {
-  it('names the merged cleanup Remove worktree and the rest Close worktree', () => {
+  it('names the cleanup Close branch whether or not the pull request merged', () => {
     const merged = resolveActions({ definitions, facts: facts({ pr: 'merged', ahead: 0 }) });
     const open = resolveActions({ definitions, facts: facts({}) });
-    expect(merged.find((action) => action.id === 'mount.close')?.label).toBe('Remove worktree');
-    expect(open.find((action) => action.id === 'mount.close')?.label).toBe('Close worktree');
+    expect(merged.find((action) => action.id === 'mount.close')?.label).toBe('Close branch');
+    expect(open.find((action) => action.id === 'mount.close')?.label).toBe('Close branch');
   });
 
   it('says a close with uncommitted changes keeps them', () => {

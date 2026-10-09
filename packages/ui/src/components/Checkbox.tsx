@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check, Minus } from 'lucide-react';
 import { cn } from '../cn';
+import { ICON_SIZE } from '../iconSize';
 
 export type CheckboxProps = {
   readonly label?: ReactNode;
@@ -25,12 +26,15 @@ export const Checkbox = ({
 }: CheckboxProps) => (
   <label
     className={cn(
-      'inline-flex items-center gap-2 text-label text-foreground',
-      disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+      'inline-flex items-center gap-1 text-label text-foreground',
+      disabled ? 'cursor-not-allowed text-disabled-foreground' : 'cursor-pointer',
       className,
     )}
   >
-    <span className="relative inline-flex size-3.5 shrink-0">
+    <span
+      data-slot="checkbox-hit-area"
+      className="relative inline-flex size-6 shrink-0 items-center justify-center"
+    >
       <input
         id={id}
         type="checkbox"
@@ -44,13 +48,13 @@ export const Checkbox = ({
           }
         }}
         className={cn(
-          'peer absolute inset-0 size-3.5 cursor-pointer appearance-none rounded-md border border-border bg-background transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed',
+          'peer size-4 cursor-pointer appearance-none rounded-sm border border-border bg-background transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:bg-fill',
           indeterminate === true && 'border-primary bg-primary',
         )}
       />
       {checked && indeterminate !== true ? (
         <Check
-          size={11}
+          size={ICON_SIZE.row}
           strokeWidth={3}
           aria-hidden
           className="pointer-events-none absolute inset-0 m-auto text-background"
@@ -58,7 +62,7 @@ export const Checkbox = ({
       ) : null}
       {indeterminate === true ? (
         <Minus
-          size={11}
+          size={ICON_SIZE.row}
           strokeWidth={3}
           aria-hidden
           className="pointer-events-none absolute inset-0 m-auto text-background"

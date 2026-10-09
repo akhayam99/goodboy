@@ -1,5 +1,12 @@
 import { worstLimitsChip, type LimitsChip } from '@goodboy/core';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import {
+  ROW_INTERACTIVE,
+  AnchoredPopover,
+  FOCUS_RING,
+  TOP_BAR_CONTROL,
+  cn,
+  useDropdown,
+} from '@goodboy/ui';
 import { TriangleAlert } from 'lucide-react';
 import {
   PROVIDER_BRAND,
@@ -18,7 +25,7 @@ type Props = {
   readonly onOpen: (chip: LimitsChip) => void;
 };
 
-const PANEL_WIDTH = 300;
+const PANEL_WIDTH = 320;
 const ROW_HEIGHT = 32;
 
 type ValueParams = {
@@ -43,13 +50,14 @@ const rowValue = ({ chip, nowMs }: ValueParams): string => {
 export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-75',
+    width: 'w-80',
     expectedWidth: PANEL_WIDTH,
     expectedHeight: hidden.length * ROW_HEIGHT + 12,
   });
   const { open: isOpen, close, toggle } = dropdown;
   const worst = worstLimitsChip({ chips: hidden });
-  const label = `${hidden.length} more ${hidden.length === 1 ? 'provider' : 'providers'}`;
+  const noun = hidden.length === 1 ? 'provider' : 'providers';
+  const label = `${hidden.length} more ${noun}`;
 
   return (
     <AnchoredPopover
@@ -66,14 +74,19 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
           aria-expanded={isOpen}
           onClick={toggle}
           className={cn(
-            'flex h-6 shrink-0 items-center gap-0.5 rounded-md px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
+            TOP_BAR_CONTROL.height,
+            TOP_BAR_CONTROL.radius,
+            FOCUS_RING,
+            'flex shrink-0 items-center gap-0.5 px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
-          <span>+{hidden.length}</span>
+          <span>
+            +{hidden.length} {noun}
+          </span>
           {worst === null ? null : (
             <TriangleAlert
-              size={10}
+              size={ICON_SIZE.mark}
               aria-hidden
               className={worst.state === 'out' ? 'text-danger' : 'text-warning'}
             />
@@ -92,7 +105,10 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
                   close();
                   onOpen(chip);
                 }}
-                className="flex h-8 w-full items-center gap-2 rounded-sm px-2 text-label hover:bg-hover"
+                className={cn(
+                  'flex min-h-8 w-full items-center gap-2 rounded-sm px-2 text-label',
+                  ROW_INTERACTIVE,
+                )}
               >
                 <Glyph
                   size={ICON_SIZE.row}

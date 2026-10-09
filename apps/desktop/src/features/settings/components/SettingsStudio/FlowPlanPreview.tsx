@@ -65,7 +65,7 @@ export const FlowPlanPreview = ({
                   ariaLabel={`Include ${label}`}
                 />
                 <span className="shrink-0 text-row text-foreground">{label}</span>
-                <Chip tone="neutral" size="sm" label={String(page.items.length)} />
+                <Chip tone="neutral" kind="state" label={String(page.items.length)} />
                 <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">
                   {summaryOf({ items: page.items })}
                 </span>

@@ -33,7 +33,7 @@ export const settleItemAnswered = async ({
     (entry) => entry.item.id === itemId,
   );
   if (target === undefined) {
-    throw new Error('This comment is no longer in Review');
+    throw new Error('This comment is no longer in Comments');
   }
   if (target.item.integratedSha !== null && !allowIntegrated) {
     throw new Error(RESOLVE_ONLY_AFTER_INTEGRATION);

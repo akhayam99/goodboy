@@ -1,9 +1,6 @@
-import type { MountId } from '@goodboy/types';
-import {
-  resolveLabelOfState,
-  resolveTallyOf,
-  resolveTallyParts,
-} from '../../resolve/commentProjection';
+import type { Agent, MountId } from '@goodboy/types';
+import { resolveLabelOfState, resolveWordOfState } from '../../resolve/commentProjection';
+import { reviewTallyOfWords, reviewTallyParts } from '../../resolve/reviewTally';
 import { fixRunLabel } from '../../resolve/fixRun';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import type { RowState, RowStateReason } from '../../workTreeModel/rowState';
@@ -11,6 +8,7 @@ import type { RowState, RowStateReason } from '../../workTreeModel/rowState';
 type ResolveThreadFact = {
   readonly threadId: string;
   readonly state: ReviewCommentState;
+  readonly isPushFailure?: boolean;
   readonly path: string | null;
   readonly line: number | null;
 };
@@ -72,6 +70,7 @@ export type ResolveReviewState = {
   readonly threadId: string;
   readonly state: ReviewCommentState;
   readonly word: string;
+  readonly isPushFailure?: boolean;
   readonly path?: string | null;
   readonly line?: number | null;
 };
@@ -108,8 +107,12 @@ const wordOfReviews = ({
   if (reviews.length < 2) {
     return picked.word;
   }
-  const parts = resolveTallyParts({
-    tally: resolveTallyOf({ states: reviews.map((review) => review.state) }),
+  const parts = reviewTallyParts({
+    tally: reviewTallyOfWords({
+      words: reviews.map((review) =>
+        resolveWordOfState({ state: review.state, isPushFailure: review.isPushFailure }),
+      ),
+    }),
   });
   return parts.length === 0 ? picked.word : parts.join(' · ');
 };
@@ -137,6 +140,7 @@ const factsOfAttempt = ({
     threads: reviews.map((review) => ({
       threadId: review.threadId,
       state: review.state,
+      isPushFailure: review.isPushFailure === true,
       path: review.path ?? null,
       line: review.line ?? null,
     })),
@@ -183,4 +187,22 @@ export const resolveFactsByAgentId = ({
     facts.set(agentId, factsOfAttempt({ attempt: { ...attempt, threadIds }, reviewByThreadId }));
   }
   return facts;
+};
+
+export const withoutWorkflowStepAttempts = <T extends ResolveAttemptLike>({
+  attempts,
+  agents,
+}: {
+  readonly attempts: ReadonlyArray<T>;
+  readonly agents: ReadonlyArray<Pick<Agent, 'id' | 'workflowRunId' | 'stepId'>> | undefined;
+}): ReadonlyArray<T> => {
+  if (agents === undefined) {
+    return attempts;
+  }
+  const stepAgentIds = new Set(
+    agents
+      .filter((agent) => agent.workflowRunId != null && agent.stepId != null)
+      .map((agent) => agent.id as string),
+  );
+  return attempts.filter((attempt) => !stepAgentIds.has(attempt.agentId));
 };

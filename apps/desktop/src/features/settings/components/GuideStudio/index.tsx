@@ -56,7 +56,6 @@ export const GuideStudio = ({ onClose }: Props) => {
       icon={CONCEPT_ICONS.guide}
       tone={CONCEPT_TONE.guide}
       title="Guide"
-      subtitle="How Goodboy works, chapter by chapter"
       closeLabel="Close guide"
       onClose={onClose}
     >

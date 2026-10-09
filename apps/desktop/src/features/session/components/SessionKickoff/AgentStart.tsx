@@ -15,6 +15,7 @@ import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKi
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -58,7 +59,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const { start, isStarting, error } = useDraftStart({ workspaceId });
   const hasProject = draft.projectId !== null;
   const promptFiles = usePromptFiles({
-    note: 'Images go to the agent you start',
+    note: 'Files go to the agent you start',
     isEnabled: hasProject,
     notices: {
       ambiguous: 'Drop the file on the instructions box to attach it.',
@@ -91,7 +92,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
       return;
     }
     promptFiles.clear();
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    window.dispatchEvent(openAgentRevealEvent());
   };
 
   const placeholder = isScout

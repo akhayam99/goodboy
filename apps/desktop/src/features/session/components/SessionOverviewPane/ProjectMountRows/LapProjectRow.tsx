@@ -60,8 +60,8 @@ export const LapProjectRow = ({ sessionId, project, stage }: Props) => {
         <Chip
           tone="neutral"
           shape="badge"
-          size="control"
-          icon={<CONCEPT_ICONS.branch size={11} aria-hidden />}
+          kind="reference"
+          icon={<CONCEPT_ICONS.branch size={ICON_SIZE.mark} aria-hidden />}
           label={<span className="font-mono">{branch}</span>}
         />
         <span className="shrink-0 text-meta text-muted-foreground">

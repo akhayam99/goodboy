@@ -1,7 +1,8 @@
 import { useId, useState, type KeyboardEvent } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Button, KbdPill, cn } from '@goodboy/ui';
+import { Button, cn, KeyHint } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { WORKFLOW_CHOICE_LINE } from '../../../../shared/lib/startCopy';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { StepHeading } from './StepHeading';
 import { NoIssueSource } from './NoIssueSource';
@@ -25,7 +26,7 @@ const CHOICE_META: Readonly<
   },
   workflow: {
     title: 'Run a workflow',
-    line: 'Preset or orchestrated.',
+    line: WORKFLOW_CHOICE_LINE,
     icon: CONCEPT_ICONS.workflows,
   },
   agent: { title: 'Ask an agent', line: 'Scout or any other role.', icon: CONCEPT_ICONS.explore },
@@ -103,7 +104,7 @@ export const FirstSessionStep = ({
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <StepHeading
         title="Give your first agent something to do"
         line="Three ways to start any session."
@@ -181,9 +182,7 @@ export const FirstSessionStep = ({
                 <span className="text-label text-muted-foreground">Scout · Auto</span>
                 <Button size="sm" disabled={!canStart} isBusy={busy} onClick={start}>
                   Start Scout
-                  <KbdPill aria-hidden className="h-4 min-w-4 text-meta">
-                    {shortcutGlyphs('composer.submit')}
-                  </KbdPill>
+                  <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
                 </Button>
               </div>
             </div>

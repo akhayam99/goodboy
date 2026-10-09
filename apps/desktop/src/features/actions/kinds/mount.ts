@@ -80,20 +80,20 @@ const openLens = ({
 const closeConfirm = ({ facts }: FactsOnly): ActionConfirm => {
   if (facts.pr === 'merged') {
     return {
-      title: `Remove the worktree for ${facts.label}?`,
+      title: `Close the branch for ${facts.label}?`,
       description:
-        'Its folder is deleted. Removal stops on its own when the folder holds uncommitted or unpushed work.',
-      confirmLabel: 'Remove worktree',
+        'Its folder is deleted. The branch and its commits stay in the repository. Closing stops on its own when the folder holds uncommitted or unpushed work.',
+      confirmLabel: NAMES.closeBranch,
       role: 'danger',
     };
   }
   return {
-    title: `Close the worktree for ${facts.label}?`,
+    title: `Close the branch for ${facts.label}?`,
     description:
       facts.dirty > 0
         ? `The branch and any pull request stay, and the ${changes({ count: facts.dirty })} stay on disk.`
         : 'Its folder is removed. The branch and any pull request stay.',
-    confirmLabel: facts.dirty > 0 ? 'Close, keep changes' : 'Close worktree',
+    confirmLabel: facts.dirty > 0 ? 'Close, keep changes' : NAMES.closeBranch,
     role: 'alert',
   };
 };
@@ -126,7 +126,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openDiff',
-    label: 'Open diff',
+    label: `Open ${NAMES.files}`,
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',
@@ -140,7 +140,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.openReview',
-    label: 'Open Review',
+    label: `Open ${NAMES.comments}`,
     shortLabel: ({ facts }) => `${facts.comments} to resolve`,
     icon: CONCEPT_ICONS.review,
     group: 'open',
@@ -314,7 +314,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.switchBranch',
-    label: 'Switch branch…',
+    label: `${NAMES.switchBranch}…`,
     icon: GitBranch,
     group: 'act',
     when: ({ facts }) => isOpen({ facts }) && facts.isRepo && !facts.isRebasing,
@@ -381,7 +381,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.close',
-    label: ({ facts }) => (facts.pr === 'merged' ? 'Remove worktree' : 'Close worktree'),
+    label: NAMES.closeBranch,
     icon: CONCEPT_ICONS.worktree,
     group: 'danger',
     when: ({ facts }) => isOpen({ facts }) && !facts.isRebasing,

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { AlertTriangle, Folder, FolderGit2 } from 'lucide-react';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
-import { InlineConfirm, Tooltip } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, InlineConfirm, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
 import { NAMES } from '../../names';
 import { ProjectRowActions } from './ProjectRowActions';
@@ -40,7 +40,10 @@ export const ProjectLinkCompactRow = ({
     <li className="flex flex-col gap-1">
       <div
         onClick={toggleEditor}
-        className="group grid h-8 w-full min-w-0 cursor-pointer grid-cols-[16px_16px_180px_minmax(0,1fr)_auto_auto_88px] items-center gap-2 rounded-md px-2 text-left hover:bg-hover"
+        className={cn(
+          'group grid h-8 w-full min-w-0 grid-cols-[16px_16px_180px_minmax(0,1fr)_auto_auto_88px] items-center gap-2 rounded-md px-2 text-left',
+          ROW_INTERACTIVE,
+        )}
       >
         <ProjectStarToggle project={project} busy={busy} />
         <KindIcon

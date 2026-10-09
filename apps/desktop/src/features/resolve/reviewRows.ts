@@ -24,6 +24,7 @@ const EMPTY_ENTRIES: ReadonlyArray<ResolveQueueItemWithThread> = [];
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const EMPTY_COMMENTS: ReadonlyArray<PrComment> = [];
 const EMPTY_NOTES: ReadonlyArray<DiffComment> = [];
+const NO_ROWS: ReadonlyArray<ResolveQueueRow> = [];
 
 export const launchRowsOf = ({ state, sessionId }: Params): ReadonlyArray<ResolveQueueRow> =>
   buildResolveQueueRows({
@@ -36,8 +37,20 @@ export const launchRowsOf = ({ state, sessionId }: Params): ReadonlyArray<Resolv
 
 export const reviewRowsOf = ({ state, sessionId }: Params): ReadonlyArray<ResolveQueueRow> => {
   const entry = selectedReviewEntryOf({ state, sessionId });
+  if (entry === null) {
+    return NO_ROWS;
+  }
   return launchRowsOf({ state, sessionId }).filter((row) =>
     rowBelongsToSource({ row: row.thread, entry }),
+  );
+};
+
+export const threadRowsOf = ({ state, sessionId }: Params): ReadonlyArray<ResolveQueueRow> => {
+  const entry = selectedReviewEntryOf({ state, sessionId });
+  return launchRowsOf({ state, sessionId }).filter(
+    (row) =>
+      row.thread.originKind === 'diff_comment' ||
+      (entry !== null && rowBelongsToSource({ row: row.thread, entry })),
   );
 };
 

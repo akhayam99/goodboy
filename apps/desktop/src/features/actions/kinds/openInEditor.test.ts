@@ -57,6 +57,8 @@ const sessionFacts: SessionFacts = {
   title: 'Fix duplicate credit',
   isArchived: false,
   isPinned: false,
+  canMovePinUp: false,
+  canMovePinDown: false,
   isBranchless: false,
   hasMount: true,
   branch: 'hl/fix-duplicate-credit',

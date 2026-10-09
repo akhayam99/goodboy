@@ -25,7 +25,7 @@ export const NoWorkspaceScreen = ({ onAddWorkspace, startOpen = false }: Props) 
       />
 
       {isStarting ? (
-        <div className="relative flex w-full max-w-md flex-col gap-5">
+        <div className="relative flex w-full max-w-md flex-col gap-4">
           <div className="flex flex-col items-center gap-3 text-center">
             <ConceptTile icon={Plus} tone="primary" />
             <h2 className="text-title text-foreground">Start a new project</h2>
@@ -49,7 +49,7 @@ export const NoWorkspaceScreen = ({ onAddWorkspace, startOpen = false }: Props) 
               </Button>
             </div>
           }
-          size="xl"
+          size="page"
           headingLevel={2}
           className="relative max-w-2xl"
         />

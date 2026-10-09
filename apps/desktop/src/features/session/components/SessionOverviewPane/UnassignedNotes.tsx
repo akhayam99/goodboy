@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import type { MountId, SessionId } from '@goodboy/types';
-import { Button } from '@goodboy/ui';
+import { Button, SectionHeader } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import {
   selectActiveMount,
@@ -56,26 +56,27 @@ export const UnassignedNotes = ({ sessionId }: Props) => {
 
   return (
     <section aria-label="Unassigned notes" className="flex min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <h2 className="flex items-baseline gap-2 text-label text-foreground">
-          Unassigned notes
-          <span className="tabular-nums text-faint-foreground">{unassigned.length}</span>
-        </h2>
-        {unassigned.length >= 2 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() =>
-              void discardDiffComments({ sessionId, ids: unassigned.map((note) => note.id) })
-            }
-          >
-            Discard all
-          </Button>
-        )}
-      </div>
-      <p className="text-meta text-muted-foreground">
-        Written before notes were tied to a branch. They stay here until you move or discard them.
-      </p>
+      <SectionHeader
+        label="Unassigned notes"
+        headingLevel={2}
+        hint="Written before notes were tied to a branch. Move or discard them."
+        meta={
+          <span className="text-label tabular-nums text-faint-foreground">{unassigned.length}</span>
+        }
+        action={
+          unassigned.length >= 2 ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() =>
+                void discardDiffComments({ sessionId, ids: unassigned.map((note) => note.id) })
+              }
+            >
+              Discard all
+            </Button>
+          ) : undefined
+        }
+      />
       <ul className="flex min-w-0 flex-col gap-2">
         {unassigned.map((note) => (
           <UnassignedNote

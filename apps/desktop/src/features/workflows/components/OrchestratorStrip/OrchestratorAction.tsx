@@ -31,6 +31,7 @@ export const OrchestratorAction = ({
     <button
       type="button"
       data-testid={testId}
+      data-variant={variant}
       aria-expanded={expanded}
       disabled={disabled}
       onClick={onClick}

@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/names';
 import { Divider } from '@goodboy/ui';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
@@ -94,7 +95,7 @@ export const AppFooter = ({
             <>
               <FooterButton
                 icon={<CONCEPT_ICONS.inbox size={ICON_SIZE.control} aria-hidden />}
-                label="Inbox"
+                label={NAMES.tasks}
                 onClick={onOpenInbox}
                 isCurrent={target.place === 'inbox' && target.tool === null}
               />

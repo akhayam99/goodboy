@@ -8,7 +8,7 @@ import {
   InlineConfirm,
   ScrollFade,
   Tooltip,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -129,7 +129,8 @@ export const WorkspaceLauncher = () => {
           <ul className="flex flex-col gap-0.5">
             {filtered.length === 0 ? (
               <li>
-                <FilledEmptyState
+                <EmptyState
+                  size="section"
                   icon={CONCEPT_ICONS.workspace}
                   tone={CONCEPT_TONE.workspace}
                   title="No workspaces found"
@@ -176,6 +177,7 @@ export const WorkspaceLauncher = () => {
 
         <div className="flex items-center gap-2">
           <Button
+            size="md"
             variant="secondary"
             disabled={isStarting}
             onClick={() => setIsStarting(true)}
@@ -184,7 +186,7 @@ export const WorkspaceLauncher = () => {
             <FolderPlus size={ICON_SIZE.control} aria-hidden />
             Start a new project
           </Button>
-          <Button variant="secondary" onClick={addWorkspace} className="w-fit">
+          <Button size="md" variant="secondary" onClick={addWorkspace} className="w-fit">
             <FolderOpen size={ICON_SIZE.control} aria-hidden />
             Open a folder
           </Button>

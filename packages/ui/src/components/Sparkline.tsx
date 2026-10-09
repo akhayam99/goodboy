@@ -29,7 +29,7 @@ export const Sparkline = ({ values, formatMaximum = formatUsdPrecise }: Props) =
 
   return (
     <div className="relative h-24 w-full rounded-lg border border-border-soft bg-subtle">
-      <span className="pointer-events-none absolute right-2 top-1.5 font-mono text-meta tabular-nums text-muted-foreground">
+      <span className="pointer-events-none absolute right-2 top-1.5 text-meta tabular-nums text-muted-foreground">
         {formatMaximum(maximum)}
       </span>
       <svg

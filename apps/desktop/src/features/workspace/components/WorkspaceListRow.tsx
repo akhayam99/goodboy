@@ -44,7 +44,13 @@ export const WorkspaceListRow = ({ workspace, highlighted, onOpen }: Props) => {
         <span className="flex items-center gap-2">
           <span className="truncate text-row text-foreground">{workspace.name}</span>
           {hasUnread ? (
-            <Chip tone="warning" size="3xs" bordered={false} label="unread" className="shrink-0" />
+            <Chip
+              tone="warning"
+              kind="state"
+              bordered={false}
+              label="unread"
+              className="shrink-0"
+            />
           ) : null}
         </span>
         <span className="block truncate text-label text-muted-foreground">{projectsLabel}</span>

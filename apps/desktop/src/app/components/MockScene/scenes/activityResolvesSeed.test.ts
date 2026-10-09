@@ -10,6 +10,10 @@ import {
   reviewCommentStateOf,
   reviewCommentWord,
 } from '../../../../features/resolve/reviewCommentState';
+import {
+  earliestEvidence,
+  resolveAgentCreation,
+} from '../../../../features/session/timeline/agentCreation';
 import { ACTIVITY_RESOLVES_SESSION, seedActivityResolvesScene } from './activityResolvesSeed';
 
 const launchesOfScene = (): ReadonlyMap<string, string | null> => {
@@ -68,7 +72,7 @@ describe('activity resolves scene', () => {
     expect(launches.get('mock-resolves-agent-0')).toBe('mock-launch-pr-318');
   });
 
-  it('counts the comments of the run in five words, not the agents', () => {
+  it('counts the comments of the run by delivery, not the agents', () => {
     seedActivityResolvesScene();
     const attempts =
       useAppStore.getState().sessionResolveAttempts[ACTIVITY_RESOLVES_SESSION.id] ?? [];
@@ -76,7 +80,7 @@ describe('activity resolves scene', () => {
       'mock-resolves-agent-0',
     );
     expect(facts?.threads).toHaveLength(10);
-    expect(facts?.word).toBe("3 ready · 4 working · 1 couldn't fix");
+    expect(facts?.word).toBe('4 need you · 4 working');
   });
 
   it('holds an output without a launch in the Log and none in Activity', () => {
@@ -118,9 +122,7 @@ describe('activity resolves scene', () => {
     expect(rows).toHaveLength(1);
     const reason = rows[0]?.kind === 'row' ? rows[0].rowState.reason : null;
     expect(reason?.kind === 'review' ? reason.runTitle : null).toBe('Fix run · #318 · 10 comments');
-    expect(reason?.kind === 'review' ? reason.word : null).toBe(
-      "3 ready · 4 working · 1 couldn't fix",
-    );
+    expect(reason?.kind === 'review' ? reason.word : null).toBe('4 need you · 4 working');
   });
 
   it('asks for the run of PR 318 as one row in Needs you, with what you owe', () => {
@@ -133,7 +135,19 @@ describe('activity resolves scene', () => {
     }).filter((owner) => owner.kind === 'fixRun');
 
     expect(owners).toHaveLength(1);
-    expect(owners[0]?.text).toBe("#318 · 3 to review · 2 couldn't fix");
-    expect(owners[0]?.owed?.target?.rank).toBe(1);
+    expect(owners[0]?.text).toBe("#318 · 5 need you · 3 to review · 2 couldn't fix");
+    expect(owners[0]?.owed?.target?.rank).toBe(2);
+  });
+
+  it('orders every agent by its own time, so no launch is pulled back by a later ordinal', () => {
+    seedActivityResolvesScene();
+    const agents = useAppStore.getState().sessionPhaseRuns[ACTIVITY_RESOLVES_SESSION.id] ?? [];
+    const creations = resolveAgentCreation({ agents });
+    const pulledBack = agents
+      .filter((agent) => earliestEvidence({ agent }) !== null)
+      .filter((agent) => creations.get(agent.id)?.at !== earliestEvidence({ agent }))
+      .map((agent) => agent.id);
+
+    expect(pulledBack).toEqual([]);
   });
 });

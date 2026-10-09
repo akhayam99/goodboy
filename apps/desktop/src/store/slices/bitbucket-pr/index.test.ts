@@ -292,6 +292,20 @@ describe('bitbucket-pr write verbs', () => {
     others.forEach(([, spy]) => expect(spy).not.toHaveBeenCalled());
   });
 
+  it('passes a chosen merge strategy through to the client and sends none by default', async () => {
+    const store = buildStore();
+
+    await store.slice.mergeBitbucketPr({ ...TARGET, strategy: 'rebase_merge' });
+
+    expect(writeSpies.merge).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pullRequestId: 12, strategy: 'rebase_merge' }),
+    );
+
+    await store.slice.mergeBitbucketPr(TARGET);
+
+    expect(writeSpies.merge.mock.calls.at(-1)?.[0]).not.toHaveProperty('strategy');
+  });
+
   it('re-reads the pull request it just wrote to, by id, instead of the branch one', async () => {
     const store = buildStore();
 

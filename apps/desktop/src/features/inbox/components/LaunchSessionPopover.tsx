@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Rocket } from 'lucide-react';
-import { AnchoredPopover, Button, KbdPill, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, Kbd, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { NAMES } from '../../../shared/names';
 import { LaunchSessionPanel } from '../../integrations/components/LaunchSessionPanel';
 import type { LaunchMount } from '../launchMountFor';
 import type { LaunchSpec } from '../launchSpecFor';
 
+const startASessionLabel = `${NAMES.start} a session`;
+
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly spec: LaunchSpec;
+  readonly label: string;
   readonly openRequest: number;
   readonly onLaunched: () => void;
   readonly mount?: LaunchMount | null;
@@ -19,6 +23,7 @@ type Props = {
 export const LaunchSessionPopover = ({
   workspaceId,
   spec,
+  label,
   openRequest,
   onLaunched,
   mount = null,
@@ -41,7 +46,7 @@ export const LaunchSessionPopover = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Launch a session"
+      ariaLabel={startASessionLabel}
       className="p-2"
       trigger={
         <Button
@@ -54,8 +59,10 @@ export const LaunchSessionPopover = ({
           }}
         >
           <Rocket size={ICON_SIZE.row} aria-hidden />
-          Launch session
-          <KbdPill>{shortcutGlyphs('list.open')}</KbdPill>
+          {label}
+          <Kbd look="inline" isOnTone aria-hidden>
+            {shortcutGlyphs('list.open')}
+          </Kbd>
         </Button>
       }
     >
@@ -64,6 +71,7 @@ export const LaunchSessionPopover = ({
         linkedSessionId={null}
         goalSeed={spec.goalSeed}
         externalTask={spec.externalTask}
+        startLabel={label}
         briefSource={spec.briefSource}
         onClose={onLaunched}
         focusRequest={focusRequest}

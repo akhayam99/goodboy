@@ -1,7 +1,7 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check, CircleCheck } from 'lucide-react';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Button, Chip, KbdPill, Markdown, SectionHeader, Tooltip, cn } from '@goodboy/ui';
+import { Button, Chip, Kbd, Markdown, SectionHeader, Tooltip } from '@goodboy/ui';
 import { useThreadQuestion } from '../../hooks/useThreadQuestion';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
@@ -50,7 +50,9 @@ import { ProposedChange } from './ProposedChange';
 import { ThreadGitEvidence } from './ThreadGitEvidence';
 import { NewReplyNote } from './NewReplyNote';
 import { ReplyNote } from './ReplyNote';
+import { PushFailedNote } from './PushFailedNote';
 import { SteerLine } from './SteerLine';
+import { STATE_CHIP_TONE } from './stateTone';
 import { replyNoteKindOf } from './replyNoteKind';
 import { SourceChangeCard } from './SourceChangeCard';
 import { ThreadRecheckLine } from './ThreadRecheckLine';
@@ -65,6 +67,8 @@ type Props = ReviewCommentBinding & {
   readonly onTryAgain: () => void;
   readonly onStartOver: () => void;
   readonly hunk?: ReactNode;
+  readonly noteActions?: ReactNode;
+  readonly hasBar?: boolean;
 };
 
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
@@ -72,6 +76,7 @@ const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const DECIDED_NOTE_STATES = new Set(['accepted', 'replied', 'skipped', 'pushed', 'resolved']);
 
 const POST_NOW_ACTION = 'reviewComment.postReplyNow';
+const OPEN_NOTE_WORD = 'Open note';
 
 const verbsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<ResolvedAction> => [
   ...actions.filter((action) => action.slot === 'primary'),
@@ -118,6 +123,8 @@ export const ReviewComment = ({
   onTryAgain,
   onStartOver,
   hunk = null,
+  noteActions = null,
+  hasBar = false,
 }: Props) => {
   const { row, state, word, threadId } = entry;
   const { answer: answered } = useThreadQuestion({
@@ -126,8 +133,10 @@ export const ReviewComment = ({
     question: row.thread.question ?? null,
   });
   const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
-  const originLabel = row.thread.sourceKind === 'local' ? 'Local' : provider;
+  const isNote = row.thread.originKind === 'diff_comment';
+  const originLabel = row.thread.sourceKind === 'local' ? 'Note' : provider;
   const canResolve = REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve;
+  const isPushFailed = entry.resolveWord === 'push_failed';
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
     [sessionId, threadId],
@@ -185,17 +194,13 @@ export const ReviewComment = ({
   const note = row.reviewerNote;
   const author = note?.author ?? null;
   const verbs = verbsOf(actions).filter(
-    (action) => !(state === 'needs' && action.id === 'reviewComment.answer'),
+    (action) =>
+      !(state === 'needs' && action.id === 'reviewComment.answer') &&
+      !(isNote && state === 'new' && action.id === 'reviewComment.skip'),
   );
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
   const isOwnFixGone = remote === 'looks_fixed' || remote === 'missing' || remote === 'folded';
   const hasChange = candidate !== null && !isOwnFixGone;
-  const replyShown =
-    remote !== 'you_replied' &&
-    (remote === 'missing'
-      ? isVerdictReply
-      : reply.trim() !== '' ||
-        (state !== 'new' && state !== 'drafting' && state !== 'needs' && state !== 'failed'));
   const blocker = sharedCandidateBlocker({ members });
   const previous = useMemo(
     () => previousAttemptsOf({ attempts, threadId, activeAttemptId: row.thread.activeAttemptId }),
@@ -235,6 +240,14 @@ export const ReviewComment = ({
     isPushWaiting,
     isPosted: row.thread.disposition !== 'fix' && row.thread.replyPostedAt !== null,
   });
+  const replyShown =
+    !isNote &&
+    replyNoteKind !== 'posted' &&
+    remote !== 'you_replied' &&
+    (remote === 'missing'
+      ? isVerdictReply
+      : reply.trim() !== '' ||
+        (state !== 'new' && state !== 'drafting' && state !== 'needs' && state !== 'failed'));
   const replyUrl =
     row.commentThread?.replies.find((candidate) => candidate.id === row.thread.replyId)?.url ??
     row.commentThread?.head.url ??
@@ -253,7 +266,7 @@ export const ReviewComment = ({
     <article
       aria-label={REVIEW_FLOW_LABEL.comment}
       data-review-comment={threadId}
-      className="flex min-w-0 flex-col gap-5"
+      className="flex min-w-0 flex-col gap-4"
     >
       <header className="flex min-w-0 items-center gap-2 text-meta">
         {author !== null && (
@@ -276,7 +289,16 @@ export const ReviewComment = ({
         {row.commentThread?.head.outdated === true && (
           <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.lineMoved} />
         )}
-        <Chip tone="neutral" size="3xs" label={originLabel} />
+        {isNote ? (
+          <Chip
+            tone={STATE_CHIP_TONE[entry.toneKey]}
+            size="3xs"
+            className="shrink-0 whitespace-nowrap"
+            label={state === 'new' ? OPEN_NOTE_WORD : word}
+          />
+        ) : (
+          <Chip tone="neutral" size="3xs" label={originLabel} />
+        )}
       </header>
 
       {hunk}
@@ -310,7 +332,12 @@ export const ReviewComment = ({
       )}
 
       {row.attempt !== null && !isOwnFixGone && isFailed && (
-        <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
+        <AgentLine
+          attempt={row.attempt}
+          toneKey={entry.toneKey}
+          word={word}
+          attemptNumber={attemptNumber}
+        />
       )}
 
       {answered !== null && state !== 'needs' && (
@@ -425,6 +452,7 @@ export const ReviewComment = ({
         <ReplyNote
           kind={replyNoteKind}
           provider={provider}
+          reply={reply}
           url={replyUrl}
           isRetry={error !== null}
           isBusy={pendingActionId === POST_NOW_ACTION}
@@ -439,11 +467,12 @@ export const ReviewComment = ({
             state: state as 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved',
             sha: conversationSha({ row }),
             provider,
+            canResolve,
           })}
         </p>
       )}
 
-      {compose === null && !isEditingReply && !isFailed && (
+      {compose === null && !isEditingReply && !isFailed && !hasBar && (
         <SteerLine
           actions={actions}
           state={state}
@@ -452,7 +481,9 @@ export const ReviewComment = ({
         />
       )}
 
-      {isFailed && (
+      {isPushFailed && <PushFailedNote rowState={row.rowState} />}
+
+      {isFailed && !isPushFailed && (
         <FailedRun
           sessionId={sessionId}
           target={target}
@@ -510,14 +541,17 @@ export const ReviewComment = ({
       ) : (
         !isEditingReply &&
         !isFailed &&
-        verbs.length > 0 && (
+        !hasBar &&
+        (verbs.length > 0 || noteActions !== null) && (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {verbs.map((action) => {
+              const isPrimary =
+                action.slot === 'primary' && !(isNote && action.id === 'reviewComment.draft');
               const button = (
                 <Button
                   key={action.id}
                   size="sm"
-                  variant={action.slot === 'primary' ? 'primary' : 'ghost'}
+                  variant={isPrimary ? 'primary' : 'ghost'}
                   data-review-verb={action.id}
                   disabled={
                     action.blockedReason !== null ||
@@ -528,15 +562,9 @@ export const ReviewComment = ({
                 >
                   {action.label}
                   {action.shortcut !== null && (
-                    <KbdPill
-                      aria-hidden
-                      className={cn(
-                        'ml-1 h-4 min-w-4 text-chip',
-                        action.slot === 'primary' && 'border-on-tone/30 bg-on-tone/15 text-on-tone',
-                      )}
-                    >
+                    <Kbd look="inline" isOnTone={isPrimary} aria-hidden>
                       {shortcutGlyphs(action.shortcut)}
-                    </KbdPill>
+                    </Kbd>
                   )}
                 </Button>
               );
@@ -552,6 +580,7 @@ export const ReviewComment = ({
                 </Tooltip>
               );
             })}
+            {noteActions}
             {remote === 'on_origin' && (
               <span className="text-meta text-faint-foreground">{REMOTE_LABEL.nothingToPush}</span>
             )}

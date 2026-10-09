@@ -77,6 +77,12 @@
           "main": true
         },
         {
+          "title": "Review a pull request",
+          "text": "A pull request waiting on you starts a session with a read-only reviewer and opens the Pull request tab, where Write review waits.",
+          "group": "Start a task",
+          "also": "review a pull request"
+        },
+        {
           "title": "Run a workflow",
           "text": "Write a goal, choose how steps are picked and read the plan before you run it. One press creates the session and starts the run.",
           "group": "Start a task",
@@ -781,14 +787,14 @@
     },
     {
       "id": "tools",
-      "title": "Inbox, plans and wireframes",
+      "title": "Tasks, plans and wireframes",
       "lead": "Connect your trackers once, let agents read them, and keep every document next to the task.",
-      "groups": ["Inbox and your tools", "Plans, reports and wireframes"],
+      "groups": ["Tasks and your tools", "Plans, reports and wireframes"],
       "mocks": ["inbox"],
       "guides": [
         {
           "area": "inbox",
-          "label": "Inbox and your tools"
+          "label": "Tasks and your tools"
         },
         {
           "area": "artifacts",
@@ -798,96 +804,96 @@
       "items": [
         {
           "title": "Supported tools",
-          "text": "Connect GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack in Settings. Each one feeds the Inbox and can start a session with its brief drafted.",
-          "group": "Inbox and your tools",
+          "text": "Connect GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack in Settings. Each one feeds Tasks and can start a session with its brief drafted.",
+          "group": "Tasks and your tools",
           "also": "supported tools",
           "shown": true
         },
         {
           "title": "Agents use your tools",
           "text": "Agents on any provider can read and act on your connected tools without ever holding your keys. Goodboy makes each call for them.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "also": "agent tools"
         },
         {
-          "title": "Inbox",
+          "title": "Tasks",
           "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together, grouped by day.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "main": true
         },
         {
           "title": "Find any issue by code or link",
           "text": "Paste an issue code, a pull request number or a link to open it. It does not need to be assigned to you.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "also": "find by code",
           "shown": true
         },
         {
           "title": "Starred issues",
-          "text": "Star an issue to keep it on top of the Inbox and of the list you pick tasks from.",
-          "group": "Inbox and your tools",
+          "text": "Star an issue to keep it on top of Tasks and of the list you pick tasks from.",
+          "group": "Tasks and your tools",
           "also": "starred issues",
           "shown": true
         },
         {
-          "title": "Launch a session from any item",
-          "text": "Press Launch session on an issue, a Slack thread or an error. The session starts with its brief already drafted.",
-          "group": "Inbox and your tools",
-          "also": "launch from an item"
+          "title": "Start from any item",
+          "text": "Start from an issue, a Slack thread or an error in one press. The session begins with its brief already drafted.",
+          "group": "Tasks and your tools",
+          "also": "start from an item"
         },
         {
           "title": "Link an item to a session",
-          "text": "Attach an Inbox item to work that already exists, on a session, its branch or the whole workspace. Link work searches every connected tracker at once.",
-          "group": "Inbox and your tools",
+          "text": "Attach a Tasks item to work that already exists, on a session, its branch or the whole workspace. Link work searches every connected tracker at once.",
+          "group": "Tasks and your tools",
           "also": "link to a session"
         },
         {
           "title": "Trackers",
           "text": "Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy. Comment, assign, edit and move issues in Linear and Jira the same way.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "main": true
         },
         {
           "title": "Code hosts",
           "text": "Work on GitHub pull requests, GitLab merge requests and Bitbucket comments, approvals and merges without leaving Goodboy. GitHub and GitLab can work side by side.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "main": true
         },
         {
           "title": "Slack: what agents can do",
           "text": "Choose the channels agents follow and set what each action may do. They never start conversations or send direct messages.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "also": "Slack actions",
           "shown": true
         },
         {
           "title": "Reply ready for #channel",
           "text": "A Slack reply waits in the session as a card with the draft. Send it, edit it or discard it.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "also": "Slack replies"
         },
         {
           "title": "Slack signature",
           "text": "Show when an agent wrote a Slack reply, with a note you can reword or switch off.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "also": "Slack signature"
         },
         {
           "title": "Images from your tools",
           "text": "See screenshots attached in Linear, Jira and GitHub inside Goodboy. Your key goes only to that tool's own image host.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "also": "tool images"
         },
         {
           "title": "Records read the same way",
           "text": "Items from any tool read the same way: one list of labels and values, with who opened them and when.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "also": "record view"
         },
         {
           "title": "Comment threads",
           "text": "Follow replies under the comment they answer, in Linear and GitLab. Long threads fold behind a Show earlier replies link.",
-          "group": "Inbox and your tools",
+          "group": "Tasks and your tools",
           "also": "comment threads",
           "shown": true
         },

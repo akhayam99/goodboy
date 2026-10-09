@@ -12,6 +12,8 @@ const MAX_LINES = 6;
 
 export const DECISION_DETAIL_LINE_HEIGHT = 20;
 
+export const DECISION_DETAIL_ACTION_HEIGHT = 24;
+
 const DETAIL_PADDING = 8;
 
 type ChangeParams = {
@@ -96,11 +98,12 @@ export const decisionChangeDetail = ({ payload }: PayloadParams): DecisionChange
       }),
     ),
   ];
-  const lineCount = lines.length + (hiddenCount > 0 ? 1 : 0) + 1;
+  const lineCount = lines.length + (hiddenCount > 0 ? 1 : 0);
   return {
     lines,
     hiddenCount,
     numbers,
-    height: lineCount * DECISION_DETAIL_LINE_HEIGHT + DETAIL_PADDING,
+    height:
+      lineCount * DECISION_DETAIL_LINE_HEIGHT + DECISION_DETAIL_ACTION_HEIGHT + DETAIL_PADDING,
   };
 };

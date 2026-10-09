@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Check, UserRound } from 'lucide-react';
 import {
+  EmptyLine,
   AnchoredPopover,
   Button,
   cn,
@@ -45,7 +46,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
   const [query, setQuery] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [assignError, setAssignError] = useState<string | null>(null);
-  const dropdown = useDropdown({ align: 'end', width: 'w-64', expectedHeight: 300 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 300 });
   const { open: isOpen, close, toggle } = dropdown;
   const { users, isLoading, error, reload } = useJiraAssignableUsers({
     issueKey,
@@ -138,7 +139,9 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           </p>
         )}
         {!isLoading && error == null && filtered.length === 0 && (
-          <p className="px-2 py-1 text-meta text-muted-foreground">No one matches that name</p>
+          <EmptyLine className="px-2 py-1 text-meta text-muted-foreground">
+            No one matches that name
+          </EmptyLine>
         )}
       </ScrollFade>
       {error != null && (

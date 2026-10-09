@@ -77,7 +77,7 @@ export const SentryProjectMap = ({ workspaceId, credentialId, org }: Props) => {
       <Band
         label="Sentry projects per project"
         ariaLabel="Sentry projects per project"
-        hint="A project can read several Sentry projects, and one Sentry project can serve several projects. Without a link, the Inbox uses the Sentry project you connected."
+        hint="A project can read several Sentry projects, and one Sentry project can serve several projects. Without a link, Tasks uses the Sentry project you connected."
       >
         <ul aria-label="Projects and their Sentry projects" className="flex flex-col">
           {projects.map((project) => (

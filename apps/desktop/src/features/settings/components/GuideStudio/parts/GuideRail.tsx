@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { Eyebrow, SelectableRow, cn, tintClasses } from '@goodboy/ui';
+import { EmptyLine, Eyebrow, SelectableRow, cn, tintClasses } from '@goodboy/ui';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -32,9 +32,9 @@ export const GuideRail = ({ chapters, activeId, query, onQueryChange, onSelect }
       />
     </div>
     {chapters.length === 0 ? (
-      <p className="px-2 py-2 text-label text-faint-foreground">
+      <EmptyLine className="px-2 py-2 text-label text-faint-foreground">
         No chapter mentions "{query.trim()}".
-      </p>
+      </EmptyLine>
     ) : null}
     {GROUP_ORDER.map((group) => {
       const inGroup = chapters.filter((chapter) => chapter.group === group);

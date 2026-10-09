@@ -4,6 +4,7 @@ import { tintClasses, type Tone } from '../tint';
 import { X, type LucideIcon } from 'lucide-react';
 import { Button } from './Button';
 import { Tooltip } from './Tooltip';
+import { ICON_SIZE } from '../iconSize';
 
 type Props = {
   readonly icon?: LucideIcon;
@@ -37,7 +38,11 @@ export const OverlayHeader = ({
       <header aria-label={title} className="flex shrink-0 items-center gap-3 px-6 py-3">
         {glyph ??
           (Icon != null ? (
-            <Icon size={18} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
+            <Icon
+              size={ICON_SIZE.hero}
+              className={cn('shrink-0', tintClasses(tone).icon)}
+              aria-hidden
+            />
           ) : null)}
         <div className="flex min-w-0 flex-col">
           <span className="text-heading text-foreground">{title}</span>
@@ -54,7 +59,7 @@ export const OverlayHeader = ({
           disabled={closeDisabled}
           aria-label={closeLabel}
         >
-          <X size={13} aria-hidden /> Close
+          <X size={ICON_SIZE.control} aria-hidden /> Close
         </Button>
       </header>
     );
@@ -67,7 +72,11 @@ export const OverlayHeader = ({
     >
       {glyph ??
         (Icon != null ? (
-          <Icon size={12} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
+          <Icon
+            size={ICON_SIZE.row}
+            className={cn('shrink-0', tintClasses(tone).icon)}
+            aria-hidden
+          />
         ) : null)}
       <span className="shrink-0 text-meta font-semibold text-foreground">{title}</span>
       {subtitle != null && subtitle !== '' ? (
@@ -88,7 +97,7 @@ export const OverlayHeader = ({
             closeDisabled && 'cursor-not-allowed opacity-50',
           )}
         >
-          <X size={14} aria-hidden />
+          <X size={ICON_SIZE.control} aria-hidden />
         </button>
       </Tooltip>
     </header>

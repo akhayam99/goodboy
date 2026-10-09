@@ -246,6 +246,12 @@ about its effect is a worse defect than one that reads badly.
   breathes the info tone, because that is where a card keeps its tone: every
   stage carries the bar, running is the one that breathes. A card never gets a
   tinted box around it.
+- **One filled primary per surface.** A page header, a drawer, a card and a
+  confirm each hold at most one filled button. While a header's own confirm is
+  open, the header primary steps down to secondary and the confirm holds the
+  filled button. A confirm is a neutral card with a tone line, never a tinted
+  box ([packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md) → Action
+  zones).
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
   notification inbox is the _log_. Nothing lives only in a toast.
 - **A toast says what already happened.** `success` means finished. `info`
@@ -388,3 +394,5 @@ second home for them.
   a shape.
 
 Every pixel is intentional: if it carries no meaning, cut it.
+
+- Icons, rows, gaps and numbers sit on one ladder each (`ICON_SIZE`, 24 to 48px rows, 4/8/12/16/24/32 gaps, sans numbers with mono for code only), held by `scale-rules.test.ts` and `row-heights-on-the-scale.test.ts`; see [DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md#icon-ladder-and-row-scale).

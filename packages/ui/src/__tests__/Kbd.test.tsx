@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { Kbd } from '../components/Kbd';
 import { KbdPill } from '../components/KbdPill';
+import { KeyHint } from '../components/KeyHint';
+import { isChordHint } from '../components/Kbd';
 
 afterEach(cleanup);
 
@@ -37,6 +39,21 @@ describe('Kbd', () => {
     expect(classes.some((name) => /^(h|min-h|min-w)-/.test(name))).toBe(false);
   });
 
+  it('marks an on-tone key and leaves an ordinary one unmarked', () => {
+    const { container } = render(
+      <>
+        <Kbd isOnTone>F</Kbd>
+        <Kbd>G</Kbd>
+      </>,
+    );
+    const [onTone = null, plain = null] = [...container.querySelectorAll('kbd')];
+
+    expect(onTone?.getAttribute('data-on-tone')).toBe('true');
+    expect(classesOf({ element: onTone })).toContain('text-on-tone');
+    expect(plain?.hasAttribute('data-on-tone')).toBe(false);
+    expect(classesOf({ element: plain })).not.toContain('text-on-tone');
+  });
+
   it('keeps the boxed cap for a single key inside a button', () => {
     const { container } = render(<Kbd look="cap">A</Kbd>);
     const kbd = container.querySelector('kbd');
@@ -67,5 +84,50 @@ describe('KbdPill', () => {
     expect(kbd?.getAttribute('data-look')).toBe('cap');
     expect(kbd?.getAttribute('aria-hidden')).toBe('true');
     expect(classesOf({ element: kbd })).toEqual(TODAYS_PILL_CLASSES);
+  });
+});
+
+describe('on a filled button', () => {
+  it('takes the label colour from the tone token, never an opacity rule', () => {
+    const { container } = render(
+      <>
+        <Kbd look="cap" isOnTone>
+          F
+        </Kbd>
+        <Kbd isOnTone>⌘↵</Kbd>
+      </>,
+    );
+    const [cap, chord] = Array.from(container.querySelectorAll('kbd'));
+
+    expect(classesOf({ element: cap ?? null })).toEqual(
+      expect.arrayContaining(['text-on-tone', 'border-on-tone/30', 'bg-on-tone/15']),
+    );
+    expect(classesOf({ element: chord ?? null })).toContain('text-on-tone');
+    expect(classesOf({ element: chord ?? null }).some((name) => name.includes('opacity'))).toBe(
+      false,
+    );
+  });
+});
+
+describe('KeyHint', () => {
+  it('tells a chord from a single key', () => {
+    expect(isChordHint('⌘↵')).toBe(true);
+    expect(isChordHint('Ctrl+Enter')).toBe(true);
+    expect(isChordHint('F')).toBe(false);
+    expect(isChordHint('Esc')).toBe(false);
+  });
+
+  it('draws a chord bare and a single key as the small cap', () => {
+    const { container } = render(
+      <>
+        <KeyHint keys="⌘↵" />
+        <KeyHint keys="F" />
+      </>,
+    );
+    const [chord, key] = Array.from(container.querySelectorAll('kbd'));
+
+    expect(chord?.getAttribute('data-look')).toBe('inline');
+    expect(key?.getAttribute('data-look')).toBe('cap');
+    expect(key?.getAttribute('aria-hidden')).toBe('true');
   });
 });

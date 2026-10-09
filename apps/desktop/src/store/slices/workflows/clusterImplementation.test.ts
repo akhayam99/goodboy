@@ -23,6 +23,7 @@ import {
   stringifyRoutingJson,
 } from '@goodboy/db';
 import type { GetFn, SetFn } from './types';
+import type { SummarizeAgentOutputResult } from './summarizeAgentOutput';
 
 const hoisted = vi.hoisted(() => {
   const insertArgs: Array<Record<string, unknown>> = [];
@@ -46,7 +47,12 @@ const hoisted = vi.hoisted(() => {
     invokeAgentUpdateStatus: vi.fn(async () => undefined),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
     invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
-    summarizeAgentOutput: vi.fn(async () => ({ summary: 'model summary', degraded: false })),
+    summarizeAgentOutput: vi.fn(async (): Promise<SummarizeAgentOutputResult> => ({
+      summary: 'model summary',
+      degraded: false,
+      model: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+      attempts: [],
+    })),
     insertOpenQuestion: vi.fn(async () => ({ inserted: true })),
   };
 });
@@ -469,6 +475,8 @@ function makeStore(initial: Record<string, unknown>) {
     selectedAgentId: PARENT,
     sendTurn,
     emitNotification,
+    resolveNotifications: vi.fn(async () => undefined),
+    stepSummaryDegraded: {},
     refreshUnreadWorkspaces,
     maybeAutoAdvanceWorkflow,
     loadSessionPlans,
@@ -502,7 +510,12 @@ afterEach(() => {
   vi.clearAllMocks();
   hoisted.invokeAgentList.mockResolvedValue([]);
   hoisted.invokeListConsumptionsForPlan.mockResolvedValue([]);
-  hoisted.summarizeAgentOutput.mockResolvedValue({ summary: 'model summary', degraded: false });
+  hoisted.summarizeAgentOutput.mockResolvedValue({
+    summary: 'model summary',
+    degraded: false,
+    model: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+    attempts: [],
+  });
 });
 
 describe('fanOutClusters', () => {
@@ -1333,7 +1346,15 @@ describe('advanceClusterImplementation', () => {
       summary: 'deterministic fallback',
       degraded: true,
       error: 'provider failed',
-    } as { summary: string; degraded: boolean });
+      model: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+      attempts: [
+        {
+          model: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+          error: 'provider failed',
+          failure: 'other',
+        },
+      ],
+    });
     hoisted.invokeAgentList.mockResolvedValue([
       container({ status: 'running' }),
       childAgent({ id: 'degraded-child', ordinal: 0, status: 'completed' }),
@@ -1346,11 +1367,12 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({
         kind: 'summarizer-degraded',
         severity: 'warning',
-        title: expect.stringContaining('child-0'),
-        body: expect.stringContaining('provider failed'),
+        title: 'Step summary unavailable',
+        body: expect.stringContaining('child-0'),
         sessionId: SID,
         action: { kind: 'retry-step-summary', sessionId: SID, agentId: child.id },
-        coalesceKey: 'step-summary-degraded:wf-1:step-1',
+        coalesceKey: `step-summary-degraded:${SID}`,
+        isOnce: true,
       }),
     );
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(

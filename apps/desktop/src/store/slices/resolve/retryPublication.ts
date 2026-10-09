@@ -40,8 +40,8 @@ export const retryPublication = async ({
   const observedAt = fetchedAt === null ? null : new Date(fetchedAt).getTime();
   const isObservationTrusted = source?.error == null && source?.hasDetail === true;
   const entry = selectedReviewEntryOf({ state: get(), sessionId });
-  const rows = (await listResolveThreads({ db: tauriDatabase, sessionId })).filter((row) =>
-    rowBelongsToSource({ row, entry }),
+  const rows = (await listResolveThreads({ db: tauriDatabase, sessionId })).filter(
+    (row) => entry !== null && rowBelongsToSource({ row, entry }),
   );
   const failedRows = rows.filter((row) => row.stateReason?.startsWith(PUBLICATION_FAILED) === true);
   const publications = await listResolvePublicationsForSession({ db: tauriDatabase, sessionId });

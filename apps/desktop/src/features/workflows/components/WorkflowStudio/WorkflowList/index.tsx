@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
-import { Button, InlineConfirm, OverflowMenu, LensEmptyState } from '@goodboy/ui';
+import { Button, InlineConfirm, OverflowMenu, EmptyState } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
@@ -93,7 +93,8 @@ export const WorkflowList = ({
         />
       ) : null}
       {workflows.length === 0 ? (
-        <LensEmptyState
+        <EmptyState
+          size="section"
           icon={CONCEPT_ICONS.workflows}
           tone={CONCEPT_TONE.workflows}
           title="No workflows yet"

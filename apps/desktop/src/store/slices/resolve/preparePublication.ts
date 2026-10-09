@@ -224,7 +224,7 @@ export const preparePublication = async ({
   const threadGit = get().sessionThreadGit?.[sessionId] ?? {};
   const entry = selectedReviewEntryOf({ state: get(), sessionId });
   const include = ({ thread }: { readonly thread: ResolveThread }): boolean =>
-    rowBelongsToSource({ row: thread, entry });
+    entry !== null && rowBelongsToSource({ row: thread, entry });
   const rows = (await listResolveThreads({ db: tauriDatabase, sessionId })).filter(
     (row) => threadIds !== undefined || include({ thread: row }),
   );

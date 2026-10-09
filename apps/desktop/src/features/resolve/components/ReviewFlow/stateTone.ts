@@ -1,34 +1,36 @@
 import { tintClasses, type Tone } from '@goodboy/ui';
 import type { RemoteTone } from '../../reviewRemote';
-import type { ReviewCommentState } from '../../reviewCommentState';
+import type { ReviewCommentTone } from '../../reviewCommentState';
 
-export const STATE_WORD_TONE: Record<ReviewCommentState, string> = {
+export const STATE_WORD_TONE: Record<ReviewCommentTone, string> = {
   new: 'text-muted-foreground',
   drafting: tintClasses('info').text,
   needs: tintClasses('warning').text,
-  ready: 'text-muted-foreground',
-  edited: tintClasses('draft').text,
-  outdated: tintClasses('primary').text,
-  failed: tintClasses('danger').text,
+  ready: tintClasses('warning').text,
+  edited: tintClasses('warning').text,
+  outdated: tintClasses('warning').text,
+  failed: tintClasses('warning').text,
+  push_failed: tintClasses('danger').text,
   accepted: tintClasses('success').text,
   replied: tintClasses('success').text,
-  skipped: 'text-muted-foreground',
-  pushed: tintClasses('success').text,
+  skipped: 'text-faint-foreground',
+  pushed: 'text-muted-foreground',
   resolved: 'text-muted-foreground',
 };
 
-export const STATE_CHIP_TONE: Record<ReviewCommentState, Tone> = {
+export const STATE_CHIP_TONE: Record<ReviewCommentTone, Tone> = {
   new: 'neutral',
   drafting: 'info',
   needs: 'warning',
   ready: 'warning',
   edited: 'warning',
   outdated: 'warning',
-  failed: 'danger',
+  failed: 'warning',
+  push_failed: 'danger',
   accepted: 'success',
   replied: 'success',
   skipped: 'neutral',
-  pushed: 'success',
+  pushed: 'neutral',
   resolved: 'neutral',
 };
 

@@ -16,7 +16,7 @@ export const RecordDetailEmptyState = ({ provider, title, description }: Props) 
       icon={CONCEPT_ICONS[provider]}
       title={title}
       description={description}
-      size="lg"
+      size="page"
       headingLevel={2}
     />
   </div>

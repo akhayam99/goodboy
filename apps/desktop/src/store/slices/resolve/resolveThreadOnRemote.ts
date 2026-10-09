@@ -22,7 +22,7 @@ export const resolveThreadOnRemote = async ({
     (candidate) => candidate.thread.threadId === threadId,
   );
   if (entry === undefined) {
-    throw new Error('This comment is no longer in Review');
+    throw new Error('This comment is no longer in Comments');
   }
   const facts = get().sessionThreadGit[sessionId]?.[threadId] ?? null;
   const isStale = facts?.gitState === 'missing';

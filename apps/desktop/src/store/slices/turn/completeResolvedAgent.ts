@@ -49,7 +49,7 @@ export const completeResolvedAgent = async ({
         set,
         sessionId,
         workflowRunId: ranAgent.workflowRunId,
-        stop: { kind: 'needs-approval', message: 'Waiting for your approval on a tool call.' },
+        stop: { kind: 'needs-approval', message: 'Waiting for your permission on a tool call.' },
       });
       return false;
     }

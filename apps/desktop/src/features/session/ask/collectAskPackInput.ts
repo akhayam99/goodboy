@@ -14,6 +14,7 @@ import { classifyAgent } from '../agent-kind';
 import { sessionTitle } from '../sessionTitle';
 import { reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import { resolveWordOfState } from '../../resolve/commentProjection';
+import { isPushFailure } from '../../resolve/reviewCommentState';
 import { threadLocationOf } from '../../resolve/threadLocationOf';
 import type { AskPackAgent, AskPackComment, AskPackInput, AskPackRun } from './buildAskPack';
 import type { AskRightNowInput } from './askRightNow';
@@ -58,7 +59,10 @@ const sessionPullRequestOf = ({ state, sessionId }: Params): PullRequestState | 
 const commentRowsOf = ({ state, sessionId }: Params) =>
   reviewRowsOf({ state, sessionId }).map((row) => ({
     row,
-    word: resolveWordOfState({ state: rowStateOf({ state, sessionId, row }) }),
+    word: resolveWordOfState({
+      state: rowStateOf({ state, sessionId, row }),
+      isPushFailure: isPushFailure({ row }),
+    }),
   }));
 
 const questionAuthorOf = ({

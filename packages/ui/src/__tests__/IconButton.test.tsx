@@ -77,4 +77,50 @@ describe('IconButton', () => {
     render(<IconButton icon={RefreshCw} label="Refresh issues" />);
     expect(screen.getByRole('button', { name: 'Refresh issues' })).toBeDefined();
   });
+  it('draws xs, sm and md as 24, 28 and 32 squares with a 12, 14 and 14 glyph', () => {
+    render(
+      <>
+        <IconButton icon={RefreshCw} label="Extra" size="xs" />
+        <IconButton icon={RefreshCw} label="Small" size="sm" />
+        <IconButton icon={RefreshCw} label="Medium" size="md" />
+      </>,
+    );
+
+    for (const [label, side, glyph] of [
+      ['Extra', 'size-6', '12'],
+      ['Small', 'size-7', '14'],
+      ['Medium', 'size-8', '14'],
+    ] as const) {
+      const button = screen.getByRole('button', { name: label });
+      expect(button.className.split(' ')).toContain(side);
+      expect(button.className.split(' ')).toContain('rounded-md');
+      expect(button.querySelector('svg')?.getAttribute('width')).toBe(glyph);
+    }
+  });
+
+  it('defaults to a 28 ghost with no border at rest', () => {
+    render(<IconButton icon={RefreshCw} label="Refresh issues" />);
+
+    const button = screen.getByRole('button', { name: 'Refresh issues' });
+    expect(button.getAttribute('data-size')).toBe('sm');
+    expect(button.className.split(' ')).toContain('size-7');
+    expect(button.className).toContain('border-transparent');
+    expect(button.className).not.toContain('border-border-soft');
+  });
+
+  it('draws a border only for the outline variant', () => {
+    render(<IconButton icon={RefreshCw} label="Refresh issues" variant="outline" />);
+
+    expect(screen.getByRole('button', { name: 'Refresh issues' }).className).toContain(
+      'border-border-soft',
+    );
+  });
+
+  it('shows a disabled control with the disabled label colour, never half opacity', () => {
+    render(<IconButton icon={RefreshCw} label="Refresh issues" disabled />);
+
+    const classes = screen.getByRole('button', { name: 'Refresh issues' }).className;
+    expect(classes).toContain('disabled:text-disabled-foreground');
+    expect(classes).not.toContain('opacity-50');
+  });
 });

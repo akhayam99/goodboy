@@ -1,4 +1,5 @@
-export const FOLLOW_LABEL = 'Follow';
+import { NAMES } from '../names';
+export const FOLLOW_LABEL = NAMES.follow;
 
 type FollowKeyParams = {
   readonly startKey: string;

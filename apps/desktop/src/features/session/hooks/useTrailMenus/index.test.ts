@@ -59,6 +59,7 @@ vi.mock('../../../../store/slices/worktrees/resolveSessionRepo', () => ({
 vi.mock('../../../../store/slices/project-mounts/mountRowModel', () => ({
   isMountRequestMerged: ({ mountId }: { mountId: string }) => h.mergedMounts.has(mountId),
   mountOpenRequestHead: ({ mountId }: { mountId: string }) => h.openHeads.get(mountId) ?? null,
+  mountRequestOf: () => null,
 }));
 vi.mock('../../../../store/slices/navigation/resolverThread', () => ({
   resolverThread: () => h.threadId,
@@ -94,6 +95,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
 import { lensDestinations } from '../../lens-destinations';
 import { createAgentEventName } from '../../createAgentEventName';
 import { branchPlace } from '../../../../store/slices/navigation/place';
+import { branchLandingTabOf } from '../../../branch/branchLandingTab';
 import { useTrailMenus } from '.';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -376,18 +378,38 @@ const anyPage = (activeLens: Setup['activeLens']): Setup => ({
 });
 
 describe('useTrailMenus page crumb', () => {
-  it('puts the page switcher on the depth one crumb only', () => {
-    const menus = menusFor({ crumbs: ['overview', 'lens-agents', 'selected-child'] });
-    expect([...menus.keys()]).toEqual(['lens-agents']);
+  it('puts the page switcher on the session crumb at every depth', () => {
     const lone = menusFor({ crumbs: ['overview'] });
     expect([...lone.keys()]).toEqual(['overview']);
+    const two = menusFor({ crumbs: ['overview', 'lens-agents'] });
+    expect([...two.keys()]).toEqual(['overview', 'lens-agents']);
+    const three = menusFor({ crumbs: ['overview', 'lens-agents', 'selected-child'] });
+    expect([...three.keys()]).toEqual(['overview', 'lens-agents']);
+    expect(rowIds(three.get('overview') as CrumbMenuModel)).toEqual(
+      rowIds(three.get('lens-agents') as CrumbMenuModel),
+    );
   });
 
-  it('puts the branch switcher, not the page switcher, on the Branch crumb', () => {
+  it('keeps the branch switcher on the Branch crumb and gives the session crumb the pages', () => {
     h.state.sessionProjectMounts = { [SESSION_ID]: [mount('ledger-core', 'ak/feat-ledger')] };
     const menus = menusFor({ crumbs: ['overview', 'branch'] });
-    expect([...menus.keys()]).toEqual(['branch']);
+    expect([...menus.keys()]).toEqual(['overview', 'branch']);
     expect(rowIds(menus.get('branch') as CrumbMenuModel)).toEqual(['/work/ledger-core']);
+    expect((menus.get('overview') as CrumbMenuModel).title).toBe('Pages');
+    expect(rowIds(menus.get('overview') as CrumbMenuModel)).toContain('runs');
+  });
+
+  it('opens the pages from the session crumb on a deeper Branch page', () => {
+    h.state.sessionProjectMounts = { [SESSION_ID]: [mount('ledger-core', 'ak/feat-ledger')] };
+    const menus = menusFor({
+      crumbs: ['overview', 'branch', 'review-thread'],
+      activeLens: 'branch',
+    });
+    const pages = menus.get('overview') as CrumbMenuModel;
+    expect(pages.title).toBe('Pages');
+    expect(rowById(pages, 'branch').isCurrent).toBe(true);
+    rowById(pages, 'runs').onSelect();
+    expect(h.openLens).toHaveBeenLastCalledWith({ sessionId: SESSION_ID, lens: 'workflows' });
   });
 
   it('carries the session title, the open lens and the summaries', () => {
@@ -414,7 +436,7 @@ describe('useTrailMenus page crumb', () => {
 
   it('clears the focused run and artifact when a page is picked', () => {
     const menu = menuOf(anyPage('agents'), 'x');
-    rowById(menu, 'workflows').onSelect();
+    rowById(menu, 'runs').onSelect();
     expect(setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, null);
     expect(setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, null);
     expect(h.openLens).toHaveBeenCalledWith({ sessionId: SESSION_ID, lens: 'workflows' });
@@ -701,7 +723,7 @@ describe('useTrailMenus diff branch crumb', () => {
         to: branchPlace({
           sessionId: SESSION_ID,
           mountPath: '/work/notify-relay',
-          tab: 'comments',
+          tab: branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
         }),
         mode: 'replace',
       }),

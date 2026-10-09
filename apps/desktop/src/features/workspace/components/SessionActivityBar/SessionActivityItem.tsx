@@ -9,6 +9,10 @@ import { useRenameRequest } from '../../../actions/useRenameRequest';
 import { sessionObjectKey } from '../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../session/hooks/useSessionTitleRename';
+import { useSessionPin } from '../../../actions/useSessionPin';
+import type { CurrentSign } from './currentSign';
+import { PagesChevron } from './PagesChevron';
+import { PinSlotButton } from './PinSlotButton';
 import { sessionNodeOf } from './sessionNode';
 import { SessionStateNode } from './SessionStateNode';
 
@@ -24,15 +28,11 @@ type RowAnchor = {
   readonly anchor: HTMLElement;
 };
 
-type PagesToggle = {
-  readonly sessionId: SessionId;
-  readonly isShown: boolean;
-};
-
 type Props = {
   readonly session: Session;
   readonly isActive: boolean;
-  readonly isPagesShown?: boolean;
+  readonly sign?: CurrentSign | null;
+  readonly isPagesFolded?: boolean;
   readonly isArchived?: boolean;
   readonly isSelected?: boolean;
   readonly getSelectedIds: () => ReadonlyArray<SessionId>;
@@ -42,13 +42,30 @@ type Props = {
   readonly onSelect: (id: SessionId) => void;
   readonly onRowEnter: (params: RowAnchor) => void;
   readonly onRowLeave: () => void;
-  readonly onPagesToggle: (params: PagesToggle) => void;
+  readonly onPagesFoldChange?: (isFolded: boolean) => void;
+};
+
+type PadParams = {
+  readonly canFoldPages: boolean;
+  readonly isFolded: boolean;
+  readonly isArchived: boolean;
+};
+
+const trailingPadOf = ({ canFoldPages, isFolded, isArchived }: PadParams): string => {
+  if (isArchived) {
+    return '';
+  }
+  if (!canFoldPages) {
+    return 'group-focus-within/select-row:pr-8 group-hover/select-row:pr-8';
+  }
+  return cn('group-focus-within/select-row:pr-14 group-hover/select-row:pr-14', isFolded && 'pr-7');
 };
 
 const SessionActivityItemView = ({
   session,
   isActive,
-  isPagesShown = false,
+  sign = null,
+  isPagesFolded = false,
   isArchived = false,
   isSelected = false,
   getSelectedIds,
@@ -58,7 +75,7 @@ const SessionActivityItemView = ({
   onSelect,
   onRowEnter,
   onRowLeave,
-  onPagesToggle,
+  onPagesFoldChange,
 }: Props) => {
   const summary = useSessionSummary({ session });
   const node = sessionNodeOf({ info: summary.info, isArchived });
@@ -66,6 +83,7 @@ const SessionActivityItemView = ({
   const sessionId = session.id as SessionId;
   const descriptionId = useId();
   const anchorKey = `sidebar:${sessionId}`;
+  const pin = useSessionPin({ session });
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   useRenameRequest({
     objectKey: sessionObjectKey({ sessionId }),
@@ -102,6 +120,8 @@ const SessionActivityItemView = ({
     );
   }
 
+  const canFoldPages = isActive && !isArchived && onPagesFoldChange !== undefined;
+  const trailingPad = trailingPadOf({ canFoldPages, isFolded: isPagesFolded, isArchived });
   const isCalm =
     node.kind === 'idle' ||
     node.kind === 'queue' ||
@@ -121,7 +141,8 @@ const SessionActivityItemView = ({
         data-select-id={session.id}
         data-node-kind={node.kind}
         aria-pressed={isSelected}
-        aria-current={isActive ? (isPagesShown ? 'true' : 'page') : undefined}
+        aria-current={sign === 'session' ? 'page' : undefined}
+        data-current-sign={sign ?? undefined}
         aria-describedby={descriptionId}
         aria-keyshortcuts="Alt+Enter Alt+Space Shift+F10"
         onClick={(event) => {
@@ -138,14 +159,14 @@ const SessionActivityItemView = ({
         onBlur={onRowLeave}
         onKeyDown={(event) => {
           menu.onKeyDown(event);
-          if (isActive && event.key === 'ArrowRight') {
+          if (canFoldPages && event.key === 'ArrowRight') {
             event.preventDefault();
-            onPagesToggle({ sessionId, isShown: true });
+            onPagesFoldChange(false);
             return;
           }
-          if (isActive && event.key === 'ArrowLeft') {
+          if (canFoldPages && event.key === 'ArrowLeft') {
             event.preventDefault();
-            onPagesToggle({ sessionId, isShown: false });
+            onPagesFoldChange(true);
             return;
           }
           if (!event.altKey || (event.key !== 'Enter' && event.key !== ' ')) {
@@ -160,7 +181,8 @@ const SessionActivityItemView = ({
           isCalm ? 'text-muted-foreground' : 'text-foreground',
           isActive && 'font-medium text-foreground',
           isSelected && 'bg-selected text-foreground',
-          isActive && !isPagesShown && 'bg-selected',
+          sign === 'session' && 'bg-selected',
+          trailingPad,
         )}
       >
         <SessionStateNode
@@ -169,6 +191,18 @@ const SessionActivityItemView = ({
         />
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       </button>
+      {isArchived ? null : (
+        <span className="absolute right-1 top-1 flex items-center gap-0.5">
+          {canFoldPages ? (
+            <PagesChevron
+              title={inlineMarkdownText({ text: title })}
+              isFolded={isPagesFolded}
+              onToggle={() => onPagesFoldChange(!isPagesFolded)}
+            />
+          ) : null}
+          <PinSlotButton isPinned={pin.isPinned} label={pin.label} onToggle={pin.toggle} />
+        </span>
+      )}
       <span id={descriptionId} className="sr-only">
         {summary.description}
       </span>

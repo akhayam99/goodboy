@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { MetaRow, SectionHeader, Skeleton, cn, PaneShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useSessionOpenQuestions } from '../../../../store';
@@ -8,6 +8,8 @@ import { modelLabel } from '../../../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import type { ArtifactGeneration } from '../../artifactCollection';
 import { generationStateOf } from '../../artifactStateOf';
+import { HeaderConfirm } from '../../../../shared/components/HeaderConfirm';
+import type { ArmedAction } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { ArtifactScouts } from '../ArtifactStudio/ArtifactScouts';
 import { ArtifactShellActions } from './ArtifactShellActions';
 import { ArtifactShellHeader } from './ArtifactShellHeader';
@@ -30,6 +32,8 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
       ),
     [sessionQuestions, generation.agentId],
   );
+  const [armed, setArmed] = useState<ArmedAction | null>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const provider = generation.provider === null ? null : PROVIDER_LABEL[generation.provider];
 
   return (
@@ -39,13 +43,17 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
           kind={generation.kind}
           title={generation.title}
           chip={<ArtifactStateChip state={generationStateOf({ generation })} />}
+          rootRef={headerRef}
+          below={
+            <HeaderConfirm armed={armed} triggerWithin={headerRef} onClose={() => setArmed(null)} />
+          }
           actions={
             <ArtifactShellActions
               target={{ kind: 'artifact', sessionId, subject: { kind: 'generation', generation } }}
-              onArm={({ run }) => void run()}
+              onArm={setArmed}
+              isPrimaryYielding={armed !== null}
             />
           }
-          toggles={null}
           meta={
             <MetaRow
               items={[
@@ -64,7 +72,7 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
         />
       }
     >
-      <div data-testid="artifact-run-detail" className="flex min-w-0 flex-col gap-5">
+      <div data-testid="artifact-run-detail" className="flex min-w-0 flex-col gap-6">
         {questions.length > 0 ? (
           <div data-testid="artifact-run-questions" className="flex min-w-0 flex-col gap-2">
             <SectionHeader label="Answer this before it can produce" />

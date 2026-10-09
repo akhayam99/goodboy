@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ProviderId, Workflow, WorkspaceId } from '@goodboy/types';
-import { PageColumn, ScrollFade } from '@goodboy/ui';
+import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import { WorkflowEditor } from '../WorkflowStudio/WorkflowEditor';
@@ -98,41 +98,49 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     />
   );
 
+  const list =
+    view === 'rules' ? (
+      <div className="flex min-w-0 flex-col gap-4">
+        {tabs}
+        <WorkflowRulesPanel workspaceId={workspaceId} />
+      </div>
+    ) : view === 'steps' ? (
+      <SavedStepsList
+        workspaceId={workspaceId}
+        connectedProviders={connectedProviders}
+        tabs={tabs}
+      />
+    ) : (
+      <WorkflowList
+        workflows={presets}
+        removedBuiltinIds={removedBuiltinIds}
+        workspaceName={workspaceName}
+        isRestoring={isRestoring}
+        tabs={tabs}
+        importControl={<ImportPopover workspaceId={workspaceId} takenNames={takenNames} />}
+        onOpen={editor.open}
+        onNew={editor.openNew}
+        onRestore={restore}
+      />
+    );
+
+  if (editor.editing === null) {
+    return (
+      <PaneShell scroll="body" title="Workflows">
+        {list}
+      </PaneShell>
+    );
+  }
+
   return (
     <ScrollFade className="min-h-0 w-full flex-1">
       <PageColumn className="flex flex-col py-5">
-        {editor.editing !== null ? null : view === 'rules' ? (
-          <div className="flex min-w-0 flex-col gap-4">
-            {tabs}
-            <WorkflowRulesPanel workspaceId={workspaceId} />
-          </div>
-        ) : view === 'steps' ? (
-          <SavedStepsList
-            workspaceId={workspaceId}
-            connectedProviders={connectedProviders}
-            tabs={tabs}
-          />
-        ) : (
-          <WorkflowList
-            workflows={presets}
-            removedBuiltinIds={removedBuiltinIds}
-            workspaceName={workspaceName}
-            isRestoring={isRestoring}
-            tabs={tabs}
-            importControl={<ImportPopover workspaceId={workspaceId} takenNames={takenNames} />}
-            onOpen={editor.open}
-            onNew={editor.openNew}
-            onRestore={restore}
-          />
-        )}
-        {editor.editing === null ? null : (
-          <WorkflowEditor
-            workspaceId={workspaceId}
-            workingDir={workingDir}
-            connectedProviders={connectedProviders}
-            editor={editor}
-          />
-        )}
+        <WorkflowEditor
+          workspaceId={workspaceId}
+          workingDir={workingDir}
+          connectedProviders={connectedProviders}
+          editor={editor}
+        />
       </PageColumn>
     </ScrollFade>
   );

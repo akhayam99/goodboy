@@ -5,6 +5,7 @@ import {
   type AgentKind,
   type AgentKindRouting,
 } from '../../../features/session/agent-kind';
+import { markUserStart } from '../../../shared/lib/userStarts';
 import { discardUncreatedSession } from '../sessions/discardUncreatedSession';
 import { draftGoalText } from './draftGoalText';
 import type { GetFn, SetFn } from './types';
@@ -16,6 +17,11 @@ type SessionDraftRun = (session: Session) => Promise<void>;
 export type SessionDraftMount = {
   readonly projectId: ProjectId | null;
   readonly reason: string;
+};
+
+type SessionDraftCheckout = {
+  readonly existingBranch: string;
+  readonly fallbackRef: string;
 };
 
 export type SessionDraftThen =
@@ -35,6 +41,7 @@ export type SessionDraftStart =
       readonly goal: string;
       readonly then?: SessionDraftThen;
       readonly mount?: SessionDraftMount;
+      readonly checkout?: SessionDraftCheckout;
       readonly attachmentInputs?: ReadonlyArray<AttachmentInput>;
     }
   | {
@@ -165,6 +172,7 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
     const mount = start.kind === 'task' ? (start.mount ?? null) : null;
     const projectId =
       mount === null ? (get().sessionDrafts[workspaceId]?.projectId ?? null) : mount.projectId;
+    const checkout = start.kind === 'task' ? (start.checkout ?? null) : null;
     const attachmentInputs = start.kind === 'workflow-run' ? [] : (start.attachmentInputs ?? []);
     const { session } = await get().createSession({
       workspaceId,
@@ -174,6 +182,10 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
       omitGoalSlot: goal === '',
       ...(projectId !== null && { projectId }),
       ...(projectId !== null && mount !== null && { projectReason: mount.reason }),
+      ...(checkout !== null && {
+        existingBranch: checkout.existingBranch,
+        fallbackRef: checkout.fallbackRef,
+      }),
       ...(candidate !== null && {
         externalTasks: [
           {
@@ -187,6 +199,7 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
       }),
     });
     set({ openSessionDraftWorkspaceId: null });
+    markUserStart({ key: session.id });
     try {
       await launch({ get, session, start });
     } catch (error) {

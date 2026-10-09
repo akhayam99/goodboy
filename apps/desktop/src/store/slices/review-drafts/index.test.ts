@@ -356,6 +356,21 @@ describe('review-drafts slice', () => {
     expect(staleDraft?.stale).toBe(true);
   });
 
+  it('files a draft on the pull request it was given, not on the session default', async () => {
+    const { slice, getState } = buildHarness({});
+
+    const draft = await slice.addReviewDraft({
+      sessionId: SESSION_ID,
+      target: { provider: 'github', repo: 'acme/mobile', prNumber: 88 },
+      path: 'src/a.ts',
+      line: 2,
+      body: 'on the other mount',
+    });
+
+    expect(draft).toMatchObject({ provider: 'github', repo: 'acme/mobile', prNumber: 88 });
+    expect(getState().reviewDrafts[SESSION_ID]?.[0]?.prNumber).toBe(88);
+  });
+
   it('adds a file-level draft with the file-level line and no range', async () => {
     const { slice, getState } = buildHarness({});
 

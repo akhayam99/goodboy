@@ -44,7 +44,11 @@ export const generateTitleText = async ({
     if ((result.exitCode ?? 0) !== 0) {
       throw new Error(result.stderr);
     }
-    return parseGeneratedTitle({ providerId, stdout: result.stdout });
+    const title = parseGeneratedTitle({ providerId, stdout: result.stdout });
+    if (title.trim() === '') {
+      throw new Error('the model returned an empty title');
+    }
+    return title;
   } finally {
     if (timeoutId !== null) {
       clearTimeout(timeoutId);

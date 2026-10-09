@@ -180,7 +180,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
           <div className="flex flex-col gap-2">
             {details.length === 0 && notes.length === 0 ? (
               <span className="flex items-center gap-1 text-label text-muted-foreground">
-                <Check size={11} aria-hidden />
+                <Check size={ICON_SIZE.mark} aria-hidden />
                 {status.upstream != null ? 'In sync and clean' : 'Clean, no upstream yet'}
               </span>
             ) : null}
@@ -189,13 +189,13 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
                 key={detail.key}
                 className="flex items-center gap-2 text-label text-muted-foreground"
               >
-                <detail.icon size={11} aria-hidden />
+                <detail.icon size={ICON_SIZE.mark} aria-hidden />
                 {detail.label}
               </span>
             ))}
             {readFailure ? (
               <span className="flex items-center gap-1 text-label text-warning">
-                <AlertTriangle size={11} aria-hidden />
+                <AlertTriangle size={ICON_SIZE.mark} aria-hidden />
                 Goodboy cannot read this checkout
               </span>
             ) : null}
@@ -226,7 +226,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
             {blockedReason != null ? (
               blockedReason === 'already up to date' ? (
                 <span className="flex items-center gap-1 px-1 text-meta text-muted-foreground">
-                  <Check size={11} aria-hidden />
+                  <Check size={ICON_SIZE.mark} aria-hidden />
                   {`${capitalize({ value: blockedReason })}.`}
                 </span>
               ) : (

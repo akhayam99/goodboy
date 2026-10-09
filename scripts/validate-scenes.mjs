@@ -8,6 +8,7 @@ const CHROME =
 const ZOOMS = [1, 1.1];
 const WIDTHS = [1440, 1200, 1024, 880, 760];
 const HEIGHT = 1000;
+const WORKFLOW_SCROLL_HEIGHT = 520;
 const STILL_CAP_PX = 1;
 const SEAM_TOLERANCE_PX = 0.05;
 const META_GAP_CAP_PX = 80;
@@ -21,6 +22,10 @@ const PLAN_DRAWER_SCENES = [
 const PLAN_DRAWER_WIDTH = 1024;
 const ROW_TOLERANCE_PX = 2;
 const SETTLE_MS = 500;
+const OPEN_ATTEMPTS = 3;
+const CALL_TIMEOUT_MS = 60_000;
+const FRAME_FALLBACK_MS = 100;
+const CLICK_PATIENCE_MS = 8000;
 
 const args = Object.fromEntries(
   process.argv
@@ -63,10 +68,18 @@ const connect = async (port) => {
     }
   });
   return (method, params = {}) =>
-    new Promise((resolvePromise) => {
+    new Promise((resolvePromise, reject) => {
       id += 1;
-      pending.set(id, resolvePromise);
-      socket.send(JSON.stringify({ id, method, params }));
+      const callId = id;
+      const timer = setTimeout(() => {
+        pending.delete(callId);
+        reject(new Error(`Chrome DevTools call ${method} timed out`));
+      }, CALL_TIMEOUT_MS);
+      pending.set(callId, (message) => {
+        clearTimeout(timer);
+        resolvePromise(message);
+      });
+      socket.send(JSON.stringify({ id: callId, method, params }));
     });
 };
 
@@ -89,7 +102,7 @@ const browser = async () => {
   const send = await connect(port);
   const close = () => {
     child.kill('SIGKILL');
-    rmSync(profile, { recursive: true, force: true });
+    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   };
   return { send, close };
 };
@@ -106,36 +119,60 @@ const run = async (send, fn, argument) => {
   return result.result?.result?.value;
 };
 
-const open = async ({ send, scene, width, zoom, readySelector = '[data-row-id]' }) => {
+const attemptOpen = async ({ send, scene, readySelector }) => {
+  try {
+    await send('Page.navigate', { url: `${app}/?scene=${scene}&brand=1` });
+    await pause(wait);
+    return await run(
+      send,
+      async (selector) => {
+        for (let poll = 0; poll < 100; poll += 1) {
+          if (document.querySelector(selector) !== null) return true;
+          await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+        }
+        return false;
+      },
+      readySelector,
+    );
+  } catch {
+    return false;
+  }
+};
+
+const open = async ({
+  send,
+  scene,
+  width,
+  zoom,
+  height = HEIGHT,
+  readySelector = '[data-row-id]',
+}) => {
   await send('Emulation.setDeviceMetricsOverride', {
     width: Math.round(width / zoom),
-    height: Math.round(HEIGHT / zoom),
+    height: Math.round(height / zoom),
     deviceScaleFactor: 2 * zoom,
     mobile: false,
   });
   await send('Page.enable');
-  await send('Page.navigate', { url: `${app}/?scene=${scene}&brand=1` });
-  await pause(wait);
-  await run(
-    send,
-    async (selector) => {
-      for (let attempt = 0; attempt < 100; attempt += 1) {
-        if (document.querySelector(selector) !== null) return true;
-        await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
-      }
-      return false;
-    },
-    readySelector,
-  );
+  for (let attempt = 0; attempt < OPEN_ATTEMPTS; attempt += 1) {
+    const isReady = await attemptOpen({ send, scene, readySelector });
+    if (isReady) return;
+  }
 };
 
-const clickButton = ({ label }) => {
-  const button = [...document.querySelectorAll('button')].find(
-    (candidate) => candidate.textContent?.trim() === label,
-  );
-  if (!(button instanceof HTMLElement)) return false;
-  button.click();
-  return true;
+const clickButton = async ({ label, patience = 0 }) => {
+  const deadline = performance.now() + patience;
+  for (;;) {
+    const button = [...document.querySelectorAll('button')].find(
+      (candidate) => candidate.textContent?.trim() === label,
+    );
+    if (button instanceof HTMLElement) {
+      button.click();
+      return true;
+    }
+    if (performance.now() >= deadline) return false;
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  }
 };
 
 const workflowScrollProbe = () => {
@@ -176,10 +213,11 @@ const validateWorkflowScroll = async ({ send, scene, click }) => {
     scene,
     width: 880,
     zoom: 1,
+    height: WORKFLOW_SCROLL_HEIGHT,
     readySelector: '[data-studio-overlay]',
   });
   if (click !== null) {
-    const clicked = await run(send, clickButton, { label: click });
+    const clicked = await run(send, clickButton, { label: click, patience: CLICK_PATIENCE_MS });
     if (!clicked) return { reached: false, reason: `missing ${click} button` };
     await pause(SETTLE_MS);
   }
@@ -236,13 +274,20 @@ const planDrawerHeader = async ({ until, tolerance }) => {
     rowSpread: Math.max(...centres) - Math.min(...centres),
     overflow: toolbar.scrollWidth - toolbar.clientWidth,
     pastEdge: children.filter((child) => child.right > box.right + 0.5).map((child) => child.label),
-    titleLines: title === null || lineHeight === 0 ? 0 : Math.round(title.getBoundingClientRect().height / lineHeight),
+    titleLines:
+      title === null || lineHeight === 0
+        ? 0
+        : Math.round(title.getBoundingClientRect().height / lineHeight),
     tolerance,
   };
 };
 
-const openEveryGroup = async ({ stillCap, settleMs }) => {
-  const frame = () => new Promise((resolvePromise) => requestAnimationFrame(resolvePromise));
+const openEveryGroup = async ({ stillCap, settleMs, frameFallbackMs }) => {
+  const frame = () =>
+    new Promise((resolvePromise) => {
+      requestAnimationFrame(resolvePromise);
+      setTimeout(resolvePromise, frameFallbackMs);
+    });
   const drifts = [];
   const toggles = () => [
     ...document.querySelectorAll('[data-row-id] button[aria-expanded="false"]'),
@@ -361,6 +406,32 @@ const clippedTimes = () =>
       : [],
   );
 
+const wrappedAges = () =>
+  [...document.querySelectorAll('[data-inbox-key] time')].flatMap((time) => {
+    const lineHeight = parseFloat(getComputedStyle(time).lineHeight);
+    return time.getBoundingClientRect().height > lineHeight * 1.5
+      ? [
+          {
+            key: time.closest('[data-inbox-key]')?.dataset.inboxKey ?? null,
+            text: time.textContent,
+          },
+        ]
+      : [];
+  });
+
+const branchCellOverlaps = () =>
+  [...document.querySelectorAll('[data-testid="project-mount-branch-cell"]')].flatMap((cell) => {
+    const action = cell.nextElementSibling;
+    if (!(action instanceof HTMLElement)) return [];
+    const actionLeft = action.getBoundingClientRect().left;
+    const reaching = [...cell.children].filter(
+      (child) => child.getBoundingClientRect().right > actionLeft + 0.5,
+    );
+    return reaching.length > 0
+      ? [{ row: cell.closest('li')?.getAttribute('aria-label') ?? null, count: reaching.length }]
+      : [];
+  });
+
 const main = async () => {
   const failures = [];
   const session = await browser();
@@ -371,6 +442,7 @@ const main = async () => {
         const motion = await run(session.send, openEveryGroup, {
           stillCap: STILL_CAP_PX,
           settleMs: SETTLE_MS,
+          frameFallbackMs: FRAME_FALLBACK_MS,
         });
         if (motion.transformed.length > 0) {
           failures.push({ scene, zoom, check: 'row keeps a transform', rows: motion.transformed });
@@ -397,6 +469,36 @@ const main = async () => {
           failures.push({ scene, width, check: 'time wider than its column', clipped });
         }
       }
+    }
+    for (const width of only === undefined ? WIDTHS : []) {
+      await open({
+        send: session.send,
+        scene: 'inbox',
+        width,
+        zoom: 1,
+        readySelector: '[data-inbox-key]',
+      });
+      const wrapped = await run(session.send, wrappedAges, null);
+      if (wrapped.length > 0) {
+        failures.push({ scene: 'inbox', width, check: 'task age wraps', wrapped });
+      }
+      await open({
+        send: session.send,
+        scene: 'overview-long-branches',
+        width,
+        zoom: 1,
+        readySelector: '[data-testid="project-mount-branch-cell"]',
+      });
+      const overlaps = await run(session.send, branchCellOverlaps, null);
+      if (overlaps.length > 0) {
+        failures.push({
+          scene: 'overview-long-branches',
+          width,
+          check: 'branch runs under the put on branch button',
+          overlaps,
+        });
+      }
+      console.log(`inbox and overview-long-branches at ${width}: ${wrapped.length} wraps`);
     }
     for (const { scene, until } of only === undefined || only === 'plan-drawer'
       ? PLAN_DRAWER_SCENES
@@ -425,10 +527,10 @@ const main = async () => {
         `${scene}: card ${header.cardWidth}px, header row spread ${header.rowSpread}px, overflow ${header.overflow}px`,
       );
     }
-    for (const target of only === undefined
+    for (const target of only === undefined || only === 'workflow'
       ? [
           { scene: 'workflow-studio&view=rules', click: null },
-          { scene: 'frame&view=workflows', click: 'Rules' },
+          { scene: 'frame&view=workflows', click: 'Run defaults' },
         ]
       : []) {
       const result = await validateWorkflowScroll({ send: session.send, ...target });

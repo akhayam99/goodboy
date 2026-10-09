@@ -44,3 +44,17 @@ export const columnPlaceOf = ({ hasSession, isDraftShown, studio }: Params): Col
   }
   return hasSession ? null : 'board';
 };
+
+const STUDIO_OVER_SESSION: ReadonlySet<ColumnPlace> = new Set<ColumnPlace>([
+  'inbox',
+  'chat',
+  'workflows',
+  'impact',
+]);
+
+type StudioOverSessionParams = {
+  readonly place: ColumnPlace;
+};
+
+export const isStudioOverSession = ({ place }: StudioOverSessionParams): boolean =>
+  STUDIO_OVER_SESSION.has(place);

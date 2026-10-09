@@ -96,7 +96,7 @@ export const ProviderPolicyRow = ({
           </span>
         </button>
         {row.isNew ? (
-          <Button size="sm" variant="secondary" emphasis="outline" onClick={() => onState('on')}>
+          <Button size="sm" variant="secondary" onClick={() => onState('on')}>
             Turn on
           </Button>
         ) : (

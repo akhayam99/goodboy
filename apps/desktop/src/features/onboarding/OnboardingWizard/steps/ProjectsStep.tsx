@@ -2,6 +2,7 @@ import { FolderGit2 } from 'lucide-react';
 import type { Workspace } from '@goodboy/types';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspace: Workspace;
@@ -11,7 +12,7 @@ type Props = {
 export const ProjectsStep = ({ workspace, initialConflicts }: Props) => (
   <div className="flex flex-col items-center gap-6 text-center">
     <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft bg-subtle text-primary">
-      <FolderGit2 size={26} aria-hidden />
+      <FolderGit2 size={ICON_SIZE.hero} aria-hidden />
     </span>
 
     <div className="flex flex-col gap-2">

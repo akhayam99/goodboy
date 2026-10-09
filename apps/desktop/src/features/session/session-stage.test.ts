@@ -100,19 +100,21 @@ describe('describeStageBucket', () => {
 });
 
 describe('the reason table', () => {
-  it('draws red only for an agent error and failing checks', () => {
+  it('draws red only for an agent error, a push that failed and failing checks', () => {
     expect(REASONS.filter((reason) => ATTENTION_REASON_META[reason].tone === 'danger')).toEqual([
       'agent-error',
+      'push-failed',
       'ci-failed',
     ]);
   });
 
   it.each<[SessionAttentionReason, string, string, string]>([
     ['agent-error', '!', 'danger', 'An agent stopped on an error'],
+    ['push-failed', '!', 'danger', "1 comment didn't go out"],
     ['ci-failed', '!', 'danger', 'Checks failing'],
     ['open-question', '?', 'warning', '1 question for you'],
     ['fix-needs-you', '?', 'warning', '1 comment needs you'],
-    ['needs-approval', 'approval', 'warning', 'Waiting for your approval'],
+    ['needs-approval', 'approval', 'warning', 'Waiting for your permission'],
     ['plan-approval', 'approval', 'warning', 'The plan waits for your approval'],
     ['changes-requested', '!', 'warning', 'Changes requested'],
     ['fix-couldnt-fix', '!', 'warning', "1 comment it couldn't fix"],

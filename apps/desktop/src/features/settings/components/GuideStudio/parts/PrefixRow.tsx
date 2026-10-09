@@ -1,4 +1,4 @@
-import { Eyebrow, KbdPill } from '@goodboy/ui';
+import { Eyebrow, Kbd } from '@goodboy/ui';
 import type { PrefixMeta } from '../../../../quick-actions/grammar';
 
 type PrefixRowProps = {
@@ -15,7 +15,7 @@ export const PrefixRow = ({ title, prefixes }: PrefixRowProps) => (
           key={prefix.symbol}
           className="flex items-center gap-2 rounded-md border border-border-soft px-2 py-1 text-label text-foreground"
         >
-          <KbdPill>{prefix.symbol}</KbdPill>
+          <Kbd look="cap">{prefix.symbol}</Kbd>
           <span className="capitalize">{prefix.noun}</span>
         </li>
       ))}

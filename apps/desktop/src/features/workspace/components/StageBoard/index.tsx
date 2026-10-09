@@ -212,21 +212,27 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
       >
         {pending || !empty || hasProjects ? (
           <>
-            <div className="flex shrink-0 items-center justify-between gap-4">
-              <span className="flex min-w-0 items-center gap-2">
-                <h1 className="text-title text-foreground">Board</h1>
-                <ProjectGitPills entries={projectGitStatuses} isQuiet />
-              </span>
-              <span className="flex shrink-0 items-center gap-2">
-                <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
-                {!hasNewSession ? null : hasUsableProject ? (
-                  newSessionButton
-                ) : (
-                  <Tooltip content={blockedReason} side="bottom">
-                    {newSessionButton}
-                  </Tooltip>
-                )}
-              </span>
+            <div data-slot="board-header" className="flex shrink-0 flex-col">
+              <div aria-hidden data-slot="board-band" className="h-10 shrink-0" />
+              <div
+                data-slot="pane-title-row"
+                className="flex h-8 shrink-0 items-center justify-between gap-4"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <h1 className="text-title text-foreground">Board</h1>
+                  <ProjectGitPills entries={projectGitStatuses} isQuiet />
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
+                  {!hasNewSession ? null : hasUsableProject ? (
+                    newSessionButton
+                  ) : (
+                    <Tooltip content={blockedReason} side="bottom">
+                      {newSessionButton}
+                    </Tooltip>
+                  )}
+                </span>
+              </div>
             </div>
             {pending ? null : (
               <OngoingTasksRow
@@ -265,7 +271,7 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
                   New session
                 </Button>
               }
-              size="lg"
+              size="page"
               headingLevel={2}
               className="max-w-md"
             />
@@ -291,7 +297,7 @@ export const StageBoard = ({ workspaceId, sessions, hasNewSession = true }: Prop
                   Open workspace settings
                 </Button>
               }
-              size="lg"
+              size="page"
               headingLevel={2}
               className="max-w-md"
             />

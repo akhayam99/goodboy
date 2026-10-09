@@ -1,5 +1,5 @@
 import { isStepSize } from '@goodboy/types';
-import { normalizeSelectableAgentRole } from '../roles';
+import { normalizeWorkflowRole } from '../roles';
 import type { PlannerOutput, PlannerStep } from './types';
 import { unwrapEdgeFence } from '../code-fence';
 
@@ -82,7 +82,7 @@ export const parsePlannerOutput = (raw: string): PlannerOutput => {
     if (typeof expectedOutput !== 'string') {
       throw new PlannerParseError(`planner step at index ${index} missing "expectedOutput"`, raw);
     }
-    const normalizedRole = normalizeSelectableAgentRole({ role });
+    const normalizedRole = normalizeWorkflowRole({ role });
     const size = typeof e.size === 'string' ? e.size.trim().toLowerCase() : null;
     steps.push({
       name,

@@ -26,7 +26,7 @@ export const bulkQuestionsOf = ({
   readonly attempts: ReadonlyArray<ResolveAttempt>;
 }): ReadonlyArray<BulkQuestion> =>
   run.entries.flatMap((entry): ReadonlyArray<BulkQuestion> => {
-    if (entry.resolveWord !== 'needs_you') {
+    if (entry.resolveWord !== 'question') {
       return [];
     }
     const open = openQuestionOfThread({

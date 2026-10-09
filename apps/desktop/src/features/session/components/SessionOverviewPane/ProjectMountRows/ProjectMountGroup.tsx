@@ -17,6 +17,7 @@ import { DiffStat } from '../../DiffStat';
 import { isBranchMergedOf } from '../../../../../shared/lib/branchPresence';
 import { NewBranchMountAction } from './NewBranchMountAction';
 import { MountActionsMenu } from './MountActionsMenu';
+import { MountTrackGrid } from './MountTrackGrid';
 import { ProjectMountRow } from './ProjectMountRow';
 import { useMergedThen } from './useMergedThen';
 
@@ -125,7 +126,7 @@ export const ProjectMountGroup = ({
               )}
             />
             Completed
-            <span className="font-mono tabular-nums">{completedRows.length}</span>
+            <span className="tabular-nums">{completedRows.length}</span>
           </Button>
         </div>
       )}
@@ -191,9 +192,7 @@ export const ProjectMountGroup = ({
             </span>
           }
         >
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_repeat(3,auto)] gap-y-0.5">
-            {rows}
-          </div>
+          <MountTrackGrid className="gap-y-0.5">{rows}</MountTrackGrid>
         </Collapsible>
       </div>
     );

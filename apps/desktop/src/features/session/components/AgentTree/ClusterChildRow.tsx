@@ -3,7 +3,7 @@ import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../store';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const StoppedIcon = CONCEPT_ICONS.runStopped;
 
@@ -46,16 +46,16 @@ export const ClusterChildRow = ({
           tintClasses('success').bg,
         )}
       >
-        <Check size={8} className="text-success" aria-hidden />
+        <Check size={ICON_SIZE.mark} className="text-success" aria-hidden />
       </span>
     ) : child.status === 'failed' ? (
       <StatusDot tone="danger" size="sm" />
     ) : child.status === 'blocked' ? (
       <StatusDot tone="warning" size="sm" />
     ) : child.status === 'stopped' ? (
-      <StoppedIcon size={10} className="text-muted-foreground" aria-label="Stopped" />
+      <StoppedIcon size={ICON_SIZE.mark} className="text-muted-foreground" aria-label="Stopped" />
     ) : (
-      <Clock size={10} className="text-faint-foreground" aria-hidden />
+      <Clock size={ICON_SIZE.mark} className="text-faint-foreground" aria-hidden />
     );
   return (
     <button

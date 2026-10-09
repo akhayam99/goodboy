@@ -6,6 +6,7 @@ import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerEscapeLayer } from '@goodboy/ui';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -98,6 +99,14 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('NotificationCenter', () => {
+  it('names the bell Notifications in its tooltip, capitalised', () => {
+    render(<NotificationCenter />);
+
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: /notifications/i }) })).toBe(
+      'Notifications',
+    );
+  });
+
   it('renders the specified empty state and marks all read on open', async () => {
     render(<NotificationCenter />);
     await openCenter();

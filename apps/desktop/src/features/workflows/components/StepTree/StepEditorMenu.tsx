@@ -32,7 +32,7 @@ export const StepEditorMenu = ({
 }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
-    width: 'w-52',
+    width: 'w-60',
     expectedWidth: 208,
     expectedHeight: 200,
     disabled,
@@ -112,7 +112,7 @@ export const StepEditorMenu = ({
           aria-expanded={dropdown.open}
           disabled={disabled}
           onClick={dropdown.toggle}
-          className={cn('size-7', dropdown.open && 'bg-muted')}
+          className={cn(dropdown.open && 'bg-muted')}
         />
       }
     >

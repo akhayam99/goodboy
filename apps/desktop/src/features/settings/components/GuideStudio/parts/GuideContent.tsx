@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { PageColumn, ScrollFade } from '@goodboy/ui';
+import { PaneShell } from '@goodboy/ui';
 import type { GuideChapter, GuideExtra } from '../guideChapters';
 import type { GuideTarget } from '../guideTarget';
 import { ChapterSection } from './ChapterSection';
@@ -79,8 +79,8 @@ export const GuideContent = ({ chapters, onOpen, onVisible, registerScrollTo }: 
   };
 
   return (
-    <ScrollFade className="h-full w-full">
-      <PageColumn className="flex flex-col gap-14 pb-24 pt-5">
+    <PaneShell scroll="body" title="Guide" meta="How Goodboy works, chapter by chapter">
+      <div className="flex flex-col gap-14 pb-24">
         {chapters.map((chapter) => (
           <div key={chapter.id} ref={anchor(chapter.id)}>
             <ChapterSection chapter={chapter} onOpen={onOpen}>
@@ -88,7 +88,7 @@ export const GuideContent = ({ chapters, onOpen, onVisible, registerScrollTo }: 
             </ChapterSection>
           </div>
         ))}
-      </PageColumn>
-    </ScrollFade>
+      </div>
+    </PaneShell>
   );
 };

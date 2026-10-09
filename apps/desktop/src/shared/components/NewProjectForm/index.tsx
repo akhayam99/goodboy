@@ -29,7 +29,7 @@ export const NewProjectForm = ({ onCreated, onCancel, autoFocus = true }: Props)
     <form
       aria-label="Start a new project"
       onSubmit={onSubmit}
-      className="flex w-full flex-col gap-5 text-left"
+      className="flex w-full flex-col gap-4 text-left"
     >
       <div className="flex flex-col gap-2">
         <label htmlFor={nameId} className="text-label text-foreground">

@@ -125,7 +125,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
             className="max-w-full"
           >
             <span className="truncate">{step.action.label}</span>
-            <ExternalLink size={11} aria-hidden />
+            <ExternalLink size={ICON_SIZE.row} aria-hidden />
           </Button>
         </div>
       ) : null}
@@ -154,7 +154,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
           disabled={stepIndex === 0}
           onClick={() => setStepIndex((index) => Math.max(index - 1, 0))}
         >
-          <ArrowLeft size={11} aria-hidden />
+          <ArrowLeft size={ICON_SIZE.row} aria-hidden />
           Back
         </Button>
         {isLast ? null : (
@@ -164,7 +164,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
             onClick={() => setStepIndex((index) => Math.min(index + 1, steps.length - 1))}
           >
             Next
-            <ArrowRight size={11} aria-hidden />
+            <ArrowRight size={ICON_SIZE.row} aria-hidden />
           </Button>
         )}
       </div>

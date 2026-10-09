@@ -7,7 +7,10 @@ import { resolverThread } from './resolverThread';
 import { resolveActiveMountPath } from '../worktrees/resolveActiveMountPath';
 import { CONTEXT_LENS_TAB } from './contextLensTab';
 import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
-import type { CanonicalPlace, Place, PlaceRequest } from './types';
+import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
+import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
+import { branchHasPullRequest } from '../session-view/branchTabOf';
+import type { BranchTab, CanonicalPlace, Place, PlaceRequest } from './types';
 
 type SessionPlace = Extract<Place, { readonly at: 'session' }>;
 
@@ -23,11 +26,16 @@ const canonicalAgent = ({
   readonly state: AppState;
   readonly request: Extract<PlaceRequest, { readonly at: 'agent' }>;
 }): CanonicalPlace => {
-  const { sessionId, agentId } = request;
+  const { sessionId, agentId, pane } = request;
   const home = agentHomeFor({ state, sessionId, agentId });
   if (home !== 'review') {
     return {
-      place: sessionPlace({ sessionId, lens: home ?? 'agents', agentId }),
+      place: sessionPlace({
+        sessionId,
+        lens: home ?? 'agents',
+        agentId,
+        ...(pane !== undefined && { target: { kind: 'agent', pane } }),
+      }),
       drawer: null,
     };
   }
@@ -97,15 +105,20 @@ const hasMount = ({
   readonly sessionId: SessionId;
 }): boolean => (state.sessionProjectMounts?.[sessionId] ?? []).length > 0;
 
-const isCodeHostBranch = ({
-  state,
-  sessionId,
-}: {
-  readonly state: AppState;
-  readonly sessionId: SessionId;
-}): boolean =>
-  (state.sessionGitlabMr?.[sessionId]?.mr ?? null) === null &&
-  (state.sessionBitbucketPr?.[sessionId]?.pr ?? null) === null;
+const prLensTab = ({ mode }: { readonly mode: string }): BranchTab => {
+  if (mode === 'write_review') {
+    return 'files';
+  }
+  return isBranchTabAvailable('pr') ? 'pr' : 'comments';
+};
+
+const unavailableBranchTab = ({ request }: { readonly request: SessionPlace }): SessionPlace => {
+  const { view } = request;
+  if (view.target?.kind !== 'branch' || isBranchTabAvailable(view.target.tab)) {
+    return request;
+  }
+  return { ...request, view: { ...view, target: { ...view.target, tab: 'comments' } } };
+};
 
 const formerBranchPlace = ({
   state,
@@ -135,25 +148,29 @@ const formerBranchPlace = ({
     return branchPlace({
       sessionId,
       mountPath: preferred ?? activeMountPath({ state, sessionId }),
-      tab: 'comments',
+      tab: branchLandingTabOf({
+        hasPullRequest: branchHasPullRequest({ state, sessionId }),
+        deepLink: threadId === null ? null : 'comments',
+      }),
       threadId,
     });
   }
-  if (view.lens === 'pr' && isCodeHostBranch({ state, sessionId })) {
+  if (view.lens === 'pr') {
     const mode = state.pullRequestModes?.[sessionId] ?? 'overview';
     return branchPlace({
       sessionId,
       mountPath: preferred ?? activeMountPath({ state, sessionId }),
-      tab: mode === 'write_review' ? 'files' : 'comments',
+      tab: prLensTab({ mode }),
     });
   }
   return null;
 };
 
-const canonicalPlace = ({ state, request }: PlaceParams): Place => {
-  if (request.at === 'board' || request.at === 'session-draft') {
-    return request;
+const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
+  if (asked.at === 'board' || asked.at === 'session-draft') {
+    return asked;
   }
+  const request = unavailableBranchTab({ request: asked });
   const { view, sessionId } = request;
   const branch = formerBranchPlace({ state, request });
   if (branch !== null) {

@@ -69,7 +69,7 @@ export const WorkflowRunStatus = ({
   if (isDiscarded) {
     return (
       <span className={cn(baseClass, 'bg-muted text-muted-foreground')}>
-        <CONCEPT_ICONS.runCancelled size={10} aria-hidden />
+        <CONCEPT_ICONS.runCancelled size={ICON_SIZE.mark} aria-hidden />
         Discarded
       </span>
     );
@@ -77,7 +77,7 @@ export const WorkflowRunStatus = ({
   if (isWorkflowRunClosedByUser({ run })) {
     return (
       <span className={cn(baseClass, 'bg-muted text-muted-foreground')} title="Closed by you">
-        <CONCEPT_ICONS.runDone size={10} aria-hidden />
+        <CONCEPT_ICONS.runDone size={ICON_SIZE.mark} aria-hidden />
         Closed
       </span>
     );
@@ -85,7 +85,7 @@ export const WorkflowRunStatus = ({
   if (isCompleted) {
     return (
       <span className={cn(baseClass, cn(tintClasses('success').bg, 'text-success'))}>
-        <CONCEPT_ICONS.runDone size={10} aria-hidden />
+        <CONCEPT_ICONS.runDone size={ICON_SIZE.mark} aria-hidden />
         Completed
       </span>
     );
@@ -98,7 +98,7 @@ export const WorkflowRunStatus = ({
         title={stop?.message}
         data-testid="workflow-run-paused"
       >
-        <Pause size={10} aria-hidden />
+        <Pause size={ICON_SIZE.mark} aria-hidden />
         Paused
       </span>
     );
@@ -124,7 +124,7 @@ export const WorkflowRunStatus = ({
         title={stop?.message}
         data-testid="workflow-run-plan-ready"
       >
-        <ClipboardCheck size={10} aria-hidden />
+        <ClipboardCheck size={ICON_SIZE.mark} aria-hidden />
         Plan ready
       </span>
     );
@@ -136,7 +136,7 @@ export const WorkflowRunStatus = ({
         title="Waiting for the decision already in flight"
         data-testid="workflow-orchestrator-stopping"
       >
-        <CircleStop size={10} aria-hidden />
+        <CircleStop size={ICON_SIZE.mark} aria-hidden />
         Stopping
       </span>
     );
@@ -148,7 +148,7 @@ export const WorkflowRunStatus = ({
         title={stop.message}
         data-testid="workflow-orchestrator-stopped"
       >
-        <CircleStop size={10} aria-hidden />
+        <CircleStop size={ICON_SIZE.mark} aria-hidden />
         Stopped
       </span>
     );
@@ -160,7 +160,7 @@ export const WorkflowRunStatus = ({
         title={stop.message}
         data-testid="workflow-orchestrator-budget-paused"
       >
-        <Pause size={10} aria-hidden />
+        <Pause size={ICON_SIZE.mark} aria-hidden />
         Budget paused
       </span>
     );
@@ -172,7 +172,7 @@ export const WorkflowRunStatus = ({
         title={stop.message}
         data-testid="workflow-orchestrator-failed"
       >
-        <AlertTriangle size={10} aria-hidden />
+        <AlertTriangle size={ICON_SIZE.mark} aria-hidden />
         Orchestrator failed
       </span>
     );
@@ -197,7 +197,7 @@ export const WorkflowRunStatus = ({
       <Chip
         as="button"
         tone="warning"
-        size="control"
+        kind="reference"
         emphasis="subtle"
         testId="workflow-run-needs-you"
         ariaLabel={label}
@@ -214,7 +214,7 @@ export const WorkflowRunStatus = ({
         className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
         title="An open question blocks the next step"
       >
-        <CONCEPT_ICONS.questions size={10} aria-hidden />
+        <CONCEPT_ICONS.questions size={ICON_SIZE.mark} aria-hidden />
         Blocked
       </span>
     );
@@ -222,7 +222,7 @@ export const WorkflowRunStatus = ({
   if (isDeciding && !hasOrchestratorStrip) {
     return (
       <span className={cn(baseClass, cn(tintClasses('primary').bg, 'text-primary'))}>
-        <CONCEPT_ICONS.orchestrator size={10} aria-hidden />
+        <CONCEPT_ICONS.orchestrator size={ICON_SIZE.mark} aria-hidden />
         Next step due
       </span>
     );
@@ -230,7 +230,7 @@ export const WorkflowRunStatus = ({
   if (isQueuedManual) {
     return (
       <span className={cn(baseClass, 'bg-muted text-muted-foreground')}>
-        <Pause size={10} aria-hidden />
+        <Pause size={ICON_SIZE.mark} aria-hidden />
         Queued
       </span>
     );
@@ -241,7 +241,7 @@ export const WorkflowRunStatus = ({
         className={cn(baseClass, 'max-w-40 truncate bg-muted text-muted-foreground')}
         title={`After ${predecessorName}`}
       >
-        <Link2 size={10} aria-hidden />
+        <Link2 size={ICON_SIZE.mark} aria-hidden />
         After {predecessorName}
       </span>
     );

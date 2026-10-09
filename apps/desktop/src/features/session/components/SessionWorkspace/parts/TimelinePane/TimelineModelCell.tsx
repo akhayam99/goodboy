@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Tooltip, WORK_META_COLUMN, cn } from '@goodboy/ui';
 import type { ModelsSummary } from '../../../../timeline/ranModels';
+import { TriggerSeparator } from '../../../../../../shared/components/RoutingPicker/TriggerSeparator';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { ROW_CARD_REST_MS } from './timelineRowIdentity';
 
@@ -31,6 +32,12 @@ export const TimelineModelCell = ({ summary, isPlanned = false, card = null }: P
       <span data-routing-part="name" className={WORK_META_COLUMN.modelName}>
         {summary.text}
       </span>
+      {summary.effort == null ? null : (
+        <span className={WORK_META_COLUMN.modelDetail}>
+          <TriggerSeparator />
+          <span data-routing-part="detail">{summary.effort}</span>
+        </span>
+      )}
     </span>
   );
   if (card === null) {

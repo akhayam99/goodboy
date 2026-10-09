@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { Tone } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage, SessionStageInfo } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { couldntFixWords, needsYouWords, pushFailedWords } from '../resolve/notes/attentionWords';
 import { NAMES } from '../../shared/names';
 import { PULL_REQUEST_PRESENTATION } from '../../shared/pullRequestPresentation';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
@@ -34,6 +35,12 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     mark: '!',
     words: 'An agent stopped on an error',
   }),
+  'push-failed': entryOf({
+    icon: 'review',
+    tone: 'danger',
+    mark: '!',
+    words: "1 comment didn't go out",
+  }),
   'ci-failed': entryOf({ icon: 'checks', tone: 'danger', mark: '!', words: 'Checks failing' }),
   'open-question': entryOf({
     icon: 'questions',
@@ -51,7 +58,7 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     icon: 'approval',
     tone: 'warning',
     mark: 'approval',
-    words: 'Waiting for your approval',
+    words: NAMES.waitingForPermission,
   }),
   'plan-approval': entryOf({
     icon: 'plan',
@@ -88,7 +95,12 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
 
 type AttentionCounts = Pick<
   SessionStageInfo,
-  'openQuestionCount' | 'fixNeedsYouCount' | 'fixCouldntFixCount'
+  | 'openQuestionCount'
+  | 'fixNeedsYouCount'
+  | 'fixCouldntFixCount'
+  | 'pushFailedCount'
+  | 'noteNeedsYouCount'
+  | 'noteCouldntFixCount'
 >;
 
 type WordsParams = {
@@ -100,6 +112,17 @@ type WordsParams = {
 const countOf = ({ count }: { readonly count: number | undefined }): number =>
   Math.max(count ?? 1, 1);
 
+const fixCountsOf = ({
+  comments,
+  notes,
+}: {
+  readonly comments: number | undefined;
+  readonly notes: number | undefined;
+}): { readonly comments: number; readonly notes: number } =>
+  (notes ?? 0) > 0
+    ? { comments: comments ?? 0, notes: notes ?? 0 }
+    : { comments: countOf({ count: comments }), notes: 0 };
+
 export const attentionWordsOf = ({
   reason,
   counts = {},
@@ -110,12 +133,18 @@ export const attentionWordsOf = ({
     return count === 1 ? '1 question for you' : `${count} questions for you`;
   }
   if (reason === 'fix-needs-you') {
-    const count = countOf({ count: counts.fixNeedsYouCount });
-    return count === 1 ? '1 comment needs you' : `${count} comments need you`;
+    return needsYouWords(
+      fixCountsOf({ comments: counts.fixNeedsYouCount, notes: counts.noteNeedsYouCount }),
+    );
   }
   if (reason === 'fix-couldnt-fix') {
-    const count = countOf({ count: counts.fixCouldntFixCount });
-    return count === 1 ? "1 comment it couldn't fix" : `${count} comments it couldn't fix`;
+    return couldntFixWords({
+      ...fixCountsOf({ comments: counts.fixCouldntFixCount, notes: counts.noteCouldntFixCount }),
+      form: 'chip',
+    });
+  }
+  if (reason === 'push-failed') {
+    return pushFailedWords({ count: countOf({ count: counts.pushFailedCount }) });
   }
   if (reason === 'plan-approval' && planVersion !== null) {
     return `Plan v${planVersion} waits for your approval`;

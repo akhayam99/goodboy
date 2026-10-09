@@ -3,6 +3,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { DayGroup } from '../../../../shared/utils/groupByDay';
 import { integrationLabel } from '../../../integrations/components/IntegrationGlyph';
 import type { InboxProvider, InboxRecord } from '../../types';
+import { hasMixedStates } from './hasMixedStates';
 import { inboxFailureNoticeOf } from './inboxFailureNotice';
 import { InboxRow, inboxOptionId } from './InboxRow';
 
@@ -45,6 +46,7 @@ export const InboxList = ({
   onToggleStar,
 }: Props) => {
   const visibleCount = days.reduce((sum, day) => sum + day.items.length, 0);
+  const isStateShown = hasMixedStates({ records: days.flatMap((day) => day.items) });
   const isShowingSkeleton = isLoading && totalCount === 0;
   const activeOptionId =
     selectedKey != null &&
@@ -81,7 +83,7 @@ export const InboxList = ({
         />
       ) : null}
       {isShowingSkeleton ? (
-        <div className="flex flex-col gap-0.5" role="status" aria-label="Loading the inbox">
+        <div className="flex flex-col gap-0.5" role="status" aria-label="Loading tasks">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex h-8 items-center gap-3 px-3">
               <Skeleton className="size-3.5 shrink-0 rounded-full" />
@@ -129,7 +131,7 @@ export const InboxList = ({
         <ul
           tabIndex={0}
           role="listbox"
-          aria-label="Inbox items"
+          aria-label="Task items"
           aria-activedescendant={activeOptionId}
           className="flex flex-col gap-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
@@ -151,6 +153,7 @@ export const InboxList = ({
                       onActivate={onActivate}
                       isStarred={starOf?.(record)}
                       onToggleStar={onToggleStar}
+                      isStateShown={isStateShown}
                     />
                   </li>
                 ))}

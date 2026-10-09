@@ -197,7 +197,7 @@ export const QuestionCard = ({
       style={{ outline: 'none' }}
       className={cn(
         '@container flex min-w-0 flex-col outline-none motion-safe:animate-fade-in',
-        isCompact ? 'gap-3 rounded-lg border border-border-soft bg-elevated p-4' : 'gap-5',
+        isCompact ? 'gap-3 rounded-lg border border-border-soft bg-elevated p-4' : 'gap-4',
       )}
     >
       <QuestionCardTop

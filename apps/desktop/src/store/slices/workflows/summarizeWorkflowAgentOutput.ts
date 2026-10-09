@@ -1,16 +1,12 @@
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
-import { fallbackStepOutputSummary, planTaskModelFallback } from '@goodboy/core';
+import { fallbackStepOutputSummary } from '@goodboy/core';
 import type { Agent, AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
-import { classifyProviderError } from '../../../features/chat/classifyProviderError';
-import {
-  providersCoolingDown,
-  routeTaskModel,
-  withFailureCooldown,
-} from '../../../features/providers/taskModelRouting';
+import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
-import { summarizeAgentOutput, type SummarizeAgentOutputResult } from './summarizeAgentOutput';
+import { summarizeAgentOutput } from './summarizeAgentOutput';
+import { notifyStepSummaryFailed, resolveStepSummaryNotice } from './stepSummaryNotice';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
@@ -23,14 +19,6 @@ type Params = {
   readonly sessionId: SessionId;
   readonly agent: Agent;
   readonly output: string;
-};
-
-type NotifyParams = {
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-  readonly agent: Agent;
-  readonly modelLabel: string;
-  readonly reason: string;
 };
 
 type UnavailableParams = {
@@ -67,24 +55,6 @@ const notifyModelUnavailable = ({
   });
 };
 
-const notifyDegraded = ({ get, sessionId, agent, modelLabel, reason }: NotifyParams): void => {
-  const workflowRunId = agent.workflowRunId;
-  const stepId = agent.stepId;
-  const coalesceKey =
-    workflowRunId != null && stepId != null
-      ? `step-summary-degraded:${workflowRunId}:${stepId}`
-      : `step-summary-degraded:${agent.id}`;
-  void get().emitNotification({
-    kind: 'summarizer-degraded',
-    severity: 'warning',
-    title: `Step summary degraded for ${agent.name}`,
-    body: `${modelLabel}: ${reason}`,
-    sessionId,
-    action: { kind: 'retry-step-summary', sessionId, agentId: agent.id as AgentId },
-    coalesceKey,
-  });
-};
-
 export const summarizeWorkflowAgentOutput = async ({
   set,
   get,
@@ -117,13 +87,7 @@ export const summarizeWorkflowAgentOutput = async ({
     nowMs: Date.now(),
   });
   if (taskModel === null) {
-    notifyDegraded({
-      get,
-      sessionId,
-      agent,
-      modelLabel: modelLabelFor(resolved),
-      reason: 'every summarizer provider is cooling down',
-    });
+    notifyStepSummaryFailed({ get, sessionId, agent, attempts: [] });
     return fallbackStepOutputSummary({ output });
   }
   const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
@@ -136,94 +100,34 @@ export const summarizeWorkflowAgentOutput = async ({
         ...(get().sessionWorkflows?.[sessionId] ?? []),
       ],
     })?.expectedOutput ?? '';
-  const runOnce = (model: TaskModelPreference): Promise<SummarizeAgentOutputResult> =>
-    summarizeAgentOutput({
-      set,
-      agentId: agent.id,
-      output,
-      taskModel: model,
-      ...(worktreePath != null && { workingDir: worktreePath }),
-      ...(expectedOutput !== '' && { expectedOutput }),
-    });
-  const recordCooldown = (model: TaskModelPreference, message: string): void => {
-    const failure = classifyProviderError({ message });
-    const isCooldownEligible =
-      failure.kind === 'usage_limit' ||
-      failure.kind === 'authentication' ||
-      failure.kind === 'rate_limit';
-    if (!isCooldownEligible) {
-      return;
-    }
-    set((state) => ({
-      providerCooldowns: withFailureCooldown({
-        cooldowns: state.providerCooldowns,
-        provider: model.providerId,
-        failure,
-        nowMs: Date.now(),
-      }),
-    }));
-  };
-
-  const result = await runOnce(taskModel);
-  if (!result.degraded) {
-    return result.summary;
-  }
-
-  const message = result.error ?? '';
-  const failure = classifyProviderError({ message });
-  const isModelUnavailable = failure.kind === 'model_not_available';
-  recordCooldown(taskModel, message);
-  const fallback = planTaskModelFallback({
-    failure: failure.kind,
+  const result = await summarizeAgentOutput({
+    set,
+    get,
+    sessionId,
+    agentId: agent.id,
+    output,
     taskModel,
-    attempt: 0,
-    connectedProviders,
-    enabledProviders,
-    coolingDownProviders: providersCoolingDown({
-      cooldowns: get().providerCooldowns,
-      nowMs: Date.now(),
-    }),
-    hidden: selectHiddenModels({ state: get() }),
+    ...(worktreePath != null && { workingDir: worktreePath }),
+    ...(expectedOutput !== '' && { expectedOutput }),
   });
-  if (fallback === null) {
-    if (isModelUnavailable) {
-      notifyModelUnavailable({ get, sessionId, agent, unavailable: taskModel, replacement: null });
-      return result.summary;
-    }
-    notifyDegraded({
-      get,
-      sessionId,
-      agent,
-      modelLabel: modelLabelFor(taskModel),
-      reason: result.error ?? 'summarization failed',
-    });
-    return result.summary;
-  }
-
-  const retried = await runOnce(fallback);
-  if (isModelUnavailable) {
-    if (retried.degraded) {
-      recordCooldown(fallback, retried.error ?? '');
-    }
+  const firstAttempt = result.attempts[0];
+  if (firstAttempt?.failure === 'model_not_available') {
     notifyModelUnavailable({
       get,
       sessionId,
       agent,
-      unavailable: taskModel,
-      replacement: retried.degraded ? null : fallback,
+      unavailable: firstAttempt.model,
+      replacement: result.degraded ? null : result.model,
     });
-    return retried.summary;
+    if (!result.degraded) {
+      resolveStepSummaryNotice({ get, sessionId });
+    }
+    return result.summary;
   }
-  if (!retried.degraded) {
-    return retried.summary;
+  if (result.degraded) {
+    notifyStepSummaryFailed({ get, sessionId, agent, attempts: result.attempts });
+    return result.summary;
   }
-  recordCooldown(fallback, retried.error ?? '');
-  notifyDegraded({
-    get,
-    sessionId,
-    agent,
-    modelLabel: modelLabelFor(fallback),
-    reason: retried.error ?? 'summarization failed',
-  });
-  return retried.summary;
+  resolveStepSummaryNotice({ get, sessionId });
+  return result.summary;
 };

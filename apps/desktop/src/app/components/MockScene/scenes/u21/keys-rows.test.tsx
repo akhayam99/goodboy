@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -47,7 +47,10 @@ describe('the activity-run-hover scene', () => {
     const rows = Array.from(activity.querySelectorAll<HTMLElement>('[data-row-id^="run:"]'));
 
     expect(rows.length).toBeGreaterThan(1);
-    expect(within(activity).getByRole('button', { name: 'Answer' })).toBeDefined();
-    expect(within(activity).getByRole('button', { name: 'Mark all seen' })).toBeDefined();
+    expect(within(activity).getAllByRole('button', { name: /^Open: / }).length).toBeGreaterThan(0);
+    expect(within(activity).queryByRole('button', { name: 'Answer' })).toBeNull();
+    expect(within(activity).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+    fireEvent.click(within(activity).getByRole('button', { name: 'Activity actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Mark all seen' })).toBeDefined();
   });
 });

@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Markdown, FilledEmptyState } from '@goodboy/ui';
+import { Markdown, EmptyState } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { AuthorshipChip } from './AuthorshipChip';
 import { formatAge } from '../../../../../shared/utils/time/formatAge';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
 import { useNow } from '../../../../../shared/hooks/useNow';
 
@@ -45,7 +49,7 @@ const HistoryEntry = ({
             aria-label="Restore this version"
             className="flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip text-muted-foreground hover:bg-hover hover:text-foreground"
           >
-            <RotateCcw size={10} aria-hidden />
+            <RotateCcw size={ICON_SIZE.mark} aria-hidden />
             restore
           </button>
         </div>
@@ -90,7 +94,8 @@ export const SlotHistoryPanel = ({ renderAsMarkdown, entries, onRestore }: Props
 
   if (entries.length === 0) {
     return (
-      <FilledEmptyState
+      <EmptyState
+        size="section"
         icon={CONCEPT_ICONS.sessionSummary}
         tone={CONCEPT_TONE.sessionSummary}
         title="No history yet"

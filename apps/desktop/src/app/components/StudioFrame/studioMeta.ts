@@ -11,6 +11,7 @@ type StudioMeta = {
   readonly tone?: Tone;
   readonly title: string;
   readonly closeLabel: string;
+  readonly tier: 'column' | 'full';
   readonly skeleton: StudioSkeletonLayout;
   readonly railWidth?: 'narrow' | 'standard';
 };
@@ -21,6 +22,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.settings,
     title: 'Settings',
     closeLabel: 'Close settings',
+    tier: 'column',
     skeleton: 'rail',
     railWidth: 'narrow',
   },
@@ -29,6 +31,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.guide,
     title: 'Guide',
     closeLabel: 'Close guide',
+    tier: 'column',
     skeleton: 'rail',
     railWidth: 'standard',
   },
@@ -36,6 +39,7 @@ export const STUDIO_META = {
     icon: Smartphone,
     title: 'Pair device',
     closeLabel: 'Close pairing',
+    tier: 'full',
     skeleton: 'grid',
   },
   addWorkspace: {
@@ -43,6 +47,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.workspace,
     title: 'Add workspace',
     closeLabel: 'Close add workspace',
+    tier: 'column',
     skeleton: 'list',
   },
   workflow: {
@@ -50,13 +55,15 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.workflows,
     title: 'Workflows',
     closeLabel: 'Close workflows',
+    tier: 'column',
     skeleton: 'grid',
   },
   inbox: {
     icon: CONCEPT_ICONS.inbox,
     tone: CONCEPT_TONE.inbox,
-    title: 'Inbox',
-    closeLabel: 'Close inbox',
+    title: NAMES.tasks,
+    closeLabel: 'Close tasks',
+    tier: 'column',
     skeleton: 'list',
   },
   impact: {
@@ -64,6 +71,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.impact,
     title: 'Impact',
     closeLabel: 'Close impact',
+    tier: 'column',
     skeleton: 'list',
   },
   changelog: {
@@ -71,6 +79,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.changelog,
     title: NAMES.whatsNew,
     closeLabel: `Close ${NAMES.whatsNew.toLowerCase()}`,
+    tier: 'column',
     skeleton: 'grid',
   },
   notifications: {
@@ -78,6 +87,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.notifications,
     title: 'Notifications',
     closeLabel: 'Close notifications',
+    tier: 'column',
     skeleton: 'list',
   },
   chat: {
@@ -85,6 +95,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.chat,
     title: 'Chat',
     closeLabel: 'Close chat',
+    tier: 'full',
     skeleton: 'rail',
     railWidth: 'narrow',
   },

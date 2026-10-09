@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
 import type { SessionStudio, StudioKind } from '../../store';
+import { STUDIO_META } from '../../app/components/StudioFrame/studioMeta';
 
 const SRC = join(__dirname, '..', '..');
 const FEATURES = join(SRC, 'features');
@@ -49,7 +50,7 @@ const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
   { pattern: /\bmax-w-(2xl|xl)\b/, allowed: NARROW_ALLOWLIST },
 ];
 
-type RootKind = 'shell' | 'bare' | 'dispatch' | 'helper';
+type RootKind = 'shell' | 'bare' | 'dispatch' | 'helper' | 'banner';
 
 type Root = {
   readonly kind: RootKind;
@@ -109,10 +110,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/session/components/AgentDetailPane/index.tsx',
     ],
   },
-  PrPane: {
-    kind: 'shell',
-    files: ['features/session/components/SessionWorkspace/parts/PrPane.tsx'],
-  },
   BranchPage: {
     kind: 'shell',
     files: ['features/branch/components/BranchPage/index.tsx'],
@@ -130,7 +127,14 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   PaneShell: { kind: 'helper', files: [] },
   TrailBar: { kind: 'helper', files: [] },
   AskTrailButton: { kind: 'helper', files: [] },
-  FirstLapBanner: { kind: 'helper', files: [] },
+  FirstLapBanner: {
+    kind: 'banner',
+    files: [
+      'features/bootstrap/FirstLapBanner/index.tsx',
+      'features/bootstrap/MoveCard/index.tsx',
+      'features/bootstrap/MoveReport/index.tsx',
+    ],
+  },
   SessionCrumbs: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
   ScriptsPanel: {
@@ -138,7 +142,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     files: ['features/scripts/components/ScriptsPanel/index.tsx'],
   },
   LinkTicketPopover: { kind: 'helper', files: [] },
-  LensEmptyState: { kind: 'helper', files: [] },
+  EmptyState: { kind: 'helper', files: [] },
 };
 
 type PlaceRoots = Readonly<Record<string, ReadonlyArray<string>>>;
@@ -169,8 +173,6 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
 
 const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray<string>>> = {
   workflow: ['features/workflows/components/WorkflowBuilderView/index.tsx'],
-  mr: ['features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx'],
-  bitbucket: ['features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/index.tsx'],
 };
 
 const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
@@ -191,6 +193,42 @@ const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
 };
 
 const COLUMN_ROOT = /<(PaneShell|PageColumn|FormPage)\b/;
+
+const STUDIO_TIERS: Readonly<Record<StudioKind, 'column' | 'full'>> = {
+  settings: 'column',
+  guide: 'column',
+  companion: 'full',
+  addWorkspace: 'column',
+  workflow: 'column',
+  inbox: 'column',
+  impact: 'column',
+  changelog: 'column',
+  notifications: 'column',
+  chat: 'full',
+};
+
+const H1_ALLOWLIST: ReadonlySet<string> = new Set([
+  'features/artifacts/components/ArtifactShell/ArtifactShellHeader.tsx',
+  'features/artifacts/components/ArtifactList/index.tsx',
+  'features/workspace/components/WorkspaceLauncher/index.tsx',
+  'features/session/components/SessionDraftPane/SessionDraftHeader.tsx',
+  'shared/components/StudioDetail/RecordHeader/index.tsx',
+]);
+
+const TITLE_ROW_PAGES: ReadonlyArray<string> = [
+  'features/session/components/SessionOverviewPane/HeaderBand.tsx',
+  'features/session/components/AgentDetailPane/AgentHeader.tsx',
+  'features/session/components/AgentTree/WorkflowRow.tsx',
+  'features/workspace/components/StageBoard/index.tsx',
+];
+
+const UI_COMPONENTS = join(SRC, '..', '..', '..', 'packages/ui/src/components');
+
+const titleRowTags = (source: string): ReadonlyArray<string> =>
+  [...source.matchAll(/data-slot="pane-title-row"/g)].map((match) => {
+    const at = match.index ?? 0;
+    return source.slice(source.lastIndexOf('<div', at), source.indexOf('>', at));
+  });
 
 const walk = (dir: string): ReadonlyArray<string> =>
   readdirSync(dir).flatMap((entry) => {
@@ -329,11 +367,93 @@ describe('content column contract', () => {
     expect(read('app/components/StudioFrame/StudioSkeleton.tsx')).toMatch(/<PageColumn\b/);
   });
 
+  it('gives every studio a tier, and puts only the rail studios that align to the gutter on full', () => {
+    const tiers = Object.fromEntries(
+      Object.entries(STUDIO_META).map(([kind, meta]) => [kind, meta.tier]),
+    );
+
+    expect(tiers).toEqual(STUDIO_TIERS);
+    expect(Object.keys(STUDIO_TIERS).sort()).toEqual(Object.keys(STUDIO_ROOTS).sort());
+  });
+
+  it('draws the studio band inside a PageColumn, never on its own gutter', () => {
+    const source = read('shared/components/StudioShell/StudioBand.tsx');
+    const header = source.slice(source.indexOf('<header'), source.indexOf('</header>'));
+
+    expect(header).toMatch(/<header[^>]*>\s*<PageColumn\b/);
+    expect(header).toContain('width={width}');
+    expect(header).not.toMatch(/\bpx-\d/);
+    expect(read('app/components/StudioFrame/index.tsx')).toContain('width={meta.tier}');
+  });
+
+  it('hands the studio frame the under-trail context so no studio title sits lower than a session title', () => {
+    const source = read('app/components/StudioFrame/index.tsx');
+
+    expect(source).toMatch(/<UnderTrailContext\.Provider value>\{children\}/);
+  });
+
+  it('renders every h1 through the title row primitive, outside the few dialogs and documents', () => {
+    const offenders = walk(SRC)
+      .map(toKey)
+      .filter((key) => key.endsWith('.tsx') && !key.startsWith('app/components/MockScene/'))
+      .filter((key) => /<h1\b/.test(read(key)) && !H1_ALLOWLIST.has(key))
+      .filter((key) => !TITLE_ROW_PAGES.includes(key))
+      .filter((key) => key !== 'features/workspace-chat/components/ChatRoom/ChatHeader.tsx');
+
+    expect(offenders).toEqual([]);
+    const stale = [...H1_ALLOWLIST].filter((key) => !/<h1\b/.test(read(key)));
+    expect(stale).toEqual([]);
+  });
+
+  it('draws the title row of every own-header page as a fixed, centred, single line', () => {
+    const drifted = TITLE_ROW_PAGES.flatMap((file) => {
+      const tags = titleRowTags(read(file));
+      if (tags.length === 0) {
+        return [`${file} has no title row`];
+      }
+      return tags.flatMap((tag) => {
+        const problems: Array<string> = [];
+        if (!/\b(min-)?h-8\b/.test(tag)) {
+          problems.push(`${file} title row is not 32px`);
+        }
+        if (!/items-center/.test(tag)) {
+          problems.push(`${file} title row does not centre`);
+        }
+        if (/flex-wrap|items-baseline|items-start/.test(tag)) {
+          problems.push(`${file} title row wraps or aligns off centre`);
+        }
+        return problems;
+      });
+    });
+
+    expect(drifted).toEqual([]);
+    const primitive = readFileSync(join(UI_COMPONENTS, 'PaneShell/PaneTitleRow.tsx'), 'utf8');
+    const bandPrimitive = readFileSync(join(UI_COMPONENTS, 'HeaderBand.tsx'), 'utf8');
+    expect(titleRowTags(primitive)[0]).toMatch(/\bh-8\b.*items-center|items-center.*\bh-8\b/);
+    expect(titleRowTags(bandPrimitive)[0]).toMatch(/\bh-8\b.*items-center|items-center.*\bh-8\b/);
+  });
+
+  it('keeps the first lap, move card and move report on the column as notices, never a bar of their own', () => {
+    const files = LENS_ROOTS['FirstLapBanner']?.files ?? [];
+
+    expect(files.filter((file) => !/<Notice\b/.test(read(file)))).toEqual([]);
+    expect(files.filter((file) => /bg-subtle|px-4 py-3/.test(read(file)))).toEqual([]);
+    const workspace = read(WORKSPACE);
+    const trailEnd = workspace.indexOf('<TrailBar');
+    const region = workspace.slice(trailEnd, workspace.indexOf('<UnderTrailContext.Provider'));
+    expect(region).not.toContain('FirstLapBanner');
+    expect(workspace).toMatch(/const banner = <FirstLapBanner sessionId=\{sessionId\} \/>;/);
+    const shell = readFileSync(join(UI_COMPONENTS, 'PaneShell/index.tsx'), 'utf8');
+    expect(shell).toContain('PaneBannerContext');
+  });
+
   it('classifies every component the session workspace mounts', () => {
     const source = read(WORKSPACE);
     const mounted = [...source.matchAll(/(?<![\w.])<([A-Z][A-Za-z]+)\b/g)]
       .map((match) => match[1] ?? '')
-      .filter((name) => name !== '' && name !== 'UnderTrailContext');
+      .filter(
+        (name) => name !== '' && name !== 'UnderTrailContext' && name !== 'PaneBannerContext',
+      );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);
 
     expect(unknown).toEqual([]);
@@ -346,7 +466,7 @@ describe('content column contract', () => {
         if (CRUMB.test(source)) {
           return [`${name}: ${file} draws a crumb`];
         }
-        if (root.kind === 'bare') {
+        if (root.kind === 'bare' || root.kind === 'banner') {
           return [];
         }
         return SHELL.test(source) ? [] : [`${name}: ${file}`];

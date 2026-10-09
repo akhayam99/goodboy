@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { cn, FOCUS_RING, Tooltip } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly eyebrow: string;
@@ -23,7 +24,7 @@ export const SearchChipPill = ({ eyebrow, label, removeLabel, onRemove }: Props)
           FOCUS_RING,
         )}
       >
-        <X size={11} aria-hidden />
+        <X size={ICON_SIZE.mark} aria-hidden />
       </button>
     </Tooltip>
   </span>

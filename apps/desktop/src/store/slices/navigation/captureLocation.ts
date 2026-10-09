@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import { resolverThread } from './resolverThread';
+import { branchTabOf } from '../session-view/branchTabOf';
 import type { LensKind } from '../session-view/types';
 import { EMPTY_FOCUS, type Focus, type Location, type SessionTarget } from './types';
 
@@ -19,6 +20,16 @@ type TargetParams = {
 };
 
 const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
+  const target = captureLensTarget({ state, sessionId, lens });
+  if (target !== null) {
+    return target;
+  }
+  const agentId = state.selectedAgentId[sessionId] ?? null;
+  const pane = state.agentPane?.[sessionId] ?? null;
+  return agentId === null || pane === null ? null : { kind: 'agent', pane };
+};
+
+const captureLensTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
   const agentId = state.selectedAgentId[sessionId] ?? null;
   if (lens === 'review' && agentId !== null) {
     const threadId = resolverThread({ state, sessionId, agentId });
@@ -41,10 +52,11 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
     return issueNumber === null ? null : { kind: 'github-issue', issueNumber };
   }
   if (lens === 'branch') {
+    const mountPath = state.diffMountPath[sessionId] ?? null;
     return {
       kind: 'branch',
-      mountPath: state.diffMountPath[sessionId] ?? null,
-      tab: state.branchTab[sessionId] ?? 'comments',
+      mountPath,
+      tab: branchTabOf({ state, sessionId, mountPath }),
       threadId: state.branchThreadId[sessionId] ?? null,
       focus: state.diffFocus[sessionId] ?? null,
     };

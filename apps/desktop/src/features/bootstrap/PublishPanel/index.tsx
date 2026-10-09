@@ -9,6 +9,7 @@ import type {
   PublishRemote,
 } from '../../../store/slices/bootstrap/publishFirstLap';
 import { GithubFormBody } from '../../integrations/github/GithubFormBody';
+import { GhInstallHelp } from './GhInstallHelp';
 
 type Where = 'github' | 'address';
 
@@ -46,9 +47,11 @@ export const PublishPanel = ({
   const publishFirstLap = useAppStore((state) => state.publishFirstLap);
   const githubStatus = useAppStore((state) => state.githubStatus);
   const refreshGithubStatus = useAppStore((state) => state.refreshGithubStatus);
+  const headingId = useId();
   const nameId = useId();
   const addressId = useId();
-  const [where, setWhere] = useState<Where>('github');
+  const [picked, setPicked] = useState<Where | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
   const [repoName, setRepoName] = useState(project.name);
   const [visibility, setVisibility] = useState<GithubRepoVisibility | null>(null);
   const [address, setAddress] = useState('');
@@ -64,6 +67,7 @@ export const PublishPanel = ({
     }
   }, [githubStatus, refreshGithubStatus]);
 
+  const where: Where = picked ?? (githubStatus?.available === false ? 'address' : 'github');
   const isToolAvailable = githubStatus?.available === true;
   const isSignedIn = isToolAvailable && githubStatus.mode !== 'absent';
   const owner = githubStatus?.user ?? null;
@@ -99,28 +103,38 @@ export const PublishPanel = ({
   };
 
   const retryTarget: PublishRemote | null =
-    retryAddress === null ? null : { kind: 'address', url: retryAddress };
+    retryAddress === null ? remote : { kind: 'address', url: retryAddress };
+
+  const checkAgain = async () => {
+    setIsChecking(true);
+    try {
+      await refreshGithubStatus();
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
   return (
     <section
-      aria-label="Publish this project"
+      aria-labelledby={headingId}
       className="flex flex-col gap-4 rounded-lg border border-border-soft bg-subtle p-4"
     >
+      <h3 id={headingId} className="text-heading text-foreground">
+        Publish this project
+      </h3>
       <SegmentedTabs
+        size="sm"
         ariaLabel="Where to publish"
         options={WHERE_OPTIONS}
         value={where}
-        onChange={(next) => setWhere(next)}
+        onChange={setPicked}
         fill
       />
 
       {where === 'github' ? (
         <div className="flex flex-col gap-4">
           {!isToolAvailable && githubStatus !== null ? (
-            <p className="text-label text-muted-foreground">
-              GitHub&apos;s command line tool isn&apos;t installed. Install it, or use an existing
-              repository.
-            </p>
+            <GhInstallHelp isChecking={isChecking} onCheckAgain={() => void checkAgain()} />
           ) : null}
           {isToolAvailable && !isSignedIn ? (
             <div className="flex flex-col gap-2">
@@ -204,9 +218,10 @@ export const PublishPanel = ({
           title={STEP_LABEL[failure.step]}
           body={
             failure.remoteUrl === null
-              ? failure.message
-              : `${failure.message} The repository exists at ${failure.remoteUrl} and was not removed.`
+              ? 'Nothing was published.'
+              : `The repository exists at ${failure.remoteUrl} and was not removed.`
           }
+          detail={failure.message}
           actions={
             retryTarget === null ? undefined : (
               <Button
@@ -216,7 +231,7 @@ export const PublishPanel = ({
                 disabled={busy}
                 onClick={() => void publish(retryTarget)}
               >
-                Publish again
+                Retry
               </Button>
             )
           }
@@ -237,14 +252,16 @@ export const PublishPanel = ({
         <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
           Cancel
         </Button>
-        <Button
-          type="button"
-          disabled={busy || remote === null}
-          aria-busy={busy}
-          onClick={() => (remote === null ? undefined : void publish(remote))}
-        >
-          {primaryLabel}
-        </Button>
+        {remote === null ? null : (
+          <Button
+            type="button"
+            disabled={busy}
+            aria-busy={busy}
+            onClick={() => void publish(remote)}
+          >
+            {primaryLabel}
+          </Button>
+        )}
       </FormActions>
     </section>
   );

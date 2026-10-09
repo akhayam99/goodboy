@@ -7,8 +7,9 @@ import {
   PanelsTopLeft,
   type LucideIcon,
 } from 'lucide-react';
-import { KbdPill, Band } from '@goodboy/ui';
+import { KeyHint, Band } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import type { ShortcutGroup } from '../../../../shared/keyboard/registry';
 import { groupWhere, shortcutRows } from './shortcutRows';
@@ -21,8 +22,8 @@ const GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
   views: 'Views',
   lists: 'Lists',
   selection: 'Selection',
-  review: 'Review',
-  diff: 'Diff',
+  review: NAMES.comments,
+  diff: NAMES.files,
   window: 'Window',
 };
 
@@ -63,9 +64,9 @@ export const ShortcutGroupSurface = ({ group }: Props) => {
                 <span className="truncate text-meta text-faint-foreground">{row.where}</span>
               ) : null}
             </span>
-            <KbdPill className="shrink-0">
-              {shortcutRangeGlyphs({ first: row.first, last: row.last })}
-            </KbdPill>
+            <span className="shrink-0">
+              <KeyHint keys={shortcutRangeGlyphs({ first: row.first, last: row.last })} />
+            </span>
           </li>
         ))}
       </ul>

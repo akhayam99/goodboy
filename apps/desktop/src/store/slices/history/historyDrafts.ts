@@ -179,12 +179,15 @@ export const loadHistoryDraft = (set: SetFn, get: GetFn) => {
       set((state) => ({
         historyDrafts: {
           ...state.historyDrafts,
-          [mountId]: emptyDraft({
-            sessionId,
-            mountId,
-            branch: target.branch,
-            loadError: formatError(error),
-          }),
+          [mountId]:
+            state.historyDrafts[mountId] !== undefined
+              ? { ...state.historyDrafts[mountId], loadError: formatError(error) }
+              : emptyDraft({
+                  sessionId,
+                  mountId,
+                  branch: target.branch,
+                  loadError: formatError(error),
+                }),
         },
       }));
     }

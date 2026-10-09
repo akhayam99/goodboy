@@ -2,12 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FileDiff, PrReviewDraft, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
-import {
-  FILE_LEVEL_LINE,
-  isFileLevelDraft,
-} from '../../../../store/slices/review-drafts/fileLevel';
+import { isFileLevelDraft } from '../../../../store/slices/review-drafts/fileLevel';
 import { resolveReviewTarget } from '../../../../store/slices/review-drafts/resolveReviewTarget';
-import { FILE_DRAFT_COMPOSER, draftThread } from '../../lib/draftThreads';
+import { draftThread } from '../../lib/draftThreads';
 import type { DiffComments, DiffThread, DiffViewed } from '../../components/DiffView/types';
 import {
   ancestorIds,
@@ -43,6 +40,7 @@ export type ReviewState = {
   readonly comments: DiffComments;
   readonly viewed: DiffViewed;
   readonly noteCountOf: (path: string) => number;
+  readonly hasNotesIn: (path: string) => boolean;
   readonly activePath: string | null;
   readonly setActivePath: (path: string) => void;
   readonly collapsed: ReadonlySet<string>;
@@ -57,7 +55,7 @@ export type ReviewState = {
 const NO_THREADS: ReadonlyArray<DiffThread> = [];
 
 export const useReviewState = ({ sessionId, worktreePath, diff }: Params): ReviewState => {
-  const { comments: noteComments } = useDiffNotes({ sessionId });
+  const { comments: noteComments, fixes } = useDiffNotes({ sessionId });
   const mountId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
   );
@@ -67,10 +65,8 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
   );
   const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
-  const addReviewDraft = useAppStore((s) => s.addReviewDraft);
   const updateReviewDraft = useAppStore((s) => s.updateReviewDraft);
   const discardReviewDraft = useAppStore((s) => s.discardReviewDraft);
-  const reportError = useAppStore((s) => s.reportError);
 
   useEffect(() => {
     if (hasPullRequest) {
@@ -90,24 +86,13 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
 
   const comments = useMemo<DiffComments>(() => {
     const threads = [...noteComments.threads, ...reviewThreads, ...fileDraftThreads];
-    if (!hasPullRequest) {
+    if (fileDraftThreads.length === 0) {
       return reviewThreads.length === 0 ? noteComments : { ...noteComments, threads };
     }
     const draftIds = new Set(fileDraftThreads.map((thread) => thread.id));
     return {
       ...noteComments,
       threads,
-      fileComposer: FILE_DRAFT_COMPOSER,
-      onSubmit: (filePath, anchor, body) => {
-        if (anchor !== null) {
-          noteComments.onSubmit(filePath, anchor, body);
-          return;
-        }
-        addReviewDraft({ sessionId, path: filePath, line: FILE_LEVEL_LINE, body }).catch(
-          (err: unknown) =>
-            reportError({ title: "Couldn't save the review comment", error: err, sessionId }),
-        );
-      },
       onEdit: (id, body) => {
         if (draftIds.has(id)) {
           void updateReviewDraft(id, body);
@@ -121,17 +106,7 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
         noteComments.onDelete?.(id);
       },
     };
-  }, [
-    addReviewDraft,
-    discardReviewDraft,
-    fileDraftThreads,
-    hasPullRequest,
-    noteComments,
-    reportError,
-    reviewThreads,
-    sessionId,
-    updateReviewDraft,
-  ]);
+  }, [discardReviewDraft, fileDraftThreads, noteComments, reviewThreads, updateReviewDraft]);
   const [query, setQuery] = useState('');
   const [unviewedOnly, setUnviewedOnly] = useState(false);
   const [notesOnly, setNotesOnly] = useState(false);
@@ -168,6 +143,11 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     return counts;
   }, [comments.threads]);
   const noteCountOf = useCallback((path: string) => noteCounts.get(path) ?? 0, [noteCounts]);
+  const notePaths = useMemo(
+    () => new Set(fixes.filter((fix) => !fix.isClosed).map((fix) => fix.note.filePath)),
+    [fixes],
+  );
+  const hasNotesIn = useCallback((path: string) => notePaths.has(path), [notePaths]);
 
   const shownFiles = useMemo(() => {
     if (!isFiltering) {
@@ -254,6 +234,7 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     comments,
     viewed: diff.viewed,
     noteCountOf,
+    hasNotesIn,
     activePath,
     setActivePath,
     collapsed,

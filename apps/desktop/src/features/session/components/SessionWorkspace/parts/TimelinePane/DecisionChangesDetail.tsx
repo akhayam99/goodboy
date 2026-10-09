@@ -1,5 +1,6 @@
 import { Button } from '@goodboy/ui';
 import {
+  DECISION_DETAIL_ACTION_HEIGHT,
   DECISION_DETAIL_LINE_HEIGHT,
   type DecisionChangeDetail,
 } from '../../../../timeline/decisionChangeLines';
@@ -36,8 +37,8 @@ export const DecisionChangesDetail = ({ id, detail, onOpenInContext }: Props) =>
         {`and ${detail.hiddenCount} more`}
       </p>
     ) : null}
-    <span className="flex items-center" style={{ height: DECISION_DETAIL_LINE_HEIGHT }}>
-      <Button variant="ghost" size="sm" className="h-5" onClick={onOpenInContext}>
+    <span className="flex items-center" style={{ height: DECISION_DETAIL_ACTION_HEIGHT }}>
+      <Button variant="ghost" size="xs" onClick={onOpenInContext}>
         Open in Context
       </Button>
     </span>

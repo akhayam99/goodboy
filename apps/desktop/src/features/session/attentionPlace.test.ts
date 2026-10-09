@@ -81,8 +81,10 @@ describe('attentionPlace', () => {
 
   it.each([
     ['ci-failed', 'checks'],
-    ['changes-requested', 'comments'],
-    ['pr-approved', 'comments'],
+    ['changes-requested', 'pr'],
+    ['pr-approved', 'pr'],
+    ['fix-needs-you', 'comments'],
+    ['fix-couldnt-fix', 'comments'],
   ] satisfies ReadonlyArray<readonly [SessionAttentionReason, string]>)(
     'opens the Branch on the tab that answers %s',
     (reason, tab) => {

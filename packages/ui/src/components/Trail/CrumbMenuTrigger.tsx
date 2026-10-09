@@ -14,10 +14,11 @@ import {
   TRAIL_LINK_CLASS,
   TRAIL_TAIL_CLASS,
 } from './trailClasses';
+import { ICON_SIZE } from '../../iconSize';
 
 const WIDTH: Record<CrumbMenuModel['width'], { readonly className: string; readonly px: number }> =
   {
-    narrow: { className: 'w-75', px: 300 },
+    narrow: { className: 'w-80', px: 320 },
     regular: { className: 'w-95', px: 380 },
     wide: { className: 'w-115', px: 460 },
   };
@@ -63,14 +64,14 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
       </span>
     ) : (
       <Icon
-        size={12}
+        size={ICON_SIZE.row}
         aria-hidden
         className={cn('shrink-0', segment.iconClassName ?? 'text-faint-foreground')}
       />
     );
   const chevron = (
     <ChevronDown
-      size={11}
+      size={ICON_SIZE.row}
       aria-hidden
       className={cn('shrink-0 transition-transform', open && 'rotate-180')}
     />
@@ -156,7 +157,7 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
           )}
         >
           <ChevronRight
-            size={12}
+            size={ICON_SIZE.row}
             aria-hidden
             className={cn(
               'shrink-0 motion-safe:transition-transform motion-safe:duration-150',
@@ -173,7 +174,6 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
       dropdown={dropdown}
       role="menu"
       ariaLabel={menu.triggerLabel}
-      className="rounded-lg border border-border-soft bg-floating shadow-xl"
       anchorClassName="flex min-w-0 items-center"
       trigger={trigger}
     >

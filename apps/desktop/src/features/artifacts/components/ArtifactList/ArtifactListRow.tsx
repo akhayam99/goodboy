@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { Button, IconButton, InteractiveRow, InlineConfirm, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
+import type { ArtifactState } from '../../artifactStateOf';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { RelativeTime } from '../../../../shared/components/RelativeTime';
@@ -92,6 +93,14 @@ const targetOf = ({
       : { kind: 'stored', artifactId: row.target.artifactId, isPlanRunning: row.isPlanRunning },
 });
 
+const progressStateOf = ({ row }: { readonly row: Row }): ArtifactState | null => {
+  if (row.state === null) {
+    return null;
+  }
+  const isKindDetail = row.state.detail === ARTIFACT_KIND_MARKER_LABEL[row.kind];
+  return isKindDetail ? { ...row.state, detail: null } : row.state;
+};
+
 const RUN_PLAN_ACTION_ID = 'artifact.runPlan';
 
 const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow }: Props) => {
@@ -112,9 +121,6 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
   const isDeleted = row.group === 'deleted';
   const hasParts = row.kind === 'plan' && row.partCount > 0 && !isDeleted;
   const rowLabel = `${ARTIFACT_KIND_MARKER_LABEL[row.kind]} ${row.title}${row.state === null ? '' : `, ${row.state.label}`}`;
-  const deleteAction = isDeleted
-    ? null
-    : findAction({ actions: controls.actions, id: 'artifact.delete' });
   const restoreAction = isDeleted
     ? findAction({ actions: controls.actions, id: 'artifact.restore' })
     : null;
@@ -126,6 +132,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
     primary !== null &&
     primary.slot === 'primary' &&
     !(primary.id === RUN_PLAN_ACTION_ID && hasUnsentComments);
+  const state = progressStateOf({ row });
   const hover = isDeleted ? [] : hoverActionsOf({ row, actions: controls.actions });
   const at = row.deletedAt ?? row.at;
   const atTitle =
@@ -180,20 +187,22 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
         >
           {row.title}
         </span>
+        <span data-testid="artifact-row-kind" className={ARTIFACT_ROW_GRID.kind}>
+          {ARTIFACT_KIND_MARKER_LABEL[row.kind]}
+        </span>
         <span className={cn(ARTIFACT_ROW_GRID.state, row.isFaint && 'opacity-80')}>
-          {row.state === null ? null : <ArtifactStateBadge state={row.state} />}
+          {state === null ? null : <ArtifactStateBadge state={state} />}
         </span>
         <span data-testid="artifact-row-time" className={ARTIFACT_ROW_GRID.date}>
           {at === null ? null : <RelativeTime iso={at} title={atTitle} />}
         </span>
         {isDeleted ? (
           <span className={ARTIFACT_ROW_GRID.deletedTail}>
-            <span className={ARTIFACT_ROW_GRID.primary}>
+            <span className={ARTIFACT_ROW_GRID.restore}>
               {restoreAction === null ? null : (
                 <Button
                   size="sm"
                   variant="secondary"
-                  emphasis="solid"
                   isBusy={controls.pendingId === restoreAction.id}
                   onClick={() => controls.trigger({ actionId: restoreAction.id })}
                 >
@@ -205,8 +214,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
               {permanentAction === null ? null : (
                 <Button
                   size="sm"
-                  variant="danger"
-                  emphasis="outline"
+                  variant="ghost-danger"
                   isBusy={controls.pendingId === permanentAction.id}
                   onClick={() => controls.trigger({ actionId: permanentAction.id })}
                 >
@@ -221,8 +229,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
               {primary === null ? null : (
                 <Button
                   size="sm"
-                  variant={isFilled ? 'primary' : 'secondary'}
-                  emphasis={isFilled ? 'outline' : 'solid'}
+                  variant="secondary"
                   disabled={primary.blockedReason !== null}
                   isBusy={controls.pendingId === primary.id}
                   title={primary.blockedReason ?? primary.description ?? undefined}
@@ -233,7 +240,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
                 </Button>
               )}
             </span>
-            <span className={ARTIFACT_ROW_GRID.hover}>
+            <span data-reveal="hover" className={ARTIFACT_ROW_GRID.hover}>
               {hover.map((action) => (
                 <IconButton
                   key={action.id}
@@ -246,19 +253,6 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
                   onClick={() => controls.trigger({ actionId: action.id })}
                 />
               ))}
-            </span>
-            <span className={ARTIFACT_ROW_GRID.remove}>
-              {deleteAction === null ? null : (
-                <IconButton
-                  icon={deleteAction.icon}
-                  iconSize={ICON_SIZE.control}
-                  label={`Delete ${row.title}`}
-                  tooltip="Delete"
-                  variant="ghost"
-                  disabled={deleteAction.blockedReason !== null}
-                  onClick={() => controls.trigger({ actionId: deleteAction.id })}
-                />
-              )}
             </span>
             <span className={ARTIFACT_ROW_GRID.menu}>
               <ArtifactOverflowMenu

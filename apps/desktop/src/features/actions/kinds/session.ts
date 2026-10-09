@@ -1,9 +1,25 @@
-import { Copy, GitBranch, Link, Link2, Pencil, Pin, PinOff } from 'lucide-react';
+import {
+  DELETE_CANNOT_UNDO,
+  DELETE_REMOVED_LINE,
+  deleteKeptLine,
+} from '../../session/deleteSessionCopy';
+import {
+  ArrowDown,
+  ArrowUp,
+  Copy,
+  GitBranch,
+  Link,
+  Link2,
+  Pencil,
+  Pin,
+  PinOff,
+} from 'lucide-react';
 import type { Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
+import { branchPlace } from '../../../store/slices/navigation/place';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { createAgentEventName } from '../../session/createAgentEventName';
@@ -19,6 +35,7 @@ import type {
   SessionActionTarget,
 } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { NAMES } from '../../../shared/names';
 
 export type SessionFacts = {
   readonly session: Session;
@@ -26,6 +43,8 @@ export type SessionFacts = {
   readonly title: string;
   readonly isArchived: boolean;
   readonly isPinned: boolean;
+  readonly canMovePinUp: boolean;
+  readonly canMovePinDown: boolean;
   readonly isBranchless: boolean;
   readonly hasMount: boolean;
   readonly branch: string | null;
@@ -56,11 +75,8 @@ const NO_MOUNT_REASON = 'Add a project to this session first';
 
 const NO_WORKTREE_REASON = 'This session has no worktree yet';
 
-const BRANCHLESS_DELETE =
-  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. This cannot be undone.';
-
-const BRANCHED_DELETE =
-  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage. This cannot be undone.';
+const deleteDescription = ({ isBranchless }: { readonly isBranchless: boolean }): string =>
+  `${DELETE_REMOVED_LINE} ${deleteKeptLine({ isBranchless })} ${DELETE_CANNOT_UNDO}`;
 
 type OpenLensParams = {
   readonly env: ActionEnv;
@@ -92,7 +108,7 @@ const restore = ({ env, session }: LifecycleParams): Promise<void> =>
 
 const deleteConfirm = ({ facts }: { readonly facts: SessionFacts }): ActionConfirm => ({
   title: 'Delete session?',
-  description: facts.isBranchless ? BRANCHLESS_DELETE : BRANCHED_DELETE,
+  description: deleteDescription({ isBranchless: facts.isBranchless }),
   confirmLabel: 'Delete',
   role: 'danger',
   ...(!facts.isArchived && { altActionId: 'session.archive' }),
@@ -182,16 +198,17 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.review',
-    label: 'Review',
+    label: NAMES.comments,
     icon: CONCEPT_ICONS.review,
     group: 'open',
     shortcut: 'lens.review',
     when: isLive,
-    run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'review' }),
+    run: ({ facts, env }) =>
+      env.getState().navigate({ to: branchPlace({ sessionId: facts.sessionId, tab: 'comments' }) }),
   },
   {
     id: 'session.diff',
-    label: 'Diff',
+    label: NAMES.files,
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',
@@ -241,7 +258,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.pin',
-    label: 'Pin session',
+    label: NAMES.pin,
     icon: Pin,
     group: 'act',
     when: ({ facts }) => isLive({ facts }) && !facts.isPinned,
@@ -249,11 +266,29 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.unpin',
-    label: 'Unpin session',
+    label: NAMES.unpin,
     icon: PinOff,
     group: 'act',
     when: ({ facts }) => isLive({ facts }) && facts.isPinned,
     run: ({ facts, env }) => env.getState().unpinSession(facts.sessionId),
+  },
+  {
+    id: 'session.pinnedUp',
+    label: 'Move up',
+    icon: ArrowUp,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.isPinned && facts.canMovePinUp,
+    run: ({ facts, env }) =>
+      env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'up' }),
+  },
+  {
+    id: 'session.pinnedDown',
+    label: 'Move down',
+    icon: ArrowDown,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.isPinned && facts.canMovePinDown,
+    run: ({ facts, env }) =>
+      env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'down' }),
   },
   {
     id: 'session.startAgent',
@@ -372,6 +407,8 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
     if (session === null) {
       return null;
     }
+    const pins = state.sessionPins[session.workspaceId as WorkspaceId] ?? [];
+    const pinIndex = pins.findIndex((pin) => pin.id === target.sessionId);
     const rawBranch = state.sessionBranches[target.sessionId] ?? null;
     const branch = rawBranch === null || rawBranch.trim() === '' ? null : rawBranch;
     const mounts = state.sessionProjectMounts[target.sessionId] ?? [];
@@ -381,9 +418,9 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       sessionId: target.sessionId,
       title: sessionTitle({ session }),
       isArchived: session.archivedAt != null,
-      isPinned: (state.sessionPins[session.workspaceId as WorkspaceId] ?? []).some(
-        (pin) => pin.id === target.sessionId,
-      ),
+      isPinned: pinIndex !== -1,
+      canMovePinUp: pinIndex > 0,
+      canMovePinDown: pinIndex !== -1 && pinIndex < pins.length - 1,
       isBranchless: isBranchlessSession({ branch: rawBranch }),
       hasMount: mounts.length > 0 || branch !== null,
       branch: branch ?? mounts[0]?.branch ?? null,

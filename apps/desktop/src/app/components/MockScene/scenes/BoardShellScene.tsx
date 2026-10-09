@@ -67,14 +67,7 @@ const BoardShellSceneContent = () => {
       <AppShell
         studio={shell.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
-        topBar={
-          <AppTopBar
-            mode={arrangement.mode}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-            onOpenImpact={noop}
-          />
-        }
+        topBar={<AppTopBar mode={arrangement.mode} onOpenSpend={noop} onOpenScript={noop} />}
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={

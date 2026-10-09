@@ -197,6 +197,26 @@ describe('WorkspaceSwitcher', () => {
     expect(screen.queryByText('charlie')).toBeNull();
   });
 
+  it('shows no empty row when the current workspace is the only one', () => {
+    state.workspaces = [aWorkspace({ name: 'alpha' })];
+    state.currentWorkspace = state.workspaces[0] ?? null;
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
+
+    expect(screen.queryByText(/No workspaces/)).toBeNull();
+    expect(screen.queryByText(/No other workspaces/)).toBeNull();
+    expect(screen.getByText('alpha')).toBeDefined();
+  });
+
+  it('says No other workspaces match when a search finds none', () => {
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Find a workspace or project'), {
+      target: { value: 'zzz' },
+    });
+
+    expect(screen.getByText('No other workspaces match')).toBeDefined();
+  });
+
   it('requests a new workspace via the global event', () => {
     const onClose = vi.fn();
     const spy = vi.fn();

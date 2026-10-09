@@ -49,7 +49,7 @@ const CARDS: ReadonlyArray<CardSeed> = [
     kind: 'resolve-threads',
     title: '3 review comments to resolve',
     detail: 'Mara Quint left them on #418',
-    label: 'Resolve 3 comments',
+    label: 'Fix 3',
     agentKind: 'resolver',
   },
   {

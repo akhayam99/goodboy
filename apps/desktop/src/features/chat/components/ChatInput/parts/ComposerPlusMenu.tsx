@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { AnchoredPopover, IconButton, useDropdown } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, AnchoredPopover, IconButton, useDropdown } from '@goodboy/ui';
 import type { QuickActionGroup } from '../../../../quick-actions/grammar';
 import { CHAT_PREFIXES } from '../lib';
 
@@ -36,7 +36,10 @@ export const ComposerPlusMenu = ({ onAttachFiles, onInsertPrefix, disabled = fal
         dropdown.close();
         onClick();
       }}
-      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-body text-foreground transition-colors hover:bg-hover"
+      className={cn(
+        'flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-body text-foreground transition-colors',
+        ROW_INTERACTIVE,
+      )}
     >
       <span>{label}</span>
       {symbol != null && <span className="text-code text-faint-foreground">{symbol}</span>}

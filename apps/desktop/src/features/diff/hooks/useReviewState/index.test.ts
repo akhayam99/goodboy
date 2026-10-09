@@ -383,24 +383,18 @@ describe('useReviewState file-level comments', () => {
     expect(result.current.comments.fileComposer).toBeUndefined();
   });
 
-  it('drafts a file-level review comment when the branch has a pull request', () => {
+  it('keeps a file comment a local note when the branch has a pull request too', () => {
     const drafts = stubDrafts();
     withPullRequest();
     const { result } = run();
 
     act(() => result.current.comments.onSubmit('src/ledger/ledger.ts', null, 'Split this file'));
 
-    expect(drafts.addReviewDraft).toHaveBeenCalledWith({
-      sessionId: SESSION,
-      path: 'src/ledger/ledger.ts',
-      line: 0,
-      body: 'Split this file',
-    });
-    expect(h.noteSubmit).not.toHaveBeenCalled();
-    expect(result.current.comments.fileComposer).toEqual({
-      label: 'Draft on this file',
-      submitLabel: 'Add draft',
-    });
+    expect(h.noteSubmit).toHaveBeenCalledWith('src/ledger/ledger.ts', null, 'Split this file');
+    expect(drafts.addReviewDraft).not.toHaveBeenCalled();
+    expect(result.current.comments.fileComposer).toBeUndefined();
+    expect(result.current.comments.composerLabel).toBe('Note');
+    expect(result.current.comments.submitLabel).toBe('Add note');
   });
 
   it('still saves a line comment as a note when the branch has a pull request', () => {

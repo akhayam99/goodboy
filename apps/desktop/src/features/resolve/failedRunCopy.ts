@@ -6,7 +6,7 @@ export const FAILED_RUN_COPY = {
   anotherModel: 'Try another model',
   hintLabel: 'What should the agent do differently?',
   hintKeys: '↵ sends, ⇧↵ new line, Esc cancels',
-  replyYourself: 'Reply yourself',
+  reply: NAMES.reply,
   skip: 'Skip',
   openTranscript: 'Open transcript',
   moreActions: 'More actions',
@@ -29,7 +29,7 @@ export const tryAgainLabel = ({
 };
 
 const ROW_ACTION_VERB: Record<ResolveRowAction, string> = {
-  resolve: 'Draft a fix',
+  resolve: 'Fix',
   answer: 'Answer',
   review: 'Review',
   retry: NAMES.retry,

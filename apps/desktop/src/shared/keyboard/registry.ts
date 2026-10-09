@@ -19,6 +19,7 @@ export type ShortcutScope =
   | 'list'
   | 'selection'
   | 'review'
+  | 'pullRequest'
   | 'diff'
   | 'terminal'
   | 'composer'
@@ -31,10 +32,11 @@ export type ShortcutScope =
   | 'exploreSession';
 
 export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
-  list: 'In the Inbox and Notifications lists',
+  list: 'In the Tasks and Notifications lists',
   selection: 'In a list with checkboxes',
-  review: 'In the Review view',
-  diff: 'In the Diff view',
+  review: 'On the Comments tab',
+  pullRequest: 'On the Pull request tab',
+  diff: 'On the Files tab',
   terminal: 'In the terminal',
   composer: 'Where a chat composer is open',
   find: 'After a search in the view',
@@ -235,7 +237,7 @@ export const SHORTCUTS = {
   },
   'composer.submit': {
     combo: 'cmd+Enter',
-    label: 'Submit, or push in Review',
+    label: 'Submit, or push from Comments',
     plane: 'app',
     group: 'session',
   },
@@ -308,7 +310,7 @@ export const SHORTCUTS = {
     group: 'session',
   },
 
-  'lens.overview': { combo: 'cmd+alt+KeyO', label: 'Session', plane: 'lens', group: 'views' },
+  'lens.overview': { combo: 'cmd+alt+KeyO', label: NAMES.overview, plane: 'lens', group: 'views' },
   'lens.context': { combo: 'cmd+alt+KeyC', label: 'Show context', plane: 'lens', group: 'views' },
   'lens.goal': { combo: 'cmd+alt+KeyG', label: 'Context: Goal', plane: 'lens', group: 'views' },
   'lens.decisions': {
@@ -324,12 +326,17 @@ export const SHORTCUTS = {
     group: 'views',
   },
   'lens.workflows': { combo: 'cmd+alt+KeyW', label: NAMES.runs, plane: 'lens', group: 'views' },
-  'lens.agents': { combo: 'cmd+alt+KeyA', label: 'Agents', plane: 'lens', group: 'views' },
-  'lens.review': { combo: 'cmd+alt+KeyR', label: 'Review', plane: 'lens', group: 'views' },
-  'lens.questions': { combo: 'cmd+alt+KeyQ', label: 'Questions', plane: 'lens', group: 'views' },
+  'lens.agents': { combo: 'cmd+alt+KeyA', label: NAMES.agents, plane: 'lens', group: 'views' },
+  'lens.review': { combo: 'cmd+alt+KeyR', label: NAMES.comments, plane: 'lens', group: 'views' },
+  'lens.questions': {
+    combo: 'cmd+alt+KeyQ',
+    label: NAMES.questions,
+    plane: 'lens',
+    group: 'views',
+  },
   'lens.files': {
     combo: 'cmd+alt+KeyF',
-    label: 'Diff',
+    label: NAMES.files,
     plane: 'lens',
     group: 'views',
     scope: 'codeSession',
@@ -341,10 +348,10 @@ export const SHORTCUTS = {
     group: 'views',
     scope: 'exploreSession',
   },
-  'lens.plans': { combo: 'cmd+alt+KeyP', label: 'Artifacts', plane: 'lens', group: 'views' },
-  'lens.scripts': { combo: 'cmd+alt+KeyS', label: 'Scripts', plane: 'lens', group: 'views' },
-  'lens.terminal': { combo: 'cmd+alt+KeyT', label: 'Terminal', plane: 'lens', group: 'views' },
-  'lens.pr': { combo: 'cmd+alt+Digit1', label: 'Pull request', plane: 'lens', group: 'views' },
+  'lens.plans': { combo: 'cmd+alt+KeyP', label: NAMES.artifacts, plane: 'lens', group: 'views' },
+  'lens.scripts': { combo: 'cmd+alt+KeyS', label: NAMES.scripts, plane: 'lens', group: 'views' },
+  'lens.terminal': { combo: 'cmd+alt+KeyT', label: NAMES.terminal, plane: 'lens', group: 'views' },
+  'lens.pr': { combo: 'cmd+alt+Digit1', label: NAMES.pullRequest, plane: 'lens', group: 'views' },
   'lens.linear': { combo: 'cmd+alt+Digit2', label: 'Linear', plane: 'lens', group: 'views' },
   'lens.gitlab_issues': {
     combo: 'cmd+alt+Digit4',
@@ -480,6 +487,13 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'review',
     scope: 'review',
+  },
+  'pullRequest.edit': {
+    combo: 'KeyE',
+    label: 'Edit title',
+    plane: 'app',
+    group: 'review',
+    scope: 'pullRequest',
   },
   'review.reply': { combo: 'KeyR', label: 'Reply', plane: 'app', group: 'review', scope: 'review' },
   'review.skip': { combo: 'KeyS', label: 'Skip', plane: 'app', group: 'review', scope: 'review' },

@@ -1,8 +1,7 @@
-import { LensEmptyState, PageColumn } from '@goodboy/ui';
+import { EmptyState, PageColumn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { CommitsHistory } from '../../history/components/CommitsHistory';
-import { BranchBodyColumn } from './BranchBodyColumn';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -13,7 +12,8 @@ export const BranchCommits = ({ sessionId, worktreePath }: Props) => {
   if (worktreePath === null) {
     return (
       <PageColumn width="column">
-        <LensEmptyState
+        <EmptyState
+          size="section"
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No worktree for this session"
@@ -23,8 +23,8 @@ export const BranchCommits = ({ sessionId, worktreePath }: Props) => {
     );
   }
   return (
-    <BranchBodyColumn>
+    <PageColumn width="column" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <CommitsHistory sessionId={sessionId} worktreePath={worktreePath} />
-    </BranchBodyColumn>
+    </PageColumn>
   );
 };

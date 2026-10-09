@@ -1,6 +1,6 @@
 import { ArrowUpRight } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
-import { EmptyLine, Eyebrow, tintClasses } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, EmptyLine, Eyebrow, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { ProviderGlyph } from '../../../shared/components/RoutingPicker/ProviderGlyph';
 import { ProviderPolicyList } from '../../../features/providers/components/ProviderPolicyList';
@@ -39,7 +39,10 @@ export const ProvidersMenuPanel = ({ workspaceId, onClose }: Props) => {
                 onClose();
                 openProviderConnect({ providerId: id, connection: connectionOf({ id }) });
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-label text-foreground hover:bg-hover"
+              className={cn(
+                'flex w-full items-center gap-2 rounded-md px-2 py-1 text-label text-foreground',
+                ROW_INTERACTIVE,
+              )}
             >
               <ProviderGlyph id={id} size={ICON_SIZE.control} />
               <span className="flex-1 text-left">Connect {PROVIDER_LABEL[id]}</span>
@@ -54,7 +57,10 @@ export const ProvidersMenuPanel = ({ workspaceId, onClose }: Props) => {
               onClose();
               openProviderUsage({ providerId: null });
             }}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-label text-foreground hover:bg-hover"
+            className={cn(
+              'flex w-full items-center gap-2 rounded-md px-2 py-1 text-label text-foreground',
+              ROW_INTERACTIVE,
+            )}
           >
             <CONCEPT_ICONS.settings
               size={ICON_SIZE.row}

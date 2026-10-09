@@ -86,8 +86,7 @@ export const MountSuggestionCard = ({
           {consequenceSentence({ projectName, agentName, cause })}
         </span>
         <Button
-          variant="info"
-          emphasis="outline"
+          variant="secondary"
           size="sm"
           isBusy={isMounting}
           busyLabel="Adding"

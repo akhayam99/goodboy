@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NotificationAction } from '@goodboy/db';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
+const RUN_ID = 'run-1' as WorkflowRunId;
 
 import { mapNotificationAction } from './';
 
 const retrySummarizerSpy = vi.fn();
 const retryStepSummarySpy = vi.fn(async () => undefined);
+const orchestrateNextStepSpy = vi.fn(async () => undefined);
 const retryPublicationSpy = vi.fn(async () => ({
   publicationId: 'pub-1',
   repo: 'acme/web',
@@ -39,6 +41,7 @@ type FakeStore = {
   >;
   retrySummarizer: typeof retrySummarizerSpy;
   retryStepSummary: typeof retryStepSummarySpy;
+  orchestrateNextStep: typeof orchestrateNextStepSpy;
   retryPublication: typeof retryPublicationSpy;
   publishConversations: typeof publishConversationsSpy;
   navigate: typeof navigateSpy;
@@ -50,6 +53,7 @@ function buildStore(overrides: Partial<FakeStore> = {}): FakeStore {
     summarizerStatus: {},
     retrySummarizer: retrySummarizerSpy,
     retryStepSummary: retryStepSummarySpy,
+    orchestrateNextStep: orchestrateNextStepSpy,
     retryPublication: retryPublicationSpy,
     publishConversations: publishConversationsSpy,
     navigate: navigateSpy,
@@ -58,15 +62,31 @@ function buildStore(overrides: Partial<FakeStore> = {}): FakeStore {
   };
 }
 
+const mapAction = (action: NotificationAction, store: FakeStore) =>
+  mapNotificationAction(action, store as never);
+
 describe('mapNotificationAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
+  it('retry-orchestrator: asks the orchestrator again for that run, past the gate', () => {
+    const action: NotificationAction = {
+      kind: 'retry-orchestrator',
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+    };
+    const toastAction = mapAction(action, buildStore());
+
+    expect(toastAction?.label).toBe('Retry');
+    toastAction?.onClick();
+    expect(orchestrateNextStepSpy).toHaveBeenCalledWith(SESSION_ID, RUN_ID, { bypassGate: true });
+  });
+
   it('retry-summarizer: returns undefined when lastAttempt is missing', () => {
     const action: NotificationAction = { kind: 'retry-summarizer', sessionId: SESSION_ID };
     const store = buildStore({ summarizerStatus: { [SESSION_ID]: undefined } });
-    const result = mapNotificationAction(action, store as never);
+    const result = mapAction(action, store);
     expect(result).toBeUndefined();
   });
 
@@ -74,7 +94,7 @@ describe('mapNotificationAction', () => {
     const lastAttempt = { turnInput: 'user prompt', turnOutput: 'agent reply' };
     const action: NotificationAction = { kind: 'retry-summarizer', sessionId: SESSION_ID };
     const store = buildStore({ summarizerStatus: { [SESSION_ID]: { lastAttempt } } });
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     expect(toastAction?.label).toBe('Retry');
   });
 
@@ -82,7 +102,7 @@ describe('mapNotificationAction', () => {
     const lastAttempt = { turnInput: 'user prompt', turnOutput: 'agent reply' };
     const action: NotificationAction = { kind: 'retry-summarizer', sessionId: SESSION_ID };
     const store = buildStore({ summarizerStatus: { [SESSION_ID]: { lastAttempt } } });
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     toastAction?.onClick();
     expect(retrySummarizerSpy).toHaveBeenCalledWith(SESSION_ID);
   });
@@ -94,7 +114,7 @@ describe('mapNotificationAction', () => {
       agentId: AGENT_ID,
     };
     const store = buildStore();
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     expect(toastAction?.label).toBe('Retry');
   });
 
@@ -105,7 +125,7 @@ describe('mapNotificationAction', () => {
       agentId: AGENT_ID,
     };
     const store = buildStore();
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     toastAction?.onClick();
     expect(retryStepSummarySpy).toHaveBeenCalledWith({ sessionId: SESSION_ID, agentId: AGENT_ID });
   });
@@ -117,7 +137,7 @@ describe('mapNotificationAction', () => {
       agentId: AGENT_ID,
     };
     const store = buildStore();
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     expect(toastAction?.label).toBe('Open agent');
   });
 
@@ -131,7 +151,7 @@ describe('mapNotificationAction', () => {
     const revealed = vi.fn();
     window.addEventListener('goodboy:reveal-chat', revealed);
 
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     toastAction?.onClick();
     await vi.waitFor(() => expect(revealed).toHaveBeenCalled());
 
@@ -144,14 +164,14 @@ describe('mapNotificationAction', () => {
   it('retry-publication: returns action with the check and retry label', () => {
     const action: NotificationAction = { kind: 'retry-publication', sessionId: SESSION_ID };
     const store = buildStore();
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     expect(toastAction?.label).toBe('Check and retry');
   });
 
   it('retry-publication: onClick reconciles a failed publication and publishes the fresh preview', async () => {
     const action: NotificationAction = { kind: 'retry-publication', sessionId: SESSION_ID };
     const store = buildStore();
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     toastAction?.onClick();
     await vi.waitFor(() =>
       expect(publishConversationsSpy).toHaveBeenCalledWith({
@@ -172,7 +192,7 @@ describe('mapNotificationAction', () => {
       }) as unknown as typeof retryPublicationSpy,
     });
 
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     toastAction?.onClick();
     await vi.waitFor(() => expect(emitNotificationSpy).toHaveBeenCalled());
 
@@ -199,7 +219,7 @@ describe('mapNotificationAction', () => {
       }) as unknown as typeof publishConversationsSpy,
     });
 
-    const toastAction = mapNotificationAction(action, store as never);
+    const toastAction = mapAction(action, store);
     toastAction?.onClick();
     await vi.waitFor(() => expect(emitNotificationSpy).toHaveBeenCalled());
 

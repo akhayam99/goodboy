@@ -5,6 +5,7 @@ import { modelLabel } from '../../utils/chat-constants';
 import { contextUsageTone } from '../../../session/contextUsageTone';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import type { TurnFooterData } from './useTurnFooter';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly data: TurnFooterData;
@@ -24,7 +25,7 @@ export const UsageStatsRow = ({
   turns = null,
 }: Props) => (
   <>
-    <ProviderIcon provider={data.provider} size={11} />
+    <ProviderIcon provider={data.provider} size={ICON_SIZE.row} />
     {data.model != null && (
       <span>{modelLabel(data.model, providerIdOf({ value: data.provider }))}</span>
     )}
@@ -55,6 +56,6 @@ export const UsageStatsRow = ({
         </span>
       </span>
     )}
-    <Info size={11} aria-hidden />
+    <Info size={ICON_SIZE.row} aria-hidden />
   </>
 );

@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
-import { Input, SegmentedTabs, SkeletonText, type SegmentedTabOption } from '@goodboy/ui';
+import {
+  EmptyLine,
+  Input,
+  SegmentedTabs,
+  SkeletonText,
+  type SegmentedTabOption,
+} from '@goodboy/ui';
 import { activeDecisionsNewestFirst, type DecisionOp } from '@goodboy/core';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -252,9 +258,9 @@ export const DecisionsSection = ({
         <DecisionChangesList changes={changes} onJump={jumpTo} />
       ) : null}
       {activeRows.length === 0 ? (
-        <p className="text-body text-muted-foreground">
+        <EmptyLine className="text-body text-muted-foreground">
           No decisions yet. Agents record one when they settle a choice; you can add your own.
-        </p>
+        </EmptyLine>
       ) : (
         <ContextBlock title="Active" icon={CONCEPT_ICONS.decisions} count={active.length}>
           {pendingRemovals.size === 0 ? null : (

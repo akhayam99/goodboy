@@ -2,6 +2,7 @@ import type { PointerEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { DiffCommentSide } from '@goodboy/types';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly className?: string;
@@ -68,7 +69,7 @@ export const LineGutter = ({
             aria-hidden
             className="absolute left-1 top-0.5 hidden size-4 items-center justify-center rounded-sm bg-primary text-on-tone group-hover/line:flex"
           >
-            <Plus size={10} strokeWidth={2.5} />
+            <Plus size={ICON_SIZE.mark} strokeWidth={2.5} />
           </span>
         ) : null}
         {lineNumber}

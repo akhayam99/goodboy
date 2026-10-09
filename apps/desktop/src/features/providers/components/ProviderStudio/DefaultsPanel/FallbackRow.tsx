@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { getModelProvider } from '@goodboy/core';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { AUTO_LABEL } from '../../../../../shared/components/RoutingPicker/AutoTriggerLabel';
 import { recommendationSummary } from '../../../../../shared/components/RoutingPicker/recommendationSummary';
@@ -58,11 +58,11 @@ export const FallbackRow = ({
           className="inline-flex min-w-0 items-center gap-1 rounded-sm px-1 text-meta text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
         >
           {fallback == null ? (
-            <CONCEPT_ICONS.autoRouting size={11} aria-hidden className="shrink-0" />
+            <CONCEPT_ICONS.autoRouting size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           ) : null}
           <span className="truncate">{shown}</span>
           <ChevronDown
-            size={11}
+            size={ICON_SIZE.row}
             aria-hidden
             className={cn('shrink-0 transition-transform', isOpen && 'rotate-180')}
           />

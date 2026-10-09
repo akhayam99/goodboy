@@ -4,6 +4,7 @@ import { cn } from '../cn';
 import { TERMINAL_DIM } from '../terminalDim';
 import { FOCUS_RING } from '../focusRing';
 import { SELECTED_ROW_CLASSES } from '../selectedRow';
+import { ICON_SIZE } from '../iconSize';
 
 type Props = {
   readonly title: ReactNode;
@@ -49,7 +50,7 @@ export const RailCard = ({
     </span>
     <span className="flex shrink-0 items-center gap-2">
       {trailing}
-      <ChevronRight size={14} aria-hidden className="text-faint-foreground" />
+      <ChevronRight size={ICON_SIZE.control} aria-hidden className="text-faint-foreground" />
     </span>
   </button>
 );

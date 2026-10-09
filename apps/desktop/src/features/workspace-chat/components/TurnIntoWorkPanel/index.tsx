@@ -8,7 +8,7 @@ import {
   formatError,
   IconButton,
   Input,
-  KbdPill,
+  Kbd,
   Notice,
   ScrollFade,
   SegmentedTabs,
@@ -24,6 +24,7 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../shared/names';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { resolveScopedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { kindRouting } from '../../../session/agent-kind';
@@ -86,7 +87,7 @@ const upTo = ({ messages, anchorMessageId }: UpToParams): ReadonlyArray<ChatMess
   return index === -1 ? messages : messages.slice(0, index + 1);
 };
 
-export const TURN_INTO_WORK_LABEL = 'Turn into work';
+export const TURN_INTO_WORK_LABEL = NAMES.startWorkFromChat;
 
 type Landed = {
   readonly sessionId: SessionId;
@@ -442,7 +443,9 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
             </Button>
             <Button size="sm" disabled={!canStart} isBusy={isStarting} onClick={() => void start()}>
               {MODE_COPY[mode].action}
-              <KbdPill aria-hidden>{shortcutGlyphs('composer.submit')}</KbdPill>
+              <Kbd look="inline" aria-hidden>
+                {shortcutGlyphs('composer.submit')}
+              </Kbd>
             </Button>
           </FormActions>
         </div>

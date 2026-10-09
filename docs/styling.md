@@ -85,6 +85,15 @@ written one by one. Spacing takes whole steps of the 4px grid, never a half
 step. The roles and the ratchets that count the raw classes and the half steps
 are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
 
+Four more scales are ratcheted to zero by `scale-rules.test.ts` and
+`row-heights-on-the-scale.test.ts`: an icon is `ICON_SIZE.mark`, `row`, `control`
+or `hero` (10, 12, 14, 18), never a number; a gap is 4, 8, 12, 16, 24 or 32px
+(`gap-1`, `gap-2`, `gap-3`, `gap-4`, `gap-6`, `gap-8`, plus `gap-0.5`), never
+`gap-5`, `gap-7` or `gap-10`; a one-line row is 24, 28, 32, 36, 40 or 48px high;
+`font-mono` is code (a branch, a path, a command, a sha), and a number is sans
+with `tabular-nums`. Text colour follows `TEXT_ROLE` (label, secondary, hint,
+disabled). See [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#icon-ladder-and-row-scale).
+
 `no-token-bypass.test.ts` rejects any `text-[Npx]`, a display grade above `2xl`,
 `font-bold`, `rounded-xs` or `rounded-xl` and up, and an arbitrary `shadow-[`.
 The one standing exception for size is relative `em` sizing
@@ -176,7 +185,7 @@ the right of it, never the session sidebar.
 Every main pane renders through `PaneShell`, and its crumb, header and body
 sit in one `PageColumn`. At rest the column is centred in the pane, with equal
 space either side: Overview, Runs, Agents, Artifacts, the session pages, Chat,
-Workflows, Inbox detail, settings pages, agent and pull request detail. The
+Workflows, Tasks detail, settings pages, agent and pull request detail. The
 header, the trail band (the `Session` crumbs and the Ask button), the body and
 the footer share the same column edges, so moving from Overview to Runs to
 Agents to a settings page never shifts the first letter. The Ask button is the
@@ -185,6 +194,15 @@ edge, the header actions' right edge. The gutter is 24px a side, 16px once the
 pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
+
+The band above the title sits on that same column. The session trail band draws
+inside the page's `PageColumn`, and a studio's band does too, at the studio's tier
+(`STUDIO_META[kind].tier`: `column` for the page studios, `full` for the rail-plus-detail
+Chat and pairing), so the crumb starts where the title starts and Close ends where the
+column ends. The title row under it is one fixed 32px row (`PaneTitleRow`: `h-8`,
+centred, no wrap, a long title truncates), 40px below the pane top, which puts every
+title centre at 56px with its left edge on the column. A banner for the page (the first
+lap notice) is the first block of the body, inside the same column.
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
 on `full`). No view centres itself. Sub-pages follow the same tiers as their
@@ -198,7 +216,7 @@ Three width tiers, one rule each:
 | ------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | measure | `--measure`, 720px    | prose: transcript assistant text, plan prose, comment and note bodies, a Brief, Chat answers (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
 | column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                |
-| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Inbox lists, the Board (`PageColumn width="full"`)                                       |
+| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)                                       |
 
 A body that owns its scroll (`scroll="self"`: the agent transcript and its
 composer) puts its own `PageColumn` around the scrolling content and the
@@ -318,11 +336,11 @@ against the content, and the board header sits `gap-6` above its columns. A
 content, never a boundary inside content. Allowed: a vertical divider inside
 the chrome (between top bar or footer groups), a pane's fixed header against its
 scrolling body (the chat composer in a `PaneShell` dock, the `DrawerFrame`
-header), and inside a
+header, the comment action bar under the Branch thread), and inside a
 floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 
-Inside content, separation comes from gap (the `gap-4/6/8` scale), from
+Inside content, separation comes from gap (the `gap-3/4/6/8` scale), from
 a band (`Band`, `bg-fill` inside its parent), or from a label
 that carries text (`Eyebrow`, `TimelineDayRule`). An unlabeled line inside
 content is a bug, not a style choice. A toolbar group or a dialog block that
@@ -396,6 +414,12 @@ Interactive controls compose `FOCUS_RING` from `@goodboy/ui`. It draws a
 two-pixel `focus-ring` token and removes the native outline. A control clipped
 inside an overflow-hidden row adds `ring-inset`; it does not weaken or resize
 the shared ring.
+
+A ring shows on keyboard focus only: it is `focus-visible`, so a click never
+draws it. Every control in the top bar, every switch and every checkbox composes
+`FOCUS_RING`, and the `controls` journey tabs through the bar and a Settings row
+and checks the ring by the constant, not by a class written in a test. A
+selected card is a fill plus a check, never a ring, a border and a wash together.
 
 ## An expanded row is one group, not two
 

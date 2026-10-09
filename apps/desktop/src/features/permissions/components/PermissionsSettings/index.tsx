@@ -1,7 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
-import { Band, Collapsible, ErrorStrip, PanelLoading, STRIPED_LIST, cn } from '@goodboy/ui';
+import {
+  EmptyState,
+  Band,
+  Collapsible,
+  ErrorStrip,
+  PanelLoading,
+  STRIPED_LIST,
+  cn,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { usePermissionRules } from '../../hooks/usePermissionRules';
 import { DEFAULT_PERMISSION_MODE, pickerModeOf, type PickerMode } from '../../modeCopy';
@@ -108,7 +116,12 @@ export const PermissionsSettings = ({ workspaceId, renderDefaultRow = asIs }: Pr
           <PanelLoading label="Loading rules" />
         ) : null}
         {!rules.isLoading && rules.error === null && rules.rules.length === 0 ? (
-          <p className="text-meta text-muted-foreground">No rules yet</p>
+          <EmptyState
+            size="section"
+            icon={CONCEPT_ICONS.checks}
+            title="No rules yet"
+            description="Save a rule when deciding how an agent can use a tool."
+          />
         ) : null}
         {rules.rules.length > 0 ? (
           <div className={cn('flex flex-col rounded-lg bg-subtle p-1', STRIPED_LIST)}>

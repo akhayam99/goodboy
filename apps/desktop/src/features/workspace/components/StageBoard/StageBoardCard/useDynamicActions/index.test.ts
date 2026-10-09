@@ -11,8 +11,6 @@ const { state } = vi.hoisted(() => ({
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionGithub: {} as Record<string, unknown>,
-    sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
     summarizerStatus: {} as Record<string, { status: string }>,
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
     ensureProjectMounted: vi.fn(async () => undefined),
@@ -26,6 +24,7 @@ const { state } = vi.hoisted(() => ({
     branchThreadId: {} as Record<string, string | null>,
     hasUnread: false,
     runHasOpenQuestions: false,
+    fixableThreadIds: [] as ReadonlyArray<string>,
   },
 }));
 
@@ -34,6 +33,10 @@ vi.mock('../../../../../../store', () => ({
     getState: () => state,
   }),
   useSessionHasUnread: () => state.hasUnread,
+}));
+
+vi.mock('../../../../../resolve/useFixableThreadIds', () => ({
+  useFixableThreadIds: () => state.fixableThreadIds,
 }));
 
 vi.mock('../../../../../context/openQuestionsGate', () => ({
@@ -92,25 +95,12 @@ const mountEvent = ({
   createdAt: '2026-01-01T00:00:00Z',
 });
 
-const reviewComment = ({ id, threadId }: { readonly id: string; readonly threadId: string }) => ({
-  id,
-  author: 'reviewer',
-  authorAvatarUrl: null,
-  body: 'rename it',
-  createdAt: `2026-01-0${id}T00:00:00Z`,
-  url: `https://example.test/${id}`,
-  source: 'review',
-  resolved: false,
-  threadId,
-});
-
 beforeEach(() => {
   state.sessionOpenQuestions = {};
   state.sessionWorkflows = {};
   state.sessionPhaseRuns = {};
   state.sessionEvents = {};
-  state.sessionGithub = {};
-  state.sessionResolveThreads = {};
+  state.fixableThreadIds = [];
   state.summarizerStatus = {};
   state.hasUnread = false;
   state.runHasOpenQuestions = false;
@@ -202,22 +192,12 @@ describe('useDynamicActions', () => {
     expect(result.current.filter((a) => a.key.startsWith('mount:'))).toHaveLength(2);
   });
 
-  it('opens the fix panel with the eligible threads and never launches', () => {
-    state.sessionGithub = {
-      'sess-1': {
-        pr: { number: 12 },
-        detail: {
-          comments: [
-            reviewComment({ id: '1', threadId: 't1' }),
-            reviewComment({ id: '2', threadId: 't2' }),
-          ],
-        },
-      },
-    };
+  it('opens the fix panel with the fixable comments of the source and never launches', () => {
+    state.fixableThreadIds = ['t1', 't2'];
     const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
 
     const action = result.current.find((a) => a.key === 'resolve');
-    expect(action?.label).toBe('Resolve 2 comments');
+    expect(action?.label).toBe('Fix 2');
     expect(action?.icon).toBe(SUGGESTION_ICONS['resolve-threads']);
 
     action?.onClick();
@@ -229,32 +209,14 @@ describe('useDynamicActions', () => {
     expect(nav.openReview).not.toHaveBeenCalled();
   });
 
-  it('leaves a thread a running fix attempt already owns out of the count', () => {
-    state.sessionGithub = {
-      'sess-1': {
-        pr: { number: 12 },
-        detail: {
-          comments: [
-            reviewComment({ id: '1', threadId: 't1' }),
-            reviewComment({ id: '2', threadId: 't2' }),
-          ],
-        },
-      },
-    };
-    state.sessionResolveThreads = {
-      'sess-1': [{ threadId: 't2', state: 'working', stage: 'working' }],
-    };
+  it('counts a GitLab or Bitbucket comment the same way, with no GitHub pull request', () => {
+    state.fixableThreadIds = ['gitlab:d-1'];
     const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
-    expect(result.current.find((a) => a.key === 'resolve')?.label).toBe('Resolve 1 comment');
+
+    expect(result.current.find((a) => a.key === 'resolve')?.label).toBe('Fix 1');
   });
 
-  it('withholds the resolve action without a pull request', () => {
-    state.sessionGithub = {
-      'sess-1': {
-        pr: null,
-        detail: { comments: [reviewComment({ id: '1', threadId: 't1' })] },
-      },
-    };
+  it('withholds the resolve action when nothing is fixable', () => {
     const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
     expect(result.current.some((a) => a.key === 'resolve')).toBe(false);
   });

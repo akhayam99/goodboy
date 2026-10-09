@@ -385,8 +385,8 @@ export const InboxStudio = ({
     <StudioShell
       icon={CONCEPT_ICONS.inbox}
       tone={CONCEPT_TONE.inbox}
-      title="Inbox"
-      closeLabel="Close inbox"
+      title={NAMES.tasks}
+      closeLabel="Close tasks"
       isEscapeEnabled={pinnedRecord == null}
       onClose={onClose}
     >

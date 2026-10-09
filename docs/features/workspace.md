@@ -4,7 +4,7 @@ Keep your repos together, and let sessions work across them.
 
 ### Start a project from nothing
 
-Begin with an empty folder and no repository. **Start a new project** on the empty screen, in the workspace launcher and in the setup wizard makes the folder, starts a git repository on main with a first commit that holds only a .gitignore, and opens a first session that works in that folder. **Publish** creates a repository on your GitHub account, private or public, or links one you already have. When main is on the remote, **Move my work** puts what you have not committed into a session named bootstrap with its own worktree, and the folder is clean again.
+Begin with an empty folder and no repository. **Start a new project** on the empty screen, in the workspace launcher and in the setup wizard makes the folder, starts a git repository on main with a first commit that holds only a .gitignore, and opens a first session that works in that folder. **Publish** creates a repository on your GitHub account, private or public, or links one you already have. Without GitHub's command line tool the panel opens on **Use an existing repository**; choosing GitHub there shows the install command (`brew install gh` on macOS, a link elsewhere) with **Copy** and **Check again**, and the **Publish** button appears only once it can work. When main is on the remote, **Move my work** puts what you have not committed into a session named bootstrap with its own worktree, and the folder is clean again.
 
 ### Workspace with several projects
 
@@ -13,7 +13,7 @@ Begin with an empty folder and no repository. **Start a new project** on the emp
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="The Northwind workspace with one session open: its Projects section lists api on the branch feat/create-orders-endpoint and storefront-web on feat/checkout-orders-api, each with New worktree and its changes, above the activity timeline">
 </picture>
 
-Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of the session lists each repo it touches, with its branch, the size of its changes and **New worktree**. A project gets a branch only when an agent needs to edit it.
+Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of the session lists each repo it touches, with its branch, the size of its changes and **New branch**. A project gets a branch only when an agent needs to edit it.
 
 ### Starred projects, descriptions and base branch
 
@@ -22,7 +22,7 @@ Keep your repos together as one workspace, and let one session work across sever
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-light.webp" alt="The Harborline workspace settings, Projects 4: Starred ledger-core and payments-api with a one-line description each and the base branch main, then All projects with notify-relay and runbooks, and a note that starred projects come first for agents">
 </picture>
 
-Point agents at the right repo without naming it. Star a project and give it a one-line description: both go into each agent's brief, and starred projects come first in the project pickers. Each repo shows its base branch, **main** here, read from origin.
+Point agents at the right repo without naming it. Star a project and give it a one-line description: both go into each agent's brief, and starred projects come first in the project pickers. In the project list they sit under **Starred**, and the rest under **Other projects**. Each repo shows its base branch, **main** here, read from origin.
 
 ### Worktrees
 
@@ -31,7 +31,7 @@ Point agents at the right repo without naming it. Star a project and give it a o
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-light.webp" alt="The Projects of one session: ledger-core with three worktrees (idempotent-postings, part 3 of 6, pull request 418 in review; statement-backfill, part 5 of 6, Files kept with Reopen; rounding-drift, part 1 of 6, pull request 412 merged with Remove worktree) and notify-relay with pull request 96 in review">
 </picture>
 
-Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder next to your checkout with its own changes and pull request, and every row shows its part, its lines changed and its pull request. **New worktree** adds one, **Remove worktree** clears a merged one, and **Reopen** brings back one whose files were kept. **Copy worktree path** in **⌘K** copies where a session works, or lets you pick one when it has several, with **⌘Enter** to copy them all.
+Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder next to your checkout with its own changes and pull request, and every row shows its part, its lines changed and its pull request. **New branch** adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept. **Copy worktree path** in **⌘K** copies where a session works, or lets you pick one when it has several, with **⌘Enter** to copy them all.
 
 ### Several branches per project
 
@@ -74,10 +74,6 @@ Pick how new session branches are named. New sessions, in workspace settings, ho
 
 ### Copy settings from another workspace
 
-Workspace settings has one page per area: Projects, About you, New sessions, After merge, Review replies, Permissions and Skills.
-
-**Disconnect** sits at the end of Projects and App > Backup ends with **Reset**. A dot after a label means the value is not the default; its menu has **Reset**. From the menu of a page, **Restore defaults** puts that page back, and **Copy from…** takes the values of another workspace.
-
-**Copy all pages from…** and **Restore all workspace defaults**, under a line in the same menu, do the same for every page at once, workflow rules included, which are edited only in the Run defaults tab of Workflows. **⌘K** offers the same two as **Copy settings from another workspace** and **Restore workspace defaults**. You see what changes, page by page, before anything is saved, and **Undo** puts it back. Projects, folders, accounts and permission history are never copied.
+Workspace settings has one page per area: Projects, About you, New sessions, After merge, Replies and commits, Permissions and Skills. **Disconnect** sits at the end of Projects and App > Backup ends with **Reset**. A dot after a label means the value is not the default; its menu has **Reset**. From the menu of a page, **Restore defaults** puts that page back, and **Copy from…** takes the values of another workspace. **Copy all pages from…** and **Restore all workspace defaults**, under a line in the same menu, do the same for every page at once, workflow rules included, which are edited only in the Run defaults tab of Workflows. **⌘K** offers the same two as **Copy settings from another workspace** and **Restore workspace defaults**. You see what changes, page by page, before anything is saved, and **Undo** puts it back. Projects, folders, accounts and permission history are never copied.
 
 Stop tracking acts immediately and offers Undo for about 10 seconds. Cmd+Z outside text fields restores the latest app operation; restoring a tracked task never changes its session links.

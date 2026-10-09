@@ -4,6 +4,7 @@ import { Tooltip } from '../Tooltip';
 import type { TrailSegmentModel } from './types';
 import { TRAIL_CRUMB_CLASS, TRAIL_CURRENT_CLASS, TRAIL_LINK_CLASS } from './trailClasses';
 import { TrailLabel } from './TrailLabel';
+import { ICON_SIZE } from '../../iconSize';
 
 type Props = {
   readonly segment: TrailSegmentModel;
@@ -22,7 +23,7 @@ export const TrailCrumb = ({ segment, isCurrent, isIconOnly, delayStyle }: Props
         </span>
       ) : (
         <Icon
-          size={12}
+          size={ICON_SIZE.row}
           aria-hidden
           className={cn('shrink-0', segment.iconClassName ?? 'text-faint-foreground')}
         />

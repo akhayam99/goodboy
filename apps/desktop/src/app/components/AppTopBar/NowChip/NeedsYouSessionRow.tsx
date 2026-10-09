@@ -1,4 +1,11 @@
-import { cn, tintClasses, InlineMarkdown, inlineMarkdownText, type Tone } from '@goodboy/ui';
+import {
+  ROW_INTERACTIVE,
+  cn,
+  tintClasses,
+  InlineMarkdown,
+  inlineMarkdownText,
+  type Tone,
+} from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { useSessionStageInfo } from '../../../../store';
 import {
@@ -33,7 +40,10 @@ export const NeedsYouSessionRow = ({ session, onSelect, fallbackTone = 'neutral'
         type="button"
         onClick={() => onSelect({ sessionId: session.id as SessionId, reason: attention })}
         title={`${inlineMarkdownText({ text: session.goal })} · ${words}`}
-        className="flex w-full items-start gap-2 px-3 py-3 text-left transition-colors hover:bg-hover"
+        className={cn(
+          'flex w-full items-start gap-2 px-3 py-3 text-left transition-colors',
+          ROW_INTERACTIVE,
+        )}
       >
         <Icon
           size={ICON_SIZE.control}

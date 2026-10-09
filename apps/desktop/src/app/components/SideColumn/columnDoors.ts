@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/names';
 import { SquareKanban, type LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
@@ -12,7 +13,7 @@ export type ColumnDoor = {
 
 export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
   { id: 'board', label: 'Board', icon: SquareKanban, shortcutId: 'session.board' },
-  { id: 'inbox', label: 'Inbox', icon: CONCEPT_ICONS.inbox },
+  { id: 'inbox', label: NAMES.tasks, icon: CONCEPT_ICONS.inbox },
   { id: 'chat', label: 'Chat', icon: CONCEPT_ICONS.chat },
   { id: 'workflows', label: 'Workflows', icon: CONCEPT_ICONS.workflows },
 ];

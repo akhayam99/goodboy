@@ -1,7 +1,29 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
-import type { GetFn, Location, SessionView, SetFn } from './types';
+import { selectActiveMount, selectWritableMounts } from '../project-mounts/selectors';
+import type { AgentPane, BranchTab, GetFn, Location, SessionView, SetFn } from './types';
+
+type TabsParams = {
+  readonly state: AppState;
+  readonly sessionId: SessionId;
+  readonly target: SessionView['target'];
+};
+
+const branchTabsAfter = ({ state, sessionId, target }: TabsParams): AppState['branchTab'] => {
+  if (target?.kind === 'branch') {
+    return { ...state.branchTab, [sessionId]: target.tab };
+  }
+  if (!(sessionId in state.branchTab)) {
+    return state.branchTab;
+  }
+  const rest: Record<SessionId, BranchTab> = { ...state.branchTab };
+  delete rest[sessionId];
+  return rest;
+};
+
+const paneOf = ({ target }: { readonly target: SessionView['target'] }): AgentPane | null =>
+  target?.kind === 'thread' || target?.kind === 'agent' ? (target.pane ?? null) : null;
 
 type SurfaceParams = {
   readonly state: AppState;
@@ -18,7 +40,7 @@ const surfaceChanges = ({
 }: SurfaceParams): Partial<AppStore> => {
   const { lens, target } = view;
   const keep = <T>(isKept: boolean, current: T, next: T): T =>
-    isKept && !isRestore && target === null ? current : next;
+    isKept && !isRestore && (target === null || target.kind === 'agent') ? current : next;
   return {
     activeLens: { ...state.activeLens, [sessionId]: lens },
     sessionStudio: { ...state.sessionStudio, [sessionId]: view.studio },
@@ -50,10 +72,7 @@ const surfaceChanges = ({
         target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null,
       ),
     },
-    branchTab: {
-      ...state.branchTab,
-      [sessionId]: target?.kind === 'branch' ? target.tab : 'comments',
-    },
+    branchTab: branchTabsAfter({ state, sessionId, target }),
     branchThreadId: {
       ...state.branchThreadId,
       [sessionId]: target?.kind === 'branch' ? target.threadId : null,
@@ -88,9 +107,30 @@ const surfaceChanges = ({
     },
     agentPane: {
       ...state.agentPane,
-      [sessionId]: view.studio === null && target?.kind === 'thread' ? (target.pane ?? null) : null,
+      [sessionId]: view.studio === null ? (paneOf({ target }) ?? null) : null,
     },
   };
+};
+
+type ActiveMountParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly view: SessionView;
+};
+
+const syncActiveMount = ({ get, sessionId, view }: ActiveMountParams): void => {
+  const target = view.target;
+  if (target?.kind !== 'branch' || target.mountPath === null) {
+    return;
+  }
+  const state = get();
+  const shown = selectWritableMounts({ state, sessionId }).find(
+    (mount) => mount.worktreePath === target.mountPath,
+  );
+  if (shown === undefined || shown.mountId === selectActiveMount({ state, sessionId })?.mountId) {
+    return;
+  }
+  void state.setSessionActiveMount({ sessionId, mountId: shown.mountId }).catch(() => undefined);
 };
 
 type Params = {
@@ -130,6 +170,9 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
     drawer,
     openSessionDraftWorkspaceId: null,
   }));
+  if (isRestore) {
+    syncActiveMount({ get, sessionId, view: resolved });
+  }
   if (resolved.agentId !== null && resolved.studio === null) {
     void get()
       .selectAgent(sessionId, resolved.agentId)

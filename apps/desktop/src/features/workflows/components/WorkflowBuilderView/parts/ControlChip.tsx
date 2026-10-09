@@ -5,7 +5,6 @@ import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly label: string;
-  readonly isLabelShown?: boolean;
   readonly value: string;
   readonly marker?: ReactNode;
   readonly isOpen: boolean;
@@ -16,7 +15,6 @@ type Props = {
 
 export const ControlChip = ({
   label,
-  isLabelShown = true,
   value,
   marker = null,
   isOpen,
@@ -37,7 +35,7 @@ export const ControlChip = ({
       disabled && 'cursor-not-allowed opacity-60',
     )}
   >
-    {isLabelShown ? <span className="shrink-0 text-faint-foreground">{label}</span> : null}
+    <span className="shrink-0 text-faint-foreground">{label}</span>
     {marker}
     <span className="min-w-0 truncate text-foreground">{value}</span>
     <ChevronDown

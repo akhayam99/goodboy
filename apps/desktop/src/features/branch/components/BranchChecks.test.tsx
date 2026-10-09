@@ -11,7 +11,15 @@ vi.mock('../../../shared/lib/editor', async (importOriginal) => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { GhTokenStatus, IntegrationBinding, PrCheckRun, PrDetail } from '@goodboy/types';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import type {
+  GhTokenStatus,
+  IntegrationBinding,
+  IsoDateTime,
+  PrCheckRun,
+  PrDetail,
+  PullRequestView,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -304,25 +312,265 @@ describe('Checks tab when the read failed', () => {
   });
 });
 
-describe('Checks tab on another host', () => {
-  it('says Goodboy does not show GitLab pipelines yet and links the merge request', async () => {
+describe('Checks tab on Bitbucket', () => {
+  const VIEW: PullRequestView = {
+    host: 'bitbucket',
+    number: 12,
+    title: 'Guard the empty cart',
+    body: '',
+    url: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12',
+    state: 'open',
+    isDraft: false,
+    author: null,
+    baseBranch: 'main',
+    headBranch: 'nw/cart-guard',
+    headSha: null,
+    createdAt: '2026-10-01T10:00:00Z',
+    updatedAt: '2026-10-06T10:00:00Z',
+    mergedAt: null,
+    mergeable: null,
+    reviewDecision: null,
+    reviewers: [],
+    resolves: [],
+    checks: {
+      read: 'ok',
+      error: null,
+      runs: [
+        { name: 'unit', conclusion: 'success', detailsUrl: null, durationMs: 61000 },
+        { name: 'lint', conclusion: 'failure', detailsUrl: null, durationMs: 12000 },
+      ],
+    },
+    files: { count: 0, first: [] },
+    commits: [],
+    mergeMethods: ['squash', 'merge', 'rebase'],
+    mergeMethodReasons: {},
+  };
+
+  const viewEntry = (view: PullRequestView | null) => ({
+    [SESSION.id]: {
+      prNumber: 12,
+      mountId: useAppStore.getState().sessionActiveMount?.[SESSION.id] ?? null,
+      view,
+      isLoading: false,
+      error: null,
+      fetchedAt: '2026-10-07T09:00:00.000Z' as IsoDateTime,
+      edits: [],
+    },
+  });
+
+  beforeEach(() => {
+    seedResolveBitbucketScene({ selected: 'bitbucket' });
+    github({ pr: null, detail: null });
+  });
+
+  it('lists the rows of the statuses and never says Bitbucket checks are not shown', async () => {
+    useAppStore.setState({ pullRequestViews: viewEntry(VIEW), loadPullRequestView: vi.fn() });
+
+    await show();
+
+    expect(screen.queryByText("Goodboy doesn't show Bitbucket checks yet")).toBeNull();
+    expect(screen.getByText('unit')).toBeDefined();
+    expect(screen.getByText('lint')).toBeDefined();
+    expect(screen.queryByText(/GitHub/)).toBeNull();
+  });
+
+  it('warns with the fix and opens the Bitbucket settings when the token cannot read statuses', async () => {
+    const denied: PullRequestView = {
+      ...VIEW,
+      checks: { read: 'denied', error: 'The API token lacks the pull request scope', runs: [] },
+    };
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-settings', listener);
+    useAppStore.setState({ pullRequestViews: viewEntry(denied), loadPullRequestView: vi.fn() });
+
+    await show();
+
+    expect(screen.getByText('The API token lacks the pull request scope')).toBeDefined();
+    expect(screen.queryByText(/GitHub/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket settings' }));
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0]?.[0]).toMatchObject({
+      detail: { scope: 'tools', tool: 'bitbucket' },
+    });
+    window.removeEventListener('goodboy:open-settings', listener);
+  });
+
+  it('offers Retry and Details when the statuses could not be read, and retries the port', async () => {
+    const failed: PullRequestView = {
+      ...VIEW,
+      checks: { read: 'failed', error: 'Bitbucket did not answer, check the connection', runs: [] },
+    };
+    const load = vi.fn();
+    useAppStore.setState({ pullRequestViews: viewEntry(failed), loadPullRequestView: load });
+
+    await show();
+
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    expect(screen.getByText('Bitbucket did not answer, check the connection')).toBeDefined();
+    load.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(load).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
+  });
+});
+
+describe('Checks tab on a host that reads its own checks', () => {
+  const capabilities: { canReadChecks: boolean } = REVIEW_SOURCE_CAPABILITIES.gitlab;
+
+  const VIEW: PullRequestView = {
+    host: 'gitlab',
+    number: 57,
+    title: 'Retry dispatch with a cap',
+    body: '',
+    url: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57',
+    state: 'open',
+    isDraft: false,
+    author: null,
+    baseBranch: 'main',
+    headBranch: 'hl/dispatch-retry',
+    headSha: null,
+    createdAt: '2026-10-01T10:00:00Z',
+    updatedAt: '2026-10-06T10:00:00Z',
+    mergedAt: null,
+    mergeable: true,
+    reviewDecision: null,
+    reviewers: [],
+    resolves: [],
+    checks: {
+      read: 'ok',
+      error: null,
+      runs: [
+        { name: 'rspec', conclusion: 'success', detailsUrl: null, durationMs: 61000 },
+        { name: 'rubocop', conclusion: 'failure', detailsUrl: null, durationMs: 12000 },
+      ],
+    },
+    files: { count: 0, first: [] },
+    commits: [],
+    mergeMethods: ['merge'],
+    mergeMethodReasons: {},
+  };
+
+  const viewEntry = (view: PullRequestView | null) => ({
+    [SESSION.id]: {
+      prNumber: 57,
+      mountId: null,
+      view,
+      isLoading: false,
+      error: null,
+      fetchedAt: '2026-10-07T09:00:00.000Z' as IsoDateTime,
+      edits: [],
+    },
+  });
+
+  beforeEach(() => {
+    capabilities.canReadChecks = true;
     seedResolveGitlabScene({ selected: 'gitlab' });
+    github({ pr: null, detail: null });
+  });
+
+  afterEach(() => {
+    capabilities.canReadChecks = true;
+  });
+
+  it('lists the rows the port read, like GitHub does, and drops the host notice', async () => {
+    useAppStore.setState({ pullRequestViews: viewEntry(VIEW), loadPullRequestView: vi.fn() });
+
+    await show();
+
+    expect(screen.queryByText("Goodboy doesn't show GitLab pipelines yet")).toBeNull();
+    expect(screen.getByText('rspec')).toBeDefined();
+    expect(screen.getByText('rubocop')).toBeDefined();
+  });
+
+  it('says the port is still reading while it has no answer', async () => {
+    useAppStore.setState({ pullRequestViews: {}, loadPullRequestView: vi.fn() });
+
+    await show();
+
+    expect(screen.queryByText("Goodboy doesn't show GitLab pipelines yet")).toBeNull();
+    expect(screen.queryByText('rspec')).toBeNull();
+  });
+
+  it('says what the token cannot read, names the project and reloads on Check again', async () => {
+    const load = vi.fn();
+    useAppStore.setState({
+      pullRequestViews: viewEntry({
+        ...VIEW,
+        checks: { read: 'denied', error: '403 Forbidden', runs: [] },
+      }),
+      loadPullRequestView: load,
+    });
+    const opened: Array<unknown> = [];
+    const listen = (event: Event): void => {
+      opened.push((event as CustomEvent).detail);
+    };
+    window.addEventListener('goodboy:open-settings', listen);
+
+    await show();
+
+    expect(screen.getByText("Goodboy can't read pipelines for notify-relay")).toBeDefined();
+    expect(screen.getByText(/Give it the `api` scope/)).toBeDefined();
+    expect(screen.queryByText(/GitHub/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab settings' }));
+    expect(opened).toEqual([{ scope: 'tools', tool: 'gitlab' }]);
+    load.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
+    expect(refresh).not.toHaveBeenCalled();
+    window.removeEventListener('goodboy:open-settings', listen);
+  });
+
+  it('says it could not read the pipelines and retries through the port', async () => {
+    const load = vi.fn();
+    useAppStore.setState({
+      pullRequestViews: viewEntry({
+        ...VIEW,
+        checks: { read: 'failed', error: 'http error 500: boom', runs: [] },
+      }),
+      loadPullRequestView: load,
+    });
+
+    await show();
+
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    load.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
+  });
+
+  it('names a read that failed before any view came back, with Retry', async () => {
+    const load = vi.fn();
+    useAppStore.setState({
+      pullRequestViews: {
+        [SESSION.id]: {
+          prNumber: 57,
+          mountId: null,
+          view: null,
+          isLoading: false,
+          error: 'http error 500: boom',
+          errorKind: 'failed',
+          fetchedAt: null,
+          edits: [],
+        },
+      },
+      loadPullRequestView: load,
+    });
+
+    await show();
+
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    load.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
+  });
+
+  it('keeps the host notice while the flag is off', async () => {
+    capabilities.canReadChecks = false;
+    useAppStore.setState({ pullRequestViews: viewEntry(VIEW), loadPullRequestView: vi.fn() });
 
     await show();
 
     expect(screen.getByText("Goodboy doesn't show GitLab pipelines yet")).toBeDefined();
-    expect(screen.queryByText(/GitHub/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /View on GitLab/ }));
-    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('/merge_requests/57'));
-  });
-
-  it('says Goodboy does not show Bitbucket checks yet', async () => {
-    seedResolveBitbucketScene({ selected: 'bitbucket' });
-
-    await show();
-
-    expect(screen.getByText("Goodboy doesn't show Bitbucket checks yet")).toBeDefined();
-    expect(screen.getByRole('button', { name: /View on Bitbucket/ })).toBeDefined();
-    expect(screen.queryByText(/GitHub/)).toBeNull();
+    expect(screen.queryByText('rspec')).toBeNull();
   });
 });

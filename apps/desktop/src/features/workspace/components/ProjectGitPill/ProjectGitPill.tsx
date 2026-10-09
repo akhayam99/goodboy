@@ -57,7 +57,7 @@ export const ProjectGitPill = ({
           <span className="max-w-36 truncate">{label}</span>
           {isWarning ? (
             <span data-testid="project-git-warning" className="flex items-center text-warning">
-              <AlertTriangle size={10} aria-hidden />
+              <AlertTriangle size={ICON_SIZE.mark} aria-hidden />
             </span>
           ) : uncommittedCount > 0 ? (
             <span

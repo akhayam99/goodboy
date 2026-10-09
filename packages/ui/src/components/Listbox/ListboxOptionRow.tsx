@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { cn } from '../../cn';
 import type { ListboxMatch } from './filterOptions';
 import { HighlightedLabel } from './HighlightedLabel';
+import { ICON_SIZE } from '../../iconSize';
 
 export type ListboxOptionRowProps = {
   readonly id: string;
@@ -84,7 +85,7 @@ export const ListboxOptionRow = ({
               isSelected ? 'border-primary bg-primary text-on-tone' : 'border-border bg-background',
             )}
           >
-            {isSelected ? <Check size={10} strokeWidth={3} /> : null}
+            {isSelected ? <Check size={ICON_SIZE.mark} strokeWidth={3} /> : null}
           </span>
         </span>
       ) : null}
@@ -132,7 +133,7 @@ export const ListboxOptionRow = ({
       ) : null}
       {isEmphasized ? (
         <Check
-          size={14}
+          size={ICON_SIZE.control}
           aria-hidden
           className={cn('shrink-0 text-foreground', hasSecondLine && 'mt-0.5')}
         />

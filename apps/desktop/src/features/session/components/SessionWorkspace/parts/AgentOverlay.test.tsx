@@ -37,6 +37,8 @@ describe('AgentOverlay', () => {
     );
 
     expect(screen.queryByText('This agent is no longer in this session')).toBeNull();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByTestId('agent-header-title-row')).toBeDefined();
   });
 
   it('offers a way back when the loaded session no longer has the agent', () => {
@@ -53,6 +55,8 @@ describe('AgentOverlay', () => {
     );
 
     expect(screen.getByText('This agent is no longer in this session')).toBeDefined();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByTestId('agent-header-title-row')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: /back/i }));
     expect(onBack).toHaveBeenCalledOnce();
   });

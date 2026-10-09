@@ -198,6 +198,8 @@ export const seedResolveBitbucketScene = ({ selected }: Params): void => {
         branch: BRANCH,
         prs: [PR],
         links: [],
+        checks: null,
+        reviewDecision: null,
       },
     },
     reviewSourceThreads: {

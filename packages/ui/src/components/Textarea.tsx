@@ -45,7 +45,7 @@ export const Textarea = ({
       ref={ref}
       value={value}
       className={cn(
-        'native-scroll w-full rounded-md border border-border bg-background px-3 py-2 text-body text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50 resize-none transition-[border-color,box-shadow] focus-visible:shadow-md',
+        'native-scroll w-full rounded-md border border-border bg-background px-3 py-2 text-label text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:bg-fill disabled:text-disabled-foreground resize-none transition-[border-color,box-shadow] focus-visible:shadow-md',
         !autoGrow && 'min-h-16',
         className,
       )}

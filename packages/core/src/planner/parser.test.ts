@@ -30,6 +30,15 @@ describe('parsePlannerOutput', () => {
     expect(out.steps[1]!.role).toBe('implementer');
   });
 
+  it('turns a resolver step into an implementer step', () => {
+    const raw = JSON.stringify({
+      workflowName: 'Fix review',
+      reasoning: 'One pass.',
+      steps: [{ name: 'Fix findings', role: 'resolver', promptPrefix: 'x', expectedOutput: 'y' }],
+    });
+    expect(parsePlannerOutput(raw).steps[0]!.role).toBe('implementer');
+  });
+
   it('strips json code fences', () => {
     const fenced = '```json\n' + validJson + '\n```';
     const out = parsePlannerOutput(fenced);
@@ -178,7 +187,7 @@ describe('parsePlannerOutput', () => {
 
   it('advertises exactly the selection-eligible role vocabulary', () => {
     expect(PLANNER_SYSTEM_PROMPT).toContain(
-      '"role": "<scout|investigator|planner|implementer|reviewer|tester|resolver|docs|report|wireframe|custom>"',
+      '"role": "<scout|investigator|planner|implementer|reviewer|tester|docs|report|wireframe|custom>"',
     );
   });
 

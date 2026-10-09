@@ -5,6 +5,7 @@ import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { NamedProviderChip } from './NamedProviderChip';
 import { ProviderGlyph } from './ProviderGlyph';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -75,7 +76,7 @@ export const ProviderGrid = ({
                 )}
               >
                 <span className={cn(!isConnected && 'opacity-35')}>
-                  <ProviderGlyph id={id} size={15} />
+                  <ProviderGlyph id={id} size={ICON_SIZE.control} />
                 </span>
                 {!isConnected ? (
                   <span
@@ -100,7 +101,7 @@ export const ProviderGrid = ({
           }}
           className="inline-flex min-w-0 items-center justify-center gap-1 rounded-md text-chip font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
         >
-          <Plus size={13} aria-hidden className="shrink-0" />
+          <Plus size={ICON_SIZE.control} aria-hidden className="shrink-0" />
           <span className="truncate">Add</span>
         </button>
       )}

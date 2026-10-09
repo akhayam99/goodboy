@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { CrumbMenuRow } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BranchName } from './BranchName';
@@ -18,9 +18,9 @@ export const BranchSwitcherRow = ({ row, onChoose }: Props) => (
     data-menu-label={row.label}
     onClick={() => onChoose(row)}
     className={cn(
-      'flex h-7.5 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left outline-none',
-      'text-foreground hover:bg-hover focus:bg-hover focus-visible:ring-2 focus-visible:ring-focus-ring',
-      'motion-safe:transition-colors',
+      'flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left outline-none',
+      'text-foreground',
+      ROW_INTERACTIVE,
     )}
   >
     <CONCEPT_ICONS.projectRepo

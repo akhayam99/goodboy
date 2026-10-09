@@ -56,17 +56,17 @@ const landedButtonStartingWith = (prefix: string): Step => ({
 });
 
 const STEPS: Readonly<Record<ChatWorkStage, ReadonlyArray<Step>>> = {
-  drawer: [buttonWithText('Start work')],
-  project: [buttonWithText('Start work'), comboboxLabelled('Project')],
-  add: [buttonWithText('Start work'), tabWithText('Add to a session')],
+  drawer: [buttonWithText('Start work from chat')],
+  project: [buttonWithText('Start work from chat'), comboboxLabelled('Project')],
+  add: [buttonWithText('Start work from chat'), tabWithText('Add to a session')],
   session: [
-    buttonWithText('Start work'),
+    buttonWithText('Start work from chat'),
     tabWithText('Add to a session'),
     comboboxLabelled('Session'),
   ],
-  started: [buttonWithText('Start work'), buttonWithText('Start session')],
+  started: [buttonWithText('Start work from chat'), buttonWithText('Start session')],
   back: [
-    buttonWithText('Start work'),
+    buttonWithText('Start work from chat'),
     buttonWithText('Start session'),
     landedButtonStartingWith('Back to '),
   ],

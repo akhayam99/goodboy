@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { InlineConfirm, SelectionCheckbox, cn } from '@goodboy/ui';
+import { EmptyLine, InlineConfirm, SelectionCheckbox, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import {
   isStorageArtifactKept,
@@ -123,7 +123,7 @@ export const ArtifactRow = ({
         </span>
         <span className={cn(ARTIFACT_COLUMN.size, 'text-meta text-foreground')}>
           {artifact.sizeBytes === null ? (
-            <span className="text-faint-foreground">No copy</span>
+            <EmptyLine className="text-faint-foreground">No copy</EmptyLine>
           ) : (
             formatBytes({ bytes: artifact.sizeBytes })
           )}

@@ -33,6 +33,7 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
   ),
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { LinkIssueAction } from './LinkIssueAction';
 
 const SESSION_ID = 'sess-1' as SessionId;
@@ -113,11 +114,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('LinkIssueAction', () => {
-  it('always names the action and its L shortcut', () => {
+  it('names the action on the chip and keeps its L shortcut in the tooltip', () => {
     render(<LinkIssueAction session={session} />);
 
-    expect(trigger().textContent).toContain('Link work');
-    expect(trigger().textContent).toContain('L');
+    expect(trigger().textContent).toBe('Link work');
+    expect(tooltipTextOf({ element: trigger() })).toContain('L');
   });
 
   it('opens on L, never while typing in a field', () => {
@@ -142,7 +143,7 @@ describe('LinkIssueAction', () => {
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
 
-    expect(screen.getByText('From your inbox')).toBeDefined();
+    expect(screen.getByText('From Tasks')).toBeDefined();
     expect(screen.getByText('Results')).toBeDefined();
     expect(optionNames()).toEqual([
       'Timeout in ledger sync job (LEDGER-2M)',
@@ -178,6 +179,19 @@ describe('LinkIssueAction', () => {
       expect.objectContaining({ provider: 'github', identifier: 'notify-relay#88' }),
     );
     expect(screen.queryByRole('combobox', { name: 'Search work to link' })).toBeNull();
+  });
+
+  it('invites a link or a search while the query is empty, and says nothing matched once it is not', () => {
+    work.items = [];
+    render(<LinkIssueAction session={session} />);
+    fireEvent.click(trigger());
+
+    screen.getByText('Paste a link or search');
+    expect(screen.queryByText(/matches\./)).toBeNull();
+
+    fireEvent.change(search(), { target: { value: 'zzz' } });
+    screen.getByText(/Nothing in .* matches\./);
+    expect(screen.queryByText('Paste a link or search')).toBeNull();
   });
 
   it('hides a task linked to every scope', () => {

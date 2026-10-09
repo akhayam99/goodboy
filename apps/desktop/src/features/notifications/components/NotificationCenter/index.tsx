@@ -1,11 +1,15 @@
+import { NAMES } from '../../../../shared/names';
 import { useEffect, useRef, useState } from 'react';
 import { Bell, ChevronRight } from 'lucide-react';
 import {
+  ROW_INTERACTIVE,
   AnchoredPopover,
   cn,
   Divider,
   SegmentedTabs,
   Skeleton,
+  FOCUS_RING,
+  TOP_BAR_CONTROL,
   EmptyState,
   Tooltip,
   useDropdown,
@@ -120,12 +124,15 @@ export const NotificationCenter = () => {
         dropdown={dropdown}
         hasBackdrop
         trigger={
-          <Tooltip content="notifications" side="top">
+          <Tooltip content={NAMES.notifications} side="top">
             <button
               type="button"
               onClick={handleOpen}
               className={cn(
-                'relative flex items-center justify-center rounded-sm p-2 motion-safe:transition-colors',
+                TOP_BAR_CONTROL.square,
+                TOP_BAR_CONTROL.radius,
+                FOCUS_RING,
+                'relative flex shrink-0 items-center justify-center motion-safe:transition-colors',
                 open
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-hover',
@@ -136,7 +143,7 @@ export const NotificationCenter = () => {
               {unread > 0 && (
                 <span
                   className={cn(
-                    'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-semibold leading-none text-on-tone tabular-nums',
+                    'absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 font-semibold leading-none text-on-tone tabular-nums',
                     unread > 9 ? 'text-chip' : 'text-meta',
                   )}
                 >
@@ -219,7 +226,10 @@ export const NotificationCenter = () => {
             close();
             openNotificationsStudio();
           }}
-          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-meta text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+          className={cn(
+            'flex w-full items-center justify-between gap-2 px-3 py-2 text-meta text-muted-foreground hover:text-foreground',
+            ROW_INTERACTIVE,
+          )}
         >
           Open all notifications
           <ChevronRight size={ICON_SIZE.row} aria-hidden />

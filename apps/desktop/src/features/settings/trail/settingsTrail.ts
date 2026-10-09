@@ -12,21 +12,11 @@ type Params = {
   readonly scope: SettingsPageScope;
   readonly appSection: AppSection;
   readonly workspacePage: WorkspacePage;
-  readonly workspaceName: string | null;
 };
 
-const scopeLabel = ({
-  scope,
-  workspaceName,
-}: {
-  readonly scope: SettingsPageScope;
-  readonly workspaceName: string | null;
-}): string => {
+const scopeLabel = ({ scope }: { readonly scope: SettingsPageScope }): string => {
   if (scope === 'app') {
     return 'App';
-  }
-  if (scope === 'workspace' && workspaceName !== null) {
-    return `Workspace · ${workspaceName}`;
   }
   return SCOPE_ITEMS.find((item) => item.scope === scope)?.label ?? 'Settings';
 };
@@ -35,7 +25,6 @@ export const settingsTrail = ({
   scope,
   appSection,
   workspacePage,
-  workspaceName,
 }: Params): ReadonlyArray<TrailSegmentModel> => {
   const scopeItem = SCOPE_ITEMS.find((item) => item.scope === scope);
   const segments: ReadonlyArray<TrailSegmentModel> = [
@@ -47,7 +36,7 @@ export const settingsTrail = ({
     },
     {
       id: 'scope',
-      label: scopeLabel({ scope, workspaceName }),
+      label: scopeLabel({ scope }),
       icon: scopeItem === undefined ? CONCEPT_ICONS.settings : CONCEPT_ICONS[scopeItem.concept],
     },
   ];

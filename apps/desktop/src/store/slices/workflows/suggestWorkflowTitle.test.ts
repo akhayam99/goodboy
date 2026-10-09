@@ -21,6 +21,8 @@ const buildSuggest = () => {
   const state = {
     sessions: [session],
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
+    providers: [],
+    providerCooldowns: {},
     workspaceOverrides: {},
     phaseTemplates: {},
   };

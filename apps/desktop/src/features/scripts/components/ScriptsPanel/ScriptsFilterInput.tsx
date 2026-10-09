@@ -1,7 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Search } from 'lucide-react';
-import { KbdPill } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Kbd, SearchField } from '@goodboy/ui';
 import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
 
 type Props = {
@@ -28,26 +26,22 @@ export const ScriptsFilterInput = ({ value, onChange }: Props) => {
   }, []);
 
   return (
-    <div className="flex h-7 w-52 items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 focus-within:ring-2 focus-within:ring-focus-ring">
-      <Search size={ICON_SIZE.row} className="shrink-0 text-muted-foreground" aria-hidden />
-      <input
-        ref={inputRef}
-        type="search"
-        aria-label="Filter scripts"
-        placeholder="Filter scripts"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== 'Escape' || value === '') {
-            return;
-          }
-          event.preventDefault();
-          event.stopPropagation();
-          onChange('');
-        }}
-        className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-muted-foreground"
-      />
-      {value === '' ? <KbdPill>/</KbdPill> : null}
-    </div>
+    <SearchField
+      inputRef={inputRef}
+      value={value}
+      onChange={onChange}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || value === '') {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        onChange('');
+      }}
+      ariaLabel="Filter scripts"
+      placeholder="Filter scripts"
+      hint={<Kbd look="cap">/</Kbd>}
+      className="w-52"
+    />
   );
 };

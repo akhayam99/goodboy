@@ -33,7 +33,7 @@ import {
   visible,
 } from './harness';
 
-const ANCHOR = /^Search or ask/;
+const ANCHOR = /^Search \(/;
 
 const focusAnchor = async (): Promise<HTMLElement> => {
   const anchor = await screen.findByRole('button', { name: ANCHOR });
@@ -355,7 +355,21 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({ id: 'lens.terminal', lands: both(lens('terminal'), () => heading('Terminal')) }),
   pressRow({
     id: 'lens.pr',
-    lands: both(branchTab('comments'), () => heading(/Stop retried webhooks/)),
+    lands: both(branchTab('pr'), () => heading(/Stop retried webhooks/)),
+  }),
+  keyRow({
+    id: 'pullRequest.edit',
+    open: async () => {
+      await press('lens.pr')();
+      expect(
+        await screen.findByRole('tab', { name: /^Pull request/, selected: true }, WAIT),
+      ).toBeDefined();
+      await pressed('pullRequest.edit', document.body);
+    },
+    lands: async () =>
+      expect(
+        await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT),
+      ).toBeDefined(),
   }),
   pressRow({ id: 'lens.context', lands: drawerIs(null) }),
   pressRow({ id: 'lens.goal', lands: drawerIs('goal') }),
@@ -401,7 +415,7 @@ const seedInbox = async (): Promise<void> => {
   useAppStore.setState({
     starredIssues: { [workspaceId]: [0, 1, 2].map(starredIssue) },
   });
-  await clickButton('Inbox');
+  await clickButton('Tasks');
   await visible('region', 'Starred');
 };
 
@@ -556,7 +570,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'list.open',
     open: inboxKey('list.open'),
-    lands: () => visible('dialog', 'Launch a session'),
+    lands: () => visible('region', 'Brief from HBL-501'),
   }),
   keyRow({
     id: 'list.openInTool',
@@ -588,9 +602,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'list.search',
     open: inboxKey('list.search'),
     lands: async () =>
-      expect(document.activeElement).toBe(
-        screen.getByRole('textbox', { name: 'Search the inbox' }),
-      ),
+      expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Search tasks' })),
   }),
 ];
 
@@ -690,10 +702,13 @@ const neighbourOf = (threadId: string, step: 1 | -1): string | null => {
 };
 
 const focusThread = async (threadId: string): Promise<HTMLElement> => {
-  if (document.querySelector(`[data-thread-id="${threadId}"]`) === null) {
-    document
-      .querySelector<HTMLElement>('nav[aria-label="Comments"] button[aria-expanded="false"]')
-      ?.click();
+  for (const toggle of document.querySelectorAll<HTMLElement>(
+    'nav[aria-label="Comments"] button[aria-expanded="false"]',
+  )) {
+    if (document.querySelector(`[data-thread-id="${threadId}"]`) !== null) {
+      break;
+    }
+    toggle.click();
     await settle();
   }
   const row = threadRow(threadId);
@@ -807,7 +822,8 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
   worldRow({
     id: 'review.reply',
     world: 'resolve',
-    open: reviewKey('review.reply', THREADS.metrics),
+    note: 'opens the reply box on a comment nobody started',
+    open: reviewKey('review.reply', THREADS.constant),
     lands: async () =>
       waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA'), WAIT),
   }),
@@ -932,7 +948,11 @@ const composerKeys: { last: KeyboardEvent | null } = { last: null };
 const openAgentChat = async (ctx: Ctx): Promise<HTMLElement> => {
   hydrateBranches();
   useAppStore.getState().navigate({
-    to: agentPlace({ sessionId: ctx.sessionId, agentId: standaloneAgent(ctx) as never }),
+    to: agentPlace({
+      sessionId: ctx.sessionId,
+      agentId: standaloneAgent(ctx) as never,
+      pane: 'transcript',
+    }),
   });
   await settle();
   const composer = await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT);

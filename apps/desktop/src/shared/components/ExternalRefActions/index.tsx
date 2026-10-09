@@ -2,6 +2,7 @@ import type { MouseEvent } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { openUrl } from '../../lib/editor';
 import { CopyButton } from '@goodboy/ui';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly url: string;
@@ -26,9 +27,14 @@ export const ExternalRefActions = ({ url, label, hostLabel }: Props) => {
         aria-label={`Open in ${hostLabel}`}
         className="inline-flex shrink-0 items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
       >
-        <ExternalLink size={13} aria-hidden />
+        <ExternalLink size={ICON_SIZE.row} aria-hidden />
       </a>
-      <CopyButton presentation="icon" value={url} label={`Copy ${label} link`} size={13} />
+      <CopyButton
+        presentation="icon"
+        value={url}
+        label={`Copy ${label} link`}
+        size={ICON_SIZE.row}
+      />
     </span>
   );
 };

@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
-import { FOCUS_RING, ICON_SIZE, StateBadge, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, ICON_SIZE, Chip, Tooltip, cn } from '@goodboy/ui';
 import type { RoleSetEntry } from '../../../../roleSetEntries';
 
 type Props = {
@@ -50,7 +50,7 @@ export const RoleModelChip = ({ entry, position, disabled, onRemove, onMove }: P
       <span className={cn(entry.isGone && 'text-faint-foreground line-through')}>
         {entry.label}
       </span>
-      {entry.isGone ? <StateBadge>Gone, skipped</StateBadge> : null}
+      {entry.isGone ? <Chip kind="state" tone="neutral" label="Gone, skipped" /> : null}
       <Tooltip content="Remove">
         <button
           type="button"

@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { CommandCenter } from './CommandCenter';
@@ -28,5 +28,17 @@ describe('CommandCenter', () => {
 
     expect(hint?.getAttribute('data-look')).toBe('inline');
     expect(hint?.textContent).toBe(shortcutGlyphs('palette.open'));
+  });
+
+  it('says Search only and keeps the workspace name in the tooltip', () => {
+    render(<CommandCenter />);
+    const button = screen.getByRole('button', {
+      name: `Search (${shortcutGlyphs('palette.open')})`,
+    });
+
+    expect(button.textContent).toBe(`Search${shortcutGlyphs('palette.open')}`);
+    expect(button.getAttribute('title')).toContain('Search ');
+    expect(button.getAttribute('title')).toContain(shortcutGlyphs('palette.open'));
+    expect(screen.queryByText(/Search or ask/)).toBeNull();
   });
 });

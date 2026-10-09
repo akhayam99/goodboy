@@ -7,6 +7,7 @@ import type { RecordFrame } from '../../../../../shared/components/StudioDetail/
 import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
 import { useEffect, useMemo, useState } from 'react';
 import { Notice, RefreshIconButton, PaneShell } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
@@ -381,7 +382,7 @@ export const MrDetailPanel = ({
       title="New merge request"
       meta={
         <span className="inline-flex items-center gap-2 font-mono">
-          <GitBranch size={11} aria-hidden />
+          <GitBranch size={ICON_SIZE.row} aria-hidden />
           {branch ?? 'no branch'}
         </span>
       }

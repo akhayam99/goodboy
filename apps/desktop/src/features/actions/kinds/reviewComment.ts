@@ -26,12 +26,12 @@ import {
 } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
-import { laneAcceptCountOf } from '../../resolve/laneAcceptCount';
+import { laneAcceptCountOf, laneAcceptNotesOf } from '../../resolve/laneAcceptCount';
 import { acceptUpToLabel } from '../../resolve/laneCopy';
 import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
 import { verdictReply } from '../../resolve/commentVerdict';
 import { postReplyWhenNothingWaits } from '../../resolve/replyDelivery';
-import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
+import { replyOf, rowStateOf, threadRowsOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { REMOTE_LABEL, commitUrlOf, remoteActionLabel, remoteOf } from '../../resolve/reviewRemote';
 import type {
@@ -41,6 +41,7 @@ import type {
 import { requestReview, type ReviewComposeMode } from '../../review/reviewRequest';
 import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
+import { NAMES } from '../../../shared/names';
 
 export type ReviewCommentFacts = {
   readonly sessionId: SessionId;
@@ -68,6 +69,7 @@ export type ReviewCommentFacts = {
   readonly isReplyFailure: boolean;
   readonly hasFixOnBranch: boolean;
   readonly laneAcceptCount: number;
+  readonly laneAcceptNotes: number;
 };
 
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
@@ -137,12 +139,9 @@ const accept = async ({ facts, env }: RunParams): Promise<void> => {
   await acceptReviewItem({
     state: env.getState(),
     sessionId: facts.sessionId,
-    threadId: facts.threadId,
     itemId: facts.itemId,
     revision: facts.revision,
     reply: facts.reply,
-    isNote: facts.isNote,
-    hasPr: facts.hasPr,
   });
   await postReplyWhenNothingWaits({
     getState: env.getState,
@@ -184,7 +183,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
   noun: 'comment',
   facts: ({ state, target }) => {
     const row =
-      reviewRowsOf({ state, sessionId: target.sessionId }).find(
+      threadRowsOf({ state, sessionId: target.sessionId }).find(
         (candidate) => candidate.thread.threadId === target.threadId,
       ) ?? null;
     if (row === null) {
@@ -231,12 +230,21 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         candidates: state.sessionResolveCandidates[target.sessionId] ?? [],
         itemId: row.item.id,
       }),
+      laneAcceptNotes: laneAcceptNotesOf({
+        candidates: state.sessionResolveCandidates[target.sessionId] ?? [],
+        itemId: row.item.id,
+        noteItemIds: new Set(
+          (state.sessionResolveQueueItems[target.sessionId] ?? [])
+            .filter((entry) => entry.thread.originKind === 'diff_comment')
+            .map((entry) => entry.item.id),
+        ),
+      }),
     };
   },
   actions: [
     {
       id: 'reviewComment.openInDiff',
-      label: 'Open in diff',
+      label: `Open in ${NAMES.files}`,
       icon: FileCode,
       group: 'open',
       when: ({ facts }) => facts.path !== null,
@@ -449,7 +457,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.accept',
-      label: ({ facts }) => acceptUpToLabel({ count: facts.laneAcceptCount }),
+      label: ({ facts }) =>
+        acceptUpToLabel({ count: facts.laneAcceptCount, notes: facts.laneAcceptNotes }),
       icon: Check,
       group: 'act',
       shortcut: 'review.accept',
@@ -508,7 +517,9 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: TextCursorInput,
       group: 'act',
       when: ({ facts }) =>
-        ((facts.state === 'ready' || facts.state === 'edited') && !hasOverlay({ facts })) ||
+        (!facts.isNote &&
+          (facts.state === 'ready' || facts.state === 'edited') &&
+          !hasOverlay({ facts })) ||
         isPostableReplyOnly({ facts }) ||
         (canRepostVerdict({ facts }) &&
           (facts.verdict?.kind === 'fixed_elsewhere' || facts.verdict?.kind === 'obsolete')),
@@ -556,6 +567,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: 'Reply only',
       icon: CornerDownRight,
       group: 'act',
+      shortcut: 'review.reply',
       when: ({ facts }) =>
         !facts.isReplyOnly &&
         !facts.hasFixOnBranch &&
@@ -575,7 +587,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.postReplyNow',
-      label: ({ facts }) => (facts.state === 'failed' ? 'Retry' : 'Post reply now'),
+      label: ({ facts }) => (facts.state === 'failed' ? NAMES.retryPush : NAMES.publishReply),
       icon: Send,
       group: 'act',
       when: ({ facts }) =>
@@ -590,7 +602,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.reply',
-      label: ({ facts }) => (facts.state === 'failed' ? 'Reply yourself' : 'Reply'),
+      label: NAMES.reply,
       icon: CornerDownRight,
       group: 'act',
       shortcut: 'review.reply',
@@ -613,7 +625,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.undo',
-      label: ({ facts }) => (facts.state === 'skipped' ? 'Resume' : 'Undo'),
+      label: ({ facts }) => (facts.state === 'skipped' ? 'Undo skip' : 'Undo'),
       icon: Undo2,
       group: 'act',
       shortcut: 'review.undo',
@@ -635,7 +647,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.resolveNoReply',
-      label: ({ facts }) => (facts.isNote ? 'Close the note' : 'Resolve without a reply'),
+      label: ({ facts }) => (facts.isNote ? 'Close the note' : NAMES.resolve),
       icon: CircleCheck,
       group: 'act',
       when: ({ facts }) => UNDECIDED.has(facts.state) && facts.canResolve,

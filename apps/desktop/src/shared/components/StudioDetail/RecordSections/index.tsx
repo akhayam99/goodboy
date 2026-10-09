@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const RecordSections = ({ sections }: Props) => (
-  <div data-slot="record-sections" className="flex min-w-0 flex-col gap-5">
+  <div data-slot="record-sections" className="flex min-w-0 flex-col gap-6">
     {orderRecordSections({ sections }).map((section) => (
       <RecordSectionBlock key={section.key} section={section} />
     ))}

@@ -113,6 +113,11 @@ const SESSIONS: ReadonlyArray<Session> = [
     openedAt: '2026-10-07T09:20:00.000Z',
   }),
   sessionOf({
+    slug: 'pushfail',
+    goal: 'Send the Harborline ledger fixes',
+    openedAt: '2026-10-07T09:18:00.000Z',
+  }),
+  sessionOf({
     slug: 'tool',
     goal: 'Write the notify-relay digest',
     openedAt: '2026-10-07T09:15:00.000Z',
@@ -222,9 +227,11 @@ const questionFor = ({ slug }: { readonly slug: string }): OpenQuestion => ({
 const threadFor = ({
   slug,
   state,
+  isPush = false,
 }: {
   readonly slug: string;
   readonly state: 'needs_answer' | 'failed';
+  readonly isPush?: boolean;
 }): ResolveThread => ({
   id: `mock-marks-thread-${slug}`,
   sessionId: idOf(slug),
@@ -235,7 +242,9 @@ const threadFor = ({
   diffCommentId: null,
   state,
   stage: state === 'failed' ? 'failed' : 'asking',
-  stateReason: null,
+  stateReason: isPush
+    ? `publication_failed:${JSON.stringify({ error: 'rejected: the remote has newer commits' })}`
+    : null,
   revision: 1,
   generation: 1,
   reopenedFromThreadId: null,
@@ -308,6 +317,7 @@ export const seedSessionMarks = (): Session => {
       ...state.sessionResolveThreads,
       [idOf('comments')]: [threadFor({ slug: 'comments', state: 'needs_answer' })],
       [idOf('unfixed')]: [threadFor({ slug: 'unfixed', state: 'failed' })],
+      [idOf('pushfail')]: [threadFor({ slug: 'pushfail', state: 'failed', isPush: true })],
     },
     sessionPhaseRuns: { ...state.sessionPhaseRuns, ...PHASE_RUNS },
     agentTurnState: { ...state.agentTurnState, ...BLOCKED },

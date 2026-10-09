@@ -12,6 +12,7 @@ import type {
 } from '@goodboy/types';
 import type { CrumbMenuModel } from '@goodboy/ui';
 import { lensDestinations } from '../../lens-destinations';
+import type { PageSummaries } from '../../pageCountWord';
 import type { AgentStateWord } from '../../agentStateWord';
 import { pageMenu } from './pageMenu';
 import { stepMenu } from './stepMenu';
@@ -67,28 +68,29 @@ describe('pageMenu', () => {
       activeLens: 'agents',
       isBranchless: false,
       sessionTitle: 'Retry failed webhook deliveries',
-      summaries: { agents: '2 running', review: '3 need you' },
+      summaries: { agents: '2 running', branch: '3 need you' },
       actions: [],
       onSelect,
     });
 
     everyMenuInvariant(menu);
     expect(menu.groups.map((group) => group.label)).toEqual([null, 'Tools', 'Linked']);
-    expect(labelsOf(menu)).toContain('Pull request');
+    expect(labelsOf(menu)).not.toContain('Pull request');
     expect(labelsOf(menu)).not.toContain('Code host');
     const agents = rowsOf(menu).find((row) => row.label === 'Agents');
     expect(agents?.isCurrent).toBe(true);
     expect(agents?.metaA).toBe('2 running');
+    expect(rowsOf(menu).find((row) => row.label === 'Branch')?.metaA).toBe('3 need you');
     expect(rowsOf(menu).filter((row) => row.isCurrent)).toHaveLength(1);
     rowsOf(menu)
-      .find((row) => row.label === 'Session')
+      .find((row) => row.label === 'Overview')
       ?.onSelect();
     expect(onSelect).toHaveBeenCalledWith(null);
   });
 });
 
 describe('pageMenu icon tones', () => {
-  const build = (summaries: Record<string, string>) =>
+  const build = (summaries: PageSummaries) =>
     pageMenu({
       destinations: lensDestinations({
         isBranchless: false,
@@ -110,19 +112,19 @@ describe('pageMenu icon tones', () => {
   it('colors every page but Overview with its concept and Linear with its brand', () => {
     const menu = build({});
 
-    expect(classOf(menu, 'Session')).toBeUndefined();
+    expect(classOf(menu, 'Overview')).toBeUndefined();
     expect(classOf(menu, 'Runs')).toBe('text-primary');
-    expect(classOf(menu, 'Diff')).toBe('text-info');
+    expect(classOf(menu, 'Branch')).toBe('text-info');
     expect(classOf(menu, 'Linear')).toBe('text-provider-linear');
     rowsOf(menu)
-      .filter((row) => row.label !== 'Session')
+      .filter((row) => row.label !== 'Overview')
       .forEach((row) => {
         expect(row.lead.kind === 'icon' && row.lead.className !== undefined).toBe(true);
       });
   });
 
-  it('turns Questions yellow only when something is open', () => {
-    expect(classOf(build({}), 'Questions')).toBe('text-faint-foreground');
+  it('turns Questions yellow, and shows it only when something is open', () => {
+    expect(labelsOf(build({}))).not.toContain('Questions');
     expect(classOf(build({ questions: '2 open' }), 'Questions')).toBe('text-warning');
   });
 });
@@ -462,7 +464,7 @@ describe('conversationMenu', () => {
     ]);
     expect(menu.count).toBe('3 open');
     expect(rowsOf(menu).map((candidate) => candidate.state?.word)).toEqual([
-      'Ready',
+      'To review',
       'Open',
       'Working',
       'Done',

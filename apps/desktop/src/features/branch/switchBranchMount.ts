@@ -1,17 +1,21 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
+import { mountRequestOf } from '../../store/slices/project-mounts/mountRowModel';
 import { branchPlace } from '../../store/slices/navigation/place';
+import { branchLandingTabOf } from './branchLandingTab';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly worktreePath: string;
+  readonly mode?: 'push' | 'replace';
 };
 
 export const switchBranchMount = async ({
   sessionId,
   mountId,
   worktreePath,
+  mode = 'replace',
 }: Params): Promise<void> => {
   const before = useAppStore.getState();
   try {
@@ -25,8 +29,11 @@ export const switchBranchMount = async ({
     to: branchPlace({
       sessionId,
       mountPath: worktreePath,
-      tab: state.branchTab?.[sessionId] ?? 'comments',
+      tab: branchLandingTabOf({
+        hasPullRequest: mountRequestOf({ state, mountId }) !== null,
+        deepLink: null,
+      }),
     }),
-    mode: 'replace',
+    mode,
   });
 };

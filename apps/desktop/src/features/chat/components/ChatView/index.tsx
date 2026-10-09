@@ -20,7 +20,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
 } from '@goodboy/types';
-import { Button, cn, Divider, PageColumn, ScrollFade, Tooltip, tintClasses } from '@goodboy/ui';
+import { Button, cn, Divider, PageColumn, ScrollFade, Tooltip } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   agentPlace,
@@ -583,10 +583,8 @@ export const ChatView = ({
       otherAgentQuestionCount > 0 ? (
         <div className="flex shrink-0 justify-center py-2">
           <Button
-            variant="warning"
-            emphasis="outline"
+            variant="secondary"
             size="sm"
-            className={cn(tintClasses('warning').borderSoft, 'px-3')}
             onClick={() => {
               navigate({ to: agentPlace({ sessionId: session.id, agentId: otherAgentId }) });
               requestOpenQuestionScroll({

@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from 'react';
-import { Button, FormActions, KbdPill, formatError, useEscapeLayer } from '@goodboy/ui';
+import { Button, FormActions, formatError, useEscapeLayer, KeyHint } from '@goodboy/ui';
 import type { ResolveCommitStyle, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { PromptField } from '../../../../../shared/components/PromptField';
@@ -13,9 +13,10 @@ import {
   LAUNCH_ORDER_LINE,
   REVIEW_LAUNCH_LABEL,
   launchStartLabel,
-  launchTitle,
+  fixLabel,
 } from '../../../reviewLaunchCopy';
 import { startBatch } from '../../../startBatch';
+import { useFixStartedToast } from '../../../hooks/useFixStartedToast';
 import type { ReviewEntry } from '../useReviewEntries';
 import { useDraftRouting } from '../useDraftRouting';
 import { LaunchPanelRow } from './LaunchPanelRow';
@@ -45,6 +46,7 @@ const storedCommitStyle = ({
 
 export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: Props) => {
   const draft = useDraftRouting({ sessionId });
+  const announceStart = useFixStartedToast();
   const [hint, setHint] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
     setIsStarting(true);
     setError(null);
     try {
-      await startBatch({
+      const started = await startBatch({
         getState: useAppStore.getState,
         sessionId,
         threadIds,
@@ -70,6 +72,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
           hint,
         }),
       });
+      announceStart({ sessionId, started, count });
       onStarted();
     } catch (caught) {
       if (!isReportedError(caught)) {
@@ -96,7 +99,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
       className="flex min-w-0 max-w-[var(--measure)] flex-col gap-4"
     >
       <div className="flex flex-col gap-1">
-        <h2 className="text-title text-foreground">{launchTitle({ count })}</h2>
+        <h2 className="text-title text-foreground">{fixLabel({ count })}</h2>
         <p className="text-meta text-muted-foreground">{LAUNCH_ORDER_LINE}</p>
       </div>
       <ul className="flex flex-col gap-0.5 rounded-lg bg-subtle p-1">
@@ -135,9 +138,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
       <FormActions error={error}>
         <Button size="sm" variant="ghost" onClick={onClose}>
           {REVIEW_LAUNCH_LABEL.cancel}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-chip">
-            Esc
-          </KbdPill>
+          <KeyHint keys="Esc" />
         </Button>
         <Button
           size="sm"
@@ -147,12 +148,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
           onClick={() => void start()}
         >
           {launchStartLabel({ count })}
-          <KbdPill
-            aria-hidden
-            className="h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
-          >
-            {shortcutGlyphs('composer.submit')}
-          </KbdPill>
+          <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
         </Button>
       </FormActions>
     </section>

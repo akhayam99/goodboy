@@ -30,6 +30,7 @@ const BASE: ReviewCommentFacts = {
   isReplyFailure: false,
   hasFixOnBranch: false,
   laneAcceptCount: 1,
+  laneAcceptNotes: 0,
 };
 
 const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict => ({
@@ -39,7 +40,7 @@ const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict
   checkedAt: 1,
 });
 
-const OPEN = ['reviewComment.openInDiff menu Open in diff'];
+const OPEN = ['reviewComment.openInDiff menu Open in Files'];
 const TRANSCRIPT = ['reviewComment.transcript menu Agent transcript'];
 const GITHUB = ['reviewComment.openOnGithub menu Open on GitHub'];
 const BITBUCKET: Partial<ReviewCommentFacts> = {
@@ -52,7 +53,7 @@ const COPY = ['reviewComment.copyLink menu Copy link'];
 const DECIDE = [
   'reviewComment.reply secondary Reply',
   'reviewComment.skip secondary Skip',
-  'reviewComment.resolveNoReply menu Resolve without a reply',
+  'reviewComment.resolveNoReply menu Resolve',
 ];
 
 type Row = {
@@ -153,7 +154,7 @@ const MATRIX: ReadonlyArray<Row> = [
       'reviewComment.editReply hover Edit reply',
       'reviewComment.rewriteReply menu Rewrite reply',
       'reviewComment.fixItAnyway menu Fix it anyway',
-      'reviewComment.postReplyNow menu Post reply now',
+      'reviewComment.postReplyNow menu Publish reply',
       'reviewComment.undo secondary Undo',
       ...COPY,
     ],
@@ -167,10 +168,10 @@ const MATRIX: ReadonlyArray<Row> = [
       ...GITHUB,
       'reviewComment.edit primary Add a hint',
       'reviewComment.anotherModel menu Try another model',
-      'reviewComment.postReplyNow menu Retry',
-      'reviewComment.reply secondary Reply yourself',
+      'reviewComment.postReplyNow menu Retry push',
+      'reviewComment.reply secondary Reply',
       'reviewComment.skip secondary Skip',
-      'reviewComment.resolveNoReply menu Resolve without a reply',
+      'reviewComment.resolveNoReply menu Resolve',
       ...COPY,
     ],
   },
@@ -182,7 +183,7 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'skipped',
     facts: { state: 'skipped', agentId: null, approval: 'deferred' },
-    expected: [...OPEN, ...GITHUB, 'reviewComment.undo secondary Resume', ...COPY],
+    expected: [...OPEN, ...GITHUB, 'reviewComment.undo secondary Undo skip', ...COPY],
   },
   {
     name: 'pushed',
@@ -211,9 +212,9 @@ const MATRIX: ReadonlyArray<Row> = [
       ...GITHUB,
       'reviewComment.edit primary Add a hint',
       'reviewComment.anotherModel menu Try another model',
-      'reviewComment.reply secondary Reply yourself',
+      'reviewComment.reply secondary Reply',
       'reviewComment.skip secondary Skip',
-      'reviewComment.resolveNoReply menu Resolve without a reply',
+      'reviewComment.resolveNoReply menu Resolve',
       ...COPY,
     ],
   },
@@ -245,7 +246,7 @@ const MATRIX: ReadonlyArray<Row> = [
       'reviewComment.replyAndResolve primary Reply and resolve',
       'reviewComment.fixAnyway secondary Fix anyway',
       'reviewComment.skip secondary Skip',
-      'reviewComment.resolveNoReply menu Resolve without a reply',
+      'reviewComment.resolveNoReply menu Resolve',
       ...COPY,
     ],
   },
@@ -257,7 +258,7 @@ const MATRIX: ReadonlyArray<Row> = [
       ...GITHUB,
       'reviewComment.resolveOnly primary Resolve only',
       'reviewComment.skip secondary Skip',
-      'reviewComment.resolveNoReply menu Resolve without a reply',
+      'reviewComment.resolveNoReply menu Resolve',
       ...COPY,
     ],
   },

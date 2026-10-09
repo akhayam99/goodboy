@@ -5,6 +5,8 @@ import {
   Divider,
   ScrollFade,
   StatusDot,
+  FOCUS_RING,
+  TOP_BAR_CONTROL,
   cn,
   tintClasses,
   useDropdown,
@@ -131,7 +133,10 @@ export const NowChip = ({ onOpenScript }: Props) => {
           title={label}
           aria-expanded={isOpen}
           className={cn(
-            'flex shrink-0 items-center gap-3 rounded-sm px-2 py-1 text-meta motion-safe:transition-colors',
+            TOP_BAR_CONTROL.height,
+            TOP_BAR_CONTROL.radius,
+            FOCUS_RING,
+            'flex shrink-0 items-center gap-3 px-2 text-meta motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >

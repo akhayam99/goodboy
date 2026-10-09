@@ -49,6 +49,14 @@ export type DrawerContent =
       readonly payload: { readonly agentId: AgentId };
     }
   | {
+      readonly kind: 'review-notes';
+      readonly payload: {
+        readonly mountPath: string | null;
+        readonly focusPath?: string | null;
+        readonly focusThreadId?: string | null;
+      };
+    }
+  | {
       readonly kind: 'file-diff';
       readonly payload: { readonly source: FileDiffSource; readonly path: string | null };
     };

@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, DrawerFrame, ScrollFade } from '@goodboy/ui';
+import { Button, DrawerFrame } from '@goodboy/ui';
 import type { ArtifactId, ChatMessage, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { isAskStreaming } from '../../../../../store/slices/ask/isAskStreaming';
-import { sessionTitle } from '../../../sessionTitle';
 import { requestAskFocus } from '../../askFocusEvent';
 import { askTurnsOf } from '../../askTurnsOf';
 import { useAskActionFacts } from '../../hooks/useAskActionFacts';
@@ -66,13 +65,22 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
     [rightNow.text, sendAskQuestion, sessionId],
   );
 
+  const composer =
+    insideId === null ? (
+      <AskComposer
+        sessionId={sessionId}
+        isStreaming={stream !== undefined}
+        isStopping={stream?.isStopping === true}
+        onSend={ask}
+        onStop={() => void stopAskReply({ sessionId })}
+      />
+    ) : null;
+
   return (
     <DrawerFrame
       title="Ask"
       icon={CONCEPT_ICONS.ask}
       iconClassName="text-muted-foreground"
-      count={<span className="block max-w-48 truncate">{sessionTitle({ session })}</span>}
-      closeLabel="Close Ask"
       onClose={onClose}
       action={
         <Button
@@ -90,55 +98,38 @@ export const AskDrawerBody = ({ session, onClose }: Props) => {
           New
         </Button>
       }
-      scroll="self"
+      dock={composer}
     >
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
-        {insideId !== null ? (
-          <AskPlanView
-            sessionId={sessionId}
-            artifactId={insideId}
-            onBack={() => setInsideId(null)}
+      {insideId !== null ? (
+        <AskPlanView sessionId={sessionId} artifactId={insideId} onBack={() => setInsideId(null)} />
+      ) : (
+        <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
+          <AskRightNow
+            lines={rightNow.lines}
+            suggestions={turns.length === 0 ? rightNow.suggestions : []}
+            isFolded={turns.length > 0 && !isRightNowOpen}
+            onUnfold={() => setIsRightNowOpen(true)}
+            onAsk={(question) => void ask(question)}
           />
-        ) : (
-          <div data-testid="ask-thread" className="flex min-w-0 flex-col gap-4">
-            <AskRightNow
-              lines={rightNow.lines}
-              suggestions={turns.length === 0 ? rightNow.suggestions : []}
-              isFolded={turns.length > 0 && !isRightNowOpen}
-              onUnfold={() => setIsRightNowOpen(true)}
-              onAsk={(question) => void ask(question)}
+          {turns.length === 0 ? (
+            <AskEarlier
+              threads={earlier}
+              onShow={(id) => void showAskThread({ sessionId, threadId: id })}
             />
-            {turns.length === 0 ? (
-              <AskEarlier
-                threads={earlier}
-                onShow={(id) => void showAskThread({ sessionId, threadId: id })}
-              />
-            ) : null}
-            {turns.map((turn) => (
-              <AskTurn
-                key={turn.question.id}
-                sessionId={sessionId}
-                question={turn.question}
-                reply={turn.reply}
-                facts={facts}
-                onOpen={onOpen}
-              />
-            ))}
-            <div ref={endRef} />
-          </div>
-        )}
-      </ScrollFade>
-      {insideId === null ? (
-        <div className="shrink-0 px-3 pb-3 pt-2">
-          <AskComposer
-            sessionId={sessionId}
-            isStreaming={stream !== undefined}
-            isStopping={stream?.isStopping === true}
-            onSend={ask}
-            onStop={() => void stopAskReply({ sessionId })}
-          />
+          ) : null}
+          {turns.map((turn) => (
+            <AskTurn
+              key={turn.question.id}
+              sessionId={sessionId}
+              question={turn.question}
+              reply={turn.reply}
+              facts={facts}
+              onOpen={onOpen}
+            />
+          ))}
+          <div ref={endRef} />
         </div>
-      ) : null}
+      )}
     </DrawerFrame>
   );
 };

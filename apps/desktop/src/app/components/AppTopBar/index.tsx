@@ -4,17 +4,14 @@ import { WorkspaceIdentityRow } from '../../../features/workspace/components/Wor
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
 import type { ShellMode } from '../../shellArrangement';
 import { CommandCenter } from './CommandCenter';
-import { ImpactButton } from './ImpactButton';
 import { LimitsStrip } from './LimitsStrip';
 import { NowChip } from './NowChip';
 import { NavCluster } from './NavCluster';
 import { SpendButton } from './SpendButton';
-import { ThemeToggle } from './ThemeToggle';
 
 type Props = {
   readonly onOpenSpend: () => void;
   readonly onOpenScript: (run: RunningScript) => void;
-  readonly onOpenImpact?: () => void;
   readonly openProviderId?: ProviderId | null;
   readonly mode?: ShellMode;
 };
@@ -22,7 +19,6 @@ type Props = {
 export const AppTopBar = ({
   onOpenSpend,
   onOpenScript,
-  onOpenImpact,
   openProviderId = null,
   mode = 'column',
 }: Props) => (
@@ -44,18 +40,11 @@ export const AppTopBar = ({
       </div>
 
       <div className="col-start-3 flex items-center justify-end gap-1">
-        <div className="flex shrink-0 items-center gap-1">
-          <NowChip onOpenScript={onOpenScript} />
-          <SpendButton onOpenSpend={onOpenSpend} />
-        </div>
+        <NowChip onOpenScript={onOpenScript} />
 
         <LimitsStrip openProviderId={openProviderId} opensProvidersMenu={mode === 'column'} />
 
-        <ThemeToggle />
-
-        {mode === 'column' && onOpenImpact !== undefined ? (
-          <ImpactButton onOpenImpact={onOpenImpact} />
-        ) : null}
+        <SpendButton onOpenSpend={onOpenSpend} />
 
         <NotificationCenter />
       </div>

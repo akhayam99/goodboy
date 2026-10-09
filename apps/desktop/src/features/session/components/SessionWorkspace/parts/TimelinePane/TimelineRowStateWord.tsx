@@ -3,14 +3,10 @@ import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import type { StatePresentation } from '../../../../../workTreeModel/statePresentation';
 
 type Props = {
-  readonly shown: StatePresentation | null;
-  readonly note: string | null;
+  readonly shown: StatePresentation;
 };
 
-export const TimelineRowStateWord = ({ shown, note }: Props) => {
-  if (shown === null) {
-    return note === null ? null : <span className="truncate">{note}</span>;
-  }
+export const TimelineRowStateWord = ({ shown }: Props) => {
   if (shown.icon === null && shown.short === shown.word) {
     return <span className="truncate">{shown.word}</span>;
   }

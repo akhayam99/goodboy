@@ -86,11 +86,10 @@ describe('PaletteOverlay, the commands mode', () => {
       'Speed up the payout export for large merchants',
     );
     expect(screen.getByText('For this session')).toBeDefined();
-    expect(optionNames().slice(0, 3)).toEqual([
-      'Message Stream the export instead of building it in memory',
-      'Open Diff',
-      'Open Terminal',
-    ]);
+    expect(optionNames()[0]).toBe('Open Files');
+    expect(optionNames()[0]).not.toMatch(/^Message /);
+    expect(optionNames()[1]).toBe('Message Stream the export instead of building it in memory');
+    expect(selectedName()).toBe('Open Files');
     expect(optionNames()).toContain('All actions for this session');
     expect(optionNames()).not.toContain('Delete…');
   });
@@ -175,7 +174,7 @@ describe('PaletteOverlay, the commands mode', () => {
     const names = optionNames();
     const recentAt = names.indexOf('Speed up the payout export for large merchants');
     expect(recentAt).toBeGreaterThanOrEqual(0);
-    expect(recentAt).toBeLessThan(names.indexOf('Inbox'));
+    expect(recentAt).toBeLessThan(names.indexOf('Tasks'));
   });
 
   it('opens every verb of a row on the right arrow and goes back on the left', () => {
@@ -263,7 +262,7 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     type(input, 'archive');
     expect(optionNames()).not.toContain('Archive');
     type(input, 'review');
-    expect(optionNames()).not.toContain('Open Review');
+    expect(optionNames()).not.toContain('Open Comments');
   });
 
   it('hides a blocked verb until it is searched, then shows it with its reason', () => {

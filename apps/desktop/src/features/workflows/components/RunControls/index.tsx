@@ -76,9 +76,37 @@ export const RunControls = ({
     : null;
   const canPause = !isPaused && !isStopped && isLive;
   const hasPair = isPaused || canPause || onClose !== null;
+  const hasPrimaryAction = isHeldForPlan;
 
   return (
     <>
+      {hasPair ? (
+        <div role="group" aria-label="Run controls" className="flex items-center gap-1">
+          {isPaused ? (
+            <OrchestratorAction
+              icon={Play}
+              label="Resume"
+              variant={hasPrimaryAction ? 'secondary' : 'primary'}
+              testId="run-resume"
+              title="Start where the run left off"
+              disabled={isBusy}
+              onClick={() => void guard(() => resumeWorkflowRun(sessionId, run.id))}
+            />
+          ) : null}
+          {canPause ? (
+            <OrchestratorAction
+              icon={Pause}
+              label="Pause"
+              variant="secondary"
+              testId="run-pause"
+              title="Finish the step in flight and start no others"
+              disabled={isBusy}
+              onClick={() => void guard(() => pauseWorkflowRun(sessionId, run.id))}
+            />
+          ) : null}
+          {onClose === null ? null : <WorkflowCloseButton onConfirm={onClose} />}
+        </div>
+      ) : null}
       {hasPlanToReview ? (
         <OrchestratorAction
           icon={CONCEPT_ICONS.plans}
@@ -99,33 +127,6 @@ export const RunControls = ({
           disabled={isBusy}
           onClick={() => void guard(approvePlan)}
         />
-      ) : null}
-      {hasPair ? (
-        <div role="group" aria-label="Run controls" className="flex items-center gap-1">
-          {isPaused ? (
-            <OrchestratorAction
-              icon={Play}
-              label="Resume"
-              variant="primary"
-              testId="run-resume"
-              title="Start where the run left off"
-              disabled={isBusy}
-              onClick={() => void guard(() => resumeWorkflowRun(sessionId, run.id))}
-            />
-          ) : null}
-          {canPause ? (
-            <OrchestratorAction
-              icon={Pause}
-              label="Pause"
-              variant="secondary"
-              testId="run-pause"
-              title="Finish the step in flight and start no others"
-              disabled={isBusy}
-              onClick={() => void guard(() => pauseWorkflowRun(sessionId, run.id))}
-            />
-          ) : null}
-          {onClose === null ? null : <WorkflowCloseButton onConfirm={onClose} />}
-        </div>
       ) : null}
       {autonomyMenu === null && approveItem === null ? null : (
         <RunControlMenu

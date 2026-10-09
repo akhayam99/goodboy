@@ -1,7 +1,7 @@
 import { CommandError, invokeCommand, toCommandError } from '../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../shared/lib/db';
 import {
-  normalizeAgentRole,
+  normalizeWorkflowRole,
   PlannerClient,
   polishStepExpectedOutput,
   polishStepInstruction,
@@ -138,7 +138,7 @@ function rowToStep(row: RawWorkflowStepRow): Step {
     ...(row.expectedOutput != null &&
       row.expectedOutput !== '' && { expectedOutput: row.expectedOutput }),
     ...(row.libraryStepId != null && { libraryStepId: row.libraryStepId as StepDefId }),
-    ...(row.role != null && { role: normalizeAgentRole({ role: row.role }) }),
+    ...(row.role != null && { role: normalizeWorkflowRole({ role: row.role }) }),
     ...(row.providerOverride != null && { providerOverride: row.providerOverride as ProviderId }),
     ...(row.modelOverride != null && { modelOverride: row.modelOverride }),
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
@@ -160,7 +160,7 @@ function rowToStepDef(row: RawStepDefRow): StepDef {
   return {
     id: row.id as StepDefId,
     workspaceId: row.workspaceId as WorkspaceId,
-    role: normalizeAgentRole({ role: row.role }),
+    role: normalizeWorkflowRole({ role: row.role }),
     name: row.name,
     promptPrefix: row.promptPrefix,
     createdAt: row.createdAt as IsoDateTime,

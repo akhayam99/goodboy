@@ -1,7 +1,8 @@
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useShallow } from 'zustand/react/shallow';
 import { commandPrefix } from '@goodboy/core';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { STRIPED_LIST, cn, tintClasses } from '@goodboy/ui';
+import { EmptyState, STRIPED_LIST, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { sessionTitle } from '../../../session/sessionTitle';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -56,7 +57,14 @@ export const RecentDecisions = ({ workspaceId }: Props) => {
     return <p className="text-meta text-danger">{`Couldn't read the decisions: ${error}`}</p>;
   }
   if (!isLoading && decisions.length === 0) {
-    return <p className="text-meta text-muted-foreground">No decisions yet</p>;
+    return (
+      <EmptyState
+        size="section"
+        icon={CONCEPT_ICONS.history}
+        title="No decisions yet"
+        description="Decisions appear when an agent asks to use a tool."
+      />
+    );
   }
   return (
     <ul

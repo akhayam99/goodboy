@@ -1,5 +1,10 @@
 import type { SessionAttentionReason, SessionPrFetchState, SessionStageInfo } from '@goodboy/types';
 import {
+  couldntFixWords,
+  needsYouWords,
+  pushFailedWords,
+} from '../../../features/resolve/notes/attentionWords';
+import {
   attentionFactsOf,
   internReasons,
   isHumanInputReason,
@@ -27,22 +32,24 @@ type ReasonTextParams = {
   readonly openQuestionCount: number;
   readonly fixNeedsYouCount: number;
   readonly fixCouldntFixCount: number;
+  readonly pushFailedCount: number;
+  readonly noteNeedsYouCount: number;
+  readonly noteCouldntFixCount: number;
 };
 
 const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => string> = {
-  'needs-approval': () => 'Needs approval',
+  'needs-approval': () => 'Needs permission',
   'agent-error': () => 'agent errored',
+  'push-failed': ({ pushFailedCount }) => pushFailedWords({ count: pushFailedCount }),
   'plan-approval': () => 'plan waiting for approval',
   'open-question': ({ openQuestionCount }) =>
     openQuestionCount === 1 ? '1 open question' : `${openQuestionCount} open questions`,
-  'fix-needs-you': ({ fixNeedsYouCount }) =>
-    fixNeedsYouCount === 1 ? '1 comment needs you' : `${fixNeedsYouCount} comments need you`,
+  'fix-needs-you': ({ fixNeedsYouCount, noteNeedsYouCount }) =>
+    needsYouWords({ comments: fixNeedsYouCount, notes: noteNeedsYouCount }),
   'ci-failed': ({ label }) => `${label}: checks failing`,
   'changes-requested': ({ label }) => `${label}: changes requested`,
-  'fix-couldnt-fix': ({ fixCouldntFixCount }) =>
-    fixCouldntFixCount === 1
-      ? "1 comment couldn't be fixed"
-      : `${fixCouldntFixCount} comments couldn't be fixed`,
+  'fix-couldnt-fix': ({ fixCouldntFixCount, noteCouldntFixCount }) =>
+    couldntFixWords({ comments: fixCouldntFixCount, notes: noteCouldntFixCount, form: 'status' }),
   'pr-queued': ({ label }) => `${label} in the merge queue`,
   'pr-approved': ({ label }) => `${label} approved, ready to merge`,
   'unread-reply': () => 'unread agent reply',
@@ -55,6 +62,9 @@ const deriveStage = (params: Params): StageWithoutRequest => {
     openQuestionCount,
     fixNeedsYouCount = 0,
     fixCouldntFixCount = 0,
+    pushFailedCount = 0,
+    noteNeedsYouCount = 0,
+    noteCouldntFixCount = 0,
     hasRunningAgent = false,
     isDecidingWorkflow = false,
     isPrReview = false,
@@ -66,19 +76,28 @@ const deriveStage = (params: Params): StageWithoutRequest => {
     isBranchless = false,
   } = params;
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
-  const [winner] = attentionFactsOf(params);
+  const facts = attentionFactsOf(params);
+  const [winner] = facts;
   const isLive = hasRunningAgent || isDecidingWorkflow;
   const reasonText = (reason: SessionAttentionReason): string =>
-    REASON_TEXT[reason]({ label, openQuestionCount, fixNeedsYouCount, fixCouldntFixCount });
-  if (
-    winner !== undefined &&
-    (winner === 'agent-error' || isHumanInputReason({ reason: winner }))
-  ) {
+    REASON_TEXT[reason]({
+      label,
+      openQuestionCount,
+      fixNeedsYouCount,
+      fixCouldntFixCount,
+      pushFailedCount,
+      noteNeedsYouCount,
+      noteCouldntFixCount,
+    });
+  const blocker = facts.find(
+    (reason) => reason === 'agent-error' || isHumanInputReason({ reason }),
+  );
+  if (blocker !== undefined && (blocker === winner || isLive)) {
     return {
       stage: 'attention',
-      reason: reasonText(winner),
-      attention: winner,
-      isRunning: winner !== 'agent-error' && isLive,
+      reason: reasonText(blocker),
+      attention: blocker,
+      isRunning: blocker !== 'agent-error' && isLive,
     };
   }
   if (hasRunningAgent) {
@@ -163,5 +182,8 @@ export const deriveSessionStage = (params: Params): SessionStageInfo => {
     openQuestionCount: params.openQuestionCount,
     fixNeedsYouCount: params.fixNeedsYouCount ?? 0,
     fixCouldntFixCount: params.fixCouldntFixCount ?? 0,
+    pushFailedCount: params.pushFailedCount ?? 0,
+    noteNeedsYouCount: params.noteNeedsYouCount ?? 0,
+    noteCouldntFixCount: params.noteCouldntFixCount ?? 0,
   };
 };

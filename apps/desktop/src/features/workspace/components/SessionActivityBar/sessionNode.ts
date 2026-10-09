@@ -28,6 +28,8 @@ type SessionNodeInfo = Pick<
   | 'openQuestionCount'
   | 'fixNeedsYouCount'
   | 'fixCouldntFixCount'
+  | 'noteNeedsYouCount'
+  | 'noteCouldntFixCount'
 > &
   Partial<Pick<SessionStageInfo, 'prState'>>;
 

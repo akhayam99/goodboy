@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/names';
 import type { LucideIcon } from 'lucide-react';
 import { ArrowUp, GitBranch, GitMerge, GitPullRequestCreate, RotateCw, Send } from 'lucide-react';
 import type { ResolvedAction } from '../actions/types';
@@ -11,6 +12,8 @@ export type BranchPrimary = {
   readonly icon: LucideIcon;
   readonly blockedReason: string | null;
   readonly isBusy: boolean;
+  readonly isSecondary: boolean;
+  readonly note: string | null;
 };
 
 export type BranchReviewCounts = {
@@ -37,11 +40,13 @@ const fromAction = ({
   action,
   label,
   icon,
+  isSecondary = false,
 }: {
   readonly source: BranchPrimarySource;
   readonly action: ResolvedAction;
   readonly label?: string;
   readonly icon?: LucideIcon;
+  readonly isSecondary?: boolean;
 }): BranchPrimary => ({
   source,
   actionId: action.id,
@@ -49,6 +54,8 @@ const fromAction = ({
   icon: icon ?? action.icon,
   blockedReason: action.blockedReason,
   isBusy: action.isBusy,
+  isSecondary,
+  note: action.description,
 });
 
 const plural = ({ count, one, many }: { count: number; one: string; many: string }): string =>
@@ -72,6 +79,8 @@ export const branchPrimaryOf = ({
       icon: ArrowUp,
       blockedReason: review.isPushing ? 'Pushing now.' : null,
       isBusy: review.isPushing,
+      isSecondary: false,
+      note: null,
     };
   }
   const push = find(diff, 'diff.push');
@@ -86,16 +95,20 @@ export const branchPrimaryOf = ({
       icon: ArrowUp,
       blockedReason: null,
       isBusy: false,
+      isSecondary: false,
+      note: null,
     };
   }
   if (hasPullRequest && review.failed > 0) {
     return {
       source: 'review',
       actionId: REVIEW_PUSH_ID,
-      label: `Retry ${review.failed}`,
+      label: NAMES.retryPush,
       icon: RotateCw,
       blockedReason: null,
       isBusy: false,
+      isSecondary: false,
+      note: null,
     };
   }
   const createOnDiff = find(diff, 'diff.createPullRequest');
@@ -119,7 +132,12 @@ export const branchPrimaryOf = ({
   }
   const merge = find(pullRequest, 'pullRequest.merge');
   if (merge !== null) {
-    return fromAction({ source: 'pullRequest', action: merge, label: 'Merge', icon: GitMerge });
+    return fromAction({
+      source: 'pullRequest',
+      action: merge,
+      icon: GitMerge,
+      isSecondary: merge.slot === 'secondary',
+    });
   }
   return null;
 };

@@ -1,6 +1,7 @@
 import { cn } from '../../cn';
 import { InlineConfirm } from '../InlineConfirm';
 import type { CrumbMenuAction } from './crumbMenuTypes';
+import { ICON_SIZE } from '../../iconSize';
 
 type Props = {
   readonly actions: ReadonlyArray<CrumbMenuAction>;
@@ -19,7 +20,7 @@ export const CrumbMenuActions = ({ actions, confirmingId, onConfirmingChange, on
         <InlineConfirm
           role="danger"
           surface="plain"
-          icon={<Icon size={12} aria-hidden />}
+          icon={<Icon size={ICON_SIZE.row} aria-hidden />}
           title={confirming.confirm.title}
           description={confirming.confirm.description}
           confirmLabel={confirming.confirm.confirmLabel}
@@ -54,7 +55,7 @@ export const CrumbMenuActions = ({ actions, confirmingId, onConfirmingChange, on
             )}
           >
             <span className="flex size-5 shrink-0 items-center justify-center">
-              <Icon size={14} aria-hidden />
+              <Icon size={ICON_SIZE.control} aria-hidden />
             </span>
             <span className="min-w-0 truncate">{action.label}</span>
             {action.hint != null ? (

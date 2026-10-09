@@ -10,6 +10,7 @@ import {
   typeaheadMenuFocus,
 } from './menuKeys';
 import type { MenuEntry, MenuItemEntry } from './menuTypes';
+import { ICON_SIZE } from '../../iconSize';
 
 const TYPEAHEAD_RESET_MS = 500;
 
@@ -150,7 +151,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
       <div ref={listRef} data-menu-panel onKeyDown={onListKeyDown} className="w-80 max-w-full">
         <InlineConfirm
           role={confirm.role}
-          icon={Icon === undefined ? null : <Icon size={14} aria-hidden />}
+          icon={Icon === undefined ? null : <Icon size={ICON_SIZE.control} aria-hidden />}
           title={confirm.title}
           description={confirm.description}
           confirmLabel={confirm.confirmLabel}
@@ -196,7 +197,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
       aria-label={label}
       data-menu-panel
       onKeyDown={onListKeyDown}
-      className="flex min-w-48 flex-col p-1"
+      className="flex min-w-50 flex-col p-1"
     >
       {entries.map((entry) => {
         if (entry.kind === 'separator') {

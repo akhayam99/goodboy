@@ -2,6 +2,7 @@ import type { ReactNode, RefObject } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
 import type { BranchCommit, HistoryGraph } from '@goodboy/types';
+import { NAMES } from '../../../../shared/names';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { HISTORY_GRAPH } from '../../historyGraphGeometry';
@@ -97,7 +98,7 @@ export const HistoryNowList = ({
             {isInteractive && onto === null && view !== 'done' ? (
               <Button size="sm" variant="secondary" className="shrink-0" onClick={onStartFromMain}>
                 <ArrowUp size={ICON_SIZE.row} aria-hidden />
-                Start from today&apos;s main
+                {`${NAMES.rebaseOn} ${baseBranch}`}
               </Button>
             ) : null}
           </span>

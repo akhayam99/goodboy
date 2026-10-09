@@ -18,6 +18,7 @@ import { SESSION_SPEND_LIMIT_EDIT_EVENT } from '../../../budget/requestSessionSp
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
 import { pickKeys } from '../../../../shared/utils/pickKeys';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -58,7 +59,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     align: 'end',
     expectedHeight: 480,
     expectedWidth: 400,
-    width: 'w-[25rem] max-w-[calc(100vw-2rem)]',
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
   });
   const { open, toggle, close, popupRef } = dropdown;
   const [isEditing, setIsEditing] = useState(false);
@@ -124,9 +125,9 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   };
 
   const glyph = presentation.isPaused ? (
-    <Pause size={11} aria-hidden className="shrink-0" />
+    <Pause size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
   ) : presentation.level === 'near' || presentation.level === 'over' ? (
-    <AlertTriangle size={11} aria-hidden className="shrink-0" />
+    <AlertTriangle size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
   ) : null;
 
   return (
@@ -153,7 +154,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
               size: 'control',
               isInteractive: true,
             }),
-            'overflow-hidden font-mono tabular-nums',
+            'overflow-hidden tabular-nums',
           )}
         >
           {glyph}

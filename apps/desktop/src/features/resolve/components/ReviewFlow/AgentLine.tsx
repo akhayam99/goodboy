@@ -4,18 +4,18 @@ import { modelLabel } from '../../../chat/utils/chat-constants';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
-import { REVIEW_COMMENT_NODE, type ReviewCommentState } from '../../reviewCommentState';
+import { REVIEW_COMMENT_NODE, type ReviewCommentTone } from '../../reviewCommentState';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
 import { STATE_WORD_TONE } from './stateTone';
 
 type Props = {
   readonly attempt: ResolveAttempt;
-  readonly state: ReviewCommentState;
+  readonly toneKey: ReviewCommentTone;
   readonly word: string;
   readonly attemptNumber?: number | null;
 };
 
-export const AgentLine = ({ attempt, state, word, attemptNumber = null }: Props) => {
+export const AgentLine = ({ attempt, toneKey, word, attemptNumber = null }: Props) => {
   const now = useNow(30_000);
   const at = attempt.endedAt ?? attempt.startedAt ?? attempt.createdAt;
   const hasNumber = attemptNumber !== null;
@@ -32,12 +32,12 @@ export const AgentLine = ({ attempt, state, word, attemptNumber = null }: Props)
   ];
   return (
     <p className="flex min-w-0 items-center gap-2 text-label">
-      <WorkNode state={REVIEW_COMMENT_NODE[state]} label={word} mark={{ kind: 'dot' }} />
+      <WorkNode state={REVIEW_COMMENT_NODE[toneKey]} label={word} mark={{ kind: 'dot' }} />
       <span className="shrink-0 text-foreground">
         {hasNumber ? `Attempt ${attemptNumber}` : REVIEW_FLOW_LABEL.resolver}
       </span>
       <span className="min-w-0 truncate text-muted-foreground">{meta.join(' · ')}</span>
-      <span className={cn('shrink-0', STATE_WORD_TONE[state])}>{word}</span>
+      <span className={cn('shrink-0', STATE_WORD_TONE[toneKey])}>{word}</span>
     </p>
   );
 };

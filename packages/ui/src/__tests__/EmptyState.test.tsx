@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Inbox } from 'lucide-react';
-import { EmptyState, FilledEmptyState, LensEmptyState } from '../components/EmptyState';
+import { EmptyState, FilledEmptyState } from '../components/EmptyState';
 
 afterEach(cleanup);
 
@@ -69,19 +69,24 @@ describe('EmptyState section', () => {
   });
 });
 
-describe('EmptyState old sizes', () => {
-  it.each(['lg', 'xl'] as const)('maps %s onto the page layout without a circle', (size) => {
-    const { container } = render(<EmptyState icon={Inbox} size={size} title="Large state" />);
+describe('EmptyState layouts', () => {
+  it.each([2, 3] as const)(
+    'renders a page at heading level %s without a circle',
+    (headingLevel) => {
+      const { container } = render(
+        <EmptyState icon={Inbox} size="page" headingLevel={headingLevel} title="Large state" />,
+      );
 
-    expect(screen.getByText('Large state')).toBeTruthy();
-    expect(container.firstElementChild?.className).toContain('flex-col items-center');
-    expect(hasCircle(container)).toBe(false);
-  });
+      expect(screen.getByText('Large state')).toBeTruthy();
+      expect(container.firstElementChild?.className).toContain('flex-col items-center');
+      expect(hasCircle(container)).toBe(false);
+    },
+  );
 
-  it.each(['sm', 'inline'] as const)('maps %s onto the section layout', (size) => {
-    const { container } = render(<EmptyState icon={Inbox} size={size} title="Small state" />);
+  it.each(['No rows', 'No results'] as const)('renders a section titled %s', (title) => {
+    const { container } = render(<EmptyState icon={Inbox} size="section" title={title} />);
 
-    expect(screen.getByText('Small state')).toBeTruthy();
+    expect(screen.getByText(title)).toBeTruthy();
     expect(container.firstElementChild?.className).toContain('min-h-7');
     expect(screen.queryByRole('heading')).toBeNull();
     expect(hasCircle(container)).toBe(false);
@@ -90,7 +95,7 @@ describe('EmptyState old sizes', () => {
   it('keeps the default title unheaded and renders a requested heading level', () => {
     render(
       <div>
-        <EmptyState icon={Inbox} size="lg" title="Semantic title" headingLevel={2} />
+        <EmptyState icon={Inbox} size="page" title="Semantic title" headingLevel={2} />
         <EmptyState icon={Inbox} title="Default title" />
       </div>,
     );
@@ -108,10 +113,15 @@ describe('EmptyState old sizes', () => {
 });
 
 describe('EmptyState wrappers', () => {
-  it('draws the lens and filled wrappers as sections with the same props', () => {
+  it('draws explicit sections and the remaining host wrapper with the same props', () => {
     const { container } = render(
       <div>
-        <LensEmptyState icon={Inbox} title="No lens rows" description="Nothing to list here." />
+        <EmptyState
+          size="section"
+          icon={Inbox}
+          title="No lens rows"
+          description="Nothing to list here."
+        />
         <FilledEmptyState icon={Inbox} title="No filled rows" />
       </div>,
     );

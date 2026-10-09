@@ -12,6 +12,102 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.23.0
+
+A page for the pull request on every host, review notes in their own drawer, branches in the sidebar, one frame for every page, and Tasks in place of Inbox.
+
+### New
+
+#### A page for the pull request
+<!-- gb area=review image=pull-request-page -->
+
+The Pull request tab is the first tab of the Branch page, on GitHub, GitLab and Bitbucket. Rename the pull request and edit its description in place, then read its activity, reviewers and checks beside it. Merge offers the methods the host allows. A branch with no pull request offers Create pull request on the same tab.
+
+#### Review notes in their own drawer
+<!-- gb area=review image=review-notes -->
+
+Notes N opens the notes you left on your own diff in a drawer, apart from the comments on the pull request. Fix, accept, close and delete work on a note as on a comment, and fixes on notes stack in the same lane as fixes on comments. Resolving a note never touches a thread on the host.
+
+#### Branches of a session in the sidebar
+<!-- gb area=sessions image=branch-rows -->
+
+A session lists its branches under its row in the sidebar. One click switches the page to a branch. You can move pins up and down, and pinned sessions show on the rail when the sidebar is folded, with a flyout for the rest.
+
+#### Start from an issue in one block
+<!-- gb area=sessions image=start-from-issue -->
+
+Start from an issue opens the New session draft with the issue picked and its brief being written. Pick how to work and press Start: the session, the run and a Follow toast come in one step. Review pull request starts a review from Tasks or from a pasted pull request link.
+
+### Improved
+
+#### Model and effort on every step row
+<!-- gb area=workflows image=step-rows -->
+
+Rows in Activity and Runs show the model and its effort instead of the role name, with the role as a small icon. Runs gets the same hover card as Activity. Both places read in the same order: icon, title, model, then time and cost.
+
+#### Comments say where each fix stands
+<!-- gb area=review image=comment-tally -->
+
+One tally counts what needs you, in the sidebar, on the Comments tab and in the run bar. A push that failed shows in red. Starting a fix shows Fix run started, or Fix queued after the current fix, with Follow. A comment reads the same on every host.
+
+#### One main button per header
+<!-- gb area=app image=header-actions -->
+
+Each page header keeps one primary button and puts the rest in one overflow menu. Delete, Archive and Discard ask inline under the header, with Esc to cancel and focus back on the button that opened them.
+
+#### Cleaner overview and lists
+<!-- gb area=sessions image=overview-lists -->
+
+The Overview keeps every worktree on one 36px row, with a failed action shown as a notice under it. The agent page, Artifacts and Scripts lists drop their trash columns for a row menu, and the report page has one heading.
+
+#### A calmer top bar
+<!-- gb area=app image=top-bar -->
+
+The top bar keeps Now, Limits, Spend and the bell. Impact opens from Spend, and the theme lives in Settings. Providers past the first few collapse into a +N chip.
+
+#### One frame for every page
+<!-- gb area=app image=one-frame -->
+
+Every page has the same title row, the same controls and one type scale, with the buttons, fields and chips on one size ladder. Empty, loading and failed states look alike on each page, and a list keeps its rows when a refresh fails.
+
+#### Provider policy in one place
+<!-- gb area=settings image=policy-failures -->
+
+When a provider is out lives in Providers, and Run defaults shows a summary with a link. A wireframe, a report or a publish that fails shows a notice that names the fix, with Details for the raw error.
+
+#### Inbox is now Tasks
+<!-- gb area=app image=tasks-words -->
+
+The door, the bell and the palette say Tasks. Each job has one verb: Start for a task, Fix for a comment, Reply and Resolve for a thread. A permission is not an approval, and Waiting for your permission says which one you owe.
+
+### Fixed
+
+- Workflows never hand a step to the Resolve agent, so a run no longer stops on Couldn't fix. A step that ends with no result says so. <!-- gb area=workflows -->
+- Summaries, titles and orchestrator replies that fail retry on the other models you allow, and you get one notice only when every model failed. <!-- gb area=providers -->
+- The agent page opens on its Brief from every door. Transcript opens only from a link to a message, and an agent remembers the tab you picked. <!-- gb area=agents -->
+- The agent header shows elapsed time instead of longer than usual, and the Brief no longer reads 0 turns or ready on a running agent. <!-- gb area=agents -->
+- A run on its own no longer sits idle when it starts or between two steps. A run that cannot go on stops and says why. <!-- gb area=workflows -->
+- A step the orchestrator could not create stops the run with a notice instead of leaving it hanging. <!-- gb area=workflows -->
+- A step waiting on your answer says so in the run bar, with the step that asked and Answer. <!-- gb area=workflows -->
+- Accepting a fix that hits a conflict keeps the note open, so you can fix it again. <!-- gb area=review -->
+- A note opened from another branch of a multi-project session switches to that branch first. <!-- gb area=review -->
+- Back after a click on a branch row returns to the branch you left, with its own files and pull request. <!-- gb area=sessions -->
+- Editing the pull request on one branch never saves onto a pull request with the same number on another. <!-- gb area=review -->
+- After Merge, Close or Ready the Activity of the pull request page updates at once. <!-- gb area=review -->
+- The rebase row names the branch it rebases onto. <!-- gb area=review -->
+- The sidebar flyout of many pins scrolls, and every pin is reachable by keyboard. <!-- gb area=sessions -->
+- Pressing E edits the title only on the pull request you are looking at. <!-- gb area=review -->
+- Drawers take focus when they open and give it back on close, and Esc leaves a draft before it closes the drawer. <!-- gb area=app -->
+- The pull request page counts a fix to review or a failed push as waiting for you, like the Comments tab does. <!-- gb area=review -->
+- Merging a pull request from a multi-project session uses the host of the branch you are on. <!-- gb area=review -->
+- Opening a fork pull request checks out its real head, never a local branch that only shares its name. <!-- gb area=review -->
+- A GitLab merge request with no approval left reads as not approved. <!-- gb area=review -->
+- Pipeline jobs of a fork merge request load from the fork project. <!-- gb area=review -->
+- Merge offers Rebase only on projects that merge by fast forward, and Squash is the only choice where the project requires it. <!-- gb area=review -->
+- Checks that cannot be read say why, instead of loading forever. <!-- gb area=review -->
+- On Bitbucket without a connection the pull request tab asks you to connect it, and its create link still opens. <!-- gb area=review -->
+- The action column of the project rows in the Overview fits Reopen, Close branch and Push at every window width. <!-- gb area=sessions -->
+
 ## Goodboy v0.22.0
 
 Plans are approved in a drawer where you read them, sessions can be pinned, checks say what they know, and the Branch page and the Board sit in the middle.

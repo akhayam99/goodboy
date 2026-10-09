@@ -122,7 +122,7 @@ export const InboxFacetRail = ({
   };
 
   return (
-    <FacetRail ariaLabel="Filter the inbox">
+    <FacetRail ariaLabel="Filter tasks">
       <FacetSection label="View">
         {INBOX_VIEWS.map((view) => (
           <FacetRow

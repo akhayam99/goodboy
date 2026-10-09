@@ -23,6 +23,7 @@ const PR: PullRequestState = {
 
 const facts = (overrides: Partial<PullRequestFacts>): PullRequestFacts => ({
   sessionId: 'session-harborline' as SessionId,
+  host: 'github',
   pr: PR,
   number: 318,
   phase: 'open',
@@ -37,6 +38,11 @@ const facts = (overrides: Partial<PullRequestFacts>): PullRequestFacts => ({
   isOwn: true,
   writeInFlight: null,
   isDraftAgentRunning: false,
+  commentsNeedYou: 0,
+  isFixRunLive: false,
+  mergeMethods: ['squash', 'merge', 'rebase'],
+  mergeMethodReasons: {},
+  commitCount: 5,
   ...overrides,
 });
 
@@ -138,7 +144,7 @@ const STATES: ReadonlyArray<{
     expected: [
       'pullRequest.openOnGithub secondary',
       'pullRequest.checkLog hover',
-      'pullRequest.merge secondary (Conflicts with main. Rebase in the Diff.)',
+      'pullRequest.merge secondary (Conflicts with main. Rebase on main from the Branch header.)',
       ...OWN_LIVE_TAIL,
       'pullRequest.convertToDraft menu',
       ...COPIES,

@@ -1,4 +1,11 @@
-import type { AgentId, IsoDateTime, ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentId,
+  IsoDateTime,
+  ProviderId,
+  SessionId,
+  WorkflowRunId,
+  WorkspaceId,
+} from '@goodboy/types';
 import type { Database } from '../client';
 import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
@@ -26,6 +33,11 @@ export type NotificationKind =
 
 export type NotificationAction =
   | { readonly kind: 'retry-summarizer'; readonly sessionId: SessionId }
+  | {
+      readonly kind: 'retry-orchestrator';
+      readonly sessionId: SessionId;
+      readonly workflowRunId: WorkflowRunId;
+    }
   | {
       readonly kind: 'retry-step-summary';
       readonly sessionId: SessionId;
@@ -79,6 +91,7 @@ type NotificationRow = {
 
 const NOTIFICATION_ACTION_KINDS = {
   'retry-summarizer': true,
+  'retry-orchestrator': true,
   'retry-step-summary': true,
   'open-agent': true,
   'open-budget': true,
@@ -264,4 +277,40 @@ export const deleteNotification = async ({ db, id }: SingleNotificationParams): 
 export const clearAllNotifications = async ({ db, workspaceId }: ScopeParams): Promise<void> => {
   const scope = scopeWhere({ workspaceId });
   await db.execute(`DELETE FROM notifications WHERE ${scope.sql}`, scope.params);
+};
+
+type CoalesceKeysParams = {
+  readonly db: Database;
+  readonly coalesceKeys: ReadonlyArray<string>;
+};
+
+export const deleteNotificationsByCoalesceKey = async ({
+  db,
+  coalesceKeys,
+}: CoalesceKeysParams): Promise<void> => {
+  if (coalesceKeys.length === 0) {
+    return;
+  }
+  const marks = coalesceKeys.map(() => '?').join(', ');
+  await db.execute(`DELETE FROM notifications WHERE coalesce_key IN (${marks})`, [...coalesceKeys]);
+};
+
+export const clearResolvedHelperNotifications = async ({
+  db,
+}: Pick<ScopeParams, 'db'>): Promise<void> => {
+  await db.execute(
+    `DELETE FROM notifications WHERE
+       (title = 'Summarizer failed' AND session_id IS NOT NULL AND EXISTS (
+         SELECT 1 FROM telemetry_records t
+         WHERE t.session_id = notifications.session_id AND t.kind = 'summarizer'
+           AND t.recorded_at > notifications.ts))
+       OR (kind = 'summarizer-degraded' AND coalesce_key LIKE 'step-summary-degraded:%' AND EXISTS (
+         SELECT 1 FROM live_agents a
+         WHERE a.id = json_extract(notifications.action, '$.agentId')
+           AND (a.output_summary IS NULL OR a.output_summary NOT LIKE '[unsummarized step output%')))
+       OR (title IN ('Couldn''t read the orchestrator''s reply', 'The orchestrator failed', 'Orchestrated run blocked')
+         AND session_id IS NOT NULL AND EXISTS (
+           SELECT 1 FROM live_agents a
+           WHERE a.session_id = notifications.session_id AND a.started_at > notifications.ts))`,
+  );
 };

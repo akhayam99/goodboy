@@ -31,6 +31,7 @@ type ApplyParams = ProjectionParams & {
 
 const toSessionGitlabMr = (mount: MountGitlabMrState): SessionGitlabMrState => ({
   mr: mount.mr,
+  approvals: mount.approvals ?? null,
   fetchedAt: mount.fetchedAt,
   loading: mount.loading,
   error: mount.error,

@@ -33,6 +33,9 @@ const mount = ({
     new DOMRect(0, 0, paneWidth, 800),
   );
   const Scene = MOCK_SCENES[scene];
+  if (Scene === undefined) {
+    throw new Error(`${scene} is not a registered scene`);
+  }
   return render(
     <ToastProvider>
       <Scene />

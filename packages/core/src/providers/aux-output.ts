@@ -189,7 +189,8 @@ const extractCursorStream = (lines: ReadonlyArray<Record<string, unknown>>): Aux
       usage = readEnvelopeUsage(payload['usage']);
       if (isFailedEnvelope(payload)) {
         isError = true;
-        errorMessage = failureMessage(payload);
+        const reported = asString(payload['error']) ?? resultText?.trim();
+        errorMessage = reported != null && reported !== '' ? reported : failureMessage(payload);
       }
     }
   }

@@ -1,7 +1,6 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
-import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { StatCard, PaneShell, FilledEmptyState } from '@goodboy/ui';
+import { StatCard, PaneShell, EmptyState } from '@goodboy/ui';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -10,6 +9,7 @@ import { SessionRows } from './SessionRows';
 import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 const FLOW_TILE_LABELS = [
   'median wall-clock',
@@ -19,7 +19,7 @@ const FLOW_TILE_LABELS = [
 ] as const;
 
 type Props = {
-  readonly header: ReactElement;
+  readonly frame: PaneFrame;
   readonly agentDurations: QueryResult<AgentDurations>;
   readonly flowHealth: QueryResult<FlowHealth>;
   readonly isLoading: boolean;
@@ -28,7 +28,7 @@ type Props = {
 };
 
 export const FlowPanel = ({
-  header,
+  frame,
   agentDurations,
   flowHealth,
   isLoading,
@@ -40,7 +40,7 @@ export const FlowPanel = ({
   const countOrUnknown = (value: number | undefined): string =>
     value === undefined ? UNKNOWN_VALUE : String(value);
   return (
-    <PaneShell scroll="body" header={header}>
+    <PaneShell scroll="body" {...frame}>
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
       <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
       {isLoading && agents === null && health === null ? (
@@ -88,16 +88,17 @@ export const FlowPanel = ({
                 className="grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-md px-2 py-2 text-label"
               >
                 <span className="capitalize text-foreground">{entry.kind}</span>
-                <span className="font-mono tabular-nums text-muted-foreground">
+                <span className="tabular-nums text-muted-foreground">
                   median {formatHours({ hours: entry.medianHours })}
                 </span>
-                <span className="font-mono tabular-nums text-muted-foreground">
+                <span className="tabular-nums text-muted-foreground">
                   p90 {formatHours({ hours: entry.p90Hours })}
                 </span>
               </div>
             ))}
             {agents !== null && agents.byKind.length === 0 ? (
-              <FilledEmptyState
+              <EmptyState
+                size="section"
                 icon={CONCEPT_ICONS.agents}
                 tone={CONCEPT_TONE.agents}
                 title="No completed agents in this window"
@@ -109,21 +110,17 @@ export const FlowPanel = ({
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-label">Waiting on open questions</span>
-              <span className="font-mono text-body tabular-nums">
+              <span className="text-body tabular-nums">
                 {countOrUnknown(health?.questionBlockedSessions)}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-label">Failed run agents</span>
-              <span className="font-mono text-body tabular-nums">
-                {countOrUnknown(health?.failedAgents)}
-              </span>
+              <span className="text-body tabular-nums">{countOrUnknown(health?.failedAgents)}</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="min-w-0 flex-1 text-label">Undismissed budget alerts</span>
-              <span className="font-mono text-body tabular-nums">
-                {countOrUnknown(health?.budgetAlerts)}
-              </span>
+              <span className="text-body tabular-nums">{countOrUnknown(health?.budgetAlerts)}</span>
             </div>
           </div>
         </StudioWidget>

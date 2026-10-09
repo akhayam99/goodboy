@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
+import { EmptyLine, Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageFolder } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -54,9 +54,9 @@ export const BulkRemoveBar = ({
   if (selected.size === 0) {
     if (suggested.length === 0) {
       return (
-        <p className="px-2 text-meta text-faint-foreground">
+        <EmptyLine className="px-2 text-meta text-faint-foreground">
           No clean folder has been idle for over {suggestAfterDays} days.
-        </p>
+        </EmptyLine>
       );
     }
     return (

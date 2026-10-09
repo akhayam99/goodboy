@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button, Input, SegmentedTabs } from '@goodboy/ui';
+import { CheckCheck } from 'lucide-react';
+import { Input, OverflowMenu, SegmentedTabs } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import {
@@ -12,6 +13,7 @@ import {
 import { countRowIdOf } from '../../../../timeline/buildTimelineStream';
 import { useExplodeGroups, type ExplodeGroups } from '../../../../hooks/useExplodeGroups';
 import { useScrollAnchor } from '../../../../hooks/useScrollAnchor';
+import { SessionCostChip } from '../../../SessionOverviewPane/SessionCostChip';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import { NeedsYouBlock } from './NeedsYouBlock';
 import { TimelineEmpty } from './TimelineEmpty';
@@ -60,7 +62,12 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
     [groups, setAnchored, showAllAnchored],
   );
   const rows = useTimelineRows({ session, view, query, explode });
-  const { rowPropsFor, openNeedsYou } = useTimelineRowProps({ session, explode, rows });
+  const { rowPropsFor, openNeedsYou } = useTimelineRowProps({
+    session,
+    explode,
+    rows,
+    isNeedsYouShown: view !== 'log',
+  });
   const { stream, entries, viewEntries, shownQuestions, owners } = rows;
   const shownQuestionsKey = [...shownQuestions].sort().join(' ');
   const shownRowIds = useRef<ReadonlySet<string>>(new Set());
@@ -93,15 +100,21 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
             value={view}
             onChange={setView}
           />
+          <SessionCostChip sessionId={sessionId} />
           {hasUnreadAgents ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6"
-              onClick={() => void markAllAgentsSeen(sessionId)}
-            >
-              Mark all seen
-            </Button>
+            <OverflowMenu
+              label="Activity actions"
+              align="left"
+              items={[
+                {
+                  kind: 'item',
+                  key: 'mark-all-seen',
+                  label: 'Mark all seen',
+                  icon: CheckCheck,
+                  onClick: () => void markAllAgentsSeen(sessionId),
+                },
+              ]}
+            />
           ) : null}
         </div>
         {actions}

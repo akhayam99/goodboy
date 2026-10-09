@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { cn } from '../../cn';
+import { FLOATING_SURFACE } from '../../floatingSurface';
 import { ScrollFade } from '../ScrollFade';
 import { MenuList } from './MenuList';
 import { placeContextMenu } from './placeContextMenu';
@@ -69,7 +71,10 @@ export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
         top: placed?.y ?? point.y,
         visibility: placed === null ? 'hidden' : 'visible',
       }}
-      className="fixed z-popover flex max-h-[calc(100vh-16px)] max-w-sm flex-col rounded-lg border border-border bg-floating text-label shadow-lg motion-safe:animate-popover-in"
+      className={cn(
+        FLOATING_SURFACE,
+        'fixed z-popover flex max-h-[calc(100vh-16px)] max-w-80 flex-col text-label motion-safe:animate-popover-in',
+      )}
     >
       <ScrollFade
         className="flex min-h-0 flex-1 flex-col"

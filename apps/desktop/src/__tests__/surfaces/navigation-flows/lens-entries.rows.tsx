@@ -3,6 +3,7 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import {
   type Ctx,
   branchTab,
+  CRUMB_ROWS,
   LENS_ROWS,
   type Row,
   WAIT,
@@ -39,8 +40,8 @@ const RIGHT_CLICK_SESSION_ROWS: ReadonlyArray<{
   readonly lens: string | null;
   readonly lands: (ctx: Ctx) => Promise<void>;
 }> = [
-  { label: 'Review', lens: 'branch', lands: branchTab('comments') },
-  { label: 'Diff', lens: 'branch', lands: branchTab('files') },
+  { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
+  { label: 'Files', lens: 'branch', lands: branchTab('files') },
   { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 
@@ -90,11 +91,15 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
       );
     },
   },
-  ...LENS_ROWS.map((row): Row => ({
+  ...CRUMB_ROWS.map((row): Row => ({
     name: `crumb menu: ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `crumb:${row.label}`, `lens:${row.lens ?? 'overview'}`],
     ...(row.seed !== undefined && { seed: row.seed }),
-    open: () => openCrumb(new RegExp(`^${row.label}`)),
+    open: async (ctx) => {
+      row.beforeOpen?.(ctx);
+      await settle();
+      await openCrumb(new RegExp(`^${row.label}`));
+    },
     lands: both(lens(row.lens), row.lands),
   })),
   ...LENS_ROWS.map((row): Row => ({

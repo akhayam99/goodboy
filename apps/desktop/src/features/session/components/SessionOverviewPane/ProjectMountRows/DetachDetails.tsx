@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { DetachDetails as Details } from './detachPlan';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly projectName: string;
@@ -23,7 +24,7 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-fit items-center gap-1 rounded-md px-1 py-0.5 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
       >
-        <Chevron size={10} aria-hidden />
+        <Chevron size={ICON_SIZE.mark} aria-hidden />
         Details
       </button>
       {isOpen ? (
@@ -48,7 +49,6 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
             <Button
               size="sm"
               variant="secondary"
-              emphasis="outline"
               disabled={isBusy}
               className="w-fit"
               onClick={onKeepFiles}

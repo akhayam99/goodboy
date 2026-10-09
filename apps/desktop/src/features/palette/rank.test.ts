@@ -23,7 +23,7 @@ const ITEMS: ReadonlyArray<RankCandidate> = [
   { key: 'session:payout', label: 'Speed up the payout export for large merchants' },
   { key: 'artifact:plan', label: 'Stream the payout export in pages' },
   { key: 'session:rounding', label: 'Fix the rounding drift in the settlement export' },
-  { key: 'goto:inbox', label: 'Inbox' },
+  { key: 'goto:inbox', label: 'Tasks' },
 ];
 
 describe('rankCandidates', () => {
@@ -159,13 +159,13 @@ describe('rankCandidates', () => {
       now: NOW,
     });
 
-    expect(labels(ranked).slice(0, 2)).toEqual(['Inbox', 'Scout']);
+    expect(labels(ranked).slice(0, 2)).toEqual(['Tasks', 'Scout']);
   });
 
   it('returns match positions on the label for highlighting', () => {
     const [first] = rankCandidates({
       items: ITEMS,
-      query: 'inbox',
+      query: 'tasks',
       frecency: EMPTY_FRECENCY,
       now: NOW,
     });

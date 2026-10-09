@@ -23,6 +23,11 @@ describe('HeaderBand', () => {
     const action = screen.getByRole('link', { name: 'Open' });
 
     expect(title.className).toContain('text-title');
+    expect(title.className).toContain('truncate');
+    expect(title.parentElement?.className.split(' ')).toEqual(
+      expect.arrayContaining(['h-8', 'items-center']),
+    );
+    expect(title.parentElement?.className).not.toContain('items-start');
     expect(title.parentElement?.contains(action)).toBe(true);
     expect(title.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(meta.compareDocumentPosition(subtitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

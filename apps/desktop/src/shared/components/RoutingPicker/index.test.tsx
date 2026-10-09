@@ -984,4 +984,19 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} variant="pill" />);
     expect(screen.queryByTestId('budget-slot')).toBeNull();
   });
+
+  it('puts a prefix before the model in the trigger', () => {
+    render(<RoutingPicker {...baseProps} variant="pill" triggerPrefix="Next turn" />);
+    const trigger = screen.getByRole('button', { name: /routing/i });
+    expect(trigger.textContent).toContain('Next turn');
+    expect(trigger.textContent).toContain('Opus 5');
+  });
+
+  it('shows a quiet word instead of the model, and keeps the model in the name', () => {
+    render(<RoutingPicker {...baseProps} variant="pill" quietLabel="Model" />);
+    const trigger = screen.getByRole('button', { name: /routing/i });
+    expect(trigger.textContent).toContain('Model');
+    expect(trigger.textContent).not.toContain('Opus 5');
+    expect(trigger.getAttribute('aria-label')).toContain('Opus 5');
+  });
 });

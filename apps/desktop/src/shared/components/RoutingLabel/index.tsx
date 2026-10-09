@@ -14,11 +14,12 @@ type Props = {
   readonly isColumn?: boolean;
   readonly hideName?: boolean;
   readonly glyphPlacement?: 'leading' | 'trailing';
+  readonly prefix?: string;
   readonly muted?: boolean;
   readonly className?: string;
 };
 
-const MISSING_LABEL = 'Model not chosen yet';
+const MISSING_LABEL = 'Model unknown';
 
 const DIVERGED_CLASS = 'underline decoration-dotted underline-offset-2';
 
@@ -31,6 +32,7 @@ export const RoutingLabel = ({
   isColumn = false,
   hideName = false,
   glyphPlacement = 'leading',
+  prefix,
   muted = false,
   className,
 }: Props) => {
@@ -100,6 +102,11 @@ export const RoutingLabel = ({
           className,
         )}
       >
+        {prefix == null ? null : (
+          <span data-routing-part="prefix" className="shrink-0 text-muted-foreground">
+            {prefix}
+          </span>
+        )}
         {glyphPlacement === 'leading' ? glyph : null}
         <span
           data-routing-part="name"

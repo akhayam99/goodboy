@@ -3,6 +3,7 @@ import { cn, tintClasses } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { useProviderStanding } from '../../../features/providers/hooks/useProviderStanding';
 import { ProviderGlyph } from './ProviderGlyph';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly id: ProviderId;
@@ -29,7 +30,7 @@ export const NamedProviderChip = ({ id, isActive, isConnected, onSelect }: Props
       )}
     >
       <span className="flex min-w-0 items-center gap-2 text-row text-foreground">
-        <ProviderGlyph id={id} size={12} />
+        <ProviderGlyph id={id} size={ICON_SIZE.row} />
         <span className="truncate">{PROVIDER_LABEL[id]}</span>
       </span>
       <span

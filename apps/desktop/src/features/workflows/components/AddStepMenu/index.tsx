@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Plus, Search } from 'lucide-react';
-import { AnchoredPopover, Input, KbdPill, useDropdown } from '@goodboy/ui';
+import { EmptyLine, AnchoredPopover, Input, Kbd, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ROLE_LABEL, kindForRole } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
@@ -167,7 +167,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
           lead={<Plus size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />}
           name="Blank step"
           note=""
-          trail={active === 0 ? <KbdPill>Enter</KbdPill> : null}
+          trail={active === 0 ? <Kbd look="cap">Enter</Kbd> : null}
           onHover={() => setActiveIndex(0)}
           onPick={() => pick(null)}
         />
@@ -184,8 +184,8 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
         ) : null}
         {workspace.map((step, index) => renderStep(step, index + 1 + builtin.length))}
         {needle !== '' && builtin.length === 0 && workspace.length === 0 ? (
-          <li role="presentation" className="px-2 py-1 text-meta text-muted-foreground">
-            No saved steps match that search
+          <li role="presentation" className="px-2 py-1">
+            <EmptyLine>No saved steps match that search</EmptyLine>
           </li>
         ) : null}
       </ul>

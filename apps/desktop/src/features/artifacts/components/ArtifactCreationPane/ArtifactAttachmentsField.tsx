@@ -4,6 +4,7 @@ import { SectionHeader, cn, tintClasses } from '@goodboy/ui';
 import { ATTACHMENT_ACCEPT } from '../../../chat/attachment-kinds';
 import type { ArtifactAttachment } from '../../artifactAttachments';
 import { ArtifactAttachmentChip } from './ArtifactAttachmentChip';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly attachments: ReadonlyArray<ArtifactAttachment>;
@@ -63,7 +64,7 @@ export const ArtifactAttachmentsField = ({
             : 'text-muted-foreground hover:bg-hover hover:text-foreground',
         )}
       >
-        <Paperclip size={11} aria-hidden /> Add files
+        <Paperclip size={ICON_SIZE.mark} aria-hidden /> Add files
       </button>
       {attachments.length > 0 ? (
         attachments.map((attachment) => (

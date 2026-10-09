@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ArrowUpRight, Ellipsis, X } from 'lucide-react';
+import { ArrowUpRight, X } from 'lucide-react';
 import { IconButton, useInheritedPaneActions } from '@goodboy/ui';
 import {
   IntegrationGlyph,
@@ -60,6 +60,7 @@ export const RecordHeader = ({
       sessionId: null,
       isStarred: null,
       onOpen: null,
+      launchLabel: null,
       onLaunch: null,
       onToggleStar: null,
       onRefresh: onRefresh ?? frame?.onRefresh ?? null,
@@ -97,8 +98,7 @@ export const RecordHeader = ({
           target={target}
           label={`More actions for ${identifier}`}
           anchorKey={`record-header:${identifier}`}
-          trigger={<Ellipsis size={ICON_SIZE.control} aria-hidden />}
-          triggerClassName="p-2"
+          size="control"
           omit={RECORD_HEADER_OMISSIONS}
         />
         {frame?.onClose != null ? (

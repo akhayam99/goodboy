@@ -138,36 +138,29 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('script pins in the Scripts lens', () => {
-  it('lists only what is pinned on the Projects page, and keeps it in a session on another worktree', async () => {
+  it('pins from the empty project inline, shows the script once, and keeps it in a session on another worktree', async () => {
     renderLens(FIRST.id);
-    const strip = screen.getByRole('region', { name: 'Pinned scripts' });
-    within(strip).getByText(/Pin scripts in Settings, under Projects/);
-    await screen.findByText('No pinned scripts');
-    expect(screen.queryByRole('button', { name: 'Pin test' })).toBeNull();
+    await screen.findByText('No scripts in ledger-core');
+    expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show test output' })).toBeNull();
-    cleanup();
 
-    render(<ProjectScriptsFold project={LEDGER} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Scripts of ledger-core' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Pin test' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pin a script of ledger-core' }));
+    const picker = await screen.findByRole('region', { name: 'Scripts of ledger-core' });
+    fireEvent.click(within(picker).getByRole('button', { name: 'Pin test' }));
+
     await waitFor(async () => expect(await savedPins()).toHaveLength(1));
     expect((await savedPins())[0]).not.toContain('worktrees');
-    cleanup();
-
-    renderLens(FIRST.id);
-    const firstStrip = screen.getByRole('region', { name: 'Pinned scripts' });
-    await within(firstStrip).findByRole('button', { name: 'Run test in ledger-core' });
-    expect(screen.getByRole('button', { name: 'Unpin test' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(await screen.findAllByRole('button', { name: 'Show test output' })).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show dev output' })).toBeNull();
     cleanup();
 
     renderLens(SECOND.id);
-    const secondStrip = screen.getByRole('region', { name: 'Pinned scripts' });
-    fireEvent.click(
-      await within(secondStrip).findByRole('button', { name: 'Run test in ledger-core' }),
+    expect(await screen.findAllByRole('button', { name: 'Show test output' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Unpin test' }).getAttribute('aria-pressed')).toBe(
+      'true',
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Run test' }));
 
     await waitFor(() => expect(invokes('workspace_script_run_adhoc')).toHaveLength(1));
     expect(invokes('workspace_script_run_adhoc')[0]).toMatchObject({

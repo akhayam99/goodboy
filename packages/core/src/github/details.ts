@@ -407,15 +407,26 @@ const readPrViewField = async <T>({
   }
 };
 
-export const fetchPrDetail = async (
+export type PrReadStates = Pick<
+  PrDetail,
+  | 'reviews'
+  | 'reviewRequests'
+  | 'checks'
+  | 'checksRead'
+  | 'checksError'
+  | 'reviewsRead'
+  | 'reviewsError'
+  | 'reviewRequestsRead'
+  | 'reviewRequestsError'
+>;
+
+export const fetchPrReadStates = async (
   runner: GhRunner,
   repo: string,
   prNumber: number,
   opts: GhRunOptions = {},
-): Promise<PrDetail> => {
-  const [issueComments, reviewComments, reviewsRead, requestsRead, checksRead] = await Promise.all([
-    fetchIssueComments(runner, repo, prNumber, opts),
-    fetchReviewThreads(runner, repo, prNumber, opts),
+): Promise<PrReadStates> => {
+  const [reviewsRead, requestsRead, checksRead] = await Promise.all([
     readPrViewField({ runner, repo, prNumber, field: 'reviews', pick: (raw) => raw.reviews, opts }),
     readPrViewField({
       runner,
@@ -434,9 +445,6 @@ export const fetchPrDetail = async (
       opts,
     }),
   ]);
-
-  const merged = dedupeComments([...issueComments, ...reviewComments]);
-  const sorted = [...merged].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   const reviews: ReadonlyArray<PrReview> = reviewsRead.value.map((r) => ({
     id: `review-${r.id}`,
@@ -470,8 +478,6 @@ export const fetchPrDetail = async (
   }));
 
   return {
-    prNumber,
-    comments: sorted,
     reviews,
     reviewRequests,
     checks,
@@ -481,5 +487,27 @@ export const fetchPrDetail = async (
     reviewsError: reviewsRead.error,
     reviewRequestsRead: requestsRead.read,
     reviewRequestsError: requestsRead.error,
+  };
+};
+
+export const fetchPrDetail = async (
+  runner: GhRunner,
+  repo: string,
+  prNumber: number,
+  opts: GhRunOptions = {},
+): Promise<PrDetail> => {
+  const [issueComments, reviewComments, states] = await Promise.all([
+    fetchIssueComments(runner, repo, prNumber, opts),
+    fetchReviewThreads(runner, repo, prNumber, opts),
+    fetchPrReadStates(runner, repo, prNumber, opts),
+  ]);
+
+  const merged = dedupeComments([...issueComments, ...reviewComments]);
+  const sorted = [...merged].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  return {
+    prNumber,
+    comments: sorted,
+    ...states,
   };
 };

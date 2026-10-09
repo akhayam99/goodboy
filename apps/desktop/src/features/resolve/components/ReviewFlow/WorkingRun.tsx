@@ -38,7 +38,8 @@ export const WorkingRun = ({ attempt }: Props) => {
   const since = attempt.startedAt ?? attempt.createdAt;
   const elapsed = formatDuration({ durationMs: Math.max(0, now - since) });
   return (
-    <section
+    <div
+      role="group"
       aria-label={FIX_RUN_THREAD_COPY.working}
       data-testid="resolver-working"
       className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle p-4 ring-1 ring-border-soft"
@@ -53,6 +54,6 @@ export const WorkingRun = ({ attempt }: Props) => {
       <p className="text-meta text-faint-foreground">
         {FIX_RUN_THREAD_COPY.sameRun} · {fixRunModelLabel({ attempt })}
       </p>
-    </section>
+    </div>
   );
 };

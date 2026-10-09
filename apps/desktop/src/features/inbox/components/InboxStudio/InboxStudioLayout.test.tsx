@@ -13,10 +13,10 @@ describe('InboxStudioLayout', () => {
   it('keeps the drawer column closed while nothing is open, with no filters column beside the list', () => {
     render(<InboxStudioLayout list={<p>rows</p>} drawer={null} />);
 
-    const drawer = screen.getByRole('complementary', { name: 'Inbox item' });
+    const drawer = screen.getByRole('complementary', { name: 'Task' });
     expect(drawer.getAttribute('data-drawer-mode')).toBe('closed');
     expect(drawer.style.width).toBe('0px');
-    expect(screen.queryByRole('complementary', { name: 'Inbox filters' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
   });
 
   it('opens the record in a drawer at the one saved width, clamped', () => {
@@ -24,7 +24,7 @@ describe('InboxStudioLayout', () => {
 
     render(<InboxStudioLayout list={<p>rows</p>} drawer={<p>record</p>} />);
 
-    const drawer = screen.getByRole('complementary', { name: 'Inbox item' });
+    const drawer = screen.getByRole('complementary', { name: 'Task' });
     expect(drawer.style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_INSET * 2}px`);
     expect(drawer.getAttribute('data-drawer-mode')).toBe('push');
   });

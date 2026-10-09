@@ -79,7 +79,15 @@ const keysIn = (container: HTMLElement) =>
     .queryAllByTestId('session-row-keys')
     .map((node) => node.textContent);
 
-const rowOf = (name: RegExp) => screen.getByRole('button', { name });
+const rowOf = (name: RegExp): HTMLElement => {
+  const row = screen
+    .getAllByRole('button', { name })
+    .find((button) => button.hasAttribute('data-select-id'));
+  if (row === undefined) {
+    throw new Error(`no session row ${name}`);
+  }
+  return row;
+};
 
 describe('the ticket key on a session row', () => {
   it('shows the key before the title on the left column row', () => {

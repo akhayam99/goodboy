@@ -5,7 +5,7 @@ import { FOCUS_RING } from '../../focusRing';
 import { tintClasses } from '../../tint';
 import { useEscapeLayer } from '../../useEscapeLayer';
 import { Button } from '../Button';
-import { KbdPill } from '../KbdPill';
+import { KeyHint } from '../KeyHint';
 import { IconButton } from '../IconButton';
 
 export type SelectionVerb = {
@@ -168,12 +168,10 @@ export const SelectionBar = ({
           <span className="flex items-center gap-2">
             <IconButton
               icon={X}
-              iconSize={13}
-              variant="ghost"
+              size="xs"
               label="Clear selection"
               tooltip={withHint({ text: 'Clear selection', hint: clearHint })}
               onClick={onClear}
-              className="p-1"
             />
             <span className="whitespace-nowrap text-row tabular-nums text-foreground">
               {count} selected
@@ -212,14 +210,7 @@ export const SelectionBar = ({
                 >
                   {verb.icon}
                   {verb.label}
-                  {verb.hint === undefined ? null : (
-                    <KbdPill
-                      aria-hidden
-                      className="h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
-                    >
-                      {verb.hint}
-                    </KbdPill>
-                  )}
+                  {verb.hint === undefined ? null : <KeyHint keys={verb.hint} isOnTone />}
                 </Button>
               ))}
             </span>

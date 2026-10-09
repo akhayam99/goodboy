@@ -1,4 +1,5 @@
 import type { BitbucketReviewTransport } from '@goodboy/core';
+import { bitbucketPullRequestTransport } from './bitbucketPullRequestTransport';
 import {
   bitbucketGetPullRequest,
   bitbucketListPullRequestComments,
@@ -21,5 +22,6 @@ export const bitbucketReviewTransport = ({
     replyToComment: async ({ parentCommentId, body }) =>
       (await bitbucketReplyToPullRequestComment({ ...target, parentCommentId, body })).id,
     readHeadSha: async () => (await bitbucketGetPullRequest(target)).sourceCommit,
+    pullRequest: bitbucketPullRequestTransport({ repo, pullRequestId }),
   };
 };

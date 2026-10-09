@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
-import { Button } from '@goodboy/ui';
+import { EmptyLine, Button } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SECRET_KIND_LABEL, SecurityFindingRow } from './SecurityFindingRow';
@@ -62,10 +62,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
       )}
       {status === 'loading' && <p className="text-body text-muted-foreground">Checking…</p>}
       {status === 'ready' && open.length === 0 && (
-        <p className="flex items-center gap-2 text-body text-muted-foreground">
-          <ShieldCheck size={ICON_SIZE.row} aria-hidden />
-          No findings in your saved scripts.
-        </p>
+        <EmptyLine icon={ShieldCheck}>No findings in your saved scripts.</EmptyLine>
       )}
       {open.map((finding) => (
         <SecurityFindingRow

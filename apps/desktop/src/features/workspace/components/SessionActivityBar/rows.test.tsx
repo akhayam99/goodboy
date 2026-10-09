@@ -138,11 +138,22 @@ describe('a session row', () => {
     expect(document.getElementById(described)?.textContent ?? '').toMatch(/needs you/i);
   });
 
-  it('marks the open session and leaves the rest unmarked', () => {
+  it('marks the open session through its page and leaves the rest unmarked', () => {
     seedColumn({ store: useAppStore, sessions: all, currentSessionId: idle.id as SessionId });
     renderBar();
-    expect(rowOf('Webhook signature rotation').getAttribute('aria-current')).not.toBeNull();
+    const marked = Array.from(document.querySelectorAll('[aria-current="page"]'));
+    expect(marked).toHaveLength(1);
+    expect(marked[0]?.textContent).toMatch(/^Overview/);
     expect(rowOf('Fix webhook retries').getAttribute('aria-current')).toBeNull();
+  });
+
+  it('marks the session row itself when the open page has no row', () => {
+    seedColumn({ store: useAppStore, sessions: all, currentSessionId: idle.id as SessionId });
+    useAppStore.setState({ activeLens: { [idle.id]: 'terminal' } });
+    renderBar();
+    const marked = Array.from(document.querySelectorAll('[aria-current="page"]'));
+    expect(marked).toHaveLength(1);
+    expect(marked[0]).toBe(rowOf('Webhook signature rotation'));
   });
 
   it('opens the session on a click', () => {

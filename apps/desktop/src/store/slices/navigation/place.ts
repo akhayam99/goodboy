@@ -1,5 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { DiffFocus, LensKind, SessionStudio } from '../session-view/types';
+import { noteIdOfThread } from '../../../features/resolve/notes/noteThread';
 import type { OpenDrawer } from '../drawer/state';
 import type { AgentPane, BranchTab, Place, PlaceRequest, SessionTarget } from './types';
 
@@ -75,6 +76,11 @@ export const fixRunTranscript = ({
   threadId = null,
   mountPath = null,
 }: FixRunParams): FixRunTranscript => ({
-  to: branchPlace({ sessionId, mountPath, tab: 'comments', threadId }),
+  to: branchPlace({
+    sessionId,
+    mountPath,
+    tab: threadId !== null && noteIdOfThread({ threadId }) !== null ? 'files' : 'comments',
+    threadId,
+  }),
   drawer: { kind: 'transcript', sessionId, payload: { agentId } },
 });

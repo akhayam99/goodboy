@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Chip } from '../components/Chip';
+import { StateBadge } from '../components/StateBadge';
 
 afterEach(cleanup);
 
@@ -40,16 +41,57 @@ describe('Chip', () => {
     expect(classesOf('two')).toContain('min-w-24');
   });
 
-  it('offers a smaller step than xs for dense metadata', () => {
+  it('maps the old sizes onto the kinds, so a small size is a state pill and a large one a reference badge', () => {
     render(
       <>
         <Chip tone="neutral" label="tiny" size="3xs" />
         <Chip tone="neutral" label="small" size="xs" />
+        <Chip tone="neutral" label="medium" size="md" />
       </>,
     );
 
-    expect(classesOf('tiny')).toContain('text-chip');
-    expect(classesOf('small')).toContain('text-meta');
+    expect(classesOf('tiny')).toContain('h-5');
+    expect(classesOf('small')).toContain('rounded-full');
+    expect(classesOf('medium')).toContain('h-6');
+    expect(classesOf('medium')).toContain('rounded-md');
+  });
+
+  it('draws each kind at its own height and radius', () => {
+    render(
+      <>
+        <Chip tone="neutral" kind="state" label="state" />
+        <Chip tone="neutral" kind="reference" label="reference" />
+        <Chip tone="neutral" kind="id" label="id" />
+        <Chip tone="neutral" kind="count" label="3" />
+      </>,
+    );
+
+    expect(classesOf('state').split(' ')).toEqual(
+      expect.arrayContaining(['h-5', 'rounded-full', 'text-chip']),
+    );
+    expect(classesOf('reference').split(' ')).toEqual(
+      expect.arrayContaining(['h-6', 'rounded-md', 'text-meta']),
+    );
+    expect(classesOf('id').split(' ')).toEqual(
+      expect.arrayContaining(['h-5', 'rounded-sm', 'font-mono']),
+    );
+    expect(classesOf('3').split(' ')).toEqual(
+      expect.arrayContaining(['h-4', 'min-w-4', 'rounded-full', 'tabular-nums']),
+    );
+  });
+
+  it('ignores a legacy shape once the kind is named', () => {
+    render(<Chip tone="neutral" kind="state" shape="badge" label="state" />);
+
+    expect(classesOf('state')).toContain('rounded-full');
+    expect(classesOf('state')).not.toContain('rounded-md');
+  });
+
+  it('makes StateBadge the state kind', () => {
+    const { container: badge } = render(<StateBadge tone="success">merged</StateBadge>);
+    const { container: chip } = render(<Chip kind="state" tone="success" label="merged" />);
+
+    expect(badge.innerHTML).toBe(chip.innerHTML);
   });
 
   it('never shouts its label', () => {

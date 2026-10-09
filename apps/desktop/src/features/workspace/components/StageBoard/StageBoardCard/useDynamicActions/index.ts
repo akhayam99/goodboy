@@ -4,7 +4,6 @@ import { formatError, type Tone } from '@goodboy/ui';
 import type {
   Agent,
   OpenQuestion,
-  ResolveThread,
   Session,
   SessionEvent,
   SessionId,
@@ -19,7 +18,8 @@ import {
   type WorkflowAdvanceView,
 } from '../../../../../workflows/workflowAdvanceView';
 import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestionsGate';
-import { eligibleReviewThreads } from '../../../../../suggestions/eligibleThreads';
+import { useFixableThreadIds } from '../../../../../resolve/useFixableThreadIds';
+import { fixLabel } from '../../../../../resolve/reviewLaunchCopy';
 import { requestReview } from '../../../../../review/reviewRequest';
 import { pendingMountProposals } from '../../../../../../store/slices/project-mounts/materializationProposals';
 import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
@@ -44,7 +44,6 @@ const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const EMPTY_WORKFLOWS: ReadonlyArray<Workflow> = [];
 const EMPTY_RUNS: ReadonlyArray<Agent> = [];
 const EMPTY_EVENTS: ReadonlyArray<SessionEvent> = [];
-const EMPTY_RESOLVE_ROWS: ReadonlyArray<ResolveThread> = [];
 const MAX_MOUNT_ACTIONS = 2;
 
 export const useDynamicActions = (
@@ -59,8 +58,6 @@ export const useDynamicActions = (
   const isSummarizerRunning = useAppStore((s) => s.summarizerStatus[id]?.status === 'running');
   const skipStuckStepAndAdvance = useAppStore((s) => s.skipStuckStepAndAdvance);
   const events = useAppStore((s) => s.sessionEvents?.[id] ?? EMPTY_EVENTS);
-  const github = useAppStore((s) => s.sessionGithub[id] ?? null);
-  const resolveRows = useAppStore((s) => s.sessionResolveThreads[id] ?? EMPTY_RESOLVE_ROWS);
   const ensureProjectMounted = useAppStore((s) => s.ensureProjectMounted);
   const emitNotification = useAppStore((s) => s.emitNotification);
   const hasUnread = useSessionHasUnread(id);
@@ -68,13 +65,7 @@ export const useDynamicActions = (
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId: id });
 
   const mountProposals = useMemo(() => pendingMountProposals({ events }), [events]);
-  const eligibleThreadIds = useMemo(
-    () =>
-      eligibleReviewThreads({ github, rows: resolveRows }).flatMap((thread) =>
-        thread.head.threadId == null ? [] : [thread.head.threadId],
-      ),
-    [github, resolveRows],
-  );
+  const eligibleThreadIds = useFixableThreadIds({ sessionId: id });
   const eligibleThreads = eligibleThreadIds.length;
 
   const advances = useMemo(() => {
@@ -193,12 +184,12 @@ export const useDynamicActions = (
         },
       });
     }
-    if (github?.pr != null && eligibleThreads > 0) {
+    if (eligibleThreads > 0) {
       actions.push({
         key: 'resolve',
         icon: SUGGESTION_ICONS['resolve-threads'],
         tone: 'primary',
-        label: `Resolve ${eligibleThreads} ${eligibleThreads === 1 ? 'comment' : 'comments'}`,
+        label: fixLabel({ count: eligibleThreads }),
         onClick: () =>
           requestReview({
             getState: useAppStore.getState,
@@ -248,7 +239,6 @@ export const useDynamicActions = (
     mountProposals,
     ensureProjectMounted,
     emitNotification,
-    github,
     eligibleThreads,
     eligibleThreadIds,
     id,

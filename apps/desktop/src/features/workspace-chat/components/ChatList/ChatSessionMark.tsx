@@ -1,6 +1,6 @@
 import { StatusDot, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import type { ChatSessionMarker } from '../../hooks/useChatSessionMarker';
 
@@ -43,7 +43,7 @@ export const ChatSessionMark = ({ marker, onOpen }: Props) => {
         }}
         className="pointer-events-auto flex shrink-0 items-center gap-1 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
-        <CONCEPT_ICONS.sessions size={11} aria-hidden />
+        <CONCEPT_ICONS.sessions size={ICON_SIZE.mark} aria-hidden />
         <StatusDot tone={marker.tone} size="sm" pulsing={marker.isPulsing} />
         <span>{marker.count === 1 ? 'session' : `${marker.count} sessions`}</span>
       </button>

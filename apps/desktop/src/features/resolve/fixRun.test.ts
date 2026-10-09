@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
-import { fixRunOf, fixRunTitle, type FixRunSource } from './fixRun';
+import { resolveWordOfState } from './commentProjection';
+import { fixRunOf, fixRunTitle, fixRunWordOf, type FixRunSource } from './fixRun';
+import type { ReviewCommentState } from './reviewCommentState';
 
 const attempt = ({
   id,
@@ -43,9 +45,9 @@ const SECOND = attempt({ id: 'a2', agentId: 'agent-2', launchId: 'launch-2', cre
 
 const source = (
   threadId: string,
-  state: FixRunSource['state'],
+  state: ReviewCommentState,
   from: ResolveAttempt | null,
-): FixRunSource => ({ threadId, state, attempt: from });
+): FixRunSource => ({ threadId, word: resolveWordOfState({ state }), attempt: from });
 
 describe('fixRunOf', () => {
   it('is null when no comment belongs to a fix run', () => {
@@ -54,7 +56,7 @@ describe('fixRunOf', () => {
     ).toBeNull();
   });
 
-  it('counts the comments of the launch by the five words', () => {
+  it('counts the comments of the launch by the delivery words', () => {
     const run = fixRunOf({
       sources: [
         source('t1', 'ready', FIRST),
@@ -68,10 +70,12 @@ describe('fixRunOf', () => {
 
     expect(run?.total).toBe(6);
     expect(run?.tally).toMatchObject({
-      ready: 3,
-      needs_you: 1,
+      needsYou: 4,
+      toReview: 2,
+      question: 1,
+      couldntFix: 1,
       working: 1,
-      couldnt_fix: 1,
+      readyToPush: 1,
       done: 0,
     });
     expect(run?.isLive).toBe(true);
@@ -107,7 +111,7 @@ describe('fixRunOf', () => {
       sources: [source('t1', 'accepted', FIRST), source('t2', 'skipped', FIRST)],
     });
 
-    expect(run?.tally).toMatchObject({ ready: 1, done: 1 });
+    expect(run?.tally).toMatchObject({ readyToPush: 1, leftOpen: 1 });
   });
 
   it('names the model with its effort', () => {
@@ -126,5 +130,17 @@ describe('fixRunTitle', () => {
 
     expect(live === null ? '' : fixRunTitle({ run: live })).toBe('Fixing 2 comments');
     expect(idle === null ? '' : fixRunTitle({ run: idle })).toBe('Fix run · 1 comment');
+  });
+});
+
+describe('fixRunWordOf', () => {
+  it('names the run by the question first, then what works, then what needs you, then what waits', () => {
+    expect(fixRunWordOf({ words: ['ready', 'working', 'to_review', 'question'] })).toBe('question');
+    expect(fixRunWordOf({ words: ['ready', 'working', 'push_failed'] })).toBe('working');
+    expect(fixRunWordOf({ words: ['ready', 'push_failed', 'to_review'] })).toBe('push_failed');
+    expect(fixRunWordOf({ words: ['ready', 'couldnt_fix'] })).toBe('couldnt_fix');
+    expect(fixRunWordOf({ words: ['ready', 'working'] })).toBe('working');
+    expect(fixRunWordOf({ words: ['done', 'ready'] })).toBe('ready');
+    expect(fixRunWordOf({ words: [] })).toBe('done');
   });
 });

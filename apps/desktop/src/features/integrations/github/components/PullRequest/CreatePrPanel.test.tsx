@@ -167,7 +167,7 @@ const draftingAgent = (): Agent => ({
 });
 
 const switchToAgentMode = () => {
-  fireEvent.click(screen.getByRole('tab', { name: 'Write it' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Draft with an agent' }));
 };
 
 beforeEach(() => {
@@ -198,7 +198,7 @@ describe('CreatePrPanel', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Pull request description' }), {
       target: { value: 'Documents the change.' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create pull request' }));
 
     await waitFor(() =>
       expect(h.store.createPrForSession).toHaveBeenCalledWith({
@@ -212,11 +212,21 @@ describe('CreatePrPanel', () => {
     );
   });
 
+  it('focuses the untouched default title with the caret at its start, so a long title reads from its first word', async () => {
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+    const title = screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement;
+
+    expect(document.activeElement).toBe(title);
+    expect(title.selectionStart).toBe(0);
+    expect(title.selectionEnd).toBe(0);
+  });
+
   it('respects the draft toggle on manual create', async () => {
     renderPanel();
     await screen.findByRole('combobox', { name: 'Branch' });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Open as draft' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Open as draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create pull request' }));
 
     await waitFor(() =>
       expect(h.store.createPrForSession).toHaveBeenCalledWith(
@@ -236,7 +246,7 @@ describe('CreatePrPanel', () => {
       />,
     );
     await screen.findByRole('combobox', { name: 'Branch' });
-    const create = screen.getByRole('button', { name: 'Create PR' });
+    const create = screen.getByRole('button', { name: 'Create pull request' });
     const cancel = screen.getByRole('button', { name: 'Cancel' });
     expect(create.closest('[data-slot="form-page"]')).not.toBeNull();
     expect(create.closest('footer')).toBeNull();
@@ -249,7 +259,7 @@ describe('CreatePrPanel', () => {
     h.store.createPrForSession.mockRejectedValueOnce(new Error('gh exploded'));
     renderPanel();
     await screen.findByRole('combobox', { name: 'Branch' });
-    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create pull request' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('gh exploded');
@@ -319,7 +329,7 @@ describe('CreatePrPanel', () => {
       (screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement).value,
     ).toBe('Make ledger postings idempotent');
     expect(screen.getByText('- Retried batches no longer double post')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create pull request' }));
 
     await waitFor(() =>
       expect(h.store.createPrForSession).toHaveBeenCalledWith(
@@ -364,7 +374,9 @@ describe('CreatePrPanel', () => {
     await screen.findByRole('combobox', { name: 'Branch' });
 
     expect(screen.getByText('Pushing the branch and opening the pull request.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create PR' }).hasAttribute('disabled')).toBe(true);
+    expect(
+      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+    ).toBe(true);
   });
 
   it('hands over to the branch page once the pull request it asked for exists', async () => {
@@ -417,7 +429,9 @@ describe('CreatePrPanel', () => {
     renderPanel();
     await screen.findByRole('combobox', { name: 'Branch' });
 
-    expect(screen.getByRole('button', { name: 'Create PR' }).hasAttribute('disabled')).toBe(true);
+    expect(
+      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+    ).toBe(true);
     expect(
       screen.getByText('An agent is already opening a pull request for this session.'),
     ).toBeDefined();
@@ -433,7 +447,9 @@ describe('CreatePrPanel', () => {
     await screen.findByRole('combobox', { name: 'Branch' });
 
     expect(screen.getByText('Scribe is writing the title and description.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create PR' }).hasAttribute('disabled')).toBe(true);
+    expect(
+      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+    ).toBe(true);
   });
 
   it('previews the closing reference for an issue linked on the session branch, and only that one', async () => {
@@ -463,7 +479,7 @@ describe('CreatePrPanel', () => {
       .getAllByTestId('pr-issue-reference')
       .map((node) => node.textContent)
       .join('\n');
-    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create pull request' }));
 
     await waitFor(() => expect(h.store.createPrForSession).toHaveBeenCalledOnce());
     const sent = h.store.createPrForSession.mock.calls[0]![0];

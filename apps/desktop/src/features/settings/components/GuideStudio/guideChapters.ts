@@ -142,11 +142,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Pick up a task',
-        desc: 'Choose an issue from your tools or the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. Then run it through the same workflow builder, or ask an agent. A Sentry error or a GitHub or GitLab item opens in its project and says why.',
+        desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then run it through the same workflow builder, or ask an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
       },
       {
         term: 'Run a workflow',
-        desc: 'The same workflow builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, then Start run creates the session and starts the run.',
+        desc: 'The same workflow builder as in a session: pick Orchestrated, Describe steps or Pick a workflow, see and edit the plan, then Start run creates the session and starts the run.',
       },
       {
         term: 'Ask an agent',
@@ -154,7 +154,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'Chat, a door in the left column, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
+        desc: 'Chat, a door in the left column, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work from chat drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
       },
       {
         term: 'Start blank',
@@ -199,8 +199,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'The top bar counts sessions that need you and running ones, from any screen.',
       },
       {
+        term: 'Top bar',
+        desc: 'Now, Limits, Spend and the bell sit on the right, with +N for providers past the first few. Impact opens from Spend, and the theme is in Settings, App, General.',
+      },
+      {
         term: 'Left column',
-        desc: 'New session, Board, Inbox, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
+        desc: 'New session, Board, Tasks, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
       },
       {
         term: 'Session rows',
@@ -208,7 +212,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pin a session',
-        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group at the top of the list, in the order you pinned them, whatever the sort or filter. Unpin session puts it back.",
+        desc: "Pin session, in a row's right-click menu or the palette, moves a session to a Pinned group at the top of the list, in the order you pinned them, whatever the sort or filter. Move up and Move down change the order, and Unpin session puts it back. When the column is folded to icons, pinned sessions stay on the rail, with a flyout for the rest.",
+      },
+      {
+        term: 'Branches in the sidebar',
+        desc: "The open session shows its pages in one card: Overview, Branch, Runs, Agents and Artifacts. Branch lists the session's branches under it, and one click switches the page to that branch.",
       },
       {
         term: 'Ask in a session',
@@ -227,7 +235,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Roles',
-        desc: 'Scout, Plan, Implement, Debug, Test, Review, Docs, Resolve and Generalist. A role sets the instructions, the default model and what the agent hands back.',
+        desc: 'Scout, Plan, Implement, Debug, Test, Review, Docs, Resolve and Generalist. A role sets the instructions, the default model and what the agent hands back. Resolve answers review comments from the Comments tab and is never a workflow step: a step that needs a fix uses Implement.',
       },
       {
         term: 'Talking to an agent',
@@ -235,7 +243,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Activity',
-        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon and ends with the model that ran (N models on a run past two), the duration and the cost. Rest the pointer on an icon or a model to see its card, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session.',
+        desc: 'Activity has two views, Activity and Log. Activity shows one row per launch: a run, an agent, or a fix run with its comments. It reads newest first, and a run has a lane in its own colour. Each row starts with its role as an icon, never a word, and ends with the model that ran and its effort (N models on a run past two), the duration and the cost. Runs shows its steps the same way. Rest the pointer on an icon or a model to see its card in either place, or press I on a row. A finished run or step folds into a count row such as 4 subagents; click it or press Right to open it. Needs you sits on top with what waits for you. Log holds the facts, such as links, branches and decisions. The Runs tab lists the runs of a session.',
       },
       {
         term: 'Run page',
@@ -305,21 +313,21 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'tools',
     group: 'task',
-    title: 'Tools, integrations and the Inbox',
+    title: 'Tools, integrations and Tasks',
     concept: 'inbox',
-    lead: 'Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack once. Agents on any provider can use them, and you work from one Inbox.',
+    lead: 'Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack once. Agents on any provider can use them, and you work from one list of Tasks.',
     points: [
       {
         term: 'Agents use your tools',
         desc: 'An agent asks Goodboy and Goodboy makes the call, so your keys never reach the agent. Keys stay in your system credential store.',
       },
       {
-        term: 'Inbox',
+        term: 'Tasks',
         desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub or GitLab items when several projects live on that host, filter by project.',
       },
       {
         term: 'Start from anything',
-        desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to This session, This branch or Whole workspace, and pick whether merging closes it.',
+        desc: 'Start from an issue, a Slack thread or an error, with the brief already drafted, or Review pull request on one waiting for you. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to This session, This branch or Whole workspace, and pick whether merging closes it.',
       },
       {
         term: 'Task links',
@@ -336,7 +344,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: 'Open the Inbox',
+        label: 'Open Tasks',
         target: { kind: 'studio', studio: { kind: 'inbox', focus: null } },
       },
       {
@@ -354,11 +362,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'One page per branch, with the tabs Comments, Files, Commits and Checks, all on one centred column. A branch chip in the header switches branches or starts a new one. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, and Back walks your history.',
+        desc: 'One page per branch, with the tabs Pull request, Comments, Files, Commits and Checks, all on one centred column. It opens on Pull request when the branch has one. A branch chip in the header switches branches or starts a new one. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, and Back walks your history.',
+      },
+      {
+        term: 'Pull request',
+        desc: 'The pull request on its own tab, on GitHub, GitLab (Merge request) and Bitbucket. Rename it with E and edit the description in place, read its activity, reviewers and checks, add reviewers, mark it ready, close it or merge it with the methods the host allows. A branch with no pull request offers Create pull request here.',
       },
       {
         term: 'Comments',
-        desc: "The review threads of the branch and the open thread beside them. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N opens a panel beside the list to pick the model; one agent then works through them in order, in its own copy of the branch. Fix 9 open comments, Use the recommended answers, Retry and Accept 5 act on many comments at once, and Accept has Undo.",
+        desc: "The review threads of the branch and the open thread beside them. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N opens a panel beside the list to pick the model; one agent then works through them in order, in its own copy of the branch. Fix 9, Use the recommended answers, Retry and Accept 5 act on many comments at once, and Accept has Undo.",
       },
       {
         term: 'Fix run',
@@ -370,11 +382,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Notes',
-        desc: 'Add note on a line saves it with the project and branch you are on. It reads Local in the Comments tab, where Fix starts an agent on it, and Post notes moves the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
+        desc: 'Add note on a line saves it with the project and branch you are on. It counts in Notes N on the Files tab, where the Notes drawer lists it apart from the pull request comments and Fix starts an agent on it, in the same lane as fixes on comments, and Move N to review draft takes the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
       },
       {
         term: 'Review sources',
-        desc: 'The picker lists each pull request or merge request of the session, on GitHub, GitLab or Bitbucket, and Notes on this machine. Bitbucket cannot resolve a thread, so its comments offer Reply.',
+        desc: 'Each comment carries a label with its host, GitHub, GitLab or Bitbucket, and your own notes never show in Comments. Bitbucket cannot resolve a thread, so its comments offer Reply.',
       },
       {
         term: 'What git says',
@@ -382,7 +394,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'The CI runs of a GitHub pull request, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
+        desc: 'The CI runs of a pull request, or the jobs of the latest GitLab pipeline, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
       },
       {
         term: 'Push',
@@ -399,7 +411,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: 'Open Review replies',
+        label: 'Open Replies and commits',
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'review-replies' } },
@@ -544,7 +556,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'App and workspace',
-        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Review replies, Permissions and Skills are pages of a workspace.',
+        desc: 'Theme, updates and shortcuts are app-wide. Projects, About you, New sessions, After merge, Replies and commits, Permissions and Skills are pages of a workspace.',
       },
       {
         term: 'Copy and restore',

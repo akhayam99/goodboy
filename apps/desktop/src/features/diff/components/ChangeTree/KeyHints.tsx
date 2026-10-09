@@ -28,7 +28,7 @@ export const KeyHints = () => {
           {KEY_HELP_ROWS.map(([keys, label]) => (
             <div key={label} className="flex items-baseline justify-between gap-6">
               <dt className="text-muted-foreground">{label}</dt>
-              <dd className="font-mono tabular-nums text-foreground">{keys}</dd>
+              <dd className="tabular-nums text-foreground">{keys}</dd>
             </div>
           ))}
         </dl>

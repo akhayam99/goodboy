@@ -77,7 +77,6 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
       title={title}
       icon={CONCEPT_ICONS.diff}
       iconClassName="text-muted-foreground"
-      closeLabel={`Close ${title}`}
       onClose={onClose}
       scroll="self"
       action={
@@ -90,7 +89,7 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
       }
     >
       {diff.loading ? (
-        <div className="flex flex-col gap-2 p-3" aria-label="Loading diff">
+        <div role="status" className="flex flex-col gap-2 p-3" aria-label="Loading diff">
           <Skeleton className="h-9 w-full rounded-md" />
           <Skeleton className="h-3 w-3/4 rounded-sm" />
           <Skeleton className="h-3 w-1/2 rounded-sm" />

@@ -27,7 +27,7 @@ export const SessionSpendPopover = ({
         <Eyebrow label="Spend" />
         <span
           title={formatUsdPrecise(spend.totalUsd)}
-          className="font-mono text-title tabular-nums text-foreground"
+          className="text-title tabular-nums text-foreground"
         >
           {formatUsd(spend.totalUsd)}
         </span>

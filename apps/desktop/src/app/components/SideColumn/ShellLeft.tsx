@@ -63,6 +63,8 @@ export const ShellLeft = ({
     return (
       <ColumnRail
         scope={arrangement.columnScope}
+        workspaceId={workspaceId}
+        currentSessionId={currentSessionId}
         place={place}
         onToggle={onToggle}
         actions={actions}

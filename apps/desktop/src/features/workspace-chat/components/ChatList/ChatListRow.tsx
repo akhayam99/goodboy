@@ -1,8 +1,8 @@
-import { memo, useMemo, useState, type MouseEvent } from 'react';
-import { Ellipsis, Pin, PinOff } from 'lucide-react';
+import { memo, useMemo, useState, type FocusEvent, type MouseEvent } from 'react';
+import { Pin, PinOff } from 'lucide-react';
 import { IconButton, InteractiveRow, SelectionCheckbox, StatusDot, cn } from '@goodboy/ui';
 import type { ChatId, ChatModelUsed, EffortLevel, ProviderId } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
@@ -12,6 +12,7 @@ import type { ObjectTarget } from '../../../actions/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
 import { useChatSessionMarker } from '../../hooks/useChatSessionMarker';
+import { ageTokenOf } from './ageToken';
 import { ChatDeleteConfirm } from './ChatDeleteConfirm';
 import { ChatModelGlyphs } from './ChatModelGlyphs';
 import { ChatRenameInput } from './ChatRenameInput';
@@ -87,6 +88,7 @@ const ChatListRowView = ({
   const marker = useChatSessionMarker({ chatId });
   const [isRenaming, setIsRenaming] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
   const anchorKey = `chat-row:${chatId}`;
 
   useRenameRequest({
@@ -135,6 +137,13 @@ const ChatListRowView = ({
     selection.onModifierClick(chatId, event);
   };
 
+  const hideUnlessInside = (event: FocusEvent<HTMLLIElement>): void => {
+    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+      return;
+    }
+    setIsRevealed(false);
+  };
+
   if (isConfirming) {
     return (
       <li data-chat-row={chatId}>
@@ -155,6 +164,10 @@ const ChatListRowView = ({
       data-idle={isIdle ? 'true' : undefined}
       data-checked={isChecked ? 'true' : undefined}
       onClickCapture={captureModifierClick}
+      onMouseEnter={() => setIsRevealed(true)}
+      onMouseLeave={() => setIsRevealed(false)}
+      onFocus={() => setIsRevealed(true)}
+      onBlur={hideUnlessInside}
     >
       <InteractiveRow
         label={title}
@@ -165,7 +178,7 @@ const ChatListRowView = ({
         dataAttributes={{ 'data-select-id': chatId }}
         menu={menu}
       >
-        <span className="relative flex min-h-5.5 min-w-0 items-center gap-1">
+        <span className="relative flex min-h-6 min-w-0 items-center gap-1">
           <SelectionCheckbox
             checked={isChecked}
             label={`Select ${title}`}
@@ -206,18 +219,18 @@ const ChatListRowView = ({
               >
                 {title}
               </span>
-              <span className="group/slot relative h-5.5 w-11 shrink-0">
-                <span className="absolute inset-y-0 right-1 flex items-center text-meta text-faint-foreground motion-safe:transition-opacity group-focus-within:opacity-0 group-hover:opacity-0 group-has-[[aria-expanded=true]]/slot:opacity-0">
-                  {time}
+              <span className="group/slot relative h-6 w-18 shrink-0">
+                <span className="absolute inset-y-0 right-1 flex items-center whitespace-nowrap text-meta tabular-nums text-faint-foreground motion-safe:transition-opacity group-focus-within:opacity-0 group-hover:opacity-0 group-has-[[aria-expanded=true]]/slot:opacity-0">
+                  {ageTokenOf({ time })}
                 </span>
                 <span className="absolute inset-y-0 right-0 flex items-center opacity-0 motion-safe:transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 group-has-[[aria-expanded=true]]/slot:opacity-100">
                   <IconButton
+                    size="xs"
                     icon={isPinned ? PinOff : Pin}
                     label={isPinned ? `Unpin ${title}` : `Pin ${title}`}
                     tooltip={isPinned ? 'Unpin' : 'Pin'}
                     variant="ghost"
                     iconSize={12}
-                    className="p-1"
                     onClick={() => onPin({ chatId, isPinned: !isPinned })}
                   />
                   <ObjectOverflowMenu
@@ -225,20 +238,21 @@ const ChatListRowView = ({
                     label={`More actions for ${title}`}
                     tooltip="More"
                     anchorKey={anchorKey}
-                    trigger={<Ellipsis size={ICON_SIZE.row} aria-hidden />}
-                    triggerClassName="p-1"
                   />
+                  {isRevealed ? (
+                    <IconButton
+                      size="xs"
+                      icon={CONCEPT_ICONS.delete}
+                      label={`Delete ${title}`}
+                      tooltip="Delete"
+                      variant="ghost"
+                      iconSize={12}
+                      className="hover:text-danger"
+                      onClick={() => setIsConfirming(true)}
+                    />
+                  ) : null}
                 </span>
               </span>
-              <IconButton
-                icon={CONCEPT_ICONS.delete}
-                label={`Delete ${title}`}
-                tooltip="Delete"
-                variant="ghost"
-                iconSize={12}
-                className="p-1 opacity-60 motion-safe:transition-opacity hover:text-danger focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100"
-                onClick={() => setIsConfirming(true)}
-              />
             </>
           )}
         </span>

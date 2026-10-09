@@ -1,6 +1,6 @@
-import { Ellipsis } from 'lucide-react';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import type { MenuTriggerSize } from '@goodboy/ui';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
+import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
 import type { ActionViewing, ArtifactActionTarget } from '../../../actions/types';
 
 type Props = {
@@ -8,7 +8,8 @@ type Props = {
   readonly label: string;
   readonly anchorKey?: string | null;
   readonly viewing?: ActionViewing | null;
-  readonly triggerClassName?: string;
+  readonly size?: MenuTriggerSize;
+  readonly onArm?: OnArm;
 };
 
 export const ArtifactOverflowMenu = ({
@@ -16,15 +17,17 @@ export const ArtifactOverflowMenu = ({
   label,
   anchorKey = null,
   viewing = null,
-  triggerClassName,
+  size = 'compact',
+  onArm,
 }: Props) => (
   <ObjectOverflowMenu
     target={target}
     label={label}
     tooltip="More actions"
-    trigger={<Ellipsis size={ICON_SIZE.control} aria-hidden />}
+    size={size}
+    hideWhenEmpty={size === 'control'}
     anchorKey={anchorKey}
     viewing={viewing}
-    {...(triggerClassName === undefined ? {} : { triggerClassName })}
+    onArm={onArm}
   />
 );

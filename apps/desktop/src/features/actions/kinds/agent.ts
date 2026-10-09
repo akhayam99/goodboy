@@ -12,7 +12,7 @@ import {
   isTurnStateLive,
 } from '../../session/agent-lifecycle';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
-import { OPEN_AGENT_INTENT } from '../../session/components/AgentDetailPane/agentOpenTab';
+import { OPEN_AGENT_INTENT } from '../../../shared/utils/openAgentReveal';
 import type { ActionEnv, AgentActionTarget, ObjectKindDefinition } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 

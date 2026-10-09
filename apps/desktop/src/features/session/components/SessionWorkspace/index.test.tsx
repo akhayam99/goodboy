@@ -237,7 +237,6 @@ vi.mock('../SessionTrail/SessionCrumbs', () => ({
 vi.mock('../../../bootstrap/FirstLapBanner', () => ({ FirstLapBanner: () => null }));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
-vi.mock('./parts/PrPane', () => ({ PrPane: () => <div data-testid="code-host-pane" /> }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
 vi.mock('./parts/IntegrationPane', () => ({
   IntegrationPane: ({ provider }: { provider: string }) => (
@@ -449,31 +448,28 @@ describe('SessionWorkspace agent overlay', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('branch-page')).toBeDefined();
-    expect(screen.queryByTestId('code-host-pane')).toBeNull();
   });
 });
 
 describe('SessionWorkspace code host routing', () => {
-  it('keeps the code host lens for a GitLab session', () => {
+  it('mounts the Branch page for a GitLab session', () => {
     store.sessionGitlabMr = { [SESSION_ID]: { mr: { iid: 7 } } };
-    store.activeLens = { [SESSION_ID]: 'pr' };
+    store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('code-host-pane')).toBeDefined();
-    expect(screen.queryByTestId('branch-page')).toBeNull();
+    expect(screen.getByTestId('branch-page')).toBeDefined();
   });
 
-  it('keeps the code host lens for a Bitbucket session', () => {
+  it('mounts the Branch page for a Bitbucket session', () => {
     store.sessionBitbucketPr = { [SESSION_ID]: { pr: { id: 42 } } };
-    store.activeLens = { [SESSION_ID]: 'pr' };
+    store.activeLens = { [SESSION_ID]: 'branch' };
     store.selectedAgentId = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('code-host-pane')).toBeDefined();
-    expect(screen.queryByTestId('branch-page')).toBeNull();
+    expect(screen.getByTestId('branch-page')).toBeDefined();
   });
 });
 

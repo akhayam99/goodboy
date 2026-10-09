@@ -52,7 +52,7 @@ const pathnameOf = ({ url }: { readonly url: string }): string | null => {
   }
 };
 
-const targetFromUrl = ({ provider, url, prNumber }: UrlParams): ReviewTarget | null => {
+export const targetFromUrl = ({ provider, url, prNumber }: UrlParams): ReviewTarget | null => {
   if (!Number.isInteger(prNumber) || prNumber <= 0) {
     return null;
   }

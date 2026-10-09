@@ -4,9 +4,7 @@ Find any session, message, plan or action, and reach it from the keyboard.
 
 ### Sidebar
 
-Every place you go sits in one sidebar on the left, on the board, in a session and beside every studio: **New session** on top, then **Board**, **Inbox**, **Chat** and **Workflows**, your sessions, and **Settings** with the Goodboy row and a bug button at the bottom.
-
-**⌘B** folds it into a slim bar of icons that keeps every door, and resting the pointer at the left edge brings the full sidebar back over the page. Settings takes over the sidebar with **Back to app**, a search field and its pages, and **Esc** brings the doors back. Impact is the chart icon next to the bell, and a click on a limits bar opens the providers menu. **Legacy layout** in Settings > App > General brings back the top bar buttons and footer of 0.20.0.
+Every place you go sits in one sidebar on the left, on the board, in a session and beside every studio: **New session** on top, then **Board**, **Tasks**, **Chat** and **Workflows**, your sessions, and **Settings** with the Goodboy row and a bug button at the bottom. **⌘B** folds it into a slim bar of icons that keeps every door, and resting the pointer at the left edge brings the full sidebar back over the page. Settings takes over the sidebar with **Back to app**, a search field and its pages, and **Esc** brings the doors back. Impact is the chart icon next to the bell, and a click on a limits bar opens the providers menu. **Legacy layout** in Settings > App > General brings back the top bar buttons and footer of 0.20.0.
 
 ### Go anywhere
 
@@ -24,7 +22,7 @@ Reach any screen without the mouse. **⌘K** opens on what you are looking at, a
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/search-command-palette-light.webp" alt="The command palette on the agent Resolve review on payments-api#318: For this agent lists Show its changes, Message this agent, Change model, Copy name and Delete agent, and For this session lists Open Review, Open Diff and Open Terminal with their shortcuts">
 </picture>
 
-Press **⌘K** to act on what you are looking at. Inside a session it opens on **Next**, the steps Goodboy would take now, such as answering a question or pushing commits, then **For this session**, the actions that fit what the session is doing (a running agent first, a finished one last), and **Runs** with the verbs of the session’s runs. **→** shows every action of any row. Results are ranked by how well they match and how often you use them, and the composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
+Press **⌘K** to act on what you are looking at. The window keeps one height while you type, and the preview on the right hides when the highlighted row has nothing to show, so the list never jumps. In a session, the first row is the session's own action, ahead of messaging a running agent. Inside a session it opens on **Next**, the steps Goodboy would take now, such as answering a question or pushing commits, then **For this session**, the actions that fit what the session is doing (a running agent first, a finished one last), and **Runs** with the verbs of the session’s runs. **→** shows every action of any row. Results are ranked by how well they match and how often you use them, and the composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
 
 ### Search
 

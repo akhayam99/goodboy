@@ -18,6 +18,7 @@ import { branchChoiceOrigin } from '../branchChoices';
 import { useBranchChoices } from '../useBranchChoices';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { selectMountById } from '../../../store/slices/project-mounts/selectors';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -115,11 +116,12 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
 
       {branch === null ? null : (
         <div className="flex min-w-0 items-center gap-2 rounded-md bg-muted px-2 py-1 text-label text-muted-foreground">
-          <GitBranch size={11} aria-hidden className="shrink-0" />
+          <GitBranch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span title={branch} className="min-w-0 flex-1 truncate font-mono text-foreground">
             {branch}
           </span>
           <IconButton
+            size="xs"
             variant="ghost"
             icon={copiedKey === null ? Copy : Check}
             iconSize={11}
@@ -133,7 +135,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
             }
             tone={copiedKey !== null ? 'success' : failedKey !== null ? 'danger' : 'neutral'}
             onClick={() => void copy({ text: branch })}
-            className="size-6 shrink-0"
+            className="shrink-0"
           />
         </div>
       )}
@@ -219,7 +221,6 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           size="sm"
           onClick={() => void onChangeBranch()}
           disabled={isBusy || target === '' || (branchMode === 'existing' && isBranchesLoading)}
-          variant={needsConfirmation && isReuseConfirmed ? 'warning' : 'primary'}
         >
           <span className={isBusy ? 'text-shimmer' : undefined}>
             {isBusy

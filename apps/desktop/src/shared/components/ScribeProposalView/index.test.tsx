@@ -75,7 +75,7 @@ describe('ScribeProposalView', () => {
     );
   });
 
-  it('puts the reason next to a Retry when a step failed', () => {
+  it('names the action, hides the reason behind Details and offers Retry when a step failed', () => {
     const onRetry = vi.fn();
     view({
       state: { kind: 'failed', reason: "Couldn't push fix/ledger-postings: denied" },
@@ -83,10 +83,23 @@ describe('ScribeProposalView', () => {
       onRetry,
     });
 
-    expect(screen.getByRole('alert').textContent).toBe("Couldn't push fix/ledger-postings: denied");
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain("Couldn't write the pull request text");
+    expect(alert.textContent).toContain('The text is kept, so you can try again.');
+    expect(alert.textContent).not.toContain('denied');
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    expect(alert.textContent).toContain("Couldn't push fix/ledger-postings: denied");
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     expect(onRetry).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Create PR' })).toBeNull();
+  });
+
+  it('shows the failure with no Retry when the text cannot be sent again', () => {
+    view({ state: { kind: 'failed', reason: 'denied' }, canRetry: false });
+
+    expect(screen.getByRole('alert')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
   it('offers Create PR when nothing was opened yet', () => {

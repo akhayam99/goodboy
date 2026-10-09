@@ -12,6 +12,9 @@ const h = vi.hoisted(() => ({
   requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
   reportError: vi.fn(async () => undefined),
   linkSessionExternalTask: vi.fn(async () => undefined),
+  patchSessionDraft: vi.fn(),
+  startSessionFromDraft: vi.fn(async (_params: unknown) => ({ id: 'session-new', goal: 'Review' })),
+  follow: vi.fn(),
 }));
 
 type StoreState = {
@@ -23,6 +26,8 @@ type StoreState = {
   readonly issueBriefs: Readonly<Record<string, never>>;
   readonly sessions: ReadonlyArray<never>;
   readonly linkSessionExternalTask: typeof h.linkSessionExternalTask;
+  readonly patchSessionDraft: typeof h.patchSessionDraft;
+  readonly startSessionFromDraft: typeof h.startSessionFromDraft;
   readonly projects: ReadonlyArray<never>;
   readonly projectSentryLinks: Readonly<Record<string, never>>;
   readonly workspaceIntegrations: Readonly<Record<string, never>>;
@@ -42,6 +47,8 @@ vi.mock('../../../../store', async () => {
       issueBriefs: {},
       sessions: [],
       linkSessionExternalTask: h.linkSessionExternalTask,
+      patchSessionDraft: h.patchSessionDraft,
+      startSessionFromDraft: h.startSessionFromDraft,
     }) as StoreState;
   const useAppStore = <T,>(selector: (value: StoreState) => T) => selector(state());
   useAppStore.getState = state;
@@ -55,6 +62,11 @@ vi.mock('../../../../store', async () => {
 
 vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
+}));
+
+vi.mock('../../../../shared/hooks/useFollowToast', () => ({
+  useFollowToast: () => h.follow,
+  useQuietFollowToast: () => h.follow,
 }));
 
 const { useRecordFrame } = await import('./index');
@@ -119,6 +131,40 @@ const GITHUB_RECORD = {
     sessionId: null,
   },
 } satisfies InboxRecord;
+
+const githubPullRequest = (role: 'author' | 'review-requested') =>
+  ({
+    key: `github:pr:318:${role}`,
+    provider: 'github',
+    kind: 'pr',
+    identifier: '#318',
+    title: 'Stop retried webhooks posting a second credit',
+    state: 'open',
+    updatedAt: '2026-08-01T10:00:00Z',
+    url: 'https://github.com/acme/payments-api/pull/318',
+    stateLabel: 'Open',
+    context: 'GitHub',
+    payload: {
+      provider: 'github',
+      kind: 'pr',
+      role,
+      sessionId: null,
+      pr: {
+        number: 318,
+        title: 'Stop retried webhooks posting a second credit',
+        url: 'https://github.com/acme/payments-api/pull/318',
+        state: 'open',
+        mergeable: true,
+        checks: 'success',
+        baseBranch: 'main',
+        headBranch: 'nadia-p/single-credit',
+        isDraft: false,
+        reviewDecision: null,
+        body: 'One credit per processor event.',
+        updatedAt: '2026-08-01T10:00:00Z',
+      },
+    },
+  }) satisfies InboxRecord;
 
 const BITBUCKET_WITHOUT_REPO = {
   key: 'bitbucket:pr:42',
@@ -197,21 +243,35 @@ afterEach(() => {
   h.createSession.mockClear();
   h.unlinkSessionExternalTask.mockClear();
   h.navigate.mockClear();
+  h.patchSessionDraft.mockClear();
+  h.requestIssueBrief.mockClear();
+  h.startSessionFromDraft.mockClear();
+  h.follow.mockClear();
+  h.reportError.mockClear();
 });
 
 describe('useRecordFrame', () => {
-  it('puts Launch session first and launches from its popover with the provider goal', async () => {
-    render(<Harness record={GITHUB_RECORD} />);
+  it('starts an issue in the New session draft: picked, its brief requested, one verb', () => {
+    const onLaunched = vi.fn();
+    const onNewSession = vi.fn();
+    window.addEventListener('goodboy:new-session', onNewSession);
+    render(<Harness record={GITHUB_RECORD} onLaunched={onLaunched} />);
 
-    const primary = screen.getByRole('button', { name: /Launch session/ });
+    const primary = screen.getByRole('button', { name: /Start from #42/ });
     const actions = primary.closest('[data-slot="record-actions"]');
     expect(actions?.firstElementChild?.contains(primary)).toBe(true);
+    expect(screen.queryByRole('dialog', { name: 'Start a session' })).toBeNull();
 
     fireEvent.click(primary);
 
-    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Session goal' }).value).toBe(
-      'GitHub issue #42: Fix launch\n\nKeep one dock.',
-    );
+    expect(h.patchSessionDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      patch: {
+        choice: 'task',
+        issueKey: 'github:42',
+        pickedIssue: expect.objectContaining({ identifier: '#42', externalId: '42' }),
+      },
+    });
     expect(h.requestIssueBrief).toHaveBeenCalledWith({
       source: expect.objectContaining({
         provider: 'github',
@@ -222,33 +282,108 @@ describe('useRecordFrame', () => {
       workspaceId: WORKSPACE_ID,
       sessionId: null,
     });
-    const [, launch] = screen.getAllByRole('button', { name: /Launch session/ });
+    expect(onNewSession).toHaveBeenCalledOnce();
+    expect(onLaunched).toHaveBeenCalledOnce();
+    expect(h.createSession).not.toHaveBeenCalled();
+    window.removeEventListener('goodboy:new-session', onNewSession);
+  });
+
+  it('starts the issue from the list too: a launch request picks it without a popover', () => {
+    const { rerender } = render(<Harness record={GITHUB_RECORD} />);
+    expect(h.patchSessionDraft).not.toHaveBeenCalled();
+
+    rerender(<Harness record={GITHUB_RECORD} launchRequest={1} />);
+
+    expect(h.patchSessionDraft).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('textbox', { name: 'Session goal' })).toBeNull();
+  });
+
+  it('keeps the one-step panel for a pull request that is yours, with the same verb', async () => {
+    render(<Harness record={githubPullRequest('author')} />);
+
+    const primary = screen.getByRole('button', { name: /Start from #318/ });
+    fireEvent.click(primary);
+
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Session goal' }).value).toBe(
+      'GitHub pull request #318: Stop retried webhooks posting a second credit\n\nOne credit per processor event.',
+    );
+    const [, launch] = screen.getAllByRole('button', { name: /Start from #318/ });
     fireEvent.click(launch as HTMLElement);
 
     await waitFor(() =>
       expect(h.createSession).toHaveBeenCalledWith({
         workspaceId: WORKSPACE_ID,
-        goal: 'GitHub issue #42: Fix launch\n\nKeep one dock.',
+        goal: 'GitHub pull request #318: Stop retried webhooks posting a second credit\n\nOne credit per processor event.',
         externalTasks: [
           {
             provider: 'github',
-            externalId: '42',
-            identifier: '#42',
-            url: 'https://github.com/acme/repo/issues/42',
-            title: 'Fix launch',
+            externalId: '318',
+            identifier: '#318',
+            url: 'https://github.com/acme/payments-api/pull/318',
+            title: 'Stop retried webhooks posting a second credit',
           },
         ],
       }),
     );
   });
 
-  it('opens the launch popover on a launch request from the list', () => {
-    const { rerender } = render(<Harness record={GITHUB_RECORD} />);
+  it('opens the panel on a launch request from the list for a pull request that is yours', () => {
+    const { rerender } = render(<Harness record={githubPullRequest('author')} />);
     expect(screen.queryByRole('textbox', { name: 'Session goal' })).toBeNull();
 
-    rerender(<Harness record={GITHUB_RECORD} launchRequest={1} />);
+    rerender(<Harness record={githubPullRequest('author')} launchRequest={1} />);
 
     expect(screen.getByRole('textbox', { name: 'Session goal' })).toBeDefined();
+  });
+
+  it('offers Review pull request, not Start, for a pull request waiting on you', async () => {
+    const onLaunched = vi.fn();
+    render(<Harness record={githubPullRequest('review-requested')} onLaunched={onLaunched} />);
+
+    expect(screen.queryByRole('button', { name: /Start from #318/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Review pull request/ }));
+
+    await waitFor(() => expect(h.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(h.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: expect.objectContaining({
+        kind: 'task',
+        candidate: expect.objectContaining({ identifier: '#318', externalId: '318' }),
+        title: 'Review #318: Stop retried webhooks posting a second credit',
+        then: { kind: 'agent', agentKind: 'pr-reviewer', prompt: '', routing: null },
+        checkout: { existingBranch: 'nadia-p/single-credit', fallbackRef: 'pull/318/head' },
+      }),
+    });
+    await waitFor(() => expect(onLaunched).toHaveBeenCalledOnce());
+    expect(h.follow).toHaveBeenCalledOnce();
+    expect(h.follow).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Review started', startKey: 'session-new' }),
+    );
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: expect.objectContaining({
+        at: 'session',
+        sessionId: 'session-new',
+        view: expect.objectContaining({
+          lens: 'branch',
+          target: expect.objectContaining({ kind: 'branch', tab: 'pr' }),
+        }),
+      }),
+    });
+  });
+
+  it('reports a failed review start and raises no success toast', async () => {
+    h.startSessionFromDraft.mockRejectedValueOnce(new Error('worktree failed'));
+    const onLaunched = vi.fn();
+    render(<Harness record={githubPullRequest('review-requested')} onLaunched={onLaunched} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Review pull request/ }));
+
+    await waitFor(() => expect(h.reportError).toHaveBeenCalledOnce());
+    expect(h.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't start the review" }),
+    );
+    expect(h.follow).not.toHaveBeenCalled();
+    expect(onLaunched).not.toHaveBeenCalled();
   });
 
   it('makes Open session the primary once a session is linked, and opens it on request', async () => {
@@ -256,7 +391,7 @@ describe('useRecordFrame', () => {
     const { rerender } = render(<Harness record={LINKED_SENTRY_RECORD} onLaunched={onLaunched} />);
 
     expect(screen.getByRole('button', { name: 'Open session' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /Launch session/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Start from/ })).toBeNull();
 
     rerender(<Harness record={LINKED_SENTRY_RECORD} onLaunched={onLaunched} launchRequest={1} />);
 
@@ -286,7 +421,7 @@ describe('useRecordFrame', () => {
   it('leaves the primary slot empty when the record cannot resolve a launch target', () => {
     render(<Harness record={BITBUCKET_WITHOUT_REPO} />);
 
-    expect(screen.queryByRole('button', { name: /Launch session/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Start from/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open session' })).toBeNull();
   });
 

@@ -26,7 +26,7 @@ export const HistoryResultHead = ({ applied }: Props) => {
             <Chip
               key={chip.kind}
               tone="neutral"
-              size="sm"
+              kind="state"
               icon={
                 <span
                   aria-hidden

@@ -64,4 +64,42 @@ describe('compactTrail', () => {
   it('keeps every segment full at 960 up to depth 4', () => {
     expect(run(4, 960)).toEqual(['full', 'full', 'full', 'full']);
   });
+
+  it('shrinks the middle crumbs before the first one', () => {
+    expect(run(4, 500)).toEqual(['full', 'icon', 'full', 'full']);
+    expect(run(4, 330)).toEqual(['icon', 'folded', 'full', 'full']);
+  });
+
+  it('keeps the first crumb full at 1100 for four crumbs of any realistic width', () => {
+    const states = compactTrail({
+      fullWidths: [64, 120, 150, 180],
+      iconWidths: [24, 24, 24, 24],
+      separatorWidth: SEPARATOR,
+      ellipsisWidth: ELLIPSIS,
+      leadWidth: LEAD,
+      available: 520,
+    });
+    expect(states[0]).toBe('full');
+  });
+
+  const WIDTHS = Array.from({ length: 11 }, (_, step) => 1100 - step * 50);
+
+  it.each([2, 3, 4, 5, 6].flatMap((depth) => WIDTHS.map((width) => [depth, width] as const)))(
+    'at %i crumbs and %ipx the first crumb holds its word until every other ancestor is folded',
+    (depth, width) => {
+      const states = run(depth, width);
+      const lastAncestor = depth - 3;
+      const middle = states.slice(1, lastAncestor + 1);
+      if (depth < 6 && states[0] === 'icon') {
+        expect(middle.every((state) => state === 'folded')).toBe(true);
+      }
+      if (depth < 6 && middle.some((state) => state !== 'folded')) {
+        expect(states[0]).toBe('full');
+      }
+      if (middle.includes('folded')) {
+        expect(middle.indexOf('folded')).toBe(0);
+        expect(middle.every((state) => state === 'folded' || state === 'icon')).toBe(true);
+      }
+    },
+  );
 });

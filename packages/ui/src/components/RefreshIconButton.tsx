@@ -15,7 +15,7 @@ export const RefreshIconButton = ({
   onClick,
   isLoading = false,
   error = null,
-  iconSize = 13,
+  iconSize,
   className,
 }: Props) => {
   return (

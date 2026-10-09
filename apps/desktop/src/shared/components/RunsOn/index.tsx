@@ -9,6 +9,7 @@ import type { AgentKindRouting } from '../../../features/session/agent-kind';
 import { RoutingPickerBody } from '../RoutingPicker/RoutingPickerBody';
 import { SUGGESTED_LABEL } from '../RoutingPicker/autoRecommendationCopy';
 import { routingLabelParts, routingNameText } from '../RoutingPicker/routingSummary';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly suggested: AgentKindRouting;
@@ -101,7 +102,7 @@ export const RunsOn = ({ suggested, override, onChange, disabled = false, classN
             className="inline-flex items-center gap-0.5 rounded-md px-1 text-label text-foreground transition-colors hover:bg-hover disabled:opacity-60"
           >
             Change
-            <ChevronDown size={11} aria-hidden className="text-muted-foreground" />
+            <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
           </button>
         }
       >

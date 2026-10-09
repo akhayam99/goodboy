@@ -5,7 +5,7 @@ import type { OrchestratorModelOption } from '../orchestrator/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
-import { normalizeSelectableAgentRole, ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '../roles';
+import { normalizeWorkflowRole, ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '../roles';
 
 const WORKFLOW_ROLE_VOCABULARY = SELECTABLE_AGENT_ROLES.filter(
   (role) => ROLE_REGISTRY[role].workflowEligible,
@@ -19,7 +19,7 @@ Rules:
 - Match the language of the DESIRED WORKFLOW description for all text fields (name, description, goal, step names, promptPrefix, expectedOutput, suggestions). If the description is written in Italian, write every field in Italian; same for any other language. Keep role values from the canonical list unchanged.
 - 2 to 6 steps. Each step has a single clear responsibility; do not bundle "plan and implement" into one step.
 - name: a short verb or noun (e.g. "Scout", "Plan", "Implement", "Review"). Title case, no numbering.
-- role: one of ${WORKFLOW_ROLE_VOCABULARY}. Pick the closest fit; use custom only when none apply. Use docs only for repository documentation and resolver only when concrete review threads are supplied.
+- role: one of ${WORKFLOW_ROLE_VOCABULARY}. Pick the closest fit; use custom only when none apply. Use docs only for repository documentation. Fixing review findings is implementer work.
 - promptPrefix: a direct instruction to that step's agent. Imperative voice. State what to do and what NOT to do (e.g. "do not write code yet"). One to three sentences.
 - expectedOutput: one sentence describing the artifact this step hands to the next.
 - Order steps so each depends only on prior outputs.
@@ -196,7 +196,7 @@ export const parseFormattedWorkflow = (text: string): FormattedWorkflow | null =
       continue;
     }
     const roleRaw = typeof e.role === 'string' ? e.role : 'custom';
-    const role = normalizeSelectableAgentRole({ role: roleRaw });
+    const role = normalizeWorkflowRole({ role: roleRaw });
     const promptPrefix = typeof e.promptPrefix === 'string' ? e.promptPrefix.trim() : '';
     const expectedOutput = typeof e.expectedOutput === 'string' ? e.expectedOutput.trim() : '';
     const routing = stepRoutingFields({ entry: e });

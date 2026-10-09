@@ -5,6 +5,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 
 const { state, picker } = vi.hoisted(() => ({
   state: {
+    sessionArtifacts: { 'session-1': [] } as Record<string, ReadonlyArray<unknown>>,
+    artifactLoadErrors: {} as Record<string, string | null>,
+    loadSessionArtifacts: vi.fn(async () => undefined),
     openArtifactCreation: vi.fn(),
     importWireframe: vi.fn(async (_params: Record<string, unknown>) => ({ id: 'wireframe-9' })),
     sessions: [] as ReadonlyArray<Record<string, unknown>>,
@@ -42,6 +45,29 @@ const renderList = (onImported = vi.fn()) => {
 };
 
 describe('ArtifactList states', () => {
+  beforeEach(() => {
+    state.sessionArtifacts = { 'session-1': [] };
+    state.artifactLoadErrors = {};
+  });
+
+  it('shows loading rows before an initial read and never the empty state', () => {
+    state.sessionArtifacts = {};
+    renderList();
+    screen.getByRole('heading', { name: 'Artifacts' });
+    expect(screen.getAllByRole('status', { name: 'Loading artifacts' })).toHaveLength(3);
+    expect(screen.queryByText('No artifacts yet')).toBeNull();
+  });
+
+  it('offers Retry and Details after a failed initial read', () => {
+    state.sessionArtifacts = {};
+    state.artifactLoadErrors = { 'session-1': 'The artifact read failed' };
+    renderList();
+    screen.getByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(state.loadSessionArtifacts).toHaveBeenCalledWith('session-1');
+    screen.getByRole('button', { name: 'Details' });
+    expect(screen.queryByText('No artifacts yet')).toBeNull();
+  });
   it('says what will be here and offers one primary the first time', async () => {
     renderList();
 

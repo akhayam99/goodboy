@@ -187,4 +187,28 @@ describe('ScriptRow', () => {
     expect(run.hasAttribute('disabled')).toBe(true);
     expect(screen.getByText('ledger-core is still preparing')).toBeDefined();
   });
+
+  it('keeps pin, run and the overflow behind hover and focus', () => {
+    renderRow({});
+
+    for (const name of ['Pin test', 'Run test', 'More for test']) {
+      expect(screen.getByRole('button', { name }).closest('[data-reveal="hover"]')).not.toBeNull();
+    }
+  });
+
+  it('keeps Stop visible at rest while the script runs', () => {
+    renderRow({
+      record: { status: 'pending', result: null, runId: 'run-1', startedAt: NOW - 5_000 },
+    });
+
+    expect(screen.getByRole('button', { name: 'Stop test' }).closest('[data-reveal]')).toBeNull();
+  });
+
+  it('opens the overflow from a horizontal glyph', () => {
+    renderRow({});
+
+    const trigger = screen.getByRole('button', { name: 'More for test' });
+    expect(trigger.querySelector('svg.lucide-ellipsis')).not.toBeNull();
+    expect(trigger.querySelector('svg.lucide-ellipsis-vertical')).toBeNull();
+  });
 });

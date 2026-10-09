@@ -122,7 +122,7 @@ describe('NotificationsStudio', () => {
     const list = screen.getByRole('region', { name: 'Older' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(1);
     expect(screen.getByText('Latest failure')).toBeDefined();
-    expect(screen.getByLabelText('2 notifications')).toBeDefined();
+    expect(screen.getByLabelText('2 similar notifications')).toBeDefined();
     expect(screen.queryByText('Older failure')).toBeNull();
   });
 

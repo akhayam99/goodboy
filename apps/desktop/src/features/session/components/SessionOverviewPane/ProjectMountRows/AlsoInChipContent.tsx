@@ -21,7 +21,7 @@ export const AlsoInChipContent = ({ session }: Props) => {
         as="button"
         tone="neutral"
         shape="badge"
-        size="control"
+        kind="reference"
         onClick={() => navigate({ to: sessionPlace({ sessionId: session.id }) })}
         className="min-w-0 shrink gap-2 hover:bg-hover hover:text-foreground"
         label={

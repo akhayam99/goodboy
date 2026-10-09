@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { ErrorStrip, PaneShell } from '@goodboy/ui';
@@ -7,9 +6,10 @@ import { SpendAnchorTitle } from './SpendAnchorTitle';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { WorkspaceTurn } from './lib';
 import { SessionBudgetContent } from './SessionBudgetContent';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 type Props = {
-  readonly header: ReactElement;
+  readonly frame: PaneFrame;
   readonly onBack: () => void;
   readonly sessionId: SessionId;
   readonly goal: string;
@@ -25,7 +25,7 @@ type Props = {
 };
 
 export const SessionPanel = ({
-  header,
+  frame,
   onBack,
   sessionId,
   goal,
@@ -40,7 +40,7 @@ export const SessionPanel = ({
   onOpenSession,
 }: Props) => {
   return (
-    <PaneShell scroll="body" header={header}>
+    <PaneShell scroll="body" {...frame}>
       <SpendAnchorTitle
         title={goal}
         meta={isCurrent ? 'Current session' : 'Session spend'}

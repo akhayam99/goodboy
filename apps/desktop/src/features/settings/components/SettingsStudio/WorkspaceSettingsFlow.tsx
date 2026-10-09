@@ -219,7 +219,6 @@ export const WorkspaceSettingsFlow = ({ workspaceId, scope, mode, onClose }: Pro
           <>
             <Button
               size="sm"
-              variant={mode === 'restore' ? 'danger' : 'primary'}
               disabled={count === 0 || isBusy}
               aria-busy={isBusy}
               onClick={() => void apply()}

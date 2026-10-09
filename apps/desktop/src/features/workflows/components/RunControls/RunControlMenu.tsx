@@ -82,7 +82,7 @@ export const RunControlMenu = ({
   const items = routingItems({ routing });
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-64',
+    width: 'w-60',
     expectedWidth: 256,
     expectedHeight: 140,
   });
@@ -136,7 +136,7 @@ export const RunControlMenu = ({
           aria-haspopup="menu"
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
-          className={cn('size-7', dropdown.open && 'bg-muted')}
+          className={cn(dropdown.open && 'bg-muted')}
         />
       }
     >

@@ -9,6 +9,7 @@ import {
   listIssueComments,
   listOpenPrBranches,
   updateIssueBody,
+  viewPullRequest,
 } from '@goodboy/core';
 import type { GhRunner, GhResult, GhRunOptions, OpenPrBranch } from '@goodboy/core';
 import type {
@@ -16,6 +17,7 @@ import type {
   GithubInboxPullRequest,
   GithubIssue,
   GithubIssueComment,
+  PullRequestState,
 } from '@goodboy/types';
 
 type RawGhRunResult = {
@@ -131,6 +133,24 @@ export const ghInboxPullRequests = async (
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<GithubInboxPullRequest>> =>
   listInboxPullRequests({ runner: tauriGhRunner, repoSlug: slug, now: new Date(), opts });
+
+type ViewPullRequestParams = {
+  readonly repo: string;
+  readonly number: number;
+  readonly workspaceId?: string;
+};
+
+export const ghViewPullRequest = async ({
+  repo,
+  number,
+  workspaceId,
+}: ViewPullRequestParams): Promise<PullRequestState | null> =>
+  viewPullRequest({
+    runner: tauriGhRunner,
+    repo,
+    number,
+    opts: workspaceId === undefined ? {} : { workspaceId },
+  });
 
 type OpenPrBranchesParams = {
   readonly cwd: string;
@@ -321,24 +341,6 @@ export const ghBaseBranches = async (
           .filter(Boolean)
       : [];
   return { defaultBranch, branches };
-};
-
-export const ghRepoCollaborators = async (
-  cwd: string,
-  workspaceId?: string,
-  projectId?: string,
-): Promise<ReadonlyArray<string>> => {
-  const res = await tauriGhRunner.run(
-    ['api', 'repos/{owner}/{repo}/collaborators?per_page=100', '--jq', '.[].login'],
-    { cwd, workspaceId, projectId },
-  );
-  if (res.exitCode !== 0) {
-    return [];
-  }
-  return res.stdout
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
 };
 
 export const ghCommitDiff = async (repo: string, sha: string): Promise<string> => {

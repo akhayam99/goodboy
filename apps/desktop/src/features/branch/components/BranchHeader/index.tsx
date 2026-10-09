@@ -1,6 +1,18 @@
 import { ArrowRight, Check } from 'lucide-react';
-import { Button, HeaderBand, Tooltip, cn } from '@goodboy/ui';
-import type { PrCheckRun, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
+import { Button, HeaderActions, HeaderBand, Notice, Tooltip, cn } from '@goodboy/ui';
+import { PULL_REQUEST_NOUNS } from '@goodboy/core';
+import type {
+  PrCheckRun,
+  PrDetail,
+  PullRequestHost,
+  PullRequestState,
+  SessionId,
+} from '@goodboy/types';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import type { BranchTab } from '../../../../store/slices/navigation/types';
+import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
+import { PullRequestTitle } from '../PullRequestTab/PullRequestTitle';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
@@ -13,6 +25,7 @@ import { BranchSwitcher } from './BranchSwitcher';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly host?: PullRequestHost;
   readonly mountPath: string | null;
   readonly pr: PullRequestState | null;
   readonly detail: PrDetail | null;
@@ -22,6 +35,12 @@ type Props = {
   readonly fallbackTitle: string;
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
+  readonly isPrimaryYielding: boolean;
+  readonly tab: BranchTab;
+  readonly isActive?: boolean;
+  readonly canEditTitle: boolean;
+  readonly createdAt: string | null;
+  readonly onMutated: () => void;
 };
 
 const NO_CHECKS: ReadonlyArray<PrCheckRun> = [];
@@ -42,15 +61,27 @@ const summaryOf = ({ pr, detail }: SummaryParams): ChecksSummary | null => {
   return checksSummaryOf({ rollup: pr.checks, checks: detail?.checks ?? NO_CHECKS });
 };
 
-const stateWord = (pr: PullRequestState | null): string => {
+const INTENT_WORD: Readonly<Record<PullRequestState['state'], string>> = {
+  draft: 'wants to merge',
+  open: 'wants to merge',
+  approved: 'wants to merge',
+  queued: 'wants to merge',
+  merged: 'merged',
+  closed: 'wanted to merge',
+};
+
+const capitalized = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+
+const stateWord = (pr: PullRequestState | null, host: PullRequestHost): string => {
   if (pr === null) {
-    return 'No pull request';
+    return `No ${PULL_REQUEST_NOUNS[host].long}`;
   }
   return pullRequestWord({ state: pr.state, isDraft: pr.isDraft });
 };
 
 export const BranchHeader = ({
   sessionId,
+  host = 'github',
   mountPath,
   pr,
   detail,
@@ -60,20 +91,36 @@ export const BranchHeader = ({
   fallbackTitle,
   controls,
   isPushBusy,
+  isPrimaryYielding,
+  tab,
+  isActive = true,
+  canEditTitle,
+  createdAt,
+  onMutated,
 }: Props) => {
   const { primary } = controls;
+  const titleEdit = usePullRequestTitleEdit({
+    sessionId,
+    pr,
+    canEdit: canEditTitle,
+    isKeyActive: isActive && tab === 'pr',
+    onSaved: onMutated,
+  });
+  const now = useNow(60_000);
+  const age = createdAt === null ? '' : formatAge({ from: createdAt, now });
   const summary = summaryOf({ pr, detail });
   const head = pr?.headBranch ?? branch;
   const base = pr?.baseBranch ?? baseBranch;
   const abort =
     controls.diffControls.actions.find((action) => action.id === 'diff.abortRebase') ?? null;
-  const blockedReason =
-    primary === null || primary.isBusy || isPushBusy ? null : primary.blockedReason;
+  const isQuiet = primary === null || primary.isBusy || isPushBusy;
+  const blockedReason = isQuiet ? null : primary.blockedReason;
+  const note = isQuiet ? null : primary.note;
   const primaryButton =
     primary === null ? null : (
       <Button
         size="sm"
-        variant="primary"
+        variant={primary.isSecondary || isPrimaryYielding ? 'secondary' : 'primary'}
         data-branch-primary={primary.actionId}
         disabled={primary.blockedReason !== null}
         isBusy={primary.isBusy || isPushBusy}
@@ -87,17 +134,36 @@ export const BranchHeader = ({
     <div className="flex min-w-0 flex-col gap-2">
       <HeaderBand
         title={
-          <span className="flex min-w-0 items-baseline gap-2">
-            {pr !== null && <span className="shrink-0 text-faint-foreground">#{pr.number}</span>}
-            <span className="min-w-0 truncate">{pr?.title ?? fallbackTitle}</span>
-          </span>
+          <PullRequestTitle
+            title={pr?.title ?? fallbackTitle}
+            edit={titleEdit}
+            noun={capitalized(PULL_REQUEST_NOUNS[host].long)}
+          />
         }
         meta={
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
-            <span className="text-foreground">{stateWord(pr)}</span>
-            {head !== null && (
+            {titleEdit.isEditing ? (
+              <span>Enter saves, Esc cancels</span>
+            ) : (
+              <span className="text-foreground">{stateWord(pr, host)}</span>
+            )}
+            {!titleEdit.isEditing && pr !== null && host !== 'github' && (
               <>
                 <span aria-hidden>·</span>
+                <span>
+                  {PULL_REQUEST_NOUNS[host].short} {PULL_REQUEST_NOUNS[host].numberPrefix}
+                  {pr.number}
+                </span>
+              </>
+            )}
+            {!titleEdit.isEditing && head !== null && (
+              <>
+                <span aria-hidden>·</span>
+                {pr?.author != null && (
+                  <span>
+                    {pr.author} {INTENT_WORD[pr.state]}
+                  </span>
+                )}
                 <BranchSwitcher
                   sessionId={sessionId}
                   currentPath={mountPath}
@@ -110,15 +176,21 @@ export const BranchHeader = ({
                     <span className="text-code">{base}</span>
                   </span>
                 )}
+                {age !== '' && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>{age}</span>
+                  </>
+                )}
               </>
             )}
-            {head === null && projectName !== null && (
+            {!titleEdit.isEditing && head === null && projectName !== null && (
               <>
                 <span aria-hidden>·</span>
                 <span className="text-code">{projectName}</span>
               </>
             )}
-            {summary !== null && (
+            {!titleEdit.isEditing && summary !== null && (
               <>
                 <span aria-hidden>·</span>
                 <span
@@ -133,7 +205,7 @@ export const BranchHeader = ({
                 </span>
               </>
             )}
-            {blockedReason !== null && (
+            {!titleEdit.isEditing && blockedReason !== null && (
               <>
                 <span aria-hidden>·</span>
                 <span data-testid="branch-blocked-reason" className="min-w-0">
@@ -141,34 +213,67 @@ export const BranchHeader = ({
                 </span>
               </>
             )}
+            {!titleEdit.isEditing && blockedReason === null && note !== null && (
+              <>
+                <span aria-hidden>·</span>
+                <span data-testid="branch-merge-note" className="min-w-0">
+                  {note}
+                </span>
+              </>
+            )}
           </div>
         }
         actions={
-          <>
-            {abort !== null && (
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={abort.blockedReason !== null}
-                onClick={() => controls.diffControls.trigger({ actionId: abort.id })}
-              >
-                {abort.shortLabel}
-              </Button>
-            )}
-            {primary !== null && primary.blockedReason !== null ? (
-              <Tooltip content={primary.blockedReason} anchorClassName="shrink-0">
-                <span className="inline-flex">{primaryButton}</span>
-              </Tooltip>
-            ) : (
-              primaryButton
-            )}
-            <BranchOverflow
-              diffControls={controls.diffControls}
-              pullRequestControls={controls.pullRequestControls}
-            />
-          </>
+          <HeaderActions
+            button={
+              abort === null ? null : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={abort.blockedReason !== null}
+                  onClick={() => controls.diffControls.trigger({ actionId: abort.id })}
+                >
+                  {abort.shortLabel}
+                </Button>
+              )
+            }
+            primary={
+              primary !== null && primary.blockedReason !== null ? (
+                <Tooltip content={primary.blockedReason} anchorClassName="shrink-0">
+                  <span className="inline-flex">{primaryButton}</span>
+                </Tooltip>
+              ) : (
+                primaryButton
+              )
+            }
+            overflow={
+              <BranchOverflow
+                diffControls={controls.diffControls}
+                pullRequestControls={controls.pullRequestControls}
+              />
+            }
+          />
         }
       />
+      {titleEdit.error !== null && (
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title="Couldn't save the title"
+          body={titleEdit.error}
+          actions={
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={titleEdit.save}
+              isBusy={titleEdit.isBusy}
+            >
+              Retry
+            </Button>
+          }
+        />
+      )}
       <ActionStatusLine controls={controls.diffControls} showReasons={false} />
       <ActionConfirmPanel controls={controls.diffControls} />
       <ActionStatusLine controls={controls.pullRequestControls} showReasons={false} />

@@ -1,7 +1,7 @@
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
-type BitbucketUser = {
+export type BitbucketUser = {
   readonly uuid: string;
   readonly accountId: string | null;
   readonly nickname: string;
@@ -69,7 +69,7 @@ export type BitbucketComment = {
   readonly webUrl: string | null;
 };
 
-export type BitbucketStatusState = 'SUCCESSFUL' | 'FAILED' | 'INPROGRESS' | 'STOPPED';
+type BitbucketStatusState = 'SUCCESSFUL' | 'FAILED' | 'INPROGRESS' | 'STOPPED';
 
 export type BitbucketStatus = {
   readonly key: string;
@@ -306,9 +306,12 @@ export const bitbucketUnrequestChanges = async ({
   });
 };
 
+export type BitbucketMergeStrategyName = 'merge_commit' | 'squash' | 'rebase_merge';
+
 type MergeParams = BitbucketPullRequestTarget & {
   readonly closeSourceBranch?: boolean;
   readonly message?: string;
+  readonly strategy?: BitbucketMergeStrategyName;
 };
 
 export const bitbucketMergePullRequest = async ({
@@ -320,6 +323,7 @@ export const bitbucketMergePullRequest = async ({
   pullRequestId,
   closeSourceBranch,
   message,
+  strategy,
 }: MergeParams): Promise<BitbucketPullRequest> =>
   invokeCommand<BitbucketPullRequest>('bitbucket_merge_pull_request', {
     workspaceId,
@@ -330,6 +334,79 @@ export const bitbucketMergePullRequest = async ({
     pullRequestId,
     closeSourceBranch: closeSourceBranch ?? null,
     message: message ?? null,
+    mergeStrategy: strategy ?? null,
+  });
+
+type UpdateParams = BitbucketPullRequestTarget & {
+  readonly title?: string;
+  readonly description?: string;
+  readonly reviewerUuids?: ReadonlyArray<string>;
+};
+
+export const bitbucketUpdatePullRequest = async ({
+  workspaceId,
+  projectId,
+  workspaceSlug,
+  repoSlug,
+  email,
+  pullRequestId,
+  title,
+  description,
+  reviewerUuids,
+}: UpdateParams): Promise<BitbucketPullRequest> =>
+  invokeCommand<BitbucketPullRequest>('bitbucket_update_pull_request', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    workspaceSlug,
+    repoSlug,
+    email,
+    pullRequestId,
+    title: title ?? null,
+    description: description ?? null,
+    reviewerUuids: reviewerUuids ?? null,
+  });
+
+type SearchMembersParams = Omit<BitbucketRepo, 'repoSlug'> & {
+  readonly query: string;
+};
+
+export const bitbucketSearchWorkspaceMembers = async ({
+  workspaceId,
+  projectId,
+  workspaceSlug,
+  email,
+  query,
+}: SearchMembersParams): Promise<ReadonlyArray<BitbucketUser>> =>
+  invokeCommand<ReadonlyArray<BitbucketUser>>('bitbucket_search_workspace_members', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    workspaceSlug,
+    email,
+    query,
+  });
+
+export type BitbucketCommit = {
+  readonly hash: string;
+  readonly message: string;
+  readonly date: string;
+  readonly author: string | null;
+};
+
+export const bitbucketListPullRequestCommits = async ({
+  workspaceId,
+  projectId,
+  workspaceSlug,
+  repoSlug,
+  email,
+  pullRequestId,
+}: BitbucketPullRequestTarget): Promise<ReadonlyArray<BitbucketCommit>> =>
+  invokeCommand<ReadonlyArray<BitbucketCommit>>('bitbucket_list_pull_request_commits', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    workspaceSlug,
+    repoSlug,
+    email,
+    pullRequestId,
   });
 
 export const bitbucketDeclinePullRequest = async ({

@@ -1,18 +1,12 @@
 import type { PrMergeMethod, SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
+import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { mountPrEventPayload } from './mountPrEventPayload';
 import { prWriteContext } from './prWriteContext';
+import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
-import { ReportedError } from '../notifications/reportedError';
-
-const MERGE_FLAG: Record<PrMergeMethod, string> = {
-  squash: '--squash',
-  merge: '--merge',
-  rebase: '--rebase',
-};
 
 export const mergePr = (_set: SetFn, get: GetFn) => {
   return async (
@@ -21,13 +15,13 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
     method: PrMergeMethod = 'squash',
     { mountId }: PrWriteOptions = {},
   ) => {
-    const { num, session, repo } = prWriteContext({
+    const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
       prNumber,
       ...(mountId === undefined ? {} : { mountId }),
-      failureTitle: ({ prNumber: target }) =>
-        prLifecycleFailureTitle({ action: 'merge', prNumber: target }),
+      failureTitle: ({ prNumber: target, nouns }) =>
+        prLifecycleFailureTitle({ action: 'merge', prNumber: target, nouns }),
     });
     await withPrWriteClaim({
       get,
@@ -35,25 +29,16 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
       prNumber: num,
       action: 'merge',
       run: async () => {
-        const res = await tauriGhRunner.run(['pr', 'merge', String(num), MERGE_FLAG[method]], {
-          cwd: repo.repoRoot,
+        await runPortWrite({
+          get,
+          sessionId,
           workspaceId: session.workspaceId,
-          projectId: repo.projectId,
+          title: prLifecycleFailureTitle({ action: 'merge', prNumber: num, nouns: port.nouns }),
+          run: () => port.merge({ method }),
         });
-        if (res.exitCode !== 0) {
-          const errMsg = res.stderr.trim() || `gh pr merge exited with ${res.exitCode}`;
-          void get().emitNotification({
-            kind: 'error',
-            severity: 'error',
-            title: `Couldn't merge #${num}`,
-            body: errMsg,
-            sessionId,
-            workspaceId: session.workspaceId,
-          });
-          throw new ReportedError(errMsg);
-        }
-        await get().refreshSessionPr(sessionId, {
-          force: true,
+        await refreshActiveRequest({
+          get,
+          sessionId,
           ...(mountId === undefined ? {} : { mountId }),
         });
         await get().recordSessionEventOnce({

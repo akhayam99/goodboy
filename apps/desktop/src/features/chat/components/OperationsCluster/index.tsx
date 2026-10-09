@@ -9,6 +9,7 @@ import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { TranscriptCard } from '../TranscriptCards';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
+import { NAMES } from '../../../../shared/names';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 
 type Props = {
@@ -44,7 +45,7 @@ const CLUSTER_TONE: Record<ClusterState, Tone> = {
 };
 
 const CLUSTER_LABEL: Record<ClusterState, string> = {
-  approval: 'Waiting for your approval',
+  approval: NAMES.waitingForPermission,
   running: 'Running',
   stopped: 'Stopped',
   failed: 'Failed',
@@ -167,7 +168,7 @@ const OperationsClusterView = ({
 
   const ariaLabel = `Operations, ${items.length} ${items.length === 1 ? 'item' : 'items'}${
     state === 'approval'
-      ? `, waiting for your approval on ${approvalTool!.toolName}`
+      ? `, waiting for your permission on ${approvalTool!.toolName}`
       : state === 'running'
         ? `, running ${runningTool!.toolName}`
         : state === 'stopped'
@@ -213,7 +214,7 @@ const OperationsClusterView = ({
           preview={
             state === 'approval' ? (
               <span className="flex min-w-0 items-center gap-2 text-warning">
-                <span className="truncate">Waiting for your approval</span>
+                <span className="truncate">{NAMES.waitingForPermission}</span>
                 <span className="shrink-0 truncate font-mono text-faint-foreground">
                   {approvalTool!.toolName}
                 </span>
@@ -222,9 +223,7 @@ const OperationsClusterView = ({
               <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate font-mono">{runningTool!.toolName}</span>
                 {duration != null && (
-                  <span className="shrink-0 font-mono tabular-nums text-faint-foreground">
-                    {duration}
-                  </span>
+                  <span className="shrink-0 tabular-nums text-faint-foreground">{duration}</span>
                 )}
               </span>
             ) : state === 'stopped' ? (

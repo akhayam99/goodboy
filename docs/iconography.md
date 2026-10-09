@@ -7,7 +7,7 @@
 One meaning, one glyph. The registry in
 [`apps/desktop/src/shared/components/conceptIcons.ts`](../apps/desktop/src/shared/components/conceptIcons.ts)
 is the contract. `CONCEPT_ICONS` maps a concept to its glyph. `CONCEPT_TONE`
-maps the same concept to its tone. `ICON_SIZE` gives the only three sizes the
+maps the same concept to its tone. `ICON_SIZE` gives the only four sizes the
 app draws icons at. This document is the readable version of that file. The
 code is right when they disagree: a change to the registry, `LENS_LABEL` or
 `LENS_ICON` updates this document in the same pull request.
@@ -30,10 +30,11 @@ Rules that hold everywhere:
 
 ## Sizes
 
-Three tokens, exported from `conceptIcons.ts`:
+Four tokens, exported from `conceptIcons.ts`:
 
 | Token               | px  | Use                                                    |
 | ------------------- | --- | ------------------------------------------------------ |
+| `ICON_SIZE.mark`    | 10  | A glyph inside a chip, a dot or an xs control          |
 | `ICON_SIZE.row`     | 12  | Leading and trailing glyphs inside list and table rows |
 | `ICON_SIZE.control` | 14  | Buttons, menu triggers, rail tabs, form adornments     |
 | `ICON_SIZE.hero`    | 18  | Empty states, studio headers, choice tiles             |
@@ -43,15 +44,15 @@ Every token is even. Badges and icon boxes are even (`size-5`, `size-9`,
 centre. `WorkNode` centres its glyph in a full-size flex box with no line
 height, and draws the svg as a block so it never sits on a text baseline.
 
-Sizes below the row token (8 to 11 px) stay as plain numbers. They belong to
-chips, badges and status dots, where the glyph is a mark inside a shape, not a
-row of its own.
-
-`apps/desktop/src/__tests__/regressions/icon-size-uses-a-token.test.ts` fails on
-any 12 to 18 px literal under `features/` and `app/`. Every feature area has
-already been moved to the tokens. The allowlist holds the one real exception
-(an HTML `input size` attribute, counted in characters). A new exception needs
-a reason in its allowlist entry, never a waiver for a whole directory.
+`mark` is the one rung below the row token: the glyph is a mark inside a shape
+(a chip, a badge, a status dot), not a row of its own. There is no 8, 9, 11 or
+13 px icon. A number on an icon is never written: `scale-rules.test.ts` counts
+every numeric `size=` on an icon tag (a brand mark such as `DogMascot` or
+`IntegrationGlyph`, and an HTML `input size`, are not icons) and
+`icon-size-uses-a-token.test.ts` fails on any 12 to 18 px literal under
+`features/` and `app/`. The allowlist holds the one real exception (an HTML
+`input size` attribute, counted in characters). A new exception needs a reason
+in its allowlist entry, never a waiver for a whole directory.
 
 ## Navigation lenses
 
@@ -103,11 +104,14 @@ The left column, the switcher and the hover card draw a session's state as a
 holds the session, from `ATTENTION_REASON_META` in
 `features/session/session-stage.ts`, which gives each reason a mark, a tone and
 a sentence that the Board card, the Now chip rows and the palette read too. Red
-`!` (`failed`) is only an agent error and failing checks. Amber is what you must
+`!` (`failed`) is only an agent error, a push that failed (`push-failed`, "1 comment didn't go out") and failing checks. Amber is what you must
 answer, approve or act on: `?` for a question or a comment that needs you, the
-shield for an approval or a held plan, and an amber `!` (`alert`) for changes
+shield for a tool permission (Waiting for your permission) or a held plan (the plan waits for your approval), and an amber `!` (`alert`) for changes
 requested and comments the fix could not fix. A solid green disc with a white
-check (`approved`) is a pull request ready to merge. A pull request in the merge
+check (`approved`) is a pull request ready to merge. A Bitbucket session wears
+the same marks: its commit statuses and its reviewers feed the same table, so a
+failed status is red, a reviewer's changes request is amber and an approval beside
+a failed status never reads ready. A pull request in the merge
 queue (`pr-queued`) is the `merging` mark: a ring in the `primary` teal around a
 half-filled core, calm and in progress, because nothing is left for you to do.
 It ranks below the needs-you reasons and above approved, and the session stays
@@ -196,7 +200,7 @@ between the repo and the folder glyph. Never work it out again inline.
 
 Brand marks only, never a lucide stand-in. `github`, `gitlab`, `bitbucket`,
 `linear`, `jira`, `sentry`, `slack` map to the `@goodboy/ui` brand
-components. The Inbox source facets and the Legacy layout footer strip draw them through `IntegrationGlyph`: in brand
+components. Tasks source facets and the Legacy layout footer strip draw them through `IntegrationGlyph`: in brand
 color when the integration is connected, muted when it is not. `providers`
 (`Blocks`) and `integrations` (`Link2`) name the categories, not a vendor.
 
@@ -218,19 +222,19 @@ section share one glyph.
 
 ## Actions
 
-| Concept        | Glyph                   | Tone    | Affordance                                 |
-| -------------- | ----------------------- | ------- | ------------------------------------------ |
-| `rename`       | `SquarePen`             | neutral | Rename an agent, workflow, title           |
-| `archive`      | `Archive`               | neutral | Archive a session                          |
-| `restore`      | `ArchiveRestore`        | neutral | Unarchive a session, on the board card too |
-| `refresh`      | `RefreshCw`             | neutral | Re-read a session's mounts and requests    |
-| `delete`       | `Trash2`                | danger  | Destructive delete                         |
-| `folderOpen`   | `FolderOpen`            | neutral | Reveal a path in the OS                    |
-| `openExternal` | `SquareArrowOutUpRight` | neutral | Open on the code host                      |
-| `terminal`     | `SquareTerminal`        | neutral | Open a terminal                            |
-| `scripts`      | `ListVideo`             | info    | Open scripts                               |
-| `more`         | `Ellipsis`              | neutral | Overflow menu trigger                      |
-| `search`       | `SearchX`               | info    | Empty search result                        |
+| Concept        | Glyph                   | Tone    | Affordance                                                                          |
+| -------------- | ----------------------- | ------- | ----------------------------------------------------------------------------------- |
+| `rename`       | `SquarePen`             | neutral | Rename an agent, workflow, title                                                    |
+| `archive`      | `Archive`               | neutral | Archive a session                                                                   |
+| `restore`      | `ArchiveRestore`        | neutral | Unarchive a session, on the board card too                                          |
+| `refresh`      | `RefreshCw`             | neutral | Re-read a session's mounts and requests                                             |
+| `delete`       | `Trash2`                | danger  | Destructive delete                                                                  |
+| `folderOpen`   | `FolderOpen`            | neutral | Reveal a path in the OS                                                             |
+| `openExternal` | `SquareArrowOutUpRight` | neutral | Open on the code host                                                               |
+| `terminal`     | `SquareTerminal`        | neutral | Open a terminal                                                                     |
+| `scripts`      | `ListVideo`             | info    | Open scripts                                                                        |
+| `more`         | `Ellipsis`              | neutral | Overflow menu trigger, the only overflow glyph (28 square in a header, 24 in a row) |
+| `search`       | `SearchX`               | info    | Empty search result                                                                 |
 
 `Ellipsis` replaced the deprecated `MoreHorizontal` alias on every overflow
 trigger in the migrated areas.
@@ -286,7 +290,7 @@ both use it. They used to disagree on four of six kinds.
 | `answer-questions`   | `questions` | `CircleHelp`         |
 | `mount-project`      | `mount`     | `Layers2`            |
 
-## Scripts and inbox
+## Scripts and Tasks
 
 Script categories own their glyphs in `SCRIPT_CATEGORIES`
 (`features/scripts/classifyScript.ts`): `dev` `Play`, `build` `Hammer`, `test`
@@ -295,7 +299,7 @@ Script categories own their glyphs in `SCRIPT_CATEGORIES`
 `Rocket`, `clean` `Trash2`, `docs` `BookOpen`, `other` `Terminal`. Import that
 list, never restate it.
 
-Inbox rows lead with the tool's brand glyph, never a kind icon. The kind icons
+Tasks rows lead with the tool's brand glyph, never a kind icon. The kind icons
 live on the Type facets in `InboxFacetRail.tsx`: `issue` `CircleDot`, pull
 requests `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. The state
 column draws `InboxStateLabel`: `open` `Circle`, `active` `Contrast`, `done`

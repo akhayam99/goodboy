@@ -26,8 +26,8 @@ export const HandoffOlderFormat = ({ text, at }: Props) => {
           grouped
           tone="neutral"
           icon={<Inbox size={ICON_SIZE.row} aria-hidden />}
-          eyebrow="first message"
-          preview="older format"
+          eyebrow="First message"
+          preview="Older format"
           meta={formatClock({ at })}
           open={open}
           onToggle={() => setOpen((value) => !value)}

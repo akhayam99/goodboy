@@ -151,7 +151,7 @@ describe('useChatPrefix, script quick action', () => {
     expect(result.current.quickEmptyHint).toBe('Add a project to this session to run its scripts.');
   });
 
-  it('points to Settings when a mounted project has no pinned scripts', () => {
+  it('points to the Scripts page when a mounted project has no scripts', () => {
     useAppStore.setState({
       sessionProjectMounts: { [SESSION_ID]: [LEDGER_MOUNT] },
       discoveredScripts: { [SESSION_ID]: { '/wt/ledger': [] } },
@@ -159,7 +159,7 @@ describe('useChatPrefix, script quick action', () => {
     const { result } = renderScripts('$');
 
     expect(result.current.quickEmptyHint).toBe(
-      'No pinned scripts in ledger-core. Pin some in Settings.',
+      'No scripts in ledger-core. Pin a script from the Scripts page.',
     );
   });
 

@@ -93,12 +93,7 @@ export const AppFrame = ({ view, isRailCollapsed, mode = sceneShellMode() }: Pro
     <>
       <AppShell
         topBar={
-          <AppTopBar
-            mode={arrangement.mode}
-            onOpenSpend={overlays.openSpend}
-            onOpenImpact={overlays.openImpact}
-            onOpenScript={noop}
-          />
+          <AppTopBar mode={arrangement.mode} onOpenSpend={overlays.openSpend} onOpenScript={noop} />
         }
         footer={
           arrangement.footer === null ? undefined : (

@@ -16,6 +16,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'branch header menu: its entries come from the pull request and diff kinds of the registry',
   'features/artifacts/components/ArtifactDocumentDrawer/PlanDrawerMenu.tsx':
     'plan drawer chrome: Open in Artifacts and Expand belong to the drawer, Copy markdown runs artifact.copySource',
+  'features/resolve/notes/components/ReviewNotesDrawer/ReviewNotesMenu.tsx':
+    'notes drawer chrome: Show closed belongs to the drawer, Move to review draft runs review.postNotes',
   'features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx':
     'creation menu: picks the kind of artifact to create',
   'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
@@ -50,6 +52,14 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'artifact files from deleted sessions: storage keep and delete',
   'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
     'task picker: chooses a linked task for a branch, a value picker',
+  'features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction.tsx':
+    'Projects section menu: Add project once nothing is left to add, section chrome',
+  'features/session/components/SessionOverviewPane/SessionHeaderMenu.tsx':
+    'Overview title row menu: the same hooks as the session actions, worded as the retired title row icons (Archive session, Delete session...), Refresh has no registry action',
+  'features/session/components/SessionOverviewPane/UnassignedNote.tsx':
+    'Discard on a note written before notes belonged to a branch, which has no object in the map',
+  'features/session/components/SessionWorkspace/parts/TimelinePane/index.tsx':
+    'Activity header menu: Mark all seen acts on the feed, not on an object in the map',
 };
 
 const isSource = (path: string): boolean =>

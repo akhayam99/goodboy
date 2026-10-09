@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FolderGit2 } from 'lucide-react';
 import { Button, Checkbox } from '@goodboy/ui';
 import type { ChildRepo } from '../../lib/repo';
+import { ICON_SIZE } from '../conceptIcons';
 
 export type KnownRepo = {
   readonly workspaceName: string;
@@ -60,7 +61,7 @@ export const DetectedRepoList = ({ repos, busy, known = {}, onConfirm, onDismiss
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="flex min-w-0 items-center gap-2">
                       <FolderGit2
-                        size={14}
+                        size={ICON_SIZE.control}
                         aria-hidden
                         className="shrink-0 text-muted-foreground"
                       />

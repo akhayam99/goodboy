@@ -1,5 +1,13 @@
 import { formatError } from '@goodboy/ui';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import {
   getAgentDurations,
   getCacheEfficiency,
@@ -55,7 +63,7 @@ type Params = {
 
 type LoadQueryParams<T> = {
   readonly query: () => Promise<T>;
-  readonly setResult: (result: QueryResult<T>) => void;
+  readonly setResult: Dispatch<SetStateAction<QueryResult<T>>>;
   readonly activeGeneration: number;
 };
 
@@ -120,7 +128,7 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
         if (generation.current !== activeGeneration) {
           return;
         }
-        setResult({ data: null, error: toError({ value }) });
+        setResult((current) => ({ data: current.data, error: toError({ value }) }));
       }
     },
     [],
@@ -130,7 +138,6 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
     async ({ scope, activeGeneration }: LoadScopeParams) => {
       setLoading((current) => ({ ...current, [scope]: true }));
       if (scope === 'overview') {
-        setOverview(EMPTY_RESULT);
         await loadQuery({
           query: () => getImpactOverview(params),
           setResult: setOverview,
@@ -138,9 +145,6 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
         });
       }
       if (scope === 'shipped') {
-        setPullRequests(EMPTY_RESULT);
-        setReviews(EMPTY_RESULT);
-        setExternalTasks(EMPTY_RESULT);
         await Promise.all([
           loadQuery({
             query: () => getPullRequestOutcomes(params),
@@ -160,8 +164,6 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
         ]);
       }
       if (scope === 'flow') {
-        setAgentDurations(EMPTY_RESULT);
-        setFlowHealth(EMPTY_RESULT);
         await Promise.all([
           loadQuery({
             query: () => getAgentDurations(params),
@@ -176,10 +178,6 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
         ]);
       }
       if (scope === 'efficiency') {
-        setCacheEfficiency(EMPTY_RESULT);
-        setContextGrowth(EMPTY_RESULT);
-        setTurns(EMPTY_RESULT);
-        setNudges(EMPTY_RESULT);
         await Promise.all([
           loadQuery({
             query: () => getCacheEfficiency(params),
@@ -215,6 +213,16 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
     generation.current += 1;
     const activeGeneration = generation.current;
     setLoading(EMPTY_LOADING);
+    setOverview(EMPTY_RESULT);
+    setPullRequests(EMPTY_RESULT);
+    setReviews(EMPTY_RESULT);
+    setExternalTasks(EMPTY_RESULT);
+    setAgentDurations(EMPTY_RESULT);
+    setFlowHealth(EMPTY_RESULT);
+    setCacheEfficiency(EMPTY_RESULT);
+    setContextGrowth(EMPTY_RESULT);
+    setTurns(EMPTY_RESULT);
+    setNudges(EMPTY_RESULT);
     void Promise.all(
       (
         ['overview', 'shipped', 'flow', 'efficiency'] satisfies ReadonlyArray<ImpactMetricGroup>

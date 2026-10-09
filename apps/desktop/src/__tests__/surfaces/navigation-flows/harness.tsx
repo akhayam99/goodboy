@@ -15,6 +15,7 @@ import {
 import type { MountGithubState } from '../../../store/types';
 import { seedSessionWithMounts } from '../../helpers/seedSessionWithMounts';
 import { App } from '../../../App';
+import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { SETTING_SHELL_CLASSIC_BARS } from '../../../features/settings/settings';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
@@ -310,7 +311,7 @@ export const openCrumb = async (label: RegExp): Promise<void> => {
 };
 
 export const openPalette = async (label: RegExp, query?: string): Promise<void> => {
-  await clickButton(/^Search .+ \(/);
+  await clickButton(/^Search \(/);
   if (query !== undefined) {
     const input = await screen.findByRole('combobox', { name: /search/i });
     fireEvent.change(input, { target: { value: query } });
@@ -349,9 +350,10 @@ export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   );
 };
 
-type BranchTabName = 'comments' | 'files' | 'commits' | 'checks';
+type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
+  pr: /^Pull request/,
   comments: /^Comments/,
   files: /^Files/,
   commits: /^Commits/,
@@ -399,40 +401,68 @@ const expectOwnControlsOnly = ({ sessionId }: Ctx): void => {
   );
 };
 
-export const LENS_ROWS: ReadonlyArray<{
+type LensRow = {
   readonly label: string;
   readonly note?: string;
   readonly lens: string | null;
   readonly seed?: Seed;
+  readonly beforeOpen?: (ctx: Ctx) => void;
   readonly lands: (ctx: Ctx) => Promise<void>;
-}> = [
+};
+
+const overviewLands = async (): Promise<void> =>
+  expect(await screen.findByTestId('context-chip')).toBeDefined();
+
+export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
+  { label: 'Overview', lens: null, lands: overviewLands },
+  { label: 'Branch', lens: 'branch', lands: branchTab('pr') },
+  { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
+  { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
+  { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
   {
-    label: 'Session',
-    lens: null,
-    lands: async () => expect(await screen.findByTestId('context-chip')).toBeDefined(),
+    label: 'Questions',
+    note: 'while one is open',
+    lens: 'questions',
+    beforeOpen: ({ sessionId }) =>
+      useAppStore.setState({
+        sessionOpenQuestions: { [sessionId]: [openQuestionFor({ sessionId })] },
+      }),
+    lands: () => heading('Questions'),
   },
+  { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
+  { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
+  { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
+];
+
+export const LENS_ROWS: ReadonlyArray<LensRow> = [
+  { label: 'Overview', lens: null, lands: overviewLands },
   { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
   { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
   { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
-  { label: 'Review', lens: 'branch', lands: branchTab('comments') },
-  { label: 'Diff', lens: 'branch', lands: branchTab('files') },
+  { label: 'Comments', lens: 'branch', lands: branchTab('comments') },
+  { label: 'Files', lens: 'branch', lands: branchTab('files') },
   {
     label: 'Pull request',
     lens: 'branch',
-    lands: both(branchTab('comments'), () => heading(/Stop retried webhooks/)),
+    lands: both(branchTab('pr'), () => heading(/Stop retried webhooks/)),
   },
   {
     label: 'Pull request',
     note: 'no pull request yet',
     lens: 'branch',
     seed: 'issue',
-    lands: branchTab('comments'),
+    lands: branchTab('pr'),
   },
   { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
   { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
   { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
+
+export const openBranchFiles = async (): Promise<void> => {
+  await openCrumb(/^Branch/);
+  await click(await screen.findByRole('tab', { name: /^Files/ }));
+};
 
 const expectNoCrash = (): void => {
   expect(

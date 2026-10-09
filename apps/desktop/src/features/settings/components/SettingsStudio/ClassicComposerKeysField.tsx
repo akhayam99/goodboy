@@ -23,7 +23,7 @@ export const ClassicComposerKeysField = () => {
       help={`Starting an agent adds a line on ${shortcutGlyphs('composer.send')} and starts on ${shortcutGlyphs('composer.submit')}, and review replies send on ${shortcutGlyphs('composer.send')}.`}
     >
       <Switch
-        label={isClassic ? 'On' : 'Off'}
+        ariaLabel="Keys from before 0.15.5"
         checked={isClassic}
         onChange={(next) => void onChange(next)}
       />

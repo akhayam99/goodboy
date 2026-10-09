@@ -12,7 +12,7 @@ import type {
   TurnState,
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import type { SessionGithubState } from '../../../store/types';
+import type { MountGithubState, SessionGithubState } from '../../../store/types';
 import type { StoryStore } from '../../../store/storyHarness';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { SessionActivityBar } from '../components/SessionActivityBar';
@@ -136,6 +136,46 @@ export const mountOf = ({
   revision: 1,
 });
 
+export const mountGithubOf = ({
+  mount,
+  number,
+}: {
+  readonly mount: SessionProjectMount;
+  readonly number: number;
+}): MountGithubState => ({
+  mountId: mount.mountId,
+  projectId: mount.projectId,
+  revision: 1,
+  repository: null,
+  host: null,
+  branch: mount.branch,
+  prs: [],
+  links: [],
+  pr: {
+    number,
+    title: 'Retry window',
+    url: `https://github.com/harborline/payments-api/pull/${number}`,
+    state: 'open',
+    mergeable: true,
+    checks: 'success',
+    baseBranch: 'main',
+    headBranch: mount.branch,
+    isDraft: false,
+    reviewDecision: null,
+    body: '',
+    updatedAt: '2026-09-25T00:00:00.000Z',
+  },
+  linkedIssues: [],
+  fetchedAt: null,
+  failedAt: null,
+  loading: false,
+  error: null,
+  detail: null,
+  detailFetchedAt: null,
+  detailLoading: false,
+  detailError: null,
+});
+
 type SeedParams = {
   readonly store: StoryStore;
   readonly sessions: ReadonlyArray<Session>;
@@ -180,11 +220,12 @@ export const seedColumn = ({
 const NO_SESSIONS: ReadonlyArray<Session> = [];
 
 type BarProps = {
+  readonly isStudioOver: boolean;
   readonly onSelectSession: (id: SessionId) => void;
   readonly onArchivedTabOpen?: () => void;
 };
 
-const StoreBar = ({ onSelectSession, onArchivedTabOpen }: BarProps) => {
+const StoreBar = ({ isStudioOver, onSelectSession, onArchivedTabOpen }: BarProps) => {
   const sessions = useAppStore((state) => state.sessions);
   const archived = useAppStore((state) => state.archivedSessions[harborline.id] ?? NO_SESSIONS);
   const currentSessionId = useAppStore((state) => state.currentSessionId);
@@ -194,6 +235,7 @@ const StoreBar = ({ onSelectSession, onArchivedTabOpen }: BarProps) => {
       sessions={sessions}
       archivedSessions={archived}
       currentSessionId={currentSessionId as SessionId | null}
+      isStudioOver={isStudioOver}
       onSelectSession={onSelectSession}
       {...(onArchivedTabOpen !== undefined && { onArchivedTabOpen })}
     />
@@ -201,17 +243,20 @@ const StoreBar = ({ onSelectSession, onArchivedTabOpen }: BarProps) => {
 };
 
 type RenderParams = {
+  readonly isStudioOver?: boolean;
   readonly onSelectSession?: (id: SessionId) => void;
   readonly onArchivedTabOpen?: () => void;
 };
 
 export const renderBar = ({
+  isStudioOver = false,
   onSelectSession = () => undefined,
   onArchivedTabOpen,
 }: RenderParams = {}) =>
   render(
     <ToastProvider>
       <StoreBar
+        isStudioOver={isStudioOver}
         onSelectSession={onSelectSession}
         {...(onArchivedTabOpen !== undefined && { onArchivedTabOpen })}
       />

@@ -5,6 +5,7 @@ import type {
   AgentQueuedStatus,
   AgentQueuedTurn,
 } from '../../../../../store/slices/agentQueue/types';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type QueuedItem = Pick<AgentQueuedTurn, 'id' | 'content' | 'attachments' | 'override' | 'status'>;
 
@@ -76,7 +77,7 @@ export const QueuedMessages = ({ items, canEdit, onEdit, onRemove, onSendNow }: 
             )}
             {attachmentCount > 0 && item.content.trim().length > 0 && (
               <span className="inline-flex shrink-0 items-center gap-0.5 text-muted-foreground">
-                <Paperclip size={10} aria-hidden />
+                <Paperclip size={ICON_SIZE.mark} aria-hidden />
                 {attachmentCount}
               </span>
             )}

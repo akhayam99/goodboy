@@ -244,10 +244,10 @@ describe('ToolSettingsScope', () => {
       timeout: 2000,
     });
     expect(screen.queryByLabelText('API key')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open in inbox' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open in Tasks' })).toBeDefined();
   });
 
-  it('opens connected tools in the inbox', async () => {
+  it('opens connected tools in Tasks', async () => {
     store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
     const dispatch = vi.spyOn(window, 'dispatchEvent');
     await act(async () => {
@@ -255,7 +255,7 @@ describe('ToolSettingsScope', () => {
         <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
       );
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Open in inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Tasks' }));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'goodboy:open-inbox', detail: { provider: 'linear' } }),
     );
@@ -533,7 +533,7 @@ describe('ToolSettingsScope', () => {
         links={[{ provider: 'linear', label: 'Linear', issueExternalId: 'issue-1' }]}
       />,
     );
-    const label = isConnected ? 'Open Linear in the inbox' : 'Connect Linear';
+    const label = isConnected ? 'Open Linear in Tasks' : 'Connect Linear';
     const button = screen.getByRole('button', { name: label });
     fireEvent.mouseEnter(button);
     expect((await screen.findByRole('tooltip')).textContent).toBe(label);

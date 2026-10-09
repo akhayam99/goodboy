@@ -1,53 +1,45 @@
-import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/integrations/github/github';
+import type { MountId, SessionId } from '@goodboy/types';
+import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { prWriteContext } from './prWriteContext';
+import { runPortWrite } from './runPortWrite';
 import type { GetFn, SetFn } from './types';
-import { ReportedError } from '../notifications/reportedError';
-
-const EDIT_FAILURE_TITLE = "Couldn't edit the pull request";
 
 export type EditPrOptions = {
   title?: string;
   body?: string;
+  isQuiet?: boolean;
+  mountId?: MountId;
 };
 
 export const editPr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, opts: EditPrOptions) => {
-    const { session, repo } = prWriteContext({
+    const { session, port } = prWriteContext({
       get,
       sessionId,
       prNumber,
-      failureTitle: () => EDIT_FAILURE_TITLE,
+      ...(opts.mountId === undefined ? {} : { mountId: opts.mountId }),
+      failureTitle: ({ nouns }) => `Couldn't edit the ${nouns.long}`,
     });
 
-    const args = ['pr', 'edit', String(prNumber)];
-    if (opts.title !== undefined) {
-      args.push('--title', opts.title);
-    }
-    if (opts.body !== undefined) {
-      args.push('--body', opts.body);
-    }
-    if (args.length === 3) {
+    if (opts.title === undefined && opts.body === undefined) {
       return;
     }
 
-    const res = await tauriGhRunner.run(args, {
-      cwd: repo.repoRoot,
+    await runPortWrite({
+      get,
+      sessionId,
       workspaceId: session.workspaceId,
-      projectId: repo.projectId,
+      title: `Couldn't edit the ${port.nouns.long}`,
+      isQuiet: opts.isQuiet === true,
+      run: async () => {
+        if (opts.title !== undefined) {
+          await port.updateTitle({ title: opts.title });
+        }
+        if (opts.body !== undefined) {
+          await port.updateBody({ body: opts.body });
+        }
+      },
     });
-    if (res.exitCode !== 0) {
-      const errMsg = res.stderr.trim() || `gh pr edit exited with ${res.exitCode}`;
-      void get().emitNotification({
-        kind: 'error',
-        severity: 'error',
-        title: EDIT_FAILURE_TITLE,
-        body: errMsg,
-        sessionId,
-        workspaceId: session.workspaceId,
-      });
-      throw new ReportedError(errMsg);
-    }
-    await get().refreshSessionPr(sessionId, { force: true });
+    await refreshActiveRequest({ get, sessionId });
   };
 };

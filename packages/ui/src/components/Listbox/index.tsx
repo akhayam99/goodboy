@@ -19,6 +19,7 @@ import type {
   ListboxValue,
 } from './listboxTypes';
 import { edgeIndex, useListboxKeyboard } from './useListboxKeyboard';
+import { ICON_SIZE } from '../../iconSize';
 
 export type { ListboxCreate, ListboxOption, ListboxSize, ListboxTriggerVariant, ListboxValue };
 
@@ -87,7 +88,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
   const {
     options,
     trigger = 'field',
-    size = 'md',
+    size = 'sm',
     placeholder = 'Choose',
     searchable,
     searchLabel = 'Search',
@@ -310,7 +311,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
       <div className="flex max-h-80 min-h-0 min-w-0 flex-col">
         {isSearchable ? (
           <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-3 text-muted-foreground">
-            <Search size={14} aria-hidden className="shrink-0" />
+            <Search size={ICON_SIZE.control} aria-hidden className="shrink-0" />
             <input
               ref={searchRef}
               type="text"

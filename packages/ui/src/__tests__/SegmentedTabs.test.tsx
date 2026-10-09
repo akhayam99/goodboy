@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Bug } from 'lucide-react';
+import { ChoiceCards } from '../components/ChoiceCards';
 import { SegmentedTabs } from '../components/SegmentedTabs';
 
 const OPTIONS = [
@@ -50,8 +51,8 @@ describe('SegmentedTabs', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('xs size draws the compact strip for a header row', () => {
-    render(
+  it('xs draws a 28 frame of 24 tabs and sm a 32 frame of 28 tabs', () => {
+    const { rerender } = render(
       <SegmentedTabs
         size="xs"
         ariaLabel="view"
@@ -61,11 +62,66 @@ describe('SegmentedTabs', () => {
       />,
     );
 
-    expect(screen.getByRole('tablist').className).toContain('p-0.5');
+    expect(screen.getByRole('tablist').className.split(' ')).toContain('h-7');
     screen.getAllByRole('tab').forEach((tab) => {
-      expect(tab.className).toContain('py-0.5');
+      expect(tab.className.split(' ')).toContain('h-6');
       expect(tab.className).toContain('rounded-sm');
     });
+
+    rerender(
+      <SegmentedTabs
+        size="sm"
+        ariaLabel="view"
+        options={OPTIONS}
+        value="first"
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('tablist').className.split(' ')).toContain('h-8');
+    screen.getAllByRole('tab').forEach((tab) => {
+      expect(tab.className.split(' ')).toContain('h-7');
+    });
+  });
+
+  it('defaults to sm and maps the retired md onto it', () => {
+    const { rerender } = render(
+      <SegmentedTabs ariaLabel="view" options={OPTIONS} value="first" onChange={vi.fn()} />,
+    );
+    expect(screen.getByRole('tablist').getAttribute('data-size')).toBe('sm');
+
+    rerender(
+      <SegmentedTabs
+        size="md"
+        ariaLabel="view"
+        options={OPTIONS}
+        value="first"
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('tablist').getAttribute('data-size')).toBe('sm');
+    expect(screen.getByRole('tablist').className.split(' ')).toContain('h-8');
+  });
+
+  it('keeps one weight and one footprint when the selection moves', () => {
+    const { rerender } = render(
+      <SegmentedTabs ariaLabel="view" options={OPTIONS} value="first" onChange={vi.fn()} />,
+    );
+    const weightsBefore = screen.getAllByRole('tab').map((tab) => tab.className.split(' '));
+    weightsBefore.forEach((classes) => {
+      expect(classes).not.toContain('font-semibold');
+    });
+
+    rerender(
+      <SegmentedTabs ariaLabel="view" options={OPTIONS} value="second" onChange={vi.fn()} />,
+    );
+    const weightsAfter = screen.getAllByRole('tab').map((tab) => tab.className.split(' '));
+    weightsAfter.forEach((classes) => {
+      expect(classes).not.toContain('font-semibold');
+    });
+    const sizeClasses = (classes: ReadonlyArray<string>) =>
+      classes.filter((name) => /^(h|px|py|gap)-|^text-label$/.test(name));
+    expect(weightsAfter.map(sizeClasses)[0]).toEqual(weightsBefore.map(sizeClasses)[0]);
   });
 
   it('names its size so a header row can check every control shares one height', () => {
@@ -85,7 +141,7 @@ describe('SegmentedTabs', () => {
   it('sits the icon in the heading line, immediately before the label it names', () => {
     render(
       <SegmentedTabs
-        size="md"
+        size="sm"
         ariaLabel="Issue type"
         options={[{ value: 'bug', label: 'Bug', icon: Bug, hint: 'Something broke' }]}
         value="bug"
@@ -137,5 +193,44 @@ describe('SegmentedTabs', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Second' }));
     expect(onChange).toHaveBeenCalledWith('second');
+  });
+
+  it('ChoiceCards is the card variant as its own component and selects by fill and a check', () => {
+    const onChange = vi.fn();
+    render(
+      <ChoiceCards
+        ariaLabel="Start"
+        options={[
+          { value: 'first', label: 'First', hint: 'One' },
+          { value: 'second', label: 'Second', hint: 'Two' },
+        ]}
+        value="first"
+        onChange={onChange}
+      />,
+    );
+
+    const first = screen.getByRole('tab', { name: /First/ });
+    expect(first.className).toContain('bg-selected');
+    expect(first.className).not.toMatch(/\bborder-primary/);
+    expect(first.className.split(' ').some((name) => name.startsWith('ring-'))).toBe(false);
+    fireEvent.click(screen.getByRole('tab', { name: /Second/ }));
+    expect(onChange).toHaveBeenCalledWith('second');
+  });
+
+  it('ChoiceCards draws the icon tile only for a card that has an icon or a glyph', () => {
+    render(
+      <ChoiceCards
+        ariaLabel="Start"
+        options={[
+          { value: 'plain', label: 'Plain', hint: 'No mark' },
+          { value: 'marked', label: 'Marked', hint: 'Has a glyph', glyph: <span>g</span> },
+        ]}
+        value="plain"
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: /Plain/ }).querySelector('.size-7')).toBeNull();
+    expect(screen.getByRole('tab', { name: /Marked/ }).querySelector('.size-7')).not.toBeNull();
   });
 });

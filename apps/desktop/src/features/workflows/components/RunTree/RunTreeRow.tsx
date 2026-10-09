@@ -25,12 +25,9 @@ import {
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { openPlanDrawer } from '../../../plans/openPlanDrawer';
-import { useAgentRowWork } from '../../../session/hooks/useAgentRowWork';
-import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { TimelineAgentMeta } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineAgentMeta';
+import { AgentStepRow } from '../../../session/components/SessionWorkspace/parts/TimelinePane/AgentStepRow';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { TimelineRowMarker } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRowMarker';
-import { TimelineRowStateLine } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRowStateLine';
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
@@ -38,6 +35,7 @@ import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { rowSlotWidth } from './rowSlotWidth';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type RunTreeRouting = {
   readonly stepById: ReadonlyMap<string, Step>;
@@ -111,15 +109,6 @@ export const RunTreeRow = ({
   const { agent } = entry;
   const step =
     !isNested && agent.stepId != null ? (routing.stepById.get(agent.stepId) ?? null) : null;
-  const work = useAgentRowWork({
-    agent,
-    kind: entry.agentKind,
-    step,
-    roleModels: routing.roleModels,
-    sessionProvider: routing.sessionProvider,
-    sessionEffort: routing.sessionEffort,
-    phase: item.rowState.phase,
-  });
   const guidance = isNested
     ? null
     : guidanceSentTo({
@@ -140,107 +129,133 @@ export const RunTreeRow = ({
       : `${agent.workflowRunId == null ? 'Subagent' : 'Step'} ${entry.stepLabel}, ${agent.name}`;
 
   return (
-    <div
-      className="flex min-w-0"
-      style={{ height: item.height }}
-      data-testid={`run-tree-row-${agent.id}`}
-      data-highlighted={isHighlighted}
-      onMouseEnter={onHighlight === undefined ? undefined : () => onHighlight(true)}
-      onMouseLeave={onHighlight === undefined ? undefined : () => onHighlight(false)}
+    <AgentStepRow
+      item={item}
+      entry={entry}
+      step={step}
+      roleModels={routing.roleModels}
+      sessionProvider={routing.sessionProvider}
+      sessionEffort={routing.sessionEffort}
+      costUsd={costUsd}
+      onOpen={onSelect}
     >
-      <span className="relative shrink-0" style={{ width: slot }} data-testid="run-tree-rail-slot">
-        <TimelineRail rail={rail} width={slot} />
-        {rail.markerY == null ? null : (
+      {({ work, glyph, state, meta, cardHandlers }) => (
+        <div
+          className="flex min-w-0"
+          style={{ height: item.height }}
+          data-testid={`run-tree-row-${agent.id}`}
+          data-highlighted={isHighlighted}
+          onMouseEnter={onHighlight === undefined ? undefined : () => onHighlight(true)}
+          onMouseLeave={onHighlight === undefined ? undefined : () => onHighlight(false)}
+        >
           <span
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: railColumnX({ column: rail.markerColumn }), top: rail.markerY }}
-            data-rail-column={rail.markerColumn}
+            className="relative shrink-0"
+            style={{ width: slot }}
+            data-testid="run-tree-rail-slot"
           >
-            <TimelineRowMarker item={item} progress={work.time?.progress ?? null} />
-          </span>
-        )}
-      </span>
-      <div className={cn(WORK_ROW.container, 'flex min-w-0 flex-1 items-end')}>
-        <div className="flex min-w-0 flex-1" style={{ height: boxHeight }}>
-          <InteractiveRow
-            label={label}
-            isSelected={isSelected}
-            onOpen={onSelect}
-            frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
-            className="flex h-full min-w-0 items-center gap-2 px-2"
-          >
-            <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
-              {entry.stepLabel}
-            </span>
-            <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
-            <span className="flex min-w-0 flex-1 items-center gap-2">
+            <TimelineRail rail={rail} width={slot} />
+            {rail.markerY == null ? null : (
               <span
-                title={agent.name}
-                className={cn(
-                  WORK_ROW.title,
-                  'flex-1 truncate',
-                  isNested ? 'text-label' : 'text-body',
-                  item.rowState.phase === 'queued'
-                    ? 'text-muted-foreground'
-                    : item.rowState.phase === 'running' || item.hasUnread
-                      ? 'font-medium text-foreground'
-                      : 'text-foreground',
-                )}
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                style={{ left: railColumnX({ column: rail.markerColumn }), top: rail.markerY }}
+                data-rail-column={rail.markerColumn}
               >
-                {agent.name}
+                <TimelineRowMarker item={item} progress={work.time?.progress ?? null} />
               </span>
-              {guidance === null ? null : (
-                <Tooltip content={guidanceTagTip({ text: guidance })} side="top">
+            )}
+          </span>
+          <div className={cn(WORK_ROW.container, 'flex min-w-0 flex-1 items-end')}>
+            <div
+              className="flex min-w-0 flex-1"
+              style={{ height: boxHeight }}
+              onFocus={cardHandlers.onFocus}
+              onBlur={cardHandlers.onBlur}
+              onKeyDown={cardHandlers.onKeyDown}
+              onPointerDown={cardHandlers.onPointerDown}
+            >
+              <InteractiveRow
+                label={label}
+                isSelected={isSelected}
+                onOpen={onSelect}
+                frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
+                className="flex h-full min-w-0 items-center gap-2 px-2"
+              >
+                <span className="w-6 shrink-0 text-right text-chip text-faint-foreground">
+                  {entry.stepLabel}
+                </span>
+                {glyph}
+                <span className="flex min-w-0 flex-1 items-center gap-2">
                   <span
-                    aria-label={`Guidance: ${guidanceTagTip({ text: guidance })}`}
+                    title={agent.name}
                     className={cn(
-                      'pointer-events-auto inline-flex shrink-0 cursor-default items-center gap-1 text-chip',
-                      tintClasses('info').text,
+                      WORK_ROW.title,
+                      'flex-1 truncate',
+                      isNested ? 'text-label' : 'text-body',
+                      item.rowState.phase === 'queued'
+                        ? 'text-muted-foreground'
+                        : item.rowState.phase === 'running' || item.hasUnread
+                          ? 'font-medium text-foreground'
+                          : 'text-foreground',
                     )}
                   >
-                    <SlidersHorizontal size={11} aria-hidden />
-                    Guidance
+                    {agent.name}
                   </span>
-                </Tooltip>
-              )}
-              {answersFor === null ? null : (
-                <span className="max-w-40 shrink-0 truncate text-meta text-muted-foreground">
-                  {`answering for ${answersFor}`}
+                  {guidance === null ? null : (
+                    <Tooltip content={guidanceTagTip({ text: guidance })} side="top">
+                      <span
+                        aria-label={`Guidance: ${guidanceTagTip({ text: guidance })}`}
+                        className={cn(
+                          'pointer-events-auto inline-flex shrink-0 cursor-default items-center gap-1 text-chip',
+                          tintClasses('info').text,
+                        )}
+                      >
+                        <SlidersHorizontal size={ICON_SIZE.mark} aria-hidden />
+                        Guidance
+                      </span>
+                    </Tooltip>
+                  )}
+                  {answersFor === null ? null : (
+                    <span className="max-w-40 shrink-0 truncate text-meta text-muted-foreground">
+                      {`answering for ${answersFor}`}
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            <TimelineRowStateLine state={item.rowState} note={work.time?.note ?? null} />
-            <TimelineAgentMeta work={work} costUsd={costUsd} />
-            {hasActionColumn ? (
-              <span className={WORK_META_COLUMN.action}>
-                {isSkipShown && skip !== null ? <RunStepSkip agent={agent} skip={skip} /> : null}
-                {answer === null ? null : (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="h-6 shrink-0"
-                    onClick={() => onAnswer(answer.question)}
-                  >
-                    Answer
-                  </Button>
-                )}
-                {planAction === null ? null : (
-                  <Button
-                    variant={isPlanHeld ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="h-6 shrink-0"
-                    onClick={() =>
-                      openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
-                    }
-                  >
-                    {isPlanHeld ? 'Review plan' : 'Open plan'}
-                  </Button>
-                )}
-              </span>
-            ) : null}
-          </InteractiveRow>
+                {state}
+                {meta}
+                {hasActionColumn ? (
+                  <span className={WORK_META_COLUMN.action}>
+                    {isSkipShown && skip !== null ? (
+                      <RunStepSkip agent={agent} skip={skip} />
+                    ) : null}
+                    {answer === null ? null : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-6 shrink-0"
+                        onClick={() => onAnswer(answer.question)}
+                      >
+                        Answer
+                      </Button>
+                    )}
+                    {planAction === null ? null : (
+                      <Button
+                        variant={isPlanHeld ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="h-6 shrink-0"
+                        onClick={() =>
+                          openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
+                        }
+                      >
+                        {isPlanHeld ? 'Review plan' : 'Open plan'}
+                      </Button>
+                    )}
+                  </span>
+                ) : null}
+              </InteractiveRow>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </AgentStepRow>
   );
 };

@@ -34,6 +34,7 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionPins: {} as Record<string, ReadonlyArray<{ id: string; at: number }>>,
     projects: [] as ReadonlyArray<unknown>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
@@ -144,6 +145,7 @@ beforeEach(() => {
   state.sessionExternalTasks = {};
   state.sessionWorktrees = {};
   state.sessionProjectMounts = {};
+  state.sessionPins = {};
   state.projects = [];
   state.sessionPhaseRuns = {};
   state.reviewDrafts = {};
@@ -352,21 +354,15 @@ describe('StageBoardCard linked request', () => {
     expect(screen.queryByLabelText('No pull request')).toBeNull();
   });
 
-  it('renders a clickable GitLab MR button that dispatches the studio event', () => {
+  it('opens the Branch page from a GitLab MR button', () => {
     state.sessionGitlabMr = {
       [SESSION_ID]: { mr: mergeRequest({ state: 'opened' }) },
     };
-    const dispatched: Event[] = [];
-    const onOpenInbox = (event: Event) => dispatched.push(event);
-    window.addEventListener('goodboy:open-inbox', onOpenInbox);
+    nav.openPullRequest.mockClear();
     render(<StageBoardCard session={session} nav={nav} />);
     const btn = screen.getByLabelText('Merge request !12 · open, open in GitLab');
     fireEvent.click(btn);
-    expect(dispatched).toHaveLength(1);
-    expect(dispatched[0]).toMatchObject({
-      detail: { provider: 'gitlab', kind: 'mr', recordKey: 'gitlab:mr:1' },
-    });
-    window.removeEventListener('goodboy:open-inbox', onOpenInbox);
+    expect(nav.openPullRequest).toHaveBeenCalledWith(session);
   });
 
   it('marks the pull request slot as still being checked before GitHub answers', () => {
@@ -639,5 +635,20 @@ describe('StageBoardCard footer', () => {
     hooks.agents = [];
     render(<StageBoardCard session={session} nav={nav} />);
     expect(screen.queryByLabelText(/agent/)).toBeNull();
+  });
+
+  it('marks a pinned session with a quiet pin and leaves the others bare', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByRole('img', { name: 'Pinned' })).toBeNull();
+    cleanup();
+    state.sessionPins = { [WORKSPACE_ID]: [{ id: SESSION_ID, at: 1 }] };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByRole('img', { name: 'Pinned' })).toBeDefined();
+  });
+
+  it('does not mark a pin kept in another workspace', () => {
+    state.sessionPins = { ['workspace-2']: [{ id: SESSION_ID, at: 1 }] };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByRole('img', { name: 'Pinned' })).toBeNull();
   });
 });

@@ -2,17 +2,11 @@ import { useCallback, useState } from 'react';
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, EmptyState, OverflowMenu, type OverflowMenuItem, PaneShell } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
 import type { ProviderDisplayInfo } from '../../../providers';
 import { useAppStore } from '../../../../../store';
 import { useCopyText } from '../../../../../shared/hooks/useCopyText';
-import { PROVIDER_BRAND } from '../../provider-brand';
 import { ProviderConnect } from '../../ProviderConnect';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { AccountGroup, type AccountConfirm } from './AccountGroup';
 import { CliGroup } from './AccountGroup/CliGroup';
@@ -28,21 +22,27 @@ type Props = {
   readonly autoUpdate: boolean;
   readonly focusModels: boolean;
   readonly workspaceId: WorkspaceId | null;
+  readonly scopeLabel: string | null;
 };
 
 type MetaParams = {
   readonly planLabel: string | null;
   readonly isApi: boolean;
+  readonly scopeLabel: string | null;
 };
 
-const metaLine = ({ planLabel, isApi }: MetaParams): string | undefined => {
+const kindLine = ({ planLabel, isApi }: Omit<MetaParams, 'scopeLabel'>): string | null => {
   if (isApi) {
     return 'Runs through the OpenCode runtime';
   }
-  if (planLabel === null) {
-    return undefined;
-  }
-  return `${planLabel} plan`;
+  return planLabel === null ? null : `${planLabel} plan`;
+};
+
+const metaLine = ({ planLabel, isApi, scopeLabel }: MetaParams): string | undefined => {
+  const parts = [scopeLabel, kindLine({ planLabel, isApi })].filter(
+    (part): part is string => part !== null,
+  );
+  return parts.length === 0 ? undefined : parts.join(' · ');
 };
 
 export const ProviderPageBody = ({
@@ -51,9 +51,9 @@ export const ProviderPageBody = ({
   autoUpdate,
   focusModels,
   workspaceId,
+  scopeLabel,
 }: Props) => {
   const id = info.id;
-  const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? CONCEPT_ICONS.providers;
   const connectPhase = useAppStore((s) => s.providerConnect[id]?.phase ?? 'idle');
   const connectProvider = useAppStore((s) => s.connectProvider);
   const logoutProvider = useAppStore((s) => s.logoutProvider);
@@ -127,16 +127,8 @@ export const ProviderPageBody = ({
     <PaneShell
       scroll="body"
       animationClassName={SETTINGS_PANE_ENTRY}
-      glyph={
-        <Icon
-          size={ICON_SIZE.hero}
-          aria-hidden
-          className="shrink-0"
-          style={{ color: `var(${PROVIDER_BRAND[id].cssVar})` }}
-        />
-      }
       title={info.label}
-      meta={metaLine({ planLabel, isApi })}
+      meta={metaLine({ planLabel, isApi, scopeLabel })}
       actions={<OverflowMenu items={menuItems} label={`More ${info.label} actions`} />}
     >
       {isReady && !isApi ? <ProviderAttentionNotice providerId={id} /> : null}

@@ -88,6 +88,27 @@ describe('OverviewActions', () => {
     expect(screen.queryByRole('button', { name: 'Create' })).toBeNull();
   });
 
+  it('gives each item one line of description, so every row has the same height', () => {
+    renderActions();
+
+    const items = screen.getAllByRole('menuitem');
+    expect(items).toHaveLength(4);
+    items.forEach((item) => {
+      const lines = item.querySelectorAll('.text-meta');
+      expect(lines).toHaveLength(1);
+      expect(lines[0]?.textContent?.length).toBeGreaterThan(0);
+      expect(lines[0]?.textContent?.length).toBeLessThanOrEqual(34);
+    });
+  });
+
+  it('describes Open run when a run is active', () => {
+    renderActions({ session: { ...SESSION, workflowRuns: [RUN] } });
+
+    expect(screen.getByRole('menuitem', { name: /Open run/ }).textContent).toContain(
+      'Follow the run in progress',
+    );
+  });
+
   it('opens the workflow builder from Start a run', () => {
     const onOpenWorkflowBuilder = vi.fn();
     renderActions({ onOpenWorkflowBuilder });

@@ -26,11 +26,7 @@ export const WorkflowRulesPanel = ({ workspaceId }: Props) => {
       </div>
       <RulesAutonomyBand autonomy={rules.autonomy} onChange={(autonomy) => save({ autonomy })} />
       <RulesSpendBand rules={rules} onChange={save} />
-      <RulesProvidersBand
-        workspaceId={workspaceId}
-        spread={rules.spreadByHeadroom}
-        onSpread={(spreadByHeadroom) => save({ spreadByHeadroom })}
-      />
+      <RulesProvidersBand workspaceId={workspaceId} />
       <RulesGuidanceBand workspaceId={workspaceId} rules={rules} onChange={save} />
     </div>
   );

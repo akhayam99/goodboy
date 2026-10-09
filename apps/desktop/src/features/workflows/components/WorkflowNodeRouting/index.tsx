@@ -48,12 +48,12 @@ export const WorkflowNodeRouting = ({ sessionId, workflowRunId, steps, onClose }
       hint={WORKFLOW_ROUTING_COPY.sectionHint}
       action={
         <IconButton
+          size="xs"
           variant="ghost"
           icon={X}
           iconSize={ICON_SIZE.row}
           label={`Hide ${WORKFLOW_ROUTING_COPY.sectionLabel.toLowerCase()}`}
           onClick={onClose}
-          className="size-6"
         />
       }
     >

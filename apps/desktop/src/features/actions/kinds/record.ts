@@ -2,6 +2,7 @@ import { ArrowUpRight, Hash, Link, PlayCircle, RefreshCw, Star } from 'lucide-re
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
+import { startFromLabel } from '../../../shared/lib/startCopy';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import type { RecordVerb } from '../../../shared/components/StudioDetail/RecordActions/types';
 import type { ActionDefinition, ObjectKindDefinition, RecordActionTarget } from '../types';
@@ -14,6 +15,7 @@ export type RecordFacts = {
   readonly sessionId: SessionId | null;
   readonly isStarred: boolean | null;
   readonly onOpen: (() => void) | null;
+  readonly launchLabel: string | null;
   readonly onLaunch: (() => void) | null;
   readonly onToggleStar: (() => void) | null;
   readonly onRefresh: (() => void) | null;
@@ -88,7 +90,7 @@ export const RECORD_KIND: ObjectKindDefinition<RecordActionTarget, RecordFacts> 
     },
     {
       id: 'record.launch',
-      label: 'Start a session',
+      label: ({ facts }) => facts.launchLabel ?? startFromLabel({ identifier: facts.identifier }),
       icon: PlayCircle,
       group: 'act',
       when: ({ facts }) => facts.sessionId === null && facts.onLaunch !== null,

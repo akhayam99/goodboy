@@ -16,14 +16,16 @@ const hover = (button: HTMLElement): void => {
   vi.useRealTimers();
 };
 
+const ONE: OverflowMenuItem[] = [{ kind: 'item', key: 'one', label: 'One', onClick: vi.fn() }];
+
 describe('OverflowMenu', () => {
   it('renders a trigger button with the default label', () => {
-    render(<OverflowMenu items={[]} />);
+    render(<OverflowMenu items={ONE} />);
     expect(screen.getByRole('button', { name: /more actions/i })).toBeDefined();
   });
 
   it('explains the trigger through the shared tooltip, not a native title', () => {
-    render(<OverflowMenu items={[]} />);
+    render(<OverflowMenu items={ONE} />);
     const trigger = screen.getByRole('button', { name: /more actions/i });
     expect(trigger.getAttribute('title')).toBeNull();
     hover(trigger);
@@ -32,7 +34,7 @@ describe('OverflowMenu', () => {
 
   it('lets the caller name the action in the tooltip', () => {
     render(
-      <OverflowMenu items={[]} label="Branch actions" tooltip="Rebase this branch, or push" />,
+      <OverflowMenu items={ONE} label="Branch actions" tooltip="Rebase this branch, or push" />,
     );
     hover(screen.getByRole('button', { name: /branch actions/i }));
     expect(screen.getByRole('tooltip').textContent).toBe('Rebase this branch, or push');
@@ -75,16 +77,29 @@ describe('OverflowMenu', () => {
     expect(screen.getByRole('menuitem', { name: 'X' })).toBeDefined();
   });
 
-  it('keeps the compact trigger by default and a 28px centred square on request', () => {
-    const { rerender } = render(<OverflowMenu items={[]} />);
+  it('draws a 24px compact trigger by default and a 28px centred square on request', () => {
+    const { rerender } = render(<OverflowMenu items={ONE} />);
     const compact = screen.getByRole('button', { name: /more actions/i });
     expect(compact.getAttribute('data-size')).toBe('compact');
-    expect(compact.className.split(' ')).toContain('p-1');
+    expect(compact.className.split(' ')).toContain('size-6');
 
-    rerender(<OverflowMenu items={[]} size="control" />);
+    rerender(<OverflowMenu items={ONE} size="control" />);
     const control = screen.getByRole('button', { name: /more actions/i });
     expect(control.getAttribute('data-size')).toBe('control');
     expect(control.className.split(' ')).toContain('size-7');
+  });
+
+  it('draws the ellipsis glyph by default, never the vertical dots', () => {
+    render(<OverflowMenu items={ONE} />);
+    const glyph = screen.getByRole('button', { name: /more actions/i }).querySelector('svg');
+    expect(glyph?.getAttribute('class')).toContain('lucide-ellipsis');
+    expect(glyph?.getAttribute('class')).not.toContain('lucide-ellipsis-vertical');
+  });
+
+  it('draws nothing when it has no items', () => {
+    const { container } = render(<OverflowMenu items={[]} />);
+    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('does not open when disabled', () => {

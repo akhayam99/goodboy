@@ -13,6 +13,7 @@ const h = vi.hoisted(() => {
     sessionActiveMount: {} as Record<string, string>,
     sessions: [] as ReadonlyArray<unknown>,
     mountGithub: {} as Record<string, unknown>,
+    diffComments: {} as Record<string, ReadonlyArray<unknown>>,
   };
   return { state, openReview: vi.fn(async () => ({ kind: 'opened' as const })) };
 });
@@ -28,6 +29,7 @@ const SESSION_ID = 'session-1' as SessionId;
 const MOUNT_ID = 'mount-1' as MountId;
 const OTHER_MOUNT_ID = 'mount-2' as MountId;
 const PROJECT_ID = 'project-1' as ProjectId;
+const OTHER_PROJECT_ID = 'project-2' as ProjectId;
 
 const seed = (): void => {
   h.state.sessionResolveThreads = {};
@@ -39,6 +41,7 @@ const seed = (): void => {
   h.state.sessionActiveMount = {};
   h.state.sessions = [{ id: SESSION_ID }];
   h.state.mountGithub = {};
+  h.state.diffComments = {};
 };
 
 beforeEach(() => {
@@ -130,5 +133,47 @@ describe('openReviewThread', () => {
       reason: 'no_pull_request',
     });
     expect(h.openReview).not.toHaveBeenCalled();
+  });
+
+  it('opens a note on the mount that owns it, so the drawer lists it', async () => {
+    h.state.sessionProjectMounts = {
+      [SESSION_ID]: [
+        {
+          mountId: MOUNT_ID,
+          projectId: PROJECT_ID,
+          branch: 'hl/ledger',
+          worktreePath: '/a',
+          repoRoot: '/a',
+        },
+        {
+          mountId: OTHER_MOUNT_ID,
+          projectId: OTHER_PROJECT_ID,
+          branch: 'hl/relay',
+          worktreePath: '/b',
+          repoRoot: '/b',
+        },
+      ],
+    };
+    h.state.diffComments = {
+      [SESSION_ID]: [{ id: 'backoff-cap', projectId: OTHER_PROJECT_ID, branch: 'hl/relay' }],
+    };
+
+    await openReviewThread({ sessionId: SESSION_ID, threadId: 'note:backoff-cap' });
+
+    expect(h.openReview).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      destination: { kind: 'threads', mountId: OTHER_MOUNT_ID, threadIds: ['note:backoff-cap'] },
+    });
+  });
+
+  it('opens a note that belongs to no mount on the notes of the displayed one', async () => {
+    h.state.diffComments = { [SESSION_ID]: [{ id: 'loose' }] };
+
+    await openReviewThread({ sessionId: SESSION_ID, threadId: 'note:loose' });
+
+    expect(h.openReview).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      destination: { kind: 'notes', threadIds: ['note:loose'] },
+    });
   });
 });

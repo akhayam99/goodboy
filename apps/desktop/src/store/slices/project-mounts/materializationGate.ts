@@ -224,7 +224,7 @@ export const deferredMaterializeNote = ({
 }: DeferredNoteParams): string =>
   isAlreadyPending
     ? `Mount already pending for ${projectName}. Do not request it again in this session. Continue with work that does not require this mount while the owner decides.`
-    : `Mount deferred for ${projectName}.`;
+    : `Added later: ${projectName}.`;
 
 type DeferredMessageParams = {
   readonly projectName: string;

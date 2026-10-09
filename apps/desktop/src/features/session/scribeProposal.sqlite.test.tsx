@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import {
   importStore,
@@ -104,7 +104,11 @@ describe('the Scribe Brief and transcript card when opening fails', () => {
     briefOf({ agentId: scribeAgentIdOf({ useAppStore }) });
 
     expect(screen.getByText('Guard settlement postings')).toBeDefined();
-    expect(screen.getByRole('alert').textContent).toBe(
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain("Couldn't write the pull request text");
+    expect(alert.textContent).not.toContain('GraphQL');
+    fireEvent.click(within(alert).getByRole('button', { name: 'Details' }));
+    expect(alert.textContent).toContain(
       'GraphQL: Resource not accessible by personal access token',
     );
     acceptCreate();

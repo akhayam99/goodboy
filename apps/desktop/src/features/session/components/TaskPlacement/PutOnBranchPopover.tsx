@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/names';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -123,7 +124,7 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch }: Pr
           tone="neutral"
           bordered={false}
           shape="badge"
-          size="control"
+          kind="reference"
           ariaLabel={`Put on a branch ${branch}`}
           expanded={isOpen}
           hasPopup="dialog"
@@ -148,7 +149,7 @@ export const PutOnBranchPopover = ({ sessionId, mountId, projectId, branch }: Pr
                   size="sm"
                   variant="ghost"
                   onClick={() => setWorktreeTask(task)}
-                >{`New worktree for ${task.identifier}`}</Button>
+                >{`${NAMES.newBranch} for ${task.identifier}`}</Button>
               ))}
             </div>
           )}

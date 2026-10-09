@@ -126,14 +126,7 @@ export const ShellFrame = ({
       <AppShell
         studio={shell.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
-        topBar={
-          <AppTopBar
-            mode={arrangement.mode}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-            onOpenImpact={noop}
-          />
-        }
+        topBar={<AppTopBar mode={arrangement.mode} onOpenSpend={noop} onOpenScript={noop} />}
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}

@@ -10,6 +10,7 @@ import {
   type RefObject,
 } from 'react';
 import { ToastStack } from './ToastStack';
+import { useToastRight } from './useToastRight';
 import {
   ToastContext,
   type PreviewNotificationParams,
@@ -131,6 +132,7 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
   const liftValue = useMemo(() => ({ setLift }), [setLift]);
   const liftValues = Object.values(lifts);
   const bottom = liftValues.length > 0 ? Math.max(...liftValues) : null;
+  const right = useToastRight({ isActive: toasts.length > 0 });
 
   return (
     <ToastContext.Provider value={value}>
@@ -139,6 +141,7 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
         <ToastStack
           toasts={toasts}
           bottom={bottom}
+          right={right}
           onDismiss={dismiss}
           onOpenOverflow={openOverflow}
         />

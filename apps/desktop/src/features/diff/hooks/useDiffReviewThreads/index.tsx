@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { eligibleReviewThreads } from '../../../suggestions/eligibleThreads';
 import { mountReviewGithub } from '../../../review/mountReviewGithub';
 import type { DiffThread } from '../../components/DiffView/types';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -62,7 +63,7 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): ReadonlyAr
               className="inline-flex w-fit items-center gap-0.5 rounded-sm text-meta text-muted-foreground hover:text-foreground"
             >
               Open in Comments
-              <ArrowUpRight size={10} aria-hidden />
+              <ArrowUpRight size={ICON_SIZE.mark} aria-hidden />
             </button>
           ),
         },

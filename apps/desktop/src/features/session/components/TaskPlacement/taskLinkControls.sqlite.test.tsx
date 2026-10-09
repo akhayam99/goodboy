@@ -170,6 +170,25 @@ describe('task link controls', () => {
     expect(screen.queryByRole('button', { name: 'Actions for HBL-412' })).toBeNull();
   });
 
+  it('reserves the trailing slot for the unlink, so the label is never covered by it', async () => {
+    await seed();
+    renderChip();
+
+    const open = screen.getByRole('button', { name: /^Open HBL-412/ });
+    const unlink = screen.getByRole('button', { name: 'Unlink HBL-412 from session' });
+    const slot = unlink.closest('[data-slot="unlink-slot"]');
+
+    expect(slot).not.toBeNull();
+    expect(slot?.className.split(' ')).toContain('size-4');
+    expect(slot?.contains(open)).toBe(false);
+    expect(unlink.getAttribute('data-size')).toBe('xs');
+    expect(open.textContent?.startsWith('HBL-412')).toBe(true);
+    await act(async () => {
+      fireEvent.click(unlink);
+    });
+    expect(await storedLinks()).toEqual([]);
+  });
+
   it('unlinks immediately without a confirmation and restores from the toast', async () => {
     await seed();
     renderChip();
@@ -213,7 +232,7 @@ describe('task link controls', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Put on a branch hl/refund' }));
     const picker = screen.getByRole('dialog', { name: 'Put on a branch' });
-    within(picker).getByRole('button', { name: 'New worktree for HBL-412' });
+    within(picker).getByRole('button', { name: 'New branch for HBL-412' });
     await act(async () => {
       fireEvent.click(within(picker).getByRole('menuitem', { name: /^HBL-412/ }));
     });
@@ -280,9 +299,9 @@ describe('task link controls', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Put on a branch hl/refund' }));
-    fireEvent.click(screen.getByRole('button', { name: 'New worktree for HBL-412' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New branch for HBL-412' }));
     screen.getByRole('textbox', { name: 'Branch name' });
-    screen.getByRole('button', { name: 'Create worktree' });
+    screen.getByRole('button', { name: 'Create branch' });
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     screen.getByRole('menuitem', { name: /^HBL-412/ });
   });

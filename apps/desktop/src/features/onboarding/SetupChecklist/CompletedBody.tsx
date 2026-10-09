@@ -1,13 +1,13 @@
 import { X } from 'lucide-react';
 import { finish } from '../onboarding-store';
-import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { Tooltip } from '@goodboy/ui';
 
 export const CompletedBody = () => (
   <>
     <div className="flex items-center justify-between">
       <span className="inline-flex items-center gap-1 text-eyebrow text-success">
-        <CONCEPT_ICONS.decisions size={11} aria-hidden />
+        <CONCEPT_ICONS.decisions size={ICON_SIZE.mark} aria-hidden />
         Setup complete
       </span>
       <Tooltip content="Dismiss onboarding">
@@ -17,7 +17,7 @@ export const CompletedBody = () => (
           aria-label="Dismiss onboarding"
           className="rounded-md p-0.5 text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
         >
-          <X size={11} aria-hidden />
+          <X size={ICON_SIZE.row} aria-hidden />
         </button>
       </Tooltip>
     </div>

@@ -125,6 +125,22 @@ describe('ScriptRunDrawer', () => {
     expect(state.cancelScript).toHaveBeenCalledWith(SESSION_ID, TEST_KEY);
   });
 
+  it('closes with a button named Close', () => {
+    const onClose = vi.fn();
+    render(
+      <ScriptRunDrawer
+        sessionId={SESSION_ID}
+        scriptKey={TEST_KEY}
+        mountId={MOUNT_ID}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps the command closed until asked', () => {
     renderDrawer();
 

@@ -7,6 +7,7 @@ import type {
 import { Button, Collapsible, formatError, Input } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { IntegrationCredentialPicker } from '../IntegrationCredentialPicker';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ConnectConfigField = {
   readonly id: string;
@@ -174,7 +175,7 @@ export const ConnectForm = ({
               rel="noreferrer"
               className="inline-flex w-fit items-center gap-1 text-meta text-muted-foreground hover:text-foreground"
             >
-              {tokenLink.label} <ExternalLink size={10} aria-hidden />
+              {tokenLink.label} <ExternalLink size={ICON_SIZE.mark} aria-hidden />
             </a>
           ) : null}
         </div>

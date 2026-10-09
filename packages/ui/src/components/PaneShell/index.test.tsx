@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { UnderTrailContext } from './underTrailContext';
 import { PaneActionsContext } from './paneActionsContext';
+import { PaneBannerContext } from './paneBannerContext';
 import { PaneShell } from '.';
 
 afterEach(cleanup);
@@ -131,5 +132,88 @@ describe('PaneShell', () => {
 
     const body = screen.getByText('Body copy').parentElement as HTMLElement;
     expect(body.className).toContain('animate-');
+  });
+
+  it('draws the title in a fixed 32px row that never wraps, with the actions at its right', () => {
+    const { container } = render(
+      <PaneShell
+        title="A very long page title that would otherwise push the actions onto a second line"
+        actions={<button type="button">Open</button>}
+      >
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const row = container.querySelector('[data-slot="pane-title-row"]') as HTMLElement;
+    const classes = row.className.split(' ');
+    expect(classes).toEqual(expect.arrayContaining(['h-8', 'items-center']));
+    expect(classes).not.toContain('flex-wrap');
+    expect(classes).not.toContain('min-h-8');
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading.className.split(' ')).toEqual(expect.arrayContaining(['truncate', 'min-w-0']));
+    const open = screen.getByRole('button', { name: 'Open' });
+    expect(row.contains(open)).toBe(true);
+    expect((open.parentElement as HTMLElement).className).toContain('shrink-0');
+  });
+
+  it('keeps the title as the first thing in the row, with no glyph before it', () => {
+    const { container } = render(
+      <PaneShell title="Linear">
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const row = container.querySelector('[data-slot="pane-title-row"]') as HTMLElement;
+    expect(row.firstElementChild).toBe(screen.getByRole('heading', { name: 'Linear' }));
+    expect(row.querySelector('svg')).toBeNull();
+  });
+
+  it('puts the meta on one muted line under the title row', () => {
+    const { container } = render(
+      <PaneShell title="Scripts" meta="3 scripts">
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const row = container.querySelector('[data-slot="pane-title-row"]') as HTMLElement;
+    const meta = container.querySelector('[data-slot="pane-meta"]') as HTMLElement;
+    expect(meta.textContent).toBe('3 scripts');
+    expect(row.contains(meta)).toBe(false);
+    expect(row.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(meta.className).toContain('truncate');
+  });
+
+  it('renders a banner handed down by the page as the first body block, once', () => {
+    render(
+      <PaneBannerContext.Provider value={<p>Your work is in the project folder.</p>}>
+        <PaneShell title="Overview">
+          <PaneShell title="Nested">
+            <p>Body copy</p>
+          </PaneShell>
+        </PaneShell>
+      </PaneBannerContext.Provider>,
+    );
+
+    const banner = screen.getByText('Your work is in the project folder.');
+    const heading = screen.getByRole('heading', { name: 'Overview' });
+    expect(screen.getAllByText('Your work is in the project folder.')).toHaveLength(1);
+    expect(pageColumnOf(banner)).toBe(pageColumnOf(heading));
+    expect(heading.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      banner.compareDocumentPosition(screen.getByText('Body copy')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('draws no banner block when the page hands none down', () => {
+    const { container } = render(
+      <PaneBannerContext.Provider value={null}>
+        <PaneShell title="Overview">
+          <p>Body copy</p>
+        </PaneShell>
+      </PaneBannerContext.Provider>,
+    );
+
+    expect(container.querySelector('[data-slot="pane-banner"]')).toBeNull();
   });
 });

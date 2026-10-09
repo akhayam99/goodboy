@@ -7,20 +7,32 @@ import type {
 } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { ResolveQueueRow } from '../../../resolve/buildResolveQueueRows';
-import { RESOLVE_WORD_LABEL } from '../../../resolve/commentProjection';
+import {
+  RESOLVE_WORD_LABEL,
+  RESOLVE_WORD_TONE,
+  type ResolveWord,
+} from '../../../resolve/commentProjection';
 import type { ResolveUiState } from '../../../resolve/resolveRowState';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 
-const CONVERSATION_STATE = {
-  new: { word: RESOLVE_WORD_LABEL.open, tone: 'neutral' },
-  working: { word: RESOLVE_WORD_LABEL.working, tone: 'info' },
-  needs_you: { word: RESOLVE_WORD_LABEL.needs_you, tone: 'warning' },
-  ready: { word: RESOLVE_WORD_LABEL.ready, tone: 'success' },
-  approved: { word: RESOLVE_WORD_LABEL.done, tone: 'success' },
-  resolved: { word: RESOLVE_WORD_LABEL.done, tone: 'neutral' },
-  failed: { word: RESOLVE_WORD_LABEL.couldnt_fix, tone: 'danger' },
-  later: { word: RESOLVE_WORD_LABEL.done, tone: 'neutral' },
-} satisfies Record<ResolveUiState, CrumbState>;
+const WORD_OF_STATUS: Readonly<Record<ResolveUiState, ResolveWord>> = {
+  new: 'open',
+  working: 'working',
+  needs_you: 'question',
+  ready: 'to_review',
+  approved: 'ready',
+  resolved: 'done',
+  failed: 'couldnt_fix',
+  later: 'left_open',
+};
+
+const stateOf = ({ row }: { readonly row: ResolveQueueRow }): CrumbState => {
+  const word =
+    row.status === 'failed' && row.rowState.failedStep !== 'run' && row.rowState.failedStep !== null
+      ? 'push_failed'
+      : WORD_OF_STATUS[row.status];
+  return { word: RESOLVE_WORD_LABEL[word], tone: RESOLVE_WORD_TONE[word] };
+};
 
 type ConversationParams = {
   readonly rows: ReadonlyArray<ResolveQueueRow>;
@@ -48,7 +60,7 @@ export const conversationMenu = ({
       label: body === '' ? (location?.shortLabel ?? 'Comment') : body,
       secondary: location?.line == null ? null : `:${location.line}`,
       metaA: null,
-      state: CONVERSATION_STATE[row.status],
+      state: stateOf({ row }),
       isCurrent: row.thread.threadId === currentThreadId,
       isDisabled: false,
       indent: 0,

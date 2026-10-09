@@ -275,13 +275,13 @@ describe('session menu in every state', () => {
     ]);
   });
 
-  it('names what a branchless delete frees and what stays in Impact', () => {
+  it('names what a branchless delete removes and keeps', () => {
     seed({ branch: '' });
     const action = bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })
       ?.resolve()
       .find((candidate) => candidate.id === 'session.delete');
     expect(action?.confirm?.description).toBe(
-      'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. This cannot be undone.',
+      'Removed: transcript, file versions, images. Kept: cost. This cannot be undone.',
     );
   });
 });
@@ -344,6 +344,58 @@ describe('pinning a session', () => {
     useAppStore.setState({ sessionPins: { [WORKSPACE]: [{ id: SESSION, at: 1 }] } });
     await run(SESSION_TARGET, 'session.unpin');
     expect(unpinSpy).toHaveBeenCalledWith(SESSION);
+  });
+});
+
+describe('ordering pinned sessions', () => {
+  const moveSpy = vi.fn(async () => undefined);
+
+  beforeEach(() => {
+    moveSpy.mockClear();
+    seed({ mounts: [mountFixture()], branch: 'hl/payout-export' });
+    useAppStore.setState({ moveSessionPin: moveSpy });
+  });
+
+  const moveVerbs = (): ReadonlyArray<string> =>
+    matrixOf(SESSION_TARGET).filter((entry) => /^session\.pinned(Up|Down)\b/.test(entry));
+
+  const pinsOf = (...ids: ReadonlyArray<string>) => ({
+    [WORKSPACE]: ids.map((id, index) => ({ id: id as typeof SESSION, at: index + 1 })),
+  });
+
+  it('offers neither move on a session that is not pinned', () => {
+    expect(moveVerbs()).toEqual([]);
+  });
+
+  it('offers neither move on the only pinned session', () => {
+    useAppStore.setState({ sessionPins: pinsOf(SESSION) });
+    expect(moveVerbs()).toEqual([]);
+  });
+
+  it('offers only Move down at the top and only Move up at the bottom', () => {
+    useAppStore.setState({ sessionPins: pinsOf(SESSION, 'session-other') });
+    expect(moveVerbs()).toEqual(['session.pinnedDown']);
+    useAppStore.setState({ sessionPins: pinsOf('session-other', SESSION) });
+    expect(moveVerbs()).toEqual(['session.pinnedUp']);
+  });
+
+  it('offers both in the middle', () => {
+    useAppStore.setState({ sessionPins: pinsOf('session-a', SESSION, 'session-b') });
+    expect(moveVerbs()).toEqual(['session.pinnedUp', 'session.pinnedDown']);
+  });
+
+  it('offers neither on an archived pinned session', () => {
+    seed({ session: sessionFixture({ archivedAt: FIXTURE_NOW }), isArchived: true });
+    useAppStore.setState({ sessionPins: pinsOf('session-a', SESSION, 'session-b') });
+    expect(moveVerbs()).toEqual([]);
+  });
+
+  it('moves the pin it was opened on', async () => {
+    useAppStore.setState({ sessionPins: pinsOf('session-a', SESSION, 'session-b') });
+    await run(SESSION_TARGET, 'session.pinnedUp');
+    await run(SESSION_TARGET, 'session.pinnedDown');
+    expect(moveSpy).toHaveBeenNthCalledWith(1, { sessionId: SESSION, direction: 'up' });
+    expect(moveSpy).toHaveBeenNthCalledWith(2, { sessionId: SESSION, direction: 'down' });
   });
 });
 
@@ -924,7 +976,7 @@ const UX5_PR_STATES: ReadonlyArray<
     [
       'pullRequest.openOnGithub secondary',
       'pullRequest.checkLog hover',
-      'pullRequest.merge secondary (Conflicts with main. Rebase in the Diff.)',
+      'pullRequest.merge secondary (Conflicts with main. Rebase on main from the Branch header.)',
       ...PR_OWN_TAIL,
       'pullRequest.convertToDraft menu',
       ...PR_COPIES,
@@ -1379,6 +1431,7 @@ const record = (
     sessionId: (fields.sessionId ?? null) as never,
     isStarred: fields.isStarred === undefined ? false : fields.isStarred,
     onOpen: () => undefined,
+    launchLabel: null,
     onLaunch: () => undefined,
     onToggleStar: () => undefined,
     onRefresh: null,
@@ -1430,6 +1483,24 @@ describe('inbox record menu in every state', () => {
       );
     expect(labels(record({ isStarred: true }))).toContain('Unstar');
     expect(labels(record({ isStarred: false }))).toContain('Star');
+  });
+
+  it('names the start by the identifier, or by the review it starts', () => {
+    const labels = (target: ObjectTarget) =>
+      (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map(
+        (action) => action.label,
+      );
+    const withLaunchLabel = (launchLabel: string | null): ObjectTarget => {
+      const target = record({});
+      if (target.kind !== 'record') {
+        throw new Error('record target expected');
+      }
+      return { ...target, facts: { ...target.facts, launchLabel } };
+    };
+    expect(labels(record({}))).toContain('Start from HAR-231');
+    expect(labels(withLaunchLabel('Start from #318'))).toContain('Start from #318');
+    expect(labels(withLaunchLabel('Review pull request'))).toContain('Review pull request');
+    expect(labels(record({}))).not.toContain('Start a session');
   });
 });
 

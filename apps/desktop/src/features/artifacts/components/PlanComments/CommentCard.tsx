@@ -20,16 +20,16 @@ const tagOf = ({
   readonly revision: number;
 }) => {
   if (comment.status === 'draft') {
-    return <Chip tone="neutral" size="3xs" label="Draft" />;
+    return <Chip tone="neutral" kind="state" label="Draft" />;
   }
   if (comment.status === 'sent') {
-    return <Chip tone="info" size="3xs" label="Sent" />;
+    return <Chip tone="info" kind="state" label="Sent" />;
   }
   if (comment.status === 'addressed') {
     return (
       <Chip
         tone="success"
-        size="3xs"
+        kind="state"
         icon={<Check size={ICON_SIZE.row} aria-hidden />}
         label="Addressed"
       />
@@ -38,7 +38,7 @@ const tagOf = ({
   return (
     <Chip
       tone="neutral"
-      size="3xs"
+      kind="state"
       label={
         comment.revision < revision ? `Not changed in v${revision}` : 'No new version in this turn'
       }

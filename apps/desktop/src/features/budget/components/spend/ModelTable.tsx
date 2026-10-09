@@ -6,7 +6,7 @@ import {
   formatTokens,
   formatUsd,
   formatUsdPrecise,
-  FilledEmptyState,
+  EmptyState,
 } from '@goodboy/ui';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { CoverageChip } from './CoverageChip';
@@ -21,7 +21,8 @@ type Props = {
 export const ModelTable = ({ entries, formatSpent = formatUsd }: Props) => {
   if (entries.length === 0) {
     return (
-      <FilledEmptyState
+      <EmptyState
+        size="section"
         icon={CONCEPT_ICONS.budget}
         tone={CONCEPT_TONE.budget}
         title="No model usage recorded yet"
@@ -54,15 +55,15 @@ export const ModelTable = ({ entries, formatSpent = formatUsd }: Props) => {
                 <CoverageChip coverage={entry.coverage} />
               </span>
             </td>
-            <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+            <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
               {formatTokens(entry.tokensIn)}
             </td>
-            <td className="px-3 py-2 text-right font-mono tabular-nums text-muted-foreground">
+            <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
               {formatTokens(entry.tokensOut)}
             </td>
             <td
               title={formatUsdPrecise(entry.spentUsd)}
-              className="px-3 py-2 text-right font-mono tabular-nums font-medium text-foreground"
+              className="px-3 py-2 text-right tabular-nums font-medium text-foreground"
             >
               {formatSpent(entry.spentUsd)}
             </td>

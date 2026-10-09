@@ -12,6 +12,7 @@ import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { RoutingPickerBody, type EffortSetting } from './RoutingPickerBody';
+import { ICON_SIZE } from '../conceptIcons';
 
 export type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -43,6 +44,8 @@ export type Props = {
   readonly providerLayout?: 'glyphs' | 'named';
   readonly budget?: ReactNode;
   readonly autoTrigger?: 'word' | 'resolved';
+  readonly triggerPrefix?: string;
+  readonly quietLabel?: string;
 };
 
 export const RoutingPicker = ({
@@ -75,6 +78,8 @@ export const RoutingPicker = ({
   providerLayout = 'glyphs',
   budget,
   autoTrigger = 'word',
+  triggerPrefix,
+  quietLabel,
 }: Props) => {
   const isInline = presentation === 'inline';
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
@@ -193,7 +198,7 @@ export const RoutingPicker = ({
                 aria-label={resetAriaLabel}
                 className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
-                <X size={10} aria-hidden />
+                <X size={ICON_SIZE.mark} aria-hidden />
               </button>
             </Tooltip>
           )}
@@ -236,7 +241,12 @@ export const RoutingPicker = ({
               )}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2">
-                {resolvedAuto?.label != null ? (
+                {quietLabel != null ? (
+                  <span className="text-muted-foreground">{quietLabel}</span>
+                ) : triggerPrefix != null ? (
+                  <span className="shrink-0 text-muted-foreground">{triggerPrefix}</span>
+                ) : null}
+                {quietLabel != null ? null : resolvedAuto?.label != null ? (
                   <TriggerLabel provider={resolvedAuto.provider} label={resolvedAuto.label} />
                 ) : isAuto ? (
                   <AutoTriggerLabel />
@@ -246,7 +256,7 @@ export const RoutingPicker = ({
                 {budget}
               </span>
               <ChevronDown
-                size={11}
+                size={ICON_SIZE.row}
                 aria-hidden
                 className={cn(
                   'shrink-0 text-muted-foreground transition-transform',

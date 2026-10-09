@@ -10,6 +10,7 @@ import {
   RemoteImageToolContext,
   type RemoteImageLoader,
 } from './loaderContext';
+import { ICON_SIZE } from '../../iconSize';
 
 type Props = {
   readonly url: string;
@@ -99,7 +100,11 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
 
   return (
     <span className={cn(BLOCK_CLASS, className)}>
-      <ImageOff size={14} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
+      <ImageOff
+        size={ICON_SIZE.control}
+        aria-hidden
+        className="mt-0.5 shrink-0 text-muted-foreground"
+      />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         {alt !== '' && <span className="text-label font-medium text-foreground">{alt}</span>}
         <span className="text-label text-muted-foreground">

@@ -32,7 +32,7 @@ describe('askButtons', () => {
     });
     expect(buttons.map((button) => button.label)).toEqual([
       'Answer question 1',
-      'Review 5 ready',
+      'Review 5',
       'Tell Implementer…',
     ]);
     expect(buttons[0]).toMatchObject({ kind: 'answer', prefill: 'Stop after 5.' });

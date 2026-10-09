@@ -1,5 +1,6 @@
 import type { PrComment } from '@goodboy/types';
 import { commitLinkOf } from './commitLink';
+import { gitlabPullRequestPort, type GitlabPullRequestTransport } from './gitlabPullRequestPort';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSource, type ReviewSourceThread } from './types';
 
 export const GITLAB_THREAD_PREFIX = 'gitlab:';
@@ -42,6 +43,7 @@ export type GitlabReviewTransport = Readonly<{
 type Params = Readonly<{
   transport: GitlabReviewTransport;
   mrUrl: string | null;
+  pullRequestTransport?: GitlabPullRequestTransport;
 }>;
 
 export const gitlabThreadId = ({ discussionId }: { readonly discussionId: string }): string =>
@@ -112,7 +114,11 @@ export const gitlabThreadsOf = ({
     ];
   });
 
-export const gitlabReviewSource = ({ transport, mrUrl }: Params): ReviewSource => ({
+export const gitlabReviewSource = ({
+  transport,
+  mrUrl,
+  pullRequestTransport,
+}: Params): ReviewSource => ({
   kind: 'gitlab',
   capabilities: REVIEW_SOURCE_CAPABILITIES.gitlab,
   listThreads: async () =>
@@ -130,4 +136,8 @@ export const gitlabReviewSource = ({ transport, mrUrl }: Params): ReviewSource =
   },
   readRemoteHead: () => transport.readHeadSha(),
   commitLink: ({ sha }) => commitLinkOf({ kind: 'gitlab', url: mrUrl, sha }),
+  pullRequest:
+    pullRequestTransport === undefined
+      ? null
+      : gitlabPullRequestPort({ transport: pullRequestTransport, mrUrl }),
 });

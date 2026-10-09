@@ -10,6 +10,6 @@ export const PrintLetterhead = ({ eyebrowLabel, dateLabel, title }: Props) => (
       <span className="print-kind">{eyebrowLabel}</span>
       {dateLabel.length > 0 ? <span className="print-date">{dateLabel}</span> : null}
     </div>
-    <h1 className="print-title">{title}</h1>
+    <h2 className="print-title">{title}</h2>
   </header>
 );

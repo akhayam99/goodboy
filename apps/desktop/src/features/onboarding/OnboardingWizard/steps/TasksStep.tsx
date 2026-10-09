@@ -35,7 +35,7 @@ export const TasksStep = ({
   const JiraBody = FORM_BODIES.jira;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <StepHeading
         title="Where do you track work?"
         line="Pick an issue and an agent starts from it."

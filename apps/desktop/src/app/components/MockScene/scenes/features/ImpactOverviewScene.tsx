@@ -7,6 +7,7 @@ import { OverviewPanel } from '../../../../../features/impact/components/ImpactS
 import { IMPACT_WINDOW_OPTIONS } from '../../../../../features/impact/lib';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../../shared/components/StudioShell';
+import type { PaneFrame } from '../../../../../shared/types/paneFrame';
 import { useAppStore } from '../../../../../store';
 import { StudioFrame } from '../StudioFrame';
 import { mockWorkspace, seedStudioChrome } from '../shellChrome';
@@ -112,7 +113,20 @@ export const FeaturesImpactOverviewScene = () => {
     return null;
   }
 
-  const header = <ImpactTabs value="overview" onChange={noop} />;
+  const frame: PaneFrame = {
+    title: 'Impact',
+    meta: 'What Goodboy got done, and what it cost.',
+    actions: (
+      <SegmentedTabs
+        ariaLabel="Impact window"
+        options={IMPACT_WINDOW_OPTIONS}
+        value="last30"
+        onChange={noop}
+        size="xs"
+      />
+    ),
+    tabs: <ImpactTabs value="overview" onChange={noop} />,
+  };
 
   return (
     <StudioFrame
@@ -122,23 +136,13 @@ export const FeaturesImpactOverviewScene = () => {
           icon={CONCEPT_ICONS.impact}
           tone={CONCEPT_TONE.impact}
           title="Impact"
-          subtitle="What Goodboy got done, and what it cost."
           closeLabel="Close impact"
-          headerAccessory={
-            <SegmentedTabs
-              ariaLabel="Impact window"
-              options={IMPACT_WINDOW_OPTIONS}
-              value="last30"
-              onChange={noop}
-              size="sm"
-            />
-          }
           onClose={noop}
         >
           {() => (
             <div className="flex min-h-0 min-w-0 flex-1">
               <OverviewPanel
-                header={header}
+                frame={frame}
                 overview={{ data: OVERVIEW, error: null }}
                 pullRequests={{ data: PULL_REQUESTS, error: null }}
                 reviews={{ data: REVIEWS, error: null }}

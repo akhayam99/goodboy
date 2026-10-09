@@ -18,12 +18,12 @@ describe('askRightNow', () => {
     const lines = askRightNow(
       input({
         commentWords: [
-          'ready',
-          'ready',
-          'ready',
-          'ready',
-          'ready',
-          'needs_you',
+          'to_review',
+          'to_review',
+          'to_review',
+          'to_review',
+          'to_review',
+          'question',
           'working',
           'working',
           'couldnt_fix',
@@ -36,7 +36,7 @@ describe('askRightNow', () => {
       }),
     );
     expect(askRightNowText(lines)).toEqual([
-      "Fixing 9 comments on #318 · 5 ready · 1 needs you · 2 working · 1 couldn't fix",
+      "Fixing 9 comments on #318 · 5 to review · 1 question · 1 couldn't fix · 2 working",
       'Implementer is running · 12 min',
       '1 open question from Planner',
       '$3.42 in this session',

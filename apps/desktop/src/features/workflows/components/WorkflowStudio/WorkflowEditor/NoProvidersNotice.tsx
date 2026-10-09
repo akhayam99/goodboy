@@ -1,5 +1,5 @@
 import { Boxes } from 'lucide-react';
-import { Button, LensEmptyState } from '@goodboy/ui';
+import { Button, EmptyState } from '@goodboy/ui';
 
 export const NoProvidersNotice = () => {
   const openProviderSettings = () => {
@@ -9,7 +9,8 @@ export const NoProvidersNotice = () => {
   };
 
   return (
-    <LensEmptyState
+    <EmptyState
+      size="section"
       icon={Boxes}
       title="No providers connected"
       description="Keep editing and saving this workflow. Writing its steps with an agent needs a connected provider."

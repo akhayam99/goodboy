@@ -8,6 +8,7 @@ type Props = {
   readonly time?: WorkTime | null;
   readonly cost?: string | null;
   readonly isPlanned?: boolean;
+  readonly note?: string | null;
 };
 
 export const TimelineRowMeta = ({
@@ -15,6 +16,7 @@ export const TimelineRowMeta = ({
   time = null,
   cost = null,
   isPlanned = false,
+  note = null,
 }: Props) => (
   <span data-testid="work-meta" className="flex shrink-0 items-center gap-2">
     {model ?? <span aria-hidden data-meta-column="model" className={WORK_META_COLUMN.model} />}
@@ -24,7 +26,7 @@ export const TimelineRowMeta = ({
           data-meta-column="time"
           className={cn(WORK_META_COLUMN.stackTime, isPlanned && 'text-faint-foreground')}
         >
-          <WorkTimeCell time={time} cost={cost} />
+          <WorkTimeCell time={time} cost={cost} note={note} />
         </span>
       )}
       {cost === null ? null : (

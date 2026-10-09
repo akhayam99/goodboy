@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { ChevronLeft, Search } from 'lucide-react';
-import { EmptyLine, ScrollFade, cn } from '@goodboy/ui';
+import { ChevronLeft } from 'lucide-react';
+import { EmptyLine, ScrollFade, SearchField, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import { settingsPaletteEntries } from '../../settingsPaletteEntries';
@@ -53,19 +53,15 @@ export const SettingsColumnNav = ({ groups, rail, onBack, onOpen }: Props) => {
           Esc
         </span>
       </button>
-      <label className="flex h-7 shrink-0 items-center gap-2 rounded-md border border-border bg-background px-2 text-faint-foreground focus-within:ring-2 focus-within:ring-focus-ring">
-        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search settings"
-          aria-label="Search settings"
-          autoComplete="off"
-          spellCheck={false}
-          className="min-w-0 flex-1 bg-transparent text-body text-foreground placeholder:text-faint-foreground focus-visible:outline-none"
-        />
-      </label>
+      <SearchField
+        value={query}
+        onChange={setQuery}
+        placeholder="Search settings"
+        ariaLabel="Search settings"
+        autoComplete="off"
+        spellCheck={false}
+        className="shrink-0"
+      />
       <ScrollFade className="min-h-0 flex-1">
         <div hidden={isSearching}>{rail}</div>
         {isSearching ? (

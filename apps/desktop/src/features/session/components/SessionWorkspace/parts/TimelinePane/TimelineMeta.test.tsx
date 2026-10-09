@@ -4,28 +4,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { visibleTextAt } from '../../../../../../test/containerView';
 import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
-import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
 import type { WorkTime } from '../../../../../workTreeModel/workTime';
-import { TimelineAgentMeta } from './TimelineAgentMeta';
 import { TimelineModelCell } from './TimelineModelCell';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
 import { TimelineRowMeta } from './TimelineRowMeta';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 
 afterEach(cleanup);
-
-const work: AgentRowWork = {
-  routing: {
-    provider: 'anthropic',
-    model: 'claude-sonnet-5',
-    effort: 'high',
-    isEffortObserved: true,
-    planned: null,
-    isPlanned: false,
-  },
-  time: undefined,
-};
 
 const timeOf = ({ label }: { readonly label: string }): WorkTime => ({
   label,
@@ -162,6 +148,32 @@ describe('TimelineModelCell', () => {
     expect(screen.getByText('Sonnet 5.5')).toBeDefined();
   });
 
+  it('shows the effort after the model name and hides it with the name under 640px', () => {
+    const { container } = render(
+      <TimelineModelCell
+        summary={{ text: 'Opus 5.5', effort: 'High', providers: ['anthropic'] }}
+      />,
+    );
+    const cell = container.firstElementChild;
+    if (cell === null) {
+      throw new Error('no cell rendered');
+    }
+
+    expect(visibleTextAt({ root: cell, width: 700 })).toBe('Opus 5.5·High');
+    expect(visibleTextAt({ root: cell, width: 600 })).toBe('');
+    expect(cell.querySelector('[data-routing-part="detail"]')?.textContent).toBe('High');
+  });
+
+  it('prints no effort for a fallback chain', () => {
+    const { container } = render(
+      <TimelineModelCell
+        summary={{ text: 'Opus 5.5 → Kimi K3', providers: ['anthropic', 'moonshot'] }}
+      />,
+    );
+
+    expect(container.querySelector('[data-routing-part="detail"]')).toBeNull();
+  });
+
   it('holds its slot empty when nothing ran and nothing is planned', () => {
     const { container } = render(<TimelineModelCell summary={null} />);
 
@@ -172,19 +184,24 @@ describe('TimelineModelCell', () => {
   });
 });
 
-describe('TimelineAgentMeta', () => {
-  it('keeps the model column where a tree asks for it', () => {
-    const { container } = render(<TimelineAgentMeta work={work} costUsd={0} />);
+describe('TimelineRowMeta note', () => {
+  it('keeps the time on its column and turns it warm with the note on a slow step', () => {
+    const { container } = render(
+      <TimelineRowMeta time={timeOf({ label: '11m' })} cost="$2.31" note="Longer than usual" />,
+    );
+    const time = within(container).getByTestId('work-time');
 
-    expect(container.querySelector('svg')).not.toBeNull();
-    expect(container.querySelector('[data-meta-column="routing"]')).not.toBeNull();
+    expect(time.textContent).toBe('11m');
+    expect(time.getAttribute('data-note')).toBe('true');
+    expect(screen.getByText('Longer than usual')).toBeDefined();
+    expect(tooltipTextOf({ element: time })).toBe('Longer than usual. Active 11m. Cost $2.31');
   });
 
-  it('carries the cost beside the model column in a tree', () => {
-    const { container } = render(<TimelineAgentMeta work={work} costUsd={1.5} />);
+  it('leaves the time quiet when the step is within its range', () => {
+    const { container } = render(<TimelineRowMeta time={timeOf({ label: '4m' })} cost="$0.31" />);
 
-    expect(container.querySelector('[data-meta-column="cost"]')?.textContent).toBe('$1.50');
-    expect(container.querySelector('[data-meta-column="stack"]')).toBeNull();
+    expect(within(container).getByTestId('work-time').getAttribute('data-note')).toBeNull();
+    expect(screen.queryByText('Longer than usual')).toBeNull();
   });
 });
 

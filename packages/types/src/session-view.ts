@@ -17,6 +17,7 @@ export type SessionStage = 'attention' | 'running' | 'review' | 'building' | 'do
 
 export type SessionAttentionReason =
   | 'agent-error'
+  | 'push-failed'
   | 'open-question'
   | 'fix-needs-you'
   | 'fix-couldnt-fix'
@@ -41,6 +42,9 @@ export type SessionStageInfo = Readonly<{
   openQuestionCount?: number;
   fixNeedsYouCount?: number;
   fixCouldntFixCount?: number;
+  pushFailedCount?: number;
+  noteNeedsYouCount?: number;
+  noteCouldntFixCount?: number;
 }>;
 
 export type SessionPrGroup =

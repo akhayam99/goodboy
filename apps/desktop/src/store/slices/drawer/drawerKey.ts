@@ -20,6 +20,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return 'ask';
     case 'transcript':
       return `transcript:${content.payload.agentId}`;
+    case 'review-notes':
+      return `review-notes:${content.payload.mountPath ?? ''}`;
     case 'file-diff':
       return `file-diff:${
         content.payload.source.kind === 'commit'

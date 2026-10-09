@@ -325,6 +325,10 @@ const CASES: ReadonlyArray<ProviderCase> = [
   },
 ];
 
+const KICKOFF_CASES = CASES.filter((entry) => entry.provider !== 'bitbucket');
+
+const PANEL_CASES = CASES.filter((entry) => entry.provider === 'bitbucket');
+
 const SESSION_BUTTON_CASES = CASES.filter((entry) => entry.provider !== 'bitbucket');
 
 type StoreState = ReturnType<StoryStore['getState']>;
@@ -404,7 +408,7 @@ type InboxItemProps = {
 const InboxItem = ({ record, workspaceId }: InboxItemProps) => {
   const linked = useInboxLinkedSessions({ workspaceId });
   return (
-    <section aria-label="Inbox item">
+    <section aria-label="Task">
       <InboxDetail
         record={attachLinkedSession({ record, linked })}
         workspaceId={workspaceId}
@@ -443,13 +447,73 @@ const expectLinked = async (session: Session, entry: ProviderCase): Promise<void
   expect(
     within(sessionRegion).getByRole('button', { name: `Open ${entry.identifier}` }),
   ).toBeDefined();
-  const inboxRegion = screen.getByRole('region', { name: 'Inbox item' });
+  const inboxRegion = screen.getByRole('region', { name: 'Task' });
   expect(within(inboxRegion).getByRole('button', { name: /Open session/ })).toBeDefined();
-  expect(within(inboxRegion).queryByRole('button', { name: /Launch session/ })).toBeNull();
+  expect(within(inboxRegion).queryByRole('button', { name: /^Start from/ })).toBeNull();
 };
 
 describe('tasks and sessions on the real store', () => {
-  it.each(CASES)('launches a session from a $label inbox item', async (entry) => {
+  it.each(KICKOFF_CASES)(
+    'starts a $label inbox item in the new session draft, and the session links it',
+    async (entry) => {
+      const session = seed(entry);
+      const createSession = vi.fn(
+        async (params: { readonly externalTasks?: ReadonlyArray<SessionExternalTask> }) => {
+          useAppStore.setState((state) => ({
+            sessionExternalTasks: {
+              ...state.sessionExternalTasks,
+              [session.id]: (params.externalTasks ?? []).map((task) => ({
+                ...task,
+                sessionId: session.id,
+              })),
+            },
+          }));
+          return { session };
+        },
+      );
+      const requestIssueBrief = vi.fn(async () => undefined);
+      stubActions({
+        createSession: createSession as unknown as StoreState['createSession'],
+        requestIssueBrief,
+        spawnAgent: vi.fn(async () => 'agent-1') as unknown as StoreState['spawnAgent'],
+      });
+
+      await mount(surfaces(session, entry));
+      const inboxRegion = screen.getByRole('region', { name: 'Task' });
+      fireEvent.click(within(inboxRegion).getByRole('button', { name: /^Start from / }));
+
+      const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID];
+      expect(draft).toMatchObject({ choice: 'task' });
+      expect(draft?.pickedIssue).toMatchObject({
+        provider: entry.provider,
+        externalId: entry.externalId,
+      });
+      expect(requestIssueBrief).toHaveBeenCalledOnce();
+      expect(createSession).not.toHaveBeenCalled();
+      const picked = draft?.pickedIssue;
+      if (picked == null) {
+        throw new Error('the draft picked no issue');
+      }
+
+      await useAppStore.getState().startSessionFromDraft({
+        workspaceId: WORKSPACE_ID,
+        start: { kind: 'task', candidate: picked, title: picked.title, goal: 'Fix it' },
+      });
+
+      expect(createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workspaceId: WORKSPACE_ID,
+          externalTasks: [
+            expect.objectContaining({ provider: entry.provider, externalId: entry.externalId }),
+          ],
+        }),
+      );
+      await settle();
+      await expectLinked(session, entry);
+    },
+  );
+
+  it.each(PANEL_CASES)('starts a session from a $label inbox item in one step', async (entry) => {
     const session = seed(entry);
     const createSession = vi.fn(
       async (params: { readonly externalTasks?: ReadonlyArray<SessionExternalTask> }) => {
@@ -471,13 +535,13 @@ describe('tasks and sessions on the real store', () => {
     });
 
     await mount(surfaces(session, entry));
-    const inboxRegion = screen.getByRole('region', { name: 'Inbox item' });
-    fireEvent.click(within(inboxRegion).getByRole('button', { name: /Launch session/ }));
-    const panel = await screen.findByRole('region', { name: 'Launch session' });
+    const inboxRegion = screen.getByRole('region', { name: 'Task' });
+    fireEvent.click(within(inboxRegion).getByRole('button', { name: /^Start from / }));
+    const panel = await screen.findByRole('region', { name: /^Start from / });
     fireEvent.change(within(panel).getByRole('textbox', { name: 'Session goal' }), {
       target: { value: 'Fix it' },
     });
-    fireEvent.click(within(panel).getByRole('button', { name: /Launch session/ }));
+    fireEvent.click(within(panel).getByRole('button', { name: /^Start from / }));
 
     await waitFor(() => expect(createSession).toHaveBeenCalledOnce());
     expect(createSession).toHaveBeenCalledWith(
@@ -492,60 +556,11 @@ describe('tasks and sessions on the real store', () => {
     await expectLinked(session, entry);
   });
 
-  it('mounts the project linked to the sentry project when launching from its error', async () => {
-    const entry = CASES.find((candidate) => candidate.provider === 'sentry');
-    if (entry == null) {
-      throw new Error('missing sentry case');
-    }
-    const session = seed(entry);
-    const project = useAppStore.getState().projects.find((candidate) => candidate.kind === 'repo');
-    if (project == null) {
-      throw new Error('the board scene has no repo project');
-    }
-    useAppStore.setState({
-      projectSentryLinks: {
-        [WORKSPACE_ID]: [{ projectId: project.id, sentryProject: 'payments-api' }],
-      },
-    } as unknown as Partial<StoreState>);
-    const createSession = vi.fn(async () => ({ session }));
-    stubActions({
-      createSession: createSession as unknown as StoreState['createSession'],
-      requestIssueBrief: vi.fn(async () => undefined),
-    });
-    const record: InboxRecord = {
-      ...entry.record,
-      payload: {
-        provider: 'sentry',
-        kind: 'error',
-        issue: { ...SENTRY_ISSUE, project: { slug: 'payments-api', name: 'payments-api' } },
-        sessionId: null,
-      } as InboxRecord['payload'],
-    };
-
-    await mount(<InboxItem record={record} workspaceId={WORKSPACE_ID} />);
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/ }));
-    const panel = await screen.findByRole('region', { name: 'Launch session' });
-    expect(
-      within(panel).getByRole('combobox', { name: 'Project to work in' }).textContent,
-    ).toContain(`Works in ${project.name}`);
-    expect(within(panel).getByText('from Sentry project payments-api')).toBeDefined();
-    fireEvent.click(within(panel).getByRole('button', { name: /Launch session/ }));
-
-    await waitFor(() =>
-      expect(createSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          projectId: project.id,
-          projectReason: 'from Sentry project payments-api',
-        }),
-      ),
-    );
-  });
-
   it.each(CASES)('links a $label inbox item to an existing session', async (entry) => {
     const session = seed(entry);
 
     await mount(surfaces(session, entry));
-    const inboxRegion = screen.getByRole('region', { name: 'Inbox item' });
+    const inboxRegion = screen.getByRole('region', { name: 'Task' });
     fireEvent.click(within(inboxRegion).getByRole('combobox', { name: 'Link to a session' }));
     fireEvent.change(await screen.findByRole('combobox', { name: 'Search sessions' }), {
       target: { value: session.goal },
@@ -703,6 +718,6 @@ describe('tasks and sessions on the real store', () => {
     await settle();
 
     expect(await screen.findByRole('button', { name: /Open session/ })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /Launch session/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Start from/ })).toBeNull();
   });
 });

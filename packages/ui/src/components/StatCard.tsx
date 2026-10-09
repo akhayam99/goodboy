@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
 import { Eyebrow } from './Eyebrow';
+import { ICON_SIZE } from '../iconSize';
 
 export type StatCardProps = {
   readonly value: string;
@@ -13,6 +14,7 @@ export type StatCardProps = {
   readonly alert?: boolean;
   readonly valueSize?: 'lg' | 'xl';
   readonly status?: ReactNode;
+  readonly reservesDeltaRow?: boolean;
   readonly onClick?: () => void;
   readonly className?: string;
 };
@@ -33,6 +35,7 @@ export const StatCard = ({
   alert,
   valueSize = 'xl',
   status,
+  reservesDeltaRow = false,
   onClick,
   className,
 }: StatCardProps) => {
@@ -53,16 +56,28 @@ export const StatCard = ({
         </span>
       ) : null}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-center justify-between gap-2">
-          <Eyebrow label={label} />
-          {status ?? null}
+        <div data-stat-label="" className="min-w-0">
+          <Eyebrow label={label} className="line-clamp-2" />
         </div>
-        <span className={cn('font-mono tabular-nums text-foreground', valueSizeClasses[valueSize])}>
+        <span className={cn('mt-auto tabular-nums text-foreground', valueSizeClasses[valueSize])}>
           {value}
         </span>
-        {hint ? <span className="text-meta text-faint-foreground">{hint}</span> : null}
+        {hint || status || reservesDeltaRow ? (
+          <div
+            data-stat-delta=""
+            className={cn(
+              'flex flex-wrap items-center gap-x-2 text-meta text-faint-foreground',
+              reservesDeltaRow && 'min-h-4',
+            )}
+          >
+            {status ?? null}
+            {hint ? <span>{hint}</span> : null}
+          </div>
+        ) : null}
       </div>
-      {onClick ? <ArrowRight size={14} aria-hidden className="text-muted-foreground" /> : null}
+      {onClick ? (
+        <ArrowRight size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
+      ) : null}
     </>
   );
 

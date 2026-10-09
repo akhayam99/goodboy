@@ -54,7 +54,7 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
             });
         }
     }
-    let branch_name = existing_branch
+    let mut branch_name = existing_branch
         .map(|b| b.to_string())
         .unwrap_or_else(|| new_branch_name.clone());
 
@@ -90,7 +90,60 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
     std::fs::create_dir_all(&parent)?;
 
     let mut tracked_remote = false;
-    if let Some(name) = existing_branch {
+    let diverted = existing_branch.and_then(|name| {
+        let fallback = args
+            .fallback_ref
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())?;
+        diverged_pull_request_head(&repo_path, name, fallback)
+    });
+    if let Some((review_branch, sha)) = diverted {
+        let review_exists = git(
+            &repo_path,
+            &[
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                &format!("refs/heads/{review_branch}"),
+            ],
+        )
+        .is_ok();
+        if review_exists {
+            if let Some(holder) =
+                branch_checkout_path_with(&repo_path, &review_branch, &mut |cwd, args| {
+                    git(cwd, args)
+                })
+            {
+                return Err(WorktreeError::BranchInUse {
+                    branch: review_branch,
+                    path: holder,
+                });
+            }
+            git(
+                &repo_path,
+                &[
+                    "worktree",
+                    "add",
+                    worktree_path.to_string_lossy().as_ref(),
+                    &review_branch,
+                ],
+            )?;
+        } else {
+            git(
+                &repo_path,
+                &[
+                    "worktree",
+                    "add",
+                    "-b",
+                    &review_branch,
+                    worktree_path.to_string_lossy().as_ref(),
+                    &sha,
+                ],
+            )?;
+        }
+        branch_name = review_branch;
+    } else if let Some(name) = existing_branch {
         let local_exists = git(
             &repo_path,
             &[
@@ -225,6 +278,44 @@ pub(super) fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktr
         reused: false,
         tracked_remote,
     })
+}
+
+fn tip_of(repo_path: &Path, reference: &str) -> Option<String> {
+    git(
+        repo_path,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("{reference}^{{commit}}"),
+        ],
+    )
+    .ok()
+    .map(|raw| raw.trim().to_string())
+    .filter(|sha| !sha.is_empty())
+}
+
+fn diverged_pull_request_head(
+    repo_path: &Path,
+    name: &str,
+    fallback: &str,
+) -> Option<(String, String)> {
+    git(repo_path, &["fetch", "--", "origin", fallback]).ok()?;
+    let sha = tip_of(repo_path, "FETCH_HEAD")?;
+    let local = tip_of(repo_path, &format!("refs/heads/{name}"));
+    let remote = if try_fetch_origin(repo_path, name).is_none() {
+        tip_of(repo_path, &format!("refs/remotes/origin/{name}"))
+    } else {
+        None
+    };
+    if local.as_deref() == Some(sha.as_str()) || remote.as_deref() == Some(sha.as_str()) {
+        return None;
+    }
+    if local.is_none() && remote.is_none() {
+        return None;
+    }
+    let short: String = sha.chars().take(8).collect();
+    Some((format!("review/{name}-{short}"), sha))
 }
 
 fn find_existing(

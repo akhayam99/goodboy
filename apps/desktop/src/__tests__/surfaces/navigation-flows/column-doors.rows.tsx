@@ -159,22 +159,23 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('dialog', 'Report a bug'),
   },
   {
-    name: 'top bar: impact',
+    name: 'classic footer: impact',
     covers: ['openImpact', 'studio:impact'],
+    bars: 'classic',
     open: () => clickButton('Impact'),
     lands: () => band('Impact'),
   },
   {
     name: 'top bar: spend',
     covers: ['openSpend', 'studio:impact'],
-    open: () => clickButton(/^Spent today/),
+    open: () => clickButton(/^Spend today/),
     lands: () => heading('Spend'),
   },
   {
     name: 'classic footer: inbox',
     covers: ['studio:inbox'],
     bars: 'classic',
-    open: () => clickButton('Inbox'),
+    open: () => clickButton('Tasks'),
     lands: () => heading('All items'),
   },
   {

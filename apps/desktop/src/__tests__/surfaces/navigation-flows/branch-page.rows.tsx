@@ -12,7 +12,7 @@ import {
   clickFirstButton,
   heading,
   lens,
-  openCrumb,
+  openBranchFiles,
   openPalette,
   settle,
   useAppStore,
@@ -75,7 +75,7 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     name: 'branch page from the mount row',
     covers: ['openMountRequest', 'openReviewTarget'],
     open: () => clickFirstButton(/^Open PR #\d+ of /),
-    lands: both(branchTab('comments'), ownPage),
+    lands: both(branchTab('pr'), ownPage),
   },
   {
     name: 'mount row: comments to resolve open the Branch on its Comments',
@@ -83,27 +83,27 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       seedReviewComment(ctx);
       await settle();
-      await clickFirstButton(/^Open Review for .+, 1 to resolve$/);
+      await clickFirstButton(/^Open Comments for .+, 1 to resolve$/);
     },
     lands: both(branchTab('comments'), trailReads(...BRANCH_TRAIL)),
   },
   {
-    name: 'trail: the Diff door reads Session then the Branch',
-    covers: ['navigate', 'trail:diff-door'],
-    open: () => openCrumb(/^Diff/),
+    name: 'trail: the Files door reads Session then the Branch',
+    covers: ['navigate', 'trail:files-door'],
+    open: () => openPalette(/^Open Files/),
     lands: both(branchTab('files'), trailReads(...BRANCH_TRAIL)),
   },
   {
-    name: 'trail: the Review door reads the same Session then the Branch',
-    covers: ['navigate', 'trail:review-door'],
-    open: () => openPalette(/^Open Review/),
+    name: 'trail: the Comments door reads the same Session then the Branch',
+    covers: ['navigate', 'trail:comments-door'],
+    open: () => openPalette(/^Open Comments/),
     lands: both(branchTab('comments'), trailReads(...BRANCH_TRAIL)),
   },
   {
     name: 'tabs: switching a tab edits the address in place, and Back leaves the Branch',
     covers: ['back', 'trail:tabs-in-place'],
     open: async () => {
-      await openCrumb(/^Diff/);
+      await openBranchFiles();
       const depth = stackDepth();
       await click(await screen.findByRole('tab', { name: /^Commits/ }));
       await click(await screen.findByRole('tab', { name: /^Checks/ }));
@@ -117,7 +117,7 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     name: 'trail: the Branch crumb menu lists the branches of the session',
     covers: ['trail:branch-menu'],
     open: async () => {
-      await openCrumb(/^Diff/);
+      await openBranchFiles();
       const crumb = within(trailNav()).getByRole('button', { name: /Branch/ });
       await click(crumb);
     },

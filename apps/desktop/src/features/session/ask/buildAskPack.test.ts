@@ -93,7 +93,7 @@ describe('buildAskPack', () => {
     expect(pack.text).toContain(
       '- [A2] Implementer · running since 09:40: Raising the retry limit.',
     );
-    expect(pack.text).toContain("2 comments: 1 ready · 1 couldn't fix");
+    expect(pack.text).toContain("2 comments: 1 couldn't fix · 1 ready");
     expect(pack.text).toContain(
       '- [Q1] from Planner: Stop after 5 attempts, or keep backing off? · options: Stop after 5 | Keep backing off',
     );
@@ -209,7 +209,7 @@ describe('buildAskPack', () => {
       comments: [
         {
           threadId: 'thread-1',
-          word: 'needs_you',
+          word: 'question',
           author: leak('author'),
           location: leak('location'),
           body: leak('body'),

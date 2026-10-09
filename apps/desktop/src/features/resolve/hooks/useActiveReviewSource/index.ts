@@ -15,7 +15,7 @@ import type {
 
 type Result = {
   readonly entries: ReadonlyArray<ReviewSourceEntry>;
-  readonly selected: ReviewSourceEntry;
+  readonly selected: ReviewSourceEntry | null;
   readonly source: ActiveReviewSource | null;
 };
 
@@ -34,7 +34,6 @@ export const useActiveReviewSource = ({ sessionId }: { readonly sessionId: Sessi
       mountGitlabMr: s.mountGitlabMr,
       mountBitbucketPr: s.mountBitbucketPr,
       sessionBitbucketPr: s.sessionBitbucketPr,
-      diffComments: s.diffComments,
       reviewSourceThreads: s.reviewSourceThreads,
       reviewSourceKeys: s.reviewSourceKeys,
     })),

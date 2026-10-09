@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { SearchHit, WorkspaceId } from '@goodboy/types';
-import { ScrollFade, FilledEmptyState } from '@goodboy/ui';
+import { ScrollFade, EmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -318,7 +318,8 @@ export const SearchMode = ({
             ))}
           </ul>
           {showEmpty ? (
-            <FilledEmptyState
+            <EmptyState
+              size="section"
               icon={CONCEPT_ICONS.search}
               tone={CONCEPT_TONE.search}
               title={

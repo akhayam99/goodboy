@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { IconButton, KbdPill, Textarea } from '@goodboy/ui';
+import { IconButton, Textarea, Kbd } from '@goodboy/ui';
 import { composerPlaceholder } from './composerPlaceholder';
 import { ReplyBar } from './ReplyBar';
 import type { ConversationSource } from './types';
@@ -75,7 +75,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
         />
         <div className="flex min-w-0 items-center justify-between gap-2 px-3 pb-2">
           <span className="flex items-center gap-1 text-meta text-faint-foreground">
-            <KbdPill className="h-4 text-chip">{shortcutGlyphs('composer.submit')}</KbdPill>
+            <Kbd>{shortcutGlyphs('composer.submit')}</Kbd>
             to send
           </span>
           <IconButton icon={ArrowUp} label="Send" disabled={isEmpty} onClick={submit} />

@@ -22,7 +22,7 @@ describe('driveChatWork', () => {
 
   it('clicks each control in order as it shows up', async () => {
     const clicked: string[] = [];
-    mount('<button id="start">Start work</button>');
+    mount('<button id="start">Start work from chat</button>');
     document.getElementById('start')?.addEventListener('click', () => {
       clicked.push('start');
       mount('<div role="combobox" aria-label="Project" id="project"></div>');
@@ -36,7 +36,7 @@ describe('driveChatWork', () => {
 
   it('waits for a disabled button instead of spending its step on it', async () => {
     const onClick = vi.fn();
-    mount('<button id="start" disabled>Start work</button>');
+    mount('<button id="start" disabled>Start work from chat</button>');
     const start = document.getElementById('start');
     start?.addEventListener('click', onClick);
 
@@ -53,7 +53,7 @@ describe('driveChatWork', () => {
     const onTab = vi.fn();
     const onSession = vi.fn();
     mount(`
-      <button id="start" aria-expanded="true">Start work</button>
+      <button id="start" aria-expanded="true">Start work from chat</button>
       <div role="tab" id="tab" aria-selected="true">Add to a session</div>
       <div role="combobox" aria-label="Session" id="session" aria-expanded="false"></div>
     `);
@@ -76,7 +76,7 @@ describe('driveChatWork', () => {
         target.setAttribute('aria-expanded', 'true');
       }
     });
-    mount('<button id="start">Start work</button>');
+    mount('<button id="start">Start work from chat</button>');
     document.getElementById('start')?.addEventListener('click', onStart);
 
     const first = driveChatWork({ stage: 'drawer' });
@@ -91,7 +91,7 @@ describe('driveChatWork', () => {
 
   it('starts the session once the brief is ready for the started stage', async () => {
     const clicked: string[] = [];
-    mount('<button id="start">Start work</button>');
+    mount('<button id="start">Start work from chat</button>');
     document.getElementById('start')?.addEventListener('click', () => {
       clicked.push('start work');
       mount('<button id="go" disabled>Start session</button>');
@@ -108,7 +108,7 @@ describe('driveChatWork', () => {
 
   it('goes back only after the new session is showing', async () => {
     const clicked: string[] = [];
-    mount('<button id="start">Start work</button>');
+    mount('<button id="start">Start work from chat</button>');
     document.getElementById('start')?.addEventListener('click', () => {
       clicked.push('start work');
       mount('<button id="go">Start session</button>');

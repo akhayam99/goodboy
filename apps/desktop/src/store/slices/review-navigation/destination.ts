@@ -1,4 +1,5 @@
 import type { MountId } from '@goodboy/types';
+import { noteIdOfThread } from '../../../features/resolve/notes/noteThread';
 
 export type ReviewDestination =
   | { readonly kind: 'home' }
@@ -57,3 +58,13 @@ export const reviewFocusThreadId = ({
   isPresent = () => true,
 }: Params & { readonly isPresent?: (threadId: string) => boolean }): string | null =>
   reviewThreadIds({ destination }).find(isPresent) ?? null;
+
+export const isNotesDestination = ({ destination }: Params): boolean => {
+  if (destination.kind === 'notes') {
+    return true;
+  }
+  if (destination.kind !== 'threads' || destination.threadIds.length === 0) {
+    return false;
+  }
+  return destination.threadIds.every((threadId) => noteIdOfThread({ threadId }) !== null);
+};

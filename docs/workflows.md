@@ -156,10 +156,11 @@ order, each with one line of copy at most.
   hints are the ones the builder shows (`RUN_AUTONOMY_OPTIONS`)
 - **Spend cap**: a switch, the amount per run and what happens at the limit, pause
   or warn
-- **Providers**: one switch, **Use providers with room left**, and one sentence
-  that says where the next step goes. It lists no provider; the policy is in
-  Models, one **Open Models** button away. With no provider that reports its
-  limits (Claude or Codex) turned on, the switch is off and says why
+- **Providers**: a row **When a provider is out** with the policy in one line
+  ("Claude, Codex · Cursor as backup") and a link, **Open Providers & models**.
+  It holds no switch and lists no provider: the order and the **Send new steps
+  to the provider with the most room** option live in Settings > Providers &
+  models, the one home of the provider policy
 - **Guidance**: text every run starts with, with its own **Polish**
 
 ### Guidance
@@ -208,10 +209,12 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 - if dropping the _out_ providers empties the menu, the menu of today comes back
 
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
-with it off (m217); new workspaces start with it on. The Run defaults tab shows the
-switch and one sentence: with it off, "New steps follow the order set in
-Models."; with it on, where the next step goes and, when a provider is passed,
-how full it is (`nextStepPick`, `spreadSentence`).
+with it off (m217); new workspaces start with it on. The switch is the
+**Send new steps to the provider with the most room** option of the policy popover in
+Settings > Providers & models, with one sentence under it: with it off, "New
+steps follow the provider order."; with it on, where the next step goes and,
+when a provider is passed, how full it is (`nextStepPick`, `spreadSentence`).
+The Run defaults tab only links there.
 
 The builder opens filled from the rules and shows them in one **From your
 rules** line with **Edit**. A launch control that leaves the rules shows a dot
@@ -226,7 +229,7 @@ rules with the autonomy their caller asked for.
 
 Each step is one agent with its own brief and its own model.
 
-- **Name** and **role**: scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, wireframe or custom
+- **Name** and **role**: scout, investigator, planner, implementer, reviewer, tester, docs, report, wireframe or custom. Resolve is not a workflow role: a step that fixes review findings is Implement work (see "Resolve inside a workflow")
 - **Prompt**: the instruction the agent starts from
 - **Expected output**: what this step promised the next one. It goes at the top of the handoff
 - **Provider**, **model** and **effort**: for example scout on a cheap model, plan on a strong one
@@ -266,8 +269,8 @@ one cluster in the header of [the run page](#the-run-page). Besides **Stop step*
 the row shows at most one action: **Decide next step** only when the run asks
 before each step, **Continue the run** after you stopped it or once it is
 complete, **Retry** after a failed decision, **Review plan** while the run
-waits for its plan, **Answer** when the planner asked a question, or the spend
-cap on a budget pause. **Stop step** asks first, then cancels the step in
+waits for its plan, **Answer** when the planner or any step asked a question,
+or the spend cap on a budget pause. **Stop step** asks first, then cancels the step in
 flight, marks it skipped and holds the run (`stopWorkflowRunNow`); **Continue
 the run** takes it from there.
 
@@ -281,9 +284,15 @@ and `resolveOrchestratorState` takes them as a `plan` signal the strip reads
 from the plan the run waits on, so a pause or a decision in flight still speaks
 first.
 
-A failed step and an open question are left to the Next action strip, so the
-row only says the run is paused, on a neutral line: the strip above carries the
-tone. When the pane is too narrow for the sentence and the controls on one
+An open question the run waits on never reads as "Waiting on step 3": the row
+says "Paused for your answer", names the step that asked when one did ("Paused
+for your answer · step 1 · Ricognizione clinical tests", a sub-scout counts as
+the step it belongs to), counts the time that step has been running, and offers
+**Answer**, which opens the agent that asked at its question, or the questions
+view when no agent asked. A spend pause or a failure still speaks before it
+(`resolveOrchestratorState` takes the first open question as `question`). A
+failed step is left to the Next action strip, so the row only says the run is
+paused, on a neutral line: the strip above carries the tone. When the pane is too narrow for the sentence and the controls on one
 line, the controls wrap to a second line on the right instead of cutting the
 sentence. When to ask (**Ask before each step** or **Run on its own**) and
 **Model per step** (the model each step runs on, and why) sit in the menu. A
@@ -404,14 +413,17 @@ action on its row, which opens the questions view on that question. An agent
 that answers a question for a step never shows it, in the tree or in the
 activity feed, because the question belongs to that step. Every row ends with
 the same meta as the activity feed: the model, the effort and what the row has
-spent, with a dotted model name when routing picked another one than the plan.
+spent. A step row reads the same in both places: role icon, title, model with
+effort, then time over cost. The role is the icon alone, with its name as the
+accessible name, and the same cards open from the icon and the model (pointer at
+rest, keyboard focus, or `i`). Planned against picked is in the card.
 The action column exists only while a row in the tree has an action, so a tree
 with nothing to do gives that width to the titles. The action is **Answer**, or
 on the step that produced a plan **Review plan** while the run waits on that
 plan and **Open plan** once it does not. Both open the plan in the plan
 drawer, over the run, and a row that asks something keeps its **Answer** alone.
-In a narrow pane the kind chip narrows and the effort column hides, so the
-title keeps its room. Clicking a row opens that agent.
+In a narrow pane the model cell drops to its glyphs, so the title keeps its
+room. Clicking a row opens that agent.
 
 A set of sub-agents, the children of one agent, folds into one row under its
 parent when every one of them is settled and none has an open question,
@@ -441,20 +453,20 @@ tree never folds a set and has no plan action.
 
 In the activity feed, an agent or step row leads with its role as a glyph and
 ends with the model that ran, then its duration with what it has spent under
-it. The model is on the row, in a model cell of about 150px: the provider glyph
-and the model, and when a step moved to another model (a fallback, a retry, a
+it. The model is on the row, in a model cell of about 176px: the provider glyph,
+the model and its effort ("Opus 5.5 · High"), and when a step moved to another model (a fallback, a retry, a
 routing change) every model in the order it ran ("Kimi K3 → Sonnet 5.5", "3
-models" past two). The effort, why a model took over, planned against picked,
+models" past two). Why a model took over, planned against picked,
 tokens and the start and finish times are in the card that opens when the
 pointer rests on the role glyph or on the model cell, and in the Brief. A step
 that has not started shows its planned model and its meta in faint. In the run tree and
 a Brief's Subagents, every row keeps the model: before a step starts, the meta
 shows the routing it is planned to run on, in faint. Once it runs, the meta
-shows what actually ran, and a dotted model name means routing picked something
-other than the plan (the tooltip names both). The
+shows what actually ran, and the identity card names the plan when routing
+picked something else. The
 effort works the same way: once a run has started, the column shows the effort
-the CLI was started with, in the row tone, and a dotted effort means it left
-the plan ("Planned High, ran Medium" in the tooltip). A run with no recorded
+the CLI was started with, in the row tone ("Planned High, ran Medium" in the
+card when it left the plan). A run with no recorded
 effort, like one from before turn spans existed or a CLI with no effort flag,
 keeps the planned effort in faint and never shows a made-up value. The agent
 header reads the same way. The
@@ -470,8 +482,8 @@ running row with enough history shows the time left ("~3-7m left", a range
 until the low end of the band passes, then "~2m left") and its node fills an
 arc toward the usual time; the elapsed time moves to the tooltip and the agent
 header ("4m · ~3-7m left"). Past the top of the band the row shows the elapsed
-time ("14m"), the arc stays full and the state reads "Longer than usual" in
-faint, with no color. At twice the usual time the Brief's Now adds a line that
+time ("14m"), the arc stays full and the time turns to the warning tone, with "Longer than
+usual" in its tooltip. At twice the usual time the Brief's Now adds a line that
 points at the transcript; nothing stops the agent. While the row waits on you
 the arc freezes in amber and the time freezes too, never "left": the pause is
 said once, by the row state and the node. A failed row drops the arc and reads
@@ -494,11 +506,13 @@ When a run needs you, one **Next action** strip says what to do. It sits on
 the workflow run row and at the top of the agent detail body, right under the
 header that holds Brief and Transcript, so both tabs show the same strip and
 the transcript does not repeat it at the bottom. Opening an agent from Activity, Workflow, the board or
-a toast follows one rule (`agentOpenTab`): an agent with an open question, and a
-resolver, open on Brief, where the question or the summary comes first; any other
-agent opens on Transcript, pinned to the latest line. A resolver that is still
+a toast follows one rule (`agentOpenTab`): the agent opens on Brief, where the
+question, the summary and the subagents come first, unless the user picked the
+Transcript by hand on that agent before or the door points at a line in the chat.
+The Transcript stays pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Fix run. Orchestrated runs get the same strip, and the
-orchestrator strip carries no answer or skip button of its own.
+orchestrator strip carries no skip button of its own. It carries **Answer** when the run waits on a question
+([The orchestrator strip](#the-orchestrator-strip)).
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Ask it to continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**
 - A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Ask it to continue** and **Skip**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
@@ -601,6 +615,9 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/preSpawnWorkflowAgents.ts`: creates the run's agents when a workflow is added
 - `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: sends the blocked notification
 - `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: asks the orchestrator for one decision
+- `apps/desktop/src/store/slices/workflows/nextRunMove.ts`: `nextRunMove`, the one rule for what a run owes next (start a pending step, decide, or nothing). `maybeAutoAdvanceWorkflow` and the watchdog both read it
+- `apps/desktop/src/store/slices/workflows/findIdleRuns.ts` and `sweepIdleRuns.ts`: the watchdog over orchestrated runs. `apps/desktop/src/features/workflows/hooks/useRunWatchdog/` drives it from `App`
+- `apps/desktop/src/store/slices/workflows/summarizerGate.ts`: `waitForSessionSummarizer`, the 60s wait on the session summarizer
 - `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to
 - `apps/desktop/src/features/workflows/components/WorkflowBuilderView/`: the builder. It draws the plan with the shared step tree
 - `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
@@ -644,6 +661,35 @@ you add it. It is not worked out step by step.
 Every screen that creates or edits a workflow saves it through the same
 upsert command. A second way of saving could create a workflow the picker
 cannot see.
+
+### Resolve inside a workflow
+
+The Resolve agent answers one review comment per thread. Its prompt asks for a
+`comment-resolved` or `comment-wontfix` marker per thread id and says nothing
+about the step-done marker a workflow waits for, and a step has no thread ids.
+A workflow step that ran it ended with no marker of either kind, the lane
+recorded a failed attempt with no thread, and the row read "Couldn't fix"
+while the run waited. So a workflow never runs it.
+
+- `ROLE_REGISTRY.resolver.workflowEligible` is `false`. The planner, the
+  orchestrator and the natural-language formatter never offer the role, and
+  `normalizeWorkflowRole` turns a `resolver` role they still emit into
+  `implementer`. The role picker of the step editor (`visibleWorkflowRoles`)
+  lists the workflow roles only
+- There is no built-in Resolve comments step. A saved workflow keeps its
+  `resolver` rows on disk with no migration: `rowToStep` and `rowToStepDef` read
+  them as `implementer`, and the next save writes the new role
+- `classifyStep` maps a step to the Implement kind when its role or its name
+  says resolve, and `classifyAgent` does the same for an agent row that has both
+  a `workflowRunId` and a `stepId`. A run created before this change takes the
+  Implement prompt, the Implement model and the step-done boundary on its next
+  turn. `withoutWorkflowStepAttempts` keeps the old failed attempts of such rows
+  out of the review facts, so the run tree shows the step state
+- A step that ends without its step-done marker keeps the same path as any
+  other role: one automatic continue, then a blocked step with a notification and
+  the Next action strip (**Ask it to continue**, **Skip**)
+- Branch, Comments and the resolve lane are unchanged. The Resolve agent still
+  runs there, one fix run per review thread
 
 ### Advance states
 
@@ -927,13 +973,44 @@ and `blocked` sends a notification. Every decision lands in the transcript as
 an `orchestrator_decision` event, and its spend is recorded against the run.
 
 - **One decision at a time.** A request that comes in while the run is
-  deciding waits in a queue and runs once the current decision settles.
+  deciding waits in a queue and runs once the current decision settles. A run
+  reads as deciding from the first request to the moment the step it chose
+  exists, never through that step's first turn (`orchestratingWorkflowRuns`
+  turns off before `activateWorkflowAgent`, while `orchestrationInFlight` keeps
+  the queue closed until the turn ends).
+- **The summarizer wait overlaps the decision.** The session context summarizer
+  must finish before the orchestrator acts on a decision, so the next step reads
+  fresh context and a run never reports done while the summarizer still writes.
+  The wait (`waitForSessionSummarizer`, 60s at most, gone when the decision is
+  thrown away) starts together with the decision call and the result is held
+  until it ends, so a step costs the longer of the two, not their sum. Before
+  this a step end waited on the summarizer twice (in `maybeAutoAdvanceWorkflow`
+  and again in `orchestrateNextStep`) and then asked, so a slow or retrying
+  summarizer put two minutes in front of a call that takes 20s.
+  `maybeAutoAdvanceWorkflow` now waits only when a static run is on autorun. A
+  forced skip (`bypassGate`) waits on nothing.
+- **A lost wake is recovered.** `sweepIdleRuns` runs every 15s and when the
+  window comes back to the front (`useRunWatchdog`). It looks for an orchestrated
+  autorun run that is started, has no outcome and no stop, is not deciding, has
+  no open question and whose session is not advancing, and that has a step to
+  decide or to start (`findIdleRuns`, built on `nextRunMove`, the same rule
+  `maybeAutoAdvanceWorkflow` uses). After 20s of that for a run that has no
+  step yet, 45s for any other, it calls `maybeAutoAdvanceWorkflow`, at most once
+  per 90s and three times per idle stretch (`runIdleEpisodes`). A run still idle after the third try gets a
+  `failure` stop, "Nothing picked this run up after three tries", and one
+  notification, so the run bar says so with **Retry**. A run that waits on an
+  answer is never nudged. Answering a question wakes the run itself, even when
+  no agent could take the answer (`answerOpenQuestions`); the next sweep is the
+  backstop.
 - **Stops are saved, with a kind.** Before the call, the orchestrator checks
   for a session paused by its spend cap (`sessionBudgetBlockAfterLoad`,
   which reads `session_budgets.on_exceed` first), the run's spend cap in
   pause mode, and open
   questions that block the run. Each one saves a `budget` or `questions` stop.
-  A failed or unreadable call saves `failure`. **Stop** saves `operator`,
+  A failed or unreadable call saves `failure`, and so does a decision whose
+  step cannot be created (the agent row, the saved workflow or the routing
+  failed), with a notification: that error used to leave the run with no step,
+  no stop and a decision that cost money and showed nowhere. **Stop** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
   **Pause** saves `paused`, which keeps the step in flight and starts nothing.
   **Stop run** (`closeWorkflowRun`) saves `closed` next to the `done`
@@ -999,8 +1076,11 @@ The summary follows fixed rules. It is not free text.
 times out or breaks the rules, Goodboy falls back to cutting the chat down to
 its start and end. No model is involved in that fallback.
 
-The step still completes, the result is marked `degraded`, and a notification
-offers to retry. Either way, the summary is what the next step starts from.
+Before that fallback, the summary retries on its own across the other allowed
+models ([helper retry chain](turns.md#helper-retry-chain)). The step still
+completes, the result is marked `degraded` only when every model failed, and one
+notification per session offers to retry. Either way, the summary is what the
+next step starts from.
 
 ### Step sequencing
 

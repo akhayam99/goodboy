@@ -1,3 +1,24 @@
+export { bitbucketCheckRuns } from './bitbucketCheckRuns';
+export {
+  BITBUCKET_PR_STATE_KIND,
+  bitbucketChecksOf,
+  bitbucketPrStateKind,
+  bitbucketReviewDecisionOf,
+} from './bitbucketPullRequestFacts';
+export {
+  bitbucketPullRequestPort,
+  type BitbucketPullRequestTransport,
+} from './bitbucketPullRequestPort';
+export type {
+  BitbucketMergeStrategy,
+  BitbucketPortCommit,
+  BitbucketPortParticipant,
+  BitbucketPortPullRequest,
+  BitbucketPortStatus,
+  BitbucketPortUser,
+  BitbucketPullRequestStateName,
+  BitbucketStatusState,
+} from './bitbucketPullRequestTypes';
 export {
   BITBUCKET_NO_RESOLVE,
   BITBUCKET_THREAD_PREFIX,
@@ -9,7 +30,16 @@ export {
   type BitbucketReviewTransport,
 } from './bitbucketReviewSource';
 export { commitLinkOf } from './commitLink';
+export { githubPullRequestPort } from './githubPullRequestPort';
 export { githubReviewSource } from './githubReviewSource';
+export { gitlabDraftTitle, stripGitlabDraftPrefix } from './gitlabDraftTitle';
+export {
+  gitlabMergeableOf,
+  gitlabPullRequestPort,
+  gitlabReviewDecisionOf,
+  gitlabStateKindOf,
+  type GitlabPullRequestTransport,
+} from './gitlabPullRequestPort';
 export {
   GITLAB_THREAD_PREFIX,
   gitlabDiscussionId,
@@ -23,6 +53,19 @@ export {
 export { groupReviewComments } from './groupReviewComments';
 export { LOCAL_NOTE_NO_REPLY, localReviewSource } from './localReviewSource';
 export { NOTE_THREAD_PREFIX } from './noteThreadPrefix';
+export { pullRequestReviewersOf } from './pullRequestReviewers';
+export {
+  PULL_REQUEST_CAPABILITY_METHODS,
+  PULL_REQUEST_NOUNS,
+  PullRequestPortError,
+  PullRequestPortUnsupported,
+  isPullRequestPortError,
+  isPullRequestPortUnsupported,
+  requirePullRequestCapability,
+  type PullRequestCapability,
+  type PullRequestFailureKind,
+  type PullRequestPort,
+} from './pullRequestPort';
 export {
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,

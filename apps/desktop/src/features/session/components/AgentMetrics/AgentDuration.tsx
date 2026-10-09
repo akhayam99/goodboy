@@ -13,7 +13,7 @@ export const AgentDuration = ({ run }: Props) => {
 
   if (run.startedAt == null) {
     return (
-      <span className="font-mono text-faint-foreground" title="Not started yet">
+      <span className="text-faint-foreground tabular-nums" title="Not started yet">
         0
       </span>
     );
@@ -27,7 +27,7 @@ export const AgentDuration = ({ run }: Props) => {
       : `Started ${startedAt}\nWorking for ${worked}`;
 
   return (
-    <span className="font-mono" title={tooltip}>
+    <span className="tabular-nums" title={tooltip}>
       {worked}
     </span>
   );

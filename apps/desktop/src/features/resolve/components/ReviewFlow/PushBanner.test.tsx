@@ -78,12 +78,36 @@ describe('PushBanner', () => {
       />,
     );
 
-    const confirm = screen.getByRole('group', { name: 'Push 1 to hl/fix-duplicate-credit?' });
+    const confirm = screen.getByRole('group', {
+      name: 'Push 1 commit to hl/fix-duplicate-credit?',
+    });
     within(confirm).getByText('Tip');
     within(confirm).getByText('Redact the webhook payload');
     within(confirm).getByText('This also pushes 1 earlier commit');
     within(confirm).getByText('Batch ledger lookups');
     within(confirm).getByText(/1 comment needs you first/);
+  });
+
+  it('names the commit style setting as a link that opens Replies and commits', () => {
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-settings', opened);
+    render(
+      <PushBanner
+        sessionId={SESSION.id}
+        push={push({ phase: { kind: 'confirm', preview: PREVIEW } })}
+      />,
+    );
+
+    const confirm = screen.getByRole('group', {
+      name: 'Push 1 commit to hl/fix-duplicate-credit?',
+    });
+    within(confirm).getByText(/set in/);
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Replies and commits' }));
+    window.removeEventListener('goodboy:open-settings', opened);
+
+    expect(opened).toHaveBeenCalledOnce();
+    const detail = (opened.mock.calls[0]?.[0] as CustomEvent).detail;
+    expect(detail).toEqual({ scope: 'workspace', section: 'review-replies' });
   });
 
   it('offers Sync on a push that failed on a moved remote', () => {

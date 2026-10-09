@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/names';
 import type { HistoryStep } from '@goodboy/types';
 import { moveFacts, type MoveFact } from './historyEdits';
 import { isFolded, messageOf, targetOf, type CombineMode } from './historyPlan';
@@ -38,7 +39,7 @@ export const HISTORY_ACTION_LABEL: Readonly<Record<HistoryAction, string>> = {
   move: 'Move',
   reword: 'Rename',
   drop: 'Remove',
-  rebase: "Start from today's main",
+  rebase: `${NAMES.rebaseOn} the base branch`,
 };
 
 type Params = {

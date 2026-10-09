@@ -23,6 +23,8 @@ const LIVE: SessionFacts = {
   title: 'Speed up the payout export',
   isArchived: false,
   isPinned: false,
+  canMovePinUp: false,
+  canMovePinDown: false,
   isBranchless: false,
   hasMount: true,
   branch: 'feat/stream-payout-export',
@@ -135,8 +137,8 @@ const commitView = ({ facts, query }: ViewParams<CommitFacts>) => {
 describe('palette verbs follow the session state', () => {
   it('offers every live verb on a session with a project, a worktree and a pull request', () => {
     expect(sessionView({ facts: LIVE, query: '' })).toEqual([
-      'Open Review',
-      'Open Diff',
+      'Open Comments',
+      'Open Files',
       'Open Terminal',
       'Open in editor',
       'Rename',
@@ -152,7 +154,7 @@ describe('palette verbs follow the session state', () => {
     ]);
   });
 
-  it('hides Diff and the editor on a session with no project until they are searched', () => {
+  it('hides Files and the editor on a session with no project until they are searched', () => {
     const facts = {
       ...LIVE,
       hasMount: false,
@@ -163,7 +165,7 @@ describe('palette verbs follow the session state', () => {
     };
 
     expect(sessionView({ facts, query: '' })).toEqual([
-      'Open Review',
+      'Open Comments',
       'Open Terminal',
       'Rename',
       'Pin session',
@@ -173,8 +175,8 @@ describe('palette verbs follow the session state', () => {
       'Archive',
       'Delete',
     ]);
-    expect(sessionView({ facts, query: 'diff' })).toEqual([
-      'Open Diff (Add a project to this session first)',
+    expect(sessionView({ facts, query: 'files' })).toEqual([
+      'Open Files (Add a project to this session first)',
     ]);
     expect(sessionView({ facts, query: 'editor' })).toEqual([
       'Open in editor (This session has no worktree yet)',
@@ -432,10 +434,10 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Link work',
       'Open Terminal',
       'Open in editor',
-      'Open Diff',
+      'Open Files',
       'Rename',
       'Copy branch name',
-      'Open Review',
+      'Open Comments',
       'All actions for this session',
     ]);
   });
@@ -443,7 +445,7 @@ describe('the empty palette ranks the session verbs by state', () => {
   it('needs you: the agent and the review come first', () => {
     expect(labelsOf(emptyScreen({ tier: 'needs' }), 'For this session').slice(0, 4)).toEqual([
       'Message Implementer',
-      'Open Review',
+      'Open Comments',
       'Start agent',
       'Open Terminal',
     ]);
@@ -455,7 +457,7 @@ describe('the empty palette ranks the session verbs by state', () => {
     expect(labelsOf(screen, 'For this session').slice(0, 5)).toEqual([
       'Interrupt Implementer',
       'Message Implementer',
-      'Open Diff',
+      'Open Files',
       'Open Terminal',
       'Start agent',
     ]);
@@ -463,8 +465,8 @@ describe('the empty palette ranks the session verbs by state', () => {
 
   it('ready to ship: review and diff come first', () => {
     expect(labelsOf(emptyScreen({ tier: 'ship' }), 'For this session').slice(0, 4)).toEqual([
-      'Open Review',
-      'Open Diff',
+      'Open Comments',
+      'Open Files',
       'Open in editor',
       'Open Terminal',
     ]);
@@ -473,8 +475,8 @@ describe('the empty palette ranks the session verbs by state', () => {
   it('finished: the pull request link comes first', () => {
     expect(labelsOf(emptyScreen({ tier: 'finished' }), 'For this session').slice(0, 3)).toEqual([
       'Copy PR link',
-      'Open Review',
-      'Open Diff',
+      'Open Comments',
+      'Open Files',
     ]);
   });
 

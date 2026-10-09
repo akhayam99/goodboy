@@ -173,7 +173,7 @@ const TRANSCRIPT = [
   {
     kind: 'decision_note' as const,
     runId: RUN_ID,
-    message: 'Mount deferred for storefront-web.',
+    message: 'Added later: storefront-web.',
     at: NOW,
   },
   {

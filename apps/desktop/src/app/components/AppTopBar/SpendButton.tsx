@@ -1,4 +1,4 @@
-import { Tooltip, formatUsd } from '@goodboy/ui';
+import { FOCUS_RING, TOP_BAR_CONTROL, Tooltip, cn, formatUsd } from '@goodboy/ui';
 import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
 
 type Props = {
@@ -13,7 +13,7 @@ export const SpendButton = ({ onOpenSpend }: Props) => {
   if (workspace == null) {
     return null;
   }
-  const label = 'Spent today, counted by Goodboy. Open spend';
+  const label = 'Spend today. Open Impact';
 
   return (
     <Tooltip content={label} side="bottom">
@@ -21,7 +21,12 @@ export const SpendButton = ({ onOpenSpend }: Props) => {
         type="button"
         onClick={onOpenSpend}
         aria-label={label}
-        className="flex shrink-0 items-center gap-1 rounded-sm px-2 py-1 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover"
+        className={cn(
+          TOP_BAR_CONTROL.height,
+          TOP_BAR_CONTROL.radius,
+          FOCUS_RING,
+          'flex shrink-0 items-center gap-1 px-2 text-chip text-muted-foreground motion-safe:transition-colors hover:bg-hover',
+        )}
       >
         <span className="font-medium tabular-nums text-foreground">
           {formatUsd(rollup.todaySpend)}

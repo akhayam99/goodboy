@@ -6,6 +6,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { AttachmentChip } from '../../../../attachments/components/AttachmentChip';
 import { useAttachmentThumbnail } from '../../../../attachments/hooks/useAttachmentThumbnail';
 import { ATTACHMENT_KIND_ROUTING } from '../../../../providers/attachment-routing';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachmentOwner }) => {
   const loadGoalAttachments = useAppStore((s) => s.loadGoalAttachments);
@@ -32,7 +33,7 @@ export const GoalAttachmentsStrip = ({ owner }: { readonly owner: GoalAttachment
     <div className="flex flex-col gap-2">
       <Eyebrow
         muted
-        icon={<Paperclip size={11} aria-hidden />}
+        icon={<Paperclip size={ICON_SIZE.row} aria-hidden />}
         label="Attachments"
         className="gap-2 font-medium"
       />
