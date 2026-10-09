@@ -48,4 +48,30 @@ describe('agentNowState', () => {
 
     expect(now.label).toBe('starting');
   });
+
+  it('never reads a running agent whose turn is not live as ready', () => {
+    const idle = { kind: 'idle', lastActivityAt: '2026-09-29T09:00:00.000Z' } as never;
+
+    expect(agentNowState({ agent, turnState: idle, transcript: [] }).label).toBeNull();
+    expect(agentNowState({ agent, turnState: idle, transcript: [], activeChildren: 0 }).label).toBe(
+      null,
+    );
+  });
+
+  it('names the subagents a running agent waits on while its own turn is not live', () => {
+    const idle = { kind: 'idle', lastActivityAt: '2026-09-29T09:00:00.000Z' } as never;
+
+    expect(agentNowState({ agent, turnState: idle, transcript: [], activeChildren: 1 }).label).toBe(
+      'Waiting on 1 subagent',
+    );
+    expect(agentNowState({ agent, turnState: idle, transcript: [], activeChildren: 3 }).label).toBe(
+      'Waiting on 3 subagents',
+    );
+  });
+
+  it('keeps ready for an agent that is not running', () => {
+    const done = { ...agent, status: 'completed' } as Agent;
+
+    expect(agentNowState({ agent: done, turnState: null, transcript: [] }).label).toBe('ready');
+  });
 });

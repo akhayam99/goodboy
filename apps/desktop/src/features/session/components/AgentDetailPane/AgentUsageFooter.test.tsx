@@ -34,6 +34,27 @@ describe('AgentUsageFooter', () => {
     screen.getByText('3 turns');
   });
 
+  it('drops the turn count when it is unknown or zero instead of reading 0 turns', () => {
+    for (const turns of [null, 0]) {
+      render(
+        <AgentUsageFooter
+          aggregate={{
+            inputTokens: 2630000,
+            outputTokens: 20800,
+            estimatedCostUsd: 1.78,
+            turns: 0,
+          }}
+          contextUsage={contextUsage}
+          turns={turns}
+        />,
+      );
+
+      screen.getByText(/in ·/);
+      expect(screen.queryByText(/turns?$/u)).toBeNull();
+      cleanup();
+    }
+  });
+
   it('never shows $0.00: hides the cost entry when it is unknown', () => {
     render(
       <AgentUsageFooter

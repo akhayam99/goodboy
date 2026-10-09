@@ -34,7 +34,9 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
     ? agentStatusWord({ status: child.status })
     : null;
   const live = agentNowState({ agent, turnState, transcript });
-  const label = hasQuestion ? 'question' : (terminalLabel ?? live.label);
+  const label = hasQuestion
+    ? 'question'
+    : (terminalLabel ?? live.label ?? agentStatusWord({ status: child.status }));
 
   const onOpen = () => {
     navigate({ to: agentPlace({ sessionId, agentId: agent.id }) });
