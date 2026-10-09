@@ -84,17 +84,17 @@ export const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
           connectedProviders={availableProviderIds}
           provider={providerId}
           model={model}
-          effort={{ editable: true, value: effort, onChange: setEffort }}
+          effort={{ editable: true, value: effort }}
           recommendation={{ model: recommendedModel }}
           disabled={false}
-          onProvider={(next) => {
-            if (next === '') {
+          onChange={(route) => {
+            if (route.provider === '') {
               return;
             }
-            setProviderId(next);
-            setModel('');
+            setProviderId(route.provider);
+            setModel(route.model);
+            setEffort(route.effort);
           }}
-          onModel={setModel}
         />
       </div>
       <button

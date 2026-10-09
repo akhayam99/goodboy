@@ -1,5 +1,4 @@
 import { useShallow } from 'zustand/react/shallow';
-import { clampEffortForModel } from '@goodboy/core';
 import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { AgentKindRouting } from '../../../../session/agent-kind';
@@ -13,9 +12,6 @@ export type DraftRouting = {
   readonly isOverridden: boolean;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly save: (next: AgentKindRouting | null) => void;
-  readonly setEffort: (effort: AgentKindRouting['effort']) => void;
-  readonly setProvider: (provider: ProviderId | '') => void;
-  readonly setModel: (model: string) => void;
 };
 
 export const useDraftRouting = ({ sessionId }: { readonly sessionId: SessionId }): DraftRouting => {
@@ -40,15 +36,5 @@ export const useDraftRouting = ({ sessionId }: { readonly sessionId: SessionId }
     isOverridden,
     connectedProviders,
     save,
-    setEffort: (effort) => save({ ...routing, effort }),
-    setProvider: (provider) => (provider === '' ? save(null) : save({ ...routing, provider })),
-    setModel: (model) =>
-      save({
-        ...routing,
-        model,
-        effort:
-          clampEffortForModel({ model, effort: routing.effort, provider: routing.provider }) ??
-          routing.effort,
-      }),
   };
 };

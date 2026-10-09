@@ -2,6 +2,7 @@ import { Chip, Eyebrow, WORK_NODE_GLYPH_SIZE, WorkNode } from '@goodboy/ui';
 import type { ReactNode } from 'react';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import type { PickedRoute } from '../../../../../shared/components/RoutingPicker/PickedRoute';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { ExampleSteps } from './ExampleSteps';
 import { GuidanceDisclosure } from './GuidanceDisclosure';
@@ -20,9 +21,7 @@ type Props = {
   readonly isOverridden: boolean;
   readonly disabled: boolean;
   readonly onGuidance: (guidance: string) => void;
-  readonly onProvider: (provider: ProviderId | '') => void;
-  readonly onModel: (model: string) => void;
-  readonly onEffort: (effort: EffortLevel) => void;
+  readonly onRoute: (route: PickedRoute) => void;
   readonly onReset: () => void;
 };
 
@@ -39,9 +38,7 @@ export const OrchestratorRow = ({
   isOverridden,
   disabled,
   onGuidance,
-  onProvider,
-  onModel,
-  onEffort,
+  onRoute,
   onReset,
 }: Props) => (
   <section aria-label="Plan" className="flex min-w-0 flex-col gap-2">
@@ -86,14 +83,13 @@ export const OrchestratorRow = ({
             connectedProviders={allowedProviders}
             provider={providerOverride}
             model={modelOverride}
-            effort={{ editable: true, value: effort, onChange: onEffort }}
+            effort={{ editable: true, value: effort }}
             recommendation={{ provider: recommendedProvider, model: recommendedModel }}
             recommendationKind="auto"
             disabled={disabled}
             overridden={isOverridden}
             onReset={onReset}
-            onProvider={onProvider}
-            onModel={onModel}
+            onChange={onRoute}
           />
         </div>
       </li>

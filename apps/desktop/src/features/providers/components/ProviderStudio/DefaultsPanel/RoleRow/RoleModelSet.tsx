@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { getModelProvider } from '@goodboy/core';
 import { ROLE_MODEL_SET_MAX, type EffortLevel, type ProviderId } from '@goodboy/types';
 import { Button, StatusDot } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
@@ -86,20 +85,22 @@ export const RoleModelSet = ({
           recommendationKind="auto"
           overridden={false}
           disabled={disabled}
-          onProvider={(next) => {
-            if (next === '') {
+          onChange={(route) => {
+            if (route.provider === '') {
               setIsPicking(false);
               return;
             }
-            setPendingProvider(next);
+            setPendingProvider(route.provider);
           }}
-          onModel={(nextModel) => {
-            if (nextModel === '') {
-              setIsPicking(false);
-              return;
-            }
-            onAdd({ providerId: getModelProvider(nextModel) ?? pendingProvider, model: nextModel });
-            setIsPicking(entries.length + 1 < ROLE_MODEL_SET_MAX);
+          commit={{
+            label: 'Add',
+            onCommit: (route) => {
+              if (route.provider === '') {
+                return;
+              }
+              onAdd({ providerId: route.provider, model: route.model });
+              setIsPicking(entries.length + 1 < ROLE_MODEL_SET_MAX);
+            },
           }}
         />
       ) : null}

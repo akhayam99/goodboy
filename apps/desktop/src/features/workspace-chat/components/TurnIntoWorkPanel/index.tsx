@@ -206,9 +206,9 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
     };
   }, [chat.id, anchorMessageId, drafter?.provider, drafter?.model, drafter?.effort]);
 
-  const changeDrafter = (update: (current: WorkDrafterChoice) => WorkDrafterChoice): void => {
+  const changeDrafter = (choice: WorkDrafterChoice): void => {
     setIsDrafterPicked(true);
-    setDrafter((current) => update(current ?? { provider: chat.provider, model: chat.model }));
+    setDrafter(choice);
   };
 
   const patch = (next: Partial<WorkBrief>): void =>
@@ -408,7 +408,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                     connectedProviders={connectedProviders}
                     defaultRouting={defaultRouting}
                     value={runsOn}
-                    onChange={(update) => setRunsOn(update)}
+                    onChange={setRunsOn}
                   />
                 </>
               ) : null}

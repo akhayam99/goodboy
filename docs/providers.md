@@ -185,8 +185,9 @@ limits from `roleSplitLimits` (`FAN_OUT_MAX_CHILDREN`, `SCOUT_DEPTH_CAP`,
 `FAN_OUT_DEPTH_CAP` in `@goodboy/core`, the same constants `scoutTree` enforces). When
 Parallel agents is off for the workspace, the split line says the role runs as one
 agent. Below it, **Models for planning** is the role's set: up to three models added
-with the same picker, removed with their **x** or Backspace, moved with Alt and an
-arrow.
+with the same picker and its **Add** button, which adds the model in view once however
+many chips it took to get there, removed with their **x** or Backspace, moved with Alt
+and an arrow.
 
 - **Auto** picks the same way for roles and tasks: the model chosen for that job on
   the default provider, then the next model in that list when your CLI is too old

@@ -489,7 +489,7 @@ describe('ChatInput, input wiring', () => {
     );
   });
 
-  it('clears a codex model when switching the composer back to claude', async () => {
+  it('replaces a codex model with one claude owns when switching the composer back to claude', async () => {
     const setSessionConfig = vi.fn(async () => undefined);
     const setAgentConfig = vi.fn(async () => undefined);
     mockStore.setState({ setSessionConfig, setAgentConfig });
@@ -515,9 +515,10 @@ describe('ChatInput, input wiring', () => {
       }),
     );
 
+    expect(setAgentConfig).toHaveBeenCalledTimes(1);
     expect(setAgentConfig).toHaveBeenCalledWith('session-1', 'agent-1', {
       providerOverride: 'anthropic',
-      modelOverride: null,
+      modelOverride: 'claude-opus-5',
     });
     expect(setSessionConfig).not.toHaveBeenCalled();
 

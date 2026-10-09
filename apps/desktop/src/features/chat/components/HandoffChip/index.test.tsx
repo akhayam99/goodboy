@@ -58,14 +58,22 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     ariaLabel,
     provider,
     model,
-    onProvider,
+    onChange,
   }: {
     readonly ariaLabel: string;
     readonly provider: string;
     readonly model: string;
-    readonly onProvider: (provider: string) => void;
+    readonly onChange: (route: {
+      readonly provider: string;
+      readonly model: string;
+      readonly effort: string;
+    }) => void;
   }) => (
-    <button type="button" aria-label={ariaLabel} onClick={() => onProvider('anthropic')}>
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={() => onChange({ provider: 'anthropic', model: 'claude-opus-5', effort: 'high' })}
+    >
       {`${provider} ${model}`}
     </button>
   ),
@@ -147,8 +155,11 @@ describe('HandoffChip', () => {
     const args = (
       state.spawnAgent.mock.calls[0] as ReadonlyArray<unknown> | undefined
     )?.[1] as Record<string, unknown>;
-    expect(args.provider).toBe('anthropic');
-    expect(args.model).not.toBe('composer-2.5');
+    expect(args).toMatchObject({
+      provider: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'high',
+    });
     expect(args.seedPrompt).toBe(
       'Follow-up from stash check: Router keeps a stale path\n\nWhat stash check found:\n\nThe router is stale.',
     );

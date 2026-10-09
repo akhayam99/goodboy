@@ -123,8 +123,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     provider,
     model,
     recommendation,
-    onProvider,
-    onModel,
+    onChange,
     onReset,
     effort,
     ariaLabel,
@@ -135,52 +134,75 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     provider: string;
     model: string;
     recommendation?: { provider?: string; model?: string };
-    onProvider: (v: string) => void;
-    onModel: (v: string) => void;
+    onChange: (route: { provider: string; model: string; effort: EffortLevel }) => void;
     onReset?: () => void;
     ariaLabel?: string;
     verbosity?: string;
     onVerbosity?: (value: string) => void;
     effort:
       | { readonly editable: false; readonly value?: EffortLevel }
-      | {
-          readonly editable: true;
-          readonly value: EffortLevel;
-          readonly onChange: (value: EffortLevel) => void;
-        };
-  }) => (
-    <div role="group" aria-label={ariaLabel} data-offered-providers={connectedProviders.join(',')}>
-      <button type="button" onClick={() => onProvider(provider === 'cursor' ? '' : 'cursor')}>
-        provider:{provider === '' ? 'default' : provider}
-      </button>
-      <button
-        type="button"
-        data-provider={provider === '' ? 'default' : provider}
-        data-recommended-model={recommendation?.model}
-        onClick={() => onModel('claude-opus-4-6')}
+      | { readonly editable: true; readonly value: EffortLevel };
+  }) => {
+    const held = effort.value ?? 'medium';
+    const heldProvider = provider === '' ? (recommendation?.provider ?? 'anthropic') : provider;
+    const heldModel = model === '' ? (recommendation?.model ?? 'claude-sonnet-4-6') : model;
+    return (
+      <div
+        role="group"
+        aria-label={ariaLabel}
+        data-offered-providers={connectedProviders.join(',')}
       >
-        model:{model === '' ? 'auto' : model}
-      </button>
-      <button type="button" onClick={() => onModel('claude-sonnet-4-6')}>
-        model:sonnet
-      </button>
-      {effort.editable ? (
-        <button type="button" onClick={() => effort.onChange('xhigh')}>
-          effort:{effort.value}
+        <button
+          type="button"
+          onClick={() =>
+            onChange(
+              provider === 'cursor'
+                ? { provider: '', model: '', effort: held }
+                : { provider: 'cursor', model: '', effort: held },
+            )
+          }
+        >
+          provider:{provider === '' ? 'default' : provider}
         </button>
-      ) : null}
-      {onVerbosity != null ? (
-        <button type="button" onClick={() => onVerbosity('verbose')}>
-          verbosity:{verbosity}
+        <button
+          type="button"
+          data-provider={provider === '' ? 'default' : provider}
+          data-recommended-model={recommendation?.model}
+          onClick={() =>
+            onChange({ provider: heldProvider, model: 'claude-opus-4-6', effort: held })
+          }
+        >
+          model:{model === '' ? 'auto' : model}
         </button>
-      ) : null}
-      {onReset != null ? (
-        <button type="button" onClick={onReset}>
-          reset routing
+        <button
+          type="button"
+          onClick={() =>
+            onChange({ provider: heldProvider, model: 'claude-sonnet-4-6', effort: 'high' })
+          }
+        >
+          model:sonnet
         </button>
-      ) : null}
-    </div>
-  ),
+        {effort.editable ? (
+          <button
+            type="button"
+            onClick={() => onChange({ provider: heldProvider, model: heldModel, effort: 'xhigh' })}
+          >
+            effort:{effort.value}
+          </button>
+        ) : null}
+        {onVerbosity != null ? (
+          <button type="button" onClick={() => onVerbosity('verbose')}>
+            verbosity:{verbosity}
+          </button>
+        ) : null}
+        {onReset != null ? (
+          <button type="button" onClick={onReset}>
+            reset routing
+          </button>
+        ) : null}
+      </div>
+    );
+  },
 }));
 
 import { PlannerClient } from '@goodboy/core';
@@ -517,7 +539,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expect(saved.steps[1]!.modelOverride).toBeUndefined();
   });
 
-  it('clamps persisted effort when switching from opus to sonnet', async () => {
+  it('applies the whole route the picker hands over to the step in one patch', async () => {
     const baseWorkflow = presetWorkflow('wf-preset-1', 'Ship It');
     const workflow: Workflow = {
       ...baseWorkflow,
@@ -1109,6 +1131,45 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
       expect.any(String),
       expect.objectContaining({
         orchestratorRouting: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'xhigh' },
+      }),
+    );
+  });
+
+  it('carries the effort the picker showed when the workspace effort only looked lower', async () => {
+    storeState.workspaceOverrides = {
+      'ws-1': {
+        taskModels: {
+          workflow_orchestrator: {
+            providerId: 'anthropic',
+            model: 'claude-sonnet-4-6',
+            effort: 'max',
+          },
+        },
+      },
+    };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
+    fireEvent.change(guidanceField(), {
+      target: { value: 'Inspect each result and stop after tests pass.' },
+    });
+    expect(
+      within(orchestratorPicker()).getByRole('button', { name: /^effort:high$/i }),
+    ).toBeDefined();
+
+    fireEvent.click(within(orchestratorPicker()).getByRole('button', { name: /^model:auto$/i }));
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-1',
+      expect.any(String),
+      expect.objectContaining({
+        orchestratorRouting: {
+          providerId: 'anthropic',
+          model: 'claude-opus-4-6',
+          effort: 'high',
+        },
       }),
     );
   });

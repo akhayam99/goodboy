@@ -19,13 +19,12 @@ export const DraftRoutingBody = ({ sessionId, onClose }: Props) => {
       onReset={() => draft.save(null)}
       provider={draft.routing.provider}
       model={draft.routing.model}
-      effort={{
-        editable: true,
-        value: draft.routing.effort,
-        onChange: draft.setEffort,
-      }}
-      onProvider={draft.setProvider}
-      onModel={draft.setModel}
+      effort={{ editable: true, value: draft.routing.effort }}
+      onChange={(route) =>
+        draft.save(
+          route.provider === '' ? null : { ...draft.routing, ...route, provider: route.provider },
+        )
+      }
     />
   );
 };

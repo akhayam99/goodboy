@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { getModelProvider, modelIdForSelection, resolveStoredModelSelection } from '@goodboy/core';
 import type {
   OrchestratorRouting,
@@ -116,7 +116,7 @@ describe('OrchestratorRoutingRow', () => {
     }
   });
 
-  it('emits model and effort with the same provider scoped representation', () => {
+  it('emits the provider and its model in one routing, in the provider scoped representation', () => {
     Object.assign(storeState, {
       workspaceOverrides: {
         'workspace-1': {
@@ -132,18 +132,14 @@ describe('OrchestratorRoutingRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
 
     const routings = setWorkflowOrchestratorRouting.mock.calls.map(([, , routing]) => routing);
-    expect(routings.length).toBeGreaterThanOrEqual(2);
-    expect(routings.some((routing) => routing?.effort != null)).toBe(true);
-    expect(new Set(routings.map((routing) => routing?.model)).size).toBe(1);
-    for (const routing of routings) {
-      const provider = routing?.providerId;
-      const model = routing?.model ?? '';
-      expect(provider).toBe('cursor');
-      expect(getModelProvider(model)).toBe(provider);
-      const stored = resolveStoredModelSelection({ provider: 'cursor', id: model });
-      expect(stored.report).toBe(null);
-      expect(modelIdForSelection({ provider: 'cursor', selection: stored.selection })).toBe(model);
-    }
+    expect(routings).toHaveLength(1);
+    const routing = routings[0];
+    const model = routing?.model ?? '';
+    expect(routing?.providerId).toBe('cursor');
+    expect(getModelProvider(model)).toBe('cursor');
+    const stored = resolveStoredModelSelection({ provider: 'cursor', id: model });
+    expect(stored.report).toBe(null);
+    expect(modelIdForSelection({ provider: 'cursor', selection: stored.selection })).toBe(model);
   });
 
   it('uses the workspace default provider, not the session provider, for the automatic routing', () => {
@@ -207,5 +203,35 @@ describe('OrchestratorRoutingRow', () => {
       expect(routing?.providerId).toBe('cursor');
       expect(getModelProvider(routing?.model ?? '')).toBe('cursor');
     }
+  });
+
+  it('pins the effort the picker showed when the workspace effort only looked lower', () => {
+    Object.assign(storeState, {
+      workspaceOverrides: {
+        'workspace-1': {
+          taskModels: {
+            workflow_orchestrator: {
+              providerId: 'anthropic',
+              model: 'claude-sonnet-4-6',
+              effort: 'max',
+            },
+          },
+        },
+      },
+    });
+    renderRow(run());
+
+    openPicker();
+    const effortRow = screen.getByRole('group', { name: 'Effort' });
+    expect(
+      within(effortRow).getByRole('button', { name: 'High' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    const modelRow = screen.getByRole('group', { name: 'Model' });
+    fireEvent.click(within(modelRow).getByRole('button', { name: 'Opus' }));
+
+    const routing = setWorkflowOrchestratorRouting.mock.calls.at(-1)?.[2];
+    expect(routing?.providerId).toBe('anthropic');
+    expect(routing?.model).toMatch(/opus/);
+    expect(routing?.effort).toBe('high');
   });
 });

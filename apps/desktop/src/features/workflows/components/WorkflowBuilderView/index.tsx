@@ -62,7 +62,6 @@ import {
   draftFromWorkflow,
   duplicateStep as duplicateDraftStep,
   reorderSteps as reorderDraftSteps,
-  stepDraftWithModel,
   updateStep as updateDraftStep,
   upsertArgsFromDraft,
 } from '../../engine';
@@ -1070,19 +1069,7 @@ export const WorkflowBuilderView = (props: Props) => {
                 onRole={(role) => patchStep(step.key, { role })}
                 onPrompt={(prompt) => patchStep(step.key, { prompt })}
                 onExpectedOutput={(expectedOutput) => patchStep(step.key, { expectedOutput })}
-                onProvider={(provider) => patchStep(step.key, { provider })}
-                onModel={(model) =>
-                  patchStep(
-                    step.key,
-                    stepDraftWithModel({
-                      step,
-                      provider: step.provider,
-                      model,
-                      recommendedModel: recommendedModel(step),
-                    }),
-                  )
-                }
-                onEffort={(next) => patchStep(step.key, { effort: next })}
+                onRoute={(route) => patchStep(step.key, route)}
                 onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
                 onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
                 onPin={() =>
@@ -1186,12 +1173,13 @@ export const WorkflowBuilderView = (props: Props) => {
           isOverridden={isOrchestratorOverridden}
           disabled={blocked}
           onGuidance={setGuidance}
-          onProvider={(next) => {
-            setOrchestratorProviderOverride(next);
-            setOrchestratorModelOverride('');
+          onRoute={(route) => {
+            setOrchestratorProviderOverride(route.provider);
+            setOrchestratorModelOverride(route.model);
+            if (route.provider !== '' && route.effort !== requestedOrchestratorEffort) {
+              setOrchestratorEffortOverride(route.effort);
+            }
           }}
-          onModel={setOrchestratorModelOverride}
-          onEffort={setOrchestratorEffortOverride}
           onReset={resetOrchestratorModel}
         />
       );
@@ -1323,12 +1311,13 @@ export const WorkflowBuilderView = (props: Props) => {
             recommendedProvider={resolvedPlanTaskModel.providerId}
             recommendedModel={plannerRecommendedModel}
             onProcess={setProcessText}
-            onProvider={(next) => {
-              setPlannerProviderOverride(next);
-              setPlannerModelOverride('');
+            onRoute={(route) => {
+              setPlannerProviderOverride(route.provider);
+              setPlannerModelOverride(route.model);
+              if (route.provider !== '' && route.effort !== plannerEffort) {
+                setPlannerEffortOverride(route.effort);
+              }
             }}
-            onModel={setPlannerModelOverride}
-            onEffort={setPlannerEffortOverride}
             onPlan={() => void onPlan()}
           />
         ) : null}

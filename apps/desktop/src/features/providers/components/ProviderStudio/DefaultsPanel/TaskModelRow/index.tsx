@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import {
   PROVIDER_CAPABILITIES,
   clampEffortForModel,
@@ -14,6 +13,7 @@ import type {
   TaskModelPreference,
 } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { savedRouteEffort } from '../../../../../../shared/components/RoutingPicker/savedRouteEffort';
 import { AUTO_RECOMMENDATION_COPY } from '../../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { autoLimitReason } from '../../../../../../shared/components/RoutingPicker/autoLimitReason';
 import { useAutoLimitContext } from '../../../../hooks/useAutoLimitContext';
@@ -57,9 +57,7 @@ export const TaskModelRow = ({
     connectedProviders: connectedProviderIds,
     providerPolicy,
   });
-  const preferredProviderId = preference?.providerId ?? automatic.providerId;
-  const [providerId, setProviderId] = useState(preferredProviderId);
-  const pendingProvider = useRef(preferredProviderId);
+  const providerId = preference?.providerId ?? automatic.providerId;
   const model = preference?.model ?? '';
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
@@ -73,7 +71,9 @@ export const TaskModelRow = ({
   }).model;
   const effortModel = model === '' ? recommendedModel : model;
   const effortValue = preference?.effort ?? automatic.effort ?? DEFAULT_EFFORT;
-  const pendingModel = useRef(effortModel);
+  const shownEffort =
+    clampEffortForModel({ model: effortModel, effort: effortValue, provider: providerId }) ??
+    effortValue;
   const hidden = useHiddenModels();
   const shownModel = preference ?? automatic;
   const isShownHidden =
@@ -95,15 +95,6 @@ export const TaskModelRow = ({
     pickedProvider: automatic.providerId,
     atLimit: limitContext?.atLimit ?? [],
   });
-
-  useEffect(() => {
-    setProviderId(preferredProviderId);
-    pendingProvider.current = preferredProviderId;
-  }, [preferredProviderId]);
-
-  useEffect(() => {
-    pendingModel.current = effortModel;
-  }, [effortModel]);
 
   const withFallback = (next: TaskModelPreference): TaskModelPreference =>
     preference?.fallback == null ? next : { ...next, fallback: preference.fallback };
@@ -127,29 +118,7 @@ export const TaskModelRow = ({
         connectedProviders={availableProviderIds}
         provider={providerId}
         model={model}
-        effort={{
-          editable: true,
-          value:
-            clampEffortForModel({
-              model: effortModel,
-              effort: effortValue,
-              provider: providerId,
-            }) ?? effortValue,
-          onChange: (effort) => {
-            const applied = clampEffortForModel({
-              model: pendingModel.current,
-              effort,
-              provider: pendingProvider.current,
-            });
-            onChange(
-              withFallback({
-                providerId: pendingProvider.current,
-                model: pendingModel.current,
-                ...(applied != null && { effort: applied }),
-              }),
-            );
-          },
-        }}
+        effort={{ editable: true, value: shownEffort }}
         recommendation={{
           provider: automatic.providerId,
           model: automatic.model,
@@ -162,45 +131,21 @@ export const TaskModelRow = ({
         resetLabel="Back to Auto"
         align="end"
         disabled={disabled}
-        onProvider={(next) => {
-          if (next === '') {
+        onChange={(route) => {
+          if (route.provider === '') {
             onChange(null);
             return;
           }
-          setProviderId(next);
-          pendingProvider.current = next;
-          const switched = resolveLimitedTaskModel({
-            limitContext: null,
-            task,
-            preferences: null,
-            workspaceDefaultProviderId: next,
-            sessionDefaultProviderId: defaultProviderId,
+          const effort = savedRouteEffort({
+            route,
+            requested: effortValue,
+            wasSaved: preference?.effort != null,
           });
-          pendingModel.current = switched.model;
-          if (preference == null) {
-            return;
-          }
-          onChange(withFallback(switched));
-        }}
-        onModel={(nextModel) => {
-          if (nextModel === '') {
-            onChange(null);
-            return;
-          }
-          const carried =
-            preference?.effort == null
-              ? null
-              : clampEffortForModel({
-                  model: nextModel,
-                  effort: preference.effort,
-                  provider: pendingProvider.current,
-                });
-          pendingModel.current = nextModel;
           onChange(
             withFallback({
-              providerId: pendingProvider.current,
-              model: nextModel,
-              ...(carried != null && { effort: carried }),
+              providerId: route.provider,
+              model: route.model,
+              ...(effort != null && { effort }),
             }),
           );
         }}

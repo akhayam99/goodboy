@@ -20,10 +20,8 @@ export type ComposerRouting = Pick<
   | 'isOverridden'
   | 'referenceProvider'
   | 'referenceModel'
-  | 'setEffort'
   | 'setVerbosity'
-  | 'onSelectProvider'
-  | 'onSelectModel'
+  | 'onSelectRoute'
   | 'onResetTurnOverride'
 >;
 
@@ -64,11 +62,7 @@ export const ComposerRoutingPickerView = ({ routing, header }: Props) => {
       shortcut="session.model"
       provider={routing.effectiveProvider}
       model={routing.effectiveModelId}
-      effort={{
-        editable: true,
-        value: routing.effectiveEffort,
-        onChange: routing.setEffort,
-      }}
+      effort={{ editable: true, value: routing.effectiveEffort }}
       verbosity={routing.verbosity}
       connectedProviders={routing.connectedProviderIds}
       disabled={!routing.allowOverride}
@@ -81,13 +75,7 @@ export const ComposerRoutingPickerView = ({ routing, header }: Props) => {
       budget={<ProviderUsagePill provider={routing.effectiveProvider} />}
       {...(isRedundant ? { quietLabel: 'Model' } : {})}
       {...(header !== null && !isRedundant ? { triggerPrefix: 'Next turn' } : {})}
-      onProvider={(next) => {
-        if (next === '') {
-          return;
-        }
-        routing.onSelectProvider(next);
-      }}
-      onModel={routing.onSelectModel}
+      onChange={routing.onSelectRoute}
       onVerbosity={routing.setVerbosity}
       onReset={routing.onResetTurnOverride}
     />

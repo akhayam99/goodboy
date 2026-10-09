@@ -1,6 +1,4 @@
 import { useShallow } from 'zustand/react/shallow';
-import { getDefaultTurnModel, clampEffortForModel } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { useAppStore } from '../../../../store';
@@ -23,19 +21,6 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
       state.providers.filter((provider) => provider.connection === 'connected').map(({ id }) => id),
     ),
   );
-  const onProvider = (provider: ProviderId | '') => {
-    if (provider === '') {
-      return;
-    }
-    const model = getDefaultTurnModel({ id: provider });
-    onChange({
-      ...value,
-      provider,
-      model,
-      effort: clampEffortForModel({ model, effort: value.effort, provider }) ?? value.effort,
-    });
-  };
-
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       {role != null && <AgentRoleField role={role} />}
@@ -49,25 +34,9 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
         connectedProviders={connectedProviders}
         provider={value.provider}
         model={value.model}
-        effort={{
-          editable: true,
-          value: value.effort,
-          onChange: (effort) => onChange({ ...value, effort }),
-        }}
+        effort={{ editable: true, value: value.effort }}
         disabled={disabled}
-        onProvider={onProvider}
-        onModel={(model) =>
-          onChange({
-            ...value,
-            model,
-            effort:
-              clampEffortForModel({
-                model,
-                effort: value.effort,
-                provider: value.provider === '' ? null : value.provider,
-              }) ?? value.effort,
-          })
-        }
+        onChange={(route) => onChange({ ...value, ...route })}
       />
     </div>
   );

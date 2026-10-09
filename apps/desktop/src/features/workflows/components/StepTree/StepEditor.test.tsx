@@ -109,9 +109,7 @@ const Host = ({ polished, roleSetLine = null, onDone, onPin, onMoveDown }: HostP
           onRole={() => undefined}
           onPrompt={(prompt) => patch(first.key, { prompt })}
           onExpectedOutput={() => undefined}
-          onProvider={() => undefined}
-          onModel={() => undefined}
-          onEffort={() => undefined}
+          onRoute={(route) => patch(first.key, route)}
           onVerbosity={(verbosity) => patch(first.key, { verbosity })}
           onRoutingReset={() => undefined}
           onPin={onPin}

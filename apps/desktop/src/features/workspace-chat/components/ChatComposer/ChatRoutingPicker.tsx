@@ -3,11 +3,11 @@ import { Button } from '@goodboy/ui';
 import { CHAT_PROVIDER_IDS, CHAT_PROVIDER_REFUSAL, isChatProvider } from '@goodboy/types';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { savedRouteEffort } from '../../../../shared/components/RoutingPicker/savedRouteEffort';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
 import { useChatDefaultModel } from '../../../../shared/hooks/useChatDefaultModel';
-import { chatModelId, shownChatEffort, type ChatRouting } from '../../chatRouting';
-import { useRoutingDraft } from './useRoutingDraft';
+import { chatModelId, chatModelKey, shownChatEffort, type ChatRouting } from '../../chatRouting';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -35,7 +35,6 @@ export const ChatRoutingPicker = ({ workspaceId, routing, onChange }: Props) => 
         .map((candidate) => candidate.id),
     ),
   );
-  const draft = useRoutingDraft({ routing, onCommit: onChange });
   const defaultModel = useChatDefaultModel({ workspaceId });
   const isDefault =
     defaultModel.saved !== null &&
@@ -53,18 +52,22 @@ export const ChatRoutingPicker = ({ workspaceId, routing, onChange }: Props) => 
       connectedProviders={offeredProviders(connected, routing.provider)}
       provider={routing.provider}
       model={chatModelId({ provider: routing.provider, model: routing.model })}
-      effort={{
-        editable: true,
-        value: shownChatEffort(routing),
-        onChange: draft.setEffort,
-      }}
+      effort={{ editable: true, value: shownChatEffort(routing) }}
       disabled={false}
-      onProvider={(provider) => {
-        if (provider !== '') {
-          draft.setProvider(provider);
+      onChange={(route) => {
+        if (route.provider === '') {
+          return;
         }
+        onChange({
+          provider: route.provider,
+          model: chatModelKey({ provider: route.provider, modelId: route.model }),
+          effort: savedRouteEffort({
+            route,
+            requested: shownChatEffort(routing),
+            wasSaved: routing.effort !== null,
+          }),
+        });
       }}
-      onModel={draft.setModelId}
       footer={
         <div className="flex flex-col gap-1 px-3 py-2 text-meta text-muted-foreground">
           {refused.length === 0 ? null : (

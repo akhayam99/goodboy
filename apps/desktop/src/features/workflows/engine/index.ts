@@ -1,6 +1,6 @@
-import { normalizeWorkflowRole, clampEffortForModel } from '@goodboy/core';
+import { normalizeWorkflowRole } from '@goodboy/core';
 import type { PlannerOutput } from '@goodboy/core';
-import type { ProviderId, Workflow, WorkflowId, WorkspaceId, EffortLevel } from '@goodboy/types';
+import type { Workflow, WorkflowId, WorkspaceId, EffortLevel } from '@goodboy/types';
 import type { WorkflowUpsertArgs } from '../workflows';
 import type { StepDraft, WorkflowDraft, WorkflowDraftErrors } from './types';
 
@@ -99,30 +99,6 @@ export const upsertArgsFromDraft = ({
   })),
   isPreset: draft.isPreset,
   origin: draft.origin,
-});
-
-type StepDraftWithModelParams = {
-  readonly step: StepDraft;
-  readonly provider: ProviderId | '';
-  readonly model: string;
-  readonly recommendedModel: string;
-};
-
-export const stepDraftWithModel = ({
-  step,
-  provider,
-  model,
-  recommendedModel,
-}: StepDraftWithModelParams): StepDraft => ({
-  ...step,
-  provider,
-  model,
-  effort:
-    clampEffortForModel({
-      model: model !== '' ? model : recommendedModel,
-      effort: step.effort,
-      provider: provider === '' ? null : provider,
-    }) ?? step.effort,
 });
 
 type ValidateDraftParams = { readonly draft: WorkflowDraft };

@@ -107,17 +107,110 @@ describe('useTurnRouting', () => {
     expect(result.current.connectedProviderIds).toBe(firstProviderIds);
   });
 
-  it('clears the session model when the provider changes', () => {
+  it('writes the provider and the model of one pick in one session config', () => {
     const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
 
     act(() => {
-      result.current.onSelectProvider('cursor');
+      result.current.onSelectRoute({
+        provider: 'cursor',
+        model: 'claude-opus-5-5-medium',
+        effort: 'medium',
+      });
     });
 
+    expect(setSessionConfig).toHaveBeenCalledTimes(1);
     expect(setSessionConfig).toHaveBeenCalledWith(SESSION_ID, {
       providerOverride: 'cursor',
-      modelOverride: null,
+      modelOverride: 'claude-opus-5-5-medium',
     });
+    expect(result.current.effectiveProvider).toBe('cursor');
+    expect(result.current.effectiveEffort).toBe('medium');
+  });
+
+  it('writes the effort with the pick when the pick changed it', () => {
+    const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
+
+    act(() => {
+      result.current.onSelectRoute({
+        provider: 'cursor',
+        model: 'claude-opus-5-5-high',
+        effort: 'high',
+      });
+    });
+
+    expect(setSessionConfig).toHaveBeenCalledTimes(1);
+    expect(setSessionConfig).toHaveBeenCalledWith(SESSION_ID, {
+      providerOverride: 'cursor',
+      modelOverride: 'claude-opus-5-5-high',
+      effort: 'high',
+    });
+    expect(result.current.effectiveEffort).toBe('high');
+  });
+
+  it('writes the effort a pick shows when the saved one only looks lower on the old model', () => {
+    const session = makeSession({
+      effort: 'max',
+      providerPreference: {
+        defaultProvider: 'anthropic',
+        defaultModel: 'claude-sonnet-4-6',
+        allowTurnOverride: true,
+      },
+    });
+    const { result } = renderHook(() => useTurnRouting({ session }));
+    expect(result.current.effectiveEffort).toBe('high');
+
+    act(() => {
+      result.current.onSelectRoute({
+        provider: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+      });
+    });
+
+    expect(setSessionConfig).toHaveBeenCalledTimes(1);
+    expect(setSessionConfig).toHaveBeenCalledWith(SESSION_ID, {
+      providerOverride: 'anthropic',
+      modelOverride: 'claude-opus-5',
+      effort: 'high',
+    });
+    expect(result.current.effort).toBe('high');
+    expect(result.current.effectiveEffort).toBe('high');
+  });
+
+  it('writes the effort of a pick on an agent when the saved one only looks lower', () => {
+    selectScout({ effort: 'max', modelOverride: 'claude-sonnet-4-6' });
+    useAppStore.setState({ agentEffortOverride: { [AGENT_ID]: 'max' } });
+    const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
+    expect(result.current.effectiveEffort).toBe('high');
+
+    act(() => {
+      result.current.onSelectRoute({
+        provider: 'anthropic',
+        model: 'claude-opus-5',
+        effort: 'high',
+      });
+    });
+
+    expect(setAgentConfig).toHaveBeenCalledWith(SESSION_ID, AGENT_ID, {
+      providerOverride: 'anthropic',
+      modelOverride: 'claude-opus-5',
+      effort: 'high',
+    });
+    expect(useAppStore.getState().agentEffortOverride[AGENT_ID]).toBe('high');
+  });
+
+  it('ignores a pick when the session was created without per-turn routing overrides', () => {
+    const session = makeSession({
+      providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+    });
+    const { result } = renderHook(() => useTurnRouting({ session }));
+
+    act(() => {
+      result.current.onSelectRoute({ provider: 'cursor', model: 'composer-2.5', effort: 'medium' });
+    });
+
+    expect(setSessionConfig).not.toHaveBeenCalled();
+    expect(result.current.effectiveProvider).toBe('anthropic');
   });
 
   it('resets to the session default when no agent is selected', () => {
@@ -138,10 +231,11 @@ describe('useTurnRouting, shared model ids', () => {
     const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
 
     act(() => {
-      result.current.onSelectProvider('cursor');
-    });
-    act(() => {
-      result.current.onSelectModel('gemini-3.1-pro');
+      result.current.onSelectRoute({
+        provider: 'cursor',
+        model: 'gemini-3.1-pro',
+        effort: 'medium',
+      });
     });
 
     expect(result.current.effectiveProvider).toBe('cursor');
@@ -191,7 +285,7 @@ describe('useTurnRouting, agent reference', () => {
     const { result } = renderHook(() => useTurnRouting({ session }));
 
     act(() => {
-      result.current.onSelectModel('opus-5');
+      result.current.onSelectRoute({ provider: 'anthropic', model: 'opus-5', effort: 'low' });
     });
 
     expect(result.current.effectiveModel).toBe('opus-5');
@@ -218,7 +312,7 @@ describe('useTurnRouting, agent reference', () => {
     const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
 
     act(() => {
-      result.current.onSelectProvider('cursor');
+      result.current.onSelectRoute({ provider: 'cursor', model: 'composer-2.5', effort: 'low' });
     });
 
     expect(result.current.effectiveProvider).toBe('cursor');

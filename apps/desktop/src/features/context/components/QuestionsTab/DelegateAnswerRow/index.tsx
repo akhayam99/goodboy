@@ -2,7 +2,6 @@ import { Bot, RotateCcw } from 'lucide-react';
 import { cn, Tooltip } from '@goodboy/ui';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { ProviderId } from '@goodboy/types';
-import { clampEffortForModel, getDefaultTurnModel } from '@goodboy/core';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { QUESTION_DELEGATE_COPY, type DelegateRowState } from '../../../questionDelegate';
@@ -40,19 +39,6 @@ export const DelegateAnswerRow = ({
   }
 
   if (state === 'chosen') {
-    const onProvider = (provider: ProviderId | '') => {
-      if (provider === '') {
-        onRouting({ ...routing, provider });
-        return;
-      }
-      const model = getDefaultTurnModel({ id: provider });
-      onRouting({
-        provider,
-        model,
-        effort: clampEffortForModel({ model, effort: routing.effort, provider }) ?? routing.effort,
-      });
-    };
-
     return (
       <div data-testid="delegate-answer-row" data-state={state} className="flex flex-col gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2 text-label text-foreground">
@@ -64,25 +50,9 @@ export const DelegateAnswerRow = ({
             connectedProviders={connectedProviders}
             provider={routing.provider}
             model={routing.model}
-            effort={{
-              editable: true,
-              value: routing.effort,
-              onChange: (effort) => onRouting({ ...routing, effort }),
-            }}
+            effort={{ editable: true, value: routing.effort }}
             disabled={false}
-            onProvider={onProvider}
-            onModel={(model) =>
-              onRouting({
-                ...routing,
-                model,
-                effort:
-                  clampEffortForModel({
-                    model,
-                    effort: routing.effort,
-                    provider: routing.provider === '' ? null : routing.provider,
-                  }) ?? routing.effort,
-              })
-            }
+            onChange={onRouting}
           />
           <button type="button" onClick={onCancel} className={LINK_CLASS}>
             {QUESTION_DELEGATE_COPY.cancel}

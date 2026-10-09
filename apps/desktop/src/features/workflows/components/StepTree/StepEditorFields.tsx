@@ -4,6 +4,7 @@ import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodbo
 import type { StepDraft } from '../../engine';
 import type { PolishField, StepPolishFields } from '../../stepPolishFields';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import type { PickedRoute } from '../../../../shared/components/RoutingPicker/PickedRoute';
 import {
   routingLabelParts,
   routingNameText,
@@ -30,9 +31,7 @@ type Props = {
   readonly onRole: (role: AgentRole) => void;
   readonly onPrompt: (prompt: string) => void;
   readonly onExpectedOutput: (expectedOutput: string) => void;
-  readonly onProvider: (provider: ProviderId | '') => void;
-  readonly onModel: (model: string) => void;
-  readonly onEffort: (effort: EffortLevel) => void;
+  readonly onRoute: (route: PickedRoute) => void;
   readonly onVerbosity: (verbosity: VerbosityLevel) => void;
   readonly onRoutingReset: () => void;
   readonly onPin: () => void;
@@ -74,9 +73,7 @@ export const StepEditorFields = ({
   onRole,
   onPrompt,
   onExpectedOutput,
-  onProvider,
-  onModel,
-  onEffort,
+  onRoute,
   onVerbosity,
   onRoutingReset,
   onPin,
@@ -212,11 +209,10 @@ export const StepEditorFields = ({
             connectedProviders={connectedProviders}
             provider={step.provider}
             model={step.model}
-            effort={{ editable: true, value: effort, onChange: onEffort }}
+            effort={{ editable: true, value: effort }}
             disabled={disabled}
             overridden
-            onProvider={onProvider}
-            onModel={onModel}
+            onChange={onRoute}
           />
         )}
         <div className="flex min-w-0 items-center justify-between gap-3 px-3">

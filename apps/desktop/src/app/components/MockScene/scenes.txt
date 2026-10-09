@@ -263,6 +263,7 @@ resolve-transcript-drawer
 resolve-transcript-drawer-multi
 resolve-transcript-drawer-multi-done
 review-modes
+role-model-set-add
 rules-no-limits
 rules-teleport
 runs-list-empty

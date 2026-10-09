@@ -1,4 +1,4 @@
-import type { ProviderId, EffortLevel } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import type { ArtifactCreationRouting } from '../../../../store/slices/artifactDrafts/types';
 
@@ -30,24 +30,19 @@ export const ArtifactRoutingControl = ({
         connectedProviders={connectedProviders}
         provider={active.provider}
         model={active.model}
-        effort={{
-          editable: true,
-          value: active.effort,
-          onChange: (effort: EffortLevel) => onChange({ ...active, effort }),
-        }}
+        effort={{ editable: true, value: active.effort }}
         recommendation={{ provider: recommendation.provider, model: recommendation.model }}
         disabled={isDisabled}
         overridden={routing !== null}
         resetLabel="Use default"
         onReset={() => onChange(null)}
-        onProvider={(provider) => {
-          if (provider === '') {
+        onChange={(route) => {
+          if (route.provider === '') {
             onChange(null);
             return;
           }
-          onChange({ ...active, provider });
+          onChange({ ...active, ...route, provider: route.provider });
         }}
-        onModel={(model) => onChange({ ...active, model })}
       />
     </div>
   );
