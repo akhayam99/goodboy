@@ -13,7 +13,7 @@ import type {
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
-import { bitbucketPrStateKind } from '../../../features/integrations/bitbucket/bitbucketPrStateKind';
+import { bitbucketPrStateKind } from '@goodboy/core';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
 import type { AppState } from '../../types';
 import { projectById } from '../projects/projectIndex';
@@ -200,8 +200,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
     number: bitbucketPr.id,
     state: bitbucketState,
     isDraft: false,
-    checks: null,
-    reviewDecision: null,
+    checks: bitbucket?.checks ?? null,
+    reviewDecision: bitbucket?.reviewDecision ?? null,
     url: bitbucketPr.webUrl ?? '',
     title: bitbucketPr.title,
     label: `PR #${bitbucketPr.id}`,

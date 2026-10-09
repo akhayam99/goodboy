@@ -111,6 +111,12 @@ describe('projectResolveComment', () => {
     );
   });
 
+  it('reads a pushed Bitbucket comment as Done, never as resolved', () => {
+    const pushed = projectResolveComment(facts({ state: 'pushed', sourceLabel: 'Bitbucket' }));
+    expect(pushed.label).toBe('Done');
+    expect(pushed.label.toLowerCase()).not.toContain('resolved');
+  });
+
   it('keeps a comment being published a Ready one that says Pushing', () => {
     expect(projectResolveComment(facts({ state: 'accepted', isPublishing: true }))).toMatchObject({
       word: 'ready',

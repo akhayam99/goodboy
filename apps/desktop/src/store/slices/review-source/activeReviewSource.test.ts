@@ -68,6 +68,8 @@ const BITBUCKET_MOUNT: MountBitbucketPrState = {
   pr: BITBUCKET_PR,
   prs: [],
   links: [],
+  checks: null,
+  reviewDecision: null,
   fetchedAt: null,
   loading: false,
   error: null,

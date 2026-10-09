@@ -142,7 +142,11 @@ Session stages under Identifiers).
 
 The board looks at the pull request or merge request of every mount, GitHub,
 GitLab or Bitbucket, and takes the worst one: failing CI, then changes
-requested, then approved. A session is done only when every request is merged
+requested, then approved. A Bitbucket mount reads its checks from the commit
+statuses of the open pull request (any failed or stopped status is failing, any
+status in progress is pending) and its review state from the reviewers (a
+requested change wins, then one approval, then reviewers who have not answered);
+a status it could not read keeps the last answer and never reads green. A session is done only when every request is merged
 or closed.
 
 ### Session lifecycle
@@ -1198,6 +1202,57 @@ kept in memory per issue text, so the same issue is not briefed twice. With no
 connected provider free for the task, the block shows the issue text alone.
 Merge and pull requests start with their text as it is.
 
+### Each source
+
+- **GitHub**: read pull requests and act on them (approve, request changes,
+  comment, reply, resolve threads, merge, close). Read issues and comment on
+  them.
+- **GitLab**: read merge requests and act on them (approve, change state,
+  comment, reply, resolve and reopen threads). Merge and Close ask for
+  confirmation first. Read, comment on and edit issues.
+- **Bitbucket**: pull requests from start to finish, with description, diff,
+  build results in plain words and review threads. Eight actions: approve,
+  revoke, request changes, withdraw, comment, reply, merge, decline, and from the
+  Pull request tab rename, edit the description, add reviewers and merge with the
+  strategy you pick. Its nouns are `pull request`, `PR` and `#42`, and Bitbucket
+  has no draft. Issues go through Jira.
+- **Jira**: read full issues and act on them. Comment, assign, move to another
+  status, edit the description.
+- **Linear**: read issues and turn them into sessions. The description and
+  comments are written back, and the status row moves the issue to another
+  state of its team.
+- **Sentry**: read issues and events and turn them into sessions.
+- **Slack**: read threads, reply, and turn them into sessions with the goal
+  filled in. Replies post as the connected user. Each workspace has its own
+  Slack connection.
+
+Linear, Jira and Sentry connect in numbered steps (`ConnectSteps`): a button
+opens the page where the key is made, the pasted key is checked on its own with
+no Connect button, and the last step picks from a list instead of free text
+(Jira projects from `jira_list_projects`, Sentry organizations and projects
+from `sentry_list_organizations` and `sentry_list_projects`). Each field uses
+the tool's own name for the secret: API key on Linear, API token on Jira, auth
+token on Sentry. A key saved for another workspace can be picked instead.
+
+## Tasks
+
+Tasks is the workspace's queue of incoming work from every connected
+source: issues, pull and merge requests, Slack threads and Sentry errors, one
+record each, one line per record. Records are grouped by day (today,
+yesterday, this week, older) and ordered by time only, newest first. A facet
+rail filters them by view (all, in progress, has a session, closed), by type
+and by source, one pick per section, with counts; only the types a connected
+tool can produce show. A tool that did not load says so in its source row and
+in one notice above the list. The state column uses the tool's own word, the
+same one the record shows. A record opens in a drawer beside the list, with the
+same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
+the workspace with Link to a session, or open the session already linked to it.
+A record shows its session whichever way the link was made: launched from the
+Tasks, picked there, or linked from the session's own link button, by search or
+by pasted URL. The session link button searches the issues of every Sentry
+project linked to the workspace, not only the connected one. A code or link
+pasted there goes through the same lookup as the Tasks search
+(`useWorkspaceIssueLookup`, scoped to the picked tracker) and links the task
 `launchSpecFor` builds from the resolved record, so a Sentry short code such as
 `PAYMENTS-API-3` resolves and a Sentry link keeps its short id. A paste the
 lookup cannot resolve falls back to the fields read from the URL.

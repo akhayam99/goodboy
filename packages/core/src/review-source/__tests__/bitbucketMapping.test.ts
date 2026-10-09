@@ -6,6 +6,7 @@ import {
   type BitbucketReviewComment,
 } from '../bitbucketReviewSource';
 import { commitLinkOf } from '../commitLink';
+import { REVIEW_SOURCE_CAPABILITIES } from '../types';
 
 const comment = (overrides: Partial<BitbucketReviewComment> = {}): BitbucketReviewComment => ({
   id: 1,
@@ -103,5 +104,22 @@ describe('bitbucket ids and links', () => {
     expect(
       commitLinkOf({ kind: 'bitbucket', url: 'https://example.com/x', sha: 'abc' }),
     ).toBeNull();
+  });
+});
+
+describe('bitbucket pull request capabilities', () => {
+  it('flips what the adapter backs and keeps the rest honest', () => {
+    expect(REVIEW_SOURCE_CAPABILITIES.bitbucket).toEqual({
+      canReply: true,
+      canResolve: false,
+      canEditTitle: true,
+      canEditBody: true,
+      canRequestReviewers: true,
+      canSetDraft: false,
+      canReadChecks: true,
+      canChooseMergeMethod: true,
+      canClose: true,
+      canReopen: false,
+    });
   });
 });

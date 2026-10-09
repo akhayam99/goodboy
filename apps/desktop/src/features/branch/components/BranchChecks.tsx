@@ -55,7 +55,8 @@ export const BranchChecks = ({ sessionId }: Props) => {
     }),
   );
   const canReadChecks = REVIEW_SOURCE_CAPABILITIES[host.kind].canReadChecks;
-  const isPortHost = host.kind === 'gitlab' || host.kind === 'bitbucket';
+  const portHost = host.kind === 'gitlab' || host.kind === 'bitbucket' ? host.kind : null;
+  const isPortHost = portHost !== null;
   const portView = usePullRequestView({
     sessionId,
     isEnabled: isPortHost && canReadChecks,
@@ -145,14 +146,12 @@ export const BranchChecks = ({ sessionId }: Props) => {
     if (view.kind === 'denied') {
       return (
         <ChecksDeniedNotice
-          host={host.kind === 'gitlab' ? 'gitlab' : 'github'}
+          host={portHost ?? 'github'}
           repoName={repoNameOf({ url: pr?.url ?? host.url ?? '' })}
           isTokenBound={connection.mode === 'pat' || hasBinding}
           isChecking={isChecking}
           error={view.error}
-          onOpenSettings={() =>
-            openToolSettings({ tool: host.kind === 'gitlab' ? 'gitlab' : 'github' })
-          }
+          onOpenSettings={() => openToolSettings({ tool: portHost ?? 'github' })}
           onCheckAgain={checkAgain}
         />
       );

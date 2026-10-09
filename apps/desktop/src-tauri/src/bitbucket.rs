@@ -28,6 +28,10 @@ pub enum BitbucketError {
     Timeout(String),
     #[error("authentication failed: {0}")]
     Auth(String),
+    #[error("forbidden: {0}")]
+    Forbidden(String),
+    #[error("invalid request: {0}")]
+    InvalidInput(String),
     #[error("not found: {0}")]
     NotFound(String),
     #[error("invalid response shape: {0}")]
@@ -48,6 +52,8 @@ impl BitbucketError {
             BitbucketError::Http { .. } => "http",
             BitbucketError::Timeout(_) => "timeout",
             BitbucketError::Auth(_) => "auth",
+            BitbucketError::Forbidden(_) => "forbidden",
+            BitbucketError::InvalidInput(_) => "invalid_input",
             BitbucketError::NotFound(_) => "not_found",
             BitbucketError::InvalidShape(_) => "shape",
             BitbucketError::NoToken(_) => "no_token",
@@ -88,7 +94,8 @@ fn error_message(body: &str) -> Option<String> {
 fn error_for_status(status: u16, body: String) -> BitbucketError {
     let detail = error_message(&body).unwrap_or_else(|| body.clone());
     match status {
-        401 | 403 => BitbucketError::Auth(format!("{AUTH_HINT} ({detail})")),
+        401 => BitbucketError::Auth(format!("{AUTH_HINT} ({detail})")),
+        403 => BitbucketError::Forbidden(format!("{AUTH_HINT} ({detail})")),
         404 => BitbucketError::NotFound(detail),
         _ => BitbucketError::Http { status, body },
     }
@@ -168,6 +175,22 @@ fn pull_request_statuses_url(base: &str, workspace: &str, repo: &str, id: u64) -
     format!(
         "{}/statuses?pagelen={}",
         pull_request_path(base, workspace, repo, id),
+        PAGE_LEN
+    )
+}
+
+fn pull_request_commits_url(base: &str, workspace: &str, repo: &str, id: u64) -> String {
+    format!(
+        "{}/commits?pagelen={}",
+        pull_request_path(base, workspace, repo, id),
+        PAGE_LEN
+    )
+}
+
+fn workspace_members_url(base: &str, workspace: &str) -> String {
+    format!(
+        "{}/members?pagelen={}",
+        workspace_url(base, workspace),
         PAGE_LEN
     )
 }
@@ -674,6 +697,83 @@ fn map_status(raw: BitbucketStatusRaw) -> BitbucketStatus {
 }
 
 #[derive(Debug, Deserialize)]
+struct BitbucketMembershipRaw {
+    #[serde(default)]
+    user: Option<BitbucketUserRaw>,
+}
+
+fn filter_members(query: &str, members: Vec<BitbucketUser>) -> Vec<BitbucketUser> {
+    let needle = query.trim().to_lowercase();
+    members
+        .into_iter()
+        .filter(|member| !member.uuid.is_empty())
+        .filter(|member| {
+            needle.is_empty()
+                || member.nickname.to_lowercase().contains(&needle)
+                || member.display_name.to_lowercase().contains(&needle)
+        })
+        .collect()
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct BitbucketCommitAuthorRaw {
+    #[serde(default)]
+    raw: Option<String>,
+    #[serde(default)]
+    user: Option<BitbucketUserRaw>,
+}
+
+#[derive(Debug, Deserialize)]
+struct BitbucketCommitRaw {
+    #[serde(default)]
+    hash: Option<String>,
+    #[serde(default)]
+    message: Option<String>,
+    #[serde(default)]
+    date: Option<String>,
+    #[serde(default)]
+    author: Option<BitbucketCommitAuthorRaw>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BitbucketCommit {
+    pub hash: String,
+    pub message: String,
+    pub date: String,
+    pub author: Option<String>,
+}
+
+fn raw_author_name(raw: &str) -> Option<String> {
+    let name = raw.split('<').next().unwrap_or("").trim();
+    if name.is_empty() {
+        None
+    } else {
+        Some(name.to_string())
+    }
+}
+
+fn map_commit(raw: BitbucketCommitRaw) -> BitbucketCommit {
+    let author = raw.author.unwrap_or_default();
+    let named = author
+        .user
+        .map(map_user)
+        .map(|user| user.nickname)
+        .filter(|name| !name.is_empty());
+    BitbucketCommit {
+        hash: raw.hash.unwrap_or_default(),
+        message: raw
+            .message
+            .as_deref()
+            .and_then(|text| text.lines().next())
+            .unwrap_or("")
+            .trim()
+            .to_string(),
+        date: raw.date.unwrap_or_default(),
+        author: named.or_else(|| author.raw.as_deref().and_then(raw_author_name)),
+    }
+}
+
+#[derive(Debug, Deserialize)]
 struct BitbucketPage<T> {
     #[serde(default = "Vec::new")]
     values: Vec<T>,
@@ -800,6 +900,24 @@ fn decline_write(base: &str, workspace: &str, repo: &str, id: u64) -> BitbucketW
     }
 }
 
+const MERGE_STRATEGIES: [&str; 3] = ["merge_commit", "squash", "rebase_merge"];
+
+fn merge_strategy_of(strategy: Option<&str>) -> Result<Option<&'static str>, BitbucketError> {
+    let Some(raw) = strategy.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(None);
+    };
+    MERGE_STRATEGIES
+        .iter()
+        .find(|known| **known == raw)
+        .map(|known| Some(*known))
+        .ok_or_else(|| {
+            BitbucketError::InvalidInput(format!(
+                "{raw} is not a bitbucket merge strategy, use one of {}",
+                MERGE_STRATEGIES.join(", ")
+            ))
+        })
+}
+
 fn merge_write(
     base: &str,
     workspace: &str,
@@ -807,7 +925,9 @@ fn merge_write(
     id: u64,
     close_source_branch: Option<bool>,
     message: Option<&str>,
-) -> BitbucketWrite {
+    merge_strategy: Option<&str>,
+) -> Result<BitbucketWrite, BitbucketError> {
+    let strategy = merge_strategy_of(merge_strategy)?;
     let mut body = serde_json::Map::new();
     if let Some(flag) = close_source_branch {
         body.insert("close_source_branch".to_string(), Value::Bool(flag));
@@ -815,11 +935,52 @@ fn merge_write(
     if let Some(text) = message.map(str::trim).filter(|text| !text.is_empty()) {
         body.insert("message".to_string(), Value::String(text.to_string()));
     }
-    BitbucketWrite {
+    if let Some(name) = strategy {
+        body.insert(
+            "merge_strategy".to_string(),
+            Value::String(name.to_string()),
+        );
+    }
+    Ok(BitbucketWrite {
         method: reqwest::Method::POST,
         url: format!("{}/merge", pull_request_path(base, workspace, repo, id)),
         body: Some(Value::Object(body)),
+    })
+}
+
+fn update_write(
+    base: &str,
+    workspace: &str,
+    repo: &str,
+    id: u64,
+    title: Option<&str>,
+    description: Option<&str>,
+    reviewer_uuids: Option<&[String]>,
+) -> Result<BitbucketWrite, BitbucketError> {
+    let mut body = serde_json::Map::new();
+    if let Some(text) = title {
+        body.insert("title".to_string(), Value::String(text.to_string()));
     }
+    if let Some(text) = description {
+        body.insert("description".to_string(), Value::String(text.to_string()));
+    }
+    if let Some(uuids) = reviewer_uuids {
+        let reviewers: Vec<Value> = uuids
+            .iter()
+            .map(|uuid| serde_json::json!({ "uuid": uuid }))
+            .collect();
+        body.insert("reviewers".to_string(), Value::Array(reviewers));
+    }
+    if body.is_empty() {
+        return Err(BitbucketError::InvalidInput(
+            "a pull request update needs a title, a description or reviewers".to_string(),
+        ));
+    }
+    Ok(BitbucketWrite {
+        method: reqwest::Method::PUT,
+        url: pull_request_path(base, workspace, repo, id),
+        body: Some(Value::Object(body)),
+    })
 }
 
 fn comment_write(base: &str, workspace: &str, repo: &str, id: u64, text: &str) -> BitbucketWrite {
@@ -1099,13 +1260,9 @@ pub async fn bitbucket_merge_pull_request(
     pull_request_id: u64,
     close_source_branch: Option<bool>,
     message: Option<String>,
+    merge_strategy: Option<String>,
     cache: State<'_, BitbucketTokenCache>,
 ) -> Result<BitbucketPullRequest, BitbucketError> {
-    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
-    let credentials = Credentials {
-        email: &email,
-        token: &token,
-    };
     let write = merge_write(
         API_BASE,
         &workspace_slug,
@@ -1113,10 +1270,93 @@ pub async fn bitbucket_merge_pull_request(
         pull_request_id,
         close_source_branch,
         message.as_deref(),
-    );
+        merge_strategy.as_deref(),
+    )?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let credentials = Credentials {
+        email: &email,
+        token: &token,
+    };
     let raw: BitbucketPullRequestRaw =
         send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
     Ok(map_pull_request(raw))
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn bitbucket_update_pull_request(
+    workspace_id: String,
+    project_id: Option<String>,
+    workspace_slug: String,
+    repo_slug: String,
+    email: String,
+    pull_request_id: u64,
+    title: Option<String>,
+    description: Option<String>,
+    reviewer_uuids: Option<Vec<String>>,
+    cache: State<'_, BitbucketTokenCache>,
+) -> Result<BitbucketPullRequest, BitbucketError> {
+    let write = update_write(
+        API_BASE,
+        &workspace_slug,
+        &repo_slug,
+        pull_request_id,
+        title.as_deref(),
+        description.as_deref(),
+        reviewer_uuids.as_deref(),
+    )?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let credentials = Credentials {
+        email: &email,
+        token: &token,
+    };
+    let raw: BitbucketPullRequestRaw =
+        send_json(&credentials, write.method, &write.url, write.body.as_ref()).await?;
+    Ok(map_pull_request(raw))
+}
+
+#[tauri::command]
+pub async fn bitbucket_search_workspace_members(
+    workspace_id: String,
+    project_id: Option<String>,
+    workspace_slug: String,
+    email: String,
+    query: String,
+    cache: State<'_, BitbucketTokenCache>,
+) -> Result<Vec<BitbucketUser>, BitbucketError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let credentials = Credentials {
+        email: &email,
+        token: &token,
+    };
+    let url = workspace_members_url(API_BASE, &workspace_slug);
+    let raw: Vec<BitbucketMembershipRaw> = get_json_paged(&credentials, &url).await?;
+    let members = raw
+        .into_iter()
+        .filter_map(|membership| membership.user)
+        .map(map_user)
+        .collect();
+    Ok(filter_members(&query, members))
+}
+
+#[tauri::command]
+pub async fn bitbucket_list_pull_request_commits(
+    workspace_id: String,
+    project_id: Option<String>,
+    workspace_slug: String,
+    repo_slug: String,
+    email: String,
+    pull_request_id: u64,
+    cache: State<'_, BitbucketTokenCache>,
+) -> Result<Vec<BitbucketCommit>, BitbucketError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let credentials = Credentials {
+        email: &email,
+        token: &token,
+    };
+    let url = pull_request_commits_url(API_BASE, &workspace_slug, &repo_slug, pull_request_id);
+    let raw: Vec<BitbucketCommitRaw> = get_json_paged(&credentials, &url).await?;
+    Ok(raw.into_iter().map(map_commit).collect())
 }
 
 #[tauri::command]
@@ -1234,6 +1474,11 @@ mod tests {
             "http"
         );
         assert_eq!(BitbucketError::Auth("x".into()).kind(), "auth");
+        assert_eq!(BitbucketError::Forbidden("x".into()).kind(), "forbidden");
+        assert_eq!(
+            BitbucketError::InvalidInput("x".into()).kind(),
+            "invalid_input"
+        );
         assert_eq!(BitbucketError::NotFound("x".into()).kind(), "not_found");
         assert_eq!(BitbucketError::InvalidShape("x".into()).kind(), "shape");
         assert_eq!(BitbucketError::NoToken("ws".into()).kind(), "no_token");
@@ -1254,11 +1499,19 @@ mod tests {
     }
 
     #[test]
-    fn error_for_status_maps_403_to_auth_and_404_to_not_found() {
+    fn error_for_status_maps_403_to_forbidden_and_404_to_not_found() {
         assert!(matches!(
-            error_for_status(403, "{}".into()),
+            error_for_status(401, "{}".into()),
             BitbucketError::Auth(_)
         ));
+        let forbidden = error_for_status(
+            403,
+            r#"{"type":"error","error":{"message":"Your credentials lack one or more required privilege scopes.","detail":{"required":["pullrequest:write"]}}}"#.into(),
+        );
+        let BitbucketError::Forbidden(detail) = forbidden else {
+            panic!("expected a forbidden error");
+        };
+        assert!(detail.contains("api token"));
         let err = error_for_status(
             404,
             r#"{"type":"error","error":{"message":"Repository not found"}}"#.into(),
@@ -1402,32 +1655,210 @@ mod tests {
         );
     }
 
+    fn merge_body(strategy: Option<&str>) -> Value {
+        let write = merge_write(BASE, "goodboy", "desktop", 5, None, None, strategy).unwrap();
+        body_of(&write).clone()
+    }
+
     #[test]
-    fn merge_write_never_pins_a_merge_strategy() {
-        let bare = merge_write(BASE, "goodboy", "desktop", 5, None, None);
+    fn merge_write_without_a_strategy_sends_none() {
+        let bare = merge_write(BASE, "goodboy", "desktop", 5, None, None, None).unwrap();
         assert_eq!(bare.method, reqwest::Method::POST);
         assert_eq!(
             bare.url,
             "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/5/merge"
         );
         assert_eq!(*body_of(&bare), serde_json::json!({}));
-        let full = merge_write(BASE, "goodboy", "desktop", 5, Some(true), Some("ship it"));
-        assert!(body_of(&full).get("merge_strategy").is_none());
+        let blank = merge_body(Some("  "));
+        assert!(blank.get("merge_strategy").is_none());
+    }
+
+    #[test]
+    fn merge_write_sends_each_known_strategy() {
+        for strategy in ["merge_commit", "squash", "rebase_merge"] {
+            assert_eq!(merge_body(Some(strategy))["merge_strategy"], strategy);
+        }
+    }
+
+    #[test]
+    fn merge_write_rejects_an_unknown_strategy_before_any_request() {
+        let err = merge_write(
+            BASE,
+            "goodboy",
+            "desktop",
+            5,
+            None,
+            None,
+            Some("fast_forward"),
+        )
+        .err()
+        .expect("an unknown strategy is refused");
+        assert_eq!(err.kind(), "invalid_input");
+        assert!(err.to_string().contains("fast_forward"));
     }
 
     #[test]
     fn merge_write_carries_only_the_options_it_was_given() {
-        let with_flag = merge_write(BASE, "goodboy", "desktop", 5, Some(false), None);
+        let with_flag =
+            merge_write(BASE, "goodboy", "desktop", 5, Some(false), None, None).unwrap();
         assert_eq!(
             body_of(&with_flag)["close_source_branch"],
             Value::Bool(false)
         );
         assert!(body_of(&with_flag).get("message").is_none());
-        let with_message = merge_write(BASE, "goodboy", "desktop", 5, None, Some(" ship it "));
+        let with_message =
+            merge_write(BASE, "goodboy", "desktop", 5, None, Some(" ship it "), None).unwrap();
         assert_eq!(body_of(&with_message)["message"], "ship it");
         assert!(body_of(&with_message).get("close_source_branch").is_none());
-        let blank_message = merge_write(BASE, "goodboy", "desktop", 5, None, Some("   "));
+        let blank_message =
+            merge_write(BASE, "goodboy", "desktop", 5, None, Some("   "), None).unwrap();
         assert!(body_of(&blank_message).get("message").is_none());
+    }
+
+    #[test]
+    fn update_write_puts_only_the_supplied_fields() {
+        let title_only = update_write(
+            BASE,
+            "goodboy",
+            "desktop",
+            42,
+            Some("Stop the duplicate credit"),
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(title_only.method, reqwest::Method::PUT);
+        assert_eq!(
+            title_only.url,
+            "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/42"
+        );
+        assert_eq!(
+            *body_of(&title_only),
+            serde_json::json!({ "title": "Stop the duplicate credit" })
+        );
+        let description_only =
+            update_write(BASE, "goodboy", "desktop", 42, None, Some("Why"), None).unwrap();
+        assert_eq!(
+            *body_of(&description_only),
+            serde_json::json!({ "description": "Why" })
+        );
+    }
+
+    #[test]
+    fn update_write_maps_reviewer_uuids_and_an_empty_list_clears_them() {
+        let uuids = vec!["{a-1}".to_string(), "{b-2}".to_string()];
+        let set = update_write(BASE, "goodboy", "desktop", 42, None, None, Some(&uuids)).unwrap();
+        assert_eq!(
+            *body_of(&set),
+            serde_json::json!({ "reviewers": [{ "uuid": "{a-1}" }, { "uuid": "{b-2}" }] })
+        );
+        let cleared = update_write(BASE, "goodboy", "desktop", 42, None, None, Some(&[])).unwrap();
+        assert_eq!(*body_of(&cleared), serde_json::json!({ "reviewers": [] }));
+    }
+
+    #[test]
+    fn update_write_rejects_an_empty_update() {
+        let err = update_write(BASE, "goodboy", "desktop", 42, None, None, None)
+            .err()
+            .expect("an empty update is refused");
+        assert_eq!(err.kind(), "invalid_input");
+    }
+
+    #[test]
+    fn members_and_commits_urls_hang_off_the_workspace_and_the_pull_request() {
+        assert_eq!(
+            workspace_members_url(BASE, "goodboy"),
+            "https://api.bitbucket.org/2.0/workspaces/goodboy/members?pagelen=50"
+        );
+        assert_eq!(
+            pull_request_commits_url(BASE, "goodboy", "desktop", 42),
+            "https://api.bitbucket.org/2.0/repositories/goodboy/desktop/pullrequests/42/commits?pagelen=50"
+        );
+    }
+
+    fn members_fixture() -> Vec<BitbucketUser> {
+        let page: BitbucketPage<BitbucketMembershipRaw> = serde_json::from_str(
+            r#"{ "values": [
+                { "type": "workspace_membership",
+                  "user": { "type": "user", "uuid": "{u-nadia}", "account_id": "70121:aa",
+                            "nickname": "nadia-p", "display_name": "Nadia Petrova",
+                            "links": { "avatar": { "href": "https://avatar.example/nadia" } } },
+                  "workspace": { "slug": "harborline" } },
+                { "type": "workspace_membership",
+                  "user": { "type": "user", "uuid": "{u-kenji}", "nickname": "kenji-w",
+                            "display_name": "Kenji Watanabe" } },
+                { "type": "workspace_membership", "user": null }
+            ], "pagelen": 50, "size": 3, "page": 1 }"#,
+        )
+        .unwrap();
+        page.values
+            .into_iter()
+            .filter_map(|membership| membership.user)
+            .map(map_user)
+            .collect()
+    }
+
+    #[test]
+    fn workspace_members_deserialize_from_the_membership_envelope() {
+        let members = members_fixture();
+        assert_eq!(members.len(), 2);
+        assert_eq!(members[0].uuid, "{u-nadia}");
+        assert_eq!(members[0].nickname, "nadia-p");
+        assert_eq!(
+            members[0].avatar_url.as_deref(),
+            Some("https://avatar.example/nadia")
+        );
+    }
+
+    #[test]
+    fn filter_members_matches_nickname_or_display_name_case_insensitively() {
+        assert_eq!(filter_members("NADIA", members_fixture()).len(), 1);
+        assert_eq!(
+            filter_members("watanabe", members_fixture())[0].uuid,
+            "{u-kenji}"
+        );
+        assert_eq!(filter_members("  ", members_fixture()).len(), 2);
+        assert!(filter_members("zed", members_fixture()).is_empty());
+    }
+
+    #[test]
+    fn commits_deserialize_with_the_first_message_line_and_the_author() {
+        let page: BitbucketPage<BitbucketCommitRaw> = serde_json::from_str(
+            r#"{ "values": [
+                { "hash": "6c20f48a9e1b", "date": "2026-10-03T12:00:00+00:00",
+                  "message": "Key the credit guard on the event id\n\nLonger body.\n",
+                  "author": { "raw": "Nadia Petrova <nadia@harborline.test>",
+                              "user": { "uuid": "{u-nadia}", "nickname": "nadia-p",
+                                        "display_name": "Nadia Petrova" } } },
+                { "hash": "a41c9e2b7d3f", "date": "2026-10-04T08:00:00+00:00",
+                  "message": "Drop the seenEvents read",
+                  "author": { "raw": "Kenji Watanabe <kenji@harborline.test>" } },
+                { "hash": "f00" }
+            ], "pagelen": 50 }"#,
+        )
+        .unwrap();
+        let commits: Vec<BitbucketCommit> = page.values.into_iter().map(map_commit).collect();
+        assert_eq!(commits[0].message, "Key the credit guard on the event id");
+        assert_eq!(commits[0].author.as_deref(), Some("nadia-p"));
+        assert_eq!(commits[1].author.as_deref(), Some("Kenji Watanabe"));
+        assert_eq!(commits[2].message, "");
+        assert!(commits[2].author.is_none());
+    }
+
+    #[test]
+    fn the_new_commands_are_registered_as_tauri_commands() {
+        let lib = include_str!("lib.rs");
+        for name in [
+            "bitbucket::bitbucket_update_pull_request",
+            "bitbucket::bitbucket_search_workspace_members",
+            "bitbucket::bitbucket_list_pull_request_commits",
+            "bitbucket::bitbucket_merge_pull_request",
+        ] {
+            assert!(
+                lib.contains(name),
+                "{name} is missing from the generate_handler block"
+            );
+        }
     }
 
     #[test]

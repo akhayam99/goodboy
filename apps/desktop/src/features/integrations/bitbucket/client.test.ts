@@ -11,7 +11,10 @@ import {
   bitbucketListPullRequestComments,
   bitbucketListPullRequestStatuses,
   bitbucketListPullRequests,
+  bitbucketListPullRequestCommits,
   bitbucketMergePullRequest,
+  bitbucketSearchWorkspaceMembers,
+  bitbucketUpdatePullRequest,
   bitbucketPullRequestDiff,
   bitbucketPullRequestForBranch,
   bitbucketReplyToPullRequestComment,
@@ -134,6 +137,7 @@ describe('bitbucket client', () => {
       ...target,
       closeSourceBranch: null,
       message: null,
+      mergeStrategy: null,
     });
   });
 
@@ -146,7 +150,70 @@ describe('bitbucket client', () => {
       ...target,
       closeSourceBranch: true,
       message: 'ship it',
+      mergeStrategy: null,
     });
+  });
+
+  it.each(['merge_commit', 'squash', 'rebase_merge'] as const)(
+    'sends the %s merge strategy by name',
+    async (strategy) => {
+      mockInvoke.mockResolvedValue({});
+
+      await bitbucketMergePullRequest({ ...target, strategy });
+
+      expect(mockInvoke).toHaveBeenCalledWith('bitbucket_merge_pull_request', {
+        ...target,
+        closeSourceBranch: null,
+        message: null,
+        mergeStrategy: strategy,
+      });
+    },
+  );
+
+  it('sends only the fields of an update and nulls the rest', async () => {
+    mockInvoke.mockResolvedValue({});
+
+    await bitbucketUpdatePullRequest({ ...target, title: 'New title' });
+    expect(mockInvoke).toHaveBeenLastCalledWith('bitbucket_update_pull_request', {
+      ...target,
+      title: 'New title',
+      description: null,
+      reviewerUuids: null,
+    });
+
+    await bitbucketUpdatePullRequest({ ...target, reviewerUuids: [] });
+    expect(mockInvoke).toHaveBeenLastCalledWith('bitbucket_update_pull_request', {
+      ...target,
+      title: null,
+      description: null,
+      reviewerUuids: [],
+    });
+  });
+
+  it('searches the workspace members without a repository', async () => {
+    mockInvoke.mockResolvedValue([]);
+
+    await bitbucketSearchWorkspaceMembers({
+      workspaceId: repo.workspaceId,
+      workspaceSlug: repo.workspaceSlug,
+      email: repo.email,
+      query: 'nadia',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith('bitbucket_search_workspace_members', {
+      workspaceId: repo.workspaceId,
+      workspaceSlug: repo.workspaceSlug,
+      email: repo.email,
+      query: 'nadia',
+    });
+  });
+
+  it('lists the commits of a pull request by its target', async () => {
+    mockInvoke.mockResolvedValue([]);
+
+    await bitbucketListPullRequestCommits(target);
+
+    expect(mockInvoke).toHaveBeenCalledWith('bitbucket_list_pull_request_commits', target);
   });
 
   it('separates a new comment from a reply by the parent comment id', async () => {

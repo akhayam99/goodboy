@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PullRequestState, SessionId } from '@goodboy/types';
 import { pullRequestFacts, type PullRequestFacts } from '../actions/kinds/pullRequestFacts';
-import { evaluatePrMergeReadiness, mergeIsClear } from './prMergeReadiness';
+import { evaluatePrMergeReadiness, mergeIsClear, mergeabilityNoteOf } from './prMergeReadiness';
 
 const PR: PullRequestState = {
   number: 248,
@@ -306,4 +306,58 @@ describe('evaluatePrMergeReadiness', () => {
       expect(evaluatePrMergeReadiness({ facts }).reason).toBe('Checks unknown.');
     },
   );
+});
+
+describe('merge readiness on Bitbucket', () => {
+  const bitbucket = (patch: Patch = {}): PullRequestFacts =>
+    factsOf({
+      host: 'bitbucket',
+      ...patch,
+      pr: patch.pr === null ? null : { mergeable: null, ...patch.pr },
+    });
+
+  it('is ready, not unknown, when the host gives no mergeability and nothing blocks', () => {
+    const readiness = evaluatePrMergeReadiness({ facts: bitbucket() });
+
+    expect(readiness.status).toBe('ready');
+    expect(readiness.blockers).toEqual([]);
+    expect(mergeIsClear({ readiness })).toBe(true);
+  });
+
+  it('still blocks on failing checks and asked-for changes', () => {
+    const readiness = evaluatePrMergeReadiness({
+      facts: bitbucket({
+        checks: 'failing',
+        failingChecks: ['lint'],
+        review: 'changes_requested',
+        changesRequestedBy: ['omar-t'],
+      }),
+    });
+
+    expect(readiness.status).toBe('blocked');
+    expect(readiness.blockers).toEqual(['1 check failing: lint.', 'omar-t asked for changes.']);
+  });
+
+  it('says a declined pull request was declined, with no Reopen to suggest', () => {
+    const readiness = evaluatePrMergeReadiness({ facts: bitbucket({ phase: 'closed' }) });
+
+    expect(readiness.reason).toBe('This pull request was declined.');
+    expect(readiness.word).toBe('Closed');
+  });
+
+  it('keeps GitHub unknown while it has not finished checking', () => {
+    const readiness = evaluatePrMergeReadiness({
+      facts: factsOf({ pr: { mergeable: null } }),
+    });
+
+    expect(readiness.status).toBe('unknown');
+    expect(mergeabilityNoteOf({ host: 'github', mergeable: null })).toBeNull();
+  });
+
+  it('words the caveat of a host that never says', () => {
+    expect(mergeabilityNoteOf({ host: 'bitbucket', mergeable: null })).toBe(
+      'Bitbucket checks this when you merge',
+    );
+    expect(mergeabilityNoteOf({ host: 'bitbucket', mergeable: true })).toBeNull();
+  });
 });

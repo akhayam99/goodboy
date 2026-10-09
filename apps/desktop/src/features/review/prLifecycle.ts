@@ -2,14 +2,23 @@ const PR_LIFECYCLE_ACTIONS = ['ready', 'undraft', 'merge', 'close', 'reopen'] as
 
 export type PrLifecycleAction = (typeof PR_LIFECYCLE_ACTIONS)[number];
 
+export type PrNouns = {
+  readonly long: string;
+  readonly numberPrefix: string;
+};
+
+const GITHUB_NOUNS: PrNouns = { long: 'pull request', numberPrefix: '#' };
+
 export const prLifecycleFailureTitle = ({
   action,
   prNumber,
+  nouns = GITHUB_NOUNS,
 }: {
   readonly action: PrLifecycleAction;
   readonly prNumber: number | null;
+  readonly nouns?: PrNouns;
 }): string => {
-  const target = prNumber === null ? 'the pull request' : `#${prNumber}`;
+  const target = prNumber === null ? `the ${nouns.long}` : `${nouns.numberPrefix}${prNumber}`;
   switch (action) {
     case 'ready':
       return `Couldn't mark ${target} ready`;
@@ -39,7 +48,9 @@ const PR_LIFECYCLE_GERUND: Record<PrLifecycleAction, string> = {
 export const describePrWriteInFlight = ({
   action,
   prNumber,
+  nouns = GITHUB_NOUNS,
 }: {
   readonly action: PrLifecycleAction;
   readonly prNumber: number;
-}): string => `Goodboy is already ${PR_LIFECYCLE_GERUND[action]} #${prNumber}`;
+  readonly nouns?: PrNouns;
+}): string => `Goodboy is already ${PR_LIFECYCLE_GERUND[action]} ${nouns.numberPrefix}${prNumber}`;

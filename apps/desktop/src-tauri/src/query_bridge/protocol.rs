@@ -796,7 +796,7 @@ pub const CATALOG: &[VerbSpec] = &[
     VerbSpec {
         provider: "bitbucket",
         verb: "pr-merge",
-        params: &[req("repo"), num("id"), opt("message")],
+        params: &[req("repo"), num("id"), opt("message"), opt("strategy")],
         access: Access::Write,
         summary: "merge a pull request",
     },
@@ -1534,6 +1534,26 @@ mod tests {
 
         assert_eq!(parsed.args["force-with-lease"], serde_json::json!(true));
         assert!(!parsed.args.contains_key("branch"));
+    }
+
+    #[test]
+    fn the_bitbucket_merge_verb_accepts_a_merge_strategy() {
+        let argv = vec![
+            "bitbucket".to_string(),
+            "pr-merge".to_string(),
+            "--repo".to_string(),
+            "payments-api".to_string(),
+            "--id".to_string(),
+            "42".to_string(),
+            "--strategy".to_string(),
+            "squash".to_string(),
+        ];
+
+        let ArgvOutcome::Parsed(parsed) = parse_argv(&argv).expect("parsed") else {
+            panic!("expected a parsed command");
+        };
+
+        assert_eq!(parsed.args["strategy"], serde_json::json!("squash"));
     }
 
     #[test]

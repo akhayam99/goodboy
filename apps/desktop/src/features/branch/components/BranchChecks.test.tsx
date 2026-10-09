@@ -312,15 +312,105 @@ describe('Checks tab when the read failed', () => {
   });
 });
 
-describe('Checks tab on a host that does not read its checks yet', () => {
-  it('says Goodboy does not show Bitbucket checks yet', async () => {
+describe('Checks tab on Bitbucket', () => {
+  const VIEW: PullRequestView = {
+    host: 'bitbucket',
+    number: 12,
+    title: 'Guard the empty cart',
+    body: '',
+    url: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12',
+    state: 'open',
+    isDraft: false,
+    author: null,
+    baseBranch: 'main',
+    headBranch: 'nw/cart-guard',
+    headSha: null,
+    createdAt: '2026-10-01T10:00:00Z',
+    updatedAt: '2026-10-06T10:00:00Z',
+    mergedAt: null,
+    mergeable: null,
+    reviewDecision: null,
+    reviewers: [],
+    resolves: [],
+    checks: {
+      read: 'ok',
+      error: null,
+      runs: [
+        { name: 'unit', conclusion: 'success', detailsUrl: null, durationMs: 61000 },
+        { name: 'lint', conclusion: 'failure', detailsUrl: null, durationMs: 12000 },
+      ],
+    },
+    files: { count: 0, first: [] },
+    commits: [],
+    mergeMethods: ['squash', 'merge', 'rebase'],
+    mergeMethodReasons: {},
+  };
+
+  const viewEntry = (view: PullRequestView | null) => ({
+    [SESSION.id]: {
+      prNumber: 12,
+      mountId: useAppStore.getState().sessionActiveMount?.[SESSION.id] ?? null,
+      view,
+      isLoading: false,
+      error: null,
+      fetchedAt: '2026-10-07T09:00:00.000Z' as IsoDateTime,
+      edits: [],
+    },
+  });
+
+  beforeEach(() => {
     seedResolveBitbucketScene({ selected: 'bitbucket' });
+    github({ pr: null, detail: null });
+  });
+
+  it('lists the rows of the statuses and never says Bitbucket checks are not shown', async () => {
+    useAppStore.setState({ pullRequestViews: viewEntry(VIEW), loadPullRequestView: vi.fn() });
 
     await show();
 
-    expect(screen.getByText("Goodboy doesn't show Bitbucket checks yet")).toBeDefined();
-    expect(screen.getByRole('button', { name: /View on Bitbucket/ })).toBeDefined();
+    expect(screen.queryByText("Goodboy doesn't show Bitbucket checks yet")).toBeNull();
+    expect(screen.getByText('unit')).toBeDefined();
+    expect(screen.getByText('lint')).toBeDefined();
     expect(screen.queryByText(/GitHub/)).toBeNull();
+  });
+
+  it('warns with the fix and opens the Bitbucket settings when the token cannot read statuses', async () => {
+    const denied: PullRequestView = {
+      ...VIEW,
+      checks: { read: 'denied', error: 'The API token lacks the pull request scope', runs: [] },
+    };
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-settings', listener);
+    useAppStore.setState({ pullRequestViews: viewEntry(denied), loadPullRequestView: vi.fn() });
+
+    await show();
+
+    expect(screen.getByText('The API token lacks the pull request scope')).toBeDefined();
+    expect(screen.queryByText(/GitHub/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Bitbucket settings' }));
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0]?.[0]).toMatchObject({
+      detail: { scope: 'tools', tool: 'bitbucket' },
+    });
+    window.removeEventListener('goodboy:open-settings', listener);
+  });
+
+  it('offers Retry and Details when the statuses could not be read, and retries the port', async () => {
+    const failed: PullRequestView = {
+      ...VIEW,
+      checks: { read: 'failed', error: 'Bitbucket did not answer, check the connection', runs: [] },
+    };
+    const load = vi.fn();
+    useAppStore.setState({ pullRequestViews: viewEntry(failed), loadPullRequestView: load });
+
+    await show();
+
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
+    expect(screen.getByText('Bitbucket did not answer, check the connection')).toBeDefined();
+    load.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(load).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
   });
 });
 

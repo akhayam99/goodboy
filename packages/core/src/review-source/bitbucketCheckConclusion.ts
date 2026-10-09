@@ -1,5 +1,5 @@
 import type { PrCheckConclusion } from '@goodboy/types';
-import type { BitbucketStatusState } from './client';
+import type { BitbucketStatusState } from './bitbucketPullRequestTypes';
 
 type Params = {
   readonly state: BitbucketStatusState;

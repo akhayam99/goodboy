@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrMergeMethod, PullRequestView } from '@goodboy/types';
+import { bitbucketPullRequestPort } from '../bitbucketPullRequestPort';
 import { githubPullRequestPort } from '../githubPullRequestPort';
 import { gitlabPullRequestPort } from '../gitlabPullRequestPort';
 import {
@@ -9,6 +10,7 @@ import {
   type PullRequestPort,
 } from '../pullRequestPort';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSourceCapabilities } from '../types';
+import { BITBUCKET_PR_URL, fakeBitbucketTransport } from './bitbucketPullRequestFixture';
 import { GITHUB_PR_REPO, GITHUB_PR_URL, failure, githubRunner } from './githubPullRequestFixture';
 import { GITLAB_MR_URL, fakeGitlabTransport } from './gitlabPullRequestFixture';
 
@@ -18,15 +20,19 @@ type Built = Readonly<{
 }>;
 
 type BuildParams = Readonly<{
-  failWith?: string;
+  failWith?: Readonly<{ text: string; kind: PullRequestFailureKind }>;
   capabilities?: ReviewSourceCapabilities;
 }>;
+
+type Failure = readonly [label: string, text: string, kind: PullRequestFailureKind];
 
 type Adapter = Readonly<{
   name: string;
   noun: string;
   reviewers: ReadonlyArray<readonly [string, string]>;
-  resolvedLabels: ReadonlyArray<string>;
+  resolves: PullRequestView['resolves'];
+  failures: ReadonlyArray<Failure>;
+  alwaysUnsupported: ReadonlyArray<string>;
   build: (params: BuildParams) => Built;
 }>;
 
@@ -42,6 +48,55 @@ const FLAG_METHOD: Readonly<Record<string, PrMergeMethod>> = {
   '--rebase': 'rebase',
 };
 
+const GITHUB_FAILURES: ReadonlyArray<Failure> = [
+  ['denied', 'GraphQL: Resource not accessible by personal access token', 'denied'],
+  ['rate limited', 'API rate limit exceeded for user', 'rate_limited'],
+  ['offline', 'dial tcp: lookup api.github.com: no such host', 'network'],
+  ['rejected', 'Pull request is in clean status', 'failed'],
+];
+
+const BITBUCKET_FAILURES: ReadonlyArray<Failure> = [
+  ['denied', 'Your credentials lack one or more required privilege scopes.', 'denied'],
+  ['rate limited', 'Rate limit for this resource has been exceeded', 'rate_limited'],
+  ['offline', 'The request did not reach Bitbucket', 'network'],
+  ['rejected', 'Merge strategy squash is not allowed for this repository', 'failed'],
+];
+
+const BITBUCKET_STRATEGY_METHOD: Readonly<Record<string, PrMergeMethod>> = {
+  squash: 'squash',
+  merge_commit: 'merge',
+  rebase_merge: 'rebase',
+};
+
+const bitbucket: Adapter = {
+  name: 'bitbucket',
+  noun: 'pull request',
+  reviewers: [
+    ['omar-t', 'changes_requested'],
+    ['kenji-w', 'approved'],
+    ['priya-n', 'pending'],
+  ],
+  resolves: [],
+  failures: BITBUCKET_FAILURES,
+  alwaysUnsupported: ['setDraft', 'reopen'],
+  build: ({ failWith, capabilities }) => {
+    const { transport, calls } = fakeBitbucketTransport(
+      failWith === undefined ? {} : { failWrites: failWith },
+    );
+    return {
+      port: bitbucketPullRequestPort({
+        transport,
+        prUrl: BITBUCKET_PR_URL,
+        ...(capabilities === undefined ? {} : { capabilities }),
+      }),
+      mergeMethodOf: () => {
+        const strategy = calls.merges[0];
+        return strategy === undefined ? null : (BITBUCKET_STRATEGY_METHOD[strategy] ?? null);
+      },
+    };
+  },
+};
+
 const github: Adapter = {
   name: 'github',
   noun: 'pull request',
@@ -50,12 +105,20 @@ const github: Adapter = {
     ['kenji-w', 'approved'],
     ['priya-n', 'pending'],
   ],
-  resolvedLabels: ['#412'],
+  resolves: [
+    {
+      label: '#412',
+      url: 'https://github.com/harborline/payments-api/issues/412',
+      isClosing: true,
+    },
+  ],
+  failures: GITHUB_FAILURES,
+  alwaysUnsupported: [],
   build: ({ failWith, capabilities }) => {
     const { runner, calls } = githubRunner({
       override: (args) =>
         failWith !== undefined && args[0] === 'pr' && args[1] !== 'view'
-          ? failure({ stderr: failWith })
+          ? failure({ stderr: failWith.text })
           : null,
     });
     return {
@@ -83,17 +146,18 @@ const gitlab: Adapter = {
     ['kenji-w', 'approved'],
     ['priya-n', 'pending'],
   ],
-  resolvedLabels: [],
+  resolves: [],
+  failures: GITHUB_FAILURES,
+  alwaysUnsupported: [],
   build: ({ failWith, capabilities }) => {
-    const kind = FAILURES.find(([, text]) => text === failWith)?.[2];
     const fake = fakeGitlabTransport(
-      failWith === undefined || kind === undefined
+      failWith === undefined
         ? {}
         : {
             writeError: new PullRequestPortError({
-              kind: kind as PullRequestFailureKind,
-              message: failWith,
-              details: failWith,
+              kind: failWith.kind,
+              message: failWith.text,
+              details: failWith.text,
             }),
           },
     );
@@ -108,7 +172,7 @@ const gitlab: Adapter = {
   },
 };
 
-const ADAPTERS: ReadonlyArray<Adapter> = [github, gitlab];
+const ADAPTERS: ReadonlyArray<Adapter> = [github, gitlab, bitbucket];
 
 const isValidView = (view: PullRequestView): boolean =>
   view.number > 0 &&
@@ -137,13 +201,6 @@ const WRITES: ReadonlyArray<Write> = [
   { name: 'merge', call: (port) => port.merge({ method: 'squash' }) },
 ];
 
-const FAILURES: ReadonlyArray<readonly [string, string, string]> = [
-  ['denied', 'GraphQL: Resource not accessible by personal access token', 'denied'],
-  ['rate limited', 'API rate limit exceeded for user', 'rate_limited'],
-  ['offline', 'dial tcp: lookup api.github.com: no such host', 'network'],
-  ['rejected', 'Pull request is in clean status', 'failed'],
-];
-
 describe.each(ADAPTERS)('pull request port contract on $name', (adapter) => {
   it('reads a valid view and names its nouns', async () => {
     const { port } = adapter.build({});
@@ -158,7 +215,7 @@ describe.each(ADAPTERS)('pull request port contract on $name', (adapter) => {
     expect(view.reviewers.map((reviewer) => [reviewer.person.login, reviewer.state])).toEqual(
       adapter.reviewers,
     );
-    expect(view.resolves.map((resolve) => resolve.label)).toEqual(adapter.resolvedLabels);
+    expect(view.resolves).toEqual(adapter.resolves);
     expect(view.files.count).toBe(8);
     expect(view.files.first).toHaveLength(7);
   });
@@ -176,18 +233,24 @@ describe.each(ADAPTERS)('pull request port contract on $name', (adapter) => {
     expect(view.checks).toEqual({ read: 'unsupported', error: null, runs: [] });
   });
 
-  describe.each(WRITES)('$name failing', (write) => {
-    it.each(FAILURES)('classifies %s and keeps the host text', async (_label, stderr, kind) => {
-      const { port } = adapter.build({ failWith: stderr });
-      const error = await write.call(port).then(
-        () => null,
-        (caught: unknown) => caught,
+  describe.each(WRITES.filter((write) => !adapter.alwaysUnsupported.includes(write.name)))(
+    '$name failing',
+    (write) => {
+      it.each(adapter.failures)(
+        'classifies %s and keeps the host text',
+        async (_label, text, kind) => {
+          const { port } = adapter.build({ failWith: { text, kind } });
+          const error = await write.call(port).then(
+            () => null,
+            (caught: unknown) => caught,
+          );
+          expect(error).toBeInstanceOf(PullRequestPortError);
+          expect((error as PullRequestPortError).kind).toBe(kind);
+          expect((error as PullRequestPortError).details).toBe(text);
+        },
       );
-      expect(error).toBeInstanceOf(PullRequestPortError);
-      expect((error as PullRequestPortError).kind).toBe(kind);
-      expect((error as PullRequestPortError).details).toBe(stderr);
-    });
-  });
+    },
+  );
 
   it.each<PrMergeMethod>(['squash', 'merge', 'rebase'])(
     'passes the %s method through',

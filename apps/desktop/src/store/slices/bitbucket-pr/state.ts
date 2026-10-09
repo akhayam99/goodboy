@@ -4,6 +4,8 @@ import type {
   MountPullRequestIdentity,
   MountPullRequestLink,
   ProjectId,
+  PullRequestChecks,
+  PullRequestReviewDecision,
   SessionId,
 } from '@goodboy/types';
 import type {
@@ -21,6 +23,8 @@ export type MountBitbucketPrState = SessionBitbucketPrEntry & {
   readonly branch: string;
   readonly prs: ReadonlyArray<BitbucketPullRequest>;
   readonly links: ReadonlyArray<MountPullRequestLink>;
+  readonly checks: PullRequestChecks;
+  readonly reviewDecision: PullRequestReviewDecision | null;
 };
 
 export type SessionBitbucketPrEntry = {

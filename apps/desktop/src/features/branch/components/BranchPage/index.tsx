@@ -6,6 +6,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
+import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { DiffRailScope } from '../../../diff/DiffRailScope';
 import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
@@ -21,6 +22,7 @@ import { isPushFailure } from '../../../resolve/reviewCommentState';
 import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
 import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
+import { useBitbucketRemote } from '../../hooks/useBitbucketRemote';
 import { useBranchIdentity } from '../../hooks/useBranchIdentity';
 import { useBranchTab } from '../../hooks/useBranchTab';
 import { usePullRequestView } from '../../hooks/usePullRequestView';
@@ -65,9 +67,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const openDiffLens = useAppStore((s) => s.openDiffLens);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
-  const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const refreshSessionMr = useAppStore((s) => s.refreshSessionMr);
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
   const historyMountId = identity.mount?.mountId ?? null;
   const commitCount = useAppStore((s) =>
@@ -81,6 +81,11 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     (s) => projectById(s.projects, identity.mount?.projectId ?? null)?.name ?? null,
   );
   const repo = useSessionRepo({ sessionId });
+  const bitbucketRemote = useBitbucketRemote({
+    sessionId,
+    workspaceId: session.workspaceId,
+    repoRoot: repo?.repoRoot ?? null,
+  });
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const { entries: sources, source: activeSource } = useActiveReviewSource({ sessionId });
   const { entries } = useReviewEntries({ sessionId });
@@ -97,8 +102,9 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     sessionId,
     repoRoot: identity.mount?.repoRoot ?? null,
   });
-  const host: PullRequestHost =
-    activeSource?.kind ?? (remoteKind === 'gitlab' ? 'gitlab' : 'github');
+  const remoteHost: PullRequestHost =
+    remoteKind === 'gitlab' ? 'gitlab' : bitbucketRemote.isBitbucket ? 'bitbucket' : 'github';
+  const host: PullRequestHost = activeSource?.kind ?? (pr === null ? remoteHost : identity.host);
   const tabs = branchTabsOf({
     hasPullRequest: pr !== null,
     provider: activeSource?.kind ?? 'local',
@@ -146,6 +152,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     pr,
     diff,
     review,
+    remoteHost: host,
   });
 
   useEffect(() => {
@@ -180,25 +187,20 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
   }, [hasPushFailure, isPushBusy, push, selectedPushIds, sessionId]);
 
-  const pullRequestView = usePullRequestView({ sessionId, isEnabled: pr !== null });
+  const pullRequestView = usePullRequestView({
+    sessionId,
+    isEnabled: pr !== null,
+    fallbackNumber: pr?.number ?? null,
+  });
   const reloadPullRequestView = pullRequestView.reload;
 
   const onMutated = useCallback(() => {
-    reloadPullRequestView();
-    if (host === 'gitlab') {
-      void refreshSessionMr(sessionId, { force: true });
-      return;
+    void refreshActiveRequest({ get: useAppStore.getState, sessionId });
+    if (host === 'github') {
+      void refreshSessionPrDetail(sessionId, { force: true });
     }
-    void refreshSessionPr(sessionId, { force: true });
-    void refreshSessionPrDetail(sessionId, { force: true });
-  }, [
-    host,
-    refreshSessionMr,
-    refreshSessionPr,
-    refreshSessionPrDetail,
-    reloadPullRequestView,
-    sessionId,
-  ]);
+    reloadPullRequestView();
+  }, [host, refreshSessionPrDetail, reloadPullRequestView, sessionId]);
 
   const onPullRequestCreated = useCallback(() => {
     setPullRequestMode({ sessionId, mode: 'overview' });
@@ -218,8 +220,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     [identity.mountPath, navigate, sessionId, tab],
   );
 
-  const sourceKind = activeSource?.kind ?? 'github';
-  const capabilities = activeSource?.capabilities ?? REVIEW_SOURCE_CAPABILITIES.github;
+  const capabilities = activeSource?.capabilities ?? REVIEW_SOURCE_CAPABILITIES[host];
   const hasEditAction = controls.pullRequestControls.actions.some(
     (action) => action.id === 'pullRequest.editDetails',
   );
@@ -228,7 +229,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   );
   const canEditTitle = hasEditAction && capabilities.canEditTitle;
   const canEditBody = hasEditAction && capabilities.canEditBody;
-  const requestReason = capabilityReasonOf({ kind: sourceKind, capability: 'canRequestReviewers' });
+  const requestReason = capabilityReasonOf({ kind: host, capability: 'canRequestReviewers' });
   const request: ReviewerRequest = !hasRequestAction
     ? { kind: 'hidden' }
     : requestReason === null
@@ -275,13 +276,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             session={session}
             host={host}
             pr={pr}
+            isBitbucketRemote={bitbucketRemote.isBitbucket}
+            newPullRequestUrl={bitbucketRemote.newPullRequestUrl}
             detail={github?.detail ?? null}
             view={pullRequestView.view}
             edits={pullRequestView.edits}
             viewError={pullRequestView.error}
             viewErrorKind={pullRequestView.errorKind}
             mountPath={identity.mountPath}
-            source={activeSource}
             canEdit={canEditBody}
             request={request}
             behind={behind}

@@ -78,6 +78,7 @@ export const PullRequestPage = ({
     <div className="flex min-w-0 flex-col gap-6 @[928px]:grid @[928px]:grid-cols-[minmax(0,1fr)_280px] @[928px]:items-start @[928px]:gap-8">
       <PullRequestProperties
         sessionId={sessionId}
+        host={host}
         pr={pr}
         detail={detail}
         view={view}

@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
+import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
@@ -11,8 +12,8 @@ export const reopenPr = (_set: SetFn, get: GetFn) => {
       get,
       sessionId,
       prNumber,
-      failureTitle: ({ prNumber: target }) =>
-        prLifecycleFailureTitle({ action: 'reopen', prNumber: target }),
+      failureTitle: ({ prNumber: target, nouns }) =>
+        prLifecycleFailureTitle({ action: 'reopen', prNumber: target, nouns }),
     });
     await withPrWriteClaim({
       get,
@@ -24,10 +25,10 @@ export const reopenPr = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
-          title: `Couldn't reopen #${num}`,
+          title: prLifecycleFailureTitle({ action: 'reopen', prNumber: num, nouns: port.nouns }),
           run: () => port.reopen(),
         });
-        await get().refreshSessionPr(sessionId, { force: true });
+        await refreshActiveRequest({ get, sessionId });
       },
     });
   };

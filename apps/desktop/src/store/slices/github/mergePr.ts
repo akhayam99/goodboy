@@ -1,5 +1,6 @@
 import type { PrMergeMethod, SessionId } from '@goodboy/types';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
+import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { mountPrEventPayload } from './mountPrEventPayload';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
@@ -19,8 +20,8 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
       sessionId,
       prNumber,
       ...(mountId === undefined ? {} : { mountId }),
-      failureTitle: ({ prNumber: target }) =>
-        prLifecycleFailureTitle({ action: 'merge', prNumber: target }),
+      failureTitle: ({ prNumber: target, nouns }) =>
+        prLifecycleFailureTitle({ action: 'merge', prNumber: target, nouns }),
     });
     await withPrWriteClaim({
       get,
@@ -32,11 +33,12 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
-          title: `Couldn't merge #${num}`,
+          title: prLifecycleFailureTitle({ action: 'merge', prNumber: num, nouns: port.nouns }),
           run: () => port.merge({ method }),
         });
-        await get().refreshSessionPr(sessionId, {
-          force: true,
+        await refreshActiveRequest({
+          get,
+          sessionId,
           ...(mountId === undefined ? {} : { mountId }),
         });
         await get().recordSessionEventOnce({

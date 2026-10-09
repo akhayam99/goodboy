@@ -1,16 +1,14 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { bitbucketCheckConclusion } from './bitbucketCheckConclusion';
-import { bitbucketCheckRuns } from './bitbucketCheckRuns';
-import type { BitbucketStatus } from './client';
+import { bitbucketCheckConclusion } from '../bitbucketCheckConclusion';
+import { bitbucketCheckRuns } from '../bitbucketCheckRuns';
+import type { BitbucketPortStatus } from '../bitbucketPullRequestTypes';
 
-const status = (overrides: Partial<BitbucketStatus> = {}): BitbucketStatus => ({
+const status = (overrides: Partial<BitbucketPortStatus> = {}): BitbucketPortStatus => ({
   key: 'PIPELINE',
   name: 'build',
   state: 'SUCCESSFUL',
   url: 'https://bitbucket.org/acme/rocket/pipelines/1',
-  description: null,
-  refname: null,
   createdOn: '2026-08-01T10:00:00Z',
   updatedOn: '2026-08-01T10:02:00Z',
   ...overrides,

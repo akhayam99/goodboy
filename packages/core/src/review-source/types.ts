@@ -92,6 +92,17 @@ export const REVIEW_SOURCE_CAPABILITIES = {
     canClose: true,
     canReopen: true,
   },
-  bitbucket: { canReply: true, canResolve: false, ...NO_PULL_REQUEST_WRITES },
+  bitbucket: {
+    canReply: true,
+    canResolve: false,
+    canEditTitle: true,
+    canEditBody: true,
+    canRequestReviewers: true,
+    canSetDraft: false,
+    canReadChecks: true,
+    canChooseMergeMethod: true,
+    canClose: true,
+    canReopen: false,
+  },
   local: { canReply: false, canResolve: true, ...NO_PULL_REQUEST_WRITES },
 } as const satisfies Readonly<Record<ReviewSourceKind, ReviewSourceCapabilities>>;

@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
+import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { prWriteContext } from './prWriteContext';
 import { prEventPayload } from './prEventPayload';
 import { runPortWrite } from './runPortWrite';
@@ -12,8 +13,8 @@ export const closePr = (_set: SetFn, get: GetFn) => {
       get,
       sessionId,
       prNumber,
-      failureTitle: ({ prNumber: target }) =>
-        prLifecycleFailureTitle({ action: 'close', prNumber: target }),
+      failureTitle: ({ prNumber: target, nouns }) =>
+        prLifecycleFailureTitle({ action: 'close', prNumber: target, nouns }),
     });
     await withPrWriteClaim({
       get,
@@ -25,10 +26,10 @@ export const closePr = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
-          title: `Couldn't close #${num}`,
+          title: prLifecycleFailureTitle({ action: 'close', prNumber: num, nouns: port.nouns }),
           run: () => port.close(),
         });
-        await get().refreshSessionPr(sessionId, { force: true });
+        await refreshActiveRequest({ get, sessionId });
         await get().recordSessionEventOnce({
           sessionId,
           kind: 'pr_closed',

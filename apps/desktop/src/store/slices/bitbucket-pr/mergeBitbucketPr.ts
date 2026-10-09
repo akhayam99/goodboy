@@ -1,9 +1,9 @@
 import { bitbucketMergePullRequest } from '../../../features/integrations/bitbucket/client';
 import { runBitbucketPrWrite } from './runBitbucketPrWrite';
-import type { BitbucketPrWriteParams, GetFn, SetFn } from './types';
+import type { BitbucketPrMergeParams, GetFn, SetFn } from './types';
 
 export const mergeBitbucketPr = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, mountId, repo, pullRequestId }: BitbucketPrWriteParams) => {
+  return async ({ sessionId, mountId, repo, pullRequestId, strategy }: BitbucketPrMergeParams) => {
     await runBitbucketPrWrite({
       set,
       get,
@@ -12,7 +12,11 @@ export const mergeBitbucketPr = (set: SetFn, get: GetFn) => {
       repo,
       pullRequestId,
       write: async () => {
-        await bitbucketMergePullRequest({ ...repo, pullRequestId });
+        await bitbucketMergePullRequest({
+          ...repo,
+          pullRequestId,
+          ...(strategy === undefined ? {} : { strategy }),
+        });
       },
     });
   };

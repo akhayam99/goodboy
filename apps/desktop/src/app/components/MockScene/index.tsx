@@ -220,6 +220,7 @@ import { U23_GITLAB_SCENES } from './scenes/u23/gitlab';
 import { U23_PR_PAGE_SCENES } from './scenes/u23/pr-page';
 import { U23_SUMMARIZER_FAILED_SCENES } from './scenes/u23/summarizer-failed';
 import { U23_START_SCENES } from './scenes/u23/start';
+import { U23_BITBUCKET_SCENES } from './scenes/u23/bitbucket';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -441,6 +442,7 @@ export const MOCK_SCENES = {
   ...U23_SUMMARIZER_FAILED_SCENES,
   ...U23_START_SCENES,
   ...U23_GITLAB_SCENES,
+  ...U23_BITBUCKET_SCENES,
 };
 
 export const MockScene = () => {

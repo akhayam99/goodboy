@@ -1,9 +1,8 @@
 import type { MountId, SessionId } from '@goodboy/types';
+import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
 import type { GetFn, SetFn } from './types';
-
-const EDIT_FAILURE_TITLE = "Couldn't edit the pull request";
 
 export type EditPrOptions = {
   title?: string;
@@ -19,7 +18,7 @@ export const editPr = (_set: SetFn, get: GetFn) => {
       sessionId,
       prNumber,
       ...(opts.mountId === undefined ? {} : { mountId: opts.mountId }),
-      failureTitle: () => EDIT_FAILURE_TITLE,
+      failureTitle: ({ nouns }) => `Couldn't edit the ${nouns.long}`,
     });
 
     if (opts.title === undefined && opts.body === undefined) {
@@ -30,7 +29,7 @@ export const editPr = (_set: SetFn, get: GetFn) => {
       get,
       sessionId,
       workspaceId: session.workspaceId,
-      title: EDIT_FAILURE_TITLE,
+      title: `Couldn't edit the ${port.nouns.long}`,
       isQuiet: opts.isQuiet === true,
       run: async () => {
         if (opts.title !== undefined) {
@@ -41,6 +40,6 @@ export const editPr = (_set: SetFn, get: GetFn) => {
         }
       },
     });
-    await get().refreshSessionPr(sessionId, { force: true });
+    await refreshActiveRequest({ get, sessionId });
   };
 };

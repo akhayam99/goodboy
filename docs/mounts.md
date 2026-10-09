@@ -387,7 +387,11 @@ origin`. A repo project can override it from its row editor
   unmounts cleanly. Polling stores the head at merge on the request link
   (`mount_pr_links.merged_head_sha` and `merged_at`: GitHub `headRefOid`
   and `mergedAt`, GitLab `sha` and `merged_at`, Bitbucket the source
-  commit), and a later poll without it keeps the stored one. A squash merge
+  commit), and a later poll without it keeps the stored one. A Bitbucket mount
+  also keeps the `checks` and `reviewDecision` of its open pull request in the
+  mount slice, refreshed with the request (one extra statuses call per refresh,
+  open requests only), so the sidebar, the Board and the Now chip see a failed
+  status or a requested change. A squash merge
   is read only from that record: its `merged_head_sha` is merged when the local tip (and
   `origin/<branch>`, if any) is an ancestor of it, and `Merged, then N new
 commits` otherwise. Without a record, only a merge commit or a rebase

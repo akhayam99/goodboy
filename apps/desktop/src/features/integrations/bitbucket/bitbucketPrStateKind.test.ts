@@ -3,7 +3,7 @@ import type { PullRequestStateKind } from '@goodboy/types';
 import type { BitbucketPullRequestState } from './client';
 import { PULL_REQUEST_PRESENTATION } from '../../../shared/pullRequestPresentation';
 import { BITBUCKET_PR_PRESENTATION } from './bitbucketPrPresentation';
-import { BITBUCKET_PR_STATE_KIND, bitbucketPrStateKind } from './bitbucketPrStateKind';
+import { BITBUCKET_PR_STATE_KIND, bitbucketPrStateKind } from '@goodboy/core';
 
 const EXPECTED: ReadonlyArray<readonly [BitbucketPullRequestState, PullRequestStateKind]> = [
   ['OPEN', 'open'],

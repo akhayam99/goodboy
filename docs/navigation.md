@@ -2288,16 +2288,17 @@ the review source built per host in
 capability table (`REVIEW_SOURCE_CAPABILITIES`) and never the host. A control
 the host forbids on an object that exists is shown disabled with its reason
 (`Bitbucket has no draft pull requests`, `Turned off in payments-api`, `Set by the
-project`), and a concept the host does not have is left out. Until a host's
-adapter lands, its sessions show the request, an `Open on` button and each write
-control disabled with its reason (`HostRequestSummary`). GitLab uses the same
+project`), and a concept the host does not have is left out. GitLab uses the same
 page with its own calls and words (the tab reads `Merge request`, the header
 `MR !42`, `Open on GitLab`): `gitlabPullRequestPort` reads and writes through
 Tauri commands that hold the stored token, `Mark ready` and `Convert to draft`
 change the `Draft:` prefix of the title, Merge lists the ways the project
 allows, and a token without the `api` scope reads `Goodboy can't read this merge
 request` with `Open GitLab settings`. A branch with no merge request shows the
-GitLab create form under `No merge request yet`. `E` edits the title in scope
+GitLab create form under `No merge request yet`. Bitbucket uses the same page through its own adapter
+(`bitbucketPullRequestPort`, built by `bitbucketPortOf` from the mount's
+request): merge offers its three strategies, `Close` declines, and the draft and
+reopen controls are left out. `E` edits the title in scope
 `pullRequest`, live only on this tab.
 
 **Comments.** The list (`Needs you`, `Working`, `Ready to push`, `Open`, `Done`, `Left open on GitHub`;
@@ -2397,7 +2398,7 @@ history row (which has no verb and no `⋯` of its own) all land on
 `branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
 session reads them through the same five states once its host's
 `canReadChecks` is on (GitLab: the jobs of the head pipeline, a job allowed to
-fail counts as skipped, a token that cannot read pipelines gets the denied
+fail counts as skipped; Bitbucket: its commit statuses; a token that cannot read pipelines gets the denied
 notice with `Open GitLab settings`); while it is off the tab says Goodboy does
 not show that host's checks yet (`checksViewOf`).
 

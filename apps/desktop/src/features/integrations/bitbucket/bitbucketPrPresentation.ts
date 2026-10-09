@@ -3,7 +3,7 @@ import {
   type PullRequestPresentation,
 } from '../../../shared/pullRequestPresentation';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { bitbucketPrStateKind } from './bitbucketPrStateKind';
+import { bitbucketPrStateKind } from '@goodboy/core';
 import type { BitbucketPullRequestState } from './client';
 
 const SUPERSEDED: PullRequestPresentation = {

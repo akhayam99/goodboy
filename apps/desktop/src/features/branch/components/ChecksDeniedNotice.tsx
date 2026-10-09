@@ -1,7 +1,9 @@
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, CommandPreview, CopyButton, Notice } from '@goodboy/ui';
+import type { ChecksHost } from '../checksViewOf';
 
 type Props = {
-  readonly host?: 'github' | 'gitlab';
+  readonly host: ChecksHost | 'github';
   readonly repoName: string;
   readonly isTokenBound: boolean;
   readonly isChecking: boolean;
@@ -13,33 +15,58 @@ type Props = {
 const REFRESH_COMMAND = 'gh auth refresh -s repo';
 
 export const ChecksDeniedNotice = ({
-  host = 'github',
+  host,
   repoName,
   isTokenBound,
   isChecking,
   error,
   onOpenSettings,
   onCheckAgain,
-}: Props) =>
-  host === 'gitlab' ? (
-    <Notice
-      tone="warning"
-      placement="inline"
-      title={`Goodboy can't read pipelines for ${repoName}`}
-      body="The GitLab token can't read pipelines. Give it the `api` scope."
-      detail={error}
-      actions={
-        <>
-          <Button variant="secondary" size="sm" onClick={onOpenSettings}>
-            Open GitLab settings
-          </Button>
-          <Button variant="secondary" size="sm" isBusy={isChecking} onClick={onCheckAgain}>
-            Check again
-          </Button>
-        </>
-      }
-    />
-  ) : (
+}: Props) => {
+  const label = REVIEW_SOURCE_LABEL[host];
+  if (host === 'gitlab') {
+    return (
+      <Notice
+        tone="warning"
+        placement="inline"
+        title={`Goodboy can't read pipelines for ${repoName}`}
+        body="The GitLab token can't read pipelines. Give it the `api` scope."
+        detail={error}
+        actions={
+          <>
+            <Button variant="secondary" size="sm" onClick={onOpenSettings}>
+              Open GitLab settings
+            </Button>
+            <Button variant="secondary" size="sm" isBusy={isChecking} onClick={onCheckAgain}>
+              Check again
+            </Button>
+          </>
+        }
+      />
+    );
+  }
+  if (host !== 'github') {
+    return (
+      <Notice
+        tone="warning"
+        placement="inline"
+        role="alert"
+        title={`Goodboy can't read checks for ${repoName}`}
+        body={error ?? `${label} did not let Goodboy read checks`}
+        actions={
+          <>
+            <Button variant="secondary" size="sm" onClick={onOpenSettings}>
+              Open {label} settings
+            </Button>
+            <Button variant="secondary" size="sm" isBusy={isChecking} onClick={onCheckAgain}>
+              Check again
+            </Button>
+          </>
+        }
+      />
+    );
+  }
+  return (
     <Notice
       tone="warning"
       placement="inline"
@@ -76,3 +103,4 @@ export const ChecksDeniedNotice = ({
       )}
     </Notice>
   );
+};

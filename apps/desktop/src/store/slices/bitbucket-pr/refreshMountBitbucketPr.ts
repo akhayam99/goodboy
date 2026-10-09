@@ -1,9 +1,13 @@
+import { bitbucketChecksOf, bitbucketReviewDecisionOf } from '@goodboy/core';
 import { listMountPullRequestLinks } from '@goodboy/db';
 import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import {
   bitbucketGetPullRequest,
+  bitbucketListPullRequestStatuses,
   bitbucketPullRequestForBranch,
   type BitbucketPullRequest,
+  type BitbucketRepo,
+  type BitbucketStatus,
 } from '../../../features/integrations/bitbucket/client';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { MountBitbucketPrState } from './state';
@@ -36,6 +40,50 @@ type Params = {
   readonly sessionId: SessionId;
   readonly target: MountFetch;
   readonly opts?: RefreshSessionBitbucketPrOptions;
+};
+
+type StatusesRead = Readonly<
+  | { kind: 'skipped' }
+  | { kind: 'failed' }
+  | { kind: 'read'; statuses: ReadonlyArray<BitbucketStatus> }
+>;
+
+const openStatusesOf = async ({
+  repo,
+  pr,
+}: {
+  readonly repo: BitbucketRepo;
+  readonly pr: BitbucketPullRequest | null;
+}): Promise<StatusesRead> => {
+  if (pr === null || pr.state !== 'OPEN') {
+    return { kind: 'skipped' };
+  }
+  try {
+    return {
+      kind: 'read',
+      statuses: await bitbucketListPullRequestStatuses({ ...repo, pullRequestId: pr.id }),
+    };
+  } catch {
+    return { kind: 'failed' };
+  }
+};
+
+const checksAfterRead = ({
+  current,
+  pr,
+  statuses,
+}: {
+  readonly current: MountBitbucketPrState;
+  readonly pr: BitbucketPullRequest | null;
+  readonly statuses: StatusesRead;
+}): MountBitbucketPrState['checks'] => {
+  if (statuses.kind === 'skipped') {
+    return null;
+  }
+  if (statuses.kind === 'failed') {
+    return current.pr !== null && pr !== null && current.pr.id === pr.id ? current.checks : null;
+  }
+  return bitbucketChecksOf({ statuses: statuses.statuses });
 };
 
 export const refreshMountBitbucketPr = async ({
@@ -74,6 +122,8 @@ export const refreshMountBitbucketPr = async ({
         branch: mount.branch,
         prs: existing?.prs ?? [],
         links: existing?.links ?? [],
+        checks: existing?.checks ?? null,
+        reviewDecision: existing?.reviewDecision ?? null,
         pr: existing?.pr ?? null,
         fetchedAt: existing?.fetchedAt ?? null,
         loading: true,
@@ -107,6 +157,7 @@ export const refreshMountBitbucketPr = async ({
             url: bitbucketRequestUrl({ repo, pullRequestId: item.id, url: item.webUrl }),
           }),
         });
+        const statuses = await openStatusesOf({ repo, pr });
         return {
           kind: 'settle',
           next: (current) =>
@@ -114,6 +165,11 @@ export const refreshMountBitbucketPr = async ({
               ? null
               : {
                   ...current,
+                  checks: checksAfterRead({ current, pr, statuses }),
+                  reviewDecision:
+                    pr === null || pr.state !== 'OPEN'
+                      ? null
+                      : bitbucketReviewDecisionOf({ participants: pr.participants }),
                   host:
                     pr === null
                       ? current.host

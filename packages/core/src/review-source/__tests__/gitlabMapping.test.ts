@@ -118,7 +118,7 @@ describe('REVIEW_SOURCE_CAPABILITIES', () => {
     expect(REVIEW_SOURCE_CAPABILITIES.local.canReply).toBe(false);
   });
 
-  it('writes the pull request on GitHub and GitLab until the other adapters land', () => {
+  it('writes the pull request on GitHub and GitLab and the Bitbucket subset', () => {
     for (const kind of ['github', 'gitlab'] as const) {
       expect(REVIEW_SOURCE_CAPABILITIES[kind]).toMatchObject({
         canEditTitle: true,
@@ -131,7 +131,17 @@ describe('REVIEW_SOURCE_CAPABILITIES', () => {
         canReopen: true,
       });
     }
-    for (const kind of ['bitbucket', 'local'] as const) {
+    expect(REVIEW_SOURCE_CAPABILITIES.bitbucket).toMatchObject({
+      canEditTitle: true,
+      canEditBody: true,
+      canRequestReviewers: true,
+      canSetDraft: false,
+      canReadChecks: true,
+      canChooseMergeMethod: true,
+      canClose: true,
+      canReopen: false,
+    });
+    for (const kind of ['local'] as const) {
       expect(REVIEW_SOURCE_CAPABILITIES[kind]).toMatchObject({
         canEditTitle: false,
         canEditBody: false,

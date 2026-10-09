@@ -20,12 +20,31 @@ describe('capabilityReasonOf', () => {
     expect(capabilityReasonOf({ kind: 'gitlab', capability: 'canReopen' })).toBeNull();
   });
 
-  it('names the noun and the host for a write that is not built yet', () => {
-    expect(capabilityReasonOf({ kind: 'bitbucket', capability: 'canEditTitle' })).toBe(
-      'Goodboy cannot edit the title of a pull request on Bitbucket yet',
+  it('names the noun and the host for a write that is not built', () => {
+    expect(capabilityReasonOf({ kind: 'local', capability: 'canEditTitle' })).toMatch(
+      /^Goodboy cannot edit the title of a .+ yet$/,
     );
-    expect(capabilityReasonOf({ kind: 'bitbucket', capability: 'canRequestReviewers' })).toBe(
-      'Goodboy cannot request reviewers for a pull request on Bitbucket yet',
+    expect(capabilityReasonOf({ kind: 'local', capability: 'canRequestReviewers' })).toMatch(
+      /^Goodboy cannot request reviewers for a .+ yet$/,
     );
+  });
+
+  it('says why Bitbucket cannot reopen a declined pull request', () => {
+    expect(capabilityReasonOf({ kind: 'bitbucket', capability: 'canReopen' })).toBe(
+      "Bitbucket can't reopen a declined pull request",
+    );
+  });
+
+  it('has nothing to say where Bitbucket can write', () => {
+    for (const capability of [
+      'canEditTitle',
+      'canEditBody',
+      'canRequestReviewers',
+      'canReadChecks',
+      'canChooseMergeMethod',
+      'canClose',
+    ] as const) {
+      expect(capabilityReasonOf({ kind: 'bitbucket', capability })).toBeNull();
+    }
   });
 });

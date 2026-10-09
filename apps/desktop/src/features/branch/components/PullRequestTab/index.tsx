@@ -7,9 +7,8 @@ import type {
   Session,
 } from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
-import type { ActiveReviewSource } from '../../../../store/slices/review-source/types';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
-import { HostRequestSummary } from './HostRequestSummary';
+import { BitbucketNoPullRequest } from './BitbucketNoPullRequest';
 import { NoPullRequest } from './NoPullRequest';
 import { PullRequestPage } from './PullRequestPage';
 import type { ReviewerRequest } from './ReviewersProperty';
@@ -18,13 +17,14 @@ type Props = {
   readonly session: Session;
   readonly host: PullRequestHost;
   readonly pr: PullRequestState | null;
+  readonly isBitbucketRemote: boolean;
+  readonly newPullRequestUrl: string | null;
   readonly detail: PrDetail | null;
   readonly view: PullRequestView | null;
   readonly edits: ReadonlyArray<PullRequestEdit>;
   readonly viewError: string | null;
   readonly viewErrorKind: PullRequestFailureKind | null;
   readonly mountPath: string | null;
-  readonly source: ActiveReviewSource | null;
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
   readonly behind: number | null;
@@ -43,13 +43,14 @@ export const PullRequestTab = ({
   session,
   host,
   pr,
+  isBitbucketRemote,
+  newPullRequestUrl,
   detail,
   view,
   edits,
   viewError,
   viewErrorKind,
   mountPath,
-  source,
   canEdit,
   request,
   behind,
@@ -63,8 +64,8 @@ export const PullRequestTab = ({
   onSelectTab,
   onOpenFiles,
 }: Props) => {
-  if (source !== null && !source.capabilities.canEditTitle) {
-    return <HostRequestSummary source={source} />;
+  if (pr === null && isBitbucketRemote) {
+    return <BitbucketNoPullRequest url={newPullRequestUrl} />;
   }
   if (pr === null) {
     return (

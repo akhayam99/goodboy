@@ -1046,6 +1046,7 @@ async fn run_write(
                 unsigned(args, "id")?,
                 None,
                 optional_text(args, "message"),
+                optional_text(args, "strategy"),
                 app.state(),
             )
             .await

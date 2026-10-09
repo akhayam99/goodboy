@@ -1,9 +1,11 @@
-import type { PullRequestPort } from '@goodboy/core';
+import { PULL_REQUEST_NOUNS, type PullRequestPort } from '@goodboy/core';
 import type { MountId, Session, SessionId } from '@goodboy/types';
 import { ReportedError } from '../notifications/reportedError';
 import type { SessionRepo } from '../worktrees/resolveSessionRepo';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';
+import { requestHostOf } from '../review-source/requestHostOf';
+import type { PrNouns } from '../../../features/review/prLifecycle';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
@@ -18,7 +20,10 @@ type Params = {
   readonly sessionId: SessionId;
   readonly prNumber: number | undefined;
   readonly mountId?: MountId;
-  readonly failureTitle: (params: { readonly prNumber: number | null }) => string;
+  readonly failureTitle: (params: {
+    readonly prNumber: number | null;
+    readonly nouns: PrNouns;
+  }) => string;
 };
 
 export type PrWriteContext = {
@@ -40,7 +45,17 @@ export const prWriteContext = ({
   const fail = (message: string): never => {
     void get()
       .reportError({
-        title: failureTitle({ prNumber: num }),
+        title: failureTitle({
+          prNumber: num,
+          nouns:
+            PULL_REQUEST_NOUNS[
+              requestHostOf({
+                state: get(),
+                sessionId,
+                ...(mountId === undefined ? {} : { mountId }),
+              })
+            ],
+        }),
         error: new Error(message),
         sessionId,
         ...(session === null ? {} : { workspaceId: session.workspaceId }),

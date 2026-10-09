@@ -1,5 +1,5 @@
 import { Check, ChevronRight } from 'lucide-react';
-import type { PullRequestPort } from '@goodboy/core';
+import type { PullRequestPort, ReviewSourceKind } from '@goodboy/core';
 import { Button, CopyButton, ROW_INTERACTIVE, StatusDot, cn } from '@goodboy/ui';
 import type {
   PrDetail,
@@ -9,7 +9,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { PrMergeReadiness } from '../../../review/prMergeReadiness';
+import { mergeabilityNoteOf, type PrMergeReadiness } from '../../../review/prMergeReadiness';
 import { checksWordOf } from '../../../integrations/github/checksRollup';
 import { pullRequestWord } from '../../pullRequestWord';
 import { checksPropertyWord } from './checksPropertyWord';
@@ -21,6 +21,7 @@ import { ReviewersProperty, type ReviewerRequest } from './ReviewersProperty';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly host: ReviewSourceKind;
   readonly pr: PullRequestState;
   readonly detail: PrDetail | null;
   readonly view: PullRequestView | null;
@@ -38,6 +39,7 @@ type Props = {
 
 export const PullRequestProperties = ({
   sessionId,
+  host,
   pr,
   detail,
   view,
@@ -60,6 +62,8 @@ export const PullRequestProperties = ({
   });
   const checksWord = checksWordOf({ pr, detail });
   const checksText = checksWord === 'unknown' ? 'Checks unknown' : checks.text;
+  const mergeNote =
+    pr.state === 'open' ? mergeabilityNoteOf({ host, mergeable: pr.mergeable }) : null;
   const files = view?.files ?? null;
   const stats = files?.first ?? [];
 
@@ -91,6 +95,11 @@ export const PullRequestProperties = ({
           )}
           <span className="min-w-0">{readiness.word}</span>
         </div>
+        {mergeNote !== null && (
+          <div className="flex min-h-6 min-w-0 items-center text-meta text-faint-foreground">
+            {mergeNote}
+          </div>
+        )}
       </PropertyBlock>
 
       <ResolvesProperty sessionId={sessionId} pr={pr} view={view} canEdit={canEdit} />

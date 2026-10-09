@@ -354,7 +354,7 @@ describe('pull request writes on a host without a port', () => {
     await expectLoudFailure({
       run: mergePr(vi.fn(), asGet(state))(SESSION_ID, 12),
       state,
-      title: "Couldn't merge #12",
+      title: "Couldn't merge !12",
       message: PR_WRITE_NO_PORT,
     });
   });

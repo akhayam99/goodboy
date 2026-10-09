@@ -4,6 +4,7 @@ import type {
   ArtifactId,
   MountId,
   ProjectId,
+  PullRequestHost,
   SessionExternalTaskProvider,
   SessionId,
   WorkflowRunId,
@@ -234,6 +235,7 @@ export type PullRequestActionTarget = {
   readonly kind: 'pullRequest';
   readonly sessionId: SessionId;
   readonly prNumber: number | null;
+  readonly host?: PullRequestHost;
 };
 
 export type DiffActionTarget = {

@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
+import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { mountPrEventPayload } from './mountPrEventPayload';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
@@ -14,8 +15,8 @@ export const markPrReady = (_set: SetFn, get: GetFn) => {
       sessionId,
       prNumber,
       ...(mountId === undefined ? {} : { mountId }),
-      failureTitle: ({ prNumber: target }) =>
-        prLifecycleFailureTitle({ action: 'ready', prNumber: target }),
+      failureTitle: ({ prNumber: target, nouns }) =>
+        prLifecycleFailureTitle({ action: 'ready', prNumber: target, nouns }),
     });
     await withPrWriteClaim({
       get,
@@ -27,11 +28,12 @@ export const markPrReady = (_set: SetFn, get: GetFn) => {
           get,
           sessionId,
           workspaceId: session.workspaceId,
-          title: `Couldn't mark #${num} ready`,
+          title: prLifecycleFailureTitle({ action: 'ready', prNumber: num, nouns: port.nouns }),
           run: () => port.setDraft({ isDraft: false }),
         });
-        await get().refreshSessionPr(sessionId, {
-          force: true,
+        await refreshActiveRequest({
+          get,
+          sessionId,
           ...(mountId === undefined ? {} : { mountId }),
         });
         await get().recordSessionEventOnce({

@@ -7,6 +7,7 @@ import {
   type BitbucketReviewTransport,
 } from '../bitbucketReviewSource';
 import { githubReviewSource } from '../githubReviewSource';
+import { fakeBitbucketTransport } from './bitbucketPullRequestFixture';
 import { PULL_REQUEST_CAPABILITY_METHODS, type PullRequestCapability } from '../pullRequestPort';
 import { PR_VIEW_JSON } from './githubPullRequestFixture';
 import { fakeGitlabTransport } from './gitlabPullRequestFixture';
@@ -239,6 +240,7 @@ const bitbucketFake = (): Fake => {
       return 4004;
     },
     readHeadSha: async () => '9a8b7c6',
+    pullRequest: fakeBitbucketTransport().transport,
   };
   return {
     source: bitbucketReviewSource({

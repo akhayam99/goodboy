@@ -1938,8 +1938,7 @@ the `h2`s of Description and Activity.
 `ReviewSourceCapabilities` of the active source: a control the host cannot do on
 an object that exists is shown disabled with its reason in words (`Bitbucket has
 no draft pull requests`, `Turned off in payments-api`, `Set by the project`), a
-control for a concept the host does not have is left out, and a control the host
-does but Goodboy has not built yet says so (`HostRequestSummary`). The merge
+control for a concept the host does not have is left out. The merge
 confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`):
 the option cards carry the effect sentence and a forbidden one is disabled with
 its reason. States follow the five of Empty states: no pull request is a page

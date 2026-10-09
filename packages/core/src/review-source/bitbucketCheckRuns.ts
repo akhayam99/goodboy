@@ -1,13 +1,13 @@
 import type { PrCheckRun } from '@goodboy/types';
 import { bitbucketCheckConclusion } from './bitbucketCheckConclusion';
-import type { BitbucketStatus } from './client';
+import type { BitbucketPortStatus } from './bitbucketPullRequestTypes';
 
 type Params = {
-  readonly statuses: ReadonlyArray<BitbucketStatus>;
+  readonly statuses: ReadonlyArray<BitbucketPortStatus>;
 };
 
 type DurationParams = {
-  readonly status: BitbucketStatus;
+  readonly status: BitbucketPortStatus;
 };
 
 const durationMs = ({ status }: DurationParams): number | null => {

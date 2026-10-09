@@ -1,6 +1,7 @@
 import { isPullRequestPortError } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
+import { selectBitbucketRequest } from '../bitbucket-pr/selectBitbucketRequest';
 import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 import { sessionPullRequestOf } from '../review-source/sessionPullRequestOf';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';
@@ -27,6 +28,7 @@ export const loadPullRequestView = async ({
   const number =
     sessionPullRequestOf({ state: get(), sessionId })?.number ??
     activeReviewSourceOf({ state: get(), sessionId })?.prNumber ??
+    selectBitbucketRequest({ state: get(), sessionId })?.pr.id ??
     null;
   if (number === null) {
     return;

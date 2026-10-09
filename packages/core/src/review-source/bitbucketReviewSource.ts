@@ -1,4 +1,8 @@
 import type { PrComment } from '@goodboy/types';
+import {
+  bitbucketPullRequestPort,
+  type BitbucketPullRequestTransport,
+} from './bitbucketPullRequestPort';
 import { commitLinkOf } from './commitLink';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSource, type ReviewSourceThread } from './types';
 
@@ -24,6 +28,7 @@ export type BitbucketReviewTransport = Readonly<{
     readonly body: string;
   }) => Promise<number>;
   readHeadSha: () => Promise<string | null>;
+  pullRequest: BitbucketPullRequestTransport;
 }>;
 
 type Params = Readonly<{
@@ -141,5 +146,5 @@ export const bitbucketReviewSource = ({ transport, prUrl }: Params): ReviewSourc
   },
   readRemoteHead: () => transport.readHeadSha(),
   commitLink: ({ sha }) => commitLinkOf({ kind: 'bitbucket', url: prUrl, sha }),
-  pullRequest: null,
+  pullRequest: bitbucketPullRequestPort({ transport: transport.pullRequest, prUrl }),
 });

@@ -150,6 +150,8 @@ const get: GetFn = () => ({
       branch: 'hl/relay-retry',
       mrs: [],
       links: [],
+      checks: null,
+      reviewDecision: null,
     },
   },
   mountBitbucketPr: {
@@ -172,6 +174,8 @@ const get: GetFn = () => ({
       branch: 'nw/cart-total',
       prs: [],
       links: [],
+      checks: null,
+      reviewDecision: null,
     },
   },
   diffComments: {},

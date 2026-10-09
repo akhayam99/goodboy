@@ -1,5 +1,8 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import type { BitbucketRepo } from '../../../features/integrations/bitbucket/client';
+import type {
+  BitbucketMergeStrategyName,
+  BitbucketRepo,
+} from '../../../features/integrations/bitbucket/client';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -8,6 +11,10 @@ export type BitbucketPrWriteParams = {
   readonly mountId?: MountId;
   readonly repo: BitbucketRepo;
   readonly pullRequestId: number;
+};
+
+export type BitbucketPrMergeParams = BitbucketPrWriteParams & {
+  readonly strategy?: BitbucketMergeStrategyName;
 };
 
 export type BitbucketPrCommentParams = BitbucketPrWriteParams & {

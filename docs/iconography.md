@@ -107,7 +107,10 @@ a sentence that the Board card, the Now chip rows and the palette read too. Red
 answer, approve or act on: `?` for a question or a comment that needs you, the
 shield for a tool permission (Waiting for your permission) or a held plan (the plan waits for your approval), and an amber `!` (`alert`) for changes
 requested and comments the fix could not fix. A solid green disc with a white
-check (`approved`) is a pull request ready to merge. A pull request in the merge
+check (`approved`) is a pull request ready to merge. A Bitbucket session wears
+the same marks: its commit statuses and its reviewers feed the same table, so a
+failed status is red, a reviewer's changes request is amber and an approval beside
+a failed status never reads ready. A pull request in the merge
 queue (`pr-queued`) is the `merging` mark: a ring in the `primary` teal around a
 half-filled core, calm and in progress, because nothing is left for you to do.
 It ranks below the needs-you reasons and above approved, and the session stays

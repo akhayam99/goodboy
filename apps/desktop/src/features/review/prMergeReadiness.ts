@@ -1,3 +1,4 @@
+import type { ReviewSourceKind } from '@goodboy/core';
 import type { PullRequestState } from '@goodboy/types';
 
 type PrMergeTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
@@ -23,7 +24,10 @@ export type MergeReadinessFacts = {
   readonly writeInFlight: string | null;
   readonly commentsNeedYou: number;
   readonly isFixRunLive: boolean;
+  readonly host?: ReviewSourceKind;
 };
+
+const MERGE_CHECKED_BY_HOST = 'Bitbucket checks this when you merge';
 
 const UNKNOWN_REASON = 'GitHub has not finished checking whether this branch merges.';
 const FIX_RUN_LIVE = 'A run is live on this branch';
@@ -48,7 +52,9 @@ const phaseBlocker = ({ facts }: { readonly facts: MergeReadinessFacts }): strin
     case 'merged':
       return 'This pull request is already merged.';
     case 'closed':
-      return 'Reopen this pull request before merging.';
+      return facts.host === 'bitbucket'
+        ? 'This pull request was declined.'
+        : 'Reopen this pull request before merging.';
     case 'draft':
       return 'Mark this pull request ready before merging.';
     case 'queued':
@@ -203,11 +209,19 @@ export const evaluatePrMergeReadiness = ({
   if (blockers.length > 0) {
     return { status: 'blocked', tone, reason: blockers[0] ?? word, word, blockers, caveats };
   }
-  if (facts.pr?.mergeable === null) {
+  if (facts.pr?.mergeable === null && facts.host !== 'bitbucket') {
     return { status: 'unknown', tone: 'neutral', reason: UNKNOWN_REASON, word, blockers, caveats };
   }
   return { status: 'ready', tone, reason: word, word, blockers, caveats };
 };
+
+export const mergeabilityNoteOf = ({
+  host,
+  mergeable,
+}: {
+  readonly host: ReviewSourceKind | undefined;
+  readonly mergeable: boolean | null;
+}): string | null => (host === 'bitbucket' && mergeable === null ? MERGE_CHECKED_BY_HOST : null);
 
 export const mergeIsClear = ({ readiness }: { readonly readiness: PrMergeReadiness }): boolean =>
   readiness.status === 'ready' && readiness.caveats.length === 0;

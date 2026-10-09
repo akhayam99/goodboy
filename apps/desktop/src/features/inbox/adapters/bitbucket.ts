@@ -1,6 +1,6 @@
 import type { BitbucketPrGroup } from '../../integrations/bitbucket/BitbucketStudio/useBitbucketPrs';
 import type { BitbucketRepo } from '../../integrations/bitbucket/client';
-import { bitbucketPrStateKind } from '../../integrations/bitbucket/bitbucketPrStateKind';
+import { bitbucketPrStateKind } from '@goodboy/core';
 import type { InboxRecord } from '../types';
 import { requestInboxState } from '../requestInboxState';
 import { stateWord } from '../stateWord';
