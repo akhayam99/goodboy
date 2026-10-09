@@ -2449,7 +2449,7 @@ the tree row. The drawer reads `Your notes` with `N open`; `Fix N` is its one
 primary (one fix run on the selected notes, all the open and fixable ones by
 default, each with a check when there are two or more) and `⋯` holds `Move N to
 review draft` (only with a pull request) and `Show closed`. Notes are grouped by
-file, each the same review comment thread Comments draws, with `Jump to line`
+file, each the same review comment thread Comments draws, with `Jump to file`
 (the Files tab at the file): `Open note` (`Fix`, `Close`, `Delete` with Undo),
 working (the run line above the list holds `Stop` and `Open transcript`), ready
 (`Accept` keeps the fix on the branch and closes the note, `Skip`, `Close the

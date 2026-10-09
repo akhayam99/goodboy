@@ -6,6 +6,8 @@ import { moveNotesLabel, postNotesResultMessage, postNotesToPr } from './postNot
 
 const SESSION_ID = 'session' as SessionId;
 
+const TARGET = { provider: 'github', repo: 'harborline/ledger-core', prNumber: 318 } as const;
+
 const noteOf = (patch: Partial<DiffComment>): DiffComment => ({
   id: 'rounding',
   sessionId: SESSION_ID,
@@ -24,6 +26,7 @@ describe('postNotesToPr', () => {
 
     const result = await postNotesToPr({
       sessionId: SESSION_ID,
+      target: TARGET,
       notes: [noteOf({ anchor: { side: 'new', lineNumber: 40, endLineNumber: 44 } })],
       addReviewDraft,
       closeNote: async (noteId) => {
@@ -33,6 +36,7 @@ describe('postNotesToPr', () => {
 
     expect(addReviewDraft).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
+      target: TARGET,
       path: 'src/ledger.ts',
       line: 44,
       startLine: 40,
@@ -49,6 +53,7 @@ describe('postNotesToPr', () => {
 
     const result = await postNotesToPr({
       sessionId: SESSION_ID,
+      target: TARGET,
       notes: [noteOf({ id: 'file-level', body: 'Split this module' })],
       addReviewDraft,
       closeNote: async (noteId) => {
@@ -59,6 +64,7 @@ describe('postNotesToPr', () => {
     expect(addReviewDraft).toHaveBeenCalledTimes(1);
     expect(addReviewDraft).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
+      target: TARGET,
       path: 'src/ledger.ts',
       line: FILE_LEVEL_LINE,
       startLine: null,

@@ -1,7 +1,6 @@
 export const REVIEW_NOTES_COPY = {
   title: 'Your notes',
   close: 'Close',
-  jumpToLine: 'Jump to line',
   jumpToFile: 'Jump to file',
   showClosed: 'Show closed',
   hideClosed: 'Hide closed',

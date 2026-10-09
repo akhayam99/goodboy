@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const MoreBranchTasks = ({ sessionId, branch, tasks }: Props) => {
-  const dropdown = useDropdown({ align: 'start', width: 'w-72', expectedHeight: 160 });
+  const dropdown = useDropdown({ align: 'start', width: 'w-80', expectedHeight: 160 });
   const label = `More tasks on ${branch}`;
   return (
     <AnchoredPopover

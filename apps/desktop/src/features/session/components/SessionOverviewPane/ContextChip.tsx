@@ -64,32 +64,30 @@ export const ContextChip = ({ sessionId }: Props) => {
 
   return (
     <Tooltip content={tooltipFor({ status, hasChange })}>
-      <span className="inline-flex shrink-0">
-        <Chip
-          as="button"
-          tone="neutral"
-          shape="badge"
-          size="control"
-          ariaPressed={isOpen}
-          testId="context-chip"
-          onClick={() =>
-            toggleContextDrawer({ sessionId, ...(hasChange && !isOpen && { tab: 'decisions' }) })
-          }
-          icon={glyph}
-          label="Context"
-          trailing={
-            hasChange ? (
-              <span
-                role="img"
-                aria-label="Changed since you last looked"
-                data-testid="context-change-dot"
-                className="size-1.5 shrink-0 rounded-full bg-primary"
-              />
-            ) : null
-          }
-          className={cn(isOpen && 'bg-selected')}
-        />
-      </span>
+      <Chip
+        as="button"
+        tone="neutral"
+        shape="badge"
+        size="control"
+        ariaPressed={isOpen}
+        testId="context-chip"
+        onClick={() =>
+          toggleContextDrawer({ sessionId, ...(hasChange && !isOpen && { tab: 'decisions' }) })
+        }
+        icon={glyph}
+        label="Context"
+        trailing={
+          hasChange ? (
+            <span
+              role="img"
+              aria-label="Changed since you last looked"
+              data-testid="context-change-dot"
+              className="size-1.5 shrink-0 rounded-full bg-primary"
+            />
+          ) : null
+        }
+        className={cn(isOpen && 'bg-selected')}
+      />
     </Tooltip>
   );
 };

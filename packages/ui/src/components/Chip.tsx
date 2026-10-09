@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react';
+import type { FocusEvent, MouseEvent, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { tintClasses, type Tone } from '../tint';
@@ -28,6 +28,12 @@ export type ChipProps = {
   readonly expanded?: boolean;
   readonly hasPopup?: 'dialog' | 'menu' | 'listbox' | 'true';
   readonly className?: string;
+  readonly ref?: Ref<HTMLElement>;
+  readonly onMouseEnter?: (event: MouseEvent<HTMLElement>) => void;
+  readonly onMouseMove?: (event: MouseEvent<HTMLElement>) => void;
+  readonly onMouseLeave?: (event: MouseEvent<HTMLElement>) => void;
+  readonly onFocus?: (event: FocusEvent<HTMLElement>) => void;
+  readonly onBlur?: (event: FocusEvent<HTMLElement>) => void;
 };
 
 export const CHIP_KIND_CLASSES = {
@@ -121,6 +127,12 @@ export const Chip = ({
   expanded,
   hasPopup,
   className,
+  ref,
+  onMouseEnter,
+  onMouseMove,
+  onMouseLeave,
+  onFocus,
+  onBlur,
 }: ChipProps) => {
   const isButton = as === 'button' || onClick !== undefined;
   const classes = cn(
@@ -145,9 +157,13 @@ export const Chip = ({
     </>
   );
 
+  const hoverProps = { onMouseEnter, onMouseMove, onMouseLeave, onFocus, onBlur };
+
   if (isButton) {
     return (
       <button
+        ref={ref as Ref<HTMLButtonElement>}
+        {...hoverProps}
         type="button"
         title={title}
         aria-label={ariaLabel}
@@ -166,6 +182,8 @@ export const Chip = ({
 
   return (
     <span
+      ref={ref as Ref<HTMLSpanElement>}
+      {...hoverProps}
       title={title}
       role={ariaLabel == null ? undefined : 'img'}
       aria-label={ariaLabel}

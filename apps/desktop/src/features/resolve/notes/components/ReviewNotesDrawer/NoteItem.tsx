@@ -40,8 +40,6 @@ export const NoteItem = ({
   const { row, state } = entry;
   const noteId = row.thread.diffCommentId ?? noteIdOfThread({ threadId: entry.threadId });
   const isBusy = binding.pendingActionId !== null || binding.isSubmitting;
-  const jumpLabel =
-    row.reviewerNote?.line == null ? REVIEW_NOTES_COPY.jumpToFile : REVIEW_NOTES_COPY.jumpToLine;
 
   const noteActions =
     state === 'new' ? (
@@ -98,7 +96,7 @@ export const NoteItem = ({
         entries={entries}
         hunk={
           <Button size="xs" variant="ghost" className="w-fit" onClick={onJump}>
-            {jumpLabel}
+            {REVIEW_NOTES_COPY.jumpToFile}
           </Button>
         }
         noteActions={noteActions}

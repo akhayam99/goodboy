@@ -18,6 +18,7 @@ import {
   CTX_PAYMENTS_WORKTREE,
   CTX_SESSION_ID,
 } from '../../../../../app/components/MockScene/scenes/brand/contextBase';
+import { NOTE_IDS } from '../../../../../app/components/MockScene/scenes/resolveNotesSeed';
 import { seedNotesScene } from '../../../../../app/components/MockScene/scenes/u23/notesSeed';
 import { noteThreadId } from '../../noteThread';
 import { ReviewNotesDrawer } from '.';
@@ -194,5 +195,42 @@ describe('the review notes drawer by lane state', () => {
         threadIds: [noteThreadId({ noteId: 'mock-note-shared-retry' })],
       }),
     );
+  });
+
+  it('drops a state filter once no note is in that state, so the rest of the notes stay in view', async () => {
+    renderDrawer();
+    const panel = await screen.findByRole('region', { name: 'Your notes' });
+    fireEvent.click(within(panel).getByRole('button', { name: /1 working/ }));
+    expect(within(panel).queryByText(/Cap the backoff/)).toBeNull();
+
+    act(() => {
+      useAppStore.setState((state) => ({
+        diffComments: {
+          ...state.diffComments,
+          [CTX_SESSION_ID]: (state.diffComments[CTX_SESSION_ID] ?? []).filter(
+            (note) => note.id !== NOTE_IDS.working,
+          ),
+        },
+        sessionResolveQueueItems: {
+          ...state.sessionResolveQueueItems,
+          [CTX_SESSION_ID]: (state.sessionResolveQueueItems[CTX_SESSION_ID] ?? []).filter(
+            (entry) => entry.thread.diffCommentId !== NOTE_IDS.working,
+          ),
+        },
+      }));
+    });
+
+    expect(within(panel).queryByRole('button', { name: /working/ })).toBeNull();
+    expect(within(panel).queryByText('No notes')).toBeNull();
+    expect(within(panel).getByText(/Cap the backoff/)).toBeDefined();
+  });
+
+  it('names the jump by what it does, the file, even for a note on a line', async () => {
+    renderDrawer();
+    const panel = await screen.findByRole('region', { name: 'Your notes' });
+    const card = noteCard({ panel, body: /Cap the backoff/ });
+
+    expect(within(card).getByRole('button', { name: 'Jump to file' })).toBeDefined();
+    expect(within(panel).queryByRole('button', { name: 'Jump to line' })).toBeNull();
   });
 });

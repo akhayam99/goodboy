@@ -100,14 +100,6 @@ const markAcceptConflict = async ({
   });
   await loadResolveQueueItemsInto({ set, sessionId });
   await loadResolveCandidatesInto({ set, sessionId });
-  await closeAcceptedNotes({
-    set,
-    get,
-    sessionId,
-    threads: steps.flatMap(({ covered }) =>
-      covered.flatMap(({ entry }) => (entry === undefined ? [] : [entry.thread])),
-    ),
-  });
 };
 
 export const PARTIAL_REFUSAL =

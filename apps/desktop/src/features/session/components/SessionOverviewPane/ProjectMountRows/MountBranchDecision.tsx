@@ -109,7 +109,7 @@ export const MountBranchDecision = ({
             branches: [observation.recordedBranch, observation.observedBranch],
           }).map((segment, index) =>
             segment.isBranch ? (
-              <span key={`${index}:${segment.text}`} className="break-all font-mono text-code">
+              <span key={`${index}:${segment.text}`} className="break-all text-code">
                 {segment.text}
               </span>
             ) : (

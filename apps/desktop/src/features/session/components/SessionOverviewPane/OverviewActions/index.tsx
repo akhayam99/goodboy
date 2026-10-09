@@ -35,7 +35,7 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
   const isRunActive = hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents });
   const dropdown = useDropdown({
     align: 'end',
-    width: 'min-w-[260px]',
+    width: 'min-w-60',
     expectedHeight: 200,
   });
   const startAgentEvent = startAgentEventOf({ sessionId });

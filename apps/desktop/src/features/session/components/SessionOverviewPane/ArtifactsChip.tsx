@@ -19,18 +19,16 @@ export const ArtifactsChip = ({ sessionId, onSelectLens }: Props) => {
 
   return (
     <Tooltip content="Reports, wireframes and plans this session wrote">
-      <span className="inline-flex shrink-0">
-        <Chip
-          as="button"
-          tone="neutral"
-          shape="badge"
-          size="control"
-          onClick={() => onSelectLens('plans')}
-          icon={<CONCEPT_ICONS.artifacts size={11} aria-hidden className="text-muted-foreground" />}
-          label="Artifacts"
-          trailing={<span className="font-mono tabular-nums text-foreground">{count}</span>}
-        />
-      </span>
+      <Chip
+        as="button"
+        tone="neutral"
+        shape="badge"
+        size="control"
+        onClick={() => onSelectLens('plans')}
+        icon={<CONCEPT_ICONS.artifacts size={11} aria-hidden className="text-muted-foreground" />}
+        label="Artifacts"
+        trailing={<span className="font-mono tabular-nums text-foreground">{count}</span>}
+      />
     </Tooltip>
   );
 };

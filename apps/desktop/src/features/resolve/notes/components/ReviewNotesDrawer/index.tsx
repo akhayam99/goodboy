@@ -185,20 +185,20 @@ export const ReviewNotesDrawer = ({
   }, []);
 
   const postNotes = actions.find((action) => action.id === POST_NOTES_ACTION) ?? null;
+  const activeFilter =
+    fixRun !== null && filter !== null && fixRun.tally[filter] > 0 ? filter : null;
   const groups = useMemo(
     () =>
-      filter === null
+      activeFilter === null
         ? notes.groups
         : notes.groups
             .map((group) => ({
               ...group,
-              entries: group.entries.filter((entry) => entry.resolveWord === filter),
+              entries: group.entries.filter((entry) => entry.resolveWord === activeFilter),
             }))
             .filter((group) => group.entries.length > 0),
-    [filter, notes.groups],
+    [activeFilter, notes.groups],
   );
-  const activeFilter =
-    fixRun !== null && filter !== null && fixRun.tally[filter] > 0 ? filter : null;
   const isSelecting = notes.fixableIds.length > 1;
 
   const dock =

@@ -636,4 +636,34 @@ describe('a note fix and comment fixes stack in one lane', () => {
       'Reply for thread-c',
     );
   });
+
+  it('keeps the note open when accepting its fix runs into a conflict', async () => {
+    const live = makeHarness();
+    await startRun({ harness: live, attemptId: 'run-1', threadIds: [NOTE_THREAD] });
+    const sha = commitFile({ name: 'a.txt', body: 'a\n' });
+    const noteItem = await seedNote({ sha });
+    await live.actions.captureResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'run-1',
+      threadIds: [NOTE_THREAD],
+    });
+    git(worktreePath, ['commit', '--amend', '--no-verify', '-m', 'base rewritten']);
+    const queue = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+
+    await expect(
+      live.actions.acceptResolveQueueItem({
+        sessionId: SESSION_ID,
+        itemId: noteItem,
+        revision: queue.find((entry) => entry.item.id === noteItem)?.item.candidateRevision ?? 0,
+        reply: '',
+      }),
+    ).rejects.toThrow('The branch moved under this fix');
+
+    const notes = await listDiffCommentsForSession(db, SESSION_ID);
+    expect(notes.map((note) => note.status)).toEqual(['open']);
+    const [thread] = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(thread?.state).toBe('failed');
+    const [item] = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+    expect(item?.item.deliveredAt).toBeNull();
+  });
 });

@@ -8,16 +8,31 @@ import {
   postNotesToPr,
 } from '../../resolve/notes/postNotesToPr';
 import { reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
-import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
+import {
+  activeReviewSourceOf,
+  selectedReviewEntryOf,
+} from '../../../store/slices/review-source/activeReviewSource';
+import { reviewSourceEntriesOf } from '../../../store/slices/review-source/reviewSourceEntries';
+import type { ReviewSourceEntry } from '../../../store/slices/review-source/types';
+import {
+  selectActiveMountId,
+  selectDisplayedMount,
+} from '../../../store/slices/project-mounts/selectors';
 import { isPushFailure } from '../../resolve/reviewCommentState';
 import { remoteOf } from '../../resolve/reviewRemote';
 import { requestReview } from '../../review/reviewRequest';
+import {
+  targetFromUrl,
+  type ReviewTarget,
+} from '../../../store/slices/review-drafts/resolveReviewTarget';
+import type { AppStore } from '../../../store/store';
 import type { ObjectKindDefinition, ReviewActionTarget } from '../types';
 
 export type ReviewFacts = {
   readonly sessionId: SessionId;
   readonly prNumber: number | null;
   readonly sourceKind: 'github' | 'gitlab' | 'bitbucket' | null;
+  readonly reviewTarget: ReviewTarget | null;
   readonly open: number;
   readonly ready: number;
   readonly accepted: number;
@@ -42,6 +57,40 @@ const pushLabel = ({
   readonly failed: number;
 }): string => (failed > 0 ? `Retry push for ${failed}` : `Push ${accepted}`);
 
+const reviewTargetOf = ({
+  state,
+  sessionId,
+}: {
+  readonly state: AppStore;
+  readonly sessionId: SessionId;
+}): ReviewTarget | null => {
+  const displayed = selectDisplayedMount({ state, sessionId });
+  const activeMountId = selectActiveMountId({ state, sessionId });
+  const isOwn = (entry: ReviewSourceEntry): boolean =>
+    displayed === null ||
+    entry.mountId === displayed.mountId ||
+    (entry.mountId === null && displayed.mountId === activeMountId);
+  const isReviewable = (entry: ReviewSourceEntry): boolean =>
+    (entry.kind === 'github' || entry.kind === 'gitlab') &&
+    entry.number !== null &&
+    entry.url !== null &&
+    isOwn(entry);
+  const selected = selectedReviewEntryOf({ state, sessionId });
+  const entry =
+    selected !== null && isReviewable(selected)
+      ? selected
+      : reviewSourceEntriesOf({ state, sessionId }).find(isReviewable);
+  if (
+    entry === undefined ||
+    entry.number === null ||
+    entry.url === null ||
+    (entry.kind !== 'github' && entry.kind !== 'gitlab')
+  ) {
+    return null;
+  }
+  return targetFromUrl({ provider: entry.kind, url: entry.url, prNumber: entry.number });
+};
+
 export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> = {
   noun: 'review',
   facts: ({ state, target }) => {
@@ -65,6 +114,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
       sessionId,
       prNumber: source?.prNumber ?? null,
       sourceKind: source?.kind ?? null,
+      reviewTarget: hasPr ? reviewTargetOf({ state, sessionId }) : null,
       open: count(
         (entry) =>
           ['new', 'drafting', 'needs', 'ready', 'edited', 'outdated'].includes(entry.state) ||
@@ -109,12 +159,17 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
       label: ({ facts }) => moveNotesLabel({ count: facts.notes }),
       icon: MessageSquarePlus,
       group: 'act',
-      when: ({ facts }) => facts.notes > 0 && facts.prNumber !== null,
+      when: ({ facts }) => facts.notes > 0 && facts.reviewTarget !== null,
       slot: () => 'menu',
       run: async ({ facts, env }) => {
+        const { reviewTarget } = facts;
+        if (reviewTarget === null) {
+          return;
+        }
         const state = env.getState();
         const result = await postNotesToPr({
           sessionId: facts.sessionId,
+          target: reviewTarget,
           notes: notesOnBranchOf({ state, sessionId: facts.sessionId }).filter((note) =>
             isOpenNote({ note }),
           ),

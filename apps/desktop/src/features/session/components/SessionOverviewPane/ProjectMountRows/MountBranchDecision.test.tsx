@@ -90,7 +90,7 @@ describe('MountBranchDecision', () => {
   it('sets the branch names apart in mono', () => {
     renderDecision();
 
-    const names = Array.from(screen.getByRole('alert').querySelectorAll('.font-mono'));
+    const names = Array.from(screen.getByRole('alert').querySelectorAll('.text-code'));
     expect(names.map((name) => name.textContent)).toEqual(['ak/part-one', 'ak/part-two']);
   });
 

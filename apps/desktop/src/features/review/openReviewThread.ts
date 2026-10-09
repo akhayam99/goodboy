@@ -1,9 +1,12 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { selectMountForPr } from '../../store/slices/github/mountForPr';
-import { selectUnambiguousProjectMount } from '../../store/slices/project-mounts/selectors';
+import {
+  selectUnambiguousProjectMount,
+  selectWritableMounts,
+} from '../../store/slices/project-mounts/selectors';
 import type { ReviewTargetOutcome } from '../../store/slices/review-navigation';
-import { noteIdOfThread } from '../resolve/notes/noteThread';
+import { isNoteOnBranch, noteIdOfThread } from '../resolve/notes/noteThread';
 import { openReview } from './openReview';
 import { pullRequestNumberFromUrl } from './pullRequestNumberFromUrl';
 
@@ -61,15 +64,43 @@ const mountIdFor = ({ state, sessionId, threadId, prNumber }: MountParams): Moun
   return owning ?? selectMountForPr({ state, sessionId, prNumber });
 };
 
+const noteMountIdFor = ({
+  state,
+  sessionId,
+  noteId,
+}: {
+  readonly state: State;
+  readonly sessionId: SessionId;
+  readonly noteId: string;
+}): MountId | null => {
+  const note = (state.diffComments[sessionId] ?? []).find((candidate) => candidate.id === noteId);
+  if (note === undefined) {
+    return null;
+  }
+  return (
+    selectWritableMounts({ state, sessionId }).find((mount) =>
+      isNoteOnBranch({ note, projectId: mount.projectId, branch: mount.branch }),
+    )?.mountId ?? null
+  );
+};
+
 export const openReviewThread = ({
   sessionId,
   threadId,
   prUrl = null,
 }: Params): Promise<ReviewTargetOutcome> => {
-  if (noteIdOfThread({ threadId }) !== null) {
-    return openReview({ sessionId, destination: { kind: 'notes', threadIds: [threadId] } });
-  }
   const state = useAppStore.getState();
+  const noteId = noteIdOfThread({ threadId });
+  if (noteId !== null) {
+    const mountId = noteMountIdFor({ state, sessionId, noteId });
+    return openReview({
+      sessionId,
+      destination:
+        mountId === null
+          ? { kind: 'notes', threadIds: [threadId] }
+          : { kind: 'threads', mountId, threadIds: [threadId] },
+    });
+  }
   const prNumber = prNumberFor({ state, sessionId, threadId, prUrl });
   if (prNumber === null) {
     return Promise.resolve({ kind: 'unavailable', reason: 'no_pull_request' });
