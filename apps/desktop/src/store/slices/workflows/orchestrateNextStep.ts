@@ -39,7 +39,10 @@ import {
   isAgentStatusSettled,
   runsForWorkflowRun,
   serializeRunSummary,
+  type BackgroundAttempt,
   type HiddenModels,
+  type OrchestratorClientResult,
+  type OrchestratorInput,
   type OrchestratorModelOption,
   type OrchestratorRoleDefault,
   type RunSummary,
@@ -75,6 +78,8 @@ import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { selectRoutingScope } from '../agents/selectRoutingScope';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
 import { decisionRestartMark } from './decisionRestart';
+import { runHelperTask } from '../providerLimits/runHelperTask';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { clearHintsReading, markHintsReading } from './orchestratorReadingHints';
 import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
@@ -370,6 +375,21 @@ const lastStderrLine = ({ stderr }: OrchestratorClientSpawnError): string | null
   return line == null ? null : line.slice(0, STDERR_LINE_MAX);
 };
 
+const UNREADABLE_REPLY = 'the orchestrator reply could not be parsed';
+
+const ORCHESTRATOR_NOTICE_KINDS = ['unreadable', 'failed', 'blocked'] as const;
+
+type NoticeKeyParams = {
+  readonly kind: (typeof ORCHESTRATOR_NOTICE_KINDS)[number];
+  readonly workflowRunId: WorkflowRunId;
+};
+
+const orchestratorNoticeKey = ({ kind, workflowRunId }: NoticeKeyParams): string =>
+  `orchestrator-${kind}:${workflowRunId}`;
+
+const triedProviderLabels = (attempts: ReadonlyArray<BackgroundAttempt>): string =>
+  [...new Set(attempts.map((attempt) => PROVIDER_LABEL[attempt.model.providerId]))].join(', ');
+
 const failureLabel = (error: unknown): string => {
   if (error instanceof OrchestratorClientSpawnError) {
     const cause = lastStderrLine(error);
@@ -642,7 +662,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
           ? run.orchestratorRouting
           : null;
-      const routing = options?.routing ?? pinnedRouting ?? taskModel;
+      const plannedRouting = options?.routing ?? pinnedRouting ?? taskModel;
       const profileBlock = buildProfileGuard({
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
@@ -690,34 +710,99 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         menu: modelMenu,
         hidden: selectHiddenModels({ state: get() }),
       });
-      const client = new OrchestratorClient({
-        ...routing,
-        invokeFn: invokeCommand,
-        ...(worktreePath != null && { workingDir: worktreePath }),
+      const wastedReplies: Array<OrchestratorClientResult> = [];
+      const decideInput: OrchestratorInput = {
+        goal: run.goal ?? workflow.goal ?? session.goal,
+        processText: orchestratorProcessText({ processText: workflow.processText, run }),
+        completedSteps,
+        openQuestionCount: openQuestions.length,
+        ...(hints !== '' && { operatorHints: hints }),
+        providerId: defaultProvider,
+        modelMenu,
+        roleDefaults,
+        stepsUsed: workflow.steps.length,
+        isModelMetadataEnabled: true,
+        ...(run.spendLimitUsd != null && {
+          spendLimitUsd: run.spendLimitUsd,
+          spentUsd: spentUsdForRun({ get, sessionId, run }),
+        }),
+      };
+      const chain = await runHelperTask({
+        set,
+        get,
+        sessionId,
+        first: plannedRouting,
+        shouldStop: isDecisionDiscarded,
+        run: async (model) => {
+          const client = new OrchestratorClient({
+            ...model,
+            invokeFn: invokeCommand,
+            ...(worktreePath != null && { workingDir: worktreePath }),
+          });
+          let reply: OrchestratorClientResult;
+          try {
+            reply = await client.decide(decideInput);
+          } catch (error) {
+            throw new Error(failureLabel(error));
+          }
+          const decision = reply.decision;
+          if (decision == null) {
+            wastedReplies.push(reply);
+            throw new Error(UNREADABLE_REPLY);
+          }
+          return { decision, usage: reply.usage, model: reply.model };
+        },
       });
-      let result: Awaited<ReturnType<typeof client.decide>> | null = null;
-      try {
-        result = await client.decide({
-          goal: run.goal ?? workflow.goal ?? session.goal,
-          processText: orchestratorProcessText({ processText: workflow.processText, run }),
-          completedSteps,
-          openQuestionCount: openQuestions.length,
-          ...(hints !== '' && { operatorHints: hints }),
-          providerId: defaultProvider,
-          modelMenu,
-          roleDefaults,
-          stepsUsed: workflow.steps.length,
-          isModelMetadataEnabled: true,
-          ...(run.spendLimitUsd != null && {
-            spendLimitUsd: run.spendLimitUsd,
-            spentUsd: spentUsdForRun({ get, sessionId, run }),
-          }),
-        });
-      } catch (error) {
+      const routing = chain.model;
+      const recordWasted = async (agentId: AgentId | null): Promise<void> => {
+        for (const reply of wastedReplies.splice(0)) {
+          await recordOrchestratorUsage({
+            set,
+            get,
+            sessionId,
+            agentId,
+            workflowRunId,
+            provider: routing.providerId,
+            model: reply.model,
+            usage: reply.usage,
+          });
+        }
+      };
+      if (!chain.ok) {
         if (isDecisionDiscarded()) {
+          await recordWasted(null);
           return;
         }
-        const message = `${failureLabel(error)} (${routing.providerId}/${routing.model})`;
+        const tried = triedProviderLabels(chain.attempts);
+        if (chain.error === UNREADABLE_REPLY) {
+          await persistOrchestrationFailure({
+            set,
+            sessionId,
+            workflowRunId,
+            message: `${routing.providerId}/${routing.model} replied with something that is not a decision`,
+          });
+          const unparseableAgentId = emitDecision({
+            get,
+            sessionId,
+            workflowRunId,
+            action: 'blocked',
+            reason: 'the orchestrator reply could not be parsed, retry to continue',
+          });
+          await recordWasted(unparseableAgentId);
+          void get().emitNotification({
+            kind: 'error',
+            severity: 'warning',
+            title: "Couldn't read the orchestrator's reply",
+            body: `${tried} replied with something that is not a decision. Retry to ask again.`,
+            sessionId,
+            action: { kind: 'retry-orchestrator', sessionId, workflowRunId },
+            coalesceKey: orchestratorNoticeKey({ kind: 'unreadable', workflowRunId }),
+            isOnce: true,
+          });
+          return;
+        }
+        await recordWasted(null);
+        const message = `${chain.error} (${routing.providerId}/${routing.model})`;
         await persistOrchestrationFailure({ set, sessionId, workflowRunId, message });
         emitDecision({
           get,
@@ -730,58 +815,20 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           kind: 'error',
           severity: 'warning',
           title: 'The orchestrator failed',
-          body: message,
+          body: `${message}. Tried ${tried}. Retry to ask again.`,
           sessionId,
+          action: { kind: 'retry-orchestrator', sessionId, workflowRunId },
+          coalesceKey: orchestratorNoticeKey({ kind: 'failed', workflowRunId }),
+          isOnce: true,
         });
         return;
       }
+      await recordWasted(null);
+      const result = chain.value;
       const decision = result.decision;
-      if (decision == null) {
-        if (isDecisionDiscarded()) {
-          await recordOrchestratorUsage({
-            set,
-            get,
-            sessionId,
-            agentId: null,
-            workflowRunId,
-            provider: routing.providerId,
-            model: result.model,
-            usage: result.usage,
-          });
-          return;
-        }
-        await persistOrchestrationFailure({
-          set,
-          sessionId,
-          workflowRunId,
-          message: `${routing.providerId}/${routing.model} replied with something that is not a decision`,
-        });
-        const unparseableAgentId = emitDecision({
-          get,
-          sessionId,
-          workflowRunId,
-          action: 'blocked',
-          reason: 'the orchestrator reply could not be parsed, retry to continue',
-        });
-        await recordOrchestratorUsage({
-          set,
-          get,
-          sessionId,
-          agentId: unparseableAgentId,
-          workflowRunId,
-          provider: routing.providerId,
-          model: result.model,
-          usage: result.usage,
-        });
-        void get().emitNotification({
-          kind: 'error',
-          severity: 'warning',
-          title: "Couldn't read the orchestrator's reply",
-          body: 'the decision could not be parsed, use next step to retry',
-          sessionId,
-        });
-        return;
-      }
+      void get().resolveNotifications(
+        ORCHESTRATOR_NOTICE_KINDS.map((kind) => orchestratorNoticeKey({ kind, workflowRunId })),
+      );
       const decisionUsage = result;
       const discardWithUsage = async (): Promise<void> => {
         await recordOrchestratorUsage({
@@ -1003,6 +1050,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         title: 'Orchestrated run blocked',
         body: decision.reason,
         sessionId,
+        ...(terminalAgentId != null && {
+          action: { kind: 'open-agent', sessionId, agentId: terminalAgentId },
+        }),
+        coalesceKey: orchestratorNoticeKey({ kind: 'blocked', workflowRunId }),
+        isOnce: true,
       });
     } finally {
       orchestrationInFlight.delete(workflowRunId);

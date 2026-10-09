@@ -20,6 +20,7 @@ export type ProvidersState = {
   readonly providerConnect: ProviderConnectMap;
   readonly cliRequirements: ReadonlyArray<CliRequirement>;
   readonly providerCooldowns: ProviderCooldowns;
+  readonly helperProviderFailures: ProviderCooldowns;
 };
 
 export const providersInitialState: ProvidersState = {
@@ -41,4 +42,5 @@ export const providersInitialState: ProvidersState = {
   providerConnect: INITIAL_CONNECT_MAP,
   cliRequirements: [],
   providerCooldowns: {},
+  helperProviderFailures: {},
 };

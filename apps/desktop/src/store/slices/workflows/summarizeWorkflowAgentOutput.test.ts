@@ -62,8 +62,11 @@ type HarnessParams = {
 
 const buildHarness = ({ connected, cooldowns, defaultProviderId, taskModels }: HarnessParams) => {
   const emitNotification = vi.fn(async (..._args: ReadonlyArray<unknown>) => undefined);
+  const resolveNotifications = vi.fn(async (..._args: ReadonlyArray<unknown>) => undefined);
   const state: Record<string, unknown> & {
     providerCooldowns: Readonly<Partial<Record<ProviderId, number>>>;
+    helperProviderFailures: Readonly<Partial<Record<ProviderId, number>>>;
+    stepSummaryDegraded: Record<string, boolean>;
   } = {
     sessions: [session],
     projects: [],
@@ -91,7 +94,11 @@ const buildHarness = ({ connected, cooldowns, defaultProviderId, taskModels }: H
     sessionWorkflows: {},
     stepSummaryDegraded: {},
     degradedStepOutputs: {},
+    sessionPhaseRuns: {},
+    helperProviderFailures: {},
+    settings: {},
     emitNotification,
+    resolveNotifications,
   };
   const set = vi.fn((updater: unknown) => {
     const patch =
@@ -108,7 +115,7 @@ const buildHarness = ({ connected, cooldowns, defaultProviderId, taskModels }: H
       agent,
       output: 'the step wrote three files and ran the suite',
     });
-  return { call, set, emitNotification, state };
+  return { call, set, emitNotification, resolveNotifications, state };
 };
 
 describe('summarizeWorkflowAgentOutput', () => {
@@ -131,6 +138,24 @@ describe('summarizeWorkflowAgentOutput', () => {
 
     expect(summary).toBe('three files touched, suite green');
     expect(summarizeStepOutputSpy.mock.calls.map((args) => args[0]?.providerId)).toEqual([
+      'anthropic',
+      'codex',
+    ]);
+    expect(emitNotification).not.toHaveBeenCalled();
+  });
+
+  it('retries a generic cli exit on another provider and does not notify', async () => {
+    summarizeStepOutputSpy
+      .mockRejectedValueOnce(new Error('summarizer cli exited with code 1'))
+      .mockRejectedValueOnce(new Error('summarizer cli exited with code 1'))
+      .mockResolvedValueOnce('three files touched, suite green');
+    const { call, emitNotification } = buildHarness({ connected: ['anthropic', 'codex'] });
+
+    const summary = await call();
+
+    expect(summary).toBe('three files touched, suite green');
+    expect(summarizeStepOutputSpy.mock.calls.map((args) => args[0]?.providerId)).toEqual([
+      'anthropic',
       'anthropic',
       'codex',
     ]);
@@ -325,5 +350,106 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(summarizeStepOutputSpy).toHaveBeenCalledTimes(1);
     expect(summary).toContain('the step wrote three files');
     expect(emitNotification).toHaveBeenCalledTimes(1);
+  });
+
+  it('raises one plain notice per session once every model failed', async () => {
+    summarizeStepOutputSpy.mockRejectedValue(new Error('Claude usage limit reached'));
+    const { call, emitNotification, resolveNotifications } = buildHarness({
+      connected: ['anthropic', 'codex'],
+    });
+
+    await call();
+
+    expect(summarizeStepOutputSpy.mock.calls.map((args) => args[0]?.providerId)).toEqual([
+      'anthropic',
+      'codex',
+    ]);
+    expect(emitNotification).toHaveBeenCalledTimes(1);
+    expect(emitNotification).toHaveBeenCalledWith({
+      kind: 'summarizer-degraded',
+      severity: 'warning',
+      title: 'Step summary unavailable',
+      body: 'Every summarizer model failed (Claude, Codex), so the output of Implement was carried over unsummarized. Retry once a provider is back.',
+      sessionId: SESSION_ID,
+      action: { kind: 'retry-step-summary', sessionId: SESSION_ID, agentId: AGENT_ID },
+      coalesceKey: `step-summary-degraded:${SESSION_ID}`,
+      isOnce: true,
+    });
+    expect(resolveNotifications).not.toHaveBeenCalled();
+  });
+
+  it('clears the notice once a summary lands and nothing else is degraded', async () => {
+    summarizeStepOutputSpy.mockResolvedValueOnce('three files touched, suite green');
+    const { call, resolveNotifications } = buildHarness({ connected: ['anthropic'] });
+
+    await call();
+
+    expect(resolveNotifications).toHaveBeenCalledWith([`step-summary-degraded:${SESSION_ID}`]);
+  });
+
+  it('keeps the notice while another step of the session is still degraded', async () => {
+    summarizeStepOutputSpy.mockResolvedValueOnce('three files touched, suite green');
+    const other: Agent = { ...agent, id: 'agent-other' as AgentId, name: 'Verify' };
+    const { call, resolveNotifications, state } = buildHarness({ connected: ['anthropic'] });
+    state.sessionPhaseRuns = { [SESSION_ID]: [agent, other] };
+    state.stepSummaryDegraded = { [other.id]: true };
+
+    await call();
+
+    expect(resolveNotifications).not.toHaveBeenCalled();
+  });
+
+  it('does not tell the owner when a fallback model wrote the summary after a generic exit', async () => {
+    const exit = new Error('summarizer cli exited with code 1');
+    summarizeStepOutputSpy
+      .mockRejectedValueOnce(exit)
+      .mockRejectedValueOnce(exit)
+      .mockResolvedValueOnce('three files touched, suite green');
+    const { call, emitNotification, state } = buildHarness({ connected: ['anthropic', 'codex'] });
+
+    await call();
+
+    expect(emitNotification).not.toHaveBeenCalled();
+    expect(state.stepSummaryDegraded[AGENT_ID]).toBe(false);
+  });
+
+  it('never falls back to a hidden model', async () => {
+    summarizeStepOutputSpy.mockRejectedValue(new Error('Claude usage limit reached'));
+    const { call, state } = buildHarness({ connected: ['anthropic', 'codex'] });
+    state.settings = {
+      'providers.hiddenModels': JSON.stringify({
+        codex: PROVIDER_CAPABILITIES.codex.models.map((model) => model.id),
+      }),
+    };
+
+    await call();
+
+    expect(summarizeStepOutputSpy.mock.calls.map((args) => args[0]?.providerId)).toEqual([
+      'anthropic',
+    ]);
+  });
+
+  it('starts on another provider while the first one is failing in this window', async () => {
+    summarizeStepOutputSpy.mockResolvedValueOnce('three files touched, suite green');
+    const { call, state } = buildHarness({ connected: ['anthropic', 'codex'] });
+    state.helperProviderFailures = { anthropic: Date.now() + 60_000 };
+
+    await call();
+
+    expect(summarizeStepOutputSpy.mock.calls.map((args) => args[0]?.providerId)).toEqual(['codex']);
+  });
+
+  it('opens a failing window for a provider that failed twice before another one answered', async () => {
+    const exit = new Error('summarizer cli exited with code 1');
+    summarizeStepOutputSpy
+      .mockRejectedValueOnce(exit)
+      .mockRejectedValueOnce(exit)
+      .mockResolvedValueOnce('three files touched, suite green');
+    const { call, state } = buildHarness({ connected: ['anthropic', 'codex'] });
+
+    await call();
+
+    expect(state.helperProviderFailures.anthropic).toBeGreaterThan(Date.now());
+    expect(state.helperProviderFailures.codex).toBeUndefined();
   });
 });

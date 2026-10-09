@@ -131,6 +131,7 @@ const buildHarness = ({ sessions = [session], agents = [agent] }: Params = {}) =
     providerCooldowns: {},
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(),
+    resolveNotifications: vi.fn(async () => undefined),
     sendTurn: vi.fn(),
     loadSessionOpenQuestions: vi.fn(async () => undefined),
     phaseTemplates: {},
@@ -247,6 +248,7 @@ describe('finalizeWorkflowStep output summary', () => {
       phaseTemplates: {},
       consolidateSessionContext: vi.fn(),
       emitNotification: vi.fn(),
+      resolveNotifications: vi.fn(async () => undefined),
       sendTurn: vi.fn(),
     };
     const set = vi.fn();
@@ -268,20 +270,20 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(stored).toContain('Tail passage: the migration lock is still held.');
     expect(stored).toContain('[middle dropped, the full text is in the step transcript]');
     expect(warnSpy).toHaveBeenCalledWith(
-      '[step-output] summarization failed, using deterministic fallback: provider unavailable',
+      '[step-output] summarization failed on 2 attempts, using deterministic fallback: provider unavailable',
     );
     expect(state.emitNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'summarizer-degraded',
         severity: 'warning',
-        title: expect.stringContaining('Implement'),
-        body: expect.stringContaining('provider unavailable'),
+        title: 'Step summary unavailable',
+        body: expect.stringContaining('Implement'),
         sessionId: SESSION_ID,
       }),
     );
   });
 
-  it('appends degraded notifications with the same coalesce key', async () => {
+  it('keys degraded notifications per session and asks for one unread notice', async () => {
     const assistantText = 'short output';
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockRejectedValue(new Error('timeout'));
@@ -302,6 +304,7 @@ describe('finalizeWorkflowStep output summary', () => {
       phaseTemplates: {},
       consolidateSessionContext: vi.fn(),
       emitNotification: vi.fn(),
+      resolveNotifications: vi.fn(async () => undefined),
       sendTurn: vi.fn(),
     };
     const set = vi.fn();
@@ -321,7 +324,8 @@ describe('finalizeWorkflowStep output summary', () => {
         severity: 'warning',
         title: expect.any(String),
         body: expect.any(String),
-        coalesceKey: `step-summary-degraded:${agent.workflowRunId}:${agent.stepId}`,
+        coalesceKey: `step-summary-degraded:${SESSION_ID}`,
+        isOnce: true,
       }),
     );
   });
@@ -602,6 +606,7 @@ describe('finalizeWorkflowStep output summary', () => {
       phaseTemplates: {},
       consolidateSessionContext: vi.fn(),
       emitNotification: vi.fn(),
+      resolveNotifications: vi.fn(async () => undefined),
       sendTurn: vi.fn(async () => undefined),
       loadSessionPlans: vi.fn(async () => undefined),
     };
@@ -658,6 +663,7 @@ describe('finalizeWorkflowStep output summary', () => {
       phaseTemplates: {},
       consolidateSessionContext: vi.fn(),
       emitNotification: vi.fn(),
+      resolveNotifications: vi.fn(async () => undefined),
       sendTurn: vi.fn(async () => undefined),
       loadSessionPlans: vi.fn(async () => undefined),
     };
@@ -707,6 +713,7 @@ describe('finalizeWorkflowStep output summary', () => {
       phaseTemplates: {},
       consolidateSessionContext: vi.fn(),
       emitNotification: vi.fn(),
+      resolveNotifications: vi.fn(async () => undefined),
       sendTurn: vi.fn(),
     };
     const set = vi.fn();

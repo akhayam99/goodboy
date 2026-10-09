@@ -44,6 +44,8 @@ const sessionWith = (run: WorkflowRun) =>
 
 type State = {
   sessions: ReadonlyArray<Session>;
+  providers: ReadonlyArray<never>;
+  providerCooldowns: Record<string, number>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   workspaceOverrides: Record<string, unknown>;
 };
@@ -51,6 +53,8 @@ type State = {
 const buildHarness = (run: WorkflowRun = baseRun) => {
   const state: State = {
     sessions: [sessionWith(run)],
+    providers: [],
+    providerCooldowns: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
     workspaceOverrides: {},
   };
