@@ -58,6 +58,8 @@ const targetAddress = ({ target }: TargetParams): string => {
       return target.mountPath;
     case 'thread':
       return `t/${target.threadId}`;
+    case 'agent':
+      return `pane/${target.pane}`;
     default: {
       const unreachable: never = target;
       return unreachable;

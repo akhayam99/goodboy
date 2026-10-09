@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
 import { selectActiveMount, selectWritableMounts } from '../project-mounts/selectors';
-import type { BranchTab, GetFn, Location, SessionView, SetFn } from './types';
+import type { AgentPane, BranchTab, GetFn, Location, SessionView, SetFn } from './types';
 
 type TabsParams = {
   readonly state: AppState;
@@ -22,6 +22,9 @@ const branchTabsAfter = ({ state, sessionId, target }: TabsParams): AppState['br
   return rest;
 };
 
+const paneOf = ({ target }: { readonly target: SessionView['target'] }): AgentPane | null =>
+  target?.kind === 'thread' || target?.kind === 'agent' ? (target.pane ?? null) : null;
+
 type SurfaceParams = {
   readonly state: AppState;
   readonly sessionId: SessionId;
@@ -37,7 +40,7 @@ const surfaceChanges = ({
 }: SurfaceParams): Partial<AppStore> => {
   const { lens, target } = view;
   const keep = <T>(isKept: boolean, current: T, next: T): T =>
-    isKept && !isRestore && target === null ? current : next;
+    isKept && !isRestore && (target === null || target.kind === 'agent') ? current : next;
   return {
     activeLens: { ...state.activeLens, [sessionId]: lens },
     sessionStudio: { ...state.sessionStudio, [sessionId]: view.studio },
@@ -104,7 +107,7 @@ const surfaceChanges = ({
     },
     agentPane: {
       ...state.agentPane,
-      [sessionId]: view.studio === null && target?.kind === 'thread' ? (target.pane ?? null) : null,
+      [sessionId]: view.studio === null ? (paneOf({ target }) ?? null) : null,
     },
   };
 };

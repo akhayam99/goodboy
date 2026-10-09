@@ -33,7 +33,8 @@ export type SessionTarget =
       readonly focus: DiffFocus | null;
     }
   | { readonly kind: 'terminal'; readonly mountPath: string }
-  | { readonly kind: 'thread'; readonly threadId: string; readonly pane?: AgentPane };
+  | { readonly kind: 'thread'; readonly threadId: string; readonly pane?: AgentPane }
+  | { readonly kind: 'agent'; readonly pane: AgentPane };
 
 export type SessionView = {
   readonly lens: LensKind | null;

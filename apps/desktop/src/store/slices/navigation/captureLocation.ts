@@ -20,6 +20,16 @@ type TargetParams = {
 };
 
 const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
+  const target = captureLensTarget({ state, sessionId, lens });
+  if (target !== null) {
+    return target;
+  }
+  const agentId = state.selectedAgentId[sessionId] ?? null;
+  const pane = state.agentPane?.[sessionId] ?? null;
+  return agentId === null || pane === null ? null : { kind: 'agent', pane };
+};
+
+const captureLensTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
   const agentId = state.selectedAgentId[sessionId] ?? null;
   if (lens === 'review' && agentId !== null) {
     const threadId = resolverThread({ state, sessionId, agentId });

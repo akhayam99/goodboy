@@ -9,7 +9,8 @@ import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { TriggerSeparator } from '../../../../shared/components/RoutingPicker/TriggerSeparator';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
-import { agentOpenTab, isOpenAgentReveal, type AgentTab } from './agentOpenTab';
+import { agentOpenTab, type AgentTab } from './agentOpenTab';
+import { isOpenAgentReveal } from '../../../../shared/utils/openAgentReveal';
 import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentHeaderStatus } from './AgentHeaderStatus';
@@ -43,14 +44,13 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       (question) => question.createdByAgentId === agent.id,
     ),
   );
-  const areQuestionsLoaded = useAppStore(
-    (state) => state.sessionOpenQuestions[session.id] !== undefined,
-  );
   const status = effectiveAgentStatus({ agent, turnState });
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const kind = classifyAgent({ agent, override: kindOverride });
   const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
-  const openTab = requestedPane ?? agentOpenTab({ hasOpenQuestions });
+  const rememberedTab = useAppStore((state) => state.agentTab[agent.id] ?? null);
+  const setAgentTab = useAppStore((state) => state.setAgentTab);
+  const openTab = agentOpenTab({ requested: requestedPane, remembered: rememberedTab });
   const openTabRef = useRef(openTab);
   openTabRef.current = openTab;
   const [tab, setTab] = useState<AgentTab>(openTab);
@@ -71,7 +71,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
 
   useEffect(() => {
     setTab(openTabRef.current);
-  }, [agent.id, areQuestionsLoaded, requestedPane]);
+  }, [agent.id, requestedPane]);
 
   useEffect(() => {
     setArmed(null);
@@ -83,6 +83,11 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     window.addEventListener('goodboy:reveal-chat', reveal);
     return () => window.removeEventListener('goodboy:reveal-chat', reveal);
   }, []);
+
+  const pickTab = (next: AgentTab) => {
+    setTab(next);
+    setAgentTab({ agentId: agent.id, pane: next });
+  };
 
   const isTranscript = tab === 'transcript';
   const headerMenu = useObjectMenuTrigger({
@@ -146,7 +151,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               ariaLabel="Agent sections"
               options={TABS}
               value={tab}
-              onChange={setTab}
+              onChange={pickTab}
               size="xs"
             />
           }

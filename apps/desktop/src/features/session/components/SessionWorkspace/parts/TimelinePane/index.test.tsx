@@ -735,7 +735,11 @@ describe('TimelinePane run waiting on an answer', () => {
     fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: 'session-1' as SessionId, agentId: 'agent-step' as AgentId }),
+      to: agentPlace({
+        sessionId: 'session-1' as SessionId,
+        agentId: 'agent-step' as AgentId,
+        pane: 'brief',
+      }),
     });
     expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: 'agent-step',
@@ -805,7 +809,11 @@ describe('TimelinePane run waiting on an answer', () => {
     fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: 'session-1' as SessionId, agentId: 'agent-child' as AgentId }),
+      to: agentPlace({
+        sessionId: 'session-1' as SessionId,
+        agentId: 'agent-child' as AgentId,
+        pane: 'brief',
+      }),
     });
     expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: 'agent-child',

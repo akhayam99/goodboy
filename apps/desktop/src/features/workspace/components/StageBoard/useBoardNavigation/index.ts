@@ -4,7 +4,7 @@ import { agentPlace, sessionPlace, useAppStore, type LensKind } from '../../../.
 import { lensPlace } from '../../../../../store/slices/navigation/canonicalLocation';
 import { openInConfiguredEditor } from '../../../../../shared/lib/editorSettings';
 import { openReview } from '../../../../review/openReview';
-import { openAgentRevealEvent } from '../../../../session/components/AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentReveal';
 
 export type BoardNavigation = {
   readonly selectCard: (session: Session) => void;

@@ -2,7 +2,7 @@
   "deepImportsByPair": {
     "actions -> artifacts": 1,
     "actions -> context": 1,
-    "actions -> session": 2,
+    "actions -> session": 1,
     "artifacts -> actions": 1,
     "artifacts -> attachments": 2,
     "artifacts -> chat": 2,
@@ -33,7 +33,6 @@
     "chat -> workflows": 1,
     "context -> attachments": 2,
     "context -> providers": 1,
-    "context -> session": 1,
     "diff -> actions": 1,
     "diff -> permissions": 1,
     "explore -> chat": 1,
@@ -48,7 +47,6 @@
     "integrations -> review": 2,
     "integrations -> session": 2,
     "integrations -> settings": 2,
-    "notifications -> session": 1,
     "onboarding -> integrations": 2,
     "onboarding -> providers": 4,
     "onboarding -> session": 1,
@@ -111,7 +109,7 @@
     "workspace -> actions": 1,
     "workspace -> integrations": 3,
     "workspace -> providers": 1,
-    "workspace -> session": 6,
+    "workspace -> session": 5,
     "workspace -> updater": 1,
     "workspace-chat -> actions": 1
   },

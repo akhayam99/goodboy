@@ -9,7 +9,7 @@ import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { CLI_LABEL } from '../../../providers/cliLabel';
 import { openProviderCliUpdate } from '../../../providers/openProviderCliUpdate';
 import { openStorage } from '../../../storage/openStorage';
-import { openAgentRevealEvent } from '../../../session/components/AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 export const pickFreshFailures = (

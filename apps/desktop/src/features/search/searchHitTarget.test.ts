@@ -43,10 +43,12 @@ describe('search hit target', () => {
       kind: 'transcript',
       sessionId: SESSION,
       agentId: 'a-builder',
+      pane: 'transcript',
       label: 'Open in transcript',
     });
     expect(searchHitTarget({ hit: hit({ kind: 'agent', docId: 'agent:a' }) })).toMatchObject({
       kind: 'transcript',
+      pane: null,
       label: 'Open agent',
     });
   });

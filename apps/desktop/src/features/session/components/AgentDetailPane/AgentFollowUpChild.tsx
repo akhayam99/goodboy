@@ -8,7 +8,7 @@ import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { agentStatusWord } from '../../agentStatusWord';
 import { agentNowState } from './agentNowState';
-import { openAgentRevealEvent } from './agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import type { FollowUpChild } from './followUpChildren';
 
 type Props = {
@@ -34,7 +34,9 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
     ? agentStatusWord({ status: child.status })
     : null;
   const live = agentNowState({ agent, turnState, transcript });
-  const label = hasQuestion ? 'question' : (terminalLabel ?? live.label);
+  const label = hasQuestion
+    ? 'question'
+    : (terminalLabel ?? live.label ?? agentStatusWord({ status: child.status }));
 
   const onOpen = () => {
     navigate({ to: agentPlace({ sessionId, agentId: agent.id }) });

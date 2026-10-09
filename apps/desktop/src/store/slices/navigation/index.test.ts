@@ -452,6 +452,54 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toEqual(transcriptOf(RESOLVER));
   });
 
+  it('lands an agent on the tab a door asks for and on no tab otherwise', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+    expect(store.getState().agentPane[S1]).toBeNull();
+    expect(store.getState().selectedAgentId[S1]).toBe(AGENT);
+
+    store
+      .getState()
+      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'transcript' }) });
+    expect(store.getState().agentPane[S1]).toBe('transcript');
+    expect(keyOf(store)).toBe(`s/${S1}/agents/pane/transcript/agent/${AGENT}`);
+
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+    expect(store.getState().agentPane[S1]).toBeNull();
+  });
+
+  it('brings the tab a door asked for back with Back and Forward', () => {
+    const store = makeStore();
+    store
+      .getState()
+      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'transcript' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    expect(store.getState().agentPane[S1]).toBeNull();
+
+    store.getState().back();
+    expect(store.getState().agentPane[S1]).toBe('transcript');
+    expect(store.getState().selectedAgentId[S1]).toBe(AGENT);
+
+    store.getState().forward();
+    expect(store.getState().agentPane[S1]).toBeNull();
+  });
+
+  it('brings the tab back after a window restore', () => {
+    const before = makeStore();
+    before
+      .getState()
+      .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'brief' }) });
+    const saved = parseLocation({
+      value: JSON.parse(JSON.stringify(captureWindowLocation({ state: before.getState() }))),
+    });
+
+    const after = makeStore();
+    after.getState().restoreLocation({ location: saved! });
+
+    expect(after.getState().agentPane[S1]).toBe('brief');
+    expect(after.getState().selectedAgentId[S1]).toBe(AGENT);
+  });
+
   it('closes the transcript drawer on the next page and brings it back on Back', () => {
     const store = makeStore();
     withAttempt(store);

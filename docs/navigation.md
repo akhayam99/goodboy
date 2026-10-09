@@ -1803,11 +1803,20 @@ comments`; the Needs you row for the pull request calls `openReview` with the
   destination `{ kind: 'threads', mountId, threadIds: [first comment that waits
 on you] }`. Any other agent keeps its page, and its pane tab is part of the
   address: `agentPlace({ sessionId, agentId, pane })` asks for `brief` or
-  `transcript`. Without a `pane` the pane picks its own tab (`agentOpenTab`: an
-  open question opens on Brief, otherwise Transcript). The key `agentPane` is
-  written only by the navigation slice, follows the page like the other
-  targets, and comes back with Back and a window restore. Tab clicks inside
-  the pane stay local and do not rewrite the address. The `threads` destination needs no
+  `transcript`. The agent page opens on Brief from every door. Without a
+  `pane` the pane picks its tab (`agentOpenTab`: the `pane` of the address,
+  else the tab the user picked by hand on that agent, else Brief). A door asks
+  for `transcript` only when it targets a place inside the chat: a search hit
+  on a message, Message this agent, Open the agent from a message, and the
+  hint that points at the transcript. A door that targets the Brief, such as a
+  question the agent asked, passes `brief`. Starting an agent, following one
+  that was spawned, and opening a card, a notification or a row all pass no
+  `pane`. The `pane` rides in the place as the target `{ kind: 'agent', pane }`,
+  so the key `agentPane` is written only by the navigation slice, follows the
+  page like the other targets, and comes back with Back, Forward and a window
+  restore. Tab clicks inside the pane do not rewrite the address; they write
+  `agentTab` (`setAgentTab`), a map from agent to its last hand-picked tab, so
+  the choice is remembered for that agent only, never for every agent. The `threads` destination needs no
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }` does the same for diff notes and first sets
@@ -1847,7 +1856,14 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   (`useAgentHeaderRouting`). The composer names its model only when it differs
   from the header's, as `Next turn`; while it matches, the chip stays quiet and
   reads `Model`. Stop is a labelled ghost button, and the transcript's day
-  divider is left-aligned like the rows.
+  divider is left-aligned like the rows. A run past its usual time shows the
+  elapsed time in the warning tone with the reason in its tooltip, never the
+  words `longer than usual` in the header. On the Brief, the **Now** block names
+  what the agent does now (`agentNowState`): its tool or `writing` or `thinking`
+  while a turn runs, `Waiting on 2 subagents` while it waits on children, and
+  nothing at all when it is running with no turn and nothing to name, so it never
+  reads `ready` for a running agent. The usage footer drops the turn count when
+  the agent has no turn of its own to count, instead of reading `0 turns`.
 - **An Artifacts row has one visible action.** The state-driven primary
   (`Run plan`, `Approve`, `Stop`, from the plan rule) and the open control
   are all a row shows at rest. Edit, Open in browser and Copy source appear on

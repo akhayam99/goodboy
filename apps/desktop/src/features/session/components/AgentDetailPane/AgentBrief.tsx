@@ -106,18 +106,24 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
   const hasOutputSummary = !outcome.isFromReply;
   const isTerminal =
     isAgentStatusSettled({ status: agent.status }) || isAgentStatusHalted({ status: agent.status });
-  const now = agentNowState({ agent, turnState, transcript });
+  const activeChildren = children.filter(
+    (child) => child.status === 'running' || child.status === 'pending',
+  ).length;
+  const now = agentNowState({ agent, turnState, transcript, activeChildren });
+  const isMuchLonger = time?.isMuchLonger === true;
   const isSplitIntoSubagents = kind === 'implementer' && laneChildren.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
       <AgentBriefHandoffLine sessionId={session.id} agentId={agent.id} />
-      {!isTerminal ? (
+      {!isTerminal && (now.label !== null || isMuchLonger) ? (
         <Band inset="content" label="Now">
-          <div className="text-label text-foreground">
-            <span className="block min-w-0 truncate">{now.label}</span>
-          </div>
-          {time?.isMuchLonger === true ? <AgentMuchLonger /> : null}
+          {now.label === null ? null : (
+            <div className="text-label text-foreground">
+              <span className="block min-w-0 truncate">{now.label}</span>
+            </div>
+          )}
+          {isMuchLonger ? <AgentMuchLonger /> : null}
         </Band>
       ) : null}
       <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
@@ -159,7 +165,7 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       <AgentUsageFooter
         aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
         contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
-        turns={metrics.turnsByAgentId.get(agent.id) ?? 0}
+        turns={metrics.turnsByAgentId.get(agent.id) ?? null}
       />
     </div>
   );

@@ -26,11 +26,16 @@ const canonicalAgent = ({
   readonly state: AppState;
   readonly request: Extract<PlaceRequest, { readonly at: 'agent' }>;
 }): CanonicalPlace => {
-  const { sessionId, agentId } = request;
+  const { sessionId, agentId, pane } = request;
   const home = agentHomeFor({ state, sessionId, agentId });
   if (home !== 'review') {
     return {
-      place: sessionPlace({ sessionId, lens: home ?? 'agents', agentId }),
+      place: sessionPlace({
+        sessionId,
+        lens: home ?? 'agents',
+        agentId,
+        ...(pane !== undefined && { target: { kind: 'agent', pane } }),
+      }),
       drawer: null,
     };
   }
