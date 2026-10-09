@@ -1193,7 +1193,7 @@
         },
         {
           "title": "Keyboard shortcuts, back and forward",
-          "text": "Drive Goodboy from the keyboard with 77 shortcuts. ⌘/ opens the list, and ⌘[ and ⌘] move through history.",
+          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts, and ⌘[ and ⌘] move through history.",
           "group": "Keyboard and terminal",
           "main": true
         },
