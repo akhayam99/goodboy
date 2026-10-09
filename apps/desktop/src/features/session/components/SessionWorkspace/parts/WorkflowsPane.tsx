@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { BookmarkPlus } from 'lucide-react';
 import type { Agent, Session, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { EmptyState, PaneShell } from '@goodboy/ui';
 import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
@@ -95,8 +95,6 @@ export const WorkflowsPane = ({ session }: Props) => {
         scroll="self"
         dock={conversation.composer}
         title={focusedRun.run.title ?? workflowKindName(focusedRun.workflow)}
-        icon={CONCEPT_ICONS.workflows}
-        tone={CONCEPT_TONE.workflows}
         actions={
           <>
             {focusedRun.workflow != null && focusedRun.workflow.isPreset === false ? (

@@ -70,15 +70,18 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
 
   if (stage === 'moving') {
     return (
-      <div className="flex flex-col gap-2 bg-subtle px-4 py-3">
-        <span className="text-label text-foreground">Moving your work into bootstrap</span>
-        <span className="text-meta text-muted-foreground">
-          The project folder stays as it is until the copy is checked.
-        </span>
+      <Notice
+        tone="info"
+        placement="inline"
+        role="status"
+        className="bg-transparent"
+        title="Moving your work into bootstrap"
+        body="The project folder stays as it is until the copy is checked."
+      >
         {notice !== null ? (
           <Notice tone="warning" placement="inline" role="alert" title={notice} />
         ) : null}
-      </div>
+      </Notice>
     );
   }
 
@@ -89,19 +92,17 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
   };
 
   return (
-    <div className="flex flex-col gap-3 bg-subtle px-4 py-3">
-      <div className="flex min-w-0 flex-col">
-        <span className="text-label text-foreground">
-          {isOnRemote
-            ? `${project.name} · main is on the remote now.`
-            : `${project.name} · This session works in your project folder`}
-        </span>
-        <span className="text-meta text-muted-foreground">
-          {isOnRemote
-            ? 'Move your work into bootstrap when you are ready.'
-            : 'Nothing is published yet.'}
-        </span>
-      </div>
+    <div className="flex min-w-0 flex-col gap-2">
+      {isOnRemote ? (
+        <MoveCard project={project} changedCount={changed} isTurnRunning={isTurnRunning} />
+      ) : (
+        <Notice
+          tone="info"
+          placement="inline"
+          className="bg-transparent"
+          title="Your work is in the project folder. Nothing is published yet."
+        />
+      )}
       {isChecking && !isOnRemote ? (
         <div role="status" aria-label="Checking the remote" className="flex items-center gap-2">
           <Skeleton className="h-3.5 w-48" />
@@ -121,9 +122,6 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
             </Button>
           }
         />
-      ) : null}
-      {isOnRemote ? (
-        <MoveCard project={project} changedCount={changed} isTurnRunning={isTurnRunning} />
       ) : null}
       {notice !== null ? (
         <Notice tone="warning" placement="inline" role="alert" title={notice} />

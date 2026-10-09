@@ -8,9 +8,9 @@ type Props = {
 };
 
 export const ChatHeader = ({ title, sessions = null, action = null }: Props) => (
-  <header className="shrink-0 pb-3 pt-3">
-    <PageColumn className="flex min-w-0 items-center gap-2">
-      <h2 className="min-w-0 truncate text-heading text-foreground">{title}</h2>
+  <header className="shrink-0 pb-3">
+    <PageColumn className="flex h-8 min-w-0 items-center gap-2">
+      <h1 className="min-w-0 truncate text-title text-foreground">{title}</h1>
       {sessions}
       <span className="flex-1" />
       {action}

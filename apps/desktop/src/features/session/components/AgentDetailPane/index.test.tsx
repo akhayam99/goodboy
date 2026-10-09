@@ -154,7 +154,7 @@ describe('AgentDetailPane', () => {
     expect(title.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('keeps Brief and Transcript on the title row, before the actions', () => {
+  it('puts the actions on the title row and Brief and Transcript on their own row under the meta line', () => {
     render(
       <AgentDetailPane
         session={session}
@@ -165,10 +165,14 @@ describe('AgentDetailPane', () => {
     );
 
     const row = screen.getByTestId('agent-header-title-row');
-    const tabs = within(row).getByRole('tablist', { name: 'Agent sections' });
-    const more = within(row).getByRole('button', { name: 'More agent actions' });
+    const meta = screen.getByTestId('agent-header-meta');
+    const tabsRow = screen.getByTestId('agent-header-tabs');
+    const tabs = within(tabsRow).getByRole('tablist', { name: 'Agent sections' });
 
-    expect(tabs.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'More agent actions' })).toBeDefined();
+    expect(within(row).queryByRole('tablist')).toBeNull();
+    expect(tabs).toBeDefined();
+    expect(meta.compareDocumentPosition(tabsRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('opens on the transcript while the agent is running', () => {

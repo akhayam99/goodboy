@@ -9,7 +9,6 @@ import { HistoryAfterColumn } from './HistoryAfterColumn';
 import { HistoryAppliedResult } from './HistoryAppliedResult';
 import { HistoryBackups } from './HistoryBackups';
 import { HistoryDragGhost } from './HistoryDragGhost';
-import { HistoryFacts } from './HistoryFacts';
 import { HistoryLegend } from './HistoryLegend';
 import { HistoryNowColumn } from './HistoryNowColumn';
 import { HistoryPlannedSection } from './HistoryPlannedSection';
@@ -30,6 +29,7 @@ import { useHistoryRows } from './useHistoryRows';
 import { useHistoryRunFlow } from './useHistoryRunFlow';
 import { useHistoryScribe } from './useHistoryScribe';
 import { useAppStore } from '../../../../store';
+import { TabActions } from '../../../../shared/components/TabActions';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -217,15 +217,6 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
       />
     ) : (
       <div className="flex flex-col gap-6" onKeyDown={keys.onPageKey}>
-        <HistoryFacts
-          ownCount={model.ownCount}
-          afterCount={isDone ? null : model.afterCount}
-          behind={model.behind}
-          isOnMain={onto !== null}
-          onlineCount={model.onlineCount}
-          prNumber={prNumber}
-          baseBranch={baseBranch}
-        />
         {backups.isShowingBackups ? (
           <HistoryBackups
             worktreePath={worktreePath}
@@ -290,7 +281,6 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
               />
             ) : null}
           </div>
-          <HistoryLegend isDone={isDone} />
         </div>
         {applied !== null && run !== null ? (
           <HistoryAppliedResult
@@ -341,12 +331,19 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
       </div>
     );
 
+  const hasGraph = draft !== null && commits.length > 0;
+
   return (
-    <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
-      <div className="flex min-w-0 flex-col gap-4 px-6 pb-6">
-        <div className="flex min-w-0 items-center justify-end gap-2">{actions}</div>
-        {body}
-      </div>
-    </ScrollFade>
+    <>
+      <TabActions>{actions}</TabActions>
+      <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
+        <div className="flex min-w-0 flex-col gap-4 pb-6">{body}</div>
+      </ScrollFade>
+      {hasGraph ? (
+        <div data-slot="history-legend" className="shrink-0 pb-3 pt-2">
+          <HistoryLegend isDone={isDone} />
+        </div>
+      ) : null}
+    </>
   );
 };

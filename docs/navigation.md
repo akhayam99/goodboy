@@ -1213,7 +1213,7 @@ one is open at a time.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
   mounts only while a studio is open and stays mounted from Inbox to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
-  subtitle and accessory, Close; Settings in the default shell has no band at all,
+  subtitle, Close; Settings in the default shell has no band at all,
   so `hasBand` is off and its skeleton has no rail), the Esc layer and the motion: `studio-in` when
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
@@ -1222,6 +1222,23 @@ one is open at a time.
   (Inbox, Notifications, Add workspace, Impact), `rail`
   (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
+- **The band sits on the studio's column.** `StudioBand` draws its crumb and Close
+  inside a `PageColumn` of the studio's tier (`tier` in `STUDIO_META`): `column` for
+  Inbox, Workflows, Impact, the guide, What's new, Notifications, Add workspace and
+  Settings, so the crumb starts where the title starts and Close ends where the
+  column ends (at 1920 it no longer sits 330px outside it), and `full` only for
+  Chat and pairing, the rail-plus-detail studios aligned to the 24px gutter. While it
+  draws a band, the frame hands its body `UnderTrailContext`, so a studio title does
+  not add the 12px a bare page adds and sits where a session title does (centre 56px
+  under the pane top).
+- **Every studio draws the grid's title row.** Under the band each studio has one
+  `h1` in the same 32px row as every page (`PaneTitleRow`, fixed `h-8`, the actions
+  at its right, a long title truncates and never wraps the row): Inbox the view's name,
+  Workflows `Workflows` with its tab strip under the title and `New workflow` as the
+  one primary at the right end of the tab row, Impact `Impact` with the period selector in the row and a meta line
+  under it (the band keeps the crumb and Close only), the guide `Guide`, What's new and
+  Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
+  (`ChatHeader`). Exactly one `h1` per studio scene.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every
@@ -1542,6 +1559,25 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
 
 ## Lens surfaces
 
+- **One header grid for every page.** A 40px band (the crumb at the column's left,
+  Ask or Close at its right edge), then one 32px title row directly under it with the
+  page's only `h1` (`text-title`) and its actions at the right, the optional meta line
+  4px under the row, and the tabs on their own row under the meta line. The title's
+  centre is 56px under the pane top and its left edge is the column's content edge on
+  every page, studio and sub-page, the Board included (it keeps an empty 40px band
+  above its title). The row is fixed (`h-8`, centred, never wraps, a long title
+  truncates), no glyph ever indents the title, and the crumb names the structure while
+  the `h1` names the object. `frameGeometryOf` (`packages/ui`) is that table.
+- **A first-lap session says where it works in one notice.** `FirstLapBanner`
+  (and the move card and the move report) render as a `Notice` with the tone as its
+  inner line and no fill, as the first block of the page body under the title row, on
+  the column: `SessionWorkspace` hands the element down with `PaneBannerContext` and the
+  page's `PaneShell` draws it, so the title never moves down when it shows. It reads
+  `Your work is in the project folder. Nothing is published yet.`; Publish lives only
+  in the Projects row.
+- **Questions is one tier.** The 288px queue and the question beside it sit inside the
+  same 1008px column under the title; the detail no longer narrows to a measure column
+  of its own beside a full-bleed rail.
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
   way back. No lens keeps a rail beside its detail. Review is the one
@@ -2053,7 +2089,9 @@ moves from one tab to the next. The Comments tab reads the width of its own pane
 `branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
 and an open drawer. The tab counts (Comments, Files, Commits) read a muted `-`
 named `Not loaded` until the data arrives, then the number, never 0 for an
-unknown (`TabCount`). Fix, Resolve without a reply and Stop live on the thread
+unknown (`TabCount`). All three arrive without a tab visit: `BranchPage` loads
+the mount's history draft (`loadHistoryDraft`) once when the page opens and the
+draft is not there yet, so the Commits count is a number on the Comments tab too. Fix, Resolve without a reply and Stop live on the thread
 and its properties; Fix launches from the list or the thread, never from Files.
 
 **Files.** The branch against its base, on the column like every other tab, with
@@ -2121,7 +2159,12 @@ the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.
 
 **Commits.** The home of history: the branch commits and the rewriter are one
-surface (`CommitsHistory`), with `Refresh` and `Backups` at its top. Backups
+surface (`CommitsHistory`), with `Refresh` (ghost), `Backups` (secondary, both
+`xs`) and one horizontal `⋯` at the right end of the tab row, in the slot
+`BranchPage` hands down (`TabActionsSlotContext`, filled with `TabActions`), so
+the body starts with the graph itself. The legend sits on its own row under the
+scroller, never under its fade, and the body takes the page's column with no
+`px-6` of its own. Backups
 (`Restore previous history`, `Restore branch`) and the result of a run (`Undo
 rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
 address, the palette verb, a mount row's `Rewrite history` and an Activity
@@ -2141,9 +2184,9 @@ with lease.
 The Commits tab draws the branch as a graph (`history_graph`): a grey main
 trunk with its head node (`main is here now`, how many commits it gained,
 `Start from today's main`), your branch leaving it at the real fork point, one
-row per commit newest first, and `Your branch starts here` at the fork. Fact
-chips over it say how many commits are yours and how many stay after Apply,
-how far main moved, and how many are already online. The big list is always
+row per commit newest first, and `Your branch starts here` at the fork. There
+is no row of fact chips over it: the graph already says how many commits are
+yours, how far main moved and what is online. The big list is always
 the branch as it is (Now) and never reorders while you plan; beside it, After
 Apply draws the planned result with a dashed lane, each node level with its
 own row when the order allows. Under 760px of content the side graph becomes

@@ -22,15 +22,20 @@ export const HistoryActions = ({ isBusy, onRefresh, onShowBackups, onOpenTermina
   ];
   return (
     <>
-      <Button size="sm" variant="ghost" disabled={isBusy} onClick={onRefresh}>
+      <Button size="xs" variant="ghost" disabled={isBusy} onClick={onRefresh}>
         <RefreshCw size={ICON_SIZE.row} aria-hidden />
         Refresh
       </Button>
-      <Button size="sm" variant="secondary" onClick={onShowBackups}>
+      <Button size="xs" variant="secondary" onClick={onShowBackups}>
         <BackupIcon size={ICON_SIZE.row} aria-hidden />
         Backups
       </Button>
-      <OverflowMenu items={overflow} label="More history actions" align="right" />
+      <OverflowMenu
+        items={overflow}
+        label="More history actions"
+        align="right"
+        trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
+      />
     </>
   );
 };

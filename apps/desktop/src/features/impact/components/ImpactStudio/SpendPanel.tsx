@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from 'react';
+import { useMemo } from 'react';
 import type { ProviderName, SessionId } from '@goodboy/types';
 import { SectionHeader, formatUsd, formatUsdPrecise, PaneShell } from '@goodboy/ui';
 import { SpendSection } from '../../../budget/components/spend/SpendSection';
@@ -8,9 +8,10 @@ import { IMPACT_WINDOW_OPTIONS, type ImpactWindowId } from '../../lib';
 import { spendTotals } from '../../utils/spendTotals';
 import { EfficiencySection } from './EfficiencySection';
 import { SessionSpendRows } from './SessionSpendRows';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 type Props = {
-  readonly header: ReactElement;
+  readonly frame: PaneFrame;
   readonly windowId: ImpactWindowId;
   readonly spend: WorkspaceSpend;
   readonly metrics: ImpactMetrics;
@@ -19,7 +20,7 @@ type Props = {
 };
 
 export const SpendPanel = ({
-  header,
+  frame,
   windowId,
   spend,
   metrics,
@@ -33,7 +34,7 @@ export const SpendPanel = ({
   const windowLabel =
     IMPACT_WINDOW_OPTIONS.find((option) => option.value === windowId)?.label ?? '';
   return (
-    <PaneShell scroll="body" header={header}>
+    <PaneShell scroll="body" {...frame}>
       <div className="flex items-baseline gap-8">
         <div className="flex flex-col" title={formatUsdPrecise(totals.windowUsd)}>
           <span className="text-label text-muted-foreground">{windowLabel}</span>

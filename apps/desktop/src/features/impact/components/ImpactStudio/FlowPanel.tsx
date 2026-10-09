@@ -1,5 +1,4 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
-import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { StatCard, PaneShell, FilledEmptyState } from '@goodboy/ui';
 import { ErrorStrip } from '@goodboy/ui';
@@ -10,6 +9,7 @@ import { SessionRows } from './SessionRows';
 import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { NOT_LOADED_HINT, UNKNOWN_VALUE } from '../../../../shared/utils/unknownValue';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 const FLOW_TILE_LABELS = [
   'median wall-clock',
@@ -19,7 +19,7 @@ const FLOW_TILE_LABELS = [
 ] as const;
 
 type Props = {
-  readonly header: ReactElement;
+  readonly frame: PaneFrame;
   readonly agentDurations: QueryResult<AgentDurations>;
   readonly flowHealth: QueryResult<FlowHealth>;
   readonly isLoading: boolean;
@@ -28,7 +28,7 @@ type Props = {
 };
 
 export const FlowPanel = ({
-  header,
+  frame,
   agentDurations,
   flowHealth,
   isLoading,
@@ -40,7 +40,7 @@ export const FlowPanel = ({
   const countOrUnknown = (value: number | undefined): string =>
     value === undefined ? UNKNOWN_VALUE : String(value);
   return (
-    <PaneShell scroll="body" header={header}>
+    <PaneShell scroll="body" {...frame}>
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
       <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
       {isLoading && agents === null && health === null ? (

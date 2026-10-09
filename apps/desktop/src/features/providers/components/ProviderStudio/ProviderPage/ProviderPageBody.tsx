@@ -2,17 +2,11 @@ import { useCallback, useState } from 'react';
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, EmptyState, OverflowMenu, type OverflowMenuItem, PaneShell } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
 import type { ProviderDisplayInfo } from '../../../providers';
 import { useAppStore } from '../../../../../store';
 import { useCopyText } from '../../../../../shared/hooks/useCopyText';
-import { PROVIDER_BRAND } from '../../provider-brand';
 import { ProviderConnect } from '../../ProviderConnect';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { AccountGroup, type AccountConfirm } from './AccountGroup';
 import { CliGroup } from './AccountGroup/CliGroup';
@@ -53,7 +47,6 @@ export const ProviderPageBody = ({
   workspaceId,
 }: Props) => {
   const id = info.id;
-  const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? CONCEPT_ICONS.providers;
   const connectPhase = useAppStore((s) => s.providerConnect[id]?.phase ?? 'idle');
   const connectProvider = useAppStore((s) => s.connectProvider);
   const logoutProvider = useAppStore((s) => s.logoutProvider);
@@ -127,14 +120,6 @@ export const ProviderPageBody = ({
     <PaneShell
       scroll="body"
       animationClassName={SETTINGS_PANE_ENTRY}
-      glyph={
-        <Icon
-          size={ICON_SIZE.hero}
-          aria-hidden
-          className="shrink-0"
-          style={{ color: `var(${PROVIDER_BRAND[id].cssVar})` }}
-        />
-      }
       title={info.label}
       meta={metaLine({ planLabel, isApi })}
       actions={<OverflowMenu items={menuItems} label={`More ${info.label} actions`} />}

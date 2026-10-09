@@ -333,6 +333,53 @@ describe('Branch page counts', () => {
   });
 });
 
+describe('Branch page tab counts before any visit', () => {
+  const countOf = (name: RegExp): string =>
+    screen.getByRole('tab', { name }).textContent?.replace(/^[A-Za-z]+/, '') ?? '';
+
+  it('loads the commit history once when the page opens, and shows all three counts without a tab visit', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedWorktree({ isDiffLoaded: true });
+    const loadHistoryDraft = vi.fn(async () => {
+      withCommits();
+    });
+    useAppStore.setState({ loadHistoryDraft });
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(loadHistoryDraft).toHaveBeenCalledTimes(1);
+    expect(loadHistoryDraft).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_ID });
+    expect(screen.getByRole('tab', { name: /^Comments/ }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(screen.queryAllByRole('img', { name: 'Not loaded' })).toHaveLength(0);
+    expect(countOf(/^Files/)).toBe('2');
+    expect(countOf(/^Commits/)).toBe('3');
+    expect(Number(countOf(/^Comments/))).toBeGreaterThan(0);
+  });
+
+  it('does not load the history again when the draft is already there', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedWorktree({ isDiffLoaded: true });
+    withCommits();
+    const loadHistoryDraft = vi.fn(async () => undefined);
+    useAppStore.setState({ loadHistoryDraft });
+    render(
+      <ToastProvider>
+        <BranchPage session={SESSION} workingDir={WORKTREE} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(loadHistoryDraft).not.toHaveBeenCalled();
+    expect(countOf(/^Commits/)).toBe('3');
+  });
+});
+
 describe('Branch page Comments', () => {
   it('opens a thread by putting it in the address, and Comments leads back to the list', async () => {
     await mountAt({ width: 384 });

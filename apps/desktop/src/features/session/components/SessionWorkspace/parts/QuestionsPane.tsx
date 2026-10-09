@@ -220,51 +220,53 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
       meta={paneMeta({ waiting: model.waiting.length, blocking: model.blockingCount })}
       scroll="self"
     >
-      <div
-        onKeyDown={handleKeyDown}
-        className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)] @max-[56rem]:grid-cols-[15rem_minmax(0,1fr)]"
-      >
-        <div className="flex min-h-0 flex-col border-r border-border-soft">
-          <QuestionsQueue
-            model={model}
-            agents={agents}
-            kindOverrides={kindOverrides}
-            selectedId={effectiveId}
-            isAnsweredOpen={isAnsweredOpen}
-            onToggleAnswered={() => setIsAnsweredOpen((value) => !value)}
-            onSelect={setSelectedId}
-            onUndo={handleUndoRow}
-          />
+      <PageColumn className="flex min-h-0 flex-1 flex-col pb-5">
+        <div
+          onKeyDown={handleKeyDown}
+          className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)] @max-[56rem]:grid-cols-[15rem_minmax(0,1fr)]"
+        >
+          <div className="flex min-h-0 flex-col border-r border-border-soft">
+            <QuestionsQueue
+              model={model}
+              agents={agents}
+              kindOverrides={kindOverrides}
+              selectedId={effectiveId}
+              isAnsweredOpen={isAnsweredOpen}
+              onToggleAnswered={() => setIsAnsweredOpen((value) => !value)}
+              onSelect={setSelectedId}
+              onUndo={handleUndoRow}
+            />
+          </div>
+          <ScrollFade className="min-h-0" fadeSize={24}>
+            {question === null || selectedRow === null ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+                <CircleCheck size={ICON_SIZE.control} aria-hidden className="text-success" />
+                <span className="text-heading text-foreground">No questions</span>
+              </div>
+            ) : (
+              <div className="px-6 py-6">
+                <LiveQuestionCard
+                  key={question.id}
+                  question={question}
+                  sessionId={sessionId}
+                  variant="full"
+                  autoFocus
+                  pager={pager}
+                  settled={
+                    selectedRow.kind === 'answered' || selectedRow.kind === 'dismissed'
+                      ? selectedRow.kind
+                      : null
+                  }
+                  onAnswered={(answeredQuestion) => selectNextWaiting(answeredQuestion.id)}
+                  onSkip={model.waiting.length > 1 ? () => selectNextWaiting(question.id) : null}
+                  onDismiss={() => void handleDismiss(question)}
+                  onUndoDismiss={() => void handleUndoDismiss(question)}
+                />
+              </div>
+            )}
+          </ScrollFade>
         </div>
-        <ScrollFade className="min-h-0" fadeSize={24}>
-          {question === null || selectedRow === null ? (
-            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-              <CircleCheck size={ICON_SIZE.control} aria-hidden className="text-success" />
-              <span className="text-heading text-foreground">No questions</span>
-            </div>
-          ) : (
-            <PageColumn width="measure" className="py-6">
-              <LiveQuestionCard
-                key={question.id}
-                question={question}
-                sessionId={sessionId}
-                variant="full"
-                autoFocus
-                pager={pager}
-                settled={
-                  selectedRow.kind === 'answered' || selectedRow.kind === 'dismissed'
-                    ? selectedRow.kind
-                    : null
-                }
-                onAnswered={(answeredQuestion) => selectNextWaiting(answeredQuestion.id)}
-                onSkip={model.waiting.length > 1 ? () => selectNextWaiting(question.id) : null}
-                onDismiss={() => void handleDismiss(question)}
-                onUndoDismiss={() => void handleUndoDismiss(question)}
-              />
-            </PageColumn>
-          )}
-        </ScrollFade>
-      </div>
+      </PageColumn>
     </PaneShell>
   );
 };

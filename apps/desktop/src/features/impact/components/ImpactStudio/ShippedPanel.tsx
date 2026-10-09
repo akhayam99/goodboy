@@ -1,5 +1,4 @@
 import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
-import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { ErrorStrip, PaneShell, FilledEmptyState } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
@@ -12,11 +11,12 @@ import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '@goodboy/ui';
 import { StatCard } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 const FUNNEL_ROWS = 5;
 
 type Props = {
-  readonly header: ReactElement;
+  readonly frame: PaneFrame;
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
   readonly externalTasks: QueryResult<ExternalTaskOutcomes>;
@@ -26,7 +26,7 @@ type Props = {
 };
 
 export const ShippedPanel = ({
-  header,
+  frame,
   pullRequests,
   reviews,
   externalTasks,
@@ -43,7 +43,7 @@ export const ShippedPanel = ({
     reviewData?.resolutionDurationsHours.filter((hours) => hours >= 1 && hours < 24).length ?? 0;
   const slowReviews = Math.max(totalReviews - fastReviews - sameDayReviews, 0);
   return (
-    <PaneShell scroll="body" header={header}>
+    <PaneShell scroll="body" {...frame}>
       <ErrorStrip label="pull requests" error={pullRequests.error} onRetry={onRetry} />
       <ErrorStrip label="review throughput" error={reviews.error} onRetry={onRetry} />
       <ErrorStrip label="linked issues" error={externalTasks.error} onRetry={onRetry} />

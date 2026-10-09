@@ -16,6 +16,7 @@ import { LEDGER, LEDGER_COMMITS, LEDGER_GRAPH } from '../../testing/ledgerFixtur
 import { LEDGER_PRESET } from '../../testing/ledgerPreset';
 import { historyBackupRef } from '../../historyBackupRef';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
+import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
 
 vi.useFakeTimers({ toFake: ['Date'] });
 vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
@@ -174,6 +175,62 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('CommitsHistory toolbar', () => {
+  const mountWithSlot = () => {
+    seed({});
+    const slot = document.createElement('div');
+    document.body.appendChild(slot);
+    render(
+      <TabActionsSlotContext.Provider value={slot}>
+        <CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />
+      </TabActionsSlotContext.Provider>,
+    );
+    return slot;
+  };
+
+  it('puts Refresh, Backups and one horizontal overflow in the tab row actions, once', () => {
+    const slot = mountWithSlot();
+
+    const inSlot = within(slot);
+    expect(inSlot.getByRole('button', { name: 'Refresh' })).toBeDefined();
+    expect(inSlot.getByRole('button', { name: 'Backups' })).toBeDefined();
+    expect(inSlot.getAllByRole('button', { name: 'More history actions' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Refresh' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Backups' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'More history actions' })).toHaveLength(1);
+    slot.remove();
+  });
+
+  it('draws no fact chips above the graph', () => {
+    const slot = mountWithSlot();
+
+    expect(screen.queryByText(/of your own/)).toBeNull();
+    expect(screen.queryByText(/already online/)).toBeNull();
+    expect(screen.queryByText(/on top of today/)).toBeNull();
+    slot.remove();
+  });
+
+  it('keeps the legend on its own row outside the scroller that fades', () => {
+    const slot = mountWithSlot();
+
+    const legend = screen.getByRole('group', { name: 'Legend' });
+    const list = screen.getByRole('list', { name: 'Commits' });
+    const row = legend.closest('[data-slot="history-legend"]') as HTMLElement;
+    const scroller = row.previousElementSibling as HTMLElement;
+    expect(scroller.contains(list)).toBe(true);
+    expect(scroller.contains(legend)).toBe(false);
+    slot.remove();
+  });
+
+  it('keeps the toolbar inline when no tab row hands it a slot', () => {
+    seed({});
+    render(<CommitsHistory sessionId={SESSION_ID} worktreePath="/w/payments" />);
+
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Backups' })).toBeDefined();
+  });
+});
+
 describe('CommitsHistory', () => {
   it('draws one list of every commit newest first between main and the fork', () => {
     setup();
@@ -184,7 +241,8 @@ describe('CommitsHistory', () => {
     expect(labels).toEqual(LEDGER_COMMITS.map((entry) => entry.subject));
     expect(screen.getByText('3 commits newer than where your branch started')).toBeDefined();
     expect(screen.getByText('Your branch starts here')).toBeDefined();
-    expect(screen.getByText(/already online, PR #214/)).toBeDefined();
+    expect(screen.queryByText(/already online/)).toBeNull();
+    expect(screen.queryByText(/of your own/)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
   });
 

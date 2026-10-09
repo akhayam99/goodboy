@@ -12,7 +12,7 @@ import {
   PaneShell,
 } from '@goodboy/ui';
 import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
@@ -557,13 +557,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     );
 
   return (
-    <PaneShell
-      title="Scripts"
-      icon={CONCEPT_ICONS.scripts}
-      tone={CONCEPT_TONE.scripts}
-      meta={groups.length === 0 ? undefined : meta}
-      actions={actions}
-    >
+    <PaneShell title="Scripts" meta={groups.length === 0 ? undefined : meta} actions={actions}>
       {groups.length === 0 ? (
         <EmptyState
           size="page"

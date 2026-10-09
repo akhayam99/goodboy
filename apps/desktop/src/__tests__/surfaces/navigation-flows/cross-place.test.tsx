@@ -868,7 +868,7 @@ describe('moving across every place keeps one frame', () => {
       expect(studio()).toBe('chat');
       expectOneRail({
         place: 'Chat',
-        layers: { header: shown('header h2'), composer: shown('textarea') },
+        layers: { header: shown('header h1'), composer: shown('textarea') },
         rail: COLUMN_RAIL,
       });
 

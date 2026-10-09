@@ -186,6 +186,15 @@ pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
 
+The band above the title sits on that same column. The session trail band draws
+inside the page's `PageColumn`, and a studio's band does too, at the studio's tier
+(`STUDIO_META[kind].tier`: `column` for the page studios, `full` for the rail-plus-detail
+Chat and pairing), so the crumb starts where the title starts and Close ends where the
+column ends. The title row under it is one fixed 32px row (`PaneTitleRow`: `h-8`,
+centred, no wrap, a long title truncates), 40px below the pane top, which puts every
+title centre at 56px with its left edge on the column. A banner for the page (the first
+lap notice) is the first block of the body, inside the same column.
+
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
 on `full`). No view centres itself. Sub-pages follow the same tiers as their
 parent: Runs > Create, a run, a form, a studio's detail and its loading state

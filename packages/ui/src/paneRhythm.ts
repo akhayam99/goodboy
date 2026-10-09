@@ -41,7 +41,7 @@ export const PANE_RHYTHM = {
     nest: 'pl-6',
   },
   board: {
-    pad: 'px-6 py-5',
+    pad: 'px-6 pb-5',
     laneGap: 'gap-3',
     maxWidth: 'max-w-[123.75rem]',
     lanesSix: 'grid-cols-[repeat(6,minmax(13rem,20rem))]',

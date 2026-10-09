@@ -4,6 +4,7 @@ import { SegmentedTabs, inlineMarkdownText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore, sessionPlace } from '../../../../store';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { ProviderPanel } from '../../../budget/components/spend/ProviderPanel';
 import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
 import { useWorkspaceSpend } from '../../../budget/hooks/useWorkspaceSpend';
@@ -66,14 +67,27 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
     }
   }, [scope, selectedSession]);
 
-  const header = <ImpactTabs value={impactTabOf({ scope })} onChange={selectTab} />;
+  const frame: PaneFrame = {
+    title: 'Impact',
+    meta: 'What Goodboy got done, and what it cost.',
+    actions: (
+      <SegmentedTabs
+        ariaLabel="Impact window"
+        options={IMPACT_WINDOW_OPTIONS}
+        value={windowId}
+        onChange={setWindowId}
+        size="xs"
+      />
+    ),
+    tabs: <ImpactTabs value={impactTabOf({ scope })} onChange={selectTab} />,
+  };
 
   const renderDetail = (requestClose: () => void): ReactNode => {
     switch (scope.kind) {
       case 'overview':
         return (
           <OverviewPanel
-            header={header}
+            frame={frame}
             overview={metrics.overview}
             pullRequests={metrics.pullRequests}
             reviews={metrics.reviews}
@@ -91,7 +105,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       case 'shipped':
         return (
           <ShippedPanel
-            header={header}
+            frame={frame}
             pullRequests={metrics.pullRequests}
             reviews={metrics.reviews}
             externalTasks={metrics.externalTasks}
@@ -103,7 +117,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       case 'flow':
         return (
           <FlowPanel
-            header={header}
+            frame={frame}
             agentDurations={metrics.agentDurations}
             flowHealth={metrics.flowHealth}
             isLoading={metrics.loading.flow}
@@ -114,7 +128,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       case 'spend':
         return (
           <SpendPanel
-            header={header}
+            frame={frame}
             windowId={windowId}
             spend={spend}
             metrics={metrics}
@@ -125,7 +139,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       case 'provider':
         return (
           <ProviderPanel
-            header={header}
+            frame={frame}
             onBack={backToSpend}
             provider={scope.provider}
             entry={spend.providers.find((entry) => entry.provider === scope.provider) ?? null}
@@ -147,7 +161,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       case 'session':
         return selectedSession === null ? null : (
           <SessionPanel
-            header={header}
+            frame={frame}
             onBack={backToSpend}
             sessionId={selectedSession.sessionId}
             goal={inlineMarkdownText({ text: selectedSession.goal })}
@@ -174,17 +188,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       icon={CONCEPT_ICONS.impact}
       tone={CONCEPT_TONE.impact}
       title="Impact"
-      subtitle="What Goodboy got done, and what it cost."
       closeLabel="Close impact"
-      headerAccessory={
-        <SegmentedTabs
-          ariaLabel="Impact window"
-          options={IMPACT_WINDOW_OPTIONS}
-          value={windowId}
-          onChange={setWindowId}
-          size="sm"
-        />
-      }
       onClose={onClose}
     >
       {(requestClose) => (

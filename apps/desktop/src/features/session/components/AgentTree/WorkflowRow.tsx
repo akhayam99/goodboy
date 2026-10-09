@@ -10,7 +10,6 @@ import {
   ScrollFade,
   TERMINAL_DIM,
   Tooltip,
-  tintClasses,
 } from '@goodboy/ui';
 import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
 import type {
@@ -236,24 +235,12 @@ export const WorkflowRow = ({
           isDiscarded && TERMINAL_DIM,
         )}
       >
-        <PageColumn className="shrink-0 pb-2 pt-3">
+        <PageColumn className="shrink-0 pb-2">
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">
               <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
-                <span
-                  className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-lg',
-                    tintClasses('primary').bg,
-                  )}
-                >
-                  <CONCEPT_ICONS.workflows
-                    size={ICON_SIZE.hero}
-                    aria-hidden
-                    className="text-primary"
-                  />
-                </span>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div data-slot="pane-title-row" className="flex h-8 min-w-0 items-center gap-2">
                     {rename.editing ? (
                       <Input
                         autoFocus
@@ -267,22 +254,19 @@ export const WorkflowRow = ({
                       />
                     ) : (
                       <div
-                        className="group/name flex min-w-0 items-start gap-2"
+                        className="group/name flex min-w-0 items-center gap-2"
                         onContextMenu={runMenu.onContextMenu}
                       >
-                        <h2
-                          title={name}
-                          className="line-clamp-2 min-w-0 break-words text-title text-foreground"
-                        >
+                        <h1 title={name} className="min-w-0 truncate text-title text-foreground">
                           {name}
-                        </h2>
+                        </h1>
                         <Tooltip content="Edit run name">
                           <button
                             type="button"
                             onClick={rename.start}
                             aria-label="Edit run name"
                             className={cn(
-                              'mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground',
+                              'inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground',
                               'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
                               'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                               'group-hover/name:opacity-100 motion-reduce:opacity-60',
@@ -351,7 +335,7 @@ export const WorkflowRow = ({
                   />
                 </div>
               </div>
-              <div className="col-start-2 row-start-1 flex items-start gap-2 self-start">
+              <div className="col-start-2 row-start-1 flex h-8 items-center gap-2 self-start">
                 <CardActionSlot label="Run navigation actions">
                   <CardAction
                     icon={expanded ? ChevronDown : ChevronRight}

@@ -1300,29 +1300,39 @@ The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`
 and `Divider`, and the pane frame built from them. `PaneShell` lives at
 `packages/ui/src/components/PaneShell/` and is the one wrapper every main pane uses. It is a scroll region whose
 header and body share one `PageColumn` with the session trail band above it. It has one `h1` per surface.
-`meta` holds counts and totals in `tabular-nums`, never a control. The header
-row wraps, so actions drop under the title instead of squeezing it. The pane
+`meta` holds counts and totals in `tabular-nums` on one muted line 4px under the
+title row, never a control. The title row is fixed (`h-8`, centred, no wrap): a long
+title truncates and the actions never drop under it. The pane
 owns the gap below the header, and children add no top margins. The root is
 `@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
 `StudioShell` it fills the pane and `PageColumn` centres the column inside it.
 
-**One title grade, one header height.** Every lens pane and studio detail gets
-its title from `PaneShell`: an `h1` at `text-lg` with `meta` inline and
-actions on the right (32px), 16px below. Inside a session the `Trail` band
-(40px: 12 above, a 24px row, 4 below) sits above it and the header adds no top
-padding; outside a session the header keeps 12px above. 92px in all, 128px
-with the optional `tabs` row.
+**One header grid.** Every page, sub-page, studio and the Board uses the same
+three rows. A 40px band (the `Trail` or the studio band: the crumb at the column's
+left, Ask or Close at its right edge), a 32px title row directly under it with the
+page's `h1` at `text-title` and the actions at its right, and an optional 12px muted
+meta line 4px under the row. The title's centre is therefore 56px under the pane top
+and its left edge is the column's content edge on every page; `frameGeometryOf`
+(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Inside
+a session the band is the `TrailBar`, and in a studio `StudioFrame` draws it inside a
+`PageColumn` of the studio's tier and hands its body `UnderTrailContext`, so the header
+adds no top padding; outside both, a bare page keeps 12px above. The Board has an
+empty 40px band above its title row to land on the same 56px. Optional `tabs` sit on
+their own row under the meta line, at the column's left. A glyph never indents the
+title: `PaneShell` has no `icon`, `glyph` or `tone`, the concept lives in the crumb. The
+crumb names the structure and the `h1` the object, and a report's document title is an
+`h2`.
 There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
-`icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
-its own header row passes `HeaderBand` (also an `h1`) through the custom
-`header` slot. The agent detail passes `AgentHeader` instead: a 32px title row
-with the one-line title (full name on hover), the Brief and Transcript tabs
-(`SegmentedTabs` `xs`, 28px) and the actions (lifecycle button, Delete as an
-icon with an anchored `ConfirmPopover`, the overflow menu), then one 18px meta
-line with role, status, time and model. That is 70px with the 16px below, no
-separate tabs row, and the transcript under it starts 8px down (`ChatView`
-`topInset="tight"`). The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
+A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
+fixed `h-8` row) through the custom `header` slot. The agent detail passes
+`AgentHeader` instead: the 32px title row with the one-line title (full name on hover)
+and the actions (lifecycle button, Delete as an icon with an anchored `ConfirmPopover`,
+the overflow menu), then one meta line with role, status, time and model, then the Brief
+and Transcript tabs (`SegmentedTabs` `xs`, 28px) on their own row, and the transcript
+under it starts 8px down (`ChatView` `topInset="tight"`). A page that must show a banner
+under its title (the first lap) receives it through `PaneBannerContext` and `PaneShell`
+draws it as the first body block on the column, once, so the title never moves. The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
 there is none, then one row of facts: `Context`, `Artifacts`, linked work, `Link work` and the cost. Goal, decisions and summary

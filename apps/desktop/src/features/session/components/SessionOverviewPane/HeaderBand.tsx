@@ -38,7 +38,12 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <div className="flex items-center gap-2">
+      <div
+        data-slot="pane-title-row"
+        className={
+          rename.editing ? 'flex min-h-8 items-center gap-2' : 'flex h-8 items-center gap-2'
+        }
+      >
         {rename.editing ? (
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <Input
@@ -65,7 +70,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
                 type="button"
                 onClick={rename.start}
                 title={inlineMarkdownText({ text: titleText })}
-                className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className="min-w-0 flex-1 cursor-text truncate rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <span key={titleText} className="motion-safe:animate-fade-in">
                   <InlineMarkdown text={titleText} />

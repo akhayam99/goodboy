@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from 'react';
+import { useMemo } from 'react';
 import { StatCard, formatUsd, formatUsdPrecise, PaneShell } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
@@ -21,9 +21,10 @@ import {
   budgetScopeNote,
   budgetWarnFraction,
 } from '../../providerBudgetView';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 type Props = {
-  readonly header: ReactElement;
+  readonly frame: PaneFrame;
   readonly onBack: () => void;
   readonly provider: ProviderName;
   readonly entry: ProviderBudgetEntry | null;
@@ -41,7 +42,7 @@ type Props = {
 };
 
 export const ProviderPanel = ({
-  header,
+  frame,
   onBack,
   provider,
   entry,
@@ -69,7 +70,7 @@ export const ProviderPanel = ({
   const coverage = useMemo(() => coverageTurnCounts(models), [models]);
 
   return (
-    <PaneShell scroll="body" header={header}>
+    <PaneShell scroll="body" {...frame}>
       <SpendAnchorTitle
         glyph={<ProviderIcon provider={provider} size={ICON_SIZE.hero} />}
         title={providerLabel({ provider })}

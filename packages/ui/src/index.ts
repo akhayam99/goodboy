@@ -220,6 +220,7 @@ export {
   useInheritedPaneActions,
 } from './components/PaneShell/paneActionsContext';
 export { UnderTrailContext } from './components/PaneShell/underTrailContext';
+export { PaneBannerContext } from './components/PaneShell/paneBannerContext';
 export { PageColumn } from './components/PageColumn';
 export type { PageColumnWidth } from './components/PageColumn';
 export { FormActions } from './components/FormActions';
@@ -306,3 +307,12 @@ export type { KeyHintProps } from './components/KeyHint';
 export { TOP_BAR_CONTROL } from './topBarControl';
 export { lastFocusedElement, useLastFocused } from './useLastFocused';
 export { FLOATING_SURFACE } from './floatingSurface';
+
+export {
+  FRAME_BAND_PX,
+  FRAME_PAGES,
+  FRAME_TITLE_CENTRE_PX,
+  FRAME_TITLE_ROW_PX,
+  frameGeometryOf,
+} from './frameGeometry';
+export type { FrameGeometry, FramePage, FrameTitleLeft } from './frameGeometry';

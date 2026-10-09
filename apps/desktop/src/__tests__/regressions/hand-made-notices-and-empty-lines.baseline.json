@@ -1,8 +1,4 @@
 {
-  "apps/desktop/src/features/bootstrap/FirstLapBanner/index.tsx": {
-    "notices": 2,
-    "emptyLines": 0
-  },
   "apps/desktop/src/features/budget/components/SessionSpendPopover/AgentSpendList.tsx": {
     "notices": 0,
     "emptyLines": 1

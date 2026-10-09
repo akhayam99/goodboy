@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import {
@@ -17,9 +16,10 @@ import { impactDelta } from '../../utils/impactDelta';
 import { shippedSessions } from '../../utils/shippedSessions';
 import { KpiTile } from './KpiTile';
 import { ShippedSessionRows } from './ShippedSessionRows';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 type Props = {
-  readonly header: ReactElement;
+  readonly frame: PaneFrame;
   readonly overview: QueryResult<ImpactOverview>;
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
@@ -45,7 +45,7 @@ const shareOf = ({ sessions, orchestrated }: ShareParams): number | null =>
   sessions === null || sessions === 0 ? null : (orchestrated ?? 0) / sessions;
 
 export const OverviewPanel = ({
-  header,
+  frame,
   overview,
   pullRequests,
   reviews,
@@ -76,7 +76,7 @@ export const OverviewPanel = ({
       : shippedSessions({ entries: prs.entries, durations: data.sessions, limit: SHIPPED_LIMIT });
 
   return (
-    <PaneShell scroll="body" header={header}>
+    <PaneShell scroll="body" {...frame}>
       <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
       <ErrorStrip
         label="pull request outcomes"

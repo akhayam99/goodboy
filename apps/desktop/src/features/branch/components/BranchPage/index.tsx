@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageColumn, PaneShell, SegmentedTabs } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -31,6 +31,7 @@ import { BranchDescription } from '../BranchDescription';
 import { BranchFiles } from '../BranchFiles';
 import { BranchHeader } from '../BranchHeader';
 import { TabCount } from './TabCount';
+import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
 
 type Props = {
   readonly session: Session;
@@ -58,10 +59,15 @@ export const BranchPage = ({ session, workingDir }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const commitCount = useAppStore((s) => {
-    const mountId = identity.mount?.mountId ?? null;
-    return mountId === null ? null : (s.historyDrafts[mountId]?.commits.length ?? null);
-  });
+  const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
+  const historyMountId = identity.mount?.mountId ?? null;
+  const commitCount = useAppStore((s) =>
+    historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits.length ?? null),
+  );
+  const hasHistoryDraft = useAppStore(
+    (s) => historyMountId !== null && s.historyDrafts[historyMountId] !== undefined,
+  );
+  const loadHistoryDraft = useAppStore((s) => s.loadHistoryDraft);
   const projectName = useAppStore(
     (s) => projectById(s.projects, identity.mount?.projectId ?? null)?.name ?? null,
   );
@@ -123,6 +129,13 @@ export const BranchPage = ({ session, workingDir }: Props) => {
     diff,
     review,
   });
+
+  useEffect(() => {
+    if (historyMountId === null || hasHistoryDraft) {
+      return;
+    }
+    void loadHistoryDraft({ sessionId, mountId: historyMountId });
+  }, [historyMountId, hasHistoryDraft, loadHistoryDraft, sessionId]);
 
   useEffect(
     () => () => setPullRequestMode({ sessionId, mode: 'overview' }),
@@ -260,56 +273,65 @@ export const BranchPage = ({ session, workingDir }: Props) => {
 
   return (
     <BranchDiffContext.Provider value={identity.mountPath === null ? null : diff}>
-      <DiffRailScope isActive={tab === 'files'}>
-        <PaneShell
-          width="column"
-          scroll="self"
-          header={
-            <div className="flex min-w-0 flex-col gap-3">
-              <BranchHeader
-                sessionId={sessionId}
-                mountPath={identity.mountPath}
-                pr={pr}
-                detail={github?.detail ?? null}
-                projectName={projectName}
-                branch={identity.mount?.branch ?? null}
-                baseBranch={identity.mount?.baseBranch ?? null}
-                fallbackTitle={identity.label}
-                controls={controls}
-                isPushBusy={isPushBusy}
-              />
-              <PushBanner sessionId={sessionId} push={push} />
-              {baseRow}
-              {controls.rebaseError !== null && (
-                <p role="alert" className="text-meta text-danger" title={controls.rebaseError}>
-                  {controls.rebaseError}
-                </p>
-              )}
-              <SegmentedTabs<BranchTab>
-                ariaLabel="Branch"
-                size="sm"
-                className="w-fit"
-                value={tab}
-                onChange={selectTab}
-                options={TAB_ORDER.map((value) => ({
-                  value,
-                  label: TAB_LABEL[value],
-                  badge:
-                    value === 'comments' ? (
-                      <TabCount count={commentsCount} />
-                    ) : value === 'files' ? (
-                      <TabCount count={filesCount} />
-                    ) : value === 'commits' ? (
-                      <TabCount count={commitCount} />
-                    ) : undefined,
-                }))}
-              />
-            </div>
-          }
-        >
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3">{body()}</div>
-        </PaneShell>
-      </DiffRailScope>
+      <TabActionsSlotContext.Provider value={tabActionsSlot}>
+        <DiffRailScope isActive={tab === 'files'}>
+          <PaneShell
+            width="column"
+            scroll="self"
+            header={
+              <div className="flex min-w-0 flex-col gap-3">
+                <BranchHeader
+                  sessionId={sessionId}
+                  mountPath={identity.mountPath}
+                  pr={pr}
+                  detail={github?.detail ?? null}
+                  projectName={projectName}
+                  branch={identity.mount?.branch ?? null}
+                  baseBranch={identity.mount?.baseBranch ?? null}
+                  fallbackTitle={identity.label}
+                  controls={controls}
+                  isPushBusy={isPushBusy}
+                />
+                <PushBanner sessionId={sessionId} push={push} />
+                {baseRow}
+                {controls.rebaseError !== null && (
+                  <p role="alert" className="text-meta text-danger" title={controls.rebaseError}>
+                    {controls.rebaseError}
+                  </p>
+                )}
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <SegmentedTabs<BranchTab>
+                    ariaLabel="Branch"
+                    size="sm"
+                    className="w-fit"
+                    value={tab}
+                    onChange={selectTab}
+                    options={TAB_ORDER.map((value) => ({
+                      value,
+                      label: TAB_LABEL[value],
+                      badge:
+                        value === 'comments' ? (
+                          <TabCount count={commentsCount} />
+                        ) : value === 'files' ? (
+                          <TabCount count={filesCount} />
+                        ) : value === 'commits' ? (
+                          <TabCount count={commitCount} />
+                        ) : undefined,
+                    }))}
+                  />
+                  <div
+                    ref={setTabActionsSlot}
+                    data-slot="branch-tab-actions"
+                    className="flex shrink-0 items-center gap-2"
+                  />
+                </div>
+              </div>
+            }
+          >
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col pt-3">{body()}</div>
+          </PaneShell>
+        </DiffRailScope>
+      </TabActionsSlotContext.Provider>
     </BranchDiffContext.Provider>
   );
 };
