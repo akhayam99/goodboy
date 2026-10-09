@@ -403,6 +403,59 @@ describe('an orchestrated run and the session summarizer', () => {
   });
 });
 
+describe('an orchestrated run that waited on an answer', () => {
+  it('asks the orchestrator for the next step even when no agent could take the answer', async () => {
+    const workflowRunId = await attachRun({ triggerMode: 'manual' });
+    void useAppStore.getState().orchestrateNextStep(sessionId, workflowRunId);
+    await vi.waitFor(() => expect(turns).toHaveLength(1));
+    turns[0]?.finish();
+    await vi.waitFor(async () =>
+      expect(await runAgents(workflowRunId)).toEqual([
+        { name: 'Scout the settlement code', status: 'completed' },
+      ]),
+    );
+    await vi.waitFor(() => expect(summarizerQueues.size).toBe(0));
+    useAppStore.setState((state) => ({
+      sessions: state.sessions.map((candidate) =>
+        candidate.id === sessionId
+          ? {
+              ...candidate,
+              workflowRuns: candidate.workflowRuns.map((run) => ({
+                ...run,
+                triggerMode: 'immediate' as const,
+              })),
+            }
+          : candidate,
+      ),
+    }));
+    await insertOpenQuestion(storySqlite(), {
+      id: 'question-settlement-alias' as OpenQuestionId,
+      sessionId,
+      workflowRunId,
+      text: 'Keep the legacy settlement route as an alias?',
+      suggestedAnswers: [],
+      isBlocking: true,
+    });
+    await useAppStore.getState().loadSessionOpenQuestions(sessionId);
+    const decisions = requests.length;
+
+    const answering = useAppStore.getState().answerOpenQuestions(
+      sessionId,
+      [
+        {
+          id: 'question-settlement-alias' as OpenQuestionId,
+          text: 'Keep the legacy settlement route as an alias?',
+          answer: 'Keep it',
+        },
+      ],
+      null,
+    );
+
+    await expect(answering).rejects.toThrow('no agent selected');
+    await vi.waitFor(() => expect(requests).toHaveLength(decisions + 1));
+  });
+});
+
 describe('the watchdog over an orchestrated run', () => {
   const waking = async (): Promise<WorkflowRunId> => {
     const workflowRunId = await attachRun({ triggerMode: 'manual' });
