@@ -22,6 +22,10 @@ const PLAN_DRAWER_SCENES = [
 const PLAN_DRAWER_WIDTH = 1024;
 const ROW_TOLERANCE_PX = 2;
 const SETTLE_MS = 500;
+const OPEN_ATTEMPTS = 3;
+const CALL_TIMEOUT_MS = 60_000;
+const FRAME_FALLBACK_MS = 100;
+const CLICK_PATIENCE_MS = 8000;
 
 const args = Object.fromEntries(
   process.argv
@@ -64,10 +68,18 @@ const connect = async (port) => {
     }
   });
   return (method, params = {}) =>
-    new Promise((resolvePromise) => {
+    new Promise((resolvePromise, reject) => {
       id += 1;
-      pending.set(id, resolvePromise);
-      socket.send(JSON.stringify({ id, method, params }));
+      const callId = id;
+      const timer = setTimeout(() => {
+        pending.delete(callId);
+        reject(new Error(`Chrome DevTools call ${method} timed out`));
+      }, CALL_TIMEOUT_MS);
+      pending.set(callId, (message) => {
+        clearTimeout(timer);
+        resolvePromise(message);
+      });
+      socket.send(JSON.stringify({ id: callId, method, params }));
     });
 };
 
@@ -90,7 +102,7 @@ const browser = async () => {
   const send = await connect(port);
   const close = () => {
     child.kill('SIGKILL');
-    rmSync(profile, { recursive: true, force: true });
+    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   };
   return { send, close };
 };
@@ -105,6 +117,26 @@ const run = async (send, fn, argument) => {
     throw new Error(JSON.stringify(result.result.exceptionDetails).slice(0, 400));
   }
   return result.result?.result?.value;
+};
+
+const attemptOpen = async ({ send, scene, readySelector }) => {
+  try {
+    await send('Page.navigate', { url: `${app}/?scene=${scene}&brand=1` });
+    await pause(wait);
+    return await run(
+      send,
+      async (selector) => {
+        for (let poll = 0; poll < 100; poll += 1) {
+          if (document.querySelector(selector) !== null) return true;
+          await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+        }
+        return false;
+      },
+      readySelector,
+    );
+  } catch {
+    return false;
+  }
 };
 
 const open = async ({
@@ -122,28 +154,25 @@ const open = async ({
     mobile: false,
   });
   await send('Page.enable');
-  await send('Page.navigate', { url: `${app}/?scene=${scene}&brand=1` });
-  await pause(wait);
-  await run(
-    send,
-    async (selector) => {
-      for (let attempt = 0; attempt < 100; attempt += 1) {
-        if (document.querySelector(selector) !== null) return true;
-        await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
-      }
-      return false;
-    },
-    readySelector,
-  );
+  for (let attempt = 0; attempt < OPEN_ATTEMPTS; attempt += 1) {
+    const isReady = await attemptOpen({ send, scene, readySelector });
+    if (isReady) return;
+  }
 };
 
-const clickButton = ({ label }) => {
-  const button = [...document.querySelectorAll('button')].find(
-    (candidate) => candidate.textContent?.trim() === label,
-  );
-  if (!(button instanceof HTMLElement)) return false;
-  button.click();
-  return true;
+const clickButton = async ({ label, patience = 0 }) => {
+  const deadline = performance.now() + patience;
+  for (;;) {
+    const button = [...document.querySelectorAll('button')].find(
+      (candidate) => candidate.textContent?.trim() === label,
+    );
+    if (button instanceof HTMLElement) {
+      button.click();
+      return true;
+    }
+    if (performance.now() >= deadline) return false;
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  }
 };
 
 const workflowScrollProbe = () => {
@@ -188,7 +217,7 @@ const validateWorkflowScroll = async ({ send, scene, click }) => {
     readySelector: '[data-studio-overlay]',
   });
   if (click !== null) {
-    const clicked = await run(send, clickButton, { label: click });
+    const clicked = await run(send, clickButton, { label: click, patience: CLICK_PATIENCE_MS });
     if (!clicked) return { reached: false, reason: `missing ${click} button` };
     await pause(SETTLE_MS);
   }
@@ -253,8 +282,12 @@ const planDrawerHeader = async ({ until, tolerance }) => {
   };
 };
 
-const openEveryGroup = async ({ stillCap, settleMs }) => {
-  const frame = () => new Promise((resolvePromise) => requestAnimationFrame(resolvePromise));
+const openEveryGroup = async ({ stillCap, settleMs, frameFallbackMs }) => {
+  const frame = () =>
+    new Promise((resolvePromise) => {
+      requestAnimationFrame(resolvePromise);
+      setTimeout(resolvePromise, frameFallbackMs);
+    });
   const drifts = [];
   const toggles = () => [
     ...document.querySelectorAll('[data-row-id] button[aria-expanded="false"]'),
@@ -383,6 +416,7 @@ const main = async () => {
         const motion = await run(session.send, openEveryGroup, {
           stillCap: STILL_CAP_PX,
           settleMs: SETTLE_MS,
+          frameFallbackMs: FRAME_FALLBACK_MS,
         });
         if (motion.transformed.length > 0) {
           failures.push({ scene, zoom, check: 'row keeps a transform', rows: motion.transformed });
