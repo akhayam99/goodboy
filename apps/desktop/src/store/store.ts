@@ -128,6 +128,7 @@ import { initialSessionDraftState } from './slices/sessionDraft/state';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
 import { initialNavigationState } from './slices/navigation/types';
+import { askInitialState } from './slices/ask/state';
 import { initialDrawerState } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { ProviderSpendEntry } from './slices/budget';
@@ -291,6 +292,7 @@ export const initialState: AppState = {
   ...initialContextDrawerState,
   ...initialContextItemsState,
   ...initialDecisionsState,
+  ...askInitialState,
   ...initialDrawerState,
   ...initialNavigationState,
   ...initialScriptsState,

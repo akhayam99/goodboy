@@ -201,7 +201,6 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
       title={plan.title}
       icon={CONCEPT_ICONS.plans}
       iconClassName="text-muted-foreground"
-      closeLabel="Close the plan"
       onClose={onClose}
       action={isExpanded ? toolbar : undefined}
       toolbar={

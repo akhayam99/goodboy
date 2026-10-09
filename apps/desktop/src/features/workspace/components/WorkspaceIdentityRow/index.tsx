@@ -16,7 +16,7 @@ export const WorkspaceIdentityRow = () => {
   );
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const dropdown = useDropdown({
-    width: 'w-[340px]',
+    width: 'w-96',
     expectedWidth: 340,
     expectedHeight: 480,
     openEvent: 'goodboy:open-workspace-switcher',

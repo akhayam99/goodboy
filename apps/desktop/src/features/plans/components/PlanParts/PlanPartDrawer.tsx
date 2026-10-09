@@ -34,7 +34,6 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
       title={`Part ${index + 1} of ${rows.length}`}
       icon={CONCEPT_ICONS.plan}
       iconClassName="text-muted-foreground"
-      closeLabel="Close the part"
       onClose={onClose}
     >
       <div data-testid="plan-part-drawer" className="flex min-w-0 flex-col gap-5">

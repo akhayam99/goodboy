@@ -30,7 +30,7 @@ export const ReviewerPicker = ({
   const [logins, setLogins] = useState<ReadonlyArray<string> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const workspaceId = useCurrentWorkspace()?.id;
-  const dropdown = useDropdown({ width: 'w-52', expectedHeight: 220 });
+  const dropdown = useDropdown({ width: 'w-60', expectedHeight: 220 });
   const { open: isOpen, close, toggle } = dropdown;
 
   useEffect(() => {

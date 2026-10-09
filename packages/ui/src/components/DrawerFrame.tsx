@@ -1,11 +1,12 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { X } from 'lucide-react';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
+import { lastFocusedElement } from '../useLastFocused';
 import { Divider } from './Divider';
+import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
-import { Tooltip } from './Tooltip';
 
 export type DrawerFrameProps = {
   readonly title: string;
@@ -21,15 +22,32 @@ export type DrawerFrameProps = {
   readonly children: ReactNode;
 };
 
+const FIELD_SELECTOR = 'textarea, input, [contenteditable="true"]';
+
+const TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', 'number', 'password']);
+
 const focusableTrigger = (): HTMLElement | null => {
   if (typeof document === 'undefined') {
     return null;
   }
   const active = document.activeElement;
-  if (!(active instanceof HTMLElement) || active === document.body) {
-    return null;
+  if (active instanceof HTMLElement && active !== document.body) {
+    return active;
   }
-  return active;
+  return lastFocusedElement();
+};
+
+const hasDraft = (element: HTMLElement): boolean => {
+  if (element instanceof HTMLTextAreaElement) {
+    return element.value !== '';
+  }
+  if (element instanceof HTMLInputElement) {
+    return TEXT_INPUT_TYPES.has(element.type) && element.value !== '';
+  }
+  if (element.isContentEditable || element.getAttribute('contenteditable') === 'true') {
+    return (element.textContent ?? '') !== '';
+  }
+  return false;
 };
 
 export const DrawerFrame = ({
@@ -39,25 +57,46 @@ export const DrawerFrame = ({
   count,
   action,
   toolbar,
-  closeLabel = 'Close panel',
+  closeLabel = 'Close',
   onClose,
   dock,
   scroll = 'frame',
   children,
 }: DrawerFrameProps) => {
-  const triggerRef = useRef<HTMLElement | null>(focusableTrigger());
-  useEscapeLayer(onClose);
+  const [trigger] = useState(focusableTrigger);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const dockRef = useRef<HTMLDivElement | null>(null);
+  const closeRef = useRef<HTMLButtonElement | null>(null);
   const hasToolbar = toolbar != null;
 
+  useEscapeLayer(() => {
+    const active = document.activeElement;
+    const section = sectionRef.current;
+    if (
+      active instanceof HTMLElement &&
+      section !== null &&
+      section.contains(active) &&
+      hasDraft(active)
+    ) {
+      active.blur();
+      return;
+    }
+    onClose();
+  });
+
   useEffect(() => {
-    const trigger = triggerRef.current;
+    const section = sectionRef.current;
+    if (section !== null && !section.contains(document.activeElement)) {
+      const field = dockRef.current?.querySelector<HTMLElement>(FIELD_SELECTOR);
+      (field ?? closeRef.current)?.focus({ preventScroll: true });
+    }
     return () => {
       if (trigger === null || !trigger.isConnected) {
         return;
       }
       trigger.focus();
     };
-  }, []);
+  }, [trigger]);
 
   const titleRow = (
     <>
@@ -83,22 +122,14 @@ export const DrawerFrame = ({
       </div>
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
-        <Tooltip content={closeLabel}>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={closeLabel}
-            className="rounded-md p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-          >
-            <X size={14} aria-hidden />
-          </button>
-        </Tooltip>
+        <IconButton ref={closeRef} icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
       </div>
     </>
   );
 
   return (
     <section
+      ref={sectionRef}
       aria-label={title}
       className="flex h-full min-h-0 min-w-0 flex-col bg-subtle motion-safe:animate-nav-step-in"
     >
@@ -128,7 +159,11 @@ export const DrawerFrame = ({
           {children}
         </ScrollFade>
       )}
-      {dock != null ? <div className="shrink-0 px-4 py-3">{dock}</div> : null}
+      {dock != null ? (
+        <div ref={dockRef} className="shrink-0 px-4 py-3">
+          {dock}
+        </div>
+      ) : null}
     </section>
   );
 };

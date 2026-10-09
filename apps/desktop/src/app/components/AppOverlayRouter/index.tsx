@@ -1,4 +1,5 @@
 import { Suspense, lazy, type ReactNode } from 'react';
+import { FLOATING_SURFACE, cn } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
 import { DeleteSessionConfirm } from '../../../features/session/components/DeleteSessionConfirm';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
@@ -275,7 +276,12 @@ export const AppOverlayRouter = ({
     <Suspense fallback={null}>
       <AppScopeOverlays studio={null} palette={palette} closePalette={closePalette} />
       {deleteTargetSession !== null && deleteOpen ? (
-        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-floating shadow-lg">
+        <div
+          className={cn(
+            FLOATING_SURFACE,
+            'fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)]',
+          )}
+        >
           <DeleteSessionConfirm session={deleteTargetSession} onClose={closeDeleteConfirm} />
         </div>
       ) : null}

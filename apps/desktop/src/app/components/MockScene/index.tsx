@@ -206,6 +206,7 @@ import { U21_RUN_TREE_SCENES } from './scenes/u21/run-tree';
 import { U21_RUN_PAGE_SCENES } from './scenes/u21/run-page';
 import { U21_PLAN_DRAWER_SCENES } from './scenes/u21/plan-drawer';
 import { U23_CONTROLS_SCENES } from './scenes/u23/controls';
+import { U23_DRAWER_CHROME_SCENES } from './scenes/u23/drawer-chrome';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -413,6 +414,7 @@ export const MOCK_SCENES = {
   ...U21_RUN_PAGE_SCENES,
   ...U21_PLAN_DRAWER_SCENES,
   ...U23_CONTROLS_SCENES,
+  ...U23_DRAWER_CHROME_SCENES,
 };
 
 export const MockScene = () => {

@@ -100,7 +100,7 @@ describe('plan document drawer header', () => {
     const toolbar = frame.querySelector('[data-drawer-toolbar]');
     expect(toolbar?.textContent).toContain('v2');
     expect(within(frame).getByTestId('artifact-state-chip').textContent).toContain('Ready to run');
-    expect(toolbar?.contains(screen.getByRole('button', { name: 'Close the plan' }))).toBe(false);
+    expect(toolbar?.contains(screen.getByRole('button', { name: 'Close' }))).toBe(false);
     expect(screen.getByTestId('plan-drawer-body').textContent).toContain(
       'Retried webhooks must never post a second credit.',
     );
@@ -235,7 +235,7 @@ describe('plan document drawer header', () => {
     const onClose = vi.fn();
     renderDrawer({ onClose });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close the plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
     expect(onClose).toHaveBeenCalledTimes(2);

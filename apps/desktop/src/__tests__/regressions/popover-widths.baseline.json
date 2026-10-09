@@ -1,0 +1,10 @@
+{
+  "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu.tsx": 1,
+  "apps/desktop/src/app/components/ProvidersMenu/index.tsx": 1,
+  "apps/desktop/src/app/components/ProvidersMenu/providersPanelSize.ts": 1,
+  "apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx": 1,
+  "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/ProvidersInOrder.tsx": 2,
+  "apps/desktop/src/features/review/components/ReviewPane/WriteReview/ReviewPanelButton.tsx": 1,
+  "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.tsx": 1,
+  "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/index.tsx": 2
+}

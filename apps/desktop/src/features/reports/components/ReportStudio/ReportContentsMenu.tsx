@@ -13,7 +13,7 @@ type Props = {
 export const ReportContentsMenu = ({ entries, activeId, onSelect }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
-    width: 'w-64 max-w-[calc(100vw-2rem)]',
+    width: 'w-60 max-w-[calc(100vw-2rem)]',
     expectedHeight: 260,
     expectedWidth: 256,
   });

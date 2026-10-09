@@ -58,7 +58,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     align: 'end',
     expectedHeight: 480,
     expectedWidth: 400,
-    width: 'w-[25rem] max-w-[calc(100vw-2rem)]',
+    width: 'w-96 max-w-[calc(100vw-2rem)]',
   });
   const { open, toggle, close, popupRef } = dropdown;
   const [isEditing, setIsEditing] = useState(false);

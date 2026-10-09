@@ -39,7 +39,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const [busy, setBusy] = useState(false);
   const [overflowView, setOverflowView] = useState<OverflowView>('menu');
   const [denyReason, setDenyReason] = useState('');
-  const dropdown = useDropdown({ align: 'end', width: 'w-72', expectedWidth: 288 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedWidth: 320 });
   const { open, close, toggle } = dropdown;
 
   const session = useAppStore((s) =>

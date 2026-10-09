@@ -1,8 +1,10 @@
 import type { SliceDeps } from '../../slice-types';
+import { clearAskDraft } from './clearAskDraft';
 import { loadAskThreads } from './loadAskThreads';
 import { newAskThread } from './newAskThread';
 import { openAsk } from './openAsk';
 import { sendAskQuestion } from './sendAskQuestion';
+import { setAskDraft } from './setAskDraft';
 import { setAskRouting } from './setAskRouting';
 import { showAskThread } from './showAskThread';
 import { askInitialState } from './state';
@@ -17,5 +19,7 @@ export const createAskSlice = ({ set, get }: SliceDeps): AskSlice => ({
   sendAskQuestion: sendAskQuestion(set, get),
   stopAskReply: stopAskReply(set, get),
   setAskRouting: setAskRouting(set, get),
+  setAskDraft: setAskDraft(set),
+  clearAskDraft: clearAskDraft(set),
   openAsk: openAsk(get),
 });

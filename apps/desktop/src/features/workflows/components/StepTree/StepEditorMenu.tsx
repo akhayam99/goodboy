@@ -32,7 +32,7 @@ export const StepEditorMenu = ({
 }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
-    width: 'w-52',
+    width: 'w-60',
     expectedWidth: 208,
     expectedHeight: 200,
     disabled,

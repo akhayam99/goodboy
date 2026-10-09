@@ -9,7 +9,7 @@ export const TranscriptReplyDock = ({ children }: Props) => {
   const ref = useRef<HTMLDivElement | null>(null);
   useToastLift({ ref });
   return (
-    <div ref={ref} data-testid="transcript-drawer-reply" className="shrink-0 px-4 pb-4">
+    <div ref={ref} data-testid="transcript-drawer-reply" className="min-w-0">
       {children}
     </div>
   );

@@ -82,7 +82,7 @@ export const RunControlMenu = ({
   const items = routingItems({ routing });
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-64',
+    width: 'w-60',
     expectedWidth: 256,
     expectedHeight: 140,
   });

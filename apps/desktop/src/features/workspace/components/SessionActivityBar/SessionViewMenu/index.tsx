@@ -32,7 +32,7 @@ const GROUP_OPTIONS: ReadonlyArray<GroupOption> = [
   { key: 'project', label: 'Project' },
 ];
 
-const MENU_WIDTH = 224;
+const MENU_WIDTH = 240;
 const MoreIcon = CONCEPT_ICONS.more;
 
 type Props = {
@@ -57,7 +57,7 @@ export const SessionViewMenu = ({
   const { hold, release } = useSidebarPeekHold();
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-56',
+    width: 'w-60',
     expectedWidth: MENU_WIDTH,
     expectedHeight: 360,
   });

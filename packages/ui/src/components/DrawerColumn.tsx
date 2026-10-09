@@ -131,6 +131,7 @@ export const DrawerColumn = ({
         <div
           aria-hidden
           data-drawer-scrim=""
+          onMouseDown={(event) => event.preventDefault()}
           onClick={() => dismissTopEscapeLayer()}
           className="absolute inset-0 z-10 bg-scrim motion-safe:animate-fade-in"
         />

@@ -25,7 +25,7 @@ const chipValueOf = ({ providers, pool }: ValueParams): string => {
 };
 
 export const ProviderPoolChip = ({ providers, pool, disabled, onChange }: Props) => {
-  const dropdown = useDropdown({ disabled, width: 'w-72' });
+  const dropdown = useDropdown({ disabled, width: 'w-80' });
   const { open, toggle } = dropdown;
   const selected = pool ?? providers;
 

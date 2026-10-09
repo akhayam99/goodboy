@@ -20,8 +20,8 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
   const dropdown = useDropdown({
     align: direction === 'back' ? 'start' : 'center',
     expectedHeight: 30 * items.length + 8,
-    expectedWidth: 280,
-    width: 'w-70 max-w-[calc(100vw-2rem)]',
+    expectedWidth: 320,
+    width: 'w-80 max-w-[calc(100vw-2rem)]',
   });
   const { open, close, toggle } = dropdown;
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -56,7 +56,6 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
       dropdown={dropdown}
       role="menu"
       ariaLabel="History"
-      className="rounded-lg border border-border-soft bg-floating shadow-xl"
       anchorClassName="flex shrink-0"
       trigger={
         <Tooltip content={tooltip} side="bottom">

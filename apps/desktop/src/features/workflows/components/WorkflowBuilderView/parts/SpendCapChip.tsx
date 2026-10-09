@@ -63,7 +63,7 @@ export const SpendCapChip = ({
 }: Props) => {
   const differs = !sameSpend({ left: { isEnabled, amount, mode }, right: rule });
   const ruleValue = chipValueOf(rule);
-  const dropdown = useDropdown({ disabled, width: 'w-72' });
+  const dropdown = useDropdown({ disabled, width: 'w-80' });
   const { open, toggle } = dropdown;
   const hasAmount = parseSpendLimit(amount) != null;
 

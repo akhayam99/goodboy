@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const QueuedRestartPopover = ({ trigger, agentCount, onCancel }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-64', expectedHeight: 96 });
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 96 });
   return (
     <AnchoredPopover
       dropdown={dropdown}

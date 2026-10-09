@@ -261,18 +261,18 @@ describe('main flows on the real store', () => {
         <DrawerHost />
       </>,
     );
-    expect(screen.queryByRole('button', { name: 'Close context' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
     fireEvent.click(screen.getByTestId('context-chip'));
     await settle();
 
     expect(useAppStore.getState().drawer).toEqual(
       expect.objectContaining({ kind: 'context', sessionId }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Close context' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     await settle();
 
     expect(useAppStore.getState().drawer).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Close context' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
     expectNoRenderLoop();
   });
 

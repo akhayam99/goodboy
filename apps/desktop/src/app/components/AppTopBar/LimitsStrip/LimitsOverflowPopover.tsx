@@ -18,7 +18,7 @@ type Props = {
   readonly onOpen: (chip: LimitsChip) => void;
 };
 
-const PANEL_WIDTH = 300;
+const PANEL_WIDTH = 320;
 const ROW_HEIGHT = 32;
 
 type ValueParams = {
@@ -43,7 +43,7 @@ const rowValue = ({ chip, nowMs }: ValueParams): string => {
 export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-75',
+    width: 'w-80',
     expectedWidth: PANEL_WIDTH,
     expectedHeight: hidden.length * ROW_HEIGHT + 12,
   });

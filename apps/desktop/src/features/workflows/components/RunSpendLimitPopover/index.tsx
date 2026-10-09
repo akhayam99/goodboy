@@ -31,7 +31,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
     align: 'end',
     expectedHeight: 220,
     expectedWidth: 264,
-    width: 'w-64',
+    width: 'w-80',
   });
   const { open, close, toggle } = dropdown;
   const [amount, setAmount] = useState('');

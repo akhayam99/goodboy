@@ -33,7 +33,7 @@ const isSameChoice = ({ a, b }: { readonly a: StartChoice; readonly b: StartChoi
   (a.triggerMode !== 'after_run' || a.chainAfterId === b.chainAfterId);
 
 export const StartsChip = ({ choice, runs, disabled, onChange }: Props) => {
-  const dropdown = useDropdown({ disabled, width: 'w-72' });
+  const dropdown = useDropdown({ disabled, width: 'w-80' });
   const { open, close, toggle } = dropdown;
   const options: ReadonlyArray<Option> = [
     {

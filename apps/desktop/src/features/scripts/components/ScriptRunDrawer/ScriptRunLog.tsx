@@ -57,7 +57,7 @@ export const ScriptRunLog = ({ stdout, stderr, placeholder }: Props) => {
         ) : (
           <pre
             aria-label="Script output"
-            className="flex flex-col whitespace-pre-wrap break-all font-mono text-meta text-foreground"
+            className="flex flex-col min-w-0 whitespace-pre-wrap break-words font-mono text-meta text-foreground"
           >
             {lines.map((line, index) =>
               line.stream === 'stderr' ? (

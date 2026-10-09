@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const NotificationFiltersButton = ({ activeCount, facets }: Props) => {
-  const filters = useDropdown({ align: 'end', width: 'w-64', expectedHeight: 420 });
+  const filters = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 420 });
   return (
     <AnchoredPopover
       dropdown={filters}

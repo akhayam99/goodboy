@@ -72,7 +72,7 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
       onFocus={() => setIsFocused(true)}
       onBlur={onBlur}
       className={cn(
-        'pointer-events-auto w-full',
+        'pointer-events-auto relative w-full',
         'motion-safe:transition-all motion-safe:duration-200',
         isShown ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
       )}
@@ -80,6 +80,7 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
       <Notice
         tone={KIND_TONE[toast.kind]}
         placement="floating"
+        className="pr-11"
         title={
           <>
             {headline}
@@ -103,29 +104,27 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
           )
         }
         actions={
-          <>
-            {action !== undefined && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  action.onClick();
-                  onDismiss({ id: toast.id });
-                }}
-              >
-                {action.label}
-              </Button>
-            )}
-            <IconButton
-              icon={X}
-              label="Dismiss notification"
-              variant="ghost"
-              iconSize={ICON_SIZE.row}
-              className="-my-1 shrink-0 p-1"
-              onClick={() => onDismiss({ id: toast.id })}
-            />
-          </>
+          action === undefined ? undefined : (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                action.onClick();
+                onDismiss({ id: toast.id });
+              }}
+            >
+              {action.label}
+            </Button>
+          )
         }
+      />
+      <IconButton
+        icon={X}
+        label="Dismiss notification"
+        variant="ghost"
+        iconSize={ICON_SIZE.row}
+        className="absolute right-1.5 top-2"
+        onClick={() => onDismiss({ id: toast.id })}
       />
     </div>
   );

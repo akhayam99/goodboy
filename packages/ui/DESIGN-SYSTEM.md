@@ -232,6 +232,21 @@ together, and there is no arbitrary shadow.
 A drawer over the page is flush with the sheet (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
+**One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
+(`rounded-lg border border-border bg-floating shadow-lg`, from
+`packages/ui/src/floatingSurface.ts`). `Popover`, `ContextMenu`,
+`MenuChoicePanel`, the crumb menu, the history arrow menu, the session hover
+card, the session switcher, the update arrival card and the delete confirm
+take it as it is; a site adds layout and padding only, never a border, a fill or
+a shadow of its own.
+
+**One width scale.** A floating surface is 240px wide when it is a menu (never
+under 200), 320 or 384 when it is a popover, 360 when it is a toast, 320 when
+it is the hover card and 420 when it is the session switcher. Nothing else:
+224, 260, 300 and 368 are retired. A wider panel (a form in a popover) is the
+exception, listed in `regressions/popover-widths.baseline.json`, which counts
+the off-scale widths per file and never lets one grow.
+
 ## Spacing scale
 
 The base is `4px`, set in px and never in rem. Every utility comes out as
@@ -828,9 +843,11 @@ age in `faint-foreground`, and one `GhostActionButton` when the session needs
 you. It opens after a 500ms rest or keyboard focus, swaps at once between rows,
 and enters with `popover-in` once, never on a swap.
 
-The switcher is the palette frame (`z-command-palette`, a scrim, `bg-floating`
-on a `rounded-lg border` with `shadow-lg`) at `max-w-105`. Its rows are 36px
-`SelectableRow` options: node, title and age. It stays hidden for the first
+The switcher is the palette frame (`z-command-palette`, a scrim, the floating
+surface) at `max-w-105`. Its rows are 36px `SelectableRow` options: node, title
+and age. Its foot shows two gestures, `⌃Tab next` (the real control glyph from
+`shortcutGlyphs('session.switcher')`) and `Release to open`; back and Esc still
+work and live in the Shortcuts list. It stays hidden for the first
 120ms of a hold, so a quick tap flips sessions without drawing it.
 
 ### Work meta
@@ -1093,7 +1110,8 @@ places it at the pointer, and an overflow trigger places it in an
 `AnchoredPopover`. The desktop feeds both from the action registry, so the two
 never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
 
-- **Surface**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
+- **Surface**: level 4 (`FLOATING_SURFACE`: `floating`, `shadow-lg`, `border`,
+  `rounded-lg`), 240px wide with a 200px floor,
   padding 4, rows at `rounded-sm`, scrolling in a `ScrollFade`. It enters with
   `animate-popover-in` (120ms, opacity and a 0.98 scale). `ContextMenu` opens
   at the pointer and flips left or up to stay 8px inside the window
@@ -1345,6 +1363,19 @@ left border only and `shadow-xl`, over a `scrim` that fades in in 120ms. The
 page under it is `inert`, a click on the scrim dismisses the top escape layer
 like Esc, and focus moves into the card on open and back to the trigger on
 close.
+
+**The drawer card.** `DrawerFrame` is the card's one frame: a 44px header, a
+divider, a body and an optional `dock`. The title row reads icon, title, count
+(a number or a version, never a session title), at most one labelled action,
+then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px
+glyph); every utility in the header (copy, open on its page, expand) is a 28px
+icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
+composer, a transcript reply field and a script run's status line. The first
+control takes focus when the drawer opens (the composer of the dock when it has
+one, `Close` otherwise); Esc blurs a non-empty text field first and closes on
+the next press, and a click on the scrim does the same through the escape
+stack. A toast beside a pushing drawer stops at the card's left edge less the
+12px gutter.
 
 **A form opens where you clicked.** One placement rule for every inline form:
 

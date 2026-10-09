@@ -16,6 +16,14 @@ export type SendAskQuestionParams = AskSessionParams & {
   readonly rightNow: ReadonlyArray<string>;
 };
 
+export type AskDraftParams = AskSessionParams & {
+  readonly threadId: ChatId | null;
+};
+
+export type SetAskDraftParams = AskDraftParams & {
+  readonly text: string;
+};
+
 export type SetAskRoutingParams = AskSessionParams & {
   readonly routing: AskRouting;
 };
@@ -27,5 +35,7 @@ export type AskSlice = AskState & {
   readonly sendAskQuestion: (params: SendAskQuestionParams) => Promise<boolean>;
   readonly stopAskReply: (params: AskSessionParams) => Promise<void>;
   readonly setAskRouting: (params: SetAskRoutingParams) => void;
+  readonly setAskDraft: (params: SetAskDraftParams) => void;
+  readonly clearAskDraft: (params: AskDraftParams) => void;
   readonly openAsk: (params: AskSessionParams) => void;
 };

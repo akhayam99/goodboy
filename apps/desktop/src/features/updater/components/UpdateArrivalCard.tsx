@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowUpCircle } from 'lucide-react';
-import { Button, InlineConfirm } from '@goodboy/ui';
+import { Button, FLOATING_SURFACE, InlineConfirm, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../store';
 import { useRunningAgentCount } from '../hooks/useRunningAgentCount';
@@ -27,7 +27,7 @@ export const UpdateArrivalCard = ({ onOpenChangelog }: Props) => {
 
   if (isConfirmingRestart && runningCount > 0) {
     return (
-      <div className="fixed bottom-[46px] left-1/2 z-popover w-[368px] -translate-x-1/2">
+      <div className="fixed bottom-[46px] left-1/2 z-popover w-96 -translate-x-1/2">
         <InlineConfirm
           role="alert"
           icon={<ArrowUpCircle size={ICON_SIZE.control} aria-hidden />}
@@ -50,7 +50,12 @@ export const UpdateArrivalCard = ({ onOpenChangelog }: Props) => {
   const lead = arrivalLead({ notes });
 
   return (
-    <div className="fixed bottom-[46px] left-1/2 z-popover w-[368px] -translate-x-1/2 rounded-lg border border-border-soft bg-floating p-3 shadow-lg">
+    <div
+      className={cn(
+        FLOATING_SURFACE,
+        'fixed bottom-[46px] left-1/2 z-popover w-96 -translate-x-1/2 p-3',
+      )}
+    >
       <div className="flex items-start gap-2">
         <ArrowUpCircle
           size={ICON_SIZE.control}

@@ -16,9 +16,9 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
   const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
   const dropdown = useDropdown({
     align: 'end',
-    width: 'w-72 max-w-[calc(100vw-2rem)]',
+    width: 'w-80 max-w-[calc(100vw-2rem)]',
     expectedHeight: 170,
-    expectedWidth: 288,
+    expectedWidth: 320,
   });
   const isOpen = dropdown.open;
   const toggle = dropdown.toggle;

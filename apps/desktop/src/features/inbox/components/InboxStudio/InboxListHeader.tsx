@@ -36,7 +36,7 @@ export const InboxListHeader = ({
   activeFilterCount,
   facets,
 }: Props) => {
-  const filters = useDropdown({ align: 'end', width: 'w-64', expectedHeight: 420 });
+  const filters = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 420 });
 
   return (
     <div className="flex min-w-0 items-center gap-2">

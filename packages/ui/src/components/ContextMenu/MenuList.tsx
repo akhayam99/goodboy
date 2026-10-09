@@ -196,7 +196,7 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
       aria-label={label}
       data-menu-panel
       onKeyDown={onListKeyDown}
-      className="flex min-w-48 flex-col p-1"
+      className="flex min-w-50 flex-col p-1"
     >
       {entries.map((entry) => {
         if (entry.kind === 'separator') {

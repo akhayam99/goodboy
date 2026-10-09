@@ -17,7 +17,7 @@ import {
 
 const WIDTH: Record<CrumbMenuModel['width'], { readonly className: string; readonly px: number }> =
   {
-    narrow: { className: 'w-75', px: 300 },
+    narrow: { className: 'w-80', px: 320 },
     regular: { className: 'w-95', px: 380 },
     wide: { className: 'w-115', px: 460 },
   };
@@ -173,7 +173,6 @@ export const CrumbMenuTrigger = ({ segment, menu, isCurrent, isIconOnly }: Props
       dropdown={dropdown}
       role="menu"
       ariaLabel={menu.triggerLabel}
-      className="rounded-lg border border-border-soft bg-floating shadow-xl"
       anchorClassName="flex min-w-0 items-center"
       trigger={trigger}
     >

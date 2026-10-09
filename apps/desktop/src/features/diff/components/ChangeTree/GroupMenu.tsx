@@ -13,7 +13,7 @@ const GROUP_LABEL: Record<TreeGroup, string> = { folders: 'Folders', kind: 'Kind
 const GROUPS: ReadonlyArray<TreeGroup> = ['folders', 'kind'];
 
 export const GroupMenu = ({ group, onGroup }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'min-w-[160px]', expectedHeight: 96 });
+  const dropdown = useDropdown({ align: 'end', width: 'min-w-50', expectedHeight: 96 });
   return (
     <AnchoredPopover
       dropdown={dropdown}

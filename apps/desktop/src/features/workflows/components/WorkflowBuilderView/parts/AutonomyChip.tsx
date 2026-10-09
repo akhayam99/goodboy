@@ -17,7 +17,7 @@ const OPTION_ROW =
   'flex min-w-0 items-start gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-hover';
 
 export const AutonomyChip = ({ autonomy, ruleAutonomy, disabled, onChange }: Props) => {
-  const dropdown = useDropdown({ disabled, width: 'w-72' });
+  const dropdown = useDropdown({ disabled, width: 'w-80' });
   const { open, close, toggle } = dropdown;
   const current = runAutonomyOf({ autoRun: autonomy !== 'step', autonomy });
   const rule = runAutonomyOf({ autoRun: ruleAutonomy !== 'step', autonomy: ruleAutonomy });

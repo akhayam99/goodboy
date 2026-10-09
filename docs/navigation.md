@@ -1728,11 +1728,7 @@ card, and the page is `inert`, so nothing under it takes a click, a Tab or a
 screen reader. A click on the scrim asks the top layer of the escape stack
 (`dismissTopEscapeLayer` in `packages/ui/src/escape.ts`), so an editor or an
 unsent draft inside the drawer answers first, exactly as it does to Esc.
-Opening it over the page moves focus to the first control in the card, unless
-the drawer already focused something (Ask focuses its composer); closing it
-returns focus to the control that opened it (`DrawerFrame`). The Ask toggle is
-under the scrim then, and is reached by `⌘L` and the drawer's Close. Pushing
-has no scrim, nothing is inert and focus stays where it was. Closed, the
+Pushing has no scrim and nothing is inert. Closed, the
 aside is 0px wide and `inert`. Opening and closing move the track in 180ms
 ease-out (none under reduced motion), and the centred column slides with it
 while the card slides 8px in; over the page it slides in 200ms; a new kind in
@@ -1748,12 +1744,67 @@ Escape and its X close it in place. The one exception is the `ask` drawer: a
 forward move that stays in its session keeps it open (`keepAskDrawer` in
 `navigate`), so a chip in an answer changes the page beside it; leaving the
 session closes it, and Back brings it back like any drawer. Another drawer
-opened from the page replaces it. Focus then returns to the trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
+opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
-one action, close), one divider, a `ScrollFade` body and an optional dock. A
-body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
-frame instead. A new kind adds a variant to `DrawerContent` and a case to the
-host.
+one labelled action, close), one divider, a `ScrollFade` body and an optional
+`dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
+fills the frame instead. A new kind adds a variant to `DrawerContent` and a
+case to the host.
+
+**Header grammar.** The close control always reads `Close`, in every drawer: the
+region is already named by its title (`<section aria-label={title}>`), so no
+drawer repeats its own name in the label. The one exception is the Context
+drawer in its versions view, whose control reads `Back to current` and goes
+back to the current view instead of closing. The Close button is a 28px target
+(`size-7`) with the 14px glyph, and so is every utility in the header (copy,
+open on its page, expand); a header holds at most one labelled button (Stop,
+Run again, Open in Files, New) and utilities share one icon tone. The count slot
+is for a count or a version, never for the session title: Ask's header reads
+`Ask`.
+
+**One dock, one padding.** The `dock` slot is `px-4 py-3` and holds the one
+control that belongs under the body: the Ask composer, the reply field of an
+agent transcript, the script run's status line. No drawer pads its own
+composer; `TranscriptReplyDock` only measures it for the toast lift.
+
+**Focus and Esc.** A drawer's first control takes focus when it opens, pushing
+or over the page: the composer when the dock holds a text field (Ask and a
+transcript that can be written to), the `Close` button otherwise, and whatever
+the body focused itself first (an editor, the composer's own focus) is left
+alone. Closing hands focus back to the control that opened it; when a shortcut
+opened the drawer from the page body (`⌘L`, `F`), the target is the last real
+control that had focus (`lastFocusedElement` in `packages/ui`, updated on
+`focusin`, never the body). Esc answers in two steps: while a text field in the
+drawer is focused and not empty, the first Esc only blurs it, the draft stays;
+the second Esc (or the first, with an empty field or no field focused) closes.
+A click on the scrim asks the same top layer of the escape stack
+(`dismissTopEscapeLayer`) and keeps focus where it was while pressed, so it
+follows the same two steps. There is one Esc listener, the stack; a drawer
+never adds a second one.
+
+**The Ask draft survives.** `askDrafts` in the `ask` slice holds the text of the
+composer per thread (`threadId`, or `${sessionId}:new` for a thread that does
+not exist yet), in memory only: closing the drawer with Esc, the scrim or `⌘L`
+and opening it again finds the draft, a send that lands clears it, and a send
+that fails puts it back.
+
+**A toast never covers a drawer.** The stack is 360px wide with its dismiss
+button pinned to the card's top right corner (a 28px target that does not move
+with the width of the action) and the action on its own row. Beside a pushing
+drawer the stack's right edge is the drawer card's left edge minus the 12px
+gutter (`toastRightOf({ mode, drawerWidth })`, measured from
+`[data-drawer-card]` while a toast is on screen); over an overlay drawer it
+stays at the right edge and above the scrim. It still lifts above the Ask
+composer and the transcript reply field (`useToastLift`).
+
+**Floating surfaces are one surface.** Menus, popovers, the hover card, the
+session switcher, the update card and the delete confirm are all
+`FLOATING_SURFACE` from `@goodboy/ui` (rounded-lg, border, `bg-floating`,
+`shadow-lg`), with no per-site border, fill or shadow. Their widths come from
+one scale: menus 240 (never under 200), popovers 320 and 384, toast 360, hover
+card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
+off-scale widths a floating surface declares per file and never lets one
+grow.
 
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the
@@ -1787,9 +1838,9 @@ revises the plan the body is dimmed and Run plan waits.
 
 The `ask` kind carries no payload: the thread on screen lives in the `ask`
 slice (`askThreadId` per session, `null` for a fresh thread). `AskDrawer`
-(`features/session/ask/components/AskDrawer/`) uses `scroll="self"`: a
-`ScrollFade` thread with the composer below it, never a dock. Its header is
-**Ask**, the session title as the count, and **New**. The body starts with
+(`features/session/ask/components/AskDrawer/`) puts the thread in the frame's
+`ScrollFade` and the composer in its `dock`. Its header is **Ask** and **New**,
+with no session title. The body starts with
 **Right now** (no model call: `askRightNow` over `askDigestOf`, the five
 comment words, running agents, open questions and the session cost) and three
 suggested questions; each line's mark is a `LineMark` (one text line tall), so
@@ -1818,8 +1869,8 @@ resolver's transcript always opens here, on the Comments tab of its Branch
 
 The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
 `summary`, in that order, and `view` is `current` or `versions` (the old
-versions of that slot, inside the same drawer, with Restore; Escape leaves the
-view before the drawer). The **Context** chip in the session header toggles it
+versions of that slot, inside the same drawer, with Restore; Escape and the
+header's **Back to current** leave the view before the drawer). The **Context** chip in the session header toggles it
 on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
 Decisions and Summary. The first open shows Summary, later ones the last tab
 used in that session. The chip carries a quiet dot, never a count, when the
@@ -1920,10 +1971,12 @@ Comments below.
 `scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
 `ScriptRunDrawer` reads the run from `scriptRuns`, where the one
 output subscription per run lives, so closing the drawer loses nothing. The
-header action is Stop while it runs and Run again after; the body is a status
+header action is Stop while it runs and Run again after (when it cannot run, a
+tooltip says why, never a native title); the body is a status
 line (state, time, project, branch), a `Command` disclosure closed by default,
 and the log, which follows the tail until you scroll up and then offers
-`Jump to latest`. Error lines carry a danger bar and an `err` prefix. The dock
+`Jump to latest`. Error lines carry a danger bar and an `err` prefix, and a long token (a path, a
+hash) wraps at the edge instead of breaking every word. The dock
 says `Following output` while it runs and the exit, time and Copy output after.
 A run records the mount it ran in, so a project mounted twice reopens on the
 right branch.

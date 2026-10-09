@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn, useEscapeLayer } from '@goodboy/ui';
+import { FLOATING_SURFACE, cn, useEscapeLayer } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { SessionHoverCardBody } from './SessionHoverCardBody';
 
@@ -79,7 +79,8 @@ export const SessionHoverCard = ({
         visibility: place === null ? 'hidden' : 'visible',
       }}
       className={cn(
-        'z-popover rounded-lg border border-border bg-floating p-3 text-label shadow-lg',
+        FLOATING_SURFACE,
+        'z-popover p-3 text-label',
         place !== null && 'motion-safe:animate-popover-in',
       )}
     >

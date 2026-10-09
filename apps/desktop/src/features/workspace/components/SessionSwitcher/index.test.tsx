@@ -38,6 +38,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
@@ -146,6 +147,19 @@ describe('the recent session switcher', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
     releaseControl();
     expect(current()).toBe(idOf(today));
+  });
+
+  it('names two gestures in its footer, with the real control glyph', () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Macintosh)');
+    mount();
+    press('session.switcher');
+    wait(120);
+
+    const footer = screen.getByText('Release to open').parentElement;
+    expect(footer?.textContent).toBe('⌃Tab nextRelease to open');
+    expect(footer?.children).toHaveLength(2);
+    expect(screen.queryByText(/Esc cancel/)).toBeNull();
+    expect(screen.queryByText(/back$/)).toBeNull();
   });
 
   it('opens a session when its row is clicked', () => {

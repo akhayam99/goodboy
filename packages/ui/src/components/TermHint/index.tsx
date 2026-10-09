@@ -26,7 +26,7 @@ const isKeyboardFocus = ({ target }: { readonly target: Element }): boolean => {
 };
 
 export const TermHint = ({ children, term, definition, action, className }: TermHintProps) => {
-  const dropdown = useDropdown({ width: 'w-72', expectedHeight: 120, expectedWidth: 288 });
+  const dropdown = useDropdown({ width: 'w-80', expectedHeight: 120, expectedWidth: 320 });
 
   const onFocus = (event: FocusEvent<HTMLButtonElement>) => {
     if (dropdown.open || !isKeyboardFocus({ target: event.currentTarget })) {

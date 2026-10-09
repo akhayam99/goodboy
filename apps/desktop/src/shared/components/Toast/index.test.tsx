@@ -211,4 +211,61 @@ describe('ToastProvider', () => {
     expect(screen.getByRole('status').parentElement?.style.bottom).toBe('');
     rect.mockRestore();
   });
+
+  describe('beside a drawer', () => {
+    const DRAWER_WIDTH = 396;
+
+    const mountBeside = (mode: 'push' | 'overlay') => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: HTMLElement,
+      ) {
+        const left = this.hasAttribute('data-drawer-card') ? window.innerWidth - DRAWER_WIDTH : 0;
+        return { left } as DOMRect;
+      });
+      return render(
+        <ToastProvider>
+          <Harness />
+          <aside data-drawer-mode={mode}>
+            <div data-drawer-card="" />
+          </aside>
+        </ToastProvider>,
+      );
+    };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('stops at the left edge of a pushing drawer card, one gutter away', () => {
+      mountBeside('push');
+      show({ kind: 'info', message: 'Copied' });
+
+      expect(screen.getByRole('status').parentElement?.style.right).toBe(`${DRAWER_WIDTH + 12}px`);
+    });
+
+    it('stays at the right edge over an overlay drawer', () => {
+      mountBeside('overlay');
+      show({ kind: 'info', message: 'Copied' });
+
+      expect(screen.getByRole('status').parentElement?.style.right).toBe('');
+    });
+
+    it('follows the drawer when it closes', () => {
+      const view = mountBeside('push');
+      show({ kind: 'info', message: 'Copied' });
+      expect(screen.getByRole('status').parentElement?.style.right).toBe(`${DRAWER_WIDTH + 12}px`);
+
+      view.rerender(
+        <ToastProvider>
+          <Harness />
+        </ToastProvider>,
+      );
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+        vi.advanceTimersByTime(50);
+      });
+
+      expect(screen.getByRole('status').parentElement?.style.right).toBe('');
+    });
+  });
 });

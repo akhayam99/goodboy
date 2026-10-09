@@ -77,12 +77,15 @@ export const AgentTranscriptDrawer = ({ sessionId, agentId, lead = null, onClose
       />
     );
 
+  const composer = reply === null ? null : <TranscriptReplyDock>{reply}</TranscriptReplyDock>;
+
   return (
     <DrawerFrame
       title={name ?? TRANSCRIPT_DRAWER_COPY.title}
       icon={CONCEPT_ICONS.agents}
       onClose={onClose}
       scroll="self"
+      dock={composer}
     >
       {session === null || agent === null ? (
         <p className={cn('text-meta text-muted-foreground', PANE_RHYTHM.body)}>
@@ -100,7 +103,6 @@ export const AgentTranscriptDrawer = ({ sessionId, agentId, lead = null, onClose
               hasComposer={false}
             />
           </div>
-          {reply === null ? null : <TranscriptReplyDock>{reply}</TranscriptReplyDock>}
         </div>
       )}
     </DrawerFrame>

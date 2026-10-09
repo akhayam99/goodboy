@@ -265,6 +265,15 @@ describe('DrawerColumn over the page', () => {
     expect(under).not.toHaveBeenCalled();
   });
 
+  it('keeps focus in a field while the scrim is pressed, so a draft answers first', () => {
+    stubColumnWidth(678);
+    renderColumn('drafts');
+
+    const isDefaultAllowed = fireEvent.mouseDown(scrim() as HTMLElement);
+
+    expect(isDefaultAllowed).toBe(false);
+  });
+
   it('leaves the page inert only while the drawer lies over it', () => {
     stubColumnWidth(678);
     const over = renderColumn('drafts');

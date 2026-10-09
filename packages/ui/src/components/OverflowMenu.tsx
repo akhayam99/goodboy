@@ -29,7 +29,7 @@ export const OverflowMenu = ({
   const dropdown = useDropdown({
     disabled,
     align: align === 'right' ? 'end' : 'start',
-    width: 'min-w-[180px]',
+    width: 'min-w-50',
     expectedHeight: 220,
   });
 

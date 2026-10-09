@@ -25,7 +25,7 @@ type Props = {
   readonly isPrimary?: boolean;
 };
 
-const PANEL_WIDTH = 300;
+const PANEL_WIDTH = 320;
 const PANEL_MAX_HEIGHT = 560;
 
 const TRIGGER_LABEL: Record<GoodboyChipState, string> = {
@@ -58,7 +58,7 @@ export const GoodboyChip = ({
   const hasDraft = useHasBugReportDraft();
   const dropdown = useDropdown({
     align: DROPDOWN_ALIGN[variant],
-    width: 'w-75',
+    width: 'w-80',
     expectedWidth: PANEL_WIDTH,
     expectedHeight: PANEL_MAX_HEIGHT,
     ...(isPrimary && { openEvent: OPEN_GOODBOY_MENU_EVENT }),
