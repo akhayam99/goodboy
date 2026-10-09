@@ -406,6 +406,32 @@ const clippedTimes = () =>
       : [],
   );
 
+const wrappedAges = () =>
+  [...document.querySelectorAll('[data-inbox-key] time')].flatMap((time) => {
+    const lineHeight = parseFloat(getComputedStyle(time).lineHeight);
+    return time.getBoundingClientRect().height > lineHeight * 1.5
+      ? [
+          {
+            key: time.closest('[data-inbox-key]')?.dataset.inboxKey ?? null,
+            text: time.textContent,
+          },
+        ]
+      : [];
+  });
+
+const branchCellOverlaps = () =>
+  [...document.querySelectorAll('[data-testid="project-mount-branch-cell"]')].flatMap((cell) => {
+    const action = cell.nextElementSibling;
+    if (!(action instanceof HTMLElement)) return [];
+    const actionLeft = action.getBoundingClientRect().left;
+    const reaching = [...cell.children].filter(
+      (child) => child.getBoundingClientRect().right > actionLeft + 0.5,
+    );
+    return reaching.length > 0
+      ? [{ row: cell.closest('li')?.getAttribute('aria-label') ?? null, count: reaching.length }]
+      : [];
+  });
+
 const main = async () => {
   const failures = [];
   const session = await browser();
@@ -443,6 +469,36 @@ const main = async () => {
           failures.push({ scene, width, check: 'time wider than its column', clipped });
         }
       }
+    }
+    for (const width of only === undefined ? WIDTHS : []) {
+      await open({
+        send: session.send,
+        scene: 'inbox',
+        width,
+        zoom: 1,
+        readySelector: '[data-inbox-key]',
+      });
+      const wrapped = await run(session.send, wrappedAges, null);
+      if (wrapped.length > 0) {
+        failures.push({ scene: 'inbox', width, check: 'task age wraps', wrapped });
+      }
+      await open({
+        send: session.send,
+        scene: 'overview-long-branches',
+        width,
+        zoom: 1,
+        readySelector: '[data-testid="project-mount-branch-cell"]',
+      });
+      const overlaps = await run(session.send, branchCellOverlaps, null);
+      if (overlaps.length > 0) {
+        failures.push({
+          scene: 'overview-long-branches',
+          width,
+          check: 'branch runs under the put on branch button',
+          overlaps,
+        });
+      }
+      console.log(`inbox and overview-long-branches at ${width}: ${wrapped.length} wraps`);
     }
     for (const { scene, until } of only === undefined || only === 'plan-drawer'
       ? PLAN_DRAWER_SCENES
