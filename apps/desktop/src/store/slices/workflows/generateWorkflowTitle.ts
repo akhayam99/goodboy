@@ -1,4 +1,5 @@
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { runHelperTask } from '../providerLimits/runHelperTask';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { devWarn } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
@@ -45,12 +46,23 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
       });
       const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
 
-      const generated = await generateTitleText({
-        prompt,
-        systemPrompt: WORKFLOW_TITLE_SYSTEM_PROMPT,
-        ...taskModel,
-        ...(worktreePath != null && { workingDir: worktreePath }),
+      const chain = await runHelperTask({
+        set,
+        get,
+        sessionId,
+        first: taskModel,
+        run: (model) =>
+          generateTitleText({
+            prompt,
+            systemPrompt: WORKFLOW_TITLE_SYSTEM_PROMPT,
+            ...model,
+            ...(worktreePath != null && { workingDir: worktreePath }),
+          }),
       });
+      if (!chain.ok) {
+        throw new Error(chain.error);
+      }
+      const generated = chain.value;
       const title = clampWorkflowTitle(generated);
       if (title.length === 0) {
         throw new Error('the model returned an empty workflow title');

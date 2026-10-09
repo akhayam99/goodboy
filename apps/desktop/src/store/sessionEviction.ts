@@ -207,6 +207,7 @@ export const NON_SESSION_STATE_KEYS = [
   'cliRequirements',
   'providerCredentials',
   'providerCooldowns',
+  'helperProviderFailures',
   'providerLimits',
   'providerLimitsProbe',
   'codexResetCredits',

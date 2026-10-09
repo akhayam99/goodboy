@@ -1,13 +1,19 @@
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
-import { formatError } from '@goodboy/ui';
-import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
-import type { AgentId, TaskModelPreference } from '@goodboy/types';
-import type { SetFn } from '../../slice-types';
+import {
+  fallbackStepOutputSummary,
+  summarizeStepOutput,
+  type BackgroundAttempt,
+} from '@goodboy/core';
+import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
+import { runHelperTask } from '../providerLimits/runHelperTask';
+import type { GetFn, SetFn } from '../../slice-types';
 
 export const SUMMARY_TIMEOUT_MS = 90_000;
 
 type Params = {
   readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly output: string;
   readonly taskModel: TaskModelPreference;
@@ -15,22 +21,26 @@ type Params = {
   readonly expectedOutput?: string;
 };
 
-type RunParams = Omit<Params, 'agentId' | 'set'>;
+type RunParams = Pick<Params, 'output' | 'workingDir' | 'expectedOutput'> & {
+  readonly taskModel: TaskModelPreference;
+};
 
 export type SummarizeAgentOutputResult = {
   readonly summary: string;
   readonly degraded: boolean;
   readonly error?: string;
+  readonly model: TaskModelPreference;
+  readonly attempts: ReadonlyArray<BackgroundAttempt>;
 };
 
 const inFlightSummaries = new Map<AgentId, Promise<SummarizeAgentOutputResult>>();
 
-const runSummarization = async ({
+const summarizeOnce = async ({
   output,
   taskModel,
   workingDir,
   expectedOutput,
-}: RunParams): Promise<SummarizeAgentOutputResult> => {
+}: RunParams): Promise<string> => {
   const runId = crypto.randomUUID();
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const timeout = new Promise<never>((_resolve, reject) => {
@@ -41,7 +51,7 @@ const runSummarization = async ({
   });
 
   try {
-    const summary = await Promise.race([
+    return await Promise.race([
       summarizeStepOutput({
         ...taskModel,
         invokeFn: invokeCommand,
@@ -52,11 +62,6 @@ const runSummarization = async ({
       }),
       timeout,
     ]);
-    return { summary, degraded: false };
-  } catch (error) {
-    const message = formatError(error);
-    console.warn(`[step-output] summarization failed, using deterministic fallback: ${message}`);
-    return { summary: fallbackStepOutputSummary({ output }), degraded: true, error: message };
   } finally {
     if (timeoutId !== null) {
       clearTimeout(timeoutId);
@@ -81,25 +86,54 @@ const recordSummaryOutcome = ({ set, agentId, output, isDegraded }: RecordParams
   });
 };
 
-export const summarizeAgentOutput = ({
+const summarizeWithFallback = async ({
   set,
-  agentId,
+  get,
+  sessionId,
   output,
   taskModel,
   workingDir,
   expectedOutput,
 }: Params): Promise<SummarizeAgentOutputResult> => {
+  const result = await runHelperTask({
+    set,
+    get,
+    sessionId,
+    first: taskModel,
+    run: (model) =>
+      summarizeOnce({
+        output,
+        taskModel: model,
+        ...(workingDir != null && { workingDir }),
+        ...(expectedOutput != null && { expectedOutput }),
+      }),
+  });
+  if (result.ok) {
+    return {
+      summary: result.value,
+      degraded: false,
+      model: result.model,
+      attempts: result.attempts,
+    };
+  }
+  console.warn(`[step-output] summarization failed, using deterministic fallback: ${result.error}`);
+  return {
+    summary: fallbackStepOutputSummary({ output }),
+    degraded: true,
+    error: result.error,
+    model: result.model,
+    attempts: result.attempts,
+  };
+};
+
+export const summarizeAgentOutput = (params: Params): Promise<SummarizeAgentOutputResult> => {
+  const { set, agentId, output } = params;
   const alreadyRunning = inFlightSummaries.get(agentId);
   if (alreadyRunning != null) {
     return alreadyRunning;
   }
 
-  const running = runSummarization({
-    output,
-    taskModel,
-    ...(workingDir != null && { workingDir }),
-    ...(expectedOutput != null && { expectedOutput }),
-  })
+  const running = summarizeWithFallback(params)
     .then((result) => {
       recordSummaryOutcome({ set, agentId, output, isDegraded: result.degraded });
       return result;

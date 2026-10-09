@@ -1,4 +1,9 @@
-import { NOTIFICATION_LIST_LIMIT, countNotifications, listNotifications } from '@goodboy/db';
+import {
+  NOTIFICATION_LIST_LIMIT,
+  clearResolvedHelperNotifications,
+  countNotifications,
+  listNotifications,
+} from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { scopedWorkspaceId } from './notificationScope';
 import type { GetFn, SetFn } from './types';
@@ -13,6 +18,7 @@ export const loadNotifications = (set: SetFn, get: GetFn) => {
     const listScope = scopedWorkspaceId({ state: get() });
     set({ notificationsLoading: true });
     try {
+      await clearResolvedHelperNotifications({ db: tauriDatabase });
       const [notifications, notificationCounts] = await Promise.all([
         listNotifications({ db: tauriDatabase, workspaceId: listScope }),
         countNotifications({ db: tauriDatabase, workspaceId }),

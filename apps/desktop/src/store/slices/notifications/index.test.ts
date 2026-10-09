@@ -253,6 +253,67 @@ describe('store contract', () => {
       );
     });
 
+    it('emitNotification with isOnce skips a second unread notice of the same key', async () => {
+      const store = useAppStore;
+      const notice = {
+        kind: 'error',
+        severity: 'warning',
+        title: 'Step summary unavailable',
+        coalesceKey: 'step-summary-degraded:session-1',
+        isOnce: true,
+      } as const;
+      await store.getState().emitNotification(notice);
+      await store.getState().emitNotification(notice);
+      expect(store.getState().notifications).toHaveLength(1);
+      expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
+
+      await store.getState().markNotificationsRead();
+      await store.getState().emitNotification(notice);
+      expect(store.getState().notifications).toHaveLength(2);
+    });
+
+    it('resolveNotifications drops every notice of the given keys, in memory and in SQL', async () => {
+      const store = useAppStore;
+      await store.getState().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Step summary unavailable',
+        coalesceKey: 'step-summary-degraded:session-1',
+      });
+      await store.getState().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Other',
+        coalesceKey: 'other:session-1',
+      });
+
+      await store.getState().resolveNotifications(['step-summary-degraded:session-1']);
+
+      expect(store.getState().notifications.map((n) => n.title)).toEqual(['Other']);
+      expect(storySpies.deleteNotificationsByCoalesceKey).toHaveBeenCalledWith(
+        expect.objectContaining({ coalesceKeys: ['step-summary-degraded:session-1'] }),
+      );
+    });
+
+    it('resolveNotifications leaves SQL alone when nothing of that key is showing', async () => {
+      const store = useAppStore;
+      await store.getState().resolveNotifications(['step-summary-degraded:session-1']);
+      expect(storySpies.deleteNotificationsByCoalesceKey).not.toHaveBeenCalled();
+    });
+
+    it('loadNotifications clears the helper notices that were resolved since', async () => {
+      const store = useAppStore;
+      storySpies.listNotifications.mockResolvedValue([]);
+      storySpies.countNotifications.mockResolvedValue([]);
+
+      await store.getState().loadNotifications();
+
+      expect(storySpies.clearResolvedHelperNotifications).toHaveBeenCalledTimes(1);
+      expect(storySpies.clearResolvedHelperNotifications.mock.invocationCallOrder[0]).toBeLessThan(
+        storySpies.listNotifications.mock.invocationCallOrder[0] ?? 0,
+      );
+    });
+
     it('emitNotification keeps the row in memory when the insert fails', async () => {
       const store = useAppStore;
       storySpies.insertNotification.mockRejectedValueOnce(new Error('database is locked'));

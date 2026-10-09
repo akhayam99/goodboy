@@ -119,6 +119,7 @@ type Harness = {
     sessionResolveThreads: Record<SessionId, ReadonlyArray<ResolveThread>>;
     refreshUnreadWorkspaces: ReturnType<typeof vi.fn>;
     emitNotification: ReturnType<typeof vi.fn>;
+    resolveNotifications: ReturnType<typeof vi.fn>;
   };
   readonly set: SetFn;
   readonly get: GetFn;
@@ -156,6 +157,7 @@ const createHarness = ({ sessionOverride }: HarnessParams = {}): Harness => {
     sessionWorkflows: {},
     refreshUnreadWorkspaces: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
+    resolveNotifications: vi.fn(async () => undefined),
   };
   const set = ((update: unknown) => {
     if (typeof update === 'function') {
@@ -373,7 +375,9 @@ describe('completeResolvedAgent', () => {
 
   it('persists a marked fallback when the summarizer fails', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    h.summarizeStepOutput.mockRejectedValueOnce(new Error('provider unavailable'));
+    h.summarizeStepOutput
+      .mockRejectedValueOnce(new Error('provider unavailable'))
+      .mockRejectedValueOnce(new Error('provider unavailable'));
     const { state, set, get } = createHarness({});
     state.sessionPhaseRuns = {
       [SESSION_ID]: [{ ...agent, kind: 'implementer', sourceThreadIds: undefined }],

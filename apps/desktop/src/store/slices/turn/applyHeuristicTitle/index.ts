@@ -1,4 +1,5 @@
 import { autoLimitContext } from '../../providerLimits/autoLimitContext';
+import { runHelperTask } from '../../providerLimits/runHelperTask';
 import { resolveLimitedTaskModel } from '../../providerLimits/resolveLimitedTaskModel';
 import { invokeCommand } from '../../../../shared/lib/invokeCommand';
 import { getDefaultBinary, runAuxOneShot } from '@goodboy/core';
@@ -91,7 +92,11 @@ const generateAgentTitle = async ({
     if ((result.exitCode ?? 0) !== 0) {
       throw new Error(result.stderr);
     }
-    return parseGeneratedTitle({ providerId, stdout: result.stdout });
+    const title = parseGeneratedTitle({ providerId, stdout: result.stdout });
+    if (title.trim() === '') {
+      throw new Error('the model returned an empty title');
+    }
+    return title;
   } finally {
     if (timeoutId !== null) {
       clearTimeout(timeoutId);
@@ -163,11 +168,22 @@ export const applyHeuristicTitle = async ({
     let generatedTitle: string;
     try {
       const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
-      generatedTitle = await generateAgentTitle({
-        prompt,
-        ...taskModel,
-        ...(worktreePath != null && { workingDir: worktreePath }),
+      const chain = await runHelperTask({
+        set,
+        get,
+        sessionId,
+        first: taskModel,
+        run: (model) =>
+          generateAgentTitle({
+            prompt,
+            ...model,
+            ...(worktreePath != null && { workingDir: worktreePath }),
+          }),
       });
+      if (!chain.ok) {
+        return;
+      }
+      generatedTitle = chain.value;
     } catch {
       return;
     }

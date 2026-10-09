@@ -426,7 +426,13 @@ export {
 } from './providers/planTurnFallback';
 export { fallbackWantsThinker } from './providers/fallbackWantsThinker';
 export { strongestModelForTier } from './providers/strongestModelForTier';
-export { planTaskModelFallback } from './providers/task-model-fallback';
+export { planAlternateTaskModel, planTaskModelFallback } from './providers/task-model-fallback';
+export {
+  runWithModelFallback,
+  type BackgroundAttempt,
+  type BackgroundPool,
+  type BackgroundResult,
+} from './providers/background-retry';
 export { cliModelId } from './providers/cliModelId';
 export {
   createJsonLineAssembler,

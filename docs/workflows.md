@@ -1034,8 +1034,11 @@ The summary follows fixed rules. It is not free text.
 times out or breaks the rules, Goodboy falls back to cutting the chat down to
 its start and end. No model is involved in that fallback.
 
-The step still completes, the result is marked `degraded`, and a notification
-offers to retry. Either way, the summary is what the next step starts from.
+Before that fallback, the summary retries on its own across the other allowed
+models ([helper retry chain](turns.md#helper-retry-chain)). The step still
+completes, the result is marked `degraded` only when every model failed, and one
+notification per session offers to retry. Either way, the summary is what the
+next step starts from.
 
 ### Step sequencing
 
