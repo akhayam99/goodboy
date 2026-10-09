@@ -89,8 +89,8 @@ describe('resolver rows read the state of the comment', () => {
       return row && rowStateNode({ state: row.rowState }).state;
     });
 
-    expect(tones).toEqual(['warning', 'info', 'success', 'danger']);
-    expect(nodes).toEqual(['ready', 'running', 'done', 'failed']);
+    expect(tones).toEqual(['warning', 'info', 'neutral', 'warning']);
+    expect(nodes).toEqual(['ready', 'running', 'done', 'alert']);
   });
 
   it('counts a ready fix and a failed draft as needing you', () => {
@@ -141,31 +141,32 @@ describe('resolveFactsByAgentId', () => {
     expect(facts.get('a3')).toMatchObject({ state: 'pushed', word: 'Pushed' });
   });
 
-  it('counts the comments of one agent, not the agent, in five words', () => {
+  it('counts the comments of one agent, not the agent, by delivery', () => {
     const facts = resolveFactsByAgentId({
       attempts: [
         attempt({
           agentId: 'a1',
-          threadIds: ['t1', 't2', 't3', 't4', 't5', 't6'],
+          threadIds: ['t1', 't2', 't3', 't4', 't5', 't6', 't7'],
           phase: 'running',
           createdAt: 1,
         }),
       ],
       reviews: [
-        { threadId: 't1', state: 'ready', word: 'Ready' },
-        { threadId: 't2', state: 'ready', word: 'Ready' },
-        { threadId: 't3', state: 'edited', word: 'Ready' },
-        { threadId: 't4', state: 'needs', word: 'Needs you' },
+        { threadId: 't1', state: 'ready', word: 'To review' },
+        { threadId: 't2', state: 'ready', word: 'To review' },
+        { threadId: 't3', state: 'edited', word: 'To review' },
+        { threadId: 't4', state: 'needs', word: 'Question' },
         { threadId: 't5', state: 'drafting', word: 'Working' },
-        { threadId: 't6', state: 'failed', word: "Couldn't fix" },
+        { threadId: 't6', state: 'failed', word: 'Push failed', isPushFailure: true },
+        { threadId: 't7', state: 'accepted', word: 'Ready' },
       ],
     });
 
     expect(facts.get('a1')).toMatchObject({
       state: 'ready',
-      word: "3 ready · 1 needs you · 1 working · 1 couldn't fix",
+      word: '5 need you · 1 working · 1 ready to push',
     });
-    expect(facts.get('a1')?.threads).toHaveLength(6);
+    expect(facts.get('a1')?.threads).toHaveLength(7);
   });
 
   it('falls back to the attempt phase when Review has no row for the thread', () => {
@@ -185,10 +186,10 @@ describe('resolveFactsByAgentId', () => {
       ],
       reviews: [
         { threadId: 't1', state: 'pushed', word: 'Pushed' },
-        { threadId: 't2', state: 'needs', word: 'Needs you' },
+        { threadId: 't2', state: 'needs', word: 'Question' },
       ],
     });
 
-    expect(facts.get('a1')).toMatchObject({ state: 'needs', word: '1 needs you' });
+    expect(facts.get('a1')).toMatchObject({ state: 'needs', word: '1 need you' });
   });
 });

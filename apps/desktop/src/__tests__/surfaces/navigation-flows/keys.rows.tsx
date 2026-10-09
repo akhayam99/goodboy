@@ -690,10 +690,13 @@ const neighbourOf = (threadId: string, step: 1 | -1): string | null => {
 };
 
 const focusThread = async (threadId: string): Promise<HTMLElement> => {
-  if (document.querySelector(`[data-thread-id="${threadId}"]`) === null) {
-    document
-      .querySelector<HTMLElement>('nav[aria-label="Comments"] button[aria-expanded="false"]')
-      ?.click();
+  for (const toggle of document.querySelectorAll<HTMLElement>(
+    'nav[aria-label="Comments"] button[aria-expanded="false"]',
+  )) {
+    if (document.querySelector(`[data-thread-id="${threadId}"]`) !== null) {
+      break;
+    }
+    toggle.click();
     await settle();
   }
   const row = threadRow(threadId);
@@ -807,7 +810,8 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
   worldRow({
     id: 'review.reply',
     world: 'resolve',
-    open: reviewKey('review.reply', THREADS.metrics),
+    note: 'opens the reply box on a comment nobody started',
+    open: reviewKey('review.reply', THREADS.constant),
     lands: async () =>
       waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA'), WAIT),
   }),

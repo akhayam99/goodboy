@@ -272,13 +272,13 @@ describe('accept in bulk', () => {
     return acceptReviewComments;
   };
 
-  it('puts Accept N on the Ready header of the five-word list and accepts exactly those', async () => {
+  it('puts Accept N on the Needs you header and accepts exactly the proposals to review', async () => {
     const acceptReviewComments = acceptStub();
     await mount({ stage: 'retry' });
     useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id });
 
-    const ready = within(list()).getByRole('region', { name: 'Ready' });
-    const header = await within(ready).findByRole('button', { name: 'Accept 7' });
+    const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
+    const header = await within(needsYou).findByRole('button', { name: 'Accept 7' });
     expect(within(list()).getAllByRole('button', { name: /^Accept \d+$/ })).toHaveLength(1);
     fireEvent.click(header);
 
@@ -315,11 +315,12 @@ describe('accept in bulk', () => {
     await waitFor(() => expect(undoReviewAccepts).toHaveBeenCalledWith({ sessionId: SESSION.id }));
   });
 
-  it('keeps accepted comments in Ready with an Accepted sub-word until they are pushed', async () => {
+  it('keeps accepted comments under Ready to push, as Ready, until they are pushed', async () => {
     await mount({ stage: 'accepted' });
 
-    const ready = within(list()).getByRole('region', { name: 'Ready' });
-    expect(within(ready).getAllByText('Accepted')).toHaveLength(5);
+    const ready = within(list()).getByRole('region', { name: 'Ready to push' });
+    expect(within(ready).getAllByText('Ready')).toHaveLength(5);
+    expect(within(ready).queryByText('Accepted')).toBeNull();
     expect(within(ready).queryByRole('button', { name: /^Accept \d+$/ })).toBeNull();
     const done = within(list()).getByRole('region', { name: 'Done' });
     expect(within(done).queryByText('Accepted')).toBeNull();

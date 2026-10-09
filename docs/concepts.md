@@ -857,13 +857,12 @@ fix can be answered without undoing its accepted decision. The git facts live in
 
 Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
-comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply` (R, a reply
-without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
+comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply only` (R, drops the change and sends a reply; `Reply`, which opens the text box, where there is no change to drop) and `Skip` (S), plus `Undo` (U, `Undo skip` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the launch panel. J and K move. A checkbox appears on hover on the comments you
-can fix (open, or couldn't fix) and on ready comments (X toggles the focused
+the launch panel. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
+can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
-opens the panel for the fixable pick and `Accept 3` accepts the ready pick, and
+opens the panel for the fixable pick and `Accept 3` accepts the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in Files, Agent
@@ -1460,7 +1459,8 @@ Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
 `review` (**in review**), `building`, `done`. A fix run raises `attention` too:
 a comment that **Needs you** gives the reason `fix-needs-you` (it opens the
 Comments tab) and a comment that **Couldn't fix** (not one you stopped, not a
-failed push) gives `fix-couldnt-fix`. Both also send one notification when the
+failed push) gives `fix-couldnt-fix`. A push that failed gives `push-failed`, in red, and
+sends its own notification. All of them also send one notification when the
 count rises (`projectResolveRows`), with an action that opens Activity, where
 the Needs you row waits.
 
@@ -1473,7 +1473,7 @@ closed or merged draft, so the flag alone never makes a word: a closed or merged
 pull request never reads Draft.
 
 Attention reasons, in `SessionAttentionReason`, rank in this order when several
-hold: `needs-approval`, `agent-error`, `plan-approval`, `open-question`,
+hold: `needs-approval`, `agent-error`, `push-failed`, `plan-approval`, `open-question`,
 `fix-needs-you`, `ci-failed`, `changes-requested`, `fix-couldnt-fix`,
 `pr-queued`, `pr-approved`, `unread-reply`. `attentionFactsOf` lists every reason
 that holds in that order, `deriveSessionStage` takes the first as `attention` and
@@ -1482,7 +1482,7 @@ needs you that an agent still works. `plan-approval` comes from a workflow run
 whose `orchestrationStop` is `plan-approval` (`isRunHeldForPlan`) and opens that
 run's page. `ATTENTION_REASON_META` gives each reason its mark, tone and words
 for the sidebar, the switcher, the hover card, the Board card, the Now chip and
-the palette; red is only an agent error and failing checks. `pr-queued` ("In
+the palette; red is only an agent error, a push that failed and failing checks. `pr-queued` ("In
 merge queue", a pull request GitHub is set to merge) is not a needs-you reason:
 when it wins, the stage is `review` and `attention` still carries it, so the
 marks and words read it while the session stays out of Needs you. A queued pull

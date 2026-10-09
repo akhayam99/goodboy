@@ -15,6 +15,7 @@ import { postReplyWhenNothingWaits } from '../../replyDelivery';
 import { startSteeredAttempt } from '../../steerAttempt';
 import { launchChoiceOf } from '../../launchChoice';
 import { startBatch } from '../../startBatch';
+import { useFixStartedToast } from '../useFixStartedToast';
 import { useResolveAgain } from '../useResolveAgain';
 
 export type ReviewCompose = {
@@ -80,7 +81,9 @@ const nextOpenAfter = ({
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly threadId: string;
 }): string | null => {
-  const open = entries.filter((entry) => entry.resolveWord !== 'done');
+  const open = entries.filter(
+    (entry) => entry.resolveWord !== 'done' && entry.resolveWord !== 'left_open',
+  );
   const index = open.findIndex((entry) => entry.threadId === threadId);
   if (index === -1) {
     return open[0]?.threadId ?? null;
@@ -100,6 +103,7 @@ export const useReviewCommentController = ({
   const settleResolveSourceChange = useAppStore((s) => s.settleResolveSourceChange);
   const answerQuestions = useAppStore((s) => s.answerQuestions);
   const retryCouldntFix = useAppStore((s) => s.retryCouldntFix);
+  const announceStart = useFixStartedToast();
   const requestAttempt = useResolveAgain({
     sessionId,
     rows: entries.map((entry) => entry.row),
@@ -199,7 +203,7 @@ export const useReviewCommentController = ({
       setIsSubmitting(true);
       setError(threadId, null);
       try {
-        await startBatch({
+        const started = await startBatch({
           getState: useAppStore.getState,
           sessionId,
           threadIds: [threadId],
@@ -209,6 +213,16 @@ export const useReviewCommentController = ({
             hint: null,
           }),
         });
+        announceStart({
+          sessionId,
+          started,
+          count: 1,
+          noun:
+            entries.find((entry) => entry.threadId === threadId)?.row.thread.originKind ===
+            'diff_comment'
+              ? 'note'
+              : 'comment',
+        });
       } catch (caught) {
         if (!isReportedError(caught)) {
           setError(threadId, formatError(caught));
@@ -217,7 +231,7 @@ export const useReviewCommentController = ({
         setIsSubmitting(false);
       }
     },
-    [isSubmitting, sessionId, setError],
+    [announceStart, entries, isSubmitting, sessionId, setError],
   );
 
   const submitCompose = useCallback(async (): Promise<void> => {

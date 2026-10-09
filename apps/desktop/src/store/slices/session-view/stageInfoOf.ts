@@ -96,6 +96,7 @@ export const stageInfoOf = (state: StageInfoState, session: Session): SessionSta
     openQuestionCount: countOpenQuestions(state, sessionId),
     fixNeedsYouCount: attention.needsYou,
     fixCouldntFixCount: attention.couldntFix,
+    pushFailedCount: attention.pushFailed,
     noteNeedsYouCount: attention.notesNeedYou,
     noteCouldntFixCount: attention.notesCouldntFix,
     hasRunningAgent: live.isRunning,

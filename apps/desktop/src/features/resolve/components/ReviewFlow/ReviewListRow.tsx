@@ -1,8 +1,9 @@
-import { Button, SelectionCheckbox, WorkNode, cn } from '@goodboy/ui';
+import { Button, ROW_INTERACTIVE, SelectionCheckbox, Tooltip, WorkNode, cn } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
-import { REMOTE_TONE_CLASS, STATE_WORD_TONE } from './stateTone';
+import { rowQualifierOf } from './rowQualifier';
+import { STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
 type RowSelection = {
@@ -27,19 +28,33 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
   const body = entryBodyOf({ entry });
   const title = entryTitleOf({ entry });
   const file = fileOf({ path: note?.path ?? null });
+  const qualifier = rowQualifierOf({ entry });
   const selectLabel = `${REVIEW_LAUNCH_LABEL.selectRow} ${note?.author ?? ''}`.trim();
+  const stateWord = (
+    <span
+      data-row-state
+      className={cn(
+        'ml-auto shrink-0 whitespace-nowrap motion-safe:transition-opacity',
+        STATE_WORD_TONE[entry.toneKey],
+        onFix !== null &&
+          'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',
+      )}
+    >
+      {entry.word}
+    </span>
+  );
   return (
     <div className="group/review-row group/select-row relative min-w-0">
       <button
         type="button"
         data-thread-id={entry.threadId}
         aria-current={isSelected ? 'true' : undefined}
+        aria-description={qualifier ?? undefined}
         onClick={onSelect}
         className={cn(
           'flex w-full min-w-0 items-start gap-3 rounded-md px-3 py-2 text-left',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          'motion-safe:transition-colors',
-          isSelected ? 'bg-selected' : 'hover:bg-hover',
+          ROW_INTERACTIVE,
+          isSelected && 'bg-selected',
         )}
       >
         <span
@@ -52,7 +67,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           )}
         >
           <WorkNode
-            state={REVIEW_COMMENT_NODE[entry.state]}
+            state={REVIEW_COMMENT_NODE[entry.toneKey]}
             label={entry.word}
             mark={{ kind: 'dot' }}
           />
@@ -73,28 +88,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
                 {note?.line == null ? '' : `:${note.line}`}
               </span>
             )}
-            <span
-              data-row-state
-              className={cn(
-                'ml-auto shrink-0 whitespace-nowrap motion-safe:transition-opacity',
-                STATE_WORD_TONE[entry.state],
-                onFix !== null &&
-                  'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',
-              )}
-            >
-              {entry.word}
-              {entry.view !== null && (
-                <span className={REMOTE_TONE_CLASS[entry.view.tone]}> · {entry.view.word}</span>
-              )}
-              {entry.chips
-                .filter((chip) => chip !== entry.view?.word)
-                .map((chip) => (
-                  <span key={chip} className="text-muted-foreground">
-                    {' '}
-                    · {chip}
-                  </span>
-                ))}
-            </span>
+            {qualifier === null ? stateWord : <Tooltip content={qualifier}>{stateWord}</Tooltip>}
           </span>
           <span className="min-w-0 truncate text-body text-foreground" title={body ?? undefined}>
             {title}

@@ -5,6 +5,7 @@ import type { EmitNotificationParams } from '../notifications/emitNotification';
 export type ResolveAttention = {
   readonly needsYou: number;
   readonly couldntFix: number;
+  readonly pushFailed: number;
   readonly notesNeedYou: number;
   readonly notesCouldntFix: number;
 };
@@ -26,6 +27,7 @@ export const resolveAttentionOf = ({
   const attemptById = new Map(attempts.map((attempt) => [attempt.id, attempt]));
   let needsYou = 0;
   let couldntFix = 0;
+  let pushFailed = 0;
   let notesNeedYou = 0;
   let notesCouldntFix = 0;
   for (const thread of threads) {
@@ -38,7 +40,13 @@ export const resolveAttentionOf = ({
       needsYou += 1;
       continue;
     }
-    if (thread.state !== 'failed' || isPushFailure({ thread })) {
+    if (thread.state === 'failed' && isPushFailure({ thread })) {
+      if (!isNote) {
+        pushFailed += 1;
+      }
+      continue;
+    }
+    if (thread.state !== 'failed') {
       continue;
     }
     const attempt =
@@ -52,7 +60,7 @@ export const resolveAttentionOf = ({
     }
     couldntFix += 1;
   }
-  return { needsYou, couldntFix, notesNeedYou, notesCouldntFix };
+  return { needsYou, couldntFix, pushFailed, notesNeedYou, notesCouldntFix };
 };
 
 export const resolveAttentionNotices = ({
@@ -87,6 +95,19 @@ export const resolveAttentionNotices = ({
           sessionId,
           action: { kind: 'open-activity', sessionId },
           coalesceKey: `fix-run-couldnt-fix:${sessionId}`,
+        } satisfies EmitNotificationParams,
+      ]
+    : []),
+  ...(after.pushFailed > before.pushFailed
+    ? [
+        {
+          kind: 'error',
+          severity: 'error',
+          title: 'Push failed',
+          body: 'Nothing was sent. Retry from the Comments tab.',
+          sessionId,
+          action: { kind: 'open-activity', sessionId },
+          coalesceKey: `push-failed:${sessionId}`,
         } satisfies EmitNotificationParams,
       ]
     : []),

@@ -73,6 +73,7 @@ describe('attentionFactsOf', () => {
       openQuestionCount: 2,
       fixNeedsYouCount: 1,
       fixCouldntFixCount: 3,
+      pushFailedCount: 1,
       hasBlockedAgent: true,
       hasPlanWaiting: true,
     });
@@ -80,6 +81,7 @@ describe('attentionFactsOf', () => {
     expect(facts).toEqual([
       'needs-approval',
       'agent-error',
+      'push-failed',
       'plan-approval',
       'open-question',
       'fix-needs-you',
@@ -92,6 +94,7 @@ describe('attentionFactsOf', () => {
 
   it.each<[string, Parameters<typeof attentionFactsOf>[0], SessionAttentionReason]>([
     ['a blocked agent', { ...base, hasBlockedAgent: true }, 'needs-approval'],
+    ['a push that failed', { ...base, pr: livePr(), pushFailedCount: 2 }, 'push-failed'],
     ['a held plan', { ...base, hasPlanWaiting: true }, 'plan-approval'],
     ['an open question', { ...base, openQuestionCount: 1 }, 'open-question'],
     ['a comment that needs you', { ...base, pr: livePr(), fixNeedsYouCount: 1 }, 'fix-needs-you'],
@@ -119,6 +122,19 @@ describe('attentionFactsOf', () => {
     ],
   ])('lists %s alone', (_name, params, reason) => {
     expect(attentionFactsOf(params)).toEqual([reason]);
+  });
+
+  it('ranks a push that failed right after an agent error and never as a human input', () => {
+    expect(
+      attentionFactsOf({
+        ...base,
+        session: errored,
+        pr: livePr(),
+        pushFailedCount: 1,
+        openQuestionCount: 1,
+      }),
+    ).toEqual(['agent-error', 'push-failed', 'open-question']);
+    expect(isHumanInputReason({ reason: 'push-failed' })).toBe(false);
   });
 
   it('ranks the merge queue below what needs you and above an unread reply', () => {

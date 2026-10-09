@@ -1,73 +1,130 @@
+import type { Tone } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
 import type { RemoteView } from './reviewRemote';
 import type { ReviewCommentState } from './reviewCommentState';
 import { causeOfAttempt, failureSentence } from './failureSentence';
 
-export type ResolveWord = 'open' | 'working' | 'needs_you' | 'ready' | 'couldnt_fix' | 'done';
-
-type ResolveSub =
-  | 'waiting'
-  | 'pushing'
-  | 'stopped'
+export type ResolveWord =
+  | 'open'
+  | 'working'
+  | 'question'
+  | 'to_review'
   | 'push_failed'
-  | 'accepted'
-  | 'answered'
-  | 'skipped'
-  | 'pushed'
-  | 'resolved_remote';
+  | 'couldnt_fix'
+  | 'ready'
+  | 'done'
+  | 'left_open';
+
+export type ResolveGroup =
+  'needs_you' | 'working' | 'ready_to_push' | 'open' | 'done' | 'left_open';
+
+type ResolveSub = 'waiting' | 'pushing' | 'stopped' | 'resolved_remote';
 
 export const RESOLVE_WORD_LABEL: Readonly<Record<ResolveWord, string>> = {
   open: 'Open',
   working: 'Working',
-  needs_you: 'Needs you',
-  ready: 'Ready',
+  question: 'Question',
+  to_review: 'To review',
+  push_failed: 'Push failed',
   couldnt_fix: "Couldn't fix",
+  ready: 'Ready',
+  done: 'Done',
+  left_open: 'Left open',
+};
+
+export const RESOLVE_WORD_TONE: Readonly<Record<ResolveWord, Tone>> = {
+  open: 'neutral',
+  working: 'info',
+  question: 'warning',
+  to_review: 'warning',
+  push_failed: 'danger',
+  couldnt_fix: 'warning',
+  ready: 'success',
+  done: 'neutral',
+  left_open: 'neutral',
+};
+
+export const RESOLVE_GROUP_LABEL: Readonly<Record<Exclude<ResolveGroup, 'left_open'>, string>> = {
+  needs_you: 'Needs you',
+  working: 'Working',
+  ready_to_push: 'Ready to push',
+  open: 'Open',
   done: 'Done',
 };
 
-export const RESOLVE_LIST_WORDS: ReadonlyArray<ResolveWord> = [
+export const leftOpenGroupLabel = ({ sourceLabel }: { readonly sourceLabel: string }): string =>
+  `Left open on ${sourceLabel}`;
+
+export const RESOLVE_LIST_GROUPS: ReadonlyArray<ResolveGroup> = [
   'needs_you',
   'working',
-  'ready',
-  'couldnt_fix',
+  'ready_to_push',
   'open',
   'done',
+  'left_open',
 ];
+
+export const RESOLVE_GROUP_OF_WORD: Readonly<Record<ResolveWord, ResolveGroup>> = {
+  open: 'open',
+  working: 'working',
+  question: 'needs_you',
+  to_review: 'needs_you',
+  push_failed: 'needs_you',
+  couldnt_fix: 'needs_you',
+  ready: 'ready_to_push',
+  done: 'done',
+  left_open: 'left_open',
+};
+
+export const RESOLVE_WORD_RANK: Readonly<Record<ResolveWord, number>> = {
+  question: 0,
+  push_failed: 1,
+  to_review: 2,
+  couldnt_fix: 3,
+  working: 4,
+  ready: 5,
+  open: 6,
+  done: 7,
+  left_open: 8,
+};
 
 const SUB_LABEL: Readonly<Record<Exclude<ResolveSub, 'resolved_remote'>, string>> = {
   waiting: 'Waiting',
   pushing: 'Pushing',
   stopped: 'Stopped',
-  push_failed: 'Push failed',
-  accepted: 'Accepted',
-  answered: 'Answered',
-  skipped: 'Skipped',
-  pushed: 'Pushed',
 };
 
 const RESOLVE_WORD_OF_STATE: Readonly<Record<ReviewCommentState, ResolveWord>> = {
   new: 'open',
   drafting: 'working',
-  needs: 'needs_you',
-  ready: 'ready',
-  edited: 'ready',
-  outdated: 'ready',
+  needs: 'question',
+  ready: 'to_review',
+  edited: 'to_review',
+  outdated: 'to_review',
   failed: 'couldnt_fix',
   accepted: 'ready',
-  replied: 'done',
-  skipped: 'done',
+  replied: 'ready',
+  skipped: 'left_open',
   pushed: 'done',
   resolved: 'done',
 };
 
 export const resolveWordOfState = ({
   state,
+  isPushFailure = false,
 }: {
   readonly state: ReviewCommentState;
-}): ResolveWord => RESOLVE_WORD_OF_STATE[state];
+  readonly isPushFailure?: boolean;
+}): ResolveWord =>
+  state === 'failed' && isPushFailure ? 'push_failed' : RESOLVE_WORD_OF_STATE[state];
 
-export const resolveLabelOfState = ({ state }: { readonly state: ReviewCommentState }): string =>
-  RESOLVE_WORD_LABEL[RESOLVE_WORD_OF_STATE[state]];
+export const resolveLabelOfState = ({
+  state,
+  isPushFailure = false,
+}: {
+  readonly state: ReviewCommentState;
+  readonly isPushFailure?: boolean;
+}): string => RESOLVE_WORD_LABEL[resolveWordOfState({ state, isPushFailure })];
 
 const CHECKS_FAILED_LABEL = 'Checks failed';
 const COMMENT_CHANGED_LABEL = 'Comment changed';
@@ -107,17 +164,15 @@ const subOf = ({ facts }: { readonly facts: ResolveCommentFacts }): ResolveSub |
       return facts.isWaitingForSlot ? 'waiting' : null;
     case 'failed':
       if (facts.isPushFailure) {
-        return 'push_failed';
+        return null;
       }
       return causeOfAttempt({ attempt: facts.attempt }) === 'stopped' ? 'stopped' : null;
     case 'accepted':
-      return facts.isPublishing ? 'pushing' : 'accepted';
     case 'replied':
-      return facts.isPublishing ? 'pushing' : 'answered';
+      return facts.isPublishing ? 'pushing' : null;
     case 'skipped':
-      return 'skipped';
     case 'pushed':
-      return 'pushed';
+      return null;
     case 'resolved':
       return 'resolved_remote';
     default: {
@@ -143,14 +198,14 @@ const labelOf = ({
 };
 
 export const projectResolveComment = (facts: ResolveCommentFacts): ResolveCommentProjection => {
-  const word = RESOLVE_WORD_OF_STATE[facts.state];
+  const word = resolveWordOfState({ state: facts.state, isPushFailure: facts.isPushFailure });
   const sub = subOf({ facts });
   const isChanged = facts.state === 'outdated';
   const sentence =
-    word === 'couldnt_fix' && sub !== 'push_failed'
+    word === 'couldnt_fix'
       ? failureSentence({ cause: causeOfAttempt({ attempt: facts.attempt }) })
       : null;
-  const hasFailedChecks = facts.hasFailedChecks && word === 'ready';
+  const hasFailedChecks = facts.hasFailedChecks && (word === 'to_review' || word === 'ready');
   return {
     word,
     sub,
@@ -166,40 +221,3 @@ export const projectResolveComment = (facts: ResolveCommentFacts): ResolveCommen
     ],
   };
 };
-
-export type ResolveTally = Readonly<Record<ResolveWord, number>>;
-
-const emptyResolveTally = (): Record<ResolveWord, number> => ({
-  open: 0,
-  working: 0,
-  needs_you: 0,
-  ready: 0,
-  couldnt_fix: 0,
-  done: 0,
-});
-
-export const resolveTallyOf = ({
-  states,
-}: {
-  readonly states: ReadonlyArray<ReviewCommentState>;
-}): ResolveTally => {
-  const tally = emptyResolveTally();
-  for (const state of states) {
-    tally[RESOLVE_WORD_OF_STATE[state]] += 1;
-  }
-  return tally;
-};
-
-const TALLY_PHRASE: ReadonlyArray<readonly [Exclude<ResolveWord, 'done' | 'open'>, string]> = [
-  ['ready', 'ready'],
-  ['needs_you', 'needs you'],
-  ['working', 'working'],
-  ['couldnt_fix', "couldn't fix"],
-];
-
-export const resolveTallyParts = ({
-  tally,
-}: {
-  readonly tally: ResolveTally;
-}): ReadonlyArray<string> =>
-  TALLY_PHRASE.flatMap(([word, phrase]) => (tally[word] === 0 ? [] : [`${tally[word]} ${phrase}`]));

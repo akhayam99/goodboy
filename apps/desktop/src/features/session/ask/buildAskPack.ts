@@ -256,12 +256,22 @@ const runSection = ({
 };
 
 const WORD_ORDER: ReadonlyArray<ResolveWord> = [
-  'ready',
-  'needs_you',
-  'working',
+  'question',
+  'push_failed',
+  'to_review',
   'couldnt_fix',
+  'working',
+  'ready',
   'open',
   'done',
+  'left_open',
+];
+
+const LISTED_WORDS: ReadonlyArray<ResolveWord> = [
+  'question',
+  'push_failed',
+  'to_review',
+  'couldnt_fix',
 ];
 
 const commentSection = ({
@@ -278,7 +288,7 @@ const commentSection = ({
     return count === 0 ? [] : [`${count} ${RESOLVE_WORD_LABEL[word].toLowerCase()}`];
   });
   const listed = comments
-    .filter((comment) => comment.word === 'needs_you' || comment.word === 'couldnt_fix')
+    .filter((comment) => LISTED_WORDS.includes(comment.word))
     .slice(0, ASK_PACK_LIMITS.comments);
   const lines = listed.map((comment, index) => {
     const key = `C${index + 1}`;

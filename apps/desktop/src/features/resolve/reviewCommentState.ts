@@ -62,8 +62,12 @@ export const reviewCommentStateOf = ({
   }
 };
 
+const PUBLICATION_FAILED_PREFIX = 'publication_failed:';
+
 export const isPushFailure = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
-  row.thread.stage === 'failed' && row.rowState.failedStep !== 'run';
+  row.thread.stage === 'failed' &&
+  (row.rowState.failedStep !== 'run' ||
+    row.thread.stateReason?.startsWith(PUBLICATION_FAILED_PREFIX) === true);
 
 const isWaitingForSlot = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.thread.stage === 'working' && row.attempt?.phase === 'queued' && row.attempt.batchId !== null;
@@ -114,8 +118,18 @@ export const reviewCommentWord = ({
   readonly row: ResolveQueueRow;
 }): string => projectReviewComment({ state, row }).label;
 
+export type ReviewCommentTone = ReviewCommentState | 'push_failed';
+
+export const reviewCommentToneKeyOf = ({
+  state,
+  row,
+}: {
+  readonly state: ReviewCommentState;
+  readonly row: ResolveQueueRow;
+}): ReviewCommentTone => (state === 'failed' && isPushFailure({ row }) ? 'push_failed' : state);
+
 export const REVIEW_COMMENT_NODE: Record<
-  ReviewCommentState,
+  ReviewCommentTone,
   Exclude<WorkNodeState, 'marker' | 'mixed' | 'finished' | 'merging'>
 > = {
   new: 'queued',
@@ -124,7 +138,8 @@ export const REVIEW_COMMENT_NODE: Record<
   ready: 'stopped',
   edited: 'stopped',
   outdated: 'stopped',
-  failed: 'failed',
+  failed: 'alert',
+  push_failed: 'failed',
   accepted: 'done',
   replied: 'done',
   skipped: 'skipped',
@@ -132,17 +147,18 @@ export const REVIEW_COMMENT_NODE: Record<
   resolved: 'closed',
 };
 
-export const REVIEW_COMMENT_TONE: Record<ReviewCommentState, Tone> = {
+export const REVIEW_COMMENT_TONE: Record<ReviewCommentTone, Tone> = {
   new: 'neutral',
   drafting: 'info',
   needs: 'warning',
   ready: 'warning',
   edited: 'warning',
   outdated: 'warning',
-  failed: 'danger',
+  failed: 'warning',
+  push_failed: 'danger',
   accepted: 'success',
   replied: 'success',
   skipped: 'neutral',
-  pushed: 'success',
+  pushed: 'neutral',
   resolved: 'neutral',
 };

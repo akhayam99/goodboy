@@ -1,3 +1,4 @@
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { ResolveCommitStyle, ResolvePublicationPreview } from '@goodboy/types';
 import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
 import { closingThreadCount } from './closingThreadCount';
@@ -16,10 +17,12 @@ export const pushConfirmTitle = ({
 }: {
   readonly preview: ResolvePublicationPreview;
 }): string => {
-  const count = pushedCount({ preview });
-  const where =
-    preview.requiresPush && preview.branch !== '' ? preview.branch : `#${preview.prNumber}`;
-  return `Push ${count} to ${where}?`;
+  const commits = preview.commits.length;
+  if (commits > 0 && preview.requiresPush && preview.branch !== '') {
+    return `Push ${plural(commits, 'commit', 'commits')} to ${preview.branch}?`;
+  }
+  const threads = pushedCount({ preview });
+  return `Push ${plural(threads, 'comment', 'comments')} to #${preview.prNumber}?`;
 };
 
 const fixesPart = ({
@@ -54,7 +57,7 @@ const closingPart = ({
 export const pushConfirmBody = ({
   preview,
   commitStyle,
-  provider = 'GitHub',
+  provider = REVIEW_SOURCE_LABEL.github,
   canResolve = true,
 }: {
   readonly preview: ResolvePublicationPreview;
@@ -97,7 +100,7 @@ const shortSha = (sha: string): string => sha.slice(0, 7);
 
 export const pushResultOf = ({
   outcome,
-  provider = 'GitHub',
+  provider = REVIEW_SOURCE_LABEL.github,
 }: {
   readonly outcome: PublicationOutcome;
   readonly provider?: string;

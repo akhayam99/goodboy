@@ -78,7 +78,9 @@ describe('PushBanner', () => {
       />,
     );
 
-    const confirm = screen.getByRole('group', { name: 'Push 1 to hl/fix-duplicate-credit?' });
+    const confirm = screen.getByRole('group', {
+      name: 'Push 1 commit to hl/fix-duplicate-credit?',
+    });
     within(confirm).getByText('Tip');
     within(confirm).getByText('Redact the webhook payload');
     within(confirm).getByText('This also pushes 1 earlier commit');

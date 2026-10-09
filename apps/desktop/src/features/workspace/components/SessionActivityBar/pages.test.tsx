@@ -257,10 +257,10 @@ describe('counts on the pages and in the page menu', () => {
     },
   );
 
-  it('counts the runs and the running agents in words', () => {
+  it('counts the running agents in words and says nothing for runs that are not running', () => {
     mountBoth();
     renderBar();
-    expect(nestedCount('runs')).toBe('2 runs');
+    expect(nestedCount('runs')).toBeNull();
     expect(nestedCount('agents')).toBe('1 running');
   });
 });

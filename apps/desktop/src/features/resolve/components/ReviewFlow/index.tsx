@@ -41,7 +41,9 @@ import {
   reviewTargetErrorLabel,
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
-import { fixRunOf, type FixRunWord } from '../../fixRun';
+import { FIX_RUN_CHIPS, FIX_RUN_CHIP_WORDS, fixRunOf, type FixRunChipKey } from '../../fixRun';
+import { RESOLVE_GROUP_OF_WORD, type ResolveGroup } from '../../commentProjection';
+import { reviewTallyOf } from '../../reviewTally';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
@@ -58,6 +60,7 @@ import { RunStatusBulkActions } from './RunStatusBulkActions';
 import { useBulkQuestions } from './useBulkQuestions';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ResolveRunStatus } from './ResolveRunStatus';
+import { ReviewActionBar } from './ReviewActionBar';
 import { ReviewComment } from './ReviewComment';
 import { LaunchPanel } from './LaunchPanel';
 import { ReviewList } from './ReviewList';
@@ -76,7 +79,10 @@ const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> 
     ['reviewComment.accept', 'reviewComment.resolveOnly', 'reviewComment.closeWithReply'],
   ],
   ['review.edit', ['reviewComment.answer', 'reviewComment.edit']],
-  ['review.reply', ['reviewComment.reply', 'reviewComment.replyAndResolve']],
+  [
+    'review.reply',
+    ['reviewComment.replyOnly', 'reviewComment.reply', 'reviewComment.replyAndResolve'],
+  ],
   ['review.skip', ['reviewComment.skip']],
   ['review.undo', ['reviewComment.undo']],
   ['review.fix', ['reviewComment.draft', 'reviewComment.fixAnyway', 'reviewComment.fixAgain']],
@@ -98,6 +104,7 @@ const sameIds = ({
 }): boolean => left.length === right.length && left.every((id, index) => id === right[index]);
 
 const SKELETON_ROWS = [0, 1, 2];
+const COLLAPSIBLE_GROUPS: ReadonlySet<ResolveGroup> = new Set(['done', 'left_open']);
 const DOCK_BOTTOM_OFFSET = 24;
 
 export const ReviewFlow = ({ session, push }: Props) => {
@@ -106,30 +113,61 @@ export const ReviewFlow = ({ session, push }: Props) => {
   const { entries, groups: allGroups, all: laneEntries } = useReviewEntries({ sessionId });
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
   const stopResolveLane = useAppStore((s) => s.stopResolveLane);
-  const [filter, setFilter] = useState<FixRunWord | null>(null);
-  const [isDoneOpen, setIsDoneOpen] = useState(false);
+  const [filter, setFilter] = useState<FixRunChipKey | null>(null);
+  const [openGroups, setOpenGroups] = useState<ReadonlySet<ResolveGroup>>(new Set());
   const run = useMemo(
     () =>
       fixRunOf({
         sources: entries.map((entry) => ({
           threadId: entry.threadId,
-          state: entry.state,
+          word: entry.resolveWord,
           attempt: entry.row.attempt,
         })),
       }),
     [entries],
   );
-  const lane = useLaneStatus({ sessionId, entries: laneEntries });
-  const activeFilter = run !== null && filter !== null && run.tally[filter] > 0 ? filter : null;
-  const groups = useMemo(
-    () =>
-      activeFilter === null ? allGroups : allGroups.filter((group) => group.word === activeFilter),
-    [activeFilter, allGroups],
+  const tally = useMemo(
+    () => reviewTallyOf({ rows: entries.map((entry) => entry.row) }),
+    [entries],
   );
-  const isDoneShown = isDoneOpen || allGroups.length === 1;
+  const lane = useLaneStatus({ sessionId, entries: laneEntries });
+  const filterChip = filter === null ? null : FIX_RUN_CHIPS.find((chip) => chip.key === filter);
+  const activeFilter =
+    run !== null && filter !== null && (filterChip?.countOf(run.tally) ?? 0) > 0 ? filter : null;
+  const groups = useMemo(() => {
+    if (activeFilter === null) {
+      return allGroups;
+    }
+    const words = FIX_RUN_CHIP_WORDS[activeFilter];
+    return allGroups
+      .map(({ group, entries: members }) => ({
+        group,
+        entries: members.filter((entry) => words.includes(entry.resolveWord)),
+      }))
+      .filter((group) => group.entries.length > 0);
+  }, [activeFilter, allGroups]);
+  const isGroupShown = useCallback(
+    (group: ResolveGroup): boolean =>
+      !COLLAPSIBLE_GROUPS.has(group) || openGroups.has(group) || allGroups.length === 1,
+    [allGroups.length, openGroups],
+  );
+  const shownGroups = useMemo(
+    () => (allGroups.length === 1 ? COLLAPSIBLE_GROUPS : openGroups),
+    [allGroups.length, openGroups],
+  );
+  const toggleGroup = useCallback((group: ResolveGroup): void => {
+    setOpenGroups((current) => {
+      const next = new Set(current);
+      if (current.has(group)) {
+        next.delete(group);
+        return next;
+      }
+      return next.add(group);
+    });
+  }, []);
   const shownEntries = useMemo(
-    () => groups.flatMap((group) => (group.word === 'done' && !isDoneShown ? [] : group.entries)),
-    [groups, isDoneShown],
+    () => groups.flatMap((group) => (isGroupShown(group.group) ? group.entries : [])),
+    [groups, isGroupShown],
   );
   const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
   const setReviewSelection = useAppStore((s) => s.setReviewSelection);
@@ -244,13 +282,29 @@ export const ReviewFlow = ({ session, push }: Props) => {
     entries[0] ??
     null;
   const focusedThreadId = focused?.threadId ?? null;
-  const isFocusedDone = focused?.resolveWord === 'done';
+  const focusedGroup = focused === null ? null : RESOLVE_GROUP_OF_WORD[focused.resolveWord];
+
+  const canPushFromList =
+    tally.readyToPush > 0 &&
+    focused?.resolveWord !== 'ready' &&
+    (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'review', sessionId },
+      })?.resolve() ?? []
+    ).some((action) => action.id === 'review.push' && action.blockedReason === null);
+  const pushFromList = (): void => {
+    void runObjectAction({ target: { kind: 'review', sessionId }, actionId: 'review.push', env });
+  };
 
   useEffect(() => {
-    if (isFocusedDone) {
-      setIsDoneOpen(true);
+    if (focusedGroup === null || !COLLAPSIBLE_GROUPS.has(focusedGroup)) {
+      return;
     }
-  }, [focusedThreadId, isFocusedDone]);
+    setOpenGroups((current) =>
+      current.has(focusedGroup) ? current : new Set(current).add(focusedGroup),
+    );
+  }, [focusedThreadId, focusedGroup]);
 
   const releaseLaunch = useCallback((): void => {
     const current = launchRef.current;
@@ -505,9 +559,11 @@ export const ReviewFlow = ({ session, push }: Props) => {
       if (!eventMatches({ event: native, entry: SHORTCUTS[shortcut] })) {
         continue;
       }
-      const action = available.find(
-        (candidate) => actionIds.includes(candidate.id) && candidate.blockedReason === null,
-      );
+      const action = actionIds
+        .map((id) =>
+          available.find((candidate) => candidate.id === id && candidate.blockedReason === null),
+        )
+        .find((candidate) => candidate !== undefined);
       if (action !== undefined) {
         event.preventDefault();
         void runVerb({ threadId: focusedThreadId, actionId: action.id });
@@ -589,12 +645,14 @@ export const ReviewFlow = ({ session, push }: Props) => {
               <div ref={listRef}>
                 <ReviewList
                   groups={groups}
+                  tally={tally}
                   focusedThreadId={focusedThreadId}
-                  isDoneOpen={isDoneShown}
-                  onToggleDone={() => setIsDoneOpen((current) => !current)}
+                  openGroups={shownGroups}
+                  onToggleGroup={toggleGroup}
                   onSelect={select}
                   onFix={(threadId) => openLaunch({ threadIds: [threadId], isDirect: true })}
                   onAccept={(threadIds) => void acceptMany(threadIds)}
+                  onPush={canPushFromList ? pushFromList : null}
                   isAccepting={isAccepting}
                   checked={checked}
                   onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
@@ -631,66 +689,77 @@ export const ReviewFlow = ({ session, push }: Props) => {
           </div>
         )}
         {isRightShown && (
-          <ScrollFade
-            className="min-h-0 min-w-0 flex-1"
-            viewportClassName="pb-8 pr-4"
-            fadeSize="h-6"
-          >
-            {isSingle && (
-              <button
-                type="button"
-                onClick={isLaunching ? closeLaunch : isPanelOpen ? closeAnswers : () => up()}
-                className="mb-4 inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-              >
-                <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-                {REVIEW_FLOW_LABEL.list}
-              </button>
-            )}
-            {isLaunching ? (
-              <LaunchPanel
-                sessionId={sessionId}
-                rows={launchRows}
-                onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
-                onClose={closeLaunch}
-                onStarted={onLaunchStarted}
-              />
-            ) : isAnswering && bulkRun !== null ? (
-              <AnswersPanel
-                sessionId={sessionId}
-                run={bulkRun}
-                questions={bulkQuestions}
-                onClose={closeAnswers}
-                onContinued={closeAnswers}
-              />
-            ) : (
-              <div className="flex min-w-0 gap-6">
-                <div className="flex min-w-0 flex-1 flex-col gap-4">
-                  <ReviewComment
-                    key={focused.threadId}
-                    sessionId={sessionId}
-                    entry={focused}
-                    entries={entries}
-                    hunk={
-                      <ThreadHunk
-                        entry={focused}
-                        onOpenInDiff={() =>
-                          void runVerb({
-                            threadId: focused.threadId,
-                            actionId: 'reviewComment.openInDiff',
-                          })
-                        }
-                      />
-                    }
-                    {...controller.bind(focused.threadId)}
-                    onSelect={select}
-                    onTryAgain={() => void controller.retryRun(focused.threadId)}
-                    onStartOver={() => void controller.startOver(focused.threadId)}
-                  />
-                  <ThreadProperties sessionId={sessionId} entry={focused} />
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <ScrollFade
+              className="min-h-0 min-w-0 flex-1"
+              viewportClassName="pb-8 pr-4"
+              fadeSize="h-6"
+            >
+              {isSingle && (
+                <button
+                  type="button"
+                  onClick={isLaunching ? closeLaunch : isPanelOpen ? closeAnswers : () => up()}
+                  className="mb-4 inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                  <ChevronLeft size={ICON_SIZE.row} aria-hidden />
+                  {REVIEW_FLOW_LABEL.list}
+                </button>
+              )}
+              {isLaunching ? (
+                <LaunchPanel
+                  sessionId={sessionId}
+                  rows={launchRows}
+                  onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
+                  onClose={closeLaunch}
+                  onStarted={onLaunchStarted}
+                />
+              ) : isAnswering && bulkRun !== null ? (
+                <AnswersPanel
+                  sessionId={sessionId}
+                  run={bulkRun}
+                  questions={bulkQuestions}
+                  onClose={closeAnswers}
+                  onContinued={closeAnswers}
+                />
+              ) : (
+                <div className="flex min-w-0 gap-6">
+                  <div className="flex min-w-0 flex-1 flex-col gap-4">
+                    <ReviewComment
+                      key={focused.threadId}
+                      sessionId={sessionId}
+                      entry={focused}
+                      entries={entries}
+                      hasBar
+                      hunk={
+                        <ThreadHunk
+                          entry={focused}
+                          onOpenInDiff={() =>
+                            void runVerb({
+                              threadId: focused.threadId,
+                              actionId: 'reviewComment.openInDiff',
+                            })
+                          }
+                        />
+                      }
+                      {...controller.bind(focused.threadId)}
+                      onSelect={select}
+                      onTryAgain={() => void controller.retryRun(focused.threadId)}
+                      onStartOver={() => void controller.startOver(focused.threadId)}
+                    />
+                    <ThreadProperties sessionId={sessionId} entry={focused} />
+                  </div>
                 </div>
-              </div>
+              )}
+            </ScrollFade>
+            {!isLaunching && !(isAnswering && bulkRun !== null) && (
+              <ReviewActionBar
+                key={focused.threadId}
+                sessionId={sessionId}
+                entry={focused}
+                binding={controller.bind(focused.threadId)}
+              />
             )}
-          </ScrollFade>
+          </div>
         )}
       </div>
     );

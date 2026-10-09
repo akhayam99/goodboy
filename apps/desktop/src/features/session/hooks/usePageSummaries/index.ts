@@ -7,9 +7,11 @@ import {
   useSessionPlans,
 } from '../../../../store';
 import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
-import { conversationsWaiting } from '../../../resolve/conversationsWaiting';
+import { useReviewTally } from '../../../resolve/useReviewTally';
+import { waitingNotesOf } from '../../../resolve/notes/waitingNotes';
 import { selectOpenQuestions } from '../../components/SessionOverviewPane/lib';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
+import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { isStandaloneAgent } from '../../agent-kind';
 import {
   COUNTED_PAGE_IDS,
@@ -33,6 +35,7 @@ const summariesOf = ({ facts }: { readonly facts: PageCountFacts }): PageSummari
 export const usePageSummaries = ({ session }: Params): PageSummaries => {
   const sessionId = session.id as SessionId;
   const rows = useResolveQueueRows({ sessionId });
+  const tally = useReviewTally({ sessionId });
   const openQuestions = useSessionOpenQuestions(sessionId);
   const plans = useSessionPlans(sessionId);
   const artifacts = useAppStore((s) => s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
@@ -47,25 +50,38 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
     const standalone = agents.filter(
       (agent) => isStandaloneAgent({ agent }) && !resolvers.has(agent.id),
     );
-    const waiting = conversationsWaiting({ rows });
-    const liveRuns = session.workflowRuns.filter((run) => run.discardedAt == null);
-    const runningRunIds = new Set(
+    const activeRunIds = new Set(
       agents.flatMap((agent) =>
-        agent.status === 'running' && agent.workflowRunId != null ? [agent.workflowRunId] : [],
+        (agent.status === 'running' || agent.status === 'blocked') && agent.workflowRunId != null
+          ? [agent.workflowRunId]
+          : [],
       ),
+    );
+    const activeRuns = session.workflowRuns.filter(
+      (run) => run.discardedAt == null && (activeRunIds.has(run.id) || isRunHeldForPlan({ run })),
     );
     return summariesOf({
       facts: {
-        waiting: waiting.comments,
-        notes: waiting.notes,
+        waiting: tally.needsYou,
+        notes: waitingNotesOf({ rows }),
         mounts: mounts.length,
-        runs: liveRuns.length,
-        runningRuns: liveRuns.filter((run) => runningRunIds.has(run.id)).length,
+        runs: activeRuns.length,
+        runningRuns: activeRuns.length,
         agents: standalone.length,
         runningAgents: standalone.filter((agent) => agent.status === 'running').length,
         artifacts: Math.max(artifacts.length, plans.length),
         openQuestions: selectOpenQuestions(openQuestions).length,
       },
     });
-  }, [rows, openQuestions, agents, kindOverride, session.workflowRuns, artifacts, plans, mounts]);
+  }, [
+    rows,
+    tally,
+    openQuestions,
+    agents,
+    kindOverride,
+    session.workflowRuns,
+    artifacts,
+    plans,
+    mounts,
+  ]);
 };

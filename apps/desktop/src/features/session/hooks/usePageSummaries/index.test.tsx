@@ -132,13 +132,13 @@ describe('usePageSummaries', () => {
     );
   });
 
-  it('counts the runs, and the runs with a running agent', () => {
+  it('counts only the runs that are running, and says nothing for runs that finished', () => {
     const first = aWorkflowRun({ ordinal: 0 });
     const second = aWorkflowRun({ ordinal: 1 });
     const withRuns: Session = { ...base, workflowRuns: [first, second] };
     seedColumn({ store: useAppStore, sessions: [withRuns], currentSessionId: sessionId });
     expect(renderHook(() => usePageSummaries({ session: withRuns })).result.current.runs).toBe(
-      '2 runs',
+      undefined,
     );
 
     useAppStore.setState({

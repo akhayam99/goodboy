@@ -79,9 +79,9 @@ describe('reviewCommentStateOf', () => {
     const row = rowOf();
     const state = reviewCommentStateOf({ row, isChanged: true });
     expect(state).toBe('outdated');
-    expect(reviewCommentWord({ state, row })).toBe('Ready');
+    expect(reviewCommentWord({ state, row })).toBe('To review');
     expect(projectReviewComment({ state, row })).toMatchObject({
-      word: 'ready',
+      word: 'to_review',
       isChanged: true,
       chips: ['Comment changed'],
     });

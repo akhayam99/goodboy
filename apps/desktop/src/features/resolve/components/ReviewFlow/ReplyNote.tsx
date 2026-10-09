@@ -1,7 +1,8 @@
-import { Check } from 'lucide-react';
-import { Button, WorkNode } from '@goodboy/ui';
+import { Check, ExternalLink } from 'lucide-react';
+import { Button, Markdown, WorkNode } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
+import { BAR_COPY } from '../../commentStateCopy';
 import { REPLY_NOTE_COPY, decidedNote } from '../../reviewFlowCopy';
 
 export type ReplyNoteKind = 'bundled' | 'alone' | 'posting' | 'posted';
@@ -10,6 +11,7 @@ type Props = {
   readonly kind: ReplyNoteKind;
   readonly provider: string;
   readonly url: string | null;
+  readonly reply?: string;
   readonly isRetry: boolean;
   readonly isBusy: boolean;
   readonly onPostNow: () => void;
@@ -18,7 +20,15 @@ type Props = {
 const NOTE_CLASS =
   'flex min-w-0 flex-wrap items-center gap-2 rounded-lg bg-subtle px-4 py-2 text-meta text-muted-foreground';
 
-export const ReplyNote = ({ kind, provider, url, isRetry, isBusy, onPostNow }: Props) => {
+export const ReplyNote = ({
+  kind,
+  provider,
+  url,
+  reply = '',
+  isRetry,
+  isBusy,
+  onPostNow,
+}: Props) => {
   if (kind === 'posting') {
     return (
       <p role="status" className={NOTE_CLASS}>
@@ -29,19 +39,21 @@ export const ReplyNote = ({ kind, provider, url, isRetry, isBusy, onPostNow }: P
   }
   if (kind === 'posted') {
     return (
-      <p role="status" className={NOTE_CLASS}>
-        <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
-        <span className="min-w-0">{REPLY_NOTE_COPY.posted({ provider })}</span>
-        {url !== null && (
-          <button
-            type="button"
-            onClick={() => void openUrl(url)}
-            className="rounded-sm text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-          >
-            {REPLY_NOTE_COPY.viewComment}
-          </button>
+      <div role="status" className="flex min-w-0 flex-col gap-2 rounded-lg bg-subtle px-4 py-2">
+        <p className="flex min-w-0 flex-wrap items-center gap-2 text-meta text-muted-foreground">
+          <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
+          <span className="min-w-0">{REPLY_NOTE_COPY.posted({ provider })}</span>
+          {url !== null && (
+            <Button size="xs" variant="ghost" onClick={() => void openUrl(url)}>
+              <ExternalLink size={ICON_SIZE.control} aria-hidden />
+              {BAR_COPY.viewOn({ host: provider })}
+            </Button>
+          )}
+        </p>
+        {reply.trim() === '' ? null : (
+          <Markdown text={reply} variant="preview" className="text-body text-foreground" />
         )}
-      </p>
+      </div>
     );
   }
   return (

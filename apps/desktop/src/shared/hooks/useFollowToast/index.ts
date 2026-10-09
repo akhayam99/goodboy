@@ -3,6 +3,8 @@ import { useAppStore } from '../../../store';
 import type { OpenDrawer } from '../../../store/slices/drawer/state';
 import type { PlaceRequest } from '../../../store/slices/navigation/types';
 import { useToast } from '../../components/Toast';
+import type { ShowToast } from '../../components/Toast/toastContext';
+import { useShowToast } from '../../components/Toast/useShowToast';
 import { FOLLOW_LABEL, followDedupeKey } from '../../lib/followToast';
 import { markUserStart } from '../../lib/userStarts';
 import { isTargetShown } from './isTargetShown';
@@ -26,9 +28,12 @@ const OVERLAY_DRAWER_SELECTOR = 'aside[data-drawer-mode="overlay"]';
 const isOverlayDrawerOpen = (): boolean =>
   typeof document !== 'undefined' && document.querySelector(OVERLAY_DRAWER_SELECTOR) !== null;
 
-export const useFollowToast = (): ((params: FollowParams) => void) => {
+const useFollowOn = ({
+  showToast,
+}: {
+  readonly showToast: ShowToast;
+}): ((params: FollowParams) => void) => {
   const navigate = useAppStore((state) => state.navigate);
-  const { showToast } = useToast();
   return useCallback(
     ({ title, message = '', target, label = FOLLOW_LABEL, startKey, onFollow }: FollowParams) => {
       if (startKey !== undefined) {
@@ -60,3 +65,9 @@ export const useFollowToast = (): ((params: FollowParams) => void) => {
     [navigate, showToast],
   );
 };
+
+export const useFollowToast = (): ((params: FollowParams) => void) =>
+  useFollowOn({ showToast: useToast().showToast });
+
+export const useQuietFollowToast = (): ((params: FollowParams) => void) =>
+  useFollowOn({ showToast: useShowToast() });

@@ -1015,7 +1015,7 @@ describe('moving across every place keeps one frame', () => {
       expect(
         (await within(page).findAllByText(/Ship a fix/, undefined, WAIT)).length,
       ).toBeGreaterThan(0);
-      expect(pageRow('Runs').textContent).toMatch(/\d/);
+      expect(pageRow('Runs').textContent).toBe('Runs');
       expect(screen.queryByText(/workflow run/i)).toBeNull();
 
       const startedRun = currentSession(sessionId).workflowRuns.at(-1)?.id ?? null;

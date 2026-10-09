@@ -434,7 +434,7 @@ describe('Branch page Comments', () => {
     expect(screen.queryByRole('button', { name: /^Comments$/ })).toBeNull();
     const groups = screen.getAllByRole('group', { name: 'Comment properties' });
     expect(groups).toHaveLength(1);
-    within(groups[0] as HTMLElement).getByText('State');
+    expect(within(groups[0] as HTMLElement).queryByText('State')).toBeNull();
     within(groups[0] as HTMLElement).getByText('Origin');
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
@@ -454,7 +454,7 @@ describe('Branch page Comments', () => {
       expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
       const groups = screen.getAllByRole('group', { name: 'Comment properties' });
       expect(groups).toHaveLength(1);
-      within(groups[0] as HTMLElement).getByText('State');
+      within(groups[0] as HTMLElement).getByText('Origin');
       cleanup();
       vi.restoreAllMocks();
     }

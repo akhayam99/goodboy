@@ -13,6 +13,7 @@ export type AttentionFactsParams = {
   readonly openQuestionCount: number;
   readonly fixNeedsYouCount?: number;
   readonly fixCouldntFixCount?: number;
+  readonly pushFailedCount?: number;
   readonly noteNeedsYouCount?: number;
   readonly noteCouldntFixCount?: number;
   readonly hasBlockedAgent?: boolean;
@@ -23,6 +24,7 @@ export type AttentionFactsParams = {
 const ATTENTION_PRIORITY: ReadonlyArray<SessionAttentionReason> = [
   'needs-approval',
   'agent-error',
+  'push-failed',
   'plan-approval',
   'open-question',
   'fix-needs-you',
@@ -79,6 +81,7 @@ export const attentionFactsOf = ({
   openQuestionCount,
   fixNeedsYouCount = 0,
   fixCouldntFixCount = 0,
+  pushFailedCount = 0,
   noteNeedsYouCount = 0,
   noteCouldntFixCount = 0,
   hasBlockedAgent = false,
@@ -90,6 +93,7 @@ export const attentionFactsOf = ({
   const holds: Record<SessionAttentionReason, boolean> = {
     'needs-approval': hasBlockedAgent,
     'agent-error': session.state.kind === 'error',
+    'push-failed': isOnBranch && pushFailedCount > 0,
     'plan-approval': hasPlanWaiting,
     'open-question': openQuestionCount > 0,
     'fix-needs-you': isOnBranch && fixNeedsYouCount + noteNeedsYouCount > 0,

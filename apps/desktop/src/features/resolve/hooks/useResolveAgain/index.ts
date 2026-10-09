@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../store';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 import { launchChoiceOf } from '../../launchChoice';
 import { startBatch } from '../../startBatch';
+import { useFixStartedToast } from '../useFixStartedToast';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -23,6 +24,7 @@ export const useResolveAgain = ({
 }: Params): ((params: ResolveAgainParams) => Promise<ResolveAgainOutcome>) => {
   const continueResolveThreads = useAppStore((s) => s.continueResolveThreads);
   const reportError = useAppStore((s) => s.reportError);
+  const announceStart = useFixStartedToast();
   const picked = useAppStore((s) => s.resolveQueueView[sessionId]?.lastRouting ?? null);
 
   return useCallback(
@@ -33,12 +35,13 @@ export const useResolveAgain = ({
       }
       try {
         if (picked !== null && picked.model !== row.attempt.model) {
-          await startBatch({
+          const started = await startBatch({
             getState: useAppStore.getState,
             sessionId,
             threadIds: [threadId],
             launchChoice: launchChoiceOf({ routing: picked, commitStyle: null, hint: instruction }),
           });
+          announceStart({ sessionId, started, count: 1 });
           return 'started';
         }
         await continueResolveThreads({ sessionId, threadIds: [threadId], hint: instruction });
@@ -48,6 +51,6 @@ export const useResolveAgain = ({
         return 'failed';
       }
     },
-    [continueResolveThreads, picked, reportError, rows, sessionId],
+    [announceStart, continueResolveThreads, picked, reportError, rows, sessionId],
   );
 };

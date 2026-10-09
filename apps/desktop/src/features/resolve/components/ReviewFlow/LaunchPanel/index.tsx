@@ -16,6 +16,7 @@ import {
   launchTitle,
 } from '../../../reviewLaunchCopy';
 import { startBatch } from '../../../startBatch';
+import { useFixStartedToast } from '../../../hooks/useFixStartedToast';
 import type { ReviewEntry } from '../useReviewEntries';
 import { useDraftRouting } from '../useDraftRouting';
 import { LaunchPanelRow } from './LaunchPanelRow';
@@ -45,6 +46,7 @@ const storedCommitStyle = ({
 
 export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: Props) => {
   const draft = useDraftRouting({ sessionId });
+  const announceStart = useFixStartedToast();
   const [hint, setHint] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
     setIsStarting(true);
     setError(null);
     try {
-      await startBatch({
+      const started = await startBatch({
         getState: useAppStore.getState,
         sessionId,
         threadIds,
@@ -70,6 +72,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
           hint,
         }),
       });
+      announceStart({ sessionId, started, count });
       onStarted();
     } catch (caught) {
       if (!isReportedError(caught)) {

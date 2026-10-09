@@ -20,7 +20,21 @@ export type AskRightNowInput = {
   readonly cost: number;
 };
 
-const COUNTED_WORDS: ReadonlyArray<ResolveWord> = ['ready', 'needs_you', 'working', 'couldnt_fix'];
+const COUNTED_WORDS: ReadonlyArray<ResolveWord> = [
+  'to_review',
+  'question',
+  'push_failed',
+  'couldnt_fix',
+  'working',
+  'ready',
+];
+
+const NEEDS_YOU_WORDS: ReadonlyArray<ResolveWord> = [
+  'question',
+  'to_review',
+  'push_failed',
+  'couldnt_fix',
+];
 
 const MAX_RUNNING_LINES = 3;
 
@@ -28,7 +42,7 @@ const commentLine = ({
   commentWords,
   prNumber,
 }: Pick<AskRightNowInput, 'commentWords' | 'prNumber'>): AskRightNowLine | null => {
-  const live = commentWords.filter((word) => word !== 'done');
+  const live = commentWords.filter((word) => word !== 'done' && word !== 'left_open');
   if (live.length === 0) {
     return null;
   }
@@ -37,15 +51,17 @@ const commentLine = ({
   const noun = pluralize(live.length, 'comment');
   const counts = COUNTED_WORDS.flatMap((word) => {
     const count = live.filter((candidate) => candidate === word).length;
-    return count === 0 && word !== 'needs_you'
-      ? []
-      : [`${count} ${RESOLVE_WORD_LABEL[word].toLowerCase()}`];
+    return count === 0 ? [] : [`${count} ${RESOLVE_WORD_LABEL[word].toLowerCase()}`];
   });
   return {
     key: 'comments',
-    tone: isFixing ? 'running' : live.includes('needs_you') ? 'needs' : 'idle',
+    tone: isFixing
+      ? 'running'
+      : live.some((word) => NEEDS_YOU_WORDS.includes(word))
+        ? 'needs'
+        : 'idle',
     lead: isFixing ? `Fixing ${noun}${on}` : `${noun}${on}`,
-    detail: counts.join(' · '),
+    detail: counts.length === 0 ? null : counts.join(' · '),
   };
 };
 
@@ -114,7 +130,10 @@ export const askSuggestions = ({
   openQuestionsFrom,
   prNumber,
 }: SuggestionParams): ReadonlyArray<string> => {
-  const needsYou = openQuestionsFrom.length > 0 || commentWords.includes('needs_you');
+  const needsYou =
+    openQuestionsFrom.length > 0 ||
+    commentWords.includes('question') ||
+    commentWords.includes('to_review');
   const failed = failedAgents[0];
   const candidates = [
     needsYou ? 'What needs me?' : null,

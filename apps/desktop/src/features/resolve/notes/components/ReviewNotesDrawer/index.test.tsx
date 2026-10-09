@@ -153,7 +153,7 @@ describe('the review notes drawer by lane state', () => {
     const panel = await screen.findByRole('region', { name: 'Your notes' });
     const card = noteCard({ panel, body: /Rename amt to amountMinor/ });
 
-    expect(within(card).getByText('Ready')).toBeDefined();
+    expect(within(card).getByText('To review')).toBeDefined();
     expect(within(card).queryByRole('button', { name: 'Reply' })).toBeNull();
     await act(async () => {
       fireEvent.click(within(card).getByRole('button', { name: 'Accept' }));

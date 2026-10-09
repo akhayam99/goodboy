@@ -168,7 +168,7 @@ const MATRIX: ReadonlyArray<Row> = [
       ...GITHUB,
       'reviewComment.edit primary Add a hint',
       'reviewComment.anotherModel menu Try another model',
-      'reviewComment.postReplyNow menu Retry',
+      'reviewComment.postReplyNow menu Retry push',
       'reviewComment.reply secondary Reply yourself',
       'reviewComment.skip secondary Skip',
       'reviewComment.resolveNoReply menu Resolve without a reply',
@@ -183,7 +183,7 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'skipped',
     facts: { state: 'skipped', agentId: null, approval: 'deferred' },
-    expected: [...OPEN, ...GITHUB, 'reviewComment.undo secondary Resume', ...COPY],
+    expected: [...OPEN, ...GITHUB, 'reviewComment.undo secondary Undo skip', ...COPY],
   },
   {
     name: 'pushed',

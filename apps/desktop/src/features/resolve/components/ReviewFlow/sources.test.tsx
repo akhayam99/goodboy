@@ -51,9 +51,11 @@ const mount = async ({ selected }: { readonly selected: Source }): Promise<void>
     </ToastProvider>,
   );
   await settle();
-  const done = screen.queryByRole('button', { name: /^Done \d+/ });
-  if (done !== null && done.getAttribute('aria-expanded') === 'false') {
-    fireEvent.click(done);
+  for (const group of [/^Done \d+/, /^Left open on \w+ \d+/]) {
+    const toggle = screen.queryByRole('button', { name: group });
+    if (toggle !== null && toggle.getAttribute('aria-expanded') === 'false') {
+      fireEvent.click(toggle);
+    }
   }
 };
 

@@ -300,3 +300,37 @@ describe('deriveSessionStage error against running', () => {
     },
   );
 });
+
+describe('deriveSessionStage push failed', () => {
+  const failed = { ...signals, pr: null, pushFailedCount: 2 } as const;
+
+  it('puts a session with a push that failed in attention, in red words', () => {
+    const info = deriveSessionStage({ session, ...failed });
+
+    expect(info).toMatchObject({
+      stage: 'attention',
+      attention: 'push-failed',
+      reason: "2 comments didn't go out",
+      pushFailedCount: 2,
+    });
+  });
+
+  it('keeps it below running, as failing checks are, because an agent may be retrying', () => {
+    const info = deriveSessionStage({ session, ...failed, hasRunningAgent: true });
+
+    expect(info).toMatchObject({ stage: 'running', attention: null, isRunning: true });
+    expect(info.otherReasons).toEqual(['push-failed']);
+  });
+
+  it('still shows an open question while an agent runs and a push has failed', () => {
+    const info = deriveSessionStage({
+      session,
+      ...failed,
+      openQuestionCount: 1,
+      hasRunningAgent: true,
+    });
+
+    expect(info).toMatchObject({ stage: 'attention', attention: 'open-question' });
+    expect(info.otherReasons).toEqual(['push-failed']);
+  });
+});

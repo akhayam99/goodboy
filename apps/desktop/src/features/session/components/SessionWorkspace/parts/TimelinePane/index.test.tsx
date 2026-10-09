@@ -1749,7 +1749,7 @@ describe('TimelinePane fix run', () => {
 
     const owners = screen.getAllByTestId('needs-you-owner');
     expect(owners).toHaveLength(1);
-    expect(owners[0]?.textContent).toContain('#318 · 1 question · 1 to review');
+    expect(owners[0]?.textContent).toContain('#318 · 2 need you · 1 to review · 1 question');
   });
 });
 

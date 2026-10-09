@@ -1652,16 +1652,16 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   [The right drawer](#the-right-drawer).
 - **The Branch page is where the session's code is discussed and ships.** The
   contract of its header and tabs is in [The Branch page](#the-branch-page).
-  Comments is one flow: the list grouped by word (Needs you, Working, Ready,
-  Couldn't fix, Open, and Done closed) under the run status line, and the
-  focused comment beside it in the page itself, never in a drawer. A comment
-  in a fix run reads one of five words (Working, Needs you, Ready, Couldn't
-  fix, Done); a comment not yet in a fix run reads Open, a group of the list and
-  not a sixth word. A thread in the address is
+  Comments is one flow: the list grouped by delivery (Needs you, Working,
+  Ready to push, Open, Done and Left open on its host, the last two closed)
+  under the run status line, and the focused comment beside it in the page
+  itself, never in a drawer. A comment reads one word (Question, To review,
+  Push failed, Couldn't fix, Working, Ready, Done, Left open, Open) and
+  `reviewTally` is the one count behind every number of them. A thread in the address is
   `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the launch panel
   in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
-Fix N` opens the same panel, or `Accept N` for ready comments. With no fix run
+Fix N` opens the same panel, or `Accept N` for comments to review. With no fix run
   the line under the tabs says `Fix N open comments`; the Overview card and
   the board card open that same panel pre-filled. Bulk answers, Retry N and
   `N accepted · Undo` (Cmd+Z) are described in
@@ -2147,12 +2147,12 @@ branch name, Copy patch).
 **Comments.** The Description (open when the pull request has a body, closed
 when it has none, with a visible `Edit` on its header while it is closed and
 `Edit` on the title and the description once it is open; `Edit title and
-description` in `⋯` still works), then the list (`Needs you`, `Ready`, `Done`;
+description` in `⋯` still works), then the list (`Needs you`, `Working`, `Ready to push`, `Open`, `Done`, `Left open on GitHub`;
 the pull request conversation only, your notes live in the Notes drawer of
 Files) and the open thread with the code
 around the commented line above it (`hunkAround`, linking to Files). The
-properties (State, Origin with the code host link and Copy link, Attempts, Fix
-commit) sit inline under the thread at every width, never in a margin rail.
+properties (Origin, Attempts, Fix commit) sit inline under the thread at every width, never in a margin rail. The
+actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Accept is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
 Every Branch tab sits on the 960px column (`PaneShell width="column"`, bodies in
 `PageColumn width="column"`), the header, the tabs and Ask included, so nothing
 moves from one tab to the next. The Comments tab reads the width of its own pane
@@ -2164,8 +2164,7 @@ and an open drawer. The tab counts (Comments, Files, Commits) read a muted `-`
 named `Not loaded` until the data arrives, then the number, never 0 for an
 unknown (`TabCount`). All three arrive without a tab visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
-draft is not there yet, so the Commits count is a number on the Comments tab too. Fix, Resolve without a reply and Stop live on the thread
-and its properties; Fix launches from the list or the thread, never from Files.
+draft is not there yet, so the Commits count is a number on the Comments tab too. Fix launches from the list or the thread bar, never from Files.
 
 **Files.** The branch against its base, on the column like every other tab, with
 the change tree in a rail of its own at the pane's left edge, outside the column.

@@ -24,9 +24,17 @@ import { newRepliesOf, sourceChangeOf, type ReviewSourceChange } from '../../../
 import {
   projectReviewComment,
   reviewCommentStateOf,
+  reviewCommentToneKeyOf,
   type ReviewCommentState,
+  type ReviewCommentTone,
 } from '../../../reviewCommentState';
-import { RESOLVE_LIST_WORDS, type ResolveWord } from '../../../commentProjection';
+import {
+  RESOLVE_GROUP_OF_WORD,
+  RESOLVE_LIST_GROUPS,
+  RESOLVE_WORD_RANK,
+  type ResolveGroup,
+  type ResolveWord,
+} from '../../../commentProjection';
 import { checksFailedItemIds } from '../../../checksFailedItemIds';
 import { isBulkAcceptable } from '../../../bulkAccept';
 import { isFixableThread } from '../../../fixableComments';
@@ -36,6 +44,7 @@ export type ReviewEntry = {
   readonly row: ResolveQueueRow;
   readonly threadId: string;
   readonly state: ReviewCommentState;
+  readonly toneKey: ReviewCommentTone;
   readonly resolveWord: ResolveWord;
   readonly word: string;
   readonly chips: ReadonlyArray<string>;
@@ -52,7 +61,7 @@ export type ReviewEntry = {
 };
 
 export type ReviewGroup = {
-  readonly word: ResolveWord;
+  readonly group: ResolveGroup;
   readonly entries: ReadonlyArray<ReviewEntry>;
 };
 
@@ -114,6 +123,7 @@ export const useReviewEntries = ({
         row,
         threadId: row.thread.threadId,
         state,
+        toneKey: reviewCommentToneKeyOf({ state, row }),
         resolveWord: projection.word,
         word: projection.label,
         chips: projection.chips,
@@ -148,9 +158,14 @@ export const useReviewEntries = ({
         kind !== null && rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } })
       );
     });
-    const groups = RESOLVE_LIST_WORDS.map((word) => ({
-      word,
-      entries: shown.filter((entry) => entry.resolveWord === word),
+    const groups = RESOLVE_LIST_GROUPS.map((group) => ({
+      group,
+      entries: shown
+        .filter((entry) => RESOLVE_GROUP_OF_WORD[entry.resolveWord] === group)
+        .sort(
+          (left, right) =>
+            RESOLVE_WORD_RANK[left.resolveWord] - RESOLVE_WORD_RANK[right.resolveWord],
+        ),
     })).filter((group) => group.entries.length > 0);
     return { entries: groups.flatMap((group) => group.entries), groups, all };
   }, [all, kind, number, projectId, scope]);

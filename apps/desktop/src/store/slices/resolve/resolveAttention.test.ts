@@ -39,7 +39,13 @@ describe('resolveAttentionOf', () => {
       attempts: [attempt({ id: 'a1', cause: 'provider_error' })],
     });
 
-    expect(attention).toEqual({ needsYou: 1, couldntFix: 1, notesNeedYou: 0, notesCouldntFix: 0 });
+    expect(attention).toEqual({
+      needsYou: 1,
+      couldntFix: 1,
+      pushFailed: 0,
+      notesNeedYou: 0,
+      notesCouldntFix: 0,
+    });
   });
 
   it('counts a note that waits or could not be fixed apart from the comments', () => {
@@ -52,24 +58,56 @@ describe('resolveAttentionOf', () => {
       attempts: [attempt({ id: 'a1', cause: 'provider_error' })],
     });
 
-    expect(attention).toEqual({ needsYou: 1, couldntFix: 0, notesNeedYou: 1, notesCouldntFix: 1 });
+    expect(attention).toEqual({
+      needsYou: 1,
+      couldntFix: 0,
+      pushFailed: 0,
+      notesNeedYou: 1,
+      notesCouldntFix: 1,
+    });
   });
 
-  it('does not raise attention for a run you stopped or a push that failed', () => {
+  it('counts a push that failed as a push failure and never as a comment it could not fix', () => {
     const attention = resolveAttentionOf({
       threads: [
-        thread({ state: 'failed', attemptId: 'a1' }),
         thread({ state: 'failed', attemptId: 'a2', stateReason: 'publication_failed:{}' }),
+        thread({
+          state: 'failed',
+          attemptId: 'a2',
+          stateReason: 'publication_failed:{}',
+          originKind: 'diff_comment',
+        }),
       ],
-      attempts: [attempt({ id: 'a1', cause: 'stopped' }), attempt({ id: 'a2', cause: null })],
+      attempts: [attempt({ id: 'a2', cause: null })],
     });
 
-    expect(attention).toEqual({ needsYou: 0, couldntFix: 0, notesNeedYou: 0, notesCouldntFix: 0 });
+    expect(attention).toEqual({
+      needsYou: 0,
+      couldntFix: 0,
+      pushFailed: 1,
+      notesNeedYou: 0,
+      notesCouldntFix: 0,
+    });
+  });
+
+  it('does not raise attention for a run you stopped', () => {
+    const attention = resolveAttentionOf({
+      threads: [thread({ state: 'failed', attemptId: 'a1' })],
+      attempts: [attempt({ id: 'a1', cause: 'stopped' })],
+    });
+
+    expect(attention).toEqual({
+      needsYou: 0,
+      couldntFix: 0,
+      pushFailed: 0,
+      notesNeedYou: 0,
+      notesCouldntFix: 0,
+    });
   });
 });
 
 describe('resolveAttentionNotices', () => {
-  const NONE = { needsYou: 0, couldntFix: 0, notesNeedYou: 0, notesCouldntFix: 0 };
+  const NONE = { needsYou: 0, couldntFix: 0, pushFailed: 0, notesNeedYou: 0, notesCouldntFix: 0 };
 
   it('tells you once when a comment starts to need you', () => {
     const notices = resolveAttentionNotices({
@@ -112,6 +150,30 @@ describe('resolveAttentionNotices', () => {
     });
 
     expect(notices.map((notice) => notice.title)).toEqual(["A fix run couldn't fix 3 comments"]);
+  });
+
+  it('tells you once, in red, when a push fails, and not again while it stays failed', () => {
+    const notices = resolveAttentionNotices({
+      before: NONE,
+      after: { ...NONE, pushFailed: 2 },
+      sessionId: SESSION,
+    });
+
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toMatchObject({
+      severity: 'error',
+      title: 'Push failed',
+      body: 'Nothing was sent. Retry from the Comments tab.',
+      action: { kind: 'open-activity', sessionId: SESSION },
+      coalesceKey: `push-failed:${SESSION}`,
+    });
+    expect(
+      resolveAttentionNotices({
+        before: { ...NONE, pushFailed: 2 },
+        after: { ...NONE, pushFailed: 2 },
+        sessionId: SESSION,
+      }),
+    ).toEqual([]);
   });
 
   it('says both when both rose and nothing when nothing rose', () => {

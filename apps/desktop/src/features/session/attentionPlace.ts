@@ -50,6 +50,9 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
       target: { kind: 'run', runId: heldRun.id },
     });
   }
+  if (reason === 'push-failed') {
+    return branchPlace({ sessionId, tab: 'comments' });
+  }
   if (reason === 'ci-failed') {
     return branchPlace({ sessionId, tab: 'checks' });
   }

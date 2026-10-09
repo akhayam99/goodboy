@@ -146,7 +146,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'question',
-        sentence: RESOLVE_WORD_LABEL.needs_you,
+        sentence: RESOLVE_WORD_LABEL.question,
         action: 'answer',
         failedStep: null,
         isRemoteMoved: false,
@@ -155,7 +155,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'ready',
-        sentence: RESOLVE_WORD_LABEL.ready,
+        sentence: RESOLVE_WORD_LABEL.to_review,
         action: 'review',
         failedStep: null,
         isRemoteMoved: false,
@@ -164,7 +164,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'queued',
-        sentence: 'Accepted',
+        sentence: RESOLVE_WORD_LABEL.ready,
         action: null,
         failedStep: null,
         isRemoteMoved: false,
@@ -193,7 +193,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'skipped',
-        sentence: 'Skipped',
+        sentence: RESOLVE_WORD_LABEL.left_open,
         action: 'resume',
         failedStep: null,
         isRemoteMoved: false,

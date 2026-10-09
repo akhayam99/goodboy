@@ -25,7 +25,7 @@ const askActionFactsOf = ({ state, sessionId }: FactsParams): AskButtonFacts => 
     askVerb({ state, target: { kind: 'session', sessionId }, actionId: 'session.review' }) !== null;
   const readyCount = canReview
     ? askDigestOf({ state, sessionId, now: Date.now() }).commentWords.filter(
-        (word) => word === 'ready',
+        (word) => word === 'to_review',
       ).length
     : 0;
   return {

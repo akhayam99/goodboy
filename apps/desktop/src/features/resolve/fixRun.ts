@@ -1,12 +1,12 @@
 import type { AgentId, ResolveAttempt } from '@goodboy/types';
 import { modelLabel } from '../chat/utils/chat-constants';
 import { launchKeyOf } from '../../store/slices/resolve/resolveLaunch';
-import { resolveTallyOf, type ResolveTally, type ResolveWord } from './commentProjection';
-import type { ReviewCommentState } from './reviewCommentState';
+import type { ResolveWord } from './commentProjection';
+import { reviewTallyOfWords, type ReviewTally } from './reviewTally';
 
 export type FixRunSource = {
   readonly threadId: string;
-  readonly state: ReviewCommentState;
+  readonly word: ResolveWord;
   readonly attempt: ResolveAttempt | null;
 };
 
@@ -16,20 +16,35 @@ export type FixRun = {
   readonly attempt: ResolveAttempt;
   readonly threadIds: ReadonlyArray<string>;
   readonly total: number;
-  readonly tally: ResolveTally;
+  readonly tally: ReviewTally;
   readonly isLive: boolean;
   readonly model: string;
 };
 
-export type FixRunWord = Extract<ResolveWord, 'ready' | 'needs_you' | 'working' | 'couldnt_fix'>;
+export type FixRunChipKey =
+  'needs_you' | 'working' | 'ready_to_push' | 'push_failed' | 'couldnt_fix';
 
-export const FIX_RUN_CHIPS: ReadonlyArray<{ readonly word: FixRunWord; readonly phrase: string }> =
-  [
-    { word: 'ready', phrase: 'ready' },
-    { word: 'needs_you', phrase: 'needs you' },
-    { word: 'working', phrase: 'working' },
-    { word: 'couldnt_fix', phrase: "couldn't fix" },
-  ];
+type FixRunChip = {
+  readonly key: FixRunChipKey;
+  readonly phrase: string;
+  readonly countOf: (tally: ReviewTally) => number;
+};
+
+export const FIX_RUN_CHIPS: ReadonlyArray<FixRunChip> = [
+  { key: 'needs_you', phrase: 'need you', countOf: (tally) => tally.needsYou },
+  { key: 'working', phrase: 'working', countOf: (tally) => tally.working },
+  { key: 'ready_to_push', phrase: 'ready to push', countOf: (tally) => tally.readyToPush },
+  { key: 'push_failed', phrase: 'push failed', countOf: (tally) => tally.pushFailed },
+  { key: 'couldnt_fix', phrase: "couldn't fix", countOf: (tally) => tally.couldntFix },
+];
+
+export const FIX_RUN_CHIP_WORDS: Readonly<Record<FixRunChipKey, ReadonlyArray<ResolveWord>>> = {
+  needs_you: ['question', 'push_failed', 'to_review', 'couldnt_fix'],
+  working: ['working'],
+  ready_to_push: ['ready'],
+  push_failed: ['push_failed'],
+  couldnt_fix: ['couldnt_fix'],
+};
 
 const capitalized = ({ text }: { readonly text: string }): string =>
   `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
@@ -39,8 +54,8 @@ export const fixRunModelLabel = ({ attempt }: { readonly attempt: ResolveAttempt
     ? modelLabel(attempt.model)
     : `${modelLabel(attempt.model)} · ${capitalized({ text: attempt.effort })}`;
 
-const isShown = ({ tally }: { readonly tally: ResolveTally }): boolean =>
-  tally.working + tally.needs_you + tally.ready + tally.couldnt_fix > 0;
+const isShown = ({ tally }: { readonly tally: ReviewTally }): boolean =>
+  tally.working + tally.needsYou + tally.readyToPush > 0;
 
 export const fixRunOf = ({
   sources,
@@ -61,7 +76,7 @@ export const fixRunOf = ({
     const newest = members.reduce((first, member) =>
       member.attempt.createdAt >= first.attempt.createdAt ? member : first,
     );
-    const tally = resolveTallyOf({ states: members.map((member) => member.state) });
+    const tally = reviewTallyOfWords({ words: members.map((member) => member.word) });
     if (!isShown({ tally }) || newest.attempt.createdAt < latestAt) {
       continue;
     }
@@ -73,7 +88,7 @@ export const fixRunOf = ({
       threadIds: members.map((member) => member.threadId),
       total: members.length,
       tally,
-      isLive: tally.working + tally.needs_you > 0,
+      isLive: tally.working + tally.question > 0,
       model: fixRunModelLabel({ attempt: newest.attempt }),
     };
   }
@@ -92,16 +107,22 @@ export const fixRunLabel = ({
 };
 
 const WORD_PRECEDENCE: ReadonlyArray<ResolveWord> = [
-  'needs_you',
+  'question',
   'working',
-  'ready',
+  'push_failed',
+  'to_review',
   'couldnt_fix',
+  'ready',
   'done',
+  'left_open',
   'open',
 ];
 
-export const fixRunWordOf = ({ tally }: { readonly tally: ResolveTally }): ResolveWord =>
-  WORD_PRECEDENCE.find((word) => tally[word] > 0) ?? 'done';
+export const fixRunWordOf = ({
+  words,
+}: {
+  readonly words: ReadonlyArray<ResolveWord>;
+}): ResolveWord => WORD_PRECEDENCE.find((word) => words.includes(word)) ?? 'done';
 
 export const fixRunThreadIdsOf = ({
   attempts,

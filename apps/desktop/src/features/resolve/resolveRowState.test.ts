@@ -32,15 +32,15 @@ describe('resolveRowState', () => {
     });
   }
 
-  it('says Ready for whatever kind of proposal waits for review', () => {
-    expect(resolveRowState({ ...base, stage: 'proposed' }).sentence).toBe('Ready');
+  it('says To review for whatever kind of proposal waits for review', () => {
+    expect(resolveRowState({ ...base, stage: 'proposed' }).sentence).toBe('To review');
   });
 
   it('uses the five words for the stages that are not finished or failed', () => {
     expect(resolveRowState({ ...base, stage: 'working' }).sentence).toBe('Working');
-    expect(resolveRowState({ ...base, stage: 'asking' }).sentence).toBe('Needs you');
-    expect(resolveRowState({ ...base, stage: 'approved' }).sentence).toBe('Accepted');
-    expect(resolveRowState({ ...base, stage: 'parked' }).sentence).toBe('Skipped');
+    expect(resolveRowState({ ...base, stage: 'asking' }).sentence).toBe('Question');
+    expect(resolveRowState({ ...base, stage: 'approved' }).sentence).toBe('Ready');
+    expect(resolveRowState({ ...base, stage: 'parked' }).sentence).toBe('Left open');
   });
 
   it('says what already happened when a delivery step failed', () => {

@@ -25,6 +25,7 @@ export const useResolveActivity = ({
           threadId: entry.threadId,
           state: entry.state,
           word: entry.word,
+          isPushFailure: entry.resolveWord === 'push_failed',
           path: entry.row.reviewerNote?.path ?? null,
           line: entry.row.reviewerNote?.line ?? null,
         })),

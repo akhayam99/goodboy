@@ -52,10 +52,10 @@ const outcomeOf = (patch: Partial<PublicationOutcome>): PublicationOutcome => ({
 });
 
 describe('the push confirm', () => {
-  it('names what goes out, where, and the commit style', () => {
+  it('names the object that goes out, where, and the commit style', () => {
     const preview = previewOf({});
 
-    expect(pushConfirmTitle({ preview })).toBe('Push 2 to hl/fix-duplicate-credit?');
+    expect(pushConfirmTitle({ preview })).toBe('Push 1 commit to hl/fix-duplicate-credit?');
     expect(pushConfirmBody({ preview, commitStyle: 'new' })).toBe(
       '1 fix in 1 new commit, 2 replies, 2 threads resolved on GitHub.',
     );
@@ -68,7 +68,7 @@ describe('the push confirm', () => {
   it('says when no commit goes out and points at the pull request instead of a branch', () => {
     const preview = previewOf({ requiresPush: false, commits: [] });
 
-    expect(pushConfirmTitle({ preview })).toBe('Push 2 to #318?');
+    expect(pushConfirmTitle({ preview })).toBe('Push 2 comments to #318?');
     expect(pushConfirmBody({ preview, commitStyle: 'new' })).toBe(
       'No commit, 2 replies, 2 threads resolved on GitHub.',
     );
@@ -82,7 +82,7 @@ describe('the push confirm', () => {
       notes: [{ threadId: 't-nit', revision: 2, closes: true }],
     });
 
-    expect(pushConfirmTitle({ preview })).toBe('Push 1 to #318?');
+    expect(pushConfirmTitle({ preview })).toBe('Push 1 comment to #318?');
     expect(pushConfirmBody({ preview, commitStyle: 'new' })).toBe(
       'No commit, 1 thread resolved on GitHub.',
     );

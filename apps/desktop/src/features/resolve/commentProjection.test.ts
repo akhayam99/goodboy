@@ -2,11 +2,14 @@
 import { describe, expect, it } from 'vitest';
 import { RESOLVE_FAILURE_CAUSES, type ResolveFailureCause } from '@goodboy/types';
 import {
+  RESOLVE_GROUP_LABEL,
+  RESOLVE_GROUP_OF_WORD,
+  RESOLVE_LIST_GROUPS,
   RESOLVE_WORD_LABEL,
+  RESOLVE_WORD_TONE,
+  leftOpenGroupLabel,
   projectResolveComment,
   resolveLabelOfState,
-  resolveTallyOf,
-  resolveTallyParts,
   type ResolveCommentFacts,
 } from './commentProjection';
 import { failureSentence } from './failureSentence';
@@ -40,48 +43,72 @@ const facts = (over: Partial<ResolveCommentFacts> & Pick<ResolveCommentFacts, 's
   }) satisfies ResolveCommentFacts;
 
 describe('projectResolveComment', () => {
-  it('puts every state of a comment under one of the five words, and an open one under Open', () => {
+  it.each<[ReviewCommentState, boolean, string, string, string, string]>([
+    ['needs', false, 'question', 'Question', 'warning', 'needs_you'],
+    ['ready', false, 'to_review', 'To review', 'warning', 'needs_you'],
+    ['edited', false, 'to_review', 'To review', 'warning', 'needs_you'],
+    ['outdated', false, 'to_review', 'To review', 'warning', 'needs_you'],
+    ['failed', true, 'push_failed', 'Push failed', 'danger', 'needs_you'],
+    ['failed', false, 'couldnt_fix', "Couldn't fix", 'warning', 'needs_you'],
+    ['drafting', false, 'working', 'Working', 'info', 'working'],
+    ['accepted', false, 'ready', 'Ready', 'success', 'ready_to_push'],
+    ['replied', false, 'ready', 'Ready', 'success', 'ready_to_push'],
+    ['pushed', false, 'done', 'Done', 'neutral', 'done'],
+    ['resolved', false, 'done', 'Done', 'neutral', 'done'],
+    ['skipped', false, 'left_open', 'Left open', 'neutral', 'left_open'],
+    ['new', false, 'open', 'Open', 'neutral', 'open'],
+  ])(
+    'puts %s (push failure %s) under %s, reads %s in %s and groups it under %s',
+    (state, isPushFailure, word, label, tone, group) => {
+      const projection = projectResolveComment(facts({ state, isPushFailure }));
+      expect(projection.word).toBe(word);
+      expect(RESOLVE_WORD_LABEL[projection.word]).toBe(label);
+      expect(RESOLVE_WORD_TONE[projection.word]).toBe(tone);
+      expect(RESOLVE_GROUP_OF_WORD[projection.word]).toBe(group);
+    },
+  );
+
+  it('gives every state a word and keeps the groups in the delivery order', () => {
     expect(ALL_STATES.map((state) => projectResolveComment(facts({ state })).word)).toEqual([
       'open',
       'working',
-      'needs_you',
-      'ready',
-      'ready',
-      'ready',
+      'question',
+      'to_review',
+      'to_review',
+      'to_review',
       'couldnt_fix',
       'ready',
-      'done',
-      'done',
+      'ready',
+      'left_open',
       'done',
       'done',
     ]);
-    expect(Object.values(RESOLVE_WORD_LABEL)).toEqual([
-      'Open',
-      'Working',
-      'Needs you',
-      'Ready',
-      "Couldn't fix",
-      'Done',
+    expect(RESOLVE_LIST_GROUPS).toEqual([
+      'needs_you',
+      'working',
+      'ready_to_push',
+      'open',
+      'done',
+      'left_open',
     ]);
+    expect(RESOLVE_GROUP_LABEL.ready_to_push).toBe('Ready to push');
   });
 
-  it('carries the quiet sub-word of a Done comment as the label', () => {
+  it('names the host in the group of the comments left open', () => {
+    expect(leftOpenGroupLabel({ sourceLabel: 'GitHub' })).toBe('Left open on GitHub');
+    expect(leftOpenGroupLabel({ sourceLabel: 'GitLab' })).toBe('Left open on GitLab');
+    expect(leftOpenGroupLabel({ sourceLabel: 'Bitbucket' })).toBe('Left open on Bitbucket');
+  });
+
+  it('never calls a decided or sent comment by a sub-word', () => {
     const label = (state: ReviewCommentState) => projectResolveComment(facts({ state })).label;
-    expect(label('pushed')).toBe('Pushed');
-    expect(label('skipped')).toBe('Skipped');
-    expect(label('replied')).toBe('Answered');
-    expect(label('accepted')).toBe('Accepted');
-    expect(projectResolveComment(facts({ state: 'accepted' }))).toMatchObject({
-      word: 'ready',
-      sub: 'accepted',
-    });
+    expect(label('pushed')).toBe('Done');
+    expect(label('skipped')).toBe('Left open');
+    expect(label('replied')).toBe('Ready');
+    expect(label('accepted')).toBe('Ready');
     expect(projectResolveComment(facts({ state: 'resolved', sourceLabel: 'GitLab' })).label).toBe(
       'Resolved on GitLab',
     );
-    expect(projectResolveComment(facts({ state: 'pushed' }))).toMatchObject({
-      word: 'done',
-      sub: 'pushed',
-    });
   });
 
   it('keeps a comment being published a Ready one that says Pushing', () => {
@@ -147,10 +174,10 @@ describe('projectResolveComment', () => {
     expect(failureSentence({ cause: null })).toBe('Cause not recorded');
   });
 
-  it('labels a push-side failure Push failed without a run cause sentence', () => {
+  it("labels a push-side failure Push failed, never Couldn't fix, without a run cause sentence", () => {
     expect(projectResolveComment(facts({ state: 'failed', isPushFailure: true }))).toMatchObject({
-      word: 'couldnt_fix',
-      sub: 'push_failed',
+      word: 'push_failed',
+      sub: null,
       label: 'Push failed',
       sentence: null,
     });
@@ -164,22 +191,22 @@ describe('projectResolveComment', () => {
         hasFailedChecks: true,
       }),
     );
-    expect(projection).toMatchObject({ word: 'ready', label: 'Ready', isChanged: true });
+    expect(projection).toMatchObject({ word: 'to_review', label: 'To review', isChanged: true });
     expect(projection.chips).toEqual(['Comment changed', 'Still needed', 'Checks failed']);
   });
 
-  it('shows the git verdict of a question as a chip, never in place of Needs you', () => {
+  it('shows the git verdict of a question as a chip, never in place of Question', () => {
     const projection = projectResolveComment(
       facts({
         state: 'needs',
         gitChip: { word: 'Still needed', node: 'stopped', tone: 'warning' },
       }),
     );
-    expect(projection).toMatchObject({ word: 'needs_you', label: 'Needs you' });
+    expect(projection).toMatchObject({ word: 'question', label: 'Question' });
     expect(projection.chips).toEqual(['Still needed']);
   });
 
-  it('only flags failed checks on a Ready change', () => {
+  it('only flags failed checks on a change that waits for review or push', () => {
     expect(projectResolveComment(facts({ state: 'ready', hasFailedChecks: true })).chips).toEqual([
       'Checks failed',
     ]);
@@ -189,45 +216,11 @@ describe('projectResolveComment', () => {
   });
 });
 
-describe('resolveTallyOf', () => {
-  it('counts comments by word, not agents', () => {
-    const states: ReadonlyArray<ReviewCommentState> = [
-      'ready',
-      'ready',
-      'edited',
-      'outdated',
-      'needs',
-      'drafting',
-      'drafting',
-      'failed',
-      'pushed',
-      'new',
-    ];
-    const tally = resolveTallyOf({ states });
-    expect(tally).toEqual({
-      open: 1,
-      working: 2,
-      needs_you: 1,
-      ready: 4,
-      couldnt_fix: 1,
-      done: 1,
-    });
-    expect(resolveTallyParts({ tally })).toEqual([
-      '4 ready',
-      '1 needs you',
-      '2 working',
-      "1 couldn't fix",
-    ]);
-  });
-
-  it('keeps accepted comments in Ready until they are pushed', () => {
-    const tally = resolveTallyOf({ states: ['accepted', 'accepted', 'ready', 'pushed'] });
-    expect(tally).toMatchObject({ ready: 3, done: 1 });
-  });
-
+describe('resolveLabelOfState', () => {
   it('names a state by its word', () => {
-    expect(resolveLabelOfState({ state: 'edited' })).toBe('Ready');
+    expect(resolveLabelOfState({ state: 'edited' })).toBe('To review');
     expect(resolveLabelOfState({ state: 'drafting' })).toBe('Working');
     expect(resolveLabelOfState({ state: 'failed' })).toBe("Couldn't fix");
+    expect(resolveLabelOfState({ state: 'failed', isPushFailure: true })).toBe('Push failed');
   });
 });

@@ -19,6 +19,7 @@ import {
   selectDisplayedMount,
 } from '../../../store/slices/project-mounts/selectors';
 import { isPushFailure } from '../../resolve/reviewCommentState';
+import { reviewTallyOf } from '../../resolve/reviewTally';
 import { remoteOf } from '../../resolve/reviewRemote';
 import { requestReview } from '../../review/reviewRequest';
 import {
@@ -107,6 +108,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
         }),
       };
     });
+    const tally = reviewTallyOf({ rows: rows.map((entry) => entry.row) });
     const count = (predicate: (entry: (typeof rows)[number]) => boolean): number =>
       rows.filter(predicate).length;
     const hasPr = source !== null;
@@ -121,12 +123,9 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
           (entry.state === 'failed' && !isPushFailure({ row: entry.row })) ||
           entry.remote !== null,
       ),
-      ready: count((entry) => entry.state === 'ready' || entry.state === 'edited'),
-      accepted: count(
-        (entry) =>
-          (entry.state === 'accepted' || entry.state === 'replied') && entry.remote !== 'on_origin',
-      ),
-      failed: count((entry) => entry.state === 'failed' && isPushFailure({ row: entry.row })),
+      ready: tally.toReview,
+      accepted: tally.readyToPush,
+      failed: tally.pushFailed,
       pushed: count((entry) => entry.state === 'pushed'),
       notes: hasPr
         ? notesOnBranchOf({ state, sessionId }).filter((note) => isOpenNote({ note })).length

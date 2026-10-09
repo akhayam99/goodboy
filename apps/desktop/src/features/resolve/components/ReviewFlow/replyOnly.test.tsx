@@ -78,12 +78,19 @@ const mountReply = async ({
 
 const comment = (): HTMLElement => screen.getByRole('article', { name: 'Comment' });
 
+const bar = (): HTMLElement => screen.getByRole('toolbar', { name: 'Comment actions' });
+
+const openMenuItem = async (name: RegExp): Promise<void> => {
+  fireEvent.click(within(bar()).getByRole('button', { name: 'More actions' }));
+  fireEvent.click(await screen.findByRole('menuitem', { name }));
+};
+
 describe('a reply-only answer in the thread', () => {
   it('keeps the reply with the push while a fix waits, and offers Post reply now', async () => {
     await mountReply({ variant: 'bundled' });
 
     expect(
-      within(comment()).getByText('Reply only. It goes out with the next push.'),
+      within(comment()).getByText('Reply only. It goes out with the next push. No code change.'),
     ).toBeDefined();
     expect(within(comment()).getByRole('button', { name: 'Post reply now' })).toBeDefined();
   });
@@ -133,7 +140,7 @@ describe('a reply-only answer in the thread', () => {
     await mountReply({ variant: 'posted' });
 
     expect(within(comment()).getByText('Replied on GitHub.')).toBeDefined();
-    expect(within(comment()).getByRole('button', { name: 'View comment' })).toBeDefined();
+    expect(within(comment()).getByRole('button', { name: 'View on GitHub' })).toBeDefined();
     expect(within(comment()).queryByRole('button', { name: 'Post reply now' })).toBeNull();
     expect(within(comment()).queryByRole('button', { name: 'Rewrite reply' })).toBeNull();
   });
@@ -143,7 +150,7 @@ describe('steering the answer in place', () => {
   it('opens a hint field for Rewrite reply, sends it with no hint required, and closes on Escape', async () => {
     await mountReply({ variant: 'alone' });
 
-    fireEvent.click(within(comment()).getByRole('button', { name: 'Rewrite reply' }));
+    await openMenuItem(/^Rewrite reply/);
 
     const field = within(comment()).getByRole('textbox', { name: 'How the reply should change' });
     expect(document.activeElement).toBe(field);
@@ -155,13 +162,13 @@ describe('steering the answer in place', () => {
     expect(
       within(comment()).queryByRole('textbox', { name: 'How the reply should change' }),
     ).toBeNull();
-    expect(within(comment()).getByRole('button', { name: 'Rewrite reply' })).toBeDefined();
+    expect(within(bar()).getByRole('button', { name: 'More actions' })).toBeDefined();
   });
 
   it('opens a hint field for Fix it anyway on a no-change answer', async () => {
     await mountReply({ variant: 'alone' });
 
-    fireEvent.click(within(comment()).getByRole('button', { name: 'Fix it anyway' }));
+    await openMenuItem(/^Fix it anyway/);
 
     expect(
       within(comment()).getByRole('textbox', { name: 'What the fix should do' }),
@@ -174,8 +181,8 @@ describe('steering the answer in place', () => {
     stub({ switchToReplyOnly });
     await mountReply({ threadId: EXPANDED_THREAD_ID });
 
-    expect(within(comment()).queryByRole('button', { name: 'Fix it anyway' })).toBeNull();
-    fireEvent.click(within(comment()).getByRole('button', { name: 'Reply only' }));
+    expect(within(bar()).queryByRole('button', { name: 'Fix it anyway' })).toBeNull();
+    fireEvent.click(within(bar()).getByRole('button', { name: /^Reply only/ }));
 
     await waitFor(() =>
       expect(switchToReplyOnly).toHaveBeenCalledWith({
@@ -188,6 +195,7 @@ describe('steering the answer in place', () => {
   it('lets the owner edit an accepted reply by hand before it goes out', async () => {
     await mountReply({ variant: 'bundled' });
 
-    expect(within(comment()).getByRole('button', { name: 'Edit reply' })).toBeDefined();
+    fireEvent.click(within(bar()).getByRole('button', { name: 'More actions' }));
+    expect(await screen.findByRole('menuitem', { name: /^Edit reply/ })).toBeDefined();
   });
 });

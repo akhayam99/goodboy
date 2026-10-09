@@ -27,3 +27,6 @@ export const couldntFixWords = ({
   form === 'status'
     ? `${phraseOf({ comments, notes })} couldn't be fixed`
     : `${phraseOf({ comments, notes })} it couldn't fix`;
+
+export const pushFailedWords = ({ count }: { readonly count: number }): string =>
+  count === 1 ? "1 comment didn't go out" : `${count} comments didn't go out`;

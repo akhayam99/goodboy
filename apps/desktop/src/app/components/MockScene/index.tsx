@@ -214,6 +214,7 @@ import { U23_NOTES_SCENES } from './scenes/u23/notes';
 import { U23_LISTS_SCENES } from './scenes/u23/lists';
 import { U23_OVERVIEW_SCENES } from './scenes/u23/overview';
 import { U23_TOPBAR_SCENES } from './scenes/u23/topbar';
+import { U23_COMMENTS_SCENES } from './scenes/u23/comments';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -429,6 +430,7 @@ export const MOCK_SCENES = {
   ...U23_LISTS_SCENES,
   ...U23_OVERVIEW_SCENES,
   ...U23_TOPBAR_SCENES,
+  ...U23_COMMENTS_SCENES,
 };
 
 export const MockScene = () => {

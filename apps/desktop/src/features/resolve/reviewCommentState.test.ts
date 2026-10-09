@@ -1,116 +1,64 @@
 import { describe, expect, it } from 'vitest';
-import type { ResolveStage, SessionId } from '@goodboy/types';
-import type { ResolveQueueRow } from './buildResolveQueueRows';
-import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProposalKind';
 import {
+  REVIEW_COMMENT_NODE,
+  REVIEW_COMMENT_TONE,
   reviewCommentStateOf,
+  reviewCommentToneKeyOf,
   reviewCommentWord,
-  type ReviewCommentState,
 } from './reviewCommentState';
-import { STATE_WORD_TONE } from './components/ReviewFlow/stateTone';
-
-const rowAt = ({
-  stage,
-  proposalKind = 'fix',
-}: {
-  readonly stage: ResolveStage;
-  readonly proposalKind?: ResolveProposalKind;
-}): ResolveQueueRow => ({
-  thread: {
-    id: 'thread-row-1',
-    sessionId: 'session-1' as SessionId,
-    projectId: null,
-    prNumber: 318,
-    threadId: 'PRRT_1',
-    originKind: 'review_comment',
-    diffCommentId: null,
-    state: 'open',
-    stage,
-    stateReason: null,
-    revision: 1,
-    generation: 1,
-    reopenedFromThreadId: null,
-    activeAttemptId: null,
-    disposition: null,
-    replyDraft: null,
-    commitShas: null,
-    fixupOfSha: null,
-    replacesSha: null,
-    question: null,
-    replyPostedAt: null,
-    replyId: null,
-    githubResolved: null,
-    closedAt: null,
-    closedSource: null,
-    createdAt: 1,
-    updatedAt: 1,
-  },
-  item: {
-    id: 'item-row-1',
-    sessionId: 'session-1' as SessionId,
-    threadId: 'PRRT_1',
-    generation: 1,
-    reopenedFromItemId: null,
-    candidateRevision: 1,
-    approvalState: 'none',
-    approvedRevision: null,
-    approvedReplyHash: null,
-    integratedSha: null,
-    deferredAt: null,
-    deliveredAt: null,
-    supersededAt: null,
-    createdAt: 1,
-    updatedAt: 1,
-  },
-  commentThread: null,
-  status: 'new',
-  rowState: {
-    state: 'new',
-    node: 'queued',
-    sentence: null,
-    action: null,
-    failedStep: null,
-    isRemoteMoved: false,
-  },
-  attempt: null,
-  reviewerNote: null,
-  proposal: null,
-  proposalKind,
-  coveredThreadIds: [],
-  delivery: null,
-});
+import { STATE_CHIP_TONE, STATE_WORD_TONE } from './components/ReviewFlow/stateTone';
+import { queueRowAt } from './testing/queueRow';
 
 describe('review comment words', () => {
-  it('says Skipped for a parked thread and Ready for a proposed one', () => {
-    const skipped = rowAt({ stage: 'parked' });
-    const ready = rowAt({ stage: 'proposed' });
+  it('says Left open for a parked thread and To review for a proposed one', () => {
+    const skipped = queueRowAt({ stage: 'parked' });
+    const proposed = queueRowAt({ stage: 'proposed' });
     expect(reviewCommentWord({ state: reviewCommentStateOf({ row: skipped }), row: skipped })).toBe(
-      'Skipped',
+      'Left open',
     );
-    expect(reviewCommentWord({ state: reviewCommentStateOf({ row: ready }), row: ready })).toBe(
-      'Ready',
+    expect(
+      reviewCommentWord({ state: reviewCommentStateOf({ row: proposed }), row: proposed }),
+    ).toBe('To review');
+  });
+
+  it('keeps To review for an edited reply and says Question for an asking thread', () => {
+    const proposed = queueRowAt({ stage: 'proposed' });
+    expect(reviewCommentStateOf({ row: proposed, isEdited: true })).toBe('edited');
+    expect(reviewCommentWord({ state: 'edited', row: proposed })).toBe('To review');
+    const asking = queueRowAt({ stage: 'asking' });
+    expect(reviewCommentWord({ state: reviewCommentStateOf({ row: asking }), row: asking })).toBe(
+      'Question',
     );
   });
 
-  it('keeps Ready for an edited reply and Needs you for an asking thread', () => {
-    const proposed = rowAt({ stage: 'proposed' });
-    expect(reviewCommentStateOf({ row: proposed, isEdited: true })).toBe('edited');
-    expect(reviewCommentWord({ state: 'edited', row: proposed })).toBe('Ready');
-    const asking = rowAt({ stage: 'asking' });
-    expect(reviewCommentWord({ state: reviewCommentStateOf({ row: asking }), row: asking })).toBe(
-      'Needs you',
-    );
+  it('tells a push that failed from a fix run that could not fix', () => {
+    const push = queueRowAt({ stage: 'failed', failedStep: 'push' });
+    const run = queueRowAt({ stage: 'failed', failedStep: 'run' });
+    expect(reviewCommentWord({ state: 'failed', row: push })).toBe('Push failed');
+    expect(reviewCommentWord({ state: 'failed', row: run })).toBe("Couldn't fix");
+    expect(reviewCommentToneKeyOf({ state: 'failed', row: push })).toBe('push_failed');
+    expect(reviewCommentToneKeyOf({ state: 'failed', row: run })).toBe('failed');
   });
 });
 
 describe('review state tones', () => {
-  it('keeps warning for Needs you only and gives Ready, Edited and Outdated their own', () => {
+  it("draws Couldn't fix as a warning everywhere and a failed push as the only red", () => {
+    expect(REVIEW_COMMENT_TONE.failed).toBe('warning');
+    expect(REVIEW_COMMENT_TONE.push_failed).toBe('danger');
+    expect(STATE_CHIP_TONE.failed).toBe('warning');
+    expect(STATE_CHIP_TONE.push_failed).toBe('danger');
+    expect(STATE_WORD_TONE.failed).toContain('warning');
+    expect(STATE_WORD_TONE.push_failed).toContain('danger');
+    expect(REVIEW_COMMENT_NODE.failed).not.toBe(REVIEW_COMMENT_NODE.push_failed);
+  });
+
+  it('reads every proposal that waits for your Accept as a warning, and a sent one as neutral', () => {
+    for (const state of ['ready', 'edited', 'outdated'] as const) {
+      expect(STATE_WORD_TONE[state]).toContain('warning');
+      expect(REVIEW_COMMENT_TONE[state]).toBe('warning');
+    }
     expect(STATE_WORD_TONE.needs).toContain('warning');
-    expect(STATE_WORD_TONE.ready).not.toContain('warning');
-    expect(STATE_WORD_TONE.edited).not.toContain('warning');
-    expect(STATE_WORD_TONE.outdated).not.toContain('warning');
-    expect(
-      new Set([STATE_WORD_TONE.ready, STATE_WORD_TONE.edited, STATE_WORD_TONE.outdated]).size,
-    ).toBe(3);
+    expect(REVIEW_COMMENT_TONE.pushed).toBe('neutral');
+    expect(REVIEW_COMMENT_TONE.accepted).toBe('success');
   });
 });

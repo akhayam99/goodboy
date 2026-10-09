@@ -111,11 +111,27 @@ const mountFailed = async ({
 const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments' });
 
 const row = (name: RegExp): HTMLElement =>
-  within(list())
-    .getAllByRole('button')
-    .find((candidate) => name.test(candidate.textContent ?? '')) ??
+  Array.from(list().querySelectorAll<HTMLElement>('button[data-thread-id]')).find((candidate) =>
+    name.test(candidate.textContent ?? ''),
+  ) ??
   (() => {
     throw new Error(`no row ${String(name)}`);
+  })();
+
+const rowDescribed = (name: RegExp): HTMLElement =>
+  Array.from(list().querySelectorAll<HTMLElement>('button[data-thread-id]')).find((candidate) =>
+    name.test(candidate.getAttribute('aria-description') ?? ''),
+  ) ??
+  (() => {
+    throw new Error(`no row described ${String(name)}`);
+  })();
+
+const bar = (): HTMLElement => screen.getByRole('toolbar', { name: 'Comment actions' });
+
+const headerPush = (name: RegExp): HTMLElement =>
+  screen.getAllByRole('button', { name }).find((button) => !list().contains(button)) ??
+  (() => {
+    throw new Error(`no header button ${String(name)}`);
   })();
 
 const comment = (): HTMLElement => screen.getByRole('article', { name: 'Comment' });
@@ -132,13 +148,17 @@ describe('Review as one flow', () => {
 
     expect(within(list()).getByRole('region', { name: 'Needs you' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Working' })).toBeDefined();
-    expect(within(list()).getByRole('region', { name: 'Ready' })).toBeDefined();
+    expect(within(list()).getByRole('region', { name: 'Ready to push' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Open' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
+    expect(within(list()).getByRole('region', { name: 'Left open on GitHub' })).toBeDefined();
     expect(focusedThread()).toBe(EXPANDED_THREAD_ID);
     expect(screen.queryByRole('complementary', { name: 'Conversation' })).toBeNull();
     expect(document.querySelector('[data-conversation-slot]')).toBeNull();
-    expect(within(comment()).getByRole('button', { name: /^Accept/ })).toBeDefined();
+    expect(within(bar()).getByRole('button', { name: /^Accept/ })).toBeDefined();
+    expect(
+      comment().compareDocumentPosition(bar()) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('counts each state group in its own title and has no summary line or filter menu', async () => {
@@ -154,22 +174,28 @@ describe('Review as one flow', () => {
     await mount({ threadId: null });
 
     const toggle = within(list()).getByRole('button', { name: /^Done \d+/ });
+    const leftOpen = within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(within(list()).queryByText('Pushed')).toBeNull();
+    expect(leftOpen.getAttribute('aria-expanded')).toBe('false');
+    expect(within(list()).queryByText('Done')).toBeNull();
+    expect(within(list()).queryByText('Left open')).toBeNull();
 
     fireEvent.click(toggle);
+    fireEvent.click(leftOpen);
 
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(within(list()).getAllByText(/Pushed|Skipped/).length).toBeGreaterThan(0);
+    expect(leftOpen.getAttribute('aria-expanded')).toBe('true');
+    expect(within(list()).getAllByText('Done').length).toBeGreaterThan(0);
+    expect(within(list()).getAllByText('Left open').length).toBeGreaterThan(0);
   });
 
-  it("orders the groups Needs you, Working, Ready, Couldn't fix, Open, Done", async () => {
+  it('orders the groups Needs you, Working, Ready to push, Open, Done, Left open', async () => {
     await mount({ threadId: null });
 
     const titles = within(list())
       .getAllByRole('region')
       .map((region) => region.getAttribute('aria-label'));
-    const wanted = ['Needs you', 'Working', 'Ready', "Couldn't fix", 'Open', 'Done'];
+    const wanted = ['Needs you', 'Working', 'Ready to push', 'Open', 'Done', 'Left open on GitHub'];
     expect(titles).toEqual(wanted.filter((title) => titles.includes(title)));
     expect(titles[0]).toBe('Needs you');
   });
@@ -177,16 +203,18 @@ describe('Review as one flow', () => {
   it('names every state with its own word and never says Resolve on a control', async () => {
     await mount({ threadId: null });
     fireEvent.click(within(list()).getByRole('button', { name: /^Done \d+/ }));
+    fireEvent.click(within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ }));
 
-    const words = within(list())
-      .getAllByRole('button')
-      .map((button) => button.textContent ?? '');
-    expect(words.some((text) => text.includes('Ready'))).toBe(true);
-    expect(words.some((text) => text.includes('Needs you'))).toBe(true);
-    expect(words.some((text) => text.includes('Working'))).toBe(true);
-    expect(words.some((text) => text.includes('Open'))).toBe(true);
-    expect(words.some((text) => text.includes('Skipped'))).toBe(true);
-    expect(words.some((text) => text.includes('Pushed'))).toBe(true);
+    const words = Array.from(list().querySelectorAll('[data-row-state]')).map(
+      (node) => node.textContent ?? '',
+    );
+    for (const word of ['To review', 'Question', 'Working', 'Ready', 'Open', 'Left open', 'Done']) {
+      expect(words, word).toContain(word);
+    }
+    expect(words).not.toContain('Needs you');
+    expect(words).not.toContain('Skipped');
+    expect(words).not.toContain('Pushed');
+    expect(words).not.toContain('Accepted');
     const labels = screen.getAllByRole('button').map((button) => button.textContent ?? '');
     expect(
       labels.filter((label) => /^Resolve\b/.test(label) && label !== 'Resolve without a reply'),
@@ -264,7 +292,7 @@ describe('Review as one flow', () => {
       await mount({ threadId: NOT_STARTED_THREAD_ID });
 
       expect(queryPanel()).toBeNull();
-      fireEvent.click(within(comment()).getByRole('button', { name: /^Fix/ }));
+      fireEvent.click(within(bar()).getByRole('button', { name: /^Fix/ }));
 
       const opened = await screen.findByRole('region', { name: 'Fix launch' });
       expect(within(opened).getByText('Fix 1 comment')).toBeDefined();
@@ -274,6 +302,24 @@ describe('Review as one flow', () => {
       expect(opened.closest('nav')).toBeNull();
       expect(spawnAgent).not.toHaveBeenCalled();
       expect(createResolveBatch).not.toHaveBeenCalled();
+    });
+
+    it('raises no toast when the batch cannot start, and shows the error in the panel', async () => {
+      const createResolveBatch = vi.fn<StoreState['createResolveBatch']>(async () => {
+        throw new Error('The batch was refused');
+      });
+      stub({ createResolveBatch });
+      await mount({ threadId: NOT_STARTED_THREAD_ID });
+
+      fireEvent.click(within(bar()).getByRole('button', { name: /^Fix/ }));
+      const opened = await screen.findByRole('region', { name: 'Fix launch' });
+      const hint = within(opened).getByLabelText('Note for the fix run');
+      fireEvent.keyDown(hint, { key: 'Enter', code: 'Enter', ctrlKey: true });
+
+      await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
+      expect(await within(opened).findByText(/The batch was refused/)).toBeDefined();
+      expect(screen.queryByText('Fix run started')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Follow' })).toBeNull();
     });
 
     it('keeps the list and its selected comment where they are when it opens', async () => {
@@ -312,7 +358,7 @@ describe('Review as one flow', () => {
       const { createResolveBatch, spawnAgent } = stubBatch();
       await mount({ threadId: NOT_STARTED_THREAD_ID });
 
-      fireEvent.click(within(comment()).getByRole('button', { name: /^Fix/ }));
+      fireEvent.click(within(bar()).getByRole('button', { name: /^Fix/ }));
       const opened = await screen.findByRole('region', { name: 'Fix launch' });
       const hint = within(opened).getByLabelText('Note for the fix run');
       fireEvent.change(hint, { target: { value: 'Keep the public API unchanged' } });
@@ -327,7 +373,9 @@ describe('Review as one flow', () => {
       });
       await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
       await waitFor(() => expect(queryPanel()).toBeNull());
-      expect(screen.queryByRole('status')).toBeNull();
+      expect(await screen.findByText('Fix run started')).toBeDefined();
+      expect(screen.getByText('1 comment on payments-api')).toBeDefined();
+      expect(screen.getAllByRole('button', { name: 'Follow' })).toHaveLength(1);
     });
 
     it('is bound to the selection: unchecking drops a comment and checking in the list adds one', async () => {
@@ -476,28 +524,29 @@ describe('Review as one flow', () => {
     await waitFor(() => expect(focusedThread()).not.toBe(EXPANDED_THREAD_ID));
   });
 
-  it('keeps the word, its chip and the author at full size and lets the file truncate first', async () => {
+  it('keeps the word and the author at full size, moves the chip to the tooltip and lets the file truncate first', async () => {
     await mount({ threadId: null });
 
-    const changed = row(/Comment changed/);
+    const changed = rowDescribed(/Comment changed/);
     expect(changed.querySelector('[data-row-author]')?.textContent).toBe('kenji-w');
     expect(changed.querySelector('[data-row-file]')?.textContent).toMatch(/\.ts/);
-    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('Ready · Comment changed');
+    expect(changed.querySelector('[data-row-state]')?.textContent).toBe('To review');
+    expect(changed.textContent).not.toContain('Comment changed');
   });
 
   it('names a real edit with the text before and after, who wrote it, and Keep the draft', async () => {
     await mount({ threadId: 'PRRT_thread_typo' });
 
-    expect(row(/Comment changed/)).toBeDefined();
+    expect(rowDescribed(/Comment changed/)).toBeDefined();
     const card = within(comment()).getByRole('region', { name: 'Comment edited' });
     expect(within(card).getByText(/Edited by kenji-w/)).toBeDefined();
     expect(card.textContent).toContain('Also rename the flag to shouldRetry.');
     expect(
-      within(comment()).getByRole('button', { name: /^Redraft with the new comment/ }),
+      within(bar()).getByRole('button', { name: /^Redraft with the new comment/ }),
     ).toBeDefined();
     const settle = vi.fn(async () => undefined);
     stub({ settleResolveSourceChange: settle });
-    fireEvent.click(within(comment()).getByRole('button', { name: /^Keep the draft/ }));
+    fireEvent.click(within(bar()).getByRole('button', { name: /^Keep the draft/ }));
     await waitFor(() =>
       expect(settle).toHaveBeenCalledWith({
         sessionId: SESSION.id,
@@ -510,20 +559,24 @@ describe('Review as one flow', () => {
   it('shows a new reply as a fact and keeps Accept available', async () => {
     await mount({ threadId: 'PRRT_thread_retry_metrics' });
 
-    expect(row(/Same loop should emit/).textContent).not.toContain('Comment changed');
+    expect(row(/Same loop should emit/).getAttribute('aria-description') ?? '').not.toContain(
+      'Comment changed',
+    );
     const note = within(comment()).getByText('New reply from nadia-p');
     expect(note).toBeDefined();
     expect(within(comment()).getAllByText(/A counter per give-up reason/).length).toBeGreaterThan(
       0,
     );
-    expect(within(comment()).getByRole('button', { name: /^Accept/ })).toBeDefined();
+    expect(within(bar()).getByRole('button', { name: /^Accept/ })).toBeDefined();
   });
 
   it('shows the moved line as a fact on the comment without changing its state', async () => {
     await mount({ threadId: 'PRRT_thread_flaky_test' });
 
     expect(within(comment()).getByText('The line moved')).toBeDefined();
-    expect(row(/This test sleeps/).textContent).not.toContain('Comment changed');
+    expect(row(/This test sleeps/).getAttribute('aria-description') ?? '').not.toContain(
+      'Comment changed',
+    );
   });
 
   it('moves with J and K while the list has focus', async () => {
@@ -542,9 +595,9 @@ describe('Review as one flow', () => {
   it('replies without a change from one text box: R, type, Cmd+Enter, Enter adds a line', async () => {
     const refuse = vi.fn<StoreState['refuseResolveQueueItem']>(async () => undefined);
     stub({ refuseResolveQueueItem: refuse });
-    await mount({ threadId: EXPANDED_THREAD_ID });
+    await mount({ threadId: NOT_STARTED_THREAD_ID });
 
-    row(/retryPolicy\.ts:42/).focus();
+    row(/config\.ts/).focus();
     press('r', 'KeyR');
     const box = await within(comment()).findByRole('textbox', { name: 'Your reply' });
     fireEvent.change(box, { target: { value: 'We keep the cap at 6 on purpose.' } });
@@ -558,7 +611,24 @@ describe('Review as one flow', () => {
     );
   });
 
-  it('skips with S and undoes a skip from the waiting group', async () => {
+  it('drops the change with R on a proposal to review: Reply only goes out with the push', async () => {
+    const switchToReplyOnly = vi.fn<StoreState['switchToReplyOnly']>(async () => undefined);
+    stub({ switchToReplyOnly });
+    await mount({ threadId: EXPANDED_THREAD_ID });
+
+    expect(within(bar()).getByRole('button', { name: /^Reply only/ })).toBeDefined();
+    row(/retryPolicy\.ts:42/).focus();
+    press('r', 'KeyR');
+
+    await waitFor(() =>
+      expect(switchToReplyOnly).toHaveBeenCalledWith({
+        sessionId: SESSION.id,
+        threadId: EXPANDED_THREAD_ID,
+      }),
+    );
+  });
+
+  it('skips with S and undoes the skip from Left open', async () => {
     const defer = vi.fn<StoreState['deferResolveQueueItem']>(async () => undefined);
     const takeUp = vi.fn<StoreState['takeUpResolveQueueItem']>(async () => undefined);
     stub({
@@ -571,18 +641,18 @@ describe('Review as one flow', () => {
     press('s', 'KeyS');
     await waitFor(() => expect(defer).toHaveBeenCalledOnce());
 
-    fireEvent.click(within(list()).getByRole('button', { name: /^Done \d+/ }));
-    fireEvent.click(row(/Skipped/));
+    fireEvent.click(within(list()).getByRole('button', { name: /^Left open on GitHub \d+/ }));
+    fireEvent.click(row(/Left open/));
     await settle();
-    fireEvent.click(within(comment()).getByRole('button', { name: /^Resume/ }));
+    fireEvent.click(within(bar()).getByRole('button', { name: /^Undo skip/ }));
     await waitFor(() => expect(takeUp).toHaveBeenCalledOnce());
   });
 
-  it('answers the agent with E on a comment that needs you', async () => {
+  it('answers the agent with E on a question', async () => {
     await mount({ threadId: null });
-    fireEvent.click(row(/Needs you/));
+    fireEvent.click(row(/Question/));
     await settle();
-    row(/Needs you/).focus();
+    row(/Question/).focus();
     press('e', 'KeyE');
 
     expect(await within(comment()).findByRole('textbox', { name: 'Your answer' })).toBeDefined();
@@ -594,23 +664,21 @@ describe('Review as one flow', () => {
     expect(within(comment()).queryByRole('textbox', { name: 'Your answer' })).toBeNull();
   });
 
-  it('keeps Stop and the transcript on the properties of a drafting comment, not in a menu', async () => {
+  it('keeps Stop and the transcript in the action bar of a drafting comment, behind a confirm', async () => {
     await mount({ threadId: null });
     fireEvent.click(row(/Working/));
     await settle();
 
-    expect(within(comment()).queryAllByRole('button', { name: /^Accept|^Edit|^Reply/ })).toEqual(
-      [],
-    );
-    expect(screen.queryByRole('button', { name: 'Comment actions' })).toBeNull();
-    const properties = screen.getAllByLabelText('Comment properties')[0] as HTMLElement;
-    expect(within(properties).getByRole('button', { name: 'Stop' })).toBeDefined();
+    expect(within(bar()).queryAllByRole('button', { name: /^Accept|^Edit|^Reply/ })).toEqual([]);
+    expect(within(bar()).getByRole('button', { name: 'Open transcript' })).toBeDefined();
+    fireEvent.click(within(bar()).getByRole('button', { name: 'Stop' }));
+    expect(await screen.findByText('Stop this fix run?')).toBeDefined();
   });
 
   it('opens the not started comment with Fix as its one primary', async () => {
     await mount({ threadId: 'PRRT_thread_retry_constant' });
 
-    const verbs = within(comment())
+    const verbs = within(bar())
       .getAllByRole('button')
       .filter((button) => button.hasAttribute('data-review-verb'))
       .map((button) => button.getAttribute('data-review-verb'));
@@ -668,9 +736,9 @@ describe('Review as one flow', () => {
     });
     await mount({ threadId: EXPANDED_THREAD_ID });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Push 1/ }));
+    fireEvent.click(headerPush(/^Push 1/));
     const confirm = await screen.findByRole('group', {
-      name: 'Push 1 to hl/fix-duplicate-credit?',
+      name: 'Push 1 commit to hl/fix-duplicate-credit?',
     });
     expect(
       within(confirm).getByText(/1 fix in 1 new commit, 1 reply, 1 thread resolved/),
@@ -711,7 +779,7 @@ describe('Review as one flow', () => {
     stub({ preparePublication: prepare });
     await mount({ threadId: THREAD_IDS.logRedact });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Push 1/ }));
+    fireEvent.click(headerPush(/^Push 1/));
     await waitFor(() => expect(prepare).toHaveBeenCalledOnce());
     expect(prepare).toHaveBeenLastCalledWith({
       sessionId: SESSION.id,
@@ -810,6 +878,8 @@ describe('Review of a failed run', () => {
     const args = spawnAgent.mock.calls[0]?.[1];
     expect(args?.model).toBe('claude-opus-5');
     expect(args?.effort).toBe('high');
+    expect(await screen.findByText('Fix run started')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Follow' })).toHaveLength(1);
   });
 
   it('opens the hint field and sends it with the retry to the same run', async () => {
@@ -858,6 +928,7 @@ describe('Review of a failed run', () => {
       threadIds: [FAILED_THREAD_ID],
     });
     expect(spawnAgent).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Fix run started|Fix queued/)).toBeNull();
   });
 
   it('opens the model list from Try another model in the menu', async () => {

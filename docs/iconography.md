@@ -103,7 +103,7 @@ The left column, the switcher and the hover card draw a session's state as a
 holds the session, from `ATTENTION_REASON_META` in
 `features/session/session-stage.ts`, which gives each reason a mark, a tone and
 a sentence that the Board card, the Now chip rows and the palette read too. Red
-`!` (`failed`) is only an agent error and failing checks. Amber is what you must
+`!` (`failed`) is only an agent error, a push that failed (`push-failed`, "1 comment didn't go out") and failing checks. Amber is what you must
 answer, approve or act on: `?` for a question or a comment that needs you, the
 shield for an approval or a held plan, and an amber `!` (`alert`) for changes
 requested and comments the fix could not fix. A solid green disc with a white

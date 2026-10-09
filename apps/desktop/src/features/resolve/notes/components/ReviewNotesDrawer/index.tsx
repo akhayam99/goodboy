@@ -10,7 +10,7 @@ import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { useActionEnv } from '../../../../actions/useActionEnv';
 import { useObjectActions } from '../../../../actions/useObjectActions';
 import { ResolveRunStatus } from '../../../components/ReviewFlow/ResolveRunStatus';
-import type { FixRunWord } from '../../../fixRun';
+import { FIX_RUN_CHIPS, FIX_RUN_CHIP_WORDS, type FixRunChipKey } from '../../../fixRun';
 import { useReviewCommentController } from '../../../hooks/useReviewCommentController';
 import { noteIdOfThread } from '../../noteThread';
 import { reviewNotesDrawer } from '../../notesDrawer';
@@ -68,7 +68,7 @@ export const ReviewNotesDrawer = ({
       ).length,
   );
   const [excluded, setExcluded] = useState<ReadonlySet<string>>(NONE_EXCLUDED);
-  const [filter, setFilter] = useState<FixRunWord | null>(null);
+  const [filter, setFilter] = useState<FixRunChipKey | null>(null);
   const [isClosedShown, setIsClosedShown] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -185,8 +185,11 @@ export const ReviewNotesDrawer = ({
   }, []);
 
   const postNotes = actions.find((action) => action.id === POST_NOTES_ACTION) ?? null;
-  const activeFilter =
-    fixRun !== null && filter !== null && fixRun.tally[filter] > 0 ? filter : null;
+  const activeFilterCount =
+    fixRun === null || filter === null
+      ? 0
+      : (FIX_RUN_CHIPS.find((chip) => chip.key === filter)?.countOf(fixRun.tally) ?? 0);
+  const activeFilter = activeFilterCount > 0 ? filter : null;
   const groups = useMemo(
     () =>
       activeFilter === null
@@ -194,7 +197,9 @@ export const ReviewNotesDrawer = ({
         : notes.groups
             .map((group) => ({
               ...group,
-              entries: group.entries.filter((entry) => entry.resolveWord === activeFilter),
+              entries: group.entries.filter((entry) =>
+                FIX_RUN_CHIP_WORDS[activeFilter].includes(entry.resolveWord),
+              ),
             }))
             .filter((group) => group.entries.length > 0),
     [activeFilter, notes.groups],

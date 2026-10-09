@@ -52,7 +52,7 @@ export const useReviewNotes = ({ sessionId }: { readonly sessionId: SessionId })
       run: fixRunOf({
         sources: notes.map((entry) => ({
           threadId: entry.threadId,
-          state: entry.state,
+          word: entry.resolveWord,
           attempt: entry.row.attempt,
         })),
       }),

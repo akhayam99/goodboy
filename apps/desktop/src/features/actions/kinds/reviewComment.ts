@@ -567,6 +567,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: 'Reply only',
       icon: CornerDownRight,
       group: 'act',
+      shortcut: 'review.reply',
       when: ({ facts }) =>
         !facts.isReplyOnly &&
         !facts.hasFixOnBranch &&
@@ -586,7 +587,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.postReplyNow',
-      label: ({ facts }) => (facts.state === 'failed' ? 'Retry' : 'Post reply now'),
+      label: ({ facts }) => (facts.state === 'failed' ? 'Retry push' : 'Post reply now'),
       icon: Send,
       group: 'act',
       when: ({ facts }) =>
@@ -624,7 +625,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.undo',
-      label: ({ facts }) => (facts.state === 'skipped' ? 'Resume' : 'Undo'),
+      label: ({ facts }) => (facts.state === 'skipped' ? 'Undo skip' : 'Undo'),
       icon: Undo2,
       group: 'act',
       shortcut: 'review.undo',

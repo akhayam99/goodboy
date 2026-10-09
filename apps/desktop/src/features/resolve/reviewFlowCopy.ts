@@ -1,3 +1,4 @@
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { ReviewComposeMode } from '../review/reviewRequest';
 
 export const REVIEW_FLOW_LABEL = {
@@ -89,24 +90,39 @@ export const composePlaceholder = ({
     ? `The reviewer reads this on ${provider} after the push`
     : COMPOSE_COPY[mode].placeholder;
 
+const sentToHost = ({
+  provider,
+  sha,
+  canResolve,
+}: {
+  readonly provider: string;
+  readonly sha: string | null;
+  readonly canResolve: boolean;
+}): string => {
+  const where = sha === null ? provider : `${provider} in ${sha.slice(0, 7)}`;
+  return canResolve ? `Sent to ${where} and the thread is resolved.` : `Sent to ${where}.`;
+};
+
 export const decidedNote = ({
   state,
   sha,
-  provider = 'GitHub',
+  provider = REVIEW_SOURCE_LABEL.github,
+  canResolve = true,
 }: {
   readonly state: 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved';
   readonly sha: string | null;
   readonly provider?: string;
+  readonly canResolve?: boolean;
 }): string => {
   switch (state) {
     case 'accepted':
       return 'Accepted. It goes out with the next push.';
     case 'replied':
-      return 'Reply only. It goes out with the next push.';
+      return 'Reply only. It goes out with the next push. No code change.';
     case 'skipped':
-      return `Skipped. It stays open on ${provider} and never blocks the push.`;
+      return `Left open on ${provider}. You skipped it. The thread stays open there.`;
     case 'pushed':
-      return sha === null ? 'Pushed.' : `Pushed in ${sha.slice(0, 7)}.`;
+      return sentToHost({ provider, sha, canResolve });
     case 'resolved':
       return `Resolved on ${provider} by someone else.`;
     default: {
@@ -120,7 +136,6 @@ export const REPLY_NOTE_COPY = {
   alone: 'Reply only. Nothing else is waiting to push, so it can go out now.',
   posting: 'Posting the reply',
   posted: ({ provider }: { readonly provider: string }): string => `Replied on ${provider}.`,
-  viewComment: 'View comment',
   postNow: 'Post reply now',
   retry: 'Retry',
 } as const;

@@ -22,9 +22,11 @@ import {
 } from '../../../../store/storyHarness';
 import { noteRow } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import {
+  QUEUE_ITEMS,
   SESSION_ID,
   buildItem,
   buildThread,
+  seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { usePageSummaries } from '.';
 
@@ -53,52 +55,73 @@ const waitingNote = (): ResolveQueueItemWithThread => {
   return { item: row.item, thread: { ...row.thread, state: 'needs_answer', stage: 'asking' } };
 };
 
-const waitingComment = (): ResolveQueueItemWithThread => ({
-  item: buildItem({
-    id: 'mock-item-comment',
-    threadId: 'PRRT_comment',
-    approvalState: 'none',
-    approvedRevision: null,
-    deferredAt: null,
-    deliveredAt: null,
-    candidateRevision: 1,
-    createdMinutesAgo: 5,
-  }),
-  thread: buildThread({
-    threadId: 'PRRT_comment',
-    state: 'needs_answer',
-    stage: 'asking',
-    revision: 1,
-    activeAttemptId: null,
-    disposition: null,
-    replyDraft: null,
-    question: 'Reject here or in the API?',
-    createdMinutesAgo: 5,
-  }),
-});
-
 describe('usePageSummaries counts comments and notes apart', () => {
-  it('counts one waiting comment as need you and one waiting note on the Branch page', () => {
+  it('counts the comments that need you once, and one waiting note on the Branch page', () => {
+    seedResolveScene({ expandedThreadId: null });
     useAppStore.setState({
-      sessionResolveQueueItems: { [SESSION_ID]: [waitingComment(), waitingNote()] },
-      sessionResolveAttempts: { [SESSION_ID]: [] },
+      sessionResolveQueueItems: { [SESSION_ID]: [...QUEUE_ITEMS, waitingNote()] },
     });
     const { result } = renderHook(() =>
       usePageSummaries({ session: aSession({ id: SESSION_ID }) }),
     );
 
-    expect(result.current.branch).toBe('1 need you · 1 note');
+    expect(result.current.branch).toBe('4 need you · 1 note');
   });
 
-  it('says nothing about notes when only a comment waits', () => {
+  it('says nothing about notes when only comments wait', () => {
+    seedResolveScene({ expandedThreadId: null });
+    const { result } = renderHook(() =>
+      usePageSummaries({ session: aSession({ id: SESSION_ID }) }),
+    );
+
+    expect(result.current.branch).toBe('4 need you');
+  });
+
+  it('counts a question, a proposal to review and a failed push as the same need', () => {
+    seedResolveScene({ expandedThreadId: null });
+    const pushFailed = {
+      item: buildItem({
+        id: 'mock-item-push-failed',
+        threadId: 'PRRT_push_failed',
+        approvalState: 'accepted',
+        approvedRevision: 1,
+        deferredAt: null,
+        deliveredAt: null,
+        candidateRevision: 1,
+        createdMinutesAgo: 5,
+      }),
+      thread: {
+        ...buildThread({
+          threadId: 'PRRT_push_failed',
+          state: 'failed',
+          stage: 'failed',
+          revision: 1,
+          activeAttemptId: null,
+          disposition: 'fix',
+          replyDraft: 'Done.',
+          question: null,
+          createdMinutesAgo: 5,
+        }),
+        stateReason: 'publication_failed:rejected',
+      },
+    };
     useAppStore.setState({
-      sessionResolveQueueItems: { [SESSION_ID]: [waitingComment()] },
-      sessionResolveAttempts: { [SESSION_ID]: [] },
+      sessionResolveQueueItems: { [SESSION_ID]: [...QUEUE_ITEMS, pushFailed] },
     });
     const { result } = renderHook(() =>
       usePageSummaries({ session: aSession({ id: SESSION_ID }) }),
     );
 
-    expect(result.current.branch).toBe('1 need you');
+    expect(result.current.branch).toBe('5 need you');
+  });
+
+  it('says nothing when no pull request is selected, as the Comments tab does', () => {
+    seedResolveScene({ expandedThreadId: null });
+    useAppStore.setState({ sessionGithub: {} });
+    const { result } = renderHook(() =>
+      usePageSummaries({ session: aSession({ id: SESSION_ID }) }),
+    );
+
+    expect(result.current.branch).toBeUndefined();
   });
 });

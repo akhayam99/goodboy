@@ -327,7 +327,7 @@ against the content, and the board header sits `gap-6` above its columns. A
 content, never a boundary inside content. Allowed: a vertical divider inside
 the chrome (between top bar or footer groups), a pane's fixed header against its
 scrolling body (the chat composer in a `PaneShell` dock, the `DrawerFrame`
-header), and inside a
+header, the comment action bar under the Branch thread), and inside a
 floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 
