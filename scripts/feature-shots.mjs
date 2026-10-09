@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { appVersionOf, recordFigure } from './lib/figures.mjs';
+import { appVersionOf, recipeOf, recordFigure } from './lib/figures.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIRECTORY = resolve(
@@ -65,22 +65,6 @@ const parseArgs = (argv) => {
     themes: (args.themes ?? THEMES.join(',')).split(','),
     base: args.base ?? process.env.GOODBOY_SHOT_URL ?? 'http://localhost:5230',
   };
-};
-
-const RECIPE_SKIPPED = new Set(['out', 'base', 'version']);
-
-const recipeOf = ({ argv }) => {
-  const parts = [];
-  for (let index = 0; index < argv.length; index += 2) {
-    const key = argv[index].replace(/^--/, '');
-    if (!RECIPE_SKIPPED.has(key)) {
-      parts.push(
-        argv[index],
-        /^[\w.,:=/%@-]+$/.test(argv[index + 1]) ? argv[index + 1] : `'${argv[index + 1]}'`,
-      );
-    }
-  }
-  return parts.join(' ');
 };
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -182,9 +166,9 @@ function centerOf(selector) {
   return [rect.x + rect.width / 2, rect.y + rect.height / 2];
 }
 
-function scrollToTop(selector) {
+function scrollToTop({ selector }) {
   const element = this.querySelector(selector);
-  if (!element) {
+  if (element === null) {
     return false;
   }
   element.scrollIntoView({ block: 'start' });
@@ -232,11 +216,11 @@ const captureScene = async ({ send, options, theme }) => {
     }
     await sleep(600);
   }
-  if (options.scroll) {
+  if (options.scroll !== null) {
     const isScrolled = await callInPage({
       send,
       pageFunction: scrollToTop,
-      argument: options.scroll,
+      argument: { selector: options.scroll },
     });
     if (isScrolled !== true) {
       throw new Error(`scroll ${options.scroll} not found in ${url}`);

@@ -110,8 +110,8 @@ const browser = async () => {
       const patience = new Promise((resolvePromise) => {
         setTimeout(() => resolvePromise(false), CLOSE_GRACE_MS).unref();
       });
-      const stopped = await Promise.race([exited.then(() => true), patience]);
-      if (!stopped) {
+      const isStopped = await Promise.race([exited.then(() => true), patience]);
+      if (!isStopped) {
         child.kill('SIGKILL');
         await exited;
       }

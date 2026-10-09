@@ -335,7 +335,7 @@ Every figure has one caption line under its `<picture>`, after a blank line:
 source of that version, keyed `features/<name>` for a guide figure and
 `readme/readme-hero` for the README hero. `pnpm features:shots` and
 `pnpm readme:hero` write the entry when a capture ends, with the shot args as
-its `recipe`, so re-shooting a figure moves its version and a figure left alone
+its `recipe`, quoted so a POSIX shell reruns it as typed, so re-shooting a figure moves its version and a figure left alone
 keeps the version it was shot at. A trial shot under a name no guide uses adds
 an entry no picture uses: delete it, because `pnpm run check:doc-refs` fails on
 it. The same check fails when a figure has no entry, when a caption differs

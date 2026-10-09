@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 export const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FIGURES_PATH = resolve(ROOT_DIRECTORY, 'docs/figures.json');
 export const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
+const SHELL_SAFE_PATTERN = /^[\w.,:=/%@-]+$/;
+const RECIPE_SKIPPED = new Set(['out', 'base', 'version']);
 
 export const captionOf = ({ version }) => `<sub>Screenshot from Goodboy ${version}</sub>`;
 
@@ -31,4 +33,18 @@ export const recordFigure = ({ key, version, recipe, path = FIGURES_PATH }) => {
   );
   writeFileSync(path, `${JSON.stringify(sorted, null, 2)}\n`);
   return entry;
+};
+
+export const shellQuoteOf = ({ value }) =>
+  SHELL_SAFE_PATTERN.test(value) ? value : `'${value.replaceAll("'", "'\\''")}'`;
+
+export const recipeOf = ({ argv }) => {
+  const parts = [];
+  for (let index = 0; index < argv.length; index += 2) {
+    const key = argv[index].replace(/^--/, '');
+    if (!RECIPE_SKIPPED.has(key)) {
+      parts.push(argv[index], shellQuoteOf({ value: argv[index + 1] }));
+    }
+  }
+  return parts.join(' ');
 };

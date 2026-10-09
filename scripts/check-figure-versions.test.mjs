@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -9,7 +10,7 @@ import {
   findProblems,
   writeCaptions,
 } from './check-figure-versions.mjs';
-import { appVersionOf, recordFigure } from './lib/figures.mjs';
+import { appVersionOf, recipeOf, recordFigure, shellQuoteOf } from './lib/figures.mjs';
 
 const MEDIA = 'https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features';
 
@@ -154,5 +155,57 @@ describe('appVersionOf', () => {
   it('prefers an override and rejects anything but x.y.z', () => {
     assert.equal(appVersionOf({ override: '0.23.0' }), '0.23.0');
     assert.throws(() => appVersionOf({ override: 'next' }));
+  });
+});
+
+describe('shellQuoteOf', () => {
+  it('leaves plain words alone and wraps anything else in single quotes', () => {
+    assert.equal(shellQuoteOf({ value: '1280x800' }), '1280x800');
+    assert.equal(shellQuoteOf({ value: 'inbox&brand=1' }), "'inbox&brand=1'");
+    assert.equal(shellQuoteOf({ value: '' }), "''");
+  });
+
+  it('closes, escapes and reopens the quote around an apostrophe', () => {
+    assert.equal(shellQuoteOf({ value: "What's new" }), "'What'\\''s new'");
+  });
+});
+
+describe('recipeOf', () => {
+  const wordsOf = ({ recipe }) =>
+    execFileSync('sh', ['-c', `printf '%s\\n' ${recipe}`], { encoding: 'utf8' })
+      .split('\n')
+      .slice(0, -1);
+
+  it('drops the output arguments and keeps the rest in order', () => {
+    const recipe = recipeOf({
+      argv: [
+        '--scene',
+        'inbox&brand=1',
+        '--out',
+        'inbox-list',
+        '--wait',
+        '8000',
+        '--version',
+        '0.23.0',
+      ],
+    });
+    assert.equal(recipe, "--scene 'inbox&brand=1' --wait 8000");
+  });
+
+  it('reruns in a shell as the same arguments, apostrophes and metacharacters included', () => {
+    const kept = [
+      '--scene',
+      'inbox&brand=1',
+      '--click',
+      "What's new,Plans",
+      '--selector',
+      "a[title='x y']",
+      '--hover',
+      '$HOME `id` "q" \\ end',
+    ];
+    const recipe = recipeOf({
+      argv: [...kept, '--out', 'shot', '--base', 'http://localhost:5230', '--version', '0.23.0'],
+    });
+    assert.deepEqual(wordsOf({ recipe }), kept);
   });
 });

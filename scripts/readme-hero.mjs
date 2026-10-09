@@ -14,7 +14,8 @@ const HEIGHT = 1600;
 const SCALE = 2;
 const SETTLE_MS = 3500;
 const LAYOUT_MS = 1200;
-const WEBSITE = process.argv[2]?.startsWith('http') ? process.argv[2] : 'http://localhost:1499';
+const WEBSITE =
+  process.argv[2]?.startsWith('http') === true ? process.argv[2] : 'http://localhost:1499';
 const VERSION_ARGUMENT = process.argv.indexOf('--version');
 
 const pause = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));

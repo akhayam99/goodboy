@@ -32,6 +32,7 @@ const SCROLL_STEP_PX = 600;
 const SCROLL_PAUSE_MS = 60;
 const TIMEOUT_MS = 480000;
 const HERO_MOCK_VISIBLE_PX = 380;
+const HERO_SETTLE_MS = 5000;
 const HERO_FIRST_SCREEN_PX = 900;
 const INTER_PROBE = '500 64px Inter';
 const REPO_BLOB_PREFIX = 'https://github.com/akhayam99/goodboy/blob/main/';
@@ -286,6 +287,13 @@ const PAGE_PROBE = `(async () => {
     .filter((image) => !(image.complete && image.naturalWidth > 0))
     .map((image) => (image.getAttribute('src') ?? '').split('/').pop());
   const heroMock = document.querySelector('[data-hero-mock]');
+  const heroRise = heroMock === null ? null : heroMock.closest('.rise') ?? heroMock;
+  if (heroRise !== null) {
+    await Promise.race([
+      Promise.all(heroRise.getAnimations().map((animation) => animation.finished.catch(() => null))),
+      new Promise((done) => setTimeout(done, ${HERO_SETTLE_MS})),
+    ]);
+  }
   const banner = document.querySelector('#iubenda-cs-banner .iubenda-cs-content');
   const h1 = document.querySelector('h1');
   const periods = [...document.querySelectorAll('h1, h2, h3')]
@@ -387,7 +395,7 @@ const PAGE_PROBE = `(async () => {
     periods,
     collisions,
     spills,
-    heroOpacity: heroMock === null ? null : Number(getComputedStyle(heroMock.closest('.rise') ?? heroMock).opacity),
+    heroOpacity: heroRise === null ? null : Number(getComputedStyle(heroRise).opacity),
     bannerCoversH1: banner !== null && h1 !== null && overlaps(banner.getBoundingClientRect(), h1.getBoundingClientRect()),
     eyebrows: [...document.querySelectorAll('.eyebrow')].map((node) => ({
       text: node.textContent.trim(),
