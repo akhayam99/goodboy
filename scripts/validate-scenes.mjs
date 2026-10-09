@@ -8,6 +8,7 @@ const CHROME =
 const ZOOMS = [1, 1.1];
 const WIDTHS = [1440, 1200, 1024, 880, 760];
 const HEIGHT = 1000;
+const WORKFLOW_SCROLL_HEIGHT = 520;
 const STILL_CAP_PX = 1;
 const SEAM_TOLERANCE_PX = 0.05;
 const META_GAP_CAP_PX = 80;
@@ -106,10 +107,17 @@ const run = async (send, fn, argument) => {
   return result.result?.result?.value;
 };
 
-const open = async ({ send, scene, width, zoom, readySelector = '[data-row-id]' }) => {
+const open = async ({
+  send,
+  scene,
+  width,
+  zoom,
+  height = HEIGHT,
+  readySelector = '[data-row-id]',
+}) => {
   await send('Emulation.setDeviceMetricsOverride', {
     width: Math.round(width / zoom),
-    height: Math.round(HEIGHT / zoom),
+    height: Math.round(height / zoom),
     deviceScaleFactor: 2 * zoom,
     mobile: false,
   });
@@ -176,6 +184,7 @@ const validateWorkflowScroll = async ({ send, scene, click }) => {
     scene,
     width: 880,
     zoom: 1,
+    height: WORKFLOW_SCROLL_HEIGHT,
     readySelector: '[data-studio-overlay]',
   });
   if (click !== null) {
@@ -236,7 +245,10 @@ const planDrawerHeader = async ({ until, tolerance }) => {
     rowSpread: Math.max(...centres) - Math.min(...centres),
     overflow: toolbar.scrollWidth - toolbar.clientWidth,
     pastEdge: children.filter((child) => child.right > box.right + 0.5).map((child) => child.label),
-    titleLines: title === null || lineHeight === 0 ? 0 : Math.round(title.getBoundingClientRect().height / lineHeight),
+    titleLines:
+      title === null || lineHeight === 0
+        ? 0
+        : Math.round(title.getBoundingClientRect().height / lineHeight),
     tolerance,
   };
 };
@@ -425,10 +437,10 @@ const main = async () => {
         `${scene}: card ${header.cardWidth}px, header row spread ${header.rowSpread}px, overflow ${header.overflow}px`,
       );
     }
-    for (const target of only === undefined
+    for (const target of only === undefined || only === 'workflow'
       ? [
           { scene: 'workflow-studio&view=rules', click: null },
-          { scene: 'frame&view=workflows', click: 'Rules' },
+          { scene: 'frame&view=workflows', click: 'Run defaults' },
         ]
       : []) {
       const result = await validateWorkflowScroll({ send: session.send, ...target });
