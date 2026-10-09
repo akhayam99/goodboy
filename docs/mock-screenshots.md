@@ -362,7 +362,7 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   the version numbers renames the `next` folder to `docs/changelog/<version>/` and sets
   `image=<name>` on the entry. `changelogImageBudget.test.ts` then checks
   names, complete dark/light pairs, that a `before` has a matching `after`,
-  at most 3 images and 1 MB per release, and no orphan file.
+  at most 12 images and 2 MB per release, and no orphan file.
 - **Retroactive from the release's own code.** A release that already
   shipped can gain pictures, but never capture today's app under an old
   entry's name: the picture would show a screen the release never had.
