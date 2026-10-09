@@ -6,10 +6,10 @@ Move between the tasks of a workspace, and see from any screen which one needs y
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" alt="The left column of the Northwind workspace: New session, the doors Board, Inbox, Chat and Workflows, and the Sessions list of one-line rows with a state sign and a title. The open session Fix webhook retries shows its pages Overview, Branch, Runs, Agents and Artifacts, and a card beside its row reads Running, pull request 318, HBL-212, payments-api, notify-relay and 2 agents">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="670" alt="The left column of the Northwind workspace: New session, the doors Board, Tasks, Chat and Workflows, and the Sessions list of one-line rows with a state sign and a title. The open session Fix webhook retries shows its pages Overview, Branch with 2 branches, Runs, Agents with 1 running and Artifacts, and a card beside its row reads Running, pull request 318 Draft with checks passing, HBL-212, payments-api, notify-relay and 2 agents">
 </picture>
 
-<sub>Screenshot from Goodboy 0.21.1</sub>
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, an amber **?**, shield or **!** means you must answer, approve or act, a green check means the pull request is ready to merge, a red **!** means something broke, a filled violet check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
 

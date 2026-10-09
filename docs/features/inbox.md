@@ -22,10 +22,10 @@ Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Line
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Inbox listing 10 items from Linear, GitHub, Jira, Sentry and Slack in Today, Yesterday and Older groups, with the View, Type, Source and Project filters and the key hints on the left, and Linear issue CAS-231 open on the right with Launch session and Link to a session">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Tasks page listing 10 items from Linear, GitHub, Jira, Sentry and Slack in Today, Yesterday and This week groups, with the search box and the Filters button, and Linear issue CAS-231 open on the right with Start from CAS-231 and Link to a session">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 Work from one list instead of seven tabs. Issues, Slack threads and Sentry errors from your connected tools sit together, grouped by day, next to pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket. Narrow the list by **View**, **Type**, **Source** and **Project**, and move with **j** and **k**. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list. A row shows its status word only when the list mixes states, so a list of open items does not repeat Open on every row.
 
@@ -33,10 +33,10 @@ Work from one list instead of seven tabs. Issues, Slack threads and Sentry error
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-lookup-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-lookup-light.webp" alt="The Inbox search box holding HBL-412, with the Linear issue Retried webhooks post a second credit listed under Not in your inbox, Assigned to Dana R., and its details open on the right">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-lookup-light.webp" alt="The Tasks search box holding HBL-412, with the Linear issue Retried webhooks post a second credit listed under Not in Tasks, Assigned to Dana R., above the Starred and Today groups, and its details open on the right with Start from HBL-412">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 Paste `HBL-412`, `#318` or a link in the search box and open the issue, even when it is not assigned to you. It appears under **Not in Tasks** with its full details beside it. An unknown prefix is tried on Linear and Jira at once.
 
@@ -56,10 +56,10 @@ Attach a Tasks item to work that already exists. **Link to a session** sits next
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-sentry-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-sentry-light.webp" alt="The Inbox filtered to Sentry, 4 errors from payments-api and notify-relay, with DuplicateChargeError: charge already captured for order open on the right, showing status Unresolved, culprit settle_batch, 42 events, 9 users and a 2 frame stack trace">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-sentry-light.webp" alt="Tasks filtered to Sentry, 4 errors from payments-api and notify-relay in Today and Yesterday groups, with DuplicateChargeError: charge already captured for order open on the right, showing status Unresolved, culprit settle_batch, 42 events, 9 users, Start from PAYMENTS-API-7K1 and a 2 frame stack trace">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and filter them by project. Comment, assign, edit and move issues in Linear and Jira the same way.
 

@@ -45,10 +45,10 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-studio-steps-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-studio-steps-light.webp" alt="The Workflows studio on the Saved steps tab: the 8 built-in steps Scout, Investigate, Plan, Implement, Test, Review, Resolve comments and Update docs, and an empty This workspace list with a New step button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-studio-steps-light.webp" alt="The Workflows studio on the Saved steps tab: the 7 built-in steps Scout, Investigate, Plan, Implement, Test, Review and Update docs, each with its role, a short description and the model setting Auto, and an empty This workspace list with a New step button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 Reuse steps across workflows. The 7 built-in steps are read-only, and **Save a copy** makes your own.
 
@@ -101,10 +101,10 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Duplicate credit fix run on HBL-412: three scouts working in parallel under step 1, then a planner, two implementers and a tester, each on its own model, with Waiting on step 1 above the tree and $0.13 spent of the $12.00 spend limit">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Duplicate credit fix run: an orchestrator bar reading Waiting on step 4 with Stop step and GPT-5.6 Sol High, two queued hints, and five steps, each row with its role icon, title, model with effort, and time and cost, with step 1 folding 3 scouts done for $0.09 and $2.74 spent of the $12.00 spend limit">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 Follow a run from top to bottom: the header with the status and **Pause** and **Stop run** as one pair, the steps in their own scroller with a line under the header once they scroll, and the composer at the bottom. Sub-agents sit indented under their agent, and a finished set folds into one row. While the run waits for its plan, **Review plan** opens it in a drawer. Add steps to a live or finished run. Parallel scouts appear as branches under their step. After a restart, one **Resume all** above the steps starts every stopped agent in that run. Deleting a run deletes its agents and their open questions with it.
 

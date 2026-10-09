@@ -10,10 +10,10 @@ The **New session** draft has three tabs: **Pick up a task**, **Run a workflow**
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-light.webp" alt="New session with the Pick up a task tab selected, a Starred list of issues with HBL-412 Retried webhooks post a second credit highlighted, and below it Brief from HBL-412 titled Stop retried webhooks posting a second credit, with Done when criteria and the buttons Dismiss, Use issue text, Edit and Use brief">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-light.webp" alt="The New session page on Pick a task: the task HBL-412 Retried webhooks post a second credit with Dismiss, then one block titled Brief from HBL-412 with its title ready to edit, and under it the tabs Run a workflow and Ask an agent with the Orchestrated workflow and its brief in a Write and Preview editor">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 Turn an issue into a briefed session in one pick. Pick HBL-412 and the draft shows one block: **Brief from HBL-412** with the title Goodboy drafted, ready to edit, then **How to work on it**: the project it works in, **Run a workflow** or **Ask an agent**, and the goal under it. The goal starts as the issue text and becomes the drafted brief with its **Done when** criteria as soon as it is written, unless you already edited it. **Use the issue text** puts the plain issue back and **Use brief** brings the draft back. **Dismiss** returns to the list. A Sentry error or a GitHub issue opens in the project it belongs to, and one **Start from HBL-412** links the issue, creates the session and starts the work, with a **Follow** toast.
 

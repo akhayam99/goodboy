@@ -63,13 +63,16 @@
     "version": "0.13.1"
   },
   "features/inbox-list": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'inbox&brand=1' --window 1280x900 --wait 8000"
   },
   "features/inbox-lookup": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'brand-lookup&brand=1' --window 1280x800 --wait 8000"
   },
   "features/inbox-sentry": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'inbox-source&brand=1' --window 1280x900 --wait 8000"
   },
   "features/inbox-slack-permissions": {
     "version": "0.13.1"
@@ -87,13 +90,15 @@
     "version": "0.13.1"
   },
   "features/overview-activity": {
-    "version": "0.14.0"
+    "version": "0.23.0",
+    "recipe": "--scene 'activity-groups&brand=1' --selector 'section[class*=\"container/activity\"]' --pad 20 --window 1280x1050 --wait 8000"
   },
   "features/overview-next": {
     "version": "0.13.1"
   },
   "features/overview-session": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x540 --wait 8000"
   },
   "features/providers-codex-reset": {
     "version": "0.13.1"
@@ -105,7 +110,8 @@
     "version": "0.13.1"
   },
   "features/providers-limits-chip": {
-    "version": "0.21.0"
+    "version": "0.23.0",
+    "recipe": "--scene 'shell&brand=1' --hover '[aria-label^=\"Claude limits\"]' --window 1480x300 --clip 1108,0,372,206 --wait 8000"
   },
   "features/providers-model-picker": {
     "version": "0.13.1"
@@ -114,19 +120,23 @@
     "version": "0.13.1"
   },
   "features/review-comment-states": {
-    "version": "0.14.0"
+    "version": "0.23.0",
+    "recipe": "--scene 'comments-groups&brand=1' --selector 'nav[class*=\"select-list\"]' --pad 20 --window 1100x900 --wait 8000"
   },
   "features/review-diff": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'branch-files-notes&brand=1' --window 1100x700 --wait 8000"
   },
   "features/review-pr-page": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'branch-pr-github&brand=1' --window 1100x820 --wait 8000"
   },
   "features/review-push-confirm": {
     "version": "0.14.0"
   },
   "features/review-resolve": {
-    "version": "0.14.0"
+    "version": "0.23.0",
+    "recipe": "--scene 'resolve&brand=1' --window 1100x800 --wait 8000"
   },
   "features/review-write": {
     "version": "0.13.1"
@@ -186,7 +196,8 @@
     "version": "0.13.1"
   },
   "features/start-pick-task": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'brand-kickoff&brand=1' --window 1000x690 --wait 8000"
   },
   "features/start-run-workflow": {
     "version": "0.15.2"
@@ -210,7 +221,8 @@
     "version": "0.21.0"
   },
   "features/switch-rail": {
-    "version": "0.21.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'session-hover&brand=1' --window 590x640 --wait 8000"
   },
   "features/workflow-builder": {
     "version": "0.15.2"
@@ -237,7 +249,8 @@
     "version": "0.13.1"
   },
   "features/workflow-run": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'workflow-run&brand=1' --window 1280x730 --wait 8000"
   },
   "features/workflow-spend": {
     "version": "0.13.1"
@@ -246,10 +259,12 @@
     "version": "0.13.1"
   },
   "features/workflow-studio-steps": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'workflow-studio&brand=1' --click 'Saved steps' --scroll '[data-studio-overlay]' --window 1280x580 --wait 8000"
   },
   "features/workspace-branches": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'mount-mismatch&brand=1' --selector section --pad 24 --window 1100x900 --wait 8000"
   },
   "features/workspace-locate": {
     "version": "0.13.1"
@@ -258,15 +273,19 @@
     "version": "0.13.1"
   },
   "features/workspace-several-projects": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'workflow&brand=1' --window 1280x800 --wait 8000"
   },
   "features/workspace-starred": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'workspace-projects&brand=1' --window 1100x800 --wait 8000"
   },
   "features/workspace-worktrees": {
-    "version": "0.13.1"
+    "version": "0.23.0",
+    "recipe": "--scene 'mounts&brand=1' --selector section --pad 24 --window 1100x900 --wait 8000"
   },
   "readme/readme-hero": {
-    "version": "0.21.0"
+    "version": "0.23.0",
+    "recipe": "pnpm readme:hero"
   }
 }

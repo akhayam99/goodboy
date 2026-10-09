@@ -6,10 +6,10 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-limits-chip-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-limits-chip-light.webp" width="530" alt="The top bar with the Claude limits chip hovered: a card reading Claude max, Claude is about to run out, Weekly 84% used with its reset time, and Updated 1m ago. Before the chip are 1 needs you, 2 running and $9.62 today, after it the theme, Impact and notifications icons">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-limits-chip-light.webp" width="452" alt="The top bar with the Claude limits chip hovered: a card reading Claude max, Claude is about to run out, Weekly 84% used with its reset time, and Updated 1m ago. Before the chip are 1 needs you and 1 running, after it $9.65 today and the notifications bell">
 </picture>
 
-<sub>Screenshot from Goodboy 0.21.0</sub>
+<sub>Screenshot from Goodboy 0.23.0</sub>
 
 See how much of your Claude and Codex plans is left before a run stops. Each provider gets a chip in the top bar that draws the 5-hour window and the week as two bars: amber from 80%, red and full at 100%, faded when the figures are old. Hover a chip, as in the picture, to read the plan, how much of each window is used and when it comes back, and click it to open the providers menu right under it. When more providers report than fit the bar, the last chip names them (`+2 providers`) and takes the tone of the worst one. Checking Claude spends no model tokens: Goodboy runs Claude's own `/usage` in an empty folder.
 
