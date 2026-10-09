@@ -2,6 +2,7 @@ export type CountedPageId = 'branch' | 'runs' | 'agents' | 'artifacts' | 'questi
 
 export type PageCountFacts = {
   readonly waiting: number;
+  readonly notes: number;
   readonly mounts: number;
   readonly runs: number;
   readonly runningRuns: number;
@@ -35,8 +36,12 @@ const runningOr = ({ running, total, noun }: RunningParams): string | null => {
 
 const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => string | null>> = {
   branch: (facts) => {
-    if (facts.waiting > 0) {
-      return `${facts.waiting} need you`;
+    const parts = [
+      facts.waiting > 0 ? `${facts.waiting} need you` : null,
+      facts.notes > 0 ? nounOf({ count: facts.notes, noun: 'note' }) : null,
+    ].filter((part): part is string => part !== null);
+    if (parts.length > 0) {
+      return parts.join(' · ');
     }
     return facts.mounts > 1 ? `${facts.mounts} branches` : null;
   },

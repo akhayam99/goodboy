@@ -523,3 +523,62 @@ describe('a destination made of several threads', () => {
     expect(live.get().reviewSelection[OTHER_SESSION_ID]).toEqual(['PRRT_7']);
   });
 });
+
+describe('a destination made of notes', () => {
+  const NOTE_THREAD = 'note:mock-note-backoff-cap';
+  const notes: ReviewDestination = { kind: 'notes', threadIds: [NOTE_THREAD] };
+
+  it('opens Files with the notes drawer and no review target', async () => {
+    const live = createHarness();
+
+    const outcome = await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: notes,
+    });
+
+    expect(outcome).toEqual({ kind: 'opened' });
+    expect(live.state.navigate).toHaveBeenCalledWith({
+      to: branchPlace({ sessionId: SESSION_ID, mountPath: null, tab: 'files' }),
+      drawer: {
+        kind: 'review-notes',
+        sessionId: SESSION_ID,
+        payload: { mountPath: null, focusPath: null, focusThreadId: NOTE_THREAD },
+      },
+    });
+    expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();
+    expect(live.state.refreshSessionPr).not.toHaveBeenCalled();
+  });
+
+  it('treats a batch of note threads as notes and a mixed batch as comments', async () => {
+    const live = createHarness();
+
+    await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: { kind: 'threads', mountId: null, threadIds: [NOTE_THREAD, 'note:another'] },
+    });
+    expect(live.state.navigate).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        drawer: expect.objectContaining({ kind: 'review-notes' }),
+      }),
+    );
+
+    await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: { kind: 'threads', mountId: null, threadIds: [NOTE_THREAD, 'PRRT_1'] },
+    });
+    expect(live.state.navigate).toHaveBeenLastCalledWith({
+      to: branchPlace({ sessionId: SESSION_ID, mountPath: null, tab: 'comments', threadId: null }),
+    });
+  });
+
+  it('switches to the mount of the notes before it opens the drawer', async () => {
+    const live = createHarness();
+
+    await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: { kind: 'threads', mountId: MOUNT_ID, threadIds: [NOTE_THREAD] },
+    });
+
+    expect(live.calls).toEqual(['mount', 'lens']);
+  });
+});

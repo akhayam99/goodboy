@@ -155,6 +155,7 @@ export const FIX_RUN_COPY = {
   threadsHeading: ({ count }: { readonly count: number }): string =>
     count === 1 ? 'Covers 1 comment' : `Covers ${count} comments`,
   openBatch: 'Open them in Comments',
+  openBatchNotes: 'Open them in Notes',
   noCommit: 'No commits yet',
   statusWorking: 'Working',
   statusQueued: 'Queued',

@@ -37,5 +37,19 @@ export const laneWaitingLine = ({
     ? `Waiting for your answer · ${total === 1 ? '1 fix' : `${total} fixes`} in the lane`
     : `Waiting for your answer · ${queued} queued after it`;
 
-export const acceptUpToLabel = ({ count }: { readonly count: number }): string =>
-  count === 1 ? 'Accept' : `Accept ${count} fixes`;
+export const acceptUpToLabel = ({
+  count,
+  notes = 0,
+}: {
+  readonly count: number;
+  readonly notes?: number;
+}): string => {
+  if (count === 1) {
+    return 'Accept';
+  }
+  const head = `Accept ${count} fixes`;
+  if (notes === 0) {
+    return head;
+  }
+  return notes === 1 ? `${head} · 1 is a note` : `${head} · ${notes} are notes`;
+};

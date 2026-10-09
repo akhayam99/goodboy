@@ -191,7 +191,7 @@ export const noteRow = ({ note }: { readonly note: DiffComment }): ResolveQueueI
 };
 
 type Params = {
-  readonly selected: 'github' | 'gitlab' | 'local';
+  readonly selected: 'github' | 'gitlab';
 };
 
 export const seedResolveGitlabScene = ({ selected }: Params): void => {
@@ -219,7 +219,7 @@ export const seedResolveGitlabScene = ({ selected }: Params): void => {
       },
     },
     reviewSourceKeys: {
-      [SESSION_ID]: selected === 'github' ? null : selected === 'gitlab' ? GITLAB_KEY : 'local',
+      [SESSION_ID]: selected === 'github' ? null : GITLAB_KEY,
     },
     diffComments: { [SESSION_ID]: NOTES },
     refreshReviewSource: async () => undefined,

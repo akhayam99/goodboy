@@ -3,7 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { isOpenNote, noteThreadId } from '../../resolve/notes/noteThread';
 import { notesOnBranchOf } from '../../resolve/notes/notesOnBranchOf';
 import {
-  POST_NOTES_LABEL,
+  moveNotesLabel,
   postNotesResultMessage,
   postNotesToPr,
 } from '../../resolve/notes/postNotesToPr';
@@ -106,7 +106,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
     },
     {
       id: 'review.postNotes',
-      label: POST_NOTES_LABEL,
+      label: ({ facts }) => moveNotesLabel({ count: facts.notes }),
       icon: MessageSquarePlus,
       group: 'act',
       when: ({ facts }) => facts.notes > 0 && facts.prNumber !== null,

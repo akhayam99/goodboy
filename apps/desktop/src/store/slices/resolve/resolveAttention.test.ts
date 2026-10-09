@@ -4,18 +4,20 @@ import { resolveAttentionNotices, resolveAttentionOf } from './resolveAttention'
 
 const SESSION = 'session-1' as SessionId;
 
-type Thread = Pick<ResolveThread, 'state' | 'stateReason' | 'activeAttemptId'>;
+type Thread = Pick<ResolveThread, 'state' | 'stateReason' | 'activeAttemptId' | 'originKind'>;
 type Attempt = Pick<ResolveAttempt, 'id' | 'failureCause' | 'phase'>;
 
 const thread = ({
   state,
   attemptId = null,
   stateReason = null,
+  originKind = 'review_comment',
 }: {
   readonly state: ResolveThread['state'];
   readonly attemptId?: string | null;
   readonly stateReason?: string | null;
-}): Thread => ({ state, stateReason, activeAttemptId: attemptId });
+  readonly originKind?: ResolveThread['originKind'];
+}): Thread => ({ state, stateReason, activeAttemptId: attemptId, originKind });
 
 const attempt = ({
   id,
@@ -37,7 +39,20 @@ describe('resolveAttentionOf', () => {
       attempts: [attempt({ id: 'a1', cause: 'provider_error' })],
     });
 
-    expect(attention).toEqual({ needsYou: 1, couldntFix: 1 });
+    expect(attention).toEqual({ needsYou: 1, couldntFix: 1, notesNeedYou: 0, notesCouldntFix: 0 });
+  });
+
+  it('counts a note that waits or could not be fixed apart from the comments', () => {
+    const attention = resolveAttentionOf({
+      threads: [
+        thread({ state: 'needs_answer' }),
+        thread({ state: 'needs_answer', originKind: 'diff_comment' }),
+        thread({ state: 'failed', attemptId: 'a1', originKind: 'diff_comment' }),
+      ],
+      attempts: [attempt({ id: 'a1', cause: 'provider_error' })],
+    });
+
+    expect(attention).toEqual({ needsYou: 1, couldntFix: 0, notesNeedYou: 1, notesCouldntFix: 1 });
   });
 
   it('does not raise attention for a run you stopped or a push that failed', () => {
@@ -49,17 +64,17 @@ describe('resolveAttentionOf', () => {
       attempts: [attempt({ id: 'a1', cause: 'stopped' }), attempt({ id: 'a2', cause: null })],
     });
 
-    expect(attention).toEqual({ needsYou: 0, couldntFix: 0 });
+    expect(attention).toEqual({ needsYou: 0, couldntFix: 0, notesNeedYou: 0, notesCouldntFix: 0 });
   });
 });
 
 describe('resolveAttentionNotices', () => {
-  const NONE = { needsYou: 0, couldntFix: 0 };
+  const NONE = { needsYou: 0, couldntFix: 0, notesNeedYou: 0, notesCouldntFix: 0 };
 
   it('tells you once when a comment starts to need you', () => {
     const notices = resolveAttentionNotices({
       before: NONE,
-      after: { needsYou: 1, couldntFix: 0 },
+      after: { ...NONE, needsYou: 1 },
       sessionId: SESSION,
     });
 
@@ -72,10 +87,27 @@ describe('resolveAttentionNotices', () => {
     });
   });
 
+  it('tells you apart when a note starts to need you or could not be fixed', () => {
+    const notices = resolveAttentionNotices({
+      before: NONE,
+      after: { ...NONE, notesNeedYou: 2, notesCouldntFix: 1 },
+      sessionId: SESSION,
+    });
+
+    expect(notices.map((notice) => notice.body)).toEqual([
+      '2 notes wait for your answer.',
+      'Retry it in the run or start over from your notes.',
+    ]);
+    expect(notices.map((notice) => notice.title)).toEqual([
+      'A fix run needs you',
+      "A fix run couldn't fix a note",
+    ]);
+  });
+
   it('tells you when comments could not be fixed, with the count', () => {
     const notices = resolveAttentionNotices({
       before: NONE,
-      after: { needsYou: 0, couldntFix: 3 },
+      after: { ...NONE, couldntFix: 3 },
       sessionId: SESSION,
     });
 
@@ -86,14 +118,14 @@ describe('resolveAttentionNotices', () => {
     expect(
       resolveAttentionNotices({
         before: NONE,
-        after: { needsYou: 1, couldntFix: 1 },
+        after: { ...NONE, needsYou: 1, couldntFix: 1 },
         sessionId: SESSION,
       }),
     ).toHaveLength(2);
     expect(
       resolveAttentionNotices({
-        before: { needsYou: 2, couldntFix: 1 },
-        after: { needsYou: 2, couldntFix: 0 },
+        before: { ...NONE, needsYou: 2, couldntFix: 1 },
+        after: { ...NONE, needsYou: 2 },
         sessionId: SESSION,
       }),
     ).toEqual([]);

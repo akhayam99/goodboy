@@ -10,6 +10,7 @@ import {
 import { resolverThread } from '../../../../../store/slices/navigation/resolverThread';
 import type { PlaceRequest } from '../../../../../store/slices/navigation/types';
 import { focusQuestionAnswer } from '../../../../context/focusQuestionAnswer';
+import { noteIdOfThread } from '../../../../resolve/notes/noteThread';
 import type { AskHandle } from '../../askHandles';
 
 type Params = {
@@ -57,6 +58,13 @@ export const useAskChipOpen = ({ sessionId, onOpenInside }: Params) =>
           navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
           return;
         case 'comment':
+          if (noteIdOfThread({ threadId: target.threadId }) !== null) {
+            void useAppStore.getState().openReviewTarget({
+              sessionId,
+              destination: { kind: 'notes', threadIds: [target.threadId] },
+            });
+            return;
+          }
           navigate({ to: branchPlace({ sessionId, tab: 'comments', threadId: target.threadId }) });
           return;
         case 'pr':

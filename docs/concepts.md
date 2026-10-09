@@ -750,18 +750,18 @@ A **review conversation** is Goodboy's saved record of one review, issue or
 note. It keeps its state, its verdict, its draft reply and the commits that
 answer it.
 
-Review exists with or without a pull request. Without one, its header reads
-`No pull request yet` with `Open a pull request`, and the list holds the notes.
-With a pull request, the list mixes the GitHub threads and the notes. Every
-open note gets a conversation, and deleting or resolving the note closes it. An
-agent reviewer's comments on a branch without a pull request are kept as
-notes. When a pull request arrives the notes stay notes; `Post open notes to
-the PR` in the Review menu turns them into draft review comments, never on its
-own.
+Review exists with or without a pull request. Without one, Comments reads `No
+pull request yet` with `Create pull request`. With a pull request, Comments holds
+the GitHub threads only. Your notes never mix with them: they live in the Notes
+drawer of the Files tab, where every open note gets a conversation, and deleting
+or resolving the note closes it. An agent reviewer's comments on a branch without
+a pull request are kept as notes. When a pull request arrives the notes stay
+notes; `Move N to review draft` in the drawer turns them into draft review
+comments (a note on a whole file too), never on its own.
 
 A note goes through the same flow with the same resolver, but there is no
-reply to write: without a pull request, `Accept` keeps the fix on the branch
-and closes the note, and `Close the note` closes it without a change.
+reply to write: `Accept` keeps the fix on the branch and closes the note, with
+or without a pull request, and `Close the note` closes it without a change.
 Reopening a closed note opens a new conversation generation instead of
 reviving the closed one, so the resolved history stays next to the reopened
 conversation.

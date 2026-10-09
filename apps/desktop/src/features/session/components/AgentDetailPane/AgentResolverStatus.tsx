@@ -32,7 +32,7 @@ export const AgentResolverStatus = ({ session, agent, status }: Props) => {
     (state) =>
       state.sessionResolveAttempts?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<ResolveAttempt>),
   );
-  const { entries } = useReviewEntries({ sessionId, isSourceScoped: false });
+  const { entries } = useReviewEntries({ sessionId, scope: 'all' });
   const word = useMemo(() => {
     const threadIds = new Set(fixRunThreadIdsOf({ attempts, agentId: agent.id }));
     const own = entries.filter((entry) => threadIds.has(entry.threadId));

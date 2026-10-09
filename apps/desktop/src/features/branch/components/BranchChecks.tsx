@@ -14,7 +14,7 @@ import { useActionControls } from '../../actions/useActionControls';
 import { useGithubConnection } from '../../integrations/github/useGithubConnection';
 import { openToolSettings } from '../../integrations/openToolSettings';
 import { ChecksMode } from '../../review/components/ReviewPane/modes/ChecksMode';
-import { checksViewOf, type ChecksHost } from '../checksViewOf';
+import { checksViewOf, type ChecksHost, type ChecksHostKind } from '../checksViewOf';
 import { repoNameOf } from '../repoNameOf';
 import { ChecksDeniedNotice } from './ChecksDeniedNotice';
 import { ChecksFailedNotice } from './ChecksFailedNotice';
@@ -49,7 +49,8 @@ export const BranchChecks = ({ sessionId }: Props) => {
   const host = useAppStore(
     useShallow((s) => {
       const entry = selectedReviewEntryOf({ state: s, sessionId });
-      return { kind: entry.kind, url: entry.url };
+      const kind: ChecksHostKind = entry?.kind ?? 'local';
+      return { kind, url: entry?.url ?? null };
     }),
   );
   const create = useActionControls({

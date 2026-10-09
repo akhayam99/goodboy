@@ -16,7 +16,7 @@ export const useResolveActivity = ({
   readonly sessionId: SessionId;
 }): ResolveActivity => {
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
-  const { entries } = useReviewEntries({ sessionId });
+  const { entries } = useReviewEntries({ sessionId, scope: 'all' });
   return useMemo(
     () => ({
       factsByAgentId: resolveFactsByAgentId({

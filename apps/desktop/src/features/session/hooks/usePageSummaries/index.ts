@@ -47,6 +47,7 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
     const standalone = agents.filter(
       (agent) => isStandaloneAgent({ agent }) && !resolvers.has(agent.id),
     );
+    const waiting = conversationsWaiting({ rows });
     const liveRuns = session.workflowRuns.filter((run) => run.discardedAt == null);
     const runningRunIds = new Set(
       agents.flatMap((agent) =>
@@ -55,7 +56,8 @@ export const usePageSummaries = ({ session }: Params): PageSummaries => {
     );
     return summariesOf({
       facts: {
-        waiting: conversationsWaiting({ rows }),
+        waiting: waiting.comments,
+        notes: waiting.notes,
         mounts: mounts.length,
         runs: liveRuns.length,
         runningRuns: liveRuns.filter((run) => runningRunIds.has(run.id)).length,

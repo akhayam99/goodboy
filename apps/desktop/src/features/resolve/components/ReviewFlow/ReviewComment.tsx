@@ -51,6 +51,7 @@ import { ThreadGitEvidence } from './ThreadGitEvidence';
 import { NewReplyNote } from './NewReplyNote';
 import { ReplyNote } from './ReplyNote';
 import { SteerLine } from './SteerLine';
+import { STATE_CHIP_TONE } from './stateTone';
 import { replyNoteKindOf } from './replyNoteKind';
 import { SourceChangeCard } from './SourceChangeCard';
 import { ThreadRecheckLine } from './ThreadRecheckLine';
@@ -65,6 +66,7 @@ type Props = ReviewCommentBinding & {
   readonly onTryAgain: () => void;
   readonly onStartOver: () => void;
   readonly hunk?: ReactNode;
+  readonly noteActions?: ReactNode;
 };
 
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
@@ -72,6 +74,7 @@ const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const DECIDED_NOTE_STATES = new Set(['accepted', 'replied', 'skipped', 'pushed', 'resolved']);
 
 const POST_NOW_ACTION = 'reviewComment.postReplyNow';
+const OPEN_NOTE_WORD = 'Open note';
 
 const verbsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<ResolvedAction> => [
   ...actions.filter((action) => action.slot === 'primary'),
@@ -118,6 +121,7 @@ export const ReviewComment = ({
   onTryAgain,
   onStartOver,
   hunk = null,
+  noteActions = null,
 }: Props) => {
   const { row, state, word, threadId } = entry;
   const { answer: answered } = useThreadQuestion({
@@ -126,7 +130,8 @@ export const ReviewComment = ({
     question: row.thread.question ?? null,
   });
   const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
-  const originLabel = row.thread.sourceKind === 'local' ? 'Local' : provider;
+  const isNote = row.thread.originKind === 'diff_comment';
+  const originLabel = row.thread.sourceKind === 'local' ? 'Note' : provider;
   const canResolve = REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
@@ -185,12 +190,15 @@ export const ReviewComment = ({
   const note = row.reviewerNote;
   const author = note?.author ?? null;
   const verbs = verbsOf(actions).filter(
-    (action) => !(state === 'needs' && action.id === 'reviewComment.answer'),
+    (action) =>
+      !(state === 'needs' && action.id === 'reviewComment.answer') &&
+      !(isNote && state === 'new' && action.id === 'reviewComment.skip'),
   );
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
   const isOwnFixGone = remote === 'looks_fixed' || remote === 'missing' || remote === 'folded';
   const hasChange = candidate !== null && !isOwnFixGone;
   const replyShown =
+    !isNote &&
     remote !== 'you_replied' &&
     (remote === 'missing'
       ? isVerdictReply
@@ -276,7 +284,16 @@ export const ReviewComment = ({
         {row.commentThread?.head.outdated === true && (
           <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.lineMoved} />
         )}
-        <Chip tone="neutral" size="3xs" label={originLabel} />
+        {isNote ? (
+          <Chip
+            tone={STATE_CHIP_TONE[state]}
+            size="3xs"
+            className="shrink-0 whitespace-nowrap"
+            label={state === 'new' ? OPEN_NOTE_WORD : word}
+          />
+        ) : (
+          <Chip tone="neutral" size="3xs" label={originLabel} />
+        )}
       </header>
 
       {hunk}
@@ -510,14 +527,18 @@ export const ReviewComment = ({
       ) : (
         !isEditingReply &&
         !isFailed &&
-        verbs.length > 0 && (
+        (verbs.length > 0 || noteActions !== null) && (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {verbs.map((action) => {
               const button = (
                 <Button
                   key={action.id}
                   size="sm"
-                  variant={action.slot === 'primary' ? 'primary' : 'ghost'}
+                  variant={
+                    action.slot === 'primary' && !(isNote && action.id === 'reviewComment.draft')
+                      ? 'primary'
+                      : 'ghost'
+                  }
                   data-review-verb={action.id}
                   disabled={
                     action.blockedReason !== null ||
@@ -547,6 +568,7 @@ export const ReviewComment = ({
                 </Tooltip>
               );
             })}
+            {noteActions}
             {remote === 'on_origin' && (
               <span className="text-meta text-faint-foreground">{REMOTE_LABEL.nothingToPush}</span>
             )}

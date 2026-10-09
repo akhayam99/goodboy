@@ -2058,9 +2058,10 @@ page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Files`, which opens the Files tab of the Branch page on that mount with the file in focus.
-There is no notes drawer: your notes are `Local` items in the Comments tab of
-the Branch page, next to the provider comments, and a note without a branch
-sits in `Unassigned notes` on the Session overview.
+`review-notes` (payload `{ mountPath, focusPath, focusThreadId }`) lists your
+notes of a branch, apart from the pull request comments; the Branch page
+section, Review notes, owns it. A note without a branch sits in `Unassigned
+notes` on the Session overview.
 
 ## The Branch page
 
@@ -2111,8 +2112,9 @@ branch name, Copy patch).
 **Comments.** The Description (open when the pull request has a body, closed
 when it has none, with a visible `Edit` on its header while it is closed and
 `Edit` on the title and the description once it is open; `Edit title and
-description` in `⋯` still works), then the list (`Needs you`, `Ready`, `Done`,
-local notes included with a `Local` label) and the open thread with the code
+description` in `⋯` still works), then the list (`Needs you`, `Ready`, `Done`;
+the pull request conversation only, your notes live in the Notes drawer of
+Files) and the open thread with the code
 around the commented line above it (`hunkAround`, linking to Files). The
 properties (State, Origin with the code host link and Copy link, Attempts, Fix
 commit) sit inline under the thread at every width, never in a margin rail.
@@ -2156,7 +2158,7 @@ opens and closes it. Docked, `⌘⇧B` and the fold button fold the rail to the
 strip and back, and `F` docks it again; `useTreePanel` keeps that choice while
 the Files tab stays open. A pane that has not been measured yet reads as docked.
 The toolbar on the column reads `Compared with main · All 5 commits`, then
-`Display`, `Post notes` and `Write review`. Folders first, then files, alphabetical,
+`Display`, `Notes N` and `Write review`. Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
@@ -2190,7 +2192,7 @@ neither shortens the page nor drops an open composer. Folder row ids start with
 `dir:`, so a folder and a file with the same path never share a key. The tree and the diff share one `useReviewState` (active
 file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
 builds the rows. `Viewed`, notes on
-lines and files, `Post open notes to the PR` and `Write review` (which swaps
+lines and files, the `Notes N` drawer and `Write review` (which swaps
 the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.
 
@@ -2312,7 +2314,7 @@ Codex rewriter turns also lose write access to the temp folders. One line sits
 above the code and replaces the old toolbar and its counts: `Comparing <base> ←
 <branch> · All N commits ▾` on the left (the base is the mount's own base branch,
 never a fixed `main`; a commit view reads `Commit abc1234`, the working tree
-`Working tree`, `Staged only` or `Unstaged only`), and `Display ▾`, `Post notes`
+`Working tree`, `Staged only` or `Unstaged only`), and `Display ▾`, `Notes N`
 and `Write review` on the right, because the view decides which files you see,
 not what you do to the branch. `Display` holds `Unified | Split` and `Wrap long
 lines` (on by default, saved as `goodboy:diff-wrap`; split always wraps). The
@@ -2362,24 +2364,26 @@ Open in editor, Copy path, Comment on file); a viewed file collapses and opens a
 header or from anywhere else, and generated or binary files start collapsed.
 `Comment on file` (the header button, the `⋯` entry, and a button on the file's
 tree row on hover or keyboard focus) opens a composer under the header and
-scrolls to it: on a branch with a GitHub or GitLab pull request it saves a
-review draft on the whole file (a `pr_review_drafts` row with `line` 0, no
-migration), sent with the next review as a GitHub `FILE` thread (pending
-review, `addPullRequestReviewThread` with `subjectType: FILE`, then submit) or a
-GitLab discussion with `position_type: file`; without a pull request it saves a
-local note on the file (the same note a line gets, without an anchor). Either
-one sits under the file header, counts in the header and the tree row, and the
-note shows in Comments like a line note, with the file path and no line.
-A file draft is stale, and skipped on submit, only when its file leaves the
-pull request. Rows are a CSS grid with `role="grid"`, never a table. Click a line
+scrolls to it. It always saves a local note on the file (the same note a line
+gets, without an anchor), with a pull request or without one; the composer reads
+`Note on this file` and `Add note` in both cases. The note sits under the file
+header, counts in the header and the tree row, and lists in the Notes drawer
+with the file path and no line. Reaching the pull request is explicit: `Move N
+to review draft` in the drawer turns a file note into a `pr_review_drafts` row
+with `line` 0 (no migration), sent with the next review as a GitHub `FILE`
+thread (pending review, `addPullRequestReviewThread` with `subjectType: FILE`,
+then submit) or a GitLab discussion with `position_type: file`. A file draft
+written before 0.23 stays in the review draft, shows under its file header, and
+is stale, and skipped on submit, only when its file leaves the pull request.
+Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
 `+ Add note` on a line saves the note with the project and branch of the active
 mount (`diff_comments.project_id` and `branch`, m223). A note shows `Close note`
-and `Delete` in the diff; Fix lives on the note's item in the Comments tab. While a fixer
+and `Delete` in the diff; Fix lives on the note's item in the Notes drawer. While a fixer
 works on a note, Close note and Delete are disabled with "A fixer is working on
 this note". Close note goes through `closeResolvedNote`, the same path the
-Comments tab uses. The Files tab shows only the notes of its own branch; a note
+Notes drawer uses. The Files tab shows only the notes of its own branch; a note
 written before m223 is assigned to a branch only when a resolver run on a known
 mount used it, and the rest wait in `Unassigned notes` on the Session overview,
 each with `Move to` and `Discard`. `Move to` names the branch when the session
@@ -2390,14 +2394,39 @@ project and branch, no dialog) when it has several; the move goes through
 `undoable` ("Note discarded" or "N notes discarded"), whose Undo and ⌘Z
 re-insert the same rows with the same ids (`restoreDiffComment`); a status
 `discarded` would need a migration because `diff_comments.status` is a CHECK
-list. With two or more notes the section header has `Discard all`. `Post notes` in the toolbar moves the open notes
-of the branch into a review draft. Write review puts
+list. With two or more notes the section header has `Discard all`. Write review puts
 its form under the last file: the line comments with Edit and Delete on hover (Delete offers Undo), the verdict,
 the summary, and one primary that says the verdict (`Approve`,
 `Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`
 in the diff toolbar holds Discard review, which confirms. The actions are
 the `writeReview` kind of the action registry. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
+
+**Review notes.** Your notes, apart from the pull request, in a right drawer of
+the Files tab (kind `review-notes`, default width, one drawer at a time). The
+Comments tab holds the pull request conversation only, so resolving a note never
+touches a provider thread. `Notes N` (secondary, `sm`) sits in the Files toolbar
+left of `Write review`, N being the open notes of the displayed branch, hidden at
+0 and a toggle; the note count on a file row in the tree opens the drawer scrolled
+to that file. Saving a note never opens the drawer, it only updates the count and
+the tree row. The drawer reads `Your notes` with `N open`; `Fix N` is its one
+primary (one fix run on the selected notes, all the open and fixable ones by
+default, each with a check when there are two or more) and `⋯` holds `Move N to
+review draft` (only with a pull request) and `Show closed`. Notes are grouped by
+file, each the same review comment thread Comments draws, with `Jump to line`
+(the Files tab at the file): `Open note` (`Fix`, `Close`, `Delete` with Undo),
+working (the run line above the list holds `Stop` and `Open transcript`), ready
+(`Accept` keeps the fix on the branch and closes the note, `Skip`, `Close the
+note`; a note has no reply to write), `Couldn't fix` (`Retry`) and the run's
+question, answered inline. The lane line (`useLaneStatus`) sits above the list, so
+a note fix and a pull request comment fix stack in one lane and read the same
+in both places; a chain accept that crosses kinds names both, `Accept 3 fixes ·
+1 is a note`. Older file drafts, written before notes took over Comment on file,
+show one quiet line at the end, `2 older drafts are in your review draft`, with
+`Open review draft`. The doors that used to land a note on Comments land here:
+`openReviewTarget` for a `notes` destination (or a `threads` one made of notes),
+`fixRunTranscript` of a note thread (Files with the transcript drawer) and a fix
+request on notes. Opening the run transcript from a note replaces the drawer.
 
 ## The Scripts lens
 

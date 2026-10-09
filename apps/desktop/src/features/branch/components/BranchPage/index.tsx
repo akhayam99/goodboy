@@ -185,7 +185,7 @@ export const BranchPage = ({ session, workingDir }: Props) => {
 
   const isGithubConnected =
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
-  const hasRemote = sources.some((source) => source.kind !== 'local');
+  const hasRemote = sources.length > 0;
   const filesCount = diff.loading || diff.error !== null ? null : diff.files.length;
   const commentsCount = activeSource !== null && !activeSource.hasDetail ? null : entries.length;
 

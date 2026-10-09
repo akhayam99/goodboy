@@ -6,6 +6,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { reviewNotesDrawer } from '../../../resolve/notes/notesDrawer';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
@@ -100,6 +101,15 @@ export const SessionDiffPane = ({
       panel.dismiss();
     },
     [panel, review],
+  );
+
+  const openDrawer = useAppStore((s) => s.openDrawer);
+  const openNotes = useCallback(
+    (path: string) => {
+      openDrawer(reviewNotesDrawer({ sessionId, mountPath: worktreePath, focusPath: path }));
+      panel.dismiss();
+    },
+    [openDrawer, panel, sessionId, worktreePath],
   );
 
   const pickFile = useCallback(
@@ -250,6 +260,8 @@ export const SessionDiffPane = ({
       onToggleFolder={review.toggleFolder}
       onPick={pickFile}
       onCommentOnFile={review.comments.allowFileLevel ? commentOnFile : null}
+      onOpenNotes={openNotes}
+      hasNotesIn={review.hasNotesIn}
       stateOf={review.viewed.stateOf}
       noteCountOf={review.noteCountOf}
     />

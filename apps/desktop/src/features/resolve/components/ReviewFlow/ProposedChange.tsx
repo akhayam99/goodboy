@@ -16,7 +16,11 @@ const SIGN = { add: '+', del: '-', context: ' ' } as const;
 export const ProposedChange = ({ files, isLoading, error }: Props) => {
   const plan = inlineChangePlan({ files });
   return (
-    <section aria-label={REVIEW_FLOW_LABEL.proposedChange} className="flex min-w-0 flex-col gap-2">
+    <div
+      role="group"
+      aria-label={REVIEW_FLOW_LABEL.proposedChange}
+      className="flex min-w-0 flex-col gap-2"
+    >
       <SectionHeader label={REVIEW_FLOW_LABEL.proposedChange} headingLevel={2} />
       {isLoading && <Skeleton className="h-16 w-full rounded-md" />}
       {error !== null && <p className="text-meta text-warning">{error}</p>}
@@ -54,6 +58,6 @@ export const ProposedChange = ({ files, isLoading, error }: Props) => {
           {changeSummaryLine({ fileCount: files.length, changedLines: plan.changedLines })}
         </p>
       )}
-    </section>
+    </div>
   );
 };

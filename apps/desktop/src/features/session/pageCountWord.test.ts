@@ -9,6 +9,7 @@ import {
 
 const QUIET: PageCountFacts = {
   waiting: 0,
+  notes: 0,
   mounts: 1,
   runs: 0,
   runningRuns: 0,
@@ -30,6 +31,10 @@ describe('pageCountWordOf', () => {
     [{ waiting: 5 }, '5 need you'],
     [{ waiting: 1 }, '1 need you'],
     [{ waiting: 5, mounts: 3 }, '5 need you'],
+    [{ notes: 1 }, '1 note'],
+    [{ notes: 2 }, '2 notes'],
+    [{ waiting: 3, notes: 1 }, '3 need you · 1 note'],
+    [{ notes: 1, mounts: 3 }, '1 note'],
     [{ mounts: 3 }, '3 branches'],
     [{ mounts: 2 }, '2 branches'],
     [{ mounts: 1 }, null],
@@ -68,6 +73,7 @@ describe('pageCountWordOf', () => {
   it('puts the noun last and never a bare number', () => {
     const everything: PageCountFacts = {
       waiting: 0,
+      notes: 0,
       mounts: 4,
       runs: 4,
       runningRuns: 0,

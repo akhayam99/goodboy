@@ -210,6 +210,7 @@ import { U23_DRAWER_CHROME_SCENES } from './scenes/u23/drawer-chrome';
 import { U23_FRAME_SCENES } from './scenes/u23/frame';
 import { U23_PAGES_SCENES } from './scenes/u23/pages';
 import { U23_POLICY_FAILURES_SCENES } from './scenes/u23/policy-failures';
+import { U23_NOTES_SCENES } from './scenes/u23/notes';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -421,6 +422,7 @@ export const MOCK_SCENES = {
   ...U23_FRAME_SCENES,
   ...U23_PAGES_SCENES,
   ...U23_POLICY_FAILURES_SCENES,
+  ...U23_NOTES_SCENES,
 };
 
 export const MockScene = () => {

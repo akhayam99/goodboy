@@ -7,11 +7,7 @@ type Params = {
 };
 
 export const rowBelongsToSource = ({ row, entry }: Params): boolean => {
-  const isNote = row.originKind === 'diff_comment';
-  if (entry.kind === 'local') {
-    return isNote;
-  }
-  if (isNote) {
+  if (row.originKind === 'diff_comment') {
     return false;
   }
   if ((row.sourceKind ?? 'github') !== entry.kind) {

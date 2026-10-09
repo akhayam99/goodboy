@@ -30,6 +30,7 @@ const BASE: ReviewCommentFacts = {
   isReplyFailure: false,
   hasFixOnBranch: false,
   laneAcceptCount: 1,
+  laneAcceptNotes: 0,
 };
 
 const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict => ({

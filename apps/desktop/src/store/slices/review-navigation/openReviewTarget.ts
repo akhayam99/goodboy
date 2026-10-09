@@ -2,10 +2,10 @@ import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId, selectMountById } from '../project-mounts/selectors';
 import { branchPlace } from '../navigation/place';
-import { LOCAL_SOURCE_KEY } from '../review-source/types';
 import { setPullRequestMode } from './setPullRequestMode';
 import {
   REVIEW_HOME,
+  isNotesDestination,
   reviewMountId,
   reviewPrNumber,
   reviewThreadId,
@@ -70,13 +70,30 @@ export const openReviewTarget = async ({
       ? null
       : (selectMountById({ state: get(), sessionId, mountId: requestedMountId })?.worktreePath ??
         null);
+  if (isNotesDestination({ destination })) {
+    if (requestedMountId !== null) {
+      try {
+        await get().setSessionActiveMount({ sessionId, mountId: requestedMountId });
+      } catch (error) {
+        return { kind: 'failed', error: formatError(error) };
+      }
+    }
+    get().navigate({
+      to: branchPlace({ sessionId, mountPath, tab: 'files' }),
+      drawer: {
+        kind: 'review-notes',
+        sessionId,
+        payload: {
+          mountPath,
+          focusPath: null,
+          focusThreadId: reviewThreadIds({ destination })[0] ?? null,
+        },
+      },
+    });
+    return { kind: 'opened' };
+  }
   if (destination.kind === 'threads') {
     get().setReviewSelection({ sessionId, threadIds: reviewThreadIds({ destination }) });
-  }
-  if (destination.kind === 'notes') {
-    set((state) => ({
-      reviewSourceKeys: { ...state.reviewSourceKeys, [sessionId]: LOCAL_SOURCE_KEY },
-    }));
   }
   const base = {
     requestId,

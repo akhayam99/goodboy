@@ -1,15 +1,13 @@
-import { useMemo } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { Button, LensEmptyState, PageColumn } from '@goodboy/ui';
+import { LensEmptyState, PageColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
-import { useActionEnv } from '../../actions/useActionEnv';
-import { useObjectActions } from '../../actions/useObjectActions';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { WriteReview } from '../../review/components/ReviewPane/WriteReview';
 import { BranchBodyColumn } from './BranchBodyColumn';
+import { NotesButton } from './NotesButton';
 
 type Props = {
   readonly session: Session;
@@ -23,10 +21,6 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
   const sessionId = session.id as SessionId;
   const mode = useAppStore((s) => s.pullRequestModes[sessionId] ?? 'overview');
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
-  const env = useActionEnv({ origin: 'button' });
-  const reviewTarget = useMemo(() => ({ kind: 'review' as const, sessionId }), [sessionId]);
-  const { actions, run } = useObjectActions({ target: reviewTarget, env });
-  const postNotes = actions.find((action) => action.id === 'review.postNotes') ?? null;
   if (worktreePath === null) {
     return (
       <PageColumn width="column">
@@ -68,17 +62,7 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
         onWriteReview={
           hasPullRequest ? () => setPullRequestMode({ sessionId, mode: 'write_review' }) : null
         }
-        toolbarExtra={
-          postNotes === null ? null : (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => void run({ actionId: postNotes.id })}
-            >
-              {postNotes.label}
-            </Button>
-          )
-        }
+        toolbarExtra={<NotesButton sessionId={sessionId} mountPath={worktreePath} />}
       />
     </BranchBodyColumn>
   );

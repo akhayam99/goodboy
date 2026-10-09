@@ -103,7 +103,7 @@ const DOCK_BOTTOM_OFFSET = 24;
 export const ReviewFlow = ({ session, push }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
-  const { entries, groups: allGroups } = useReviewEntries({ sessionId });
+  const { entries, groups: allGroups, all: laneEntries } = useReviewEntries({ sessionId });
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
   const stopResolveLane = useAppStore((s) => s.stopResolveLane);
   const [filter, setFilter] = useState<FixRunWord | null>(null);
@@ -119,7 +119,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
       }),
     [entries],
   );
-  const lane = useLaneStatus({ sessionId, entries });
+  const lane = useLaneStatus({ sessionId, entries: laneEntries });
   const activeFilter = run !== null && filter !== null && run.tally[filter] > 0 ? filter : null;
   const groups = useMemo(
     () =>
@@ -570,7 +570,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
       );
     }
     if (focused === null) {
-      return <ReviewEmptyState provider={provider} />;
+      return <ReviewEmptyState sessionId={sessionId} provider={provider} />;
     }
     const isSingle = layout === 'single';
     const isLaunching = launch !== null;

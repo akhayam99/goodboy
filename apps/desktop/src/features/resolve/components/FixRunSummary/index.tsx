@@ -42,7 +42,7 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
       state.sessionResolveAttempts?.[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<ResolveAttempt>),
   );
   const turnKind = useAppStore((state) => state.agentTurnState[agent.id]?.kind ?? null);
-  const { entries } = useReviewEntries({ sessionId, isSourceScoped: false });
+  const { entries } = useReviewEntries({ sessionId, scope: 'all' });
   const outcome = useAgentOutcome({ agent });
   const status = fixRunStatusOf({ attempts, agentId: agent.id, turnKind });
   const mountId = brief.attempt.mountTarget?.mountId ?? null;

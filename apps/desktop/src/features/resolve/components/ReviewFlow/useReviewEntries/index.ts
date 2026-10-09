@@ -63,36 +63,34 @@ const EMPTY_RECHECKS: Readonly<Record<string, ThreadRecheck>> = {};
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
 const EMPTY_CHECK_RUNS: ReadonlyArray<ResolveCheckRun> = [];
 
+export type ReviewEntryScope = 'comments' | 'notes' | 'all';
+
 export const useReviewEntries = ({
   sessionId,
-  isSourceScoped = true,
+  scope = 'comments',
 }: {
   readonly sessionId: SessionId;
-  readonly isSourceScoped?: boolean;
+  readonly scope?: ReviewEntryScope;
 }): {
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly groups: ReadonlyArray<ReviewGroup>;
+  readonly all: ReadonlyArray<ReviewEntry>;
 } => {
   const rows = useResolveQueueRows({ sessionId, scope: 'displayed' });
   const changes = useAppStore((s) => s.sessionResolveSourceSnapshots[sessionId] ?? EMPTY_CHANGES);
   const { selected } = useActiveReviewSource({ sessionId });
-  const { kind, projectId, number } = selected;
+  const kind = selected?.kind ?? null;
+  const projectId = selected?.projectId ?? null;
+  const number = selected?.number ?? null;
   const drafts = useAppStore((s) => s.resolveItemDrafts[sessionId] ?? EMPTY_DRAFTS);
   const threadGit = useAppStore((s) => s.sessionThreadGit[sessionId] ?? EMPTY_GIT);
   const rechecks = useAppStore((s) => s.sessionThreadRechecks[sessionId] ?? EMPTY_RECHECKS);
   const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? EMPTY_CANDIDATES);
   const checkRuns = useAppStore((s) => s.sessionResolveCheckRuns[sessionId] ?? EMPTY_CHECK_RUNS);
-  return useMemo(() => {
+  const all = useMemo(() => {
     const failedChecks = checksFailedItemIds({ candidates, checkRuns });
-    const shown = isSourceScoped
-      ? rows.filter(
-          (row) =>
-            row.thread.originKind === 'diff_comment' ||
-            rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } }),
-        )
-      : rows;
-    const ordered = groupConversationsByFile({ rows: shown }).flatMap((group) => group.rows);
-    const entries = ordered.map((row): ReviewEntry => {
+    const ordered = groupConversationsByFile({ rows }).flatMap((group) => group.rows);
+    return ordered.map((row): ReviewEntry => {
       const state = reviewCommentStateOf({
         row,
         isEdited: isReplyEdited({ draft: drafts[row.thread.threadId], row }),
@@ -137,22 +135,23 @@ export const useReviewEntries = ({
         isAcceptable: isBulkAcceptable({ state, remote }),
       };
     });
+  }, [candidates, changes, checkRuns, drafts, rechecks, rows, threadGit]);
+  return useMemo(() => {
+    const shown = all.filter(({ row }) => {
+      if (scope === 'all') {
+        return true;
+      }
+      if (scope === 'notes') {
+        return row.thread.originKind === 'diff_comment';
+      }
+      return (
+        kind !== null && rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } })
+      );
+    });
     const groups = RESOLVE_LIST_WORDS.map((word) => ({
       word,
-      entries: entries.filter((entry) => entry.resolveWord === word),
+      entries: shown.filter((entry) => entry.resolveWord === word),
     })).filter((group) => group.entries.length > 0);
-    return { entries: groups.flatMap((group) => group.entries), groups };
-  }, [
-    candidates,
-    changes,
-    checkRuns,
-    drafts,
-    isSourceScoped,
-    kind,
-    number,
-    projectId,
-    rechecks,
-    rows,
-    threadGit,
-  ]);
+    return { entries: groups.flatMap((group) => group.entries), groups, all };
+  }, [all, kind, number, projectId, scope]);
 };

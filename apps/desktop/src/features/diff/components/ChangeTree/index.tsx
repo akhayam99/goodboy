@@ -11,6 +11,7 @@ import {
 } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { MiddleText } from '../../../../shared/components/MiddleText';
 import {
   visibleRows,
   type ChangeTree as ChangeTreeModel,
@@ -27,7 +28,6 @@ import {
 } from '../../lib/windowRows';
 import { Delta } from './Delta';
 import { KeyHints } from './KeyHints';
-import { MiddleText } from './MiddleText';
 import { ProgressRing } from './ProgressRing';
 import { TreeHead } from './TreeHead';
 
@@ -54,6 +54,8 @@ type Props = {
   readonly onToggleFolder: (id: string) => void;
   readonly onPick: (path: string) => void;
   readonly onCommentOnFile: ((path: string) => void) | null;
+  readonly onOpenNotes: ((path: string) => void) | null;
+  readonly hasNotesIn: (path: string) => boolean;
   readonly stateOf: (file: FileDiff) => ViewedState;
   readonly noteCountOf: (path: string) => number;
 };
@@ -73,6 +75,8 @@ export const ChangeTree = ({
   onToggleFolder,
   onPick,
   onCommentOnFile,
+  onOpenNotes,
+  hasNotesIn,
   stateOf,
   noteCountOf,
 }: Props) => {
@@ -230,6 +234,8 @@ export const ChangeTree = ({
             const state = states.get(row.id) ?? 'none';
             const viewed = state === 'viewed';
             const notes = noteCountOf(row.id);
+            const canOpenNotes = notes > 0 && onOpenNotes !== null && hasNotesIn(row.id);
+            const notesLabel = `${notes} ${notes === 1 ? 'note' : 'notes'}`;
             const tone = tintClasses(STATUS_TONE[row.file.status]);
             return (
               <li key={row.id} className="group relative list-none">
@@ -245,6 +251,7 @@ export const ChangeTree = ({
                     ROW_INTERACTIVE,
                     isActive && 'bg-overlay-selected',
                     viewed ? 'text-muted-foreground' : 'text-foreground',
+                    canOpenNotes && 'pr-11',
                   )}
                 >
                   <span className="flex w-4 shrink-0 items-center justify-center">
@@ -288,9 +295,9 @@ export const ChangeTree = ({
                       </span>
                     )}
                   </span>
-                  {notes > 0 ? (
+                  {notes > 0 && !canOpenNotes ? (
                     <span
-                      aria-label={`${notes} ${notes === 1 ? 'note' : 'notes'}`}
+                      aria-label={notesLabel}
                       className="flex shrink-0 items-center gap-0.5 text-meta tabular-nums text-faint-foreground"
                     >
                       <MessageSquare size={ICON_SIZE.row} aria-hidden />
@@ -305,10 +312,32 @@ export const ChangeTree = ({
                     {STATUS_LETTER[row.file.status]}
                   </span>
                 </button>
+                {canOpenNotes ? (
+                  <Tooltip
+                    content="Open notes"
+                    anchorClassName="absolute right-1 top-1/2 -translate-y-1/2"
+                  >
+                    <button
+                      type="button"
+                      aria-label={notesLabel}
+                      onClick={() => onOpenNotes(row.id)}
+                      className={cn(
+                        'flex h-6 items-center gap-1 rounded-sm px-2 text-meta tabular-nums text-faint-foreground hover:text-foreground',
+                        FOCUS_RING,
+                      )}
+                    >
+                      <MessageSquare size={ICON_SIZE.row} aria-hidden />
+                      {notes}
+                    </button>
+                  </Tooltip>
+                ) : null}
                 {onCommentOnFile === null ? null : (
                   <Tooltip
                     content="Comment on file"
-                    anchorClassName="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+                    anchorClassName={cn(
+                      'absolute top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100',
+                      canOpenNotes ? 'right-11' : 'right-1',
+                    )}
                   >
                     <button
                       type="button"

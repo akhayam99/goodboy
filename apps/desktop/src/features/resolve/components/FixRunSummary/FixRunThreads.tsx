@@ -1,6 +1,7 @@
 import { Band, Button, Chip, inlineMarkdownText } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openReview } from '../../../review/openReview';
+import { noteIdOfThread } from '../../notes/noteThread';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import { FIX_RUN_COPY } from '../../reviewFlowCopy';
 import { threadLocationOf } from '../../threadLocationOf';
@@ -80,7 +81,9 @@ export const FixRunThreads = ({ sessionId, mountId, threads, batchThreadIds, onO
             })
           }
         >
-          {FIX_RUN_COPY.openBatch}
+          {batchThreadIds.every((threadId) => noteIdOfThread({ threadId }) !== null)
+            ? FIX_RUN_COPY.openBatchNotes
+            : FIX_RUN_COPY.openBatch}
         </Button>
       </div>
     )}

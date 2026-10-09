@@ -8,17 +8,8 @@ import type {
   ResolveThreadState,
   SessionId,
 } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
 import { noteThreadId } from '../../../../features/resolve/notes/noteThread';
-import {
-  MOUNT_TARGET,
-  SESSION_ID,
-  buildItem,
-  buildThread,
-  isoAgo,
-  msAgo,
-  seedResolveScene,
-} from './resolveSeed';
+import { MOUNT_TARGET, buildItem, buildThread, isoAgo, msAgo } from './resolveSeed';
 
 type NoteKey = 'open' | 'openSecond' | 'working' | 'needs' | 'ready' | 'failed' | 'done';
 
@@ -153,16 +144,6 @@ export const NOTE_IDS: Readonly<Record<NoteKey, string>> = {
   done: SEEDS.done.id,
 };
 
-const RESOLVE_PLACES: Readonly<Record<NoteKey, NotePlace>> = {
-  open: { filePath: 'src/webhooks/retryPolicy.ts', line: 42 },
-  openSecond: { filePath: 'src/payments/capture.ts', line: 17 },
-  working: { filePath: 'src/webhooks/retryPolicy.ts', line: 58 },
-  needs: { filePath: 'src/payments/refund.ts', line: 21 },
-  ready: { filePath: 'src/payments/refund.ts', line: 9 },
-  failed: { filePath: 'src/payments/capture.ts', line: 30 },
-  done: { filePath: 'src/webhooks/retryPolicy.ts', line: 12 },
-};
-
 type Placed = {
   readonly sessionId: SessionId;
   readonly seed: NoteSeed;
@@ -285,25 +266,4 @@ export const resolveNotesFor = ({
     entries: placed.map(entryOf),
     attempts: placed.flatMap(attemptOf),
   };
-};
-
-export const seedResolveNotes = (): void => {
-  seedResolveScene({ expandedThreadId: null });
-  const { notes, entries, attempts } = resolveNotesFor({
-    sessionId: SESSION_ID,
-    places: RESOLVE_PLACES,
-  });
-  const state = useAppStore.getState();
-  useAppStore.setState({
-    drawer: null,
-    diffComments: { ...state.diffComments, [SESSION_ID]: notes },
-    sessionResolveQueueItems: {
-      ...state.sessionResolveQueueItems,
-      [SESSION_ID]: [...(state.sessionResolveQueueItems[SESSION_ID] ?? []), ...entries],
-    },
-    sessionResolveAttempts: {
-      ...state.sessionResolveAttempts,
-      [SESSION_ID]: [...(state.sessionResolveAttempts[SESSION_ID] ?? []), ...attempts],
-    },
-  });
 };

@@ -23,7 +23,7 @@ const QUIET_LINK =
 
 const originLabelOf = ({ entry }: { readonly entry: ReviewEntry }): string => {
   const kind = entry.row.thread.sourceKind ?? 'github';
-  return kind === 'local' ? 'Local' : REVIEW_SOURCE_LABEL[kind];
+  return kind === 'local' ? 'Note' : REVIEW_SOURCE_LABEL[kind];
 };
 
 export const ThreadProperties = ({ sessionId, entry }: Props) => {

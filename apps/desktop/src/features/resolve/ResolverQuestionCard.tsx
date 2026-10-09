@@ -52,7 +52,8 @@ export const ResolverQuestionCard = ({ sessionId, row }: Props) => {
   };
 
   return (
-    <section
+    <div
+      role="group"
       aria-label={FIX_RUN_QUESTION_COPY.title}
       data-testid="resolver-question"
       className="flex min-w-0 flex-col gap-3 rounded-lg bg-subtle p-4 ring-1 ring-border-soft"
@@ -114,6 +115,6 @@ export const ResolverQuestionCard = ({ sessionId, row }: Props) => {
           {error}
         </p>
       )}
-    </section>
+    </div>
   );
 };

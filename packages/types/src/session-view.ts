@@ -41,6 +41,8 @@ export type SessionStageInfo = Readonly<{
   openQuestionCount?: number;
   fixNeedsYouCount?: number;
   fixCouldntFixCount?: number;
+  noteNeedsYouCount?: number;
+  noteCouldntFixCount?: number;
 }>;
 
 export type SessionPrGroup =

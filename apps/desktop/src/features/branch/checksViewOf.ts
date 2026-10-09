@@ -2,6 +2,8 @@ import type { PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
 
 export type ChecksHost = 'gitlab' | 'bitbucket';
 
+export type ChecksHostKind = 'github' | ChecksHost | 'local';
+
 type ChecksView =
   | { readonly kind: 'host'; readonly host: ChecksHost; readonly url: string | null }
   | { readonly kind: 'no-pr' }
@@ -11,7 +13,7 @@ type ChecksView =
   | { readonly kind: 'ready'; readonly checks: ReadonlyArray<PrCheckRun> };
 
 type Params = {
-  readonly hostKind: 'github' | 'gitlab' | 'bitbucket' | 'local';
+  readonly hostKind: ChecksHostKind;
   readonly hostUrl: string | null;
   readonly pr: PullRequestState | null;
   readonly detail: PrDetail | null;

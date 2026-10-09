@@ -11,6 +11,7 @@ import type {
 import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import { useAppStore, type AppStore } from '../../store';
+import type { MountGithubState } from '../../types';
 import type { MountBitbucketPrState } from '../bitbucket-pr/state';
 import { activeReviewSourceOf, selectedReviewEntryOf } from './activeReviewSource';
 import { reviewSourceEntriesOf } from './reviewSourceEntries';
@@ -27,6 +28,8 @@ const BITBUCKET_MOUNT_ID = 'bbmount' as MountId;
 const BITBUCKET_PROJECT_ID = 'bbproject' as ProjectId;
 const WORKSPACE_ID = 'workspace' as WorkspaceId;
 const STAMP = '2026-09-04T14:20:00.000Z' as IsoDateTime;
+const LEDGER = 'ledger' as MountId;
+const RELAY = 'relay' as MountId;
 
 const BITBUCKET_PR: BitbucketPullRequest = {
   id: 12,
@@ -161,13 +164,40 @@ const stateWith = (overrides: Partial<AppStore> = {}): AppStore => ({
 });
 
 describe('review sources of a session', () => {
-  it('lists the pull request, the merge request and the notes with open counts', () => {
+  it('lists the pull request and the merge request with open counts, never the notes', () => {
     const entries = reviewSourceEntriesOf({ state: stateWith(), sessionId: SESSION });
     expect(entries.map((entry) => [entry.kind, entry.label, entry.openCount])).toEqual([
       ['github', 'payments-api #318', 2],
       ['gitlab', 'notify-relay !57', 1],
-      ['local', 'Notes on this machine', 0],
     ]);
+  });
+
+  it('keeps the notes out of the list whatever notes the session holds', () => {
+    const note = {
+      id: 'n1',
+      sessionId: SESSION,
+      filePath: 'src/a.ts',
+      body: 'Cap it',
+      status: 'open',
+      createdAt: STAMP,
+      authorKind: 'user',
+    } as const;
+    const state = stateWith({ diffComments: { [SESSION]: [note] } });
+    expect(
+      reviewSourceEntriesOf({ state, sessionId: SESSION }).some(
+        (entry) => (entry.kind as string) === 'local',
+      ),
+    ).toBe(false);
+    expect(
+      reviewSourceEntriesOf({
+        state: stateWith({
+          sessionGithub: {},
+          sessionGitlabMr: {},
+          diffComments: state.diffComments,
+        }),
+        sessionId: SESSION,
+      }),
+    ).toEqual([]);
   });
 
   it('reads the github pull request by default and its comments', () => {
@@ -187,15 +217,87 @@ describe('review sources of a session', () => {
     expect(source?.comments.map((item) => item.threadId)).toEqual(['gitlab:d1']);
   });
 
-  it('has no remote source when the notes are picked', () => {
+  it('ignores a stored pick that is no longer a request and reads the pull request', () => {
     const state = stateWith({ reviewSourceKeys: { [SESSION]: 'local' } });
-    expect(activeReviewSourceOf({ state, sessionId: SESSION })).toBeNull();
-    expect(selectedReviewEntryOf({ state, sessionId: SESSION }).kind).toBe('local');
+    expect(activeReviewSourceOf({ state, sessionId: SESSION })?.kind).toBe('github');
+    expect(selectedReviewEntryOf({ state, sessionId: SESSION })?.kind).toBe('github');
   });
 
-  it('falls back to the notes when the session has no request', () => {
+  it('selects nothing when the session has no request', () => {
     const state = stateWith({ sessionGithub: {}, sessionGitlabMr: {} });
-    expect(selectedReviewEntryOf({ state, sessionId: SESSION }).kind).toBe('local');
+    expect(selectedReviewEntryOf({ state, sessionId: SESSION })).toBeNull();
+    expect(activeReviewSourceOf({ state, sessionId: SESSION })).toBeNull();
+  });
+
+  it('lists one pull request for each of two mounts and no notes among them', () => {
+    const mountOf = (id: string, name: string) => ({
+      id: id as MountId,
+      sessionId: SESSION,
+      projectId: `${id}-project` as ProjectId,
+      worktreePath: `/repo/${name}`,
+      lastWorktreePath: null,
+      branch: `hl/${name}`,
+      baseBranch: 'main',
+      parallelIndex: 0,
+      mountName: name,
+      repoSlug: null,
+      isAttached: true,
+      diskState: 'present' as const,
+      revision: 1,
+      createdAt: STAMP,
+      updatedAt: STAMP,
+      repoRoot: `/repo/${name}`,
+    });
+    const githubOf = (id: string, number: number): MountGithubState => ({
+      mountId: id as MountId,
+      projectId: `${id}-project` as ProjectId,
+      revision: 1,
+      repository: null,
+      host: null,
+      branch: `hl/${id}`,
+      prs: [],
+      links: [],
+      pr: {
+        number,
+        title: 'Guard the batch',
+        url: `https://example.invalid/harborline/${id}/pull/${number}`,
+        state: 'open',
+        mergeable: true,
+        checks: 'success',
+        baseBranch: 'main',
+        headBranch: `hl/${id}`,
+        isDraft: false,
+        reviewDecision: null,
+        body: '',
+        updatedAt: STAMP,
+      },
+      linkedIssues: [],
+      fetchedAt: null,
+      failedAt: null,
+      loading: false,
+      error: null,
+      detail: null,
+      detailFetchedAt: null,
+      detailLoading: false,
+      detailError: null,
+    });
+    const state = stateWith({
+      sessionGithub: {},
+      sessionGitlabMr: {},
+      sessionMounts: {
+        [SESSION]: [mountOf('ledger', 'ledger-core'), mountOf('relay', 'notify-relay')],
+      },
+      mountGithub: {
+        [LEDGER]: githubOf('ledger', 31),
+        [RELAY]: githubOf('relay', 32),
+      },
+    });
+    const entries = reviewSourceEntriesOf({ state, sessionId: SESSION });
+    expect(entries.map((entry) => [entry.kind, entry.number])).toEqual([
+      ['github', 31],
+      ['github', 32],
+    ]);
+    expect(selectedReviewEntryOf({ state, sessionId: SESSION })?.kind).toBe('github');
   });
 });
 
@@ -256,7 +358,6 @@ describe('bitbucket as a review source', () => {
     const entries = reviewSourceEntriesOf({ state: bitbucketState(), sessionId: SESSION });
     expect(entries.map((entry) => [entry.kind, entry.label, entry.openCount])).toEqual([
       ['bitbucket', 'storefront-web #12', 2],
-      ['local', 'Notes on this machine', 0],
     ]);
   });
 
@@ -279,9 +380,7 @@ describe('bitbucket as a review source', () => {
         },
       },
     });
-    expect(reviewSourceEntriesOf({ state, sessionId: SESSION }).map((entry) => entry.kind)).toEqual(
-      ['local'],
-    );
+    expect(reviewSourceEntriesOf({ state, sessionId: SESSION })).toEqual([]);
   });
 });
 
@@ -289,7 +388,6 @@ describe('rowBelongsToSource', () => {
   it('keeps a row on the source it was created for', () => {
     const github = { kind: 'github', projectId: null, number: 318 } as const;
     const gitlab = { kind: 'gitlab', projectId: null, number: 57 } as const;
-    const local = { kind: 'local', projectId: null, number: null } as const;
     const bitbucket = { kind: 'bitbucket', projectId: null, number: 12 } as const;
     expect(rowBelongsToSource({ row: row({}), entry: github })).toBe(true);
     expect(rowBelongsToSource({ row: row({}), entry: gitlab })).toBe(false);
@@ -300,12 +398,15 @@ describe('rowBelongsToSource', () => {
       rowBelongsToSource({ row: row({ sourceKind: 'bitbucket', prNumber: 12 }), entry: bitbucket }),
     ).toBe(true);
     expect(rowBelongsToSource({ row: row({}), entry: bitbucket })).toBe(false);
-    expect(rowBelongsToSource({ row: row({ originKind: 'diff_comment' }), entry: local })).toBe(
-      true,
-    );
     expect(rowBelongsToSource({ row: row({ originKind: 'diff_comment' }), entry: github })).toBe(
       false,
     );
+    expect(
+      rowBelongsToSource({
+        row: row({ originKind: 'diff_comment', sourceKind: 'local' }),
+        entry: gitlab,
+      }),
+    ).toBe(false);
   });
 
   it('separates two requests with the same number in different projects', () => {

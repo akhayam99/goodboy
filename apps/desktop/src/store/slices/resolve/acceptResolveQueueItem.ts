@@ -10,7 +10,7 @@ import {
   setResolveCandidateState,
   setResolveQueueItemApproval,
 } from '@goodboy/db';
-import type { ResolveCandidate, ResolveQueueItemWithThread } from '@goodboy/types';
+import type { ResolveCandidate, ResolveQueueItemWithThread, ResolveThread } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
   integrateWorktreeCandidate,
@@ -19,6 +19,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { advanceResolveStage } from './advanceResolveStage';
 import { withCandidateLock } from './candidateLock';
+import { closeResolvedNote } from './closeResolvedNote';
 import { hashResolveReply } from './hashResolveReply';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
@@ -99,6 +100,14 @@ const markAcceptConflict = async ({
   });
   await loadResolveQueueItemsInto({ set, sessionId });
   await loadResolveCandidatesInto({ set, sessionId });
+  await closeAcceptedNotes({
+    set,
+    get,
+    sessionId,
+    threads: steps.flatMap(({ covered }) =>
+      covered.flatMap(({ entry }) => (entry === undefined ? [] : [entry.thread])),
+    ),
+  });
 };
 
 export const PARTIAL_REFUSAL =
@@ -239,6 +248,20 @@ const landedShasOf = async ({
   return landed;
 };
 
+const closeAcceptedNotes = async ({
+  set,
+  get,
+  sessionId,
+  threads,
+}: SliceParams &
+  SessionParams & { readonly threads: ReadonlyArray<ResolveThread> }): Promise<void> => {
+  for (const thread of threads) {
+    if (thread.originKind === 'diff_comment') {
+      await closeResolvedNote({ set, get, sessionId, threadId: thread.threadId });
+    }
+  }
+};
+
 const acceptDecidedItem = async ({
   set,
   get,
@@ -271,6 +294,12 @@ const acceptDecidedItem = async ({
       event: () => ({ kind: 'user_approved' }),
     });
     await loadResolveQueueItemsInto({ set, sessionId });
+    await closeAcceptedNotes({
+      set,
+      get,
+      sessionId,
+      threads: approved === undefined ? [] : [approved.thread],
+    });
     return;
   }
   const entries = await listResolveQueueItems({ db, sessionId });
@@ -359,4 +388,12 @@ const acceptDecidedItem = async ({
   });
   await loadResolveQueueItemsInto({ set, sessionId });
   await loadResolveCandidatesInto({ set, sessionId });
+  await closeAcceptedNotes({
+    set,
+    get,
+    sessionId,
+    threads: steps.flatMap(({ covered }) =>
+      covered.flatMap(({ entry }) => (entry === undefined ? [] : [entry.thread])),
+    ),
+  });
 };

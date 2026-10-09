@@ -9,8 +9,17 @@ const WAITING: ReadonlySet<ResolveUiState> = new Set([
   'approved',
 ]);
 
+type Waiting = {
+  readonly comments: number;
+  readonly notes: number;
+};
+
 export const conversationsWaiting = ({
   rows,
 }: {
   readonly rows: ReadonlyArray<ResolveQueueRow>;
-}): number => rows.filter((row) => WAITING.has(row.status)).length;
+}): Waiting => {
+  const waiting = rows.filter((row) => WAITING.has(row.status));
+  const notes = waiting.filter((row) => row.thread.originKind === 'diff_comment').length;
+  return { comments: waiting.length - notes, notes };
+};

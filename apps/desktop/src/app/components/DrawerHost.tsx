@@ -9,6 +9,7 @@ import { ScriptRunDrawer } from '../../features/scripts/components/ScriptRunDraw
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
 import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
+import { ReviewNotesDrawer } from '../../features/resolve/notes/components/ReviewNotesDrawer';
 import { FixRunLead } from '../../features/resolve/components/FixRunSummary/FixRunLead';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
@@ -108,6 +109,17 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           agentId={drawer.payload.agentId}
           lead={<FixRunLead sessionId={drawer.sessionId} agentId={drawer.payload.agentId} />}
+          onClose={closeDrawer}
+        />
+      );
+    case 'review-notes':
+      return (
+        <ReviewNotesDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          mountPath={drawer.payload.mountPath}
+          focusPath={drawer.payload.focusPath ?? null}
+          focusThreadId={drawer.payload.focusThreadId ?? null}
           onClose={closeDrawer}
         />
       );

@@ -11,6 +11,7 @@ type Props = {
   readonly onStop: () => void;
   readonly lane?: LaneStatus | null;
   readonly actions?: ReactNode;
+  readonly noun?: 'comment' | 'note';
 };
 
 const CHIP_TONE: Readonly<Record<FixRunWord, Tone>> = {
@@ -28,8 +29,9 @@ export const ResolveRunStatus = ({
   onStop,
   lane = null,
   actions = null,
+  noun = 'comment',
 }: Props) => {
-  const title = lane === null ? fixRunTitle({ run }) : lane.line;
+  const title = lane === null ? fixRunTitle({ run, noun }) : lane.line;
   const isLive = run.isLive || lane !== null;
   return (
     <section
@@ -37,9 +39,11 @@ export const ResolveRunStatus = ({
       data-testid="resolve-run-status"
       className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-subtle px-4 py-2 ring-1 ring-border-soft"
     >
-      <span className="flex shrink-0 items-center gap-2 text-label text-foreground">
+      <span className="flex min-w-0 max-w-full items-center gap-2 text-label text-foreground">
         {isLive && <WorkNode state="running" label={title} mark={{ kind: 'dot' }} />}
-        {title}
+        <span className="min-w-0 truncate" title={title}>
+          {title}
+        </span>
       </span>
       <ul aria-label="Filter by state" className="flex min-w-0 flex-wrap items-center gap-1">
         {FIX_RUN_CHIPS.map(({ word, phrase }) => {

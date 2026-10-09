@@ -3,6 +3,7 @@ import { useAppStore } from '../../store';
 import { selectMountForPr } from '../../store/slices/github/mountForPr';
 import { selectUnambiguousProjectMount } from '../../store/slices/project-mounts/selectors';
 import type { ReviewTargetOutcome } from '../../store/slices/review-navigation';
+import { noteIdOfThread } from '../resolve/notes/noteThread';
 import { openReview } from './openReview';
 import { pullRequestNumberFromUrl } from './pullRequestNumberFromUrl';
 
@@ -65,6 +66,9 @@ export const openReviewThread = ({
   threadId,
   prUrl = null,
 }: Params): Promise<ReviewTargetOutcome> => {
+  if (noteIdOfThread({ threadId }) !== null) {
+    return openReview({ sessionId, destination: { kind: 'notes', threadIds: [threadId] } });
+  }
   const state = useAppStore.getState();
   const prNumber = prNumberFor({ state, sessionId, threadId, prUrl });
   if (prNumber === null) {

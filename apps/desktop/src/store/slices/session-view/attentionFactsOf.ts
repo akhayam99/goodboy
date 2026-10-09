@@ -13,6 +13,8 @@ export type AttentionFactsParams = {
   readonly openQuestionCount: number;
   readonly fixNeedsYouCount?: number;
   readonly fixCouldntFixCount?: number;
+  readonly noteNeedsYouCount?: number;
+  readonly noteCouldntFixCount?: number;
   readonly hasBlockedAgent?: boolean;
   readonly isBranchless?: boolean;
   readonly hasPlanWaiting?: boolean;
@@ -77,6 +79,8 @@ export const attentionFactsOf = ({
   openQuestionCount,
   fixNeedsYouCount = 0,
   fixCouldntFixCount = 0,
+  noteNeedsYouCount = 0,
+  noteCouldntFixCount = 0,
   hasBlockedAgent = false,
   isBranchless = false,
   hasPlanWaiting = false,
@@ -88,10 +92,10 @@ export const attentionFactsOf = ({
     'agent-error': session.state.kind === 'error',
     'plan-approval': hasPlanWaiting,
     'open-question': openQuestionCount > 0,
-    'fix-needs-you': isOnBranch && fixNeedsYouCount > 0,
+    'fix-needs-you': isOnBranch && fixNeedsYouCount + noteNeedsYouCount > 0,
     'ci-failed': livePr !== null && livePr.checks === 'failure',
     'changes-requested': livePr !== null && livePr.reviewDecision === 'changes_requested',
-    'fix-couldnt-fix': isOnBranch && fixCouldntFixCount > 0,
+    'fix-couldnt-fix': isOnBranch && fixCouldntFixCount + noteCouldntFixCount > 0,
     'pr-queued': livePr !== null && livePr.state === 'queued',
     'pr-approved': livePr !== null && isPullRequestApproved({ pr: livePr }),
     'unread-reply': hasUnread,

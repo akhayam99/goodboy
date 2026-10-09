@@ -69,7 +69,7 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'PR with open notes',
     facts: { notes: 2 },
-    expected: ['review.postNotes menu Post open notes to the PR'],
+    expected: ['review.postNotes menu Move 2 to review draft'],
   },
   {
     name: 'loading',

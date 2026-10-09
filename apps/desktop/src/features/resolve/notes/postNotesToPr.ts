@@ -1,5 +1,6 @@
 import type { DiffComment, SessionId } from '@goodboy/types';
 import type { AddReviewDraftInput } from '../../../store/slices/review-drafts/addReviewDraft';
+import { FILE_LEVEL_LINE } from '../../../store/slices/review-drafts/fileLevel';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -10,21 +11,13 @@ type Params = {
 
 export type PostNotesResult = {
   readonly posted: number;
-  readonly skipped: number;
 };
 
-export const POST_NOTES_LABEL = 'Post open notes to the PR';
+export const moveNotesLabel = ({ count }: { readonly count: number }): string =>
+  `Move ${count} to review draft`;
 
-export const postNotesResultMessage = ({ posted, skipped }: PostNotesResult): string => {
-  const drafts =
-    posted === 1
-      ? '1 note is now a draft review comment'
-      : `${posted} notes are now draft review comments`;
-  if (skipped === 0) {
-    return drafts;
-  }
-  return `${drafts}. ${skipped} without a line stayed as notes`;
-};
+export const postNotesResultMessage = ({ posted }: PostNotesResult): string =>
+  posted === 1 ? '1 note moved to your review draft' : `${posted} notes moved to your review draft`;
 
 const draftOf = ({
   sessionId,
@@ -32,10 +25,17 @@ const draftOf = ({
 }: {
   readonly sessionId: SessionId;
   readonly note: DiffComment;
-}): AddReviewDraftInput | null => {
+}): AddReviewDraftInput => {
   const anchor = note.anchor;
   if (anchor === undefined) {
-    return null;
+    return {
+      sessionId,
+      path: note.filePath,
+      line: FILE_LEVEL_LINE,
+      startLine: null,
+      side: 'new',
+      body: note.body,
+    };
   }
   const isRange = anchor.endLineNumber !== undefined && anchor.endLineNumber > anchor.lineNumber;
   return {
@@ -55,16 +55,10 @@ export const postNotesToPr = async ({
   closeNote,
 }: Params): Promise<PostNotesResult> => {
   let posted = 0;
-  let skipped = 0;
   for (const note of notes) {
-    const draft = draftOf({ sessionId, note });
-    if (draft === null) {
-      skipped += 1;
-      continue;
-    }
-    await addReviewDraft(draft);
+    await addReviewDraft(draftOf({ sessionId, note }));
     await closeNote(note.id);
     posted += 1;
   }
-  return { posted, skipped };
+  return { posted };
 };

@@ -370,7 +370,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Notes',
-        desc: 'Add note on a line saves it with the project and branch you are on. It reads Local in the Comments tab, where Fix starts an agent on it, and Post notes moves the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
+        desc: 'Add note on a line saves it with the project and branch you are on. It counts in Notes N on the Files tab, where the Notes drawer lists it and Fix starts an agent on it, and Move N to review draft takes the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
       },
       {
         term: 'Review sources',

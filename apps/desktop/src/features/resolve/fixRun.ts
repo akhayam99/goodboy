@@ -140,7 +140,13 @@ export const fixRunNameOf = ({
   });
 };
 
-export const fixRunTitle = ({ run }: { readonly run: FixRun }): string => {
-  const comments = run.total === 1 ? '1 comment' : `${run.total} comments`;
-  return run.isLive ? `Fixing ${comments}` : `Fix run · ${comments}`;
+export const fixRunTitle = ({
+  run,
+  noun = 'comment',
+}: {
+  readonly run: FixRun;
+  readonly noun?: 'comment' | 'note';
+}): string => {
+  const counted = run.total === 1 ? `1 ${noun}` : `${run.total} ${noun}s`;
+  return run.isLive ? `Fixing ${counted}` : `Fix run · ${counted}`;
 };

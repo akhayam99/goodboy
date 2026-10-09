@@ -1,7 +1,10 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { branchPlace } from '../../store/slices/navigation/place';
+import { selectOpenDrawer } from '../../store/slices/drawer/selectOpenDrawer';
 import { dispatchAfterNavigation } from '../actions/dispatchAfterNavigation';
+import { noteIdOfThread } from '../resolve/notes/noteThread';
+import { reviewNotesDrawer } from '../resolve/notes/notesDrawer';
 
 export const REVIEW_REQUEST_EVENT = 'goodboy:review-request';
 
@@ -38,9 +41,36 @@ type FixParams = {
   readonly threadIds: ReadonlyArray<string>;
 };
 
+const isNoteThreadId = (threadId: string): boolean => noteIdOfThread({ threadId }) !== null;
+
+const openNotes = ({
+  getState,
+  sessionId,
+  threadId,
+}: {
+  readonly getState: () => AppStore;
+  readonly sessionId: SessionId;
+  readonly threadId: string | null;
+}): void => {
+  const state = getState();
+  const open = selectOpenDrawer(state);
+  if (open !== null && open.sessionId === sessionId && open.kind === 'review-notes') {
+    return;
+  }
+  const mountPath = state.diffMountPath?.[sessionId] ?? null;
+  state.navigate({
+    to: branchPlace({ sessionId, mountPath, tab: 'files' }),
+    drawer: reviewNotesDrawer({ sessionId, mountPath, focusThreadId: threadId }),
+  });
+};
+
 const requestFix = ({ getState, sessionId, threadIds }: FixParams): void => {
   const state = getState();
   state.requestReviewLaunch({ sessionId, threadIds });
+  if (threadIds.length > 0 && threadIds.every(isNoteThreadId)) {
+    openNotes({ getState, sessionId, threadId: threadIds[0] ?? null });
+    return;
+  }
   const isOnComments =
     state.currentSessionId === sessionId &&
     (state.activeLens[sessionId] ?? null) === 'branch' &&
@@ -66,6 +96,11 @@ export const requestReview = ({ getState, sessionId, request }: Params): void =>
     return;
   }
   const threadId = 'threadId' in request ? request.threadId : null;
+  if (threadId !== null && isNoteThreadId(threadId)) {
+    openNotes({ getState, sessionId, threadId });
+    dispatchAfterNavigation({ name: REVIEW_REQUEST_EVENT, detail: { sessionId, request } });
+    return;
+  }
   getState().navigate({
     to: branchPlace({ sessionId, tab: 'comments', threadId }),
     drawer: threadId === null ? null : { kind: 'conversation', sessionId, payload: { threadId } },

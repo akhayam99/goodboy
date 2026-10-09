@@ -15,7 +15,10 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { SESSION } from '../../../../app/components/MockScene/scenes/resolveSeed';
-import { seedResolveGitlabScene } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
+import {
+  NOTES,
+  seedResolveGitlabScene,
+} from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import { BranchPage } from '../../../branch/components/BranchPage';
 
 let useAppStore: StoryStore;
@@ -38,7 +41,7 @@ const settle = async (): Promise<void> => {
   });
 };
 
-type Source = 'github' | 'gitlab' | 'local';
+type Source = 'github' | 'gitlab';
 
 const mount = async ({ selected }: { readonly selected: Source }): Promise<void> => {
   seedResolveGitlabScene({ selected });
@@ -66,17 +69,25 @@ const CASES: ReadonlyArray<{
   readonly first: RegExp;
   readonly rows: number;
 }> = [
-  { source: 'github', first: /retryPolicy\.ts/, rows: 11 },
-  { source: 'gitlab', first: /dispatch\.ts/, rows: 5 },
-  { source: 'local', first: /retryPolicy\.ts/, rows: 2 },
+  { source: 'github', first: /retryPolicy\.ts/, rows: 9 },
+  { source: 'gitlab', first: /dispatch\.ts/, rows: 3 },
 ];
 
 describe.each(CASES)('Comments on the $source source', ({ source, first, rows }) => {
-  it('lists the comments of the request and the local notes in one list', async () => {
+  it('lists the comments of the request only', async () => {
     await mount({ selected: source });
 
     expect(rowsOf()).toHaveLength(rows);
     expect(rowsOf().some((text) => first.test(text))).toBe(true);
+  });
+
+  it('lists none of the local notes, which live in the Notes drawer of Files', async () => {
+    await mount({ selected: source });
+
+    for (const note of NOTES) {
+      expect(screen.queryByText(note.body, { exact: false })).toBeNull();
+    }
+    expect(rowsOf().every((text) => !text.includes('Local'))).toBe(true);
   });
 
   it('has no source picker and no pull request link of its own', async () => {

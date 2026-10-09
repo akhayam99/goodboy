@@ -50,6 +50,8 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
       onToggleFolder={vi.fn()}
       onPick={vi.fn()}
       onCommentOnFile={null}
+      onOpenNotes={null}
+      hasNotesIn={() => false}
       stateOf={() => 'none'}
       noteCountOf={() => 0}
       {...overrides}
@@ -165,6 +167,8 @@ describe('ChangeTree', () => {
         onToggleFolder={onToggleFolder}
         onPick={vi.fn()}
         onCommentOnFile={null}
+        onOpenNotes={null}
+        hasNotesIn={() => false}
         stateOf={() => 'none'}
         noteCountOf={() => 0}
       />,
@@ -225,6 +229,30 @@ describe('ChangeTree', () => {
 
     expect(screen.getByText('1 of 4 viewed')).toBeDefined();
     expect(screen.getByLabelText('2 notes')).toBeDefined();
+  });
+
+  it('opens the notes of a file from its note count when the file has notes of its own', () => {
+    const onOpenNotes = vi.fn();
+    renderTree({
+      noteCountOf: (path) => (path === 'src/ledger/export/page.tsx' ? 2 : 0),
+      hasNotesIn: (path) => path === 'src/ledger/export/page.tsx',
+      onOpenNotes,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '2 notes' }));
+
+    expect(onOpenNotes).toHaveBeenCalledWith('src/ledger/export/page.tsx');
+  });
+
+  it('shows the count of a file with only pull request threads as plain text', () => {
+    renderTree({
+      noteCountOf: (path) => (path === 'src/ledger/export/page.tsx' ? 1 : 0),
+      hasNotesIn: () => false,
+      onOpenNotes: vi.fn(),
+    });
+
+    expect(screen.getByLabelText('1 note')).toBeDefined();
+    expect(screen.queryByRole('button', { name: '1 note' })).toBeNull();
   });
 
   it('keeps the head on every file while the tree shows only the filtered ones', () => {

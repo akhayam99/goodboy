@@ -1,13 +1,16 @@
-import { CheckCheck, MessageSquare } from 'lucide-react';
-import { EmptyState, FilledEmptyState } from '@goodboy/ui';
+import { CheckCheck } from 'lucide-react';
+import { FilledEmptyState } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { NoPullRequestState } from './NoPullRequestState';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly provider: string | null;
 };
 
-export const ReviewEmptyState = ({ provider }: Props) =>
+export const ReviewEmptyState = ({ sessionId, provider }: Props) =>
   provider === null ? (
-    <EmptyState icon={MessageSquare} title="No open notes" />
+    <NoPullRequestState sessionId={sessionId} />
   ) : (
     <FilledEmptyState icon={CheckCheck} tone="neutral" title={`No open comments on ${provider}`} />
   );
