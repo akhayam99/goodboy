@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IsoDateTime, MountBranchObservation, MountId, SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
@@ -57,17 +57,53 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+const sentenceOf = ({ text }: { readonly text: string }): HTMLElement =>
+  screen.getByText(
+    (_content, element) =>
+      element?.tagName === 'SPAN' && element.children.length > 0 && element.textContent === text,
+  );
+
 describe('MountBranchDecision', () => {
+  it('is a warning notice on the inline rail with three neutral buttons in one order', async () => {
+    renderDecision();
+
+    const notice = screen.getByRole('alert');
+    expect(notice.getAttribute('data-tone')).toBe('warning');
+    expect(notice.getAttribute('data-placement')).toBe('inline');
+    expect(notice.querySelector('[data-confirm-cancel]')).toBeNull();
+    await waitFor(() =>
+      expect(
+        within(notice)
+          .getByRole('button', { name: 'Use this branch here' })
+          .hasAttribute('disabled'),
+      ).toBe(false),
+    );
+    const names = within(notice)
+      .getAllByRole('button')
+      .map((button) => button.textContent);
+    expect(names).toEqual(['Use this branch here', 'Keep both branches', 'Not now']);
+    within(notice)
+      .getAllByRole('button')
+      .forEach((button) => expect(button.getAttribute('data-size')).toBe('sm'));
+  });
+
+  it('sets the branch names apart in mono', () => {
+    renderDecision();
+
+    const names = Array.from(screen.getByRole('alert').querySelectorAll('.font-mono'));
+    expect(names.map((name) => name.textContent)).toEqual(['ak/part-one', 'ak/part-two']);
+  });
+
   it('names the mount, the recorded branch and the one found', async () => {
     renderDecision();
 
     expect(screen.getByText('ledger-core is not on the branch it was left on')).toBeDefined();
-    expect(screen.getByText('Expected ak/part-one, found ak/part-two.')).toBeDefined();
+    expect(sentenceOf({ text: 'Expected ak/part-one, found ak/part-two.' })).toBeDefined();
     await waitFor(() =>
       expect(
-        screen.getByText(
-          'Expected ak/part-one, found ak/part-two. Keep both branches keeps ak/part-two here and opens ak/part-one again in a worktree of its own.',
-        ),
+        sentenceOf({
+          text: 'Expected ak/part-one, found ak/part-two. Keep both branches keeps ak/part-two here and opens ak/part-one again in a worktree of its own.',
+        }),
       ).toBeDefined(),
     );
   });
@@ -111,9 +147,9 @@ describe('MountBranchDecision', () => {
 
     expect(screen.getByText('ledger-core is not on the branch it was left on')).toBeDefined();
     expect(
-      screen.getByText(
-        'Expected ak/part-one, found ak/part-two. ak/part-two is already checked out as PR #418 in this session, and git keeps one branch in one worktree.',
-      ),
+      sentenceOf({
+        text: 'Expected ak/part-one, found ak/part-two. ak/part-two is already checked out as PR #418 in this session, and git keeps one branch in one worktree.',
+      }),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Use this branch here' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Check again' }).hasAttribute('disabled')).toBe(
@@ -139,7 +175,9 @@ describe('MountBranchDecision', () => {
     renderDecision({ next: { state: 'detached', observedBranch: null } });
 
     expect(screen.getByText('ledger-core is not on a branch')).toBeDefined();
-    expect(screen.getByText('Expected ak/part-one, found a commit with no branch.')).toBeDefined();
+    expect(
+      sentenceOf({ text: 'Expected ak/part-one, found a commit with no branch.' }),
+    ).toBeDefined();
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Put it back on ak/part-one' }).hasAttribute('disabled'),
@@ -161,7 +199,7 @@ describe('MountBranchDecision', () => {
 
     expect(screen.getByText("ledger-core's branch could not be read")).toBeDefined();
     expect(
-      screen.getByText('Expected ak/part-one, but its directory could not be read.'),
+      sentenceOf({ text: 'Expected ak/part-one, but its directory could not be read.' }),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' }).hasAttribute('disabled')).toBe(
       false,
@@ -183,9 +221,9 @@ describe('MountBranchDecision', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText(
-          'Expected ak/part-one, found ak/part-two. ak/part-two is already checked out in another worktree of this project, and git keeps one branch in one worktree.',
-        ),
+        sentenceOf({
+          text: 'Expected ak/part-one, found ak/part-two. ak/part-two is already checked out in another worktree of this project, and git keeps one branch in one worktree.',
+        }),
       ).toBeDefined(),
     );
     expect(screen.queryByRole('button', { name: 'Use this branch here' })).toBeNull();

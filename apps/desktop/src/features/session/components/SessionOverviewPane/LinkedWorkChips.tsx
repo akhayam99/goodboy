@@ -29,9 +29,11 @@ export const LinkedWorkChips = ({ sessionId, onSelectLens }: Props) => {
   const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
   const isSkeleton = useSessionSkeleton({ sessionId });
   const linkedIssues = github?.linkedIssues ?? [];
-  const orderedTasks = [...distinctTasks({ tasks: externalTasks })].sort(
-    (left, right) => PROVIDER_ORDER[left.task.provider] - PROVIDER_ORDER[right.task.provider],
-  );
+  const orderedTasks = distinctTasks({ tasks: externalTasks })
+    .filter(({ task }) => task.scope !== 'branch')
+    .sort(
+      (left, right) => PROVIDER_ORDER[left.task.provider] - PROVIDER_ORDER[right.task.provider],
+    );
   if (linkedIssues.length === 0 && orderedTasks.length === 0) {
     return null;
   }

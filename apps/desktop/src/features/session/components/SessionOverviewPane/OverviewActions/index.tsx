@@ -12,8 +12,6 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { hasActiveWorkflowRun } from '../../../../workflows/activeWorkflowRuns';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
-import { reportCreationAdapter } from '../../../../reports/reportCreationAdapter';
-import { wireframeCreationAdapter } from '../../../../wireframes/wireframeCreationAdapter';
 
 type Props = {
   readonly session: Session;
@@ -37,7 +35,7 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
   const isRunActive = hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents });
   const dropdown = useDropdown({
     align: 'end',
-    width: 'min-w-[200px]',
+    width: 'min-w-[260px]',
     expectedHeight: 200,
   });
   const startAgentEvent = startAgentEventOf({ sessionId });
@@ -47,6 +45,7 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
       kind: 'item',
       key: 'workflow',
       label: isRunActive ? 'Open run' : 'Start a run',
+      description: isRunActive ? 'Follow the run in progress' : 'Run a workflow on this session',
       icon: CONCEPT_ICONS.workflows,
       onClick: isRunActive ? onOpenRun : onOpenWorkflowBuilder,
     },
@@ -54,6 +53,7 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
       kind: 'item',
       key: 'agent',
       label: 'Start agent',
+      description: 'Hand one task to an agent',
       icon: CONCEPT_ICONS.agents,
       onClick: () => window.dispatchEvent(new CustomEvent(startAgentEvent)),
     },
@@ -62,7 +62,7 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
       kind: 'item',
       key: 'report',
       label: 'Report',
-      description: reportCreationAdapter.ctaTitle,
+      description: 'Write up what this session did',
       icon: CONCEPT_ICONS.changelog,
       onClick: () => openArtifactCreation({ sessionId, kind: 'report', workflowRunId: null }),
     },
@@ -70,7 +70,7 @@ export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: P
       kind: 'item',
       key: 'wireframe',
       label: 'Wireframe',
-      description: wireframeCreationAdapter.ctaTitle,
+      description: 'Draw a screen or flow',
       icon: LayoutTemplate,
       onClick: () => openArtifactCreation({ sessionId, kind: 'wireframe', workflowRunId: null }),
     },

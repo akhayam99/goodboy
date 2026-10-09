@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   ChatId,
   ChatSessionLink,
@@ -98,7 +98,28 @@ describe('ChatOriginRow', () => {
     expect(screen.queryByText(/From chat|Fed by chat/)).toBeNull();
   });
 
-  it('names the chat that started the session and the chat that fed it, one line each', () => {
+  it('names the chat that started the session on one line, without a dangling dot', () => {
+    useAppStore.setState({
+      chatLinks: { ['chat-retry' as ChatId]: [linkOf('chat-retry', 'new')] },
+    });
+    render(<ChatOriginRow session={SESSION} />);
+
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]?.textContent).toBe('From chat: Payments retry design');
+    expect(buttons[0]?.textContent).not.toMatch(/·/);
+  });
+
+  it('says Fed by chat only when no chat started the session', () => {
+    useAppStore.setState({
+      chatLinks: { ['chat-rounding' as ChatId]: [linkOf('chat-rounding', 'add')] },
+    });
+    render(<ChatOriginRow session={SESSION} />);
+
+    expect(screen.getByRole('button').textContent).toBe('Fed by chat: Ledger rounding');
+  });
+
+  it('keeps the other chats in a popover behind +1 more', () => {
     useAppStore.setState({
       chatLinks: {
         ['chat-rounding' as ChatId]: [linkOf('chat-rounding', 'add')],
@@ -107,9 +128,12 @@ describe('ChatOriginRow', () => {
     });
     render(<ChatOriginRow session={SESSION} />);
 
-    const [first, second] = screen.getAllByRole('button');
-    expect(first?.textContent).toBe('From chat ·Payments retry design');
-    expect(second?.textContent).toBe('Fed by chat ·Ledger rounding');
+    expect(screen.queryByText(/Ledger rounding/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '+1 more' }));
+    const popover = screen.getByRole('dialog', { name: 'Other chats' });
+    fireEvent.click(within(popover).getByRole('button', { name: 'Fed by chat: Ledger rounding' }));
+
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: 'chat-rounding' });
   });
 
   it('opens the chat from its line', () => {

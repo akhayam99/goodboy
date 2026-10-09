@@ -6,6 +6,8 @@ import { useAppStore, useMountDiffStats } from '../../../../../store';
 import { MountCleanupProposals } from '../MountCleanupProposals';
 import { MountProjectAction } from './MountProjectAction';
 import { ArchivedGate } from '../ArchivedGate';
+import { MountTrackGrid } from './MountTrackGrid';
+import { MountSkeletonRows } from './MountSkeletonRows';
 import { ProjectMountGroup } from './ProjectMountGroup';
 import { LapProjectRow } from './LapProjectRow';
 import { useMountRows } from './useMountRows';
@@ -91,6 +93,7 @@ export const ProjectMountRows = ({ session }: Props) => {
     <Band inset="content" ariaLabel="Projects">
       <SectionHeader
         label="Projects"
+        headingLevel={2}
         action={
           <ArchivedGate isArchived={session.archivedAt != null}>
             <MountProjectAction
@@ -120,9 +123,10 @@ export const ProjectMountRows = ({ session }: Props) => {
       {areMountsLoaded && groups.length === 0 && !hasLapRow ? (
         <EmptyLine>{NO_PROJECT_LINE}</EmptyLine>
       ) : null}
+      {!areMountsLoaded && groups.length === 0 && !hasLapRow ? <MountSkeletonRows /> : null}
       {groups.length === 0 ? null : (
         <div className="@container min-w-0">
-          <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,auto)] gap-y-2">
+          <MountTrackGrid className="gap-y-2">
             {groups.map((group) => (
               <ProjectMountGroup
                 key={group.projectId}
@@ -135,7 +139,7 @@ export const ProjectMountRows = ({ session }: Props) => {
                 isSkeleton={isSkeleton}
               />
             ))}
-          </div>
+          </MountTrackGrid>
         </div>
       )}
       <MountCleanupProposals sessionId={session.id} />

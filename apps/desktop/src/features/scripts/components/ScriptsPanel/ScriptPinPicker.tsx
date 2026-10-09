@@ -26,7 +26,7 @@ export const ScriptPinPicker = ({ projectName, groups, pins, onTogglePin, onClos
       {listed.map((group) => (
         <div key={`${group.source}:${group.relDir}`} className="flex flex-col">
           {listed.length > 1 || group.relDir !== '' ? (
-            <span className="font-mono text-meta text-faint-foreground">
+            <span className="text-code text-faint-foreground">
               {group.relDir === '' ? group.packageName : group.relDir}
             </span>
           ) : null}

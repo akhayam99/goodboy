@@ -120,3 +120,36 @@ export const buildBranchDecision = ({
     }
   }
 };
+
+export type BranchTextSegment = Readonly<{
+  text: string;
+  isBranch: boolean;
+}>;
+
+type SplitParams = {
+  readonly text: string;
+  readonly branches: ReadonlyArray<string | null>;
+};
+
+const escapeRegExp = ({ text }: { readonly text: string }): string =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export const splitOnBranches = ({
+  text,
+  branches,
+}: SplitParams): ReadonlyArray<BranchTextSegment> => {
+  const names = [
+    ...new Set(branches.filter((name): name is string => name !== null && name !== '')),
+  ]
+    .sort((left, right) => right.length - left.length)
+    .map((name) => escapeRegExp({ text: name }));
+  if (names.length === 0) {
+    return [{ text, isBranch: false }];
+  }
+  const pattern = new RegExp(`(?<![\\w/.-])(${names.join('|')})(?![\\w/-])`, 'g');
+  const known = new Set(branches);
+  return text
+    .split(pattern)
+    .filter((part) => part !== '')
+    .map((part) => ({ text: part, isBranch: known.has(part) }));
+};

@@ -78,7 +78,10 @@ describe('UnassignedNotes on sqlite', () => {
     renderNotes();
 
     await act(async () => {
-      fireEvent.click(screen.getAllByRole('button', { name: 'Discard' })[0]!);
+      fireEvent.click(screen.getAllByRole('button', { name: 'Note actions' })[0]!);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Discard' }));
     });
 
     expect(await storedIds()).toHaveLength(1);
@@ -98,7 +101,10 @@ describe('UnassignedNotes on sqlite', () => {
     const before = await storedIds();
     renderNotes();
     await act(async () => {
-      fireEvent.click(screen.getAllByRole('button', { name: 'Discard' })[0]!);
+      fireEvent.click(screen.getAllByRole('button', { name: 'Note actions' })[0]!);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Discard' }));
     });
 
     await act(async () => {

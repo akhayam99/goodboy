@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollFade, cn, formatError } from '@goodboy/ui';
+import { EmptyLine, ScrollFade, cn, formatError } from '@goodboy/ui';
 import type { Project, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
@@ -97,7 +97,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
         />
       ) : null}
       {filtered.length === 0 ? (
-        <p className="px-3 py-2 text-label text-muted-foreground">No matching projects</p>
+        <EmptyLine className="px-3">No matching projects</EmptyLine>
       ) : (
         <ScrollFade className="max-h-56" viewportClassName="py-0.5" fadeFrom="subtle">
           <ul>

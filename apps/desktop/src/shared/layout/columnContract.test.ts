@@ -216,7 +216,6 @@ const STUDIO_TIERS: Readonly<Record<StudioKind, 'column' | 'full'>> = {
 const H1_ALLOWLIST: ReadonlySet<string> = new Set([
   'features/artifacts/components/ArtifactShell/ArtifactShellHeader.tsx',
   'features/artifacts/components/ArtifactList/index.tsx',
-  'features/artifacts/components/ArtifactDocument/PrintLetterhead.tsx',
   'features/workspace/components/WorkspaceLauncher/index.tsx',
   'features/session/components/SessionDraftPane/SessionDraftHeader.tsx',
   'shared/components/StudioDetail/RecordHeader/index.tsx',

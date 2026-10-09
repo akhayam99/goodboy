@@ -212,6 +212,7 @@ import { U23_PAGES_SCENES } from './scenes/u23/pages';
 import { U23_POLICY_FAILURES_SCENES } from './scenes/u23/policy-failures';
 import { U23_NOTES_SCENES } from './scenes/u23/notes';
 import { U23_LISTS_SCENES } from './scenes/u23/lists';
+import { U23_OVERVIEW_SCENES } from './scenes/u23/overview';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -425,6 +426,7 @@ export const MOCK_SCENES = {
   ...U23_POLICY_FAILURES_SCENES,
   ...U23_NOTES_SCENES,
   ...U23_LISTS_SCENES,
+  ...U23_OVERVIEW_SCENES,
 };
 
 export const MockScene = () => {

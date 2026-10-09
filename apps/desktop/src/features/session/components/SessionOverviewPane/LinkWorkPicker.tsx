@@ -1,6 +1,15 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
-import { Divider, Eyebrow, KbdPill, ScrollFade, SegmentedTabs, SkeletonRow, cn } from '@goodboy/ui';
+import {
+  Divider,
+  EmptyLine,
+  Eyebrow,
+  KbdPill,
+  ScrollFade,
+  SegmentedTabs,
+  SkeletonRow,
+  cn,
+} from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
@@ -217,6 +226,10 @@ export const LinkWorkPicker = ({
           </p>
         ) : rows.length === 0 && isLoading ? (
           <SkeletonRow label="Loading your inbox" />
+        ) : rows.length === 0 && query.trim() === '' ? (
+          <EmptyLine className="justify-center px-3 py-5 text-center">
+            Paste a link or search
+          </EmptyLine>
         ) : rows.length === 0 ? (
           <p className="flex flex-col items-center gap-0.5 px-3 py-5 text-center text-label text-muted-foreground">
             <span>{`Nothing in ${sourceName} matches.`}</span>

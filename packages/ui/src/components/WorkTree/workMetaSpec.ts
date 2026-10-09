@@ -5,7 +5,7 @@ export const WORK_ROW = {
   label: 'min-w-40 @max-[440px]:min-w-0',
   state: '@max-[320px]:hidden',
   stateSlot:
-    'flex w-28 shrink-0 items-center justify-end whitespace-nowrap @max-[790px]:w-24 @max-[320px]:hidden',
+    'flex min-w-28 max-w-64 shrink-0 items-center justify-end whitespace-nowrap @max-[790px]:min-w-24 @max-[320px]:hidden',
 } as const satisfies Record<string, string>;
 
 export const WORK_META_COLUMN = {

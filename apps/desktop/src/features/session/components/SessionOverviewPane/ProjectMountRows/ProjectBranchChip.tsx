@@ -14,7 +14,7 @@ type Props = {
   readonly blockedReason: string | null;
 };
 
-const CHIP_CLASS = 'min-w-0 max-w-full shrink-0 gap-0 px-0';
+const CHIP_CLASS = 'min-w-0 max-w-full shrink gap-0 px-0';
 const FACE_CLASS = cn('inline-flex h-full min-w-0 items-center gap-2 rounded-md px-2', FOCUS_RING);
 
 type NameParams = {
@@ -85,7 +85,7 @@ export const ProjectBranchChip = ({
       dropdown={dropdown}
       role="dialog"
       ariaLabel="Switch branch"
-      anchorClassName="flex min-w-0 max-w-full shrink-0"
+      anchorClassName="flex min-w-0 max-w-full shrink"
       trigger={
         <Chip
           as="span"

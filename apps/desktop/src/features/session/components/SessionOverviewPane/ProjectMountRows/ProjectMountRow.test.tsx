@@ -436,7 +436,7 @@ describe('ProjectMountRow one action by state', () => {
     );
   });
 
-  it('says a failed push under the control', async () => {
+  it('raises a notice row under a failed push and runs it again on Retry', async () => {
     store.pushSessionBranch.mockResolvedValueOnce({
       ok: false,
       error: 'rejected by origin',
@@ -448,7 +448,14 @@ describe('ProjectMountRow one action by state', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Push 2 commits for API' }));
 
-    expect((await screen.findByRole('status')).textContent).toBe('rejected by origin');
+    const notice = await screen.findByRole('alert');
+    expect(notice.textContent).toContain("Couldn't push API");
+    expect(notice.textContent).toContain('Nothing was pushed.');
+    fireEvent.click(within(notice).getByRole('button', { name: 'Details' }));
+    expect(within(notice).getByText('rejected by origin')).toBeDefined();
+
+    fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(store.pushSessionBranch).toHaveBeenCalledTimes(2));
   });
 });
 
@@ -469,6 +476,26 @@ describe('ProjectMountRow availability', () => {
     await waitFor(() =>
       expect(store.attachMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
     );
+  });
+
+  it('puts a failed Reopen in a notice row and leaves the cells of the row alone', async () => {
+    store.attachMount.mockRejectedValueOnce(new Error('worktree path is already in use'));
+    renderRow({ row: detached });
+    const cells = screen.getByTestId('project-mount-cells');
+    const before = cells.innerHTML;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen for API' }));
+
+    const notice = await screen.findByRole('alert');
+    expect(notice.textContent).toContain("Couldn't reopen API");
+    expect(cells.innerHTML).toBe(before);
+    expect(cells.nextElementSibling?.contains(notice)).toBe(true);
+    expect(within(cells).queryByRole('alert')).toBeNull();
+    expect(cells.getAttribute('data-row-height')).toBe('36');
+
+    fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(store.attachMount).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 
   it('keeps the worktree tools out of the menu of a closed row', () => {
@@ -522,6 +549,38 @@ describe('ProjectMountRow availability', () => {
     const webItem = screen.getByRole('listitem', { name: 'Web' });
     expect(within(apiItem).getByRole('button', { name: `Open NW-41 on ${shared}` })).toBeDefined();
     expect(within(webItem).queryByRole('button', { name: `Open NW-41 on ${shared}` })).toBeNull();
+  });
+
+  it('keeps the tasks of a branch on one line: the first chip and a +N popover for the rest', () => {
+    const taskOf = ({ externalId, identifier }: { externalId: string; identifier: string }) => ({
+      sessionId,
+      projectId: 'api',
+      branch: 'feat/api',
+      scope: 'branch',
+      provider: 'linear',
+      externalId,
+      identifier,
+      url: `https://linear.example/${identifier}`,
+      title: `Task ${identifier}`,
+      createdAt: '2026-09-27T10:00:00.000Z',
+    });
+    store.projects = [{ id: 'api', kind: 'repo', baseBranch: 'main' }];
+    store.sessionExternalTasks = {
+      [sessionId]: [
+        taskOf({ externalId: 'e1', identifier: 'NW-41' }),
+        taskOf({ externalId: 'e2', identifier: 'NW-42' }),
+        taskOf({ externalId: 'e3', identifier: 'NW-43' }),
+      ],
+    };
+    renderRow({ row: baseRow });
+
+    const row = screen.getByRole('listitem', { name: 'API' });
+    expect(within(row).getByRole('button', { name: 'Open NW-41 on feat/api' })).toBeDefined();
+    expect(within(row).queryByRole('button', { name: 'Open NW-42 on feat/api' })).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: 'More tasks on feat/api' }));
+    expect(screen.getByText('+2')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open NW-42 on feat/api' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open NW-43 on feat/api' })).toBeDefined();
   });
 
   it('names the row and its action menu after the mount label', () => {

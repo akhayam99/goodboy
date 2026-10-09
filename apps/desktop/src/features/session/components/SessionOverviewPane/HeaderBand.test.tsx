@@ -184,7 +184,7 @@ describe('HeaderBand', () => {
     expect(onSelectLens).toHaveBeenCalledWith('plans');
   });
 
-  it('keeps every session fact on one row', () => {
+  it('keeps Context, Artifacts, session tasks and Link work on one row, and the cost out of it', () => {
     useAppStore.setState({
       sessionArtifacts: { [SESSION_ID]: [plan({ id: 'a1' })] },
     });
@@ -195,7 +195,11 @@ describe('HeaderBand', () => {
     facts.getByRole('button', { name: /Artifacts/ });
     facts.getByText('HAR-212');
     facts.getByRole('button', { name: 'Link work' });
-    facts.getByText('$3.47');
+    expect(facts.queryByText('$3.47')).toBeNull();
+    expect(screen.queryByText('$3.47')).toBeNull();
+    expect(
+      Array.from(screen.getByLabelText('Session facts').children).map((chip) => chip.textContent),
+    ).toEqual(['Context', 'Artifacts1', 'HAR-212', 'Link work']);
   });
 
   it('keeps only refresh, archive and delete in the title action zone, in that order', () => {

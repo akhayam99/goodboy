@@ -10,7 +10,7 @@ type Props = {
 export const ClosedNote = ({ note, onReopen }: Props) => (
   <li className="flex min-w-0 items-start gap-2 list-none">
     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-      <span className="min-w-0 truncate font-mono text-meta text-faint-foreground">
+      <span className="min-w-0 truncate text-code text-faint-foreground">
         {note.filePath}
         {note.anchor === undefined ? '' : `:${note.anchor.lineNumber}`}
       </span>

@@ -869,6 +869,12 @@ running or done, and so does every surface that reads `formatActiveTime`.
 | action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                                    |
 | menu       | 24px  | the row menu, like Stop run on a run row                                                                  | never drops                                    |
 
+The state slot of a work row (`WORK_ROW.stateSlot`) is not a column: it is
+`min-w-28 max-w-64` (112 to 256px), so a long state such as "3 ready · 4
+working · 1 couldn't fix" shows whole when the row has room, and the title is
+what truncates first. Under 790px of row it narrows to 96px, under 320px it
+leaves.
+
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
@@ -1526,6 +1532,8 @@ under their own key, and hold the row's other controls while one runs.
 ## Section rhythm
 
 `PANE_RHYTHM.stack` separates peer sections. `Divider` separates app chrome from content, never content from content: [docs/styling.md](../../docs/styling.md) owns the rule. Section children do not add margins. `SectionHeader` is the standard section heading, with an optional description. The eyebrow size is the default for every surface. `size="page"` is only for a document whose body is prose the reader came for, such as the guide or a creation flow's form sections. Description copy comes only through `hint`, so its size and muted tone stay matched to the heading grade.
+
+**One page, one section header.** The sections of a page (the Overview's Projects, Next and Unassigned notes) all open with `SectionHeader` at `headingLevel={2}`: the eyebrow, an optional count in `meta`, the section's one control in `action` and its one line of explanation in `hint`. A section never builds its own heading from a `h2` and type classes.
 
 **The outline is independent of the grade.** `headingLevel` turns an eyebrow-grade label into an `h2` or `h3`. So a pane section keeps its place in the document outline without taking the page grade. A section that needs a heading does not need bigger type because of that.
 

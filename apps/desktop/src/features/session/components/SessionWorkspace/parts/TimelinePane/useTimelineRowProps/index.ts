@@ -34,6 +34,7 @@ type Params = {
   readonly session: Session;
   readonly explode: ExplodeGroups;
   readonly rows: TimelineRows;
+  readonly isNeedsYouShown?: boolean;
 };
 
 type RowParams = {
@@ -46,7 +47,12 @@ type RowPropsControl = {
   readonly openNeedsYou: (params: { readonly owner: NeedsYouOwner }) => void;
 };
 
-export const useTimelineRowProps = ({ session, explode, rows }: Params): RowPropsControl => {
+export const useTimelineRowProps = ({
+  session,
+  explode,
+  rows,
+  isNeedsYouShown = false,
+}: Params): RowPropsControl => {
   const sessionId: SessionId = session.id;
   const navigate = useAppStore((s) => s.navigate);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
@@ -160,6 +166,9 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
     },
   });
 
+  const isOwnedByNeedsYou = ({ item }: { readonly item: TimelineRowItem }): boolean =>
+    rows.owners.some((owner) => owner.id === item.id || owner.id === item.familyId);
+
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
     if (entry.kind === 'event') {
@@ -196,6 +205,9 @@ export const useTimelineRowProps = ({ session, explode, rows }: Params): RowProp
     }
     switch (ask.kind) {
       case 'answer':
+        if (isNeedsYouShown && isOwnedByNeedsYou({ item })) {
+          return null;
+        }
         return answerAction({ question: ask.question, isAskerOffScreen: entry.kind === 'run' });
       case 'restartStep': {
         const target = openTargetFor({ entry });

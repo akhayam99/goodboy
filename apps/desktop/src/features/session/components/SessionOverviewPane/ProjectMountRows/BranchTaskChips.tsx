@@ -4,6 +4,7 @@ import type { ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { externalTaskLinkKey } from '../../../../../store/slices/sessions/externalTaskLinkKey';
 import { LinkedTaskChip } from '../../../../../shared/components/LinkedTaskChip';
+import { MoreBranchTasks } from './MoreBranchTasks';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -23,27 +24,25 @@ export const BranchTaskChips = ({ sessionId, projectId, branch, isSkeleton }: Pr
       ),
     ),
   );
-  if (tasks.length === 0) {
+  const [first, ...rest] = tasks;
+  if (first === undefined) {
     return null;
   }
+  if (isSkeleton) {
+    return <SkeletonChip key={externalTaskLinkKey({ task: first })} />;
+  }
   return (
-    <span
-      aria-label={`Tasks on ${branch}`}
-      className="flex min-w-0 max-w-full flex-wrap items-center gap-1"
-    >
-      {tasks.map((task) =>
-        isSkeleton ? (
-          <SkeletonChip key={externalTaskLinkKey({ task })} />
-        ) : (
-          <LinkedTaskChip
-            key={externalTaskLinkKey({ task })}
-            sessionId={sessionId}
-            task={task}
-            branch={branch}
-            branches={[branch]}
-            size="xs"
-          />
-        ),
+    <span aria-label={`Tasks on ${branch}`} className="flex min-w-0 shrink-0 items-center gap-1">
+      <LinkedTaskChip
+        key={externalTaskLinkKey({ task: first })}
+        sessionId={sessionId}
+        task={first}
+        branch={branch}
+        branches={[branch]}
+        size="xs"
+      />
+      {rest.length === 0 ? null : (
+        <MoreBranchTasks sessionId={sessionId} branch={branch} tasks={rest} />
       )}
     </span>
   );

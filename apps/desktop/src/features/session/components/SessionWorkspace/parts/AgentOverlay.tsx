@@ -35,7 +35,7 @@ export const AgentOverlay = ({
     <div className="absolute inset-0 z-20 flex flex-col bg-background motion-safe:animate-layer-in">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {selectedAgent === null && runsLoaded ? (
-          <PaneShell title="Agent">
+          <PaneShell header={<AgentHeader title="Agent" meta={null} tabs={null} actions={null} />}>
             <LensEmptyState
               icon={CONCEPT_ICONS.agents}
               title="This agent is no longer in this session"

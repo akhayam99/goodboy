@@ -12,7 +12,6 @@ import { GoalTeaser } from './GoalTeaser';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { ArtifactsChip } from './ArtifactsChip';
 import { ChatOriginRow } from './ChatOriginRow';
-import { SessionCostChip } from './SessionCostChip';
 import { ArchivedRestore } from './ArchivedRestore';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
 import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
@@ -95,7 +94,6 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
         <ArtifactsChip sessionId={sessionId} onSelectLens={onSelectLens} />
         <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
         {isArchived ? null : <LinkIssueAction session={session} />}
-        <SessionCostChip sessionId={sessionId} />
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostK
 import { AlsoInChip } from './AlsoInChip';
 import { PutOnBranchPopover } from '../../TaskPlacement/PutOnBranchPopover';
 import { BranchTaskChips } from './BranchTaskChips';
+import { MountActionFailureNotice } from './MountActionFailureNotice';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
@@ -27,6 +28,7 @@ import { RebaseStoppedNotice } from './RebaseStoppedNotice';
 import { MountRowAction } from './MountRowAction';
 import { useMountPresence } from './useMountPresence';
 import { mountWorktreeState } from './mountRowState';
+import { MOUNT_ROW_HEIGHT } from './mountGrid';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -89,65 +91,74 @@ export const ProjectMountRow = ({
     >
       <div
         data-testid="project-mount-cells"
-        className="col-span-full grid min-h-8 grid-cols-subgrid items-center gap-x-4 rounded-md px-1 py-1 hover:bg-hover"
+        data-row-height={MOUNT_ROW_HEIGHT}
+        style={{ height: MOUNT_ROW_HEIGHT }}
+        className="col-span-full grid grid-cols-subgrid items-center gap-x-3 rounded-md px-1 hover:bg-hover"
       >
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <MountKindGlyph
-            projectKind={row.projectKind}
-            isMainCheckout={row.isMainCheckout}
-            label={label}
-          />
-          {isStatusPending && row.branch === '' ? (
-            <span data-testid="project-branch-skeleton" className="shrink-0">
-              <Skeleton className="h-6 w-28 rounded-md" />
-            </span>
-          ) : (
-            <ProjectBranchChip
-              sessionId={sessionId}
-              mountId={row.mountId}
-              branch={row.branch}
-              canSwitch={switchBranch !== null}
-              blockedReason={switchBranch?.blockedReason ?? null}
-            />
-          )}
-          {row.branch === '' ? null : (
-            <BranchTaskChips
-              sessionId={sessionId}
-              projectId={row.projectId}
-              branch={row.branch}
-              isSkeleton={isSkeleton}
-            />
-          )}
-          {row.branch === '' || !row.isAttached ? null : (
-            <PutOnBranchPopover
-              sessionId={sessionId}
-              mountId={row.mountId}
-              projectId={row.projectId}
-              branch={row.branch}
-            />
-          )}
-          {row.branch === '' ? null : (
-            <MountStatusPhrase
+        <div className="relative flex h-full min-w-0 items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden">
+            <MountKindGlyph
+              projectKind={row.projectKind}
+              isMainCheckout={row.isMainCheckout}
               label={label}
-              status={worktreeStatus}
-              series={row.series}
-              isRepo={isRepo && row.isAttached}
-              isPending={isStatusPending}
-              isSkeleton={isSkeleton}
-              isMerged={isMerged}
-              isRebasing={controls.pendingId === 'mount.rebase'}
-              commitsAfterMerge={commitsAfterMerge}
-              request={row.request}
             />
-          )}
-          {isRepo && row.branch !== '' ? (
-            <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />
-          ) : null}
-          {hasTurnChoice && row.isAttached && (
-            <MountPresence sessionId={sessionId} label={label} agents={presence} />
+            {isStatusPending && row.branch === '' ? (
+              <span data-testid="project-branch-skeleton" className="shrink-0">
+                <Skeleton className="h-6 w-28 rounded-md" />
+              </span>
+            ) : (
+              <ProjectBranchChip
+                sessionId={sessionId}
+                mountId={row.mountId}
+                branch={row.branch}
+                canSwitch={switchBranch !== null}
+                blockedReason={switchBranch?.blockedReason ?? null}
+              />
+            )}
+            {row.branch === '' ? null : (
+              <BranchTaskChips
+                sessionId={sessionId}
+                projectId={row.projectId}
+                branch={row.branch}
+                isSkeleton={isSkeleton}
+              />
+            )}
+            {row.branch === '' ? null : (
+              <MountStatusPhrase
+                label={label}
+                status={worktreeStatus}
+                series={row.series}
+                isRepo={isRepo && row.isAttached}
+                isPending={isStatusPending}
+                isSkeleton={isSkeleton}
+                isMerged={isMerged}
+                isRebasing={controls.pendingId === 'mount.rebase'}
+                commitsAfterMerge={commitsAfterMerge}
+                request={row.request}
+              />
+            )}
+            {row.isAttached ? (
+              <MountResolveLink sessionId={sessionId} row={row} label={label} />
+            ) : null}
+            {isRepo && row.branch !== '' ? (
+              <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />
+            ) : null}
+            {hasTurnChoice && row.isAttached && (
+              <MountPresence sessionId={sessionId} label={label} agents={presence} />
+            )}
+          </div>
+          {row.branch === '' || !row.isAttached ? null : (
+            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center group-focus-within/mount-row:pointer-events-auto group-hover/mount-row:pointer-events-auto">
+              <PutOnBranchPopover
+                sessionId={sessionId}
+                mountId={row.mountId}
+                projectId={row.projectId}
+                branch={row.branch}
+              />
+            </span>
           )}
         </div>
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1 overflow-hidden">
           {isSkeleton && row.isAttached ? (
             <SkeletonChip width="lg" />
           ) : row.isAttached ? (
@@ -156,7 +167,6 @@ export const ProjectMountRow = ({
               {row.request === null && isRepo && !row.isCompleted && !row.isMainCheckout ? (
                 <span className="px-2 text-label text-faint-foreground">No PR yet</span>
               ) : null}
-              <MountResolveLink sessionId={sessionId} row={row} label={label} />
             </>
           ) : (
             <Chip
@@ -174,7 +184,7 @@ export const ProjectMountRow = ({
             />
           )}
         </div>
-        <div className="flex items-center">
+        <div className="flex min-w-0 items-center overflow-hidden">
           {!row.isAttached || !isRepo ? null : isSkeleton ? (
             <Skeleton className="h-3.5 w-16" />
           ) : (
@@ -187,7 +197,7 @@ export const ProjectMountRow = ({
             />
           )}
         </div>
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex min-w-0 items-center justify-end gap-1">
           {isSkeleton ? (
             <SkeletonChip width="sm" />
           ) : (
@@ -201,6 +211,11 @@ export const ProjectMountRow = ({
           />
         </div>
       </div>
+      {controls.failure === null ? null : (
+        <div className="col-span-full flex flex-col px-2 pb-2">
+          <MountActionFailureNotice projectName={row.projectName} controls={controls} />
+        </div>
+      )}
       {isRepo && hasTools && worktreeStatus?.inProgress === 'rebase' ? (
         <div className="col-span-full flex flex-col px-2 pb-2">
           <RebaseStoppedNotice

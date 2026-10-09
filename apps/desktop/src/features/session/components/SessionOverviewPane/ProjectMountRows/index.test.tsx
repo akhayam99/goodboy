@@ -43,6 +43,7 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
+import { mountGridTracksOf } from './mountGrid';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import type { MountGithubState } from '../../../../../store/types';
 import {
@@ -507,7 +508,7 @@ describe('ProjectMountRows', () => {
     expect(screen.queryByText(/No project yet/)).toBeNull();
   });
 
-  it('never offers the first lap project in Add project', () => {
+  it('never offers the first lap project in Add project, and moves the action to the overflow', () => {
     seed({
       projects: [PAYMENTS],
       mounts: [],
@@ -525,10 +526,35 @@ describe('ProjectMountRows', () => {
     });
     renderRows();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-
+    expect(screen.queryByRole('button', { name: 'Add project' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Project actions' }));
+    screen.getByRole('menuitem', { name: /Add project/ });
     expect(screen.queryByRole('button', { name: 'Add payments-api' })).toBeNull();
-    screen.getByText('Every workspace project is already in this session.');
+  });
+
+  it('keeps Add project in the header while a workspace project is left to add', () => {
+    seed({ mounts: [mountView({ id: 'm1', branch: 'hl/one' })] });
+    renderRows();
+
+    screen.getByRole('button', { name: 'Add project' });
+    expect(screen.queryByRole('button', { name: 'Project actions' })).toBeNull();
+  });
+
+  it('draws skeleton rows on the loaded grid while the mounts load, never a header alone', () => {
+    seed({ mounts: null });
+    const { unmount } = renderRows();
+
+    const skeleton = screen.getByTestId('mount-skeleton');
+    expect(within(skeleton).getAllByTestId('mount-skeleton-row')).toHaveLength(2);
+    expect(skeleton.querySelector('[data-mount-grid]')?.getAttribute('data-mount-grid')).toBe(
+      mountGridTracksOf().join(' '),
+    );
+    unmount();
+
+    seed({ mounts: [mountView({ id: 'm1', branch: 'hl/one' })] });
+    renderRows();
+    expect(screen.queryByTestId('mount-skeleton')).toBeNull();
+    screen.getByTestId('project-mount-row');
   });
 
   it('turns only the refreshing parts of a row to skeleton, after 250 ms', () => {

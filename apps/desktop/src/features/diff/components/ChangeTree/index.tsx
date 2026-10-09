@@ -317,18 +317,16 @@ export const ChangeTree = ({
                     content="Open notes"
                     anchorClassName="absolute right-1 top-1/2 -translate-y-1/2"
                   >
-                    <button
-                      type="button"
+                    <Button
+                      size="xs"
+                      variant="quiet"
                       aria-label={notesLabel}
                       onClick={() => onOpenNotes(row.id)}
-                      className={cn(
-                        'flex h-6 items-center gap-1 rounded-sm px-2 text-meta tabular-nums text-faint-foreground hover:text-foreground',
-                        FOCUS_RING,
-                      )}
+                      className="tabular-nums"
                     >
                       <MessageSquare size={ICON_SIZE.row} aria-hidden />
                       {notes}
-                    </button>
+                    </Button>
                   </Tooltip>
                 ) : null}
                 {onCommentOnFile === null ? null : (

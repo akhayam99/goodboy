@@ -15,7 +15,7 @@ export const NoteFileGroup = ({ path, children }: Props) => (
     className="flex min-w-0 flex-col gap-4"
   >
     {path === null ? null : (
-      <h3 className="flex min-w-0 font-mono text-meta text-muted-foreground" title={path}>
+      <h3 className="flex min-w-0 text-code text-muted-foreground" title={path}>
         <MiddleText value={path} tail={LAST_SEGMENT} />
       </h3>
     )}

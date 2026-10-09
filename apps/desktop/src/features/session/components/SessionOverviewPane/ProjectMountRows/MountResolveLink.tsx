@@ -40,7 +40,7 @@ export const MountResolveLink = ({ sessionId, row, label }: Props) => {
   const Icon = CONCEPT_ICONS.comments;
 
   return (
-    <span className="flex min-w-0 shrink-0 items-center gap-1">
+    <span className="flex shrink-0 items-center gap-1">
       <button
         type="button"
         aria-label={`Open ${NAMES.comments} for ${label}, ${count} to resolve`}

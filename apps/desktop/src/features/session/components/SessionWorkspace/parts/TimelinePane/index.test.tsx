@@ -108,6 +108,9 @@ vi.mock('../../../../../../store', async () => {
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => null,
 }));
+vi.mock('../../../SessionOverviewPane/SessionCostChip', () => ({
+  SessionCostChip: () => <span>$3.47</span>,
+}));
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
 }));
@@ -518,6 +521,44 @@ describe('TimelinePane loading', () => {
 });
 
 describe('TimelinePane unread affordance', () => {
+  const COMPLETED_AGENT = {
+    id: 'agent-1',
+    sessionId: 'session-1',
+    ordinal: 1,
+    name: 'scout',
+    status: 'completed',
+    startedAt: '2026-08-20T10:00:00.000Z',
+  };
+
+  it('keeps the session cost in the Activity header, next to the tabs', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    const views = within(activity).getByRole('tablist', { name: 'Activity view' });
+    expect(within(activity).getByText('$3.47')).toBeDefined();
+    expect(views.parentElement?.contains(within(activity).getByText('$3.47'))).toBe(true);
+  });
+
+  it('puts Mark all seen in the Activity menu, only while an agent is unseen', () => {
+    storeState.sessionPhaseRuns = { 'session-1': [COMPLETED_AGENT] };
+    unread.current = true;
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const activity = screen.getByRole('region', { name: 'Activity' });
+
+    expect(within(activity).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+    fireEvent.click(within(activity).getByRole('button', { name: 'Activity actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Mark all seen' }));
+
+    expect(storeState.markAllAgentsSeen).toHaveBeenCalledWith('session-1');
+  });
+
+  it('drops the Activity menu when nothing is unseen', () => {
+    storeState.sessionPhaseRuns = { 'session-1': [COMPLETED_AGENT] };
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.queryByRole('button', { name: 'Activity actions' })).toBeNull();
+  });
+
   it('hides the CTA once nothing is unread', () => {
     storeState.sessionPhaseRuns = {
       'session-1': [
@@ -730,6 +771,19 @@ describe('TimelinePane run waiting on an answer', () => {
     expect(within(agentRow).getByText('Needs you')).toBeDefined();
     expect(amber.length).toBeGreaterThan(0);
     expect(amber.every((element) => agentRow.contains(element))).toBe(true);
+  });
+
+  it('answers from the Needs you card only: the agent row has no second Answer', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
+    questions.open = [STEP_QUESTION];
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    const block = screen.getByRole('region', { name: 'Needs you' });
+
+    expect(within(block).getAllByRole('button', { name: /^Open/ })).toHaveLength(1);
+    expect(within(activity).queryAllByRole('button', { name: 'Answer' })).toHaveLength(0);
   });
 
   it('jumps from the Needs you row of the run to the asking agent behind a closed step', () => {

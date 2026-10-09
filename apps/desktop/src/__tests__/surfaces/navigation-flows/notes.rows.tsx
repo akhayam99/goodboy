@@ -249,7 +249,8 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     seed: 'issue',
     open: async (ctx) => {
       installNotesStore(ctx);
-      await openCrumb(/^Diff/);
+      await openCrumb(/^Branch/);
+      await click(await screen.findByRole('tab', { name: /^Files/ }));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await addNoteOnFile({ file: SECOND_FILE, body: 'Log the duplicate once' });
@@ -289,7 +290,8 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     seed: 'issue',
     open: async (ctx) => {
       installNotesStore(ctx);
-      await openCrumb(/^Diff/);
+      await openCrumb(/^Branch/);
+      await click(await screen.findByRole('tab', { name: /^Files/ }));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await click(await screen.findByRole('tab', { name: /^Commits/ }));
@@ -309,7 +311,8 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     seed: 'issue',
     open: async (ctx) => {
       installNotesStore(ctx);
-      await openCrumb(/^Diff/);
+      await openCrumb(/^Branch/);
+      await click(await screen.findByRole('tab', { name: /^Files/ }));
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await startFakeNoteFix({

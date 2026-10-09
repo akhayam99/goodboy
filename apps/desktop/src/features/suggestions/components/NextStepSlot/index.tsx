@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { SectionHeader } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
@@ -164,18 +165,21 @@ export const NextStepSlot = ({
   };
 
   return (
-    <div className="flex flex-col gap-1">
-      {rowFor({ suggestion: first, isCompact: false })}
-      {rest.length > 0 && !expanded && (
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="self-start px-2 text-label text-faint-foreground transition-colors hover:text-foreground"
-        >
-          {rest.length} more
-        </button>
-      )}
-      {expanded && rest.map((suggestion) => rowFor({ suggestion, isCompact: true }))}
-    </div>
+    <section aria-label="Next" className="flex flex-col gap-2">
+      <SectionHeader label="Next" headingLevel={2} />
+      <div className="flex flex-col gap-1">
+        {rowFor({ suggestion: first, isCompact: false })}
+        {rest.length > 0 && !expanded && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="self-start px-2 text-label text-faint-foreground transition-colors hover:text-foreground"
+          >
+            {rest.length} more
+          </button>
+        )}
+        {expanded && rest.map((suggestion) => rowFor({ suggestion, isCompact: true }))}
+      </div>
+    </section>
   );
 };

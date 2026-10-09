@@ -25,6 +25,8 @@ import { aSession, anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { ToastProvider } from '../../shared/components/Toast';
+import { CTX_PAYMENTS_WORKTREE, CTX_SESSION_ID } from './MockScene/scenes/brand/contextBase';
+import { seedNotesScene } from './MockScene/scenes/u23/notesSeed';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION } from '../../test/planFixtures';
 import { seedPlanDrawer } from '../../test/planDrawerFixtures';
 import { DrawerHost } from './DrawerHost';
@@ -166,6 +168,18 @@ const ENTRIES: ReadonlyArray<Entry> = [
       kind: 'artifact-document',
       sessionId: PLAN_FIXTURE_SESSION,
       payload: { artifactId: PLAN_FIXTURE_ID, revision: null },
+    },
+  },
+  {
+    kind: 'review-notes',
+    region: 'Your notes',
+    seed: () => {
+      seedNotesScene({ variant: 'empty' });
+    },
+    drawer: {
+      kind: 'review-notes',
+      sessionId: CTX_SESSION_ID,
+      payload: { mountPath: CTX_PAYMENTS_WORKTREE },
     },
   },
   {

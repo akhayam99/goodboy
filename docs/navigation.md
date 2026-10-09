@@ -1623,6 +1623,25 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   a detail and has no back link. Completed and discarded groups sit behind
   header toggles that hide themselves at zero. So a session whose runs are all
   done shows an empty state, instead of opening the last completed run.
+- **The Overview is one column of sections that share one heading.** Under
+  the title: one provenance line (`From chat: <title>`, `Fed by chat` only
+  with no `From chat`, the others behind `+N more`), then the facts row
+  (Context, Artifacts, the session's own tasks, Link work). Branch tasks show
+  on their mount row only, as the first chip and `+N`; the cost lives in the
+  Activity header. Projects, Next and Unassigned notes open with
+  `SectionHeader` at level 2, and Needs you opens with the same eyebrow.
+  The Projects card lays its rows on four fixed tracks
+  (`mountGridTracksOf`: branch, pull request 96, changes 120, action 96) and
+  every mount row is `MOUNT_ROW_HEIGHT` (36px), so a long branch or a failure
+  never moves a column. A failed row action raises an inline `Notice`
+  (`danger`, title `Couldn't <verb> <project>`, `Details`, `Retry`) under its
+  row; a branch mismatch is a `warning` `Notice` with `Use this branch here`,
+  `Keep both branches` and `Not now`. A card whose mounts have not loaded
+  draws skeleton rows on the same tracks. `Add project` leaves the header once
+  nothing is left to add and becomes an item of the `Project actions` menu.
+  `Mark all seen` is in the Activity menu and shows only while an agent is
+  unseen; a waiting question is answered from its Needs you row, never from a
+  second `Answer` on the timeline row.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.

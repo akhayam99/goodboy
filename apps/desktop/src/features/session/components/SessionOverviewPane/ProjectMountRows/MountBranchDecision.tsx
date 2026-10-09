@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GitBranch } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
+import { Button, Notice } from '@goodboy/ui';
 import type {
   MountBranchObservation,
   MountBranchResolution,
@@ -10,8 +9,7 @@ import type {
 import { worktreeBranchHolder } from '../../../../worktree/worktree';
 import { useAppStore } from '../../../../../store';
 import type { MountBranchHolder } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { buildBranchDecision } from './branchDecision';
+import { buildBranchDecision, splitOnBranches } from './branchDecision';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -99,26 +97,57 @@ export const MountBranchDecision = ({
   };
 
   return (
-    <InlineConfirm
+    <Notice
+      tone="warning"
+      placement="inline"
       role="alert"
-      icon={<GitBranch size={ICON_SIZE.row} aria-hidden />}
       title={decision.title}
-      description={decision.description}
-      confirmLabel={decision.confirm.label}
-      cancelLabel="Not now"
-      isBusy={isBusy}
-      isConfirmDisabled={decision.confirm.isDisabled}
-      {...(alt === null
-        ? {}
-        : {
-            altAction: {
-              label: alt.label,
-              disabled: alt.isDisabled,
-              onClick: () => void resolve({ resolution: alt.resolution }),
-            },
-          })}
-      onConfirm={() => resolve({ resolution: decision.confirm.resolution })}
-      onCancel={() => setIsDismissed(true)}
+      body={
+        <span className="break-words">
+          {splitOnBranches({
+            text: decision.description,
+            branches: [observation.recordedBranch, observation.observedBranch],
+          }).map((segment, index) =>
+            segment.isBranch ? (
+              <span key={`${index}:${segment.text}`} className="break-all font-mono text-code">
+                {segment.text}
+              </span>
+            ) : (
+              segment.text
+            ),
+          )}
+        </span>
+      }
+      actions={
+        <>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={isBusy || decision.confirm.isDisabled}
+            onClick={() => void resolve({ resolution: decision.confirm.resolution })}
+          >
+            {decision.confirm.label}
+          </Button>
+          {alt === null ? null : (
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={isBusy || alt.isDisabled}
+              onClick={() => void resolve({ resolution: alt.resolution })}
+            >
+              {alt.label}
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={isBusy}
+            onClick={() => setIsDismissed(true)}
+          >
+            Not now
+          </Button>
+        </>
+      }
     />
   );
 };
