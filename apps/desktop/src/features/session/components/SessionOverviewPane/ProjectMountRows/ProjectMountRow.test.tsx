@@ -583,6 +583,14 @@ describe('ProjectMountRow availability', () => {
     expect(screen.getByRole('button', { name: 'Open NW-43 on feat/api' })).toBeDefined();
   });
 
+  it('keeps room at the end of the branch cell for the put on branch button', () => {
+    renderRow({ row: { ...baseRow } });
+    expect(screen.getByTestId('project-mount-branch-cell').className).toContain('pr-7');
+    cleanup();
+    renderRow({ row: { ...baseRow, isAttached: false } });
+    expect(screen.getByTestId('project-mount-branch-cell').className).not.toContain('pr-7');
+  });
+
   it('names the row and its action menu after the mount label', () => {
     renderRow({ row: { ...baseRow }, label: 'API on feat/api' });
 

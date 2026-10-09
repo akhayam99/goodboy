@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { EmptyLine, Chip, Skeleton, SkeletonChip } from '@goodboy/ui';
+import { EmptyLine, Chip, Skeleton, SkeletonChip, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -96,7 +96,13 @@ export const ProjectMountRow = ({
         className="col-span-full grid grid-cols-subgrid items-center gap-x-3 rounded-md px-1 hover:bg-hover"
       >
         <div className="relative flex h-full min-w-0 items-center">
-          <div className="flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden">
+          <div
+            data-testid="project-mount-branch-cell"
+            className={cn(
+              'flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden',
+              row.branch !== '' && row.isAttached && 'pr-7',
+            )}
+          >
             <MountKindGlyph
               projectKind={row.projectKind}
               isMainCheckout={row.isMainCheckout}
