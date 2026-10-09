@@ -18,6 +18,7 @@ type Props = {
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly controller: ReviewCommentController;
   readonly inclusion: Inclusion | null;
+  readonly isIndented: boolean;
   readonly onJump: () => void;
   readonly onSelect: (threadId: string) => void;
 };
@@ -32,6 +33,7 @@ export const NoteItem = ({
   entries,
   controller,
   inclusion,
+  isIndented,
   onJump,
   onSelect,
 }: Props) => {
@@ -79,7 +81,8 @@ export const NoteItem = ({
   return (
     <li
       data-note-thread={entry.threadId}
-      className={inclusion === null ? 'relative list-none' : 'relative list-none pl-7'}
+      data-indented={isIndented ? 'true' : undefined}
+      className={isIndented ? 'relative list-none pl-7' : 'relative list-none'}
     >
       {inclusion === null ? null : (
         <SelectionCheckbox

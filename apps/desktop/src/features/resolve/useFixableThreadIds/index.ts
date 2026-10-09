@@ -3,11 +3,11 @@ import type { SessionId } from '@goodboy/types';
 import { fixableThreadIdsOf } from '../reviewTally';
 import { useSourceQueueRows } from '../useSourceQueueRows';
 
-export const useFixableThreadIds = ({
-  sessionId,
-}: {
+type Params = {
   readonly sessionId: SessionId;
-}): ReadonlyArray<string> => {
+};
+
+export const useFixableThreadIds = ({ sessionId }: Params): ReadonlyArray<string> => {
   const rows = useSourceQueueRows({ sessionId });
   return useMemo(() => fixableThreadIdsOf({ rows }), [rows]);
 };

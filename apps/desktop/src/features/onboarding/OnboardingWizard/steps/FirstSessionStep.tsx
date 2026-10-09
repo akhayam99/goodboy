@@ -182,7 +182,7 @@ export const FirstSessionStep = ({
                 <span className="text-label text-muted-foreground">Scout · Auto</span>
                 <Button size="sm" disabled={!canStart} isBusy={busy} onClick={start}>
                   Start Scout
-                  <KeyHint keys={shortcutGlyphs('composer.submit')} onTone />
+                  <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
                 </Button>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { EmptyLine, Chip, Skeleton, SkeletonChip } from '@goodboy/ui';
+import { EmptyLine, Chip, Skeleton, SkeletonChip, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -78,6 +78,7 @@ export const ProjectMountRow = ({
   );
   const controls = useActionControls({ target });
   const menuTrigger = useObjectMenuTrigger({ target });
+  const isActionRoomKept = row.branch !== '' && row.isAttached;
   const switchBranch =
     controls.actions.find((action) => action.id === 'mount.switchBranch') ?? null;
 
@@ -96,7 +97,14 @@ export const ProjectMountRow = ({
         className="col-span-full grid grid-cols-subgrid items-center gap-x-3 rounded-md px-1 hover:bg-hover"
       >
         <div className="relative flex h-full min-w-0 items-center">
-          <div className="flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden">
+          <div
+            data-testid="project-mount-branch-cell"
+            data-keeps-action-room={isActionRoomKept ? 'true' : undefined}
+            className={cn(
+              'flex min-w-0 flex-1 items-center gap-x-2 overflow-hidden',
+              isActionRoomKept && 'pr-7',
+            )}
+          >
             <MountKindGlyph
               projectKind={row.projectKind}
               isMainCheckout={row.isMainCheckout}
@@ -147,7 +155,7 @@ export const ProjectMountRow = ({
               <MountPresence sessionId={sessionId} label={label} agents={presence} />
             )}
           </div>
-          {row.branch === '' || !row.isAttached ? null : (
+          {!isActionRoomKept ? null : (
             <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center group-focus-within/mount-row:pointer-events-auto group-hover/mount-row:pointer-events-auto">
               <PutOnBranchPopover
                 sessionId={sessionId}

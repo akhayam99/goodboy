@@ -133,7 +133,7 @@ export const ReviewActionBar = ({ sessionId, entry, binding }: Props) => {
         {icon}
         {label}
         {action.shortcut !== null && (
-          <Kbd look="inline" onTone={variant === 'primary'} aria-hidden>
+          <Kbd look="inline" isOnTone={variant === 'primary'} aria-hidden>
             {shortcutGlyphs(action.shortcut)}
           </Kbd>
         )}

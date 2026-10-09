@@ -310,6 +310,7 @@ export const ReviewNotesDrawer = ({
                       }
                     : null
                 }
+                isIndented={isSelecting}
                 onJump={() => jump(group.path)}
                 onSelect={focusThread}
               />

@@ -545,15 +545,13 @@ export const ReviewComment = ({
         (verbs.length > 0 || noteActions !== null) && (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {verbs.map((action) => {
+              const isPrimary =
+                action.slot === 'primary' && !(isNote && action.id === 'reviewComment.draft');
               const button = (
                 <Button
                   key={action.id}
                   size="sm"
-                  variant={
-                    action.slot === 'primary' && !(isNote && action.id === 'reviewComment.draft')
-                      ? 'primary'
-                      : 'ghost'
-                  }
+                  variant={isPrimary ? 'primary' : 'ghost'}
                   data-review-verb={action.id}
                   disabled={
                     action.blockedReason !== null ||
@@ -564,7 +562,7 @@ export const ReviewComment = ({
                 >
                   {action.label}
                   {action.shortcut !== null && (
-                    <Kbd look="inline" onTone={action.slot === 'primary'} aria-hidden>
+                    <Kbd look="inline" isOnTone={isPrimary} aria-hidden>
                       {shortcutGlyphs(action.shortcut)}
                     </Kbd>
                   )}

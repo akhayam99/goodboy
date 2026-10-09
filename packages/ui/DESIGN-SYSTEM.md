@@ -1270,14 +1270,15 @@ two looks.
   as part of the label. The shortcut sheet and the Esc of a sheet header take it
   too.
 
-Inside a filled button a hint takes the button's `on-tone` text (`onTone` on
+Inside a filled button a hint takes the button's `on-tone` text (`isOnTone` on
 `Kbd`, `KeyHint` and `KbdPill`), never an opacity step. `KeyHint` is the one
 component for a hint inside a control: a chord (`⌘↵`) is drawn bare, a single
 key (`F`, `Esc`) is drawn as the small cap, and the hint is `aria-hidden`.
 `KbdPill` is `Kbd look="cap"` and takes no `className`; `kbd-overrides.test.ts`
 holds it. A hint shows only on a control whose shortcut is registered. A control
 that lists a shortcut in its tooltip (the Link work chip) does not repeat it as a
-cap. `Kbd` sets `data-look` so a test names the look without reading a class.
+cap. `Kbd` sets `data-look` and, on a filled button, `data-on-tone`, so a test names the look
+without reading a class.
 
 ## Notices
 
@@ -2005,8 +2006,8 @@ an object that exists is shown disabled with its reason in words (`Bitbucket has
 no draft pull requests`, `Turned off in payments-api`, `Set by the project`), a
 control for a concept the host does not have is left out. The merge
 confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`):
-the option cards carry the effect sentence and a forbidden one is disabled with
-its reason. States follow the five of Empty states: no pull request is a page
+the option cards carry the effect sentence, draw no icon tile when they have no
+icon, and a forbidden one is disabled with its reason. States follow the five of Empty states: no pull request is a page
 `EmptyState` over the create form, the activity loads as a `SkeletonRow`, a
 failed read is an inline danger `Notice` with Retry.
 

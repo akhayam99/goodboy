@@ -9,9 +9,9 @@ const WAITING: ReadonlySet<ResolveUiState> = new Set([
   'approved',
 ]);
 
-export const waitingNotesOf = ({
-  rows,
-}: {
+type Params = {
   readonly rows: ReadonlyArray<ResolveQueueRow>;
-}): number =>
+};
+
+export const waitingNotesOf = ({ rows }: Params): number =>
   rows.filter((row) => row.thread.originKind === 'diff_comment' && WAITING.has(row.status)).length;

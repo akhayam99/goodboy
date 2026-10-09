@@ -82,10 +82,10 @@ const InboxRowView = ({
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       className={cn(
-        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_48px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors',
+        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_56px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors',
         isStateShown
-          ? '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_48px]'
-          : '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_48px]',
+          ? '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_56px]'
+          : '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_56px]',
         selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',
       )}
     >
@@ -145,7 +145,7 @@ const InboxRowView = ({
           dateTime={record.updatedAt}
           title={formatDateTime({ at: record.updatedAt, hasYear: true })}
           className={cn(
-            'pointer-events-none text-meta text-faint-foreground',
+            'pointer-events-none whitespace-nowrap text-meta text-faint-foreground',
             canOpen && 'group-hover:hidden',
             canOpen && selected && 'hidden',
           )}

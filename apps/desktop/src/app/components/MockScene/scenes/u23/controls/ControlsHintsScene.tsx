@@ -18,11 +18,11 @@ export const ControlsHintsScene = () => (
     <SceneRow name="Filled button with a single key">
       <Button size="sm" variant="primary">
         Fix 3
-        <KeyHint keys="F" onTone />
+        <KeyHint keys="F" isOnTone />
       </Button>
       <Button size="sm" variant="primary">
         Start Scout
-        <KeyHint keys="⌘↵" onTone />
+        <KeyHint keys="⌘↵" isOnTone />
       </Button>
     </SceneRow>
     <SceneRow name="Quiet button with a single key">

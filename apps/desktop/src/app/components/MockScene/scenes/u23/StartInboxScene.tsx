@@ -163,13 +163,37 @@ const PR_GROUPS: ReadonlyArray<GithubPrGroup> = [
   },
 ];
 
+const REPO_SLUG = 'harborline/payments-api';
+
+const isRepoSlugCall = ({ payload }: { readonly payload: unknown }): boolean =>
+  typeof payload === 'object' &&
+  payload !== null &&
+  'args' in payload &&
+  Array.isArray(payload.args) &&
+  payload.args.includes('nameWithOwner');
+
+export const startInboxIpc = ({
+  command,
+  payload,
+}: {
+  readonly command: string;
+  readonly payload: unknown;
+}): unknown => {
+  if (command === 'linear_fetch_issue_comments') {
+    return [];
+  }
+  if (command === 'gh_run') {
+    return {
+      stdout: isRepoSlugCall({ payload }) ? REPO_SLUG : '[]',
+      stderr: '',
+      exitCode: 0,
+    };
+  }
+  return null;
+};
+
 const installIpc = (): void => {
-  mockIPC((cmd) => {
-    if (cmd === 'linear_fetch_issue_comments') {
-      return [];
-    }
-    return null;
-  });
+  mockIPC((command, payload) => startInboxIpc({ command, payload }));
 };
 
 const recordsOf = ({ variant }: Props): ReadonlyArray<InboxRecord> =>
@@ -208,7 +232,7 @@ export const StartInboxScene = ({ variant }: Props) => {
           icon={CONCEPT_ICONS.inbox}
           tone={CONCEPT_TONE.inbox}
           title="Tasks"
-          closeLabel="Close inbox"
+          closeLabel="Close tasks"
           onClose={noop}
         >
           {() => (

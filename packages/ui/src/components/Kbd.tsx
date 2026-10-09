@@ -5,7 +5,7 @@ export type KbdLook = 'inline' | 'cap';
 
 export type KbdProps = ComponentProps<'kbd'> & {
   readonly look?: KbdLook;
-  readonly onTone?: boolean;
+  readonly isOnTone?: boolean;
 };
 
 const LOOK_CLASSES = {
@@ -22,11 +22,12 @@ const CHORD_GLYPHS = /[⌘⌃⌥⇧+]/;
 
 export const isChordHint = (glyphs: string): boolean => CHORD_GLYPHS.test(glyphs);
 
-export const Kbd = ({ look = 'inline', onTone = false, className, ...rest }: KbdProps) => {
+export const Kbd = ({ look = 'inline', isOnTone = false, className, ...rest }: KbdProps) => {
   return (
     <kbd
       data-look={look}
-      className={cn(LOOK_CLASSES[look], onTone && ON_TONE_CLASSES[look], className)}
+      data-on-tone={isOnTone ? 'true' : undefined}
+      className={cn(LOOK_CLASSES[look], isOnTone && ON_TONE_CLASSES[look], className)}
       {...rest}
     />
   );

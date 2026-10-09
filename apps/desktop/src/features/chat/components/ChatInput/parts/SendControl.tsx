@@ -49,7 +49,7 @@ export const SendControl = ({
         </Button>
         <Button variant="primary" size="sm" onClick={onSendNow}>
           Send now
-          <KeyHint keys={shortcutGlyphs('composer.submit')} onTone />
+          <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
         </Button>
       </>
     );

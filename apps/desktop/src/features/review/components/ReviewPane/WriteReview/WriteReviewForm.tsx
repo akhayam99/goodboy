@@ -79,7 +79,7 @@ export const WriteReviewForm = ({ sessionId, variant = 'page' }: Props) => {
         onClick={onSubmit}
       >
         {submit.label}
-        <KeyHint keys={shortcutGlyphs('composer.submit')} onTone />
+        <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
       </Button>
     );
 

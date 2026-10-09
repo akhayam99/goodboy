@@ -14,7 +14,7 @@ export const StartButton = ({ label, isBusy = false, onClick }: Props) => (
   <Button size="sm" isBusy={isBusy} busyLabel={NAMES.starting} onClick={onClick}>
     <Rocket size={ICON_SIZE.row} aria-hidden />
     {label}
-    <Kbd look="inline" onTone aria-hidden>
+    <Kbd look="inline" isOnTone aria-hidden>
       {shortcutGlyphs('list.open')}
     </Kbd>
   </Button>

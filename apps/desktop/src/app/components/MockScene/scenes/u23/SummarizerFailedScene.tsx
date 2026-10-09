@@ -6,11 +6,14 @@ import { seedBoardScene, WORKSPACE_ID } from '../BoardScene';
 import { AppFrame } from '../audit/AppFrame';
 import { seedFrameChromeStubs } from '../audit/frameSeed';
 import { useSceneClicks } from '../audit/useSceneClicks';
+import { sceneClock } from '../../sceneClock';
 
 const STUDIO_CLICKS: ReadonlyArray<string> = ['Open all'];
 
 const SESSION_ID = 'mock-summarizer-failed-session-refunds' as SessionId;
-const NOW_MS = Date.parse('2026-09-07T13:15:00.000Z');
+const NOW_MS = sceneClock({ anchor: '2026-09-07T13:15:00.000Z' }).ms({
+  at: '2026-09-07T13:15:00.000Z',
+});
 
 const RUN_ID = 'mock-run-refunds-1' as WorkflowRunId;
 const AGENT_ID = 'mock-agent-refunds-implement' as AgentId;
@@ -104,6 +107,19 @@ const seedSummarizerFailures = (): void => {
       inWorkspace: true,
       count: 1,
     })),
+    summarizerStatus: {
+      [SESSION_ID]: {
+        status: 'error',
+        lastUpdate: new Date(NOW_MS - 4 * 60_000).toISOString() as IsoDateTime,
+        error: 'Cursor reached the usage limit for this account.',
+        lastUsage: null,
+        lastAttempt: {
+          turnInput: 'Export the refunds as a ledger report.',
+          turnOutput: 'The refunds export is written.',
+          workingDir: null,
+        },
+      },
+    },
     hasOlderNotifications: false,
     notificationsLoading: false,
     loadNotifications: async () => undefined,

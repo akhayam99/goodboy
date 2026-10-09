@@ -17,9 +17,13 @@ export const REVIEW_LAUNCH_LABEL = {
 
 export type LaunchNoun = 'comment' | 'note';
 
-export const fixLabel = ({ count }: { readonly count: number }): string => `Fix ${count}`;
+type CountParams = {
+  readonly count: number;
+};
 
-export const launchStartLabel = ({ count }: { readonly count: number }): string =>
+export const fixLabel = ({ count }: CountParams): string => `Fix ${count}`;
+
+export const launchStartLabel = ({ count }: CountParams): string =>
   count === 0 ? 'Start fixing' : `Start fixing ${count}`;
 
 export const LAUNCH_ORDER_LINE =
