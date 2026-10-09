@@ -425,12 +425,30 @@ const EMPTY_THREADS = JSON.stringify({
   },
 });
 
-const isGraphqlCall = ({ payload }: { readonly payload: unknown }): boolean =>
-  typeof payload === 'object' &&
-  payload !== null &&
-  'args' in payload &&
-  Array.isArray(payload.args) &&
-  payload.args.includes('graphql');
+const ghArgsOf = ({ payload }: { readonly payload: unknown }): ReadonlyArray<string> => {
+  if (typeof payload !== 'object' || payload === null || !('args' in payload)) {
+    return [];
+  }
+  return Array.isArray(payload.args)
+    ? payload.args.filter((arg): arg is string => typeof arg === 'string')
+    : [];
+};
+
+const BASE_BRANCHES = ['main', 'release/2026-q3'];
+
+export const prPageGhStdout = ({ payload }: { readonly payload: unknown }): string => {
+  const args = ghArgsOf({ payload });
+  if (args.includes('graphql')) {
+    return EMPTY_THREADS;
+  }
+  if (args.includes('defaultBranchRef')) {
+    return 'main';
+  }
+  if (args.some((arg) => arg.includes('/branches'))) {
+    return BASE_BRANCHES.join('\n');
+  }
+  return '[]';
+};
 
 const prPageStatus = ({ behind }: { readonly behind: number }): WorktreeStatus => ({
   ...CTX_STATUS,
@@ -441,17 +459,14 @@ const prPageStatus = ({ behind }: { readonly behind: number }): WorktreeStatus =
 export const prPageHandlers = ({ behind }: { readonly behind: number }): FakeHandlers => ({
   ...handlersFor(BRANCH_FILES_PATCH),
   worktree_status: () => prPageStatus({ behind }),
+  gh_run: (args) => ({ stdout: prPageGhStdout({ payload: args }), stderr: '', exitCode: 0 }),
 });
 
 const installIpc = ({ behind }: { readonly behind: number }): void => {
   const handlers = prPageHandlers({ behind });
   mockSceneIpc((command, payload) => {
     if (command === 'gh_run') {
-      return {
-        stdout: isGraphqlCall({ payload }) ? EMPTY_THREADS : '[]',
-        stderr: '',
-        exitCode: 0,
-      };
+      return { stdout: prPageGhStdout({ payload }), stderr: '', exitCode: 0 };
     }
     return handlers[command]?.(undefined) ?? null;
   });

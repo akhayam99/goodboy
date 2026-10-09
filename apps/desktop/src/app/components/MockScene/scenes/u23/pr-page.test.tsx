@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -42,8 +42,10 @@ const draw = ({ name }: { readonly name: SceneName }) => {
 const answerWith = ({ behind }: { readonly behind: number }): void => {
   const handlers = prPageHandlers({ behind });
   vi.mocked(invoke).mockImplementation(
-    async (command: string) =>
-      handlers[command]?.(undefined) ?? new Promise<never>(() => undefined),
+    async (command: string, args?: unknown) =>
+      handlers[command]?.(
+        typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : undefined,
+      ) ?? new Promise<never>(() => undefined),
   );
 };
 
@@ -137,6 +139,15 @@ describe('the pull request page scenes', () => {
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
     expect(screen.getByRole('switch', { name: 'Open as draft' })).toBeDefined();
+  });
+
+  it('branch-pr-none picks the default base branch instead of an empty list', async () => {
+    draw({ name: 'branch-pr-none' });
+
+    await screen.findByRole('heading', { name: 'No pull request yet' });
+    const base = await screen.findByRole('combobox', { name: 'Branch' });
+    await waitFor(() => expect(base.textContent).toContain('main'));
+    expect(base.textContent).not.toContain('[]');
   });
 
   it('branch-pr-merge-blocked prints why Merge cannot run', async () => {
