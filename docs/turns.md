@@ -607,6 +607,20 @@ budget`).
   cools that provider and falls back to another task model. Anything else
   sets the error state and offers a retry. The turn itself never fails because
   its summary did.
+- A summarizer CLI that exits non-zero reports why. The error carries the
+  provider's own message: the `error` or `result` text of a failed stream-json
+  result event on stdout, else the last three lines of stderr (ANSI stripped, 400
+  characters at most), as `summarizer cli exited with code 1: <detail>`. Without
+  it a Cursor quota or sign-in failure read as a bare exit code and was never
+  classified, so no fallback ran. The fallback picks only models the user has not
+  hidden. An explicit summarizer model in the task settings wins; hiding never
+  changes it.
+- **Summarizer failed** names the cause in plain words (`Cursor reached the usage
+limit for this account.`, `Cursor is not signed in.`, a generic line for
+  anything unclassified), never the raw CLI line. The raw message stays in the
+  session's summarizer status. It raises once per provider and failure kind
+  (`summarizer-failed:<provider>:<kind>`): while one is unread, the same kind from
+  another session adds no second toast.
 - Its spend is recorded as summarizer telemetry, apart from turn spend.
 - Each finished pass stores its round in `summarizerRounds` (turns read,
   provider, model, effort, tokens, cost, which of goal, decisions and summary

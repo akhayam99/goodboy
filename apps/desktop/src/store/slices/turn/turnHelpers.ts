@@ -94,6 +94,7 @@ import {
 import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
 import { selectMountById } from '../project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './mountContinuations';
+import { summarizerFailureNotice } from './summarizerFailureNotice';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
@@ -789,14 +790,21 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       });
       return;
     }
+    const notice = summarizerFailureNotice({ providerId: taskModel.providerId, message });
+    const alreadyShown = get().notifications.some(
+      (notification) => !notification.read && notification.coalesceKey === notice.coalesceKey,
+    );
+    if (alreadyShown) {
+      return;
+    }
     void get().emitNotification({
       kind: 'error',
       severity: 'error',
       title: 'Summarizer failed',
-      body: `${taskModel.providerId}: ${message}`,
+      body: notice.body,
       sessionId,
       action: { kind: 'retry-summarizer', sessionId },
-      coalesceKey: `summarizer-failed:${sessionId}`,
+      coalesceKey: notice.coalesceKey,
     });
   }
 };

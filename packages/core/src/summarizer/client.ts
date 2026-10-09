@@ -8,6 +8,7 @@ import { isSlotKey, SLOT_KEYS, type SlotKey } from '../context/slots';
 import { activeDecisionsNewestFirst, CONSOLIDATION_OP_KINDS } from '../context/decisions-ledger';
 import { parseDecisionOps, type SummarizerDecisionOp } from './decision-ops';
 import { extractJson } from './extract-json';
+import { cliFailureDetail } from './spawn-failure';
 import { SUMMARIZER_SYSTEM_PROMPT } from './prompt';
 
 export type ContextSlotDeltaUpsert = Readonly<{ key: SlotKey; value: string }>;
@@ -56,8 +57,11 @@ export class SummarizerSpawnError extends Error {
   constructor(
     public readonly exitCode: number | null,
     public readonly stderr: string,
+    public readonly detail: string = '',
   ) {
-    super(`summarizer cli exited with code ${exitCode ?? 'null'}`);
+    super(
+      `summarizer cli exited with code ${exitCode ?? 'null'}${detail === '' ? '' : `: ${detail}`}`,
+    );
     this.name = 'SummarizerSpawnError';
   }
 }
@@ -117,7 +121,15 @@ export class Summarizer {
     });
 
     if ((result.exitCode ?? 0) !== 0) {
-      throw new SummarizerSpawnError(result.exitCode, result.stderr);
+      throw new SummarizerSpawnError(
+        result.exitCode,
+        result.stderr,
+        cliFailureDetail({
+          providerId: this.providerId,
+          stdout: result.stdout,
+          stderr: result.stderr,
+        }),
+      );
     }
 
     const output = extractAuxOutput({ providerId: this.providerId, stdout: result.stdout });

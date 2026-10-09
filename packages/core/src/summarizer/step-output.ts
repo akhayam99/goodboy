@@ -3,6 +3,7 @@ import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
 import { SummarizerParseError, SummarizerSpawnError, type SummarizerDeps } from './client';
+import { cliFailureDetail } from './spawn-failure';
 
 const MAX_SUMMARY_LENGTH = 1200;
 const FALLBACK_TOTAL_BUDGET = 4000;
@@ -134,7 +135,11 @@ export const summarizeStepOutput = async ({
     invokeFn,
   });
   if ((result.exitCode ?? 0) !== 0) {
-    throw new SummarizerSpawnError(result.exitCode, result.stderr);
+    throw new SummarizerSpawnError(
+      result.exitCode,
+      result.stderr,
+      cliFailureDetail({ providerId, stdout: result.stdout, stderr: result.stderr }),
+    );
   }
 
   const extracted = extractAuxOutput({ providerId, stdout: result.stdout });
