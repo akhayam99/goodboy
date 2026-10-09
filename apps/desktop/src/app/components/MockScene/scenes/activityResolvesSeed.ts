@@ -119,7 +119,7 @@ const attemptIdOf = ({
 const buildRunAgent = (): Agent => ({
   id: RUN_AGENT_ID,
   sessionId: SESSION.id,
-  ordinal: 100,
+  ordinal: 6.05,
   name: `Resolve: ${RUN_SEEDS.length} review comments`,
   kind: 'resolver',
   status: 'running',
@@ -142,7 +142,7 @@ const buildLegacyAgent = ({
   return {
     id: agentIdOf({ index }),
     sessionId: SESSION.id,
-    ordinal: 100 - index,
+    ordinal: -index,
     name: `Resolve: ${seed.author} on ${seed.file}`,
     kind: 'resolver',
     status: AGENT_STATUS[seed.kind],
@@ -217,7 +217,7 @@ const subagentIdOf = ({ index }: { readonly index: number }): AgentId =>
 const buildImplementer = (): Agent => ({
   id: IMPLEMENTER_ID,
   sessionId: SESSION.id,
-  ordinal: 10,
+  ordinal: 5.5,
   name: 'Implement the stuck-delivery banner',
   kind: 'implementer',
   status: 'running',
@@ -238,7 +238,7 @@ const buildSubagent = ({
   id: subagentIdOf({ index }),
   sessionId: SESSION.id,
   parentAgentId: IMPLEMENTER_ID,
-  ordinal: 11 + index,
+  ordinal: 5.5 + 0.01 * (index + 1),
   name: seed.name,
   kind: seed.kind,
   status: seed.status,

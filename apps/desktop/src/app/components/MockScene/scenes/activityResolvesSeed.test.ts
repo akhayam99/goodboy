@@ -10,6 +10,10 @@ import {
   reviewCommentStateOf,
   reviewCommentWord,
 } from '../../../../features/resolve/reviewCommentState';
+import {
+  earliestEvidence,
+  resolveAgentCreation,
+} from '../../../../features/session/timeline/agentCreation';
 import { ACTIVITY_RESOLVES_SESSION, seedActivityResolvesScene } from './activityResolvesSeed';
 
 const launchesOfScene = (): ReadonlyMap<string, string | null> => {
@@ -133,5 +137,17 @@ describe('activity resolves scene', () => {
     expect(owners).toHaveLength(1);
     expect(owners[0]?.text).toBe("#318 · 5 need you · 3 to review · 2 couldn't fix");
     expect(owners[0]?.owed?.target?.rank).toBe(2);
+  });
+
+  it('orders every agent by its own time, so no launch is pulled back by a later ordinal', () => {
+    seedActivityResolvesScene();
+    const agents = useAppStore.getState().sessionPhaseRuns[ACTIVITY_RESOLVES_SESSION.id] ?? [];
+    const creations = resolveAgentCreation({ agents });
+    const pulledBack = agents
+      .filter((agent) => earliestEvidence({ agent }) !== null)
+      .filter((agent) => creations.get(agent.id)?.at !== earliestEvidence({ agent }))
+      .map((agent) => agent.id);
+
+    expect(pulledBack).toEqual([]);
   });
 });
