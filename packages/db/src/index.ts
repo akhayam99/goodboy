@@ -406,6 +406,8 @@ export {
   markNotificationRead,
   deleteNotification,
   clearAllNotifications,
+  clearResolvedHelperNotifications,
+  deleteNotificationsByCoalesceKey,
   NOTIFICATION_LIST_LIMIT,
   type Notification,
   type NotificationCountBucket,
