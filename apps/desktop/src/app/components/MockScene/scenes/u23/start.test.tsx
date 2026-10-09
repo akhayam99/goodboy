@@ -15,6 +15,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { U23_START_SCENES } from './start';
+import { startInboxIpc } from './StartInboxScene';
 
 beforeAll(async () => {
   await importStore();
@@ -76,6 +77,16 @@ describe('the start scenes', () => {
 
     expect(await screen.findByRole('button', { name: /Review pull request/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: /Start from #318/ })).toBeNull();
+  });
+
+  it('reads the conversation of the pull request row without an error', async () => {
+    vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) =>
+      startInboxIpc({ command, payload: args }),
+    );
+    draw({ name: 'start-review-row' });
+
+    expect(await screen.findByText('No comments yet')).toBeDefined();
+    expect(screen.queryByText("Couldn't load the conversation")).toBeNull();
   });
 
   it('keeps the one-step panel for a Slack thread, with the same verb', async () => {
