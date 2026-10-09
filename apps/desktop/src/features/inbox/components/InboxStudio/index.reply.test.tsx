@@ -112,7 +112,7 @@ afterEach(() => {
 const keyHints = (): string => {
   const filters = screen.getByRole('button', { name: /^Filters/ });
   fireEvent.click(filters);
-  const hints = screen.getByRole('navigation', { name: 'Filter the inbox' }).textContent ?? '';
+  const hints = screen.getByRole('navigation', { name: 'Filter tasks' }).textContent ?? '';
   fireEvent.click(filters);
   return hints;
 };

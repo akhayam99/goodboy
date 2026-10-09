@@ -175,7 +175,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     name: 'classic footer: inbox',
     covers: ['studio:inbox'],
     bars: 'classic',
-    open: () => clickButton('Inbox'),
+    open: () => clickButton('Tasks'),
     lands: () => heading('All items'),
   },
   {

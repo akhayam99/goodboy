@@ -199,11 +199,11 @@ const ROWS: ReadonlyArray<Row> = [
   {
     name: 'a tool waiting for approval',
     params: { ...base, pr: livePr(), hasBlockedAgent: true },
-    before: { stage: 'attention', attention: 'needs-approval', reason: 'Needs approval' },
+    before: { stage: 'attention', attention: 'needs-approval', reason: 'Needs permission' },
     after: {
       stage: 'attention',
       attention: 'needs-approval',
-      reason: 'Needs approval',
+      reason: 'Needs permission',
       isRunning: false,
     },
   },
@@ -339,11 +339,11 @@ const ROWS: ReadonlyArray<Row> = [
   {
     name: 'running with a tool waiting for approval',
     params: { ...base, pr: livePr(), hasRunningAgent: true, hasBlockedAgent: true },
-    before: { stage: 'attention', attention: 'needs-approval', reason: 'Needs approval' },
+    before: { stage: 'attention', attention: 'needs-approval', reason: 'Needs permission' },
     after: {
       stage: 'attention',
       attention: 'needs-approval',
-      reason: 'Needs approval',
+      reason: 'Needs permission',
       isRunning: true,
     },
   },

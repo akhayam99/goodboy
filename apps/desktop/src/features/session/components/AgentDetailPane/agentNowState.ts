@@ -44,7 +44,7 @@ export const agentNowState = ({ agent, turnState, transcript }: NowStateParams):
     return { label: runningLabel({ transcript }) };
   }
   if (turnState?.kind === 'blocked') {
-    return { label: 'Needs approval' };
+    return { label: 'Needs permission' };
   }
   if (turnState?.kind === 'error') {
     return { label: turnState.message };

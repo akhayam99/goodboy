@@ -579,7 +579,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    expect(screen.getByText('Read-only · 2 projects')).toBeDefined();
+    expect(screen.getByText('Read-only')).toBeDefined();
     expect(screen.queryByText(/Shift\+Enter/)).toBeNull();
     fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), { target: { value: 'Hi' } });
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Send' }) })).toBe(

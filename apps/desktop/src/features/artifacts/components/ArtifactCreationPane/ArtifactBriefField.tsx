@@ -64,7 +64,7 @@ export const ArtifactBriefField = ({
     if (pasted.length <= room) {
       return;
     }
-    setClipNote(`pasted text was cut at ${formatBriefCount({ value: LIMIT })} characters`);
+    setClipNote(`Pasted text was cut at ${formatBriefCount({ value: LIMIT })} characters`);
   };
 
   return (
@@ -114,7 +114,7 @@ export const ArtifactBriefField = ({
       )}
       {value.trim().length === 0 ? (
         <span className="text-meta leading-relaxed text-muted-foreground">
-          with no brief the agent is asked to: {defaultRequest}
+          With no brief the agent is asked to: {defaultRequest}
         </span>
       ) : null}
       {value.length >= ARTIFACT_BRIEF_COUNTER_FLOOR ? (

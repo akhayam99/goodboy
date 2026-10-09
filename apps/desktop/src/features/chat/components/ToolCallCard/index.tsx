@@ -32,7 +32,7 @@ const NODE_LABEL_FOR: Record<ToolStatus, string> = {
   running: 'Running',
   done: 'Done',
   failed: 'Failed',
-  approval: 'Needs approval',
+  approval: 'Needs permission',
   stopped: 'Stopped',
   denied: 'Denied',
 };

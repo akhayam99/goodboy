@@ -84,7 +84,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
   const trimmed = text.trim();
   const hasProject = projectId !== null;
   const promptFiles = usePromptFiles({
-    note: 'Images go to the agent you start',
+    note: 'Files go to the agent you start',
     isEnabled: hasProject && how === 'agent',
     notices: {
       ambiguous: 'Drop the file on the instructions box to attach it.',

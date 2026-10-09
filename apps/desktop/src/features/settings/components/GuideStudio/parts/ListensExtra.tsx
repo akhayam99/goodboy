@@ -88,7 +88,7 @@ export const ListensExtra = () => (
       </p>
     </Band>
 
-    <Band inset="content" label="In the Inbox and Notifications" headingLevel={3}>
+    <Band inset="content" label="In Tasks and Notifications" headingLevel={3}>
       <ul className="flex flex-col gap-2">
         {shortcutRows({ group: 'lists' }).map((row) => (
           <li key={row.key} className="flex items-center justify-between gap-3 text-label">

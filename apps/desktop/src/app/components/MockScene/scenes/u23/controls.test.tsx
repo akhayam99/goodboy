@@ -183,7 +183,7 @@ describe('controls hints', () => {
     renderScene('controls-hints');
 
     const row = rowOf('Filled button with a single key');
-    const single = within(row).getByRole('button', { name: /^Fix 3 comments/ });
+    const single = within(row).getByRole('button', { name: /^Fix 3/ });
     const chord = within(row).getByRole('button', { name: /^Start Scout/ });
     expect(single.querySelector('kbd')?.getAttribute('data-look')).toBe('cap');
     expect(chord.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');

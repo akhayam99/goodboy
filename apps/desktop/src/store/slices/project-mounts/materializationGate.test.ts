@@ -11,6 +11,7 @@ import type {
 import {
   clearMaterializationBatch,
   deferredMaterializeMessage,
+  deferredMaterializeNote,
   materializationGate,
   proposeMaterialization,
   runMaterializationBatch,
@@ -276,5 +277,14 @@ describe('deferredMaterializeMessage', () => {
 
     expect(message).toContain('Do not request it again in this session.');
     expect(message).toContain('Continue with work that does not require this mount');
+  });
+});
+
+describe('deferredMaterializeNote', () => {
+  it('tells a person the project is added later, without the word mount', () => {
+    const note = deferredMaterializeNote({ projectName: 'storefront-web' });
+
+    expect(note).toBe('Added later: storefront-web.');
+    expect(note).not.toMatch(/mount/i);
   });
 });

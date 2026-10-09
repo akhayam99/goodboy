@@ -142,7 +142,7 @@ describe('OperationsCluster', () => {
     const rail = screen.getByRole('button').parentElement!;
     expect(rail.className).toContain('border-l-2');
     expect(rail.className).toContain('border-warning');
-    screen.getByText('Waiting for your approval');
+    screen.getByText('Waiting for your permission');
   });
 
   it('keeps a user-opened cluster open once the run completes', () => {

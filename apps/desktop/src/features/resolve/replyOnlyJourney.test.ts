@@ -417,7 +417,7 @@ describe('a reply-only answer on the Comments page', () => {
     expect(receipts[0]).toMatchObject({ replyPhase: 'posted' });
   });
 
-  it('keeps the reply with the push while commits wait, and posts it on Post reply now', async () => {
+  it('keeps the reply with the push while commits wait, and posts it on Publish reply', async () => {
     await seed({
       rows: [
         replyOnlyRow(),

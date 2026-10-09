@@ -51,7 +51,7 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Inbox, Chat and Workflows sit under
+- **The column holds every door.** Board, Tasks, Chat and Workflows sit under
   New session, the Sessions list follows, Settings and the Goodboy row sit at
   the foot. Board is home and the first door (⌘⇧H). The column is on every
   screen with a workspace: the board, a session, the draft and every studio but
@@ -88,7 +88,7 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Inbox, Chat, Workflows, Settings), a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Settings), a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
@@ -138,7 +138,7 @@ opens it on a mode. Commands is the first mode.
   1. **Next**: up to three rows from `deriveNextSteps`, the same model, handlers
      and outcome log as the session's next-step slot (`useSessionPalette` calls
      `useSessionSuggestions` and `useSuggestionActions`). Needs-you rows first.
-     A step the slot confirms (Merge, Close worktree) confirms here too. Mount
+     A step the slot confirms (Merge, Close branch) confirms here too. Mount
      proposals stay in the slot. Push, Create pull request and Rebase live here:
      a mount target needs live git status, so the palette takes them from the
      model that already reads it.
@@ -162,7 +162,7 @@ opens it on a mode. Commands is the first mode.
      session, the project, the model and the steps, and nothing starts until you
      confirm.
   4. **Recent**, agents of this session first; then **Go to** (Board inside a
-     session, Inbox, Chat, Workflows, Impact, Notifications, What's new), **App**
+     session, Tasks, Chat, Workflows, Impact, Notifications, What's new), **App**
      (New session, Settings, Switch theme, Connect a provider, Pair your iPhone,
      Report a bug) and **Help**.
      On the Board the first section is **Needs you**: the sessions the Now chip
@@ -341,7 +341,7 @@ never exists on one surface only.
   step, Start the next step, Restore; Copy run summary; Stop run, Archive
   run and Delete run, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too, plus Delete on any stored artifact that is not already
-  deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, an inbox record (with the tool verbs of
+  deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, a Tasks record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
   project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
@@ -390,7 +390,7 @@ never exists on one surface only.
   covers the last row.
 - **Confirm and undo.** A verb that loses work confirms inside the menu with
   `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
-  Delete script, Close worktree, Remove from session, Abort rebase). Remove
+  Delete script, Close branch, Remove from session, Abort rebase). Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
@@ -421,7 +421,7 @@ reference material beside the page and closes with the pane that opened it.
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 New session (⌘N, the only emphasised control, selected while the draft is open,
 a primary dot and `Draft in progress` while a draft waits), the doors Board
-(⌘⇧H), Inbox, Chat and Workflows as one 28px row each (icon and word, the
+(⌘⇧H), Tasks, Chat and Workflows as one 28px row each (icon and word, the
 shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
 belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
@@ -452,7 +452,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): the toggle, New, Board, Inbox, Chat and Workflows as icons
+  (`ColumnRail`): the toggle, New, Board, Tasks, Chat and Workflows as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
@@ -586,7 +586,7 @@ or `remembered` for the open session. A page that has a row in the card
 takes `bg-selected` and `aria-current="page"` alone. Where no row matches (the
 Tools Explore, Scripts and Terminal, a linked record, Questions with nothing
 open) or the pages are folded, the session row takes the sign. While a studio
-(Inbox, Chat, Workflows, Impact) sits over the session the row is `remembered`:
+(Tasks, Chat, Workflows, Impact) sits over the session the row is `remembered`:
 medium weight, no fill, no `aria-current`; closing the studio returns the sign to
 the page. The session row also carries `data-current-sign`. Questions renders in
 the card only while something is open, warning-toned with the count word
@@ -647,8 +647,10 @@ rhythm. Each section has an eyebrow label, and a section has at most one
 primary button. Projects, Next and Activity are peer sections in the pane body,
 one `PANE_RHYTHM.stack` gap apart: the header passes `headerRhythm="section"`,
 so the gap under it is the same. Space separates sections, never a
-`<Divider />`, and a section never has a border. The Activity header holds two
-controls, Filter and New. A section appears once its
+`<Divider />`, and a section never has a border. The Activity header holds the
+**Activity | Log** switch, **Mark all seen** while an agent has an unread reply
+and **New** on the right; the Log adds a search field under it, and there is no
+description line. A section appears once its
 fact exists (a plan, a workflow run, a PR on a project). Before that it is one
 quiet action row (link an issue, start an agent, attach a workflow). So the
 empty session reads as a young version of the same document, not a wall of
@@ -684,14 +686,14 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   `WorkflowBuilderView` as the Workflow tab (Orchestrated, Describe steps or Pick a workflow,
   the plan, guidance, Can use, Starts, when to ask, Spend cap), with the issue as
   its goal and its own draft under `kickoff-task:<workspace>`. When the issue
-  maps to a project (`launchMountFor`, the Inbox rule: a GitHub or GitLab repo
+  maps to a project (`launchMountFor`, the Tasks rule: a GitHub or GitLab repo
   path, or a Sentry project linked or code-mapped to a project) a
   `LaunchMountRow` above the choice says which project the session works in
   and why, and lets you pick another or none. Start run, or Start on the
   agent side, links the issue, mounts that project, creates the session and
   starts the run or agent in one gesture (`startSessionFromDraft`, kind
   `task` with a `mount` and a `then`). Without a tracker
-  it shows the connect links. The search, like the Inbox search, reads an issue
+  it shows the connect links. The search, like the Tasks search, reads an issue
   code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
   `owner/repo#482`, a tracker URL; anything else stays a local filter). When
   no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
@@ -714,18 +716,18 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   the manual `Retry`. The mobile companion resolves Linear, Sentry and
   GitLab issues through the same direct lookups instead of searching only
   the issues assigned to you. Issues can be starred (`StarToggle`, the same
-  star as projects) from an Inbox row, a lookup hit or `s` on the selected
+  star as projects) from a Tasks row, a lookup hit or `s` on the selected
   row. Stars live per workspace (`workspace_starred_issues`, keyed by
   provider and external id; GitHub keys by `owner/repo#N`) with the last
   copy of identifier, title and state, so the `Starred` group draws before
   any tracker answers; a row not refreshed since app start opens the detail
   panel from that snapshot (`placeholderRecordOf`), not the tool's URL, and
-  gets replaced once the refresh lands a real record. In the Inbox it sits
+  gets replaced once the refresh lands a real record. In Tasks it sits
   under `Not in your inbox` and above the days, and a starred issue leaves
   the days; open ones come first, closed ones at the bottom with `Unstar
 closed` and `Undo`, and one the tracker no longer returns reads `Can't
 reach NW-230 anymore`. Pick up a task shows only the open starred issues,
-  even ones a session already picked up. Opening the Inbox or Pick up a task
+  even ones a session already picked up. Opening Tasks or Pick up a task
   refreshes the stars at most every five minutes (`refreshStarredIssues`):
   one request per tracker for Linear and Jira, one per project for GitLab,
   and one per issue for GitHub and Sentry, which have no batch endpoint for
@@ -1158,7 +1160,7 @@ Models row When a provider is out, writing through the same
 `setProviderPolicy`, then Connect for each CLI provider that is not connected,
 then Manage providers. It reads the cached providers and never refreshes them
 on open. Changelog opens from the Goodboy menu and the palette, so it earns no
-door. The connected tools have no glyph strip any more: the Inbox's Source
+door. The connected tools have no glyph strip any more: Tasks' Source
 filter is the tool door, and Connect a tool lives in Settings > Integrations.
 
 - **The release notice answers "have you read the notes for what you're
@@ -1174,9 +1176,9 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
   Manage gear with no folder open.
 - **Under Legacy layout the 0.20.0 footer comes back** (`AppFooter`): the
   connected integration glyphs and Link integration on the left, the Goodboy
-  chip in the centre, Inbox, Workflows, Impact, Providers and Settings on the
+  chip in the centre, Tasks, Workflows, Impact, Providers and Settings on the
   right. Its target is a pair, the place and the tool (`FooterTarget`), so a
-  scoped tool glyph and Inbox never light together.
+  scoped tool glyph and Tasks never light together.
 
 ## Shortcuts
 
@@ -1205,7 +1207,7 @@ Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Lists, Comments, Files, Window; ids stay `review` and
 `diff`), and Settings > App > Shortcuts lists the
 groups in that order, read top to bottom per column. An entry that works only in
-one place carries a `scope` (the Inbox and Notifications lists, the Branch page,
+one place carries a `scope` (Tasks and Notifications lists, the Branch page,
 the terminal, a chat composer, an activity row, a workspace
 open, a code or an explore session). The page prints the place under the group
 name when the whole group shares it, or under the row when it does not. A scope
@@ -1252,7 +1254,7 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
 
-Utility studios (Inbox, Chat, Workflows, Impact, Notifications, Changelog,
+Utility studios (Tasks, Chat, Workflows, Impact, Notifications, Changelog,
 the guide, pairing, Add workspace) render in the shell's studio slot, which
 covers the content area only, beside the column, as its own sheet with the
 studio band on top. The column stays live, so another door or a session row is
@@ -1285,8 +1287,8 @@ one is open at a time.
 - **An open studio is a history entry.** Opening a studio, or switching from
   one studio to another, pushes an entry over the page underneath
   (`openStudio`). Reopening the same studio, a Settings scope change and the
-  Inbox's provider and record update that entry (`amendStudio`). Back from
-  Workflows reopens the Inbox with its record. Close and Esc fold every studio
+  Tasks' provider and record update that entry (`amendStudio`). Back from
+  Workflows reopens Tasks with its record. Close and Esc fold every studio
   entry stacked on the same page into that page (`closeStudio`): closing means
   the side trip is over, Back means one step.
 - **Navigating closes the studio.** A forward move to a place (another
@@ -1294,7 +1296,7 @@ one is open at a time.
   from the palette, a needs-you row, a shortcut or a link inside the studio, so
   the destination always lands in front. Switching workspace closes it too.
 - **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
-  mounts only while a studio is open and stays mounted from Inbox to Workflows
+  mounts only while a studio is open and stays mounted from Tasks to Workflows
   to Settings. It owns the 40px band (the studio's icon and name, the body's
   subtitle, Close; Settings in the default shell has no band at all,
   so `hasBand` is off and its skeleton has no rail), the Esc layer and the motion: `studio-in` when
@@ -1302,12 +1304,12 @@ one is open at a time.
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
-  (Inbox, Notifications, Add workspace, Impact), `rail`
+  (Tasks, Notifications, Add workspace, Impact), `rail`
   (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
 - **The band sits on the studio's column.** `StudioBand` draws its crumb and Close
   inside a `PageColumn` of the studio's tier (`tier` in `STUDIO_META`): `column` for
-  Inbox, Workflows, Impact, the guide, What's new, Notifications, Add workspace and
+  Tasks, Workflows, Impact, the guide, What's new, Notifications, Add workspace and
   Settings, so the crumb starts where the title starts and Close ends where the
   column ends (at 1920 it no longer sits 330px outside it), and `full` only for
   Chat and pairing, the rail-plus-detail studios aligned to the 24px gutter. While it
@@ -1316,13 +1318,13 @@ one is open at a time.
   under the pane top).
 - **Every studio draws the grid's title row.** Under the band each studio has one
   `h1` in the same 32px row as every page (`PaneTitleRow`, fixed `h-8`, the actions
-  at its right, a long title truncates and never wraps the row): Inbox the view's name,
+  at its right, a long title truncates and never wraps the row): Tasks the view's name,
   Workflows `Workflows` with its tab strip under the title and `New workflow` as the
   one primary at the right end of the tab row, Impact `Impact` with the period selector in the row and a meta line
   under it (the band keeps the crumb and Close only), the guide `Guide`, What's new and
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
-- **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
+- **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every
   popover built on `useDropdown` (`AnchoredPopover`, the pickers, the bell):
@@ -1360,13 +1362,13 @@ one is open at a time.
   J and K or the arrow keys move, Enter runs the row's action and E dismisses.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
-  are shared primitives. The inbox uses all three: its facets filter by view,
+  are shared primitives. Tasks uses all three: its facets filter by view,
   type and source (one pick per section, a tool that did not load says so in
-  its row) behind the same Filters button in the list header, so the inbox is
+  its row) behind the same Filters button in the list header, so Tasks is
   the list and the record beside the column, never a third column; its
   one-line rows are grouped by the same days in time order, and
   J and K move the selection while the record follows beside the list. The
-  inbox opens with its first row chosen, so those keys act at once; Enter opens
+  Tasks opens with its first row chosen, so those keys act at once; Enter opens
   the launch popover on that row (⌘↵ in the panel launches) or the session once
   one is linked, O opens the record in its tool, R focuses the reply box when
   the record has one (a Sentry issue has none: the rail drops Reply and R does
@@ -1605,7 +1607,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   git remote. So a leftover scoped personal API key on a non-GitHub workspace
   can still be cleared.
 - **A code-host record keeps its verbs outside a session.** A GitLab merge
-  request opened from the inbox approves, merges, closes and reopens through
+  request opened from Tasks approves, merges, closes and reopens through
   the workspace's GitLab host. A Bitbucket pull request shows its verbs too,
   blocked with the reason until Goodboy has resolved it for a session. A GitHub
   pull request opens read only: description, review state, branches and its
@@ -1616,16 +1618,16 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   project stops at an empty state.
 - **Every record header has the same four places.** `RecordHeader` puts the
   tool glyph, the identifier and the state on the identity line, with Open in
-  the tool, the `⋯` menu and, in the inbox, close at its end. Under the title
+  the tool, the `⋯` menu and, in Tasks, close at its end. Under the title
   sits one action row: one primary (Launch session, or Open session once one is
   linked) and at most two tool verbs picked by state. Before a session is
-  linked, the inbox adds Link to a session beside Launch session: a searchable
+  linked, Tasks adds Link to a session beside Launch session: a searchable
   list of the workspace's sessions, inline, that links the record to the one
   you pick. Everything else lives in
   `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Remove link to session,
   then destructive verbs after a separator. Editable properties change from the
   control that shows them (the Jira state opens its transitions). Launch
-  session opens a popover with the goal and the brief; Enter from the inbox list
+  session opens a popover with the goal and the brief; Enter from the Tasks list
   opens it, or opens the linked session.
 - **Every record body has one order.** Under the header, facts sit as pills in
   fixed slots (person, weight, place, labels, measure, links, time), each with
@@ -1721,7 +1723,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Accept N` for comments to review. With no fix run
-  the line under the tabs says `Fix N open comments`; the Overview card and
+  the line under the tabs says `Fix N`; the Overview card and
   the board card open that same panel pre-filled. Bulk answers, Retry N and
   `N accepted · Undo` (Cmd+Z) are described in
   [Concepts](./concepts.md). Cmd+A is not in the shortcut table:
@@ -2119,7 +2121,7 @@ the drawer header switches between the two. It also closes when the focused
 artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
-A studio covers the whole window grid, so it cannot use that column. The inbox
+A studio covers the whole window grid, so it cannot use that column. Tasks
 record opens in the same `DrawerColumn` inside the studio body
 (`InboxStudioLayout`), with the same width, card and motion. Escape closes the
 record before the studio.
@@ -2315,7 +2317,7 @@ with lease.
 
 The Commits tab draws the branch as a graph (`history_graph`): a grey main
 trunk with its head node (`main is here now`, how many commits it gained,
-`Start from today's main`), your branch leaving it at the real fork point, one
+`Rebase on main`), your branch leaving it at the real fork point, one
 row per commit newest first, and `Your branch starts here` at the fork. There
 is no row of fact chips over it: the graph already says how many commits are
 yours, how far main moved and what is online. The big list is always

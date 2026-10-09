@@ -87,7 +87,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
           <FilledEmptyState
             icon={CONCEPT_ICONS.bitbucket}
             tone={CONCEPT_TONE.bitbucket}
-            title={!hasQuery ? 'Inbox clear' : 'No matching pull requests'}
+            title={!hasQuery ? 'Nothing waiting' : 'No matching pull requests'}
             description={
               !hasQuery
                 ? 'No pull requests on this repository yet.'

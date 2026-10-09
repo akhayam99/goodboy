@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/names';
 import { Check, Play } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -14,7 +15,7 @@ export const PlanPrimaryButton = ({ action, isReasonShown = true }: Props) => {
     return null;
   }
   const isDisabled = primary.kind === 'disabled';
-  const Icon = primary.label === 'Approve' ? Check : Play;
+  const Icon = primary.label === NAMES.approve ? Check : Play;
 
   return (
     <>

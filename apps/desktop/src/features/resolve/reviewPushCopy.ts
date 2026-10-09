@@ -1,6 +1,8 @@
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { ResolveCommitStyle, ResolvePublicationPreview } from '@goodboy/types';
 import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
+import { NAMES } from '../../shared/names';
+import { openSettings } from '../settings/openSettings';
 import { closingThreadCount } from './closingThreadCount';
 
 const plural = (count: number, one: string, many: string): string =>
@@ -79,14 +81,24 @@ export const PUSH_TIP_LABEL = 'Tip';
 export const earlierCommitsLine = ({ count }: { readonly count: number }): string =>
   `This also pushes ${count} earlier ${count === 1 ? 'commit' : 'commits'}`;
 
+export type PushStyleNote = {
+  readonly text: string;
+  readonly linkLabel: string;
+  readonly onOpen: () => void;
+};
+
 export const pushStyleNote = ({
   commitStyle,
 }: {
   readonly commitStyle: ResolveCommitStyle;
-}): string =>
-  commitStyle === 'fixup'
-    ? 'Commits are fixups of the commits they fix, set in Replies and commits.'
-    : 'Every fix is its own new commit, set in Replies and commits.';
+}): PushStyleNote => ({
+  text:
+    commitStyle === 'fixup'
+      ? 'Commits are fixups of the commits they fix, set in'
+      : 'Every fix is its own new commit, set in',
+  linkLabel: NAMES.repliesAndCommits,
+  onOpen: () => openSettings({ scope: 'workspace', section: 'review-replies' }),
+});
 
 type PushResultTone = 'done' | 'partial' | 'failed';
 

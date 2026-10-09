@@ -19,7 +19,7 @@ export const WIREFRAME_FIDELITY_VARIANT_LABEL: Record<WireframeFidelity, string>
 
 export const WIREFRAME_FIDELITY_HINT: Record<WireframeFidelity, string> = {
   low: 'neutral greys, placeholder media and layout annotations',
-  high: 'colors, type and radii read from the design files in the mounted repo. when the app finds no style evidence it says so and uses the generic theme instead',
+  high: "colors, type and radii read from the project's design files. when the app finds no style evidence it says so and uses the generic theme instead",
 };
 
 export const requestedWireframeFidelity = ({

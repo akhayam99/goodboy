@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/names';
 import { useEffect, useState } from 'react';
 import type { MountCleanupProposal, SessionId } from '@goodboy/types';
 import { Button, cn, tintClasses } from '@goodboy/ui';
@@ -73,7 +74,7 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
               onClick={() => void resolve(proposal, 'remove')}
               className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
             >
-              Remove worktree
+              {NAMES.closeBranch}
             </Button>
             <Button
               variant="ghost"

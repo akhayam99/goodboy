@@ -1,7 +1,9 @@
+import { NAMES } from '../../shared/names';
+
 export const CHANGELOG_SCREENS = {
   workflows: 'Workflows',
   'workflows/steps': 'Workflow steps',
-  inbox: 'Inbox',
+  inbox: NAMES.tasks,
   notifications: 'Notifications',
   impact: 'Impact',
   'settings/app': 'Settings',

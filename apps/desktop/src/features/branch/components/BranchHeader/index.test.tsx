@@ -585,7 +585,7 @@ describe('BranchHeader one primary by state', () => {
     cleanup();
 
     renderHeader({ pr: PR, review: { accepted: 0, replies: 0, failed: 1, isPushing: false } });
-    expect(screen.getByRole('button', { name: /Retry 1/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry push' })).toBeDefined();
   });
 
   it('keeps Abort rebase as the secondary of a stopped rebase and confirms it inline', () => {

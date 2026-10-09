@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/names';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, FormActions, Input, SegmentedTabs } from '@goodboy/ui';
@@ -57,7 +58,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
       onDone();
     } catch (error) {
       void reportError({
-        title: `Couldn't create a worktree for ${task.identifier}`,
+        title: `Couldn't create a branch for ${task.identifier}`,
         error,
         sessionId,
       });
@@ -69,7 +70,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
   return (
     <div className="flex flex-col gap-3 p-3">
       <div className="flex flex-col gap-1">
-        <span className="text-row text-foreground">{`New worktree for ${task.identifier}`}</span>
+        <span className="text-row text-foreground">{`${NAMES.newBranch} for ${task.identifier}`}</span>
         <span className="text-meta text-muted-foreground">
           {projectName === '' ? 'It gets its own branch.' : `${projectName} · from its base branch`}
         </span>
@@ -129,7 +130,7 @@ export const TaskWorktreeForm = ({ sessionId, task, onBack, onDone }: Props) => 
           disabled={isBusy || (mode === 'existing' && branch.trim() === '')}
           onClick={() => void create()}
         >
-          {isBusy ? 'Creating…' : 'Create worktree'}
+          {isBusy ? 'Creating…' : 'Create branch'}
         </Button>
       </FormActions>
     </div>

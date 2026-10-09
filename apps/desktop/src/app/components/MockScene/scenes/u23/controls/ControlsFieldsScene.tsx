@@ -38,9 +38,9 @@ export const ControlsFieldsScene = () => {
           className="w-60"
         />
         <SearchField
-          ariaLabel="Search the inbox, medium"
+          ariaLabel="Search tasks, medium"
           size="md"
-          placeholder="Search the inbox"
+          placeholder="Search tasks"
           value=""
           onChange={setQuery}
           className="w-60"

@@ -174,7 +174,7 @@ describe('PaletteOverlay, the commands mode', () => {
     const names = optionNames();
     const recentAt = names.indexOf('Speed up the payout export for large merchants');
     expect(recentAt).toBeGreaterThanOrEqual(0);
-    expect(recentAt).toBeLessThan(names.indexOf('Inbox'));
+    expect(recentAt).toBeLessThan(names.indexOf('Tasks'));
   });
 
   it('opens every verb of a row on the right arrow and goes back on the left', () => {

@@ -31,7 +31,7 @@ export type ShortcutScope =
   | 'exploreSession';
 
 export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
-  list: 'In the Inbox and Notifications lists',
+  list: 'In the Tasks and Notifications lists',
   selection: 'In a list with checkboxes',
   review: 'On the Comments tab',
   diff: 'On the Files tab',

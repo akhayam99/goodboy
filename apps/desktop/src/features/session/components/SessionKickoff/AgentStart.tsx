@@ -58,7 +58,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const { start, isStarting, error } = useDraftStart({ workspaceId });
   const hasProject = draft.projectId !== null;
   const promptFiles = usePromptFiles({
-    note: 'Images go to the agent you start',
+    note: 'Files go to the agent you start',
     isEnabled: hasProject,
     notices: {
       ambiguous: 'Drop the file on the instructions box to attach it.',

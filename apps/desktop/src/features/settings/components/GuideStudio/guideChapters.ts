@@ -142,7 +142,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Pick up a task',
-        desc: 'Choose an issue from your tools or the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. Then run it through the same workflow builder, or ask an agent. A Sentry error or a GitHub or GitLab item opens in its project and says why.',
+        desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. Then run it through the same workflow builder, or ask an agent. A Sentry error or a GitHub or GitLab item opens in its project and says why.',
       },
       {
         term: 'Run a workflow',
@@ -200,7 +200,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Left column',
-        desc: 'New session, Board, Inbox, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
+        desc: 'New session, Board, Tasks, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
       },
       {
         term: 'Session rows',
@@ -305,16 +305,16 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'tools',
     group: 'task',
-    title: 'Tools, integrations and the Inbox',
+    title: 'Tools, integrations and Tasks',
     concept: 'inbox',
-    lead: 'Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack once. Agents on any provider can use them, and you work from one Inbox.',
+    lead: 'Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack once. Agents on any provider can use them, and you work from one list of Tasks.',
     points: [
       {
         term: 'Agents use your tools',
         desc: 'An agent asks Goodboy and Goodboy makes the call, so your keys never reach the agent. Keys stay in your system credential store.',
       },
       {
-        term: 'Inbox',
+        term: 'Tasks',
         desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub or GitLab items when several projects live on that host, filter by project.',
       },
       {
@@ -336,7 +336,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: 'Open the Inbox',
+        label: 'Open Tasks',
         target: { kind: 'studio', studio: { kind: 'inbox', focus: null } },
       },
       {
@@ -358,7 +358,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: "The review threads of the branch and the open thread beside them. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N opens a panel beside the list to pick the model; one agent then works through them in order, in its own copy of the branch. Fix 9 open comments, Use the recommended answers, Retry and Accept 5 act on many comments at once, and Accept has Undo.",
+        desc: "The review threads of the branch and the open thread beside them. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N opens a panel beside the list to pick the model; one agent then works through them in order, in its own copy of the branch. Fix 9, Use the recommended answers, Retry and Accept 5 act on many comments at once, and Accept has Undo.",
       },
       {
         term: 'Fix run',

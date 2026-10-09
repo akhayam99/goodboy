@@ -583,7 +583,7 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   the 2.1.282 binary and `claude --help`; no real turn has exercised it
 - `turn.rs` starts Claude with `-p <prompt>` and no input stream, so no host
   exists: every call the mode doesn't allow is denied, the turn stops, and the
-  approval card takes it from there
+  permission card takes it from there
 - Cursor's help describes `--mode plan` as read-only planning with no edits.
   Goodboy passes it without `--force`. Whether read-only shell commands still
   run in that mode has not been checked on a real turn, so the table keeps

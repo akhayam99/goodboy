@@ -13,7 +13,7 @@ Turn review comments into commits without writing the fix yourself. The Comments
 
 ### Bulk actions
 
-Fix, answer and accept many comments at once. With no fix run going, the line under the tabs reads **9 open comments** with **Fix 9 open comments**: it checks every comment you can fix, the open ones and the ones that could not be fixed, and opens the launch panel. **Cmd+A** checks the same set. A comment that needs you stays out, because you answer it instead. **Draft fixes for 9** on the Overview and **Resolve 9 comments** on a Board card open that same panel on the Comments tab with the same comments checked, and never start a run by themselves.
+Fix, answer and accept many comments at once. With no fix run going, the line under the tabs reads **9 open comments** with **Fix 9**: it checks every comment you can fix, the open ones and the ones that could not be fixed, and opens the launch panel. **Cmd+A** checks the same set. A comment that needs you stays out, because you answer it instead. **Draft fixes for 9** on the Overview and **Resolve 9 comments** on a Board card open that same panel on the Comments tab with the same comments checked, and never start a run by themselves.
 
 While a run is going and two or more questions are open, **Use the recommended answers (2)** shows in the line under the tabs, next to the model. A panel opens in the right column with each question and its recommended answer already chosen. Pick another answer, or **Drop** a question to leave it in Needs you, then **Continue with 2 answers** sends them all to the same run. **Retry 1 that couldn't fix** retries every comment that could not be fixed, in the same run and the same copy of the branch.
 

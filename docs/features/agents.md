@@ -81,7 +81,7 @@ See what each turn cost: provider, model, duration, tokens, cache share, estimat
 
 ### Tool call states
 
-Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Needs approval**, **Stopped** or **Denied**, with elapsed time and readable input and output.
+Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Needs permission**, **Stopped** or **Denied**, with elapsed time and readable input and output.
 
 ### Composer plus menu
 

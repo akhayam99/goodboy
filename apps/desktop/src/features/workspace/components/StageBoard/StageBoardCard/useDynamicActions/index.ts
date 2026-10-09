@@ -20,6 +20,7 @@ import {
 } from '../../../../../workflows/workflowAdvanceView';
 import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestionsGate';
 import { eligibleReviewThreads } from '../../../../../suggestions/eligibleThreads';
+import { fixLabel } from '../../../../../resolve/reviewLaunchCopy';
 import { requestReview } from '../../../../../review/reviewRequest';
 import { pendingMountProposals } from '../../../../../../store/slices/project-mounts/materializationProposals';
 import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
@@ -198,7 +199,7 @@ export const useDynamicActions = (
         key: 'resolve',
         icon: SUGGESTION_ICONS['resolve-threads'],
         tone: 'primary',
-        label: `Resolve ${eligibleThreads} ${eligibleThreads === 1 ? 'comment' : 'comments'}`,
+        label: fixLabel({ count: eligibleThreads }),
         onClick: () =>
           requestReview({
             getState: useAppStore.getState,

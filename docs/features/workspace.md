@@ -13,7 +13,7 @@ Begin with an empty folder and no repository. **Start a new project** on the emp
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="The Northwind workspace with one session open: its Projects section lists api on the branch feat/create-orders-endpoint and storefront-web on feat/checkout-orders-api, each with New worktree and its changes, above the activity timeline">
 </picture>
 
-Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of the session lists each repo it touches, with its branch, the size of its changes and **New worktree**. A project gets a branch only when an agent needs to edit it.
+Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of the session lists each repo it touches, with its branch, the size of its changes and **New branch**. A project gets a branch only when an agent needs to edit it.
 
 ### Starred projects, descriptions and base branch
 
@@ -31,7 +31,7 @@ Point agents at the right repo without naming it. Star a project and give it a o
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-light.webp" alt="The Projects of one session: ledger-core with three worktrees (idempotent-postings, part 3 of 6, pull request 418 in review; statement-backfill, part 5 of 6, Files kept with Reopen; rounding-drift, part 1 of 6, pull request 412 merged with Remove worktree) and notify-relay with pull request 96 in review">
 </picture>
 
-Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder next to your checkout with its own changes and pull request, and every row shows its part, its lines changed and its pull request. **New worktree** adds one, **Remove worktree** clears a merged one, and **Reopen** brings back one whose files were kept. **Copy worktree path** in **⌘K** copies where a session works, or lets you pick one when it has several, with **⌘Enter** to copy them all.
+Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder next to your checkout with its own changes and pull request, and every row shows its part, its lines changed and its pull request. **New branch** adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept. **Copy worktree path** in **⌘K** copies where a session works, or lets you pick one when it has several, with **⌘Enter** to copy them all.
 
 ### Several branches per project
 

@@ -324,12 +324,12 @@ export const ArtifactCreationPane = ({
               scopeLine={
                 basedOn.kind === 'workflow-run' ? adapter.scopeCopy.run : adapter.scopeCopy.session
               }
-              repoLine={adapter.repoLine({ choice, repo })}
               onChange={setBasedOn}
             />
             <ArtifactContextDisclosure
               rows={inventory}
               truncations={preview.truncations}
+              repoLine={adapter.repoLine({ choice, repo })}
               isCollecting={preview.status === 'collecting'}
               isOpen={isContextOpen}
               onOpenChange={setIsContextOpen}

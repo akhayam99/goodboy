@@ -245,12 +245,12 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
           <AnchoredPopover
             dropdown={dropdown}
             role={overflowView === 'menu' ? 'menu' : 'dialog'}
-            ariaLabel="More approval actions"
+            ariaLabel="More permission actions"
             className={overflowView === 'menu' ? 'py-1' : undefined}
             trigger={
               <IconButton
                 icon={MoreIcon}
-                label="More approval actions"
+                label="More permission actions"
                 variant="ghost"
                 disabled={busy}
                 aria-haspopup="menu"

@@ -1,5 +1,6 @@
 import { Button } from '@goodboy/ui';
-import { fixOpenLabel, openCommentsLine } from '../../reviewBulkCopy';
+import { openCommentsLine } from '../../reviewBulkCopy';
+import { fixLabel } from '../../reviewLaunchCopy';
 
 type Props = {
   readonly count: number;
@@ -10,7 +11,7 @@ export const FixOpenLine = ({ count, onFix }: Props) => (
   <div className="flex min-w-0 flex-wrap items-center gap-3">
     <span className="text-label text-foreground">{openCommentsLine({ count })}</span>
     <Button size="sm" variant="secondary" onClick={onFix}>
-      {fixOpenLabel({ count })}
+      {fixLabel({ count })}
     </Button>
   </div>
 );

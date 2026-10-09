@@ -299,7 +299,7 @@ export const InboxScene = () => {
         <StudioShell
           icon={CONCEPT_ICONS.inbox}
           tone={CONCEPT_TONE.inbox}
-          title="Inbox"
+          title="Tasks"
           closeLabel="Close inbox"
           onClose={noop}
         >

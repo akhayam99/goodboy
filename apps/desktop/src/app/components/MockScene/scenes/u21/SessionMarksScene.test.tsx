@@ -79,7 +79,7 @@ const MARKS: ReadonlyArray<Mark> = [
     title: 'Write the notify-relay digest',
     tone: 'warning',
     state: 'approval',
-    words: 'Waiting for your approval',
+    words: 'Waiting for your permission',
   },
   {
     title: 'Plan the Cascadia onboarding',

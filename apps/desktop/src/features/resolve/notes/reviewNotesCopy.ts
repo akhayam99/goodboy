@@ -1,3 +1,5 @@
+import { NAMES } from '../../../shared/names';
+
 export const REVIEW_NOTES_COPY = {
   title: 'Your notes',
   close: 'Close',
@@ -19,7 +21,8 @@ export const notesOpenCount = ({ count }: { readonly count: number }): string =>
 
 export const fixNotesLabel = ({ count }: { readonly count: number }): string => `Fix ${count}`;
 
-export const notesButtonLabel = ({ count }: { readonly count: number }): string => `Notes ${count}`;
+export const notesButtonLabel = ({ count }: { readonly count: number }): string =>
+  `${NAMES.notes} ${count}`;
 
 export const olderDraftsLine = ({ count }: { readonly count: number }): string =>
   count === 1

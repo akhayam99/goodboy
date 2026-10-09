@@ -12,7 +12,7 @@ export const InboxStudioLayout = ({ list, drawer, drawerRef }: Props) => (
     className="h-full"
     main={<div className="flex min-h-0 min-w-0 flex-1">{list}</div>}
     drawer={drawer ?? null}
-    ariaLabel="Inbox item"
+    ariaLabel="Task"
     resizeLabel="Resize the item panel"
     {...(drawerRef !== undefined && { drawerRef })}
   />

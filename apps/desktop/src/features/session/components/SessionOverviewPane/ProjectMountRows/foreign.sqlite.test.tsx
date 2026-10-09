@@ -241,13 +241,13 @@ describe('a teammate pull request opened from Goodboy', () => {
       </ToastProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'New worktree in ledger-core' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New branch in ledger-core' }));
     fireEvent.click(screen.getByRole('tab', { name: 'Existing branch' }));
     fireEvent.click(await screen.findByRole('combobox', { name: 'Branch' }));
     const option = await screen.findByRole('option', { name: /grw-1348-cta/ });
     expect(option.textContent).toContain('PR #9900 · pat-harborline');
     fireEvent.click(option);
-    fireEvent.click(screen.getByRole('button', { name: 'Create worktree' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create branch' }));
 
     await waitFor(() =>
       expect(storySpies.createWorktree).toHaveBeenCalledWith(

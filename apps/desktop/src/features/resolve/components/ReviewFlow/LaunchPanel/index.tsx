@@ -13,7 +13,7 @@ import {
   LAUNCH_ORDER_LINE,
   REVIEW_LAUNCH_LABEL,
   launchStartLabel,
-  launchTitle,
+  fixLabel,
 } from '../../../reviewLaunchCopy';
 import { startBatch } from '../../../startBatch';
 import { useFixStartedToast } from '../../../hooks/useFixStartedToast';
@@ -99,7 +99,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
       className="flex min-w-0 max-w-[var(--measure)] flex-col gap-4"
     >
       <div className="flex flex-col gap-1">
-        <h2 className="text-title text-foreground">{launchTitle({ count })}</h2>
+        <h2 className="text-title text-foreground">{fixLabel({ count })}</h2>
         <p className="text-meta text-muted-foreground">{LAUNCH_ORDER_LINE}</p>
       </div>
       <ul className="flex flex-col gap-0.5 rounded-lg bg-subtle p-1">

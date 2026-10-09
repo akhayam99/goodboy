@@ -612,7 +612,7 @@ describe('CommitsHistory', () => {
 
   it('starts from today main as one more planned change', () => {
     const actions = setup();
-    fireEvent.click(screen.getByRole('button', { name: /Start from today's main/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Rebase on main/ }));
     expect(actions.editHistoryDraft).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,

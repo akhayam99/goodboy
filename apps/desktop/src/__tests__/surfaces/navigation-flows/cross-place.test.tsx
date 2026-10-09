@@ -1049,7 +1049,7 @@ describe('moving across every place keeps one frame', () => {
     async () => {
       await boot({ seed: 'pr' });
 
-      await openPalette(/^Inbox$/, 'Inbox');
+      await openPalette(/^Tasks$/, 'Tasks');
       expect(studio()).toBe('inbox');
       expect(currentDoors()).toEqual(['inbox']);
       expectColumnBesideStudio();

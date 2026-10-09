@@ -61,8 +61,8 @@ export const STUDIO_META = {
   inbox: {
     icon: CONCEPT_ICONS.inbox,
     tone: CONCEPT_TONE.inbox,
-    title: 'Inbox',
-    closeLabel: 'Close inbox',
+    title: NAMES.tasks,
+    closeLabel: 'Close tasks',
     tier: 'column',
     skeleton: 'list',
   },

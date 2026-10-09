@@ -25,9 +25,6 @@ export const REVIEW_BULK_LABEL = {
 export const openCommentsLine = ({ count }: { readonly count: number }): string =>
   plural({ count, one: 'open comment', many: 'open comments' });
 
-export const fixOpenLabel = ({ count }: { readonly count: number }): string =>
-  `Fix ${plural({ count, one: 'open comment', many: 'open comments' })}`;
-
 export const recommendedAnswersLabel = ({ count }: { readonly count: number }): string =>
   `Use the recommended answers (${count})`;
 

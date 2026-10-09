@@ -176,7 +176,7 @@ the right of it, never the session sidebar.
 Every main pane renders through `PaneShell`, and its crumb, header and body
 sit in one `PageColumn`. At rest the column is centred in the pane, with equal
 space either side: Overview, Runs, Agents, Artifacts, the session pages, Chat,
-Workflows, Inbox detail, settings pages, agent and pull request detail. The
+Workflows, Tasks detail, settings pages, agent and pull request detail. The
 header, the trail band (the `Session` crumbs and the Ask button), the body and
 the footer share the same column edges, so moving from Overview to Runs to
 Agents to a settings page never shifts the first letter. The Ask button is the
@@ -207,7 +207,7 @@ Three width tiers, one rule each:
 | ------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | measure | `--measure`, 720px    | prose: transcript assistant text, plan prose, comment and note bodies, a Brief, Chat answers (`PANE_RHYTHM.prose`, `PageColumn width="measure"`) |
 | column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`)                |
-| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Inbox lists, the Board (`PageColumn width="full"`)                                       |
+| full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)                                       |
 
 A body that owns its scroll (`scroll="self"`: the agent transcript and its
 composer) puts its own `PageColumn` around the scrolling content and the

@@ -75,7 +75,7 @@ const renderRail = ({
 afterEach(cleanup);
 
 const section = (label: string) =>
-  within(screen.getByRole('navigation', { name: 'Filter the inbox' })).getByRole('group', {
+  within(screen.getByRole('navigation', { name: 'Filter tasks' })).getByRole('group', {
     name: label,
   });
 
@@ -231,7 +231,7 @@ describe('InboxFacetRail', () => {
       />,
     );
 
-    const rail = screen.getByRole('navigation', { name: 'Filter the inbox' });
+    const rail = screen.getByRole('navigation', { name: 'Filter tasks' });
     expect(within(rail).queryByRole('group', { name: 'Project' })).toBeNull();
     expect(within(rail).queryByRole('button', { name: /empty/ })).toBeNull();
   });
@@ -239,7 +239,7 @@ describe('InboxFacetRail', () => {
   it('leaves the project section out with a single project', () => {
     renderRail();
     expect(
-      within(screen.getByRole('navigation', { name: 'Filter the inbox' })).queryByRole('group', {
+      within(screen.getByRole('navigation', { name: 'Filter tasks' })).queryByRole('group', {
         name: 'Project',
       }),
     ).toBeNull();
@@ -276,7 +276,7 @@ describe('InboxFacetRail', () => {
       );
 
     const projectRegion = () =>
-      within(screen.getByRole('navigation', { name: 'Filter the inbox' })).queryByRole('group', {
+      within(screen.getByRole('navigation', { name: 'Filter tasks' })).queryByRole('group', {
         name: 'Project',
       });
 

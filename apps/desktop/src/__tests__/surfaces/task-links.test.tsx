@@ -404,7 +404,7 @@ type InboxItemProps = {
 const InboxItem = ({ record, workspaceId }: InboxItemProps) => {
   const linked = useInboxLinkedSessions({ workspaceId });
   return (
-    <section aria-label="Inbox item">
+    <section aria-label="Task">
       <InboxDetail
         record={attachLinkedSession({ record, linked })}
         workspaceId={workspaceId}
@@ -443,7 +443,7 @@ const expectLinked = async (session: Session, entry: ProviderCase): Promise<void
   expect(
     within(sessionRegion).getByRole('button', { name: `Open ${entry.identifier}` }),
   ).toBeDefined();
-  const inboxRegion = screen.getByRole('region', { name: 'Inbox item' });
+  const inboxRegion = screen.getByRole('region', { name: 'Task' });
   expect(within(inboxRegion).getByRole('button', { name: /Open session/ })).toBeDefined();
   expect(within(inboxRegion).queryByRole('button', { name: /Launch session/ })).toBeNull();
 };
@@ -471,7 +471,7 @@ describe('tasks and sessions on the real store', () => {
     });
 
     await mount(surfaces(session, entry));
-    const inboxRegion = screen.getByRole('region', { name: 'Inbox item' });
+    const inboxRegion = screen.getByRole('region', { name: 'Task' });
     fireEvent.click(within(inboxRegion).getByRole('button', { name: /Launch session/ }));
     const panel = await screen.findByRole('region', { name: 'Launch session' });
     fireEvent.change(within(panel).getByRole('textbox', { name: 'Session goal' }), {
@@ -545,7 +545,7 @@ describe('tasks and sessions on the real store', () => {
     const session = seed(entry);
 
     await mount(surfaces(session, entry));
-    const inboxRegion = screen.getByRole('region', { name: 'Inbox item' });
+    const inboxRegion = screen.getByRole('region', { name: 'Task' });
     fireEvent.click(within(inboxRegion).getByRole('combobox', { name: 'Link to a session' }));
     fireEvent.change(await screen.findByRole('combobox', { name: 'Search sessions' }), {
       target: { value: session.goal },

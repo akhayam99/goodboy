@@ -379,7 +379,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   },
   {
     id: 'artifact.runPlan',
-    label: ({ facts }) => primaryOf({ facts }).label ?? 'Run plan',
+    label: ({ facts }) => primaryOf({ facts }).label ?? NAMES.runPlan,
     icon: Play,
     group: 'act',
     slot: () => 'primary',

@@ -48,7 +48,7 @@ type Props = {
 };
 
 const SECTION_TITLE: Readonly<Record<LinkWorkRow['section'], string>> = {
-  inbox: 'From your inbox',
+  inbox: 'From Tasks',
   results: 'Results',
   paste: 'Paste',
 };
@@ -225,7 +225,7 @@ export const LinkWorkPicker = ({
             {`Goodboy links ${Object.values(LINK_WORK_PROVIDER_LABEL).join(', ')} URLs.`}
           </p>
         ) : rows.length === 0 && isLoading ? (
-          <SkeletonRow label="Loading your inbox" />
+          <SkeletonRow label="Loading your tasks" />
         ) : rows.length === 0 && query.trim() === '' ? (
           <EmptyLine className="justify-center px-3 py-5 text-center">
             Paste a link or search

@@ -40,4 +40,13 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
       () => heading(/^Goodboy \d/),
     ),
   },
+  {
+    name: 'searching Inbox finds Tasks',
+    covers: ['studio:inbox'],
+    open: () => openPalette(/^Tasks$/, 'Inbox'),
+    lands: both(
+      () => band('Tasks'),
+      () => heading('All items'),
+    ),
+  },
 ];

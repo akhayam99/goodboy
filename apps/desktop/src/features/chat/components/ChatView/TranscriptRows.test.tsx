@@ -202,7 +202,7 @@ describe('TranscriptRows', () => {
     const { container } = renderRows(
       [
         itemRow({ kind: 'assistant_text', key: 'a0', text: 'looking' }),
-        itemRow({ kind: 'error', key: 'e1', message: 'Mount deferred for web', runId: RUN_ID }),
+        itemRow({ kind: 'error', key: 'e1', message: 'Added later: web', runId: RUN_ID }),
         itemRow({ kind: 'assistant_text', key: 'a1', text: 'carrying on' }),
       ],
       new Map(),

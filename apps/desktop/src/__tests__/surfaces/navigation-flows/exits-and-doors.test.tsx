@@ -32,7 +32,7 @@ type Door = {
 };
 
 const DOORS: ReadonlyArray<Door> = [
-  { name: 'Inbox', kind: 'inbox' },
+  { name: 'Tasks', kind: 'inbox' },
   { name: 'Workflows', kind: 'workflow' },
   { name: 'Impact', kind: 'impact' },
   { name: 'Settings', kind: 'settings' },
@@ -186,7 +186,7 @@ describe('doors replace the open studio and content links stack', () => {
   it('replaces the open studio when another door is pressed', async () => {
     await boot({ seed: 'pr' });
 
-    await openDoor({ door: { name: 'Inbox', kind: 'inbox' }, bars: 'column' });
+    await openDoor({ door: { name: 'Tasks', kind: 'inbox' }, bars: 'column' });
     const withOneStudio = stack()?.entries.length ?? 0;
     await openDoor({ door: { name: 'Workflows', kind: 'workflow' }, bars: 'column' });
     await clickButton(/^Spend today/);
@@ -199,7 +199,7 @@ describe('doors replace the open studio and content links stack', () => {
   it('replaces the open studio from a bar event that carries the door mark', async () => {
     await boot({ seed: 'pr' });
 
-    await clickButton('Inbox');
+    await clickButton('Tasks');
     const withOneStudio = stack()?.entries.length ?? 0;
     await fireOpenSettings({ scope: 'providers', door: true });
 
@@ -210,7 +210,7 @@ describe('doors replace the open studio and content links stack', () => {
   it('stacks a link opened from inside a studio so back returns to it', async () => {
     await boot({ seed: 'pr' });
 
-    await clickButton('Inbox');
+    await clickButton('Tasks');
     const withOneStudio = stack()?.entries.length ?? 0;
     await fireOpenSettings({ scope: 'providers' });
 

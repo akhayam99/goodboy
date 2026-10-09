@@ -232,7 +232,7 @@ describe('task link controls', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Put on a branch hl/refund' }));
     const picker = screen.getByRole('dialog', { name: 'Put on a branch' });
-    within(picker).getByRole('button', { name: 'New worktree for HBL-412' });
+    within(picker).getByRole('button', { name: 'New branch for HBL-412' });
     await act(async () => {
       fireEvent.click(within(picker).getByRole('menuitem', { name: /^HBL-412/ }));
     });
@@ -299,9 +299,9 @@ describe('task link controls', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Put on a branch hl/refund' }));
-    fireEvent.click(screen.getByRole('button', { name: 'New worktree for HBL-412' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New branch for HBL-412' }));
     screen.getByRole('textbox', { name: 'Branch name' });
-    screen.getByRole('button', { name: 'Create worktree' });
+    screen.getByRole('button', { name: 'Create branch' });
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     screen.getByRole('menuitem', { name: /^HBL-412/ });
   });

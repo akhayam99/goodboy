@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/names';
 import type { LucideIcon } from 'lucide-react';
 import { ArrowUp, GitBranch, GitMerge, GitPullRequestCreate, RotateCw, Send } from 'lucide-react';
 import type { ResolvedAction } from '../actions/types';
@@ -92,7 +93,7 @@ export const branchPrimaryOf = ({
     return {
       source: 'review',
       actionId: REVIEW_PUSH_ID,
-      label: `Retry ${review.failed}`,
+      label: NAMES.retryPush,
       icon: RotateCw,
       blockedReason: null,
       isBusy: false,

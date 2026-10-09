@@ -174,9 +174,9 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(rightNames()).toEqual(['Inbox', 'Workflows', 'Impact', 'Providers', SETTINGS_LABEL]);
+    expect(rightNames()).toEqual(['Tasks', 'Workflows', 'Impact', 'Providers', SETTINGS_LABEL]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
     fireEvent.click(screen.getByRole('button', { name: 'Workflows' }));
     fireEvent.click(screen.getByRole('button', { name: 'Impact' }));
     fireEvent.click(screen.getByRole('button', { name: SETTINGS_LABEL }));
@@ -498,7 +498,7 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Inbox' }).getAttribute('aria-current')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Tasks' }).getAttribute('aria-current')).toBeNull();
     expect(screen.getByRole('button', { name: 'Sentry' }).getAttribute('aria-current')).toBe(
       'page',
     );
@@ -517,7 +517,7 @@ describe('AppFooter', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Inbox' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('button', { name: 'Tasks' }).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('button', { name: 'Sentry' }).getAttribute('aria-current')).toBeNull();
   });
 
@@ -538,7 +538,7 @@ describe('AppFooter', () => {
     );
 
     expect(container.querySelector('.\\@container\\/footer')).not.toBeNull();
-    ['Inbox', 'Workflows', 'Settings', 'Connect an integration'].forEach((word) => {
+    ['Tasks', 'Workflows', 'Settings', 'Connect an integration'].forEach((word) => {
       expect(screen.getByText(word).className).toContain('@min-chrome-labels/footer:inline');
     });
     unmount();

@@ -32,7 +32,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   gets `<prefix>/<slug>`. The task id only enters when the session starts from a
   task: a task linked later never renames the branch. The prefix may hold `/`
   (`team/ak`); the worktree folder stays flat because `/` becomes `-`.
-- A name an agent or the New worktree form asks for goes through the same
+- A name an agent or the New branch form asks for goes through the same
   prefix (project, then workspace, then the default). A name that already
   starts with `<prefix>/` stays as it is, `feat/x` becomes `<prefix>/feat-x`
   and a bare `x` becomes `<prefix>/x` (`prefixedBranchName` in
@@ -398,8 +398,8 @@ commits` otherwise. Without a record, only a merge commit or a rebase
 
 ## Branches that are not the owner's
 
-The branch pickers (Switch branch `Pick existing`, New worktree `Existing
-branch`, New worktree for a task) list three groups from `useBranchChoices`:
+The branch pickers (Switch branch `Pick existing`, New branch `Existing
+branch`, New branch for a task) list three groups from `useBranchChoices`:
 `On this Mac` (local branches), `Open pull requests` (open requests of the
 repository, from `gh pr list`, fork heads left out) and `On origin` (remote
 branches nobody has locally, from `worktree_list_remote_branches`). Each entry
@@ -469,7 +469,7 @@ the `mount` kind of the action registry
 (`features/actions/kinds/mount.ts`). The action cell shows the one action
 the state calls for, picked by its `inline` slot: `Rebase on main` when main
 moved, `Push N commits` when commits wait on a branch with a pull request,
-`Create PR` when the branch has commits and no pull request, `Remove worktree`
+`Create PR` when the branch has commits and no pull request, `Close branch`
 once the pull request merged, `Reopen` on a closed row. A blocked action stays
 visible, disabled, with its reason in the tooltip. The always visible row menu
 (`⋯`, also on right click) lists every available action of the worktree: open
@@ -478,7 +478,7 @@ of detected editors), scripts, Rebase, Push, Rewrite history, Switch branch,
 Start new turns here (only with two or more mounts), the copies, then Close
 worktree, or Remove from session on a closed row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
-and Abort rebase forward. Below a 28rem container New worktree shows its icon
+and Abort rebase forward. Below a 28rem container New branch shows its icon
 only. The project menu (`MountActionsMenu`, the `project` kind) holds Remove from session
 and renders nothing when the project has no mount to remove.
 
@@ -495,7 +495,7 @@ tooltip. Copy branch name lives in the row menu.
 
 A branch row shows the tasks linked to that branch as chips (`LinkedTaskChip`, the
 `task` kind). The visible **Put on a branch** action opens an anchored picker for a linked
-task, with **Link work** for another task and **New worktree for** to give a
+task, with **Link work** for another task and **New branch for** to give a
 task its own branch. A task already on the session moves with
 `assignSessionExternalTask`: it links the branch row, then drops the session row.
 `takeOffSessionExternalTask` reverses it, and taking a task off its last branch

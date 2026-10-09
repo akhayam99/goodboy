@@ -94,6 +94,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     openBuilder();
 
     expect(autonomyChip().getAttribute('aria-label')).toBe('When to ask: Ask after the plan');
+    expect(autonomyChip().textContent).toBe('When to askAsk after the plan');
     expect(spendChip().getAttribute('aria-label')).toBe('Spend cap: $25.00 · Pause');
     expect(screen.queryByTestId('from-your-rules')).toBeNull();
     expect(screen.queryByRole('img', { name: /Run defaults/ })).toBeNull();

@@ -143,7 +143,7 @@ describe('LinkIssueAction', () => {
     render(<LinkIssueAction session={session} />);
     fireEvent.click(trigger());
 
-    expect(screen.getByText('From your inbox')).toBeDefined();
+    expect(screen.getByText('From Tasks')).toBeDefined();
     expect(screen.getByText('Results')).toBeDefined();
     expect(optionNames()).toEqual([
       'Timeout in ledger sync job (LEDGER-2M)',

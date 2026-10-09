@@ -48,8 +48,6 @@ export const AskRightNow = ({ lines, suggestions, isFolded, onUnfold, onAsk }: P
     <section aria-label="Right now" data-testid="ask-right-now" className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <Eyebrow label="Right now" />
-        <span className="flex-1" />
-        <span className="text-meta text-faint-foreground">instant, no model</span>
       </div>
       <ul className="flex flex-col gap-1">
         {lines.map((line) => (

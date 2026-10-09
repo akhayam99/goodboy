@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { NAMES } from '../../../shared/names';
 import { runObjectAction } from '../registry';
 import { useActionEnv } from '../useActionEnv';
 
@@ -10,7 +11,7 @@ type Params = {
 
 export type SessionPin = {
   readonly isPinned: boolean;
-  readonly label: 'Pin session' | 'Unpin session';
+  readonly label: typeof NAMES.pin | typeof NAMES.unpin;
   readonly toggle: () => void;
 };
 
@@ -28,5 +29,5 @@ export const useSessionPin = ({ session }: Params): SessionPin => {
       env,
     });
   }, [env, isPinned, sessionId]);
-  return { isPinned, label: isPinned ? 'Unpin session' : 'Pin session', toggle };
+  return { isPinned, label: isPinned ? NAMES.unpin : NAMES.pin, toggle };
 };

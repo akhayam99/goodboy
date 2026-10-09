@@ -437,8 +437,8 @@ export const BrandLookupScene = () => {
         <StudioShell
           icon={CONCEPT_ICONS.inbox}
           tone={CONCEPT_TONE.inbox}
-          title="Inbox"
-          closeLabel="Close inbox"
+          title="Tasks"
+          closeLabel="Close tasks"
           onClose={noop}
         >
           {() => (

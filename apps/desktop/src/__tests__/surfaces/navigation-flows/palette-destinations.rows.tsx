@@ -207,11 +207,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       ),
   },
   {
-    name: 'palette: Inbox',
-    covers: ['openStudio', 'studio:inbox', 'palette:Inbox'],
-    open: () => openPalette(/^Inbox$/),
+    name: 'palette: Tasks',
+    covers: ['openStudio', 'studio:inbox', 'palette:Tasks'],
+    open: () => openPalette(/^Tasks$/),
     lands: both(
-      () => band('Inbox'),
+      () => band('Tasks'),
       () => heading('All items'),
     ),
   },

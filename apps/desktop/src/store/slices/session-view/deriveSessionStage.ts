@@ -38,7 +38,7 @@ type ReasonTextParams = {
 };
 
 const REASON_TEXT: Record<SessionAttentionReason, (params: ReasonTextParams) => string> = {
-  'needs-approval': () => 'Needs approval',
+  'needs-approval': () => 'Needs permission',
   'agent-error': () => 'agent errored',
   'push-failed': ({ pushFailedCount }) => pushFailedWords({ count: pushFailedCount }),
   'plan-approval': () => 'plan waiting for approval',

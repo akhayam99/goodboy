@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../shared/names';
 import { useEffect, useRef, useState } from 'react';
 import { Bell, ChevronRight } from 'lucide-react';
 import {
@@ -122,7 +123,7 @@ export const NotificationCenter = () => {
         dropdown={dropdown}
         hasBackdrop
         trigger={
-          <Tooltip content="notifications" side="top">
+          <Tooltip content={NAMES.notifications} side="top">
             <button
               type="button"
               onClick={handleOpen}

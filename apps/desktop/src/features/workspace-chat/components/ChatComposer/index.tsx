@@ -104,9 +104,11 @@ export const ChatComposer = ({
       }
       actions={
         <>
-          <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
-            {`Read-only · ${pluralize(projectCount, 'project')}`}
-          </span>
+          <Tooltip content={`Reads ${pluralize(projectCount, 'project')} and changes nothing`}>
+            <span className="hidden text-meta text-faint-foreground @2xl/chat:inline">
+              Read-only
+            </span>
+          </Tooltip>
           {isStreaming ? (
             <Tooltip content="Stop the answer">
               <button

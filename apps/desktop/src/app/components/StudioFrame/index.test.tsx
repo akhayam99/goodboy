@@ -21,8 +21,8 @@ type BodyProps = {
 
 const Body = ({ subtitle, isEscapeEnabled = true }: BodyProps) => (
   <StudioShell
-    title="Inbox"
-    closeLabel="Close inbox"
+    title="Tasks"
+    closeLabel="Close tasks"
     {...(subtitle !== undefined && { subtitle })}
     isEscapeEnabled={isEscapeEnabled}
     headerAccessory={<button type="button">Refresh</button>}
@@ -101,9 +101,9 @@ describe('StudioFrame', () => {
       </StudioFrame>,
     );
 
-    const band = screen.getByRole('banner', { name: 'Inbox' });
+    const band = screen.getByRole('banner', { name: 'Tasks' });
     const trail = within(band).getByRole('navigation', { name: 'Breadcrumb' });
-    expect(within(trail).getByText('Inbox').getAttribute('aria-current')).toBe('page');
+    expect(within(trail).getByText('Tasks').getAttribute('aria-current')).toBe('page');
   });
 
   it('lets a studio body carry its own trail into the band, in place of the root', () => {
@@ -202,7 +202,7 @@ describe('StudioFrame', () => {
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close tasks' }));
     act(() => {
       vi.advanceTimersByTime(300);
     });

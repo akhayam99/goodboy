@@ -17,13 +17,10 @@ export const REVIEW_LAUNCH_LABEL = {
 
 export type LaunchNoun = 'comment' | 'note';
 
-export const launchTitle = ({ count }: { readonly count: number }): string =>
-  count === 1 ? 'Fix 1 comment' : `Fix ${count} comments`;
+export const fixLabel = ({ count }: { readonly count: number }): string => `Fix ${count}`;
 
 export const launchStartLabel = ({ count }: { readonly count: number }): string =>
   count === 0 ? 'Start fixing' : `Start fixing ${count}`;
 
 export const LAUNCH_ORDER_LINE =
   'One agent works through them in order, in its own copy of the branch.';
-
-export const fixSelectedLabel = ({ count }: { readonly count: number }): string => `Fix ${count}`;

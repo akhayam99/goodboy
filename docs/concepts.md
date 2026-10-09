@@ -89,7 +89,7 @@ in it.
 every turn running in the one it had, so opening a workspace only switches
 this window in place when nothing is running here. When agents are running,
 the workspace popover asks first and offers a new window, which keeps them
-going; a side door that used to switch silently (a notification, an inbox
+going; a side door that used to switch silently (a notification, a Tasks
 item, Open a folder) now opens that workspace's own window instead of
 touching this one. `⌘Enter` on a workspace row always opens a new window,
 no question asked.
@@ -122,13 +122,13 @@ the session. The stages are the columns of the board:
 - **done**
 
 "Running" has one meaning everywhere. An agent turn that is starting or
-running, an agent waiting for an approval, and a workflow run deciding its next
+running, an agent waiting for a permission, and a workflow run deciding its next
 step all count as live work. The top bar chip, the workspace switcher's "N
 running", the footer count, the update pill and the restart-when-idle check all
 read it, so a workspace with one agent waiting on a permission is never "idle".
 
 **Needs you** outranks running when what waits is a human input: an open
-question, a tool waiting for your approval, a comment the fix run needs you for,
+question, a tool waiting for your permission, a comment the fix run needs you for,
 or a plan waiting for your approval (a workflow run held at its plan). The
 session sits in needs you while its agents keep working, and the top bar chip,
 the board column, the palette and `⌥⌘↓` all count it there ("1 needs you",
@@ -224,7 +224,7 @@ its own worktree, its own current branch and its own pull request history.
   alone does not say what you wanted.
 
 **Unmount** takes one mount out of the session and keeps its history. The
-screen calls it **Close worktree**, and a closed row offers **Reopen**.
+screen calls it **Close branch**, and a closed row offers **Reopen**.
 **Cleanup** deletes the worktree and keeps its local branch. Goodboy does not
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
@@ -362,9 +362,9 @@ whether you clicked it on the board or in the session overview.
   Activity does not show, so it never sits above a question already in view.
   With one such question, **Answer** opens the agent that asked at that
   question (`useOpenAgentQuestion`); with more, it opens the questions view.
-- An approval has one place in the overview: the **Needs you** callout,
-  whose **Answer the approval** opens the blocked agent. The approve-tool
-  suggestion for that same agent stays out of Next steps; an approval the
+- A permission has one place in the overview: the **Needs you** callout,
+  whose button opens the blocked agent. The approve-tool
+  suggestion for that same agent stays out of Next steps; a permission the
   callout does not name (a second blocked agent) still shows there.
 - Eighteen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
@@ -411,7 +411,7 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   `planRunToast`; see `docs/navigation.md` Follow toasts) - the toast the
   standalone PlanReadySuggestion component used to show before the unified
   resolver replaced it in E7-5, restored here.
-- The resolve-threads card ("Draft fixes for N") never starts an agent: it
+- The resolve-threads card ("Fix N") never starts an agent: it
   sends a `fix` request (`requestReview`) with the fixable comments and opens
   the launch panel on the Comments tab, pre-filled. The board card "Resolve N
   comments" does the same. N and the comments come from `eligibleReviewThreads`,
@@ -865,7 +865,7 @@ row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Accept 3` accepts the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
-`…` also offers Stop drafting, Resolve without a reply, Open in Files, Agent
+`…` also offers Stop drafting, Resolve, Open in Files, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
 next open comment. Accept never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the
@@ -916,11 +916,11 @@ with a local commit and never pushes.
 
 - Every start goes through one path (`startBatch`): `Fix` on the row of a
   comment nobody started (hover) or in its detail, `F` on the focused row, the
-  `Fix N open comments` line (no run going), the Overview card or the board
+  `Fix N` line (no run going), the Overview card or the board
   card. Every door shares one set, the fixable comments: open plus couldn't fix
   (`isFixableThread`, `features/resolve/fixableComments.ts`); a comment that
   needs you is answered, never relaunched, and a failed push is retried from
-  the push. The header has no "Draft fixes" button: a batch is
+  the push. The header has no separate fix button: a batch is
   born from the comments you pick. Opening Review never starts an agent.
   `Fix` opens the **launch panel** in the right column of the Comments tab, in
   place of the thread (never above the columns, never a dialog): the page does
@@ -940,7 +940,7 @@ N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
   marker contract
 - Bulk actions on the Comments tab, each one a single store action. With no run
   (`fixRunOf` finds no launch with a live comment) the line under the
-  tabs is `N open comments · Fix N open comments ⌘A`, which opens the panel on
+  tabs is `N open comments · Fix N ⌘A`, which opens the panel on
   the fixable set. With a run, `RunStatusBulkActions` sits in the `actions`
   slot of the run status line (`ResolveRunStatus`, before the model) and
   `bulkRunOf` hands it the entries of that run:
@@ -974,7 +974,7 @@ for this session`, else `Resolver default`); launching does not turn the
   session pick or the role default); F is Retry in this run.
   `…` holds **Try another model** (the picker opens inline under the buttons,
   it sets the model of a new agent; the `reviewComment.anotherModel` verb, so
-  right click and the palette have it too), **Add a hint**, Reply yourself, Skip
+  right click and the palette have it too), **Add a hint**, Reply, Skip
   and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no
@@ -1091,8 +1091,8 @@ specific rule that fits wins.
   then says so (`Read only · Ask first isn't available on Codex`)
 - When a call is denied in a run with no one watching, the turn stops. The
   agent's row, its session card and the top bar's Needs you all read **Needs
-  approval**, not running, until you answer
-- The approval card's primary action, **Allow and continue**, grants that
+  permission**, not running, until you answer
+- The permission card's primary action, **Allow and continue**, grants that
   exact call once and resumes the turn by itself; the secondary "Always
   allow" actions write a rule (command-prefix for Bash, the whole tool for an
   edit) and need a manual retry
@@ -1171,8 +1171,8 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the new session draft, or opening Launch session on an
-inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
+Picking an issue in the new session draft, or opening Launch session on a
+tracker issue, asks the **Issue briefs** task model for a brief: a title, a goal
 of one to three sentences and up to five "done when" criteria, in the issue's
 language. It reads the issue text, not its comments, and answers in checked
 JSON, so a reply with a preamble fails instead of leaking into the goal. The
@@ -1182,7 +1182,7 @@ three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
 `SessionKickoff/`) underneath: Run a workflow (preselected, the full workflow
 builder with the goal filled in) or Ask an agent, precompiled with that goal
 and editable. Its own action links the issue, mounts the project the issue
-maps to (the same rule as Launch session in the Inbox), creates the session
+maps to (the same rule as Launch session in Tasks), creates the session
 and starts the workflow or agent in the same gesture; nothing exists before
 that. In the
 Launch session popover the brief fills the goal only while you have not edited it, and
@@ -1221,9 +1221,9 @@ from `sentry_list_organizations` and `sentry_list_projects`). Each field uses
 the tool's own name for the secret: API key on Linear, API token on Jira, auth
 token on Sentry. A key saved for another workspace can be picked instead.
 
-## Inbox
+## Tasks
 
-The inbox is the workspace's queue of incoming work from every connected
+Tasks is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
 record each, one line per record. Records are grouped by day (today,
 yesterday, this week, older) and ordered by time only, newest first. A facet
@@ -1235,10 +1235,10 @@ same one the record shows. A record opens in a drawer beside the list, with the
 same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
 the workspace with Link to a session, or open the session already linked to it.
 A record shows its session whichever way the link was made: launched from the
-inbox, picked there, or linked from the session's own link button, by search or
+Tasks, picked there, or linked from the session's own link button, by search or
 by pasted URL. The session link button searches the issues of every Sentry
 project linked to the workspace, not only the connected one. A code or link
-pasted there goes through the same lookup as the inbox search
+pasted there goes through the same lookup as the Tasks search
 (`useWorkspaceIssueLookup`, scoped to the picked tracker) and links the task
 `launchSpecFor` builds from the resolved record, so a Sentry short code such as
 `PAYMENTS-API-3` resolves and a Sentry link keeps its short id. A paste the
@@ -1275,7 +1275,7 @@ project; its row shows the tracker's own project or team instead. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
-suggested from Sentry code mappings and wait for your Link. The inbox reads the
+suggested from Sentry code mappings and wait for your Link. Tasks reads the
 first page of every linked Sentry project besides the connected one, in one
 load that starts once the links are read. A Sentry call that hits a rate limit
 or a gateway error is retried up to twice, waiting what `Retry-After` asks for
@@ -1370,10 +1370,10 @@ task up again in Goodboy.
 
   | Internal word       | On screen                                         |
   | ------------------- | ------------------------------------------------- |
-  | mount, branch mount | worktree (repo), folder (folder project), project |
+  | mount, branch mount | branch (repo), folder (folder project), project   |
   | mount a project     | Add project                                       |
-  | fork a mount        | New worktree                                      |
-  | unmount             | Close worktree, and Reopen for a closed row       |
+  | fork a mount        | New branch                                        |
+  | unmount             | Close branch, and Reopen for a closed row         |
   | spawn               | Start (an agent, a reviewer, an implementer)      |
   | handoff             | Suggested next: Implementer, the next brief       |
   | cluster             | part (in a plan), subagent (once it runs)         |
@@ -1452,6 +1452,42 @@ task up again in Goodboy.
   then chat. A screen that puts chat before the task has the order wrong.
 - Integrations share the layout, never the logic. A Sentry issue and a GitHub
   pull request look alike because they use the same page layout component.
+
+### Words we use
+
+One verb per job, one noun per object. The registered names live in
+`shared/names.ts` (`NAMES`, with `FORMER_NAMES` for search) and
+`__tests__/regressions/retiredNames.ts` fails the old phrase, so check there
+before a change adds a word.
+
+- **Fix**: start fixing comments. The count is the comments a fix can start now
+  (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
+  the launch panel title. The panel's own button, **Start fixing 3**, stays.
+- **Reply**: answer a thread yourself. **Reply only** drops the code change and
+  keeps the reply. **Publish reply** sends a decided reply that did not go out.
+  **Resolve** ends a thread without a reply (a note says **Close**).
+- **Push**: sends commits (**Push 2**, **Retry push** after a failure).
+  **Publish 2 replies** sends replies without a push. **Sync and try again** is
+  about the remote branch that moved, not the base.
+- **Rebase on main**: brings the base in, with the base branch's own name.
+  **Update 2** is for local clones only.
+- **Branch**: the one noun for a line of work on a project. **New branch**
+  starts one (its worktree is created for it), **Switch branch** moves to
+  another, **Close branch** finishes it; the branch and its commits stay in the
+  repository.
+- **Follow**: watch what a thing you started is doing. Anything you start
+  offers it in its toast.
+- **Approve**: accept a plan (**Approve** when the run waits for it, **Run
+  plan** when it does not). A tool that waits for you asks for **permission**
+  (Allow, Deny); only a plan waits for **approval**.
+- **Pin**: **Pin session** and **Unpin session** keep a session at the top of
+  the list, the rail and the switcher.
+- **Notes**: the one noun for comments you write on your own diff before they
+  become a review draft.
+- **Tasks**: the door that lists issues, pull requests, threads and errors from
+  your tools (it was Inbox). Its stored keys, events and scene ids keep the old
+  name `inbox`.
+- **Notifications**: the bell and its list, capitalised everywhere.
 
 ### Identifiers
 

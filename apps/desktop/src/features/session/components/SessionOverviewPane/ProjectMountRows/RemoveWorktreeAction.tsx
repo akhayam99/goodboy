@@ -1,3 +1,4 @@
+import { NAMES } from '../../../../../shared/names';
 import { useState } from 'react';
 import { AnchoredPopover, InlineConfirm, cn, useDropdown, type ConfirmRole } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -89,15 +90,15 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       const result = await removeMountWorktree({ sessionId, mountId: row.mountId, mode });
       switch (result.kind) {
         case 'removed':
-          showToast({ kind: 'info', message: `Removed the worktree for ${label}.` });
+          showToast({ kind: 'info', message: `Closed the branch for ${label}.` });
           break;
         case 'missing':
-          showToast({ kind: 'info', message: `The worktree for ${label} was already gone.` });
+          showToast({ kind: 'info', message: `The branch for ${label} was already closed.` });
           break;
         case 'kept':
         case 'failed':
           void reportError({
-            title: `Couldn't remove the worktree for ${label}`,
+            title: `Couldn't close the branch for ${label}`,
             error: result.reason ?? '',
             sessionId,
           });
@@ -106,7 +107,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       setConfirm(null);
       dropdown.close();
     } catch (error) {
-      void reportError({ title: `Couldn't remove the worktree for ${label}`, error, sessionId });
+      void reportError({ title: `Couldn't close the branch for ${label}`, error, sessionId });
     } finally {
       setIsBusy(false);
     }
@@ -189,7 +190,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       });
       reveal();
     } catch (error) {
-      void reportError({ title: `Couldn't check the worktree for ${label}`, error, sessionId });
+      void reportError({ title: `Couldn't check the branch for ${label}`, error, sessionId });
     } finally {
       setIsChecking(false);
     }
@@ -199,13 +200,13 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={`Remove the worktree for ${label}`}
+      ariaLabel={`${NAMES.closeBranch} for ${label}`}
       anchorClassName="shrink-0"
       trigger={
         <button
           type="button"
           disabled={isChecking || isBusy}
-          aria-label={`Remove the worktree for ${label}`}
+          aria-label={`${NAMES.closeBranch} for ${label}`}
           onClick={() => {
             if (dropdown.open) {
               cancel();
@@ -219,7 +220,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
             triggerClassName,
           )}
         >
-          {isChecking ? 'Checking' : 'Remove worktree'}
+          {isChecking ? 'Checking' : NAMES.closeBranch}
         </button>
       }
     >
@@ -233,8 +234,8 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
               <AlertIcon size={ICON_SIZE.row} />
             )
           }
-          title="Remove worktree?"
-          confirmLabel="Remove worktree"
+          title={`${NAMES.closeBranch}?`}
+          confirmLabel={NAMES.closeBranch}
           surface="plain"
           isBusy={isBusy}
           isConfirmDisabled={confirm.kind === 'blocked' || confirm.kind === 'unread'}

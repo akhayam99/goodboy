@@ -437,7 +437,9 @@ describe('HandoffBlock', () => {
   it('shows an agent spawned before handoffs were stored in the older format', () => {
     renderBlock({ handoffId: null });
 
-    expect(screen.getByTestId('handoff-older-format').textContent).toContain('older format');
+    const row = screen.getByTestId('handoff-older-format');
+    expect(row.textContent).toContain('First message');
+    expect(row.textContent).toContain('Older format');
     expect(loadAgentHandoff).not.toHaveBeenCalled();
   });
 

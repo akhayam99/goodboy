@@ -51,7 +51,7 @@ export const ToolDetailPanel = ({
               window.dispatchEvent(new CustomEvent('goodboy:open-inbox', { detail: { provider } }))
             }
           >
-            Open in inbox
+            Open in Tasks
           </Button>
         </div>
       ) : null}

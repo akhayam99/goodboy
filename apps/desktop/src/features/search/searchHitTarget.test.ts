@@ -79,7 +79,7 @@ describe('search hit target', () => {
     });
   });
 
-  it('opens a linked issue in its lens and a starred one in the Inbox', () => {
+  it('opens a linked issue in its lens and a starred one in Tasks', () => {
     expect(
       searchHitTarget({
         hit: hit({
@@ -111,7 +111,7 @@ describe('search hit target', () => {
       workspaceId: WORKSPACE,
       provider: 'sentry',
       recordKey: 'sentry:error:77',
-      label: 'Open in Inbox',
+      label: 'Open in Tasks',
     });
   });
 

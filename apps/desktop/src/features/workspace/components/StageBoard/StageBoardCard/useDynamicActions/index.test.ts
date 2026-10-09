@@ -217,7 +217,7 @@ describe('useDynamicActions', () => {
     const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
 
     const action = result.current.find((a) => a.key === 'resolve');
-    expect(action?.label).toBe('Resolve 2 comments');
+    expect(action?.label).toBe('Fix 2');
     expect(action?.icon).toBe(SUGGESTION_ICONS['resolve-threads']);
 
     action?.onClick();
@@ -245,7 +245,7 @@ describe('useDynamicActions', () => {
       'sess-1': [{ threadId: 't2', state: 'working', stage: 'working' }],
     };
     const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
-    expect(result.current.find((a) => a.key === 'resolve')?.label).toBe('Resolve 1 comment');
+    expect(result.current.find((a) => a.key === 'resolve')?.label).toBe('Fix 1');
   });
 
   it('withholds the resolve action without a pull request', () => {

@@ -1,4 +1,9 @@
 import {
+  DELETE_CANNOT_UNDO,
+  DELETE_REMOVED_LINE,
+  deleteKeptLine,
+} from '../../session/deleteSessionCopy';
+import {
   ArrowDown,
   ArrowUp,
   Copy,
@@ -69,11 +74,8 @@ const NO_MOUNT_REASON = 'Add a project to this session first';
 
 const NO_WORKTREE_REASON = 'This session has no worktree yet';
 
-const BRANCHLESS_DELETE =
-  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. This cannot be undone.';
-
-const BRANCHED_DELETE =
-  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage. This cannot be undone.';
+const deleteDescription = ({ isBranchless }: { readonly isBranchless: boolean }): string =>
+  `${DELETE_REMOVED_LINE} ${deleteKeptLine({ isBranchless })} ${DELETE_CANNOT_UNDO}`;
 
 type OpenLensParams = {
   readonly env: ActionEnv;
@@ -105,7 +107,7 @@ const restore = ({ env, session }: LifecycleParams): Promise<void> =>
 
 const deleteConfirm = ({ facts }: { readonly facts: SessionFacts }): ActionConfirm => ({
   title: 'Delete session?',
-  description: facts.isBranchless ? BRANCHLESS_DELETE : BRANCHED_DELETE,
+  description: deleteDescription({ isBranchless: facts.isBranchless }),
   confirmLabel: 'Delete',
   role: 'danger',
   ...(!facts.isArchived && { altActionId: 'session.archive' }),
@@ -254,7 +256,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.pin',
-    label: 'Pin session',
+    label: NAMES.pin,
     icon: Pin,
     group: 'act',
     when: ({ facts }) => isLive({ facts }) && !facts.isPinned,
@@ -262,7 +264,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.unpin',
-    label: 'Unpin session',
+    label: NAMES.unpin,
     icon: PinOff,
     group: 'act',
     when: ({ facts }) => isLive({ facts }) && facts.isPinned,

@@ -275,13 +275,13 @@ describe('session menu in every state', () => {
     ]);
   });
 
-  it('names what a branchless delete frees and what stays in Impact', () => {
+  it('names what a branchless delete removes and keeps', () => {
     seed({ branch: '' });
     const action = bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })
       ?.resolve()
       .find((candidate) => candidate.id === 'session.delete');
     expect(action?.confirm?.description).toBe(
-      'Frees the transcript, file versions and images. Cost and shipped work stay in Impact. This cannot be undone.',
+      'Removed: transcript, file versions, images. Kept: cost. This cannot be undone.',
     );
   });
 });

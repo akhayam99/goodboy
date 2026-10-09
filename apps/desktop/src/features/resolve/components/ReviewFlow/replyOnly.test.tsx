@@ -86,16 +86,16 @@ const openMenuItem = async (name: RegExp): Promise<void> => {
 };
 
 describe('a reply-only answer in the thread', () => {
-  it('keeps the reply with the push while a fix waits, and offers Post reply now', async () => {
+  it('keeps the reply with the push while a fix waits, and offers Publish reply', async () => {
     await mountReply({ variant: 'bundled' });
 
     expect(
       within(comment()).getByText('Reply only. It goes out with the next push. No code change.'),
     ).toBeDefined();
-    expect(within(comment()).getByRole('button', { name: 'Post reply now' })).toBeDefined();
+    expect(within(comment()).getByRole('button', { name: 'Publish reply' })).toBeDefined();
   });
 
-  it('says nothing else is waiting when no fix is left to push, and still offers Post reply now', async () => {
+  it('says nothing else is waiting when no fix is left to push, and still offers Publish reply', async () => {
     await mountReply({ variant: 'alone' });
 
     expect(
@@ -103,15 +103,15 @@ describe('a reply-only answer in the thread', () => {
         'Reply only. Nothing else is waiting to push, so it can go out now.',
       ),
     ).toBeDefined();
-    expect(within(comment()).getByRole('button', { name: 'Post reply now' })).toBeDefined();
+    expect(within(comment()).getByRole('button', { name: 'Publish reply' })).toBeDefined();
   });
 
-  it('posts the one thread when Post reply now is pressed', async () => {
+  it('posts the one thread when Publish reply is pressed', async () => {
     const publishThreadNow = vi.fn(async () => undefined);
     stub({ publishThreadNow });
     await mountReply({ variant: 'bundled' });
 
-    fireEvent.click(within(comment()).getByRole('button', { name: 'Post reply now' }));
+    fireEvent.click(within(comment()).getByRole('button', { name: 'Publish reply' }));
 
     await waitFor(() =>
       expect(publishThreadNow).toHaveBeenCalledWith({
@@ -128,12 +128,12 @@ describe('a reply-only answer in the thread', () => {
     stub({ publishThreadNow });
     await mountReply({ variant: 'alone' });
 
-    fireEvent.click(within(comment()).getByRole('button', { name: 'Post reply now' }));
+    fireEvent.click(within(comment()).getByRole('button', { name: 'Publish reply' }));
 
     const alert = await within(comment()).findByRole('alert');
     expect(alert.textContent).toContain('GitHub did not answer');
     expect(within(comment()).getByRole('button', { name: 'Retry' })).toBeDefined();
-    expect(within(comment()).queryByRole('button', { name: 'Post reply now' })).toBeNull();
+    expect(within(comment()).queryByRole('button', { name: 'Publish reply' })).toBeNull();
   });
 
   it('reads as replied on GitHub, with a link to the comment, once it is posted', async () => {
@@ -141,7 +141,7 @@ describe('a reply-only answer in the thread', () => {
 
     expect(within(comment()).getByText('Replied on GitHub.')).toBeDefined();
     expect(within(comment()).getByRole('button', { name: 'View on GitHub' })).toBeDefined();
-    expect(within(comment()).queryByRole('button', { name: 'Post reply now' })).toBeNull();
+    expect(within(comment()).queryByRole('button', { name: 'Publish reply' })).toBeNull();
     expect(within(comment()).queryByRole('button', { name: 'Rewrite reply' })).toBeNull();
   });
 });

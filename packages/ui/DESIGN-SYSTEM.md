@@ -587,7 +587,7 @@ Each action has one colour, read only through `HISTORY_ACTION_CLASSES` in
 | Move                        | reorder  | violet     | `--color-history-move`     |
 | Rename                      | reword   | neutral    | `--color-muted-foreground` |
 | Remove                      | drop     | red        | `--color-danger`           |
-| Start from today's main     | rebase   | trunk grey | `--color-idle`             |
+| Rebase on the base branch   | rebase   | trunk grey | `--color-idle`             |
 
 The colour shows on the change mark (a 12% wash, a 40% border and the colour
 as text), on the node and the outer ring of a commit that takes others in, on
@@ -792,7 +792,7 @@ the check and the half-filled core of the queue.
 | `ci-failed`         | `failed`, `!`        | danger  | Checks failing                           |
 | `open-question`     | `question`, `?`      | warning | 1 question for you (plural by the count) |
 | `fix-needs-you`     | `question`, `?`      | warning | 3 comments need you                      |
-| `needs-approval`    | `approval`, shield   | warning | Waiting for your approval                |
+| `needs-approval`    | `approval`, shield   | warning | Waiting for your permission              |
 | `plan-approval`     | `approval`, shield   | warning | Plan v2 waits for your approval          |
 | `changes-requested` | `alert`, `!`         | warning | Changes requested                        |
 | `fix-couldnt-fix`   | `alert`, `!`         | warning | 2 comments it couldn't fix               |
@@ -1469,7 +1469,7 @@ draws unified and the toolbar says `Split needs a wider window`, and the
 choice comes back with room.
 
 **Work panes use the full width.** A pane whose body is a working surface (the
-terminal, an inbox list, the Board) passes `width="full"` to `PaneShell`, and to
+terminal, a Tasks list, the Board) passes `width="full"` to `PaneShell`, and to
 the `PageColumn` of its tabs. It keeps the 24px gutter (16px under 720px) and
 drops the 960px cap, so the header and the body share one left edge on any
 pane, from the pane's own edge. The Branch page is not one of them: every tab
@@ -1510,7 +1510,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. The less frequent starts sit behind an `OverflowMenu`. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon, and `OverflowMenu` renders the items through `MenuItems`.
 - The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
-- The session overview's actions carry a second exception: a frequent alternative to the primary sits as one secondary button beside it, not folded into the menu. `OverviewActions` shows a secondary Run workflow (Open run once one is active) next to the primary Start agent, with `OverflowMenu` labeled Create holding only the rarer starts (Report, Wireframe). Still one primary; the secondary is the one alternative common enough to earn its own button.
+- The session overview's actions are one secondary `New` button that opens a menu of every start: Start a run (Open run once one is active), Start agent, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Run on its own uses it everywhere (`WorkflowAutorunToggle`).
 
@@ -1601,7 +1601,7 @@ Bands of one block stack 8px apart (`BandStack`), sections 24px.
 
 Use a band where something is configured in groups: defaults, the provider
 page, settings, a tool's detail, skills. Never on a navigation or selection
-list (sidebar, inbox, facet rail, popover, palette: there the background means
+list (sidebar, Tasks, facet rail, popover, palette: there the background means
 hover and selection), never in a creation flow, never in a card or in another
 band (`Band` throws when nested), never together with a border or a divider.
 
@@ -1829,7 +1829,7 @@ drawn as an empty list.
    never shown while a load failed.
 5. **Not connected.** The tool behind the page is not connected. The
    `ConnectIntegrationEmptyState` pattern for one tool, a `page` state with
-   `Connect a tool` where several tools feed the page (the Inbox).
+   `Connect a tool` where several tools feed the page (Tasks).
 
 ### The primitives
 
@@ -1867,7 +1867,7 @@ old shape, and the next round moves it.
 | Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                                              | N/A                                                      | 0.22.1                                                              | N/A                                       |
 | Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries                          | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
 | Notifications  | Skeleton rows                            | `section`: No notifications yet, one line and no Unread or All tabs                               | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                       |
-| Inbox          | Skeleton rows                            | `page`: No items yet                                                                              | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
+| Tasks          | Skeleton rows                            | `page`: No items yet                                                                              | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
 | Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                                        | N/A                                                      | N/A                                                                 | N/A                                       |
 | Checks         | A muted Loading line                     | `section`: No checks have reported yet                                                            | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
 | Comments       | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |

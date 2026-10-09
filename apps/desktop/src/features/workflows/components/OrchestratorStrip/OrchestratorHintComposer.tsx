@@ -54,7 +54,7 @@ export const OrchestratorHintComposer = ({
   const [text, setText] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const fieldRef = useRef<HTMLDivElement>(null);
-  const files = usePromptFiles({ note: 'Images go to the next agent' });
+  const files = usePromptFiles({ note: 'Files go to the next agent' });
   const canSend = text.trim() !== '' || files.attachments.length > 0;
   const isOpen = isFocused || canSend;
 

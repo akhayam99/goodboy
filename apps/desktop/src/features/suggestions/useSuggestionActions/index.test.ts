@@ -253,7 +253,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Draft fixes for 3');
+    expect(actions.primary?.label).toBe('Fix 3');
     expect(actions.primary?.runsOn).toBeUndefined();
     await actions.primary?.run();
 
@@ -297,7 +297,7 @@ describe('useSuggestionActions', () => {
     });
     await actions.primary?.run();
 
-    expect(actions.primary?.label).toBe('Draft fixes for 2');
+    expect(actions.primary?.label).toBe('Fix 2');
     expect(spies.requestReviewLaunch).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       threadIds: ['thread-1', 'thread-3'],
@@ -852,7 +852,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Close worktree');
+    expect(actions.primary?.label).toBe('Close branch');
     expect(actions.primary?.requiresConfirm).toBe(true);
     actions.primary?.run();
     expect(spies.resolveMountCleanup).toHaveBeenCalledWith({

@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/names';
 import type { ArtifactComment, PlanWithCount, WorkflowRun } from '@goodboy/types';
 import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 import { PLANNER_QUESTION_REASON } from './plannerQuestions';
@@ -5,7 +6,7 @@ import { NOT_REVISING, PLAN_REVISING_REASON, type PlanRevising } from './planRev
 
 type PlanPrimaryKind = 'approve' | 'run' | 'disabled' | 'none';
 
-type PlanPrimaryLabel = 'Approve' | 'Run plan';
+type PlanPrimaryLabel = typeof NAMES.approve | typeof NAMES.runPlan;
 
 export type PlanPrimary = Readonly<{
   kind: PlanPrimaryKind;
@@ -37,7 +38,7 @@ export const planPrimaryOf = ({
   if (revising.kind === 'revising') {
     return {
       kind: 'disabled',
-      label: feedsRun ? 'Approve' : 'Run plan',
+      label: feedsRun ? NAMES.approve : NAMES.runPlan,
       reason: PLAN_REVISING_REASON,
       isSecondary: false,
     };
@@ -48,17 +49,17 @@ export const planPrimaryOf = ({
   if (plannerQuestionCount > 0) {
     return {
       kind: 'disabled',
-      label: feedsRun ? 'Approve' : 'Run plan',
+      label: feedsRun ? NAMES.approve : NAMES.runPlan,
       reason: PLANNER_QUESTION_REASON,
       isSecondary: false,
     };
   }
   const isSecondary = drafts.length > 0;
   if (!feedsRun) {
-    return { kind: 'run', label: 'Run plan', reason: null, isSecondary };
+    return { kind: 'run', label: NAMES.runPlan, reason: null, isSecondary };
   }
   if (!isRunHeldForPlan({ run }) && run.rulesSnapshot?.planApproved === true) {
     return NONE;
   }
-  return { kind: 'approve', label: 'Approve', reason: null, isSecondary };
+  return { kind: 'approve', label: NAMES.approve, reason: null, isSecondary };
 };

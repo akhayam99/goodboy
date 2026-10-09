@@ -56,7 +56,7 @@ export const TrackerStudioLinks = ({ links, connected }: Props) => {
     <div className="flex flex-wrap items-center gap-1">
       {links.map((link) => {
         const label = connected[link.provider]
-          ? `Open ${link.label} in the inbox`
+          ? `Open ${link.label} in Tasks`
           : `Connect ${link.label}`;
         return (
           <Tooltip key={link.provider} content={label}>

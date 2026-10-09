@@ -131,7 +131,7 @@ describe('SideColumn', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
     fireEvent.click(screen.getByRole('button', { name: 'Workflows' }));
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
 
     expect(doors.openBoard).toHaveBeenCalledOnce();
     expect(doors.openChat).toHaveBeenCalledOnce();

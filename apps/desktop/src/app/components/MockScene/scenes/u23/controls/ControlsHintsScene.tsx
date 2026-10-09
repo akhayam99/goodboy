@@ -17,7 +17,7 @@ export const ControlsHintsScene = () => (
     </SceneRow>
     <SceneRow name="Filled button with a single key">
       <Button size="sm" variant="primary">
-        Fix 3 comments
+        Fix 3
         <KeyHint keys="F" onTone />
       </Button>
       <Button size="sm" variant="primary">

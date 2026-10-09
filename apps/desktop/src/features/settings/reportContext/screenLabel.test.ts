@@ -22,7 +22,7 @@ describe('screenLabel', () => {
     [`s/${SESSION_ID}/pr/mr`, 'Session › Pull request › Merge request'],
     [`s/${SESSION_ID}/agents/agent/agent-7`, 'Session › Agents'],
     ['board+settings/providers/anthropic', 'Board · Settings › Providers'],
-    ['board+inbox/linear/NW-142', 'Board · Inbox › Linear'],
+    ['board+inbox/linear/NW-142', 'Board · Tasks › Linear'],
     [`s/${SESSION_ID}/diff+changelog`, "Session › Files · What's new"],
   ])('reads %s as %s', (key, expected) => {
     expect(screenLabel({ locationKey: key })).toBe(expected);
@@ -32,7 +32,7 @@ describe('screenLabel', () => {
     const label = screenLabel({
       locationKey: `s/${SESSION_ID}/diff//Users/rowan/harborline@commit:fc2f0899#src/App.tsx+inbox/github/acme/ledger-core#12`,
     });
-    expect(label).toBe('Session › Files · Inbox › GitHub');
+    expect(label).toBe('Session › Files · Tasks › GitHub');
     expect(label).not.toContain(SESSION_ID);
     expect(label).not.toContain('rowan');
     expect(label).not.toContain('harborline');

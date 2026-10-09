@@ -83,7 +83,7 @@ export const AskComposer = ({ sessionId, isStreaming, isStopping, onSend, onStop
           <AskRoutingPicker sessionId={sessionId} />
           <span className="flex items-center gap-1 text-meta text-faint-foreground">
             <Eye size={ICON_SIZE.row} aria-hidden />
-            Read only
+            Read-only
           </span>
         </span>
       }

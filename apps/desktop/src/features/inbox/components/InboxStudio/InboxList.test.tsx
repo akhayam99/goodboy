@@ -83,7 +83,7 @@ describe('InboxList', () => {
   it('groups rows by day with a count per day', () => {
     renderList();
 
-    const listbox = screen.getByRole('listbox', { name: 'Inbox items' });
+    const listbox = screen.getByRole('listbox', { name: 'Task items' });
     expect(
       within(within(listbox).getByRole('group', { name: 'Today' })).getByText('Today item'),
     ).toBeDefined();
@@ -113,7 +113,7 @@ describe('InboxList', () => {
   it('points aria-activedescendant at the selected option', () => {
     renderList({ selectedKey: 'CAS-2' });
 
-    const listbox = screen.getByRole('listbox', { name: 'Inbox items' });
+    const listbox = screen.getByRole('listbox', { name: 'Task items' });
     const option = screen.getByRole('option', { name: /Old item/ });
     expect(listbox.getAttribute('aria-activedescendant')).toBe(option.id);
     expect(option.getAttribute('aria-selected')).toBe('true');
@@ -155,7 +155,7 @@ describe('InboxList', () => {
   it('shows skeleton rows only until the first row arrives', () => {
     renderList({ records: [], totalCount: 0, isLoading: true });
 
-    expect(screen.getByRole('status', { name: 'Loading the inbox' })).toBeDefined();
+    expect(screen.getByRole('status', { name: 'Loading tasks' })).toBeDefined();
   });
 
   it('asks to connect a tool when none is connected', () => {

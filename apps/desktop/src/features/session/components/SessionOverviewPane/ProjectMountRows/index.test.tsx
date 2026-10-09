@@ -223,7 +223,7 @@ describe('ProjectMountRows', () => {
 
     screen.getByRole('list', { name: 'payments-api worktrees' });
     screen.getByRole('list', { name: 'ledger-core worktrees' });
-    expect(screen.getAllByRole('button', { name: /^New worktree in/ })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /^New branch in/ })).toHaveLength(2);
     expect(
       screen.getAllByTestId('project-mount-row').map((row) => row.getAttribute('aria-label')),
     ).toEqual([

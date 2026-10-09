@@ -57,7 +57,7 @@ file holds those explanations. Everything below has been "fixed" at least once a
   posts GitHub rows. `resolveStepPlan` leaves a thread open when the source
   cannot resolve (`REVIEW_SOURCE_CAPABILITIES`, Bitbucket replies only). Wording
   follows the same capabilities: where `canResolve` is false the comment has no
-  "Resolve without a reply" and the push confirm says the thread stays open.
+  "Resolve" and the push confirm says the thread stays open.
   Read `sessionGitlabMr` and `reviewSourceThreads` through the selectors, not
   by hand: picking a source in another project calls `setSessionActiveMount`.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every

@@ -62,7 +62,9 @@ describe('the push confirm', () => {
     expect(pushConfirmBody({ preview, commitStyle: 'fixup' })).toBe(
       '1 fix in 1 fixup commit, 2 replies, 2 threads resolved on GitHub.',
     );
-    expect(pushStyleNote({ commitStyle: 'fixup' })).toContain('fixups');
+    expect(pushStyleNote({ commitStyle: 'fixup' }).text).toContain('fixups');
+    expect(pushStyleNote({ commitStyle: 'new' }).text).toContain('its own new commit');
+    expect(pushStyleNote({ commitStyle: 'new' }).linkLabel).toBe('Replies and commits');
   });
 
   it('says when no commit goes out and points at the pull request instead of a branch', () => {

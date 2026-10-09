@@ -276,7 +276,7 @@ describe('captureMaterializeRequestsFromTurn', () => {
     });
     const note = appendTurnEvent.mock.calls[0]?.[2];
     expect(note?.kind).toBe('decision_note');
-    expect(note?.message).toBe('Mount deferred for web.');
+    expect(note?.message).toBe('Added later: web.');
   });
 
   it('caps a turn at two immediate mounts and proposes the rest', async () => {

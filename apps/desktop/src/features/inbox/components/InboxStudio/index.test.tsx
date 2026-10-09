@@ -291,12 +291,12 @@ const renderStudio = (overrides: Partial<Parameters<typeof InboxStudio>[0]> = {}
 const detailText = (): string => screen.queryByTestId('detail')?.textContent ?? 'none';
 
 const rowOrder = (): ReadonlyArray<string> =>
-  within(screen.getByRole('listbox', { name: 'Inbox items' }))
+  within(screen.getByRole('listbox', { name: 'Task items' }))
     .getAllByRole('option')
     .map((option) => option.textContent ?? '');
 
 const openFilters = (): void => {
-  if (screen.queryByRole('navigation', { name: 'Filter the inbox' }) !== null) {
+  if (screen.queryByRole('navigation', { name: 'Filter tasks' }) !== null) {
     return;
   }
   fireEvent.click(screen.getByRole('button', { name: /^Filters/ }));
@@ -305,7 +305,7 @@ const openFilters = (): void => {
 const facet = (section: string, name: RegExp) => {
   openFilters();
   return within(
-    within(screen.getByRole('navigation', { name: 'Filter the inbox' })).getByRole('group', {
+    within(screen.getByRole('navigation', { name: 'Filter tasks' })).getByRole('group', {
       name: section,
     }),
   ).getByRole('button', { name });
@@ -358,7 +358,7 @@ describe('InboxStudio', () => {
   it('filters rows by the search query', () => {
     renderStudio();
 
-    fireEvent.change(screen.getByLabelText('Search the inbox'), {
+    fireEvent.change(screen.getByLabelText('Search tasks'), {
       target: { value: 'flaky' },
     });
 
@@ -488,7 +488,7 @@ describe('InboxStudio', () => {
     renderStudio();
 
     press('list.search');
-    expect(document.activeElement).toBe(screen.getByLabelText('Search the inbox'));
+    expect(document.activeElement).toBe(screen.getByLabelText('Search tasks'));
   });
 
   it('acts from a focused row, where the click left the focus', () => {
@@ -507,7 +507,7 @@ describe('InboxStudio', () => {
 
   it('leaves the keys to the search field while typing in it', () => {
     renderStudio();
-    const search = screen.getByLabelText('Search the inbox');
+    const search = screen.getByLabelText('Search tasks');
     search.focus();
 
     const next = press('list.next', search);
@@ -520,7 +520,7 @@ describe('InboxStudio', () => {
 
   it('leaves the search field on Escape and gives the keys back to the list', () => {
     renderStudio();
-    const search = screen.getByLabelText('Search the inbox');
+    const search = screen.getByLabelText('Search tasks');
     search.focus();
 
     pressKey({ code: 'Escape', target: search });
@@ -582,7 +582,7 @@ describe('InboxStudio', () => {
     renderStudio();
 
     fireEvent.click(screen.getByRole('option', { name: /TypeError boom/ }));
-    fireEvent.change(screen.getByLabelText('Search the inbox'), {
+    fireEvent.change(screen.getByLabelText('Search tasks'), {
       target: { value: 'nothing matches this' },
     });
 

@@ -309,7 +309,7 @@ export const InboxSourceScene = () => {
         <StudioShell
           icon={CONCEPT_ICONS.inbox}
           tone={CONCEPT_TONE.inbox}
-          title="Inbox"
+          title="Tasks"
           closeLabel="Close inbox"
           onClose={noop}
         >
@@ -321,7 +321,7 @@ export const InboxSourceScene = () => {
                   title={
                     filters.source === 'sentry' || filters.source === 'linear'
                       ? SOURCE_TITLE[filters.source]
-                      : 'Inbox'
+                      : 'Tasks'
                   }
                   meta={`${visible.length} items`}
                   actions={

@@ -41,9 +41,9 @@ export const InboxLookupGroup = ({
     return null;
   }
   return (
-    <section aria-label="Not in your inbox" className="flex flex-col gap-0.5 pb-2">
+    <section aria-label="Not in Tasks" className="flex flex-col gap-0.5 pb-2">
       <div className="px-3 py-1">
-        <Eyebrow label="Not in your inbox" />
+        <Eyebrow label="Not in Tasks" />
       </div>
       {state.status === 'loading' ? (
         <div className="flex h-8 items-center gap-3 px-3 text-label text-muted-foreground">

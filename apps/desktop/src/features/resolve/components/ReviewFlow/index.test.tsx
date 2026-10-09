@@ -216,10 +216,8 @@ describe('Review as one flow', () => {
     expect(words).not.toContain('Pushed');
     expect(words).not.toContain('Accepted');
     const labels = screen.getAllByRole('button').map((button) => button.textContent ?? '');
-    expect(
-      labels.filter((label) => /^Resolve\b/.test(label) && label !== 'Resolve without a reply'),
-    ).toEqual([]);
-    expect(within(comment()).queryByRole('button', { name: 'Resolve without a reply' })).toBeNull();
+    expect(labels.filter((label) => /^Resolve\b/.test(label) && label !== 'Resolve')).toEqual([]);
+    expect(within(comment()).queryByRole('button', { name: 'Resolve' })).toBeNull();
   });
 
   it('puts Fix on the row of a comment nobody started, and nowhere else', async () => {
@@ -295,7 +293,7 @@ describe('Review as one flow', () => {
       fireEvent.click(within(bar()).getByRole('button', { name: /^Fix/ }));
 
       const opened = await screen.findByRole('region', { name: 'Fix launch' });
-      expect(within(opened).getByText('Fix 1 comment')).toBeDefined();
+      expect(within(opened).getByText('Fix 1')).toBeDefined();
       expect(list().contains(opened)).toBe(false);
       expect(opened.contains(list())).toBe(false);
       expect(screen.queryByRole('article', { name: 'Comment' })).toBeNull();
@@ -332,7 +330,7 @@ describe('Review as one flow', () => {
 
       await screen.findByRole('region', { name: 'Fix launch' });
       expect(currentRow()).toBe(before);
-      expect(within(panel()).getByText('Fix 1 comment')).toBeDefined();
+      expect(within(panel()).getByText('Fix 1')).toBeDefined();
       expect(within(panel()).getAllByRole('checkbox')).toHaveLength(1);
     });
 
@@ -391,13 +389,13 @@ describe('Review as one flow', () => {
       fireEvent.click(within(bar).getByRole('button', { name: `Fix ${selected.length}` }));
 
       const opened = await screen.findByRole('region', { name: 'Fix launch' });
-      expect(within(opened).getByText(`Fix ${selected.length} comments`)).toBeDefined();
+      expect(within(opened).getByText(`Fix ${selected.length}`)).toBeDefined();
       expect(within(opened).getByText(/^One agent works through them in order/)).toBeDefined();
       expect(within(opened).getAllByRole('checkbox')).toHaveLength(selected.length);
 
       const [dropped] = within(opened).getAllByRole('checkbox');
       fireEvent.click(dropped as HTMLElement);
-      expect(within(panel()).getByText(`Fix ${selected.length - 1} comments`)).toBeDefined();
+      expect(within(panel()).getByText(`Fix ${selected.length - 1}`)).toBeDefined();
       expect(useAppStore.getState().reviewSelection[SESSION.id]).toHaveLength(selected.length - 1);
       expect(within(panel()).getAllByRole('checkbox')).toHaveLength(selected.length);
 
@@ -424,13 +422,13 @@ describe('Review as one flow', () => {
       const first = list().querySelector<HTMLElement>(`[data-fix-row="${NOT_STARTED_THREAD_ID}"]`);
       fireEvent.click(first as HTMLElement);
       await screen.findByRole('region', { name: 'Fix launch' });
-      expect(within(panel()).getByText('Fix 1 comment')).toBeDefined();
+      expect(within(panel()).getByText('Fix 1')).toBeDefined();
 
       const unchecked = list()
         .querySelector(`[data-thread-id="${otherId}"]`)
         ?.parentElement?.querySelector('[role="checkbox"]');
       fireEvent.click(unchecked as HTMLElement);
-      expect(within(panel()).getByText('Fix 2 comments')).toBeDefined();
+      expect(within(panel()).getByText('Fix 2')).toBeDefined();
 
       fireEvent.click(row(/idempotency\.ts/));
       expect(queryPanel()).toBeNull();
@@ -455,7 +453,7 @@ describe('Review as one flow', () => {
       );
 
       const opened = await screen.findByRole('region', { name: 'Fix launch' });
-      expect(within(opened).getByText('Fix 1 comment')).toBeDefined();
+      expect(within(opened).getByText('Fix 1')).toBeDefined();
       expect(useAppStore.getState().reviewLaunchRequests[SESSION.id]).toBeNull();
     });
 
@@ -940,13 +938,13 @@ describe('Review of a failed run', () => {
     expect(await screen.findByRole('region', { name: 'Model for a new agent' })).toBeDefined();
   });
 
-  it('puts Try another model, Add a hint, Reply yourself, Skip and Open transcript in the menu', async () => {
+  it('puts Try another model, Add a hint, Reply, Skip and Open transcript in the menu', async () => {
     await mountFailed({ failure: 'run' });
 
     fireEvent.click(within(comment()).getByRole('button', { name: 'More actions' }));
     expect(await screen.findByRole('menuitem', { name: /Try another model/ })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /Add a hint/ })).toBeDefined();
-    expect(await screen.findByRole('menuitem', { name: /Reply yourself/ })).toBeDefined();
+    expect(await screen.findByRole('menuitem', { name: /Reply/ })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /Skip/ })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /Open transcript/ })).toBeDefined();
   });

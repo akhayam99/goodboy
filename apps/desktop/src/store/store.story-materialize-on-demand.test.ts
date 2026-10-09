@@ -654,11 +654,9 @@ describe('story: an agent asks for write access with the materialize marker', ()
     expect(proposal?.turnRunId).toBeTypeOf('string');
     const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const note = transcript.find((event) => event.kind === 'decision_note');
-    expect(note).toMatchObject({ message: 'Mount deferred for web.' });
+    expect(note).toMatchObject({ message: 'Added later: web.' });
     expect(
-      transcript.some(
-        (event) => event.kind === 'error' && event.message.includes('Mount deferred'),
-      ),
+      transcript.some((event) => event.kind === 'error' && event.message.includes('Added later')),
     ).toBe(false);
   });
 

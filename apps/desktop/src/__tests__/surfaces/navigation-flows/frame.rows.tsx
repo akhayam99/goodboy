@@ -142,13 +142,13 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     lands: landsOnSessionPage({ page: 'questions', title: 'Questions' }),
   },
   {
-    name: 'frame: the Inbox studio draws its band and its title on the column',
+    name: 'frame: the Tasks studio draws its band and its title on the column',
     covers: ['openInbox', 'studio:inbox'],
     open: async () => {
-      await clickButton('Inbox');
+      await clickButton('Tasks');
     },
     lands: async () => {
-      await band('Inbox');
+      await band('Tasks');
       await settle();
       expectOnGrid({ page: 'inbox', isStudio: true });
     },

@@ -379,7 +379,7 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       });
       await openComments(ctx);
 
-      await click(await screen.findByRole('button', { name: 'Fix 3 open comments' }));
+      await click(await screen.findByRole('button', { name: 'Fix 3' }));
       const panel = await screen.findByRole('region', { name: 'Fix launch' }, WAIT);
       const note = within(panel).getByLabelText('Note for the fix run');
       await act(async () => {

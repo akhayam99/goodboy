@@ -1,4 +1,5 @@
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { NAMES } from '../../shared/names';
 import type { ReviewComposeMode } from '../review/reviewRequest';
 
 export const REVIEW_FLOW_LABEL = {
@@ -136,7 +137,7 @@ export const REPLY_NOTE_COPY = {
   alone: 'Reply only. Nothing else is waiting to push, so it can go out now.',
   posting: 'Posting the reply',
   posted: ({ provider }: { readonly provider: string }): string => `Replied on ${provider}.`,
-  postNow: 'Post reply now',
+  postNow: NAMES.publishReply,
   retry: 'Retry',
 } as const;
 

@@ -116,10 +116,10 @@ describe('Fix open comments', () => {
     const { spawnAgent, createResolveBatch } = stubAgents();
     await mount({ stage: 'launch' });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Fix 9 open comments/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Fix 9/ }));
 
     const panel = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(within(panel).getByText('Fix 9 comments')).toBeDefined();
+    expect(within(panel).getByText('Fix 9')).toBeDefined();
     expect(within(panel).getAllByRole('checkbox')).toHaveLength(9);
     expect(within(panel).queryByText(/What should the client see/)).toBeNull();
     expect(useAppStore.getState().reviewSelection[SESSION.id]).toHaveLength(9);
@@ -146,7 +146,7 @@ describe('Fix open comments', () => {
     });
 
     const panel = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(within(panel).getByText('Fix 9 comments')).toBeDefined();
+    expect(within(panel).getByText('Fix 9')).toBeDefined();
     expect(spawnAgent).not.toHaveBeenCalled();
     expect(createResolveBatch).not.toHaveBeenCalled();
   });
@@ -396,7 +396,7 @@ describe('bulk scenes', () => {
       </ToastProvider>,
     );
     const launch = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(within(launch).getByText('Fix 9 comments')).toBeDefined();
+    expect(within(launch).getByText('Fix 9')).toBeDefined();
     cleanup();
 
     render(

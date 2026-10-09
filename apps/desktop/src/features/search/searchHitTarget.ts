@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/names';
 import {
   isSessionExternalTaskProvider,
   type AgentId,
@@ -229,7 +230,7 @@ export const searchHitTarget = ({ hit }: Params): SearchHitTarget => {
       workspaceId: hit.workspaceId,
       provider: hit.provider,
       recordKey: `${hit.provider}:${RECORD_KIND[hit.provider]}:${hit.refId}`,
-      label: 'Open in Inbox',
+      label: `Open in ${NAMES.tasks}`,
     };
   }
   if (hit.kind === 'workflow') {

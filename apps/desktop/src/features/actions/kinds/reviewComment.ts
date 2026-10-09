@@ -587,7 +587,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.postReplyNow',
-      label: ({ facts }) => (facts.state === 'failed' ? 'Retry push' : 'Post reply now'),
+      label: ({ facts }) => (facts.state === 'failed' ? NAMES.retryPush : NAMES.publishReply),
       icon: Send,
       group: 'act',
       when: ({ facts }) =>
@@ -602,7 +602,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.reply',
-      label: ({ facts }) => (facts.state === 'failed' ? 'Reply yourself' : 'Reply'),
+      label: NAMES.reply,
       icon: CornerDownRight,
       group: 'act',
       shortcut: 'review.reply',
@@ -647,7 +647,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.resolveNoReply',
-      label: ({ facts }) => (facts.isNote ? 'Close the note' : 'Resolve without a reply'),
+      label: ({ facts }) => (facts.isNote ? 'Close the note' : NAMES.resolve),
       icon: CircleCheck,
       group: 'act',
       when: ({ facts }) => UNDECIDED.has(facts.state) && facts.canResolve,

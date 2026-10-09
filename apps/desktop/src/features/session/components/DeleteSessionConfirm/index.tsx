@@ -3,12 +3,10 @@ import { formatError, InlineConfirm } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionTitle } from '../../sessionTitle';
+import { DELETE_CANNOT_UNDO, DELETE_REMOVED_LINE, deleteKeptLine } from '../../deleteSessionCopy';
 import { useSessionArchive } from '../../hooks/useSessionArchive';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-
-const KEPT_IN_IMPACT =
-  'Frees the transcript, file versions and images. Cost and shipped work stay in Impact.';
 
 type Props = {
   readonly session: Session;
@@ -24,9 +22,6 @@ export const DeleteSessionConfirm = ({ session, onClose, className, surface }: P
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isBranchless = isBranchlessSession({ branch: sessionBranch });
-  const description = isBranchless
-    ? KEPT_IN_IMPACT
-    : `${KEPT_IN_IMPACT} The branch and its commits stay in the repository, and a worktree still holding uncommitted work is kept and listed under Settings, Storage.`;
 
   const onConfirm = async () => {
     setBusy(true);
@@ -59,7 +54,6 @@ export const DeleteSessionConfirm = ({ session, onClose, className, surface }: P
       role="danger"
       icon={<CONCEPT_ICONS.delete size={ICON_SIZE.row} aria-hidden />}
       title="Delete session?"
-      description={description}
       confirmLabel="Delete"
       onConfirm={onConfirm}
       onCancel={onClose}
@@ -77,7 +71,9 @@ export const DeleteSessionConfirm = ({ session, onClose, className, surface }: P
       <p className="truncate rounded-md border border-border-soft bg-subtle px-2 py-1 font-mono text-foreground">
         {sessionTitle({ session })}
       </p>
-      <p className="font-medium text-danger">This cannot be undone.</p>
+      <p className="text-muted-foreground">{DELETE_REMOVED_LINE}</p>
+      <p className="text-muted-foreground">{deleteKeptLine({ isBranchless })}</p>
+      <p className="font-medium text-danger">{DELETE_CANNOT_UNDO}</p>
       {error != null && <p className="font-medium text-danger">{error}</p>}
     </InlineConfirm>
   );

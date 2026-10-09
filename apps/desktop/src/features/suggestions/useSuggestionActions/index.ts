@@ -1,3 +1,4 @@
+import { NAMES } from '../../../shared/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
@@ -10,7 +11,7 @@ import { showsRunsOn } from '../../session/showsRunsOn';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
-import { draftFixesLabel } from '../../actions/kinds/review';
+import { fixLabel } from '../../resolve/reviewLaunchCopy';
 import { prLifecycleFailureTitle } from '../../review/prLifecycle';
 import { requestReview } from '../../review/reviewRequest';
 import { eligibleReviewThreads } from '../eligibleThreads';
@@ -196,7 +197,7 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'resolve-threads') {
       return {
         primary: {
-          label: draftFixesLabel({ fresh: unresolvedThreads.length }),
+          label: fixLabel({ count: unresolvedThreads.length }),
           isDisabled: false,
           failureTitle: "The fix panel didn't open",
           run: openFixPanel,
@@ -481,10 +482,10 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'close-worktree') {
       return {
         primary: {
-          label: 'Close worktree',
+          label: NAMES.closeBranch,
           isDisabled: false,
           requiresConfirm: true,
-          failureTitle: "Couldn't close the worktree",
+          failureTitle: "Couldn't close the branch",
           run: () =>
             resolveMountCleanup({
               sessionId,

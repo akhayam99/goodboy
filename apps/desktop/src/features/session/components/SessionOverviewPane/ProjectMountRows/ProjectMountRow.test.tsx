@@ -70,8 +70,8 @@ vi.mock('./ProjectBranchChip', () => ({
 }));
 vi.mock('./RemoveWorktreeAction', () => ({
   RemoveWorktreeAction: ({ label }: RemoveWorktreeProps) => (
-    <button type="button" aria-label={`Remove the worktree for ${label}`}>
-      Remove worktree
+    <button type="button" aria-label={`Close branch for ${label}`}>
+      Close branch
     </button>
   ),
 }));
@@ -609,18 +609,18 @@ describe('ProjectMountRow availability', () => {
     expect(screen.getByTestId('branch-decision')).toBeDefined();
   });
 
-  it('offers Remove worktree only once the pull request merged', () => {
+  it('offers Close branch only once the pull request merged', () => {
     renderRow({
       worktreeStatus: statusWith({ mainDistance: { kind: 'known', ahead: 0, behind: 0 } }),
       row: { ...baseRow, isCompleted: true, request: { ...openRequest, state: 'merged' } },
     });
 
-    expect(screen.getByRole('button', { name: 'Remove the worktree for API' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Close branch for API' })).toBeDefined();
     cleanup();
     store.sessionMounts = {};
     store.mountGithub = {};
     renderRow({});
-    expect(screen.queryByRole('button', { name: 'Remove the worktree for API' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close branch for API' })).toBeNull();
   });
 });
 
@@ -636,7 +636,7 @@ describe('ProjectMountRow menu', () => {
     expect(labels.some((label) => label.startsWith('Open scripts'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Rewrite history'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Copy path'))).toBe(true);
-    expect(labels.some((label) => label.startsWith('Close worktree'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Close branch'))).toBe(true);
   });
 
   it('opens rewrite history for this worktree from the row menu', async () => {

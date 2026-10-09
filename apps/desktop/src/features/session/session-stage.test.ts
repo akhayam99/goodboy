@@ -114,7 +114,7 @@ describe('the reason table', () => {
     ['ci-failed', '!', 'danger', 'Checks failing'],
     ['open-question', '?', 'warning', '1 question for you'],
     ['fix-needs-you', '?', 'warning', '1 comment needs you'],
-    ['needs-approval', 'approval', 'warning', 'Waiting for your approval'],
+    ['needs-approval', 'approval', 'warning', 'Waiting for your permission'],
     ['plan-approval', 'approval', 'warning', 'The plan waits for your approval'],
     ['changes-requested', '!', 'warning', 'Changes requested'],
     ['fix-couldnt-fix', '!', 'warning', "1 comment it couldn't fix"],

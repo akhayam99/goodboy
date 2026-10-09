@@ -47,9 +47,6 @@ export type ReviewFacts = {
 
 const PUSHING_REASON = 'Pushing now.';
 
-export const draftFixesLabel = ({ fresh }: { readonly fresh: number }): string =>
-  fresh === 1 ? 'Draft a fix' : `Draft fixes for ${fresh}`;
-
 const pushLabel = ({
   accepted,
   failed,

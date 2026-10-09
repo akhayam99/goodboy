@@ -113,9 +113,9 @@ describe('RemoveWorktreeAction', () => {
     );
     renderAction();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove the worktree for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
-    await waitFor(() => expect(screen.getByText('Remove worktree?')).toBeDefined());
+    await waitFor(() => expect(screen.getByText('Close branch?')).toBeDefined());
     expect(
       screen.getByText('1 ignored file at risk, not tracked by git: .env.local.'),
     ).toBeDefined();
@@ -128,7 +128,7 @@ describe('RemoveWorktreeAction', () => {
     );
     renderAction();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove the worktree for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
     await waitFor(() =>
       expect(removeMountWorktree).toHaveBeenCalledWith({
@@ -137,7 +137,7 @@ describe('RemoveWorktreeAction', () => {
         mode: 'safe',
       }),
     );
-    expect(screen.queryByText('Remove worktree?')).toBeNull();
+    expect(screen.queryByText('Close branch?')).toBeNull();
   });
 
   it('asks the base the mount carries rather than assuming main', async () => {
@@ -146,7 +146,7 @@ describe('RemoveWorktreeAction', () => {
     );
     renderAction();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove the worktree for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
     await waitFor(() =>
       expect(worktreeDetachAssessment).toHaveBeenCalledWith({
@@ -168,7 +168,7 @@ describe('RemoveWorktreeAction', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove the worktree for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
     await waitFor(() =>
       expect(worktreeDetachAssessment).toHaveBeenCalledWith({
@@ -188,9 +188,9 @@ describe('RemoveWorktreeAction', () => {
     );
     renderAction();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove the worktree for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
-    await waitFor(() => expect(screen.getByText('Remove worktree?')).toBeDefined());
+    await waitFor(() => expect(screen.getByText('Close branch?')).toBeDefined());
     expect(screen.getByText('ak/feat is not merged into origin/main yet.')).toBeDefined();
     expect(removeMountWorktree).not.toHaveBeenCalled();
   });
@@ -205,19 +205,16 @@ describe('RemoveWorktreeAction', () => {
     );
     renderAction();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove the worktree for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close branch for API' }));
 
-    await waitFor(() => expect(screen.getByText('Remove worktree?')).toBeDefined());
+    await waitFor(() => expect(screen.getByText('Close branch?')).toBeDefined());
     expect(
       screen.getByText(
         'Whether ak/feat is merged into its base branch is unknown; the worktree stays until that can be read.',
       ),
     ).toBeDefined();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Remove worktree' })).toHaveProperty(
-      'disabled',
-      true,
-    );
+    expect(screen.getByRole('button', { name: 'Close branch' })).toHaveProperty('disabled', true);
     expect(removeMountWorktree).not.toHaveBeenCalled();
   });
 });

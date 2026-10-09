@@ -1,9 +1,10 @@
+import { NAMES } from '../../shared/names';
 import type { ResolveRowState } from './resolveRowState';
 
 export const BAR_COPY = {
   label: 'Comment actions',
   more: 'More actions',
-  retryPush: 'Retry push',
+  retryPush: NAMES.retryPush,
   openTranscript: 'Open transcript',
   viewOn: ({ host }: { readonly host: string }): string => `View on ${host}`,
 } as const;

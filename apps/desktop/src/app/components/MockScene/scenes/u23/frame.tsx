@@ -39,7 +39,7 @@ export const U23_FRAME_SCENES = {
   'frame-studio-inbox': () => (
     <FramedStudioScene kind="inbox" place="inbox">
       <PaneShell scroll="body" title="All items" meta={`${INBOX_ROWS.length} items`}>
-        <ul aria-label="Inbox items" className="flex flex-col gap-3">
+        <ul aria-label="Task items" className="flex flex-col gap-3">
           {INBOX_ROWS.map((row) => (
             <li key={row} className="text-body text-foreground">
               {row}

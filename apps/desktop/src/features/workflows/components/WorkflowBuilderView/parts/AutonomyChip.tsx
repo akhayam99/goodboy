@@ -32,7 +32,6 @@ export const AutonomyChip = ({ autonomy, ruleAutonomy, disabled, onChange }: Pro
       trigger={
         <ControlChip
           label={RUN_AUTONOMY_HEADER}
-          isLabelShown={false}
           value={current.label}
           marker={differs ? <RuleDot ruleValue={rule.label} /> : null}
           isOpen={open}

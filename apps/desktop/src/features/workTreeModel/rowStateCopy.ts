@@ -13,7 +13,7 @@ export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   running: 'Running',
   question: NAMES.needsYou,
   budget: 'Paused at the spend cap',
-  approval: 'Waiting for your approval',
+  approval: NAMES.waitingForPermission,
   alert: NAMES.needsYou,
   failed: 'Failed',
   approved: 'Approved',
@@ -49,7 +49,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
     case 'noArtifact':
       return 'No artifact, use Retry capture in the transcript';
     case 'needsApproval':
-      return 'Needs approval, answer the request in the transcript';
+      return 'Needs permission, answer the request in the transcript';
     case 'stepFailed':
       return reason.stepLabel == null ? 'A step failed' : `Step ${reason.stepLabel} failed`;
     case 'stepBlocked':
@@ -133,7 +133,7 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'noArtifact':
       return 'No artifact';
     case 'needsApproval':
-      return 'Needs approval';
+      return 'Needs permission';
     case 'stepBlocked':
       return reason.stepLabel == null ? 'Step blocked' : `Step ${reason.stepLabel} blocked`;
     case 'failed':
@@ -265,7 +265,7 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
     return { state: node, label: 'No artifact' };
   }
   if (state.reason?.kind === 'needsApproval') {
-    return { state: node, label: 'Needs approval' };
+    return { state: node, label: 'Needs permission' };
   }
   if (state.reason?.kind === 'planReady') {
     return { state: node, label: 'Plan ready' };

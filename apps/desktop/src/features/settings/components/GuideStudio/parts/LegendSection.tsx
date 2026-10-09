@@ -28,7 +28,7 @@ export const LegendSection = ({}: Props) => (
           {
             dot: tintClasses('warning').dot,
             label: 'waiting',
-            desc: 'needs your answer or approval',
+            desc: 'needs your answer, permission or approval',
           },
           { dot: tintClasses('danger').dot, label: 'failed', desc: 'ended with an error' },
           {

@@ -1,3 +1,4 @@
+import { NAMES } from '../../shared/names';
 import { AppWindow } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
@@ -8,7 +9,7 @@ const CHANGELOG_AREAS = {
   workflows: { label: 'Workflows', icon: CONCEPT_ICONS.workflows },
   review: { label: 'Review', icon: CONCEPT_ICONS.review },
   artifacts: { label: 'Artifacts', icon: CONCEPT_ICONS.artifacts },
-  inbox: { label: 'Inbox', icon: CONCEPT_ICONS.inbox },
+  inbox: { label: NAMES.tasks, icon: CONCEPT_ICONS.inbox },
   providers: { label: 'Providers', icon: CONCEPT_ICONS.providers },
   integrations: { label: 'Integrations', icon: CONCEPT_ICONS.integrations },
   scripts: { label: 'Scripts', icon: CONCEPT_ICONS.scripts },

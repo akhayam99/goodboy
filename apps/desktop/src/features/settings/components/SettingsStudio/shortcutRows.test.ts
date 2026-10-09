@@ -59,7 +59,7 @@ describe('shortcutRows', () => {
       'list.dismiss',
       'list.search',
     ]);
-    expect(groupWhere({ group: 'lists' })).toBe('In the Inbox and Notifications lists');
+    expect(groupWhere({ group: 'lists' })).toBe('In the Tasks and Notifications lists');
   });
 
   it('lists the selection keys under their own group with one shared place', () => {

@@ -198,7 +198,7 @@ README images always show the app around the feature. Two frames wrap them:
 
 Every frame (these two, `audit/WorkspaceFrame` and the board shell) takes its
 column actions, studio and overlay layers from `scenes/useSceneShell`, which
-runs the app's own `useAppOverlays`: Board, Inbox, Chat, Workflows and Settings
+runs the app's own `useAppOverlays`: Board, Tasks, Chat, Workflows and Settings
 in the column work as in the app, Settings swaps the column and **Back to app**
 returns. A scene that installs its own IPC answers goes through
 `scenes/mockSceneIpc.ts`, which answers editor and browser detection, `db_select`,

@@ -83,7 +83,7 @@ export const InboxList = ({
         />
       ) : null}
       {isShowingSkeleton ? (
-        <div className="flex flex-col gap-0.5" role="status" aria-label="Loading the inbox">
+        <div className="flex flex-col gap-0.5" role="status" aria-label="Loading tasks">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex h-8 items-center gap-3 px-3">
               <Skeleton className="size-3.5 shrink-0 rounded-full" />
@@ -131,7 +131,7 @@ export const InboxList = ({
         <ul
           tabIndex={0}
           role="listbox"
-          aria-label="Inbox items"
+          aria-label="Task items"
           aria-activedescendant={activeOptionId}
           className="flex flex-col gap-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >

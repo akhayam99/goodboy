@@ -82,7 +82,7 @@ const closeMenus = async (): Promise<void> => {
 
 const GOTO_LABELS: ReadonlySet<string> = new Set([
   'Board',
-  'Inbox',
+  'Tasks',
   'Chat',
   'Workflows',
   'Impact',

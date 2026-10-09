@@ -69,7 +69,7 @@ export const InboxListHeader = ({
           onQueryChange('');
         }}
         placeholder={ISSUE_SEARCH_PLACEHOLDER}
-        ariaLabel="Search the inbox"
+        ariaLabel="Search tasks"
         autoComplete="off"
         hint={<KbdPill>{shortcutGlyphs('list.search')}</KbdPill>}
         className="w-[200px] min-w-0"
@@ -77,7 +77,7 @@ export const InboxListHeader = ({
       <AnchoredPopover
         dropdown={filters}
         role="dialog"
-        ariaLabel="Inbox filters"
+        ariaLabel="Task filters"
         className="max-h-[70vh] py-1"
         trigger={
           <button

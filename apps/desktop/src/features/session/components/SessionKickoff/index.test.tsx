@@ -688,7 +688,7 @@ describe('SessionKickoff', () => {
       },
     };
     renderKickoff();
-    await screen.findByText('Not in your inbox');
+    await screen.findByText('Not in Tasks');
 
     fireEvent.click(screen.getByRole('option', { name: /CAS-231 Settle the month close/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick up CAS-231' }));

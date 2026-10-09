@@ -401,7 +401,7 @@ const seedInbox = async (): Promise<void> => {
   useAppStore.setState({
     starredIssues: { [workspaceId]: [0, 1, 2].map(starredIssue) },
   });
-  await clickButton('Inbox');
+  await clickButton('Tasks');
   await visible('region', 'Starred');
 };
 
@@ -588,9 +588,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'list.search',
     open: inboxKey('list.search'),
     lands: async () =>
-      expect(document.activeElement).toBe(
-        screen.getByRole('searchbox', { name: 'Search the inbox' }),
-      ),
+      expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Search tasks' })),
   }),
 ];
 
