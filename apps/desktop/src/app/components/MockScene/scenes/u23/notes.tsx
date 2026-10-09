@@ -10,8 +10,6 @@ import { CTX_SESSION, CTX_SESSION_ID } from '../brand/contextBase';
 import { DiffStage } from '../brand/DiffStage';
 import { seedNotesScene, type NotesVariant } from './notesSeed';
 
-const SCENE_WIDTH_PX = 1440;
-
 type Props = {
   readonly variant: NotesVariant;
 };
@@ -31,7 +29,7 @@ export const NotesScene = ({ variant }: Props) => {
   }
 
   return (
-    <main className="flex h-screen bg-background text-foreground" style={{ width: SCENE_WIDTH_PX }}>
+    <main className="flex h-screen w-full bg-background text-foreground">
       <DrawerColumn
         main={
           <div className="@container flex h-full w-full min-w-0 flex-col">

@@ -136,6 +136,20 @@ describe('the review notes drawer on sqlite', () => {
     expect(within(panel).getAllByRole('button', { name: 'Delete' })).toHaveLength(3);
   });
 
+  it('keeps the key hint of Fix on a note in the muted tone, as the button is not filled', async () => {
+    renderDrawer();
+
+    const panel = await drawer();
+    await waitFor(() => within(panel).getByText('3 open'));
+    const fixes = panel.querySelectorAll<HTMLElement>('[data-review-verb="reviewComment.draft"]');
+    expect(fixes).toHaveLength(3);
+    fixes.forEach((fix) => {
+      const hint = fix.querySelector('kbd');
+      expect(hint).not.toBeNull();
+      expect(hint?.className).not.toContain('text-on-tone');
+    });
+  });
+
   it('closes a note with Close, lists it under Show closed and reopens it', async () => {
     renderDrawer();
     const panel = await drawer();
