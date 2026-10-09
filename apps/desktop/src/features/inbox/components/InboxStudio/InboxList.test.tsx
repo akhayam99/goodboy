@@ -92,6 +92,24 @@ describe('InboxList', () => {
     ).toBeDefined();
   });
 
+  it('shows no status word when every row reads the same', () => {
+    renderList();
+
+    expect(screen.queryByText('Todo')).toBeNull();
+  });
+
+  it('shows each row status word when the list mixes states', () => {
+    renderList({
+      records: [
+        record({ key: 'CAS-1', title: 'Today item', hoursAgo: 2 }),
+        { ...record({ key: 'CAS-2', title: 'Old item', hoursAgo: 24 * 30 }), stateLabel: 'Done' },
+      ],
+    });
+
+    expect(screen.getByText('Todo')).toBeDefined();
+    expect(screen.getByText('Done')).toBeDefined();
+  });
+
   it('points aria-activedescendant at the selected option', () => {
     renderList({ selectedKey: 'CAS-2' });
 

@@ -271,7 +271,12 @@ export const SessionActivityBar = ({
 
   return (
     <div ref={barRef} className="relative flex h-full min-h-0 w-full shrink-0 flex-col gap-1">
-      <div className="flex h-7 shrink-0 items-center justify-between pl-3 pr-2">
+      <div
+        className={cn(
+          'flex h-7 shrink-0 items-center justify-between',
+          PANE_RHYTHM.sessionList.headerInset,
+        )}
+      >
         <Eyebrow label="Sessions" muted />
         <SessionViewMenu
           workspaceId={workspaceId}
@@ -318,7 +323,7 @@ export const SessionActivityBar = ({
                   />
                 ) : null}
                 {group.isCollapsed ? null : (
-                  <ul role="list" className="flex flex-col">
+                  <ul role="list" className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}>
                     {group.sessions.map((session) => renderRow(session, false))}
                   </ul>
                 )}
@@ -348,7 +353,7 @@ export const SessionActivityBar = ({
                   <Eyebrow label="Archived" muted />
                 </span>
               ) : null}
-              <ul role="list" className="flex flex-col">
+              <ul role="list" className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}>
                 {shownArchived.map((session) => renderRow(session, true))}
               </ul>
             </div>

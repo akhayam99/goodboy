@@ -42,7 +42,8 @@ import { useObjectActions } from '../../../actions/useObjectActions';
 import { sessionTitle } from '../../../session/sessionTitle';
 import type { PaletteModeProps } from '../../paletteModeTypes';
 import { verbEntries, type VerbSelectParams } from '../../sources/verbEntries';
-import { liveAgentVerbs } from '../../sources/liveAgentEntries';
+import { paletteBodyLayoutOf, previewFactCountOf } from './paletteBodyLayout';
+import { liveAgentVerbs, sessionOwnFirst } from '../../sources/liveAgentEntries';
 import { runRow, runSection } from '../../sources/runEntries';
 import {
   runConfirmFacts,
@@ -372,7 +373,7 @@ export const CommandsBody = ({
     [askSessionId, hasWorkspace, query],
   );
 
-  const sections = useMemo(
+  const builtSections = useMemo(
     () =>
       level === null
         ? buildCommandList({
@@ -434,6 +435,15 @@ export const CommandsBody = ({
       levelWorkflows,
     ],
   );
+  const sections = useMemo(
+    () =>
+      sessionOwnFirst({
+        scopeKind: scope?.kind ?? null,
+        isIdle: level === null && query.trim() === '',
+        sections: builtSections,
+      }),
+    [scope?.kind, level, query, builtSections],
+  );
   const rows = useMemo(() => flattenRows(sections), [sections]);
   const activeKey =
     selectedKey ?? (level === null ? defaultCommandKey({ query, rows, askKeys: ASK_KEYS }) : null);
@@ -462,6 +472,9 @@ export const CommandsBody = ({
   }, [selected]);
 
   const subject = level?.title ?? scopeInfo?.title ?? null;
+  const layout = paletteBodyLayoutOf({
+    hasPreview: selected !== null && previewFactCountOf({ entry: selected.item, subject }) >= 1,
+  });
   const allChoice = levelChoices.find((entry) => entry.key.endsWith(`:${ALL_CHOICES_ID}`)) ?? null;
 
   const finish = (entry: PaletteEntry): void => {
@@ -726,71 +739,83 @@ export const CommandsBody = ({
           onCancel={() => setConfirming(null)}
         />
       ) : (
-        <div className="flex min-h-0 flex-1">
-          <ScrollFade className="max-h-[420px] min-h-0 min-w-0 flex-1" fadeFrom="floating">
-            <ul
-              ref={listRef}
-              id={listboxId}
-              role="listbox"
-              aria-label="Commands"
-              className="flex flex-col gap-0.5 p-2"
-            >
-              {rows.length === 0 ? (
-                <li role="presentation">
-                  <FilledEmptyState
-                    icon={CONCEPT_ICONS.search}
-                    tone={CONCEPT_TONE.search}
-                    title={
-                      (level === null ? query : filter).trim() === ''
-                        ? 'Nothing to do here yet'
-                        : `Nothing matches “${(level === null ? query : filter).trim()}”`
-                    }
-                    className="justify-center"
-                  />
-                </li>
-              ) : (
-                sections.flatMap((section, sectionIndex) => [
-                  ...(section.title === null
-                    ? []
-                    : [
-                        <li
-                          key={`section:${section.title}`}
-                          role="presentation"
-                          className="flex h-8 items-end px-3"
-                        >
-                          <Eyebrow label={section.title} />
-                        </li>,
-                      ]),
-                  ...section.rows.map((row) => (
-                    <CommandRowView
-                      key={`${sectionIndex}:${row.item.key}`}
-                      row={row}
-                      id={optionId(row.item.key)}
-                      isSelected={row.item.key === selected?.item.key}
-                      onHover={() => setSelectedKey(row.item.key)}
-                      onRun={() => activate(row.item)}
-                    />
-                  )),
-                ])
-              )}
-            </ul>
-          </ScrollFade>
-          {selected !== null && (
-            <>
-              <Divider orientation="vertical" className="hidden md:block" />
-              <aside
-                aria-label="Preview"
-                className="hidden w-72 shrink-0 flex-col justify-between gap-4 p-4 md:flex"
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1">
+            <ScrollFade className="max-h-[420px] min-h-0 min-w-0 flex-1" fadeFrom="floating">
+              <ul
+                ref={listRef}
+                id={listboxId}
+                role="listbox"
+                aria-label="Commands"
+                className="flex flex-col gap-0.5 p-2"
               >
-                <EntryPreview entry={selected.item} subject={subject} />
-                <PreviewHints
-                  entry={selected.item}
-                  isActionsLevel={level !== null}
-                  allLabel={allChoice?.label ?? null}
-                  hasOtherModes={modeSwitch !== null}
-                />
-              </aside>
-            </>
+                {rows.length === 0 ? (
+                  <li role="presentation">
+                    <FilledEmptyState
+                      icon={CONCEPT_ICONS.search}
+                      tone={CONCEPT_TONE.search}
+                      title={
+                        (level === null ? query : filter).trim() === ''
+                          ? 'Nothing to do here yet'
+                          : `Nothing matches “${(level === null ? query : filter).trim()}”`
+                      }
+                      className="justify-center"
+                    />
+                  </li>
+                ) : (
+                  sections.flatMap((section, sectionIndex) => [
+                    ...(section.title === null
+                      ? []
+                      : [
+                          <li
+                            key={`section:${section.title}`}
+                            role="presentation"
+                            className="flex h-8 items-end px-3"
+                          >
+                            <Eyebrow label={section.title} />
+                          </li>,
+                        ]),
+                    ...section.rows.map((row) => (
+                      <CommandRowView
+                        key={`${sectionIndex}:${row.item.key}`}
+                        row={row}
+                        id={optionId(row.item.key)}
+                        isSelected={row.item.key === selected?.item.key}
+                        onHover={() => setSelectedKey(row.item.key)}
+                        onRun={() => activate(row.item)}
+                      />
+                    )),
+                  ])
+                )}
+              </ul>
+            </ScrollFade>
+            {selected !== null && layout.previewShown && (
+              <>
+                <Divider orientation="vertical" className="hidden md:block" />
+                <aside
+                  aria-label="Preview"
+                  className="hidden w-72 shrink-0 flex-col justify-between gap-4 p-4 md:flex"
+                >
+                  <EntryPreview entry={selected.item} subject={subject} />
+                  <PreviewHints
+                    entry={selected.item}
+                    isActionsLevel={level !== null}
+                    allLabel={allChoice?.label ?? null}
+                    hasOtherModes={modeSwitch !== null}
+                  />
+                </aside>
+              </>
+            )}
+          </div>
+          {selected !== null && !layout.previewShown && (
+            <div className="px-4 py-2">
+              <PreviewHints
+                entry={selected.item}
+                isActionsLevel={level !== null}
+                allLabel={allChoice?.label ?? null}
+                hasOtherModes={modeSwitch !== null}
+              />
+            </div>
           )}
         </div>
       )}

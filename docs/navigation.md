@@ -88,7 +88,7 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Inbox, Chat, Workflows, Settings), the Impact icon, a ⌘K Go to
+  a column door (Inbox, Chat, Workflows, Settings), a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
@@ -101,8 +101,7 @@
   studio itself.
 - **One selected sign.** The open studio's door, New session while the draft is
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
-  `aria-current="page"`, in the column, on the rail and on the Impact icon
-  alike. Every door reads it from one place (`columnPlaceOf`, through
+  `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
   does, because the open session's row is the sign. A popover trigger (the
   Limits chips, the Goodboy row) is never selected: it only reports
@@ -917,14 +916,13 @@ covered.
   top-level agent (`landOnSession.ts`) so the brief waits in that agent's
   composer draft (`agentDraft`); a session without an agent opens on its
   overview with nothing drafted.
-- Right: the Now chip (needs you, running, scripts, each
-  only when above zero), today's spend and the bell. There is no storage chip:
+- Right, in this order: the Now chip (needs you, running, scripts, each
+  only when above zero), Limits, today's spend and the bell. There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
-  session and opens that run's output in the right drawer. Spend opens Impact
-  on its Spend tab; it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
+  session and opens that run's output in the right drawer. `Limits`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and a bar of
   the provider's most used window; the number shows from 80%, `Out` with the
@@ -940,15 +938,18 @@ covered.
   connected the strip is one `Connect a provider` chip that pulses and opens
   the same menu, and nothing shows while providers are still being detected.
   A bar in the chrome is always a provider window; money is always a figure.
-  Then the theme toggle, the Impact icon (a door to the Impact studio on its
-  Overview tab, pressed while it is open, tooltip `Impact`) and the bell, which
-  opens the notification popover.
+  Then Spend, the one door to Impact: the figure with `today`, named `Spend
+today. Open Impact`, opening the Impact studio on its Spend tab (it is never
+  merged with a count). The other Impact tabs are reached inside the studio and
+  from ⌘K. The bar holds no Impact icon in the column layout; the Legacy layout
+  keeps its own Impact door in the footer. Last the bell, which opens the
+  notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-wide` the command center narrows and says only `Search or
-ask` (wide it adds `in {workspace}`), and
+1. Below `chrome-wide` the command center narrows (its label is `Search`
+   at every width; the workspace name lives in its tooltip) and
    Limits keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
    (`need you`, `running`, `scripts`, `today`) drop and Limits keeps
@@ -956,13 +957,14 @@ ask` (wide it adds `in {workspace}`), and
    tooltips carry the words.
 
 The traffic lights, identity, the movement cluster, the command center, the
-needs-you count, the spend figure, the first Limits chip, Impact and the bell
+needs-you count, the spend figure, the first Limits chip and the bell
 never hide. A Limits chip is
 the provider glyph and two bars, with no card, label or number around it; the
 percentage lives in its tooltip and its accessible name. A provider with no
 figures yet draws no chip. The Limits chips past the ones that fit, and the
-providers with no figures, are the only overflow: a `+N` chip takes the tone
-of the worst hidden provider and lists them. No other control moves into an
+providers with no figures, are the only overflow: a `+N providers` chip (`+1
+provider`, never a bare number) takes the tone of the worst hidden provider and
+lists them. It stays visible at every bar width. No other control moves into an
 overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
 only drop under zoom.
 
@@ -977,20 +979,17 @@ only drop under zoom.
   replacing a window with agents running here asks first, inline under the
   row, never in a modal: the primary keeps them going in a new window, the
   ghost alternative stops them and opens here. A closed `Disconnected` group
-  lists workspaces removed from disk, each with a small `Reconnect`. Settings
+  lists workspaces removed from disk, each with a small `Reconnect`. With no other workspace the popover draws no empty row under the current one; a search that finds none says `No other workspaces match`. Settings
   opens on its home; only Workspace settings lives behind this popover,
   so the bar holds no second settings control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
-- **Theme is in the bar, after the fourth round of removing it.** A dark room,
-  a projector, a shared screen: the theme changes several times a day, and a
-  detour through Settings is friction each time. The toggle sits after the
-  Limits chips and before the bell, with no divider, alternates dark and light on a click,
-  and turns Match system into an explicit choice the first time it is
-  clicked. Below the 720px `chrome-narrow` width it leaves the bar; it is not
-  in the never-hide list. The three-way choice (dark, light, Match system)
-  stays in Settings > App > General and in the palette.
+- **Theme is not in the bar.** The theme changes a few times a week, not per
+  click, and the swap is one paint (`theme-switch-is-one-paint`), so a
+  permanent icon bought little. The three-way choice (dark, light, Match
+  system) lives in Settings > App > General and in the palette (`Switch to
+light mode`, `Switch to dark mode`). No shortcut is bound to it.
 - The top bar never edits. Reporting a bug, the setup checklist, the update
   and the version are about Goodboy itself, so they live at the foot of the
   column: the Goodboy row and the bug icon beside it.

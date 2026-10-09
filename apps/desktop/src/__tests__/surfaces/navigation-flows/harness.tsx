@@ -311,7 +311,7 @@ export const openCrumb = async (label: RegExp): Promise<void> => {
 };
 
 export const openPalette = async (label: RegExp, query?: string): Promise<void> => {
-  await clickButton(/^Search .+ \(/);
+  await clickButton(/^Search \(/);
   if (query !== undefined) {
     const input = await screen.findByRole('combobox', { name: /search/i });
     fireEvent.change(input, { target: { value: query } });

@@ -271,7 +271,6 @@ export const App = () => {
             <AppTopBar
               mode={arrangement.mode}
               onOpenSpend={openSpend}
-              onOpenImpact={openImpact}
               onOpenScript={openScript}
               openProviderId={settingsProviderId}
             />

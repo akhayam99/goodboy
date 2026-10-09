@@ -49,7 +49,8 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
   });
   const { open: isOpen, close, toggle } = dropdown;
   const worst = worstLimitsChip({ chips: hidden });
-  const label = `${hidden.length} more ${hidden.length === 1 ? 'provider' : 'providers'}`;
+  const noun = hidden.length === 1 ? 'provider' : 'providers';
+  const label = `${hidden.length} more ${noun}`;
 
   return (
     <AnchoredPopover
@@ -73,7 +74,9 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
-          <span>+{hidden.length}</span>
+          <span>
+            +{hidden.length} {noun}
+          </span>
           {worst === null ? null : (
             <TriangleAlert
               size={10}

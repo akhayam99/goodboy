@@ -181,7 +181,7 @@ describe('navigation flow table ratchet', () => {
     });
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     await settle();
-    await clickButton(/^Search .+ \(/);
+    await clickButton(/^Search \(/);
     const sessionGoals = new Set(useAppStore.getState().sessions.map((session) => session.goal));
     const workspaceNames = new Set(useAppStore.getState().workspaces.map((ws) => ws.name));
     const agentNames = new Set(

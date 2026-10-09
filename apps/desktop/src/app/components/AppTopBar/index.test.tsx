@@ -101,11 +101,10 @@ const ATTENTION_SESSION = {
   goal: 'Review the failing checks',
 } as unknown as Session;
 
-const SPEND_LABEL = 'Spent today, counted by Goodboy. Open spend';
+const SPEND_LABEL = 'Spend today. Open Impact';
 
 type BarOverrides = {
   readonly onOpenSpend?: () => void;
-  readonly onOpenImpact?: () => void;
   readonly mode?: 'column' | 'classic';
 };
 
@@ -114,7 +113,6 @@ const renderBar = (overrides: BarOverrides = {}) =>
     <AppTopBar
       mode={overrides.mode ?? 'column'}
       onOpenSpend={overrides.onOpenSpend ?? vi.fn()}
-      onOpenImpact={overrides.onOpenImpact ?? vi.fn()}
       onOpenScript={vi.fn()}
     />,
   );
@@ -140,7 +138,7 @@ describe('AppTopBar', () => {
     window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, spy);
 
     const center = screen.getByRole('button', {
-      name: `Search or ask in Harborline (${shortcutGlyphs('palette.open')})`,
+      name: `Search (${shortcutGlyphs('palette.open')})`,
     });
     fireEvent.click(center);
 
@@ -182,29 +180,28 @@ describe('AppTopBar', () => {
     expect(screen.queryByRole('button', { name: 'Impact' })).toBeNull();
   });
 
-  it('seats Impact as an icon door right before the bell', () => {
-    const onOpenImpact = vi.fn();
-    const { container } = renderBar({ onOpenImpact });
+  it('seats Now, Limits, Spend and the bell in that order, with no Impact icon', () => {
+    hooks.groups = [{ key: 'running', sessions: [ATTENTION_SESSION] }];
+    hooks.rollup = { attentionCount: 0, runningCount: 1, todaySpend: 5.04 };
+    const { container } = renderBar();
     const right = zones(container)[2] as HTMLElement;
-    const impact = screen.getByRole('button', { name: 'Impact' });
+    const now = screen.getByRole('button', { name: /running/ });
+    const spend = screen.getByRole('button', { name: SPEND_LABEL });
+    const bell = screen.getByTestId('notification-center');
+    const follows = (a: Element, b: Element): boolean =>
+      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
-    expect(impact.nextElementSibling).toBe(screen.getByTestId('notification-center'));
-    expect(right.contains(impact)).toBe(true);
-    expect(impact.getAttribute('aria-current')).toBeNull();
-    fireEvent.click(impact);
-    expect(onOpenImpact).toHaveBeenCalledOnce();
+    expect(right.contains(now) && right.contains(spend) && right.contains(bell)).toBe(true);
+    expect(follows(now, spend)).toBe(true);
+    expect(follows(spend, bell)).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Impact' })).toBeNull();
   });
 
-  it('marks Impact current while its studio is open and does nothing on a second press', () => {
-    Object.assign(store, { appStudio: { kind: 'impact', scope: null } });
-    const onOpenImpact = vi.fn();
-    renderBar({ onOpenImpact });
-    const impact = screen.getByRole('button', { name: 'Impact' });
+  it('keeps the theme out of the bar, Settings and the palette change it', () => {
+    renderBar();
 
-    expect(impact.getAttribute('aria-current')).toBe('page');
-    fireEvent.click(impact);
-    expect(onOpenImpact).not.toHaveBeenCalled();
-    Object.assign(store, { appStudio: null });
+    expect(screen.queryByRole('button', { name: /switch to (light|dark)/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /theme/i })).toBeNull();
   });
 
   it('keeps the brand and a workspace gear out of the bar', () => {
@@ -214,12 +211,6 @@ describe('AppTopBar', () => {
     expect(screen.queryByText('Goodboy')).toBeNull();
     expect(screen.queryByRole('button', { name: /^open settings/i })).toBeNull();
     expect(screen.queryByTestId('update-indicator')).toBeNull();
-  });
-
-  it('gives the theme its place in the bar, after the divider and before notifications', () => {
-    renderBar();
-
-    expect(screen.getByRole('button', { name: /switch to (light|dark)/i })).toBeDefined();
   });
 
   it('leaves the now chip out when nothing needs you, and keeps spend', () => {

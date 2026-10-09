@@ -33,7 +33,7 @@ import {
   visible,
 } from './harness';
 
-const ANCHOR = /^Search or ask/;
+const ANCHOR = /^Search \(/;
 
 const focusAnchor = async (): Promise<HTMLElement> => {
   const anchor = await screen.findByRole('button', { name: ANCHOR });

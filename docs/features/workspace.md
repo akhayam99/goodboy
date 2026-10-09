@@ -22,7 +22,7 @@ Keep your repos together as one workspace, and let one session work across sever
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-light.webp" alt="The Harborline workspace settings, Projects 4: Starred ledger-core and payments-api with a one-line description each and the base branch main, then All projects with notify-relay and runbooks, and a note that starred projects come first for agents">
 </picture>
 
-Point agents at the right repo without naming it. Star a project and give it a one-line description: both go into each agent's brief, and starred projects come first in the project pickers. Each repo shows its base branch, **main** here, read from origin.
+Point agents at the right repo without naming it. Star a project and give it a one-line description: both go into each agent's brief, and starred projects come first in the project pickers. In the project list they sit under **Starred**, and the rest under **Other projects**. Each repo shows its base branch, **main** here, read from origin.
 
 ### Worktrees
 

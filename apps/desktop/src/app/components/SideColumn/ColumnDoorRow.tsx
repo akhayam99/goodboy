@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
@@ -34,7 +34,8 @@ export const ColumnDoorRow = ({
       onSelect();
     }}
     className={cn(
-      'group flex h-7 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2 text-row motion-safe:transition-colors',
+      PANE_RHYTHM.navRail.door,
+      'group flex w-full min-w-0 shrink-0 items-center gap-2 rounded-md text-row motion-safe:transition-colors',
       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
       isCurrent
         ? 'cursor-default bg-selected text-foreground'

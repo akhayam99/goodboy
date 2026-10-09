@@ -1,10 +1,11 @@
 import { Bot, FolderOpen, MousePointer2, SquareTerminal } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { BandRow, Button } from '@goodboy/ui';
+import { BandRow, Button, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import type { OtherToolId, OtherToolUsage } from '../../otherTools';
+import { OTHER_TOOL_COLUMN } from './otherToolColumns';
 
 type ToolMeta = {
   readonly name: string;
@@ -33,7 +34,7 @@ export const OtherToolRow = ({ tool, onReveal }: Props) => {
       ? 0
       : Math.max(MIN_BAR_PERCENT, Math.round((tool.goodboyBytes / tool.bytes) * 100));
   return (
-    <BandRow className="grid grid-cols-[28px_minmax(0,1fr)_auto_minmax(0,220px)_auto] gap-3">
+    <BandRow className={cn('grid gap-3', OTHER_TOOL_COLUMN.grid)}>
       <span
         aria-hidden
         className="flex size-7 items-center justify-center rounded-md bg-subtle text-muted-foreground"
@@ -46,7 +47,7 @@ export const OtherToolRow = ({ tool, onReveal }: Props) => {
           {tool.displayPath}
         </span>
       </span>
-      <span className="text-meta tabular-nums text-muted-foreground">
+      <span className={OTHER_TOOL_COLUMN.count}>
         {formatInteger(tool.sessions)} {tool.sessions === 1 ? meta.noun : `${meta.noun}s`}
       </span>
       <span className="flex min-w-0 flex-col gap-1">
@@ -58,9 +59,7 @@ export const OtherToolRow = ({ tool, onReveal }: Props) => {
           <i className="block h-full bg-primary" style={{ width: `${share}%` }} />
         </span>
         <span className="flex min-w-0 items-baseline gap-2">
-          <span className="text-label tabular-nums text-foreground">
-            {formatBytes({ bytes: tool.bytes })}
-          </span>
+          <span className={OTHER_TOOL_COLUMN.size}>{formatBytes({ bytes: tool.bytes })}</span>
           <span className="truncate text-meta text-faint-foreground">
             {formatBytes({ bytes: tool.goodboyBytes })} from Goodboy sessions
           </span>

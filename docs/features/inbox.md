@@ -25,7 +25,7 @@ Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Line
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Inbox listing 10 items from Linear, GitHub, Jira, Sentry and Slack in Today, Yesterday and Older groups, with the View, Type, Source and Project filters and the key hints on the left, and Linear issue CAS-231 open on the right with Launch session and Link to a session">
 </picture>
 
-Work from one list instead of seven tabs. Issues, Slack threads and Sentry errors from your connected tools sit together, grouped by day, next to pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket. Narrow the list by **View**, **Type**, **Source** and **Project**, and move with **j** and **k**. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list.
+Work from one list instead of seven tabs. Issues, Slack threads and Sentry errors from your connected tools sit together, grouped by day, next to pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket. Narrow the list by **View**, **Type**, **Source** and **Project**, and move with **j** and **k**. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list. A row shows its status word only when the list mixes states, so a list of open items does not repeat Open on every row.
 
 ### Find any issue by code or link
 

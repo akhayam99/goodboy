@@ -3,6 +3,7 @@ import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { DayGroup } from '../../../../shared/utils/groupByDay';
 import { integrationLabel } from '../../../integrations/components/IntegrationGlyph';
 import type { InboxProvider, InboxRecord } from '../../types';
+import { hasMixedStates } from './hasMixedStates';
 import { inboxFailureNoticeOf } from './inboxFailureNotice';
 import { InboxRow, inboxOptionId } from './InboxRow';
 
@@ -45,6 +46,7 @@ export const InboxList = ({
   onToggleStar,
 }: Props) => {
   const visibleCount = days.reduce((sum, day) => sum + day.items.length, 0);
+  const isStateShown = hasMixedStates({ records: days.flatMap((day) => day.items) });
   const isShowingSkeleton = isLoading && totalCount === 0;
   const activeOptionId =
     selectedKey != null &&
@@ -151,6 +153,7 @@ export const InboxList = ({
                       onActivate={onActivate}
                       isStarred={starOf?.(record)}
                       onToggleStar={onToggleStar}
+                      isStateShown={isStateShown}
                     />
                   </li>
                 ))}

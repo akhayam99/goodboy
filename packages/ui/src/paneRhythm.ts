@@ -39,6 +39,8 @@ export const PANE_RHYTHM = {
     row: 'px-2 min-h-8',
     rowTwo: 'px-2 py-1 min-h-12',
     nest: 'pl-6',
+    door: 'h-7 px-2',
+    doorGap: 'gap-1',
   },
   board: {
     pad: 'px-6 pb-5',
@@ -54,5 +56,9 @@ export const PANE_RHYTHM = {
   sessionList: {
     pad: 'px-2 py-2',
     cardGap: 'gap-2',
+    rowInset: 'px-2',
+    headerInset: 'pl-4 pr-2',
+    rowGap: 'gap-1',
+    menuTrigger: 'size-7',
   },
 } as const;

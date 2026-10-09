@@ -22,6 +22,7 @@ type Props = {
   readonly isStarred?: boolean;
   readonly onToggleStar?: (record: InboxRecord) => void;
   readonly onActivate?: (record: InboxRecord) => void;
+  readonly isStateShown?: boolean;
 };
 
 type OptionIdParams = {
@@ -38,6 +39,7 @@ const InboxRowView = ({
   isStarred,
   onToggleStar,
   onActivate,
+  isStateShown = true,
 }: Props) => {
   const now = useNow(30_000);
   const relativeTime = formatAge({ from: record.updatedAt, now });
@@ -78,7 +80,10 @@ const InboxRowView = ({
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       className={cn(
-        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_48px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors @2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_48px]',
+        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_48px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors',
+        isStateShown
+          ? '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_48px]'
+          : '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_48px]',
         selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',
       )}
     >
@@ -114,11 +119,13 @@ const InboxRowView = ({
       <span className="pointer-events-none relative hidden truncate text-meta text-faint-foreground @2xl:block">
         {record.context}
       </span>
-      <InboxStateLabel
-        state={record.state}
-        label={record.stateLabel}
-        className="pointer-events-none relative hidden text-meta text-muted-foreground @2xl:flex"
-      />
+      {isStateShown ? (
+        <InboxStateLabel
+          state={record.state}
+          label={record.stateLabel}
+          className="pointer-events-none relative hidden text-meta text-muted-foreground @2xl:flex"
+        />
+      ) : null}
       <span className="relative flex h-5 items-center justify-end">
         {star === undefined ? null : (
           <StarToggle

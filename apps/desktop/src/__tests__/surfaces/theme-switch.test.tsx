@@ -17,7 +17,7 @@ import {
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
-import { ThemeToggle } from '../../app/components/AppTopBar/ThemeToggle';
+import { ThemeSwitchProbe } from '../helpers/ThemeSwitchProbe';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import {
   SETTINGS_WORKSPACE,
@@ -66,7 +66,7 @@ const mountMeasured = async ({ tree }: { readonly tree: ReactNode }): Promise<Co
   render(
     <ToastProvider>
       <Profiler id="toggle" onRender={() => (counts.toggle += 1)}>
-        <ThemeToggle />
+        <ThemeSwitchProbe />
       </Profiler>
       <div data-testid="measured">
         <Profiler id="tree" onRender={() => (counts.tree += 1)}>

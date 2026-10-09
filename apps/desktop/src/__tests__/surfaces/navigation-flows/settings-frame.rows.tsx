@@ -57,7 +57,7 @@ const escape = async (): Promise<void> => {
 };
 
 const pressKey = async (id: ShortcutId): Promise<void> => {
-  const anchor = await screen.findByRole('button', { name: /^Search or ask/ });
+  const anchor = await screen.findByRole('button', { name: /^Search \(/ });
   anchor.focus();
   pressShortcut({ id });
   await settle();

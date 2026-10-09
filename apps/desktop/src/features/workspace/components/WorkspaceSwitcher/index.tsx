@@ -169,11 +169,11 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
             }}
           />
         ) : null}
-        {filtered.length === 0 ? (
+        {filtered.length === 0 && query.trim() !== '' ? (
           <FilledEmptyState
             icon={CONCEPT_ICONS.workspace}
             tone={CONCEPT_TONE.workspace}
-            title="No workspaces"
+            title="No other workspaces match"
           />
         ) : (
           filtered.map((w, i) => (

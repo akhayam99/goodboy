@@ -40,7 +40,7 @@ export const CONTROLS_ROWS: ReadonlyArray<Row> = [
     name: 'top bar: Tab walks the bar from the history arrows to the bell and every control wears the shared focus ring',
     covers: [],
     open: async () => {
-      await screen.findByRole('button', { name: /^Search or ask/ });
+      await screen.findByRole('button', { name: /^Search \(/ });
       await settle();
     },
     lands: async () => {
@@ -52,7 +52,7 @@ export const CONTROLS_ROWS: ReadonlyArray<Row> = [
       };
       const arrows = stops.filter((stop) => stop.hasAttribute('data-nav-arrow'));
       const search = named((stop) =>
-        (stop.getAttribute('aria-label') ?? '').startsWith('Search or ask'),
+        (stop.getAttribute('aria-label') ?? '').startsWith('Search ('),
       );
       const bell = named((stop) =>
         (stop.getAttribute('aria-label') ?? '').startsWith('Notifications'),

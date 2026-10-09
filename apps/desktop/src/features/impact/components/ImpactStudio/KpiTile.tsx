@@ -39,6 +39,7 @@ export const KpiTile = ({ label, value, delta, title, hint, onSelect }: Props) =
         value={value}
         {...(status !== undefined && { status })}
         {...(hint !== undefined && { hint })}
+        reservesDeltaRow
         onClick={onSelect}
         className="w-full"
       />

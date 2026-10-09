@@ -57,13 +57,16 @@ export const compactTrail = ({
     return leadWidth + segments + separators + (hasFold ? ellipsisWidth : 0);
   };
 
-  for (let index = 0; index <= lastAncestor; index += 1) {
-    if (total() <= available) {
-      return states;
-    }
+  const shrink = (index: number) => {
     if (states[index] === 'full' && canShrink(index)) {
       states[index] = 'icon';
     }
+  };
+  for (let index = 1; index <= lastAncestor; index += 1) {
+    if (total() <= available) {
+      return states;
+    }
+    shrink(index);
   }
   for (let index = 1; index <= lastAncestor; index += 1) {
     if (total() <= available) {
@@ -72,6 +75,9 @@ export const compactTrail = ({
     if (canShrink(index)) {
       states[index] = 'folded';
     }
+  }
+  if (total() > available) {
+    shrink(0);
   }
   return states;
 };

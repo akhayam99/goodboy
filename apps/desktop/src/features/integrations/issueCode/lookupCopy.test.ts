@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { InboxRecord } from '../../inbox/types';
-import { lookupHitSecondLine } from './lookupCopy';
+import { ISSUE_SEARCH_PLACEHOLDER, lookupHitSecondLine } from './lookupCopy';
 
 const record = (patch: Partial<InboxRecord>): InboxRecord => ({
   key: 'linear:issue:1',
@@ -63,5 +63,9 @@ describe('lookupHitSecondLine', () => {
       payload: { provider: 'github', kind: 'issue', sessionId: null, issue: {} as never },
     });
     expect(lookupHitSecondLine(githubRecord)).toBe('ledger-core');
+  });
+
+  it('keeps the search placeholder to two short ideas', () => {
+    expect(ISSUE_SEARCH_PLACEHOLDER).toBe('Search or paste a link');
   });
 });

@@ -10,7 +10,6 @@
   "apps/desktop/src/app/components/AppTopBar/LimitsStrip/index.test.tsx": 5,
   "apps/desktop/src/app/components/AppTopBar/NavCluster/index.test.tsx": 5,
   "apps/desktop/src/app/components/AppTopBar/NowChip/index.test.tsx": 2,
-  "apps/desktop/src/app/components/AppTopBar/ThemeToggle/index.test.tsx": 3,
   "apps/desktop/src/app/components/StudioFrame/index.test.tsx": 1,
   "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/index.test.tsx": 2,
   "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactScoutList.test.tsx": 2,

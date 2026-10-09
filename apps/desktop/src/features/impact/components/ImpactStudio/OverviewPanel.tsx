@@ -1,20 +1,13 @@
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import {
-  Button,
-  EmptyState,
-  ErrorStrip,
-  PanelLoading,
-  SectionHeader,
-  PaneShell,
-} from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { ErrorStrip, PanelLoading, SectionHeader, PaneShell } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { ImpactTab } from '../../lib';
 import { formatHours } from '../../utils/formatHours';
 import { impactDelta } from '../../utils/impactDelta';
 import { shippedSessions } from '../../utils/shippedSessions';
 import { KpiTile } from './KpiTile';
+import { OverviewEmpty } from './OverviewEmpty';
 import { ShippedSessionRows } from './ShippedSessionRows';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
@@ -86,19 +79,7 @@ export const OverviewPanel = ({
       <ErrorStrip label="review outcomes" error={reviews.error} onRetry={onRetryShipped} />
       {isLoading && data === null ? <PanelLoading label="Loading impact metrics" /> : null}
       {data !== null && data.sessionCount === 0 ? (
-        <EmptyState
-          icon={CONCEPT_ICONS.impact}
-          tone={CONCEPT_TONE.impact}
-          title="Impact fills in as sessions finish"
-          action={
-            <Button variant="secondary" size="sm" onClick={onStartSession}>
-              Start a session
-            </Button>
-          }
-          bordered
-          size="lg"
-          headingLevel={2}
-        />
+        <OverviewEmpty onStartSession={onStartSession} />
       ) : null}
       {data !== null && data.sessionCount > 0 ? (
         <>

@@ -41,6 +41,9 @@ const DOORS: ReadonlyArray<Door> = [
 
 const ARRANGEMENTS: ReadonlyArray<Bars> = ['column', 'classic'];
 
+const doorsOf = ({ bars }: { readonly bars: Bars }): ReadonlyArray<Door> =>
+  DOORS.filter((door) => bars === 'classic' || door.kind !== 'impact');
+
 const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
   const found = Array.from(
     document.querySelectorAll<HTMLElement>('[data-nav-cluster] button'),
@@ -109,7 +112,11 @@ const currentMarks = (): ReadonlyArray<string> => {
 };
 
 const openDoor = async ({ door, bars }: { readonly door: Door; readonly bars: Bars }) => {
-  if (bars === 'column' && door.name !== 'Impact') {
+  if (bars === 'column' && door.kind === 'impact') {
+    await clickButton(/^Spend today/);
+    return;
+  }
+  if (bars === 'column') {
     const id = door.kind === 'workflow' ? 'workflows' : door.kind;
     const control = document.querySelector<HTMLElement>(
       `[data-side-column] [data-column-door="${id}"]`,
@@ -182,7 +189,7 @@ describe('doors replace the open studio and content links stack', () => {
     await openDoor({ door: { name: 'Inbox', kind: 'inbox' }, bars: 'column' });
     const withOneStudio = stack()?.entries.length ?? 0;
     await openDoor({ door: { name: 'Workflows', kind: 'workflow' }, bars: 'column' });
-    await clickButton('Impact');
+    await clickButton(/^Spend today/);
     await openDoor({ door: { name: 'Chat', kind: 'chat' }, bars: 'column' });
 
     expect(appStudioKind()).toBe('chat');
@@ -216,7 +223,7 @@ describe('doors replace the open studio and content links stack', () => {
 });
 
 describe.each(ARRANGEMENTS)('exactly one door in the frame is marked current, %s', (bars) => {
-  it.each(DOORS.map((door) => [door.name, door] as const))(
+  it.each(doorsOf({ bars }).map((door) => [door.name, door] as const))(
     'marks only %s while its studio is open',
     async (_name, door) => {
       await boot({ seed: 'pr', bars });
@@ -239,7 +246,7 @@ describe.each(ARRANGEMENTS)('exactly one door in the frame is marked current, %s
   it('marks one door at a time while the doors replace each other', async () => {
     await boot({ seed: 'pr', bars });
 
-    for (const door of DOORS.filter(
+    for (const door of doorsOf({ bars }).filter(
       (candidate) => bars === 'classic' || candidate.kind !== 'settings',
     )) {
       await openDoor({ door, bars });

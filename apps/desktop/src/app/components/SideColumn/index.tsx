@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { SessionNavSidebar } from '../../../features/session/components/SessionNavSidebar';
@@ -61,13 +61,13 @@ export const SideColumn = ({
         </div>
         {scope === 'workspace' && workspaceId !== null ? (
           <>
-            <div className="flex shrink-0 flex-col gap-0.5 px-2">
+            <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
               <NewSessionRow
                 workspaceId={workspaceId}
                 isCurrent={place === 'new'}
                 {...(onNavigate !== undefined && { onNavigate })}
               />
-              <div className="flex flex-col gap-0.5 pt-1">
+              <div className={cn('flex flex-col pt-1', PANE_RHYTHM.navRail.doorGap)}>
                 {COLUMN_DOORS.map((door) => (
                   <ColumnDoorRow
                     key={door.id}

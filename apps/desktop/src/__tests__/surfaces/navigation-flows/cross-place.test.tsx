@@ -66,7 +66,7 @@ const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
 };
 
 const press = async (id: ShortcutId): Promise<void> => {
-  const anchor = await screen.findByRole('button', { name: /^Search or ask/ });
+  const anchor = await screen.findByRole('button', { name: /^Search \(/ });
   anchor.focus();
   pressShortcut({ id });
   await settle();
@@ -514,7 +514,7 @@ describe('moving across every place keeps one frame', () => {
         [() => door('inbox'), 'inbox'],
         [() => door('chat'), 'chat'],
         [() => door('workflows'), 'workflow'],
-        [() => screen.getByRole('button', { name: 'Impact' }), 'impact'],
+        [() => screen.getByRole('button', { name: /^Spend today/ }), 'impact'],
       ];
       for (const [control, kind] of doors) {
         await click(control());

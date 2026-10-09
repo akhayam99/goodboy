@@ -9,14 +9,15 @@ export const CommandCenter = () => {
   const workspace = useCurrentWorkspace();
   const glyph = shortcutGlyphs('palette.open');
   const place = workspace?.name ?? 'Goodboy';
-  const label = `Search or ask in ${place} (${glyph})`;
+  const label = `Search (${glyph})`;
+  const tooltip = `Search ${place} (${glyph})`;
 
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent(OPEN_COMMAND_PALETTE_EVENT))}
       aria-label={label}
-      title={label}
+      title={tooltip}
       className={cn(
         TOP_BAR_CONTROL.height,
         TOP_BAR_CONTROL.radius,
@@ -26,8 +27,7 @@ export const CommandCenter = () => {
     >
       <Search size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="hidden min-w-0 flex-1 truncate text-left @min-chrome-labels/topbar:inline">
-        Search or ask
-        <span className="hidden @min-chrome-wide/topbar:inline"> in {place}</span>
+        Search
       </span>
       <Kbd look="inline" aria-hidden className="shrink-0">
         {glyph}

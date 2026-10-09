@@ -172,7 +172,7 @@ describe('controls hints', () => {
 
     const row = rowOf('Ask and Search side by side');
     const ask = within(row).getByTestId('ask-trail-button');
-    const search = within(row).getByRole('button', { name: /^Search or ask in/ });
+    const search = within(row).getByRole('button', { name: /^Search \(/ });
     expect(ask.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');
     expect(search.querySelector('kbd')?.getAttribute('data-look')).toBe('inline');
     expect(ask.querySelector('kbd')?.textContent).toBe(shortcutGlyphs('ask.open'));

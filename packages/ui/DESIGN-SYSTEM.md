@@ -179,6 +179,19 @@ half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
 row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px). A session
 row in the left column is 28px, and so are the pages nested under it.
 
+The Sessions block shares one left edge and one gap. The `Sessions` eyebrow
+(`sessionList.headerInset`, 16px), the door icons (`navRail.inset` plus
+`navRail.door`) and the session row icons (`sessionList.pad` plus
+`sessionList.rowInset`) all start at 16px, and the doors and the session rows
+share one vertical gap (`navRail.doorGap` equals `sessionList.rowGap`). The view
+menu trigger is a 28px target (`sessionList.menuTrigger`). `paneRhythm.test.ts`
+holds the three edges and the gap.
+
+A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
+the bottom of the card with `mt-auto`, and puts the delta and the hint on their
+own row under the figure, never beside the label. A row of cards that carry
+deltas passes `reservesDeltaRow` so the figures sit on one baseline.
+
 The `html` root stays 15px while any `rem` remains. `body` and `#root` are
 14/20, so text with no class lands on the body role instead of 15/23.25.
 
@@ -1027,10 +1040,16 @@ One ladder of control heights runs through every register: **24** (`xs`),
 | `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`. The Legacy layout row keeps its state word on purpose.                                                                                                                                                       |
 
 A bar has one control height. Every control in the top bar is 28 and
-`rounded-md`: the history arrows, Board, Chat, the command centre, Theme,
-Impact, the bell, Spend, the Limits chips and the Now chip all take
+`rounded-md`: the history arrows, Board, Chat, the command centre, the bell,
+Spend, the Limits chips and the Now chip all take
 `TOP_BAR_CONTROL` (height `h-7`, square `size-7`, radius `rounded-md`) and
-`FOCUS_RING`. The bar container stays `h-9`. The bell's count badge sits 2px
+`FOCUS_RING`. The bar container stays `h-9`. The right cluster reads Now, Limits,
+Spend, the bell, and Spend is the one door to Impact (`Spend today. Open
+Impact`): there is no Impact icon and no theme toggle in the bar. The command
+centre says `Search` with its chord as bare text; the workspace name lives in its
+tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
+number. The trail keeps the first crumb's word until every other ancestor has
+shrunk to an icon and folded (`compactTrail`). The bell's count badge sits 2px
 inside the bell's box. The session trail band keeps its 24 controls, and trail,
 rail and tree-row buttons are 24.
 
@@ -1267,7 +1286,7 @@ what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surface
 | foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                       |
 | rail button | a size-8 icon button with the word and shortcut in a right-side `Tooltip`                              |
 
-Rows sit 2px apart (`gap-0.5`); the doors start 4px under New session. The
+Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
 column swaps its content only for Settings, as two layers in place that
 cross-fade (opacity and a 6px slide, 160ms, `motion-safe` only); the hidden
 layer is `inert`. Settings takes the column in both sidebar states: over the
@@ -1928,9 +1947,9 @@ A theme switch is one paint, a class swap on `<html>` and nothing else:
 `applyDocumentTheme` writes the `light` or `dark` class, `data-theme` and
 `color-scheme` once each in a single task, and the CSS variables repaint the
 page in that frame. There is no React state for it (the zustand store keeps
-only the preference, set in the same call, so the toggle, the Settings field
+only the preference, set in the same call, so the palette, the Settings field
 and the footer chip commit once together). Every route into a switch (the
-toggle, Settings, the palette, the system, another window) goes through that
+palette, Settings, the system, another window) goes through that
 one function, and it writes nothing when the resolved theme is already
 applied. `html[data-theme-switching]` turns every element transition off from
 before the swap until two painted frames later (a timer guards a window that
@@ -1944,10 +1963,8 @@ against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames
 with a 500ms freeze on a large diff, against 80 frames with the swap alone),
 and a window that repaints for a fade reads as the UI flickering, worst on
 the busiest pages. A circular reveal and a cross-fade were both tried and
-dropped for that reason. The toggle icon alone turns in (`theme-icon-in`,
-420ms, transform and opacity only) when its sun or moon swaps. The few things
-that paint with JS colors (the xterm terminal, the changelog image, the theme
-toggle icon) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
+dropped for that reason. The few things
+that paint with JS colors (the xterm terminal, the changelog image) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 
 - `spin-border`: working, on an element whose own edge carries the signal

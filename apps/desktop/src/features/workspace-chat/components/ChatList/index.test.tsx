@@ -45,6 +45,7 @@ import {
   seedChats,
   type ChatSeed,
 } from '../../../../__tests__/helpers/chatListFixtures';
+import userEvent from '@testing-library/user-event';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -54,6 +55,7 @@ import {
 } from '../../../../store/storyHarness';
 import type { ChatBackend } from '../../chatBackend';
 import { chatModelLabel } from '../../chatModelLabel';
+import { ageTokenOf } from './ageToken';
 import { ChatList } from './index';
 
 vi.useFakeTimers({ toFake: ['Date'] });
@@ -163,7 +165,41 @@ describe('ChatList', () => {
     await renderList();
 
     expect(rowOf('lunch').getAttribute('data-idle')).toBe('true');
-    expect(rowOf('lunch').textContent).toContain('idle 9d');
+    expect(rowOf('lunch').textContent?.replaceAll('\u00a0', ' ')).toContain('idle 9d');
+  });
+
+  it('keeps the age in one non-wrapping token', async () => {
+    await renderList();
+
+    const age = within(rowOf('lunch')).getByText('idle 9d');
+    expect(age.textContent).toBe('idle\u00a09d');
+    expect(age.textContent?.includes(' ')).toBe(false);
+    expect(ageTokenOf({ time: 'idle 14d' })).toBe('idle\u00a014d');
+    expect(ageTokenOf({ time: '09:41' })).toBe('09:41');
+  });
+
+  it('keeps the delete button out of the row at rest and shows it on hover and focus', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    await renderList();
+    const row = rowOf('lunch');
+    const deleteName = 'Delete Lunch ideas near the office';
+
+    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
+
+    await user.hover(row);
+    expect(within(row).getByRole('button', { name: deleteName })).toBeDefined();
+
+    await user.unhover(row);
+    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
+
+    const opener = within(row).getByRole('button', { name: 'Lunch ideas near the office' });
+    act(() => opener.focus());
+    const reached = within(row).getByRole('button', { name: deleteName });
+    expect(reached.tabIndex).not.toBe(-1);
+    act(() => reached.focus());
+    expect(document.activeElement).toBe(reached);
+    act(() => reached.blur());
+    expect(within(row).queryByRole('button', { name: deleteName })).toBeNull();
   });
 
   it('archives the idle chats with an undo', async () => {

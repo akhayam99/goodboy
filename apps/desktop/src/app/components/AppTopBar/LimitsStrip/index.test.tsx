@@ -210,6 +210,12 @@ describe('LimitsStrip', () => {
     expect(buttons[1]?.className).toContain('@min-chrome-labels/topbar:flex');
     expect(screen.getByRole('button', { name: '3 more providers' })).toBeTruthy();
     expect(screen.getAllByRole('button', { name: '2 more providers' })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: '3 more providers' }).textContent).toBe(
+      '+3 providers',
+    );
+    screen.getAllByRole('button', { name: '2 more providers' }).forEach((chip) => {
+      expect(chip.textContent).toBe('+2 providers');
+    });
     expect(screen.queryByRole('button', { name: '0 more providers' })).toBeNull();
   });
 
@@ -233,6 +239,7 @@ describe('LimitsStrip', () => {
     render(<LimitsStrip />);
 
     const overflow = screen.getByRole('button', { name: '1 more provider' });
+    expect(overflow.textContent).toBe('+1 provider');
     expect(overflow.querySelector('svg')?.getAttribute('class')).toContain('text-danger');
     fireEvent.click(overflow);
     expect(screen.getByRole('list', { name: 'More provider limits' }).textContent).toContain(

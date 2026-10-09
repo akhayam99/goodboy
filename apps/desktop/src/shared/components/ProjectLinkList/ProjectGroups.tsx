@@ -90,7 +90,7 @@ export const ProjectGroups = ({
       {groups.all.length > 0 ? (
         <div className="flex flex-col">
           <div className="flex items-center gap-2 px-2 py-1">
-            <Eyebrow label="All projects" />
+            <Eyebrow label={groups.starred.length > 0 ? 'Other projects' : 'All projects'} />
             <span className="tabular-nums text-eyebrow text-foreground">{groups.all.length}</span>
           </div>
           <ul className="flex flex-col">{visibleAll.map(row)}</ul>

@@ -86,11 +86,10 @@ describe('PaletteOverlay, the commands mode', () => {
       'Speed up the payout export for large merchants',
     );
     expect(screen.getByText('For this session')).toBeDefined();
-    expect(optionNames().slice(0, 3)).toEqual([
-      'Message Stream the export instead of building it in memory',
-      'Open Files',
-      'Open Terminal',
-    ]);
+    expect(optionNames()[0]).toBe('Open Files');
+    expect(optionNames()[0]).not.toMatch(/^Message /);
+    expect(optionNames()[1]).toBe('Message Stream the export instead of building it in memory');
+    expect(selectedName()).toBe('Open Files');
     expect(optionNames()).toContain('All actions for this session');
     expect(optionNames()).not.toContain('Delete…');
   });
