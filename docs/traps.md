@@ -168,18 +168,24 @@ file holds those explanations. Everything below has been "fixed" at least once a
   later turn of the same agent without a copy (an operator message) runs on
   the real branch with the lease. `resolve_session_settings` is no longer
   read; the parallel limit it held is gone.
-- `RoutingPicker.onModel(model)` carries only the model string, not the
-  provider picked in the picker. A consumer that rebuilds a provider-model
-  pair from values captured by an earlier render can save the old provider
-  with the new model. Every `onModel` consumer keeps the provider in current
-  state or a ref. Nobody has ever widened the contract to close this. The same
-  stale-pairing bug was fixed at the call site instead, separately, at least
-  twice
-  (the old role row and `TaskModelRow`, then the old step library form and
-  `OrchestratorRoutingRow` in #1307). Each time the fix tracked the provider in
-  a ref instead of adding a provider parameter to `onModel`. This matters for
-  more than passing UI state when the consumer persists the pair, as
-  `step_def_upsert` does into the SQLite `step_library` table.
+- `RoutingPicker.onChange(route)` carries the whole route (provider, model and
+  effort) in one call. It used to be three callbacks fired in one event, and a
+  mount that built the second patch from
+  props captured by the render before the first wrote the old provider back:
+  picking Cursor then Opus 5.5 on a workflow step left the step on its old
+  provider. The same bug was patched at the call site again and again with
+  refs and microtask queues (#1307 and others) before the contract changed. A
+  mount applies the route in one patch. It never splits it back into a
+  provider write and a model write, never reads the provider from a ref, and
+  never infers the provider from the model id (`getModelProvider` answers for
+  one provider when several share an id). This matters most when the consumer
+  persists the pair, as `step_def_upsert` does into the SQLite `step_library`
+  table. The route's effort is already clamped to the model it names, and the
+  `effort` a mount hands the picker is the value the user saw. Neither is the
+  effort the mount stored. A mount that asks "did the pick change the effort"
+  compares with the stored or requested effort. Comparing with the clamped one
+  calls a pick unchanged when only the clamp hid the difference: a saved Max
+  shown as High on Sonnet stayed Max on the Opus the user picked.
 - A push count never reads `@{upstream}` or the `branch.ab` line of `git
 status` directly. A branch cut from a remote-tracking ref (`worktree add -b
 <b> <path> origin/main`) tracks that ref under git's default

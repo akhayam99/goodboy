@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from '../../agentSpawnConfigValue';
 
@@ -22,6 +23,7 @@ const h = vi.hoisted(() => ({
   providers: [
     { id: 'anthropic', connection: 'connected' },
     { id: 'codex', connection: 'connected' },
+    { id: 'cursor', connection: 'connected' },
   ] satisfies Store['providers'],
 }));
 
@@ -34,7 +36,44 @@ import { AgentSpawnConfig } from './index';
 
 afterEach(cleanup);
 
+type HostProps = {
+  readonly onValue: (value: AgentSpawnConfigValue) => void;
+};
+
+const Host = ({ onValue }: HostProps) => {
+  const [value, setValue] = useState(DEFAULT_CONFIG);
+  onValue(value);
+  return <AgentSpawnConfig value={value} onChange={setValue} disabled={false} />;
+};
+
 describe('AgentSpawnConfig', () => {
+  it('keeps the provider, model and effort picked in one move when the parent owns the value', () => {
+    let value = DEFAULT_CONFIG;
+    render(<Host onValue={(next) => (value = next)} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Cursor/ }));
+    expect(value.provider).toBe('cursor');
+    const model = within(screen.getByRole('group', { name: 'Model' }));
+    fireEvent.click(model.getByRole('button', { name: 'Opus' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Version' })).getByRole('button', { name: '5.5' }),
+    );
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Effort' })).getByRole('button', { name: 'Medium' }),
+    );
+    expect(value).toMatchObject({
+      provider: 'cursor',
+      model: 'claude-opus-5-5-medium',
+      effort: 'medium',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Codex/ }));
+    expect(value.provider).toBe('codex');
+    fireEvent.click(screen.getByRole('button', { name: /^Claude/ }));
+    expect(value.provider).toBe('anthropic');
+  });
+
   it('routes provider, model, effort and hint through one picker', () => {
     const onChange = vi.fn<(value: AgentSpawnConfigValue) => void>();
     const view = render(

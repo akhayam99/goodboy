@@ -10,14 +10,7 @@ import { BuilderTitleField } from '../../WorkflowBuilderView/parts/BuilderTitleF
 import { GoalField } from '../../WorkflowBuilderView/parts/GoalField';
 import { PlanDraftingBanner } from '../../WorkflowBuilderView/parts/PlanDraftingBanner';
 import type { StepDraft } from '../../../engine';
-import {
-  addStep,
-  blankStepDraft,
-  duplicateStep,
-  reorderSteps,
-  stepDraftWithModel,
-  updateStep,
-} from '../../../engine';
+import { addStep, blankStepDraft, duplicateStep, reorderSteps, updateStep } from '../../../engine';
 import { useSaveAsStep } from '../../../hooks/useSaveAsStep';
 import { useSavedSteps } from '../../../hooks/useSavedSteps';
 import { useWorkflowDrag } from '../../../../../shared/hooks/useWorkflowDrag';
@@ -289,19 +282,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
                   onRole={(role) => patchStep(step.key, { role })}
                   onPrompt={(prompt) => patchStep(step.key, { prompt })}
                   onExpectedOutput={(expectedOutput) => patchStep(step.key, { expectedOutput })}
-                  onProvider={(provider) => patchStep(step.key, { provider })}
-                  onModel={(model) =>
-                    patchStep(
-                      step.key,
-                      stepDraftWithModel({
-                        step,
-                        provider: step.provider,
-                        model,
-                        recommendedModel: recommendedModel(step),
-                      }),
-                    )
-                  }
-                  onEffort={(next) => patchStep(step.key, { effort: next })}
+                  onRoute={(route) => patchStep(step.key, route)}
                   onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
                   onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
                   onPin={() =>

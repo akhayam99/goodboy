@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { getModelProvider } from '@goodboy/core';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -81,22 +80,13 @@ export const FallbackRow = ({
           recommendationKind="auto"
           overridden={fallback != null}
           disabled={disabled}
-          onProvider={(next) => {
-            if (next === '') {
+          onChange={(route) => {
+            if (route.provider === '') {
               onFallback(null);
               return;
             }
-            setPendingProvider(next);
-          }}
-          onModel={(nextModel) => {
-            if (nextModel === '') {
-              onFallback(null);
-              return;
-            }
-            onFallback({
-              providerId: getModelProvider(nextModel) ?? pendingProvider,
-              model: nextModel,
-            });
+            setPendingProvider(route.provider);
+            onFallback({ providerId: route.provider, model: route.model });
           }}
         />
       ) : null}

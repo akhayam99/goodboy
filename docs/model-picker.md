@@ -121,10 +121,32 @@ not in the UI. For example, it clamps an effort the chosen combination cannot
 serve, or adds a flag only one provider needs. A clamp is reported back, so the
 surface can say what it did instead of quietly changing the user's choice.
 
+A pick reaches its mount as one `onChange(route)`, where the route is
+`{ provider, model, effort }` (`PickedRoute`). The provider is always the one
+the pick was made under, the model is its CLI id, and the effort is already
+clamped to what that model serves. Picking Auto hands over
+`{ provider: '', model: '', effort }`. A mount applies the route in one patch
+and never builds a change from the pick plus props it captured earlier, so
+there is nothing to keep in a ref and no way to save the old provider with the
+new model. A mount that stores an optional effort asks `savedRouteEffort`,
+which keeps an unset effort unset until the pick changes it and drops it for a
+model with no effort ladder. It compares the pick with the effort that was
+requested, never with the clamped value the picker showed: a saved Max shows as
+High on Sonnet, so comparing with High would call a pick of Opus unchanged and
+leave Max to run on it.
+
 Going the other way, an id resolves from the catalog descriptor only when it is
 a catalog key. Raw CLI ids and provider slugs keep their regex parsing.
 Transcripts store what the provider echoed, and those strings carry effort
 suffixes that the catalog key does not.
+
+`onChange` fires on every click, the provider chips included, and a mount treats
+each route as the new draft. A mount where a pick does something that the next
+pick cannot undo, such as appending a model to a set, never acts in `onChange`.
+It passes `commit` (`{ label, onCommit }`) and the picker renders one button,
+disabled while Auto is in view, that hands over the route in view once. The role
+model set in Defaults does this: choosing Opus and then its version is one
+choice, so it adds one model.
 
 ## Max Mode
 

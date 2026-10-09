@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import {
   PROVIDER_CAPABILITIES,
   modelIdForSelection,
@@ -8,6 +7,7 @@ import {
 import { resolveLimitedTaskModel } from '../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { savedRouteEffort } from '../../../../../shared/components/RoutingPicker/savedRouteEffort';
 import { AUTO_RECOMMENDATION_COPY } from '../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { autoLimitReason } from '../../../../../shared/components/RoutingPicker/autoLimitReason';
 import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
@@ -73,9 +73,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
       ? run.orchestratorRouting
       : null;
-  const preferredProviderId = pinned?.providerId ?? automatic.providerId;
-  const [providerId, setProviderId] = useState<ProviderId>(preferredProviderId);
-  const pendingProvider = useRef<ProviderId>(preferredProviderId);
+  const providerId = pinned?.providerId ?? automatic.providerId;
   const model = pinned?.model ?? '';
   const routingFor = ({ provider }: ProviderRoutingParams) =>
     provider === automatic.providerId
@@ -92,26 +90,17 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     provider: providerId,
     model: model === '' ? recommendedModel : model,
   });
-  const pendingModel = useRef<string>(effortModel);
   const effortValue = pinned?.effort ?? automatic.effort ?? DEFAULT_EFFORT;
+  const shownEffort =
+    clampEffortForModel({ model: effortModel, effort: effortValue, provider: providerId }) ??
+    effortValue;
   const connectedProviders = providers
     .filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id)
     .filter((candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0);
 
-  useEffect(() => {
-    setProviderId(preferredProviderId);
-    pendingProvider.current = preferredProviderId;
-  }, [preferredProviderId]);
-
-  useEffect(() => {
-    pendingModel.current = effortModel;
-  }, [effortModel]);
-
   const apply = ({ providerId: nextProvider, model: nextModel, effort }: ApplyParams) => {
     const resolved = providerModelId({ provider: nextProvider, model: nextModel });
-    pendingProvider.current = nextProvider;
-    pendingModel.current = resolved;
     void setWorkflowOrchestratorRouting(sessionId, run.id, {
       providerId: nextProvider,
       model: resolved,
@@ -130,28 +119,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
         connectedProviders={connectedProviders}
         provider={providerId}
         model={model}
-        effort={{
-          editable: true,
-          value:
-            clampEffortForModel({
-              model: effortModel,
-              effort: effortValue,
-              provider: providerId,
-            }) ?? effortValue,
-          onChange: (effort) => {
-            const nextModel = pendingModel.current;
-            const applied = clampEffortForModel({
-              model: nextModel,
-              effort,
-              provider: pendingProvider.current,
-            });
-            apply({
-              providerId: pendingProvider.current,
-              model: nextModel,
-              ...(applied != null && { effort: applied }),
-            });
-          },
-        }}
+        effort={{ editable: true, value: shownEffort }}
         recommendation={{
           provider: automatic.providerId,
           model: automatic.model,
@@ -168,34 +136,19 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
         defaultSummary={`${automatic.providerId} ${automatic.model}`}
         onReset={() => void setWorkflowOrchestratorRouting(sessionId, run.id, null)}
         hasTriggerReset={false}
-        onProvider={(next) => {
-          if (next === '') {
+        onChange={(route) => {
+          if (route.provider === '') {
             return;
           }
-          setProviderId(next);
-          pendingProvider.current = next;
-          if (pinned == null) {
-            return;
-          }
-          apply(routingFor({ provider: next }));
-        }}
-        onModel={(nextModel) => {
-          if (nextModel === '') {
-            void setWorkflowOrchestratorRouting(sessionId, run.id, null);
-            return;
-          }
-          const carried =
-            pinned?.effort == null
-              ? null
-              : clampEffortForModel({
-                  model: nextModel,
-                  effort: pinned.effort,
-                  provider: pendingProvider.current,
-                });
+          const effort = savedRouteEffort({
+            route,
+            requested: effortValue,
+            wasSaved: pinned?.effort != null,
+          });
           apply({
-            providerId: pendingProvider.current,
-            model: nextModel,
-            ...(carried != null && { effort: carried }),
+            providerId: route.provider,
+            model: route.model,
+            ...(effort != null && { effort }),
           });
         }}
       />

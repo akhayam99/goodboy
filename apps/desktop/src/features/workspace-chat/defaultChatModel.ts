@@ -23,7 +23,7 @@ type ProviderParams = {
   readonly hidden?: HiddenModels | null;
 };
 
-export const chatModelOf = ({ provider, hidden = null }: ProviderParams): ModelKey | null => {
+const chatModelOf = ({ provider, hidden = null }: ProviderParams): ModelKey | null => {
   if (!isChatProvider(provider)) {
     return null;
   }

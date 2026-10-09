@@ -7,7 +7,7 @@ import { StepEditor } from '../StepTree/StepEditor';
 import { usePolish } from '../../hooks/usePolish';
 import { useProsePolishDeps } from '../../hooks/useProsePolishDeps';
 import { stepPolishFields } from '../../stepPolishFields';
-import { addStep, stepDraftWithModel, type StepDraft } from '../../engine';
+import { addStep, type StepDraft } from '../../engine';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
@@ -124,18 +124,7 @@ export const RunStepDraft = ({
         onRole={(value) => patch({ role: value })}
         onPrompt={(value) => patch({ prompt: value })}
         onExpectedOutput={(value) => patch({ expectedOutput: value })}
-        onProvider={(value) => patch({ provider: value })}
-        onModel={(value) =>
-          patch(
-            stepDraftWithModel({
-              step: draft,
-              provider: draft.provider,
-              model: value,
-              recommendedModel,
-            }),
-          )
-        }
-        onEffort={(value) => patch({ effort: value })}
+        onRoute={patch}
         onVerbosity={(value) => patch({ verbosity: value })}
         onRoutingReset={() => patch({ provider: '', model: '' })}
         onPin={() => patch({ provider: resolvedProvider, model: recommendedModel })}

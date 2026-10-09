@@ -2,8 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { AgentId, PlanId, ProviderId, SessionId, TurnState } from '@goodboy/types';
-import { clampEffortForModel, extractHandoff, getDefaultTurnModel } from '@goodboy/core';
+import type { AgentId, PlanId, SessionId, TurnState } from '@goodboy/types';
+import { extractHandoff } from '@goodboy/core';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import {
   AGENT_KIND_META,
@@ -94,18 +94,6 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     sessionNudge.agentId === sourceAgentId &&
     sessionNudge.targetKind === handoff.kind;
   const routing = pickedRouting ?? defaultRouting;
-
-  const onProvider = (provider: ProviderId | '') => {
-    if (provider === '') {
-      return;
-    }
-    const model = getDefaultTurnModel({ id: provider });
-    setPickedRouting({
-      provider,
-      model,
-      effort: clampEffortForModel({ model, effort: routing.effort, provider }) ?? routing.effort,
-    });
-  };
 
   const onSpawn = () => {
     if (pendingRef.current) {
@@ -198,25 +186,14 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
             connectedProviders={connectedProviders}
             provider={routing.provider}
             model={routing.model}
-            effort={{
-              editable: true,
-              value: routing.effort,
-              onChange: (effort) => setPickedRouting({ ...routing, effort }),
-            }}
+            effort={{ editable: true, value: routing.effort }}
             disabled={isPending}
-            onProvider={onProvider}
-            onModel={(model) =>
-              setPickedRouting({
-                ...routing,
-                model,
-                effort:
-                  clampEffortForModel({
-                    model,
-                    effort: routing.effort,
-                    provider: routing.provider,
-                  }) ?? routing.effort,
-              })
-            }
+            onChange={(route) => {
+              if (route.provider === '') {
+                return;
+              }
+              setPickedRouting({ ...routing, ...route, provider: route.provider });
+            }}
           />
         ) : (
           <>

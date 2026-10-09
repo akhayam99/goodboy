@@ -46,8 +46,8 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     model,
     effort,
     recommendation,
-    onProvider,
-    onModel,
+    onChange,
+    commit,
     onReset,
     overridden,
     footer,
@@ -55,55 +55,75 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     ariaLabel: string;
     provider: string;
     model: string;
-    effort: { editable: boolean; value?: string; onChange?: (level: string) => void };
+    effort: { editable: boolean; value?: string };
     recommendation?: { provider?: string; model?: string };
-    onProvider: (provider: string) => void;
-    onModel: (model: string) => void;
+    onChange: (route: { provider: string; model: string; effort: string }) => void;
+    commit?: {
+      label: string;
+      onCommit: (route: { provider: string; model: string; effort: string }) => void;
+    };
     onReset?: () => void;
     overridden?: boolean;
     footer?: ReactNode;
-  }) => (
-    <>
-      <button
-        type="button"
-        aria-label={`${ariaLabel} provider`}
-        onClick={() => onProvider('cursor')}
-      >
-        {provider}
-      </button>
-      <button
-        type="button"
-        aria-label={`${ariaLabel} model`}
-        onClick={() => onModel('claude-sonnet-4-6')}
-      >
-        {model === '' ? (recommendation?.model ?? '') : model}
-      </button>
-      <button type="button" aria-label={`${ariaLabel} auto`} onClick={() => onProvider('')}>
-        auto
-      </button>
-      <button
-        type="button"
-        aria-label={`${ariaLabel} cheap model`}
-        onClick={() => onModel('claude-haiku-4-5')}
-      >
-        pick haiku
-      </button>
-      <button
-        type="button"
-        aria-label={`${ariaLabel} high effort`}
-        disabled={!effort.editable}
-        onClick={() => effort.onChange?.('high')}
-      >
-        {effort.value ?? ''}
-      </button>
-      {onReset != null && overridden === true && (
-        <button type="button" aria-label={`${ariaLabel} reset`} onClick={onReset}>
-          reset
+  }) => {
+    const held = effort.value ?? 'medium';
+    const shownModel = model === '' ? (recommendation?.model ?? '') : model;
+    return (
+      <>
+        <button
+          type="button"
+          aria-label={`${ariaLabel} provider`}
+          onClick={() => onChange({ provider: 'cursor', model: 'composer-2.5', effort: held })}
+        >
+          {provider}
         </button>
-      )}
-      {footer}
-    </>
-  ),
+        <button
+          type="button"
+          aria-label={`${ariaLabel} model`}
+          onClick={() => onChange({ provider, model: 'claude-sonnet-4-6', effort: held })}
+        >
+          {shownModel}
+        </button>
+        <button
+          type="button"
+          aria-label={`${ariaLabel} auto`}
+          onClick={() => onChange({ provider: '', model: '', effort: held })}
+        >
+          auto
+        </button>
+        <button
+          type="button"
+          aria-label={`${ariaLabel} cheap model`}
+          onClick={() => onChange({ provider, model: 'claude-haiku-4-5', effort: held })}
+        >
+          pick haiku
+        </button>
+        <button
+          type="button"
+          aria-label={`${ariaLabel} high effort`}
+          disabled={!effort.editable}
+          onClick={() => onChange({ provider, model: shownModel, effort: 'high' })}
+        >
+          {effort.value ?? ''}
+        </button>
+        {commit != null && (
+          <button
+            type="button"
+            aria-label={`${ariaLabel} commit`}
+            onClick={() => commit.onCommit({ provider, model: 'claude-sonnet-4-6', effort: held })}
+          >
+            {commit.label}
+          </button>
+        )}
+        {onReset != null && overridden === true && (
+          <button type="button" aria-label={`${ariaLabel} reset`} onClick={onReset}>
+            reset
+          </button>
+        )}
+        {footer}
+      </>
+    );
+  },
 }));
 
 const EMPTY_OVERRIDES: OverrideSettings = {
@@ -397,7 +417,10 @@ describe('DefaultsPanel', () => {
     expect(set.textContent).toContain('Not set. Auto picks the model');
     fireEvent.click(screen.getByRole('button', { name: 'Add model' }));
     fireEvent.click(screen.getByRole('button', { name: 'Planner add model model' }));
+    expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Planner add model commit' }));
 
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledTimes(1);
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
       expect.objectContaining({
@@ -587,21 +610,17 @@ describe('DefaultsPanel', () => {
     expect(add.hasAttribute('disabled')).toBe(true);
   });
 
-  it('keeps provider changes local while automatic is selected', () => {
+  it('pins the provider with its model in one write when picked while automatic is selected', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing provider' }));
 
-    expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
-    const modelPicker = screen.getByRole('button', { name: 'Step summaries routing model' });
-
-    fireEvent.click(modelPicker);
-
+    expect(state.setWorkspaceOverrides).toHaveBeenCalledTimes(1);
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
       expect.objectContaining({
         taskModels: {
-          summarizer: { providerId: 'cursor', model: 'claude-sonnet-4-6' },
+          summarizer: { providerId: 'cursor', model: 'composer-2.5' },
         },
       }),
     );

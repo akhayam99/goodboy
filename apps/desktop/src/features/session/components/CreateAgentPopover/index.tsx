@@ -1,7 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { clampEffortForModel } from '@goodboy/core';
 import {
   ROW_INTERACTIVE,
   AnchoredPopover,
@@ -234,12 +233,7 @@ export const CreateAgentPopover = ({
               connectedProviders={connectedProviders}
               provider={effective.provider}
               model={effective.model}
-              effort={{
-                editable: true,
-                value: effective.effort,
-                onChange: (effort) =>
-                  setRouting((current) => ({ ...(current ?? spawnDefault), effort })),
-              }}
+              effort={{ editable: true, value: effective.effort }}
               onClose={close}
               recommendation={{ ...suggestion, label: SUGGESTED_LABEL, reason: suggestionReason }}
               overridden={routing !== null}
@@ -250,28 +244,18 @@ export const CreateAgentPopover = ({
                   onSelect: () => setRouting(lastUsed),
                 },
               })}
-              onProvider={(provider) => {
+              onChange={({ provider, model, effort }) => {
                 if (provider === '') {
                   setRouting(null);
                   return;
                 }
-                setRouting((current) => ({ ...(current ?? spawnDefault), provider }));
+                setRouting((current) => ({
+                  ...(current ?? spawnDefault),
+                  provider,
+                  model,
+                  effort,
+                }));
               }}
-              onModel={(model) =>
-                setRouting((current) => {
-                  const base = current ?? spawnDefault;
-                  return {
-                    ...base,
-                    model,
-                    effort:
-                      clampEffortForModel({
-                        model,
-                        effort: base.effort,
-                        provider: base.provider,
-                      }) ?? base.effort,
-                  };
-                })
-              }
             />
           </div>
         )}

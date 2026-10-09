@@ -1,9 +1,6 @@
-import { useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ChevronDown } from 'lucide-react';
 import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
-import { clampEffortForModel, getDefaultTurnModel } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
 import { RoutingPickerBody } from '../RoutingPicker/RoutingPickerBody';
@@ -35,44 +32,8 @@ export const RunsOn = ({ suggested, override, onChange, disabled = false, classN
     ),
   );
   const routing = override ?? suggested;
-  const pending = useRef(routing);
-
-  useEffect(() => {
-    pending.current = routing;
-  }, [routing]);
   const label = routingLabelParts(routing);
   const name = routingNameText(label);
-
-  const commit = (next: AgentKindRouting | null) => {
-    pending.current = next ?? suggested;
-    onChange(next);
-  };
-
-  const setProvider = (provider: ProviderId | '') => {
-    if (provider === '') {
-      commit(null);
-      return;
-    }
-    const current = pending.current;
-    const model =
-      provider === current.provider ? current.model : getDefaultTurnModel({ id: provider });
-    commit({
-      provider,
-      model,
-      effort: clampEffortForModel({ model, effort: current.effort, provider }) ?? current.effort,
-    });
-  };
-
-  const setModel = (model: string) => {
-    const current = pending.current;
-    commit({
-      ...current,
-      model,
-      effort:
-        clampEffortForModel({ model, effort: current.effort, provider: current.provider }) ??
-        current.effort,
-    });
-  };
 
   return (
     <div
@@ -112,16 +73,17 @@ export const RunsOn = ({ suggested, override, onChange, disabled = false, classN
             onClose={dropdown.close}
             recommendation={{ ...suggested, label: SUGGESTED_LABEL }}
             overridden={override !== null}
-            onReset={() => commit(null)}
+            onReset={() => onChange(null)}
             provider={routing.provider}
             model={routing.model}
-            effort={{
-              editable: true,
-              value: routing.effort,
-              onChange: (effort) => commit({ ...pending.current, effort }),
+            effort={{ editable: true, value: routing.effort }}
+            onChange={(route) => {
+              if (route.provider === '') {
+                onChange(null);
+                return;
+              }
+              onChange({ provider: route.provider, model: route.model, effort: route.effort });
             }}
-            onProvider={setProvider}
-            onModel={setModel}
           />
         </PopoverBody>
       </AnchoredPopover>

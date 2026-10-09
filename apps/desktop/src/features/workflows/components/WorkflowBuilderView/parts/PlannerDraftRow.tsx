@@ -2,6 +2,7 @@ import { Button, cn } from '@goodboy/ui';
 import { PromptField } from '../../../../../shared/components/PromptField';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import type { PickedRoute } from '../../../../../shared/components/RoutingPicker/PickedRoute';
 
 type Props = {
   readonly process: string;
@@ -15,9 +16,7 @@ type Props = {
   readonly recommendedProvider: ProviderId;
   readonly recommendedModel: string;
   readonly onProcess: (process: string) => void;
-  readonly onProvider: (provider: ProviderId | '') => void;
-  readonly onModel: (model: string) => void;
-  readonly onEffort: (effort: EffortLevel) => void;
+  readonly onRoute: (route: PickedRoute) => void;
   readonly onPlan: () => void;
 };
 
@@ -35,9 +34,7 @@ export const PlannerDraftRow = ({
   recommendedProvider,
   recommendedModel,
   onProcess,
-  onProvider,
-  onModel,
-  onEffort,
+  onRoute,
   onPlan,
 }: Props) => (
   <div className="flex flex-col gap-2 rounded-lg bg-subtle p-3 ring-1 ring-border-soft focus-within:ring-foreground/15">
@@ -66,13 +63,12 @@ export const PlannerDraftRow = ({
         connectedProviders={connectedProviders}
         provider={providerOverride}
         model={modelOverride}
-        effort={{ editable: true, value: effort, onChange: onEffort }}
+        effort={{ editable: true, value: effort }}
         recommendation={{ provider: recommendedProvider, model: recommendedModel }}
         recommendationKind="auto"
         overridden={providerOverride !== '' || modelOverride !== ''}
         disabled={disabled}
-        onProvider={onProvider}
-        onModel={onModel}
+        onChange={onRoute}
       />
       <Button
         size="sm"

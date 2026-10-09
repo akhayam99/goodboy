@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { latestInGroup } from '@goodboy/core';
 import { chatModelLabel } from './chatModelLabel';
-import { chatModelOf, defaultChatModel } from './defaultChatModel';
+import { defaultChatModel } from './defaultChatModel';
 
 describe('defaultChatModel', () => {
   it('starts a chat on the newest Sonnet in the catalog when Claude is connected', () => {
@@ -20,7 +20,6 @@ describe('defaultChatModel', () => {
 
   it('keeps a Codex chat on the mid tier line, never on the expensive one', () => {
     const codex = defaultChatModel({ connected: ['codex'] });
-    expect(codex.model).toBe(chatModelOf({ provider: 'codex' }));
     expect(codex.model).toBe(
       latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Terra' })[0]?.key,
     );
@@ -29,7 +28,10 @@ describe('defaultChatModel', () => {
   it('starts on the workspace default provider when a chat can run on it', () => {
     expect(
       defaultChatModel({ connected: ['anthropic', 'codex'], workspaceDefaultProvider: 'codex' }),
-    ).toEqual({ provider: 'codex', model: chatModelOf({ provider: 'codex' }) });
+    ).toEqual({
+      provider: 'codex',
+      model: latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Terra' })[0]?.key,
+    });
   });
 
   it('never starts a chat on a Cursor default, it falls back to the Sonnet line', () => {
@@ -48,7 +50,7 @@ describe('defaultChatModel', () => {
   });
 
   it('offers no chat model for a provider a chat refuses', () => {
-    expect(chatModelOf({ provider: 'cursor' })).toBeNull();
+    expect(defaultChatModel({ connected: ['cursor'] }).provider).toBe('anthropic');
   });
 
   it('labels a model from its catalog', () => {

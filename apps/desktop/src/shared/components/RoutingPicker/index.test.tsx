@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   MODEL_CATALOGS,
   PROVIDER_CAPABILITIES,
+  getModelProvider,
   resolveModelArgs,
   resolveStoredModelSelection,
 } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
+import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { cursorMaxModeAdvisory } from '../../lib/cursorMaxModeAdvisory';
@@ -29,11 +31,10 @@ const baseProps = {
   ] as ReadonlyArray<ProviderId>,
   provider: 'anthropic' as ProviderId,
   model: 'claude-opus-5',
-  effort: { editable: true, value: 'high', onChange: vi.fn() } as const,
+  effort: { editable: true, value: 'high' } as const,
   disabled: false,
   ariaLabel: 'routing',
-  onProvider: vi.fn(),
-  onModel: vi.fn(),
+  onChange: vi.fn(),
 };
 type SegmentParams = {
   readonly element: HTMLElement;
@@ -105,7 +106,7 @@ describe('RoutingPicker', () => {
         {...baseProps}
         provider="cursor"
         model="claude-opus-5-5-high"
-        effort={{ editable: true, value: 'high', onChange: vi.fn() }}
+        effort={{ editable: true, value: 'high' }}
       />,
     );
     expect(screen.getByRole('button', { name: /^routing:/ }).getAttribute('aria-label')).toBe(
@@ -117,7 +118,7 @@ describe('RoutingPicker', () => {
         {...baseProps}
         provider="cursor"
         model="composer-2.5-fast"
-        effort={{ editable: true, value: 'high', onChange: vi.fn() }}
+        effort={{ editable: true, value: 'high' }}
       />,
     );
     const trigger = screen.getByRole('button', { name: /^routing:/ });
@@ -233,13 +234,13 @@ describe('RoutingPicker', () => {
   });
 
   it('puts a provider recommendation in its own row above the provider tabs', () => {
-    const onProvider = vi.fn();
+    const onChange = vi.fn();
     render(
       <RoutingPicker
         {...baseProps}
         provider=""
         model=""
-        onProvider={onProvider}
+        onChange={onChange}
         recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
       />,
     );
@@ -248,7 +249,7 @@ describe('RoutingPicker', () => {
     expect(row.querySelectorAll('svg')).toHaveLength(2);
     expect(row.textContent).toBe('RecommendedSonnet 4.6');
     fireEvent.click(row);
-    expect(onProvider).toHaveBeenCalledWith('');
+    expect(onChange).toHaveBeenCalledWith({ provider: '', model: '', effort: 'high' });
   });
 
   it('says Auto on the closed trigger and shows what Auto picks now in the popover', () => {
@@ -363,20 +364,20 @@ describe('RoutingPicker', () => {
   });
 
   it('names the recommendation row with the label the caller gives it', () => {
-    const onProvider = vi.fn();
+    const onChange = vi.fn();
     render(
       <RoutingPicker
         {...baseProps}
         provider="anthropic"
         model="claude-sonnet-4-6"
         overridden
-        onProvider={onProvider}
+        onChange={onChange}
         recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6', label: 'Auto' }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Auto Claude · Sonnet 4.6' }));
-    expect(onProvider).toHaveBeenCalledWith('');
+    expect(onChange).toHaveBeenCalledWith({ provider: '', model: '', effort: 'high' });
   });
 
   it('marks the recommended provider tab as secondary, never as selected', () => {
@@ -476,19 +477,23 @@ describe('RoutingPicker', () => {
   });
 
   it('reports the picked model and keeps the popover open', () => {
-    const onModel = vi.fn();
-    render(<RoutingPicker {...baseProps} onModel={onModel} />);
+    const onChange = vi.fn();
+    render(<RoutingPicker {...baseProps} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Sonnet' }));
     fireEvent.click(screen.getByRole('button', { name: '4.6' }));
-    expect(onModel).toHaveBeenCalledWith('claude-sonnet-4-6');
+    expect(onChange).toHaveBeenCalledWith({
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      effort: 'high',
+    });
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
   it('mounts the same axes inline, with no trigger, no popover and no separators', () => {
-    const onModel = vi.fn();
+    const onChange = vi.fn();
     const { rerender } = render(
-      <RoutingPicker {...baseProps} presentation="inline" onModel={onModel} />,
+      <RoutingPicker {...baseProps} presentation="inline" onChange={onChange} />,
     );
     const inline = screen.getByRole('group', { name: 'routing' });
     expect(screen.queryByRole('button', { name: /^routing:/i })).toBeNull();
@@ -497,14 +502,18 @@ describe('RoutingPicker', () => {
 
     fireEvent.click(within(inline).getByRole('button', { name: 'Sonnet' }));
     fireEvent.click(within(inline).getByRole('button', { name: '4.6' }));
-    expect(onModel).toHaveBeenCalledWith('claude-sonnet-4-6');
+    expect(onChange).toHaveBeenCalledWith({
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      effort: 'high',
+    });
 
     rerender(
       <RoutingPicker
         {...baseProps}
         presentation="inline"
         model="claude-sonnet-4-6"
-        onModel={onModel}
+        onChange={onChange}
       />,
     );
     expect(
@@ -514,12 +523,14 @@ describe('RoutingPicker', () => {
     ).toBe('true');
   });
 
-  it('reports the picked provider and keeps the popover open', () => {
-    const onProvider = vi.fn();
-    render(<RoutingPicker {...baseProps} onProvider={onProvider} />);
+  it('reports the picked provider with its model and effort in one change, and keeps the popover open', () => {
+    const onChange = vi.fn();
+    render(<RoutingPicker {...baseProps} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
-    expect(onProvider).toHaveBeenCalledWith('cursor');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ provider: 'cursor' }));
+    expect(getModelProvider(onChange.mock.calls[0]?.[0].model)).toBe('cursor');
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
@@ -533,19 +544,21 @@ describe('RoutingPicker', () => {
   });
 
   it('offers Cursor literal auto as a plain model chip', () => {
-    const onModel = vi.fn();
+    const onChange = vi.fn();
     render(
       <RoutingPicker
         {...baseProps}
         model=""
         recommendation={{ model: 'claude-sonnet-4-6' }}
-        onModel={onModel}
+        onChange={onChange}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
     fireEvent.click(screen.getByRole('button', { name: 'Auto' }));
-    expect(onModel).toHaveBeenCalledWith('auto');
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ provider: 'cursor', model: 'auto' }),
+    );
   });
 
   it('renders Cursor toggles once in a single Modes row', () => {
@@ -554,7 +567,7 @@ describe('RoutingPicker', () => {
         {...baseProps}
         provider="cursor"
         model="composer-2.5-fast"
-        effort={{ editable: true, value: 'medium', onChange: vi.fn() }}
+        effort={{ editable: true, value: 'medium' }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
@@ -570,17 +583,21 @@ describe('RoutingPicker', () => {
 
   it('reports the picked effort and keeps the popover open', () => {
     const onChange = vi.fn();
-    render(<RoutingPicker {...baseProps} effort={{ editable: true, value: 'high', onChange }} />);
+    render(<RoutingPicker {...baseProps} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Medium' }));
-    expect(onChange).toHaveBeenCalledWith('medium');
+    expect(onChange).toHaveBeenCalledWith({
+      provider: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'medium',
+    });
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
   it('splits Codex checkpoints into a version and a variant row', () => {
-    const onModel = vi.fn();
+    const onChange = vi.fn();
     render(
-      <RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" onModel={onModel} />,
+      <RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-terra" onChange={onChange} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const versions = within(screen.getByRole('group', { name: 'Version' }));
@@ -601,34 +618,45 @@ describe('RoutingPicker', () => {
       'true',
     );
     fireEvent.click(variants.getByRole('button', { name: 'Luna' }));
-    expect(onModel).toHaveBeenCalledWith('gpt-5.6-luna');
+    expect(onChange).toHaveBeenCalledWith({
+      provider: 'codex',
+      model: 'gpt-5.6-luna',
+      effort: 'high',
+    });
   });
 
   it('selects GPT-6.1 Sol from the version row and emits its cli id', () => {
-    const onModel = vi.fn();
-    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" onModel={onModel} />);
+    const onChange = vi.fn();
+    render(
+      <RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" onChange={onChange} />,
+    );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const versions = within(screen.getByRole('group', { name: 'Version' }));
     fireEvent.click(versions.getByRole('button', { name: '6.1' }));
-    expect(onModel).toHaveBeenCalledWith('gpt-6.1-sol');
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'codex', model: 'gpt-6.1-sol' }),
+    );
   });
 
   it('selects Astra from Sol and emits its cli id and requested effort', () => {
-    const onModel = vi.fn();
     const onChange = vi.fn();
     render(
       <RoutingPicker
         {...baseProps}
         provider="codex"
         model="gpt-5.6-sol"
-        onModel={onModel}
-        effort={{ editable: true, value: 'low', onChange }}
+        onChange={onChange}
+        effort={{ editable: true, value: 'low' }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: '6' }));
-    expect(onModel).toHaveBeenCalledWith('gpt-6-astra');
-    const selectedModelId = onModel.mock.calls.at(-1)?.[0] as string;
+    expect(onChange).toHaveBeenLastCalledWith({
+      provider: 'codex',
+      model: 'gpt-6-astra',
+      effort: 'low',
+    });
+    const selectedModelId = onChange.mock.calls.at(-1)?.[0].model as string;
     const selection = resolveStoredModelSelection({
       provider: 'codex',
       id: selectedModelId,
@@ -638,7 +666,11 @@ describe('RoutingPicker', () => {
       '-m gpt-6-astra -c model_reasoning_effort="low"',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Max' }));
-    expect(onChange).toHaveBeenCalledWith('max');
+    expect(onChange).toHaveBeenLastCalledWith({
+      provider: 'codex',
+      model: 'gpt-6-astra',
+      effort: 'max',
+    });
   });
 
   it('offers a variant row for every version that ships a variant, even a lone one', () => {
@@ -666,21 +698,24 @@ describe('RoutingPicker', () => {
   });
 
   it('clamps Cursor effort after a toggle invalidates it and announces the adjustment', () => {
-    const onModel = vi.fn();
     const onChange = vi.fn();
     render(
       <RoutingPicker
         {...baseProps}
         provider="cursor"
         model="claude-opus-5-low"
-        onModel={onModel}
-        effort={{ editable: true, value: 'low', onChange }}
+        onChange={onChange}
+        effort={{ editable: true, value: 'low' }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Thinking' }));
-    expect(onModel).toHaveBeenCalledWith('claude-opus-5-thinking-high');
-    expect(onChange).toHaveBeenCalledWith('high');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith({
+      provider: 'cursor',
+      model: 'claude-opus-5-thinking-high',
+      effort: 'high',
+    });
     expect(screen.getByText('Effort adjusted from Low to High.')).toBeDefined();
   });
 
@@ -690,7 +725,7 @@ describe('RoutingPicker', () => {
         {...baseProps}
         provider="cursor"
         model="claude-4.6-sonnet-medium"
-        effort={{ editable: true, value: 'medium', onChange: vi.fn() }}
+        effort={{ editable: true, value: 'medium' }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
@@ -759,7 +794,7 @@ describe('RoutingPicker', () => {
         {...baseProps}
         provider="cursor"
         model="claude-4.6-sonnet-medium"
-        effort={{ editable: true, value: 'medium', onChange: vi.fn() }}
+        effort={{ editable: true, value: 'medium' }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
@@ -780,7 +815,7 @@ describe('RoutingPicker', () => {
         {...baseProps}
         provider="cursor"
         model="gpt-5.5-high"
-        effort={{ editable: true, value: 'high', onChange: vi.fn() }}
+        effort={{ editable: true, value: 'high' }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
@@ -823,7 +858,7 @@ describe('RoutingPicker', () => {
         {...baseProps}
         provider="cursor"
         model="claude-opus-5-low"
-        effort={{ editable: true, value: 'low', onChange: vi.fn() }}
+        effort={{ editable: true, value: 'low' }}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
@@ -942,12 +977,16 @@ describe('RoutingPicker', () => {
   });
 
   it('resolves the exact model arguments for the selection it emits', () => {
-    const onModel = vi.fn();
-    render(<RoutingPicker {...baseProps} onModel={onModel} />);
+    const onChange = vi.fn();
+    render(<RoutingPicker {...baseProps} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
     fireEvent.click(screen.getByRole('button', { name: '5' }));
-    expect(onModel).toHaveBeenCalledWith('claude-opus-5');
+    expect(onChange).toHaveBeenCalledWith({
+      provider: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'high',
+    });
     const selection = resolveStoredModelSelection({
       provider: 'anthropic',
       id: 'claude-opus-5',
@@ -998,5 +1037,185 @@ describe('RoutingPicker', () => {
     expect(trigger.textContent).toContain('Model');
     expect(trigger.textContent).not.toContain('Opus 5');
     expect(trigger.getAttribute('aria-label')).toContain('Opus 5');
+  });
+});
+
+type Held = {
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly effort: EffortLevel;
+};
+
+const HELD_AT_START: Held = { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' };
+
+type HoldingParentProps = {
+  readonly onHeld: (held: Held) => void;
+};
+
+const HoldingParent = ({ onHeld }: HoldingParentProps) => {
+  const [held, setHeld] = useState(HELD_AT_START);
+  onHeld(held);
+  return (
+    <RoutingPicker
+      {...baseProps}
+      presentation="inline"
+      provider={held.provider}
+      model={held.model}
+      effort={{ editable: true, value: held.effort }}
+      onChange={(route) => {
+        if (route.provider !== '') {
+          setHeld({ ...route, provider: route.provider });
+        }
+      }}
+    />
+  );
+};
+
+describe('RoutingPicker hands the whole route to the parent in one change', () => {
+  const group = (name: string) => within(screen.getByRole('group', { name }));
+
+  it('clamps the effort to what the picked model can serve', () => {
+    const onChange = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        presentation="inline"
+        model="claude-opus-5-5"
+        effort={{ editable: true, value: 'max' }}
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(group('Model').getByRole('button', { name: 'Sonnet' }));
+    fireEvent.click(group('Version').getByRole('button', { name: '4.6' }));
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      effort: 'high',
+    });
+    expect(screen.getByText('Effort adjusted from Max to High.')).toBeDefined();
+  });
+
+  it('keeps the effort of a Cursor model whose catalog entry carries none', () => {
+    const onChange = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        presentation="inline"
+        provider="cursor"
+        model="claude-opus-5-5-medium"
+        effort={{ editable: true, value: 'medium' }}
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(group('Model').getByRole('button', { name: 'Gemini' }));
+
+    expect(onChange).toHaveBeenLastCalledWith({
+      provider: 'cursor',
+      model: 'gemini-3.1-pro',
+      effort: 'medium',
+    });
+  });
+
+  it('keeps the provider, model and effort picked in one move', () => {
+    let held = HELD_AT_START;
+    render(<HoldingParent onHeld={(next) => (held = next)} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    expect(held.provider).toBe('cursor');
+    fireEvent.click(group('Model').getByRole('button', { name: 'Opus' }));
+    fireEvent.click(group('Version').getByRole('button', { name: '5.5' }));
+    fireEvent.click(group('Effort').getByRole('button', { name: 'Medium' }));
+    expect(held).toEqual({ provider: 'cursor', model: 'claude-opus-5-5-medium', effort: 'medium' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
+    expect(held.provider).toBe('codex');
+    expect(getModelProvider(held.model)).toBe('codex');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Claude' }));
+    expect(held.provider).toBe('anthropic');
+    expect(getModelProvider(held.model)).toBe('anthropic');
+  });
+
+  it('keeps Claude on Opus 5.5 and Medium', () => {
+    let held = HELD_AT_START;
+    render(<HoldingParent onHeld={(next) => (held = next)} />);
+
+    fireEvent.click(group('Version').getByRole('button', { name: '5.5' }));
+    fireEvent.click(group('Effort').getByRole('button', { name: 'Medium' }));
+    expect(held).toEqual({ provider: 'anthropic', model: 'claude-opus-5-5', effort: 'medium' });
+  });
+});
+
+describe('RoutingPicker commit', () => {
+  const group = (name: string) => within(screen.getByRole('group', { name }));
+  const addButton = () => screen.getByRole('button', { name: /^Add (?!provider$)/ });
+
+  it('renders no commit control unless the mount asks for one', () => {
+    render(<RoutingPicker {...baseProps} presentation="inline" />);
+
+    expect(screen.queryByRole('button', { name: /^Add (?!provider$)/ })).toBeNull();
+  });
+
+  it('keeps reporting every pick as a change and commits only on the button, once', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        presentation="inline"
+        onChange={onChange}
+        commit={{ label: 'Add', onCommit }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    fireEvent.click(group('Model').getByRole('button', { name: 'Opus' }));
+    fireEvent.click(group('Version').getByRole('button', { name: '5.5' }));
+
+    expect(onChange).toHaveBeenCalledTimes(3);
+    expect(onCommit).not.toHaveBeenCalled();
+
+    fireEvent.click(addButton());
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith(onChange.mock.calls.at(-1)?.[0]);
+    expect(onCommit.mock.calls[0]?.[0]).toMatchObject({ provider: 'cursor' });
+  });
+
+  it('commits the provider that is in view, not the one the mount holds', () => {
+    const onCommit = vi.fn();
+    render(
+      <RoutingPicker {...baseProps} presentation="inline" commit={{ label: 'Add', onCommit }} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Codex' }));
+    fireEvent.click(addButton());
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    const route = onCommit.mock.calls[0]?.[0] as { provider: string; model: string } | undefined;
+    expect(route?.provider).toBe('codex');
+    expect(getModelProvider(route?.model ?? '')).toBe('codex');
+  });
+
+  it('keeps the commit button disabled while Auto is the pick in view', () => {
+    const onCommit = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        presentation="inline"
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6', effort: 'medium' }}
+        recommendationKind="auto"
+        overridden={false}
+        commit={{ label: 'Add', onCommit }}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: 'Add' });
+    expect(button.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(button);
+    expect(onCommit).not.toHaveBeenCalled();
   });
 });

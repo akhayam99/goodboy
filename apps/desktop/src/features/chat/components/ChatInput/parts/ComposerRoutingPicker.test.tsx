@@ -67,10 +67,8 @@ const routingOn = ({ modelId }: { readonly modelId: string }): ComposerRouting =
   isOverridden: false,
   referenceProvider: 'anthropic',
   referenceModel: modelId,
-  setEffort: vi.fn(),
   setVerbosity: vi.fn(),
-  onSelectProvider: vi.fn(),
-  onSelectModel: vi.fn(),
+  onSelectRoute: vi.fn(),
   onResetTurnOverride: vi.fn(),
 });
 

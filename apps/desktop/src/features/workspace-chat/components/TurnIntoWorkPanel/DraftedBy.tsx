@@ -1,15 +1,17 @@
-import { clampEffortForModel, resolveStoredModelSelection } from '@goodboy/core';
-import type { ProviderId } from '@goodboy/types';
+import { resolveStoredModelSelection } from '@goodboy/core';
+import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { savedRouteEffort } from '../../../../shared/components/RoutingPicker/savedRouteEffort';
 import type { WorkDrafterChoice } from '../../workDrafter';
 
 type Props = {
   readonly choice: WorkDrafterChoice;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly onChange: (update: (current: WorkDrafterChoice) => WorkDrafterChoice) => void;
+  readonly onChange: (choice: WorkDrafterChoice) => void;
 };
 
 const DRAFTED_BY_LABEL = 'Drafted by';
+const DEFAULT_EFFORT: EffortLevel = 'medium';
 
 export const DraftedBy = ({ choice, connectedProviders, onChange }: Props) => (
   <div className="flex min-w-0 items-center gap-2">
@@ -22,37 +24,24 @@ export const DraftedBy = ({ choice, connectedProviders, onChange }: Props) => (
       connectedProviders={connectedProviders}
       provider={choice.provider}
       model={choice.model}
-      effort={{
-        editable: true,
-        value: choice.effort ?? 'medium',
-        onChange: (effort) => onChange((current) => ({ ...current, effort })),
-      }}
+      effort={{ editable: true, value: choice.effort ?? DEFAULT_EFFORT }}
       disabled={false}
-      onProvider={(provider) => {
-        if (provider === '') {
+      onChange={(route) => {
+        if (route.provider === '') {
           return;
         }
-        onChange((current) => ({ ...current, provider }));
+        const effort = savedRouteEffort({
+          route,
+          requested: choice.effort ?? DEFAULT_EFFORT,
+          wasSaved: choice.effort != null,
+        });
+        onChange({
+          provider: route.provider,
+          model: resolveStoredModelSelection({ provider: route.provider, id: route.model })
+            .selection.key,
+          ...(effort != null && { effort }),
+        });
       }}
-      onModel={(model) =>
-        onChange((current) => {
-          const key = resolveStoredModelSelection({ provider: current.provider, id: model })
-            .selection.key;
-          const effort =
-            current.effort == null
-              ? null
-              : clampEffortForModel({
-                  model: key,
-                  effort: current.effort,
-                  provider: current.provider,
-                });
-          return {
-            provider: current.provider,
-            model: key,
-            ...(effort != null && { effort }),
-          };
-        })
-      }
     />
   </div>
 );

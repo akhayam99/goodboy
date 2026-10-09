@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import { Button } from '@goodboy/ui';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
+import type { PickedRoute } from '../../../../shared/components/RoutingPicker/PickedRoute';
 import type { StepDraft } from '../../engine';
 import type { StepPolishFields } from '../../stepPolishFields';
 import { StepEditorFields } from './StepEditorFields';
@@ -26,9 +27,7 @@ type Props = {
   readonly onRole: (role: AgentRole) => void;
   readonly onPrompt: (prompt: string) => void;
   readonly onExpectedOutput: (expectedOutput: string) => void;
-  readonly onProvider: (provider: ProviderId | '') => void;
-  readonly onModel: (model: string) => void;
-  readonly onEffort: (effort: EffortLevel) => void;
+  readonly onRoute: (route: PickedRoute) => void;
   readonly onVerbosity: (verbosity: VerbosityLevel) => void;
   readonly onRoutingReset: () => void;
   readonly onPin: () => void;
@@ -62,9 +61,7 @@ export const StepEditor = ({
   onRole,
   onPrompt,
   onExpectedOutput,
-  onProvider,
-  onModel,
-  onEffort,
+  onRoute,
   onVerbosity,
   onRoutingReset,
   onPin,
@@ -107,9 +104,7 @@ export const StepEditor = ({
         onRole={onRole}
         onPrompt={onPrompt}
         onExpectedOutput={onExpectedOutput}
-        onProvider={onProvider}
-        onModel={onModel}
-        onEffort={onEffort}
+        onRoute={onRoute}
         onVerbosity={onVerbosity}
         onRoutingReset={onRoutingReset}
         onPin={onPin}

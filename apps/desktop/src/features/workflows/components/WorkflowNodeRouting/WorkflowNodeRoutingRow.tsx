@@ -1,5 +1,4 @@
 import { Eyebrow } from '@goodboy/ui';
-import { useEffect, useRef } from 'react';
 import type {
   Agent,
   EffortLevel,
@@ -39,16 +38,9 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
   const navigate = useAppStore((state) => state.navigate);
   const view = selectWorkflowNodeRouting({ agent, step, isPending, error });
   const shown = view.executed ?? view.selected;
-  const draftRef = useRef<WorkflowModelPick | null>(null);
-  const pendingProviderRef = useRef<ProviderId | null>(null);
   const effort: EffortLevel = shown?.effort ?? 'medium';
   const automatic = view.proposal?.pick ?? (view.isLocked ? null : view.selected);
   const automaticReason = view.proposal?.reason ?? (view.isLocked ? '' : view.reason);
-
-  useEffect(() => {
-    draftRef.current = null;
-    pendingProviderRef.current = null;
-  }, [shown?.provider, shown?.model, shown?.effort, view.isLocked]);
 
   const lock = ({ provider, model, effort: next }: LockParams) => {
     const pick: WorkflowModelPick = {
@@ -56,14 +48,10 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
       model,
       effort: lockableEffort({ provider, model, effort: next }),
     };
-    draftRef.current = pick;
-    pendingProviderRef.current = null;
     void setWorkflowNodeRoutingLock({ sessionId, nodeKind: 'agent', id: agent.id, pick });
   };
 
   const reset = () => {
-    draftRef.current = null;
-    pendingProviderRef.current = null;
     void resetWorkflowNodeRoutingLock({ sessionId, nodeKind: 'agent', id: agent.id });
   };
 
@@ -85,17 +73,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
           connectedProviders={connectedProviders}
           provider={view.isLocked ? (shown?.provider ?? '') : ''}
           model={view.isLocked ? (shown?.model ?? '') : ''}
-          effort={{
-            editable: true,
-            value: effort,
-            onChange: (next) => {
-              const current = draftRef.current ?? shown;
-              if (current == null || current.effort === next) {
-                return;
-              }
-              lock({ provider: current.provider, model: current.model, effort: next });
-            },
-          }}
+          effort={{ editable: true, value: effort }}
           recommendation={{
             ...(automatic != null && { provider: automatic.provider, model: automatic.model }),
             ...(automatic?.effort != null && { effort: automatic.effort }),
@@ -110,20 +88,12 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
               ? WORKFLOW_ROUTING_COPY.legacyResetLabel
               : WORKFLOW_ROUTING_COPY.resetLabel
           }
-          onProvider={(next) => {
-            if (next === '') {
+          onChange={(route) => {
+            if (route.provider === '') {
               reset();
               return;
             }
-            pendingProviderRef.current = next;
-          }}
-          onModel={(model) => {
-            const current = draftRef.current ?? shown;
-            const provider = pendingProviderRef.current ?? current?.provider ?? null;
-            if (provider === null) {
-              return;
-            }
-            lock({ provider, model, effort: current?.effort ?? effort });
+            lock({ provider: route.provider, model: route.model, effort: route.effort });
           }}
         />
       ) : (

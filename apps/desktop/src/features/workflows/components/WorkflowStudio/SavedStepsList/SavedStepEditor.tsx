@@ -3,7 +3,6 @@ import { Copy, Trash2 } from 'lucide-react';
 import { Button, FormActions, InlineConfirm } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../../engine';
-import { stepDraftWithModel } from '../../../engine';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { StepEditorFields } from '../../StepTree/StepEditorFields';
 
@@ -64,13 +63,7 @@ export const SavedStepEditor = ({
         onRole={(role) => onChange({ role })}
         onPrompt={(prompt) => onChange({ prompt })}
         onExpectedOutput={(expectedOutput) => onChange({ expectedOutput })}
-        onProvider={(provider) => onChange({ provider })}
-        onModel={(model) =>
-          onChange(
-            stepDraftWithModel({ step: draft, provider: draft.provider, model, recommendedModel }),
-          )
-        }
-        onEffort={(effort) => onChange({ effort })}
+        onRoute={onChange}
         onVerbosity={(verbosity) => onChange({ verbosity })}
         onRoutingReset={() => onChange({ provider: '', model: '' })}
         onPin={() => onChange({ provider: recommendedProvider, model: recommendedModel })}

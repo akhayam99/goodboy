@@ -11,7 +11,8 @@ import { recommendationSummary, recommendedRoutingOf } from './recommendationSum
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolveRouting, type Recommendation } from './resolveRouting';
-import { RoutingPickerBody, type EffortSetting } from './RoutingPickerBody';
+import { RoutingPickerBody, type EffortSetting, type PickerCommit } from './RoutingPickerBody';
+import type { PickedRoute } from './PickedRoute';
 import { ICON_SIZE } from '../conceptIcons';
 
 export type Props = {
@@ -20,8 +21,8 @@ export type Props = {
   readonly model: string;
   readonly effort: EffortSetting;
   readonly disabled: boolean;
-  readonly onProvider: (provider: ProviderId | '') => void;
-  readonly onModel: (model: string) => void;
+  readonly onChange: (route: PickedRoute) => void;
+  readonly commit?: PickerCommit;
   readonly recommendation?: Recommendation;
   readonly recommendationKind?: RecommendationKind;
   readonly footer?: ReactNode;
@@ -54,8 +55,8 @@ export const RoutingPicker = ({
   model,
   effort,
   disabled,
-  onProvider,
-  onModel,
+  onChange,
+  commit,
   recommendation,
   recommendationKind,
   footer,
@@ -145,8 +146,7 @@ export const RoutingPicker = ({
       provider={provider}
       model={model}
       effort={effort}
-      onProvider={onProvider}
-      onModel={onModel}
+      onChange={onChange}
       onClose={close}
       summary={summary}
       availability={availability}
@@ -155,6 +155,7 @@ export const RoutingPicker = ({
       providerLayout={providerLayout}
       onConnectionInFlightChange={setIsProviderConnectionInFlight}
       {...(!isInline && { focusRoot: dropdown.popupRef })}
+      {...(commit != null && { commit })}
       {...(recommendation != null && { recommendation })}
       {...(recommendationKind != null && { recommendationKind })}
       {...(verbosity != null && { verbosity })}

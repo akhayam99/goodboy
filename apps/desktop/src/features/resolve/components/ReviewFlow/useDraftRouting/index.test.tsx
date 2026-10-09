@@ -8,6 +8,7 @@ import { useDraftRouting } from './index';
 
 const SESSION_ID = 'session-draft' as SessionId;
 const OTHER_SESSION_ID = 'session-other' as SessionId;
+const OPUS = { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' } as const;
 
 beforeEach(() => {
   useAppStore.setState({ resolveQueueView: {} });
@@ -30,7 +31,7 @@ describe('useDraftRouting', () => {
     const { result } = renderHook(() => useDraftRouting({ sessionId: SESSION_ID }));
 
     act(() => {
-      result.current.setModel('claude-opus-5');
+      result.current.save(OPUS);
     });
 
     expect(result.current.source).toBe('session-pick');
@@ -47,7 +48,7 @@ describe('useDraftRouting', () => {
     const other = renderHook(() => useDraftRouting({ sessionId: OTHER_SESSION_ID }));
 
     act(() => {
-      first.result.current.setModel('claude-opus-5');
+      first.result.current.save(OPUS);
     });
 
     expect(first.result.current.source).toBe('session-pick');
@@ -59,7 +60,7 @@ describe('useDraftRouting', () => {
     const { result } = renderHook(() => useDraftRouting({ sessionId: SESSION_ID }));
 
     act(() => {
-      result.current.setModel('claude-opus-5');
+      result.current.save(OPUS);
     });
     act(() => {
       result.current.save(null);

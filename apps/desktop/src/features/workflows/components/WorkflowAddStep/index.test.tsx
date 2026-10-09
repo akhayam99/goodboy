@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { aWorkflowRun } from '@goodboy/types/testing';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type {
@@ -73,7 +73,7 @@ const seed = ({ providerOverride }: SeedParams = {}) => {
         workflowRuns: [aWorkflowRun({ id: RUN_ID })],
       }),
     ],
-    providers: [connected('anthropic'), connected('codex')],
+    providers: [connected('anthropic'), connected('codex'), connected('cursor')],
     addStepToWorkflowRun,
   });
 };
@@ -127,6 +127,39 @@ describe('WorkflowAddStep', () => {
       ),
     );
     expect(screen.queryByRole('group', { name: 'Edit step 3' })).toBeNull();
+  });
+
+  it('sends the Cursor model picked for the step with its provider and effort', async () => {
+    seed();
+    renderAddStep();
+
+    openDraft();
+    nameStep('Review the retry changes');
+    fireEvent.click(screen.getByRole('tab', { name: 'Pin a model' }));
+    const routing = within(screen.getByRole('group', { name: 'Routing for step 3' }));
+    fireEvent.click(routing.getByRole('button', { name: /^Cursor/ }));
+    fireEvent.click(
+      within(routing.getByRole('group', { name: 'Model' })).getByRole('button', { name: 'Opus' }),
+    );
+    fireEvent.click(
+      within(routing.getByRole('group', { name: 'Version' })).getByRole('button', { name: '5.5' }),
+    );
+    fireEvent.click(
+      within(routing.getByRole('group', { name: 'Effort' })).getByRole('button', {
+        name: 'Medium',
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
+
+    await waitFor(() =>
+      expect(addStepToWorkflowRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          providerOverride: 'cursor',
+          modelOverride: 'claude-opus-5-5-medium',
+          effort: 'medium',
+        }),
+      ),
+    );
   });
 
   it('follows the provider the session override will spawn, not the first connected one', () => {

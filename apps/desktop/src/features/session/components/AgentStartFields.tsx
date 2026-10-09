@@ -1,7 +1,6 @@
 import { ChevronDown } from 'lucide-react';
-import { clampEffortForModel } from '@goodboy/core';
 import { AnchoredPopover, PopoverBody, SelectableRow, cn, useDropdown } from '@goodboy/ui';
-import type { AgentEffort, Project, ProjectId, ProviderId } from '@goodboy/types';
+import type { Project, ProjectId, ProviderId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { RoutingLabel } from '../../../shared/components/RoutingLabel';
 import { RoutingPickerBody } from '../../../shared/components/RoutingPicker/RoutingPickerBody';
@@ -125,33 +124,17 @@ export const AgentStartFields = ({
             connectedProviders={connectedProviders}
             provider={effective.provider}
             model={effective.model}
-            effort={{
-              editable: true,
-              value: effective.effort,
-              onChange: (effort: AgentEffort) => onRoutingChange({ ...effective, effort }),
-            }}
+            effort={{ editable: true, value: effective.effort }}
             onClose={modelDropdown.close}
             recommendation={{ ...suggestion, label: SUGGESTED_LABEL }}
             overridden={routing !== null}
-            onProvider={(provider) => {
-              if (provider === '') {
+            onChange={(route) => {
+              if (route.provider === '') {
                 onRoutingChange(null);
                 return;
               }
-              onRoutingChange({ ...effective, provider });
+              onRoutingChange({ ...effective, ...route, provider: route.provider });
             }}
-            onModel={(model) =>
-              onRoutingChange({
-                ...effective,
-                model,
-                effort:
-                  clampEffortForModel({
-                    model,
-                    effort: effective.effort,
-                    provider: effective.provider,
-                  }) ?? effective.effort,
-              })
-            }
           />
         </PopoverBody>
       </AnchoredPopover>

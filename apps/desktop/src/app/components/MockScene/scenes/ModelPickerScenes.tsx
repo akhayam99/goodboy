@@ -67,11 +67,10 @@ const Trigger = ({ caption, provider, model, effort }: TriggerProps) => (
       connectedProviders={CONNECTED}
       provider={provider}
       model={model}
-      effort={{ editable: true, value: effort, onChange: noop }}
+      effort={{ editable: true, value: effort }}
       disabled={false}
       ariaLabel={`${caption} routing`}
-      onProvider={noop}
-      onModel={noop}
+      onChange={noop}
     />
   </div>
 );
@@ -89,12 +88,11 @@ const CursorColumn = () => (
       connectedProviders={CONNECTED}
       provider="cursor"
       model="gemini-3.8-flash-medium"
-      effort={{ editable: true, value: 'medium', onChange: noop }}
+      effort={{ editable: true, value: 'medium' }}
       disabled={false}
       ariaLabel="Cursor routing"
       openEvent={CURSOR_OPEN_EVENT}
-      onProvider={noop}
-      onModel={noop}
+      onChange={noop}
     />
   </Column>
 );
@@ -108,12 +106,11 @@ const CodexColumn = () => (
       connectedProviders={CONNECTED}
       provider="codex"
       model="gpt-5.6-sol"
-      effort={{ editable: true, value: 'high', onChange: noop }}
+      effort={{ editable: true, value: 'high' }}
       disabled={false}
       ariaLabel="Codex routing"
       openEvent={CODEX_OPEN_EVENT}
-      onProvider={noop}
-      onModel={noop}
+      onChange={noop}
     />
   </Column>
 );

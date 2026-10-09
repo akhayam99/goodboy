@@ -36,12 +36,11 @@ export const ModelPickerClaudeScene = () => {
           connectedProviders={CONNECTED}
           provider="anthropic"
           model="claude-sonnet-5-5"
-          effort={{ editable: true, value: 'medium', onChange: noop }}
+          effort={{ editable: true, value: 'medium' }}
           disabled={false}
           ariaLabel="Claude routing"
           openEvent={OPEN_EVENT}
-          onProvider={noop}
-          onModel={noop}
+          onChange={noop}
         />
       </section>
     </main>

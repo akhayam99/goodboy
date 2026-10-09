@@ -8,7 +8,7 @@ import {
   resolveStoredModelSelection,
   visibleCatalog,
 } from '@goodboy/core';
-import { Button, cn, Divider, tintClasses } from '@goodboy/ui';
+import { Button, cn, Divider, FormActions, tintClasses } from '@goodboy/ui';
 import type {
   CatalogModel,
   EffortLevel,
@@ -32,6 +32,7 @@ import { NoConnectedProviders } from './NoConnectedProviders';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { recommendationSummary, recommendedRoutingOf } from './recommendationSummary';
 import { resolvePickerSelection } from './resolvePickerSelection';
+import type { PickedRoute } from './PickedRoute';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
 import { useCursorMaxModeModels } from './useCursorMaxModeModels';
@@ -56,19 +57,20 @@ type LastUsedRouting = {
 
 export type EffortSetting =
   | { readonly editable: false; readonly value?: EffortLevel }
-  | {
-      readonly editable: true;
-      readonly value: EffortLevel;
-      readonly onChange: (effort: EffortLevel) => void;
-    };
+  | { readonly editable: true; readonly value: EffortLevel };
+
+export type PickerCommit = {
+  readonly label: string;
+  readonly onCommit: (route: PickedRoute) => void;
+};
 
 type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly provider: ProviderId | '';
   readonly model: string;
   readonly effort: EffortSetting;
-  readonly onProvider: (provider: ProviderId | '') => void;
-  readonly onModel: (model: string) => void;
+  readonly onChange: (route: PickedRoute) => void;
+  readonly commit?: PickerCommit;
   readonly onClose: () => void;
   readonly recommendation?: Recommendation;
   readonly recommendationKind?: RecommendationKind;
@@ -92,8 +94,8 @@ export const RoutingPickerBody = ({
   provider,
   model,
   effort,
-  onProvider,
-  onModel,
+  onChange,
+  commit,
   onClose,
   recommendation,
   recommendationKind,
@@ -219,19 +221,15 @@ export const RoutingPickerBody = ({
         : normalized;
     setDraftSelection(appliedSelection);
     setClampNotice(resolved.notice);
-    onModel(nextModelId);
-    if (editableEffort == null || applied == null || applied === editableEffort.value) {
-      return;
-    }
-    editableEffort.onChange(applied);
+    onChange({ provider: nextProvider, model: nextModelId, effort: applied ?? effortValue });
   };
 
   const onPickProvider = ({ next, viewedProvider }: PickProviderParams) => {
-    onProvider(next);
     setViewProvider(viewedProvider);
     setIsViewingAuto(next === '');
     if (next === '') {
       setDraftSelection(routing.selection);
+      onChange({ provider: '', model: '', effort: effortValue });
       return;
     }
     const remapped = remapModelSelection({
@@ -454,6 +452,24 @@ export const RoutingPickerBody = ({
             </PickerSection>
           </>
         )}
+      {commit != null && isViewProviderConnected && connectProvider == null && (
+        <FormActions className="px-3 pb-3 pt-1">
+          <Button
+            size="sm"
+            disabled={isViewingAuto}
+            aria-label={isViewingAuto ? commit.label : `${commit.label} ${viewedModel.label}`}
+            onClick={() =>
+              commit.onCommit({
+                provider: viewProvider,
+                model: draftModelId,
+                effort: viewedRouting.effort,
+              })
+            }
+          >
+            {commit.label}
+          </Button>
+        </FormActions>
+      )}
     </>
   );
 };
