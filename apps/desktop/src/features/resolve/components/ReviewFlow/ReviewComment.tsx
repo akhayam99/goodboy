@@ -564,7 +564,7 @@ export const ReviewComment = ({
                 >
                   {action.label}
                   {action.shortcut !== null && (
-                    <Kbd look="inline" onTone={action.slot === 'primary'} aria-hidden>
+                    <Kbd look="inline" isOnTone={action.slot === 'primary'} aria-hidden>
                       {shortcutGlyphs(action.shortcut)}
                     </Kbd>
                   )}

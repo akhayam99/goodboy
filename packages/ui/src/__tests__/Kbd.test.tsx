@@ -76,10 +76,10 @@ describe('on a filled button', () => {
   it('takes the label colour from the tone token, never an opacity rule', () => {
     const { container } = render(
       <>
-        <Kbd look="cap" onTone>
+        <Kbd look="cap" isOnTone>
           F
         </Kbd>
-        <Kbd onTone>⌘↵</Kbd>
+        <Kbd isOnTone>⌘↵</Kbd>
       </>,
     );
     const [cap, chord] = Array.from(container.querySelectorAll('kbd'));

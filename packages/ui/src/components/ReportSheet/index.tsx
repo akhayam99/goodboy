@@ -304,7 +304,7 @@ export const ReportSheet = ({
         >
           {submitLabel}
           {submitIcon}
-          <KeyHint keys={submitHint} onTone />
+          <KeyHint keys={submitHint} isOnTone />
         </Button>
       </FormActions>
     </section>

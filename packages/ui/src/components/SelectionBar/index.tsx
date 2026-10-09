@@ -210,7 +210,7 @@ export const SelectionBar = ({
                 >
                   {verb.icon}
                   {verb.label}
-                  {verb.hint === undefined ? null : <KeyHint keys={verb.hint} onTone />}
+                  {verb.hint === undefined ? null : <KeyHint keys={verb.hint} isOnTone />}
                 </Button>
               ))}
             </span>

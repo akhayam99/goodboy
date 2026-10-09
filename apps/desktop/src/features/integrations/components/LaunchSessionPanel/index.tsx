@@ -220,7 +220,7 @@ export const LaunchSessionPanel = ({
             {isBusy ? NAMES.starting : startLabel}
           </span>
           {!isBusy ? (
-            <Kbd look="inline" onTone aria-hidden>
+            <Kbd look="inline" isOnTone aria-hidden>
               {shortcutGlyphs('composer.submit')}
             </Kbd>
           ) : null}

@@ -148,7 +148,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
           onClick={() => void start()}
         >
           {launchStartLabel({ count })}
-          <KeyHint keys={shortcutGlyphs('composer.submit')} onTone />
+          <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
         </Button>
       </FormActions>
     </section>

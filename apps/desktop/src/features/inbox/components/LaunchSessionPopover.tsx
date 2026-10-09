@@ -60,7 +60,7 @@ export const LaunchSessionPopover = ({
         >
           <Rocket size={ICON_SIZE.row} aria-hidden />
           {label}
-          <Kbd look="inline" onTone aria-hidden>
+          <Kbd look="inline" isOnTone aria-hidden>
             {shortcutGlyphs('list.open')}
           </Kbd>
         </Button>

@@ -1270,7 +1270,7 @@ two looks.
   as part of the label. The shortcut sheet and the Esc of a sheet header take it
   too.
 
-Inside a filled button a hint takes the button's `on-tone` text (`onTone` on
+Inside a filled button a hint takes the button's `on-tone` text (`isOnTone` on
 `Kbd`, `KeyHint` and `KbdPill`), never an opacity step. `KeyHint` is the one
 component for a hint inside a control: a chord (`⌘↵`) is drawn bare, a single
 key (`F`, `Esc`) is drawn as the small cap, and the hint is `aria-hidden`.
