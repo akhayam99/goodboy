@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.23.1
+
+Workflow steps, agent start and handoffs keep the provider you pick in the model picker.
+
+### Fixed
+
+- The model picker in workflow presets, steps, agent start and handoffs keeps the provider, model and effort you pick. It used to snap back to the previous provider. <!-- gb area=workflows -->
+
 ## Goodboy v0.23.0
 
 A page for the pull request on every host, review notes in their own drawer, branches in the sidebar, one frame for every page, and Tasks in place of Inbox.
