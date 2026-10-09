@@ -2,7 +2,11 @@ import { useMemo } from 'react';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
-import { resolveFactsByAgentId, type ResolveActivityFacts } from '../../timeline/resolveActivity';
+import {
+  resolveFactsByAgentId,
+  withoutWorkflowStepAttempts,
+  type ResolveActivityFacts,
+} from '../../timeline/resolveActivity';
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
@@ -15,7 +19,12 @@ export const useResolveActivity = ({
 }: {
   readonly sessionId: SessionId;
 }): ResolveActivity => {
-  const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
+  const allAttempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
+  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId]);
+  const attempts = useMemo(
+    () => withoutWorkflowStepAttempts({ attempts: allAttempts, agents }),
+    [allAttempts, agents],
+  );
   const { entries } = useReviewEntries({ sessionId, scope: 'all' });
   return useMemo(
     () => ({

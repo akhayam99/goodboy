@@ -1,4 +1,4 @@
-import { normalizeAgentRole, clampEffortForModel } from '@goodboy/core';
+import { normalizeWorkflowRole, clampEffortForModel } from '@goodboy/core';
 import type { PlannerOutput } from '@goodboy/core';
 import type { ProviderId, Workflow, WorkflowId, WorkspaceId, EffortLevel } from '@goodboy/types';
 import type { WorkflowUpsertArgs } from '../workflows';
@@ -25,7 +25,7 @@ export const draftFromWorkflow = ({ workflow }: DraftFromWorkflowParams): Workfl
       key: nextKey(),
       sourceStepId: step.id,
       libraryStepId: step.libraryStepId ?? null,
-      role: normalizeAgentRole({ role: step.role ?? 'custom' }),
+      role: normalizeWorkflowRole({ role: step.role ?? 'custom' }),
       name: step.name,
       prompt: step.promptPrefix ?? '',
       expectedOutput: step.expectedOutput ?? '',
@@ -48,7 +48,7 @@ export const draftFromPlannerSteps = ({ steps }: DraftFromPlannerStepsParams): S
     key: nextKey(),
     sourceStepId: null,
     libraryStepId: null,
-    role: normalizeAgentRole({ role: step.role }),
+    role: normalizeWorkflowRole({ role: step.role }),
     name: step.name,
     prompt: step.promptPrefix,
     expectedOutput: step.expectedOutput,

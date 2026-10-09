@@ -17,7 +17,7 @@ const openRoles = () => {
 };
 
 describe('RoleSelect', () => {
-  it('offers exactly the picker-eligible roles', () => {
+  it('offers exactly the workflow roles the picker lists', () => {
     const options = openRoles();
 
     expect(options.getAllByRole('option').map((option) => option.dataset.value)).toEqual([
@@ -27,12 +27,17 @@ describe('RoleSelect', () => {
       'implementer',
       'reviewer',
       'tester',
-      'resolver',
       'docs',
       'custom',
     ]);
     expect(options.getByRole('option', { name: /^Debugger/ })).toBeDefined();
     expect(options.getByRole('option', { name: /^Generalist/ })).toBeDefined();
+  });
+
+  it('never offers Resolve, which belongs to review comments and not to a workflow step', () => {
+    const options = openRoles();
+
+    expect(options.queryByRole('option', { name: /^Resolv/ })).toBeNull();
   });
 
   it('omits artifact roles from the manual picker', () => {

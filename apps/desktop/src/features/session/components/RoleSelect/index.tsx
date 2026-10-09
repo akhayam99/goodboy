@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ROLE_REGISTRY } from '@goodboy/core';
 import { cn, Listbox, type ListboxOption } from '@goodboy/ui';
 import type { AgentRole } from '@goodboy/types';
-import { agentKindPalette, kindForRole, ROLE_LABEL, visibleAgentRoles } from '../../agent-kind';
+import { agentKindPalette, kindForRole, ROLE_LABEL, visibleWorkflowRoles } from '../../agent-kind';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
 };
 
 const roleOptions = (): ReadonlyArray<ListboxOption<AgentRole>> =>
-  visibleAgentRoles().map((role) => {
+  visibleWorkflowRoles().map((role) => {
     const palette = agentKindPalette({ kind: kindForRole({ role }) });
     const Icon = palette.icon;
     return {

@@ -20,6 +20,11 @@ describe('BUILTIN_STEPS', () => {
     }
   });
 
+  it('never offers a step that runs the Resolve agent', () => {
+    expect(BUILTIN_STEPS.map((step) => step.role)).not.toContain('resolver');
+    expect(isBuiltinStepId({ id: 'seed_resolver' })).toBe(false);
+  });
+
   it('keeps the ids that saved workflows already point at', () => {
     for (const id of ['seed_scout', 'seed_planner', 'seed_implementer', 'seed_tester']) {
       expect(isBuiltinStepId({ id })).toBe(true);
@@ -35,7 +40,8 @@ describe('BUILTIN_STEPS', () => {
   });
 
   it('finds a built-in step by role and tells a workspace step apart', () => {
-    expect(builtinStepForRole({ role: 'resolver' })?.id).toBe('seed_resolver');
+    expect(builtinStepForRole({ role: 'docs' })?.id).toBe('seed_docs');
+    expect(builtinStepForRole({ role: 'resolver' })).toBeUndefined();
     expect(builtinStepForRole({ role: 'custom' })).toBeUndefined();
     expect(isBuiltinStepId({ id: 'lib_step-1' })).toBe(false);
   });

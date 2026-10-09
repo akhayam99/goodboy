@@ -62,6 +62,14 @@ describe('parseFormattedWorkflow', () => {
     expect(parseFormattedWorkflow(json)?.steps[0]?.role).toBe('wireframe');
   });
 
+  it('turns a resolver step into an implementer step', () => {
+    const json = JSON.stringify({
+      steps: [{ name: 'Fix findings', role: 'resolver', promptPrefix: '', expectedOutput: '' }],
+    });
+
+    expect(parseFormattedWorkflow(json)?.steps[0]?.role).toBe('implementer');
+  });
+
   it('normalizes legacy role aliases', () => {
     const json = JSON.stringify({
       steps: [
@@ -200,7 +208,7 @@ describe('formatWorkflowFromNL', () => {
       expect.objectContaining({
         args: expect.objectContaining({
           systemPrompt: expect.stringContaining(
-            'role: one of scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, wireframe, custom.',
+            'role: one of scout, investigator, planner, implementer, reviewer, tester, docs, report, wireframe, custom.',
           ),
         }),
       }),

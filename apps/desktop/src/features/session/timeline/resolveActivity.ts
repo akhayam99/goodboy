@@ -1,4 +1,4 @@
-import type { MountId } from '@goodboy/types';
+import type { Agent, MountId } from '@goodboy/types';
 import { resolveLabelOfState, resolveWordOfState } from '../../resolve/commentProjection';
 import { reviewTallyOfWords, reviewTallyParts } from '../../resolve/reviewTally';
 import { fixRunLabel } from '../../resolve/fixRun';
@@ -187,4 +187,22 @@ export const resolveFactsByAgentId = ({
     facts.set(agentId, factsOfAttempt({ attempt: { ...attempt, threadIds }, reviewByThreadId }));
   }
   return facts;
+};
+
+export const withoutWorkflowStepAttempts = <T extends ResolveAttemptLike>({
+  attempts,
+  agents,
+}: {
+  readonly attempts: ReadonlyArray<T>;
+  readonly agents: ReadonlyArray<Pick<Agent, 'id' | 'workflowRunId' | 'stepId'>> | undefined;
+}): ReadonlyArray<T> => {
+  if (agents === undefined) {
+    return attempts;
+  }
+  const stepAgentIds = new Set(
+    agents
+      .filter((agent) => agent.workflowRunId != null && agent.stepId != null)
+      .map((agent) => agent.id as string),
+  );
+  return attempts.filter((attempt) => !stepAgentIds.has(attempt.agentId));
 };

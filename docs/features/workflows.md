@@ -42,7 +42,7 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-studio-steps-light.webp" alt="The Workflows studio on the Saved steps tab: the 8 built-in steps Scout, Investigate, Plan, Implement, Test, Review, Resolve comments and Update docs, and an empty This workspace list with a New step button">
 </picture>
 
-Reuse steps across workflows. The 8 built-in steps are read-only, and **Save a copy** makes your own.
+Reuse steps across workflows. The 7 built-in steps are read-only, and **Save a copy** makes your own.
 
 ### Model per step
 

@@ -4,7 +4,11 @@ import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineRowItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { needsYouOwners } from './needsYou';
-import { resolveFactsByAgentId, type ResolveActivityFacts } from './resolveActivity';
+import {
+  resolveFactsByAgentId,
+  withoutWorkflowStepAttempts,
+  type ResolveActivityFacts,
+} from './resolveActivity';
 import { rowStateNode, rowStateSentence, rowStateTone } from '../../workTreeModel/rowStateCopy';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -191,5 +195,49 @@ describe('resolveFactsByAgentId', () => {
     });
 
     expect(facts.get('a1')).toMatchObject({ state: 'needs', word: '1 need you' });
+  });
+});
+
+describe('a workflow step that once ran the Resolve agent', () => {
+  const failedAttemptWithoutThreads = {
+    agentId: 'step-fix',
+    batchId: null,
+    prNumber: null,
+    threadIds: [],
+    phase: 'failed',
+    createdAt: 1,
+  } as const;
+  const laneAttempt = { ...failedAttemptWithoutThreads, agentId: 'lane-fix', threadIds: ['t1'] };
+  const stepAgent = {
+    id: 'step-fix' as AgentId,
+    workflowRunId: 'run-1' as Agent['workflowRunId'],
+    stepId: 'step-1' as Agent['stepId'],
+  };
+  const laneAgent = { id: 'lane-fix' as AgentId };
+
+  it('shows the red Draft failed mark when the attempt is read as a review fix', () => {
+    const facts = resolveFactsByAgentId({
+      attempts: [failedAttemptWithoutThreads],
+      reviews: [],
+    });
+
+    expect(facts.get('step-fix')).toMatchObject({ state: 'failed' });
+  });
+
+  it('is left out of the review facts, so the workflow reports the step itself', () => {
+    const attempts = withoutWorkflowStepAttempts({
+      attempts: [failedAttemptWithoutThreads, laneAttempt],
+      agents: [stepAgent, laneAgent],
+    });
+    const facts = resolveFactsByAgentId({ attempts, reviews: [] });
+
+    expect(facts.has('step-fix')).toBe(false);
+    expect(facts.has('lane-fix')).toBe(true);
+  });
+
+  it('keeps every attempt while the agents are not loaded yet', () => {
+    expect(
+      withoutWorkflowStepAttempts({ attempts: [laneAttempt], agents: undefined }),
+    ).toHaveLength(1);
   });
 });

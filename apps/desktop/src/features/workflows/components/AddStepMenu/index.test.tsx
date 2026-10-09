@@ -38,7 +38,8 @@ describe('AddStepMenu', () => {
     const list = screen.getByRole('listbox', { name: 'Steps' });
     const options = within(list).getAllByRole('option');
     expect(options[0]?.textContent).toContain('Blank step');
-    expect(options).toHaveLength(10);
+    expect(options).toHaveLength(9);
+    expect(within(list).queryByText('Resolve comments')).toBeNull();
     expect(within(list).getByText('Built in')).toBeDefined();
     expect(within(list).getByText('This workspace')).toBeDefined();
     expect(within(list).getByText(/Based on Review/)).toBeDefined();

@@ -213,7 +213,7 @@ export const ROLE_REGISTRY = {
     presentationKey: 'resolver',
     defaultRoutingTaskType: 'implementation',
     outputKind: 'none',
-    workflowEligible: true,
+    workflowEligible: false,
     classifierEligible: false,
     selectionEligible: true,
     pickerEligible: true,
@@ -426,6 +426,14 @@ export const normalizeSelectableAgentRole = ({ role }: NormalizeAgentRoleParams)
     return normalized;
   }
   return 'custom';
+};
+
+export const normalizeWorkflowRole = ({ role }: NormalizeAgentRoleParams): AgentRole => {
+  const normalized = normalizeAgentRole({ role });
+  if (normalized === 'resolver') {
+    return 'implementer';
+  }
+  return normalizeSelectableAgentRole({ role: normalized });
 };
 
 export const presentationKeyForRole = ({ role }: NormalizeAgentRoleParams): RolePresentationKey =>

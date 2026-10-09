@@ -1529,22 +1529,22 @@ never "CI".
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 
-| Kind          | Label            | Started from                    |
-| ------------- | ---------------- | ------------------------------- |
-| `planner`     | Plan             | spawn menu                      |
-| `scout`       | Scout            | spawn menu                      |
-| `implementer` | Implement        | spawn menu                      |
-| `debugger`    | Debug            | spawn menu                      |
-| `tester`      | Test             | spawn menu                      |
-| `reviewer`    | Review           | spawn menu                      |
-| `pr-reviewer` | PR reviewer      | PR review session               |
-| `docs`        | Docs             | spawn menu                      |
-| `report`      | Report           | workflow step                   |
-| `wireframe`   | Wireframe        | workflow step                   |
-| `resolver`    | Resolve          | Fix run on the Branch page      |
-| `rewriter`    | History rewriter | a history replay that conflicts |
-| `scribe`      | Scribe           | pull request panel              |
-| `generic`     | Generalist       | spawn menu                      |
+| Kind          | Label            | Started from                                      |
+| ------------- | ---------------- | ------------------------------------------------- |
+| `planner`     | Plan             | spawn menu                                        |
+| `scout`       | Scout            | spawn menu                                        |
+| `implementer` | Implement        | spawn menu                                        |
+| `debugger`    | Debug            | spawn menu                                        |
+| `tester`      | Test             | spawn menu                                        |
+| `reviewer`    | Review           | spawn menu                                        |
+| `pr-reviewer` | PR reviewer      | PR review session                                 |
+| `docs`        | Docs             | spawn menu                                        |
+| `report`      | Report           | workflow step                                     |
+| `wireframe`   | Wireframe        | workflow step                                     |
+| `resolver`    | Resolve          | Fix run on the Branch page, never a workflow step |
+| `rewriter`    | History rewriter | a history replay that conflicts                   |
+| `scribe`      | Scribe           | pull request panel                                |
+| `generic`     | Generalist       | spawn menu                                        |
 
 Other identifiers:
 

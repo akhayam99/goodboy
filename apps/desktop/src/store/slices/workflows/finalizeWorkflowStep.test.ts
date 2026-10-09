@@ -421,6 +421,51 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(finalize.state.workflowContinueAttempts).toEqual({});
   });
 
+  it('blocks a legacy Resolve step that stops mid-sentence instead of hanging on it', async () => {
+    const resolverStep: Agent = {
+      ...agent,
+      name: 'Fix findings from the review (payments-api questionnaire)',
+      kind: 'resolver',
+    };
+    const finalize = buildHarness({ agents: [resolverStep] });
+    const stoppedMidSentence =
+      'need commit hashes and messages to finish the handover. running `git log -5 --oneline`:';
+
+    await finalize(SESSION_ID, AGENT_ID, stoppedMidSentence, false);
+    const result = await finalize(SESSION_ID, AGENT_ID, stoppedMidSentence, false);
+
+    expect(result).toEqual({ shouldAutoAdvance: false });
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'blocked' }),
+    );
+    expect(finalize.state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: expect.stringContaining('Step blocked'),
+        sessionId: SESSION_ID,
+      }),
+    );
+  });
+
+  it('completes a legacy Resolve step on the step-done marker, with no review thread', async () => {
+    summarizeStepOutputSpy.mockResolvedValue('Fixed the findings.');
+    const resolverStep: Agent = { ...agent, name: 'Fix findings', kind: 'resolver' };
+    const finalize = buildHarness({ agents: [resolverStep] });
+
+    const result = await finalize(
+      SESSION_ID,
+      AGENT_ID,
+      'Fixed three findings in two commits. <<step-done id="agent-1">>',
+      false,
+    );
+
+    expect(result).toEqual({ shouldAutoAdvance: true });
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'completed' }),
+    );
+  });
+
   it('fails the step only when its last turn died', async () => {
     const finalize = buildHarness();
 

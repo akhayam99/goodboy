@@ -301,6 +301,35 @@ describe('preSpawnWorkflowAgents', () => {
     expect(insert['providerOverride']).toBe('anthropic');
   });
 
+  it('spawns a step that names the Resolve role as an implementer agent on the implementer model', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [step({ role: 'resolver', name: 'Fix the review findings (payments-api)' })],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['kind']).toBe('implementer');
+    expect(insert['modelOverride']).toBe(AUTO_DEFAULTS.anthropic.implementer[0]?.key);
+  });
+
+  it('spawns a step named like a resolve step as an implementer agent when it has no role', async () => {
+    await preSpawnWorkflowAgents({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      steps: [step({ role: undefined, name: 'Resolve comments' })],
+      baseOrdinal: 0,
+      defaultProvider: 'anthropic',
+      roleModels: null,
+    });
+
+    const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
+    expect(insert['kind']).toBe('implementer');
+  });
+
   it('runs a scout step decided mid-run on the scout role model, never on an expensive one', async () => {
     const result = await preSpawnWorkflowAgents({
       sessionId: SESSION_ID,

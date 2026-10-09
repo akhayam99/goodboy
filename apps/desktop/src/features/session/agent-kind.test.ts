@@ -591,6 +591,27 @@ describe('classifyAgent', () => {
     expect(classifyAgent({ agent: agentOf({ kind: 'custom' }), override: null })).toBe('generic');
   });
 
+  it('reads a legacy workflow step row of kind resolver as an implementer', () => {
+    const stepRow = agentOf({
+      name: 'Fix findings',
+      kind: 'resolver',
+      workflowRunId: WF,
+      stepId: STEP,
+    });
+
+    expect(classifyAgent({ agent: stepRow, override: null })).toBe('implementer');
+    expect(classifyAgent({ agent: stepRow, override: 'resolver' })).toBe('implementer');
+  });
+
+  it('keeps a resolver of the lane as a resolver', () => {
+    expect(classifyAgent({ agent: agentOf({ kind: 'resolver' }), override: null })).toBe(
+      'resolver',
+    );
+    expect(
+      classifyAgent({ agent: agentOf({ kind: 'resolver', workflowRunId: WF }), override: null }),
+    ).toBe('resolver');
+  });
+
   it('returns generic without a persisted kind or meaningful name', () => {
     expect(classifyAgent({ agent: agentOf({ name: 'agent 1' }), override: null })).toBe('generic');
   });
@@ -623,7 +644,9 @@ describe('name inference through classifyAgent', () => {
     ['agent 1', 'generic'],
   ] as [string, AgentKind][])('name %s → %s', (name, expected) => {
     expect(classifyAgent({ agent: { name }, override: null })).toBe(expected);
-    expect(classifyStep({ step: { name } })).toBe(expected);
+    expect(classifyStep({ step: { name } })).toBe(
+      expected === 'resolver' ? 'implementer' : expected,
+    );
   });
 });
 
@@ -657,6 +680,14 @@ describe('classifyStep', () => {
 
   it('maps the custom role to the generalist', () => {
     expect(classifyStep({ step: { name: 'Implement feature', role: 'custom' } })).toBe('generic');
+  });
+
+  it('runs a resolver step as an implementer step, by role and by name', () => {
+    expect(classifyStep({ step: { name: 'Fix the review findings', role: 'resolver' } })).toBe(
+      'implementer',
+    );
+    expect(classifyStep({ step: { name: 'Resolve comments' } })).toBe('implementer');
+    expect(classifyStep({ step: { name: 'Resolve comments', role: null } })).toBe('implementer');
   });
 
   it('falls back to the name when the step has no role', () => {

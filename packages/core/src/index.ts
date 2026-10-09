@@ -146,6 +146,7 @@ export {
   isAgentRole,
   normalizeAgentRole,
   normalizeSelectableAgentRole,
+  normalizeWorkflowRole,
   presentationKeyForRole,
   roleSplitLimits,
   fanOutDepthCapForRole,

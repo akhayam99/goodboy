@@ -63,14 +63,6 @@ export const BUILTIN_STEPS: ReadonlyArray<BuiltinStep> = [
     expectedOutput: 'A list of findings, most severe first, each with a file:line reference.',
   },
   {
-    id: builtinStepId('resolver'),
-    role: 'resolver',
-    name: 'Resolve comments',
-    promptPrefix:
-      'Work through the open review comments one by one. Fix what the comment asks for, or explain why it should stay as it is. Keep each fix inside the scope of its comment.',
-    expectedOutput: 'Each comment with the fix that answers it, or the reason it stays as it is.',
-  },
-  {
     id: builtinStepId('docs'),
     role: 'docs',
     name: 'Update docs',

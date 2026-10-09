@@ -229,7 +229,7 @@ rules with the autonomy their caller asked for.
 
 Each step is one agent with its own brief and its own model.
 
-- **Name** and **role**: scout, investigator, planner, implementer, reviewer, tester, resolver, docs, report, wireframe or custom
+- **Name** and **role**: scout, investigator, planner, implementer, reviewer, tester, docs, report, wireframe or custom. Resolve is not a workflow role: a step that fixes review findings is Implement work (see "Resolve inside a workflow")
 - **Prompt**: the instruction the agent starts from
 - **Expected output**: what this step promised the next one. It goes at the top of the handoff
 - **Provider**, **model** and **effort**: for example scout on a cheap model, plan on a strong one
@@ -647,6 +647,35 @@ you add it. It is not worked out step by step.
 Every screen that creates or edits a workflow saves it through the same
 upsert command. A second way of saving could create a workflow the picker
 cannot see.
+
+### Resolve inside a workflow
+
+The Resolve agent answers one review comment per thread. Its prompt asks for a
+`comment-resolved` or `comment-wontfix` marker per thread id and says nothing
+about the step-done marker a workflow waits for, and a step has no thread ids.
+A workflow step that ran it ended with no marker of either kind, the lane
+recorded a failed attempt with no thread, and the row read "Couldn't fix"
+while the run waited. So a workflow never runs it.
+
+- `ROLE_REGISTRY.resolver.workflowEligible` is `false`. The planner, the
+  orchestrator and the natural-language formatter never offer the role, and
+  `normalizeWorkflowRole` turns a `resolver` role they still emit into
+  `implementer`. The role picker of the step editor (`visibleWorkflowRoles`)
+  lists the workflow roles only
+- There is no built-in Resolve comments step. A saved workflow keeps its
+  `resolver` rows on disk with no migration: `rowToStep` and `rowToStepDef` read
+  them as `implementer`, and the next save writes the new role
+- `classifyStep` maps a step to the Implement kind when its role or its name
+  says resolve, and `classifyAgent` does the same for an agent row that has both
+  a `workflowRunId` and a `stepId`. A run created before this change takes the
+  Implement prompt, the Implement model and the step-done boundary on its next
+  turn. `withoutWorkflowStepAttempts` keeps the old failed attempts of such rows
+  out of the review facts, so the run tree shows the step state
+- A step that ends without its step-done marker keeps the same path as any
+  other role: one automatic continue, then a blocked step with a notification and
+  the Next action strip (**Ask it to continue**, **Skip**)
+- Branch, Comments and the resolve lane are unchanged. The Resolve agent still
+  runs there, one fix run per review thread
 
 ### Advance states
 
