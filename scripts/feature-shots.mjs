@@ -29,7 +29,7 @@ const STAGE = {
 const USAGE = `usage: node scripts/feature-shots.mjs --scene <key&params> --out <name>
   [--selector <css>] [--clip x,y,w,h] [--window 1280x800] [--pad 24]
   [--scale 3] [--wait 5000] [--frame-pad 40] [--themes dark,light]
-  [--click "Text one,Text two"] [--hover <css>] [--version x.y.z]
+  [--click "Text one,Text two"] [--scroll <css>] [--hover <css>] [--version x.y.z]
   [--base http://localhost:5230]
        node scripts/feature-shots.mjs --scene <key&params> --probe <css> [--window 1280x800]`;
 
@@ -60,6 +60,7 @@ const parseArgs = (argv) => {
     framePad: Number(args['frame-pad'] ?? 40),
     click: args.click ? args.click.split(',') : [],
     hover: args.hover ?? null,
+    scroll: args.scroll ?? null,
     version: args.version ?? null,
     themes: (args.themes ?? THEMES.join(',')).split(','),
     base: args.base ?? process.env.GOODBOY_SHOT_URL ?? 'http://localhost:5230',
@@ -75,7 +76,7 @@ const recipeOf = ({ argv }) => {
     if (!RECIPE_SKIPPED.has(key)) {
       parts.push(
         argv[index],
-        /^[\w.,:=&/%@-]+$/.test(argv[index + 1]) ? argv[index + 1] : `'${argv[index + 1]}'`,
+        /^[\w.,:=/%@-]+$/.test(argv[index + 1]) ? argv[index + 1] : `'${argv[index + 1]}'`,
       );
     }
   }
@@ -106,7 +107,7 @@ const openChrome = async ({ width, height }) => {
     try {
       chrome.kill('SIGKILL');
     } catch {}
-    rmSync(profile, { recursive: true, force: true });
+    rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   };
   try {
     const send = await connect({ port });
@@ -181,6 +182,15 @@ function centerOf(selector) {
   return [rect.x + rect.width / 2, rect.y + rect.height / 2];
 }
 
+function scrollToTop(selector) {
+  const element = this.querySelector(selector);
+  if (!element) {
+    return false;
+  }
+  element.scrollIntoView({ block: 'start' });
+  return true;
+}
+
 function clickText(text) {
   const targets = [...this.querySelectorAll('button, [role="tab"], [role="menuitem"], a')];
   const target = targets.find((element) => (element.textContent ?? '').trim().startsWith(text));
@@ -219,6 +229,17 @@ const captureScene = async ({ send, options, theme }) => {
     const isClicked = await callInPage({ send, pageFunction: clickText, argument: text });
     if (isClicked !== true) {
       throw new Error(`no button or tab reads "${text}" in ${url}`);
+    }
+    await sleep(600);
+  }
+  if (options.scroll) {
+    const isScrolled = await callInPage({
+      send,
+      pageFunction: scrollToTop,
+      argument: options.scroll,
+    });
+    if (isScrolled !== true) {
+      throw new Error(`scroll ${options.scroll} not found in ${url}`);
     }
     await sleep(600);
   }
