@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openMountRequest } from './openMountRequest';
-import { branchPlace, sessionPlace } from '../navigation/place';
+import { branchPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -107,26 +107,19 @@ describe('openMountRequest', () => {
     expect(state.navigate).not.toHaveBeenCalled();
   });
 
-  it('keeps gitlab and bitbucket on their own mount scoped studios, through navigate', async () => {
-    const gitlab = harness();
-    await gitlab.run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'gitlab' });
-    expect(gitlab.state.setSessionActiveMount).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      mountId: MOUNT_ID,
-    });
-    expect(gitlab.state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, studio: { kind: 'mr', mountId: MOUNT_ID } }),
-    });
-    expect(gitlab.state.openReviewTarget).not.toHaveBeenCalled();
-
-    const bitbucket = harness();
-    await bitbucket.run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'bitbucket' });
-    expect(bitbucket.state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({
+  it('opens a gitlab or bitbucket request on the Branch page, on the mount it belongs to', async () => {
+    for (const provider of ['gitlab', 'bitbucket'] as const) {
+      const { state, run } = harness();
+      await run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider, requestNumber: 57 });
+      expect(state.setSessionActiveMount).toHaveBeenCalledWith({
         sessionId: SESSION_ID,
-        studio: { kind: 'bitbucket', mountId: MOUNT_ID },
-      }),
-    });
-    expect(bitbucket.state.openReviewTarget).not.toHaveBeenCalled();
+        mountId: MOUNT_ID,
+      });
+      expect(state.navigate).toHaveBeenCalledWith({
+        to: branchPlace({ sessionId: SESSION_ID, tab: 'pr' }),
+      });
+      expect(state.setPullRequestMode).not.toHaveBeenCalled();
+      expect(state.openReviewTarget).not.toHaveBeenCalled();
+    }
   });
 });

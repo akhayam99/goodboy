@@ -17,7 +17,6 @@ import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
-import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
 import { openLens } from '../../openLens';
@@ -171,7 +170,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               {lens === 'scripts' ? (
                 <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}
-              {lens === 'pr' ? <PrPane session={session} /> : null}
               {lens === 'branch' ? (
                 <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
               ) : null}

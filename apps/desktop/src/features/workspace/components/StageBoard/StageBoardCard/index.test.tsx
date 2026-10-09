@@ -354,21 +354,15 @@ describe('StageBoardCard linked request', () => {
     expect(screen.queryByLabelText('No pull request')).toBeNull();
   });
 
-  it('renders a clickable GitLab MR button that dispatches the studio event', () => {
+  it('opens the Branch page from a GitLab MR button', () => {
     state.sessionGitlabMr = {
       [SESSION_ID]: { mr: mergeRequest({ state: 'opened' }) },
     };
-    const dispatched: Event[] = [];
-    const onOpenInbox = (event: Event) => dispatched.push(event);
-    window.addEventListener('goodboy:open-inbox', onOpenInbox);
+    nav.openPullRequest.mockClear();
     render(<StageBoardCard session={session} nav={nav} />);
     const btn = screen.getByLabelText('Merge request !12 · open, open in GitLab');
     fireEvent.click(btn);
-    expect(dispatched).toHaveLength(1);
-    expect(dispatched[0]).toMatchObject({
-      detail: { provider: 'gitlab', kind: 'mr', recordKey: 'gitlab:mr:1' },
-    });
-    window.removeEventListener('goodboy:open-inbox', onOpenInbox);
+    expect(nav.openPullRequest).toHaveBeenCalledWith(session);
   });
 
   it('marks the pull request slot as still being checked before GitHub answers', () => {

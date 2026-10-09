@@ -15,11 +15,8 @@ const WRAPPERS: ReadonlySet<string> = new Set([
 ]);
 
 const ALLOWED: Readonly<Record<string, number>> = {
-  'features/context/components/ContextPanel/strips/BitbucketPrStrip.tsx': 1,
-  'features/context/components/ContextPanel/strips/GitlabMrStrip.tsx': 1,
   'features/history/components/CommitsHistory/HistoryPlannedChanges.tsx': 1,
   'features/history/components/CommitsHistory/HistoryResult.tsx': 2,
-  'features/session/components/SessionKickoff/IssueBriefProposal/BriefVerbatim.tsx': 1,
   'features/session/components/SessionKickoff/TaskStart.tsx': 1,
   'features/settings/components/SettingsStudio/WorkspaceSettingsFlow.tsx': 1,
 };

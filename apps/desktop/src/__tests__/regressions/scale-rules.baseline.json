@@ -1,7 +1,4 @@
 {
-  "apps/desktop/src/features/context/components/ContextPanel/strips/BitbucketPrStrip.tsx#iconSize": 1,
-  "apps/desktop/src/features/context/components/ContextPanel/strips/GitlabMrStrip.tsx#iconSize": 1,
-  "apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrInbox.tsx#iconSize": 1,
   "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx#iconSize": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.tsx#mono": 1,
   "packages/ui/src/components/EmptyLine.tsx#iconSize": 1,

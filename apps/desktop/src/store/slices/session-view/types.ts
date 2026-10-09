@@ -100,10 +100,7 @@ export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
   lastRouting: null,
 };
 
-export type SessionStudio =
-  | { readonly kind: 'workflow' }
-  | { readonly kind: 'mr'; readonly mountId?: MountId }
-  | { readonly kind: 'bitbucket'; readonly mountId?: MountId };
+export type SessionStudio = { readonly kind: 'workflow' };
 
 export const DEFAULT_PREFS: SessionViewPrefs = {
   sort: 'needsYou',

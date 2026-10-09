@@ -8,7 +8,6 @@
     "features/chat/components/PhaseTransitionCard/index.tsx": 1,
     "features/history/components/CommitsHistory/HistoryPlannedChanges.tsx": 4,
     "features/integrations/bitbucket/BitbucketFormBody.tsx": 2,
-    "features/integrations/bitbucket/BitbucketStudio/index.tsx": 1,
     "features/integrations/bitbucket/BitbucketStudio/usePrVerbs/index.ts": 1,
     "features/integrations/github/components/MissingGithubRemoteEmptyState.tsx": 1,
     "features/integrations/github/components/PullRequest/CreatePrPanel.tsx": 3,

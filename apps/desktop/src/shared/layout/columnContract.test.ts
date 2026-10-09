@@ -110,10 +110,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/session/components/AgentDetailPane/index.tsx',
     ],
   },
-  PrPane: {
-    kind: 'shell',
-    files: ['features/session/components/SessionWorkspace/parts/PrPane.tsx'],
-  },
   BranchPage: {
     kind: 'shell',
     files: ['features/branch/components/BranchPage/index.tsx'],
@@ -177,8 +173,6 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
 
 const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray<string>>> = {
   workflow: ['features/workflows/components/WorkflowBuilderView/index.tsx'],
-  mr: ['features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx'],
-  bitbucket: ['features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/index.tsx'],
 };
 
 const FORM_AND_DETAIL_ROOTS: PlaceRoots = {

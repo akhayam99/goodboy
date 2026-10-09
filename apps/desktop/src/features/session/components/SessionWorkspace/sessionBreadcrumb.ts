@@ -115,34 +115,10 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   };
 
   if (studio != null) {
-    if (studio.kind === 'workflow') {
-      return sealLast([
-        overview,
-        workflowsList,
-        { id: 'create', label: 'Create', icon: CONCEPT_ICONS.workflows },
-      ]);
-    }
-    if (studio.kind === 'bitbucket') {
-      return sealLast([
-        overview,
-        {
-          id: 'pr',
-          label: lensLabel('pr'),
-          ...lensIcon({ lens: 'pr' }),
-          onClick: () => handlers.toLens('pr'),
-        },
-        { id: 'bitbucket', label: 'Bitbucket', icon: CONCEPT_ICONS.bitbucket },
-      ]);
-    }
     return sealLast([
       overview,
-      {
-        id: 'gitlab_issues',
-        label: lensLabel('gitlab_issues'),
-        ...lensIcon({ lens: 'gitlab_issues' }),
-        onClick: () => handlers.toLens('gitlab_issues'),
-      },
-      { id: 'mr', label: 'Merge request', icon: CONCEPT_ICONS.gitlab },
+      workflowsList,
+      { id: 'create', label: 'Create', icon: CONCEPT_ICONS.workflows },
     ]);
   }
 

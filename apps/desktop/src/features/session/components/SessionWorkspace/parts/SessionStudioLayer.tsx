@@ -3,8 +3,6 @@ import { cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useCurrentWorkspace, type SessionStudio } from '../../../../../store';
 import { WorkflowBuilderView } from '../../../../workflows/components/WorkflowBuilderView';
-import { MrSessionPane } from '../../../../integrations/gitlab/MrSessionPane';
-import { BitbucketStudio } from '../../../../integrations/bitbucket/BitbucketStudio';
 
 const STUDIO_OUT_MS = 120;
 
@@ -52,21 +50,6 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
     return null;
   }
 
-  const renderStudioContent = (): ReactNode => {
-    switch (studio.kind) {
-      case 'workflow':
-        return <WorkflowBuilderView session={session} onClose={requestClose} />;
-      case 'bitbucket':
-        return <BitbucketStudio sessionId={session.id} onClose={requestClose} />;
-      case 'mr':
-        return <MrSessionPane sessionId={session.id} onClose={requestClose} />;
-      default: {
-        const exhaustive: never = studio;
-        throw new Error(`unknown session studio kind: ${String(exhaustive)}`);
-      }
-    }
-  };
-
   return (
     <div
       className={cn(
@@ -74,7 +57,9 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
         closing ? 'motion-safe:animate-layer-out' : 'motion-safe:animate-layer-in',
       )}
     >
-      <div className="relative min-h-0 flex-1">{renderStudioContent()}</div>
+      <div className="relative min-h-0 flex-1">
+        <WorkflowBuilderView session={session} onClose={requestClose} />
+      </div>
     </div>
   );
 };

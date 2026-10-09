@@ -15,14 +15,6 @@ vi.mock('../../../../workflows/components/WorkflowBuilderView', () => ({
   WorkflowBuilderView: () => <div data-testid="studio-workflow" />,
 }));
 
-vi.mock('../../../../integrations/gitlab/MrSessionPane', () => ({
-  MrSessionPane: () => <div data-testid="studio-mr" />,
-}));
-
-vi.mock('../../../../integrations/bitbucket/BitbucketStudio', () => ({
-  BitbucketStudio: () => <div data-testid="studio-bitbucket" />,
-}));
-
 import { SessionStudioLayer } from './SessionStudioLayer';
 
 const session = { id: 'session-1' } as unknown as Session;
@@ -41,18 +33,8 @@ describe('SessionStudioLayer', () => {
     expect(screen.getByTestId('studio-workflow')).not.toBeNull();
   });
 
-  it('has no github studio kind: the review lens owns pull requests', () => {
-    const kinds: ReadonlyArray<SessionStudio['kind']> = ['workflow', 'mr', 'bitbucket'];
-    expect(kinds).not.toContain('github');
-  });
-
-  it('renders the bitbucket studio for a bitbucket studio', () => {
-    renderStudio({ kind: 'bitbucket' });
-    expect(screen.getByTestId('studio-bitbucket')).not.toBeNull();
-  });
-
-  it('renders the merge request pane for an mr studio', () => {
-    renderStudio({ kind: 'mr' });
-    expect(screen.getByTestId('studio-mr')).not.toBeNull();
+  it('has no code host studio kind: the Branch page owns pull requests', () => {
+    const kinds: ReadonlyArray<SessionStudio['kind']> = ['workflow'];
+    expect(kinds).toEqual(['workflow']);
   });
 });

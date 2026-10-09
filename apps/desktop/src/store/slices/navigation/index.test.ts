@@ -339,7 +339,7 @@ describe('navigation slice', () => {
     expect(store.getState().activeLens[S1]).toBe('linear');
   });
 
-  it('keeps the pull request page for a GitLab merge request', () => {
+  it('lands the pull request lens on the Branch page for a GitLab merge request', () => {
     const store = makeStore();
     store.setState({
       sessionGitlabMr: {
@@ -366,7 +366,7 @@ describe('navigation slice', () => {
       },
     });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    expect(store.getState().activeLens[S1]).toBe('pr');
+    expect(store.getState().activeLens[S1]).toBe('branch');
   });
 
   const transcriptOf = (agentId: AgentId) => ({
@@ -505,7 +505,12 @@ describe('navigation slice', () => {
       to: sessionPlace({ sessionId: S1, lens: 'workflows', studio: { kind: 'workflow' } }),
     });
     store.getState().navigate({
-      to: sessionPlace({ sessionId: S1, lens: 'workflows', studio: { kind: 'mr' } }),
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'workflows',
+        studio: { kind: 'workflow' },
+        target: null,
+      }),
     });
     store.getState().up();
     const stack = store.getState().navigation[WS];

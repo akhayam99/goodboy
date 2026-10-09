@@ -100,16 +100,6 @@ const hasMount = ({
   readonly sessionId: SessionId;
 }): boolean => (state.sessionProjectMounts?.[sessionId] ?? []).length > 0;
 
-const isCodeHostBranch = ({
-  state,
-  sessionId,
-}: {
-  readonly state: AppState;
-  readonly sessionId: SessionId;
-}): boolean =>
-  (state.sessionGitlabMr?.[sessionId]?.mr ?? null) === null &&
-  (state.sessionBitbucketPr?.[sessionId]?.pr ?? null) === null;
-
 const prLensTab = ({ mode }: { readonly mode: string }): BranchTab => {
   if (mode === 'write_review') {
     return 'files';
@@ -160,7 +150,7 @@ const formerBranchPlace = ({
       threadId,
     });
   }
-  if (view.lens === 'pr' && isCodeHostBranch({ state, sessionId })) {
+  if (view.lens === 'pr') {
     const mode = state.pullRequestModes?.[sessionId] ?? 'overview';
     return branchPlace({
       sessionId,

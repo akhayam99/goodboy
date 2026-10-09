@@ -61,21 +61,6 @@ const PENDING: ReadonlyArray<Pending> = [
     owner: 'c6-sweep rewrites the empty line',
   },
   {
-    path: 'apps/desktop/src/features/context/components/ContextPanel/strips/GitlabMrStrip.tsx',
-    rule: 'iconSize',
-    owner: 'the integrator removes the old studio strips',
-  },
-  {
-    path: 'apps/desktop/src/features/context/components/ContextPanel/strips/BitbucketPrStrip.tsx',
-    rule: 'iconSize',
-    owner: 'the integrator removes the old studio strips',
-  },
-  {
-    path: 'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrInbox.tsx',
-    rule: 'iconSize',
-    owner: 'e3-bitbucket owns the adapter',
-  },
-  {
     path: 'apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx',
     rule: 'iconSize',
     owner: 'e2-gitlab owns the adapter',
