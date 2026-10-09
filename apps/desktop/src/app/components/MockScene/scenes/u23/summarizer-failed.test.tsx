@@ -68,5 +68,6 @@ describe('the summarizer failed scene', () => {
     expect(document.body.textContent).not.toContain('exited with code');
     expect(document.body.textContent).toContain('4m ago');
     expect(screen.queryByText('Older')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Retry' })).toHaveLength(3);
   });
 });

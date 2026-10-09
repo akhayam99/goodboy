@@ -107,6 +107,19 @@ const seedSummarizerFailures = (): void => {
       inWorkspace: true,
       count: 1,
     })),
+    summarizerStatus: {
+      [SESSION_ID]: {
+        status: 'error',
+        lastUpdate: new Date(NOW_MS - 4 * 60_000).toISOString() as IsoDateTime,
+        error: 'Cursor reached the usage limit for this account.',
+        lastUsage: null,
+        lastAttempt: {
+          turnInput: 'Export the refunds as a ledger report.',
+          turnOutput: 'The refunds export is written.',
+          workingDir: null,
+        },
+      },
+    },
     hasOlderNotifications: false,
     notificationsLoading: false,
     loadNotifications: async () => undefined,
