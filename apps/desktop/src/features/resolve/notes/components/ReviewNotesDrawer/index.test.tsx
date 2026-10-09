@@ -77,6 +77,18 @@ describe('the review notes drawer by lane state', () => {
     expect(within(panel).getByRole('region', { name: 'src/ledger/postCredit.ts' })).toBeDefined();
   });
 
+  it('keeps every note of a selectable list on one left edge, with or without its checkbox', async () => {
+    renderDrawer();
+
+    const panel = await screen.findByRole('region', { name: 'Your notes' });
+    const items = panel.querySelectorAll<HTMLElement>('[data-note-thread]');
+    expect(items).toHaveLength(6);
+    expect(
+      within(panel).getAllByRole('checkbox', { name: 'Include in the fix' }).length,
+    ).toBeLessThan(6);
+    items.forEach((item) => expect(item.className).toContain('pl-7'));
+  });
+
   it('offers Fix, Close and Delete on an open note', async () => {
     renderDrawer();
     const panel = await screen.findByRole('region', { name: 'Your notes' });
