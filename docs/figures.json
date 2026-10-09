@@ -1,0 +1,272 @@
+{
+  "features/agents-composer-menu": {
+    "version": "0.21.1"
+  },
+  "features/agents-transcript": {
+    "version": "0.13.1"
+  },
+  "features/agents-what-received": {
+    "version": "0.13.1"
+  },
+  "features/agents-workspace-chat": {
+    "version": "0.21.1"
+  },
+  "features/artifact-compare": {
+    "version": "0.13.1"
+  },
+  "features/artifact-create": {
+    "version": "0.13.1"
+  },
+  "features/artifact-list": {
+    "version": "0.13.1"
+  },
+  "features/artifact-report": {
+    "version": "0.13.1"
+  },
+  "features/artifact-scouts": {
+    "version": "0.13.1"
+  },
+  "features/board-card": {
+    "version": "0.13.1"
+  },
+  "features/board-stage": {
+    "version": "0.13.1"
+  },
+  "features/context-decisions": {
+    "version": "0.13.1"
+  },
+  "features/context-drawer": {
+    "version": "0.13.1"
+  },
+  "features/context-summary": {
+    "version": "0.13.1"
+  },
+  "features/history-backups": {
+    "version": "0.13.1"
+  },
+  "features/history-conflicts": {
+    "version": "0.13.1"
+  },
+  "features/history-result": {
+    "version": "0.13.1"
+  },
+  "features/history-rewrite": {
+    "version": "0.13.1"
+  },
+  "features/history-stopped": {
+    "version": "0.13.1"
+  },
+  "features/history-trial": {
+    "version": "0.13.1"
+  },
+  "features/inbox-comment-threads": {
+    "version": "0.13.1"
+  },
+  "features/inbox-list": {
+    "version": "0.13.1"
+  },
+  "features/inbox-lookup": {
+    "version": "0.13.1"
+  },
+  "features/inbox-sentry": {
+    "version": "0.13.1"
+  },
+  "features/inbox-slack-permissions": {
+    "version": "0.13.1"
+  },
+  "features/inbox-slack-reply": {
+    "version": "0.13.1"
+  },
+  "features/keyboard-explore": {
+    "version": "0.13.1"
+  },
+  "features/keyboard-script-drawer": {
+    "version": "0.13.1"
+  },
+  "features/keyboard-shortcuts": {
+    "version": "0.13.1"
+  },
+  "features/overview-activity": {
+    "version": "0.14.0"
+  },
+  "features/overview-next": {
+    "version": "0.13.1"
+  },
+  "features/overview-session": {
+    "version": "0.13.1"
+  },
+  "features/providers-codex-reset": {
+    "version": "0.13.1"
+  },
+  "features/providers-fallback-auto": {
+    "version": "0.13.1"
+  },
+  "features/providers-impact-overview": {
+    "version": "0.13.1"
+  },
+  "features/providers-limits-chip": {
+    "version": "0.21.0"
+  },
+  "features/providers-model-picker": {
+    "version": "0.13.1"
+  },
+  "features/providers-monthly-cap": {
+    "version": "0.13.1"
+  },
+  "features/review-comment-states": {
+    "version": "0.14.0"
+  },
+  "features/review-diff": {
+    "version": "0.13.1"
+  },
+  "features/review-pr-page": {
+    "version": "0.13.1"
+  },
+  "features/review-push-confirm": {
+    "version": "0.14.0"
+  },
+  "features/review-resolve": {
+    "version": "0.14.0"
+  },
+  "features/review-write": {
+    "version": "0.13.1"
+  },
+  "features/search-command-palette": {
+    "version": "0.13.1"
+  },
+  "features/search-go-anywhere": {
+    "version": "0.13.1"
+  },
+  "features/search-jump": {
+    "version": "0.13.1"
+  },
+  "features/search-overlay": {
+    "version": "0.13.1"
+  },
+  "features/security-backup-notice": {
+    "version": "0.13.1"
+  },
+  "features/security-changelog-update": {
+    "version": "0.13.1"
+  },
+  "features/security-export-import": {
+    "version": "0.13.1"
+  },
+  "features/security-findings": {
+    "version": "0.13.1"
+  },
+  "features/security-newer-data": {
+    "version": "0.13.1"
+  },
+  "features/security-updates": {
+    "version": "0.13.1"
+  },
+  "features/setup-about-you": {
+    "version": "0.13.1"
+  },
+  "features/setup-cli-update": {
+    "version": "0.13.1"
+  },
+  "features/setup-integrations": {
+    "version": "0.13.1"
+  },
+  "features/setup-permissions": {
+    "version": "0.13.1"
+  },
+  "features/setup-provider-connection": {
+    "version": "0.13.1"
+  },
+  "features/setup-provider-page": {
+    "version": "0.13.1"
+  },
+  "features/setup-welcome": {
+    "version": "0.13.1"
+  },
+  "features/start-ask-agent": {
+    "version": "0.13.1"
+  },
+  "features/start-pick-task": {
+    "version": "0.13.1"
+  },
+  "features/start-run-workflow": {
+    "version": "0.15.2"
+  },
+  "features/storage-branches": {
+    "version": "0.13.1"
+  },
+  "features/storage-worktrees": {
+    "version": "0.13.1"
+  },
+  "features/support-report-bug": {
+    "version": "0.13.1"
+  },
+  "features/switch-display-options": {
+    "version": "0.21.1"
+  },
+  "features/switch-notifications": {
+    "version": "0.13.1"
+  },
+  "features/switch-now-chip": {
+    "version": "0.21.0"
+  },
+  "features/switch-rail": {
+    "version": "0.21.1"
+  },
+  "features/workflow-builder": {
+    "version": "0.15.2"
+  },
+  "features/workflow-builder-custom": {
+    "version": "0.13.1"
+  },
+  "features/workflow-builder-preset": {
+    "version": "0.13.1"
+  },
+  "features/workflow-hints": {
+    "version": "0.13.1"
+  },
+  "features/workflow-model": {
+    "version": "0.13.1"
+  },
+  "features/workflow-question-agent": {
+    "version": "0.14.0"
+  },
+  "features/workflow-questions": {
+    "version": "0.13.1"
+  },
+  "features/workflow-recap": {
+    "version": "0.13.1"
+  },
+  "features/workflow-run": {
+    "version": "0.13.1"
+  },
+  "features/workflow-spend": {
+    "version": "0.13.1"
+  },
+  "features/workflow-starts": {
+    "version": "0.13.1"
+  },
+  "features/workflow-studio-steps": {
+    "version": "0.13.1"
+  },
+  "features/workspace-branches": {
+    "version": "0.13.1"
+  },
+  "features/workspace-locate": {
+    "version": "0.13.1"
+  },
+  "features/workspace-repo-status": {
+    "version": "0.13.1"
+  },
+  "features/workspace-several-projects": {
+    "version": "0.13.1"
+  },
+  "features/workspace-starred": {
+    "version": "0.13.1"
+  },
+  "features/workspace-worktrees": {
+    "version": "0.13.1"
+  },
+  "readme/readme-hero": {
+    "version": "0.21.0"
+  }
+}

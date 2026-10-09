@@ -155,6 +155,16 @@
   border-radius: var(--r-view);
 }
 
+.prose sub {
+  vertical-align: baseline;
+  font: var(--t-caption);
+  color: var(--t3);
+}
+
+.prose p:has(> sub:only-child) {
+  margin-top: -8px;
+}
+
 .prose .themeImage.dark,
 :root[data-theme='dark'] .prose .themeImage.light {
   display: none;

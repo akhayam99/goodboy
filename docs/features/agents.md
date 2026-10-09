@@ -9,6 +9,8 @@ Talk to agents, watch what they do and steer them while they work.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, opened from the left column beside the Sessions list: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, session marks on two chats, and the answer to Where is the consent step defined? as a table of three payments-api files with Read 4 files, Sonnet 5.5 · Medium under it and a Started a session note, below the header chip 1 session and above a message box that reads Sonnet 5.5 · Medium and Read-only · 3 projects">
 </picture>
 
+<sub>Screenshot from Goodboy 0.21.1</sub>
+
 Ask about the workspace without starting a session. **Chat**, in the left column under **Board**, opens your chats on the left and one conversation on the right. Each chat reads every project of the workspace and never changes a file: the composer says **Read-only · 3 projects**, the answer streams in, **Read 4 files** lists what it opened, and the model picker beside the box is the same one you use for sessions, limited to Claude and Codex, the two providers that can be held to reading. It keeps the effort you pick for that chat and applies it from the next message. **Make default** in the picker, or **Chat** under **Defaults** in the provider settings, sets the model and effort every new chat in the workspace starts with, and **Back to automatic** clears it. Each answer names the model and effort that wrote it, so a chat that changed model shows both. Hover an answer for **Copy** and **Start work from chat**. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you. Every row names its model: a provider glyph, or two when the chat used both Claude and Codex, and with the list dragged to about 320 px or wider the model and effort too, as **Sonnet 5.5 · Medium**; hover it for the other models the chat used and its message count. **Delete** sits on every row and in the chat header without a hover, quiet at rest; one click asks in place, with **Archive instead**. A checkbox on a row, or X, starts a selection and a bar raises **Archive** and **Delete**, which asks once for all of them.
 
 Hover a chat in the list for **Pin** and **⋯**. The same menu opens with a right click or Shift+F10: **Rename** edits the title in place (Enter saves, Esc cancels), **Mark as unread**, **Pin**, **Archive** and **Delete**. **Delete** asks first in the menu, removes the chat's messages from this device and leaves any session started from it alone; the confirm also offers **Archive instead**. A chat that started a session shows a session mark with the session's stage on its second line, and a chat that used more than one model shows the providers it used.
@@ -48,6 +50,8 @@ Read who an agent is without giving the transcript away. The title, the **Brief*
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-what-received-light.webp" alt="The top of the Credit once per event id chat: an Also received row with the chips Goal, Plan, 2 files and All, above the message sent by Codex about payments-api and notify-relay, then an Operations row with 1 Grep and 1 Read">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 Check exactly what an agent was told. The top of each chat starts closed and shows the message and who sent it, here **Codex**. Open it to see a chip for each part of its brief: **Goal**, **Plan**, **2 files**. **All** lists closed summaries, and **View as sent to** the provider shows the exact text, with a copy button. Long text stays at eight lines until you choose **Show all**.
 
 ### Agent transcript
@@ -56,6 +60,8 @@ Check exactly what an agent was told. The top of each chat starts closed and sho
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-light.webp" alt="An agent transcript: the ask about the retried webhooks and payments-api#318, the agent's answer, chips for the plan Dedupe on the event id, the report Where the second credit comes from and the wireframe Deliveries screen, retry state, and a Resolve findings group with thread 1 explained, thread 2 closed with commit 9f2c1ab and thread 3 no change">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 Follow one agent's work in order. The plan, report and wireframe it writes show as chips under its text, and a **Resolve findings** group lists each review thread as **explained**, **closed** or **no change**. File edits group into **Operations** rows, and questions and permission cards appear in the flow where you answer them.
 
@@ -89,6 +95,8 @@ Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Need
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-light.webp" alt="The message box of a chat with the plus menu open, listing Attach files, Run a script ($), Start a run (~) and Ask another agent (@), next to Ask first and the GPT-5.6 Sol model">
 </picture>
+
+<sub>Screenshot from Goodboy 0.21.1</sub>
 
 Do more from the message box. The **+** opens **Attach files**, **Run a script** (`$`), **Start a run** (`~`) and **Ask another agent** (`@`). `$` lists your saved scripts and the `package.json` scripts you pinned, across pnpm and yarn workspaces. In the command palette, `$` lists the scripts you pinned and your saved scripts, each with its project.
 

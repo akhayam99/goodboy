@@ -9,6 +9,8 @@ Move between the tasks of a workspace, and see from any screen which one needs y
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" alt="The left column of the Northwind workspace: New session, the doors Board, Inbox, Chat and Workflows, and the Sessions list of one-line rows with a state sign and a title. The open session Fix webhook retries shows its pages Overview, Branch, Runs, Agents and Artifacts, and a card beside its row reads Running, pull request 318, HBL-212, payments-api, notify-relay and 2 agents">
 </picture>
 
+<sub>Screenshot from Goodboy 0.21.1</sub>
+
 Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, an amber **?**, shield or **!** means you must answer, approve or act, a green check means the pull request is ready to merge, a red **!** means something broke, a filled violet check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
 
 Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open sits in a card with its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count, so it is clear they belong to that session. **Questions** joins them while one is open. A chevron at the right end of the open session's row folds and shows its pages, and Goodboy remembers the choice for each session. Whatever you have open, one row shows where you are: the page, or the session itself when the page is a tool such as Terminal. A session with several branches lists them under **Branch** while you are on that page, and choosing one opens that branch on the tab it lands on.
@@ -17,6 +19,8 @@ Rest the pointer on a row for half a second, or move the keyboard focus to it, a
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Sessions options menu open in the left column of the Northwind workspace, with Sort set to Needs you first, Alphabetical, Last activity and Created, Group set to None, PR state, Stage and Project, Filter by project and a View section with Show archived">
 </picture>
+
+<sub>Screenshot from Goodboy 0.21.1</sub>
 
 The options button in the **Sessions** header sorts the list by **Needs you first**, **Alphabetical**, **Last activity** or **Created**, groups it by **None**, **PR state**, **Stage** or **Project**, narrows it to a project and shows archived sessions. Goodboy keeps your choice for each workspace. The first eight rows show, and **Show more** opens the rest.
 
@@ -35,6 +39,8 @@ Fold the sidebar with the toggle and the rail keeps the open session and your pi
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-light.webp" alt="The top bar chip 2 needs you, 2 running opened into the panel Now in Harborline over the Board: NEEDS YOU 2 with Warn merchants before a payout hold and Fix the rounding drift in the settlement export, and RUNNING 2 with Speed up the payout export for large merchants and Nightly reconciliation before the Monday close">
 </picture>
 
+<sub>Screenshot from Goodboy 0.21.0</sub>
+
 Know what needs you from any screen. The chip in the top bar counts sessions that need you, running sessions and running scripts. Click it to open **Now in Harborline**, which lists each one, and click a row to jump to that session.
 
 ### Notifications
@@ -43,6 +49,8 @@ Know what needs you from any screen. The chip in the top bar counts sessions tha
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-light.webp" alt="The Notifications page for Harborline: All notifications, 6 notifications, 4 unread, with Pull request opened for payments-api #318, Session reached 80% of its cap with an Open spend button, Handoff degraded, and 1 session folder left on disk with a Review storage button, and a left column of views, severity, source and workspace filters">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session close to its spending cap, lands in one list: a bell with an unread count, and a page grouped by severity, source and workspace. **Unread** and **Needs action** cut it down, and a row that needs you carries its next step, like **Open spend** or **Review storage**.
 

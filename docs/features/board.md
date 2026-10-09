@@ -9,6 +9,8 @@ The board shows every session of a workspace by stage. Workflows chain agents in
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with its sessions in six lanes: building, running, needs you, in review, done and archived, with the New session button at the top right">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 See where each task stands without moving cards around. The board has six lanes, always in the same order: **building**, **running**, **needs you**, **in review**, **done** and **archived**. Each session sits in the lane that matches what is happening in it, and a running session that is waiting on a question for you sits in **needs you**, not in **running**. The order is the pipeline, left to right, from work starting to work finished, so a lane never changes place. Lists elsewhere, such as the session list in the sidebar, put what needs you first instead.
 
 The title, the lanes and the buttons share one frame, centred in the window: the title starts where the first lane starts and the buttons end where the last lane ends. A summary of your repositories, such as **3 repos** and **4 uncommitted**, reads as quiet text next to the title, and the project filter and **New session** sit at the right. Tasks linked to the whole workspace sit in one quiet row under the title, **Ongoing**: click a task to show only the sessions that link it, click it again or **Clear** to see them all, and its x stops tracking it.
@@ -27,6 +29,8 @@ On a wide window the six lanes sit side by side, up to 320 pixels each, and extr
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-light.webp" alt="Two session cards: Fix the rounding drift in the settlement export with 1 open question, and Stop retried webhooks posting a second credit with PR #318 awaiting review, each with project and issue chips, cost and age" width="692">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 Read a task at a glance: the pull request or status line, the agent count, project and issue chips, cost and age. A colored bar on the left shows the stage. When one action is waiting, a round button opens it, like **1 open question** on the first card.
 

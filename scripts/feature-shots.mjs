@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { appVersionOf, recordFigure } from './lib/figures.mjs';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIRECTORY = resolve(
@@ -28,7 +29,7 @@ const STAGE = {
 const USAGE = `usage: node scripts/feature-shots.mjs --scene <key&params> --out <name>
   [--selector <css>] [--clip x,y,w,h] [--window 1280x800] [--pad 24]
   [--scale 3] [--wait 5000] [--frame-pad 40] [--themes dark,light]
-  [--click "Text one,Text two"] [--hover <css>]
+  [--click "Text one,Text two"] [--hover <css>] [--version x.y.z]
   [--base http://localhost:5230]
        node scripts/feature-shots.mjs --scene <key&params> --probe <css> [--window 1280x800]`;
 
@@ -59,9 +60,26 @@ const parseArgs = (argv) => {
     framePad: Number(args['frame-pad'] ?? 40),
     click: args.click ? args.click.split(',') : [],
     hover: args.hover ?? null,
+    version: args.version ?? null,
     themes: (args.themes ?? THEMES.join(',')).split(','),
     base: args.base ?? process.env.GOODBOY_SHOT_URL ?? 'http://localhost:5230',
   };
+};
+
+const RECIPE_SKIPPED = new Set(['out', 'base', 'version']);
+
+const recipeOf = ({ argv }) => {
+  const parts = [];
+  for (let index = 0; index < argv.length; index += 2) {
+    const key = argv[index].replace(/^--/, '');
+    if (!RECIPE_SKIPPED.has(key)) {
+      parts.push(
+        argv[index],
+        /^[\w.,:=&/%@-]+$/.test(argv[index + 1]) ? argv[index + 1] : `'${argv[index + 1]}'`,
+      );
+    }
+  }
+  return parts.join(' ');
 };
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
@@ -338,6 +356,13 @@ const main = async () => {
         `shot ok: ${outPath} ${pixels} ${kilobytes} KB (clip ${capture.width}x${capture.height} css, frame ${frameWidth} css wide)`,
       );
     }
+    const version = appVersionOf({ override: options.version ?? undefined });
+    recordFigure({
+      key: `features/${options.out}`,
+      version,
+      recipe: recipeOf({ argv: process.argv.slice(2) }),
+    });
+    console.log(`figures.json: features/${options.out} is Goodboy ${version}`);
   } finally {
     clearTimeout(timer);
     chrome.close();

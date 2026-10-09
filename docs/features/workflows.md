@@ -9,6 +9,8 @@ A workflow runs several agents in one session, each step with its own role, mode
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-light.webp" alt="The workflow builder for Duplicate credit fix: a goal, the Orchestrated, Custom and Preset modes, the plan preview with the Orchestrator row on GPT-5.6 Sol, guidance, Starts Now, Autorun, Spend cap and Start workflow">
 </picture>
 
+<sub>Screenshot from Goodboy 0.15.2</sub>
+
 Shape a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top, in the same nodes the run will show. **Starts**, when to ask and **Spend cap** sit under the plan.
 
 ### Orchestrated
@@ -22,12 +24,16 @@ Give a goal and let a model pick each next step, with its role, provider, model,
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-light.webp" alt="The workflow builder in Custom mode: Describe the steps, Auto and Generate plan, the Draft with planner button, an Add step row and the Save as preset switch next to Start workflow">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 In **Describe steps** mode, write the steps yourself with **Add step**, describe them and press **Generate plan**, or press **Draft with planner**. **Save as preset** keeps what you changed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-light.webp" alt="The workflow builder in Preset mode with the Pick a preset list open: Trace and fix, Harden an endpoint and Migrate a contract, each with a description and its step dots">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 In **Pick a workflow** mode, pick a saved sequence from the list and edit any step before starting.
 
@@ -42,6 +48,8 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-studio-steps-light.webp" alt="The Workflows studio on the Saved steps tab: the 8 built-in steps Scout, Investigate, Plan, Implement, Test, Review, Resolve comments and Update docs, and an empty This workspace list with a New step button">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 Reuse steps across workflows. The 7 built-in steps are read-only, and **Save a copy** makes your own.
 
 ### Model per step
@@ -50,6 +58,8 @@ Reuse steps across workflows. The 7 built-in steps are read-only, and **Save a c
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-model-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-model-light.webp" alt="The model picker open on the Orchestrator row of the workflow builder, with the provider icons and the Model, Version, Variant and Effort rows set to GPT, 5.6, Sol and High">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 Put a light model on a scout and a strong one on the planner. A step follows its role by default; **Pin a model** picks its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
 
@@ -72,6 +82,8 @@ The **Run defaults** tab of Workflows sets what every new run starts with: how i
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-spend-light.webp" alt="The Spend cap popover in the workflow builder, switched on at $12, with Pause workflows and Only warn me, and the Spend cap chip reading $12.00 · Pause">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 Cap what a run or a session can spend, and choose **Pause workflows** or **Warn only**. A paused run offers **Raise limit**.
 
 ### Chained starts
@@ -80,6 +92,8 @@ Cap what a run or a session can spend, and choose **Pause workflows** or **Warn 
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-starts-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-starts-light.webp" alt="The Starts menu of the workflow builder open with Now, Manually and After Harden an endpoint">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run queued until you start it, or **After** followed by a workflow name, which starts once that workflow completes.
 
@@ -90,6 +104,8 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Duplicate credit fix run on HBL-412: three scouts working in parallel under step 1, then a planner, two implementers and a tester, each on its own model, with Waiting on step 1 above the tree and $0.13 spent of the $12.00 spend limit">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 Follow a run from top to bottom: the header with the status and **Pause** and **Stop run** as one pair, the steps in their own scroller with a line under the header once they scroll, and the composer at the bottom. Sub-agents sit indented under their agent, and a finished set folds into one row. While the run waits for its plan, **Review plan** opens it in a drawer. Add steps to a live or finished run. Parallel scouts appear as branches under their step. After a restart, one **Resume all** above the steps starts every stopped agent in that run. Deleting a run deletes its agents and their open questions with it.
 
 ### Hints to the orchestrator
@@ -99,6 +115,8 @@ Follow a run from top to bottom: the header with the status and **Pause** and **
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-light.webp" alt="The orchestrator strip on step 4 with the Tell the orchestrator something box, Queue and Read now, a queued hint reading Replay the event from the Sentry trace before the tester signs off, and Show read (2)">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 Steer a run while it goes. Write a hint on as many lines as you need, in markdown, with images the next agent gets. **Queue** waits for the next decision, and **Read now** stops the step in flight, keeps what it wrote and decides again. A queued hint shows **Waits for the next decision**, and read ones show the step they were read at.
 
 ### Why each step, and the run recap
@@ -107,6 +125,8 @@ Steer a run while it goes. Write a hint on as many lines as you need, in markdow
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The Recap of the Duplicate credit fix run, its Goal, and the Why each step list with 5 decisions, from Replay one event three times back to Trace where a retried webhook posts">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 See why each step was picked, with a short **Recap** of what is done and what is left, rewritten after each decision.
 
@@ -121,6 +141,8 @@ Start each step from a short brief instead of the whole previous chat. If the su
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-light.webp" alt="The Questions lens: 3 waiting and 1 blocking in a Waiting on you list, and the question Which queue should the delivery retries run on? from the Add the stuck-delivery banner agent, with the file src/deliveries/retry.ts and the answers Dedicated retry queue (Recommended), Shared jobs queue, Retry in process and Something else, plus Let an agent decide, Skip and Answer">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 Get each question as one card: who asks, whether it is **Blocking**, the question, and its answers as numbered tiles with the recommended one tagged. Pick with a number key, answer with **Enter**, or write something else in line. The Questions lens lists what waits on you next to the question you are answering, and **j** and **k** move through the list. The same card sits at the end of the transcript and at the top of the agent's Brief. The answers to one agent go out together once you answered its last question, and until then each one keeps an Undo. A blocking question holds its step until you answer, or until you write what you want to say and choose **Send as message**: the agent gets it as a normal message and the question closes. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
 
 ### Let an agent decide
@@ -129,6 +151,8 @@ Get each question as one card: who asks, whether it is **Blocking**, the questio
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-light.webp" alt="The Brief of the agent Reuse the token footer in the brief: a header with the title, the Brief and Transcript tabs and a delete icon, one line with Implementer, Running and Opus 5, and its blocking question open on Let an agent decide: An agent decides with Sonnet 5 · Medium, a hints box, Cancel and Hand off">
 </picture>
+
+<sub>Screenshot from Goodboy 0.14.0</sub>
 
 Hand a question to another agent with a hint and a model from **Let an agent decide**, then press **Hand off**. Its answer counts as yours, and **Answer it yourself** takes it back.
 

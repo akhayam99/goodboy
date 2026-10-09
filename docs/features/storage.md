@@ -9,6 +9,8 @@ Free disk space and clean up branches, with what is safe to remove spelled out.
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-light.webp" alt="Storage, Worktrees 5.0 GB, with the tabs To review 3, In use 0 and Kept 0: hl/flaky-retry-test 2.5 GB and hl/retire-export-cron 1.8 GB in ledger-core, hl/receipt-email-retry 700 MB in notify-relay, each marked Safe to remove, and the button Remove 3 safe folders in Harborline, 5.0 GB">
 </picture>
 
+<sub>Screenshot from Goodboy 0.13.1</sub>
+
 Free disk space without guessing. **Worktrees** lists the checkout folders of archived, deleted or gone sessions by repo, with their size, when each last changed, why it exists and whether it is safe to remove. **Remove 3 safe folders in Harborline** clears them together, and it takes only clean folders idle for over 30 days. Folders with changes, running agents or a git operation in progress are skipped, with the reason.
 
 ### Branches
@@ -17,6 +19,8 @@ Free disk space without guessing. **Worktrees** lists the checkout folders of ar
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-light.webp" alt="Clean up branches: 9 local branches with the tabs Safe to delete 7, Needs a look 2 and All 9, grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete merged by merge commit, rebase or pull request, plus the button Select 7 safe to delete">
 </picture>
+
+<sub>Screenshot from Goodboy 0.13.1</sub>
 
 Delete old branches with confidence. **Branches** has its own page under App settings, next to **Storage**. It opens on the branches that are **Safe to delete**, with how many **need a look**; **Show all branches** brings in the rest, and the **Made by** picker narrows them to **Made by Goodboy** or **Yours**. Each row shows its session, whether it still exists on origin and how it was merged: merge commit, rebase or pull request. **Delete** on a merged branch acts at once and offers **Undo**; an unmerged one asks first, above the selection bar. A row checkbox, X or ⌘A picks several, and the bar can also delete them on origin.
 

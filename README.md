@@ -5,6 +5,8 @@
   <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy, a free desktop ADE built in public. Stop re-explaining yourself: the Duplicate credit fix task in Harborline, its steps run by scouts, a planner, implementers, a reviewer, a debugger waiting on your answer and a tester, each on its own model" width="880">
 </picture>
 
+<sub>Screenshot from Goodboy 0.21.0</sub>
+
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)
 [![stars](https://img.shields.io/github/stars/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=%E2%AD%90%20stars&labelColor=15181b&color=3d444d)](https://github.com/akhayam99/goodboy/stargazers)
