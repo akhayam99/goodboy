@@ -46,7 +46,7 @@ describe('Kbd', () => {
         <Kbd>G</Kbd>
       </>,
     );
-    const [onTone, plain] = [...container.querySelectorAll('kbd')];
+    const [onTone = null, plain = null] = [...container.querySelectorAll('kbd')];
 
     expect(onTone?.getAttribute('data-on-tone')).toBe('true');
     expect(classesOf({ element: onTone })).toContain('text-on-tone');
