@@ -216,4 +216,21 @@ describe('SegmentedTabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Second/ }));
     expect(onChange).toHaveBeenCalledWith('second');
   });
+
+  it('ChoiceCards draws the icon tile only for a card that has an icon or a glyph', () => {
+    render(
+      <ChoiceCards
+        ariaLabel="Start"
+        options={[
+          { value: 'plain', label: 'Plain', hint: 'No mark' },
+          { value: 'marked', label: 'Marked', hint: 'Has a glyph', glyph: <span>g</span> },
+        ]}
+        value="plain"
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: /Plain/ }).querySelector('.size-7')).toBeNull();
+    expect(screen.getByRole('tab', { name: /Marked/ }).querySelector('.size-7')).not.toBeNull();
+  });
 });

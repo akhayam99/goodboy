@@ -63,14 +63,16 @@ export const ChoiceCards = <T extends string>({
               option.disabled === true && 'cursor-not-allowed opacity-50 hover:bg-transparent',
             )}
           >
-            <span
-              className={cn(
-                'flex size-7 shrink-0 items-center justify-center rounded-md',
-                isActive ? tintClasses('primary').bgSoft : 'bg-fill',
-              )}
-            >
-              {mark}
-            </span>
+            {mark === null ? null : (
+              <span
+                className={cn(
+                  'flex size-7 shrink-0 items-center justify-center rounded-md',
+                  isActive ? tintClasses('primary').bgSoft : 'bg-fill',
+                )}
+              >
+                {mark}
+              </span>
+            )}
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-row text-foreground">{option.label}</span>
               {option.hint != null && (
