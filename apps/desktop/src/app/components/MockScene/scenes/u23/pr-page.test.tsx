@@ -15,7 +15,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { U23_PR_PAGE_SCENES } from './pr-page';
-import { prPageHandlers } from './prPageSeed';
+import { prPageGhStdout, prPageHandlers } from './prPageSeed';
 
 beforeAll(async () => {
   await importStore();
@@ -41,12 +41,12 @@ const draw = ({ name }: { readonly name: SceneName }) => {
 
 const answerWith = ({ behind }: { readonly behind: number }): void => {
   const handlers = prPageHandlers({ behind });
-  vi.mocked(invoke).mockImplementation(
-    async (command: string, args?: unknown) =>
-      handlers[command]?.(
-        typeof args === 'object' && args !== null ? (args as Record<string, unknown>) : undefined,
-      ) ?? new Promise<never>(() => undefined),
-  );
+  vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) => {
+    if (command === 'gh_run') {
+      return { stdout: prPageGhStdout({ payload: args }), stderr: '', exitCode: 0 };
+    }
+    return handlers[command]?.(undefined) ?? new Promise<never>(() => undefined);
+  });
 };
 
 const properties = (): HTMLElement => screen.getByRole('complementary', { name: 'Properties' });

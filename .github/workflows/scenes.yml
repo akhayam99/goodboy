@@ -29,7 +29,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: scene measures
         run: |
-          VITE_GOODBOY_MOCK=1 pnpm --filter @goodboy/desktop exec vite --port 5230 --strictPort &
+          VITE_GOODBOY_MOCK=1 pnpm --filter @goodboy/desktop exec vite --host 127.0.0.1 --port 5230 --strictPort &
           app_pid=$!
           trap 'kill "$app_pid"' EXIT
           for attempt in $(seq 1 60); do
@@ -39,4 +39,4 @@ jobs:
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:5230 > /dev/null
-          VALIDATE_CHROME="$(command -v google-chrome)" node scripts/validate-scenes.mjs
+          VALIDATE_CHROME="$(command -v google-chrome)" node scripts/validate-scenes.mjs --app http://127.0.0.1:5230

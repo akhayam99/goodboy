@@ -459,7 +459,6 @@ const prPageStatus = ({ behind }: { readonly behind: number }): WorktreeStatus =
 export const prPageHandlers = ({ behind }: { readonly behind: number }): FakeHandlers => ({
   ...handlersFor(BRANCH_FILES_PATCH),
   worktree_status: () => prPageStatus({ behind }),
-  gh_run: (args) => ({ stdout: prPageGhStdout({ payload: args }), stderr: '', exitCode: 0 }),
 });
 
 const installIpc = ({ behind }: { readonly behind: number }): void => {
