@@ -100,6 +100,7 @@ export const SESSION_EVICTION = [
   { key: 'diffFocus', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffMountPath', keyedBy: 'session', evictOn: 'archive' },
   { key: 'branchTab', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionPagesFolded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'branchThreadId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'terminalMountPath', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionCreations', keyedBy: 'session', evictOn: 'archive' },

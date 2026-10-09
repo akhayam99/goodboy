@@ -5,6 +5,7 @@ import { closeArtifactConversation, openArtifactConversation } from './artifactC
 import { closeArtifactCreation, openArtifactCreation } from './artifactCreation';
 import { markSessionOpened } from './markSessionOpened';
 import { setSessionViewPrefs } from './setSessionViewPrefs';
+import { setSessionPagesFolded } from './setSessionPagesFolded';
 import { toggleSessionGroup } from './toggleSessionGroup';
 import {
   openDiffLens,
@@ -45,6 +46,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setSessionViewPrefs: setSessionViewPrefs(set, get),
     markSessionOpened: markSessionOpened(set),
     toggleSessionGroup: toggleSessionGroup(set),
+    setSessionPagesFolded: setSessionPagesFolded(set),
     setActiveLens: setActiveLens(set),
     toggleWorkflowExpand: toggleWorkflowExpand(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),

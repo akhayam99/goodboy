@@ -181,7 +181,7 @@ describe('the session card scene', () => {
     const cards = sessionList().querySelectorAll<HTMLElement>('[data-session-card]');
     expect(cards).toHaveLength(1);
     const card = within(cards[0] as HTMLElement);
-    expect(card.getByRole('button', { name: /Add POST \/orders/ })).toBeDefined();
+    expect(card.getByRole('button', { name: /^Add POST \/orders[^,]*$/ })).toBeDefined();
     const pages = card
       .getAllByRole('button')
       .filter((button) => button.closest('ul[aria-label="Pages"]'));

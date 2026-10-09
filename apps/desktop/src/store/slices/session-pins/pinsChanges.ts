@@ -24,3 +24,29 @@ export const removePin =
   ({ sessionId }: UnpinParams): PinsChange =>
   (pins) =>
     pins.some((pin) => pin.id === sessionId) ? pins.filter((pin) => pin.id !== sessionId) : pins;
+
+export type PinDirection = 'up' | 'down';
+
+type MoveParams = {
+  readonly sessionId: SessionId;
+  readonly direction: PinDirection;
+};
+
+export const movePin =
+  ({ sessionId, direction }: MoveParams): PinsChange =>
+  (pins) => {
+    const index = pins.findIndex((pin) => pin.id === sessionId);
+    const neighbour = pins[direction === 'up' ? index - 1 : index + 1];
+    const pin = pins[index];
+    if (index === -1 || pin === undefined || neighbour === undefined) {
+      return pins;
+    }
+    return pins
+      .map((candidate) => {
+        if (candidate.id === pin.id) {
+          return { ...candidate, at: neighbour.at };
+        }
+        return candidate.id === neighbour.id ? { ...candidate, at: pin.at } : candidate;
+      })
+      .sort((first, second) => first.at - second.at);
+  };

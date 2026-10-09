@@ -1,4 +1,14 @@
-import { Copy, GitBranch, Link, Link2, Pencil, Pin, PinOff } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  Copy,
+  GitBranch,
+  Link,
+  Link2,
+  Pencil,
+  Pin,
+  PinOff,
+} from 'lucide-react';
 import type { Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
@@ -27,6 +37,8 @@ export type SessionFacts = {
   readonly title: string;
   readonly isArchived: boolean;
   readonly isPinned: boolean;
+  readonly canMovePinUp: boolean;
+  readonly canMovePinDown: boolean;
   readonly isBranchless: boolean;
   readonly hasMount: boolean;
   readonly branch: string | null;
@@ -257,6 +269,24 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     run: ({ facts, env }) => env.getState().unpinSession(facts.sessionId),
   },
   {
+    id: 'session.pinnedUp',
+    label: 'Move up',
+    icon: ArrowUp,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.isPinned && facts.canMovePinUp,
+    run: ({ facts, env }) =>
+      env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'up' }),
+  },
+  {
+    id: 'session.pinnedDown',
+    label: 'Move down',
+    icon: ArrowDown,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.isPinned && facts.canMovePinDown,
+    run: ({ facts, env }) =>
+      env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'down' }),
+  },
+  {
     id: 'session.startAgent',
     label: 'Start agent',
     icon: CONCEPT_ICONS.agents,
@@ -373,6 +403,8 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
     if (session === null) {
       return null;
     }
+    const pins = state.sessionPins[session.workspaceId as WorkspaceId] ?? [];
+    const pinIndex = pins.findIndex((pin) => pin.id === target.sessionId);
     const rawBranch = state.sessionBranches[target.sessionId] ?? null;
     const branch = rawBranch === null || rawBranch.trim() === '' ? null : rawBranch;
     const mounts = state.sessionProjectMounts[target.sessionId] ?? [];
@@ -382,9 +414,9 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       sessionId: target.sessionId,
       title: sessionTitle({ session }),
       isArchived: session.archivedAt != null,
-      isPinned: (state.sessionPins[session.workspaceId as WorkspaceId] ?? []).some(
-        (pin) => pin.id === target.sessionId,
-      ),
+      isPinned: pinIndex !== -1,
+      canMovePinUp: pinIndex > 0,
+      canMovePinDown: pinIndex !== -1 && pinIndex < pins.length - 1,
       isBranchless: isBranchlessSession({ branch: rawBranch }),
       hasMount: mounts.length > 0 || branch !== null,
       branch: branch ?? mounts[0]?.branch ?? null,

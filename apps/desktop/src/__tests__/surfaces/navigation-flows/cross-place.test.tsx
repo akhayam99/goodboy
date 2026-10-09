@@ -899,7 +899,8 @@ describe('moving across every place keeps one frame', () => {
 
       await click(sessionRow(sessionId));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      expect(sessionRow(sessionId).getAttribute('aria-current')).toBe('true');
+      expect(sessionRow(sessionId).getAttribute('aria-current')).toBeNull();
+      expect(sessionRow(sessionId).getAttribute('data-current-sign')).toBe('overview');
       expect(currentPage()).toBe('Overview');
 
       for (const [page, lens] of SESSION_PAGES) {
@@ -960,7 +961,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      expect(sessionRow(other).getAttribute('aria-current')).toBe('true');
+      expect(sessionRow(other).getAttribute('data-current-sign')).toBe('overview');
 
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
@@ -975,8 +976,8 @@ describe('moving across every place keeps one frame', () => {
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
       expect(
-        peek.querySelector(`[data-select-id="${sessionId}"]`)?.getAttribute('aria-current'),
-      ).toBe('true');
+        peek.querySelector(`[data-select-id="${sessionId}"]`)?.getAttribute('data-current-sign'),
+      ).toBe('branch');
       await click(peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) as HTMLElement);
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
       await click(historyButton('Back'));

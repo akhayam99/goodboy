@@ -12,6 +12,7 @@ import { SidebarToggleButton } from './parts/SidebarToggleButton';
 
 type Props = {
   readonly currentSessionId: SessionId | null;
+  readonly isStudioOver?: boolean;
   readonly onNavigate?: () => void;
   readonly isCollapsed?: boolean;
   readonly onToggleSidebar?: () => void;
@@ -19,6 +20,7 @@ type Props = {
 
 export const SessionNavSidebar = ({
   currentSessionId,
+  isStudioOver = false,
   onNavigate,
   isCollapsed = false,
   onToggleSidebar,
@@ -61,6 +63,7 @@ export const SessionNavSidebar = ({
               sessions={sessions}
               archivedSessions={archivedSessions}
               currentSessionId={currentSessionId}
+              isStudioOver={isStudioOver}
               onSelectSession={onSelectSession}
               onArchivedTabOpen={onArchivedTabOpen}
             />

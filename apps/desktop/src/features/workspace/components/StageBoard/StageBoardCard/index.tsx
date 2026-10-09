@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo } from 'react';
-import { ChevronRight, MessageSquareDiff } from 'lucide-react';
+import { ChevronRight, MessageSquareDiff, Pin } from 'lucide-react';
 import {
   Chip,
   cn,
@@ -11,7 +11,7 @@ import {
   inlineMarkdownText,
   ToneBar,
 } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPrFetchState } from '../../../../../store';
 import { useSessionSummary } from '../../../hooks/useSessionSummary';
 import { SessionProgress } from '../../SessionProgress';
@@ -93,6 +93,11 @@ export const StageBoardCard = memo(function StageBoardCard({
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[id]?.mr ?? null);
   const agentCountLabel = `${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`;
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
+  const isPinned = useAppStore((s) =>
+    (s.sessionPins?.[session.workspaceId as WorkspaceId] ?? EMPTY_ARRAY).some(
+      (pin) => pin.id === id,
+    ),
+  );
   const workspaceProjectCount = useAppStore(
     (s) =>
       (s.projects ?? EMPTY_ARRAY).filter((project) => project.workspaceId === session.workspaceId)
@@ -284,6 +289,11 @@ export const StageBoardCard = memo(function StageBoardCard({
 
       <span className="col-span-2 col-start-1 row-start-2 flex h-5 min-w-0 items-center gap-2">
         <span className="flex min-w-0 items-center gap-2 overflow-hidden">
+          {isPinned && !archived ? (
+            <span role="img" aria-label="Pinned" className="inline-flex shrink-0">
+              <Pin size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
+            </span>
+          ) : null}
           {agentCount > 0 && (
             <Tooltip content={agentCountLabel} side="top">
               <span

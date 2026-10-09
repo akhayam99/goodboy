@@ -41,6 +41,7 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
+import { branchLandingTabOf } from '../../branchLandingTab';
 import type { BranchReviewCounts } from '../../branchPrimary';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { BranchHeader } from './index';
@@ -419,7 +420,7 @@ const withMounts = (mounts: ReadonlyArray<SessionProjectMount>): void => {
 const chipOf = (): HTMLElement => screen.getByRole('button', { name: /^Branch feat\/export$/ });
 
 describe('BranchHeader branch switcher', () => {
-  it('lists the session branches with their pull request and moves the page to the one picked', async () => {
+  it('lists the session branches with their pull request and moves the page to the landing tab of the one picked', async () => {
     const navigate = vi.fn();
     const setSessionActiveMount = vi.fn<StoreState['setSessionActiveMount']>(async () => undefined);
     useAppStore.setState({ navigate, setSessionActiveMount });
@@ -449,7 +450,7 @@ describe('BranchHeader branch switcher', () => {
         to: branchPlace({
           sessionId: SESSION_ID,
           mountPath: MOUNT_FIX.worktreePath,
-          tab: 'files',
+          tab: branchLandingTabOf({ hasPullRequest: true, deepLink: null }),
         }),
         mode: 'replace',
       }),

@@ -66,7 +66,12 @@ export const FloatingSurfacesScene = () => {
       <div className={cn(FLOATING_SURFACE, 'w-80 p-3 text-label')}>
         <SessionHoverCardBody session={SESSION} isArchived={false} onOpenAttention={noop} />
       </div>
-      <SwitcherPanel sessions={SWITCHER_SESSIONS} selectedIndex={1} onChoose={noop} />
+      <SwitcherPanel
+        sessions={SWITCHER_SESSIONS}
+        pinnedCount={0}
+        selectedIndex={1}
+        onChoose={noop}
+      />
     </main>
   );
 };

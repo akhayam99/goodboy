@@ -103,7 +103,7 @@
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
-  does, because the open session's row is the sign. A popover trigger (the
+  does, because the open session's card is the sign (see the card below). A popover trigger (the
   Limits chips, the Goodboy row) is never selected: it only reports
   `aria-expanded`. A button's label, `aria-label` and tooltip name the same word
   (`Workflows`, `Chat`); the hover hint adds only the shortcut.
@@ -451,11 +451,13 @@ hide animation or overlay can move it.
 **The columns** are one grid at saved widths, clamped when read.
 
 - **A column has one reduced state, and it is never a narrower copy of
-  itself.** The left column's one reduced state is the 44px rail of doors
+  itself.** The left column's one reduced state is the 44px rail
   (`ColumnRail`): the toggle, New, Board, Inbox, Chat and Workflows as icons
-  with their names and shortcuts in tooltips, then Settings, the bug and the
-  Goodboy mark at the bottom. It works at rail width because it holds doors,
-  not the list; the sessions list comes back through the peek. Hiding a column
+  with their names and shortcuts in tooltips, then the open session and the
+  pinned sessions as 28px node buttons (see the rail paragraph below), then
+  Settings, the bug and the Goodboy mark at the bottom. It works at rail width
+  because it holds doors and a few marks, not the list; the sessions list comes
+  back through the peek. Hiding a column
   outright sets it and its handle to zero width and marks the aside `inert`: a
   zero-width column that still takes focus is a keyboard trap. The shell
   primitive can lay out more reduced states than the product uses. Which one a
@@ -495,7 +497,11 @@ session and its pages sit in one card (`data-session-card`, the elevated surface
 a hairline, so it reads against the column in light too), so it is plain that the pages belong to that session; every
 other session stays a flat row. The nesting is not a mode: the list stays the
 list, the card moves to another session when it opens, and `←` and `→` on the
-open row fold and open the pages while the session row stays in the card. The
+open row, or the chevron at its right end (`Fold the pages of <title>` and
+`Show the pages of <title>`, `aria-expanded`), fold and open the pages while the
+session row stays in the card. The fold is remembered per session in memory
+(`sessionPagesFolded`, evicted when the session is archived) and the default is
+open. The
 tools (Scripts, Terminal, Explore) and the linked records (Linear, GitLab,
 Jira, Slack, GitHub issue) stay in the page menu and the palette. Rows and
 chips inside the overview still route to the other surfaces. Board → session
@@ -564,11 +570,64 @@ under Pinned. Pins are stored per workspace in the `settings` table (key
 `sessions.pinned.<workspace id>`, a JSON list of `{ id, at }`), written by
 compare and swap with one retry so two windows never drop each other's pin,
 read when a workspace opens and when the window regains focus, and pruned of
-deleted sessions on read (`store/slices/session-pins`). Rail buttons, the
-switcher's Pinned section, a Board glyph and reordering are not built yet.
+deleted sessions on read (`store/slices/session-pins`). The pin shows in six
+places: the list's Pinned group, a ghost pin button in the right end of a row on
+hover and focus (`Pin session` and `Unpin session`), a pin toggle in the
+Overview title row, a quiet pin on the Board card, the rail buttons, and the
+switcher's Pinned section. **Move up** and **Move down** (`session.pinnedUp`,
+`session.pinnedDown`) reorder a pinned session from the row menu and `⌘K`, only
+while it can move; `movePin` swaps the `at` of two neighbours and goes through
+the same compare and swap. Dragging is not built.
+
+**The card carries one current sign, from every page.** `currentSignOf`
+(`SessionActivityBar/currentSign.ts`) returns exactly one of a page id, `session`
+or `remembered` for the open session. A page that has a row in the card
+(Overview, Branch, Runs, Agents, Artifacts, and Questions while one is open)
+takes `bg-selected` and `aria-current="page"` alone. Where no row matches (the
+Tools Explore, Scripts and Terminal, a linked record, Questions with nothing
+open) or the pages are folded, the session row takes the sign. While a studio
+(Inbox, Chat, Workflows, Impact) sits over the session the row is `remembered`:
+medium weight, no fill, no `aria-current`; closing the studio returns the sign to
+the page. The session row also carries `data-current-sign`. Questions renders in
+the card only while something is open, warning-toned with the count word
+`1 open`. The first crumb of the session trail (`Session`) opens the Pages menu
+at every depth, including on the Branch page, where the second crumb keeps its
+own branch menu (`buildTrailMenus`).
+
+**A session with several branches lists them under Branch.** With two or more
+mounts, the card nests one row per branch directly under the Branch row while
+Branch is the current page: the repo glyph, the branch name cut in the middle
+(`splitBranchLabel`) and the pull request glyph of that mount
+(`PULL_REQUEST_PRESENTATION`). At most five show, then `All branches`, which opens
+the Overview, where the Projects section lists every mount. The current branch
+(the mount in `diffMountPath`) reads in foreground with `aria-current="true"`;
+the Branch row keeps the page sign. A click is a forward move through
+`switchBranchMount` (the same handler as the switcher chip and the trail menu),
+and it lands on the landing tab of the target branch
+(`branchLandingTabOf({ hasPullRequest, deepLink: null })`), never on the tab,
+thread or diff focus of the branch it leaves. Navigating anywhere that is not a
+branch page stores no branch tab (`applyLocation`), so the tab always falls back
+to the landing rule. The rows carry no needs-you count because the resolve queue
+rows know their project and pull request number but not their mount.
+
+**The rail holds the open session and the pinned ones.** Under the doors, in the
+workspace scope only, the open session is a 28px node button (the same
+`SessionStateNode` as its row); a click opens the session, and hovering or
+focusing it opens a flyout card (`RailFlyout`, the overlay layer of the hover
+card) with the same pages list as the card (`SessionPages`, one source), the
+branches when there are several, and the pinned sessions. Esc closes it and
+returns focus to the button, and `→` or `↓` on the button moves into it. A studio
+over the session leaves its button `remembered`. The pinned sessions follow as
+28px node buttons in pin order (up to seven, the open one is not repeated), with
+the session title and the stage words in the tooltip, then `+N` which opens the
+same flyout with every pin. `New` shows the draft dot and reads `New session,
+draft in progress` while a written draft waits elsewhere.
 
 **Two keys switch sessions without the list.** `⌃Tab` opens a list of the
-recent sessions in last-opened order, the open one first. `Tab` and `⇧Tab`
+pinned sessions (a **Pinned** section, up to eight, in pin order) and then the
+recent sessions in last-opened order, the open one first among them; a pinned
+session is listed once. The first press still lands on the previous session
+wherever it sits. `Tab` and `⇧Tab`
 move while `⌃` is held, releasing `⌃` opens the chosen session and Esc cancels.
 A quick tap flips to the previous session and never draws the list. `⌥⌘↓`
 lands on the next session that needs you, in the Now chip's order, on its
@@ -2118,11 +2177,12 @@ is the repo and the branch of the page. It opens a menu of the session's
 branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
 glyph, branch cut in the middle, `#318 Open`, a check on the current one,
 grouped by repo when there are several) and `New branch`. Choosing a branch
-makes it the active mount and replaces the address with the same tab
-(`switchBranchMount`, also what the trail menu runs), so the crumb, the header
-and the body follow together. `New branch` swaps the menu for a name field
+makes it the active mount and replaces the address with the landing tab of
+that branch (`switchBranchMount`, also what the trail menu and the sidebar rows
+run), so the crumb, the header and the body follow together and nothing of the
+branch it leaves carries over. `New branch` swaps the menu for a name field
 (empty names it automatically) and a `Create branch` that forks a worktree
-(`forkMount`) and lands on it on the same tab; a folder project cannot fork and
+(`forkMount`) and lands on it on its landing tab; a folder project cannot fork and
 offers none. With one branch the chip has no chevron and its menu holds only
 `New branch`; with neither it is plain text.
 

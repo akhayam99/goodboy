@@ -834,14 +834,26 @@ rank below running, because an agent may be working on exactly that.
 
 The title is `text-row`. Needs you and running read in `foreground`, idle, done
 and archived in `muted-foreground`. The open session is medium weight, and its
-row has no fill while its pages are nested under it. The pages are five 28px
-child rows in a `SelectableRow`, with no indent of their own because the card
+row has no fill while its pages are nested under it. The pages are 28px
+child rows in a `SelectableRow` (the five work pages, and Questions while one is
+open, warning-toned), with no indent of their own because the card
 groups them (see The left column): the page icon in its concept tone, centred
 in a 14px box so it sits in the node's column, then its word starting at the
-title's x, and its count word in `faint-foreground`. The current page takes
-`bg-selected` and `aria-current="page"`, and the session row then carries
-`aria-current="true"`. The row and the page rows take their hover wash and
-focus ring from `ROW_INTERACTIVE`, never a copy.
+title's x, and its count word in `faint-foreground`. There is one current sign,
+from `currentSignOf`: the page that matches takes `bg-selected` and
+`aria-current="page"` alone; where no row matches (Tools, linked records) or
+the pages are folded, the session row takes `bg-selected` and
+`aria-current="page"`; while a studio sits over it the session row keeps medium
+weight and `text-foreground` with no fill and no `aria-current` (`remembered`).
+The row carries `data-current-sign`. A 16px chevron button sits at the right end
+of the open row (visible on hover and focus, always visible while folded,
+`aria-expanded`), and a 20px ghost pin button in the same slot on hover and
+focus of any live row (the checkbox owns the left slot). With two or more
+branches the card nests a 28px row per branch under the Branch page while it
+is current, at the page indent, up to five and then `All branches`: the repo
+glyph, the branch cut in the middle in `text-code`, and the pull request glyph;
+the current branch reads in `foreground`. Every row and button takes its hover
+wash and focus ring from `ROW_INTERACTIVE`, never a copy.
 
 The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
 at `z-popover`, 8px to the right of the column and aligned to its row, with a
@@ -861,7 +873,25 @@ surface) at `max-w-105`. Its rows are 36px `SelectableRow` options: node, title
 and age. Its foot shows two gestures, `⌃Tab next` (the real control glyph from
 `shortcutGlyphs('session.switcher')`) and `Release to open`; back and Esc still
 work and live in the Shortcuts list. It stays hidden for the first
-120ms of a hold, so a quick tap flips sessions without drawing it.
+120ms of a hold, so a quick tap flips sessions without drawing it. With pins it
+adds a `Pinned` eyebrow and listbox of up to eight sessions above `Recent
+sessions`; the first `Tab` still selects the previous session wherever it sits.
+
+### Rail
+
+The 44px rail (`ColumnRail`) keeps its 32px door buttons and adds 28px node
+buttons (`RAIL_NODE_BUTTON` in `RailButton.tsx`) under the doors, in the
+workspace scope only: the open session (the row's `SessionStateNode`, current
+fill on its page, no fill and `text-foreground` while a studio sits over it),
+then up to seven pinned sessions with the title and the stage words in a
+tooltip, then `+N` in `text-meta`. The open session and `+N` open a flyout
+instead of a tooltip: the floating surface, 288px wide, `z-popover`, 8px to the
+right of the button, holding the title and stage words, the pages list (the
+same `SessionPages`), the branches and a `Pinned` eyebrow with one row per pin.
+It opens after a 150ms rest or keyboard focus, closes 180ms after the pointer
+leaves, and Esc closes it and returns focus to the button. `New` shows a 6px
+primary dot (`data-slot="draft-dot"`) while a written draft waits, and its label
+and tooltip read `New session, draft in progress`.
 
 ### Work meta
 

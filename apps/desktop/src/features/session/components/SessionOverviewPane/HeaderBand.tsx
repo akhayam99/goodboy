@@ -1,4 +1,5 @@
-import { Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
+import { Pin, PinOff } from 'lucide-react';
+import { IconButton, Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -14,6 +15,7 @@ import { ArtifactsChip } from './ArtifactsChip';
 import { ChatOriginRow } from './ChatOriginRow';
 import { ArchivedRestore } from './ArchivedRestore';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { useSessionPin } from '../../../actions/useSessionPin';
 import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 
 type Props = {
@@ -30,6 +32,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
     anchorKeys: [null, SESSION_HEADER_ANCHOR],
     onRename: rename.start,
   });
+  const pin = useSessionPin({ session });
   const titleText = sessionTitle({ session });
   const isNamedByGoodboy = useAppStore(
     (s) => s.goodboyNamedSessionId === sessionId && !session.titleUserEdited,
@@ -84,6 +87,14 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
         <div className="flex shrink-0 items-center gap-1">
           {isArchived ? null : <SessionRefreshAction sessionId={sessionId} />}
           <SessionDestructiveActions session={session} />
+          {isArchived ? null : (
+            <IconButton
+              icon={pin.isPinned ? PinOff : Pin}
+              label={pin.label}
+              aria-pressed={pin.isPinned}
+              onClick={pin.toggle}
+            />
+          )}
         </div>
       </div>
       <ChatOriginRow session={session} />

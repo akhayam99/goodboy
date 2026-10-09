@@ -11,7 +11,7 @@ Move between the tasks of a workspace, and see from any screen which one needs y
 
 Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, an amber **?**, shield or **!** means you must answer, approve or act, a green check means the pull request is ready to merge, a red **!** means something broke, a filled violet check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
 
-Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open sits in a card with its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count, so it is clear they belong to that session.
+Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open sits in a card with its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count, so it is clear they belong to that session. **Questions** joins them while one is open. A chevron at the right end of the open session's row folds and shows its pages, and Goodboy remembers the choice for each session. Whatever you have open, one row shows where you are: the page, or the session itself when the page is a tool such as Terminal. A session with several branches lists them under **Branch** while you are on that page, and choosing one opens that branch on the tab it lands on.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
@@ -24,7 +24,9 @@ To switch without looking at the list, hold **Control** and press **Tab** to fli
 
 ### Pin a session to keep it at the top
 
-With many sessions, keep the ones you return to at the top of the list. Choose **Pin session** from a row's right-click menu or from the command palette, and the session moves to a **Pinned** group above the rest, in the order you pinned them, whatever the sort, grouping or project filter. **Unpin session** puts it back. A pinned session you archive comes back to Pinned when you restore it.
+With many sessions, keep the ones you return to at the top of the list. Choose **Pin session** from a row's right-click menu or from the command palette, and the session moves to a **Pinned** group above the rest, in the order you pinned them, whatever the sort, grouping or project filter. **Unpin session** puts it back. A pinned session you archive comes back to Pinned when you restore it. Hover a row to pin it from the pin at its right end, or use the pin in the session's title row. **Move up** and **Move down** in the row menu and the command palette set the order. The same order shows on the Board card, which carries a small pin, in the **Pinned** section of the Control-Tab switcher, and on the rail.
+
+Fold the sidebar with the toggle and the rail keeps the open session and your pinned sessions as small signs under the doors. Hover or focus the open session to see its pages, its branches and your pinned sessions, and choose one. **New** shows a dot while a draft waits.
 
 ### Now chip
 

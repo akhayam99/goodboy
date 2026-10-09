@@ -9,7 +9,7 @@ import { ColumnFoot } from './ColumnFoot';
 import { ColumnToggleButton } from './ColumnToggleButton';
 import { NewSessionRow } from './NewSessionRow';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
-import type { ColumnPlace } from './columnPlace';
+import { isStudioOverSession, type ColumnPlace } from './columnPlace';
 
 type Props = {
   readonly scope: ShellColumnScope;
@@ -86,7 +86,10 @@ export const SideColumn = ({
             </div>
             <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
               <SessionNavSidebar
-                currentSessionId={place === null ? currentSessionId : null}
+                currentSessionId={
+                  place === null || isStudioOverSession({ place }) ? currentSessionId : null
+                }
+                isStudioOver={isStudioOverSession({ place })}
                 {...(onNavigate !== undefined && { onNavigate })}
               />
             </div>

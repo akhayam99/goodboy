@@ -124,6 +124,7 @@ describe('the u21 run page scenes', () => {
     await screen.findByTestId('orchestrator-strip');
     const names = screen
       .getAllByRole('button')
+      .filter((button) => !button.hasAttribute('data-rail-session'))
       .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '')
       .filter((name) => /^Stop\b/.test(name));
 

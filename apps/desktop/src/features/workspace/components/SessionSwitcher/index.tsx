@@ -17,6 +17,7 @@ export const SessionSwitcher = () => {
       <div aria-hidden className="absolute inset-0 bg-scrim motion-safe:animate-fade-in" />
       <SwitcherPanel
         sessions={state.ids.map((id) => sessionById(sessions, id))}
+        pinnedCount={state.pinnedCount}
         selectedIndex={state.index}
         onChoose={choose}
       />

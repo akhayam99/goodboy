@@ -103,7 +103,6 @@ describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) 
         onSelect={noop}
         onRowEnter={noop}
         onRowLeave={noop}
-        onPagesToggle={noop}
       />,
     );
 
@@ -189,7 +188,6 @@ describe('a session in the merge queue', () => {
         onSelect={noop}
         onRowEnter={noop}
         onRowLeave={noop}
-        onPagesToggle={noop}
       />,
     );
 

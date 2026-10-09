@@ -23,6 +23,8 @@ const LIVE: SessionFacts = {
   title: 'Speed up the payout export',
   isArchived: false,
   isPinned: false,
+  canMovePinUp: false,
+  canMovePinDown: false,
   isBranchless: false,
   hasMount: true,
   branch: 'feat/stream-payout-export',

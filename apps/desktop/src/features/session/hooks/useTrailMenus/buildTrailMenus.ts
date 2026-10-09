@@ -56,10 +56,11 @@ export const buildTrailMenus = ({
   const scope = createTrailMenuScope(inputs);
   crumbs.forEach((crumb, index) => {
     const isDepthOne = crumbs.length === 1 ? index === 0 : index === 1;
-    const menu =
-      isDepthOne && crumb.id !== 'branch'
-        ? pageCrumbMenu({ scope, activeLens, isBranchless })
-        : menuForCrumb({ scope, crumbId: crumb.id });
+    const isSessionCrumb = index === 0;
+    const hasPageMenu = isSessionCrumb || (isDepthOne && crumb.id !== 'branch');
+    const menu = hasPageMenu
+      ? pageCrumbMenu({ scope, activeLens, isBranchless })
+      : menuForCrumb({ scope, crumbId: crumb.id });
     if (menu !== null) {
       menus.set(crumb.id, menu);
     }

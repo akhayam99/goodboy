@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Eyebrow,
   FilledEmptyState,
@@ -33,8 +33,7 @@ import { sessionGroupPresentation } from './groupPresentation';
 import { SessionViewMenu } from './SessionViewMenu';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
-import { SessionPages } from './SessionPages';
-import { SESSION_CARD_CLASS } from './sessionCard';
+import { OpenSessionCard } from './OpenSessionCard';
 
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
 
@@ -45,6 +44,7 @@ type Props = {
   sessions: ReadonlyArray<Session>;
   archivedSessions: ReadonlyArray<Session>;
   currentSessionId: SessionId | null;
+  isStudioOver?: boolean;
   onSelectSession: (id: SessionId) => void;
   onArchivedTabOpen?: () => void;
 };
@@ -59,6 +59,7 @@ export const SessionActivityBar = ({
   sessions,
   archivedSessions,
   currentSessionId,
+  isStudioOver = false,
   onSelectSession,
   onArchivedTabOpen,
 }: Props) => {
@@ -67,7 +68,6 @@ export const SessionActivityBar = ({
   const navigate = useAppStore((s) => s.navigate);
   const prefs = useSessionViewPrefs(workspaceId);
   const column = useSessionColumn(workspaceId, sessions);
-  const [foldedPagesFor, setFoldedPagesFor] = useState<SessionId | null>(null);
   const hover = useHoverCardTarget();
   const { close: closeHover } = hover;
 
@@ -98,10 +98,6 @@ export const SessionActivityBar = ({
   useEffect(() => {
     onArchivedTabOpen?.();
   }, [onArchivedTabOpen]);
-
-  useEffect(() => {
-    setFoldedPagesFor(null);
-  }, [currentSessionId]);
 
   const visibleOrder = useMemo(
     () => [...column.order, ...shownArchived.map((session) => session.id as SessionId)],
@@ -194,12 +190,6 @@ export const SessionActivityBar = ({
     [setSessionViewPrefs, workspaceId],
   );
 
-  const setPagesShown = useCallback(
-    ({ sessionId, isShown }: { readonly sessionId: SessionId; readonly isShown: boolean }) =>
-      setFoldedPagesFor(isShown ? null : sessionId),
-    [],
-  );
-
   const openAttention = useCallback(
     ({ sessionId, reason }: OpenAttention) => {
       closeHover();
@@ -236,34 +226,28 @@ export const SessionActivityBar = ({
   const renderRow = (session: Session, isArchived: boolean) => {
     const id = session.id as SessionId;
     const isActive = id === currentSessionId;
-    const isPagesShown = isActive && foldedPagesFor !== id && !isArchived;
-    const row = (
-      <SessionActivityItem
-        session={session}
-        isActive={isActive}
-        isPagesShown={isPagesShown}
-        isArchived={isArchived}
-        isSelected={isSelected(id)}
-        getSelectedIds={getSelectedIds}
-        onClearSelection={clearSelection}
-        onModifierClick={selection.handleItemClick}
-        onToggleSelect={onToggleSelect}
-        onSelect={selectSession}
-        onRowEnter={hover.enter}
-        onRowLeave={hover.leave}
-        onPagesToggle={setPagesShown}
-      />
-    );
-    const isCard = isActive && !isArchived;
+    const rowProps = {
+      session,
+      isArchived,
+      isSelected: isSelected(id),
+      getSelectedIds,
+      onClearSelection: clearSelection,
+      onModifierClick: selection.handleItemClick,
+      onToggleSelect,
+      onSelect: selectSession,
+      onRowEnter: hover.enter,
+      onRowLeave: hover.leave,
+    };
     return (
       <li key={session.id} className="flex flex-col">
-        {isCard ? (
-          <div data-session-card className={SESSION_CARD_CLASS}>
-            {row}
-            {isPagesShown ? <SessionPages session={session} /> : null}
-          </div>
+        {isActive && !isArchived ? (
+          <OpenSessionCard {...rowProps} hasStudioOver={isStudioOver} />
         ) : (
-          row
+          <SessionActivityItem
+            {...rowProps}
+            isActive={isActive}
+            sign={isActive ? 'session' : null}
+          />
         )}
       </li>
     );

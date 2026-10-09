@@ -2,17 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useEscapeLayer } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../../store';
-import { recentlyOpenedFirst } from '../../../../../store/slices/session-view/sortAndGroupSessions';
 import { MODAL_SELECTOR, registerShortcut } from '../../../../../shared/keyboard/dispatcher';
 import { isTerminalFocused } from '../../../../../shared/keyboard/isTerminalFocused';
+import { switcherOrderOf, type SwitcherOrder } from '../switcherOrder';
 
 const VISIBLE_AFTER_MS = 120;
-const LIST_LIMIT = 8;
 
 type Direction = 1 | -1;
 
 type SwitcherState = {
   readonly ids: ReadonlyArray<SessionId>;
+  readonly pinnedCount: number;
   readonly index: number;
   readonly isVisible: boolean;
 };
@@ -22,12 +22,14 @@ type Switcher = {
   readonly choose: (index: number) => void;
 };
 
-const recentIds = (): ReadonlyArray<SessionId> => {
-  const { sessions, currentSessionId } = useAppStore.getState();
-  const recent = recentlyOpenedFirst(sessions).map((session) => session.id as SessionId);
-  const current = recent.find((id) => id === currentSessionId);
-  const rest = recent.filter((id) => id !== current);
-  return (current === undefined ? rest : [current, ...rest]).slice(0, LIST_LIMIT);
+const currentOrder = (): SwitcherOrder => {
+  const { sessions, currentSessionId, currentWorkspaceId, sessionPins } = useAppStore.getState();
+  const pins = currentWorkspaceId === null ? [] : (sessionPins[currentWorkspaceId] ?? []);
+  return switcherOrderOf({
+    sessions,
+    currentSessionId,
+    pinnedIds: pins.map((pin) => pin.id),
+  });
 };
 
 const yieldsToFocus = (): boolean =>
@@ -100,16 +102,22 @@ export const useSessionSwitcher = (): Switcher => {
         const length = current.ids.length;
         publish({
           ids: current.ids,
+          pinnedCount: current.pinnedCount,
           index: (current.index + direction + length) % length,
           isVisible: true,
         });
         return true;
       }
-      const ids = recentIds();
+      const { ids, pinnedCount, previousIndex } = currentOrder();
       if (ids.length < 2) {
         return true;
       }
-      publish({ ids, index: direction === 1 ? 1 : ids.length - 1, isVisible: false });
+      publish({
+        ids,
+        pinnedCount,
+        index: direction === 1 ? Math.max(previousIndex, 0) : ids.length - 1,
+        isVisible: false,
+      });
       arm();
       return true;
     },

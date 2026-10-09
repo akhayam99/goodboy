@@ -250,4 +250,32 @@ describe('HeaderBand', () => {
 
     screen.getByRole('button', { name: 'Untitled session' });
   });
+
+  it('pins the session from the title row through the pin action and unpins it again', () => {
+    const pinSession = vi.fn(async () => undefined);
+    const unpinSession = vi.fn(async () => undefined);
+    useAppStore.setState({ pinSession, unpinSession });
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
+
+    const pin = screen.getByRole('button', { name: 'Pin session' });
+    expect(pin.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(pin);
+    expect(pinSession).toHaveBeenCalledWith(SESSION_ID);
+
+    cleanup();
+    useAppStore.setState({
+      sessionPins: { ['workspace-1' as WorkspaceId]: [{ id: SESSION_ID, at: 1 }] },
+    });
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
+    const unpin = screen.getByRole('button', { name: 'Unpin session' });
+    expect(unpin.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(unpin);
+    expect(unpinSession).toHaveBeenCalledWith(SESSION_ID);
+  });
+
+  it('has no pin toggle on an archived session', () => {
+    render(<HeaderBand session={{ ...session, archivedAt: NOW }} onSelectLens={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: /pin session/i })).toBeNull();
+  });
 });

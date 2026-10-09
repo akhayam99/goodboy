@@ -21,7 +21,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
-import { seedColumn, sessionOf } from '../../testing/sessionColumn';
+import { harborline, seedColumn, sessionOf } from '../../testing/sessionColumn';
 import { SessionSwitcher } from '.';
 
 let useAppStore: StoryStore;
@@ -214,5 +214,88 @@ describe('the recent session switcher', () => {
     });
     expect(sent.event?.defaultPrevented).toBe(true);
     field.remove();
+  });
+});
+
+describe('the pinned section of the switcher', () => {
+  const pin = (...sessions: ReadonlyArray<{ readonly id: string }>) =>
+    useAppStore.setState({
+      sessionPins: {
+        [harborline.id]: sessions.map((session, index) => ({ id: idOf(session), at: index + 1 })),
+      },
+    });
+
+  const selectedAny = () =>
+    screen
+      .getAllByRole('option')
+      .find((option) => option.getAttribute('aria-selected') === 'true')
+      ?.textContent?.replace(/\s*(just now|\d+\w ago)$/, '');
+
+  const titlesIn = (name: string) =>
+    within(screen.getByRole('listbox', { name }))
+      .getAllByRole('option')
+      .map((option) => option.textContent?.replace(/\s*(just now|\d+\w ago)$/, ''));
+
+  it('lists the pinned sessions first, in pin order, then the recent ones', () => {
+    mount();
+    pin(lastWeek, monday);
+    press('session.switcher');
+    wait(120);
+    expect(titlesIn('Pinned')).toEqual(['Notify relay backoff', 'Ledger export speedup']);
+    expect(titlesIn('Recent sessions')).toEqual(['Fix webhook retries']);
+  });
+
+  it('still starts on the previous session when it is not pinned', () => {
+    mount();
+    pin(lastWeek);
+    press('session.switcher');
+    wait(120);
+    expect(selectedAny()).toBe('Ledger export speedup');
+    releaseControl();
+    expect(current()).toBe(idOf(monday));
+  });
+
+  it('starts on the previous session when it is pinned, without moving through the pins', () => {
+    mount();
+    pin(lastWeek, monday);
+    press('session.switcher');
+    wait(120);
+    expect(selectedAny()).toBe('Ledger export speedup');
+    releaseControl();
+    expect(current()).toBe(idOf(monday));
+  });
+
+  it('lists the open session once when it is pinned', () => {
+    mount();
+    pin(today, lastWeek);
+    press('session.switcher');
+    wait(120);
+    const all = [...titlesIn('Pinned'), ...titlesIn('Recent sessions')];
+    expect(all.filter((title) => title === 'Fix webhook retries')).toHaveLength(1);
+    expect(new Set(all).size).toBe(all.length);
+    expect(titlesIn('Pinned')).toEqual(['Fix webhook retries', 'Notify relay backoff']);
+  });
+
+  it('steps through the pinned rows first, then the recent ones, and wraps', () => {
+    mount();
+    pin(lastWeek);
+    press('session.switcher');
+    wait(120);
+    expect(selectedAny()).toBe('Ledger export speedup');
+    press('session.switcher');
+    expect(selectedAny()).toBe('Notify relay backoff');
+    press('session.switcher');
+    expect(selectedAny()).toBe('Fix webhook retries');
+    press('session.switcher');
+    expect(selectedAny()).toBe('Ledger export speedup');
+    press('session.switcherBack');
+    expect(selectedAny()).toBe('Fix webhook retries');
+  });
+
+  it('shows no Pinned section when nothing is pinned', () => {
+    mount();
+    press('session.switcher');
+    wait(120);
+    expect(screen.queryByRole('listbox', { name: 'Pinned' })).toBeNull();
   });
 });

@@ -1,7 +1,25 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
-import type { GetFn, Location, SessionView, SetFn } from './types';
+import type { BranchTab, GetFn, Location, SessionView, SetFn } from './types';
+
+type TabsParams = {
+  readonly state: AppState;
+  readonly sessionId: SessionId;
+  readonly target: SessionView['target'];
+};
+
+const branchTabsAfter = ({ state, sessionId, target }: TabsParams): AppState['branchTab'] => {
+  if (target?.kind === 'branch') {
+    return { ...state.branchTab, [sessionId]: target.tab };
+  }
+  if (!(sessionId in state.branchTab)) {
+    return state.branchTab;
+  }
+  const rest: Record<SessionId, BranchTab> = { ...state.branchTab };
+  delete rest[sessionId];
+  return rest;
+};
 
 type SurfaceParams = {
   readonly state: AppState;
@@ -50,10 +68,7 @@ const surfaceChanges = ({
         target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null,
       ),
     },
-    branchTab: {
-      ...state.branchTab,
-      [sessionId]: target?.kind === 'branch' ? target.tab : 'comments',
-    },
+    branchTab: branchTabsAfter({ state, sessionId, target }),
     branchThreadId: {
       ...state.branchThreadId,
       [sessionId]: target?.kind === 'branch' ? target.threadId : null,

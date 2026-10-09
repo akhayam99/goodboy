@@ -34,6 +34,7 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionPins: {} as Record<string, ReadonlyArray<{ id: string; at: number }>>,
     projects: [] as ReadonlyArray<unknown>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
@@ -144,6 +145,7 @@ beforeEach(() => {
   state.sessionExternalTasks = {};
   state.sessionWorktrees = {};
   state.sessionProjectMounts = {};
+  state.sessionPins = {};
   state.projects = [];
   state.sessionPhaseRuns = {};
   state.reviewDrafts = {};
@@ -639,5 +641,20 @@ describe('StageBoardCard footer', () => {
     hooks.agents = [];
     render(<StageBoardCard session={session} nav={nav} />);
     expect(screen.queryByLabelText(/agent/)).toBeNull();
+  });
+
+  it('marks a pinned session with a quiet pin and leaves the others bare', () => {
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByRole('img', { name: 'Pinned' })).toBeNull();
+    cleanup();
+    state.sessionPins = { [WORKSPACE_ID]: [{ id: SESSION_ID, at: 1 }] };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByRole('img', { name: 'Pinned' })).toBeDefined();
+  });
+
+  it('does not mark a pin kept in another workspace', () => {
+    state.sessionPins = { ['workspace-2']: [{ id: SESSION_ID, at: 1 }] };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByRole('img', { name: 'Pinned' })).toBeNull();
   });
 });

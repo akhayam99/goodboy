@@ -2,6 +2,7 @@ import { expect } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import type { MountId, SessionMountView, SessionProjectMount } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
+import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
 import {
   type Ctx,
   type Row,
@@ -118,7 +119,7 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'branch switcher: the chip moves the page to a second branch, and the crumb and header follow',
+    name: 'branch switcher: the chip moves the page to a second branch on its landing tab, and the crumb and header follow',
     covers: ['navigate', 'trail:branch-switcher'],
     open: async (ctx) => {
       addSecondBranch(ctx);
@@ -144,7 +145,13 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
         () => expect(useAppStore.getState().diffMountPath[ctx.sessionId]).toBe(SECOND_PATH),
         WAIT,
       );
-      await branchTab('files')(ctx);
+      await waitFor(
+        () =>
+          expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe(
+            branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
+          ),
+        WAIT,
+      );
       await waitFor(() => expect(paneHeading()).toBe(SECOND_BRANCH), WAIT);
       await screen.findByRole('button', { name: `Branch ${SECOND_BRANCH}` }, WAIT);
       expect(trailNav().textContent ?? '').toMatch(/Session.*Branch/);

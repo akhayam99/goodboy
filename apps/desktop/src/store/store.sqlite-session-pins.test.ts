@@ -335,6 +335,82 @@ describe('store on sqlite: pinned sessions', () => {
   });
 });
 
+describe('store on sqlite: moving pinned sessions', () => {
+  const pinThree = async () => {
+    const state = () => useAppStore.getState();
+    await state().pinSession(LEDGER.id as SessionId);
+    await state().pinSession(RELAY.id as SessionId);
+    await state().pinSession(PAYMENTS.id as SessionId);
+  };
+
+  it('moves a pin down and up, and the order survives a reload', async () => {
+    await pinThree();
+
+    await useAppStore
+      .getState()
+      .moveSessionPin({ sessionId: LEDGER.id as SessionId, direction: 'down' });
+    expect(pinnedIds()).toEqual([RELAY.id, LEDGER.id, PAYMENTS.id]);
+
+    await useAppStore
+      .getState()
+      .moveSessionPin({ sessionId: PAYMENTS.id as SessionId, direction: 'up' });
+    forgetPinsInMemory();
+    await useAppStore.getState().loadSessionPins({ workspaceId: HARBORLINE_ID });
+
+    expect(pinnedIds()).toEqual([RELAY.id, PAYMENTS.id, LEDGER.id]);
+    expect(await storedIds()).toEqual([RELAY.id, PAYMENTS.id, LEDGER.id]);
+  });
+
+  it('leaves the row alone at the ends', async () => {
+    await pinThree();
+    const before = await getSetting(storySqlite(), HARBORLINE_KEY);
+
+    await useAppStore
+      .getState()
+      .moveSessionPin({ sessionId: LEDGER.id as SessionId, direction: 'up' });
+    await useAppStore
+      .getState()
+      .moveSessionPin({ sessionId: PAYMENTS.id as SessionId, direction: 'down' });
+
+    expect(await getSetting(storySqlite(), HARBORLINE_KEY)).toBe(before);
+  });
+
+  it('keeps both moves when two stores move different pins at the same time', async () => {
+    await pinThree();
+    const other = create<AppStore>()((set, get) => ({
+      ...useAppStore.getState(),
+      ...createSessionPinsSlice({ set, get }),
+    }));
+    await other.getState().loadSessionPins({ workspaceId: HARBORLINE_ID });
+
+    await Promise.all([
+      useAppStore
+        .getState()
+        .moveSessionPin({ sessionId: LEDGER.id as SessionId, direction: 'down' }),
+      other.getState().moveSessionPin({ sessionId: PAYMENTS.id as SessionId, direction: 'up' }),
+    ]);
+
+    const stored = await storedIds();
+    expect(stored).toHaveLength(3);
+    expect(new Set(stored).size).toBe(3);
+    expect(stored.indexOf(LEDGER.id)).toBeGreaterThan(0);
+    expect(stored.indexOf(PAYMENTS.id)).toBeLessThan(2);
+  });
+
+  it('reports a move that cannot be written and shows what the row holds', async () => {
+    await pinThree();
+    injectDbFault({ match: /UPDATE settings SET value/, message: 'disk full' });
+
+    await useAppStore
+      .getState()
+      .moveSessionPin({ sessionId: LEDGER.id as SessionId, direction: 'down' });
+
+    expect(await storedIds()).toEqual([LEDGER.id, RELAY.id, PAYMENTS.id]);
+    expect(pinnedIds()).toEqual([LEDGER.id, RELAY.id, PAYMENTS.id]);
+    expect(await errorTitles()).toEqual(["Couldn't move the pinned session"]);
+  });
+});
+
 describe('store on sqlite: a pin that cannot be written', () => {
   it('leaves the store and the row empty when the first write fails and reports it', async () => {
     injectDbFault({ match: /INSERT INTO settings/, message: 'disk full' });
