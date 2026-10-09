@@ -56,10 +56,17 @@ describe('RoutingLabel', () => {
     expect(screen.getByText('High')).toBeDefined();
   });
 
-  it('says the model is not chosen yet when nothing is routed', () => {
+  it('says the model is unknown when nothing is routed', () => {
     render(<RoutingLabel />);
 
-    expect(screen.getByText('Model not chosen yet')).toBeDefined();
+    expect(screen.getByText('Model unknown')).toBeDefined();
+  });
+
+  it('puts a prefix before the model for a turn that has not run', () => {
+    render(<RoutingLabel provider="anthropic" model="claude-opus-4-5" prefix="Next turn:" />);
+
+    expect(screen.getByText('Next turn:')).toBeDefined();
+    expect(screen.getByText('Opus 4.5')).toBeDefined();
   });
 
   it('keeps the whole route in the tooltip for an unknown model', () => {

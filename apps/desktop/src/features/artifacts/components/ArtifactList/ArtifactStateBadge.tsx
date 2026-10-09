@@ -24,7 +24,7 @@ export const ArtifactStateBadge = ({ state }: Props) => {
       data-testid="artifact-row-state"
       data-state={state.key}
       title={stateDescription({ presentation: state })}
-      className="flex min-w-0 items-center gap-2 text-label"
+      className="flex min-w-0 flex-col items-start justify-center text-label"
     >
       {state.tone === 'warning' ? (
         <Chip
@@ -42,7 +42,10 @@ export const ArtifactStateBadge = ({ state }: Props) => {
         </span>
       )}
       {state.detail === null ? null : (
-        <span className="min-w-0 truncate text-meta text-faint-foreground @max-[640px]:hidden">
+        <span
+          data-testid="artifact-row-progress"
+          className="max-w-full min-w-0 truncate px-2 text-meta text-faint-foreground"
+        >
           {state.detail}
         </span>
       )}

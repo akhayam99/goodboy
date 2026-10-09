@@ -35,5 +35,5 @@ export const scriptEmptyHint = ({ groups, query, isReading }: Params): string =>
   if (isReading) {
     return `Reading scripts in ${projectNames({ groups: ready })}.`;
   }
-  return `No pinned scripts in ${projectNames({ groups: ready })}. Pin some in Settings.`;
+  return `No scripts in ${projectNames({ groups: ready })}. Pin a script from the Scripts page.`;
 };

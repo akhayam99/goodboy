@@ -169,6 +169,11 @@ describe('TranscriptRows', () => {
     expect(screen.getAllByTestId('transcript-day')).toHaveLength(1);
   });
 
+  it('aligns the day divider to the start like the rows', () => {
+    renderRows([itemRow(userText('u1', new Date(2026, 4, 15, 9, 0, 0)))]);
+    expect(screen.getByTestId('transcript-day').getAttribute('data-align')).toBe('start');
+  });
+
   it('marks the move into today after an earlier day', () => {
     renderRows([
       itemRow(userText('u1', new Date(Date.now() - 86_400_000))),

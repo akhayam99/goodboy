@@ -13,6 +13,7 @@ import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentHeaderStatus } from './AgentHeaderStatus';
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';
+import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
 import { AgentBrief } from './AgentBrief';
 import { AgentHeader } from './AgentHeader';
 import { AgentHeaderTime } from './AgentHeaderTime';
@@ -54,13 +55,8 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
   );
-  const modelOverride = useAppStore(
-    (state) => state.agentModelOverride[agent.id] ?? agent.modelOverride ?? null,
-  );
-  const effortOverride = useAppStore(
-    (state) => state.agentEffortOverride[agent.id] ?? agent.effort ?? null,
-  );
   const executed = useExecutedAgentRouting({ agent });
+  const routing = useAgentHeaderRouting({ session, agent });
   const time = useAgentDetailWorkTime({
     session,
     agent,
@@ -80,11 +76,6 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     return () => window.removeEventListener('goodboy:reveal-chat', reveal);
   }, []);
 
-  const planned =
-    modelOverride != null || providerOverride != null || effortOverride != null
-      ? { provider: providerOverride, model: modelOverride, effort: effortOverride }
-      : null;
-  const observedEffort = executed?.effort ?? null;
   const isTranscript = tab === 'transcript';
   const headerMenu = useObjectMenuTrigger({
     target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
@@ -129,11 +120,12 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
               {time == null ? null : <AgentHeaderTime time={time} />}
               <TriggerSeparator />
               <RoutingLabel
-                provider={executed?.provider ?? providerOverride}
-                model={executed?.model ?? modelOverride}
-                effort={observedEffort ?? effortOverride}
-                planned={planned}
-                isEffortObserved={observedEffort != null}
+                provider={routing.provider}
+                model={routing.model}
+                effort={routing.effort}
+                planned={routing.planned}
+                isEffortObserved={routing.isEffortObserved}
+                prefix={routing.isNextTurn ? 'Next turn:' : undefined}
               />
             </>
           }

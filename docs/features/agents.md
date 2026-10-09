@@ -39,7 +39,7 @@ Give each agent the job it is good at. Nine roles come with the app, **Scout**, 
 
 ### Agent header
 
-Read who an agent is without giving the transcript away. The title, the **Brief** and **Transcript** tabs and the actions share one row, and role, status, time and model sit on one line under it. The title stays on one line and shows in full on hover. **Delete** is an icon that asks in a confirm anchored to it, and the menu beside it holds the rest. The transcript starts right under the header, without a leading day chip.
+Read who an agent is without giving the transcript away. The title, the **Brief** and **Transcript** tabs and the actions share one row, and role, status, time and model sit on one line under it. The title stays on one line and shows in full on hover. Every agent page has this header, even while it loads or when the agent is gone. The model is the one of the agent's last turn, then the one saved for it, and reads **Model unknown** when nothing is known; an agent that is running and has not started its turn yet reads **Next turn:** with the model it will use. The message box names its own model only when it differs, as **Next turn**, and shows a quiet **Model** otherwise. While a turn runs the message box offers a **Stop** button with its word. **Delete** is an icon that asks in a confirm anchored to it, and the menu beside it holds the rest. The transcript starts right under the header, and a day divider sits at the left like the messages.
 
 ### What the agent received
 

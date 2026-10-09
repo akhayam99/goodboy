@@ -27,17 +27,15 @@ export const SendControl = ({
   if (isRunning && isEmpty) {
     return (
       <Tooltip content="Stop the turn">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onCancel}
-          aria-label="Stop"
-          className={cn(
-            'inline-flex h-7 w-7 items-center justify-center rounded-md text-danger transition-colors',
-            tintClasses('danger').hoverBg,
-          )}
+          className={cn(tintClasses('danger').text, tintClasses('danger').hoverBg)}
         >
-          <Square size={ICON_SIZE.control} aria-hidden fill="currentColor" />
-        </button>
+          <Square size={ICON_SIZE.row} aria-hidden fill="currentColor" />
+          Stop
+        </Button>
       </Tooltip>
     );
   }

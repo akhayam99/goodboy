@@ -3,16 +3,17 @@ export const ARTIFACT_ROW_GRID = {
   lead: 'size-[18px] shrink-0',
   glyph: 'w-5 shrink-0',
   title: 'min-w-16 flex-1 truncate text-row',
+  kind: 'w-20 shrink-0 truncate text-meta text-muted-foreground @max-[560px]:hidden',
   state:
-    'flex w-52 min-w-0 shrink-0 items-center justify-start @max-[560px]:w-32 @max-[400px]:hidden',
+    'flex w-36 min-w-0 shrink-0 items-center justify-start @max-[560px]:w-32 @max-[400px]:hidden',
   date: 'w-[72px] shrink-0 text-right text-meta tabular-nums text-faint-foreground @max-[480px]:hidden',
-  tail: 'flex w-60 shrink-0 items-center @max-[560px]:w-39',
+  tail: 'flex w-52 shrink-0 items-center @max-[560px]:w-31',
   primary: 'flex w-[92px] shrink-0 items-center justify-end',
   hover:
-    'pointer-events-none flex w-[84px] shrink-0 items-center justify-end opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 @max-[560px]:hidden',
-  remove: 'flex w-8 shrink-0 items-center justify-center',
+    'pointer-events-none invisible flex w-[84px] shrink-0 items-center justify-end opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 @max-[560px]:hidden',
   menu: 'flex w-8 shrink-0 items-center justify-center',
-  deletedTail: 'flex w-60 shrink-0 items-center',
-  deleted: 'flex w-[148px] shrink-0 items-center justify-end',
+  deletedTail: 'flex w-52 shrink-0 items-center',
+  restore: 'flex w-[68px] shrink-0 items-center justify-end',
+  deleted: 'flex w-[140px] shrink-0 items-center justify-end',
   partsIndent: 'pl-[60px]',
 } as const satisfies Record<string, string>;

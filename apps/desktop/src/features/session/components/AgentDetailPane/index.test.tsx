@@ -2,13 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, ProviderId, ProviderName, Session, SessionId } from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
   agentKindOverride: {},
-  agentProviderOverride: {},
-  agentModelOverride: {},
-  agentEffortOverride: {},
+  agentProviderOverride: {} as Record<string, ProviderId>,
+  agentModelOverride: {} as Record<string, string>,
+  agentEffortOverride: {} as Record<string, string>,
   agentTurnState: {} as Record<string, { kind: string }>,
   agentPane: {} as Record<string, 'brief' | 'transcript' | null>,
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
@@ -16,7 +16,7 @@ const state = vi.hoisted(() => ({
 }));
 
 const executedRouting = vi.hoisted(() => ({
-  value: null as { provider: string; model: string; effort: string | null } | null,
+  value: null as { provider: ProviderName; model: string; effort: string | null } | null,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -24,6 +24,32 @@ vi.mock('../../../../store', () => ({
   useExecutedAgentRouting: () => executedRouting.value,
   EMPTY_ARRAY: [],
 }));
+
+vi.mock('../../../../shared/hooks/useAgentHeaderRouting', async () => {
+  const { agentRowRouting } = await import('../../timeline/agentRowRouting');
+  const { agentHeaderRouting } =
+    await import('../../../../shared/hooks/useAgentHeaderRouting/agentHeaderRouting');
+  const { EFFORT_LEVELS } = await import('../../../chat/utils/chat-constants');
+  return {
+    useAgentHeaderRouting: ({ agent }: { readonly agent: Agent }) =>
+      agentHeaderRouting({
+        row: agentRowRouting({
+          executed: executedRouting.value,
+          step: null,
+          kind: 'implementer',
+          roleModels: null,
+          providerOverride: state.agentProviderOverride[agent.id] ?? null,
+          modelOverride: state.agentModelOverride[agent.id] ?? null,
+          effortOverride:
+            EFFORT_LEVELS.find((level) => level === state.agentEffortOverride[agent.id]) ?? null,
+          sessionProvider: null,
+          sessionEffort: null,
+        }),
+        reference: null,
+        isLive: agent.status === 'running',
+      }),
+  };
+});
 
 const detailTime = vi.hoisted(() => ({
   value: undefined as
@@ -150,8 +176,32 @@ describe('AgentDetailPane', () => {
 
     expect(within(meta).getByText('Implementer')).toBeDefined();
     expect(within(meta).getByText('Running')).toBeDefined();
-    expect(within(meta).getByText('Model not chosen yet')).toBeDefined();
+    expect(within(meta).getByText('Model unknown')).toBeDefined();
     expect(title.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows the model of the last turn in the header of a finished agent', () => {
+    executedRouting.value = { provider: 'anthropic', model: 'claude-opus-4-5', effort: 'medium' };
+    render(<AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />);
+    const meta = screen.getByTestId('agent-header-meta');
+    expect(within(meta).getByText('Opus 4.5')).toBeDefined();
+    expect(within(meta).queryByText('Model unknown')).toBeNull();
+    expect(within(meta).queryByText('Next turn:')).toBeNull();
+  });
+
+  it('labels a model chosen for the next turn while the agent runs', () => {
+    Object.assign(state, { agentModelOverride: { [agentId]: 'claude-opus-4-5' } });
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => {}}
+      />,
+    );
+    const meta = screen.getByTestId('agent-header-meta');
+    expect(within(meta).getByText('Next turn:')).toBeDefined();
+    expect(within(meta).getByText('Opus 4.5')).toBeDefined();
   });
 
   it('puts the actions on the title row and Brief and Transcript on their own row under the meta line', () => {

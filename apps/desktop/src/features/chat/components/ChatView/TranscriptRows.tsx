@@ -157,7 +157,8 @@ export const TranscriptRows = ({
             <li
               key={`day-${day}-${idx}`}
               data-testid="transcript-day"
-              className="flex justify-center"
+              data-align="start"
+              className="flex justify-start"
             >
               <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-eyebrow text-muted-foreground">
                 {formatDayLabel(at)}

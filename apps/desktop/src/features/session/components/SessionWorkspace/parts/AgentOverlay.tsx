@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button, LensEmptyState, Skeleton, SkeletonText, PaneShell } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
+import { AgentHeader } from '../../AgentDetailPane/AgentHeader';
 import { WorkTimeProvider } from '../../../../workTreeModel/components/WorkTimeProvider';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -48,7 +49,16 @@ export const AgentOverlay = ({
             />
           </PaneShell>
         ) : selectedAgent === null ? (
-          <PaneShell header={<Skeleton className="h-6 w-48" />}>
+          <PaneShell
+            header={
+              <AgentHeader
+                title="Agent"
+                meta={<Skeleton className="h-4 w-48" />}
+                tabs={null}
+                actions={null}
+              />
+            }
+          >
             <SkeletonText lines={3} />
           </PaneShell>
         ) : (

@@ -1729,6 +1729,23 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
 - **A blocked action is re-routed, never hidden.** A blocked workflow advance
   gives the reason on the CTA and opens an inline confirm before anything
   starts. With auto-run off, nothing advances without a click.
+- **The Agent page always has its header.** Every agent page (the brief, the
+  planner, Scribe, a missing or loading agent) renders `AgentHeader`: title,
+  status line, Brief | Transcript, overflow. The model in the status line is
+  the model of the agent's last turn, then the choice saved for the agent (an
+  override, or its workflow step), else `Model unknown`; a running agent that
+  has not run yet and has a chosen model reads `Next turn: <model>`
+  (`useAgentHeaderRouting`). The composer names its model only when it differs
+  from the header's, as `Next turn`; while it matches, the chip stays quiet and
+  reads `Model`. Stop is a labelled ghost button, and the transcript's day
+  divider is left-aligned like the rows.
+- **An Artifacts row has one visible action.** The state-driven primary
+  (`Run plan`, `Approve`, `Stop`, from the plan rule) and the open control
+  are all a row shows at rest. Edit, Open in browser and Copy source appear on
+  hover and focus (`data-reveal="hover"`), and Delete, Rename and the rest live
+  in the row overflow. Kind has its own fixed column (Plan, Report,
+  Wireframe), and progress (`part 2 of 4`) sits under the status. A report's
+  document title is an `h2` under the page's single `h1`.
 
 ## Starting a project from nothing
 
@@ -2461,9 +2478,11 @@ invocation, e.g. `Runs yarn workspace @northwind/web run dev`), the script's
 made every `dev` row look the same), Source (hidden inside a Saved or package
 section, since the header already says it; shown as `Saved`/`package.json`/
 `composer.json` only for a flat, single-package list), Last run in glyph and
-word, one Run or Stop button and a `⋯` menu (saved: Edit, Duplicate, Delete
-with an inline confirm; manifest: Save as script, Copy command, both using
-the invocation). "Save as script" from a workspace package writes a command
+word and one right edge of actions: Pin, Run and a horizontal `…` menu
+(saved: Edit, Duplicate, Delete with an inline confirm; manifest: Save as
+script, Copy command, both using the invocation). Pin, Run and the menu show on
+hover and focus; Stop stays visible while the script runs. The group header's
+one ghost refresh sits on the same edge. "Save as script" from a workspace package writes a command
 that still runs in that package once saved at the project root
 (`workspaceInvocation`: `yarn workspace <pkg> run <name>`, `pnpm --filter
 <pkg> run <name>`, `npm run <name> --workspace <dir>`, `bun run --filter <pkg>
@@ -2476,14 +2495,18 @@ projects that are not in the session are named in one line under the groups.
 The session sidebar has no scripts section: `$` launches, the Now chip
 watches.
 
-Every row also has a pin, always visible. A pin belongs to the project, not
+A pin belongs to the project, not
 the worktree: its id is the source, the folder and the name
 (`scriptPinId`, a saved script by its id), stored as a JSON list in the app
 setting `scripts.pinned.<projectId>` (`toggleScriptPin`, loaded by
-`loadScriptPins` through `useScriptPins`). Pinned scripts of the mounted
-projects sit in a `Pinned` strip at the top of the lens, one click runs one in
-its group's worktree, and the palette lists them under `$` with the project
-name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
+`loadScriptPins` through `useScriptPins`). A project with no pinned or saved
+script reads `No scripts in <project>` with an inline `Pin a script` that opens
+the project's manifest scripts in the group (`ScriptPinPicker`, pinning one adds
+its row) and `New script`; it never sends you to Settings. A pinned script
+shows once: in the `Pinned` strip at the top of the lens only when the session
+has more than one project (one click runs one in its group's worktree), and
+only in the rows otherwise. The palette lists pinned scripts under `$` with the
+project name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
 their project name too). On the workspace Projects page every row has a
 `Scripts` fold (`ProjectScriptsFold`, closed by default) that reads the
 project folder only when it opens (`loadProjectRootScripts`, kept in memory

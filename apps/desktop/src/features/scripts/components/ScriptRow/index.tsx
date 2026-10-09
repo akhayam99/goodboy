@@ -1,4 +1,4 @@
-import { Pin, Play, Square, Terminal } from 'lucide-react';
+import { Ellipsis, Pin, Play, Square, Terminal } from 'lucide-react';
 import { IconButton, InteractiveRow, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { RunnableScript } from '../../buildSessionScripts';
@@ -25,6 +25,13 @@ type Props = {
   readonly onRun: (script: RunnableScript) => void;
   readonly onStop: (script: RunnableScript) => void;
 };
+
+const SCRIPT_ROW_SLOT = 'flex w-7 shrink-0 items-center justify-center';
+
+const SCRIPT_ROW_REVEAL = cn(
+  SCRIPT_ROW_SLOT,
+  'invisible opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100',
+);
 
 const runsInLabel = ({ script }: { readonly script: RunnableScript }): string =>
   script.relDir === ''
@@ -58,6 +65,7 @@ export const ScriptRow = ({
       isSelected={isSelected}
       onOpen={() => onOpen(script)}
       menu={menu}
+      frameClassName="group"
       dataAttributes={{ 'data-script-key': script.key }}
       className="flex h-8 items-center gap-2 px-2"
     >
@@ -84,50 +92,52 @@ export const ScriptRow = ({
         </span>
       ) : null}
       <LastRunCell lastRun={lastRun} blockedReason={blockedReason} />
-      <span className="flex w-7 shrink-0 justify-center">
-        <IconButton
-          size="xs"
-          variant="ghost"
-          icon={Pin}
-          iconSize={ICON_SIZE.row}
-          label={isPinned ? `Unpin ${script.name}` : `Pin ${script.name}`}
-          aria-pressed={isPinned}
-          tone={isPinned ? 'primary' : 'neutral'}
-
-          onClick={onTogglePin}
-        />
-      </span>
-      <span className="flex w-7 shrink-0 justify-center">
+      <span className="flex shrink-0 items-center justify-end">
+        <span data-reveal="hover" className={SCRIPT_ROW_REVEAL}>
+          <IconButton
+            size="xs"
+            variant="ghost"
+            icon={Pin}
+            iconSize={ICON_SIZE.row}
+            label={isPinned ? `Unpin ${script.name}` : `Pin ${script.name}`}
+            aria-pressed={isPinned}
+            tone={isPinned ? 'primary' : 'neutral'}
+            onClick={onTogglePin}
+          />
+        </span>
         {isRunning ? (
-          <IconButton
-            size="xs"
-            variant="ghost"
-            icon={Square}
-            iconSize={ICON_SIZE.row}
-            label={`Stop ${script.name}`}
-
-            onClick={() => onStop(script)}
-          />
+          <span className={SCRIPT_ROW_SLOT}>
+            <IconButton
+              size="xs"
+              variant="ghost"
+              icon={Square}
+              iconSize={ICON_SIZE.row}
+              label={`Stop ${script.name}`}
+              onClick={() => onStop(script)}
+            />
+          </span>
         ) : (
-          <IconButton
-            size="xs"
-            variant="ghost"
-            icon={Play}
-            iconSize={ICON_SIZE.row}
-            label={`Run ${script.name}`}
-            tooltip={blockedReason ?? undefined}
-            disabled={blockedReason !== null}
-
-            onClick={() => onRun(script)}
-          />
+          <span data-reveal="hover" className={SCRIPT_ROW_REVEAL}>
+            <IconButton
+              size="xs"
+              variant="ghost"
+              icon={Play}
+              iconSize={ICON_SIZE.row}
+              label={`Run ${script.name}`}
+              tooltip={blockedReason ?? undefined}
+              disabled={blockedReason !== null}
+              onClick={() => onRun(script)}
+            />
+          </span>
         )}
-      </span>
-      <span className="flex w-6 shrink-0 justify-center">
-        <ObjectOverflowMenu
-          target={target}
-          label={`More for ${script.name}`}
-          anchorKey={`script:${script.key}`}
-        />
+        <span data-reveal="hover" className={SCRIPT_ROW_REVEAL}>
+          <ObjectOverflowMenu
+            target={target}
+            label={`More for ${script.name}`}
+            trigger={<Ellipsis size={ICON_SIZE.row} aria-hidden />}
+            anchorKey={`script:${script.key}`}
+          />
+        </span>
       </span>
     </InteractiveRow>
   );

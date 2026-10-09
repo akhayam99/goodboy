@@ -43,6 +43,8 @@ export type Props = {
   readonly providerLayout?: 'glyphs' | 'named';
   readonly budget?: ReactNode;
   readonly autoTrigger?: 'word' | 'resolved';
+  readonly triggerPrefix?: string;
+  readonly quietLabel?: string;
 };
 
 export const RoutingPicker = ({
@@ -75,6 +77,8 @@ export const RoutingPicker = ({
   providerLayout = 'glyphs',
   budget,
   autoTrigger = 'word',
+  triggerPrefix,
+  quietLabel,
 }: Props) => {
   const isInline = presentation === 'inline';
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
@@ -236,7 +240,12 @@ export const RoutingPicker = ({
               )}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2">
-                {resolvedAuto?.label != null ? (
+                {quietLabel != null ? (
+                  <span className="text-muted-foreground">{quietLabel}</span>
+                ) : triggerPrefix != null ? (
+                  <span className="shrink-0 text-muted-foreground">{triggerPrefix}</span>
+                ) : null}
+                {quietLabel != null ? null : resolvedAuto?.label != null ? (
                   <TriggerLabel provider={resolvedAuto.provider} label={resolvedAuto.label} />
                 ) : isAuto ? (
                   <AutoTriggerLabel />

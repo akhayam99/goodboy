@@ -8,8 +8,7 @@ export const AgentMuchLonger = () => (
     <span>Much longer than usual.</span>
     <Button
       variant="ghost"
-      size="sm"
-      className="h-5 px-1 text-meta"
+      size="xs"
       onClick={() => window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'))}
     >
       Check what it is doing in the transcript
