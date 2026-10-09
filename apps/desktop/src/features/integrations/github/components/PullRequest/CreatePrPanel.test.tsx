@@ -212,6 +212,16 @@ describe('CreatePrPanel', () => {
     );
   });
 
+  it('focuses the untouched default title with the caret at its start, so a long title reads from its first word', async () => {
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+    const title = screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement;
+
+    expect(document.activeElement).toBe(title);
+    expect(title.selectionStart).toBe(0);
+    expect(title.selectionEnd).toBe(0);
+  });
+
   it('respects the draft toggle on manual create', async () => {
     renderPanel();
     await screen.findByRole('combobox', { name: 'Branch' });

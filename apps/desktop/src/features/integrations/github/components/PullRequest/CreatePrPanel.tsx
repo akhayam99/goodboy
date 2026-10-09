@@ -270,6 +270,11 @@ export const CreatePrPanel = ({
                     disabled={busy !== null}
                     aria-label="Pull request title"
                     className="h-8 w-full text-body sm:w-96"
+                    onFocus={(event) => {
+                      if (event.currentTarget.value === defaultTitle) {
+                        event.currentTarget.setSelectionRange(0, 0);
+                      }
+                    }}
                     autoFocus
                   />
                 </FieldRow>
