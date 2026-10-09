@@ -81,7 +81,11 @@ vi.mock('../../activeChatBackend', () => ({
 }));
 
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { NAMES } from '../../../../shared/names';
 import { ChatRoom } from './index';
+
+const startWork = (): HTMLElement =>
+  within(screen.getByRole('banner')).getByRole('button', { name: NAMES.startWorkFromChat });
 
 type RoomParams = {
   readonly chat: ChatSummary | null;
@@ -226,7 +230,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     const goal = await screen.findByDisplayValue(
       'Ask for consent again when the policy version changes.',
     );
@@ -261,7 +265,7 @@ describe('ChatRoom', () => {
     store.createSession.mockRejectedValueOnce(new Error('disk full'));
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
@@ -277,7 +281,7 @@ describe('ChatRoom', () => {
     store.recordChatLink.mockRejectedValueOnce(new Error('disk full'));
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
@@ -299,7 +303,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     expect(screen.getByRole('button', { name: 'Remove payments-api' })).toBeDefined();
 
@@ -329,7 +333,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
 
     const trigger = screen.getByRole('combobox', { name: 'Project' });
@@ -346,7 +350,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('button', { name: 'Remove payments-api' }));
     expect(screen.getByRole('combobox', { name: 'Project' }).textContent).toContain('No project');
@@ -380,7 +384,7 @@ describe('ChatRoom', () => {
     store.mounts = { 'session-refunds': [{ projectId: 'project-payments' }] };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('tab', { name: 'Add to a session' }));
     expect(screen.queryByRole('combobox', { name: 'Project' })).toBeNull();
@@ -422,7 +426,7 @@ describe('ChatRoom', () => {
     store.sessionPhaseRuns = { 'session-refunds': [{ id: 'agent-refunds', ordinal: 1 }] };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('tab', { name: 'Add to a session' }));
     fireEvent.click(screen.getByRole('combobox', { name: 'Session' }));
@@ -446,7 +450,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
 
     expect(summarize).toHaveBeenCalledTimes(1);
@@ -468,7 +472,7 @@ describe('ChatRoom', () => {
     };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
 
     expect(summarize).toHaveBeenCalledTimes(1);
@@ -481,7 +485,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('button', { name: /^Drafted by: / }));
     const models = screen.getByRole('group', { name: 'Model' });
@@ -504,7 +508,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
 
     const startAs = screen.getByRole('tablist', { name: 'Start as' });
@@ -519,7 +523,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('button', { name: /^Runs on: / }));
     const effort = screen.getByRole('group', { name: 'Effort' });
@@ -539,7 +543,7 @@ describe('ChatRoom', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    fireEvent.click(startWork());
     const goal = await screen.findByDisplayValue(
       'Ask for consent again when the policy version changes.',
     );
@@ -555,7 +559,9 @@ describe('ChatRoom', () => {
     renderRoom({ chat: CHAT });
 
     const copy = screen.getByRole('button', { name: 'Copy the answer' });
-    const startHere = screen.getByRole('button', { name: 'Start work from here' });
+    const startHere = within(copy.parentElement as HTMLElement).getByRole('button', {
+      name: NAMES.startWorkFromChat,
+    });
     for (const token of ['text-meta', 'text-faint-foreground', 'h-6', 'px-2']) {
       expect(copy.classList.contains(token)).toBe(true);
       expect(startHere.classList.contains(token)).toBe(true);
@@ -563,13 +569,13 @@ describe('ChatRoom', () => {
     expect(copy.classList.contains('text-muted-foreground')).toBe(false);
   });
 
-  it('keeps the header to the title and Start work', () => {
+  it('keeps the header to the title and Start work from chat', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
     const header = screen.getByRole('banner');
     expect(within(header).getByRole('heading', { name: CHAT.title })).toBeDefined();
-    expect(within(header).getByRole('button', { name: 'Start work' })).toBeDefined();
+    expect(within(header).getByRole('button', { name: NAMES.startWorkFromChat })).toBeDefined();
     expect(within(header).queryByText(/Read-only/)).toBeNull();
     expect(within(header).queryByText(/Harborline/)).toBeNull();
     expect(within(header).queryByText(/Sonnet/)).toBeNull();
@@ -671,11 +677,11 @@ describe('ChatRoom', () => {
     });
   });
 
-  it('keeps Start work off until an answer is done', () => {
+  it('keeps Start work from chat off until an answer is done', () => {
     store.chatMessages = { [CHAT_ID]: [ANSWERED[0]!] };
     renderRoom({ chat: CHAT });
 
-    expect(screen.getByRole('button', { name: 'Start work' }).hasAttribute('disabled')).toBe(true);
+    expect(startWork().hasAttribute('disabled')).toBe(true);
   });
 
   it('creates the chat with the default model on the first send', async () => {

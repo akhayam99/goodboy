@@ -1518,7 +1518,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 
 | Place     | What goes there                                                      | Shape                                              |
 | --------- | -------------------------------------------------------------------- | -------------------------------------------------- |
-| Primary   | Launch session, or Open session once one is linked                   | one filled button, first in the action row         |
+| Primary   | Start from HBL-412, Review pull request, or Open session once linked | one filled button, first in the action row         |
 | Secondary | at most two tool verbs that move the record forward, picked by state | neutral `secondary` buttons, tone only in the icon |
 | Overflow  | rare tool verbs, Refresh and Copy link                               | the `⋯` menu on the identity line                  |
 | Utilities | Open in the tool, `⋯`, close                                         | icon buttons at the end of the identity line       |
@@ -1950,7 +1950,7 @@ failed read is an inline danger `Notice` with Retry.
 
 The chat page (`features/workspace-chat/components/ChatStudio`) is a studio
 on `StudioRailLayout`: the chat list is the rail on `chrome`, one
-conversation is the wrapped sheet, and "Turn into work" is the
+conversation is the wrapped sheet, and "Start work from chat" is the
 `DrawerColumn` drawer beside it, never a dialog.
 
 - **List rows** are `InteractiveRow`s: title `text-label`, the last answer
@@ -1968,7 +1968,7 @@ conversation is the wrapped sheet, and "Turn into work" is the
   `Markdown` in `text-prose` with no bubble. Under it, in order: `Read N files`
   (a quiet
   disclosure listing paths in `text-code`), then one `h-7` row. Copy
-  (`CopyButton` with `tone="faint"`) and "Start work from here" sit on the
+  (`CopyButton` with `tone="faint"`) and "Start work from chat" sit on the
   left, quiet `text-meta` actions that show on hover or keyboard focus of
   the answer (`group/answer`, `opacity-0` at rest so the row never shifts);
   the model and effort that wrote the answer sit on the right as faint

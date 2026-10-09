@@ -218,6 +218,7 @@ import { U23_COMMENTS_SCENES } from './scenes/u23/comments';
 import { U23_SIDEBAR_NAV_SCENES } from './scenes/u23/sidebar-nav';
 import { U23_PR_PAGE_SCENES } from './scenes/u23/pr-page';
 import { U23_SUMMARIZER_FAILED_SCENES } from './scenes/u23/summarizer-failed';
+import { U23_START_SCENES } from './scenes/u23/start';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -437,6 +438,7 @@ export const MOCK_SCENES = {
   ...U23_SIDEBAR_NAV_SCENES,
   ...U23_PR_PAGE_SCENES,
   ...U23_SUMMARIZER_FAILED_SCENES,
+  ...U23_START_SCENES,
 };
 
 export const MockScene = () => {

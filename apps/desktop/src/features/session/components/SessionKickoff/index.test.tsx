@@ -20,9 +20,10 @@ const { holder, hooks, spies } = vi.hoisted(() => ({
       async (_params: unknown): Promise<ReadonlyArray<IssueCandidate>> => [],
     ),
     loadPhaseTemplates: vi.fn(async () => undefined),
-    startSessionFromDraft: vi.fn(async (_params: unknown) => ({ id: 'sess-new' })),
+    startSessionFromDraft: vi.fn(async (_params: unknown) => ({ id: 'sess-new', goal: 'Fix it' })),
     requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
     runBuilder: vi.fn(async (_session: unknown) => undefined),
+    follow: vi.fn(),
   },
 }));
 
@@ -34,6 +35,7 @@ vi.mock('../../../../store', async () => {
 });
 
 type BuilderKickoffStub = {
+  readonly primaryLabel?: string;
   readonly goal: string;
   readonly goalPlaceholder: string;
   readonly onGoalChange: (goal: string) => void;
@@ -53,10 +55,14 @@ vi.mock('../../../workflows/components/WorkflowBuilderView', () => ({
         type="button"
         onClick={() => void kickoff.start(spies.runBuilder).catch(() => undefined)}
       >
-        Start run
+        {kickoff.primaryLabel ?? 'Start run'}
       </button>
     </div>
   ),
+}));
+
+vi.mock('../../../../shared/hooks/useFollowToast', () => ({
+  useFollowToast: () => spies.follow,
 }));
 
 vi.mock('../../../integrations/github/useGithubConnection', () => ({
@@ -198,7 +204,8 @@ beforeEach(() => {
   spies.fetchIssueCandidates.mockReset();
   spies.fetchIssueCandidates.mockResolvedValue([]);
   spies.startSessionFromDraft.mockReset();
-  spies.startSessionFromDraft.mockResolvedValue({ id: 'sess-new' });
+  spies.startSessionFromDraft.mockResolvedValue({ id: 'sess-new', goal: 'Fix it' });
+  spies.follow.mockClear();
   spies.requestIssueBrief.mockClear();
 });
 
@@ -216,7 +223,7 @@ describe('SessionKickoff', () => {
         .map((node) => node.textContent),
     ).toEqual([
       'Pick up a taskAn issue from your tracker.',
-      'Run a workflowOrchestrated, custom or preset.',
+      'Run a workflowOrchestrated, steps you describe, or a saved workflow.',
       'Ask an agentScout or any other role.',
     ]);
     expect(screen.queryByRole('button', { name: 'More ways to start' })).toBeNull();
@@ -273,7 +280,7 @@ describe('SessionKickoff', () => {
 
     expect(screen.getByRole('button', { name: 'Start Scout on the whole project' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Start run' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Pick up/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Pick / })).toBeNull();
   });
 
   it('puts focus on the selected tab when the draft opens', () => {
@@ -446,7 +453,7 @@ describe('SessionKickoff', () => {
     });
   });
 
-  it('proposes the brief of a picked issue and opens the workflow builder on it, without linking first', async () => {
+  it('picks an issue into one block: an editable brief title, how to work on it, and the one start', async () => {
     store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     spies.fetchIssueCandidates.mockResolvedValue([
       candidate({}),
@@ -455,7 +462,7 @@ describe('SessionKickoff', () => {
     renderKickoff();
     await screen.findByText('ENG-1');
 
-    expect(screen.getByRole('button', { name: 'Pick up issue' }).hasAttribute('disabled')).toBe(
+    expect(screen.getByRole('button', { name: 'Pick an issue' }).hasAttribute('disabled')).toBe(
       true,
     );
     fireEvent.change(screen.getByRole('textbox', { name: 'Search issues' }), {
@@ -463,15 +470,18 @@ describe('SessionKickoff', () => {
     });
     expect(screen.queryByText('ENG-3')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pick up ENG-1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
 
     expect(spies.requestIssueBrief).toHaveBeenCalledWith(
       expect.objectContaining({ workspaceId: WORKSPACE_ID, sessionId: null }),
     );
     expect(spies.startSessionFromDraft).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
-
-    expect(spies.startSessionFromDraft).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Search issues' })).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Brief title' })).toHaveProperty(
+      'value',
+      'Fix the login redirect',
+    );
     expect(screen.getByRole('tab', { name: 'Run a workflow' }).getAttribute('aria-selected')).toBe(
       'true',
     );
@@ -480,8 +490,11 @@ describe('SessionKickoff', () => {
     expect((goalField as HTMLTextAreaElement).value).toBe(
       '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
     );
+    fireEvent.change(screen.getByRole('textbox', { name: 'Brief title' }), {
+      target: { value: 'Stop the login redirect loop' },
+    });
     fireEvent.change(goalField, { target: { value: 'Fix the login redirect loop' } });
-    fireEvent.click(within(builder).getByRole('button', { name: 'Start run' }));
+    fireEvent.click(within(builder).getByRole('button', { name: 'Start from ENG-1' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -489,12 +502,33 @@ describe('SessionKickoff', () => {
       start: {
         kind: 'task',
         candidate: candidate({}),
-        title: 'Fix the login redirect',
+        title: 'Stop the login redirect loop',
         goal: 'Fix the login redirect loop',
         then: { kind: 'workflow-run', run: spies.runBuilder },
       },
     });
     expect(screen.queryByRole('button', { name: /Fix a bug/ })).toBeNull();
+    await waitFor(() => expect(spies.follow).toHaveBeenCalledOnce());
+    expect(spies.follow).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Run started', startKey: 'sess-new' }),
+    );
+  });
+
+  it('puts Dismiss back on the list and clears the picked issue', async () => {
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
+    renderKickoff();
+    await screen.findByText('ENG-1');
+
+    fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+    expect(screen.getByRole('textbox', { name: 'Search issues' })).toBeDefined();
+    expect(
+      (store().getState().sessionDrafts as Record<string, { pickedIssue: unknown }>)['ws-1']
+        ?.pickedIssue,
+    ).toBeNull();
   });
 
   it('mounts the project of a github issue and lets you pick none before starting', async () => {
@@ -514,11 +548,10 @@ describe('SessionKickoff', () => {
     await screen.findByText('#7');
 
     fireEvent.click(screen.getByRole('button', { name: /#7/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pick up #7' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick #7' }));
 
     expect(screen.getByText('from GitHub repo acme/ledger-core')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start from #7' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -552,11 +585,10 @@ describe('SessionKickoff', () => {
     await screen.findByText('LEDGER-API-4');
 
     fireEvent.click(screen.getByRole('button', { name: /LEDGER-API-4/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pick up LEDGER-API-4' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick LEDGER-API-4' }));
 
     expect(screen.getByText('from Sentry project ledger-api')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Start run' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start from LEDGER-API-4' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -575,10 +607,9 @@ describe('SessionKickoff', () => {
     await screen.findByText('ENG-1');
 
     fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pick up ENG-1' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
     fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start Implementer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start from ENG-1' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -691,7 +722,7 @@ describe('SessionKickoff', () => {
     await screen.findByText('Not in Tasks');
 
     fireEvent.click(screen.getByRole('option', { name: /CAS-231 Settle the month close/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pick up CAS-231' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick CAS-231' }));
 
     expect(spies.requestIssueBrief).toHaveBeenCalledWith(
       expect.objectContaining({ workspaceId: WORKSPACE_ID, sessionId: null }),

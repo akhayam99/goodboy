@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, FormActions, KbdPill, cn, formatError, inlineMarkdownText } from '@goodboy/ui';
+import { Button, FormActions, Kbd, cn, formatError, inlineMarkdownText } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import type {
   ProjectId,
@@ -21,6 +21,7 @@ import type { LaunchMount } from '../../../inbox/launchMountFor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { NAMES } from '../../../../shared/names';
 
 type ExternalTask = {
   readonly provider: SessionExternalTaskProvider;
@@ -35,6 +36,7 @@ type Props = {
   readonly linkedSessionId: SessionId | null;
   readonly goalSeed: string;
   readonly externalTask: ExternalTask;
+  readonly startLabel: string;
   readonly briefSource: IssueBriefSource | null;
   readonly onClose: () => void;
   readonly focusRequest?: number;
@@ -46,6 +48,7 @@ export const LaunchSessionPanel = ({
   linkedSessionId,
   goalSeed,
   externalTask,
+  startLabel,
   briefSource,
   onClose,
   focusRequest = 0,
@@ -154,7 +157,7 @@ export const LaunchSessionPanel = ({
   return (
     <section
       ref={sectionRef}
-      aria-label="Launch session"
+      aria-label={startLabel}
       className="flex flex-col gap-1 rounded-md bg-subtle p-2 ring-1 ring-border-soft motion-safe:transition-shadow focus-within:ring-2 focus-within:ring-focus-ring"
     >
       {briefSource !== null && brief !== null && brief.status !== 'unavailable' && (
@@ -214,9 +217,13 @@ export const LaunchSessionPanel = ({
       >
         <Button size="sm" onClick={() => void launch()} disabled={!canLaunch} className="shrink-0">
           <span className={cn(isBusy && 'text-shimmer')}>
-            {isBusy ? 'Launching…' : 'Launch session'}
+            {isBusy ? NAMES.starting : startLabel}
           </span>
-          {!isBusy ? <KbdPill>{shortcutGlyphs('composer.submit')}</KbdPill> : null}
+          {!isBusy ? (
+            <Kbd look="inline" onTone aria-hidden>
+              {shortcutGlyphs('composer.submit')}
+            </Kbd>
+          ) : null}
           {!isBusy ? <ArrowRight size={ICON_SIZE.row} aria-hidden /> : null}
         </Button>
       </FormActions>

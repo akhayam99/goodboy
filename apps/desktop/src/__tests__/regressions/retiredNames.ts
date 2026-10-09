@@ -89,4 +89,15 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   { id: 'lowercase-notifications', pattern: /^notifications$/, use: NAMES.notifications },
   { id: 'inbox-door', pattern: /\bInbox\b/, use: NAMES.tasks },
+  { id: 'launch-session', pattern: /\bLaunch(?:ing)? session\b/, use: NAMES.start },
+  {
+    id: 'pick-up-issue',
+    pattern: /\bPick up (?:issue\b|[A-Z][A-Z0-9]*-\d+|#\d+)/,
+    use: NAMES.pickAnIssue,
+  },
+  {
+    id: 'turn-into-work',
+    pattern: /^(?:Turn into work|Start work(?: from here)?)$/,
+    use: NAMES.startWorkFromChat,
+  },
 ];

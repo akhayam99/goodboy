@@ -570,7 +570,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'list.open',
     open: inboxKey('list.open'),
-    lands: () => visible('dialog', 'Launch a session'),
+    lands: () => visible('region', 'Brief from HBL-501'),
   }),
   keyRow({
     id: 'list.openInTool',

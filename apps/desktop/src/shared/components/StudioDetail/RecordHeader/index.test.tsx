@@ -44,7 +44,7 @@ const VERBS: RecordVerbs = {
 };
 
 const frame = (overrides: Partial<RecordFrame> = {}): RecordFrame => ({
-  primary: <button type="button">Launch session</button>,
+  primary: <button type="button">Start from HBL-412</button>,
   sessionVerbs: [verb({ key: 'unlink', label: 'Remove link to session', icon: Unlink })],
   onRefresh: vi.fn(),
   onClose: vi.fn(),
@@ -76,12 +76,13 @@ describe('RecordHeader', () => {
     expect(screen.getByText('!87')).toBeDefined();
     expect(screen.getByText('Open')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open in GitLab' })).toBeDefined();
-    const row = screen.getByRole('button', { name: 'Launch session' }).parentElement as HTMLElement;
+    const row = screen.getByRole('button', { name: 'Start from HBL-412' })
+      .parentElement as HTMLElement;
     expect(
       within(row)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['Launch session', 'Merge']);
+    ).toEqual(['Start from HBL-412', 'Merge']);
   });
 
   it('orders the overflow from the registry: tool verbs, session, refresh, copies, then destructive', () => {

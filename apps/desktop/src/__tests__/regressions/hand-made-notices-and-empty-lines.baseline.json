@@ -55,14 +55,6 @@
     "notices": 0,
     "emptyLines": 1
   },
-  "apps/desktop/src/features/session/components/SessionKickoff/IssueBriefProposal/BriefVerbatim.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
-  "apps/desktop/src/features/session/components/SessionKickoff/TaskStart.tsx": {
-    "notices": 0,
-    "emptyLines": 1
-  },
   "apps/desktop/src/features/settings/components/GuideStudio/parts/GuideRail.tsx": {
     "notices": 0,
     "emptyLines": 1

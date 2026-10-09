@@ -1,6 +1,7 @@
-import type { GithubIssue } from '@goodboy/types';
+import type { GithubIssue, PullRequestState } from '@goodboy/types';
 import { titleBranchSlug } from '../../shared/utils/issueBranchSlug';
 import { goalFromIssue as goalFromGithubIssue } from './github/goal-from-issue';
+import { goalFromPullRequest as goalFromGithubPullRequest } from './github/goal-from-pull-request';
 import { githubBranchSlug } from './github/components/PullRequest/useGithubIssues';
 import type { IssueCandidate } from './fetchIssueCandidates';
 import type { LinearIssue } from './linear/client';
@@ -36,6 +37,17 @@ export const githubIssueCandidate = (issue: GithubIssue): IssueCandidate => ({
   goal: goalFromGithubIssue({ issue }),
   body: issue.body,
   branchSlug: githubBranchSlug({ issue }),
+});
+
+export const githubPullRequestCandidate = (pr: PullRequestState): IssueCandidate => ({
+  provider: 'github',
+  externalId: String(pr.number),
+  identifier: `#${pr.number}`,
+  title: pr.title,
+  url: pr.url,
+  goal: goalFromGithubPullRequest({ pr }),
+  body: pr.body,
+  branchSlug: titleBranchSlug({ title: pr.title }),
 });
 
 export const gitlabIssueCandidate = (issue: GitlabIssue): IssueCandidate => ({

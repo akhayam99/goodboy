@@ -14,6 +14,8 @@ const CALLERS: ReadonlyArray<string> = [
   'features/integrations/components/LaunchSessionPanel/index.tsx',
   'features/session/components/AgentTree/WorkflowRunStartButton.tsx',
   'features/resolve/hooks/useFixStartedToast/index.ts',
+  'features/session/components/SessionKickoff/useStartFromDraft/index.ts',
+  'features/inbox/usePullRequestReviewStart/index.ts',
 ];
 
 const sourceOf = (path: string): string => readFileSync(join(SRC, path), 'utf8');

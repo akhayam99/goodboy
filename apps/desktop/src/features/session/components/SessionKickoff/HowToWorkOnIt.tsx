@@ -14,7 +14,7 @@ import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates'
 import { LaunchMountRow } from '../../../integrations/components/LaunchSessionPanel/LaunchMountRow';
 import { useLaunchMount } from '../../../inbox/useLaunchMount';
 import { resolveSpawnRouting } from '../../spawn-routing';
-import { AGENT_KIND_META, visibleAgentKinds, type AgentKind } from '../../agent-kind';
+import { visibleAgentKinds, type AgentKind } from '../../agent-kind';
 import { AgentStartFields, type AgentStartRouting } from '../AgentStartFields';
 import {
   WorkflowBuilderView,
@@ -23,6 +23,9 @@ import {
 import { KICKOFF_GOAL_PLACEHOLDER } from './WorkflowStart';
 import { StartFooter } from './StartFooter';
 import { useDraftStart } from './useDraftStart';
+import { useStartFromDraft } from './useStartFromDraft';
+import { NAMES } from '../../../../shared/names';
+import { startFromLabel } from '../../../../shared/lib/startCopy';
 import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
@@ -40,16 +43,19 @@ type Props = {
   readonly candidate: IssueCandidate;
   readonly title: string;
   readonly goal: string;
+  readonly onGoalChange: (goal: string) => void;
 };
 
-export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) => {
+export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal, onGoalChange }: Props) => {
   const [how, setHow] = useState<How>('workflow');
-  const [text, setText] = useState(goal);
+  const text = goal;
+  const setText = onGoalChange;
   const [agentKind, setAgentKind] = useState<AgentKind>('implementer');
   const [agentRouting, setAgentRouting] = useState<AgentStartRouting>(null);
   const [pickedProjectId, setPickedProjectId] = useState<ProjectId | null | undefined>(undefined);
   const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
-  const startSessionFromDraft = useAppStore((state) => state.startSessionFromDraft);
+  const startSessionFromDraft = useStartFromDraft();
+  const startLabel = startFromLabel({ identifier: candidate.identifier });
   const { start: startAgent, isStarting, error } = useDraftStart({ workspaceId });
   const mount = useLaunchMount({
     workspaceId,
@@ -66,7 +72,6 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
 
   const kinds = visibleAgentKinds();
   const kind = kinds.includes(agentKind) ? agentKind : (kinds[0] ?? 'implementer');
-  const kindLabel = AGENT_KIND_META[kind].noun;
   const defaultProvider = useAppStore(
     (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderId,
   );
@@ -96,7 +101,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
   const taskStart = (then: SessionDraftThen): SessionDraftStart => ({
     kind: 'task',
     candidate,
-    title,
+    title: title.trim() === '' ? candidate.title : title,
     goal: trimmed,
     then,
     ...(draftMount !== null && { mount: draftMount }),
@@ -107,6 +112,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
     lane: 'task',
     goal: text,
     goalPlaceholder: KICKOFF_GOAL_PLACEHOLDER,
+    primaryLabel: startLabel,
     onGoalChange: setText,
     start: async (run: (session: Session) => Promise<void>) => {
       await startSessionFromDraft({
@@ -186,10 +192,10 @@ export const HowToWorkOnIt = ({ workspaceId, candidate, title, goal }: Props) =>
               size="sm"
               disabled={trimmed === '' || isStarting}
               isBusy={isStarting}
-              busyLabel={`Starting ${kindLabel}`}
+              busyLabel={NAMES.starting}
               onClick={() => void startAgentRun()}
             >
-              {`Start ${kindLabel}`}
+              {startLabel}
             </Button>
           </StartFooter>
         </div>

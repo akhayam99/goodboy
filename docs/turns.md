@@ -855,7 +855,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   `ChatSummary.modelsUsed` lists the distinct provider and model pairs of a
   chat's answers, oldest first, and `ChatSummary.messageCount` its messages.
   Both come from the one grouped read in `listChats`, so the chat list costs
-  a single scan however many chats there are. `chat_session_links` saves each Start work or
+  a single scan however many chats there are. `chat_session_links` saves each Start work from chat or
   Add to a session (`new` or `add`, the chat, the session and the message it
   started from). Deleting a chat deletes its messages and links, never its
   sessions; deleting a session deletes its links. Idle is derived: a chat with
@@ -867,7 +867,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   never starts above the mid cost tier. When the workspace default provider can run
   a chat (Claude or Codex) and is connected, the chat starts on its line instead; a
   Cursor or OpenCode default never reaches a chat. Picking Claude in Providers,
-  Models, Chat proposes the same model. **Start work** drafts its brief with the
+  Models, Chat proposes the same model. **Start work from chat** drafts its brief with the
   model and effort in **Drafted by**, remembered per workspace. The user can save a provider, model and effort
   per workspace in the `settings` table under `chat.default_model.<workspaceId>`
   (JSON, an empty string means cleared), from Providers, Models, Chat, or with
@@ -892,7 +892,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   Opening the chat, or archiving it, clears the mark. `unreadChatIds` lives in
   the chats slice and is saved in `localStorage` (`chat-unread:v1`), so it
   survives a reload without a migration.
-- **Turn into work.** "Start work" drafts a brief (title, goal, what we know,
+- **Start work from chat.** The button drafts a brief (title, goal, what we know,
   files, projects) with one `summarize_session` call through `runAuxOneShot`
   with no tools and no working folder (`summarizeChatForWork.ts`). **Drafted
   by** picks the model that writes it: a `RoutingPicker` pill limited to chat

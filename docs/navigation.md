@@ -677,22 +677,28 @@ The draft asks one question, "How do you want to start?", with three choices
 on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
 
 - **Pick up a task** shows the open issues of the connected trackers with a
-  search field. Picking one and pressing **Pick up** proposes the brief under
-  the list, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Use brief, Edit or Use issue text settles the title and goal and opens
-  **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
-  or Ask an agent choice as the other two tabs, precompiled with that goal,
-  Run a workflow preselected. Run a workflow is the same embedded
+  search field. Picking one with **Pick HBL-412** (or a double click, or Enter
+  in the search) replaces the list with one block (`PickedIssue`): the brief
+  title as an editable input over the brief flow in [concepts.md](concepts.md),
+  then **How to work on it** (`HowToWorkOnIt`): the same Run a workflow
+  or Ask an agent choice as the other two tabs, precompiled with the goal,
+  Run a workflow preselected. There is no gate: the title and the goal start as
+  the issue text (`usePickedIssueText`) and the brief takes their place when it
+  lands, unless either was edited. **Use the issue text** and **Use brief**
+  switch between the two, **Dismiss** goes back to the list and clears the
+  pick. The goal is edited where the work is: the builder goal field or the
+  agent instructions. Run a workflow is the same embedded
   `WorkflowBuilderView` as the Workflow tab (Orchestrated, Describe steps or Pick a workflow,
   the plan, guidance, Can use, Starts, when to ask, Spend cap), with the issue as
   its goal and its own draft under `kickoff-task:<workspace>`. When the issue
   maps to a project (`launchMountFor`, the Tasks rule: a GitHub or GitLab repo
   path, or a Sentry project linked or code-mapped to a project) a
   `LaunchMountRow` above the choice says which project the session works in
-  and why, and lets you pick another or none. Start run, or Start on the
-  agent side, links the issue, mounts that project, creates the session and
+  and why, and lets you pick another or none. **Start from HBL-412**, on the
+  workflow side and on the agent side, links the issue, mounts that project, creates the session and
   starts the run or agent in one gesture (`startSessionFromDraft`, kind
-  `task` with a `mount` and a `then`). Without a tracker
+  `task` with a `mount` and a `then`), and raises one **Follow** toast
+  (`useStartFromDraft`, **Session started** or **Run started**). Without a tracker
   it shows the connect links. The search, like the Tasks search, reads an issue
   code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
   `owner/repo#482`, a tracker URL; anything else stays a local filter). When
@@ -715,7 +721,9 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   shows a live countdown and retries once on its own when it ends, alongside
   the manual `Retry`. The mobile companion resolves Linear, Sentry and
   GitLab issues through the same direct lookups instead of searching only
-  the issues assigned to you. Issues can be starred (`StarToggle`, the same
+  the issues assigned to you. A GitHub pull request link in the same search
+  (`parsePullRequestUrl`, GitHub only) shows one row, **Review pull request
+  #318**, instead of the list. Issues can be starred (`StarToggle`, the same
   star as projects) from a Tasks row, a lookup hit or `s` on the selected
   row. Stars live per workspace (`workspace_starred_issues`, keyed by
   provider and external id; GitHub keys by `owner/repo#N`) with the last
@@ -969,7 +977,7 @@ covered.
   query. A query that reads like a question (ends with `?` or has four words
   or more) has the first Ask row picked, a shorter one keeps the best match
   picked so Enter still jumps.
-  Start session in a chat's Turn into work panel creates the session and
+  Start session in a chat's Start work from chat panel creates the session and
   navigates to `sessionPlace({ sessionId })`, the overview, as a new history
   entry after the chat's own; Back returns to the same chat because
   `captureLocation` keeps `appStudio`. Add to session navigates to that
@@ -1611,7 +1619,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   the workspace's GitLab host. A Bitbucket pull request shows its verbs too,
   blocked with the reason until Goodboy has resolved it for a session. A GitHub
   pull request opens read only: description, review state, branches and its
-  comments, with Launch session as the primary and Open in GitHub for the rest.
+  comments, with Start from #318 as the primary (Review pull request when its
+  review is requested of you) and Open in GitHub for the rest.
   Merge
   always asks first, and so does every destructive verb. The mount reads
   through the workspace's first repo project, so a workspace with no repo
@@ -1619,16 +1628,20 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
 - **Every record header has the same four places.** `RecordHeader` puts the
   tool glyph, the identifier and the state on the identity line, with Open in
   the tool, the `⋯` menu and, in Tasks, close at its end. Under the title
-  sits one action row: one primary (Launch session, or Open session once one is
-  linked) and at most two tool verbs picked by state. Before a session is
-  linked, Tasks adds Link to a session beside Launch session: a searchable
+  sits one action row: one primary (Start from HBL-412, Review pull request, or
+  Open session once one is linked) and at most two tool verbs picked by state.
+  Before a session is linked, Tasks adds Link to a session beside Start: a searchable
   list of the workspace's sessions, inline, that links the record to the one
   you pick. Everything else lives in
   `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Remove link to session,
   then destructive verbs after a separator. Editable properties change from the
-  control that shows them (the Jira state opens its transitions). Launch
-  session opens a popover with the goal and the brief; Enter from the Tasks list
-  opens it, or opens the linked session.
+  control that shows them (the Jira state opens its transitions). Start has
+  one verb and the result follows the record (`startFromRecord`): an issue or
+  an error opens the New session draft with the issue picked and its brief
+  being written; a pull request waiting on you starts a PR reviewer and lands
+  on the Pull request tab; a Slack thread, a merge request, a Bitbucket pull
+  request or a pull request of yours opens a popover with the goal and the
+  brief. Enter from the Tasks list does the same, or opens the linked session.
 - **Every record body has one order.** Under the header, facts sit as pills in
   fixed slots (person, weight, place, labels, measure, links, time), each with
   its field name in the tooltip and time as a relative age with the date in the
@@ -1860,6 +1873,12 @@ issue picker. The section hides when none of the allowed sources is connected.
 Creating a session picks no project either. The session is born on the
 workspace with only a container directory, and projects are materialized when
 the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
+
+Every start of work from a task says **Start from** and the identifier
+(`startFromLabel`): **Start from HBL-412** in Tasks and in the draft,
+**Start from #318** in the one-step panel, **Start work from chat** in Chat.
+**Review pull request** is the one exception, because the review is the work.
+The retired phrases are in `retiredNames.ts`.
 
 ## The right drawer
 

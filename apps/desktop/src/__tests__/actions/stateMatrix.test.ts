@@ -1431,6 +1431,7 @@ const record = (
     sessionId: (fields.sessionId ?? null) as never,
     isStarred: fields.isStarred === undefined ? false : fields.isStarred,
     onOpen: () => undefined,
+    launchLabel: null,
     onLaunch: () => undefined,
     onToggleStar: () => undefined,
     onRefresh: null,
@@ -1482,6 +1483,24 @@ describe('inbox record menu in every state', () => {
       );
     expect(labels(record({ isStarred: true }))).toContain('Unstar');
     expect(labels(record({ isStarred: false }))).toContain('Star');
+  });
+
+  it('names the start by the identifier, or by the review it starts', () => {
+    const labels = (target: ObjectTarget) =>
+      (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map(
+        (action) => action.label,
+      );
+    const withLaunchLabel = (launchLabel: string | null): ObjectTarget => {
+      const target = record({});
+      if (target.kind !== 'record') {
+        throw new Error('record target expected');
+      }
+      return { ...target, facts: { ...target.facts, launchLabel } };
+    };
+    expect(labels(record({}))).toContain('Start from HAR-231');
+    expect(labels(withLaunchLabel('Start from #318'))).toContain('Start from #318');
+    expect(labels(withLaunchLabel('Review pull request'))).toContain('Review pull request');
+    expect(labels(record({}))).not.toContain('Start a session');
   });
 });
 

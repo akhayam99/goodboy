@@ -16,13 +16,14 @@ Get from install to a first agent: connect a provider, check what it can do, lin
 
 [More on set up](docs/features/setup.md)
 
-<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a>
+<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a>
 
 ## Start a task
 
 Begin from an issue, a workflow or a question, in one draft that turns into a session when you press Start.
 
 - Pick up a task, with a drafted brief
+- Review a pull request
 - Run a workflow
 - Ask an agent
 
@@ -128,7 +129,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 [More on workflows](docs/features/workflows.md)
 
-<a id="supported-tools"></a><a id="agents-use-your-tools"></a><a id="inbox"></a><a id="tasks"></a><a id="find-any-issue-by-code-or-link"></a><a id="starred-issues"></a><a id="launch-a-session-from-any-item"></a><a id="link-an-item-to-a-session"></a><a id="trackers"></a><a id="code-hosts"></a><a id="slack-what-agents-can-do"></a><a id="reply-ready-for-channel"></a><a id="slack-signature"></a><a id="images-from-your-tools"></a><a id="records-read-the-same-way"></a><a id="comment-threads"></a>
+<a id="supported-tools"></a><a id="agents-use-your-tools"></a><a id="inbox"></a><a id="tasks"></a><a id="find-any-issue-by-code-or-link"></a><a id="starred-issues"></a><a id="start-from-any-item"></a><a id="link-an-item-to-a-session"></a><a id="trackers"></a><a id="code-hosts"></a><a id="slack-what-agents-can-do"></a><a id="reply-ready-for-channel"></a><a id="slack-signature"></a><a id="images-from-your-tools"></a><a id="records-read-the-same-way"></a><a id="comment-threads"></a>
 
 ## Tasks and your tools
 
@@ -137,7 +138,7 @@ Connect your trackers, code hosts and Slack once. Their work lands in one list c
 - Tasks
 - Trackers
 - Code hosts
-- Launch a session from any item
+- Start from any item
 
 [More on tasks and your tools](docs/features/inbox.md)
 

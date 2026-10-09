@@ -3,6 +3,7 @@ import { Play } from 'lucide-react';
 import { CopyButton, Markdown, Notice, PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { chatAnswerMeta } from '../../chatAnswerMeta';
 import { ChatReads } from './ChatReads';
 import { ChatTyping } from './ChatTyping';
@@ -65,7 +66,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
                 className="flex h-6 items-center gap-1 rounded-md px-2 text-meta text-faint-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <Play size={ICON_SIZE.row} aria-hidden />
-                Start work from here
+                {NAMES.startWorkFromChat}
               </button>
             )}
           </div>

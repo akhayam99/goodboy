@@ -142,11 +142,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Pick up a task',
-        desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. Then run it through the same workflow builder, or ask an agent. A Sentry error or a GitHub or GitLab item opens in its project and says why.',
+        desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then run it through the same workflow builder, or ask an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
       },
       {
         term: 'Run a workflow',
-        desc: 'The same workflow builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, then Start run creates the session and starts the run.',
+        desc: 'The same workflow builder as in a session: pick Orchestrated, Describe steps or Pick a workflow, see and edit the plan, then Start run creates the session and starts the run.',
       },
       {
         term: 'Ask an agent',
@@ -154,7 +154,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'Chat, a door in the left column, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
+        desc: 'Chat, a door in the left column, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work from chat drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
       },
       {
         term: 'Start blank',
@@ -319,7 +319,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start from anything',
-        desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to This session, This branch or Whole workspace, and pick whether merging closes it.',
+        desc: 'Start from an issue, a Slack thread or an error, with the brief already drafted, or Review pull request on one waiting for you. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to This session, This branch or Whole workspace, and pick whether merging closes it.',
       },
       {
         term: 'Task links',

@@ -54,6 +54,10 @@ export const NAMES = {
   legacyLayout: 'Legacy layout',
   repliesAndCommits: 'Replies and commits',
   start: 'Start',
+  starting: 'Starting…',
+  pickAnIssue: 'Pick an issue',
+  reviewPullRequest: 'Review pull request',
+  startWorkFromChat: 'Start work from chat',
   fix: 'Fix',
   waitingForPermission: 'Waiting for your permission',
   approve: 'Approve',
@@ -130,6 +134,9 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.newBranch]: ['New worktree'],
   [NAMES.closeBranch]: ['Remove worktree', 'Close worktree'],
   [NAMES.rebaseOn]: ["Start from today's main"],
+  [NAMES.start]: ['Launch session'],
+  [NAMES.pickAnIssue]: ['Pick up issue'],
+  [NAMES.startWorkFromChat]: ['Start work', 'Start work from here', 'Turn into work'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

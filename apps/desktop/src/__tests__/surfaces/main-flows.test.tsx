@@ -175,14 +175,14 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('launches a session from an inbox item with the issue linked', async () => {
+  it('starts an inbox issue in the new session draft with the issue picked', async () => {
     seedBoardScene();
-    const createSession = vi.fn(async () => ({
-      session: { id: 'session-launched', goal: 'Keep trailing-comma rows' } as Session,
-    }));
+    const requestIssueBrief = vi.fn(async () => undefined);
+    const onNewSession = vi.fn();
+    window.addEventListener('goodboy:new-session', onNewSession);
     stubActions({
-      createSession: createSession as unknown as StoreState['createSession'],
-      requestIssueBrief: vi.fn(async () => undefined),
+      createSession: vi.fn() as unknown as StoreState['createSession'],
+      requestIssueBrief,
     });
 
     await mountFlow(
@@ -197,21 +197,19 @@ describe('main flows on the real store', () => {
         launchFocusRequest={0}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Launch session/ }));
-    const panel = await screen.findByRole('region', { name: 'Launch session' });
-    fireEvent.change(within(panel).getByRole('textbox', { name: 'Session goal' }), {
-      target: { value: 'Keep trailing-comma rows' },
-    });
-    fireEvent.click(within(panel).getByRole('button', { name: /Launch session/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Start from #412/ }));
 
-    await waitFor(() => expect(createSession).toHaveBeenCalledOnce());
-    expect(createSession).toHaveBeenCalledWith(
-      expect.objectContaining({
-        workspaceId: WORKSPACE_ID,
-        goal: 'Keep trailing-comma rows',
-        externalTasks: [expect.objectContaining({ provider: 'github' })],
+    await waitFor(() =>
+      expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toMatchObject({
+        choice: 'task',
+        issueKey: 'github:412',
+        pickedIssue: expect.objectContaining({ provider: 'github', identifier: '#412' }),
       }),
     );
+    expect(requestIssueBrief).toHaveBeenCalledOnce();
+    expect(onNewSession).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('region', { name: /^Start from/ })).toBeNull();
+    window.removeEventListener('goodboy:new-session', onNewSession);
     expectNoRenderLoop();
   });
 

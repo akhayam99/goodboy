@@ -167,7 +167,6 @@
   "apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx#iconSize": 1,
   "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx#iconSize": 1,
   "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx#mono": 1,
-  "apps/desktop/src/features/session/components/SessionKickoff/IssueCandidateRow.tsx#mono": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ArtifactsChip.tsx#iconSize": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ArtifactsChip.tsx#mono": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ContextChip.tsx#iconSize": 2,

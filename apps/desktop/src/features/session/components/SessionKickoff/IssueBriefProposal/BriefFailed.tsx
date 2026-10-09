@@ -9,11 +9,9 @@ type Props = {
   readonly source: IssueBriefSource;
   readonly entry: Extract<IssueBriefEntry, { status: 'failed' }>;
   readonly onRetry: () => void;
-  readonly onUseIssueText: () => void;
-  readonly onDismiss: () => void;
 };
 
-export const BriefFailed = ({ source, entry, onRetry, onUseIssueText, onDismiss }: Props) => (
+export const BriefFailed = ({ source, entry, onRetry }: Props) => (
   <Notice
     tone="danger"
     placement="inline"
@@ -22,17 +20,9 @@ export const BriefFailed = ({ source, entry, onRetry, onUseIssueText, onDismiss 
     body={issueBriefFailureText({ failure: entry.failure })}
     detail={entry.detail}
     actions={
-      <>
-        <Button variant="secondary" size="sm" onClick={onRetry}>
-          Retry
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onUseIssueText}>
-          Use issue text
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onDismiss}>
-          Dismiss
-        </Button>
-      </>
+      <Button variant="secondary" size="sm" onClick={onRetry}>
+        Retry
+      </Button>
     }
   />
 );

@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Button, Eyebrow, Input, Skeleton } from '@goodboy/ui';
+import { Button, EmptyLine, Eyebrow, Input, Skeleton } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
@@ -10,15 +9,18 @@ import {
 } from '../../../integrations/components/TrackerStudioLinks';
 import type { KickoffIssues } from './useKickoffIssues';
 import { StartFooter } from './StartFooter';
-import { DraftIssueBrief } from './DraftIssueBrief';
-import { HowToWorkOnIt } from './HowToWorkOnIt';
-import { issueBriefSource } from './issueBriefSource';
+import { PastedPullRequest } from './PastedPullRequest';
+import { PickedIssue } from './PickedIssue';
+import { candidateKey, pickIssue } from '../../pickIssue';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { InboxLookupGroup } from '../../../inbox/components/InboxStudio/InboxLookupGroup';
+import { parsePullRequestUrl } from '../../../integrations/issueCode/parsePullRequestUrl';
 import { ISSUE_SEARCH_PLACEHOLDER } from '../../../integrations/issueCode/lookupCopy';
 import { candidateOfRecord } from '../../../integrations/starred/candidateOfRecord';
 import { useInboxStars } from '../../../inbox/useInboxStars';
 import type { InboxRecord } from '../../../inbox/types';
+import { NAMES } from '../../../../shared/names';
+import { pickLabel } from '../../../../shared/lib/startCopy';
 import { IssueCandidateRow } from './IssueCandidateRow';
 
 const EMPTY_RECORDS: ReadonlyArray<InboxRecord> = [];
@@ -36,9 +38,6 @@ type Props = {
   readonly issues: KickoffIssues;
 };
 
-const candidateKey = ({ candidate }: PickIssueParams): string =>
-  `${candidate.provider}:${candidate.externalId}`;
-
 const matchesQuery = ({ candidate, query }: PickIssueParams & { readonly query: string }) => {
   const needle = query.trim().toLowerCase();
   if (needle === '') {
@@ -52,16 +51,11 @@ const matchesQuery = ({ candidate, query }: PickIssueParams & { readonly query: 
 
 export const TaskStart = ({ workspaceId, issues }: Props) => {
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
-  const requestIssueBrief = useAppStore((state) => state.requestIssueBrief);
   const query = useAppStore((state) => selectSessionDraft({ state, workspaceId }).issueQuery);
   const selectedKey = useAppStore((state) => selectSessionDraft({ state, workspaceId }).issueKey);
   const pickedIssue = useAppStore(
     (state) => selectSessionDraft({ state, workspaceId }).pickedIssue,
   );
-  const [acceptedBrief, setAcceptedBrief] = useState<{
-    readonly title: string;
-    readonly goal: string;
-  } | null>(null);
 
   const lookup = useWorkspaceIssueLookup({
     workspaceId,
@@ -89,6 +83,7 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
   const selectedLookupKey =
     lookupHits.find((hit) => candidateKey({ candidate: hit.candidate }) === selectedKey)?.record
       .key ?? null;
+  const pastedPullRequest = parsePullRequestUrl(query);
   const workspaceName = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
   );
@@ -101,26 +96,31 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
     });
   };
 
-  const pickUp = ({ candidate }: PickIssueParams) => {
-    patchSessionDraft({
-      workspaceId,
-      patch: { issueKey: candidateKey({ candidate }), pickedIssue: candidate },
-    });
-    void requestIssueBrief({
-      source: issueBriefSource({ candidate }),
-      workspaceId,
-      sessionId: null,
-    });
-  };
+  const pickUp = ({ candidate }: PickIssueParams) => pickIssue({ workspaceId, candidate });
+
+  if (pickedIssue !== null) {
+    return (
+      <PickedIssue
+        key={candidateKey({ candidate: pickedIssue })}
+        workspaceId={workspaceId}
+        candidate={pickedIssue}
+        onDismiss={() => patchSessionDraft({ workspaceId, patch: { pickedIssue: null } })}
+      />
+    );
+  }
 
   if (!issues.hasSources) {
     return (
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2">
-        <p className="min-w-0 flex-1 text-label text-muted-foreground">No tracker connected yet</p>
-        <div className="shrink-0">
-          <TrackerStudioLinks links={TRACKER_STUDIO_LINKS} connected={issues.connected} />
-        </div>
-      </div>
+      <EmptyLine
+        className="flex-wrap px-3 py-2"
+        action={
+          <div className="shrink-0">
+            <TrackerStudioLinks links={TRACKER_STUDIO_LINKS} connected={issues.connected} />
+          </div>
+        }
+      >
+        No tracker connected yet
+      </EmptyLine>
     );
   }
 
@@ -157,19 +157,38 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
         data-kickoff-field
         className="h-8 text-body"
       />
-      <InboxLookupGroup
-        lookup={lookup}
-        workspaceName={workspaceName}
-        selectedKey={selectedLookupKey}
-        onSelect={(hit) => select({ key: candidateKey({ candidate: hit.candidate }) })}
-      />
-      {starredRows.length === 0 ? null : (
-        <div className="flex flex-col gap-0.5">
-          <div className="px-2 py-1">
-            <Eyebrow label="Starred" />
-          </div>
-          <ul aria-label="Starred issues" className="flex flex-col gap-0.5">
-            {starredRows.map((candidate) => {
+      {pastedPullRequest === null ? (
+        <>
+          <InboxLookupGroup
+            lookup={lookup}
+            workspaceName={workspaceName}
+            selectedKey={selectedLookupKey}
+            onSelect={(hit) => select({ key: candidateKey({ candidate: hit.candidate }) })}
+          />
+          {starredRows.length === 0 ? null : (
+            <div className="flex flex-col gap-0.5">
+              <div className="px-2 py-1">
+                <Eyebrow label="Starred" />
+              </div>
+              <ul aria-label="Starred issues" className="flex flex-col gap-0.5">
+                {starredRows.map((candidate) => {
+                  const key = candidateKey({ candidate });
+                  return (
+                    <li key={key}>
+                      <IssueCandidateRow
+                        candidate={candidate}
+                        isSelected={key === selectedKey}
+                        onSelect={() => select({ key })}
+                        onPickUp={() => pickUp({ candidate })}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+          <ul aria-label="Issues" className="flex flex-col gap-0.5">
+            {visibleRows.map((candidate) => {
               const key = candidateKey({ candidate });
               return (
                 <li key={key}>
@@ -182,64 +201,37 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
                 </li>
               );
             })}
+            {visibleRows.length === 0 ? (
+              <li>
+                <EmptyLine className="px-2">
+                  {issues.rows.length === 0 ? 'No open issues detected' : 'No issue matches'}
+                </EmptyLine>
+              </li>
+            ) : null}
           </ul>
-        </div>
-      )}
-      <ul aria-label="Issues" className="flex flex-col gap-0.5">
-        {visibleRows.map((candidate) => {
-          const key = candidateKey({ candidate });
-          return (
-            <li key={key}>
-              <IssueCandidateRow
-                candidate={candidate}
-                isSelected={key === selectedKey}
-                onSelect={() => select({ key })}
-                onPickUp={() => pickUp({ candidate })}
-              />
-            </li>
-          );
-        })}
-        {visibleRows.length === 0 ? (
-          <li className="px-2 py-2 text-label text-muted-foreground">
-            {issues.rows.length === 0 ? 'No open issues detected' : 'No issue matches'}
-          </li>
-        ) : null}
-      </ul>
-      {pickedIssue === null ? (
-        <StartFooter note={selected == null ? 'Pick an issue to start from it.' : null}>
-          <Button
-            size="sm"
-            disabled={selected == null}
-            onClick={() => {
-              if (selected == null) {
-                return;
-              }
-              pickUp({ candidate: selected });
-            }}
-          >
-            {selected == null ? 'Pick up issue' : `Pick up ${selected.identifier}`}
-          </Button>
-        </StartFooter>
+          <StartFooter note={selected == null ? 'Pick an issue to start from it.' : null}>
+            <Button
+              size="sm"
+              disabled={selected == null}
+              onClick={() => {
+                if (selected == null) {
+                  return;
+                }
+                pickUp({ candidate: selected });
+              }}
+            >
+              {selected == null
+                ? NAMES.pickAnIssue
+                : pickLabel({ identifier: selected.identifier })}
+            </Button>
+          </StartFooter>
+        </>
       ) : (
-        <div className="flex flex-col gap-2">
-          <DraftIssueBrief
-            workspaceId={workspaceId}
-            candidate={pickedIssue}
-            onStart={({ title, goal }) => setAcceptedBrief({ title, goal })}
-            onDismiss={() => {
-              setAcceptedBrief(null);
-              patchSessionDraft({ workspaceId, patch: { pickedIssue: null } });
-            }}
-          />
-          {acceptedBrief == null ? null : (
-            <HowToWorkOnIt
-              workspaceId={workspaceId}
-              candidate={pickedIssue}
-              title={acceptedBrief.title}
-              goal={acceptedBrief.goal}
-            />
-          )}
-        </div>
+        <PastedPullRequest
+          key={pastedPullRequest.url}
+          workspaceId={workspaceId}
+          pasted={pastedPullRequest}
+        />
       )}
     </div>
   );

@@ -2,12 +2,14 @@ import type { ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { Button, FormActions, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/names';
 
 type Props = {
   readonly controls: ReactNode;
   readonly reason: string | null;
   readonly isStartDisabled: boolean;
   readonly isStarting: boolean;
+  readonly label: string | null;
   readonly canDiscard: boolean;
   readonly onDiscard: () => void;
   readonly onStart: () => void;
@@ -20,6 +22,7 @@ export const LaunchBar = ({
   reason,
   isStartDisabled,
   isStarting,
+  label,
   canDiscard,
   onDiscard,
   onStart,
@@ -46,7 +49,7 @@ export const LaunchBar = ({
       className="shrink-0"
     >
       <span className={cn(isStarting && 'text-shimmer')}>
-        {isStarting ? 'Starting…' : 'Start run'}
+        {isStarting ? NAMES.starting : (label ?? 'Start run')}
       </span>
     </Button>
   </FormActions>

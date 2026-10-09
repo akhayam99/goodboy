@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { useStartFromDraft } from './useStartFromDraft';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import {
   WorkflowBuilderView,
@@ -16,7 +17,7 @@ export const KICKOFF_GOAL_PLACEHOLDER = 'What should get done?';
 export const WorkflowStart = ({ workspaceId }: Props) => {
   const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
-  const startSessionFromDraft = useAppStore((state) => state.startSessionFromDraft);
+  const startSessionFromDraft = useStartFromDraft();
   const goal = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowGoal);
 
   useEffect(() => {

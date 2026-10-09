@@ -89,6 +89,21 @@ describe('names', () => {
     });
   });
 
+  it('registers the words of starting work from a task, a pull request and a chat', () => {
+    expect(NAMES).toMatchObject({
+      starting: 'Starting…',
+      pickAnIssue: 'Pick an issue',
+      reviewPullRequest: 'Review pull request',
+      startWorkFromChat: 'Start work from chat',
+    });
+    expect(formerNamesOf(NAMES.start)).toContain('Launch session');
+    expect(formerNamesOf(NAMES.startWorkFromChat)).toEqual([
+      'Start work',
+      'Start work from here',
+      'Turn into work',
+    ]);
+  });
+
   it('feeds the follow and fix labels from NAMES', () => {
     expect(FOLLOW_LABEL).toBe(NAMES.follow);
     expect(fixLabel({ count: 3 })).toBe(`${NAMES.fix} 3`);
@@ -120,18 +135,37 @@ describe('names', () => {
     ['Waiting for your approval', 'waiting-for-approval'],
     ['notifications', 'lowercase-notifications'],
     ['Inbox', 'inbox-door'],
+    ['Launch session', 'launch-session'],
+    ['Launching session', 'launch-session'],
+    ['Pick up issue', 'pick-up-issue'],
+    ['Pick up HBL-412', 'pick-up-issue'],
+    ['Pick up #7', 'pick-up-issue'],
+    ['Turn into work', 'turn-into-work'],
+    ['Start work', 'turn-into-work'],
+    ['Start work from here', 'turn-into-work'],
   ])('fails the old phrase %s', (phrase, id) => {
     const retired = RETIRED_NAMES.find((entry) => entry.id === id);
 
     expect(retired?.pattern.test(phrase)).toBe(true);
   });
 
-  it.each(['Fix 3', 'Reply', 'Resolve', 'Publish reply', 'New branch', 'Close branch', 'Tasks'])(
-    'lets the new word %s through',
-    (phrase) => {
-      expect(RETIRED_NAMES.filter((entry) => entry.pattern.test(phrase))).toEqual([]);
-    },
-  );
+  it.each([
+    'Fix 3',
+    'Reply',
+    'Resolve',
+    'Publish reply',
+    'New branch',
+    'Close branch',
+    'Tasks',
+    'Start from HBL-412',
+    'Review pull request #318',
+    'Start work from chat',
+    'Pick HBL-412',
+    'Pick an issue',
+    'Pick up a task',
+  ])('lets the new word %s through', (phrase) => {
+    expect(RETIRED_NAMES.filter((entry) => entry.pattern.test(phrase))).toEqual([]);
+  });
 
   it('spells no registered verb by hand outside NAMES', () => {
     const root = join(__dirname, '..');

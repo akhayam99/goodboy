@@ -2,6 +2,7 @@ import { useId, useState, type KeyboardEvent } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, cn, KeyHint } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { WORKFLOW_CHOICE_LINE } from '../../../../shared/lib/startCopy';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { StepHeading } from './StepHeading';
 import { NoIssueSource } from './NoIssueSource';
@@ -25,7 +26,7 @@ const CHOICE_META: Readonly<
   },
   workflow: {
     title: 'Run a workflow',
-    line: 'Preset or orchestrated.',
+    line: WORKFLOW_CHOICE_LINE,
     icon: CONCEPT_ICONS.workflows,
   },
   agent: { title: 'Ask an agent', line: 'Scout or any other role.', icon: CONCEPT_ICONS.explore },

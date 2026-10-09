@@ -10,6 +10,7 @@ import { openUrl } from '../../../../shared/lib/editor';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { recordSessionId } from '../../recordSessionId';
+import { startLabelOf } from '../../startFromRecord';
 import type { InboxRecord } from '../../types';
 import { InboxStateLabel } from '../InboxStateLabel';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
@@ -62,6 +63,7 @@ const InboxRowView = ({
         sessionId,
         isStarred: star?.isStarred ?? null,
         onOpen: () => onSelect(record),
+        launchLabel: startLabelOf({ record }),
         onLaunch: onActivate === undefined ? null : () => onActivate(record),
         onToggleStar: star?.onToggle ?? null,
         onRefresh: null,

@@ -104,6 +104,7 @@ export type BuilderKickoff = {
   readonly lane?: KickoffLane;
   readonly goal: string;
   readonly goalPlaceholder: string;
+  readonly primaryLabel?: string;
   readonly onGoalChange: (goal: string) => void;
   readonly start: (run: (session: Session) => Promise<void>) => Promise<void>;
 };
@@ -850,7 +851,9 @@ export const WorkflowBuilderView = (props: Props) => {
     if (mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed) {
       await attachWorkflowToSession(target.id, selectedPreset.id, await attachOptions());
       writeLastWorkflowMode({ workspaceId, mode });
-      showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
+      if (kickoff === null) {
+        showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
+      }
       return;
     }
     const now = new Date().toISOString() as Workflow['createdAt'];
@@ -909,7 +912,9 @@ export const WorkflowBuilderView = (props: Props) => {
     }
     await attachWorkflowToSession(target.id, workflowId, await attachOptions());
     writeLastWorkflowMode({ workspaceId, mode });
-    showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
+    if (kickoff === null) {
+      showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
+    }
   };
 
   const onStart = async () => {
@@ -1374,6 +1379,7 @@ export const WorkflowBuilderView = (props: Props) => {
           reason={startGate.reason}
           isStartDisabled={startGate.isDisabled}
           isStarting={busy}
+          label={kickoff?.primaryLabel ?? null}
           canDiscard={!draftEmpty}
           onDiscard={resetDraft}
           onStart={() => void onStart()}

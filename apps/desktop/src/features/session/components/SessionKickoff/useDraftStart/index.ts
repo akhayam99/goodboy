@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
 import type { SessionDraftStart } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
+import { useStartFromDraft } from '../useStartFromDraft';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -15,7 +15,7 @@ type Result = {
 };
 
 export const useDraftStart = ({ workspaceId }: Params): Result => {
-  const startSessionFromDraft = useAppStore((state) => state.startSessionFromDraft);
+  const startSessionFromDraft = useStartFromDraft();
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const busyRef = useRef(false);

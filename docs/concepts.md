@@ -1173,80 +1173,34 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the new session draft, or opening Launch session on a
-tracker issue, asks the **Issue briefs** task model for a brief: a title, a goal
+Picking an issue in the new session draft, or pressing Start from HBL-412 on a
+tracker issue in Tasks, asks the **Issue briefs** task model for a brief: a title, a goal
 of one to three sentences and up to five "done when" criteria, in the issue's
 language. It reads the issue text, not its comments, and answers in checked
 JSON, so a reply with a preamble fails instead of leaking into the goal. The
-brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
-text or Dismiss, and a failure stays inline in the card with Retry. The first
-three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
-`SessionKickoff/`) underneath: Run a workflow (preselected, the full workflow
-builder with the goal filled in) or Ask an agent, precompiled with that goal
-and editable. Its own action links the issue, mounts the project the issue
-maps to (the same rule as Launch session in Tasks), creates the session
-and starts the workflow or agent in the same gesture; nothing exists before
-that. In the
-Launch session popover the brief fills the goal only while you have not edited it, and
-Launch works with the issue text while the brief is still loading. Briefs are
+brief is only a proposal, and there is no gate to accept it. The draft opens one
+block (`PickedIssue`, `SessionKickoff/`) with the issue text as the title and goal, so
+Start is possible at once; when the brief lands it takes their place unless you
+already edited either, and Use the issue text or Use brief switches between the
+two. A failure stays inline with Retry. Under the title sits How to work on it
+(`HowToWorkOnIt`): Run a workflow (preselected, the full workflow builder with
+the goal filled in) or Ask an agent, precompiled with that goal and editable. Its
+one action, Start from HBL-412, links the issue, mounts the project the issue
+maps to (the same rule as Start in Tasks), creates the session
+and starts the workflow or agent in the same gesture, and raises one Follow
+toast; nothing exists before that. In the
+one-step panel of a Slack thread, a merge request or a pull request of yours the
+brief fills the goal only while you have not edited it, and
+Start works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
-connected provider free for the task, the card shows the issue text alone.
-Merge and pull requests launch with their text as it is.
+connected provider free for the task, the block shows the issue text alone.
+Merge and pull requests start with their text as it is.
 
-### Each source
-
-- **GitHub**: read pull requests and act on them (approve, request changes,
-  comment, reply, resolve threads, merge, close). Read issues and comment on
-  them.
-- **GitLab**: read merge requests and act on them (approve, change state,
-  comment, reply, resolve and reopen threads). Merge and Close ask for
-  confirmation first. Read, comment on and edit issues.
-- **Bitbucket**: pull requests from start to finish, with description, diff,
-  build results in plain words and review threads. Eight actions: approve,
-  revoke, request changes, withdraw, comment, reply, merge, decline. Issues go
-  through Jira.
-- **Jira**: read full issues and act on them. Comment, assign, move to another
-  status, edit the description.
-- **Linear**: read issues and turn them into sessions. The description and
-  comments are written back, and the status row moves the issue to another
-  state of its team.
-- **Sentry**: read issues and events and turn them into sessions.
-- **Slack**: read threads, reply, and turn them into sessions with the goal
-  filled in. Replies post as the connected user. Each workspace has its own
-  Slack connection.
-
-Linear, Jira and Sentry connect in numbered steps (`ConnectSteps`): a button
-opens the page where the key is made, the pasted key is checked on its own with
-no Connect button, and the last step picks from a list instead of free text
-(Jira projects from `jira_list_projects`, Sentry organizations and projects
-from `sentry_list_organizations` and `sentry_list_projects`). Each field uses
-the tool's own name for the secret: API key on Linear, API token on Jira, auth
-token on Sentry. A key saved for another workspace can be picked instead.
-
-## Tasks
-
-Tasks is the workspace's queue of incoming work from every connected
-source: issues, pull and merge requests, Slack threads and Sentry errors, one
-record each, one line per record. Records are grouped by day (today,
-yesterday, this week, older) and ordered by time only, newest first. A facet
-rail filters them by view (all, in progress, has a session, closed), by type
-and by source, one pick per section, with counts; only the types a connected
-tool can produce show. A tool that did not load says so in its source row and
-in one notice above the list. The state column uses the tool's own word, the
-same one the record shows. A record opens in a drawer beside the list, with the
-same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
-the workspace with Link to a session, or open the session already linked to it.
-A record shows its session whichever way the link was made: launched from the
-Tasks, picked there, or linked from the session's own link button, by search or
-by pasted URL. The session link button searches the issues of every Sentry
-project linked to the workspace, not only the connected one. A code or link
-pasted there goes through the same lookup as the Tasks search
-(`useWorkspaceIssueLookup`, scoped to the picked tracker) and links the task
 `launchSpecFor` builds from the resolved record, so a Sentry short code such as
 `PAYMENTS-API-3` resolves and a Sentry link keeps its short id. A paste the
 lookup cannot resolve falls back to the fields read from the URL.
 
-Launch session mounts the item's project when it maps to one
+Start in Tasks mounts the item's project when it maps to one
 (`launchMountFor`). A Sentry error reads the projects linked to its Sentry
 project and the ones a Sentry code mapping points at; a GitHub or GitLab item
 reads the project whose remote is its repo. One match is mounted, several
@@ -1477,6 +1431,12 @@ before a change adds a word.
   starts one (its worktree is created for it), **Switch branch** moves to
   another, **Close branch** finishes it; the branch and its commits stay in the
   repository.
+- **Start**: begin work from a thing, with the thing after it. **Start from
+  HBL-412** in Tasks, in the New session draft and in the one-step panel,
+  **Start from #318** for a pull request, **Start work from chat** in Chat.
+  **Review pull request** is the one exception: the review is the work. Pick the
+  issue first with **Pick HBL-412**. The old phrases (Launch session, Pick up
+  issue, Turn into work) are retired.
 - **Follow**: watch what a thing you started is doing. Anything you start
   offers it in its toast.
 - **Approve**: accept a plan (**Approve** when the run waits for it, **Run

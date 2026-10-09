@@ -40,7 +40,6 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/permissions/components/PermissionRequestCard/index.tsx': ['document'],
   'features/integrations/components/LaunchSessionPanel/index.tsx': ['document'],
   'features/onboarding/OnboardingWizard/steps/FirstSessionStep.tsx': ['document'],
-  'features/session/components/SessionKickoff/IssueBriefProposal/BriefEditor.tsx': ['document'],
 };
 
 const NOT_AGENT: Readonly<Record<string, string>> = {

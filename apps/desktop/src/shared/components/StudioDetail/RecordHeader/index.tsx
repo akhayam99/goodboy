@@ -60,6 +60,7 @@ export const RecordHeader = ({
       sessionId: null,
       isStarred: null,
       onOpen: null,
+      launchLabel: null,
       onLaunch: null,
       onToggleStar: null,
       onRefresh: onRefresh ?? frame?.onRefresh ?? null,
