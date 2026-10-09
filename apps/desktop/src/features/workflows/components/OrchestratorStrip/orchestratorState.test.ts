@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   Agent,
   AgentId,
+  OpenQuestion,
   SessionId,
   StepId,
   WorkflowId,
@@ -47,6 +48,7 @@ type ResolveParams = {
   readonly agents?: ReadonlyArray<Agent>;
   readonly isOrchestrating?: boolean;
   readonly hasOpenQuestions?: boolean;
+  readonly question?: Pick<OpenQuestion, 'createdByAgentId'> | null;
   readonly costUsd?: number;
   readonly plan?: PlanSignal;
 };
@@ -56,10 +58,19 @@ const resolve = ({
   agents = [],
   isOrchestrating = false,
   hasOpenQuestions = false,
+  question = null,
   costUsd = 0,
   plan = { kind: 'none' },
 }: ResolveParams = {}) =>
-  resolveOrchestratorState({ run, agents, isOrchestrating, hasOpenQuestions, costUsd, plan });
+  resolveOrchestratorState({
+    run,
+    agents,
+    isOrchestrating,
+    hasOpenQuestions,
+    question,
+    costUsd,
+    plan,
+  });
 
 describe('resolveOrchestratorState', () => {
   it('reports deciding while the orchestrator is choosing', () => {
@@ -247,7 +258,56 @@ describe('resolveOrchestratorState', () => {
     const state = resolve({ agents: [makeAgent(0, 'completed')], hasOpenQuestions: true });
 
     expect(state.phase).toBe('needs-answer');
-    expect(state.tone).toBe('neutral');
+    expect(state.tone).toBe('warning');
+    expect(state.sentence).toBe('Paused for your answer');
+    expect(state.waitingOnAgentId).toBeNull();
+  });
+
+  it('names the running step that asked instead of waiting on it', () => {
+    const asker = makeAgent(1, 'running', { name: 'Scout the diaries area' });
+    const state = resolve({
+      agents: [makeAgent(0, 'completed'), asker],
+      hasOpenQuestions: true,
+      question: { createdByAgentId: asker.id },
+    });
+
+    expect(state.phase).toBe('needs-answer');
+    expect(state.sentence).toBe('Paused for your answer · step 2 · Scout the diaries area');
+    expect(state.waitingOnAgentId).toBe(asker.id);
+  });
+
+  it('counts the step a sub-scout belongs to when the sub-scout asked', () => {
+    const parent = makeAgent(0, 'running', { name: 'Scout the diaries area' });
+    const child = makeAgent(1, 'completed', {
+      name: 'api clinical tests module',
+      parentAgentId: parent.id,
+    });
+    const state = resolve({
+      agents: [parent, child],
+      hasOpenQuestions: true,
+      question: { createdByAgentId: child.id },
+    });
+
+    expect(state.sentence).toBe('Paused for your answer · step 1 · api clinical tests module');
+    expect(state.waitingOnAgentId).toBeNull();
+  });
+
+  it('keeps Waiting on step while the running step has no question', () => {
+    const state = resolve({ agents: [makeAgent(0, 'running')] });
+
+    expect(state.phase).toBe('waiting');
+    expect(state.sentence).toBe('Waiting on step 1 · step 0');
+  });
+
+  it('still shows a spend pause over an open question', () => {
+    const state = resolve({
+      run: makeRun({ orchestrationStop: { kind: 'budget', message: 'Paused at the spend cap' } }),
+      agents: [makeAgent(0, 'running')],
+      hasOpenQuestions: true,
+      question: { createdByAgentId: 'agent-0' as AgentId },
+    });
+
+    expect(state.phase).toBe('paused-budget');
   });
 
   it('reports a failed step ahead of a pending one', () => {

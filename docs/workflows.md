@@ -269,8 +269,8 @@ one cluster in the header of [the run page](#the-run-page). Besides **Stop step*
 the row shows at most one action: **Decide next step** only when the run asks
 before each step, **Continue the run** after you stopped it or once it is
 complete, **Retry** after a failed decision, **Review plan** while the run
-waits for its plan, **Answer** when the planner asked a question, or the spend
-cap on a budget pause. **Stop step** asks first, then cancels the step in
+waits for its plan, **Answer** when the planner or any step asked a question,
+or the spend cap on a budget pause. **Stop step** asks first, then cancels the step in
 flight, marks it skipped and holds the run (`stopWorkflowRunNow`); **Continue
 the run** takes it from there.
 
@@ -284,9 +284,15 @@ and `resolveOrchestratorState` takes them as a `plan` signal the strip reads
 from the plan the run waits on, so a pause or a decision in flight still speaks
 first.
 
-A failed step and an open question are left to the Next action strip, so the
-row only says the run is paused, on a neutral line: the strip above carries the
-tone. When the pane is too narrow for the sentence and the controls on one
+An open question the run waits on never reads as "Waiting on step 3": the row
+says "Paused for your answer", names the step that asked when one did ("Paused
+for your answer · step 1 · Ricognizione clinical tests", a sub-scout counts as
+the step it belongs to), counts the time that step has been running, and offers
+**Answer**, which opens the agent that asked at its question, or the questions
+view when no agent asked. A spend pause or a failure still speaks before it
+(`resolveOrchestratorState` takes the first open question as `question`). A
+failed step is left to the Next action strip, so the row only says the run is
+paused, on a neutral line: the strip above carries the tone. When the pane is too narrow for the sentence and the controls on one
 line, the controls wrap to a second line on the right instead of cutting the
 sentence. When to ask (**Ask before each step** or **Run on its own**) and
 **Model per step** (the model each step runs on, and why) sit in the menu. A
@@ -504,7 +510,8 @@ a toast follows one rule (`agentOpenTab`): an agent with an open question, and a
 resolver, open on Brief, where the question or the summary comes first; any other
 agent opens on Transcript, pinned to the latest line. A resolver that is still
 working shows its live line at the top of its Fix run. Orchestrated runs get the same strip, and the
-orchestrator strip carries no answer or skip button of its own.
+orchestrator strip carries no skip button of its own. It carries **Answer** when the run waits on a question
+([The orchestrator strip](#the-orchestrator-strip)).
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Ask it to continue** asks the same agent to verify its work and finish, **Skip** skips it after an inline confirmation. The error the turn ended with sits behind **Show details**
 - A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Ask it to continue** and **Skip**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it

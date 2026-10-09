@@ -11,6 +11,7 @@ import type {
 import { isRunHeldForPlan } from '../../../../store/slices/workflows/workflowPlanApproval';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../orchestratorCopy';
 import { isRunPaused } from '../../isRunPaused';
+import { resolveRootAgent } from '../../../session/agent-kind';
 
 type OrchestratorPhase =
   | 'deciding'
@@ -52,6 +53,7 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
   readonly isOrchestrating: boolean;
   readonly hasOpenQuestions: boolean;
+  readonly question?: Pick<OpenQuestion, 'createdByAgentId'> | null;
   readonly costUsd: number;
   readonly plan?: PlanSignal;
 };
@@ -62,6 +64,8 @@ type StopPresentation = {
   readonly sentence: string;
   readonly showsMessage: boolean;
 };
+
+const PAUSED_FOR_ANSWER = 'Paused for your answer';
 
 const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation> = {
   budget: {
@@ -78,8 +82,8 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   },
   questions: {
     phase: 'needs-answer',
-    tone: 'neutral',
-    sentence: 'Paused for your answer',
+    tone: 'warning',
+    sentence: PAUSED_FOR_ANSWER,
     showsMessage: false,
   },
   operator: {
@@ -151,11 +155,33 @@ const WHITESPACE = /\s+/g;
 const planQuestionSentence = ({ text }: Pick<OpenQuestion, 'text'>): string =>
   `The planner asked: ${text.replace(WHITESPACE, ' ').trim()}`;
 
+type AskerParams = {
+  readonly ordered: ReadonlyArray<Agent>;
+  readonly askerId: AgentId | null | undefined;
+};
+
+type Asker = {
+  readonly agent: Agent;
+  readonly stepNumber: number;
+};
+
+const askerOf = ({ ordered, askerId }: AskerParams): Asker | null => {
+  const agent = askerId == null ? undefined : ordered.find((candidate) => candidate.id === askerId);
+  if (agent === undefined) {
+    return null;
+  }
+  const root = resolveRootAgent({ agents: ordered, agentId: agent.id });
+  const roots = ordered.filter((candidate) => candidate.parentAgentId == null);
+  const rootIndex = roots.findIndex((candidate) => candidate.id === root?.id);
+  return rootIndex < 0 ? null : { agent, stepNumber: rootIndex + 1 };
+};
+
 export const resolveOrchestratorState = ({
   run,
   agents,
   isOrchestrating,
   hasOpenQuestions,
+  question = null,
   costUsd,
   plan = NO_PLAN_SIGNAL,
 }: Params): OrchestratorState => {
@@ -233,6 +259,19 @@ export const resolveOrchestratorState = ({
     };
   }
   const stop = run.orchestrationStop;
+  if (hasOpenQuestions && (stop == null || stop.kind === 'questions')) {
+    const asker = askerOf({ ordered, askerId: question?.createdByAgentId });
+    return {
+      ...base,
+      phase: 'needs-answer',
+      tone: 'warning',
+      sentence:
+        asker === null
+          ? PAUSED_FOR_ANSWER
+          : `${PAUSED_FOR_ANSWER} · step ${asker.stepNumber} · ${asker.agent.name}`,
+      waitingOnAgentId: asker?.agent.status === 'running' ? asker.agent.id : null,
+    };
+  }
   const isAnsweredQuestionStop = stop?.kind === 'questions' && hasOpenQuestions === false;
   if (stop != null && isAnsweredQuestionStop === false) {
     const known: StopPresentation | undefined = STOP_PRESENTATION[stop.kind];
@@ -255,14 +294,6 @@ export const resolveOrchestratorState = ({
       tone: 'neutral',
       sentence: `Waiting on step ${runningIndex + 1} · ${agent.name}`,
       waitingOnAgentId: agent.id,
-    };
-  }
-  if (hasOpenQuestions) {
-    return {
-      ...base,
-      phase: 'needs-answer',
-      tone: 'neutral',
-      sentence: 'Paused for your answer',
     };
   }
   const haltedIndex = ordered.findIndex((agent) => isAgentStatusHalted({ status: agent.status }));
