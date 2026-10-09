@@ -7,7 +7,6 @@ export { RepoChip } from './RepoChip';
 export { StartsInChip } from './StartsInChip';
 export { GroupLabel } from './GroupLabel';
 export { KindChip } from './KindChip';
-export { KindGlyph } from './KindGlyph';
 export { RecordState, INBOX_STATE_PRESENTATION, type InboxState } from './RecordState';
 export { RunTree, type RunTreeRouting, type RunTreeRowData } from './RunTree';
 export { StateBadge, type StateTone } from './StateBadge';
