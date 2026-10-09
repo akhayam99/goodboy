@@ -22,7 +22,7 @@ const FEATURE_LIST = [
   'A timeline of what ran, what it cost and what was decided',
   'Nine roles, each workflow step with its own provider, model and effort',
   'Plans, reports and wireframes kept next to the task',
-  'GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack in one Inbox',
+  'GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack in one Tasks list',
   'Review comments resolved as commits, with replies you approve',
   'Your tasks, decisions and settings stored on your computer, no account',
 ];
