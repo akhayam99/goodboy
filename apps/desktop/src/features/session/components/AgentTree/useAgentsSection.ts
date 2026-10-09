@@ -29,7 +29,7 @@ import { classifyAgent, type AgentKind } from '../../agent-kind';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { useSessionAgentTree } from './useSessionAgentTree';
-import { openAgentRevealEvent } from '../AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 
 type Params = {

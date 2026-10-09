@@ -8,7 +8,7 @@ import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { agentStatusWord } from '../../agentStatusWord';
 import { agentNowState } from './agentNowState';
-import { openAgentRevealEvent } from './agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import type { FollowUpChild } from './followUpChildren';
 
 type Props = {

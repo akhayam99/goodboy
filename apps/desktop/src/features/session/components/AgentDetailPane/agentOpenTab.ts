@@ -9,15 +9,3 @@ type Params = {
 
 export const agentOpenTab = ({ requested, remembered }: Params): AgentTab =>
   requested ?? remembered ?? 'brief';
-
-export const OPEN_AGENT_INTENT = 'open-agent';
-
-export const openAgentRevealEvent = (): CustomEvent<{ readonly intent: string }> =>
-  new CustomEvent('goodboy:reveal-chat', { detail: { intent: OPEN_AGENT_INTENT } });
-
-export const isOpenAgentReveal = (event: Event): boolean =>
-  event instanceof CustomEvent &&
-  typeof event.detail === 'object' &&
-  event.detail !== null &&
-  'intent' in event.detail &&
-  event.detail.intent === OPEN_AGENT_INTENT;

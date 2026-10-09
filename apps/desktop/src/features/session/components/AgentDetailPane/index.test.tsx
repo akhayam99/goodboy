@@ -90,7 +90,7 @@ vi.mock('./AgentNextAction', () => ({
 
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentDetailPane } from './index';
-import { openAgentRevealEvent } from './agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 const sessionId = 'session-1' as SessionId;
 const agentId = 'agent-1' as AgentId;

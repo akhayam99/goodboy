@@ -39,7 +39,7 @@ import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { openAgentRevealEvent } from '../AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 

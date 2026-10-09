@@ -20,7 +20,7 @@ import { TranscriptShell } from '../TranscriptShell';
 import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
-import { openAgentRevealEvent } from '../../../session/components/AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

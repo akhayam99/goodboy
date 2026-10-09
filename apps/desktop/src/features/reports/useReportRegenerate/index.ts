@@ -3,7 +3,7 @@ import { formatError } from '@goodboy/ui';
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { asReportType } from '../reportTypes';
-import { openAgentRevealEvent } from '../../session/components/AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 
 export const REGENERATE_READY_HINT = 'Run the report again on the same evidence pack';
 

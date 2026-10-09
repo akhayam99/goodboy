@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
-import { openAgentRevealEvent } from '../../../session/components/AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 type Params = {
   readonly sessionId: SessionId;

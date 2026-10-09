@@ -232,7 +232,7 @@ vi.mock('../../agent-kind', () => ({
 }));
 
 import { AgentsSection } from './AgentsSection';
-import { isOpenAgentReveal } from '../AgentDetailPane/agentOpenTab';
+import { isOpenAgentReveal } from '../../../../shared/utils/openAgentReveal';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;

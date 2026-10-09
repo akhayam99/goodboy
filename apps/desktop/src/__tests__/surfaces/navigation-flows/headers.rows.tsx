@@ -2,7 +2,6 @@ import { expect, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { AgentId } from '@goodboy/types';
-import { anAgent } from '@goodboy/types/testing';
 import { agentPlace } from '../../../store';
 import { type Row, WAIT, click, settle, useAppStore } from './harness';
 import { SEEDS, group, installComments, openComments } from './comments-words.rows';
@@ -125,12 +124,12 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
           ...current.sessionPhaseRuns,
           [ctx.sessionId]: [
             ...(current.sessionPhaseRuns[ctx.sessionId] ?? []),
-            anAgent({
+            {
+              ...first,
               id: OTHER_AGENT,
-              sessionId: ctx.sessionId,
               name: 'Review the retry cap',
               kind: 'reviewer',
-            }),
+            },
           ],
         },
       }));

@@ -19,7 +19,7 @@ import { loadArtifactProvenance } from './artifactProvenance';
 import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from './artifactRetryDraft';
 import type { ArtifactGeneration } from './artifactCollection';
 import { artifactFileSlug } from './hooks/useArtifactExport/artifactFileSlug';
-import { openAgentRevealEvent } from '../session/components/AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../shared/utils/openAgentReveal';
 import {
   artifactExportContents,
   artifactSourceExport,

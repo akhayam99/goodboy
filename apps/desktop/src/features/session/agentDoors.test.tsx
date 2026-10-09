@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { AgentId, OpenQuestionId, SearchHit, SessionId } from '@goodboy/types';
-import { anAgent, aSession } from '@goodboy/types/testing';
+import { TEST_NOW, anAgent, aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../store/store';
 import { AGENT_KIND } from '../actions/kinds/agent';
 import { MESSAGE_KIND } from '../actions/kinds/message';
@@ -11,7 +11,8 @@ import { useOpenAgentQuestion } from '../context/hooks/useOpenAgentQuestion';
 import { openNotificationSession } from '../notifications/openNotificationSession';
 import { openSearchHit } from '../search/openSearchHit';
 import { useBoardNavigation } from '../workspace/components/StageBoard/useBoardNavigation';
-import { agentOpenTab, isOpenAgentReveal } from './components/AgentDetailPane/agentOpenTab';
+import { agentOpenTab } from './components/AgentDetailPane/agentOpenTab';
+import { isOpenAgentReveal } from '../../shared/utils/openAgentReveal';
 import type { Notification } from '@goodboy/db';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -117,25 +118,24 @@ const messageHit = (agentId: AgentId, kind: 'message' | 'agent'): SearchHit => (
   ordinal: null,
   url: null,
   isArchived: false,
-  occurredAt: '2026-09-25T00:00:00.000Z' as SearchHit['occurredAt'],
+  occurredAt: TEST_NOW,
   title: [{ text: 'Cap the retries', isMatch: false }],
   snippet: [],
 });
 
-const notificationFor = (agentId: AgentId): Notification =>
-  ({
-    id: 'n1',
-    title: 'Step summary degraded',
-    coalesceKey: 'single',
-    read: false,
-    sessionId: SESSION,
-    ts: '2026-08-31T12:00:00.000Z',
-    kind: 'error',
-    body: null,
-    severity: 'warning',
-    workspaceId: null,
-    action: { kind: 'retry-step-summary', sessionId: SESSION, agentId },
-  }) as unknown as Notification;
+const notificationFor = (agentId: AgentId): Notification => ({
+  id: 'n1',
+  title: 'Step summary degraded',
+  coalesceKey: 'single',
+  read: false,
+  sessionId: SESSION,
+  ts: TEST_NOW,
+  kind: 'error',
+  body: null,
+  severity: 'warning',
+  workspaceId: null,
+  action: { kind: 'retry-step-summary', sessionId: SESSION, agentId },
+});
 
 const DOORS: ReadonlyArray<Door> = [
   {

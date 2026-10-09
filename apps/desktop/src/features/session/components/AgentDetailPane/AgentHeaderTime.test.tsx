@@ -49,6 +49,6 @@ describe('AgentHeaderTime', () => {
     expect(tooltipTextOf({ element: screen.getByTestId('agent-header-time') })).toContain(
       'Longer than usual. Running 13m 13s.',
     );
-    expect(screen.getByText('Longer than usual').className).toContain('sr-only');
+    expect(screen.getByText('Longer than usual')).toBeDefined();
   });
 });

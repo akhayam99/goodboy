@@ -15,7 +15,7 @@ import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKi
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
-import { openAgentRevealEvent } from '../AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

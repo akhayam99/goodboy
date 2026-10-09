@@ -5,7 +5,7 @@ import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { asWireframeFidelity, type WireframeFidelity } from '../wireframeFidelity';
 import { deriveWireframeTarget, type WireframeTarget } from '../wireframeTarget';
-import { openAgentRevealEvent } from '../../session/components/AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 
 type Params = Readonly<{
   sessionId: SessionId;
