@@ -1,5 +1,7 @@
+import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import type { PullRequestState, SessionId, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { sessionPullRequestOf } from '../../../../store/slices/review-source/sessionPullRequestOf';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { resolveDiffMount } from '../../../session/components/SessionWorkspace/parts/resolveDiffMount';
 
@@ -16,13 +18,15 @@ export type BranchIdentity = {
 
 const branchLabelOf = ({
   pr,
+  prefix,
   mount,
 }: {
   readonly pr: PullRequestState | null;
+  readonly prefix: string;
   readonly mount: SessionProjectMount | null;
 }): string => {
   if (pr !== null) {
-    return `#${pr.number} ${pr.title}`;
+    return `${prefix}${pr.number} ${pr.title}`;
   }
   if (mount === null) {
     return 'Branch';
@@ -36,8 +40,11 @@ export const useBranchIdentity = ({ sessionId }: Params): BranchIdentity => {
   const fallbackPath = useAppStore(
     (s) => resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null,
   );
-  const pr = useAppStore((s) => s.sessionGithub?.[sessionId]?.pr ?? null);
   const mountPath = resolveDiffMount({ mounts, requestedPath, fallbackPath });
   const mount = mounts.find((candidate) => candidate.worktreePath === mountPath) ?? null;
-  return { mountPath, mount, pr, label: branchLabelOf({ pr, mount }) };
+  const mountId = mount?.mountId ?? null;
+  const isGithub = useAppStore((s) => (s.sessionGithub?.[sessionId]?.pr ?? null) !== null);
+  const pr = useAppStore((s) => sessionPullRequestOf({ state: s, sessionId, mountId }));
+  const prefix = pr !== null && !isGithub ? PULL_REQUEST_NOUNS.gitlab.numberPrefix : '#';
+  return { mountPath, mount, pr, label: branchLabelOf({ pr, prefix, mount }) };
 };

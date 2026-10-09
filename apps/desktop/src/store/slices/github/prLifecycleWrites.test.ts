@@ -335,7 +335,7 @@ describe.each(VERBS)('$name when the host refuses', ({ title, call }) => {
 });
 
 describe('pull request writes on a host without a port', () => {
-  it('fails loudly instead of running gh', async () => {
+  it('fails loudly instead of running gh when GitLab is not connected', async () => {
     const state = {
       ...makeState(),
       sessionGithub: {},

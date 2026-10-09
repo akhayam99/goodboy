@@ -1,4 +1,4 @@
-const DRAFT_PREFIX = /^\s*(?:\[(?:draft|wip)\]|\((?:draft|wip)\)|(?:draft|wip)(?=\s|:))\s*:?\s*/i;
+import { gitlabDraftTitle, stripGitlabDraftPrefix } from '@goodboy/core';
 
 type StripParams = {
   readonly title: string;
@@ -10,12 +10,7 @@ type Params = {
 };
 
 export const stripDraftPrefix = ({ title }: StripParams): string =>
-  title.replace(DRAFT_PREFIX, '').trim();
+  stripGitlabDraftPrefix({ title });
 
-export const mrDraftTitle = ({ title, isDraft }: Params): string => {
-  const bare = stripDraftPrefix({ title });
-  if (!isDraft) {
-    return bare;
-  }
-  return bare === '' ? 'Draft:' : `Draft: ${bare}`;
-};
+export const mrDraftTitle = ({ title, isDraft }: Params): string =>
+  gitlabDraftTitle({ title, isDraft });

@@ -10,6 +10,7 @@ import {
   agentPlace,
   sessionPlace,
 } from '../../../../store';
+import { sessionPullRequestOf } from '../../../../store/slices/review-source/sessionPullRequestOf';
 import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 import { clipQuestionText, isQuestionDelegate } from '../../../context/questionDelegate';
@@ -66,6 +67,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     (s) =>
       s.sessionSelectedPrNumber?.[sessionId] ?? s.sessionGithub?.[sessionId]?.pr?.number ?? null,
   );
+  const hasHostRequest = useAppStore((s) => sessionPullRequestOf({ state: s, sessionId }) !== null);
   const branchThreadId = useAppStore((s) =>
     s.activeLens?.[sessionId] === 'branch' ? (s.branchThreadId?.[sessionId] ?? null) : null,
   );
@@ -248,7 +250,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
                   lens === 'branch'
                     ? branchTab
                     : branchLandingTabOf({
-                        hasPullRequest: pullRequestNumber !== null,
+                        hasPullRequest: pullRequestNumber !== null || hasHostRequest,
                         deepLink: null,
                       }),
               }),
@@ -276,6 +278,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       pullRequestModeLabel,
       pullRequestMode,
       pullRequestNumber,
+      hasHostRequest,
       branch,
       branchIdentity.mountPath,
       branchTab,

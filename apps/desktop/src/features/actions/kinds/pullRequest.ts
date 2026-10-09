@@ -11,12 +11,17 @@ import {
   UserPlus,
   XCircle,
 } from 'lucide-react';
+import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { PrMergeMethod, PullRequestState, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { selectActiveProjectPrs } from '../../../store/slices/github/activeProjectPrs';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { selectPrWrite } from '../../../store/slices/pr-writes/selectPrWrite';
+import {
+  sessionPullRequestHostOf,
+  sessionPullRequestOf,
+} from '../../../store/slices/review-source/sessionPullRequestOf';
 import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { isPrDraftAgentRunning } from '../../integrations/github/prDraftAgent';
@@ -61,8 +66,12 @@ const isOpenForMerge = ({ facts }: FactsOnly): boolean =>
 
 const hasPr = ({ facts }: FactsOnly): boolean => facts.phase !== 'none';
 
+const nounsOf = ({ facts }: FactsOnly) => PULL_REQUEST_NOUNS[facts.host];
+
 const numberLabel = ({ facts }: FactsOnly): string =>
-  facts.number === null ? 'the pull request' : `#${facts.number}`;
+  facts.number === null
+    ? `the ${nounsOf({ facts }).long}`
+    : `${nounsOf({ facts }).numberPrefix}${facts.number}`;
 
 const baseOf = ({ facts }: FactsOnly): string => facts.pr?.baseBranch ?? 'the base branch';
 
@@ -115,7 +124,7 @@ const mergeOptions = ({
   }));
 
 const defaultMergeMethod = ({ facts }: { readonly facts: PullRequestFacts }): PrMergeMethod =>
-  ALL_MERGE_METHODS.find((method) => facts.mergeMethods.includes(method)) ?? 'squash';
+  facts.mergeMethods[0] ?? 'squash';
 
 const mergeLabel = ({ facts }: FactsOnly): string =>
   facts.commentsNeedYou > 0 ? `Merge · ${facts.commentsNeedYou} open` : 'Merge';
@@ -131,6 +140,9 @@ const refresh = ({ env, facts }: { readonly env: ActionEnv; readonly facts: Pull
   void state.refreshSessionPr(facts.sessionId, { force: true });
   void state.refreshSessionPrDetail(facts.sessionId, { force: true });
   void state.loadPullRequestView({ sessionId: facts.sessionId, force: true });
+  if (facts.host === 'gitlab') {
+    void state.refreshSessionMr(facts.sessionId, { force: true });
+  }
 };
 
 const write = async ({
@@ -195,8 +207,8 @@ const openPrLens = ({
 const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = [
   {
     id: 'pullRequest.openOnGithub',
-    label: 'Open on GitHub',
-    shortLabel: () => 'GitHub',
+    label: ({ facts }) => `Open on ${REVIEW_SOURCE_LABEL[facts.host]}`,
+    shortLabel: ({ facts }) => REVIEW_SOURCE_LABEL[facts.host],
     icon: ExternalLink,
     group: 'open',
     when: hasPr,
@@ -217,7 +229,8 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     when: isLive,
     slot: () => 'hover',
     run: ({ facts }) => {
-      const url = facts.failingLogUrl ?? (facts.pr === null ? null : `${facts.pr.url}/checks`);
+      const suffix = facts.host === 'gitlab' ? 'pipelines' : 'checks';
+      const url = facts.failingLogUrl ?? (facts.pr === null ? null : `${facts.pr.url}/${suffix}`);
       if (url !== null) {
         void openUrl(url);
       }
@@ -265,7 +278,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
         description:
           readiness.caveats.length > 0
             ? `${readiness.word}. Choose how ${facts.pr?.headBranch ?? 'the branch'} lands on ${baseOf({ facts })}.`
-            : `Choose how ${facts.pr?.headBranch ?? 'the branch'} lands on ${baseOf({ facts })}. GitHub closes the pull request.`,
+            : `Choose how ${facts.pr?.headBranch ?? 'the branch'} lands on ${baseOf({ facts })}. ${REVIEW_SOURCE_LABEL[facts.host]} closes the ${nounsOf({ facts }).long}.`,
         confirmLabel: readiness.caveats.length > 0 ? 'Merge anyway' : 'Merge',
         role: readiness.caveats.length > 0 ? 'alert' : 'primary',
         choice: {
@@ -392,7 +405,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
   },
   {
     id: 'pullRequest.close',
-    label: 'Close pull request',
+    label: ({ facts }) => `Close ${nounsOf({ facts }).long}`,
     icon: XCircle,
     group: 'danger',
     when: ({ facts }) => isLive({ facts }) && facts.isOwn,
@@ -402,7 +415,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       title: `Close ${numberLabel({ facts })} without merging?`,
       description:
         'Reviewers see it closed. The branch and its commits stay, and Reopen brings it back.',
-      confirmLabel: 'Close pull request',
+      confirmLabel: `Close ${nounsOf({ facts }).long}`,
       role: 'danger',
     }),
     run: ({ facts, env }) =>
@@ -426,7 +439,7 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
   noun: 'pull request',
   facts: ({ state, target }) => {
     const github = state.sessionGithub[target.sessionId] ?? null;
-    const canonical = github?.pr ?? null;
+    const canonical = sessionPullRequestOf({ state, sessionId: target.sessionId });
     const candidates = selectActiveProjectPrs({ state, sessionId: target.sessionId });
     const pr =
       target.prNumber === null
@@ -456,6 +469,7 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
     const view = pr !== null && entry?.prNumber === pr.number ? entry.view : null;
     return pullRequestFacts({
       sessionId: target.sessionId,
+      host: sessionPullRequestHostOf({ state, sessionId: target.sessionId }),
       pr,
       checks: detailMatches ? detail.checks : null,
       checksRead: detailMatches ? (detail.checksRead ?? 'ok') : null,

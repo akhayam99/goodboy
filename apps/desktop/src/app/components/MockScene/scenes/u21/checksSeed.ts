@@ -1,11 +1,9 @@
 import type { PrCheckRun, PrDetail, PrReview, PrReviewRequest } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { SessionGithubState } from '../../../../../store/types';
-import { seedResolveGitlabScene } from '../resolveGitlabSeed';
 import { NOW_ISO, RESOLVE_SCENE_PR, SESSION_ID, seedResolveScene } from '../resolveSeed';
 
-export type ChecksVariant =
-  'runs' | 'failing' | 'denied' | 'empty' | 'no-pr' | 'gitlab' | 'loading';
+export type ChecksVariant = 'runs' | 'failing' | 'denied' | 'empty' | 'no-pr' | 'loading';
 
 const SAML_LINE =
   'HTTP 403: Resource protected by organization SAML enforcement. You must grant your token access to this organization.';
@@ -115,8 +113,6 @@ const githubFor = ({ variant, current }: GithubParams): Github => {
       return { pr: null, detail: null };
     case 'loading':
       return { pr: RESOLVE_SCENE_PR, detail: null };
-    case 'gitlab':
-      return { pr: current.pr, detail: current.detail };
     default: {
       const unexpectedVariant: never = variant;
       return unexpectedVariant;
@@ -125,12 +121,7 @@ const githubFor = ({ variant, current }: GithubParams): Github => {
 };
 
 export const applyChecksSeed = ({ variant }: { readonly variant: ChecksVariant }): void => {
-  if (variant === 'gitlab') {
-    seedResolveGitlabScene({ selected: 'gitlab' });
-  }
-  if (variant !== 'gitlab') {
-    seedResolveScene({ expandedThreadId: null });
-  }
+  seedResolveScene({ expandedThreadId: null });
   useAppStore.setState((state) => {
     const current = state.sessionGithub[SESSION_ID];
     if (current === undefined) {

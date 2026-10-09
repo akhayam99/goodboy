@@ -4,6 +4,7 @@ import type {
   PrDetailRead,
   PrMergeMethod,
   PrReview,
+  PullRequestHost,
   PullRequestState,
   PullRequestView,
   ResolveThread,
@@ -19,6 +20,7 @@ type PullRequestChecksPhase = 'none' | 'pending' | 'failing' | 'green' | 'unknow
 
 export type PullRequestFacts = {
   readonly sessionId: SessionId;
+  readonly host: PullRequestHost;
   readonly pr: PullRequestState | null;
   readonly number: number | null;
   readonly phase: PullRequestPhase;
@@ -60,6 +62,7 @@ export const ALL_MERGE_METHODS: ReadonlyArray<PrMergeMethod> = ['squash', 'merge
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly host?: PullRequestHost;
   readonly pr: PullRequestState | null;
   readonly checks: ReadonlyArray<PrCheckRun> | null;
   readonly checksRead?: PrDetailRead | null;
@@ -136,6 +139,7 @@ const changesRequestedByOf = ({
 
 export const pullRequestFacts = ({
   sessionId,
+  host = 'github',
   pr,
   checks,
   checksRead = null,
@@ -155,6 +159,7 @@ export const pullRequestFacts = ({
   const author = pr?.author ?? null;
   return {
     sessionId,
+    host,
     pr,
     number: pr?.number ?? null,
     phase: phaseOf({ pr }),
@@ -179,6 +184,7 @@ export const pullRequestFacts = ({
 
 type SessionMergeParams = {
   readonly sessionId: SessionId;
+  readonly host?: PullRequestHost;
   readonly github: Pick<SessionGithubState, 'pr' | 'detail'> | null;
   readonly threads: ReadonlyArray<ResolveThread>;
   readonly mergeView?: PullRequestView | null;
@@ -186,6 +192,7 @@ type SessionMergeParams = {
 
 export const sessionMergeFacts = ({
   sessionId,
+  host = 'github',
   github,
   threads,
   mergeView = null,
@@ -195,6 +202,7 @@ export const sessionMergeFacts = ({
     github?.detail != null && github.detail.prNumber === pr?.number ? github.detail : null;
   return pullRequestFacts({
     sessionId,
+    host,
     pr,
     checks: detail?.checks ?? null,
     checksRead: detail?.checksRead ?? null,

@@ -5,6 +5,7 @@ export type GitlabUser = {
   id: number;
   username: string;
   name: string;
+  avatarUrl?: string | null;
 };
 
 export type GitlabIssue = {
@@ -127,6 +128,7 @@ type GitlabMergeStatus =
   | null;
 
 type GitlabMrAuthor = {
+  id?: number | null;
   username: string;
   name: string;
   avatarUrl: string | null;
@@ -150,6 +152,15 @@ export type GitlabMergeRequest = {
   mergedAt?: string | null;
   author?: GitlabMrAuthor | null;
   reviewers?: ReadonlyArray<GitlabMrAuthor> | null;
+  createdAt?: string | null;
+  detailedMergeStatus?: string | null;
+  headPipeline?: GitlabHeadPipeline | null;
+};
+
+type GitlabHeadPipeline = {
+  id: number;
+  status: string;
+  webUrl?: string | null;
 };
 
 export const gitlabFetchAssignedMrs = async (
@@ -540,14 +551,162 @@ export const gitlabUpdateMrState = async ({
   });
 };
 
+export type GitlabMergeMethod = 'merge' | 'squash' | 'rebase';
+
 export const gitlabMergeMr = async (
   workspaceId: WorkspaceId,
   host: string,
   projectPath: string,
   mrIid: number,
   projectId?: ProjectId,
+  method?: GitlabMergeMethod,
 ): Promise<GitlabMergeRequest> => {
   return invokeCommand<GitlabMergeRequest>('gitlab_merge_mr', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    host,
+    projectPath,
+    mrIid,
+    ...(method !== undefined ? { method } : {}),
+  });
+};
+
+export const gitlabGetMr = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+  mrIid,
+}: MrTarget): Promise<GitlabMergeRequest> => {
+  return invokeCommand<GitlabMergeRequest>('gitlab_get_mr', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    host,
+    projectPath,
+    mrIid,
+  });
+};
+
+type UpdateMrParams = MrTarget & {
+  readonly title?: string;
+  readonly description?: string;
+  readonly reviewerIds?: ReadonlyArray<number>;
+};
+
+export const gitlabUpdateMr = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+  mrIid,
+  title,
+  description,
+  reviewerIds,
+}: UpdateMrParams): Promise<GitlabMergeRequest> => {
+  return invokeCommand<GitlabMergeRequest>('gitlab_update_mr', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    host,
+    projectPath,
+    mrIid,
+    ...(title !== undefined && { title }),
+    ...(description !== undefined && { description }),
+    ...(reviewerIds !== undefined && { reviewerIds }),
+  });
+};
+
+export type GitlabMergeSettings = {
+  mergeMethod: string;
+  squashOption: string | null;
+  onlyAllowMergeIfPipelineSucceeds: boolean;
+};
+
+type ProjectTarget = Omit<MrTarget, 'mrIid'>;
+
+export const gitlabProjectMergeMethods = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+}: ProjectTarget): Promise<GitlabMergeSettings> => {
+  return invokeCommand<GitlabMergeSettings>('gitlab_project_merge_methods', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    host,
+    projectPath,
+  });
+};
+
+export const gitlabSearchProjectUsers = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+  query,
+}: ProjectTarget & { readonly query: string }): Promise<ReadonlyArray<GitlabUser>> => {
+  return invokeCommand<ReadonlyArray<GitlabUser>>('gitlab_search_project_users', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    host,
+    projectPath,
+    query,
+  });
+};
+
+type GitlabPipeline = {
+  id: number;
+  status: string;
+  webUrl: string | null;
+  sha: string | null;
+};
+
+export type GitlabJob = {
+  id: number;
+  name: string;
+  stage: string | null;
+  status: string;
+  webUrl: string | null;
+  allowFailure: boolean;
+  duration: number | null;
+};
+
+export type GitlabMrChecks = {
+  pipeline: GitlabPipeline | null;
+  jobs: ReadonlyArray<GitlabJob>;
+};
+
+export const gitlabMrPipelineJobs = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+  mrIid,
+}: MrTarget): Promise<GitlabMrChecks | null> => {
+  return invokeCommand<GitlabMrChecks | null>('gitlab_mr_pipeline_jobs', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    host,
+    projectPath,
+    mrIid,
+  });
+};
+
+export type GitlabMrCommit = {
+  id: string;
+  shortId: string;
+  title: string;
+  authorName: string | null;
+  committedDate: string | null;
+};
+
+export const gitlabMrCommits = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+  mrIid,
+}: MrTarget): Promise<ReadonlyArray<GitlabMrCommit>> => {
+  return invokeCommand<ReadonlyArray<GitlabMrCommit>>('gitlab_mr_commits', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     host,

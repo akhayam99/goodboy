@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { PrMergeMethod, PullRequestView } from '@goodboy/types';
 import { githubPullRequestPort } from '../githubPullRequestPort';
+import { gitlabPullRequestPort } from '../gitlabPullRequestPort';
 import {
   PullRequestPortError,
   PullRequestPortUnsupported,
+  type PullRequestFailureKind,
   type PullRequestPort,
 } from '../pullRequestPort';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSourceCapabilities } from '../types';
 import { GITHUB_PR_REPO, GITHUB_PR_URL, failure, githubRunner } from './githubPullRequestFixture';
+import { GITLAB_MR_URL, fakeGitlabTransport } from './gitlabPullRequestFixture';
 
 type Built = Readonly<{
   port: PullRequestPort;
@@ -22,6 +25,8 @@ type BuildParams = Readonly<{
 type Adapter = Readonly<{
   name: string;
   noun: string;
+  reviewers: ReadonlyArray<readonly [string, string]>;
+  resolvedLabels: ReadonlyArray<string>;
   build: (params: BuildParams) => Built;
 }>;
 
@@ -40,6 +45,12 @@ const FLAG_METHOD: Readonly<Record<string, PrMergeMethod>> = {
 const github: Adapter = {
   name: 'github',
   noun: 'pull request',
+  reviewers: [
+    ['omar-t', 'changes_requested'],
+    ['kenji-w', 'approved'],
+    ['priya-n', 'pending'],
+  ],
+  resolvedLabels: ['#412'],
   build: ({ failWith, capabilities }) => {
     const { runner, calls } = githubRunner({
       override: (args) =>
@@ -64,7 +75,40 @@ const github: Adapter = {
   },
 };
 
-const ADAPTERS: ReadonlyArray<Adapter> = [github];
+const gitlab: Adapter = {
+  name: 'gitlab',
+  noun: 'merge request',
+  reviewers: [
+    ['omar-t', 'pending'],
+    ['kenji-w', 'approved'],
+    ['priya-n', 'pending'],
+  ],
+  resolvedLabels: [],
+  build: ({ failWith, capabilities }) => {
+    const kind = FAILURES.find(([, text]) => text === failWith)?.[2];
+    const fake = fakeGitlabTransport(
+      failWith === undefined || kind === undefined
+        ? {}
+        : {
+            writeError: new PullRequestPortError({
+              kind: kind as PullRequestFailureKind,
+              message: failWith,
+              details: failWith,
+            }),
+          },
+    );
+    return {
+      port: gitlabPullRequestPort({
+        transport: fake.transport,
+        mrUrl: GITLAB_MR_URL,
+        ...(capabilities === undefined ? {} : { capabilities }),
+      }),
+      mergeMethodOf: () => fake.merges[0] ?? null,
+    };
+  },
+};
+
+const ADAPTERS: ReadonlyArray<Adapter> = [github, gitlab];
 
 const isValidView = (view: PullRequestView): boolean =>
   view.number > 0 &&
@@ -111,14 +155,10 @@ describe.each(ADAPTERS)('pull request port contract on $name', (adapter) => {
 
   it('reads the review state, the closing issues and the first seven files', async () => {
     const view = await adapter.build({}).port.read();
-    expect(view.reviewers.map((reviewer) => [reviewer.person.login, reviewer.state])).toEqual([
-      ['omar-t', 'changes_requested'],
-      ['kenji-w', 'approved'],
-      ['priya-n', 'pending'],
-    ]);
-    expect(view.resolves).toEqual([
-      { label: '#412', url: expect.stringContaining('/issues/412'), isClosing: true },
-    ]);
+    expect(view.reviewers.map((reviewer) => [reviewer.person.login, reviewer.state])).toEqual(
+      adapter.reviewers,
+    );
+    expect(view.resolves.map((resolve) => resolve.label)).toEqual(adapter.resolvedLabels);
     expect(view.files.count).toBe(8);
     expect(view.files.first).toHaveLength(7);
   });

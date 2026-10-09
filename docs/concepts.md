@@ -753,7 +753,9 @@ note. It keeps its state, its verdict, its draft reply and the commits that
 answer it.
 
 Review exists with or without a pull request. Without one, Comments reads `No
-pull request yet` with `Create pull request`. With a pull request, Comments holds
+pull request yet` with `Create pull request`. On GitLab the words are `merge
+request`, `MR` and `!42` (`PULL_REQUEST_NOUNS`), and the Branch page, its
+header and its merge ask read them from the host. With a pull request, Comments holds
 the GitHub threads only. Your notes never mix with them: they live in the Notes
 drawer of the Files tab, where every open note gets a conversation, and deleting
 or resolving the note closes it. An agent reviewer's comments on a branch without

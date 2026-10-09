@@ -5,9 +5,10 @@ import type { PullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
 type Props = {
   readonly title: string;
   readonly edit: PullRequestTitleEdit;
+  readonly noun?: string;
 };
 
-export const PullRequestTitle = ({ title, edit }: Props) => {
+export const PullRequestTitle = ({ title, edit, noun = 'Pull request' }: Props) => {
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
       event.preventDefault();
@@ -21,7 +22,7 @@ export const PullRequestTitle = ({ title, edit }: Props) => {
         autoFocus
         value={edit.draft}
         disabled={edit.isBusy}
-        aria-label="Pull request title"
+        aria-label={`${noun} title`}
         autoComplete="off"
         spellCheck={false}
         onChange={(event) => edit.setDraft(event.target.value)}

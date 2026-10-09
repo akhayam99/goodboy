@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { PULL_REQUEST_NOUNS, REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import { PageColumn, PaneShell, SegmentedTabs } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
+import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
@@ -11,6 +11,7 @@ import { DiffRailScope } from '../../../diff/DiffRailScope';
 import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
+import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import { PushBanner } from '../../../resolve/components/ReviewFlow/PushBanner';
 import { ReviewFlow } from '../../../resolve/components/ReviewFlow';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
@@ -43,6 +44,17 @@ type Props = {
   readonly isActive?: boolean;
 };
 
+const tabLabelOf = ({
+  host,
+  label,
+}: {
+  readonly host: PullRequestHost;
+  readonly label: string;
+}): string => {
+  const long = PULL_REQUEST_NOUNS[host].long;
+  return host === 'github' ? label : `${long.charAt(0).toUpperCase()}${long.slice(1)}`;
+};
+
 export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const sessionId = session.id as SessionId;
   const identity = useBranchIdentity({ sessionId });
@@ -55,6 +67,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
+  const refreshSessionMr = useAppStore((s) => s.refreshSessionMr);
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
   const historyMountId = identity.mount?.mountId ?? null;
   const commitCount = useAppStore((s) =>
@@ -80,6 +93,12 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   });
 
   const { pr } = identity;
+  const remoteKind = useMountRemoteHostKind({
+    sessionId,
+    repoRoot: identity.mount?.repoRoot ?? null,
+  });
+  const host: PullRequestHost =
+    activeSource?.kind ?? (remoteKind === 'gitlab' ? 'gitlab' : 'github');
   const tabs = branchTabsOf({
     hasPullRequest: pr !== null,
     provider: activeSource?.kind ?? 'local',
@@ -165,10 +184,21 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const reloadPullRequestView = pullRequestView.reload;
 
   const onMutated = useCallback(() => {
+    reloadPullRequestView();
+    if (host === 'gitlab') {
+      void refreshSessionMr(sessionId, { force: true });
+      return;
+    }
     void refreshSessionPr(sessionId, { force: true });
     void refreshSessionPrDetail(sessionId, { force: true });
-    reloadPullRequestView();
-  }, [refreshSessionPr, refreshSessionPrDetail, reloadPullRequestView, sessionId]);
+  }, [
+    host,
+    refreshSessionMr,
+    refreshSessionPr,
+    refreshSessionPrDetail,
+    reloadPullRequestView,
+    sessionId,
+  ]);
 
   const onPullRequestCreated = useCallback(() => {
     setPullRequestMode({ sessionId, mode: 'overview' });
@@ -243,11 +273,13 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         <PageColumn width="column" className="flex min-w-0 flex-col">
           <PullRequestTab
             session={session}
+            host={host}
             pr={pr}
             detail={github?.detail ?? null}
             view={pullRequestView.view}
             edits={pullRequestView.edits}
             viewError={pullRequestView.error}
+            viewErrorKind={pullRequestView.errorKind}
             mountPath={identity.mountPath}
             source={activeSource}
             canEdit={canEditBody}
@@ -311,6 +343,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               <div className="flex min-w-0 flex-col gap-3">
                 <BranchHeader
                   sessionId={sessionId}
+                  host={host}
                   mountPath={identity.mountPath}
                   pr={pr}
                   detail={github?.detail ?? null}
@@ -342,7 +375,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                     onChange={selectTab}
                     options={tabs.map(({ id: value, label }) => ({
                       value,
-                      label,
+                      label: value === 'pr' ? tabLabelOf({ host, label }) : label,
                       badge:
                         value === 'comments' ? (
                           <TabCount count={commentsCount} />

@@ -1,6 +1,8 @@
+import { isPullRequestPortError } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
 import { activeReviewSourceOf } from '../review-source/activeReviewSource';
+import { sessionPullRequestOf } from '../review-source/sessionPullRequestOf';
 import { pullRequestPortFor } from '../review-source/pullRequestPortFor';
 import { entryMountIdOf } from './entryMountId';
 import type { PullRequestViewEntry } from './state';
@@ -23,7 +25,7 @@ export const loadPullRequestView = async ({
   force = false,
 }: Params): Promise<void> => {
   const number =
-    get().sessionGithub?.[sessionId]?.pr?.number ??
+    sessionPullRequestOf({ state: get(), sessionId })?.number ??
     activeReviewSourceOf({ state: get(), sessionId })?.prNumber ??
     null;
   if (number === null) {
@@ -90,6 +92,7 @@ export const loadPullRequestView = async ({
       view: same?.view ?? null,
       isLoading: false,
       error: formatError(error),
+      errorKind: isPullRequestPortError(error) ? error.kind : null,
       fetchedAt: same?.fetchedAt ?? null,
       edits: same?.edits ?? [],
     });

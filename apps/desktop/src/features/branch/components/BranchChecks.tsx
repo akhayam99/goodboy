@@ -67,7 +67,7 @@ export const BranchChecks = ({ sessionId }: Props) => {
 
   const pr = github?.pr ?? null;
   const detail = github?.detail ?? null;
-  const isChecking = github?.detailLoading === true;
+  const isChecking = isPortHost ? portView.isLoading : github?.detailLoading === true;
   const prNumber = pr?.number ?? null;
   const hasDetail = detail !== null && detail.prNumber === prNumber;
 
@@ -78,9 +78,14 @@ export const BranchChecks = ({ sessionId }: Props) => {
     void refreshSessionPrDetail(sessionId);
   }, [hasDetail, prNumber, refreshSessionPrDetail, sessionId]);
 
+  const reloadPortView = portView.reload;
   const checkAgain = useCallback(() => {
+    if (isPortHost) {
+      reloadPortView();
+      return;
+    }
     void refreshSessionPrDetail(sessionId, { force: true });
-  }, [refreshSessionPrDetail, sessionId]);
+  }, [isPortHost, refreshSessionPrDetail, reloadPortView, sessionId]);
 
   const view = checksViewOf({
     hostKind: host.kind,
@@ -140,11 +145,14 @@ export const BranchChecks = ({ sessionId }: Props) => {
     if (view.kind === 'denied') {
       return (
         <ChecksDeniedNotice
+          host={host.kind === 'gitlab' ? 'gitlab' : 'github'}
           repoName={repoNameOf({ url: pr?.url ?? host.url ?? '' })}
           isTokenBound={connection.mode === 'pat' || hasBinding}
           isChecking={isChecking}
           error={view.error}
-          onOpenSettings={() => openToolSettings({ tool: 'github' })}
+          onOpenSettings={() =>
+            openToolSettings({ tool: host.kind === 'gitlab' ? 'gitlab' : 'github' })
+          }
           onCheckAgain={checkAgain}
         />
       );

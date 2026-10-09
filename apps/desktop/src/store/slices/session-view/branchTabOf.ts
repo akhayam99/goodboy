@@ -1,9 +1,10 @@
 import type { SessionId } from '@goodboy/types';
 import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
 import type { AppState } from '../../types';
+import { sessionPullRequestOf, type RequestState } from '../review-source/sessionPullRequestOf';
 import type { BranchTab } from '../navigation/types';
 
-type State = Pick<AppState, 'branchTab' | 'sessionGithub'>;
+type State = Pick<AppState, 'branchTab'> & RequestState;
 
 type Params = {
   readonly state: State;
@@ -15,9 +16,9 @@ export const branchHasPullRequest = ({
   state,
   sessionId,
 }: {
-  readonly state: Pick<AppState, 'sessionGithub'>;
+  readonly state: RequestState;
   readonly sessionId: SessionId;
-}): boolean => (state.sessionGithub?.[sessionId]?.pr ?? null) !== null;
+}): boolean => sessionPullRequestOf({ state, sessionId }) !== null;
 
 export const branchTabOf = ({ state, sessionId }: Params): BranchTab =>
   state.branchTab?.[sessionId] ??

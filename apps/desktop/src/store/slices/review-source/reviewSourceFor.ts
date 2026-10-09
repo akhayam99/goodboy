@@ -8,6 +8,7 @@ import {
 import type { ResolveThread, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { bitbucketReviewTransport } from '../../../features/integrations/bitbucket/bitbucketReviewTransport';
+import { gitlabPullRequestTransport } from '../../../features/integrations/gitlab/gitlabPullRequestTransport';
 import { gitlabReviewTransport } from '../../../features/integrations/gitlab/gitlabReviewTransport';
 import { sessionThreadGhOptions } from '../github/sessionThreadGhOptions';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
@@ -62,15 +63,17 @@ export const reviewSourceFor = ({ get, sessionId, row }: Params): ReviewSource =
     if (session === undefined || entry === undefined || entry.mr === null) {
       throw new Error(NO_REVIEW_SOURCE);
     }
+    const target = {
+      workspaceId: session.workspaceId,
+      projectId: entry.projectId,
+      host: entry.host ?? '',
+      projectPath: entry.projectPath ?? '',
+      mrIid: entry.mr.iid,
+    };
     return gitlabReviewSource({
-      transport: gitlabReviewTransport({
-        workspaceId: session.workspaceId,
-        projectId: entry.projectId,
-        host: entry.host ?? '',
-        projectPath: entry.projectPath ?? '',
-        mrIid: entry.mr.iid,
-      }),
+      transport: gitlabReviewTransport(target),
       mrUrl: entry.mr.webUrl,
+      pullRequestTransport: gitlabPullRequestTransport(target),
     });
   }
   if (kind === 'bitbucket') {

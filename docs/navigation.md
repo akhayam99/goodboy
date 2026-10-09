@@ -868,7 +868,8 @@ running.` on Merge, reads in the meta line as well as in the tooltip) over
   rewritten to the Branch address by `canonicalLocation`, so the palette, the
   shortcuts, a notification, a chip, a search hit and an Activity row all land
   on the same address; a saved place is rewritten the same way when it is
-  restored. A GitLab or Bitbucket merge request keeps the `pr` page, a session
+  restored. A GitLab or Bitbucket merge request keeps the `pr` page (the old
+  studio stays reachable from its strip until the host cleanup), a session
   without a branch keeps File versions.
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
@@ -2289,8 +2290,15 @@ the host forbids on an object that exists is shown disabled with its reason
 (`Bitbucket has no draft pull requests`, `Turned off in payments-api`, `Set by the
 project`), and a concept the host does not have is left out. Until a host's
 adapter lands, its sessions show the request, an `Open on` button and each write
-control disabled with its reason (`HostRequestSummary`). `E` edits the title in
-scope `pullRequest`, live only on this tab.
+control disabled with its reason (`HostRequestSummary`). GitLab uses the same
+page with its own calls and words (the tab reads `Merge request`, the header
+`MR !42`, `Open on GitLab`): `gitlabPullRequestPort` reads and writes through
+Tauri commands that hold the stored token, `Mark ready` and `Convert to draft`
+change the `Draft:` prefix of the title, Merge lists the ways the project
+allows, and a token without the `api` scope reads `Goodboy can't read this merge
+request` with `Open GitLab settings`. A branch with no merge request shows the
+GitLab create form under `No merge request yet`. `E` edits the title in scope
+`pullRequest`, live only on this tab.
 
 **Comments.** The list (`Needs you`, `Working`, `Ready to push`, `Open`, `Done`, `Left open on GitHub`;
 the pull request conversation only, your notes live in the Notes drawer of
@@ -2388,8 +2396,10 @@ address, the palette verb, a mount row's `Rewrite history` and an Activity
 history row (which has no verb and no `⋯` of its own) all land on
 `branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
 session reads them through the same five states once its host's
-`canReadChecks` is on; while it is off the tab says Goodboy does not show that
-host's checks yet (`checksViewOf`).
+`canReadChecks` is on (GitLab: the jobs of the head pipeline, a job allowed to
+fail counts as skipped, a token that cannot read pipelines gets the denied
+notice with `Open GitLab settings`); while it is off the tab says Goodboy does
+not show that host's checks yet (`checksViewOf`).
 
 The Branch page shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. Every rewrite takes the shown

@@ -19,6 +19,8 @@ type ForBranch = (
 
 const h = vi.hoisted(() => ({
   mrForBranch: vi.fn(),
+  getMr: vi.fn(),
+  approvals: vi.fn(),
   createMr: vi.fn(),
   mergeMr: vi.fn(),
   remoteUrl: vi.fn(async (repoRoot: string) => `git@gitlab.com:acme${repoRoot}.git`),
@@ -27,6 +29,8 @@ const h = vi.hoisted(() => ({
 
 vi.mock('../../../features/integrations/gitlab/client', () => ({
   gitlabMrForBranch: h.mrForBranch,
+  gitlabGetMr: h.getMr,
+  gitlabMrApprovalState: h.approvals,
   gitlabCreateMr: h.createMr,
   gitlabMergeMr: h.mergeMr,
 }));
@@ -180,9 +184,84 @@ beforeEach(() => {
   h.links.length = 0;
   h.mrForBranch.mockReset();
   h.mrForBranch.mockResolvedValue(null);
+  h.getMr.mockReset();
+  h.getMr.mockRejectedValue(new Error('no detail'));
+  h.approvals.mockReset();
+  h.approvals.mockResolvedValue(null);
   h.createMr.mockReset();
   h.mergeMr.mockReset();
   h.remoteUrl.mockClear();
+});
+
+describe('refreshSessionMr facts', () => {
+  const APPROVALS = {
+    approvalsRequired: 1,
+    approvalsLeft: 0,
+    userHasApproved: false,
+    userCanApprove: true,
+    approvedBy: [{ user: { username: 'kenji-w', name: 'Kenji Watanabe', avatarUrl: null } }],
+  };
+
+  it('keeps the head pipeline, the merge status and the approvals of an open merge request', async () => {
+    const { state, set, get } = harness([mountView({ id: M1, branch: 'ak/part-one' })]);
+    h.mrForBranch.mockResolvedValue(makeMr({ iid: 11, branch: 'ak/part-one' }));
+    h.getMr.mockResolvedValue({
+      ...makeMr({ iid: 11, branch: 'ak/part-one' }),
+      headPipeline: { id: 9001, status: 'failed', webUrl: null },
+      detailedMergeStatus: 'mergeable',
+    });
+    h.approvals.mockResolvedValue(APPROVALS);
+
+    await refreshSessionMr(set, get)(SESSION_ID);
+
+    const entry = (state.mountGitlabMr as Record<string, unknown>)[M1] as {
+      mr: GitlabMergeRequest;
+      approvals: unknown;
+    };
+    expect(entry.mr.headPipeline?.status).toBe('failed');
+    expect(entry.approvals).toEqual(APPROVALS);
+    expect(h.getMr).toHaveBeenCalledWith(
+      expect.objectContaining({ mrIid: 11, projectPath: 'acme/web', projectId: PROJECT_ID }),
+    );
+  });
+
+  it('keeps the merge request of the branch when the extra reads fail', async () => {
+    const { state, set, get } = harness([mountView({ id: M1, branch: 'ak/part-one' })]);
+    h.mrForBranch.mockResolvedValue(makeMr({ iid: 11, branch: 'ak/part-one' }));
+    h.approvals.mockRejectedValue(new Error('403'));
+
+    await refreshSessionMr(set, get)(SESSION_ID);
+
+    const entry = (state.mountGitlabMr as Record<string, unknown>)[M1] as {
+      mr: GitlabMergeRequest;
+      approvals: unknown;
+      error: string | null;
+    };
+    expect(entry.mr.iid).toBe(11);
+    expect(entry.approvals).toBeNull();
+    expect(entry.error).toBeNull();
+  });
+
+  it('does not read approvals or the pipeline of a merged merge request', async () => {
+    const { set, get } = harness([mountView({ id: M1, branch: 'ak/part-one' })]);
+    h.mrForBranch.mockResolvedValue(makeMr({ iid: 11, branch: 'ak/part-one', state: 'merged' }));
+
+    await refreshSessionMr(set, get)(SESSION_ID);
+
+    expect(h.getMr).not.toHaveBeenCalled();
+    expect(h.approvals).not.toHaveBeenCalled();
+  });
+
+  it('projects the approvals of the active mount onto the session', async () => {
+    const { state, set, get } = harness([mountView({ id: M1, branch: 'ak/part-one' })]);
+    h.mrForBranch.mockResolvedValue(makeMr({ iid: 11, branch: 'ak/part-one' }));
+    h.approvals.mockResolvedValue(APPROVALS);
+
+    await refreshSessionMr(set, get)(SESSION_ID);
+
+    const session = (state.sessionGitlabMr as Record<string, { approvals?: unknown }>)[SESSION_ID];
+    expect(session?.approvals).toEqual(APPROVALS);
+  });
 });
 
 describe('refreshSessionMr across mounts', () => {

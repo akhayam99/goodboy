@@ -1,6 +1,13 @@
 import { ArrowRight, Check } from 'lucide-react';
 import { Button, HeaderBand, Notice, Tooltip, cn } from '@goodboy/ui';
-import type { PrCheckRun, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
+import { PULL_REQUEST_NOUNS } from '@goodboy/core';
+import type {
+  PrCheckRun,
+  PrDetail,
+  PullRequestHost,
+  PullRequestState,
+  SessionId,
+} from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
@@ -18,6 +25,7 @@ import { BranchSwitcher } from './BranchSwitcher';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly host?: PullRequestHost;
   readonly mountPath: string | null;
   readonly pr: PullRequestState | null;
   readonly detail: PrDetail | null;
@@ -61,15 +69,18 @@ const INTENT_WORD: Readonly<Record<PullRequestState['state'], string>> = {
   closed: 'wanted to merge',
 };
 
-const stateWord = (pr: PullRequestState | null): string => {
+const capitalized = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+
+const stateWord = (pr: PullRequestState | null, host: PullRequestHost): string => {
   if (pr === null) {
-    return 'No pull request';
+    return `No ${PULL_REQUEST_NOUNS[host].long}`;
   }
   return pullRequestWord({ state: pr.state, isDraft: pr.isDraft });
 };
 
 export const BranchHeader = ({
   sessionId,
+  host = 'github',
   mountPath,
   pr,
   detail,
@@ -120,13 +131,28 @@ export const BranchHeader = ({
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <HeaderBand
-        title={<PullRequestTitle title={pr?.title ?? fallbackTitle} edit={titleEdit} />}
+        title={
+          <PullRequestTitle
+            title={pr?.title ?? fallbackTitle}
+            edit={titleEdit}
+            noun={capitalized(PULL_REQUEST_NOUNS[host].long)}
+          />
+        }
         meta={
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
             {titleEdit.isEditing ? (
               <span>Enter saves, Esc cancels</span>
             ) : (
-              <span className="text-foreground">{stateWord(pr)}</span>
+              <span className="text-foreground">{stateWord(pr, host)}</span>
+            )}
+            {!titleEdit.isEditing && pr !== null && host !== 'github' && (
+              <>
+                <span aria-hidden>·</span>
+                <span>
+                  {PULL_REQUEST_NOUNS[host].short} {PULL_REQUEST_NOUNS[host].numberPrefix}
+                  {pr.number}
+                </span>
+              </>
             )}
             {!titleEdit.isEditing && head !== null && (
               <>

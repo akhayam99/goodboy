@@ -1,8 +1,11 @@
 import { listMountPullRequestLinks } from '@goodboy/db';
-import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
+import type { IsoDateTime, MountId, ProjectId, SessionId } from '@goodboy/types';
 import {
+  gitlabGetMr,
+  gitlabMrApprovalState,
   gitlabMrForBranch,
   type GitlabMergeRequest,
+  type GitlabMrApprovalState,
 } from '../../../features/integrations/gitlab/client';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { MountGitlabMrState } from './state';
@@ -29,6 +32,37 @@ type Params = {
   readonly sessionId: SessionId;
   readonly target: MountFetch;
   readonly opts?: RefreshMrOptions;
+};
+
+type MrFacts = {
+  readonly mr: GitlabMergeRequest | null;
+  readonly approvals: GitlabMrApprovalState | null;
+};
+
+const readMrFacts = async ({
+  context,
+  mr,
+  projectId,
+}: {
+  readonly context: MrContext;
+  readonly mr: GitlabMergeRequest | null;
+  readonly projectId: ProjectId;
+}): Promise<MrFacts> => {
+  if (mr === null || mr.state !== 'opened') {
+    return { mr, approvals: null };
+  }
+  const target = {
+    workspaceId: context.workspaceId,
+    projectId,
+    host: context.host,
+    projectPath: context.projectPath,
+    mrIid: mr.iid,
+  };
+  const [detail, approvals] = await Promise.all([
+    gitlabGetMr(target).catch(() => null),
+    gitlabMrApprovalState(target).catch(() => null),
+  ]);
+  return { mr: detail ?? mr, approvals };
 };
 
 export const refreshMountMr = async ({
@@ -63,6 +97,7 @@ export const refreshMountMr = async ({
         mrs: existing?.mrs ?? [],
         links: existing?.links ?? [],
         mr: existing?.mr ?? null,
+        approvals: existing?.approvals ?? null,
         fetchedAt: existing?.fetchedAt ?? null,
         loading: true,
         error: null,
@@ -73,12 +108,17 @@ export const refreshMountMr = async ({
           sessionId,
           mountId,
         });
-        const mr = await gitlabMrForBranch(
+        const found = await gitlabMrForBranch(
           context.workspaceId,
           context.host,
           context.projectPath,
           mount.branch,
         );
+        const { mr, approvals } = await readMrFacts({
+          context,
+          mr: found,
+          projectId: mount.projectId,
+        });
         const observedAt = new Date().toISOString() as IsoDateTime;
         const links = await syncRequestLinks<GitlabMergeRequest>({
           get,
@@ -120,6 +160,7 @@ export const refreshMountMr = async ({
                   }),
                   links,
                   mr,
+                  approvals,
                   fetchedAt: observedAt,
                   loading: false,
                   error: null,

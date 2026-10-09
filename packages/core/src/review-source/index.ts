@@ -11,6 +11,14 @@ export {
 export { commitLinkOf } from './commitLink';
 export { githubPullRequestPort } from './githubPullRequestPort';
 export { githubReviewSource } from './githubReviewSource';
+export { gitlabDraftTitle, stripGitlabDraftPrefix } from './gitlabDraftTitle';
+export {
+  gitlabMergeableOf,
+  gitlabPullRequestPort,
+  gitlabReviewDecisionOf,
+  gitlabStateKindOf,
+  type GitlabPullRequestTransport,
+} from './gitlabPullRequestPort';
 export {
   GITLAB_THREAD_PREFIX,
   gitlabDiscussionId,

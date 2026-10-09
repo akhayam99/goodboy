@@ -118,18 +118,20 @@ describe('REVIEW_SOURCE_CAPABILITIES', () => {
     expect(REVIEW_SOURCE_CAPABILITIES.local.canReply).toBe(false);
   });
 
-  it('writes the pull request only on GitHub until the other adapters land', () => {
-    expect(REVIEW_SOURCE_CAPABILITIES.github).toMatchObject({
-      canEditTitle: true,
-      canEditBody: true,
-      canRequestReviewers: true,
-      canSetDraft: true,
-      canReadChecks: true,
-      canChooseMergeMethod: true,
-      canClose: true,
-      canReopen: true,
-    });
-    for (const kind of ['gitlab', 'bitbucket', 'local'] as const) {
+  it('writes the pull request on GitHub and GitLab until the other adapters land', () => {
+    for (const kind of ['github', 'gitlab'] as const) {
+      expect(REVIEW_SOURCE_CAPABILITIES[kind]).toMatchObject({
+        canEditTitle: true,
+        canEditBody: true,
+        canRequestReviewers: true,
+        canSetDraft: true,
+        canReadChecks: true,
+        canChooseMergeMethod: true,
+        canClose: true,
+        canReopen: true,
+      });
+    }
+    for (const kind of ['bitbucket', 'local'] as const) {
       expect(REVIEW_SOURCE_CAPABILITIES[kind]).toMatchObject({
         canEditTitle: false,
         canEditBody: false,

@@ -5,7 +5,10 @@ import type {
   ProjectId,
   SessionId,
 } from '@goodboy/types';
-import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
+import type {
+  GitlabMergeRequest,
+  GitlabMrApprovalState,
+} from '../../../features/integrations/gitlab/client';
 
 export type MountGitlabMrState = SessionGitlabMrState & {
   readonly mountId: MountId;
@@ -20,6 +23,7 @@ export type MountGitlabMrState = SessionGitlabMrState & {
 
 export type SessionGitlabMrState = {
   readonly mr: GitlabMergeRequest | null;
+  readonly approvals?: GitlabMrApprovalState | null;
   readonly fetchedAt: IsoDateTime | null;
   readonly loading: boolean;
   readonly error: string | null;

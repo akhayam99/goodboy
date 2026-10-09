@@ -1,4 +1,11 @@
-import type { PrDetail, PullRequestState, PullRequestView, Session } from '@goodboy/types';
+import type { PullRequestFailureKind } from '@goodboy/core';
+import type {
+  PullRequestHost,
+  PrDetail,
+  PullRequestState,
+  PullRequestView,
+  Session,
+} from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { ActiveReviewSource } from '../../../../store/slices/review-source/types';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
@@ -9,11 +16,13 @@ import type { ReviewerRequest } from './ReviewersProperty';
 
 type Props = {
   readonly session: Session;
+  readonly host: PullRequestHost;
   readonly pr: PullRequestState | null;
   readonly detail: PrDetail | null;
   readonly view: PullRequestView | null;
   readonly edits: ReadonlyArray<PullRequestEdit>;
   readonly viewError: string | null;
+  readonly viewErrorKind: PullRequestFailureKind | null;
   readonly mountPath: string | null;
   readonly source: ActiveReviewSource | null;
   readonly canEdit: boolean;
@@ -32,11 +41,13 @@ type Props = {
 
 export const PullRequestTab = ({
   session,
+  host,
   pr,
   detail,
   view,
   edits,
   viewError,
+  viewErrorKind,
   mountPath,
   source,
   canEdit,
@@ -52,7 +63,7 @@ export const PullRequestTab = ({
   onSelectTab,
   onOpenFiles,
 }: Props) => {
-  if (source !== null && source.kind !== 'github') {
+  if (source !== null && !source.capabilities.canEditTitle) {
     return <HostRequestSummary source={source} />;
   }
   if (pr === null) {
@@ -70,11 +81,13 @@ export const PullRequestTab = ({
   return (
     <PullRequestPage
       session={session}
+      host={host}
       pr={pr}
       detail={detail}
       view={view}
       edits={edits}
       viewError={viewError}
+      viewErrorKind={viewErrorKind}
       canEdit={canEdit}
       request={request}
       behind={behind}

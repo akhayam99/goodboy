@@ -1,4 +1,4 @@
-import type { MountId, SessionId } from '@goodboy/types';
+import type { MountId, PrMergeMethod, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { gitlabMergeMr } from '../../../features/integrations/gitlab/client';
 import { resolveMrContext, resolveSessionMrTarget } from './resolveMrContext';
@@ -7,10 +7,11 @@ import type { GetFn, SetFn } from './types';
 export type MergeMrInput = {
   readonly sessionId: SessionId;
   readonly mountId?: MountId;
+  readonly method?: PrMergeMethod;
 };
 
 export const mergeMrForSession = (_set: SetFn, get: GetFn) => {
-  return async ({ sessionId, mountId }: MergeMrInput): Promise<void> => {
+  return async ({ sessionId, mountId, method }: MergeMrInput): Promise<void> => {
     const target = resolveSessionMrTarget({
       get,
       sessionId,
@@ -25,7 +26,14 @@ export const mergeMrForSession = (_set: SetFn, get: GetFn) => {
       return;
     }
     try {
-      await gitlabMergeMr(context.workspaceId, context.host, context.projectPath, mr.iid);
+      await gitlabMergeMr(
+        context.workspaceId,
+        context.host,
+        context.projectPath,
+        mr.iid,
+        undefined,
+        method,
+      );
     } catch (err) {
       const errMsg = formatError(err);
       void get().emitNotification({

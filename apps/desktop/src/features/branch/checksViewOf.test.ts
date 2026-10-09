@@ -133,11 +133,20 @@ describe('repoNameOf', () => {
     );
   });
 
+  it('reads the project from a GitLab merge request address, groups included', () => {
+    expect(
+      repoNameOf({ url: 'https://gitlab.com/harborline/payments-api/-/merge_requests/42' }),
+    ).toBe('payments-api');
+    expect(
+      repoNameOf({
+        url: 'https://gitlab.invalid/cascadia/platform/ledger-core/-/merge_requests/9',
+      }),
+    ).toBe('ledger-core');
+  });
+
   it('falls back to a plain phrase when the address has another shape', () => {
     expect(repoNameOf({ url: '' })).toBe('this repository');
-    expect(repoNameOf({ url: 'https://gitlab.invalid/a/b/-/merge_requests/1' })).toBe(
-      'this repository',
-    );
+    expect(repoNameOf({ url: 'https://example.invalid/a/b/issues/1' })).toBe('this repository');
   });
 });
 

@@ -32,9 +32,6 @@ export const capabilityReasonOf = ({ kind, capability }: Params): string | null 
   if (capability === 'canSetDraft' && kind === 'bitbucket') {
     return 'Bitbucket has no draft pull requests';
   }
-  if (capability === 'canChooseMergeMethod' && kind === 'gitlab') {
-    return 'Set by the project';
-  }
   const noun = PULL_REQUEST_NOUNS[kind].long;
   const verb = VERB[capability];
   const host = REVIEW_SOURCE_LABEL[kind];

@@ -1,8 +1,10 @@
 import type { PullRequestPort } from '@goodboy/core';
 import type { MountId, SessionId } from '@goodboy/types';
 import { githubPortOf } from '../../../features/integrations/github/githubPortOf';
+import { gitlabPortOf } from '../../../features/integrations/gitlab/gitlabPortOf';
 import type { GetFn } from '../../slice-types';
 import { activeReviewSourceOf } from './activeReviewSource';
+import { sessionPullRequestHostOf } from './sessionPullRequestOf';
 import type { ActiveReviewSource } from './types';
 
 export type PortBuilderParams = Readonly<{
@@ -20,11 +22,13 @@ const noPortOf: PortBuilder = () => null;
 
 const PORT_BUILDERS = {
   github: githubPortOf,
-  gitlab: noPortOf,
+  gitlab: gitlabPortOf,
   bitbucket: noPortOf,
 } as const satisfies Readonly<Record<RemoteKind, PortBuilder>>;
 
 export const pullRequestPortFor = (params: PortBuilderParams): PullRequestPort | null => {
-  const active = activeReviewSourceOf({ state: params.get(), sessionId: params.sessionId });
-  return PORT_BUILDERS[active?.kind ?? 'github'](params);
+  const state = params.get();
+  const active = activeReviewSourceOf({ state, sessionId: params.sessionId });
+  const kind = active?.kind ?? sessionPullRequestHostOf({ state, sessionId: params.sessionId });
+  return PORT_BUILDERS[kind](params);
 };

@@ -152,7 +152,10 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
     };
   }
   const gitlab = (state.mountGitlabMr ?? {})[mountId];
-  const mapped = mapMrToPullRequestState({ mr: gitlab?.mr ?? null });
+  const mapped = mapMrToPullRequestState({
+    mr: gitlab?.mr ?? null,
+    approvals: gitlab?.approvals ?? null,
+  });
   if (mapped !== null) {
     return {
       provider: 'gitlab',

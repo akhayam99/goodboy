@@ -312,18 +312,7 @@ describe('Checks tab when the read failed', () => {
   });
 });
 
-describe('Checks tab on another host', () => {
-  it('says Goodboy does not show GitLab pipelines yet and links the merge request', async () => {
-    seedResolveGitlabScene({ selected: 'gitlab' });
-
-    await show();
-
-    expect(screen.getByText("Goodboy doesn't show GitLab pipelines yet")).toBeDefined();
-    expect(screen.queryByText(/GitHub/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /View on GitLab/ }));
-    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('/merge_requests/57'));
-  });
-
+describe('Checks tab on a host that does not read its checks yet', () => {
   it('says Goodboy does not show Bitbucket checks yet', async () => {
     seedResolveBitbucketScene({ selected: 'bitbucket' });
 
@@ -390,7 +379,7 @@ describe('Checks tab on a host that reads its own checks', () => {
   });
 
   afterEach(() => {
-    capabilities.canReadChecks = false;
+    capabilities.canReadChecks = true;
   });
 
   it('lists the rows the port read, like GitHub does, and drops the host notice', async () => {
@@ -410,6 +399,53 @@ describe('Checks tab on a host that reads its own checks', () => {
 
     expect(screen.queryByText("Goodboy doesn't show GitLab pipelines yet")).toBeNull();
     expect(screen.queryByText('rspec')).toBeNull();
+  });
+
+  it('says what the token cannot read, names the project and reloads on Check again', async () => {
+    const load = vi.fn();
+    useAppStore.setState({
+      pullRequestViews: viewEntry({
+        ...VIEW,
+        checks: { read: 'denied', error: '403 Forbidden', runs: [] },
+      }),
+      loadPullRequestView: load,
+    });
+    const opened: Array<unknown> = [];
+    const listen = (event: Event): void => {
+      opened.push((event as CustomEvent).detail);
+    };
+    window.addEventListener('goodboy:open-settings', listen);
+
+    await show();
+
+    expect(screen.getByText("Goodboy can't read pipelines for notify-relay")).toBeDefined();
+    expect(screen.getByText(/Give it the `api` scope/)).toBeDefined();
+    expect(screen.queryByText(/GitHub/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open GitLab settings' }));
+    expect(opened).toEqual([{ scope: 'tools', tool: 'gitlab' }]);
+    load.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
+    expect(refresh).not.toHaveBeenCalled();
+    window.removeEventListener('goodboy:open-settings', listen);
+  });
+
+  it('says it could not read the pipelines and retries through the port', async () => {
+    const load = vi.fn();
+    useAppStore.setState({
+      pullRequestViews: viewEntry({
+        ...VIEW,
+        checks: { read: 'failed', error: 'http error 500: boom', runs: [] },
+      }),
+      loadPullRequestView: load,
+    });
+
+    await show();
+
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    load.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
   });
 
   it('keeps the host notice while the flag is off', async () => {

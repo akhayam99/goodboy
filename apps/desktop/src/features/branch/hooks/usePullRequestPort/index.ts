@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { PullRequestPort } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { sessionPullRequestOf } from '../../../../store/slices/review-source/sessionPullRequestOf';
 import { pullRequestPortFor } from '../../../../store/slices/review-source/pullRequestPortFor';
 
 type Params = {
@@ -9,7 +10,9 @@ type Params = {
 };
 
 export const usePullRequestPort = ({ sessionId }: Params): PullRequestPort | null => {
-  const prNumber = useAppStore((state) => state.sessionGithub[sessionId]?.pr?.number ?? null);
+  const prNumber = useAppStore(
+    (state) => sessionPullRequestOf({ state, sessionId })?.number ?? null,
+  );
   const mountId = useAppStore((state) => state.sessionActiveMount?.[sessionId] ?? null);
   return useMemo(
     () => (prNumber === null ? null : pullRequestPortFor({ get: useAppStore.getState, sessionId })),

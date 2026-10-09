@@ -14,15 +14,15 @@ describe('capabilityReasonOf', () => {
     );
   });
 
-  it('says the project sets the merge method on GitLab', () => {
-    expect(capabilityReasonOf({ kind: 'gitlab', capability: 'canChooseMergeMethod' })).toBe(
-      'Set by the project',
-    );
+  it('has no reason on GitLab, where every write is built', () => {
+    expect(capabilityReasonOf({ kind: 'gitlab', capability: 'canEditTitle' })).toBeNull();
+    expect(capabilityReasonOf({ kind: 'gitlab', capability: 'canChooseMergeMethod' })).toBeNull();
+    expect(capabilityReasonOf({ kind: 'gitlab', capability: 'canReopen' })).toBeNull();
   });
 
   it('names the noun and the host for a write that is not built yet', () => {
-    expect(capabilityReasonOf({ kind: 'gitlab', capability: 'canEditTitle' })).toBe(
-      'Goodboy cannot edit the title of a merge request on GitLab yet',
+    expect(capabilityReasonOf({ kind: 'bitbucket', capability: 'canEditTitle' })).toBe(
+      'Goodboy cannot edit the title of a pull request on Bitbucket yet',
     );
     expect(capabilityReasonOf({ kind: 'bitbucket', capability: 'canRequestReviewers' })).toBe(
       'Goodboy cannot request reviewers for a pull request on Bitbucket yet',

@@ -27,6 +27,7 @@ const PR: PullRequestState = {
 
 const facts = (overrides: Partial<PullRequestFacts> = {}): PullRequestFacts => ({
   sessionId: SESSION,
+  host: 'github',
   pr: PR,
   number: 318,
   phase: 'open',

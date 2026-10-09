@@ -9,6 +9,7 @@ import {
 import { githubReviewSource } from '../githubReviewSource';
 import { PULL_REQUEST_CAPABILITY_METHODS, type PullRequestCapability } from '../pullRequestPort';
 import { PR_VIEW_JSON } from './githubPullRequestFixture';
+import { fakeGitlabTransport } from './gitlabPullRequestFixture';
 import {
   gitlabReviewSource,
   type GitlabReviewDiscussion,
@@ -199,6 +200,7 @@ const gitlabFake = (): Fake => {
     source: gitlabReviewSource({
       transport,
       mrUrl: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57',
+      pullRequestTransport: fakeGitlabTransport().transport,
     }),
     openThreadId: 'gitlab:d41',
     providerThreadId: 'd41',

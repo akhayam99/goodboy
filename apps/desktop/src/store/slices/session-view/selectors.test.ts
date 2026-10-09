@@ -410,7 +410,13 @@ describe('useStageGroupedSessions', () => {
     store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
     store.state.sessionGitlabMr = {
       [SESSION_ID]: {
-        mr: { iid: 7, state: 'merged', draft: false, sourceBranch: 'ak/feat-thing' },
+        mr: {
+          iid: 7,
+          title: 'Retry the send',
+          state: 'merged',
+          draft: false,
+          sourceBranch: 'ak/feat-thing',
+        },
       },
     };
     const sessions = [createSession(SESSION_ID)];

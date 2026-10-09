@@ -1,8 +1,10 @@
 import { useCallback, useEffect } from 'react';
+import type { PullRequestFailureKind } from '@goodboy/core';
 import type { PullRequestView, SessionId } from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import { useAppStore } from '../../../../store';
 import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';
+import { sessionPullRequestOf } from '../../../../store/slices/review-source/sessionPullRequestOf';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -16,6 +18,7 @@ export type PullRequestViewRead = {
   readonly view: PullRequestView | null;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly errorKind: PullRequestFailureKind | null;
   readonly edits: ReadonlyArray<PullRequestEdit>;
   readonly reload: () => void;
 };
@@ -27,8 +30,10 @@ export const usePullRequestView = ({
 }: Params): PullRequestViewRead => {
   const entry = useAppStore((state) => state.pullRequestViews[sessionId] ?? null);
   const load = useAppStore((state) => state.loadPullRequestView);
-  const githubNumber = useAppStore((state) => state.sessionGithub[sessionId]?.pr?.number ?? null);
-  const prNumber = githubNumber ?? fallbackNumber;
+  const hostNumber = useAppStore(
+    (state) => sessionPullRequestOf({ state, sessionId })?.number ?? null,
+  );
+  const prNumber = hostNumber ?? fallbackNumber;
   const mountId = useAppStore((state) => entryMountIdOf({ state, sessionId }));
 
   useEffect(() => {
@@ -47,6 +52,7 @@ export const usePullRequestView = ({
     view: isCurrent ? entry.view : null,
     isLoading: isCurrent && entry.isLoading,
     error: isCurrent ? entry.error : null,
+    errorKind: isCurrent ? (entry.errorKind ?? null) : null,
     edits: isCurrent ? entry.edits : NO_EDITS,
     reload,
   };

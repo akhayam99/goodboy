@@ -308,6 +308,17 @@ commits` (`branchPresenceOf`, `openRequest`); on the request's head it reads
   past its `merged_head_sha` stays open instead and reads `Merged, then N
 new commits` (`checkMergedThen`, one git check per tip, kept in
   `mergedThen` by mount).
+- **A GitLab row reads the same facts as a GitHub one.** `refreshSessionMr`
+  fills `mountGitlabMr` per mount and, for an open merge request only, reads it
+  once more (`gitlab_get_mr`: the head pipeline and the merge status) with its
+  approvals (`gitlab_mr_approval_state`), at the cadence of the refresh and in
+  no loop of its own. `mapMrToPullRequestState` turns them into `checks`
+  (`success`, `failure`, `pending`, or null with no pipeline), `mergeable`
+  (false on conflicts, null while GitLab is still checking) and
+  `reviewDecision` (`approved` once approvals are met, otherwise
+  `review_required`; GitLab has no changes requested), so the sidebar glyphs,
+  the readiness and the Board read a real state. A failed extra read leaves the
+  fields null and never fails the refresh.
 - **Requests are created per mount.** Creation refreshes the provider first,
   so a retry after the remote accepted a request attaches the existing one
   instead of opening a duplicate. GitHub and GitLab requests open as drafts

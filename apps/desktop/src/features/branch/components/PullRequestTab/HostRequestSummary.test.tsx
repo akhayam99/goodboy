@@ -48,41 +48,40 @@ const sourceOf = ({
   }) as ActiveReviewSource;
 
 describe('the pull request tab on a host without an adapter yet', () => {
-  it('names the merge request and shows each write control disabled with its reason', () => {
+  it('names the pull request and shows each write control disabled with its reason', () => {
     render(
       <HostRequestSummary
         source={sourceOf({
-          kind: 'gitlab',
-          label: 'notify-relay !57',
-          url: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57',
+          kind: 'bitbucket',
+          label: 'storefront-web #12',
+          url: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12',
         })}
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Merge request on GitLab' })).toBeDefined();
-    for (const name of ['Edit title', 'Edit description', 'Request review', 'Mark ready']) {
+    expect(screen.getByRole('heading', { name: 'Pull request on Bitbucket' })).toBeDefined();
+    for (const name of ['Edit title', 'Edit description', 'Request review']) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
     }
     expect(
-      screen.getByText('Goodboy cannot edit the title of a merge request on GitLab yet'),
+      screen.getByText('Goodboy cannot edit the title of a pull request on Bitbucket yet'),
     ).toBeDefined();
-    expect(screen.getByText('Set by the project')).toBeDefined();
   });
 
   it('opens the request on its host', () => {
     render(
       <HostRequestSummary
         source={sourceOf({
-          kind: 'gitlab',
-          label: 'notify-relay !57',
-          url: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57',
+          kind: 'bitbucket',
+          label: 'storefront-web #12',
+          url: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12',
         })}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Open on GitLab/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Open on Bitbucket/ }));
 
-    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('/merge_requests/57'));
+    expect(openUrl).toHaveBeenCalledWith(expect.stringContaining('/pull-requests/12'));
   });
 
   it('leaves out the draft control where the host has no drafts', () => {

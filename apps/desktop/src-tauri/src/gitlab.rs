@@ -218,6 +218,8 @@ pub struct GitlabUser {
     pub id: i64,
     pub username: String,
     pub name: String,
+    #[serde(rename = "avatarUrl", alias = "avatar_url", default)]
+    pub avatar_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -362,6 +364,8 @@ pub async fn gitlab_update_issue(
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitlabMrAuthor {
+    #[serde(default)]
+    pub id: Option<i64>,
     pub username: String,
     pub name: String,
     #[serde(rename = "avatarUrl", alias = "avatar_url", default)]
@@ -399,6 +403,24 @@ pub struct GitlabMergeRequest {
     pub author: Option<GitlabMrAuthor>,
     #[serde(default)]
     pub reviewers: Option<Vec<GitlabMrAuthor>>,
+    #[serde(rename = "createdAt", alias = "created_at", default)]
+    pub created_at: Option<String>,
+    #[serde(
+        rename = "detailedMergeStatus",
+        alias = "detailed_merge_status",
+        default
+    )]
+    pub detailed_merge_status: Option<String>,
+    #[serde(rename = "headPipeline", alias = "head_pipeline", default)]
+    pub head_pipeline: Option<GitlabHeadPipeline>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabHeadPipeline {
+    pub id: i64,
+    pub status: String,
+    #[serde(rename = "webUrl", alias = "web_url", default)]
+    pub web_url: Option<String>,
 }
 
 #[tauri::command]
@@ -1012,7 +1034,12 @@ pub async fn gitlab_unapprove_mr(
     read_approval_state(&host, &token, &encoded, mr_iid).await
 }
 
-fn mr_update_payload(state_event: Option<&str>, title: Option<&str>) -> serde_json::Value {
+fn mr_update_payload(
+    state_event: Option<&str>,
+    title: Option<&str>,
+    description: Option<&str>,
+    reviewer_ids: Option<&[i64]>,
+) -> serde_json::Value {
     let mut payload = serde_json::Map::new();
     if let Some(event) = state_event {
         payload.insert("state_event".to_string(), serde_json::json!(event));
@@ -1020,7 +1047,21 @@ fn mr_update_payload(state_event: Option<&str>, title: Option<&str>) -> serde_js
     if let Some(value) = title {
         payload.insert("title".to_string(), serde_json::json!(value));
     }
+    if let Some(value) = description {
+        payload.insert("description".to_string(), serde_json::json!(value));
+    }
+    if let Some(ids) = reviewer_ids {
+        payload.insert("reviewer_ids".to_string(), serde_json::json!(ids));
+    }
     serde_json::Value::Object(payload)
+}
+
+fn mr_path(encoded_project: &str, mr_iid: i64) -> String {
+    format!("/projects/{encoded_project}/merge_requests/{mr_iid}")
+}
+
+fn is_empty_payload(payload: &serde_json::Value) -> bool {
+    payload.as_object().map(|map| map.is_empty()) == Some(true)
 }
 
 #[tauri::command]
@@ -1037,8 +1078,8 @@ pub async fn gitlab_update_mr_state(
 ) -> Result<GitlabMergeRequest, GitlabError> {
     let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
-    let payload = mr_update_payload(state_event.as_deref(), title.as_deref());
-    if payload.as_object().map(|map| map.is_empty()) == Some(true) {
+    let payload = mr_update_payload(state_event.as_deref(), title.as_deref(), None, None);
+    if is_empty_payload(&payload) {
         return Err(GitlabError::InvalidShape(
             "merge request update needs a state event or a title".to_string(),
         ));
@@ -1047,14 +1088,50 @@ pub async fn gitlab_update_mr_state(
         reqwest::Method::PUT,
         &host,
         &token,
-        &format!("/projects/{encoded}/merge_requests/{mr_iid}"),
+        &mr_path(&encoded, mr_iid),
         &payload,
     )
     .await
 }
 
 #[tauri::command]
-pub async fn gitlab_merge_mr(
+#[allow(clippy::too_many_arguments)]
+pub async fn gitlab_update_mr(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    title: Option<String>,
+    description: Option<String>,
+    reviewer_ids: Option<Vec<i64>>,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabMergeRequest, GitlabError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let payload = mr_update_payload(
+        None,
+        title.as_deref(),
+        description.as_deref(),
+        reviewer_ids.as_deref(),
+    );
+    if is_empty_payload(&payload) {
+        return Err(GitlabError::InvalidShape(
+            "merge request update needs a title, a description or reviewers".to_string(),
+        ));
+    }
+    send_json(
+        reqwest::Method::PUT,
+        &host,
+        &token,
+        &mr_path(&encoded, mr_iid),
+        &payload,
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn gitlab_get_mr(
     workspace_id: String,
     project_id: Option<String>,
     host: String,
@@ -1064,14 +1141,257 @@ pub async fn gitlab_merge_mr(
 ) -> Result<GitlabMergeRequest, GitlabError> {
     let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let encoded = encode_project_path(&project_path);
+    get_json(&host, &token, &mr_path(&encoded, mr_iid)).await
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MergeStrategy {
+    Merge,
+    Squash,
+    Rebase,
+}
+
+fn merge_strategy(method: Option<&str>) -> Result<MergeStrategy, GitlabError> {
+    match method.map(str::trim).filter(|value| !value.is_empty()) {
+        None | Some("merge") => Ok(MergeStrategy::Merge),
+        Some("squash") => Ok(MergeStrategy::Squash),
+        Some("rebase") => Ok(MergeStrategy::Rebase),
+        Some(other) => Err(GitlabError::InvalidShape(format!(
+            "unknown merge method: {other}"
+        ))),
+    }
+}
+
+fn merge_body(strategy: MergeStrategy) -> serde_json::Value {
+    match strategy {
+        MergeStrategy::Squash => serde_json::json!({ "squash": true }),
+        MergeStrategy::Merge | MergeStrategy::Rebase => serde_json::json!({}),
+    }
+}
+
+fn rebase_blocker(
+    project_merge_method: &str,
+    detailed_merge_status: Option<&str>,
+) -> Option<&'static str> {
+    if !matches!(project_merge_method, "ff" | "rebase_merge") {
+        return Some("this project does not merge by fast-forward");
+    }
+    if detailed_merge_status == Some("need_rebase") {
+        return Some("rebase the merge request first");
+    }
+    None
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn gitlab_merge_mr(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    method: Option<String>,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabMergeRequest, GitlabError> {
+    let strategy = merge_strategy(method.as_deref())?;
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let encoded = encode_project_path(&project_path);
+    if strategy == MergeStrategy::Rebase {
+        let settings: GitlabMergeSettings =
+            get_json(&host, &token, &project_settings_path(&encoded)).await?;
+        let current: GitlabMergeRequest =
+            get_json(&host, &token, &mr_path(&encoded, mr_iid)).await?;
+        if let Some(reason) = rebase_blocker(
+            &settings.merge_method,
+            current.detailed_merge_status.as_deref(),
+        ) {
+            return Err(GitlabError::InvalidShape(reason.to_string()));
+        }
+    }
     send_json(
         reqwest::Method::PUT,
         &host,
         &token,
-        &format!("/projects/{encoded}/merge_requests/{mr_iid}/merge"),
-        &serde_json::json!({}),
+        &format!("{}/merge", mr_path(&encoded, mr_iid)),
+        &merge_body(strategy),
     )
     .await
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabMergeSettings {
+    #[serde(
+        rename = "mergeMethod",
+        alias = "merge_method",
+        default = "default_merge_method"
+    )]
+    pub merge_method: String,
+    #[serde(rename = "squashOption", alias = "squash_option", default)]
+    pub squash_option: Option<String>,
+    #[serde(
+        rename = "onlyAllowMergeIfPipelineSucceeds",
+        alias = "only_allow_merge_if_pipeline_succeeds",
+        default
+    )]
+    pub only_allow_merge_if_pipeline_succeeds: bool,
+}
+
+fn default_merge_method() -> String {
+    "merge".to_string()
+}
+
+fn project_settings_path(encoded_project: &str) -> String {
+    format!("/projects/{encoded_project}")
+}
+
+#[tauri::command]
+pub async fn gitlab_project_merge_methods(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabMergeSettings, GitlabError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let encoded = encode_project_path(&project_path);
+    get_json(&host, &token, &project_settings_path(&encoded)).await
+}
+
+fn project_users_path(encoded_project: &str, query: &str) -> String {
+    format!(
+        "/projects/{encoded_project}/users?search={}",
+        percent_encode(query.trim())
+    )
+}
+
+#[tauri::command]
+pub async fn gitlab_search_project_users(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    query: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Vec<GitlabUser>, GitlabError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let encoded = encode_project_path(&project_path);
+    get_json(&host, &token, &project_users_path(&encoded, &query)).await
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabPipeline {
+    pub id: i64,
+    pub status: String,
+    #[serde(rename = "webUrl", alias = "web_url", default)]
+    pub web_url: Option<String>,
+    #[serde(default)]
+    pub sha: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabJob {
+    pub id: i64,
+    pub name: String,
+    #[serde(default)]
+    pub stage: Option<String>,
+    pub status: String,
+    #[serde(rename = "webUrl", alias = "web_url", default)]
+    pub web_url: Option<String>,
+    #[serde(rename = "allowFailure", alias = "allow_failure", default)]
+    pub allow_failure: bool,
+    #[serde(default)]
+    pub duration: Option<f64>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GitlabMrChecks {
+    pub pipeline: Option<GitlabPipeline>,
+    pub jobs: Vec<GitlabJob>,
+}
+
+fn mr_pipelines_path(encoded_project: &str, mr_iid: i64) -> String {
+    format!("{}/pipelines", mr_path(encoded_project, mr_iid))
+}
+
+fn pipeline_jobs_path(encoded_project: &str, pipeline_id: i64) -> String {
+    format!("/projects/{encoded_project}/pipelines/{pipeline_id}/jobs")
+}
+
+fn is_denied(error: &GitlabError) -> bool {
+    matches!(error, GitlabError::Http { status, .. } if *status == 403 || *status == 404)
+}
+
+#[tauri::command]
+pub async fn gitlab_mr_pipeline_jobs(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Option<GitlabMrChecks>, GitlabError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let encoded = encode_project_path(&project_path);
+    let Some(pipelines) = get_json_optional::<Vec<GitlabPipeline>>(
+        &host,
+        &token,
+        &mr_pipelines_path(&encoded, mr_iid),
+    )
+    .await?
+    else {
+        return Ok(None);
+    };
+    let Some(pipeline) = pipelines.into_iter().next() else {
+        return Ok(Some(GitlabMrChecks {
+            pipeline: None,
+            jobs: Vec::new(),
+        }));
+    };
+    let jobs = match get_json_paged::<GitlabJob>(
+        &host,
+        &token,
+        &pipeline_jobs_path(&encoded, pipeline.id),
+    )
+    .await
+    {
+        Ok(jobs) => jobs,
+        Err(error) if is_denied(&error) => return Ok(None),
+        Err(error) => return Err(error),
+    };
+    Ok(Some(GitlabMrChecks {
+        pipeline: Some(pipeline),
+        jobs,
+    }))
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitlabMrCommit {
+    pub id: String,
+    #[serde(rename = "shortId", alias = "short_id", default)]
+    pub short_id: String,
+    pub title: String,
+    #[serde(rename = "authorName", alias = "author_name", default)]
+    pub author_name: Option<String>,
+    #[serde(rename = "committedDate", alias = "committed_date", default)]
+    pub committed_date: Option<String>,
+}
+
+fn mr_commits_path(encoded_project: &str, mr_iid: i64) -> String {
+    format!("{}/commits", mr_path(encoded_project, mr_iid))
+}
+
+#[tauri::command]
+pub async fn gitlab_mr_commits(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Vec<GitlabMrCommit>, GitlabError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let encoded = encode_project_path(&project_path);
+    get_json_paged(&host, &token, &mr_commits_path(&encoded, mr_iid)).await
 }
 
 #[cfg(test)]
@@ -1232,6 +1552,22 @@ mod tests {
         let reviewers = mr.reviewers.unwrap();
         assert_eq!(reviewers[0].username, "bob");
         assert!(reviewers[0].avatar_url.is_none());
+        assert!(reviewers[0].id.is_none());
+    }
+
+    #[test]
+    fn merge_request_reviewers_carry_their_user_id() {
+        let raw = r#"{
+            "id": 9, "iid": 2, "project_id": 3, "title": "t", "description": null,
+            "state": "opened", "web_url": "https://gitlab.com/acme/web/-/merge_requests/2",
+            "source_branch": "a", "target_branch": "main",
+            "reviewers": [{ "id": 7, "username": "kenji-w", "name": "Kenji Watanabe" }]
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
+        let reviewers = mr.reviewers.unwrap();
+        assert_eq!(reviewers[0].id, Some(7));
+        let value = serde_json::to_value(&reviewers[0]).unwrap();
+        assert_eq!(value["id"], 7);
     }
 
     #[test]
@@ -1478,15 +1814,342 @@ mod tests {
 
     #[test]
     fn mr_update_payload_carries_only_the_supplied_fields() {
-        let closing = mr_update_payload(Some("close"), None);
+        let closing = mr_update_payload(Some("close"), None, None, None);
         assert_eq!(closing["state_event"], "close");
         assert!(closing.get("title").is_none());
 
-        let retitle = mr_update_payload(None, Some("Draft: ship it"));
+        let retitle = mr_update_payload(None, Some("Draft: ship it"), None, None);
         assert_eq!(retitle["title"], "Draft: ship it");
         assert!(retitle.get("state_event").is_none());
 
-        assert_eq!(mr_update_payload(None, None), serde_json::json!({}));
+        assert_eq!(
+            mr_update_payload(None, None, None, None),
+            serde_json::json!({})
+        );
+    }
+
+    #[test]
+    fn mr_update_payload_carries_a_description_and_reviewers_only_when_supplied() {
+        let described = mr_update_payload(None, None, Some("Key the guard on the event id"), None);
+        assert_eq!(described["description"], "Key the guard on the event id");
+        assert!(described.get("title").is_none());
+        assert!(described.get("reviewer_ids").is_none());
+
+        let reviewed = mr_update_payload(None, None, None, Some(&[7, 9]));
+        assert_eq!(reviewed["reviewer_ids"], serde_json::json!([7, 9]));
+        assert!(reviewed.get("description").is_none());
+    }
+
+    #[test]
+    fn mr_update_payload_with_an_empty_reviewer_list_clears_the_reviewers() {
+        let cleared = mr_update_payload(None, None, None, Some(&[]));
+        assert_eq!(cleared, serde_json::json!({ "reviewer_ids": [] }));
+        assert!(!is_empty_payload(&cleared));
+        assert!(is_empty_payload(&mr_update_payload(None, None, None, None)));
+    }
+
+    #[test]
+    fn mr_update_payload_keeps_an_empty_description_so_it_can_be_cleared() {
+        let cleared = mr_update_payload(None, None, Some(""), None);
+        assert_eq!(cleared, serde_json::json!({ "description": "" }));
+    }
+
+    #[test]
+    fn merge_strategy_defaults_to_a_plain_merge_and_rejects_unknown_methods() {
+        assert_eq!(merge_strategy(None).unwrap(), MergeStrategy::Merge);
+        assert_eq!(merge_strategy(Some("  ")).unwrap(), MergeStrategy::Merge);
+        assert_eq!(merge_strategy(Some("merge")).unwrap(), MergeStrategy::Merge);
+        assert_eq!(
+            merge_strategy(Some("squash")).unwrap(),
+            MergeStrategy::Squash
+        );
+        assert_eq!(
+            merge_strategy(Some("rebase")).unwrap(),
+            MergeStrategy::Rebase
+        );
+        let error = merge_strategy(Some("fast-forward")).unwrap_err();
+        assert!(
+            matches!(error, GitlabError::InvalidShape(message) if message.contains("fast-forward"))
+        );
+    }
+
+    #[test]
+    fn merge_body_sends_squash_only_for_the_squash_method() {
+        assert_eq!(merge_body(MergeStrategy::Merge), serde_json::json!({}));
+        assert_eq!(
+            merge_body(MergeStrategy::Squash),
+            serde_json::json!({ "squash": true })
+        );
+        assert_eq!(merge_body(MergeStrategy::Rebase), serde_json::json!({}));
+    }
+
+    #[test]
+    fn rebase_needs_a_fast_forward_project_and_an_up_to_date_merge_request() {
+        assert_eq!(
+            rebase_blocker("merge", Some("mergeable")),
+            Some("this project does not merge by fast-forward")
+        );
+        assert_eq!(
+            rebase_blocker("ff", Some("need_rebase")),
+            Some("rebase the merge request first")
+        );
+        assert_eq!(
+            rebase_blocker("rebase_merge", Some("need_rebase")),
+            Some("rebase the merge request first")
+        );
+        assert_eq!(rebase_blocker("ff", Some("mergeable")), None);
+        assert_eq!(rebase_blocker("rebase_merge", None), None);
+    }
+
+    #[test]
+    fn mr_paths_encode_the_project_and_name_the_resource() {
+        let encoded = encode_project_path("harborline/payments-api");
+        assert_eq!(
+            mr_path(&encoded, 42),
+            "/projects/harborline%2Fpayments-api/merge_requests/42"
+        );
+        assert_eq!(
+            mr_pipelines_path(&encoded, 42),
+            "/projects/harborline%2Fpayments-api/merge_requests/42/pipelines"
+        );
+        assert_eq!(
+            mr_commits_path(&encoded, 42),
+            "/projects/harborline%2Fpayments-api/merge_requests/42/commits"
+        );
+        assert_eq!(
+            pipeline_jobs_path(&encoded, 9001),
+            "/projects/harborline%2Fpayments-api/pipelines/9001/jobs"
+        );
+        assert_eq!(
+            project_settings_path(&encoded),
+            "/projects/harborline%2Fpayments-api"
+        );
+    }
+
+    #[test]
+    fn project_users_path_escapes_the_search_text() {
+        let encoded = encode_project_path("harborline/payments-api");
+        assert_eq!(
+            project_users_path(&encoded, "  nadia p&q "),
+            "/projects/harborline%2Fpayments-api/users?search=nadia%20p%26q"
+        );
+    }
+
+    #[test]
+    fn denied_means_forbidden_or_missing_and_nothing_else() {
+        let http = |status: u16| GitlabError::Http {
+            status,
+            body: String::new(),
+        };
+        assert!(is_denied(&http(403)));
+        assert!(is_denied(&http(404)));
+        assert!(!is_denied(&http(401)));
+        assert!(!is_denied(&http(500)));
+        assert!(!is_denied(&GitlabError::InvalidShape("x".into())));
+    }
+
+    #[test]
+    fn merge_request_deserializes_the_pipeline_and_merge_status_of_a_single_read() {
+        let raw = r#"{
+            "id": 501,
+            "iid": 42,
+            "project_id": 9,
+            "title": "Stop retried webhooks posting a second credit",
+            "description": "Key the guard on the event id.",
+            "state": "opened",
+            "web_url": "https://gitlab.com/harborline/payments-api/-/merge_requests/42",
+            "source_branch": "hl/fix-duplicate-credit",
+            "target_branch": "main",
+            "draft": false,
+            "has_conflicts": false,
+            "merge_status": "can_be_merged",
+            "detailed_merge_status": "need_rebase",
+            "created_at": "2026-09-26T08:00:00Z",
+            "updated_at": "2026-10-06T09:30:00Z",
+            "sha": "6c20f48a9e1",
+            "head_pipeline": {
+                "id": 9001,
+                "status": "failed",
+                "web_url": "https://gitlab.com/harborline/payments-api/-/pipelines/9001"
+            }
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
+        assert_eq!(mr.created_at.as_deref(), Some("2026-09-26T08:00:00Z"));
+        assert_eq!(mr.detailed_merge_status.as_deref(), Some("need_rebase"));
+        let pipeline = mr.head_pipeline.unwrap();
+        assert_eq!(pipeline.id, 9001);
+        assert_eq!(pipeline.status, "failed");
+    }
+
+    #[test]
+    fn merge_request_without_a_pipeline_reads_it_as_none() {
+        let raw = r#"{
+            "id": 501, "iid": 42, "project_id": 9, "title": "t", "description": null,
+            "state": "opened", "web_url": "https://gitlab.com/a/b/-/merge_requests/42",
+            "source_branch": "a", "target_branch": "main", "head_pipeline": null
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(raw).unwrap();
+        assert!(mr.head_pipeline.is_none());
+        assert!(mr.created_at.is_none());
+        assert!(mr.detailed_merge_status.is_none());
+    }
+
+    #[test]
+    fn project_settings_deserialize_the_merge_rules_of_a_project() {
+        let raw = r#"{
+            "id": 9,
+            "name": "payments-api",
+            "merge_method": "rebase_merge",
+            "squash_option": "never",
+            "only_allow_merge_if_pipeline_succeeds": true
+        }"#;
+        let settings: GitlabMergeSettings = serde_json::from_str(raw).unwrap();
+        assert_eq!(settings.merge_method, "rebase_merge");
+        assert_eq!(settings.squash_option.as_deref(), Some("never"));
+        assert!(settings.only_allow_merge_if_pipeline_succeeds);
+        let value = serde_json::to_value(&settings).unwrap();
+        assert_eq!(value["mergeMethod"], "rebase_merge");
+        assert_eq!(value["squashOption"], "never");
+        assert_eq!(value["onlyAllowMergeIfPipelineSucceeds"], true);
+    }
+
+    #[test]
+    fn project_settings_default_to_a_merge_commit_project_without_squash_rules() {
+        let settings: GitlabMergeSettings = serde_json::from_str("{}").unwrap();
+        assert_eq!(settings.merge_method, "merge");
+        assert!(settings.squash_option.is_none());
+        assert!(!settings.only_allow_merge_if_pipeline_succeeds);
+    }
+
+    #[test]
+    fn pipelines_and_jobs_deserialize_a_real_payload() {
+        let pipelines = r#"[
+            {
+                "id": 9001,
+                "iid": 311,
+                "project_id": 9,
+                "status": "failed",
+                "source": "merge_request_event",
+                "ref": "refs/merge-requests/42/head",
+                "sha": "6c20f48a9e1",
+                "web_url": "https://gitlab.com/harborline/payments-api/-/pipelines/9001",
+                "created_at": "2026-10-06T09:00:00.000Z"
+            }
+        ]"#;
+        let parsed: Vec<GitlabPipeline> = serde_json::from_str(pipelines).unwrap();
+        assert_eq!(parsed[0].id, 9001);
+        assert_eq!(parsed[0].status, "failed");
+        assert_eq!(parsed[0].sha.as_deref(), Some("6c20f48a9e1"));
+
+        let jobs = r#"[
+            {
+                "id": 77,
+                "name": "unit",
+                "stage": "test",
+                "status": "success",
+                "allow_failure": false,
+                "duration": 83.5,
+                "web_url": "https://gitlab.com/harborline/payments-api/-/jobs/77"
+            },
+            {
+                "id": 78,
+                "name": "deploy-preview",
+                "stage": "deploy",
+                "status": "manual",
+                "allow_failure": true,
+                "duration": null,
+                "web_url": "https://gitlab.com/harborline/payments-api/-/jobs/78"
+            }
+        ]"#;
+        let parsed: Vec<GitlabJob> = serde_json::from_str(jobs).unwrap();
+        assert_eq!(parsed[0].duration, Some(83.5));
+        assert!(!parsed[0].allow_failure);
+        assert_eq!(parsed[1].status, "manual");
+        assert!(parsed[1].allow_failure);
+        assert!(parsed[1].duration.is_none());
+        let value = serde_json::to_value(&parsed[1]).unwrap();
+        assert_eq!(value["allowFailure"], true);
+        assert_eq!(
+            value["webUrl"],
+            "https://gitlab.com/harborline/payments-api/-/jobs/78"
+        );
+    }
+
+    #[test]
+    fn mr_checks_serialize_the_pipeline_and_its_jobs() {
+        let checks = GitlabMrChecks {
+            pipeline: None,
+            jobs: Vec::new(),
+        };
+        assert_eq!(
+            serde_json::to_value(&checks).unwrap(),
+            serde_json::json!({ "pipeline": null, "jobs": [] })
+        );
+    }
+
+    #[test]
+    fn project_users_deserialize_with_an_avatar() {
+        let raw = r#"[
+            {
+                "id": 7,
+                "username": "kenji-w",
+                "name": "Kenji Watanabe",
+                "state": "active",
+                "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/7/avatar.png",
+                "web_url": "https://gitlab.com/kenji-w"
+            },
+            { "id": 8, "username": "priya-n", "name": "Priya Nair" }
+        ]"#;
+        let users: Vec<GitlabUser> = serde_json::from_str(raw).unwrap();
+        assert_eq!(users[0].username, "kenji-w");
+        assert!(users[0].avatar_url.is_some());
+        assert!(users[1].avatar_url.is_none());
+        let value = serde_json::to_value(&users[0]).unwrap();
+        assert_eq!(
+            value["avatarUrl"],
+            "https://gitlab.com/uploads/-/system/user/avatar/7/avatar.png"
+        );
+    }
+
+    #[test]
+    fn commits_deserialize_the_commit_list_of_a_merge_request() {
+        let raw = r#"[
+            {
+                "id": "a41c9e2b7d3f0000000000000000000000000000",
+                "short_id": "a41c9e2b",
+                "title": "Drop the seenEvents read",
+                "author_name": "Nadia Petrova",
+                "author_email": "nadia@harborline.test",
+                "created_at": "2026-10-03T12:00:00.000Z",
+                "committed_date": "2026-10-03T12:00:00.000Z",
+                "message": "Drop the seenEvents read\n"
+            }
+        ]"#;
+        let commits: Vec<GitlabMrCommit> = serde_json::from_str(raw).unwrap();
+        assert_eq!(commits[0].short_id, "a41c9e2b");
+        assert_eq!(commits[0].author_name.as_deref(), Some("Nadia Petrova"));
+        let value = serde_json::to_value(&commits[0]).unwrap();
+        assert_eq!(value["committedDate"], "2026-10-03T12:00:00.000Z");
+        assert_eq!(value["title"], "Drop the seenEvents read");
+    }
+
+    #[test]
+    fn every_pull_request_command_is_registered_as_a_tauri_command() {
+        let lib = include_str!("lib.rs");
+        for command in [
+            "gitlab::gitlab_update_mr,",
+            "gitlab::gitlab_get_mr,",
+            "gitlab::gitlab_merge_mr,",
+            "gitlab::gitlab_project_merge_methods,",
+            "gitlab::gitlab_search_project_users,",
+            "gitlab::gitlab_mr_pipeline_jobs,",
+            "gitlab::gitlab_mr_commits,",
+        ] {
+            assert!(
+                lib.contains(command),
+                "{command} is missing from the generate_handler block"
+            );
+        }
     }
 
     #[test]
