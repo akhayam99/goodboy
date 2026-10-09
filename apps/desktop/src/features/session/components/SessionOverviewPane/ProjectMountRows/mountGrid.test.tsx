@@ -16,14 +16,33 @@ describe('mountGridTracksOf', () => {
     { index: 0, track: 'minmax(0,1fr)', name: 'branch, flexible' },
     { index: 1, track: '96px', name: 'pull request' },
     { index: 2, track: '120px', name: 'changes' },
-    { index: 3, track: '96px', name: 'action' },
+    { index: 3, track: '176px', name: 'action' },
   ])('track $index is $track ($name)', ({ index, track }) => {
     expect(mountGridTracksOf()[index]).toBe(track);
   });
 
   it('has four tracks and joins them into one template', () => {
     expect(mountGridTracksOf()).toHaveLength(4);
-    expect(mountGridTracksOf().join(' ')).toBe('minmax(0,1fr) 96px 120px 96px');
+    expect(mountGridTracksOf().join(' ')).toBe('minmax(0,1fr) 96px 120px 176px');
+  });
+
+  it.each([
+    { label: 'Close branch', textPx: 75, hasIcon: false },
+    { label: 'Reopen', textPx: 43, hasIcon: true },
+    { label: 'Push 12 commits', textPx: 95, hasIcon: true },
+    { label: 'Rebase on main', textPx: 90, hasIcon: true },
+    { label: 'Create PR', textPx: 57, hasIcon: true },
+  ])('the action track fits "$label" beside the overflow menu', ({ textPx, hasIcon }) => {
+    const BUTTON_PADDING_PX = 16;
+    const ICON_WITH_GAP_PX = hasIcon ? 20 : 0;
+    const GAP_PX = 4;
+    const OVERFLOW_MENU_PX = 28;
+    const ROW_INSET_PX = 10;
+    const track = Number.parseInt(mountGridTracksOf()[3] ?? '0', 10);
+
+    expect(track).toBeGreaterThanOrEqual(
+      BUTTON_PADDING_PX + ICON_WITH_GAP_PX + textPx + GAP_PX + OVERFLOW_MENU_PX + ROW_INSET_PX,
+    );
   });
 
   it('fixes a mount row at 36px', () => {
