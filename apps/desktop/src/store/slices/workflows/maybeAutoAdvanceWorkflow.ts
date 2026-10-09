@@ -8,7 +8,6 @@ import {
 } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
-import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import {
   budgetBlockMessage,
   sessionBudgetBlockAfterLoad,
@@ -18,12 +17,20 @@ import {
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
+import { nextRunMove } from './nextRunMove';
 import { waitForSessionSummarizer } from './summarizerGate';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
 
 const advanceInFlight = new Set<SessionId>();
+
+type AdvancingParams = {
+  readonly sessionId: SessionId;
+};
+
+export const isSessionAdvancing = ({ sessionId }: AdvancingParams): boolean =>
+  advanceInFlight.has(sessionId);
 
 type Params = {
   readonly set: SetFn;
@@ -67,9 +74,20 @@ const startChainedRuns = async ({ get, sessionId }: Params): Promise<void> => {
   }
 };
 
+const hasStaticAutoRun = ({ get, sessionId }: Pick<Params, 'get' | 'sessionId'>): boolean =>
+  sessionById(get().sessions, sessionId)?.workflowRuns.some(
+    (run) =>
+      run.autoRun &&
+      run.discardedAt == null &&
+      run.triggerMode === 'immediate' &&
+      run.executionMode !== 'dynamic',
+  ) ?? false;
+
 const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   await startChainedRuns({ set, get, sessionId });
-  await waitForSessionSummarizer({ get, sessionId });
+  if (hasStaticAutoRun({ get, sessionId })) {
+    await waitForSessionSummarizer({ get, sessionId });
+  }
 
   const state = get();
   const session = sessionById(state.sessions, sessionId);
@@ -150,34 +168,16 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   let dynamicRunId = null as (typeof activeRuns)[number]['id'] | null;
   const nextPendingAgent = (() => {
     for (const run of runnableRuns) {
-      if (workflowRunHasOpenQuestions({ questions: openQuestions, run })) {
-        continue;
+      const move = nextRunMove({
+        run,
+        template: templates.find((t) => t.id === run.workflowId),
+        agents: runsForWorkflowRun(runs, run.id),
+        openQuestions,
+      });
+      if (move.kind === 'activate') {
+        return move.agent;
       }
-      const template = templates.find((t) => t.id === run.workflowId);
-      if (template == null) {
-        continue;
-      }
-      const runAgents = runsForWorkflowRun(runs, run.id);
-      const sortedSteps = [...template.steps].sort((a, b) => a.ordinal - b.ordinal);
-      for (const step of sortedSteps) {
-        const agent = runAgents.find((r) => r.stepId === step.id);
-        if (agent == null || agent.status !== 'pending') {
-          continue;
-        }
-        const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
-        const allDone = prevSteps.every((s) =>
-          runAgents.some((r) => r.stepId === s.id && isAgentStatusSettled({ status: r.status })),
-        );
-        if (allDone) {
-          return agent;
-        }
-        break;
-      }
-      if (
-        run.executionMode === 'dynamic' &&
-        runAgents.every((agent) => isAgentStatusSettled({ status: agent.status })) &&
-        run.orchestrationOutcome == null
-      ) {
+      if (move.kind === 'decide') {
         dynamicRunId = run.id;
       }
     }

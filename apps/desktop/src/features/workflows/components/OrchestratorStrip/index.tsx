@@ -13,7 +13,10 @@ import type {
   WorkflowRun,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
-import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
+import {
+  workflowRunHasOpenQuestions,
+  workflowRunOpenQuestions,
+} from '../../../context/openQuestionsGate';
 import { requestSessionSpendLimitEdit } from '../../../budget/requestSessionSpendLimitEdit';
 import { isBudgetBlocked } from '../../../../store/slices/workflows/budgetBlock';
 import { WorkflowNodeRouting } from '../WorkflowNodeRouting';
@@ -107,11 +110,13 @@ export const OrchestratorStrip = ({
       : planRevising.kind === 'revising'
         ? { kind: 'revising' }
         : NO_PLAN_SIGNAL;
+  const runQuestion = workflowRunOpenQuestions({ questions: openQuestions, run })[0] ?? null;
   const state = resolveOrchestratorState({
     run,
     agents,
     isOrchestrating,
     hasOpenQuestions: workflowRunHasOpenQuestions({ questions: openQuestions, run }),
+    question: runQuestion,
     costUsd,
     plan: planSignal,
   });
@@ -227,13 +232,24 @@ export const OrchestratorStrip = ({
             onClick={() => answer({ question: planQuestion })}
           />
         );
+      case 'needs-answer':
+        return runQuestion === null ? null : (
+          <OrchestratorAction
+            icon={CONCEPT_ICONS.questions}
+            label="Answer"
+            variant="primary"
+            tone="warning"
+            testId="orchestrator-answer-question"
+            title="Open the question this run waits on"
+            onClick={() => answer({ question: runQuestion })}
+          />
+        );
       case 'deciding':
       case 'plan-revising':
       case 'paused':
       case 'stopping':
       case 'waiting':
       case 'automatic':
-      case 'needs-answer':
       case 'needs-approval':
       case 'step-failed':
         return null;

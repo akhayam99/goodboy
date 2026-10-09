@@ -36,6 +36,7 @@ import { skipStuckStepAndAdvance } from './skipStuckStepAndAdvance';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
 import { setWorkflowRunSpendLimit } from './setWorkflowRunSpendLimit';
 import { startWorkflowRun } from './startWorkflowRun';
+import { sweepIdleRuns } from './sweepIdleRuns';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
 import { pauseWorkflowRun } from './pauseWorkflowRun';
 import { resumeWorkflowRun } from './resumeWorkflowRun';
@@ -88,5 +89,6 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     retryStepSummary: retryStepSummary(set, get),
     recoverStuckStep: recoverStuckStep(get),
     askAgentToContinue: askAgentToContinue(get),
+    sweepIdleRuns: sweepIdleRuns(set, get),
   };
 };

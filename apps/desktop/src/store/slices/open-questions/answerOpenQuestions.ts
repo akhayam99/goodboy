@@ -51,6 +51,10 @@ export const answerOpenQuestions = (set: SetFn, get: GetFn) => {
       questionIds: valid.map((pair) => pair.id),
     });
     await persistOpenQuestionAnswers({ get, sessionId, pairs: valid });
-    await sendAnswersToSettledAgents({ get, sessionId, askingAgentIds });
+    try {
+      await sendAnswersToSettledAgents({ get, sessionId, askingAgentIds });
+    } finally {
+      void get().maybeAutoAdvanceWorkflow(sessionId);
+    }
   };
 };
