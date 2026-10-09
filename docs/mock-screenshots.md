@@ -321,12 +321,28 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
 - Put `%20` for spaces inside `--scene`, or Chrome never loads the page.
 - `--click "Commits,Sort"` clicks, in order, the buttons, tabs or links whose text starts with each name, after the scene loads and before the capture. It shoots a state a scene does not open by itself, such as a second tab or an open picker. A name that matches nothing stops the run.
 - `--hover "<css selector>"` moves the pointer to the center of the first match, after the clicks and before the capture. It shoots a tooltip or a hover card the scene does not open by itself, such as the limits card of a provider chip in the top bar (`--hover '[aria-label^="Claude limits"]'`).
+- `--scroll "<css selector>"` scrolls the first match to the top of the window, after the clicks and before the capture. It shoots a pane the scene stacks below the first screen, such as the studio home under the workflow builder (`--scroll '[data-studio-overlay]'`).
+- `--version x.y.z` names the version the manifest records for the figure. Without it the shot takes the version of `apps/desktop/package.json` of the checkout that runs the script.
 
 Each feature-area guide points at each file with its raw URL,
 `https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/<name>-dark.webp`.
 Pictures live outside this repo so each reshoot does not grow its history:
 push the new files to goodboy-media first, then the text here. Reusing a name
 replaces the picture in place, within the five minutes GitHub caches it.
+
+Every figure has one caption line under its `<picture>`, after a blank line:
+`<sub>Screenshot from Goodboy 0.23.0</sub>`. `docs/figures.json` is the one
+source of that version, keyed `features/<name>` for a guide figure and
+`readme/readme-hero` for the README hero. `pnpm features:shots` and
+`pnpm readme:hero` write the entry when a capture ends, with the shot args as
+its `recipe`, so re-shooting a figure moves its version and a figure left alone
+keeps the version it was shot at. A trial shot under a name no guide uses adds
+an entry no picture uses: delete it, because `pnpm run check:doc-refs` fails on
+it. The same check fails when a figure has no entry, when a caption differs
+from its entry, or when an entry is newer than the repo version.
+`node scripts/check-figure-versions.mjs --write` rewrites the caption lines from
+the manifest. In a worktree, `../goodboy-media` does not resolve: set
+`GOODBOY_MEDIA_DIR` to the checkout of goodboy-media.
 
 A figure shows exactly the feature named by the heading it sits under, and its
 alt text names what is visible.
