@@ -94,7 +94,7 @@ The Commits tab of the Branch page shapes a branch before it goes to review: fol
 
 ## Review and resolve on the Branch page
 
-One Branch page per branch holds the Comments, Files, Commits and Checks tabs. Turn review comments into commits with a Fix run, push them back with one Push, and read your own diff and notes before anyone else does.
+One Branch page per branch holds the Pull request, Comments, Files, Commits and Checks tabs. Edit the pull request in place, merge it your way, turn review comments into commits with a Fix run, push them back with one Push, and read your own diff and notes before anyone else does.
 
 - Resolve
 - Review sources

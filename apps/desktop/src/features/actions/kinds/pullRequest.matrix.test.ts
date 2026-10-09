@@ -37,6 +37,11 @@ const facts = (overrides: Partial<PullRequestFacts>): PullRequestFacts => ({
   isOwn: true,
   writeInFlight: null,
   isDraftAgentRunning: false,
+  commentsNeedYou: 0,
+  isFixRunLive: false,
+  mergeMethods: ['squash', 'merge', 'rebase'],
+  mergeMethodReasons: {},
+  commitCount: 5,
   ...overrides,
 });
 

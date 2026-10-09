@@ -86,7 +86,7 @@ describe('LinkedPrChip', () => {
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-1', 42);
     expect(h.store.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'comments' }),
+      to: branchPlace({ sessionId: 'session-1' as SessionId, tab: 'pr' }),
     });
     expect(h.openUrl).not.toHaveBeenCalled();
   });
@@ -103,7 +103,7 @@ describe('LinkedPrChip', () => {
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-2', 42);
     expect(h.store.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: 'session-2' as SessionId, tab: 'comments' }),
+      to: branchPlace({ sessionId: 'session-2' as SessionId, tab: 'pr' }),
     });
     expect(h.openUrl).not.toHaveBeenCalled();
   });

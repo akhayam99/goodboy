@@ -25,7 +25,7 @@ import {
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
-import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
+import { branchPlace } from '../../../../../store/slices/navigation/place';
 import { NAMES } from '../../../../../shared/names';
 import { sessionDisplayTitle } from '../../../../session/sessionTitle';
 import { ChatOriginGlyph } from '../../../../../shared/components/ChatOriginGlyph';
@@ -109,7 +109,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
   const reviewDrafts = useAppStore((s) => s.reviewDrafts[id]);
   const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
-  const openSession = useOpenSession();
+  const navigate = useAppStore((s) => s.navigate);
 
   useEffect(() => {
     if (!isPrReview || reviewDrafts != null) {
@@ -313,7 +313,7 @@ export const StageBoardCard = memo(function StageBoardCard({
               ariaLabel={`Review ${reviewDraftCount} draft ${reviewDraftCount === 1 ? 'comment' : 'comments'}`}
               onClick={(event) => {
                 event.stopPropagation();
-                openSession({ sessionId: id, lens: 'review' });
+                navigate({ to: branchPlace({ sessionId: id, tab: 'comments' }) });
               }}
               icon={<MessageSquareDiff size={10} aria-hidden />}
               label={<span className="tabular-nums">{reviewDraftCount}</span>}

@@ -12,6 +12,7 @@ type Params = {
 type ActionFailure = {
   readonly actionId: string;
   readonly message: string;
+  readonly choice: string | null;
 };
 
 export type ActionControls = {
@@ -22,7 +23,7 @@ export type ActionControls = {
   readonly confirming: ResolvedAction | null;
   readonly failure: ActionFailure | null;
   readonly trigger: (params: { readonly actionId: string }) => void;
-  readonly confirm: () => Promise<void>;
+  readonly confirm: (params?: { readonly choice?: string | null }) => Promise<void>;
   readonly cancel: () => void;
   readonly retry: () => void;
 };
@@ -35,13 +36,19 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
   const [failure, setFailure] = useState<ActionFailure | null>(null);
 
   const execute = useCallback(
-    async ({ actionId }: { readonly actionId: string }) => {
+    async ({
+      actionId,
+      choice = null,
+    }: {
+      readonly actionId: string;
+      readonly choice?: string | null;
+    }) => {
       setFailure(null);
       setPendingId(actionId);
       try {
-        await run({ actionId });
+        await run({ actionId, choice });
       } catch (error) {
-        setFailure({ actionId, message: formatError(error) });
+        setFailure({ actionId, message: formatError(error), choice });
       } finally {
         setPendingId(null);
       }
@@ -75,20 +82,23 @@ export const useActionControls = ({ target, anchorKey = null }: Params): ActionC
     [actions, confirmingId],
   );
 
-  const confirm = useCallback(async () => {
-    if (confirming === null) {
-      return;
-    }
-    const actionId = confirming.id;
-    setConfirmingId(null);
-    await execute({ actionId });
-  }, [confirming, execute]);
+  const confirm = useCallback(
+    async (params?: { readonly choice?: string | null }) => {
+      if (confirming === null) {
+        return;
+      }
+      const actionId = confirming.id;
+      setConfirmingId(null);
+      await execute({ actionId, choice: params?.choice ?? null });
+    },
+    [confirming, execute],
+  );
 
   const cancel = useCallback(() => setConfirmingId(null), []);
 
   const retry = useCallback(() => {
     if (failure !== null) {
-      void execute({ actionId: failure.actionId });
+      void execute({ actionId: failure.actionId, choice: failure.choice });
     }
   }, [execute, failure]);
 

@@ -75,7 +75,7 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     name: 'branch page from the mount row',
     covers: ['openMountRequest', 'openReviewTarget'],
     open: () => clickFirstButton(/^Open PR #\d+ of /),
-    lands: both(branchTab('comments'), ownPage),
+    lands: both(branchTab('pr'), ownPage),
   },
   {
     name: 'mount row: comments to resolve open the Branch on its Comments',

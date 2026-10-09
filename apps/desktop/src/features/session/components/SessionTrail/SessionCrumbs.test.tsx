@@ -345,7 +345,7 @@ describe('SessionCrumbs', () => {
 
     fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Branch/ }));
     expect(h.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'files' }),
     });
   });
 

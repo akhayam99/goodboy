@@ -17,7 +17,7 @@ import {
   type SuggestionAgent,
   type SuggestionRebaseRequest,
 } from '../deriveNextSteps';
-import { eligibleReviewThreadCount } from '../eligibleThreads';
+import { useReviewTally } from '../../resolve/useReviewTally';
 import { toMountEvents } from '../../../store/slices/project-mounts/materializationProposals';
 import { pendingAgentSignal } from '../pendingAgentSignal';
 import { useNextStepOutcomes } from '../useNextStepOutcomes';
@@ -105,7 +105,7 @@ export const useSessionSuggestions = ({
     useShallow((state) => plans.map((plan) => state.planConsumptions[plan.id] ?? EMPTY_ARRAY)),
   );
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
-  const resolveRows = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? EMPTY_ARRAY);
+  const fixableCount = useReviewTally({ sessionId }).fixable;
   const mounts = useAppStore(
     (state) =>
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
@@ -247,7 +247,7 @@ export const useSessionSuggestions = ({
           ? null
           : { id: firstOffScreen.id, createdByAgentId: firstOffScreen.createdByAgentId ?? null },
       hasPullRequest: github?.pr != null,
-      eligibleThreadCount: eligibleReviewThreadCount({ github, rows: resolveRows }),
+      eligibleThreadCount: fixableCount,
       mountEvents: toMountEvents({ events }),
       projects: withRebase
         ? rebaseMounts.map((mount) => {
@@ -355,7 +355,7 @@ export const useSessionSuggestions = ({
     plans,
     projects,
     rebaseMounts,
-    resolveRows,
+    fixableCount,
     sessionId,
     shownQuestionIds,
     withRebase,

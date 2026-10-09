@@ -3,6 +3,7 @@ import { runJson } from '../github/gh';
 import { fetchPrDetail } from '../github/details';
 import { addReviewThreadReply, resolveReviewThread } from '../github/mutations';
 import { commitLinkOf } from './commitLink';
+import { githubPullRequestPort } from './githubPullRequestPort';
 import { groupReviewComments } from './groupReviewComments';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSource } from './types';
 
@@ -50,4 +51,5 @@ export const githubReviewSource = ({
     return raw.headRefOid ?? null;
   },
   commitLink: ({ sha }) => commitLinkOf({ kind: 'github', url: prUrl, sha }),
+  pullRequest: githubPullRequestPort({ runner, repo, prNumber, prUrl, options }),
 });

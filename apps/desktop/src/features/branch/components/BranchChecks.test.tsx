@@ -11,7 +11,15 @@ vi.mock('../../../shared/lib/editor', async (importOriginal) => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { GhTokenStatus, IntegrationBinding, PrCheckRun, PrDetail } from '@goodboy/types';
+import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import type {
+  GhTokenStatus,
+  IntegrationBinding,
+  IsoDateTime,
+  PrCheckRun,
+  PrDetail,
+  PullRequestView,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -324,5 +332,92 @@ describe('Checks tab on another host', () => {
     expect(screen.getByText("Goodboy doesn't show Bitbucket checks yet")).toBeDefined();
     expect(screen.getByRole('button', { name: /View on Bitbucket/ })).toBeDefined();
     expect(screen.queryByText(/GitHub/)).toBeNull();
+  });
+});
+
+describe('Checks tab on a host that reads its own checks', () => {
+  const capabilities: { canReadChecks: boolean } = REVIEW_SOURCE_CAPABILITIES.gitlab;
+
+  const VIEW: PullRequestView = {
+    host: 'gitlab',
+    number: 57,
+    title: 'Retry dispatch with a cap',
+    body: '',
+    url: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57',
+    state: 'open',
+    isDraft: false,
+    author: null,
+    baseBranch: 'main',
+    headBranch: 'hl/dispatch-retry',
+    headSha: null,
+    createdAt: '2026-10-01T10:00:00Z',
+    updatedAt: '2026-10-06T10:00:00Z',
+    mergedAt: null,
+    mergeable: true,
+    reviewDecision: null,
+    reviewers: [],
+    resolves: [],
+    checks: {
+      read: 'ok',
+      error: null,
+      runs: [
+        { name: 'rspec', conclusion: 'success', detailsUrl: null, durationMs: 61000 },
+        { name: 'rubocop', conclusion: 'failure', detailsUrl: null, durationMs: 12000 },
+      ],
+    },
+    files: { count: 0, first: [] },
+    commits: [],
+    mergeMethods: ['merge'],
+    mergeMethodReasons: {},
+  };
+
+  const viewEntry = (view: PullRequestView | null) => ({
+    [SESSION.id]: {
+      prNumber: 57,
+      view,
+      isLoading: false,
+      error: null,
+      fetchedAt: '2026-10-07T09:00:00.000Z' as IsoDateTime,
+      edits: [],
+    },
+  });
+
+  beforeEach(() => {
+    capabilities.canReadChecks = true;
+    seedResolveGitlabScene({ selected: 'gitlab' });
+    github({ pr: null, detail: null });
+  });
+
+  afterEach(() => {
+    capabilities.canReadChecks = false;
+  });
+
+  it('lists the rows the port read, like GitHub does, and drops the host notice', async () => {
+    useAppStore.setState({ pullRequestViews: viewEntry(VIEW), loadPullRequestView: vi.fn() });
+
+    await show();
+
+    expect(screen.queryByText("Goodboy doesn't show GitLab pipelines yet")).toBeNull();
+    expect(screen.getByText('rspec')).toBeDefined();
+    expect(screen.getByText('rubocop')).toBeDefined();
+  });
+
+  it('says the port is still reading while it has no answer', async () => {
+    useAppStore.setState({ pullRequestViews: {}, loadPullRequestView: vi.fn() });
+
+    await show();
+
+    expect(screen.queryByText("Goodboy doesn't show GitLab pipelines yet")).toBeNull();
+    expect(screen.queryByText('rspec')).toBeNull();
+  });
+
+  it('keeps the host notice while the flag is off', async () => {
+    capabilities.canReadChecks = false;
+    useAppStore.setState({ pullRequestViews: viewEntry(VIEW), loadPullRequestView: vi.fn() });
+
+    await show();
+
+    expect(screen.getByText("Goodboy doesn't show GitLab pipelines yet")).toBeDefined();
+    expect(screen.queryByText('rspec')).toBeNull();
   });
 });

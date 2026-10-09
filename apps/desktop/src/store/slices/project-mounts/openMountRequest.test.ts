@@ -52,7 +52,7 @@ describe('openMountRequest', () => {
       mode: 'create_pr',
     });
     expect(state.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'pr' }),
     });
     expect(state.openReviewTarget).not.toHaveBeenCalled();
   });

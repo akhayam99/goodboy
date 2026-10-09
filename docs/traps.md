@@ -45,6 +45,14 @@ file holds those explanations. Everything below has been "fixed" at least once a
   the error matches `isRemoteMovedError`; `verifiedPush` builds its two
   messages through the same module, so changing their wording elsewhere turns
   the button off.
+- A pull request is written through its `PullRequestPort`
+  (`ReviewSource.pullRequest`, built per host by `pullRequestPortFor`): the
+  `store/slices/github` verbs, `usePullRequestView` and the Branch page never
+  build `gh` arguments themselves. A control reads `REVIEW_SOURCE_CAPABILITIES`,
+  never the host name; a flag is `true` only with its port method and its test
+  (`reviewSourceContract.test.ts`, `pullRequestPortContract.test.ts`). Merge readiness is one
+  function, `evaluatePrMergeReadiness`, used by the Branch header and the
+  companion alike.
 - Review comments come from a `ReviewSource` (`packages/core/src/review-source/`),
   never from `sessionGithub` alone. `activeReviewSourceOf` (review-source slice)
   picks the source of the active mount: its comments, PR or MR number, url,

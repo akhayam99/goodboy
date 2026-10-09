@@ -1,6 +1,11 @@
 import { ArrowRight, Check } from 'lucide-react';
-import { Button, HeaderBand, Tooltip, cn } from '@goodboy/ui';
+import { Button, HeaderBand, Notice, Tooltip, cn } from '@goodboy/ui';
 import type { PrCheckRun, PrDetail, PullRequestState, SessionId } from '@goodboy/types';
+import { useNow } from '../../../../shared/hooks/useNow';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import type { BranchTab } from '../../../../store/slices/navigation/types';
+import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
+import { PullRequestTitle } from '../PullRequestTab/PullRequestTitle';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
@@ -22,6 +27,10 @@ type Props = {
   readonly fallbackTitle: string;
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
+  readonly tab: BranchTab;
+  readonly canEditTitle: boolean;
+  readonly createdAt: string | null;
+  readonly onMutated: () => void;
 };
 
 const NO_CHECKS: ReadonlyArray<PrCheckRun> = [];
@@ -42,6 +51,15 @@ const summaryOf = ({ pr, detail }: SummaryParams): ChecksSummary | null => {
   return checksSummaryOf({ rollup: pr.checks, checks: detail?.checks ?? NO_CHECKS });
 };
 
+const INTENT_WORD: Readonly<Record<PullRequestState['state'], string>> = {
+  draft: 'wants to merge',
+  open: 'wants to merge',
+  approved: 'wants to merge',
+  queued: 'wants to merge',
+  merged: 'merged',
+  closed: 'wanted to merge',
+};
+
 const stateWord = (pr: PullRequestState | null): string => {
   if (pr === null) {
     return 'No pull request';
@@ -60,20 +78,34 @@ export const BranchHeader = ({
   fallbackTitle,
   controls,
   isPushBusy,
+  tab,
+  canEditTitle,
+  createdAt,
+  onMutated,
 }: Props) => {
   const { primary } = controls;
+  const titleEdit = usePullRequestTitleEdit({
+    sessionId,
+    pr,
+    canEdit: canEditTitle,
+    isKeyActive: tab === 'pr',
+    onSaved: onMutated,
+  });
+  const now = useNow(60_000);
+  const age = createdAt === null ? '' : formatAge({ from: createdAt, now });
   const summary = summaryOf({ pr, detail });
   const head = pr?.headBranch ?? branch;
   const base = pr?.baseBranch ?? baseBranch;
   const abort =
     controls.diffControls.actions.find((action) => action.id === 'diff.abortRebase') ?? null;
-  const blockedReason =
-    primary === null || primary.isBusy || isPushBusy ? null : primary.blockedReason;
+  const isQuiet = primary === null || primary.isBusy || isPushBusy;
+  const blockedReason = isQuiet ? null : primary.blockedReason;
+  const note = isQuiet ? null : primary.note;
   const primaryButton =
     primary === null ? null : (
       <Button
         size="sm"
-        variant="primary"
+        variant={primary.isSecondary ? 'secondary' : 'primary'}
         data-branch-primary={primary.actionId}
         disabled={primary.blockedReason !== null}
         isBusy={primary.isBusy || isPushBusy}
@@ -86,18 +118,22 @@ export const BranchHeader = ({
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <HeaderBand
-        title={
-          <span className="flex min-w-0 items-baseline gap-2">
-            {pr !== null && <span className="shrink-0 text-faint-foreground">#{pr.number}</span>}
-            <span className="min-w-0 truncate">{pr?.title ?? fallbackTitle}</span>
-          </span>
-        }
+        title={<PullRequestTitle title={pr?.title ?? fallbackTitle} edit={titleEdit} />}
         meta={
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
-            <span className="text-foreground">{stateWord(pr)}</span>
-            {head !== null && (
+            {titleEdit.isEditing ? (
+              <span>Enter saves, Esc cancels</span>
+            ) : (
+              <span className="text-foreground">{stateWord(pr)}</span>
+            )}
+            {!titleEdit.isEditing && head !== null && (
               <>
                 <span aria-hidden>·</span>
+                {pr?.author != null && (
+                  <span>
+                    {pr.author} {INTENT_WORD[pr.state]}
+                  </span>
+                )}
                 <BranchSwitcher
                   sessionId={sessionId}
                   currentPath={mountPath}
@@ -110,15 +146,21 @@ export const BranchHeader = ({
                     <span className="text-code">{base}</span>
                   </span>
                 )}
+                {age !== '' && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>{age}</span>
+                  </>
+                )}
               </>
             )}
-            {head === null && projectName !== null && (
+            {!titleEdit.isEditing && head === null && projectName !== null && (
               <>
                 <span aria-hidden>·</span>
                 <span className="text-code">{projectName}</span>
               </>
             )}
-            {summary !== null && (
+            {!titleEdit.isEditing && summary !== null && (
               <>
                 <span aria-hidden>·</span>
                 <span
@@ -133,11 +175,19 @@ export const BranchHeader = ({
                 </span>
               </>
             )}
-            {blockedReason !== null && (
+            {!titleEdit.isEditing && blockedReason !== null && (
               <>
                 <span aria-hidden>·</span>
                 <span data-testid="branch-blocked-reason" className="min-w-0">
                   {blockedReason}
+                </span>
+              </>
+            )}
+            {!titleEdit.isEditing && blockedReason === null && note !== null && (
+              <>
+                <span aria-hidden>·</span>
+                <span data-testid="branch-merge-note" className="min-w-0">
+                  {note}
                 </span>
               </>
             )}
@@ -169,6 +219,25 @@ export const BranchHeader = ({
           </>
         }
       />
+      {titleEdit.error !== null && (
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title="Couldn't save the title"
+          body={titleEdit.error}
+          actions={
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={titleEdit.save}
+              isBusy={titleEdit.isBusy}
+            >
+              Retry
+            </Button>
+          }
+        />
+      )}
       <ActionStatusLine controls={controls.diffControls} showReasons={false} />
       <ActionConfirmPanel controls={controls.diffControls} />
       <ActionStatusLine controls={controls.pullRequestControls} showReasons={false} />

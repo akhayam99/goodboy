@@ -305,6 +305,8 @@ const nodeText = (node: HTMLElement): string => node.textContent ?? '';
 
 const openComments = async (ctx: Ctx): Promise<void> => {
   await openCrumb(/^Branch/);
+  await branchTab('pr')(ctx);
+  await click(await screen.findByRole('tab', { name: /^Comments/ }));
   await branchTab('comments')(ctx);
   await waitFor(() => expect(list()).toBeDefined(), WAIT);
 };

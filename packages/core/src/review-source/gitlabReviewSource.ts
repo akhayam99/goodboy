@@ -130,4 +130,5 @@ export const gitlabReviewSource = ({ transport, mrUrl }: Params): ReviewSource =
   },
   readRemoteHead: () => transport.readHeadSha(),
   commitLink: ({ sha }) => commitLinkOf({ kind: 'gitlab', url: mrUrl, sha }),
+  pullRequest: null,
 });

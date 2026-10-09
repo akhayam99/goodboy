@@ -10,5 +10,8 @@ export const branchLandingTabOf = ({ hasPullRequest, deepLink }: Params): Branch
   if (deepLink !== null) {
     return deepLink;
   }
-  return hasPullRequest && isBranchTabAvailable('pr') ? 'pr' : 'comments';
+  if (!hasPullRequest) {
+    return 'files';
+  }
+  return isBranchTabAvailable('pr') ? 'pr' : 'comments';
 };

@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 
-const flags = vi.hoisted(() => ({ isPrAvailable: false }));
+const flags = vi.hoisted(() => ({ isPrAvailable: true }));
 
 vi.mock('./branchTabs', async (importOriginal) => {
   const original = await importOriginal<typeof import('./branchTabs')>();
@@ -25,9 +25,9 @@ const SESSION = 'session-ledger-core' as SessionId;
 
 const SCOPE = { hasPullRequest: true, provider: 'github' } as const;
 
-const prFirst: BranchTabRegistry = {
+const withoutPr: BranchTabRegistry = {
   ...BRANCH_TAB_REGISTRY,
-  pr: { ...BRANCH_TAB_REGISTRY.pr, isAvailable: true },
+  pr: { ...BRANCH_TAB_REGISTRY.pr, isAvailable: false },
 };
 
 const tabOf = (place: Place): BranchTab | null =>
@@ -42,29 +42,35 @@ const landed = (request: Place, pullRequestMode?: 'write_review'): BranchTab | n
 };
 
 beforeEach(() => {
-  flags.isPrAvailable = false;
+  flags.isPrAvailable = true;
 });
 
 describe('the Branch tab registry', () => {
-  it('shows the four tabs in order while the pull request tab is unavailable', () => {
+  it('puts the pull request first in the five tabs', () => {
     expect(branchTabsOf(SCOPE).map((tab) => tab.id)).toEqual([
-      'comments',
-      'files',
-      'commits',
-      'checks',
-    ]);
-    expect(BRANCH_TAB_REGISTRY.pr.isAvailable).toBe(false);
-  });
-
-  it('puts the pull request first once it is available', () => {
-    expect(branchTabsOf(SCOPE, prFirst).map((tab) => tab.id)).toEqual([
       'pr',
       'comments',
       'files',
       'commits',
       'checks',
     ]);
-    expect(branchTabsOf(SCOPE, prFirst)[0]?.label).toBe('Pull request');
+    expect(branchTabsOf(SCOPE)[0]?.label).toBe('Pull request');
+    expect(BRANCH_TAB_REGISTRY.pr.isAvailable).toBe(true);
+  });
+
+  it('shows the same five tabs with and without a pull request', () => {
+    expect(
+      branchTabsOf({ hasPullRequest: false, provider: 'github' }).map((tab) => tab.id),
+    ).toEqual(['pr', 'comments', 'files', 'commits', 'checks']);
+  });
+
+  it('leaves the pull request tab out of a registry that holds it back', () => {
+    expect(branchTabsOf(SCOPE, withoutPr).map((tab) => tab.id)).toEqual([
+      'comments',
+      'files',
+      'commits',
+      'checks',
+    ]);
   });
 
   it('names each tab by the label of its shortcut', () => {
@@ -85,6 +91,10 @@ describe('the Branch tab registry', () => {
 });
 
 describe('the pull request tab while it is unavailable', () => {
+  beforeEach(() => {
+    flags.isPrAvailable = false;
+  });
+
   it('lands a pr address on Comments', () => {
     expect(landed(branchPlace({ sessionId: SESSION, tab: 'pr' }))).toBe('comments');
   });
@@ -103,9 +113,12 @@ describe('the pull request tab while it is unavailable', () => {
 
 describe('the pull request tab once it is available', () => {
   it('keeps a pr address and maps the pull request page request to it', () => {
-    flags.isPrAvailable = true;
     expect(landed(branchPlace({ sessionId: SESSION, tab: 'pr' }))).toBe('pr');
     expect(landed(sessionPlace({ sessionId: SESSION, lens: 'pr' }))).toBe('pr');
     expect(landed(sessionPlace({ sessionId: SESSION, lens: 'pr' }), 'write_review')).toBe('files');
+  });
+
+  it('lands the Branch door on Files while the branch has no pull request', () => {
+    expect(landed(sessionPlace({ sessionId: SESSION, lens: 'review' }))).toBe('files');
   });
 });

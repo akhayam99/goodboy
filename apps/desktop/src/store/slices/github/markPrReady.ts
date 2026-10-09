@@ -1,16 +1,15 @@
 import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
 import { mountPrEventPayload } from './mountPrEventPayload';
 import { prWriteContext } from './prWriteContext';
+import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
-import { ReportedError } from '../notifications/reportedError';
 
 export const markPrReady = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number, { mountId }: PrWriteOptions = {}) => {
-    const { num, session, repo } = prWriteContext({
+    const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
       prNumber,
@@ -24,23 +23,13 @@ export const markPrReady = (_set: SetFn, get: GetFn) => {
       prNumber: num,
       action: 'ready',
       run: async () => {
-        const res = await tauriGhRunner.run(['pr', 'ready', String(num)], {
-          cwd: repo.repoRoot,
+        await runPortWrite({
+          get,
+          sessionId,
           workspaceId: session.workspaceId,
-          projectId: repo.projectId,
+          title: `Couldn't mark #${num} ready`,
+          run: () => port.setDraft({ isDraft: false }),
         });
-        if (res.exitCode !== 0) {
-          const errMsg = res.stderr.trim() || `gh pr ready exited with ${res.exitCode}`;
-          void get().emitNotification({
-            kind: 'error',
-            severity: 'error',
-            title: `Couldn't mark #${num} ready`,
-            body: errMsg,
-            sessionId,
-            workspaceId: session.workspaceId,
-          });
-          throw new ReportedError(errMsg);
-        }
         await get().refreshSessionPr(sessionId, {
           force: true,
           ...(mountId === undefined ? {} : { mountId }),

@@ -162,6 +162,7 @@ describe('shortcut registry', () => {
   it('scopes the review and diff keys to the Comments and Files tabs', () => {
     expect(SHORTCUT_SCOPE_LABEL.review).toBe('On the Comments tab');
     expect(SHORTCUT_SCOPE_LABEL.diff).toBe('On the Files tab');
+    expect(SHORTCUT_SCOPE_LABEL.pullRequest).toBe('On the Pull request tab');
   });
 
   it('retires no label that still names Review or Diff as a page', () => {

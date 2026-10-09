@@ -355,7 +355,21 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({ id: 'lens.terminal', lands: both(lens('terminal'), () => heading('Terminal')) }),
   pressRow({
     id: 'lens.pr',
-    lands: both(branchTab('comments'), () => heading(/Stop retried webhooks/)),
+    lands: both(branchTab('pr'), () => heading(/Stop retried webhooks/)),
+  }),
+  keyRow({
+    id: 'pullRequest.edit',
+    open: async () => {
+      await press('lens.pr')();
+      expect(
+        await screen.findByRole('tab', { name: /^Pull request/, selected: true }, WAIT),
+      ).toBeDefined();
+      await pressed('pullRequest.edit', document.body);
+    },
+    lands: async () =>
+      expect(
+        await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT),
+      ).toBeDefined(),
   }),
   pressRow({ id: 'lens.context', lands: drawerIs(null) }),
   pressRow({ id: 'lens.goal', lands: drawerIs('goal') }),

@@ -28,7 +28,7 @@ describe('useOpenSession', () => {
 
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: 's1' as SessionId, tab: 'comments' }),
+      to: branchPlace({ sessionId: 's1' as SessionId, tab: 'files' }),
     });
   });
 

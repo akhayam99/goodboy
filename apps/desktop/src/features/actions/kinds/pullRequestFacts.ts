@@ -2,11 +2,17 @@ import type {
   PrCheckRun,
   PrComment,
   PrDetailRead,
+  PrMergeMethod,
   PrReview,
   PullRequestState,
+  PullRequestView,
+  ResolveAttempt,
+  ResolveThread,
   SessionId,
 } from '@goodboy/types';
 import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
+import type { SessionGithubState } from '../../../store/types';
+import { resolveAttentionOf } from '../../../store/slices/resolve/resolveAttention';
 
 type PullRequestPhase = 'none' | 'draft' | 'open' | 'queued' | 'merged' | 'closed';
 
@@ -28,7 +34,32 @@ export type PullRequestFacts = {
   readonly isOwn: boolean;
   readonly writeInFlight: string | null;
   readonly isDraftAgentRunning: boolean;
+  readonly commentsNeedYou: number;
+  readonly isFixRunLive: boolean;
+  readonly mergeMethods: ReadonlyArray<PrMergeMethod>;
+  readonly mergeMethodReasons: Readonly<Partial<Record<PrMergeMethod, string>>>;
+  readonly commitCount: number | null;
 };
+
+type FixSignals = {
+  readonly commentsNeedYou: number;
+  readonly isFixRunLive: boolean;
+};
+
+export const fixSignalsOf = ({
+  threads,
+  attempts,
+}: {
+  readonly threads: ReadonlyArray<ResolveThread>;
+  readonly attempts: ReadonlyArray<ResolveAttempt>;
+}): FixSignals => ({
+  commentsNeedYou: resolveAttentionOf({ threads, attempts }).needsYou,
+  isFixRunLive: threads.some(
+    (thread) => thread.originKind !== 'diff_comment' && thread.state === 'working',
+  ),
+});
+
+export const ALL_MERGE_METHODS: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
 
 type Params = {
   readonly sessionId: SessionId;
@@ -40,6 +71,11 @@ type Params = {
   readonly viewer: string | null;
   readonly writeInFlight: string | null;
   readonly isDraftAgentRunning: boolean;
+  readonly commentsNeedYou?: number;
+  readonly isFixRunLive?: boolean;
+  readonly mergeMethods?: ReadonlyArray<PrMergeMethod>;
+  readonly mergeMethodReasons?: Readonly<Partial<Record<PrMergeMethod, string>>>;
+  readonly commitCount?: number | null;
 };
 
 const FAILED = new Set<PrCheckRun['conclusion']>(['failure', 'timed_out']);
@@ -111,6 +147,11 @@ export const pullRequestFacts = ({
   viewer,
   writeInFlight,
   isDraftAgentRunning,
+  commentsNeedYou = 0,
+  isFixRunLive = false,
+  mergeMethods = ALL_MERGE_METHODS,
+  mergeMethodReasons = {},
+  commitCount = null,
 }: Params): PullRequestFacts => {
   const runs = checks ?? [];
   const failing = runs.filter((check) => FAILED.has(check.conclusion));
@@ -131,5 +172,49 @@ export const pullRequestFacts = ({
     isOwn: author === null || viewer === null || author === viewer,
     writeInFlight,
     isDraftAgentRunning,
+    commentsNeedYou,
+    isFixRunLive,
+    mergeMethods,
+    mergeMethodReasons,
+    commitCount,
   };
+};
+
+type SessionMergeParams = {
+  readonly sessionId: SessionId;
+  readonly github: Pick<SessionGithubState, 'pr' | 'detail'> | null;
+  readonly threads: ReadonlyArray<ResolveThread>;
+  readonly attempts: ReadonlyArray<ResolveAttempt>;
+  readonly mergeView?: PullRequestView | null;
+};
+
+export const sessionMergeFacts = ({
+  sessionId,
+  github,
+  threads,
+  attempts,
+  mergeView = null,
+}: SessionMergeParams): PullRequestFacts => {
+  const pr = github?.pr ?? null;
+  const detail =
+    github?.detail != null && github.detail.prNumber === pr?.number ? github.detail : null;
+  return pullRequestFacts({
+    sessionId,
+    pr,
+    checks: detail?.checks ?? null,
+    checksRead: detail?.checksRead ?? null,
+    comments: detail?.comments ?? [],
+    reviews: detail?.reviews ?? [],
+    viewer: null,
+    writeInFlight: null,
+    isDraftAgentRunning: false,
+    ...fixSignalsOf({ threads, attempts }),
+    ...(mergeView === null
+      ? {}
+      : {
+          mergeMethods: mergeView.mergeMethods,
+          mergeMethodReasons: mergeView.mergeMethodReasons,
+          commitCount: mergeView.commits.length,
+        }),
+  });
 };

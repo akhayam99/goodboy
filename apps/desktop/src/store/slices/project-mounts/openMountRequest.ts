@@ -47,7 +47,7 @@ export const openMountRequest = (_set: SetFn, get: GetFn) => {
       }
       get().setPullRequestMode({ sessionId, mode: 'create_pr' });
       const mountPath = selectMountById({ state: get(), sessionId, mountId })?.worktreePath ?? null;
-      get().navigate({ to: branchPlace({ sessionId, mountPath, tab: 'comments' }) });
+      get().navigate({ to: branchPlace({ sessionId, mountPath, tab: 'pr' }) });
       return { kind: 'opened' };
     }
     return get().openReviewTarget({

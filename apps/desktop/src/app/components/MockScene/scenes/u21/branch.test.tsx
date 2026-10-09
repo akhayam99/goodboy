@@ -73,18 +73,17 @@ describe('the u21 branch scenes', () => {
     expect(within(menu).getByRole('menuitem', { name: 'New branch' })).toBeDefined();
   });
 
-  it('shows the description open with its text and one visible Edit', async () => {
+  it('shows the description on the pull request tab with its text and one visible Edit', async () => {
     renderScene('branch-description-open');
 
-    const toggle = await screen.findByRole('button', { name: 'Description' });
+    const description = await screen.findByRole('region', { name: 'Description' });
 
     await waitForSettledReads();
     expectNoErrorNotice();
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(
-      screen.getByText(/^Retried webhook deliveries no longer post a second credit/),
+      within(description).getByText(/^Retried webhook deliveries no longer post a second credit/),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Edit title' })).toBeDefined();
+    expect(within(description).getAllByRole('button', { name: 'Edit' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /^Stop retried webhooks/ })).toBeDefined();
   });
 });

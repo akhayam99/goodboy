@@ -107,9 +107,9 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
       await openCrumb(/^Branch/);
     },
     lands: async (ctx) => {
-      await branchTab('comments')(ctx);
+      await branchTab('pr')(ctx);
       await waitFor(() => expectOnGrid({ page: 'branch', isStudio: false }), WAIT);
-      for (const name of [/^Files/, /^Commits/, /^Checks/]) {
+      for (const name of [/^Comments/, /^Files/, /^Commits/, /^Checks/]) {
         await click(screen.getByRole('tab', { name }));
         await waitFor(() => expectOnGrid({ page: 'branch', isStudio: false }), WAIT);
       }

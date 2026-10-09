@@ -111,7 +111,35 @@ describe('commitLinkOf', () => {
 
 describe('REVIEW_SOURCE_CAPABILITIES', () => {
   it('lets bitbucket reply without resolving', () => {
-    expect(REVIEW_SOURCE_CAPABILITIES.bitbucket).toEqual({ canReply: true, canResolve: false });
+    expect(REVIEW_SOURCE_CAPABILITIES.bitbucket).toMatchObject({
+      canReply: true,
+      canResolve: false,
+    });
     expect(REVIEW_SOURCE_CAPABILITIES.local.canReply).toBe(false);
+  });
+
+  it('writes the pull request only on GitHub until the other adapters land', () => {
+    expect(REVIEW_SOURCE_CAPABILITIES.github).toMatchObject({
+      canEditTitle: true,
+      canEditBody: true,
+      canRequestReviewers: true,
+      canSetDraft: true,
+      canReadChecks: true,
+      canChooseMergeMethod: true,
+      canClose: true,
+      canReopen: true,
+    });
+    for (const kind of ['gitlab', 'bitbucket', 'local'] as const) {
+      expect(REVIEW_SOURCE_CAPABILITIES[kind]).toMatchObject({
+        canEditTitle: false,
+        canEditBody: false,
+        canRequestReviewers: false,
+        canSetDraft: false,
+        canReadChecks: false,
+        canChooseMergeMethod: false,
+        canClose: false,
+        canReopen: false,
+      });
+    }
   });
 });

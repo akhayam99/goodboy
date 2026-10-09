@@ -350,9 +350,10 @@ export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   );
 };
 
-type BranchTabName = 'comments' | 'files' | 'commits' | 'checks';
+type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
+  pr: /^Pull request/,
   comments: /^Comments/,
   files: /^Files/,
   commits: /^Commits/,
@@ -414,7 +415,7 @@ const overviewLands = async (): Promise<void> =>
 
 export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },
-  { label: 'Branch', lens: 'branch', lands: branchTab('comments') },
+  { label: 'Branch', lens: 'branch', lands: branchTab('pr') },
   { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
   { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
@@ -444,14 +445,14 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
   {
     label: 'Pull request',
     lens: 'branch',
-    lands: both(branchTab('comments'), () => heading(/Stop retried webhooks/)),
+    lands: both(branchTab('pr'), () => heading(/Stop retried webhooks/)),
   },
   {
     label: 'Pull request',
     note: 'no pull request yet',
     lens: 'branch',
     seed: 'issue',
-    lands: branchTab('comments'),
+    lands: branchTab('pr'),
   },
   { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
   { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },

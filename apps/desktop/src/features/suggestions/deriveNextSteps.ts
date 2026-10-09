@@ -402,7 +402,7 @@ export const deriveNextSteps = ({
       payload: { planId: activePlan.id },
     });
   }
-  if (hasPullRequest && eligibleThreadCount > 0) {
+  if (eligibleThreadCount > 0) {
     suggestions.push({
       id: `resolve-threads:${sessionId}`,
       kind: 'resolve-threads',

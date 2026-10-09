@@ -157,12 +157,15 @@ const depthOf = (): number => {
 };
 
 describe('Branch page header and tabs', () => {
-  it('names the pull request and offers Comments, Files, Commits and Checks as tabs', async () => {
+  it('names the pull request and offers Pull request, Comments, Files, Commits and Checks as tabs', async () => {
     await mount();
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/#\d+/);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      useAppStore.getState().sessionGithub[SESSION.id]?.pr?.title,
+    );
     const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
     expect(tabs.map((text) => text.replace(/[\d-]+$/, '').trim())).toEqual([
+      'Pull request',
       'Comments',
       'Files',
       'Commits',
@@ -473,44 +476,6 @@ describe('Branch page Comments', () => {
     screen.getByRole('button', { name: /^Comments$/ });
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
-
-  it('keeps the description closed while the pull request has no body', async () => {
-    await mount();
-
-    const toggle = screen.getByRole('button', { name: 'Description' });
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-  });
-
-  it('opens the description on its own when the pull request has a body', async () => {
-    seedResolveScene({ expandedThreadId: null });
-    act(() => {
-      useAppStore.setState((state) => ({
-        sessionGithub: {
-          ...state.sessionGithub,
-          [SESSION.id]: {
-            ...state.sessionGithub[SESSION.id]!,
-            pr: {
-              ...state.sessionGithub[SESSION.id]!.pr!,
-              body: 'Retried deliveries no longer post a second credit.',
-            },
-          },
-        },
-      }));
-    });
-    render(
-      <ToastProvider>
-        <BranchPage session={SESSION} workingDir={null} />
-      </ToastProvider>,
-    );
-    await settle();
-
-    expect(screen.getByRole('button', { name: 'Description' }).getAttribute('aria-expanded')).toBe(
-      'true',
-    );
-    expect(screen.getByText('Retried deliveries no longer post a second credit.')).toBeDefined();
-  });
 });
 
 describe('Branch page Checks and Files', () => {
@@ -523,25 +488,27 @@ describe('Branch page Checks and Files', () => {
     expect(screen.getByRole('region', { name: 'Checks' })).toBeDefined();
   });
 
-  it('keeps the new pull request form on Comments and lets the other tabs render', async () => {
+  it('offers the new pull request form on its own tab and lets the other tabs render', async () => {
     await mount();
     act(() => {
+      seedWorktree({ isDiffLoaded: false });
       useAppStore.setState((state) => ({
         sessionGithub: {
           ...state.sessionGithub,
           [SESSION.id]: { ...state.sessionGithub[SESSION.id]!, pr: null },
         },
         sessionSelectedPrNumber: { ...state.sessionSelectedPrNumber, [SESSION.id]: null },
-        pullRequestModes: { ...state.pullRequestModes, [SESSION.id]: 'create_pr' },
       }));
     });
+    fireEvent.click(screen.getByRole('tab', { name: /^Pull request/ }));
     await settle();
-    expect(screen.getByRole('region', { name: 'New pull request' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'No pull request yet' })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('tab', { name: /^Checks/ }));
     await settle();
 
-    expect(screen.queryByRole('region', { name: 'New pull request' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'No pull request yet' })).toBeNull();
     expect(screen.getByRole('tab', { name: /^Checks/ }).getAttribute('aria-selected')).toBe('true');
   });
 

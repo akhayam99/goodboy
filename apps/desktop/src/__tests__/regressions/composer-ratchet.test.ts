@@ -51,7 +51,7 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
     'a review comment on GitHub, read by people',
   'features/review/components/ReviewPane/WriteReview/WriteReviewForm.tsx':
     'a review on GitHub, read by people',
-  'features/integrations/github/components/PullRequest/PrOverview.tsx':
+  'features/branch/components/PullRequestTab/PullRequestDescription.tsx':
     'the pull request body, read by people',
   'features/integrations/github/components/PullRequest/CreatePrPanel.tsx':
     'the pull request body, read by people',

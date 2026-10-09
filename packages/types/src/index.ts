@@ -503,6 +503,20 @@ export type {
   PullRequestStateKind,
 } from './github';
 export type {
+  PullRequestChecksRead,
+  PullRequestChecksView,
+  PullRequestCommit,
+  PullRequestFileStat,
+  PullRequestHost,
+  PullRequestNouns,
+  PullRequestPerson,
+  PullRequestResolve,
+  PullRequestReviewDecision,
+  PullRequestReviewer,
+  PullRequestReviewerState,
+  PullRequestView,
+} from './pull-request';
+export type {
   BootstrapAlignOutcome,
   BootstrapClearReport,
   BootstrapFileChange,

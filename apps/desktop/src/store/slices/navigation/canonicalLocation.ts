@@ -7,7 +7,9 @@ import { resolverThread } from './resolverThread';
 import { resolveActiveMountPath } from '../worktrees/resolveActiveMountPath';
 import { CONTEXT_LENS_TAB } from './contextLensTab';
 import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
+import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
 import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
+import { branchHasPullRequest } from '../session-view/branchTabOf';
 import type { BranchTab, CanonicalPlace, Place, PlaceRequest } from './types';
 
 type SessionPlace = Extract<Place, { readonly at: 'session' }>;
@@ -151,7 +153,10 @@ const formerBranchPlace = ({
     return branchPlace({
       sessionId,
       mountPath: preferred ?? activeMountPath({ state, sessionId }),
-      tab: 'comments',
+      tab: branchLandingTabOf({
+        hasPullRequest: branchHasPullRequest({ state, sessionId }),
+        deepLink: threadId === null ? null : 'comments',
+      }),
       threadId,
     });
   }

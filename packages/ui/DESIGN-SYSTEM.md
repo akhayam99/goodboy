@@ -1914,6 +1914,38 @@ discarded read as three answers instead of one long list.
 What "empty" means, and the copy rule for it, are product rules and live in
 [DESIGN.md](../../DESIGN.md).
 
+## Pull request page
+
+The Pull request tab of the Branch page is a document on the 960px column with
+a properties column: Linear's pull request page in our register. The main column
+is the description (`SectionHeader` with `Edit` beside it, a markdown editor with
+Write and Preview and `Save`, `Cancel` at its end) and the Activity: plain rows
+of a 20px glyph, one muted line with the person in `text-row`, and the age at the
+right in `tabular-nums`; a row that opens something takes `ROW_INTERACTIVE` and
+says what it opens (`Open Comments`, `View checks`), a row that opens nothing has
+no hover. The title is the page's `h1` in the fixed 32px title row
+(`PaneTitleRow`): editing swaps its content for an input of the same height, so
+the page never jumps. The properties column is 280px from 928px of pane
+(`@container` query, not the window) and a two-column compact grid above the
+description below it. Each block is a faint label, one value row of 28px or
+more and nothing else: Status carries the state word and the one readiness word
+(a `StatusDot` only where the tone says something: danger for a failing check or
+a conflict, warning for changes requested or comments that wait, info for a live
+run, a check for ready). Labels are not headings, so the outline reads `h1`, then
+the `h2`s of Description and Activity.
+
+**The capability rule.** The page never branches on the host. It reads the
+`ReviewSourceCapabilities` of the active source: a control the host cannot do on
+an object that exists is shown disabled with its reason in words (`Bitbucket has
+no draft pull requests`, `Turned off in payments-api`, `Set by the project`), a
+control for a concept the host does not have is left out, and a control the host
+does but Goodboy has not built yet says so (`HostRequestSummary`). The merge
+confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`):
+the option cards carry the effect sentence and a forbidden one is disabled with
+its reason. States follow the five of Empty states: no pull request is a page
+`EmptyState` over the create form, the activity loads as a `SkeletonRow`, a
+failed read is an inline danger `Notice` with Retry.
+
 ## Workspace chat
 
 The chat page (`features/workspace-chat/components/ChatStudio`) is a studio

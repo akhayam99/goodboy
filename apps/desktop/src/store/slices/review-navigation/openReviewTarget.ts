@@ -119,7 +119,7 @@ export const openReviewTarget = async ({
       writeTarget({ set, sessionId, target: null });
       if (outcome.kind === 'opened') {
         setPullRequestMode({ set, sessionId, mode: 'overview' });
-        get().navigate({ to: branchPlace({ sessionId, mountPath, tab: 'comments' }) });
+        get().navigate({ to: branchPlace({ sessionId, mountPath, tab: 'pr' }) });
       }
       return outcome;
     }

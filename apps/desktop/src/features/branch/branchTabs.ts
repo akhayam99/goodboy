@@ -25,7 +25,7 @@ export const BRANCH_TAB_REGISTRY: BranchTabRegistry = {
     label: NAMES.pullRequest,
     address: 'pr',
     shortcut: 'lens.pr',
-    isAvailable: false,
+    isAvailable: true,
   },
   comments: {
     id: 'comments',

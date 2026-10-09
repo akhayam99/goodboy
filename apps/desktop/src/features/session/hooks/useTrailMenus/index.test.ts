@@ -95,6 +95,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
 import { lensDestinations } from '../../lens-destinations';
 import { createAgentEventName } from '../../createAgentEventName';
 import { branchPlace } from '../../../../store/slices/navigation/place';
+import { branchLandingTabOf } from '../../../branch/branchLandingTab';
 import { useTrailMenus } from '.';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -722,7 +723,7 @@ describe('useTrailMenus diff branch crumb', () => {
         to: branchPlace({
           sessionId: SESSION_ID,
           mountPath: '/work/notify-relay',
-          tab: 'comments',
+          tab: branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
         }),
         mode: 'replace',
       }),

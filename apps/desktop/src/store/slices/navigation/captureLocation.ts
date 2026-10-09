@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import { resolverThread } from './resolverThread';
+import { branchTabOf } from '../session-view/branchTabOf';
 import type { LensKind } from '../session-view/types';
 import { EMPTY_FOCUS, type Focus, type Location, type SessionTarget } from './types';
 
@@ -41,10 +42,11 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
     return issueNumber === null ? null : { kind: 'github-issue', issueNumber };
   }
   if (lens === 'branch') {
+    const mountPath = state.diffMountPath[sessionId] ?? null;
     return {
       kind: 'branch',
-      mountPath: state.diffMountPath[sessionId] ?? null,
-      tab: state.branchTab[sessionId] ?? 'comments',
+      mountPath,
+      tab: branchTabOf({ state, sessionId, mountPath }),
       threadId: state.branchThreadId[sessionId] ?? null,
       focus: state.diffFocus[sessionId] ?? null,
     };

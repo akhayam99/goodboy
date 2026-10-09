@@ -170,6 +170,8 @@ type HarnessProps = {
   readonly review: BranchReviewCounts;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly detail?: PrDetail | null;
+  readonly canEditTitle?: boolean;
+  readonly onMutated?: () => void;
 };
 
 const detailOf = ({
@@ -200,7 +202,7 @@ const diffOf = (): SessionDiff => ({
   clearFocus: vi.fn(),
 });
 
-const Harness = ({ pr, review, checks, detail }: HarnessProps) => {
+const Harness = ({ pr, review, checks, detail, canEditTitle = false, onMutated }: HarnessProps) => {
   const controls = useBranchControls({
     sessionId: SESSION_ID,
     worktreePath: MOUNT.worktreePath,
@@ -220,6 +222,10 @@ const Harness = ({ pr, review, checks, detail }: HarnessProps) => {
       fallbackTitle="feat/export"
       controls={controls}
       isPushBusy={false}
+      tab="pr"
+      canEditTitle={canEditTitle}
+      createdAt={null}
+      onMutated={onMutated ?? vi.fn()}
     />
   );
 };
@@ -229,10 +235,19 @@ const renderHeader = ({
   review = NO_REVIEW,
   checks = NO_CHECKS,
   detail,
+  canEditTitle,
+  onMutated,
 }: Partial<HarnessProps> = {}) =>
   render(
     <ToastProvider>
-      <Harness pr={pr} review={review} checks={checks} detail={detail} />
+      <Harness
+        pr={pr}
+        review={review}
+        checks={checks}
+        detail={detail}
+        canEditTitle={canEditTitle}
+        onMutated={onMutated}
+      />
     </ToastProvider>,
   );
 
@@ -247,7 +262,6 @@ describe('BranchHeader identity', () => {
       ],
     });
 
-    expect(screen.getByText('#318')).toBeDefined();
     expect(screen.getByText('Ledger export')).toBeDefined();
     const meta = screen.getByText('Draft').closest('div') as HTMLElement;
     expect(meta.textContent).toContain('payments-api');
@@ -269,7 +283,7 @@ describe('BranchHeader identity', () => {
     renderHeader({ pr: PR });
     const withPr = screen.getAllByRole('heading', { level: 1 });
     expect(withPr).toHaveLength(1);
-    expect(withPr[0]?.textContent).toBe('#318Ledger export');
+    expect(withPr[0]?.textContent).toBe('Ledger export');
     cleanup();
 
     renderHeader();
@@ -506,7 +520,7 @@ describe('BranchHeader branch switcher', () => {
         to: branchPlace({
           sessionId: SESSION_ID,
           mountPath: MOUNT_FIX.worktreePath,
-          tab: 'comments',
+          tab: branchLandingTabOf({ hasPullRequest: true, deepLink: null }),
         }),
         mode: 'replace',
       }),
@@ -696,5 +710,94 @@ describe('BranchHeader overflow', () => {
     expect(labels.some((label) => label.startsWith('Change base branch'))).toBe(true);
     expect(labels.some((label) => label.startsWith('Copy branch name'))).toBe(true);
     expect(labels.some((label) => /Rewrite history|Restore a backup/.test(label))).toBe(false);
+  });
+});
+
+describe('BranchHeader title editing', () => {
+  const editPr = vi.fn<StoreState['editPr']>(async () => undefined);
+
+  beforeEach(() => {
+    editPr.mockReset();
+    editPr.mockResolvedValue(undefined);
+    useAppStore.setState({ editPr });
+    status = statusOf({});
+  });
+
+  it('shows the title as a plain heading when the pull request is not yours', () => {
+    renderHeader({ pr: PR, canEditTitle: false });
+
+    expect(screen.queryByRole('button', { name: 'Ledger export' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ledger export');
+  });
+
+  it('turns the title into an input on a click and saves on Enter', async () => {
+    const onMutated = vi.fn();
+    renderHeader({ pr: PR, canEditTitle: true, onMutated });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
+    const input = screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement;
+    expect(input.value).toBe('Ledger export');
+    fireEvent.change(input, { target: { value: 'Ledger export, with retries' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(onMutated).toHaveBeenCalledTimes(1));
+    expect(editPr).toHaveBeenCalledWith(SESSION_ID, 318, {
+      title: 'Ledger export, with retries',
+      isQuiet: true,
+    });
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+  });
+
+  it('opens on the E key and cancels on Escape without writing', () => {
+    renderHeader({ pr: PR, canEditTitle: true });
+
+    fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
+    expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+
+    fireEvent.keyDown(window, { code: 'Escape', key: 'Escape' });
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+    expect(editPr).not.toHaveBeenCalled();
+  });
+
+  it('ignores the E key when the title cannot be edited', () => {
+    renderHeader({ pr: PR, canEditTitle: false });
+
+    fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
+
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+  });
+
+  it('keeps the draft, names the failure under the title and retries', async () => {
+    editPr.mockRejectedValueOnce(new Error('Resource not accessible by personal access token'));
+    renderHeader({ pr: PR, canEditTitle: true });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
+    const input = screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Ledger export v2' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't save the title");
+    expect(alert.textContent).toContain('Resource not accessible');
+    const kept = screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement;
+    expect(kept.value).toBe('Ledger export v2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(editPr).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull(),
+    );
+  });
+
+  it('does not write when the title did not change', async () => {
+    renderHeader({ pr: PR, canEditTitle: true });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Pull request title' }), {
+      key: 'Enter',
+    });
+
+    await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
+    expect(editPr).not.toHaveBeenCalled();
   });
 });

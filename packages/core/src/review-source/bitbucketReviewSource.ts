@@ -141,4 +141,5 @@ export const bitbucketReviewSource = ({ transport, prUrl }: Params): ReviewSourc
   },
   readRemoteHead: () => transport.readHeadSha(),
   commitLink: ({ sha }) => commitLinkOf({ kind: 'bitbucket', url: prUrl, sha }),
+  pullRequest: null,
 });

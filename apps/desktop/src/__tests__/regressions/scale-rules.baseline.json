@@ -83,11 +83,7 @@
   "apps/desktop/src/features/integrations/components/IntegrationCredentialPicker/CredentialRow.tsx#mono": 1,
   "apps/desktop/src/features/integrations/components/LaunchSessionPanel/BriefStrip.tsx#mono": 1,
   "apps/desktop/src/features/integrations/components/ToolSettingsScope/GithubAccountRows/GhMissingNotice.tsx#iconSize": 1,
-  "apps/desktop/src/features/integrations/github/components/LinkIssueToPrPopover.tsx#mono": 1,
-  "apps/desktop/src/features/integrations/github/components/PullRequest/CreatePrPanel.tsx#iconSize": 1,
-  "apps/desktop/src/features/integrations/github/components/PullRequest/CreatePrPanel.tsx#mono": 3,
-  "apps/desktop/src/features/integrations/github/components/PullRequest/PrOverview.tsx#iconSize": 3,
-  "apps/desktop/src/features/integrations/github/components/PullRequest/ReviewerPicker.tsx#iconSize": 1,
+  "apps/desktop/src/features/integrations/github/components/PullRequest/CreatePrPanel.tsx#mono": 2,
   "apps/desktop/src/features/integrations/github/components/PullRequest/ThreadPathChip.tsx#mono": 1,
   "apps/desktop/src/features/integrations/github/components/PullRequest/ThreadReplies.tsx#iconSize": 1,
   "apps/desktop/src/features/integrations/github/GithubFormBody.tsx#iconSize": 1,
@@ -332,5 +328,6 @@
   "packages/ui/src/components/Trail/TrailFold.tsx#iconSize": 2,
   "packages/ui/src/components/Trail/TrailSeparator.tsx#iconSize": 1,
   "packages/ui/src/components/ValueToken.tsx#mono": 1,
-  "packages/ui/src/paneRhythm.ts#gap": 2
+  "packages/ui/src/paneRhythm.ts#gap": 2,
+  "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx#mono": 1
 }

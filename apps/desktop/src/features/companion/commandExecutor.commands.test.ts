@@ -643,7 +643,7 @@ describe('mergePr (write path, security-gated)', () => {
     });
     const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
     expect(res.ok).toBe(false);
-    expect(res.error).toBe('merge refused: A reviewer asked for changes');
+    expect(res.error).toBe('merge refused: A reviewer asked for changes.');
     expect(h.mergePr).not.toHaveBeenCalled();
   });
 
@@ -651,7 +651,7 @@ describe('mergePr (write path, security-gated)', () => {
     h.state.value = makeStore({ sessionGithub: { s1: { pr: eligiblePr({ mergeable: null }) } } });
     const res = await executeBridgeCommand(cmd('mergePr', { sessionId: 's1', method: 'squash' }));
     expect(res.error).toBe(
-      'merge refused: GitHub has not finished checking whether this branch merges',
+      'merge refused: GitHub has not finished checking whether this branch merges.',
     );
     expect(h.mergePr).not.toHaveBeenCalled();
   });

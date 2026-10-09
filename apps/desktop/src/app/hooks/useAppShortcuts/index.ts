@@ -4,7 +4,14 @@ import { isTerminalFocused } from '../../../shared/keyboard/isTerminalFocused';
 import { WORKSPACE_DIGIT_IDS } from '../../../shared/keyboard/registry';
 import { workspacesByDigit } from '../../../features/workspace/recent';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { useAppStore, useCurrentWorkspace, useWorkspaces, type LensKind } from '../../../store';
+import {
+  branchPlace,
+  useAppStore,
+  useCurrentWorkspace,
+  useWorkspaces,
+  type LensKind,
+} from '../../../store';
+import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
 import { isLensReachable } from '../../../features/session/isLensReachable';
@@ -95,11 +102,13 @@ export const useAppShortcuts = ({
     const isBranchDoor =
       active === 'branch' &&
       (kind === 'review' || kind === 'pr' || kind === 'files') &&
-      (state.branchTab[sessionId] ?? 'comments') === doorTabOf({ kind });
-    openLens({
-      sessionId,
-      lens: kind != null && (active === kind || isBranchDoor) ? null : kind,
-    });
+      branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
+    const isLeaving = kind != null && (active === kind || isBranchDoor);
+    if (kind === 'review' && !isLeaving) {
+      state.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+      return;
+    }
+    openLens({ sessionId, lens: isLeaving ? null : kind });
   }, []);
 
   const isExploreSession = useAppStore((state) => {

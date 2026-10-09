@@ -101,13 +101,13 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate', 'trail:branch-column'],
     open: async (ctx) => {
       await openBranchPage();
-      await branchTab('comments')(ctx);
-      for (const name of [/^Comments/, /^Files/, /^Commits/, /^Checks/]) {
+      await branchTab('pr')(ctx);
+      for (const name of [/^Pull request/, /^Comments/, /^Files/, /^Commits/, /^Checks/]) {
         await visitTab(name);
         expect(trailColumn()).toBe('column');
         expect(headerColumn()).toBe('column');
       }
-      for (const name of [/^Comments/, /^Files/, /^Commits/]) {
+      for (const name of [/^Pull request/, /^Comments/, /^Files/, /^Commits/]) {
         await visitTab(name);
         expect(bodyColumns().length).toBeGreaterThan(0);
         expect(bodyColumns().every((width) => width === 'column')).toBe(true);
@@ -124,7 +124,7 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       addSecondBranch(ctx);
       await openBranchPage();
-      await branchTab('comments')(ctx);
+      await branchTab('pr')(ctx);
       await visitTab(/^Files/);
       const chip = await screen.findByRole(
         'button',

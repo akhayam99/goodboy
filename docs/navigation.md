@@ -2169,12 +2169,15 @@ Files tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
-**Header.** Title, the one h1 (`#318 Ledger export`, or the branch name
-without a pull request), the line `Open · payments-api · hl/fix-credit ▾ → main
+**Header.** Title, the one h1 (the pull request's title, or the branch name
+without a pull request; on a pull request you can edit, click it or press `E` on
+the Pull request tab and it becomes an input in the same 32px row, `Enter` saves
+to the host, `Esc` cancels, a failure is an inline notice with Retry), the line
+`Open · nadia-p wants to merge payments-api · hl/fix-credit ▾ → main · 11d ago
 · ✓ N checks` (the state word, `Draft` for a draft and `No pull request` without
-one, then the switcher chip, the base and the checks), one primary and `⋯`. The
-branch name prints once in that line, in `text-code`: the trail reads `Branch`
-and the title is the pull request's. **The switcher chip** (`BranchSwitcher`)
+one, the author, then the switcher chip, the base, the age and the checks), one
+primary and `⋯`. The branch name prints once in that line, in `text-code`: the
+trail reads `Branch` and the title is the pull request's. **The switcher chip** (`BranchSwitcher`)
 is the repo and the branch of the page. It opens a menu of the session's
 branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
 glyph, branch cut in the middle, `#318 Open`, a check on the current one,
@@ -2192,7 +2195,21 @@ The primary is the first that applies: `Rebase on main`
 (`Open terminal` while a rebase is stopped, with `Abort rebase` beside it),
 `Push N` (accepted threads, then unpushed commits), `Publish N replies` (the
 fix is already on origin), `Retry N`, `Create PR`, `Ready for review`, `Merge`
-(`branchPrimaryOf`). Push, Publish and Retry go through the existing publish
+(`branchPrimaryOf`). `Merge` is a filled primary only when the pull request is
+ready; while comments need you or a fix run is live it turns secondary and counts
+(`Merge · 3 open`), never disabled, and while a check fails, a review is
+missing or the branch conflicts it is disabled with the reason in the meta line.
+One rule decides all three (`evaluatePrMergeReadiness`, `features/review`): its
+blockers are a merged, closed, queued or draft pull request, conflicts, checks
+unknown, failing or running, changes requested, a review required and a write
+already running; its caveats are comments that need you and a live fix run. The
+companion's `mergePr` asks the same function and refuses on a caveat too. Its
+confirm is an inline panel with a method picker (`ActionConfirm.choice`,
+`ChoiceCards`): `Squash and merge` (`One commit on main`), `Merge commit` and
+`Rebase and merge`, the default squash when the repository allows it, and a
+method the repository forbids shown disabled with its reason
+(`Turned off in payments-api`). Merging raises one plain `info` toast with no
+Follow. Push, Publish and Retry go through the existing publish
 machinery: a frozen preview in line under the header (`PushBanner`, the only
 one), drift and the result per thread. Only the header pushes: a thread has no
 Push, Push again or Sync button. With an accepted thread opened in Comments the
@@ -2206,10 +2223,57 @@ review, Convert to draft, Close or Reopen, Open on GitHub, Copy link) and the
 branch actions (Change base branch…, Open terminal, Open in editor, Copy
 branch name, Copy patch).
 
-**Comments.** The Description (open when the pull request has a body, closed
-when it has none, with a visible `Edit` on its header while it is closed and
-`Edit` on the title and the description once it is open; `Edit title and
-description` in `⋯` still works), then the list (`Needs you`, `Working`, `Ready to push`, `Open`, `Done`, `Left open on GitHub`;
+**Tabs and landing.** Five tabs, in this order, with and without a pull
+request: `Pull request`, `Comments N`, `Files N`, `Commits N`, `Checks`
+(`branchTabsOf`, `features/branch/branchTabs.ts`; the label of the first is the
+registry's, `Pull request`, and the key is ⌥⌘1). Every door that means "go to the
+branch" lands through one pure rule (`branchLandingTabOf`,
+`features/branch/branchLandingTab.ts`): an explicit tab in the place wins, else
+`Pull request` when the active mount has a pull request, else `Files`. The
+sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
+pull request chip, an approved or changes-requested mark and a mount's
+`Create PR` land on `Pull request`; a comment, a thread, a fix run, a note, ⌥⌘R
+(`Open Comments`) and a draft comments chip name `Comments` themselves, `Files`
+and `Commits` doors name theirs, and a CI failure names `Checks`. The chosen tab
+is stored per session and is read through `branchTabOf` (`useBranchTab` in a
+component), never from `branchTab[sessionId]` directly, so a tab is only
+remembered once the person has chosen one.
+
+**Pull request.** The pull request itself, on the 960px column
+(`features/branch/components/PullRequestTab`). With a pull request, the main
+column holds the description rendered as markdown with `Edit` beside its heading
+(a click on the text also opens it; the editor is a textarea with Write and
+Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
+Retry; an empty description reads `No description yet` with `Add description`)
+and the Activity, oldest first: who opened it, the pushes grouped by day, the
+reviews, one line `4 comments on files, 2 need you` that opens Comments, one line
+for the checks that opens Checks, your edits of this session and the merge. Rows
+that open something carry `ROW_INTERACTIVE`. The properties column is 280px on
+the right from 928px of pane and a compact grid above the description below it:
+Status (the state and the one readiness word, `Ready to merge`, `Blocked: 2
+checks failing`, `Changes requested`, `Draft, not open for review yet`, `A run is
+live on this branch`, `Waiting on checks and review`), Resolves (the linked
+issues; `Link issue` opens the popover), Reviewers (a glyph and a word each; `+`
+opens the picker that searches the host's collaborators), Checks (the rollup,
+opens the tab; `Checks unknown` when the read failed), Branch (`3 behind main`
+with `Rebase on main`) and Files changed (the count and the first seven with
+`+N -N`, each opens Files at that file). Without a pull request the tab is a
+first-time empty state (`No pull request yet`, one sentence) over the create
+form (title from the session goal, description with `Draft with an agent`, base
+branch, `Open as draft`, `Create pull request`); creating it raises a `Follow`
+toast only when the page is not already on screen. Every write goes through the
+host-neutral `PullRequestPort` (`packages/core/src/review-source`), a facet of
+the review source built per host in
+`store/slices/review-source/pullRequestPortFor.ts`; the page reads the
+capability table (`REVIEW_SOURCE_CAPABILITIES`) and never the host. A control
+the host forbids on an object that exists is shown disabled with its reason
+(`Bitbucket has no draft pull requests`, `Turned off in payments-api`, `Set by the
+project`), and a concept the host does not have is left out. Until a host's
+adapter lands, its sessions show the request, an `Open on` button and each write
+control disabled with its reason (`HostRequestSummary`). `E` edits the title in
+scope `pullRequest`, live only on this tab.
+
+**Comments.** The list (`Needs you`, `Working`, `Ready to push`, `Open`, `Done`, `Left open on GitHub`;
 the pull request conversation only, your notes live in the Notes drawer of
 Files) and the open thread with the code
 around the commented line above it (`hunkAround`, linking to Files). The
@@ -2303,7 +2367,10 @@ scroller, never under its fade, and the body takes the page's column with no
 rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
 address, the palette verb, a mount row's `Rewrite history` and an Activity
 history row (which has no verb and no `⋯` of its own) all land on
-`branch/commits`. **Checks.** The checks of the pull request.
+`branch/commits`. **Checks.** The checks of the pull request. A GitLab or Bitbucket
+session reads them through the same five states once its host's
+`canReadChecks` is on; while it is off the tab says Goodboy does not show that
+host's checks yet (`checksViewOf`).
 
 The Branch page shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. Every rewrite takes the shown

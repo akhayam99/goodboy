@@ -1,15 +1,14 @@
 import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
 import { prWriteContext } from './prWriteContext';
 import { prEventPayload } from './prEventPayload';
+import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
-import { ReportedError } from '../notifications/reportedError';
 
 export const closePr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number) => {
-    const { num, session, repo } = prWriteContext({
+    const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
       prNumber,
@@ -22,23 +21,13 @@ export const closePr = (_set: SetFn, get: GetFn) => {
       prNumber: num,
       action: 'close',
       run: async () => {
-        const res = await tauriGhRunner.run(['pr', 'close', String(num)], {
-          cwd: repo.repoRoot,
+        await runPortWrite({
+          get,
+          sessionId,
           workspaceId: session.workspaceId,
-          projectId: repo.projectId,
+          title: `Couldn't close #${num}`,
+          run: () => port.close(),
         });
-        if (res.exitCode !== 0) {
-          const errMsg = res.stderr.trim() || `gh pr close exited with ${res.exitCode}`;
-          void get().emitNotification({
-            kind: 'error',
-            severity: 'error',
-            title: `Couldn't close #${num}`,
-            body: errMsg,
-            sessionId,
-            workspaceId: session.workspaceId,
-          });
-          throw new ReportedError(errMsg);
-        }
         await get().refreshSessionPr(sessionId, { force: true });
         await get().recordSessionEventOnce({
           sessionId,

@@ -28,6 +28,7 @@ import { worktreeDiffFile } from '../worktree/worktree';
 import {
   evaluateMobileCreateSession,
   evaluateMobileMerge,
+  mobileMergeFacts,
   evaluateMobileSpawnWorkflow,
 } from './mobileConfinement';
 import type { AgentKind } from '../session/agent-kind';
@@ -705,8 +706,10 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
     case 'mergePr': {
       const sessionId = requireSession(data);
       const method = asString(data.method) ?? 'squash';
-      const pr = store.sessionGithub[sessionId]?.pr ?? null;
-      const gate = evaluateMobileMerge({ pr, method });
+      const gate = evaluateMobileMerge({
+        facts: mobileMergeFacts({ state: store, sessionId }),
+        method,
+      });
       if (!gate.ok) {
         throw new BridgeSafeError(`merge refused: ${gate.reason}`);
       }

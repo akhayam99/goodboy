@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import {
   type Ctx,
   type Row,
@@ -58,11 +58,11 @@ const rowsAppear = async (): Promise<void> => {
 };
 
 const reviewersStayListed = async (): Promise<void> => {
-  await click(await screen.findByRole('tab', { name: /^Comments/ }));
-  await click(await screen.findByRole('button', { name: 'Description' }));
-  expect(await screen.findByText('Reviewers', undefined, WAIT)).toBeDefined();
-  expect(screen.getByText('mara-l')).toBeDefined();
-  expect(screen.getByText('kenji-w')).toBeDefined();
+  await click(await screen.findByRole('tab', { name: /^Pull request/ }));
+  const properties = await screen.findByRole('complementary', { name: 'Properties' }, WAIT);
+  expect(within(properties).getByText('Reviewers')).toBeDefined();
+  expect(within(properties).getByText('mara-l')).toBeDefined();
+  expect(within(properties).getByText('kenji-w')).toBeDefined();
 };
 
 export const CHECKS_ROWS: ReadonlyArray<Row> = [

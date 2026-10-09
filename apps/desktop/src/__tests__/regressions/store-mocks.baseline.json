@@ -69,7 +69,6 @@
   "apps/desktop/src/features/integrations/components/ToolSettingsScope/index.test.tsx": 1,
   "apps/desktop/src/features/integrations/ConnectIntegrationEmptyState.test.tsx": 1,
   "apps/desktop/src/features/integrations/github/components/PullRequest/CreatePrPanel.test.tsx": 2,
-  "apps/desktop/src/features/integrations/github/components/PullRequest/ReviewerPicker.test.tsx": 1,
   "apps/desktop/src/features/integrations/gitlab/GitlabFormBody.test.tsx": 1,
   "apps/desktop/src/features/integrations/gitlab/GitlabIssueDetail/index.test.tsx": 1,
   "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.test.tsx": 1,

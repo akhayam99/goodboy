@@ -368,7 +368,7 @@ describe('bitbucket as a review source', () => {
     expect(source?.repo).toBe('northwind/storefront-web');
     expect(source?.headBranch).toBe('nw/cart-total');
     expect(source?.comments).toHaveLength(2);
-    expect(source?.capabilities).toEqual({ canReply: true, canResolve: false });
+    expect(source?.capabilities).toMatchObject({ canReply: true, canResolve: false });
   });
 
   it('leaves a merged pull request out of the picker', () => {

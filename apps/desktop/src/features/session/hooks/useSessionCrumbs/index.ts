@@ -31,6 +31,8 @@ import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolv
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useBranchIdentity } from '../../../branch/hooks/useBranchIdentity';
+import { branchLandingTabOf } from '../../../branch/branchLandingTab';
+import { branchTabOf } from '../../../../store/slices/session-view/branchTabOf';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 
 type Params = {
@@ -79,7 +81,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     return row === undefined ? 'Comment' : (threadLocationOf({ row })?.shortLabel ?? 'Comment');
   }, [queueRows, branchThreadId]);
   const branchIdentity = useBranchIdentity({ sessionId });
-  const branchTab = useAppStore((s) => s.branchTab?.[sessionId] ?? 'comments');
+  const branchTab = useAppStore((s) => branchTabOf({ state: s, sessionId, mountPath: null }));
   const branchFilePath = useAppStore((s) => s.diffFocus?.[sessionId]?.path ?? null);
   const branchLeaf = useMemo((): BreadcrumbCrumb | null => {
     if (lens !== 'branch') {
@@ -242,7 +244,13 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
               to: branchPlace({
                 sessionId,
                 mountPath: branchIdentity.mountPath,
-                tab: lens === 'branch' ? branchTab : 'comments',
+                tab:
+                  lens === 'branch'
+                    ? branchTab
+                    : branchLandingTabOf({
+                        hasPullRequest: pullRequestNumber !== null,
+                        deepLink: null,
+                      }),
               }),
             });
           },

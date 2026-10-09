@@ -25,7 +25,7 @@ type FollowParams = {
 
 const OVERLAY_DRAWER_SELECTOR = 'aside[data-drawer-mode="overlay"]';
 
-const isOverlayDrawerOpen = (): boolean =>
+export const isOverlayDrawerOpen = (): boolean =>
   typeof document !== 'undefined' && document.querySelector(OVERLAY_DRAWER_SELECTOR) !== null;
 
 const useFollowOn = ({

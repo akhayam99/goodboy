@@ -162,6 +162,8 @@ const seed = ({ variant }: Props): void => {
     sessionProjectMounts: { [SESSION_ID]: mounts },
     sessionActiveMount: { [SESSION_ID]: FIX_MOUNT_ID },
     diffMountPath: { [SESSION_ID]: FIX_PATH },
+    loadPullRequestView: async () => undefined,
+    ...(variant === 'description-open' && { branchTab: { [SESSION_ID]: 'pr' as const } }),
     sessionGithub: {
       [SESSION_ID]: { ...github, pr: withBody },
     },

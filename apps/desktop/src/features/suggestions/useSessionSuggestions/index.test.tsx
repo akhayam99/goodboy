@@ -5,7 +5,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
 import type { NudgeEvent } from '@goodboy/db';
 
-const { store, worktreeStatus, listNudgeEvents, openQuestions } = vi.hoisted(() => ({
+const { store, worktreeStatus, listNudgeEvents, openQuestions, tally } = vi.hoisted(() => ({
+  tally: { fixable: 0 },
   openQuestions: { list: [] as ReadonlyArray<unknown> },
   worktreeStatus: vi.fn(),
   listNudgeEvents: vi.fn(async (): Promise<ReadonlyArray<NudgeEvent>> => []),
@@ -13,7 +14,6 @@ const { store, worktreeStatus, listNudgeEvents, openQuestions } = vi.hoisted(() 
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
     sessionGithub: {} as Record<string, unknown>,
-    sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
     mountGithub: {} as Record<string, unknown>,
     mountGitlabMr: {} as Record<string, unknown>,
     mountBitbucketPr: {} as Record<string, unknown>,
@@ -47,6 +47,10 @@ vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
   useSessionPlans: () => [],
   useSessionOpenQuestions: () => openQuestions.list,
+}));
+
+vi.mock('../../resolve/useReviewTally', () => ({
+  useReviewTally: () => ({ fixable: tally.fixable }),
 }));
 
 vi.mock('../../workflows/useAttachedWorkflowRuns', () => ({
@@ -101,6 +105,7 @@ beforeEach(() => {
 
 afterEach(() => {
   openQuestions.list = [];
+  tally.fixable = 0;
   resetWorktreeStatusCache();
   store.sessionEvents = {};
   store.sessionPhaseRuns = {};
@@ -297,6 +302,18 @@ describe('useSessionSuggestions rebase opt-out', () => {
 
     expect(worktreeStatus).not.toHaveBeenCalled();
     expect(view.result.current.some((s) => s.kind === 'rebase-project')).toBe(false);
+  });
+});
+
+describe('useSessionSuggestions fix comments', () => {
+  it('offers Fix N from the fixable tally of the selected source, whatever the host', async () => {
+    tally.fixable = 3;
+    const view = renderHook(() => useSessionSuggestions({ session, withRebase: false }));
+
+    await waitFor(() => {
+      const fix = view.result.current.find((s) => s.kind === 'resolve-threads');
+      expect(fix?.payload).toEqual({ eligibleThreadCount: 3 });
+    });
   });
 });
 

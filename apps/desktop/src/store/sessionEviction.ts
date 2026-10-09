@@ -52,6 +52,7 @@ export const SESSION_EVICTION = [
   { key: 'historyRewriters', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'scribeAgents', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionGithub', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'pullRequestViews', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionProjectPrs', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionSelectedPrNumber', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionLoading', keyedBy: 'session', evictOn: 'archive' },

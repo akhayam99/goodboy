@@ -16,20 +16,6 @@ export type ReviewTally = {
   readonly fixable: number;
 };
 
-export const EMPTY_REVIEW_TALLY: ReviewTally = {
-  needsYou: 0,
-  question: 0,
-  toReview: 0,
-  pushFailed: 0,
-  couldntFix: 0,
-  working: 0,
-  readyToPush: 0,
-  done: 0,
-  leftOpen: 0,
-  open: 0,
-  fixable: 0,
-};
-
 export const reviewTallyOfWords = ({
   words,
 }: {
@@ -62,6 +48,18 @@ const resolveWordOfRow = ({ row }: { readonly row: ResolveQueueRow }): ResolveWo
     state: reviewCommentStateOf({ row }),
     isPushFailure: isPushFailure({ row }),
   });
+
+const isFixableWord = ({ word }: { readonly word: ResolveWord }): boolean =>
+  word === 'open' || word === 'couldnt_fix';
+
+export const fixableThreadIdsOf = ({
+  rows,
+}: {
+  readonly rows: ReadonlyArray<ResolveQueueRow>;
+}): ReadonlyArray<string> =>
+  rows.flatMap((row) =>
+    isFixableWord({ word: resolveWordOfRow({ row }) }) ? [row.thread.threadId] : [],
+  );
 
 export const reviewTallyOf = ({
   rows,

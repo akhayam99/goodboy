@@ -232,7 +232,7 @@ describe('the review navigation target', () => {
     expect(outcome).toEqual({ kind: 'opened' });
     expect(live.state.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 248, MOUNT_ID);
     expect(live.state.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
+      to: branchPlace({ sessionId: SESSION_ID, tab: 'pr' }),
     });
     expect(live.state.navigate).toHaveBeenCalledTimes(1);
     expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();

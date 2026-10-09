@@ -332,9 +332,6 @@
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/index.tsx": 1,
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/LaunchedNotice.tsx": 1,
     "apps/desktop/src/features/integrations/components/ToolSettingsScope/GithubAccountRows/AllWorkspacesRow.tsx": 1,
-    "apps/desktop/src/features/integrations/github/components/LinkIssueToPrPopover.tsx": 2,
-    "apps/desktop/src/features/integrations/github/components/PullRequest/PrOverview.tsx": 2,
-    "apps/desktop/src/features/integrations/github/components/PullRequest/ReviewerPicker.tsx": 1,
     "apps/desktop/src/features/integrations/github/components/PullRequest/ThreadReplies.tsx": 1,
     "apps/desktop/src/features/integrations/sentry/SentryBreadcrumbs.tsx": 1,
     "apps/desktop/src/features/integrations/sentry/SentryLevelBadge.tsx": 1,
@@ -350,7 +347,6 @@
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderCredentialsSection.tsx": 1,
     "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 1,
     "apps/desktop/src/features/reports/components/ReportStudio/ReportOutlineNav.tsx": 1,
-    "apps/desktop/src/features/review/components/ReviewPane/modes/LinkedIssuesSection.tsx": 1,
     "apps/desktop/src/features/review/components/ReviewThreadContent/index.tsx": 1,
     "apps/desktop/src/features/scripts/components/RunningScriptRow.tsx": 1,
     "apps/desktop/src/features/session/components/AgentCard/AgentCardTitle.tsx": 1,
@@ -420,7 +416,8 @@
     "packages/ui/src/components/TermHint/index.tsx": 1,
     "packages/ui/src/components/Tooltip.tsx": 1,
     "packages/ui/src/components/WorkTree/WorkNodeCenter.tsx": 2,
-    "packages/ui/src/selectedRow.ts": 1
+    "packages/ui/src/selectedRow.ts": 1,
+    "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 2
   },
   "raw-leading": {
     "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
@@ -533,7 +530,6 @@
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/index.tsx": 1,
     "apps/desktop/src/features/integrations/components/LaunchSessionPanel/LaunchedNotice.tsx": 1,
     "apps/desktop/src/features/integrations/components/ToolSettingsScope/GithubAccountRows/AllWorkspacesRow.tsx": 1,
-    "apps/desktop/src/features/integrations/github/components/LinkIssueToPrPopover.tsx": 2,
     "apps/desktop/src/features/notifications/components/NotificationCenter/index.tsx": 1,
     "apps/desktop/src/features/notifications/components/NotificationsStudio/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderConnect/EscapeHatch.tsx": 1,
@@ -565,6 +561,7 @@
     "packages/ui/src/components/FieldRow.tsx": 2,
     "packages/ui/src/components/RemoteImage/index.tsx": 1,
     "packages/ui/src/components/TermHint/index.tsx": 1,
-    "packages/ui/src/components/Tooltip.tsx": 1
+    "packages/ui/src/components/Tooltip.tsx": 1,
+    "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 2
   }
 }

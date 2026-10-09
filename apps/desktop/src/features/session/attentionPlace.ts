@@ -8,6 +8,7 @@ import type {
   TurnState,
 } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace } from '../../store';
+import { branchLandingTabOf } from '../branch/branchLandingTab';
 import type { PlaceRequest } from '../../store/slices/navigation/types';
 import { agentHasUnread } from '../../store/slices/agents/agentHasUnread';
 import { resolveAttentionOf } from '../../store/slices/resolve/resolveAttention';
@@ -66,7 +67,10 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
     return branchPlace({ sessionId, tab: comments === 0 && notes > 0 ? 'files' : 'comments' });
   }
   if (reason === 'pr-approved' || reason === 'changes-requested') {
-    return branchPlace({ sessionId, tab: 'comments' });
+    return branchPlace({
+      sessionId,
+      tab: branchLandingTabOf({ hasPullRequest: true, deepLink: 'pr' }),
+    });
   }
   if (reason === null) {
     return sessionPlace({ sessionId });

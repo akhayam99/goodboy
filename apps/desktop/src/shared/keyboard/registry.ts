@@ -19,6 +19,7 @@ export type ShortcutScope =
   | 'list'
   | 'selection'
   | 'review'
+  | 'pullRequest'
   | 'diff'
   | 'terminal'
   | 'composer'
@@ -34,6 +35,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   list: 'In the Tasks and Notifications lists',
   selection: 'In a list with checkboxes',
   review: 'On the Comments tab',
+  pullRequest: 'On the Pull request tab',
   diff: 'On the Files tab',
   terminal: 'In the terminal',
   composer: 'Where a chat composer is open',
@@ -485,6 +487,13 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'review',
     scope: 'review',
+  },
+  'pullRequest.edit': {
+    combo: 'KeyE',
+    label: 'Edit title',
+    plane: 'app',
+    group: 'review',
+    scope: 'pullRequest',
   },
   'review.reply': { combo: 'KeyR', label: 'Reply', plane: 'app', group: 'review', scope: 'review' },
   'review.skip': { combo: 'KeyS', label: 'Skip', plane: 'app', group: 'review', scope: 'review' },

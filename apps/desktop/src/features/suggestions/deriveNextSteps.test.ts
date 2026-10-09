@@ -134,13 +134,13 @@ describe('deriveNextSteps', () => {
     expect(derive({}).some((suggestion) => suggestion.kind === 'plan-ready')).toBe(true);
   });
 
-  it('carries the eligible thread count and needs a pull request', () => {
-    const suggestions = derive({ hasPullRequest: true, eligibleThreadCount: 1 });
+  it('carries the fixable comment count of the selected source, on any host', () => {
+    const suggestions = derive({ hasPullRequest: false, eligibleThreadCount: 1 });
     expect(
       suggestions.find((suggestion) => suggestion.kind === 'resolve-threads')?.payload,
     ).toEqual({ eligibleThreadCount: 1 });
     expect(
-      derive({ hasPullRequest: false, eligibleThreadCount: 1 }).some(
+      derive({ hasPullRequest: true, eligibleThreadCount: 0 }).some(
         (suggestion) => suggestion.kind === 'resolve-threads',
       ),
     ).toBe(false);

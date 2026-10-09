@@ -19,6 +19,7 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
+import { branchPlace } from '../../../store/slices/navigation/place';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { createAgentEventName } from '../../session/createAgentEventName';
@@ -202,7 +203,8 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     group: 'open',
     shortcut: 'lens.review',
     when: isLive,
-    run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'review' }),
+    run: ({ facts, env }) =>
+      env.getState().navigate({ to: branchPlace({ sessionId: facts.sessionId, tab: 'comments' }) }),
   },
   {
     id: 'session.diff',

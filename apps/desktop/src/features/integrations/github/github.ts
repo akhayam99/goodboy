@@ -323,24 +323,6 @@ export const ghBaseBranches = async (
   return { defaultBranch, branches };
 };
 
-export const ghRepoCollaborators = async (
-  cwd: string,
-  workspaceId?: string,
-  projectId?: string,
-): Promise<ReadonlyArray<string>> => {
-  const res = await tauriGhRunner.run(
-    ['api', 'repos/{owner}/{repo}/collaborators?per_page=100', '--jq', '.[].login'],
-    { cwd, workspaceId, projectId },
-  );
-  if (res.exitCode !== 0) {
-    return [];
-  }
-  return res.stdout
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
-};
-
 export const ghCommitDiff = async (repo: string, sha: string): Promise<string> => {
   const res = await tauriGhRunner.run([
     'api',

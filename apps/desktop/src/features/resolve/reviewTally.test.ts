@@ -4,7 +4,12 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ResolveStage } from '@goodboy/types';
 import type { ResolveWord } from './commentProjection';
-import { reviewTallyOf, reviewTallyOfWords, reviewTallyParts } from './reviewTally';
+import {
+  fixableThreadIdsOf,
+  reviewTallyOf,
+  reviewTallyOfWords,
+  reviewTallyParts,
+} from './reviewTally';
 import { queueRowAt } from './testing/queueRow';
 
 const SOURCE_ROOT = join(__dirname, '..', '..');
@@ -96,6 +101,21 @@ describe('reviewTallyOf', () => {
   });
 });
 
+describe('fixableThreadIdsOf', () => {
+  it('lists the open and the couldnt-fix comments, the same ones the tally counts as fixable', () => {
+    const rows = [
+      queueRowAt({ stage: 'new', threadId: 'PRRT_open' }),
+      queueRowAt({ stage: 'failed', failedStep: 'run', threadId: 'PRRT_run' }),
+      queueRowAt({ stage: 'failed', failedStep: 'push', threadId: 'PRRT_push' }),
+      queueRowAt({ stage: 'working', threadId: 'PRRT_working' }),
+      queueRowAt({ stage: 'asking', threadId: 'PRRT_asking' }),
+    ];
+
+    expect(fixableThreadIdsOf({ rows })).toEqual(['PRRT_open', 'PRRT_run']);
+    expect(fixableThreadIdsOf({ rows })).toHaveLength(reviewTallyOf({ rows }).fixable);
+  });
+});
+
 const SURFACES = [
   'features/resolve/components/ReviewFlow/ReviewList.tsx',
   'features/resolve/components/ReviewFlow/ResolveRunStatus.tsx',
@@ -105,6 +125,9 @@ const SURFACES = [
   'features/actions/kinds/review.ts',
   'features/session/hooks/usePageSummaries/index.ts',
   'features/session/timeline/resolveActivity.ts',
+  'features/suggestions/useSessionSuggestions/index.ts',
+  'features/suggestions/useSuggestionActions/index.ts',
+  'features/workspace/components/StageBoard/StageBoardCard/useDynamicActions/index.ts',
   'features/session/components/SessionWorkspace/parts/TimelinePane/NeedsYouBlock.tsx',
 ];
 

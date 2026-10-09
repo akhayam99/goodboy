@@ -270,6 +270,7 @@ It includes:
 - The container and branches being created
 - Issues linked and unlinked
 - One pull request per project, from opened to merged or closed
+- Your edits of a pull request's title and description stay in the page's Activity until you leave the session (memory only, not a recorded event)
 - Runs started, stopped and archived
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
@@ -413,9 +414,10 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   resolver replaced it in E7-5, restored here.
 - The resolve-threads card ("Fix N") never starts an agent: it
   sends a `fix` request (`requestReview`) with the fixable comments and opens
-  the launch panel on the Comments tab, pre-filled. The board card "Resolve N
-  comments" does the same. N and the comments come from `eligibleReviewThreads`,
-  which reads the one fixable predicate (`isFixableThread`).
+  the launch panel on the Comments tab, pre-filled. The board card "Fix N"
+  does the same. N and the comments come from the fixable part of `reviewTally`
+  (`useFixableThreadIds`) for the selected review source, so a GitLab or Bitbucket
+  pull request counts like a GitHub one.
 
 ## Agents
 

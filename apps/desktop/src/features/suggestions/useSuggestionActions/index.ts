@@ -1,7 +1,7 @@
 import { NAMES } from '../../../shared/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
+import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
@@ -14,7 +14,7 @@ import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent
 import { fixLabel } from '../../resolve/reviewLaunchCopy';
 import { prLifecycleFailureTitle } from '../../review/prLifecycle';
 import { requestReview } from '../../review/reviewRequest';
-import { eligibleReviewThreads } from '../eligibleThreads';
+import { useFixableThreadIds } from '../../resolve/useFixableThreadIds';
 import { useMountProposalActions } from '../useMountProposalActions';
 import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
@@ -66,7 +66,6 @@ export type SuggestionActionResolver = (params: {
 }) => SuggestionActions;
 
 const NO_ACTIONS: SuggestionActions = { primary: null, onDismiss: null };
-const EMPTY_ROWS: ReadonlyArray<ResolveThread> = [];
 
 type StartRebaseParams = {
   readonly target: RebaseSuggestionTarget;
@@ -79,7 +78,6 @@ export const useSuggestionActions = ({
 }: Params): SuggestionActionResolver => {
   const sessionId = session.id;
   const openAgentQuestion = useOpenAgentQuestion({ sessionId });
-  const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
   const mounts = useAppStore(
     (state) =>
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
@@ -94,7 +92,6 @@ export const useSuggestionActions = ({
   );
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
-  const rows = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? EMPTY_ROWS);
   const navigate = useAppStore((state) => state.navigate);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const proposalActions = useMountProposalActions({ sessionId });
@@ -138,12 +135,9 @@ export const useSuggestionActions = ({
     status: behind?.status ?? null,
   });
 
-  const unresolvedThreads = useMemo(() => eligibleReviewThreads({ github, rows }), [github, rows]);
+  const threadIds = useFixableThreadIds({ sessionId });
 
   const openFixPanel = async (): Promise<void> => {
-    const threadIds = unresolvedThreads.flatMap((thread) =>
-      thread.head.threadId == null ? [] : [thread.head.threadId],
-    );
     if (threadIds.length === 0) {
       return;
     }
@@ -197,7 +191,7 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'resolve-threads') {
       return {
         primary: {
-          label: fixLabel({ count: unresolvedThreads.length }),
+          label: fixLabel({ count: threadIds.length }),
           isDisabled: false,
           failureTitle: "The fix panel didn't open",
           run: openFixPanel,

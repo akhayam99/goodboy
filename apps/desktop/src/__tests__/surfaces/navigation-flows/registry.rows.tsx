@@ -49,13 +49,13 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'pages menu: choosing Branch lands on the Comments tab',
+    name: 'pages menu: choosing Branch lands on the Pull request tab',
     covers: ['navigate', 'lens:branch'],
     open: async () => {
       await clickButton(/^Session/);
       await click(await screen.findByRole('menuitemradio', { name: /^Branch/ }));
     },
-    lands: both(lens('branch'), branchTab('comments')),
+    lands: both(lens('branch'), branchTab('pr')),
   },
   {
     name: 'palette: Open Comments finds the Comments tab',
@@ -76,16 +76,19 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('comments'),
   },
   {
-    name: 'a pull request address lands on Comments while that tab is unavailable',
+    name: 'a pull request address lands on the Pull request tab, first of the five',
     covers: ['navigate', 'tab:pr'],
     open: async (ctx) => {
       useAppStore.getState().navigate({ to: branchPlace({ sessionId: ctx.sessionId, tab: 'pr' }) });
       await settle();
     },
     lands: async (ctx) => {
-      await branchTab('comments')(ctx);
+      await branchTab('pr')(ctx);
       await waitFor(
-        () => expect(screen.queryByRole('tab', { name: /^Pull request/ })).toBeNull(),
+        () =>
+          expect(screen.getAllByRole('tab').map((tab) => tab.textContent ?? '')[0]).toMatch(
+            /^Pull request/,
+          ),
         WAIT,
       );
     },

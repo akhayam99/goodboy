@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import type { MountId, SessionExternalTask, SessionId } from '@goodboy/types';
 import {
   Button,
-  Checkbox,
   FieldRow,
   FormActions,
   formatError,
@@ -11,9 +10,10 @@ import {
   SectionHeader,
   SegmentedTabs,
   Skeleton,
+  Switch,
   Textarea,
 } from '@goodboy/ui';
-import { AlertTriangle, ArrowRight, GitBranch, PenLine, RotateCw } from 'lucide-react';
+import { AlertTriangle, ArrowRight, PenLine, RotateCw } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
 import { usePrDraftAgentRunning } from '../../usePrDraftAgentRunning';
 import { closingIssueReferences } from '../../closingIssueReferences';
@@ -243,15 +243,6 @@ export const CreatePrPanel = ({
     <div className="flex min-h-0 flex-1 flex-col">
       <FormPage>
         <section className="flex flex-col gap-6">
-          <SectionHeader
-            label="Open a pull request"
-            action={
-              <span className="inline-flex items-center gap-1 font-mono text-meta text-muted-foreground">
-                <GitBranch size={11} aria-hidden />
-                {branch ?? 'no branch'}
-              </span>
-            }
-          />
           <section className="flex flex-col">
             <SectionHeader
               label="How"
@@ -262,7 +253,7 @@ export const CreatePrPanel = ({
                   size="sm"
                   options={[
                     { value: 'manual', label: 'Manual', icon: PenLine },
-                    { value: 'agent', label: 'Write it', icon: CONCEPT_ICONS.agents },
+                    { value: 'agent', label: 'Draft with an agent', icon: CONCEPT_ICONS.agents },
                   ]}
                   value={mode}
                   onChange={setMode}
@@ -368,11 +359,13 @@ export const CreatePrPanel = ({
                 </FieldRow>
               </>
             )}
-            <FieldRow
-              label="Open as draft"
-              help="Creates the pull request in GitHub's draft state."
-            >
-              <Checkbox checked={draft} onChange={setDraft} disabled={busy !== null} />
+            <FieldRow label="Open as draft" help="Reviewers are asked once you mark it ready.">
+              <Switch
+                ariaLabel="Open as draft"
+                checked={draft}
+                onChange={setDraft}
+                disabled={busy !== null}
+              />
             </FieldRow>
           </section>
         </section>
@@ -453,7 +446,7 @@ export const CreatePrPanel = ({
                 <span className="text-shimmer">Creating…</span>
               ) : (
                 <>
-                  Create PR
+                  Create pull request
                   <ArrowRight size={ICON_SIZE.row} aria-hidden />
                 </>
               )}

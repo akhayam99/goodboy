@@ -177,11 +177,11 @@ describe('the pages under the open session', () => {
     expect(useAppStore.getState().activeLens[open.id]).toBe('agents');
   });
 
-  it('opens the Branch page on Comments from its row', () => {
+  it('opens the Branch page on Files from its row while the branch has no pull request', () => {
     mountOpen();
     fireEvent.click(pagesOf().getByRole('button', { name: /^Branch/ }));
     expect(useAppStore.getState().activeLens[open.id]).toBe('branch');
-    expect(useAppStore.getState().branchTab[open.id]).toBe('comments');
+    expect(useAppStore.getState().branchTab[open.id]).toBe('files');
   });
 
   it('folds with Left on the open row and opens again with Right', () => {

@@ -255,7 +255,7 @@ describe('navigation slice', () => {
 
     store.getState().forward();
     store.getState().forward();
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/files`);
   });
 
   it('truncates the forward entries on a new push', () => {
@@ -325,13 +325,13 @@ describe('navigation slice', () => {
     expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('opens the pull request as the Branch, with its Comments, and Back leaves it', () => {
+  it('opens the pull request as the Branch, on its Pull request tab, and Back leaves it', () => {
     const store = makeStore();
     store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'linear' }) });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
     expect(store.getState().activeLens[S1]).toBe('branch');
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/pr`);
 
     store.getState().back();
     expect(store.getState().activeLens[S1]).toBe('linear');
@@ -525,14 +525,14 @@ describe('navigation slice', () => {
       },
     });
     store.getState().openStudio({ studio: { kind: 'workflow' } });
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments+workflows`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/files+workflows`);
 
     store.getState().back();
     expect(store.getState().appStudio).toEqual({
       kind: 'inbox',
       focus: { provider: 'linear', kind: null, recordKey: 'NW-214', sessionId: null },
     });
-    expect(keyOf(store)).toBe(`s/${S1}/branch/comments+inbox/linear/NW-214`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/files+inbox/linear/NW-214`);
 
     store.getState().back();
     expect(store.getState().appStudio).toBeNull();
@@ -797,8 +797,8 @@ const depthOf = (store: ReturnType<typeof makeStore>): number =>
 describe('Branch page', () => {
   it('opens the canonical Branch address from every former door', () => {
     const doors = [
-      { request: sessionPlace({ sessionId: S1, lens: 'review' }), tab: 'comments' },
-      { request: sessionPlace({ sessionId: S1, lens: 'pr' }), tab: 'comments' },
+      { request: sessionPlace({ sessionId: S1, lens: 'review' }), tab: 'files' },
+      { request: sessionPlace({ sessionId: S1, lens: 'pr' }), tab: 'pr' },
       {
         request: sessionPlace({
           sessionId: S1,
@@ -824,9 +824,30 @@ describe('Branch page', () => {
     }
   });
 
+  it('lands the Branch door on the pull request once the branch has one', () => {
+    const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    expect(branchOf(store)?.tab).toBe('pr');
+  });
+
+  it('keeps a comment link on Comments whether or not the branch has a pull request', () => {
+    const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
+    store.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'review',
+        target: { kind: 'thread', threadId: 'gh:PRRT_42' },
+      }),
+    });
+    expect(branchOf(store)).toMatchObject({ tab: 'comments', threadId: 'gh:PRRT_42' });
+  });
+
   it('reads the same trail whichever door opened it', () => {
     const keys = (['review', 'pr'] as const).map((lens) => {
       const store = makeStore();
+      store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
       store.getState().navigate({ to: BOARD_PLACE });
       store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
       store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens }) });

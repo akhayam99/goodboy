@@ -174,6 +174,7 @@ export const seedActionState = ({
         ? {}
         : {
             [SESSION]: {
+              detail: null,
               ...(state.sessionGithub[SESSION] ?? {}),
               pr: { url: seed.prUrl },
             } as never,

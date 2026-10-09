@@ -66,6 +66,8 @@ const headerPart = (selector: string): HTMLElement => {
 
 const openBranchOnComments = async (ctx: Ctx): Promise<void> => {
   await clickFirstButton(/^Open PR #\d+ of /);
+  await branchTab('pr')(ctx);
+  await click(await screen.findByRole('tab', { name: /^Comments/ }));
   await branchTab('comments')(ctx);
   frame = { title: headerPart('h1'), tabs: headerPart('[role="tablist"]') };
 };

@@ -1,4 +1,4 @@
-import type { PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
+import type { PrCheckRun, PrDetail, PullRequestChecksView, PullRequestState } from '@goodboy/types';
 
 export type ChecksHost = 'gitlab' | 'bitbucket';
 
@@ -20,6 +20,32 @@ type Params = {
   readonly isDetailLoading: boolean;
   readonly detailError: string | null;
   readonly hasFetchedDetail: boolean;
+  readonly canReadChecks: boolean;
+  readonly portChecks: PullRequestChecksView | null;
+};
+
+const portViewOf = ({
+  host,
+  url,
+  portChecks,
+}: {
+  readonly host: ChecksHost;
+  readonly url: string | null;
+  readonly portChecks: PullRequestChecksView | null;
+}): ChecksView => {
+  if (portChecks === null) {
+    return { kind: 'loading' };
+  }
+  if (portChecks.read === 'denied') {
+    return { kind: 'denied', error: portChecks.error };
+  }
+  if (portChecks.read === 'failed') {
+    return { kind: 'failed', error: portChecks.error };
+  }
+  if (portChecks.read === 'unsupported') {
+    return { kind: 'host', host, url };
+  }
+  return { kind: 'ready', checks: portChecks.runs };
 };
 
 export const checksViewOf = ({
@@ -30,9 +56,13 @@ export const checksViewOf = ({
   isDetailLoading,
   detailError,
   hasFetchedDetail,
+  canReadChecks,
+  portChecks,
 }: Params): ChecksView => {
   if (hostKind === 'gitlab' || hostKind === 'bitbucket') {
-    return { kind: 'host', host: hostKind, url: hostUrl };
+    return canReadChecks
+      ? portViewOf({ host: hostKind, url: hostUrl, portChecks })
+      : { kind: 'host', host: hostKind, url: hostUrl };
   }
   if (pr === null) {
     return { kind: 'no-pr' };

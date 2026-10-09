@@ -19,4 +19,5 @@ export const localReviewSource = ({ closeNote }: Params): ReviewSource => ({
   },
   readRemoteHead: async () => null,
   commitLink: () => null,
+  pullRequest: null,
 });
