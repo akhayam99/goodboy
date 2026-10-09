@@ -305,12 +305,12 @@ export const clearResolvedHelperNotifications = async ({
          WHERE t.session_id = notifications.session_id AND t.kind = 'summarizer'
            AND t.recorded_at > notifications.ts))
        OR (kind = 'summarizer-degraded' AND coalesce_key LIKE 'step-summary-degraded:%' AND EXISTS (
-         SELECT 1 FROM agents a
+         SELECT 1 FROM live_agents a
          WHERE a.id = json_extract(notifications.action, '$.agentId')
            AND (a.output_summary IS NULL OR a.output_summary NOT LIKE '[unsummarized step output%')))
        OR (title IN ('Couldn''t read the orchestrator''s reply', 'The orchestrator failed', 'Orchestrated run blocked')
          AND session_id IS NOT NULL AND EXISTS (
-           SELECT 1 FROM agents a
+           SELECT 1 FROM live_agents a
            WHERE a.session_id = notifications.session_id AND a.started_at > notifications.ts))`,
   );
 };
