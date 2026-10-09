@@ -1,7 +1,6 @@
 {
   "app/components/SideColumn/ColumnToggleButton.tsx": 1,
   "app/components/SideColumn/ReportBugButton.tsx": 1,
-  "features/branch/components/BranchHeader/BranchSwitcherRow.tsx": 1,
   "features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": 1,
   "features/chat/components/ChatView/parts/QuestionWaitingPill.tsx": 1,
   "features/inbox/components/InboxStudio/InboxFacetRail.tsx": 1,
@@ -23,8 +22,6 @@
   "features/settings/components/SettingsStudio/FlowSourcePicker.tsx": 1,
   "features/settings/components/SettingsStudio/SettingsColumnNav.tsx": 1,
   "features/storage/components/BranchesPage/RecentlyDeletedBranches.tsx": 1,
-  "features/suggestions/components/NextStepSlot/NextStepRow.tsx": 1,
-  "features/workflows/components/RunControls/RunAutonomyItems.tsx": 1,
   "features/workspace/components/WorkspaceSwitcher/index.tsx": 1,
   "features/workspace-chat/components/ChatList/ChatListGroup.tsx": 1,
   "features/workspace-chat/components/ChatList/ChatUndoRow.tsx": 1,

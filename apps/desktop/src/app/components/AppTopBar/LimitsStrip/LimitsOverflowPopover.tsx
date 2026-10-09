@@ -106,7 +106,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
                   onOpen(chip);
                 }}
                 className={cn(
-                  'flex h-8 w-full items-center gap-2 rounded-sm px-2 text-label',
+                  'flex min-h-8 w-full items-center gap-2 rounded-sm px-2 text-label',
                   ROW_INTERACTIVE,
                 )}
               >

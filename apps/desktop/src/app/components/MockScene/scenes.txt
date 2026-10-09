@@ -126,7 +126,9 @@ controls-topbar
 conversation
 crash-report
 design-comments
+design-controls-scale
 design-scale
+design-scale-ladders
 diff-notes
 drawer-ask-draft
 drawer-headers

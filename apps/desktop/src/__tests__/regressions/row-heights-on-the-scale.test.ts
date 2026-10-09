@@ -15,16 +15,7 @@ type Pending = {
   readonly owner: string;
 };
 
-const PENDING: ReadonlyArray<Pending> = [
-  {
-    path: 'apps/desktop/src/features/branch/components/BranchHeader/BranchSwitcherMenu.tsx',
-    owner: 'd7-headers owns the branch header',
-  },
-  {
-    path: 'apps/desktop/src/features/branch/components/BranchHeader/BranchSwitcherRow.tsx',
-    owner: 'd7-headers owns the branch header',
-  },
-];
+const PENDING: ReadonlyArray<Pending> = [];
 
 const NOT_A_ROW: ReadonlyArray<{ readonly path: string; readonly reason: string }> = [
   {

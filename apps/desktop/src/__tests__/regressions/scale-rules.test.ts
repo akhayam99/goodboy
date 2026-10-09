@@ -44,28 +44,7 @@ type Pending = {
   readonly owner: string;
 };
 
-const PENDING: ReadonlyArray<Pending> = [
-  {
-    path: 'apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.tsx',
-    rule: 'mono',
-    owner: 'd7-headers rewrites the header band',
-  },
-  {
-    path: 'packages/ui/src/components/Notice/index.tsx',
-    rule: 'iconSize',
-    owner: 'c6-sweep rewrites the notice',
-  },
-  {
-    path: 'packages/ui/src/components/EmptyLine.tsx',
-    rule: 'iconSize',
-    owner: 'c6-sweep rewrites the empty line',
-  },
-  {
-    path: 'apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx',
-    rule: 'iconSize',
-    owner: 'e2-gitlab owns the adapter',
-  },
-];
+const PENDING: ReadonlyArray<Pending> = [];
 
 const keyOf = ({ path, rule }: { readonly path: string; readonly rule: Rule }): string =>
   `${path}#${rule}`;

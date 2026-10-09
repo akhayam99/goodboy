@@ -2,6 +2,7 @@ import { useId, useState, type ReactNode } from 'react';
 import { ChevronRight, CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
 import { cn } from '../../cn';
 import { FOCUS_RING } from '../../focusRing';
+import { ICON_SIZE } from '../../iconSize';
 import { tintClasses } from '../../tint';
 import { ToneBar } from '../ToneBar';
 
@@ -133,7 +134,7 @@ export const Notice = ({
               )}
             >
               <ChevronRight
-                size={10}
+                size={ICON_SIZE.mark}
                 aria-hidden
                 className={cn('motion-safe:transition-transform', isDetailOpen && 'rotate-90')}
               />

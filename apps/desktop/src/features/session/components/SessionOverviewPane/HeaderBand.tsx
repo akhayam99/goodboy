@@ -62,7 +62,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
             />
             <div className="flex items-center justify-between gap-2 text-meta">
               <span className="min-w-0 truncate text-danger">{rename.error ?? ''}</span>
-              <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
+              <span className="shrink-0 tabular-nums text-muted-foreground">
                 {rename.draft.length}/{rename.maxLength}
               </span>
             </div>

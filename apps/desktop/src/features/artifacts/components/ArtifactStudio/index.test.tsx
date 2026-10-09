@@ -243,6 +243,7 @@ describe('ArtifactStudio list', () => {
   });
 
   it('says there is nothing yet when the session has no artifact', () => {
+    state.sessionArtifacts = { 'sess-1': [] };
     renderStudio();
     expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
     expect(screen.getByText('No artifacts yet')).toBeDefined();

@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import type { CrumbMenuGroup, CrumbMenuRow } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn, type CrumbMenuGroup, type CrumbMenuRow } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BranchSwitcherRow } from './BranchSwitcherRow';
 
@@ -43,7 +43,10 @@ export const BranchSwitcherMenu = ({ groups, count, canCreate, onChoose, onNewBr
           tabIndex={-1}
           data-menu-label="New branch"
           onClick={onNewBranch}
-          className="flex h-7.5 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground outline-none hover:bg-hover hover:text-foreground focus:bg-hover focus:text-foreground focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors"
+          className={cn(
+            'flex min-h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground outline-none hover:text-foreground focus:text-foreground',
+            ROW_INTERACTIVE,
+          )}
         >
           <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           New branch

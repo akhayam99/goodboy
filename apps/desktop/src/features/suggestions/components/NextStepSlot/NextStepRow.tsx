@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Ellipsis } from 'lucide-react';
-import { AnchoredPopover, Button, IconButton, cn, tintClasses, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Button,
+  IconButton,
+  ROW_INTERACTIVE,
+  cn,
+  tintClasses,
+  useDropdown,
+} from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
@@ -155,7 +163,10 @@ export const NextStepRow = ({
             dropdown.close();
             onNotNow();
           }}
-          className="flex w-full items-center rounded-md px-2 py-2 text-left text-body text-foreground transition-colors hover:bg-hover"
+          className={cn(
+            'flex w-full items-center rounded-md px-2 py-2 text-left text-body text-foreground',
+            ROW_INTERACTIVE,
+          )}
         >
           Not now
         </button>

@@ -1,6 +1,1 @@
-{
-  "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx#iconSize": 1,
-  "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.tsx#mono": 1,
-  "packages/ui/src/components/EmptyLine.tsx#iconSize": 1,
-  "packages/ui/src/components/Notice/index.tsx#iconSize": 1
-}
+{}

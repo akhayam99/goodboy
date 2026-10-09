@@ -153,14 +153,16 @@ describe('chats slice', () => {
     holder.backend = { ...backend, settleStreaming };
     const { slice, read } = harness({});
 
-    await expect(slice.loadChats({ workspaceId: WORKSPACE })).rejects.toThrow('database is locked');
+    await slice.loadChats({ workspaceId: WORKSPACE });
     expect(read().hasSettledChatStreams).toBe(false);
+    expect(read().chatLoadErrors[WORKSPACE]).toContain('database is locked');
 
     await slice.loadChats({ workspaceId: WORKSPACE });
     await slice.loadChats({ workspaceId: WORKSPACE });
 
     expect(settleStreaming).toHaveBeenCalledTimes(2);
     expect(read().hasSettledChatStreams).toBe(true);
+    expect(read().chatLoadErrors[WORKSPACE]).toBeNull();
   });
 
   it('creates a chat on top of the list with a placeholder title', async () => {

@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import { cn } from '../cn';
+import { ICON_SIZE } from '../iconSize';
 
 type IconProps = {
   readonly size?: number;
@@ -22,7 +23,7 @@ export const EmptyLine = ({ icon: Icon, action, className, children }: Props) =>
       className,
     )}
   >
-    {Icon === undefined ? null : <Icon size={13} aria-hidden className="shrink-0" />}
+    {Icon === undefined ? null : <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
     <p className="min-w-0 flex-1">{children}</p>
     {action ?? null}
   </div>
