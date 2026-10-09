@@ -1277,7 +1277,8 @@ key (`F`, `Esc`) is drawn as the small cap, and the hint is `aria-hidden`.
 `KbdPill` is `Kbd look="cap"` and takes no `className`; `kbd-overrides.test.ts`
 holds it. A hint shows only on a control whose shortcut is registered. A control
 that lists a shortcut in its tooltip (the Link work chip) does not repeat it as a
-cap. `Kbd` sets `data-look` so a test names the look without reading a class.
+cap. `Kbd` sets `data-look` and, on a filled button, `data-on-tone`, so a test names the look
+without reading a class.
 
 ## Notices
 

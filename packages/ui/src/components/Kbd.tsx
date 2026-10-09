@@ -26,6 +26,7 @@ export const Kbd = ({ look = 'inline', isOnTone = false, className, ...rest }: K
   return (
     <kbd
       data-look={look}
+      data-on-tone={isOnTone ? 'true' : undefined}
       className={cn(LOOK_CLASSES[look], isOnTone && ON_TONE_CLASSES[look], className)}
       {...rest}
     />

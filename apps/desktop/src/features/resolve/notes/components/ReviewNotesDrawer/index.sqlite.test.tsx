@@ -146,7 +146,7 @@ describe('the review notes drawer on sqlite', () => {
     fixes.forEach((fix) => {
       const hint = fix.querySelector('kbd');
       expect(hint).not.toBeNull();
-      expect(hint?.className).not.toContain('text-on-tone');
+      expect(hint?.hasAttribute('data-on-tone')).toBe(false);
     });
   });
 

@@ -39,6 +39,21 @@ describe('Kbd', () => {
     expect(classes.some((name) => /^(h|min-h|min-w)-/.test(name))).toBe(false);
   });
 
+  it('marks an on-tone key and leaves an ordinary one unmarked', () => {
+    const { container } = render(
+      <>
+        <Kbd isOnTone>F</Kbd>
+        <Kbd>G</Kbd>
+      </>,
+    );
+    const [onTone, plain] = [...container.querySelectorAll('kbd')];
+
+    expect(onTone?.getAttribute('data-on-tone')).toBe('true');
+    expect(classesOf({ element: onTone })).toContain('text-on-tone');
+    expect(plain?.hasAttribute('data-on-tone')).toBe(false);
+    expect(classesOf({ element: plain })).not.toContain('text-on-tone');
+  });
+
   it('keeps the boxed cap for a single key inside a button', () => {
     const { container } = render(<Kbd look="cap">A</Kbd>);
     const kbd = container.querySelector('kbd');

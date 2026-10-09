@@ -81,6 +81,7 @@ export const NoteItem = ({
   return (
     <li
       data-note-thread={entry.threadId}
+      data-indented={isIndented ? 'true' : undefined}
       className={isIndented ? 'relative list-none pl-7' : 'relative list-none'}
     >
       {inclusion === null ? null : (

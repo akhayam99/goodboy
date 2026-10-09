@@ -585,10 +585,10 @@ describe('ProjectMountRow availability', () => {
 
   it('keeps room at the end of the branch cell for the put on branch button', () => {
     renderRow({ row: { ...baseRow } });
-    expect(screen.getByTestId('project-mount-branch-cell').className).toContain('pr-7');
+    expect(screen.getByTestId('project-mount-branch-cell').dataset.keepsActionRoom).toBe('true');
     cleanup();
     renderRow({ row: { ...baseRow, isAttached: false } });
-    expect(screen.getByTestId('project-mount-branch-cell').className).not.toContain('pr-7');
+    expect(screen.getByTestId('project-mount-branch-cell').dataset.keepsActionRoom).toBeUndefined();
   });
 
   it('names the row and its action menu after the mount label', () => {

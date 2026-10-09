@@ -86,7 +86,7 @@ describe('the review notes drawer by lane state', () => {
     expect(
       within(panel).getAllByRole('checkbox', { name: 'Include in the fix' }).length,
     ).toBeLessThan(6);
-    items.forEach((item) => expect(item.className).toContain('pl-7'));
+    items.forEach((item) => expect(item.dataset.indented).toBe('true'));
   });
 
   it('offers Fix, Close and Delete on an open note', async () => {
