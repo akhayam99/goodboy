@@ -22,7 +22,7 @@ Give a goal and let a model pick each next step, with its role, provider, model,
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-light.webp" alt="The workflow builder in Custom mode: Describe the steps, Auto and Generate plan, the Draft with planner button, an Add step row and the Save as preset switch next to Start workflow">
 </picture>
 
-Write the steps yourself with **Add step**, describe them and press **Generate plan**, or press **Draft with planner**. **Save as preset** keeps what you changed.
+In **Describe steps** mode, write the steps yourself with **Add step**, describe them and press **Generate plan**, or press **Draft with planner**. **Save as preset** keeps what you changed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-dark.webp">

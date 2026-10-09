@@ -670,7 +670,7 @@
         {
           "id": "preset-and-custom",
           "title": "Preset and Custom",
-          "copy": "Write the steps yourself with Add step, describe them and press Generate plan, or press Draft with planner.",
+          "copy": "In Describe steps mode, write the steps yourself with Add step, describe them and press Generate plan, or press Draft with planner.",
           "image": "workflow-builder-preset",
           "isNew": false
         },
