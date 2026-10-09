@@ -1,14 +1,6 @@
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import {
-  Button,
-  ROW_INTERACTIVE,
-  Tooltip,
-  WORK_ROW,
-  cn,
-  tintClasses,
-  useEscapeLayer,
-} from '@goodboy/ui';
+import { Button, ROW_INTERACTIVE, Tooltip, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
@@ -26,6 +18,7 @@ import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
+import { useRowCard } from './useRowCard';
 
 type TimelineRowExpansion = {
   readonly isExpanded: boolean;
@@ -87,8 +80,7 @@ export const TimelineStreamRow = ({
   contextMenu,
   identity = null,
 }: Props) => {
-  const [isCardOpen, setIsCardOpen] = useState(false);
-  useEscapeLayer(() => setIsCardOpen(false), isCardOpen);
+  const card = useRowCard({ isEnabled: identity !== null });
   const hover = useHoverMarkViewed({
     sessionId,
     agentId: agentIdOf({ item }),
@@ -101,10 +93,8 @@ export const TimelineStreamRow = ({
     item.rowState.ask?.kind !== 'groupChild' &&
     rowStateTone({ state: item.rowState }) === 'warning';
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
-    const isPlainKey = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
-    if (identity !== null && isPlainKey && event.key === 'i') {
-      event.preventDefault();
-      setIsCardOpen((isOpen) => !isOpen);
+    card.handlers.onKeyDown(event);
+    if (event.defaultPrevented) {
       return;
     }
     if (onBranchKey !== null && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
@@ -139,7 +129,7 @@ export const TimelineStreamRow = ({
           diffStat={diffStat}
           worktrees={worktrees}
           identity={identity}
-          isCardOpen={isCardOpen}
+          isCardOpen={card.isOpen}
         />
       </span>
       {state}
@@ -203,7 +193,9 @@ export const TimelineStreamRow = ({
               type="button"
               onClick={openTarget.open}
               onKeyDown={onKeyDown}
-              onBlur={() => setIsCardOpen(false)}
+              onFocus={card.handlers.onFocus}
+              onBlur={card.handlers.onBlur}
+              onPointerDown={card.handlers.onPointerDown}
               aria-description={`${openTarget.label}, Enter`}
               aria-keyshortcuts={runLane === null ? undefined : 'Shift+Enter'}
               aria-expanded={expansion === null ? undefined : expansion.isExpanded}

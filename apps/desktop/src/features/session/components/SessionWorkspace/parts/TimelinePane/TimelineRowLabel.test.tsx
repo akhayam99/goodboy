@@ -342,7 +342,7 @@ describe('TimelineRowLabel', () => {
           entry: agentEntry({ agentKind: 'generic', name: 'Piano: migrazione' }),
           grade: 'step',
         })}
-        identity={{ hasGlyph: false, summary: null, card: null }}
+        identity={{ hasGlyph: false, roleLabel: null, summary: null, card: null }}
       />,
     );
 
@@ -350,20 +350,27 @@ describe('TimelineRowLabel', () => {
     expect(container.textContent).toBe('Piano: migrazione');
   });
 
-  it('keeps the role, model and effort in the name of the row without printing a word', () => {
+  it('names the role on the icon and keeps model and effort in the row name without printing a word', () => {
     const { container } = render(
       <TimelineRowLabel
         item={itemOf({
           entry: agentEntry({ agentKind: 'implementer', name: 'Add the banner' }),
           grade: 'step',
         })}
-        identity={{ hasGlyph: true, summary: 'Implementer, Sonnet 5.5, High', card: 'card' }}
+        identity={{
+          hasGlyph: true,
+          roleLabel: 'Implementer',
+          summary: 'Sonnet 5.5, High',
+          card: 'card',
+        }}
       />,
     );
 
-    expect(screen.getByText('Implementer, Sonnet 5.5, High').className).toContain('sr-only');
-    expect(container.querySelector('[role="img"]')).toBeNull();
-    expect(container.querySelector('[data-testid="role-glyph"]')).not.toBeNull();
+    expect(screen.getByText('Sonnet 5.5, High').className).toContain('sr-only');
+    expect(screen.getByRole('img', { name: 'Implementer' })).toBe(
+      container.querySelector('[data-testid="role-glyph"]'),
+    );
+    expect(screen.queryByText('Implementer')).toBeNull();
   });
 
   it('leaves the provider glyph off the label', () => {

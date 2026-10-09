@@ -187,7 +187,9 @@ describe('WorkflowDecisions', () => {
     seed(agents, steps);
     render(<Harness steps={steps} />);
 
-    const treeNode = within(screen.getByTestId('run-tree-row-agent-1')).getByRole('img');
+    const treeNode = within(
+      within(screen.getByTestId('run-tree-row-agent-1')).getByTestId('run-tree-rail-slot'),
+    ).getByRole('img');
     const decisionNode = within(decisionOf('step-1')).getByRole('img');
     expect(decisionNode.getAttribute('aria-label')).toBe(treeNode.getAttribute('aria-label'));
     expect(within(decisionOf('step-0')).getByRole('img', { name: 'Done' })).toBeDefined();

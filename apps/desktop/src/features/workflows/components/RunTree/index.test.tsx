@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -21,6 +21,8 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { WORK_META_COLUMN } from '@goodboy/ui';
+import { carriesSpec } from '../../../../test/classTokens';
 import { brandColor } from '../../../providers/components/provider-brand';
 import { useAppStore } from '../../../../store';
 import { RunTree } from './index';
@@ -44,6 +46,7 @@ const workflow: Workflow = {
       ordinal: 0,
       name: 'Scout',
       promptPrefix: '',
+      role: 'planner',
       modelOverride: 'claude-sonnet-4-5',
     },
     {
@@ -52,6 +55,7 @@ const workflow: Workflow = {
       ordinal: 1,
       name: 'Implement',
       promptPrefix: '',
+      role: 'implementer',
       modelOverride: 'gpt-5.1-codex',
     },
     {
@@ -224,13 +228,27 @@ const renderTree = ({
 const rowOf = (id: string): HTMLElement => screen.getByTestId(`run-tree-row-${id}`);
 
 const META_SELECTOR = {
-  model: '[data-meta-column="routing"] [data-routing-part="name"]',
-  effort: '[data-meta-column="routing"] [data-routing-part="detail"]',
+  model: '[data-meta-column="model"] [data-routing-part="name"]',
+  effort: '[data-meta-column="model"] [data-routing-part="detail"]',
   cost: '[data-meta-column="cost"]',
 } as const;
 
 const metaOf = (id: string, column: keyof typeof META_SELECTOR): string | null =>
   rowOf(id).querySelector(META_SELECTOR[column])?.textContent ?? null;
+
+const glyphOf = (id: string): HTMLElement => within(rowOf(id)).getByTestId('role-glyph');
+
+const cardAfterRest = ({ element }: { readonly element: HTMLElement }): string => {
+  vi.useFakeTimers();
+  fireEvent.mouseEnter(element);
+  act(() => {
+    vi.advanceTimersByTime(800);
+  });
+  vi.useRealTimers();
+  const text = screen.getByRole('tooltip').textContent ?? '';
+  fireEvent.mouseLeave(element);
+  return text;
+};
 
 const rowIds = (): ReadonlyArray<string> =>
   screen
@@ -308,7 +326,6 @@ describe('RunTree', () => {
     renderTree();
 
     expect(metaOf('agent-1', 'model')).toBe('Sonnet 4.5');
-    expect(screen.queryByTestId('routing-divergence')).toBeNull();
   });
 
   it('shows the model that actually ran and marks the plan it replaced', () => {
@@ -333,10 +350,9 @@ describe('RunTree', () => {
     });
     renderTree();
 
-    const ran = within(rowOf('agent-1')).getByTestId('routing-divergence');
-    expect(ran.getAttribute('data-meta-column')).toBe('routing');
     expect(metaOf('agent-1', 'model')).not.toBe('Sonnet 4.5');
     expect(metaOf('agent-1', 'cost')).toBe('$0.10');
+    expect(cardAfterRest({ element: glyphOf('agent-1') })).toContain('Planned');
   });
 
   it('shows the provider the agent runs on instead of guessing it from the model id', () => {
@@ -423,6 +439,104 @@ describe('RunTree', () => {
     onHighlight.mockClear();
     fireEvent.mouseEnter(rowOf('child-1'));
     expect(onHighlight).not.toHaveBeenCalled();
+  });
+});
+
+describe('RunTree step row grammar', () => {
+  it('draws the role as an icon with a name and prints no role word', () => {
+    renderTree();
+    const row = rowOf('agent-2');
+
+    expect(within(row).getByRole('img', { name: 'Implementer' })).toBe(glyphOf('agent-2'));
+    expect(within(row).queryByText('Implementer')).toBeNull();
+    expect(within(rowOf('agent-1')).getByRole('img', { name: /^Scout/u })).toBeDefined();
+  });
+
+  it('puts the model and the effort on the right, before the time and the cost', () => {
+    renderTree({ agentEffortOverride: { [implement.id]: 'low' } });
+    const columns = [
+      ...rowOf('agent-2').querySelectorAll(
+        '[data-meta-column="model"], [data-meta-column="stack"]',
+      ),
+    ].map((column) => column.getAttribute('data-meta-column'));
+
+    expect(columns).toEqual(['model', 'stack']);
+    expect(
+      carriesSpec({
+        element: rowOf('agent-2').querySelector('[data-meta-column="model"]'),
+        spec: WORK_META_COLUMN.model,
+      }),
+    ).toBe(true);
+    expect(
+      carriesSpec({
+        element: rowOf('agent-2').querySelector('[data-meta-column="stack"]'),
+        spec: WORK_META_COLUMN.stack,
+      }),
+    ).toBe(true);
+    expect(metaOf('agent-2', 'model')).toBe('GPT 5.1 Codex');
+    expect(metaOf('agent-2', 'effort')).toBe('Low');
+  });
+
+  it('opens the same identity card as the activity feed once the pointer rests on the icon', () => {
+    renderTree();
+
+    const card = cardAfterRest({ element: glyphOf('agent-2') });
+
+    expect(card).toContain('Implementer');
+    expect(card).toContain('Step 2 of 3');
+  });
+
+  it('opens the models card from the model on the right', () => {
+    renderTree();
+    const model = rowOf('agent-2').querySelector<HTMLElement>('[data-meta-column="model"]');
+    if (model === null) {
+      throw new Error('no model cell');
+    }
+
+    expect(cardAfterRest({ element: model })).toContain('Models, in run order');
+  });
+
+  it('opens the identity card when the row takes keyboard focus, and closes it on blur', () => {
+    renderTree();
+    const button = screen.getByRole('button', { name: 'Step 2, Implement' });
+    vi.useFakeTimers();
+
+    fireEvent.keyDown(button, { key: 'Tab' });
+    fireEvent.focus(button);
+    act(() => {
+      vi.advanceTimersByTime(799);
+    });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.getByRole('tooltip').textContent).toContain('Implementer');
+
+    fireEvent.blur(button);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('keeps a click on the icon or the model opening the step', () => {
+    const onSelect = vi.fn();
+    renderTree({ onSelect });
+
+    fireEvent.click(glyphOf('agent-2'));
+    fireEvent.click(rowOf('agent-2').querySelector('[data-meta-column="model"]')!);
+
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    expect(onSelect).toHaveBeenCalledWith(implement.id);
+  });
+
+  it('opens the card with i on the focused row', () => {
+    renderTree();
+    const button = screen.getByRole('button', { name: 'Step 2, Implement' });
+
+    fireEvent.keyDown(button, { key: 'i' });
+    expect(screen.getByRole('tooltip').textContent).toContain('Implementer');
+
+    fireEvent.keyDown(button, { key: 'i' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });
 

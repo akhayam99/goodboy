@@ -222,6 +222,7 @@ import { U23_SUMMARIZER_FAILED_SCENES } from './scenes/u23/summarizer-failed';
 import { U23_START_SCENES } from './scenes/u23/start';
 import { U23_BITBUCKET_SCENES } from './scenes/u23/bitbucket';
 import { U23_HEADERS_SCENES } from './scenes/u23/headers';
+import { U23_STEP_ROWS_SCENES } from './scenes/u23/step-rows';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -445,6 +446,7 @@ export const MOCK_SCENES = {
   ...U23_GITLAB_SCENES,
   ...U23_BITBUCKET_SCENES,
   ...U23_HEADERS_SCENES,
+  ...U23_STEP_ROWS_SCENES,
 };
 
 export const MockScene = () => {

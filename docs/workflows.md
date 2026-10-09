@@ -407,14 +407,17 @@ action on its row, which opens the questions view on that question. An agent
 that answers a question for a step never shows it, in the tree or in the
 activity feed, because the question belongs to that step. Every row ends with
 the same meta as the activity feed: the model, the effort and what the row has
-spent, with a dotted model name when routing picked another one than the plan.
+spent. A step row reads the same in both places: role icon, title, model with
+effort, then time over cost. The role is the icon alone, with its name as the
+accessible name, and the same cards open from the icon and the model (pointer at
+rest, keyboard focus, or `i`). Planned against picked is in the card.
 The action column exists only while a row in the tree has an action, so a tree
 with nothing to do gives that width to the titles. The action is **Answer**, or
 on the step that produced a plan **Review plan** while the run waits on that
 plan and **Open plan** once it does not. Both open the plan in the plan
 drawer, over the run, and a row that asks something keeps its **Answer** alone.
-In a narrow pane the kind chip narrows and the effort column hides, so the
-title keeps its room. Clicking a row opens that agent.
+In a narrow pane the model cell drops to its glyphs, so the title keeps its
+room. Clicking a row opens that agent.
 
 A set of sub-agents, the children of one agent, folds into one row under its
 parent when every one of them is settled and none has an open question,
@@ -444,20 +447,20 @@ tree never folds a set and has no plan action.
 
 In the activity feed, an agent or step row leads with its role as a glyph and
 ends with the model that ran, then its duration with what it has spent under
-it. The model is on the row, in a model cell of about 150px: the provider glyph
-and the model, and when a step moved to another model (a fallback, a retry, a
+it. The model is on the row, in a model cell of about 176px: the provider glyph,
+the model and its effort ("Opus 5.5 · High"), and when a step moved to another model (a fallback, a retry, a
 routing change) every model in the order it ran ("Kimi K3 → Sonnet 5.5", "3
-models" past two). The effort, why a model took over, planned against picked,
+models" past two). Why a model took over, planned against picked,
 tokens and the start and finish times are in the card that opens when the
 pointer rests on the role glyph or on the model cell, and in the Brief. A step
 that has not started shows its planned model and its meta in faint. In the run tree and
 a Brief's Subagents, every row keeps the model: before a step starts, the meta
 shows the routing it is planned to run on, in faint. Once it runs, the meta
-shows what actually ran, and a dotted model name means routing picked something
-other than the plan (the tooltip names both). The
+shows what actually ran, and the identity card names the plan when routing
+picked something else. The
 effort works the same way: once a run has started, the column shows the effort
-the CLI was started with, in the row tone, and a dotted effort means it left
-the plan ("Planned High, ran Medium" in the tooltip). A run with no recorded
+the CLI was started with, in the row tone ("Planned High, ran Medium" in the
+card when it left the plan). A run with no recorded
 effort, like one from before turn spans existed or a CLI with no effort flag,
 keeps the planned effort in faint and never shows a made-up value. The agent
 header reads the same way. The
@@ -473,8 +476,8 @@ running row with enough history shows the time left ("~3-7m left", a range
 until the low end of the band passes, then "~2m left") and its node fills an
 arc toward the usual time; the elapsed time moves to the tooltip and the agent
 header ("4m · ~3-7m left"). Past the top of the band the row shows the elapsed
-time ("14m"), the arc stays full and the state reads "Longer than usual" in
-faint, with no color. At twice the usual time the Brief's Now adds a line that
+time ("14m"), the arc stays full and the time turns to the warning tone, with "Longer than
+usual" in its tooltip. At twice the usual time the Brief's Now adds a line that
 points at the transcript; nothing stops the agent. While the row waits on you
 the arc freezes in amber and the time freezes too, never "left": the pause is
 said once, by the row state and the node. A failed row drops the arc and reads

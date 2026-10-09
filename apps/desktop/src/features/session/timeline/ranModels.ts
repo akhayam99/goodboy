@@ -30,6 +30,7 @@ export type RunModel = {
 
 export type ModelsSummary = {
   readonly text: string;
+  readonly effort?: string | null;
   readonly providers: ReadonlyArray<ProviderId>;
 };
 
@@ -160,7 +161,9 @@ export const runRanModels = ({ spans, runId }: RunParams): ReadonlyArray<RunMode
   }));
 };
 
-type SummaryModel = Pick<RanModel, 'key' | 'provider' | 'name'>;
+type SummaryModel = Pick<RanModel, 'key' | 'provider' | 'name'> & {
+  readonly effort?: string | null;
+};
 
 type SummaryParams = {
   readonly models: ReadonlyArray<SummaryModel>;
@@ -186,13 +189,13 @@ export const modelsSummary = ({ models, isRun = false }: SummaryParams): ModelsS
     }
   }
   if (isRun && list.length === 2) {
-    return { text: `${first.name} + 1`, providers };
+    return { text: `${first.name} + 1`, effort: null, providers };
   }
   if (list.length === 1) {
-    return { text: first.name, providers };
+    return { text: first.name, effort: isRun ? null : (first.effort ?? null), providers };
   }
   if (list.length === 2) {
-    return { text: list.map((model) => model.name).join(' → '), providers };
+    return { text: list.map((model) => model.name).join(' → '), effort: null, providers };
   }
-  return { text: `${list.length} models`, providers };
+  return { text: `${list.length} models`, effort: null, providers };
 };

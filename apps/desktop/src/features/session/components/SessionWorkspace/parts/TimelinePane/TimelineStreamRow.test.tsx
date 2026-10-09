@@ -354,7 +354,8 @@ describe('TimelineStreamRow', () => {
 describe('TimelineStreamRow, hover cards', () => {
   const IDENTITY = {
     hasGlyph: true,
-    summary: 'Implementer, Sonnet 5.5, High',
+    roleLabel: 'Implementer',
+    summary: 'Sonnet 5.5, High',
     card: <span>Identity card body</span>,
   };
 
@@ -406,7 +407,7 @@ describe('TimelineStreamRow, hover cards', () => {
   it('names the role, the model and the effort in the accessible name of the row', () => {
     renderCardRow();
 
-    expect(screen.getByRole('button', { name: /Implementer, Sonnet 5\.5, High/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Implementer.*Sonnet 5\.5, High/ })).toBeDefined();
   });
 
   it('opens the identity card only after the pointer rests 800ms on the role glyph', () => {
@@ -501,6 +502,32 @@ describe('TimelineStreamRow, hover cards', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('Identity card body');
 
     fireEvent.keyDown(row, { key: 'i' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('opens the identity card when the row takes keyboard focus, after the same 800ms', () => {
+    renderCardRow();
+    startFake();
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    fireEvent.keyDown(row, { key: 'Tab' });
+    fireEvent.focus(row);
+    advance({ ms: 799 });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    advance({ ms: 1 });
+    expect(screen.getByRole('tooltip').textContent).toBe('Identity card body');
+  });
+
+  it('does not open the card when a click gives the row focus', () => {
+    renderCardRow();
+    startFake();
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    fireEvent.pointerDown(row);
+    fireEvent.focus(row);
+    advance({ ms: 2_000 });
+
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 

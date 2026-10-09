@@ -901,16 +901,16 @@ The right end of a work row is `WorkMeta` in
 `$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
 running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                                                                     | in a narrow row                                |
-| ---------- | ----- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; lists other than Activity only | glyph only under 840px, gone under 360px       |
-| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                               | "left" goes under 640px, gone under 500px      |
-| cost       | 48px  | what the row has spent, empty before anything is spent                                                    | under 620px it leaves the row                  |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                              | under 620px it leaves the row                  |
-| model      | 152px | Activity only: the provider glyphs and the models that ran, in run order                                  | glyphs only under 640px                        |
-| stack      | 72px  | Activity only: duration on top (meta size, muted), cost under it (chip size, faint)                       | cost leaves under 620px, all of it under 500px |
-| action     | 76px  | the one visible action, reserved for the tree of a live run                                               | never drops                                    |
-| menu       | 24px  | the row menu, like Stop run on a run row                                                                  | never drops                                    |
+| column     | width | holds                                                                                                               | in a narrow row                                |
+| ---------- | ----- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; the workflow builder and plan parts only | glyph only under 840px, gone under 360px       |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                         | "left" goes under 640px, gone under 500px      |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                              | under 620px it leaves the row                  |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                        | under 620px it leaves the row                  |
+| model      | 176px | Activity and Runs: the provider glyphs, the models that ran in run order and the effort (`Opus 5.5 · High`)         | glyphs only under 640px                        |
+| stack      | 72px  | Activity and Runs: duration on top (meta size, muted), cost under it (chip size, faint)                             | cost leaves under 620px, all of it under 500px |
+| action     | 76px  | the one visible action, reserved for the tree of a live run                                                         | never drops                                    |
+| menu       | 24px  | the row menu, like Stop run on a run row                                                                            | never drops                                    |
 
 The state slot of a work row (`WORK_ROW.stateSlot`) is not a column: it is
 `min-w-28 max-w-64` (112 to 256px), so a long state such as "3 ready · 4
@@ -925,12 +925,26 @@ drops it, as the builder does for a plan with no measured estimate yet. A
 run row has no routing column: it takes the time column and the cost column
 like any other row.
 
-The activity timeline uses two other columns, in this order after the state
+The step rows of the activity timeline and of the run tree (Runs, the run page
+and a Brief's Subagents) are one grammar: role icon, step title, model with
+effort, then time over cost. Both draw it from the same pieces, so they cannot
+drift: `TimelineRoleGlyph` for the icon, `AgentRowMeta` for the right side
+(`TimelineModelCell` and the stacked `TimelineRowMeta`), `agentRowIdentity` for
+the card and the accessible name, and `useRowCard` for when the card opens.
+The role is an icon only, never a coloured role-name pill: the 18px glyph has
+the role as its accessible name (`role="img"`) and in the card header. The
+workflow builder keeps its role pill because the role is a field there.
+
+The right side uses two columns, in this order after the state
 word: the model cell (`TimelineModelCell`) and the stacked time and cost column
-(`TimelineRowMeta`). The model cell holds the provider glyph and the model that
-actually ran, read from the turn spans of the agent in run order. When several
+(`TimelineRowMeta`). The model cell holds the provider glyph, the model that
+actually ran, read from the turn spans of the agent in run order, and its effort
+after a dot (`Opus 5.5 · High`, effort in faint). When several
 ran (a fallback, a retry, a routing change) it holds one glyph per provider and
-the names joined by an arrow ("Kimi K3 → Sonnet 5.5"), or "3 models" past two. A
+the names joined by an arrow ("Kimi K3 → Sonnet 5.5"), or "3 models" past two,
+with no effort (the card lists each one with its own). The name truncates before
+the effort does, and the title always truncates before the model cell does: the
+cell only drops to its glyphs under 640px. A
 live agent ends on its current routing; an agent that has not started shows its
 planned model in faint. A run row shows the distinct models of its steps ("Sonnet
 5.5 + 2", glyphs side by side). Every row holds both columns, empty when it has
@@ -941,9 +955,13 @@ The role glyph before the title and the model cell are the only two hover
 targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`),
 on the `Tooltip` `card` variant with `restDelayMs` set to 800: the pointer has to
 rest, every move restarts the wait, the card closes as it leaves and a card
-never opens because another one just closed. `i` on a focused row opens the
-identity card. Nothing is only in a card: the Brief has the same facts and the
-accessible name of the row reads "Implementer, Sonnet 5.5, High".
+never opens because another one just closed. The run tree opens the same cards
+with the same delay: its glyph and meta sit above the row's click layer
+(`WORK_ROW.pointerLayer`) and a click on them still opens the step. Keyboard
+focus on a row opens the identity card after the same 800ms (a click never
+does), blur and Escape close it, and `i` on a focused row toggles it at once
+(`useRowCard`). Nothing is only in a card: the Brief has the same facts and the
+accessible name of a feed row reads "Implementer", then "Sonnet 5.5, High".
 
 The narrow rules are container queries, never window breakpoints, because
 the same feed sits in a wide overview and in a split pane. The activity feed
@@ -966,7 +984,10 @@ drops the time gutter; the day and Now labels move beside the rail. Label segmen
 leading words and tokens whole ("Opened #612:") and only the last segment
 truncates. A row carries no hover hint on its right; the open target and the
 keys are read by screen readers (`aria-description`, `aria-keyshortcuts`).
-"Longer than usual" shows only on a running step, never on a finished one.
+"Longer than usual" shows only on a running step, never on a finished one, and
+it is not a word in the row: the duration turns to the warning tone, the note
+leads its tooltip and screen readers hear it after the time, so it never pushes
+the model column.
 What leaves the row stays in the routing tooltip, which
 always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
 is `RoutingLabel isColumn`, with no fill and no chip. Its words come from

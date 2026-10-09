@@ -39,7 +39,7 @@ Know the one move that unblocks a task, like answering a question, fixing a fail
 
 ### Time left
 
-See how long a step has left, learned from your own past runs. Queued steps show a range, like the **~11-14m** on **Cover the console retry states** in the timeline above. A slow run says "Longer than usual", and thin history shows a count instead of a guess.
+See how long a step has left, learned from your own past runs. Queued steps show a range, like the **~11-14m** on **Cover the console retry states** in the timeline above. A slow run turns its time warm, with "Longer than usual" in the tooltip, and thin history shows a count instead of a guess.
 
 ### File versions
 

@@ -136,7 +136,7 @@ const ROUTING_PART = { model: 'name', effort: 'detail' } as const;
 
 const metaOf = (id: string, column: keyof typeof ROUTING_PART): string | null =>
   rowOf(id).querySelector(
-    `[data-meta-column="routing"] [data-routing-part="${ROUTING_PART[column]}"]`,
+    `[data-meta-column="model"] [data-routing-part="${ROUTING_PART[column]}"]`,
   )?.textContent ?? null;
 
 const rowIds = (): ReadonlyArray<string> =>

@@ -18,6 +18,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
+import { WORK_META_COLUMN } from '@goodboy/ui';
+import { carriesSpec } from '../../../../../../test/classTokens';
 import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 
 type Worktree = {
@@ -1284,6 +1286,22 @@ describe('TimelinePane row meta', () => {
     expect(meta.querySelector('[data-meta-column="cost"]')).toBeNull();
   });
 
+  it('puts the model and the effort of a step on the shared meta columns', () => {
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
+    const model = meta.querySelector('[data-meta-column="model"]');
+
+    expect(carriesSpec({ element: model ?? null, spec: WORK_META_COLUMN.model })).toBe(true);
+    expect(
+      carriesSpec({
+        element: meta.querySelector('[data-meta-column="stack"]'),
+        spec: WORK_META_COLUMN.stack,
+      }),
+    ).toBe(true);
+    expect(model?.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
+    expect(model?.querySelector('[data-routing-part="detail"]')?.textContent).toBe('High');
+  });
+
   it('opens the identity card of a step on the role glyph after the pointer rests', () => {
     vi.useFakeTimers();
     try {
@@ -1368,7 +1386,7 @@ describe('TimelinePane row meta', () => {
   it('names the run, its role and its model on the row for assistive tech', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
-    expect(screen.getByRole('button', { name: /Planner, Opus 4\.5, High/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Planner.*Opus 4\.5, High/ })).toBeDefined();
   });
 
   it('puts the run row on the same columns, with the total spend and no step counter', () => {
@@ -1587,7 +1605,9 @@ describe('TimelinePane row meta', () => {
 
       const row = rowOf('Build the fix');
       expect(within(row).getByTestId('work-time').textContent).toBe('11m');
-      expect(within(row).getByTestId('timeline-row-state').textContent).toBe('Longer than usual');
+      expect(within(row).getByTestId('work-time').getAttribute('data-note')).toBe('true');
+      expect(within(row).getByText('Longer than usual')).toBeDefined();
+      expect(within(row).queryByTestId('timeline-row-state')).toBeNull();
     });
 
     it('keeps the longer than usual note off a finished step that ran past its range', () => {

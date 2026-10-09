@@ -94,7 +94,12 @@ export const TimelineRunStreamRow = ({
       openTarget={openTarget}
       action={action}
       diffStat={diffStat}
-      identity={{ hasGlyph: true, summary: null, card: <RunIdentityCard entry={entry} /> }}
+      identity={{
+        hasGlyph: true,
+        roleLabel: null,
+        summary: null,
+        card: <RunIdentityCard entry={entry} />,
+      }}
       meta={
         <TimelineRowMeta
           model={
@@ -105,14 +110,10 @@ export const TimelineRunStreamRow = ({
           }
           time={time ?? null}
           cost={cost}
-        />
-      }
-      state={
-        <TimelineRowStateLine
-          state={item.rowState}
           note={item.rowState.phase === 'running' ? (time?.note ?? null) : null}
         />
       }
+      state={<TimelineRowStateLine state={item.rowState} />}
       progress={time?.progress ?? null}
       contextMenu={contextMenu}
       runLane={runLane}

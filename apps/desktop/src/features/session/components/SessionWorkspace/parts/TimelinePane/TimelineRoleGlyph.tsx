@@ -22,7 +22,12 @@ export const TimelineRoleGlyph = ({ kind, identity, isCardOpen }: Props) => {
         isOpen={isCardOpen}
         content={identity.card}
       >
-        <span data-testid="role-glyph" className="inline-flex shrink-0 self-center">
+        <span
+          data-testid="role-glyph"
+          role={identity.roleLabel === null ? undefined : 'img'}
+          aria-label={identity.roleLabel ?? undefined}
+          className="inline-flex shrink-0 self-center"
+        >
           <AgentKindChip kind={kind} density="glyph" isDecorative />
         </span>
       </Tooltip>
