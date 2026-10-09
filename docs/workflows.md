@@ -993,18 +993,23 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   autorun run that is started, has no outcome and no stop, is not deciding, has
   no open question and whose session is not advancing, and that has a step to
   decide or to start (`findIdleRuns`, built on `nextRunMove`, the same rule
-  `maybeAutoAdvanceWorkflow` uses). After 45s of that it calls
-  `maybeAutoAdvanceWorkflow`, at most once per 90s and three times per idle
-  stretch (`runIdleEpisodes`). A run still idle after the third try gets a
+  `maybeAutoAdvanceWorkflow` uses). After 20s of that for a run that has no
+  step yet, 45s for any other, it calls `maybeAutoAdvanceWorkflow`, at most once
+  per 90s and three times per idle stretch (`runIdleEpisodes`). A run still idle after the third try gets a
   `failure` stop, "Nothing picked this run up after three tries", and one
   notification, so the run bar says so with **Retry**. A run that waits on an
-  answer is never nudged; once the answer is in, the next sweep wakes it.
+  answer is never nudged. Answering a question wakes the run itself, even when
+  no agent could take the answer (`answerOpenQuestions`); the next sweep is the
+  backstop.
 - **Stops are saved, with a kind.** Before the call, the orchestrator checks
   for a session paused by its spend cap (`sessionBudgetBlockAfterLoad`,
   which reads `session_budgets.on_exceed` first), the run's spend cap in
   pause mode, and open
   questions that block the run. Each one saves a `budget` or `questions` stop.
-  A failed or unreadable call saves `failure`. **Stop** saves `operator`,
+  A failed or unreadable call saves `failure`, and so does a decision whose
+  step cannot be created (the agent row, the saved workflow or the routing
+  failed), with a notification: that error used to leave the run with no step,
+  no stop and a decision that cost money and showed nowhere. **Stop** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
   **Pause** saves `paused`, which keeps the step in flight and starts nothing.
   **Stop run** (`closeWorkflowRun`) saves `closed` next to the `done`

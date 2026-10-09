@@ -75,6 +75,10 @@ describe('findIdleRuns', () => {
     expect(idleRunsOf().map((idle) => idle.move.kind)).toEqual(['decide']);
   });
 
+  it('marks a run that never got its first step as fresh', () => {
+    expect(idleRunsOf().map((idle) => idle.isFresh)).toEqual([true]);
+  });
+
   it('leaves a run that asks before each step to you', () => {
     expect(idleRunsOf({ run: { autoRun: false } })).toEqual([]);
   });

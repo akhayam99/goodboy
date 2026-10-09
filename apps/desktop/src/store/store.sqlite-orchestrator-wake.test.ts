@@ -348,16 +348,27 @@ describe('an orchestrated run and the session summarizer', () => {
     expect(useAppStore.getState().orchestratingWorkflowRuns[workflowRunId]).toBe(false);
   });
 
-  it('stops polling the summarizer once the decision failed', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    reply = 'the orchestrator said something that is not a decision';
-    setSummarizer('running');
+  it('says so when the step the orchestrator chose cannot be created', async () => {
+    storySpies.invokeAgentInsert.mockRejectedValueOnce(new Error('the agents table is locked'));
+
     const workflowRunId = await attachRun({ triggerMode: 'immediate' });
+
     await vi.waitFor(() => expect(storedStopKind(workflowRunId)).toBe('failure'));
-
-    await vi.advanceTimersByTimeAsync(500);
-
-    expect(vi.getTimerCount()).toBe(0);
+    expect(runOf(workflowRunId)?.orchestrationStop?.message).toContain(
+      'the agents table is locked',
+    );
+    expect(await storedStop(workflowRunId)).toEqual([
+      expect.objectContaining({ orchestration_stop_kind: 'failure' }),
+    ]);
+    expect(await runAgents(workflowRunId)).toEqual([]);
+    await vi.waitFor(async () =>
+      expect(
+        await rowsOf<{ title: string }>({
+          sql: 'SELECT title FROM notifications WHERE session_id = ?',
+          params: [sessionId],
+        }),
+      ).toEqual([{ title: 'The orchestrator could not start the next step' }]),
+    );
   });
 
   it('lets a forced skip past the summarizer', async () => {
@@ -475,15 +486,15 @@ describe('the watchdog over an orchestrated run', () => {
     return workflowRunId;
   };
 
-  it('wakes a run nothing woke once it has sat idle past the threshold', async () => {
+  it('wakes a run that never got its first step once it has sat idle for twenty seconds', async () => {
     const workflowRunId = await waking();
     const t0 = Date.now();
 
     await useAppStore.getState().sweepIdleRuns({ nowMs: t0 });
-    await useAppStore.getState().sweepIdleRuns({ nowMs: t0 + 30_000 });
+    await useAppStore.getState().sweepIdleRuns({ nowMs: t0 + 10_000 });
     expect(requests).toHaveLength(0);
 
-    await useAppStore.getState().sweepIdleRuns({ nowMs: t0 + 46_000 });
+    await useAppStore.getState().sweepIdleRuns({ nowMs: t0 + 21_000 });
 
     await vi.waitFor(() => expect(requests).toHaveLength(1));
     await vi.waitFor(async () => expect(await runAgents(workflowRunId)).toHaveLength(1));
@@ -554,17 +565,21 @@ describe('the watchdog over an orchestrated run', () => {
       useAppStore.getState().sweepIdleRuns({ nowMs: t0 + offsetMs });
 
     await sweepAt(0);
-    await sweepAt(46_000);
+    await sweepAt(10_000);
+    expect(wake).not.toHaveBeenCalled();
+    await sweepAt(21_000);
     await sweepAt(60_000);
     await sweepAt(100_000);
     expect(wake).toHaveBeenCalledTimes(1);
 
-    await sweepAt(137_000);
-    await sweepAt(228_000);
+    await sweepAt(112_000);
+    await sweepAt(202_000);
     expect(wake).toHaveBeenCalledTimes(3);
     expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined();
 
-    await sweepAt(320_000);
+    await sweepAt(291_000);
+    expect(runOf(workflowRunId)?.orchestrationStop).toBeUndefined();
+    await sweepAt(293_000);
     expect(wake).toHaveBeenCalledTimes(3);
 
     expect(runOf(workflowRunId)?.orchestrationStop?.kind).toBe('failure');

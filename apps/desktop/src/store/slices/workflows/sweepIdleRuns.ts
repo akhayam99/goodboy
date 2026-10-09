@@ -9,6 +9,7 @@ import type { RunIdleEpisode } from './state';
 import type { GetFn, SetFn } from './types';
 
 export const RUN_WATCHDOG_TICK_MS = 15_000;
+const RUN_FRESH_IDLE_BEFORE_NUDGE_MS = 20_000;
 const RUN_IDLE_BEFORE_NUDGE_MS = 45_000;
 const RUN_NUDGE_INTERVAL_MS = 90_000;
 const RUN_MAX_NUDGES = 3;
@@ -119,7 +120,10 @@ export const sweepIdleRuns = (set: SetFn, get: GetFn) => {
       const nudged = new Set<SessionId>();
       for (const candidate of idle) {
         const episode = tracked[candidate.run.id]!;
-        if (nowMs - episode.since < RUN_IDLE_BEFORE_NUDGE_MS) {
+        const idleBeforeNudgeMs = candidate.isFresh
+          ? RUN_FRESH_IDLE_BEFORE_NUDGE_MS
+          : RUN_IDLE_BEFORE_NUDGE_MS;
+        if (nowMs - episode.since < idleBeforeNudgeMs) {
           continue;
         }
         if (episode.lastNudgeAt !== null && nowMs - episode.lastNudgeAt < RUN_NUDGE_INTERVAL_MS) {

@@ -15,6 +15,7 @@ export type IdleRun = {
   readonly sessionId: SessionId;
   readonly run: WorkflowRun;
   readonly move: Exclude<RunMove, { readonly kind: 'none' }>;
+  readonly isFresh: boolean;
 };
 
 type AdvancingParams = {
@@ -67,16 +68,17 @@ export const findIdleRuns = ({
       if (orchestratingWorkflowRuns[run.id] === true || pendingOrchestrations[run.id] != null) {
         continue;
       }
+      const runAgents = runsForWorkflowRun(agents, run.id);
       const move = nextRunMove({
         run,
         template: templates.find((template) => template.id === run.workflowId),
-        agents: runsForWorkflowRun(agents, run.id),
+        agents: runAgents,
         openQuestions: sessionOpenQuestions[session.id] ?? NO_QUESTIONS,
       });
       if (move.kind === 'none') {
         continue;
       }
-      idle.push({ sessionId: session.id, run, move });
+      idle.push({ sessionId: session.id, run, move, isFresh: runAgents.length === 0 });
     }
   }
   return idle;

@@ -365,6 +365,8 @@ const isRunClosedOut = ({ get, sessionId, workflowRunId }: OperatorStopParams): 
 export const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
   resolveStoredModelSelection({ provider: providerId, id: model }).report?.kind !== 'unknown';
 
+const STEP_NOT_CREATED = 'The orchestrator chose a step it could not create';
+
 const STDERR_NOISE = /^Reading additional input from stdin/;
 const STDERR_LINE_MAX = 200;
 
@@ -547,7 +549,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       return;
     }
     orchestrationInFlight.add(workflowRunId);
-    let isSummarizerGateCancelled = false;
     try {
       setDeciding({ set, workflowRunId, isDeciding: true });
       const session = sessionById(get().sessions, sessionId);
@@ -614,11 +615,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const summarizerSettled: Promise<void> =
         options?.bypassGate === true
           ? Promise.resolve()
-          : waitForSessionSummarizer({
-              get,
-              sessionId,
-              isCancelled: () => isSummarizerGateCancelled,
-            });
+          : waitForSessionSummarizer({ get, sessionId });
       const agents = [
         ...runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId),
       ].sort((left, right) => left.ordinal - right.ordinal);
@@ -915,7 +912,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           await discardWithUsage();
           return;
         }
-        const agent = await appendStep({
+        const created = await appendStep({
           set,
           get,
           sessionId,
@@ -940,7 +937,41 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
               proposal: routingProposal,
             }),
           },
-        });
+        }).then(
+          (value) => ({ isCreated: true as const, agent: value }),
+          (error: unknown) => ({ isCreated: false as const, error }),
+        );
+        if (!created.isCreated) {
+          const message = `${STEP_NOT_CREATED}: ${formatError(created.error)} (${selected.provider}/${selected.model})`;
+          await persistOrchestrationFailure({ set, sessionId, workflowRunId, message });
+          const failedAgentId = emitDecision({
+            get,
+            sessionId,
+            workflowRunId,
+            action: 'blocked',
+            reason: message,
+          });
+          await recordOrchestratorUsage({
+            set,
+            get,
+            sessionId,
+            agentId: failedAgentId,
+            workflowRunId,
+            provider: routing.providerId,
+            model: result.model,
+            usage: result.usage,
+          });
+          void get().emitNotification({
+            kind: 'error',
+            severity: 'warning',
+            title: 'The orchestrator could not start the next step',
+            body: message,
+            sessionId,
+            coalesceKey: `orchestrator-step-not-created:${workflowRunId}`,
+          });
+          return;
+        }
+        const agent = created.agent;
         emitDecision({
           get,
           sessionId,
@@ -1014,7 +1045,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         sessionId,
       });
     } finally {
-      isSummarizerGateCancelled = true;
       orchestrationInFlight.delete(workflowRunId);
       setDeciding({ set, workflowRunId, isDeciding: false });
       const pending = get().pendingOrchestrations?.[workflowRunId];

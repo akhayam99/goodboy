@@ -517,7 +517,7 @@ describe('OrchestratorStrip state ladder', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
     expect(storeState['navigate']).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION_ID, agentId: 'agent-0' as AgentId }),
+      to: expect.objectContaining({ at: 'agent', agentId: 'agent-0', sessionId: SESSION_ID }),
     });
   });
 

@@ -7,17 +7,15 @@ const SUMMARIZER_GATE_TIMEOUT_MS = 60_000;
 type SummarizerGateParams = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
-  readonly isCancelled?: () => boolean;
 };
 
 export const waitForSessionSummarizer = async ({
   get,
   sessionId,
-  isCancelled = () => false,
 }: SummarizerGateParams): Promise<void> => {
   const deadline = Date.now() + SUMMARIZER_GATE_TIMEOUT_MS;
   while (get().summarizerStatus[sessionId]?.status === 'running') {
-    if (Date.now() >= deadline || isCancelled()) {
+    if (Date.now() >= deadline) {
       return;
     }
     await new Promise<void>((resolve) => {
