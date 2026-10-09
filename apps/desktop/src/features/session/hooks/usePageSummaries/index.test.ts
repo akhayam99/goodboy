@@ -10,8 +10,8 @@ vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).dbLibModuleMock(),
 );
 
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, renderHook } from '@testing-library/react';
 import { aSession } from '@goodboy/types/testing';
 import type { IsoDateTime, ResolveQueueItemWithThread } from '@goodboy/types';
 import {
@@ -39,6 +39,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
 });
+
+afterEach(cleanup);
 
 const waitingNote = (): ResolveQueueItemWithThread => {
   const row = noteRow({

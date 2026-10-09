@@ -26,12 +26,23 @@ beforeEach(async () => {
   await resetStoryStore();
 });
 
+const readOnce = <T>(hook: () => T): T => {
+  const { result, unmount } = renderHook(hook);
+  const value = result.current;
+  unmount();
+  return value;
+};
+
+const fixableAndTally = () => ({
+  ids: readOnce(() => useFixableThreadIds({ sessionId: SESSION_ID })),
+  tally: readOnce(() => useReviewTally({ sessionId: SESSION_ID })),
+});
+
 describe('useFixableThreadIds', () => {
   it('lists the comments Fix N would take on the selected GitLab merge request', () => {
     seedResolveGitlabScene({ selected: 'gitlab' });
 
-    const ids = renderHook(() => useFixableThreadIds({ sessionId: SESSION_ID })).result.current;
-    const tally = renderHook(() => useReviewTally({ sessionId: SESSION_ID })).result.current;
+    const { ids, tally } = fixableAndTally();
 
     expect(ids.length).toBeGreaterThan(0);
     expect(ids).toHaveLength(tally.fixable);
@@ -41,8 +52,7 @@ describe('useFixableThreadIds', () => {
   it('counts the same comments on the GitHub source, never the other host', () => {
     seedResolveGitlabScene({ selected: 'github' });
 
-    const ids = renderHook(() => useFixableThreadIds({ sessionId: SESSION_ID })).result.current;
-    const tally = renderHook(() => useReviewTally({ sessionId: SESSION_ID })).result.current;
+    const { ids, tally } = fixableAndTally();
 
     expect(ids).toHaveLength(tally.fixable);
     expect(ids.every((id) => id.startsWith('PRRT_'))).toBe(true);

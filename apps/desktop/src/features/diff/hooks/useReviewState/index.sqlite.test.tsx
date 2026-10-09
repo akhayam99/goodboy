@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { insertSession, insertWorkspace } from '@goodboy/db';
 import type { FileDiff, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
@@ -91,6 +91,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  cleanup();
   useAppStore.setState({ sessionExternalTasks: {} });
 });
 
