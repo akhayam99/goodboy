@@ -17,7 +17,7 @@ import type { GetFn, SetFn } from '../../slice-types';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
-export const HELPER_FAILURE_WINDOW_MS = 3 * 60 * 1000;
+const HELPER_FAILURE_WINDOW_MS = 3 * 60 * 1000;
 
 const COOLDOWN_FAILURES = ['usage_limit', 'authentication', 'rate_limit'];
 

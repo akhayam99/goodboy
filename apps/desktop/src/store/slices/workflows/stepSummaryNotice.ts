@@ -3,7 +3,7 @@ import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import type { GetFn } from './types';
 
-export const stepSummaryNoticeKey = ({ sessionId }: { readonly sessionId: SessionId }): string =>
+const stepSummaryNoticeKey = ({ sessionId }: { readonly sessionId: SessionId }): string =>
   `step-summary-degraded:${sessionId}`;
 
 type FailedParams = {
