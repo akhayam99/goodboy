@@ -34,6 +34,7 @@ const h = vi.hoisted(() => ({
   refetch: vi.fn(),
   openUrl: vi.fn(async () => undefined),
   isEscapeEnabled: true as boolean,
+  closeLabel: '' as string,
   toggleStar: vi.fn<(record: InboxRecord) => Promise<void>>(async () => undefined),
   orderCalls: 0,
   stars: null as unknown,
@@ -43,11 +44,14 @@ vi.mock('../../../../shared/components/StudioShell', () => ({
   StudioShell: ({
     children,
     isEscapeEnabled,
+    closeLabel,
   }: {
     children: (requestClose: () => void) => ReactNode;
     isEscapeEnabled: boolean;
+    closeLabel: string;
   }) => {
     h.isEscapeEnabled = isEscapeEnabled;
+    h.closeLabel = closeLabel;
     return <div>{children(vi.fn())}</div>;
   },
 }));
@@ -342,6 +346,11 @@ afterEach(() => {
 });
 
 describe('InboxStudio', () => {
+  it('names its close control after the Tasks page', () => {
+    renderStudio();
+    expect(h.closeLabel).toBe('Close tasks');
+  });
+
   it('orders rows by time only, newest first, never by state', () => {
     h.records = [
       sentryError,
