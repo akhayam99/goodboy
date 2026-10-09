@@ -68,6 +68,15 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'retry-orchestrator') {
+    const { sessionId, workflowRunId } = action;
+    return {
+      label: 'Retry',
+      onClick: () => {
+        void store.orchestrateNextStep(sessionId, workflowRunId, { bypassGate: true });
+      },
+    };
+  }
   if (action.kind === 'retry-step-summary') {
     const { sessionId, agentId } = action;
     return {

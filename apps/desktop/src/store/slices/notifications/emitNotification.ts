@@ -21,6 +21,7 @@ export type EmitNotificationParams = {
   workspaceId?: WorkspaceId;
   action?: NotificationAction;
   coalesceKey?: string;
+  isOnce?: boolean;
 };
 
 export const emitNotification = (set: SetFn, get: GetFn) => {
@@ -33,7 +34,14 @@ export const emitNotification = (set: SetFn, get: GetFn) => {
     workspaceId,
     action,
     coalesceKey,
+    isOnce,
   }: EmitNotificationParams) => {
+    if (
+      isOnce === true &&
+      get().notifications.some((existing) => !existing.read && existing.coalesceKey === coalesceKey)
+    ) {
+      return;
+    }
     const n: Notification = {
       id: crypto.randomUUID(),
       ts: new Date().toISOString() as IsoDateTime,
