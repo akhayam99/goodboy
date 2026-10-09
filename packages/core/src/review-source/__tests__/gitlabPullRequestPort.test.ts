@@ -77,15 +77,16 @@ describe('gitlab state mapping', () => {
     expect(gitlabMergeableOf({ hasConflicts, mergeStatus: status })).toBe(value);
   });
 
+  it('asks for no review when the project requires no approval', () => {
+    expect(gitlabReviewDecisionOf({ approvals: { approvalsLeft: 0, approvedBy: [] } })).toBeNull();
+  });
+
   it('reads approvals as approved only when someone approved and none are left', () => {
     expect(gitlabReviewDecisionOf({ approvals: null })).toBeNull();
     expect(gitlabReviewDecisionOf({ approvals: APPROVALS_JSON })).toBe('review_required');
     expect(
       gitlabReviewDecisionOf({ approvals: { approvalsLeft: 0, approvedBy: [{ user: KENJI }] } }),
     ).toBe('approved');
-    expect(gitlabReviewDecisionOf({ approvals: { approvalsLeft: 0, approvedBy: [] } })).toBe(
-      'review_required',
-    );
   });
 
   it('never reads changes requested, GitLab has no such state', () => {
@@ -134,11 +135,13 @@ describe('gitlab reviewers', () => {
 describe('gitlab merge methods', () => {
   it.each([
     ['merge', 'default_off', ['merge', 'squash'], ['rebase']],
-    ['rebase_merge', 'default_off', ['merge', 'squash', 'rebase'], []],
+    ['rebase_merge', 'default_off', ['merge', 'squash'], ['rebase']],
     ['ff', 'default_off', ['rebase', 'squash'], ['merge']],
     ['merge', 'never', ['merge'], ['squash', 'rebase']],
     ['ff', 'never', ['rebase'], ['squash', 'merge']],
-    ['merge', 'always', ['merge', 'squash'], ['rebase']],
+    ['merge', 'always', ['squash'], ['merge', 'rebase']],
+    ['ff', 'always', ['squash'], ['merge', 'rebase']],
+    ['ff', 'default_on', ['rebase', 'squash'], ['merge']],
   ] as const)(
     'offers %s with squash %s as %j and forbids %j',
     (mergeMethod, squashOption, allowed, forbidden) => {

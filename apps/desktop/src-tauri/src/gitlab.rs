@@ -1165,7 +1165,7 @@ fn merge_strategy(method: Option<&str>) -> Result<MergeStrategy, GitlabError> {
 fn merge_body(strategy: MergeStrategy) -> serde_json::Value {
     match strategy {
         MergeStrategy::Squash => serde_json::json!({ "squash": true }),
-        MergeStrategy::Merge | MergeStrategy::Rebase => serde_json::json!({}),
+        MergeStrategy::Merge | MergeStrategy::Rebase => serde_json::json!({ "squash": false }),
     }
 }
 
@@ -1173,7 +1173,7 @@ fn rebase_blocker(
     project_merge_method: &str,
     detailed_merge_status: Option<&str>,
 ) -> Option<&'static str> {
-    if !matches!(project_merge_method, "ff" | "rebase_merge") {
+    if project_merge_method != "ff" {
         return Some("this project does not merge by fast-forward");
     }
     if detailed_merge_status == Some("need_rebase") {
@@ -1286,6 +1286,8 @@ pub struct GitlabPipeline {
     pub web_url: Option<String>,
     #[serde(default)]
     pub sha: Option<String>,
+    #[serde(rename = "projectId", alias = "project_id", default)]
+    pub project_id: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -1315,6 +1317,12 @@ fn mr_pipelines_path(encoded_project: &str, mr_iid: i64) -> String {
 
 fn pipeline_jobs_path(encoded_project: &str, pipeline_id: i64) -> String {
     format!("/projects/{encoded_project}/pipelines/{pipeline_id}/jobs")
+}
+
+fn pipeline_owner(pipeline: &GitlabPipeline, encoded_project: &str) -> String {
+    pipeline
+        .project_id
+        .map_or_else(|| encoded_project.to_string(), |id| id.to_string())
 }
 
 fn is_denied(error: &GitlabError) -> bool {
@@ -1350,7 +1358,7 @@ pub async fn gitlab_mr_pipeline_jobs(
     let jobs = match get_json_paged::<GitlabJob>(
         &host,
         &token,
-        &pipeline_jobs_path(&encoded, pipeline.id),
+        &pipeline_jobs_path(&pipeline_owner(&pipeline, &encoded), pipeline.id),
     )
     .await
     {
@@ -1874,13 +1882,19 @@ mod tests {
     }
 
     #[test]
-    fn merge_body_sends_squash_only_for_the_squash_method() {
-        assert_eq!(merge_body(MergeStrategy::Merge), serde_json::json!({}));
+    fn merge_body_asks_for_squash_only_for_the_squash_method() {
+        assert_eq!(
+            merge_body(MergeStrategy::Merge),
+            serde_json::json!({ "squash": false })
+        );
         assert_eq!(
             merge_body(MergeStrategy::Squash),
             serde_json::json!({ "squash": true })
         );
-        assert_eq!(merge_body(MergeStrategy::Rebase), serde_json::json!({}));
+        assert_eq!(
+            merge_body(MergeStrategy::Rebase),
+            serde_json::json!({ "squash": false })
+        );
     }
 
     #[test]
@@ -1895,10 +1909,13 @@ mod tests {
         );
         assert_eq!(
             rebase_blocker("rebase_merge", Some("need_rebase")),
-            Some("rebase the merge request first")
+            Some("this project does not merge by fast-forward")
         );
         assert_eq!(rebase_blocker("ff", Some("mergeable")), None);
-        assert_eq!(rebase_blocker("rebase_merge", None), None);
+        assert_eq!(
+            rebase_blocker("rebase_merge", None),
+            Some("this project does not merge by fast-forward")
+        );
     }
 
     #[test]
@@ -1923,6 +1940,26 @@ mod tests {
         assert_eq!(
             project_settings_path(&encoded),
             "/projects/harborline%2Fpayments-api"
+        );
+    }
+
+    #[test]
+    fn the_jobs_of_a_fork_pipeline_are_asked_of_the_project_that_owns_it() {
+        let encoded = encode_project_path("harborline/payments-api");
+        let fork: GitlabPipeline = serde_json::from_str(
+            r#"{"id":9001,"status":"success","project_id":77,"sha":"a41c9e2b7d3f"}"#,
+        )
+        .unwrap();
+        let same: GitlabPipeline =
+            serde_json::from_str(r#"{"id":9002,"status":"success"}"#).unwrap();
+
+        assert_eq!(
+            pipeline_jobs_path(&pipeline_owner(&fork, &encoded), fork.id),
+            "/projects/77/pipelines/9001/jobs"
+        );
+        assert_eq!(
+            pipeline_jobs_path(&pipeline_owner(&same, &encoded), same.id),
+            "/projects/harborline%2Fpayments-api/pipelines/9002/jobs"
         );
     }
 

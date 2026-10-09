@@ -171,6 +171,25 @@ describe('checksViewOf on a host that reads its own checks', () => {
     });
   });
 
+  it('names a read that failed before any checks came back', () => {
+    expect(
+      view({
+        hostKind: 'gitlab',
+        pr: null,
+        canReadChecks: true,
+        portReadFailure: { kind: 'failed', error: 'timeout' },
+      }),
+    ).toEqual({ kind: 'failed', error: 'timeout' });
+    expect(
+      view({
+        hostKind: 'bitbucket',
+        pr: null,
+        canReadChecks: true,
+        portReadFailure: { kind: 'denied', error: '403 Forbidden' },
+      }),
+    ).toEqual({ kind: 'denied', error: '403 Forbidden' });
+  });
+
   it('shows the rows the port read, without a GitHub pull request', () => {
     expect(
       view({

@@ -18,6 +18,7 @@ type Props = {
   readonly host: PullRequestHost;
   readonly pr: PullRequestState | null;
   readonly isBitbucketRemote: boolean;
+  readonly isBitbucketConnected: boolean;
   readonly newPullRequestUrl: string | null;
   readonly detail: PrDetail | null;
   readonly view: PullRequestView | null;
@@ -44,6 +45,7 @@ export const PullRequestTab = ({
   host,
   pr,
   isBitbucketRemote,
+  isBitbucketConnected,
   newPullRequestUrl,
   detail,
   view,
@@ -65,7 +67,7 @@ export const PullRequestTab = ({
   onOpenFiles,
 }: Props) => {
   if (pr === null && isBitbucketRemote) {
-    return <BitbucketNoPullRequest url={newPullRequestUrl} />;
+    return <BitbucketNoPullRequest url={newPullRequestUrl} isConnected={isBitbucketConnected} />;
   }
   if (pr === null) {
     return (

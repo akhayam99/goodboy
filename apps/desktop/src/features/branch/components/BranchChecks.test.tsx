@@ -538,6 +538,32 @@ describe('Checks tab on a host that reads its own checks', () => {
     expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
   });
 
+  it('names a read that failed before any view came back, with Retry', async () => {
+    const load = vi.fn();
+    useAppStore.setState({
+      pullRequestViews: {
+        [SESSION.id]: {
+          prNumber: 57,
+          mountId: null,
+          view: null,
+          isLoading: false,
+          error: 'http error 500: boom',
+          errorKind: 'failed',
+          fetchedAt: null,
+          edits: [],
+        },
+      },
+      loadPullRequestView: load,
+    });
+
+    await show();
+
+    expect(screen.getByRole('alert').textContent).toContain("Couldn't read checks");
+    load.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, force: true });
+  });
+
   it('keeps the host notice while the flag is off', async () => {
     capabilities.canReadChecks = false;
     useAppStore.setState({ pullRequestViews: viewEntry(VIEW), loadPullRequestView: vi.fn() });

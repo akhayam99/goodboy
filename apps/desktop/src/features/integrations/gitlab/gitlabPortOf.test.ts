@@ -178,6 +178,17 @@ describe('gitlabPortOf', () => {
     expect(portOf({ mountId: MOUNT_ID, prNumber: 42 })).not.toBeNull();
   });
 
+  it('never borrows the merge request of another mount when a mount is named', () => {
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [SESSION_ID]: [MOUNT, { ...MOUNT, mountId: OTHER_MOUNT_ID, mountName: 'ledger-core' }],
+      },
+      mountGitlabMr: { [MOUNT_ID]: ENTRY },
+    });
+
+    expect(portOf({ mountId: OTHER_MOUNT_ID, prNumber: 42 })).toBeNull();
+  });
+
   it('has no port without a connected GitLab', () => {
     useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] } });
 

@@ -41,10 +41,13 @@ export const gitlabPortOf = ({
   if (!hasCredential) {
     return null;
   }
-  const mountIds = [
-    mountId ?? selectActiveMountId({ state, sessionId }),
-    ...sessionMountTargets({ state, sessionId }).map((target) => target.id),
-  ].filter((id): id is MountId => id !== null);
+  const mountIds =
+    mountId === undefined
+      ? [
+          selectActiveMountId({ state, sessionId }),
+          ...sessionMountTargets({ state, sessionId }).map((target) => target.id),
+        ].filter((id): id is MountId => id !== null)
+      : [mountId];
   const entry = mountIds
     .map((id) => state.mountGitlabMr?.[id])
     .find((candidate) => hasMergeRequest(candidate, prNumber));

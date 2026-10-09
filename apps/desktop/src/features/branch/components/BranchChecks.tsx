@@ -98,6 +98,10 @@ export const BranchChecks = ({ sessionId }: Props) => {
     hasFetchedDetail: (github?.detailFetchedAt ?? null) !== null,
     canReadChecks,
     portChecks: portView.view?.checks ?? null,
+    portReadFailure:
+      portView.isLoading || portView.view !== null || portView.error === null
+        ? null
+        : { kind: portView.errorKind === 'denied' ? 'denied' : 'failed', error: portView.error },
   });
 
   const createAction = create.actions.find((action) => action.id === CREATE_ACTION_ID);

@@ -5,14 +5,19 @@ import { openUrl } from '../../../../shared/lib/editor';
 
 type Props = {
   readonly url: string | null;
+  readonly isConnected: boolean;
 };
 
-export const BitbucketNoPullRequest = ({ url }: Props) => (
+export const BitbucketNoPullRequest = ({ url, isConnected }: Props) => (
   <EmptyState
     size="page"
     icon={CONCEPT_ICONS.pr}
     title="No pull request yet"
-    description="Create the pull request on Bitbucket, it appears here"
+    description={
+      isConnected
+        ? 'Create the pull request on Bitbucket, it appears here'
+        : 'Create the pull request on Bitbucket. Connect Bitbucket in Settings to follow it here'
+    }
     action={
       url === null ? undefined : (
         <Button variant="secondary" size="sm" onClick={() => void openUrl(url)}>

@@ -437,3 +437,63 @@ fn a_branch_name_the_validator_refuses_fails_before_anything_is_created() {
     assert!(!parent.join("payments").exists());
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn a_pull_request_from_a_fork_branch_named_like_a_local_one_reviews_its_own_code() {
+    let root = std::fs::canonicalize(init_repo("review-fork-main")).unwrap();
+    commit(&root, "a.txt", "a\n", "first");
+    push_to_new_remote(&root);
+    git_ok(&root, &["checkout", "-b", "fork-work"]);
+    let pr_head = commit(&root, "b.txt", "b\n", "the fork change");
+    git_ok(&root, &["push", "origin", "HEAD:refs/pull/7/head"]);
+    git_ok(&root, &["checkout", "main"]);
+    let parent_dir = root.join(".goodboy").join("worktrees");
+    std::fs::create_dir_all(&parent_dir).unwrap();
+
+    let created = worktree_create_blocking(CreateArgs {
+        repo_path: root.to_string_lossy().into_owned(),
+        branch_name: "main".to_string(),
+        parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
+        existing_branch: Some("main".to_string()),
+        fallback_ref: Some("pull/7/head".to_string()),
+        base_branch: None,
+        dir_name: Some("review".to_string()),
+    })
+    .unwrap();
+
+    assert!(created.branch_name.starts_with("review/main-"));
+    assert_eq!(
+        git_ok(Path::new(&created.worktree_path), &["rev-parse", "HEAD"]),
+        pr_head
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_pull_request_from_a_branch_of_the_repository_keeps_the_branch_name() {
+    let root = std::fs::canonicalize(init_repo("review-same-repo")).unwrap();
+    commit(&root, "a.txt", "a\n", "first");
+    push_to_new_remote(&root);
+    git_ok(&root, &["checkout", "-b", "ak/fix-credit"]);
+    commit(&root, "b.txt", "b\n", "the change");
+    git_ok(&root, &["push", "origin", "HEAD:refs/pull/8/head"]);
+    git_ok(&root, &["push", "origin", "ak/fix-credit"]);
+    git_ok(&root, &["checkout", "main"]);
+    git_ok(&root, &["branch", "-D", "ak/fix-credit"]);
+    let parent_dir = root.join(".goodboy").join("worktrees");
+    std::fs::create_dir_all(&parent_dir).unwrap();
+
+    let created = worktree_create_blocking(CreateArgs {
+        repo_path: root.to_string_lossy().into_owned(),
+        branch_name: "ak/fix-credit".to_string(),
+        parent_dir: Some(parent_dir.to_string_lossy().into_owned()),
+        existing_branch: Some("ak/fix-credit".to_string()),
+        fallback_ref: Some("pull/8/head".to_string()),
+        base_branch: None,
+        dir_name: Some("review".to_string()),
+    })
+    .unwrap();
+
+    assert_eq!(created.branch_name, "ak/fix-credit");
+    std::fs::remove_dir_all(root).unwrap();
+}

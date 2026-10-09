@@ -22,19 +22,27 @@ type Params = {
   readonly hasFetchedDetail: boolean;
   readonly canReadChecks: boolean;
   readonly portChecks: PullRequestChecksView | null;
+  readonly portReadFailure?: PortReadFailure | null;
+};
+
+type PortReadFailure = {
+  readonly kind: 'denied' | 'failed';
+  readonly error: string | null;
 };
 
 const portViewOf = ({
   host,
   url,
   portChecks,
+  portReadFailure,
 }: {
   readonly host: ChecksHost;
   readonly url: string | null;
   readonly portChecks: PullRequestChecksView | null;
+  readonly portReadFailure: PortReadFailure | null;
 }): ChecksView => {
   if (portChecks === null) {
-    return { kind: 'loading' };
+    return portReadFailure === null ? { kind: 'loading' } : portReadFailure;
   }
   if (portChecks.read === 'denied') {
     return { kind: 'denied', error: portChecks.error };
@@ -58,10 +66,11 @@ export const checksViewOf = ({
   hasFetchedDetail,
   canReadChecks,
   portChecks,
+  portReadFailure = null,
 }: Params): ChecksView => {
   if (hostKind === 'gitlab' || hostKind === 'bitbucket') {
     return canReadChecks
-      ? portViewOf({ host: hostKind, url: hostUrl, portChecks })
+      ? portViewOf({ host: hostKind, url: hostUrl, portChecks, portReadFailure })
       : { kind: 'host', host: hostKind, url: hostUrl };
   }
   if (pr === null) {

@@ -284,6 +284,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             host={host}
             pr={pr}
             isBitbucketRemote={bitbucketRemote.isBitbucket}
+            isBitbucketConnected={bitbucketRemote.isConnected}
             newPullRequestUrl={bitbucketRemote.newPullRequestUrl}
             detail={github?.detail ?? null}
             view={pullRequestView.view}

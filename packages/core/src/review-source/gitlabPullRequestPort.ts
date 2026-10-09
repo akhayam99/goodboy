@@ -181,9 +181,10 @@ export const gitlabReviewDecisionOf = ({
   if (approvals === null) {
     return null;
   }
-  return approvals.approvedBy.length > 0 && approvals.approvalsLeft === 0
-    ? 'approved'
-    : 'review_required';
+  if (approvals.approvalsLeft > 0) {
+    return 'review_required';
+  }
+  return approvals.approvedBy.length > 0 ? 'approved' : null;
 };
 
 export const gitlabMergeMethodsOf = ({
@@ -191,10 +192,13 @@ export const gitlabMergeMethodsOf = ({
 }: {
   readonly settings: GitlabMergeSettingsPayload;
 }): Pick<PullRequestView, 'mergeMethods' | 'mergeMethodReasons'> => {
+  const squashRequired = settings.squashOption === 'always';
   const allowed: Readonly<Record<PrMergeMethod, boolean>> = {
     squash: settings.squashOption !== 'never',
-    merge: settings.mergeMethod === 'merge' || settings.mergeMethod === 'rebase_merge',
-    rebase: settings.mergeMethod === 'ff' || settings.mergeMethod === 'rebase_merge',
+    merge:
+      !squashRequired &&
+      (settings.mergeMethod === 'merge' || settings.mergeMethod === 'rebase_merge'),
+    rebase: !squashRequired && settings.mergeMethod === 'ff',
   };
   const preferred: PrMergeMethod = settings.mergeMethod === 'ff' ? 'rebase' : 'merge';
   const ordered = [

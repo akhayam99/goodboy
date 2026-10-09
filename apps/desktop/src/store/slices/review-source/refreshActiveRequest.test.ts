@@ -17,7 +17,9 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
-import type { SessionGithubState } from '../../types';
+import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
+import type { MountGithubState, SessionGithubState } from '../../types';
+import type { MountGitlabMrState } from '../gitlab-mr/state';
 import type { MountBitbucketPrState } from '../bitbucket-pr/state';
 import { refreshActiveRequest } from './refreshActiveRequest';
 import { requestHostOf } from './requestHostOf';
@@ -165,6 +167,70 @@ describe('requestHostOf', () => {
     });
 
     expect(hostNow()).toBe('github');
+  });
+});
+
+describe('requestHostOf with a named mount', () => {
+  const GITHUB_MOUNT_ID = 'mount-ledger-core' as MountId;
+  const MR: GitlabMergeRequest = {
+    id: 4201,
+    iid: 42,
+    projectId: 9,
+    title: 'Retry dispatch with a cap',
+    description: null,
+    state: 'opened',
+    webUrl: 'https://gitlab.com/harborline/payments-api/-/merge_requests/42',
+    sourceBranch: PR.sourceBranch,
+    targetBranch: 'main',
+    draft: false,
+    hasConflicts: false,
+    mergeStatus: 'can_be_merged',
+    updatedAt: STAMP,
+  };
+  const GITLAB: MountGitlabMrState = {
+    mountId: MOUNT_ID,
+    projectId: PROJECT_ID,
+    revision: 1,
+    host: 'https://gitlab.com',
+    projectPath: 'harborline/payments-api',
+    branch: PR.sourceBranch,
+    mrs: [MR],
+    links: [],
+    mr: MR,
+    fetchedAt: STAMP,
+    loading: false,
+    error: null,
+  };
+  const GITHUB_MOUNT: MountGithubState = {
+    ...GITHUB,
+    mountId: GITHUB_MOUNT_ID,
+    projectId: PROJECT_ID,
+    revision: 1,
+    repository: 'harborline/ledger-core',
+    host: 'github.com',
+    branch: 'ak/fix-credit',
+    prs: [GITHUB_PR],
+    links: [],
+  };
+
+  it('answers for that mount even when the active request lives on another host', () => {
+    useAppStore.setState({
+      sessionMounts: {
+        [SESSION_ID]: [VIEW, { ...VIEW, id: GITHUB_MOUNT_ID, mountName: 'ledger-core' }],
+      },
+      sessionGithub: {},
+      mountGitlabMr: { [MOUNT_ID]: GITLAB },
+      mountGithub: { [GITHUB_MOUNT_ID]: GITHUB_MOUNT },
+    });
+
+    expect(hostNow()).toBe('gitlab');
+    expect(
+      requestHostOf({
+        state: useAppStore.getState(),
+        sessionId: SESSION_ID,
+        mountId: GITHUB_MOUNT_ID,
+      }),
+    ).toBe('github');
   });
 });
 

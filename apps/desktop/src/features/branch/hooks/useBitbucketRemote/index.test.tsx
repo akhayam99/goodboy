@@ -152,14 +152,17 @@ describe('useBitbucketRemote', () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
-  it('does nothing in a workspace without a Bitbucket connection', async () => {
-    useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] } });
+  it('still knows a Bitbucket remote without a connection, and never asks Bitbucket for it', async () => {
+    useAppStore.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [] }, mountBitbucketPr: {} });
     worktree.remote.mockResolvedValue('git@bitbucket.org:harborline/payments-api.git');
 
     const { result } = remoteAt(`/repos/unconnected-${counter}`);
 
-    expect(result.current.isBitbucket).toBe(false);
-    expect(worktree.remote).not.toHaveBeenCalled();
+    await waitFor(() => expect(result.current.isBitbucket).toBe(true));
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.newPullRequestUrl).toBe(
+      'https://bitbucket.org/harborline/payments-api/pull-requests/new?source=hl%2Ffix-duplicate-credit',
+    );
     expect(refresh).not.toHaveBeenCalled();
   });
 

@@ -89,7 +89,7 @@ describe('mapMrToPullRequestState', () => {
     [null, null],
     [approvals({ left: 1, approvers: 0 }), 'review_required'],
     [approvals({ left: 1, approvers: 1 }), 'review_required'],
-    [approvals({ left: 0, approvers: 0 }), 'review_required'],
+    [approvals({ left: 0, approvers: 0 }), null],
     [approvals({ left: 0, approvers: 1 }), 'approved'],
   ] as const)('reads the approvals %j as the decision %s', (state, decision) => {
     expect(mapMrToPullRequestState({ mr: MR, approvals: state })?.reviewDecision).toBe(decision);
