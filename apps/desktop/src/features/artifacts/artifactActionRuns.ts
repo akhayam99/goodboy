@@ -19,6 +19,7 @@ import { loadArtifactProvenance } from './artifactProvenance';
 import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from './artifactRetryDraft';
 import type { ArtifactGeneration } from './artifactCollection';
 import { artifactFileSlug } from './hooks/useArtifactExport/artifactFileSlug';
+import { openAgentRevealEvent } from '../../shared/utils/openAgentReveal';
 import {
   artifactExportContents,
   artifactSourceExport,
@@ -105,7 +106,7 @@ export const regenerateReport = async ({
     attachments: [],
     evidence: kickoff,
   });
-  window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+  window.dispatchEvent(openAgentRevealEvent());
 };
 
 type WireframeParams = {
@@ -132,7 +133,7 @@ export const spawnWireframeVariant = async ({
     workflowRunId: artifact.workflowRunId,
     attachments: [],
   });
-  window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+  window.dispatchEvent(openAgentRevealEvent());
 };
 
 export const retryArtifactGeneration = async ({

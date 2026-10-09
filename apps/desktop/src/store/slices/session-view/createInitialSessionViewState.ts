@@ -12,6 +12,7 @@ export const createInitialSessionViewState = ({}: Params) => ({
   focusedGithubIssueNumber: {},
   focusedExternalTask: {},
   agentPane: {},
+  agentTab: {},
   sessionStudio: {},
   workflowExpand: {},
   focusedWorkflowRunId: {},

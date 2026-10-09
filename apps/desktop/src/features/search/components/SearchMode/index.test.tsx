@@ -239,7 +239,7 @@ describe('search mode', () => {
     await flush();
     expect(onClose).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith({
-      to: { at: 'agent', sessionId: SESSION, agentId: AGENT },
+      to: { at: 'agent', sessionId: SESSION, agentId: AGENT, pane: 'transcript' },
     });
     expect(startViewFind).toHaveBeenCalledWith({
       query: 'settlement',

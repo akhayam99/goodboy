@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
-import { openAgentRevealEvent } from '../../../session/components/AgentDetailPane/agentOpenTab';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -23,7 +23,9 @@ export const useOpenAgentQuestion = ({ sessionId }: Params) => {
         navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
         return;
       }
-      navigate({ to: agentPlace({ sessionId, agentId: question.createdByAgentId }) });
+      navigate({
+        to: agentPlace({ sessionId, agentId: question.createdByAgentId, pane: 'brief' }),
+      });
       requestOpenQuestionScroll({ agentId: question.createdByAgentId, questionId: question.id });
       window.dispatchEvent(openAgentRevealEvent());
     },

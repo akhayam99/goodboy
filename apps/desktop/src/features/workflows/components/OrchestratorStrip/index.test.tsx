@@ -465,7 +465,7 @@ describe('OrchestratorStrip state ladder', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
     expect(storeState['navigate']).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION_ID, agentId: PLAN.agentId }),
+      to: agentPlace({ sessionId: SESSION_ID, agentId: PLAN.agentId, pane: 'brief' }),
     });
     expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
   });

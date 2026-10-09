@@ -1,8 +1,9 @@
 import type { Agent, TurnEvent, TurnState } from '@goodboy/types';
 import { agentStatusWord } from '../../agentStatusWord';
+import { pluralize } from '../../../../shared/utils/pluralize';
 
 type AgentNowState = {
-  readonly label: string;
+  readonly label: string | null;
 };
 
 type RunningLabelParams = {
@@ -29,6 +30,7 @@ type NowStateParams = {
   readonly agent: Agent;
   readonly turnState: TurnState | null;
   readonly transcript: ReadonlyArray<TurnEvent>;
+  readonly activeChildren?: number;
 };
 
 type StatusParams = {
@@ -39,10 +41,16 @@ type StatusParams = {
 export const effectiveAgentStatus = ({ agent, turnState }: StatusParams): Agent['status'] =>
   turnState?.kind === 'running' ? 'running' : agent.status;
 
-export const agentNowState = ({ agent, turnState, transcript }: NowStateParams): AgentNowState => {
+export const agentNowState = ({
+  agent,
+  turnState,
+  transcript,
+  activeChildren = 0,
+}: NowStateParams): AgentNowState => {
   if (turnState?.kind === 'running' || (turnState === null && agent.status === 'running')) {
     return { label: runningLabel({ transcript }) };
   }
+
   if (turnState?.kind === 'blocked') {
     return { label: 'Needs permission' };
   }
@@ -57,6 +65,11 @@ export const agentNowState = ({ agent, turnState, transcript }: NowStateParams):
   }
   if (agent.status === 'failed' || agent.status === 'stopped') {
     return { label: agentStatusWord({ status: agent.status }) };
+  }
+  if (agent.status === 'running') {
+    return {
+      label: activeChildren === 0 ? null : `Waiting on ${pluralize(activeChildren, 'subagent')}`,
+    };
   }
   return { label: 'ready' };
 };

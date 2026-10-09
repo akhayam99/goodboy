@@ -188,6 +188,7 @@ type SessionViewSliceState = {
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
+  readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
@@ -206,6 +207,7 @@ type SessionViewSliceState = {
 };
 
 type SessionViewSliceActions = {
+  setAgentTab(params: { readonly agentId: AgentId; readonly pane: AgentPane }): void;
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionViewPrefs(params: SetSessionViewPrefsParams): void;

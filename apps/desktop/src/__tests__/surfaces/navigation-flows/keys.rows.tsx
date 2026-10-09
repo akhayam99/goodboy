@@ -948,7 +948,11 @@ const composerKeys: { last: KeyboardEvent | null } = { last: null };
 const openAgentChat = async (ctx: Ctx): Promise<HTMLElement> => {
   hydrateBranches();
   useAppStore.getState().navigate({
-    to: agentPlace({ sessionId: ctx.sessionId, agentId: standaloneAgent(ctx) as never }),
+    to: agentPlace({
+      sessionId: ctx.sessionId,
+      agentId: standaloneAgent(ctx) as never,
+      pane: 'transcript',
+    }),
   });
   await settle();
   const composer = await screen.findByPlaceholderText(/^What should .* build\?/, undefined, WAIT);

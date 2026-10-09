@@ -40,4 +40,5 @@ export type SessionViewState = {
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
+  readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
 };

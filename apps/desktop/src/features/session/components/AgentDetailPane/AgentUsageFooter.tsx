@@ -10,7 +10,7 @@ import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 type Props = {
   readonly aggregate: AgentAggregate | null;
   readonly contextUsage: ReadonlyArray<ProviderContextUsage>;
-  readonly turns: number;
+  readonly turns: number | null;
 };
 
 export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
@@ -63,7 +63,7 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
             totalInput={totalInput}
             cachedPct={cachedPct}
             contextPct={contextPct}
-            turns={turns}
+            turns={turns === null || turns <= 0 ? null : turns}
           />
         </button>
       }

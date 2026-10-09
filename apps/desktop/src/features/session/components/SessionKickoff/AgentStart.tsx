@@ -15,6 +15,7 @@ import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKi
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
+import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -91,7 +92,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
       return;
     }
     promptFiles.clear();
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    window.dispatchEvent(openAgentRevealEvent());
   };
 
   const placeholder = isScout

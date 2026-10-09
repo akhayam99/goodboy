@@ -501,7 +501,7 @@ describe('useSuggestionActions', () => {
 
     expect(onSelectQuestions).not.toHaveBeenCalled();
     expect(spies.navigate).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID }),
+      to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID, pane: 'brief' }),
     });
     expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: AGENT_ID,
