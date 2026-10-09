@@ -52,5 +52,9 @@ const STUDIO_OVER_SESSION: ReadonlySet<ColumnPlace> = new Set<ColumnPlace>([
   'impact',
 ]);
 
-export const isStudioOverSession = ({ place }: { readonly place: ColumnPlace }): boolean =>
+type StudioOverSessionParams = {
+  readonly place: ColumnPlace;
+};
+
+export const isStudioOverSession = ({ place }: StudioOverSessionParams): boolean =>
   STUDIO_OVER_SESSION.has(place);
