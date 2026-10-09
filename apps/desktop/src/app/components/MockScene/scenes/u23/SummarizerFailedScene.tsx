@@ -6,11 +6,14 @@ import { seedBoardScene, WORKSPACE_ID } from '../BoardScene';
 import { AppFrame } from '../audit/AppFrame';
 import { seedFrameChromeStubs } from '../audit/frameSeed';
 import { useSceneClicks } from '../audit/useSceneClicks';
+import { sceneClock } from '../../sceneClock';
 
 const STUDIO_CLICKS: ReadonlyArray<string> = ['Open all'];
 
 const SESSION_ID = 'mock-summarizer-failed-session-refunds' as SessionId;
-const NOW_MS = Date.parse('2026-09-07T13:15:00.000Z');
+const NOW_MS = sceneClock({ anchor: '2026-09-07T13:15:00.000Z' }).ms({
+  at: '2026-09-07T13:15:00.000Z',
+});
 
 const RUN_ID = 'mock-run-refunds-1' as WorkflowRunId;
 const AGENT_ID = 'mock-agent-refunds-implement' as AgentId;
