@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const FIGURES_PATH = resolve(ROOT_DIRECTORY, 'docs/figures.json');
+const FIGURES_PATH = resolve(ROOT_DIRECTORY, 'docs/figures.json');
 export const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 
 export const captionOf = ({ version }) => `<sub>Screenshot from Goodboy ${version}</sub>`;
