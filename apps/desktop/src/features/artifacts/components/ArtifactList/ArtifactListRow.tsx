@@ -193,7 +193,6 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
                 <Button
                   size="sm"
                   variant="secondary"
-                  emphasis="solid"
                   isBusy={controls.pendingId === restoreAction.id}
                   onClick={() => controls.trigger({ actionId: restoreAction.id })}
                 >
@@ -205,8 +204,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
               {permanentAction === null ? null : (
                 <Button
                   size="sm"
-                  variant="danger"
-                  emphasis="outline"
+                  variant="ghost-danger"
                   isBusy={controls.pendingId === permanentAction.id}
                   onClick={() => controls.trigger({ actionId: permanentAction.id })}
                 >
@@ -221,8 +219,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
               {primary === null ? null : (
                 <Button
                   size="sm"
-                  variant={isFilled ? 'primary' : 'secondary'}
-                  emphasis={isFilled ? 'outline' : 'solid'}
+                  variant="secondary"
                   disabled={primary.blockedReason !== null}
                   isBusy={controls.pendingId === primary.id}
                   title={primary.blockedReason ?? primary.description ?? undefined}

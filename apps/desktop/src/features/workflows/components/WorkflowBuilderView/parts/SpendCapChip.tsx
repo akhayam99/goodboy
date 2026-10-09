@@ -88,12 +88,7 @@ export const SpendCapChip = ({
       <div className="flex items-center justify-between gap-3">
         <span className="text-meta text-muted-foreground">Cap this run before it starts.</span>
         <Switch
-          label={
-            <>
-              <span className="sr-only">{NAMES.spendCap} </span>
-              {isEnabled ? 'On' : 'Off'}
-            </>
-          }
+          ariaLabel={NAMES.spendCap}
           checked={isEnabled}
           disabled={disabled}
           onChange={onEnabled}

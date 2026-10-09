@@ -1,4 +1,4 @@
-import { Button, KbdPill } from '@goodboy/ui';
+import { Button, KeyHint } from '@goodboy/ui';
 import { REVIEW_BULK_LABEL, acceptedLine } from '../../reviewBulkCopy';
 
 type Props = {
@@ -16,11 +16,9 @@ export const BulkUndoBar = ({ count, hint, isBusy, onUndo }: Props) => (
     <span className="whitespace-nowrap text-row tabular-nums text-foreground">
       {acceptedLine({ count })}
     </span>
-    <Button size="sm" variant="ghost" isBusy={isBusy} onClick={onUndo} className="gap-2">
+    <Button size="sm" variant="ghost" isBusy={isBusy} onClick={onUndo}>
       {REVIEW_BULK_LABEL.undo}
-      <KbdPill aria-hidden className="h-4 min-w-4 text-chip">
-        {hint}
-      </KbdPill>
+      <KeyHint keys={hint} />
     </Button>
   </div>
 );

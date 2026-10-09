@@ -1,5 +1,5 @@
 import { Moon, Sun } from 'lucide-react';
-import { Tooltip } from '@goodboy/ui';
+import { FOCUS_RING, TOP_BAR_CONTROL, Tooltip, cn } from '@goodboy/ui';
 import { useAppliedTheme, useThemeStore } from '../../../../shared/lib/theme';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -28,7 +28,12 @@ export const ThemeToggle = () => {
         type="button"
         onClick={toggleTheme}
         aria-label={tooltip}
-        className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+        className={cn(
+          TOP_BAR_CONTROL.square,
+          TOP_BAR_CONTROL.radius,
+          FOCUS_RING,
+          'flex shrink-0 items-center justify-center text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
+        )}
       >
         <Icon
           key={theme}

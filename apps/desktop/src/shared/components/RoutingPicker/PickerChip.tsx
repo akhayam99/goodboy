@@ -1,6 +1,6 @@
 import { EyeOff } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import { CHIP_TONE_ACTIVE, type ChipTone } from './chipTone';
+import { CHIP_ACTIVE } from './chipTone';
 
 const HIDDEN_IN_PICKER = 'Hidden in the picker';
 
@@ -9,7 +9,6 @@ type Props = {
   readonly active: boolean;
   readonly disabled?: boolean;
   readonly title?: string;
-  readonly tone?: ChipTone;
   readonly isHiddenInPicker?: boolean;
   readonly onSelect: () => void;
 };
@@ -19,7 +18,6 @@ export const PickerChip = ({
   active,
   disabled = false,
   title,
-  tone = 'neutral',
   isHiddenInPicker = false,
   onSelect,
 }: Props) => (
@@ -32,7 +30,7 @@ export const PickerChip = ({
     className={cn(
       'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label transition-colors',
       active
-        ? cn('font-medium shadow-sm', CHIP_TONE_ACTIVE[tone])
+        ? cn('font-medium shadow-sm', CHIP_ACTIVE)
         : 'text-muted-foreground hover:bg-background hover:text-foreground',
       disabled && 'cursor-not-allowed opacity-60',
     )}

@@ -25,7 +25,7 @@ type Props = {
   readonly onActed?: () => void;
 };
 
-const ICON_BUTTON = 'flex size-5.5 items-center justify-center rounded-sm text-muted-foreground';
+const ICON_BUTTON = 'flex size-6 items-center justify-center rounded-sm text-muted-foreground';
 
 export const NotificationRow = ({
   notifications,
@@ -200,7 +200,7 @@ export const NotificationRow = ({
             <button
               type="button"
               onClick={runAction}
-              className="inline-flex h-5.5 items-center whitespace-nowrap rounded-sm px-2 text-chip text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
+              className="inline-flex h-6 items-center whitespace-nowrap rounded-sm px-2 text-chip text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
             >
               {action.label}
             </button>

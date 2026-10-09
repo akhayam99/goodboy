@@ -136,7 +136,7 @@ export const RunControlMenu = ({
           aria-haspopup="menu"
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
-          className={cn('size-7', dropdown.open && 'bg-muted')}
+          className={cn(dropdown.open && 'bg-muted')}
         />
       }
     >

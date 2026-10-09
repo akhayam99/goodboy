@@ -1,5 +1,4 @@
-import { FOCUS_RING, cn } from '@goodboy/ui';
-import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
+import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { CombineMode } from '../../historyPlan';
 
 type Props = {
@@ -9,65 +8,46 @@ type Props = {
   readonly isDisabled?: boolean;
 };
 
-const OPTIONS: ReadonlyArray<{
-  readonly mode: CombineMode;
-  readonly label: string;
-  readonly hint: string;
-}> = [
+type Choice = CombineMode | 'separate';
+
+const COMBINE_OPTIONS: ReadonlyArray<SegmentedTabOption<Choice>> = [
   {
-    mode: 'fixup',
+    value: 'fixup',
     label: 'Keep title',
-    hint: 'Fold in (fixup): keeps only the title of the commit it goes into.',
+    tooltip: 'Fold in (fixup): keeps only the title of the commit it goes into.',
   },
-  { mode: 'squash', label: 'Keep both', hint: 'Combine (squash): keeps both commit messages.' },
+  {
+    value: 'squash',
+    label: 'Keep both',
+    tooltip: 'Combine (squash): keeps both commit messages.',
+  },
 ];
 
-const OPTION_CLASS = 'rounded-sm border px-2 text-chip whitespace-nowrap';
-const IDLE_CLASS = 'border-transparent text-muted-foreground hover:text-foreground';
+const SEPARATE_OPTION: SegmentedTabOption<Choice> = {
+  value: 'separate',
+  label: 'Separate',
+  tooltip: 'Make it its own commit again',
+};
 
-export const HistoryModeSwitch = ({ mode, onChange, onSeparate, isDisabled = false }: Props) => (
-  <span
-    role="group"
-    aria-label={onSeparate === undefined ? 'What to keep' : 'Where this commit goes'}
-    className="inline-flex shrink-0 gap-px rounded-md border border-border-soft bg-fill p-0.5"
-  >
-    {OPTIONS.map((option) => {
-      const isPressed = option.mode === mode;
-      return (
-        <button
-          key={option.mode}
-          type="button"
-          title={option.hint}
-          aria-pressed={isPressed}
-          disabled={isDisabled}
-          onClick={(event) => {
-            event.stopPropagation();
-            onChange(option.mode);
-          }}
-          className={cn(
-            OPTION_CLASS,
-            FOCUS_RING,
-            isPressed ? HISTORY_ACTION_CLASSES[option.mode].mark : IDLE_CLASS,
-          )}
-        >
-          {option.label}
-        </button>
-      );
-    })}
-    {onSeparate === undefined ? null : (
-      <button
-        type="button"
-        title="Make it its own commit again"
-        aria-pressed={false}
-        disabled={isDisabled}
-        onClick={(event) => {
-          event.stopPropagation();
-          onSeparate();
+export const HistoryModeSwitch = ({ mode, onChange, onSeparate, isDisabled = false }: Props) => {
+  const options = (
+    onSeparate === undefined ? COMBINE_OPTIONS : [...COMBINE_OPTIONS, SEPARATE_OPTION]
+  ).map((option) => ({ ...option, disabled: isDisabled }));
+  return (
+    <span className="inline-flex shrink-0" onClick={(event) => event.stopPropagation()}>
+      <SegmentedTabs<Choice>
+        size="xs"
+        ariaLabel={onSeparate === undefined ? 'What to keep' : 'Where this commit goes'}
+        options={options}
+        value={mode}
+        onChange={(choice) => {
+          if (choice === 'separate') {
+            onSeparate?.();
+            return;
+          }
+          onChange(choice);
         }}
-        className={cn(OPTION_CLASS, FOCUS_RING, IDLE_CLASS)}
-      >
-        Separate
-      </button>
-    )}
-  </span>
-);
+      />
+    </span>
+  );
+};

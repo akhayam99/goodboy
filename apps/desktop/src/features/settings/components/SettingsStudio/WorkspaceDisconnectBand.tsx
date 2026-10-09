@@ -65,7 +65,7 @@ export const WorkspaceDisconnectBand = ({ workspaceId, requestClose }: Props) =>
         />
       ) : (
         <FieldRow label={`Disconnect ${workspaceName ?? 'this workspace'}`} help={DISCONNECT_NOTE}>
-          <Button variant="danger" size="sm" onClick={() => setIsConfirming(true)}>
+          <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
             Disconnect
           </Button>
         </FieldRow>

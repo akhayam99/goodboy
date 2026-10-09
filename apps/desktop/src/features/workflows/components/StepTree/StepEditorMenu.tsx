@@ -112,7 +112,7 @@ export const StepEditorMenu = ({
           aria-expanded={dropdown.open}
           disabled={disabled}
           onClick={dropdown.toggle}
-          className={cn('size-7', dropdown.open && 'bg-muted')}
+          className={cn(dropdown.open && 'bg-muted')}
         />
       }
     >

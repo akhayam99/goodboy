@@ -54,8 +54,7 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
       </p>
       <div className="flex items-center gap-2">
         <Button
-          variant="warning"
-          emphasis="outline"
+          variant="secondary"
           size="sm"
           onClick={handleRepair}
           disabled={!canRepair}

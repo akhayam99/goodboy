@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from 'react';
-import { Button, FormActions, KbdPill, formatError, useEscapeLayer } from '@goodboy/ui';
+import { Button, FormActions, formatError, useEscapeLayer, KeyHint } from '@goodboy/ui';
 import type { ResolveCommitStyle, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { PromptField } from '../../../../../shared/components/PromptField';
@@ -135,9 +135,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
       <FormActions error={error}>
         <Button size="sm" variant="ghost" onClick={onClose}>
           {REVIEW_LAUNCH_LABEL.cancel}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-chip">
-            Esc
-          </KbdPill>
+          <KeyHint keys="Esc" />
         </Button>
         <Button
           size="sm"
@@ -147,12 +145,7 @@ export const LaunchPanel = ({ sessionId, rows, onToggle, onClose, onStarted }: P
           onClick={() => void start()}
         >
           {launchStartLabel({ count })}
-          <KbdPill
-            aria-hidden
-            className="h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
-          >
-            {shortcutGlyphs('composer.submit')}
-          </KbdPill>
+          <KeyHint keys={shortcutGlyphs('composer.submit')} onTone />
         </Button>
       </FormActions>
     </section>

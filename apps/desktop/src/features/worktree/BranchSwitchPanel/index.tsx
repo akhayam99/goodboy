@@ -120,6 +120,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
             {branch}
           </span>
           <IconButton
+            size="xs"
             variant="ghost"
             icon={copiedKey === null ? Copy : Check}
             iconSize={11}
@@ -133,7 +134,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
             }
             tone={copiedKey !== null ? 'success' : failedKey !== null ? 'danger' : 'neutral'}
             onClick={() => void copy({ text: branch })}
-            className="size-6 shrink-0"
+            className="shrink-0"
           />
         </div>
       )}
@@ -219,7 +220,6 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           size="sm"
           onClick={() => void onChangeBranch()}
           disabled={isBusy || target === '' || (branchMode === 'existing' && isBranchesLoading)}
-          variant={needsConfirmation && isReuseConfirmed ? 'warning' : 'primary'}
         >
           <span className={isBusy ? 'text-shimmer' : undefined}>
             {isBusy

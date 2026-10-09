@@ -7,6 +7,7 @@ import { Button } from '../Button';
 import { CopyButton } from '../CopyButton';
 import { FormActions } from '../FormActions';
 import { KbdPill } from '../KbdPill';
+import { KeyHint } from '../KeyHint';
 import { ScrollFade } from '../ScrollFade';
 import { Textarea } from '../Textarea';
 import { AttachmentChip, type ReportSheetAttachment } from './AttachmentChip';
@@ -290,7 +291,7 @@ export const ReportSheet = ({
         {isDetailOpen ? null : (
           <Button variant="ghost" size="sm" onClick={openDetail}>
             Add detail
-            <KbdPill className="ml-2">⇥</KbdPill>
+            <KeyHint keys="⇥" />
           </Button>
         )}
         <Button
@@ -302,9 +303,7 @@ export const ReportSheet = ({
         >
           {submitLabel}
           {submitIcon}
-          <KbdPill className="ml-2 border-transparent bg-on-tone/15 text-on-tone">
-            {submitHint}
-          </KbdPill>
+          <KeyHint keys={submitHint} onTone />
         </Button>
       </FormActions>
     </section>

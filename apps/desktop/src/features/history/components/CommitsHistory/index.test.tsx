@@ -271,20 +271,20 @@ describe('CommitsHistory', () => {
     expect(lastItems(actions)).toEqual(setVerb({ items: LEDGER_PRESET, sha: b, verb: 'drop' }));
     expect(within(row(x)).getByRole('button', { name: 'Keep' })).toBeDefined();
     const folded = within(row(e));
-    expect(folded.getAllByRole('button', { name: 'Separate' })).toHaveLength(1);
+    expect(folded.getAllByRole('tab', { name: 'Separate' })).toHaveLength(1);
     expect(folded.queryByRole('button', { name: 'Rename' })).toBeNull();
     expect(folded.getByRole('button', { name: /More for/ })).toBeDefined();
   });
 
   it('offers keep title, keep both and separate as one control on a folded row', () => {
     const actions = setup({ items: LEDGER_PRESET });
-    const control = within(within(row(e)).getByRole('group', { name: 'Where this commit goes' }));
-    expect(control.getAllByRole('button').map((button) => button.textContent)).toEqual([
+    const control = within(within(row(e)).getByRole('tablist', { name: 'Where this commit goes' }));
+    expect(control.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
       'Keep title',
       'Keep both',
       'Separate',
     ]);
-    fireEvent.click(control.getByRole('button', { name: 'Separate' }));
+    fireEvent.click(control.getByRole('tab', { name: 'Separate' }));
     expect(lastItems(actions)).toEqual(resetStep({ items: LEDGER_PRESET, sha: e }));
   });
 
@@ -302,9 +302,9 @@ describe('CommitsHistory', () => {
   it('switches a fold between keep title and keep both on the row and on its change', () => {
     const folded = combineInto({ items: BASE, sha: f, target: a, mode: 'fixup' });
     const actions = setup({ items: folded });
-    expect(screen.getAllByRole('group', { name: 'Where this commit goes' })).toHaveLength(1);
-    expect(screen.getAllByRole('group', { name: 'What to keep' })).toHaveLength(1);
-    fireEvent.click(within(row(f)).getByRole('button', { name: 'Keep both' }));
+    expect(screen.getAllByRole('tablist', { name: 'Where this commit goes' })).toHaveLength(1);
+    expect(screen.getAllByRole('tablist', { name: 'What to keep' })).toHaveLength(1);
+    fireEvent.click(within(row(f)).getByRole('tab', { name: 'Keep both' }));
     expect(lastItems(actions)).toEqual(setCombineMode({ items: folded, sha: f, mode: 'squash' }));
   });
 

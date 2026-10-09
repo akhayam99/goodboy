@@ -130,7 +130,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
           help="Signs every comment and review reply Goodboy posts."
         >
           <Switch
-            label={attributionFooter ? 'On' : 'Off'}
+            ariaLabel="Attribution line"
             checked={attributionFooter}
             disabled={busy}
             onChange={(next) =>
@@ -157,7 +157,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
           help="Lets eligible agents split independent work and reconcile it in one output."
         >
           <Switch
-            label={parallelAgents ? 'On' : 'Off'}
+            ariaLabel="Parallel agents"
             checked={parallelAgents}
             disabled={busy}
             onChange={(next) =>

@@ -1,7 +1,7 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check, CircleCheck } from 'lucide-react';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Button, Chip, KbdPill, Markdown, SectionHeader, Tooltip, cn } from '@goodboy/ui';
+import { Button, Chip, KeyHint, Markdown, SectionHeader, Tooltip } from '@goodboy/ui';
 import { useThreadQuestion } from '../../hooks/useThreadQuestion';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
@@ -528,15 +528,10 @@ export const ReviewComment = ({
                 >
                   {action.label}
                   {action.shortcut !== null && (
-                    <KbdPill
-                      aria-hidden
-                      className={cn(
-                        'ml-1 h-4 min-w-4 text-chip',
-                        action.slot === 'primary' && 'border-on-tone/30 bg-on-tone/15 text-on-tone',
-                      )}
-                    >
-                      {shortcutGlyphs(action.shortcut)}
-                    </KbdPill>
+                    <KeyHint
+                      keys={shortcutGlyphs(action.shortcut)}
+                      onTone={action.slot === 'primary'}
+                    />
                   )}
                 </Button>
               );

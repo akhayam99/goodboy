@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { DECISION_DETAIL_LINE_HEIGHT, decisionChangeDetail } from './decisionChangeLines';
+import {
+  DECISION_DETAIL_ACTION_HEIGHT,
+  DECISION_DETAIL_LINE_HEIGHT,
+  decisionChangeDetail,
+} from './decisionChangeLines';
 
 describe('decisionChangeDetail', () => {
   it('reads each change as a diff line and knows which decisions it touched', () => {
@@ -21,7 +25,9 @@ describe('decisionChangeDetail', () => {
       ['−', 'D5', 'withdrawn: drift'],
     ]);
     expect(detail?.numbers).toEqual([12, 3, 5]);
-    expect(detail?.height).toBe(4 * DECISION_DETAIL_LINE_HEIGHT + 8);
+    expect(detail?.height).toBe(
+      3 * DECISION_DETAIL_LINE_HEIGHT + DECISION_DETAIL_ACTION_HEIGHT + 8,
+    );
   });
 
   it('caps the lines and counts the rest', () => {
@@ -37,7 +43,9 @@ describe('decisionChangeDetail', () => {
 
     expect(detail?.lines).toHaveLength(6);
     expect(detail?.hiddenCount).toBe(3);
-    expect(detail?.height).toBe(8 * DECISION_DETAIL_LINE_HEIGHT + 8);
+    expect(detail?.height).toBe(
+      7 * DECISION_DETAIL_LINE_HEIGHT + DECISION_DETAIL_ACTION_HEIGHT + 8,
+    );
   });
 
   it('has nothing to open for an old event or a pure rewording', () => {

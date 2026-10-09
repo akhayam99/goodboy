@@ -1,12 +1,12 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import {
   Button,
-  KbdPill,
   SectionHeader,
   SegmentedTabs,
   Textarea,
   Tooltip,
   formatError,
+  KeyHint,
 } from '@goodboy/ui';
 import type { PrReviewDraft, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -79,12 +79,7 @@ export const WriteReviewForm = ({ sessionId, variant = 'page' }: Props) => {
         onClick={onSubmit}
       >
         {submit.label}
-        <KbdPill
-          aria-hidden
-          className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
-        >
-          {shortcutGlyphs('composer.submit')}
-        </KbdPill>
+        <KeyHint keys={shortcutGlyphs('composer.submit')} onTone />
       </Button>
     );
 

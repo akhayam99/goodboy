@@ -273,7 +273,7 @@ export const ProjectGitSummaryPill = ({ entries, isQuiet = false }: Props) => {
               label="Check origin"
               tooltip="Check origin"
               onClick={() => void onCheckOrigin()}
-              className={cn('size-7 shrink-0', isCheckingOrigin && 'spin-border spin-border-info')}
+              className={cn('shrink-0', isCheckingOrigin && 'spin-border spin-border-info')}
             />
             {updatableProjects.length === 0 ? (
               <span className="flex shrink-0 items-center gap-1 text-label text-muted-foreground">

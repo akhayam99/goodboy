@@ -56,6 +56,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
       trigger={
         presentation === 'icon' ? (
           <IconButton
+            size="xs"
             variant="ghost"
             icon={FolderPlus}
             iconSize={ICON_SIZE.row}
@@ -66,7 +67,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
               setIsComplete(false);
               dropdown.toggle();
             }}
-            className="size-6 shrink-0"
+            className="shrink-0"
           />
         ) : (
           <Button

@@ -2,8 +2,28 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { Button } from '../components/Button';
+import {
+  BUTTON_SIZE_CLASSES,
+  BUTTON_VARIANT_CLASSES,
+  Button,
+  type ButtonSize,
+  type ButtonVariant,
+} from '../components/Button';
 import { FOCUS_RING } from '../focusRing';
+
+const HEIGHT_BY_SIZE = { xs: 'h-6', sm: 'h-7', md: 'h-8' } as const satisfies Record<
+  ButtonSize,
+  string
+>;
+
+const VARIANTS = [
+  'primary',
+  'secondary',
+  'ghost',
+  'danger',
+  'quiet',
+  'ghost-danger',
+] as const satisfies ReadonlyArray<ButtonVariant>;
 
 describe('Button', () => {
   afterEach(cleanup);
@@ -37,47 +57,80 @@ describe('Button', () => {
     expect(classes).toEqual(expect.arrayContaining(FOCUS_RING.split(' ')));
   });
 
-  it('has an extra small size for a ghost action inside a row', () => {
+  it('draws xs, sm and md at 24, 28 and 32 and names its size', () => {
     render(
-      <Button variant="ghost" size="xs">
-        Open
-      </Button>,
+      <>
+        <Button size="xs">Extra</Button>
+        <Button size="sm">Small</Button>
+        <Button size="md">Medium</Button>
+      </>,
     );
-    const classes = screen.getByRole('button', { name: 'Open' }).className.split(' ');
 
-    expect(classes).toContain('h-6');
-    expect(classes).not.toContain('h-7');
+    for (const [label, size] of [
+      ['Extra', 'xs'],
+      ['Small', 'sm'],
+      ['Medium', 'md'],
+    ] as const) {
+      const button = screen.getByRole('button', { name: label });
+      expect(button.getAttribute('data-size')).toBe(size);
+      expect(button.className.split(' ')).toContain(HEIGHT_BY_SIZE[size]);
+    }
   });
 
-  it('draws sm at 28px and names its size for a header row to check', () => {
-    render(<Button size="sm">Create PR</Button>);
-    const button = screen.getByRole('button', { name: 'Create PR' });
+  it('defaults to sm so an unsized button sits at 28', () => {
+    render(<Button>Save</Button>);
+    const button = screen.getByRole('button', { name: 'Save' });
 
     expect(button.getAttribute('data-size')).toBe('sm');
     expect(button.className.split(' ')).toContain('h-7');
+    expect(button.className.split(' ')).not.toContain('h-8');
   });
 
-  it('keeps every emphasis as an enabled button', () => {
+  it('spaces the icon by 4 at xs and by 8 above it', () => {
+    expect(BUTTON_SIZE_CLASSES.xs.split(' ')).toContain('gap-1');
+    expect(BUTTON_SIZE_CLASSES.sm.split(' ')).toContain('gap-2');
+    expect(BUTTON_SIZE_CLASSES.md.split(' ')).toContain('gap-2');
+  });
+
+  it('offers exactly the ladder of variants, with quiet and ghost danger in it', () => {
+    expect(Object.keys(BUTTON_VARIANT_CLASSES).sort()).toEqual([...VARIANTS].sort());
+    expect(BUTTON_VARIANT_CLASSES.quiet).toContain('text-muted-foreground');
+    expect(BUTTON_VARIANT_CLASSES['ghost-danger']).toContain('text-danger');
+    expect(BUTTON_VARIANT_CLASSES['ghost-danger']).not.toContain('bg-danger ');
+  });
+
+  it('keeps every variant as an enabled button', () => {
     render(
       <>
-        <Button variant="danger">Solid</Button>
-        <Button variant="danger" emphasis="outline">
-          Outline
-        </Button>
+        {VARIANTS.map((variant) => (
+          <Button key={variant} variant={variant}>
+            {variant}
+          </Button>
+        ))}
       </>,
     );
 
-    expect(screen.getByRole('button', { name: 'Solid' }).hasAttribute('disabled')).toBe(false);
-    expect(screen.getByRole('button', { name: 'Outline' }).hasAttribute('disabled')).toBe(false);
+    for (const variant of VARIANTS) {
+      expect(screen.getByRole('button', { name: variant }).hasAttribute('disabled')).toBe(false);
+    }
   });
 
-  it('renders the supported semantic actions as buttons', () => {
+  it('shows a disabled button as the fill with the disabled label, never as half opacity', () => {
     render(
       <>
-        <Button variant="info">Info</Button>
+        {VARIANTS.map((variant) => (
+          <Button key={variant} variant={variant} disabled>
+            {variant}
+          </Button>
+        ))}
       </>,
     );
 
-    expect(screen.getByRole('button', { name: 'Info' })).toBeDefined();
+    for (const variant of VARIANTS) {
+      const classes = screen.getByRole('button', { name: variant }).className;
+      expect(classes).toContain('disabled:text-disabled-foreground');
+      expect(classes).not.toContain('opacity-50');
+    }
+    expect(BUTTON_VARIANT_CLASSES.primary).toContain('disabled:bg-fill');
   });
 });

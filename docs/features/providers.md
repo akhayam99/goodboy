@@ -31,17 +31,7 @@ Keep a task moving when a provider runs out. With another eligible provider conn
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-light.webp" alt="Settings, Providers and models, Defaults: Default provider set to Claude with the note Auto starts here, Fallback order with Claude first, and the Explore and plan roles Scout, Debugger and Planner, each with an Auto picker">
 </picture>
 
-Choose which providers this workspace uses, and in what order.
-
-**When a provider is out** in Defaults sums the list up ("Claude, Codex · Cursor as backup") and opens it in place: drag a provider by its handle, or move it with Alt and the arrow keys, and set it **On**, **Backup only** or **Off**. The first On provider is where new work starts.
-
-Auto uses the first On provider that can work, a **Backup only** provider only when no On provider can (not connected, at its limit, CLI too old), and an **Off** provider never, not even for a role pinned to it. One mark is yours to set: **Keep using after the limit**, which keeps a provider in the order while it is at its limit. A provider connected later shows at the end as **New** and stays unused until you turn it on.
-
-Every agent launch, new session, background task, workflow step and the workflow orchestrator's model menu read the same list. A click on a limits chip in the top bar opens the same list for the current workspace. Each role below, from Scout to Planner, says what Auto picks for it and opens to show how it runs, read only: what it does, what Auto picks and why, whether it splits and how far ("Up to 4 scouts, 2 levels"), and what it can launch.
-
-Every line comes from the engine, so it cannot drift from what runs. The one part you edit is the role's model set, **Models for planning** on the Planner: up to three models chosen with the same picker. Auto picks one per step by the step's size, trying them in your order, and a step can follow the role or pin its own model. A model that leaves the catalog stays in the set struck through and is skipped. A role without a set runs on Auto.
-
-Auto runs each role on the newest model of its line: Sonnet 5.5 for most Claude roles and Opus 5.5 for the Planner, GPT-6.1 Sol for the heavier Codex roles. On an older Claude or Codex CLI it keeps the newest model that CLI can run.
+Choose which providers this workspace uses, and in what order. **When a provider is out** in Defaults sums the list up ("Claude, Codex · Cursor as backup") and opens it in place: drag a provider by its handle, or move it with Alt and the arrow keys, and set it **On**, **Backup only** or **Off**. The first On provider is where new work starts. Auto uses the first On provider that can work, a **Backup only** provider only when no On provider can (not connected, at its limit, CLI too old), and an **Off** provider never, not even for a role pinned to it. One mark is yours to set: **Keep using after the limit**, which keeps a provider in the order while it is at its limit. A provider connected later shows at the end as **New** and stays unused until you turn it on. Every agent launch, new session, background task, workflow step and the workflow orchestrator's model menu read the same list. A click on a limits chip in the top bar opens the same list for the current workspace. Each role below, from Scout to Planner, says what Auto picks for it and opens to show how it runs, read only: what it does, what Auto picks and why, whether it splits and how far ("Up to 4 scouts, 2 levels"), and what it can launch. Every line comes from the engine, so it cannot drift from what runs. The one part you edit is the role's model set, **Models for planning** on the Planner: up to three models chosen with the same picker. Auto picks one per step by the step's size, trying them in your order, and a step can follow the role or pin its own model. A model that leaves the catalog stays in the set struck through and is skipped. A role without a set runs on Auto. Auto runs each role on the newest model of its line: Sonnet 5.5 for most Claude roles and Opus 5.5 for the Planner, GPT-6.1 Sol for the heavier Codex roles. On an older Claude or Codex CLI it keeps the newest model that CLI can run.
 
 ### Model picker
 
@@ -50,11 +40,7 @@ Auto runs each role on the newest model of its line: Sonnet 5.5 for most Claude 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-model-picker-light.webp" alt="The model picker opened on the Implementer role in Defaults: Auto with what it resolves to now, Claude Sonnet 5 Medium, then Provider icons, Model chips Haiku, Sonnet, Opus and Fable, Version 4.6 and 5, and Effort from Low to Max">
 </picture>
 
-Pick a model with the reason next to it.
-
-The picker leads with **Auto** and what it resolves to right now, then the provider, the model family, the version and the effort. The settings icon beside **Provider** opens **Models in the picker**, where you choose which models appear; a model you turn off is also left out of Auto and the workflow orchestrator. When you create an agent, the picker also offers a **Suggested** model with the reason and **Last used here**.
-
-Under the provider icons the picker says why the provider you look at is not a plain choice: **Off in this workspace**, **Backup only** or **At limit until 18:40**; a model the CLI is too old for, or one you hid, says so on its own line.
+Pick a model with the reason next to it. The picker leads with **Auto** and what it resolves to right now, then the provider, the model family, the version and the effort. The settings icon beside **Provider** opens **Models in the picker**, where you choose which models appear; a model you turn off is also left out of Auto and the workflow orchestrator. When you create an agent, the picker also offers a **Suggested** model with the reason and **Last used here**. Under the provider icons the picker says why the provider you look at is not a plain choice: **Off in this workspace**, **Backup only** or **At limit until 18:40**; a model the CLI is too old for, or one you hid, says so on its own line.
 
 ### Impact
 
@@ -63,11 +49,7 @@ Under the provider icons the picker says why the provider you look at is not a p
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-impact-overview-light.webp" alt="Impact, Overview, over 30 days: In the last 30 days Goodboy ran 24 sessions in Harborline, merged 17 pull requests and spent $250.77, then the tiles Pull requests merged 17, Reviews resolved 46, Run by workflows 63% and Median session 1.4h, and the sessions that shipped the most">
 </picture>
 
-See what Goodboy got done and what it cost over **7 days**, **30 days** or **All time**.
-
-**Overview** opens on tiles for **Sessions**, **Pull requests merged**, **Reviews resolved**, **Run by workflows** and **Median session**, each against the period before except **Sessions**, and the sessions that shipped the most. **Shipped**, **Flow** and **Spend** go deeper. The **Sessions** tile says how many of them were deleted. **Reviews resolved** counts only comments that were resolved, and comments sent to an agent show apart in **Shipped**.
-
-Impact, the **Spend** tab and the cost in the top bar add up spend the same way. Deleting a session frees its transcript, file versions and images, but its cost and the pull requests it merged still count here, on a row marked **Deleted**.
+See what Goodboy got done and what it cost over **7 days**, **30 days** or **All time**. **Overview** opens on tiles for **Sessions**, **Pull requests merged**, **Reviews resolved**, **Run by workflows** and **Median session**, each against the period before except **Sessions**, and the sessions that shipped the most. **Shipped**, **Flow** and **Spend** go deeper. The **Sessions** tile says how many of them were deleted. **Reviews resolved** counts only comments that were resolved, and comments sent to an agent show apart in **Shipped**. Impact, the **Spend** tab and the cost in the top bar add up spend the same way. Deleting a session frees its transcript, file versions and images, but its cost and the pull requests it merged still count here, on a row marked **Deleted**.
 
 ### Monthly cap and budget alert
 

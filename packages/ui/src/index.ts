@@ -126,7 +126,7 @@ export {
   SlackIcon,
   XIcon,
 } from './components/brandIcons';
-export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
+export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button';
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
 export { SelectionCheckbox } from './components/SelectionCheckbox';
@@ -292,3 +292,15 @@ export type { KbdLook, KbdProps } from './components/Kbd';
 export { ROW_HOVER, ROW_INTERACTIVE } from './rowInteractive';
 export { drawerAsideWidthOf, drawerLayoutOf } from './drawerGeometry';
 export type { DrawerLayout } from './drawerGeometry';
+export type { ChipKind } from './components/Chip';
+export type { IconButtonSize } from './components/IconButton';
+export { SearchField } from './components/SearchField';
+export type { SearchFieldProps } from './components/SearchField';
+export { ChoiceCards } from './components/ChoiceCards';
+export type { ChoiceCardsProps } from './components/ChoiceCards';
+export type { FieldSize } from './components/Input';
+export type { SegmentedTabsSize } from './components/SegmentedTabs';
+export { isChordHint } from './components/Kbd';
+export { KeyHint } from './components/KeyHint';
+export type { KeyHintProps } from './components/KeyHint';
+export { TOP_BAR_CONTROL } from './topBarControl';

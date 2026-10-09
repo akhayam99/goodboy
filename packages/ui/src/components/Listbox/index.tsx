@@ -87,7 +87,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
   const {
     options,
     trigger = 'field',
-    size = 'md',
+    size = 'sm',
     placeholder = 'Choose',
     searchable,
     searchLabel = 'Search',

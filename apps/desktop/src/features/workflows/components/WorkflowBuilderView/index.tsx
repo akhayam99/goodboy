@@ -962,7 +962,6 @@ export const WorkflowBuilderView = (props: Props) => {
       <Button
         size="sm"
         variant={isPlannerOpen ? 'primary' : 'secondary'}
-        emphasis="outline"
         aria-pressed={isPlannerOpen}
         disabled={blocked}
         onClick={() => setIsPlannerOpen((open) => !open)}

@@ -320,7 +320,12 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   <Button variant="ghost" size="sm" disabled={busy} onClick={closeOverflow}>
                     Cancel
                   </Button>
-                  <Button variant="danger" size="sm" disabled={busy} onClick={handleDenyWithReason}>
+                  <Button
+                    variant="ghost-danger"
+                    size="sm"
+                    disabled={busy}
+                    onClick={handleDenyWithReason}
+                  >
                     Deny
                   </Button>
                 </div>

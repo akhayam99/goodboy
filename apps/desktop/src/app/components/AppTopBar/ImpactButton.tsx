@@ -1,4 +1,4 @@
-import { Tooltip, cn } from '@goodboy/ui';
+import { TOP_BAR_CONTROL, Tooltip, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 
@@ -28,7 +28,9 @@ export const ImpactButton = ({ onOpenImpact }: Props) => {
           onOpenImpact();
         }}
         className={cn(
-          'flex size-6 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors',
+          TOP_BAR_CONTROL.square,
+          TOP_BAR_CONTROL.radius,
+          'flex shrink-0 items-center justify-center motion-safe:transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           isCurrent
             ? 'cursor-default bg-overlay-selected text-foreground'

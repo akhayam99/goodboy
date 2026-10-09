@@ -1,5 +1,5 @@
 import { SquareKanban } from 'lucide-react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { TOP_BAR_CONTROL, Tooltip, cn } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -27,7 +27,9 @@ export const BoardButton = ({ isOnBoard, hasStudio, onBoard }: Props) => {
           onBoard();
         }}
         className={cn(
-          'flex h-6 shrink-0 items-center gap-2 rounded-md px-2 text-label motion-safe:transition-colors',
+          TOP_BAR_CONTROL.height,
+          TOP_BAR_CONTROL.radius,
+          'flex shrink-0 items-center gap-2 px-2 text-label motion-safe:transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           isCurrent
             ? 'cursor-default bg-overlay-selected text-foreground'

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { AlertCircle, Ellipsis, RefreshCw, SquareTerminal } from 'lucide-react';
-import { Button, KbdPill } from '@goodboy/ui';
+import { Button, KeyHint } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -115,12 +115,7 @@ export const FailedRun = ({
               <Button size="sm" variant="primary" isBusy={isBusy} onClick={onTryAgain}>
                 <RefreshCw size={ICON_SIZE.control} aria-hidden />
                 {FIX_RUN_THREAD_COPY.retry}
-                <KbdPill
-                  aria-hidden
-                  className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-chip text-on-tone"
-                >
-                  {shortcutGlyphs('review.fix')}
-                </KbdPill>
+                <KeyHint keys={shortcutGlyphs('review.fix')} onTone />
               </Button>
             )}
             <Button size="sm" variant="ghost" isBusy={isBusy} onClick={onStartOver}>

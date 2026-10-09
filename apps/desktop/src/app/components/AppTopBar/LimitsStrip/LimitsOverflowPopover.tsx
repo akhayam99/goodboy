@@ -1,5 +1,5 @@
 import { worstLimitsChip, type LimitsChip } from '@goodboy/core';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, FOCUS_RING, TOP_BAR_CONTROL, cn, useDropdown } from '@goodboy/ui';
 import { TriangleAlert } from 'lucide-react';
 import {
   PROVIDER_BRAND,
@@ -66,7 +66,10 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
           aria-expanded={isOpen}
           onClick={toggle}
           className={cn(
-            'flex h-6 shrink-0 items-center gap-0.5 rounded-md px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
+            TOP_BAR_CONTROL.height,
+            TOP_BAR_CONTROL.radius,
+            FOCUS_RING,
+            'flex shrink-0 items-center gap-0.5 px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >

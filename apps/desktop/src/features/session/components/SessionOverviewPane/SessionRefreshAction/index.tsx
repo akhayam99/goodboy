@@ -16,6 +16,7 @@ export const SessionRefreshAction = ({ sessionId }: Props) => {
 
   return (
     <IconButton
+      size="xs"
       variant="ghost"
       icon={CONCEPT_ICONS.refresh}
       iconSize={ICON_SIZE.row}
@@ -23,7 +24,7 @@ export const SessionRefreshAction = ({ sessionId }: Props) => {
       tooltip={tooltip}
       busy={isRefreshing}
       onClick={() => void refresh({ sessionId })}
-      className="size-6 shrink-0"
+      className="shrink-0"
     />
   );
 };

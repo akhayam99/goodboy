@@ -127,7 +127,7 @@ describe('ProviderPolicyList', () => {
     for (const [name, subtitle] of rows) {
       const text = screen.getByText(subtitle);
       const column = text.closest('button[aria-expanded]');
-      const control = screen.getByRole('radiogroup', { name: `${name} policy` });
+      const control = screen.getByRole('tablist', { name: `${name} policy` });
       expect(column?.contains(control)).toBe(false);
       expect(control.contains(text)).toBe(false);
       expect(column?.parentElement).toBe(control.parentElement);
@@ -168,7 +168,7 @@ describe('ProviderPolicyList', () => {
     renderList();
 
     fireEvent.click(
-      within(screen.getByRole('radiogroup', { name: 'Codex policy' })).getByRole('radio', {
+      within(screen.getByRole('tablist', { name: 'Codex policy' })).getByRole('tab', {
         name: 'Off',
       }),
     );
@@ -218,14 +218,14 @@ describe('ProviderPolicyList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
     await waitFor(() => expect(writtenRows().at(-1)?.providerPool).toBeNull());
-    expect(screen.getAllByRole('radio', { name: 'On', checked: true })).toHaveLength(3);
+    expect(screen.getAllByRole('tab', { name: 'On', selected: true })).toHaveLength(3);
   });
 
   it('writes the same row whether the click comes from Defaults or from the footer', async () => {
     const defaults = render(<ProvidersInOrder workspaceId={WORKSPACE.id} />);
     fireEvent.click(screen.getByRole('button', { name: /Claude, Codex · Cursor as backup/ }));
     fireEvent.click(
-      within(screen.getByRole('radiogroup', { name: 'Cursor policy' })).getByRole('radio', {
+      within(screen.getByRole('tablist', { name: 'Cursor policy' })).getByRole('tab', {
         name: 'Off',
       }),
     );
@@ -238,7 +238,7 @@ describe('ProviderPolicyList', () => {
     render(<ProvidersMenu workspaceId={WORKSPACE.id} />);
     fireEvent.click(screen.getByRole('button', { name: 'Providers' }));
     fireEvent.click(
-      within(screen.getByRole('radiogroup', { name: 'Cursor policy' })).getByRole('radio', {
+      within(screen.getByRole('tablist', { name: 'Cursor policy' })).getByRole('tab', {
         name: 'Off',
       }),
     );

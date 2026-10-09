@@ -170,6 +170,25 @@ describe('task link controls', () => {
     expect(screen.queryByRole('button', { name: 'Actions for HBL-412' })).toBeNull();
   });
 
+  it('reserves the trailing slot for the unlink, so the label is never covered by it', async () => {
+    await seed();
+    renderChip();
+
+    const open = screen.getByRole('button', { name: /^Open HBL-412/ });
+    const unlink = screen.getByRole('button', { name: 'Unlink HBL-412 from session' });
+    const slot = unlink.closest('[data-slot="unlink-slot"]');
+
+    expect(slot).not.toBeNull();
+    expect(slot?.className.split(' ')).toContain('size-4');
+    expect(slot?.contains(open)).toBe(false);
+    expect(unlink.getAttribute('data-size')).toBe('xs');
+    expect(open.textContent?.startsWith('HBL-412')).toBe(true);
+    await act(async () => {
+      fireEvent.click(unlink);
+    });
+    expect(await storedLinks()).toEqual([]);
+  });
+
   it('unlinks immediately without a confirmation and restores from the toast', async () => {
     await seed();
     renderChip();

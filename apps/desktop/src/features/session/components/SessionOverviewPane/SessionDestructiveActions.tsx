@@ -30,13 +30,14 @@ export const SessionDestructiveActions = ({ session }: Props) => {
   return (
     <>
       <IconButton
+        size="xs"
         variant="ghost"
         icon={isArchived ? CONCEPT_ICONS.restore : CONCEPT_ICONS.archive}
         iconSize={ICON_SIZE.row}
         label={archiveLabel}
         tooltip={archiveTooltip}
         onClick={() => void (isArchived ? restore : archive)({ sessions: [session] })}
-        className="size-6 shrink-0"
+        className="shrink-0"
       />
       <AnchoredPopover
         dropdown={deleteConfirm}
@@ -46,6 +47,7 @@ export const SessionDestructiveActions = ({ session }: Props) => {
         className="max-w-[calc(100vw-2rem)]"
         trigger={
           <IconButton
+            size="xs"
             variant="ghost"
             tone={isDeleteArmed ? 'danger' : 'neutral'}
             icon={CONCEPT_ICONS.delete}
@@ -55,7 +57,7 @@ export const SessionDestructiveActions = ({ session }: Props) => {
             aria-expanded={isDeleteArmed}
             onClick={deleteConfirm.toggle}
             className={cn(
-              'size-6 shrink-0',
+              'shrink-0',
               tintClasses('danger').hoverText,
               tintClasses('danger').hoverBgSoft,
             )}

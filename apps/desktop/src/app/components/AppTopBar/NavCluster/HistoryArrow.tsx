@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, TOP_BAR_CONTROL, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { HistoryMenu, type HistoryItem } from './HistoryMenu';
@@ -89,7 +89,9 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
             onPointerUp={clearHold}
             onPointerLeave={clearHold}
             className={cn(
-              'flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground motion-safe:transition-colors',
+              TOP_BAR_CONTROL.square,
+              TOP_BAR_CONTROL.radius,
+              'flex shrink-0 items-center justify-center text-muted-foreground motion-safe:transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               isDisabled ? 'cursor-default opacity-40' : 'hover:bg-hover hover:text-foreground',
             )}

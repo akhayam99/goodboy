@@ -41,7 +41,6 @@ export const WorkflowResumeStrip = ({ sessionId, runId, agents }: Props) => {
       <Button
         size="sm"
         variant="secondary"
-        emphasis="outline"
         isBusy={pending.pendingKeys.has(RESUME_KEY)}
         onClick={() =>
           void pending.run({

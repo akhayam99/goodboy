@@ -37,7 +37,7 @@ export type TimelineBranchKey = (params: { readonly direction: 'expand' | 'colla
 export type TimelineRowAction = {
   readonly label: string;
   readonly onAct: () => void;
-  readonly variant?: 'secondary' | 'warning';
+  readonly variant?: 'secondary';
   readonly isBusy?: boolean;
 };
 
@@ -227,9 +227,7 @@ export const TimelineStreamRow = ({
             >
               <Button
                 variant={action.variant ?? 'ghost'}
-                emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
-                size="sm"
-                className="h-6"
+                size="xs"
                 isBusy={action.isBusy === true}
                 onClick={action.onAct}
               >

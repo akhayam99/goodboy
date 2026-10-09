@@ -4,6 +4,7 @@ import { Band, BandStack, Markdown, SectionHeader, SegmentedTabs, Switch } from 
 import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { buildResolutionReplyBody } from '../../../../store/slices/github/buildResolutionReplyBody';
 import {
   EDIT_POSTED_REPLY_OFF,
@@ -172,7 +173,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             help="Off leaves it open for the reviewer to resolve. Bitbucket threads always stay open."
           >
             <Switch
-              label={settings.resolveOnGithub ? 'On' : 'Off'}
+              ariaLabel={NAMES.markThreadResolved}
               checked={settings.resolveOnGithub}
               disabled={isBusy}
               onChange={(next) => void persist({ patch: { resolveOnGithub: next } })}
@@ -184,7 +185,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             help="After a squash or fixup, adds an Update line to a reply Goodboy already posted. GitHub may notify people."
           >
             <Switch
-              label={isEditPostedReplyOn({ raw: rawEdit }) ? 'On' : 'Off'}
+              ariaLabel="Edit the posted reply"
               checked={isEditPostedReplyOn({ raw: rawEdit })}
               onChange={(next) => saveEditPostedReply({ isOn: next })}
             />

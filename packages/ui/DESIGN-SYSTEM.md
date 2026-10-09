@@ -988,6 +988,44 @@ list in a doc goes stale, `src/index.ts` cannot. If a register needs a shape
 the family does not have, add it to the family. A register never keeps a
 private one.
 
+## Control scale
+
+One ladder of control heights runs through every register: **24** (`xs`),
+**28** (`sm`, the default), **32** (`md`). Nothing else is a control height.
+
+| Primitive                            | Sizes                                                                                                           | Notes                                                                                                                                                                                                                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`                             | `xs` 24 (icon 12, gap 4), `sm` 28 (icon 12, gap 8), `md` 32 (icon 14, gap 8)                                    | Variants `primary`, `secondary`, `ghost`, `quiet` (a ghost with muted text), `danger`, `ghost-danger`. Solid `danger` is the confirm button of `InlineConfirm` only: no other first click is solid red. Disabled is the `fill` background with the `disabled-foreground` label, never `opacity-50`. |
+| `IconButton`                         | `xs` 24, `sm` 28, `md` 32 squares, `rounded-md`, glyph 12, 14, 14                                               | Ghost by default. A border only for `variant="outline"`. A smaller glyph sits inside the 24 target. Every icon-only control keeps its tooltip.                                                                                                                                                      |
+| `Chip`                               | `kind="state"` pill 20 (11/16), `reference` badge 24 (12/16, clickable), `id` 4px mono badge 20, `count` dot 16 | The kind is the meaning; the old `size` and `shape` props map onto it until the sweep. `StateBadge` is `Chip kind="state"`. A routing chip (effort, reply length, mode) is neutral and selected by fill.                                                                                            |
+| `SegmentedTabs`                      | `xs` frame 28 (inside a title row that also holds actions), `sm` frame 32 (page-level tabs on their own row)    | The tab keeps one weight selected or not; selection is a fill. A group of two to four choices is `SegmentedTabs`; a group of cards with a description is `ChoiceCards`.                                                                                                                             |
+| `Input`, `Textarea`, `Listbox` field | `sm` 28 (default), `md` 32                                                                                      | 12px text, `rounded-md`. `SearchField` (28, search icon, clear button, `ariaLabel` required) is the one search input; it takes a `hint` for a registered shortcut.                                                                                                                                  |
+| `Checkbox`                           | 16 box, 4px radius, inside a 24 hit area                                                                        |                                                                                                                                                                                                                                                                                                     |
+| `Switch`                             | 16 by 28 track inside a 24 target                                                                               | The label names the setting and never says On or Off: the setting goes in `ariaLabel`. The Legacy layout row keeps its state word on purpose.                                                                                                                                                       |
+
+A bar has one control height. Every control in the top bar is 28 and
+`rounded-md`: the history arrows, Board, Chat, the command centre, Theme,
+Impact, the bell, Spend, the Limits chips and the Now chip all take
+`TOP_BAR_CONTROL` (height `h-7`, square `size-7`, radius `rounded-md`) and
+`FOCUS_RING`. The bar container stays `h-9`. The bell's count badge sits 2px
+inside the bell's box. The session trail band keeps its 24 controls, and trail,
+rail and tree-row buttons are 24.
+
+A task chip reserves a 16px trailing slot that shows the unlink on hover, so
+the button never covers the last character of the label.
+
+A selected card is a fill plus a check: never a ring, a border and a wash
+together. A focus ring appears on keyboard focus (`focus-visible`) only.
+
+Rules for new and changed code (the migration of old code is the sweep's):
+icons use `ICON_SIZE` (row 12, control 14, hero 18); mono is for branch, path,
+command, sha and code; money, counts and durations are sans with
+`tabular-nums`; rows sit on 24, 28, 32, 36, 40 and 48; gaps sit on 4, 8, 12, 16,
+24 and 32 (no `gap-5`, `gap-7`, `gap-10`); uppercase goes through `Eyebrow`.
+`control-heights.test.ts`, `kbd-overrides.test.ts`,
+`hand-rolled-radio-groups.test.ts`, `switch-labels-name-the-setting.test.ts` and
+`scale-rules.test.ts` hold the line; each baseline only shrinks.
+
 ## Listbox
 
 `Listbox` is the one control for picking a value from a list. There is no
@@ -995,7 +1033,8 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 `no-token-bypass.test.ts` fails on `<select` and on any import of `Select`.
 
 - **Trigger**: `field` in forms and Settings (hairline `border`, the
-  container's fill, 28px `sm` or 32px `md`, `rounded-md`), `quiet` for a value
+  container's fill, 28px `sm` (the default) or 32px `md`, 12px text,
+  `rounded-md`), `quiet` for a value
   inside a row (muted text, `bg-hover` on hover), `chip` inside cards and steps
   (`chipClasses`). Open, the border goes to `border-strong` and the chevron
   turns 180 degrees in 120ms. Disabled, the text is `disabled-foreground` and
@@ -1094,10 +1133,14 @@ two looks.
   as part of the label. The shortcut sheet and the Esc of a sheet header take it
   too.
 
-Inside a filled button an inline hint uses the button's `on-tone` text at weight
-400, never an opacity step. `KbdPill` stays as `Kbd look="cap"` with the same
-props until the cap sites are swept. `Kbd` sets `data-look` so a test names the
-look without reading a class.
+Inside a filled button a hint takes the button's `on-tone` text (`onTone` on
+`Kbd`, `KeyHint` and `KbdPill`), never an opacity step. `KeyHint` is the one
+component for a hint inside a control: a chord (`⌘↵`) is drawn bare, a single
+key (`F`, `Esc`) is drawn as the small cap, and the hint is `aria-hidden`.
+`KbdPill` is `Kbd look="cap"` and takes no `className`; `kbd-overrides.test.ts`
+holds it. A hint shows only on a control whose shortcut is registered. A control
+that lists a shortcut in its tooltip (the Link work chip) does not repeat it as a
+cap. `Kbd` sets `data-look` so a test names the look without reading a class.
 
 ## Notices
 

@@ -63,9 +63,9 @@ export const ShortcutGroupSurface = ({ group }: Props) => {
                 <span className="truncate text-meta text-faint-foreground">{row.where}</span>
               ) : null}
             </span>
-            <KbdPill className="shrink-0">
-              {shortcutRangeGlyphs({ first: row.first, last: row.last })}
-            </KbdPill>
+            <span className="shrink-0">
+              <KbdPill>{shortcutRangeGlyphs({ first: row.first, last: row.last })}</KbdPill>
+            </span>
           </li>
         ))}
       </ul>

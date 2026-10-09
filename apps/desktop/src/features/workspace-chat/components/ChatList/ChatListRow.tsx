@@ -165,7 +165,7 @@ const ChatListRowView = ({
         dataAttributes={{ 'data-select-id': chatId }}
         menu={menu}
       >
-        <span className="relative flex min-h-5.5 min-w-0 items-center gap-1">
+        <span className="relative flex min-h-6 min-w-0 items-center gap-1">
           <SelectionCheckbox
             checked={isChecked}
             label={`Select ${title}`}
@@ -206,18 +206,19 @@ const ChatListRowView = ({
               >
                 {title}
               </span>
-              <span className="group/slot relative h-5.5 w-11 shrink-0">
+              <span className="group/slot relative h-6 w-11 shrink-0">
                 <span className="absolute inset-y-0 right-1 flex items-center text-meta text-faint-foreground motion-safe:transition-opacity group-focus-within:opacity-0 group-hover:opacity-0 group-has-[[aria-expanded=true]]/slot:opacity-0">
                   {time}
                 </span>
                 <span className="absolute inset-y-0 right-0 flex items-center opacity-0 motion-safe:transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 group-has-[[aria-expanded=true]]/slot:opacity-100">
                   <IconButton
+                    size="xs"
                     icon={isPinned ? PinOff : Pin}
                     label={isPinned ? `Unpin ${title}` : `Pin ${title}`}
                     tooltip={isPinned ? 'Unpin' : 'Pin'}
                     variant="ghost"
                     iconSize={12}
-                    className="p-1"
+
                     onClick={() => onPin({ chatId, isPinned: !isPinned })}
                   />
                   <ObjectOverflowMenu
@@ -231,12 +232,13 @@ const ChatListRowView = ({
                 </span>
               </span>
               <IconButton
+                size="xs"
                 icon={CONCEPT_ICONS.delete}
                 label={`Delete ${title}`}
                 tooltip="Delete"
                 variant="ghost"
                 iconSize={12}
-                className="p-1 opacity-60 motion-safe:transition-opacity hover:text-danger focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100"
+                className="opacity-60 motion-safe:transition-opacity hover:text-danger focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100"
                 onClick={() => setIsConfirming(true)}
               />
             </>

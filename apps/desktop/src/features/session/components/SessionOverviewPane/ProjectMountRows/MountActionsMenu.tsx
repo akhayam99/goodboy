@@ -270,7 +270,7 @@ export const MountActionsMenu = ({
           }}
           aria-haspopup="menu"
           aria-expanded={dropdown.open}
-          className={cn('size-7', dropdown.open && 'bg-muted')}
+          className={cn(dropdown.open && 'bg-muted')}
         />
       }
     >

@@ -42,7 +42,7 @@ const ROLE_TONE: Record<ConfirmRole, Tone> = {
 
 const ROLE_VARIANT: Record<ConfirmRole, ButtonVariant> = {
   primary: 'primary',
-  alert: 'warning',
+  alert: 'primary',
   danger: 'danger',
 };
 

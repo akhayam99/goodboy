@@ -26,7 +26,7 @@ export type ListboxTriggerProps = {
 
 const FIELD_SIZE: Record<ListboxSize, string> = {
   sm: 'h-7 px-2 text-label',
-  md: 'h-8 px-3 text-body',
+  md: 'h-8 px-3 text-label',
 };
 
 const QUIET_SIZE: Record<ListboxSize, string> = {

@@ -589,7 +589,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     open: inboxKey('list.search'),
     lands: async () =>
       expect(document.activeElement).toBe(
-        screen.getByRole('textbox', { name: 'Search the inbox' }),
+        screen.getByRole('searchbox', { name: 'Search the inbox' }),
       ),
   }),
 ];

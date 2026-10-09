@@ -106,7 +106,7 @@ export const UpdatesSection = () => {
           help="Restart to use it once it lands."
         >
           <Switch
-            label={autoDownload ? 'On' : 'Off'}
+            ariaLabel="Download updates in the background"
             checked={autoDownload}
             onChange={onToggleAutoDownload}
           />

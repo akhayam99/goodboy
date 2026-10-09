@@ -365,6 +365,7 @@ export const WizardFrame = ({
             <FormActions reason={actions.hint}>
               {isFirstStep ? null : (
                 <Button
+                  size="md"
                   variant="ghost"
                   onClick={goBack}
                   disabled={isLocked}
@@ -375,6 +376,7 @@ export const WizardFrame = ({
               )}
               {actions.skip !== null && (
                 <Button
+                  size="md"
                   variant="ghost"
                   disabled={actions.skip.disabled}
                   onClick={CTA_HANDLERS[actions.skip.action]}
@@ -385,6 +387,7 @@ export const WizardFrame = ({
               )}
               {actions.primary !== null && (
                 <Button
+                  size="md"
                   variant="primary"
                   disabled={actions.primary.disabled}
                   onClick={CTA_HANDLERS[actions.primary.action]}

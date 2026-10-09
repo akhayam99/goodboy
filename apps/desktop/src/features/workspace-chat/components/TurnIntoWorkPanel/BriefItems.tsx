@@ -38,12 +38,13 @@ export const BriefItems = ({
               {item}
             </span>
             <IconButton
+              size="xs"
               icon={X}
               label={removeLabel(item)}
               tooltip="Remove"
               variant="ghost"
               iconSize={11}
-              className="p-0.5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
               onClick={() => onRemove(item)}
             />
           </li>

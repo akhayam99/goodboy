@@ -397,6 +397,12 @@ two-pixel `focus-ring` token and removes the native outline. A control clipped
 inside an overflow-hidden row adds `ring-inset`; it does not weaken or resize
 the shared ring.
 
+A ring shows on keyboard focus only: it is `focus-visible`, so a click never
+draws it. Every control in the top bar, every switch and every checkbox composes
+`FOCUS_RING`, and the `controls` journey tabs through the bar and a Settings row
+and checks the ring by the constant, not by a class written in a test. A
+selected card is a fill plus a check, never a ring, a border and a wash together.
+
 ## An expanded row is one group, not two
 
 A disclosure (a header plus the body it opens) is a single surface. The

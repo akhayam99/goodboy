@@ -1,58 +1,43 @@
 import type { ComponentProps } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
-import { tintClasses, type Tone } from '../tint';
 import { StatusDot } from './StatusDot';
 
-export type ButtonVariant =
-  'primary' | 'secondary' | 'ghost' | 'danger' | 'warning' | 'info' | 'success';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'quiet' | 'ghost-danger';
 export type ButtonSize = 'xs' | 'sm' | 'md';
-export type ButtonEmphasis = 'solid' | 'outline';
 
 export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
   variant?: ButtonVariant;
-  emphasis?: ButtonEmphasis;
   size?: ButtonSize;
   type?: 'button' | 'submit' | 'reset';
   isBusy?: boolean;
   busyLabel?: string;
 };
 
-const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-on-tone hover:bg-primary/90',
-  secondary: 'bg-fill text-foreground hover:bg-hover border-border',
-  ghost: 'border-0 text-foreground hover:bg-hover',
-  danger: 'bg-danger text-on-tone hover:bg-danger/90',
-  warning: 'bg-warning text-on-tone hover:bg-warning/90',
-  info: 'bg-info text-on-tone hover:bg-info/90',
-  success: 'bg-success text-on-tone hover:bg-success/90',
-};
+export const BUTTON_VARIANT_CLASSES = {
+  primary:
+    'bg-primary text-on-tone hover:bg-primary/90 disabled:bg-fill disabled:text-disabled-foreground',
+  secondary:
+    'bg-fill text-foreground hover:bg-hover border-border disabled:bg-fill disabled:text-disabled-foreground',
+  ghost:
+    'border-0 text-foreground hover:bg-hover disabled:bg-transparent disabled:text-disabled-foreground',
+  quiet:
+    'border-0 text-muted-foreground hover:bg-hover hover:text-foreground disabled:bg-transparent disabled:text-disabled-foreground',
+  danger:
+    'bg-danger text-on-tone hover:bg-danger/90 disabled:bg-fill disabled:text-disabled-foreground',
+  'ghost-danger':
+    'border-0 text-danger hover:bg-danger/10 disabled:bg-transparent disabled:text-disabled-foreground',
+} as const satisfies Record<ButtonVariant, string>;
 
-const variantTone: Record<ButtonVariant, Tone> = {
-  primary: 'primary',
-  secondary: 'neutral',
-  ghost: 'neutral',
-  danger: 'danger',
-  warning: 'warning',
-  info: 'info',
-  success: 'success',
-};
-
-const outlineClasses = (variant: ButtonVariant): string => {
-  const tint = tintClasses(variantTone[variant]);
-  return cn('bg-transparent', tint.border, tint.text, tint.hoverBorder, tint.hoverBg);
-};
-
-const sizeClasses: Record<ButtonSize, string> = {
-  xs: 'h-6 px-2 text-label',
-  sm: 'h-7 px-3 text-label',
-  md: 'h-8 px-3 text-body',
-};
+export const BUTTON_SIZE_CLASSES = {
+  xs: 'h-6 gap-1 px-2 text-label',
+  sm: 'h-7 gap-2 px-3 text-label',
+  md: 'h-8 gap-2 px-3 text-body',
+} as const satisfies Record<ButtonSize, string>;
 
 export const Button = ({
   variant = 'primary',
-  emphasis = 'solid',
-  size = 'md',
+  size = 'sm',
   type = 'button',
   isBusy = false,
   busyLabel,
@@ -68,10 +53,10 @@ export const Button = ({
       aria-busy={isBusy ? true : undefined}
       data-size={size}
       className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap gap-2 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none',
         FOCUS_RING,
-        emphasis === 'outline' ? outlineClasses(variant) : variantClasses[variant],
-        sizeClasses[size],
+        BUTTON_VARIANT_CLASSES[variant],
+        BUTTON_SIZE_CLASSES[size],
         className,
       )}
       {...rest}

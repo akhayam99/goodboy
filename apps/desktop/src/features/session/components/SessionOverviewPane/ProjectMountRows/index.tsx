@@ -105,11 +105,12 @@ export const ProjectMountRows = ({ session }: Props) => {
         <div className="flex min-w-0 items-center gap-2">
           <p className="min-w-0 flex-1 text-meta text-muted-foreground">{PROJECTS_EXPLAINER}</p>
           <IconButton
+            size="xs"
             variant="ghost"
             icon={X}
             label="Dismiss"
             onClick={dismissHint}
-            className="size-6 shrink-0"
+            className="shrink-0"
           />
         </div>
       ) : null}

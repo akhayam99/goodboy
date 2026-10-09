@@ -26,7 +26,7 @@ export const ResetConfirm = ({ advice, nowMs, isBusy, onCancel, onConfirm }: Pro
             Cancel
           </Button>
           <Button
-            variant="warning"
+            variant="primary"
             size="sm"
             isBusy={isBusy}
             busyLabel="Using reset"

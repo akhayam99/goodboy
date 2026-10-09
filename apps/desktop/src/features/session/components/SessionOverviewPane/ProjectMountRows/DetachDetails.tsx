@@ -48,7 +48,6 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
             <Button
               size="sm"
               variant="secondary"
-              emphasis="outline"
               disabled={isBusy}
               className="w-fit"
               onClick={onKeepFiles}

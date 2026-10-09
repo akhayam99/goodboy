@@ -216,7 +216,7 @@ describe('InlineConfirm', () => {
     expect(group.className).not.toContain('rounded-lg');
   });
 
-  it('maps each role to the kit button variant of the same tone', () => {
+  it('maps danger to the one solid red button and alert to the primary button', () => {
     const { rerender } = render(
       <InlineConfirm
         role="danger"
@@ -240,7 +240,8 @@ describe('InlineConfirm', () => {
         onCancel={vi.fn()}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-warning');
+    expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-primary');
+    expect(screen.getByRole('button', { name: 'Go' }).className).not.toContain('bg-warning');
 
     rerender(
       <InlineConfirm

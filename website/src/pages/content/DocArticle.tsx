@@ -14,12 +14,8 @@ type Props = {
   readonly next: DocSummary | null;
 };
 
-const pagerLink = (
-  label: string,
-  direction: PagerLink['direction'],
-  doc: DocSummary | null,
-): readonly PagerLink[] =>
-  doc === null ? [] : [{ label, direction, title: doc.title, href: SITE.doc(doc.area) }];
+const pagerLink = (label: string, doc: DocSummary | null): readonly PagerLink[] =>
+  doc === null ? [] : [{ label, title: doc.title, href: SITE.doc(doc.area) }];
 
 export const DocArticle = ({ crumbs, doc, bodyHtml, clusterId, previous, next }: Props) => (
   <ContentPage
@@ -42,7 +38,7 @@ export const DocArticle = ({ crumbs, doc, bodyHtml, clusterId, previous, next }:
     <Prose html={bodyHtml} />
     <Pager
       label="More guides"
-      links={[...pagerLink('Previous', 'back', previous), ...pagerLink('Next', 'forward', next)]}
+      links={[...pagerLink('Previous', previous), ...pagerLink('Next', next)]}
     />
   </ContentPage>
 );

@@ -86,35 +86,38 @@ export const ScriptRow = ({
       <LastRunCell lastRun={lastRun} blockedReason={blockedReason} />
       <span className="flex w-7 shrink-0 justify-center">
         <IconButton
+          size="xs"
           variant="ghost"
           icon={Pin}
           iconSize={ICON_SIZE.row}
           label={isPinned ? `Unpin ${script.name}` : `Pin ${script.name}`}
           aria-pressed={isPinned}
           tone={isPinned ? 'primary' : 'neutral'}
-          className="p-1"
+
           onClick={onTogglePin}
         />
       </span>
       <span className="flex w-7 shrink-0 justify-center">
         {isRunning ? (
           <IconButton
+            size="xs"
             variant="ghost"
             icon={Square}
             iconSize={ICON_SIZE.row}
             label={`Stop ${script.name}`}
-            className="p-1"
+
             onClick={() => onStop(script)}
           />
         ) : (
           <IconButton
+            size="xs"
             variant="ghost"
             icon={Play}
             iconSize={ICON_SIZE.row}
             label={`Run ${script.name}`}
             tooltip={blockedReason ?? undefined}
             disabled={blockedReason !== null}
-            className="p-1"
+
             onClick={() => onRun(script)}
           />
         )}

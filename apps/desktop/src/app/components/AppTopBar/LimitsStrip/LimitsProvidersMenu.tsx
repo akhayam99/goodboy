@@ -1,6 +1,15 @@
 import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
-import { AnchoredPopover, StatusDot, Tooltip, cn, tintClasses, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  StatusDot,
+  FOCUS_RING,
+  TOP_BAR_CONTROL,
+  Tooltip,
+  cn,
+  tintClasses,
+  useDropdown,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useProvidersConnection } from '../../../hooks/useProvidersConnection';
 import { ProvidersMenuPanel } from '../../ProvidersMenu/ProvidersMenuPanel';
@@ -55,7 +64,10 @@ export const LimitsProvidersMenu = ({ workspaceId, chips, nowMs }: Props) => {
               aria-expanded={dropdown.open}
               data-limits-chip="providers"
               className={cn(
-                'flex h-6 shrink-0 items-center gap-2 rounded-md px-2 text-meta motion-safe:transition-colors',
+                TOP_BAR_CONTROL.height,
+                TOP_BAR_CONTROL.radius,
+                FOCUS_RING,
+                'flex shrink-0 items-center gap-2 px-2 text-meta motion-safe:transition-colors',
                 dropdown.open ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-hover',
                 hasNoProvider && tintClasses('warning').text,
               )}

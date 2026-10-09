@@ -12,7 +12,7 @@ export const HandOff = ({
   <div className="flex flex-col gap-3">
     <p className="text-body text-muted-foreground">{line}</p>
     <div>
-      <Button variant="primary" disabled={busy} isBusy={busy} onClick={onOpen}>
+      <Button size="md" variant="primary" disabled={busy} isBusy={busy} onClick={onOpen}>
         Open a new session
       </Button>
     </div>

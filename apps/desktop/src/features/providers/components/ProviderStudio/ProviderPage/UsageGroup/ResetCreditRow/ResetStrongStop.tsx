@@ -41,8 +41,7 @@ export const ResetStrongStop = ({ advice, count, nowMs, isBusy, onKeep, onConfir
           />
           <div className="flex justify-end gap-2">
             <Button
-              variant="danger"
-              emphasis="outline"
+              variant="ghost-danger"
               size="sm"
               disabled={!hasConsent || isBusy}
               isBusy={isBusy}

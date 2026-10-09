@@ -52,11 +52,12 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
             }
             actions={
               <IconButton
+                size="xs"
                 icon={X}
                 label="Dismiss alert"
                 variant="ghost"
                 iconSize={ICON_SIZE.row}
-                className="-my-1 p-1"
+
                 onClick={() => onDismiss(alert.id)}
               />
             }

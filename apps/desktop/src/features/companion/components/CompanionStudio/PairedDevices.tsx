@@ -50,12 +50,7 @@ export const PairedDevices = ({ enrolled, revoking, onRevoke, onPairAnother }: P
               <Smartphone size={ICON_SIZE.row} aria-hidden /> Pair another device
             </Button>
           )}
-          <Button
-            variant="danger"
-            emphasis="outline"
-            size="sm"
-            onClick={() => setIsConfirming(true)}
-          >
+          <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
             <Unplug size={ICON_SIZE.row} aria-hidden /> Disconnect
           </Button>
         </div>

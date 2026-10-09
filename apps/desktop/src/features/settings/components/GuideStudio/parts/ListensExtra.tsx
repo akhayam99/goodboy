@@ -93,9 +93,9 @@ export const ListensExtra = () => (
         {shortcutRows({ group: 'lists' }).map((row) => (
           <li key={row.key} className="flex items-center justify-between gap-3 text-label">
             <span className="truncate text-muted-foreground">{row.label}</span>
-            <KbdPill className="shrink-0">
-              {shortcutRangeGlyphs({ first: row.first, last: row.last })}
-            </KbdPill>
+            <span className="shrink-0">
+              <KbdPill>{shortcutRangeGlyphs({ first: row.first, last: row.last })}</KbdPill>
+            </span>
           </li>
         ))}
       </ul>

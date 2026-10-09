@@ -1,5 +1,5 @@
 import { ArrowUp, Square } from 'lucide-react';
-import { Button, cn, KbdPill, Tooltip, tintClasses } from '@goodboy/ui';
+import { Button, cn, Tooltip, tintClasses, KeyHint } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { formatCombo, shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 
@@ -46,16 +46,12 @@ export const SendControl = ({
     return (
       <>
         <Button variant="ghost" size="sm" onClick={onSend}>
-          Queue{' '}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-meta">
-            {formatCombo('Enter')}
-          </KbdPill>
+          Queue
+          <KeyHint keys={formatCombo('Enter')} />
         </Button>
         <Button variant="primary" size="sm" onClick={onSendNow}>
-          Send now{' '}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-meta">
-            {shortcutGlyphs('composer.submit')}
-          </KbdPill>
+          Send now
+          <KeyHint keys={shortcutGlyphs('composer.submit')} onTone />
         </Button>
       </>
     );

@@ -1,4 +1,4 @@
-import { SelectionCheckbox, WorkNode, cn } from '@goodboy/ui';
+import { Button, SelectionCheckbox, WorkNode, cn } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
@@ -110,18 +110,19 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
         />
       )}
       {onFix !== null && (
-        <button
-          type="button"
+        <Button
+          size="xs"
+          variant="secondary"
           data-fix-row={entry.threadId}
           onClick={onFix}
           className={cn(
-            'absolute right-2 top-1.5 rounded-md bg-elevated px-3 py-0.5 text-label text-foreground ring-1 ring-border-soft',
+            'absolute right-2 top-1 bg-elevated',
             'opacity-0 group-focus-within/review-row:opacity-100 group-hover/review-row:opacity-100',
-            'hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-opacity',
+            'motion-safe:transition-opacity',
           )}
         >
           {REVIEW_LAUNCH_LABEL.fix}
-        </button>
+        </Button>
       )}
     </div>
   );

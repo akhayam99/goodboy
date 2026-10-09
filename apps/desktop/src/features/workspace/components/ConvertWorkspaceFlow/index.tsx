@@ -253,6 +253,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
             )}
 
             <SegmentedTabs
+              size="sm"
               ariaLabel="Repository setup"
               options={ACTION_OPTIONS}
               value={action}
@@ -267,6 +268,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
               </p>
             ) : (
               <SegmentedTabs
+                size="sm"
                 ariaLabel="Repository host"
                 options={[
                   { value: 'github', label: 'GitHub' },

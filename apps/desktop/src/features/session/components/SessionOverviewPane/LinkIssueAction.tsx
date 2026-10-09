@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { AnchoredPopover, Chip, KbdPill, Tooltip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Chip, Tooltip, useDropdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { linkIssueEventName } from '../../../actions/kinds/session';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { withShortcutHint } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LinkWorkPanel } from './LinkWorkPanel';
@@ -59,7 +59,12 @@ export const LinkIssueAction = ({ session }: Props) => {
       ariaLabel="Link work"
       className="overflow-hidden p-0"
       trigger={
-        <Tooltip content="Link an issue, an error or a thread to this session">
+        <Tooltip
+          content={withShortcutHint({
+            label: 'Link an issue, an error or a thread to this session',
+            shortcut: 'session.linkWork',
+          })}
+        >
           <Chip
             as="button"
             tone="neutral"
@@ -74,7 +79,6 @@ export const LinkIssueAction = ({ session }: Props) => {
             }}
             icon={<Plus size={ICON_SIZE.row} aria-hidden />}
             label="Link work"
-            trailing={<KbdPill aria-hidden>{shortcutGlyphs('session.linkWork')}</KbdPill>}
           />
         </Tooltip>
       }

@@ -107,6 +107,7 @@ export const PublishPanel = ({
       className="flex flex-col gap-4 rounded-lg border border-border-soft bg-subtle p-4"
     >
       <SegmentedTabs
+        size="sm"
         ariaLabel="Where to publish"
         options={WHERE_OPTIONS}
         value={where}

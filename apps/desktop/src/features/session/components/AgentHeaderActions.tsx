@@ -92,6 +92,7 @@ export const AgentHeaderActions = ({
           onCancel={closeDelete}
           trigger={() => (
             <IconButton
+              size="xs"
               variant="ghost"
               tone={isDeleteOpen ? 'danger' : 'neutral'}
               icon={deleteAction.icon}
@@ -100,7 +101,7 @@ export const AgentHeaderActions = ({
               aria-expanded={isDeleteOpen}
               onClick={() => setIsDeleteOpen(true)}
               className={cn(
-                'size-6 shrink-0',
+                'shrink-0',
                 tintClasses('danger').hoverText,
                 tintClasses('danger').hoverBgSoft,
               )}

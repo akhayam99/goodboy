@@ -1,5 +1,5 @@
 import { AppWindow } from 'lucide-react';
-import { Chip, KbdPill, Tooltip, cn } from '@goodboy/ui';
+import { Chip, KbdPill, Tooltip, cn, Kbd } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
@@ -67,9 +67,9 @@ export const OtherWorkspaceRow = ({
         </span>
       </button>
       {digitShortcut === null ? null : (
-        <KbdPill className="shrink-0 group-hover:hidden group-focus-within:hidden">
-          {shortcutGlyphs(digitShortcut)}
-        </KbdPill>
+        <span className="shrink-0 group-hover:hidden group-focus-within:hidden">
+          <Kbd>{shortcutGlyphs(digitShortcut)}</Kbd>
+        </span>
       )}
       <button
         type="button"
