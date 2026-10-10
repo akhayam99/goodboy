@@ -166,6 +166,12 @@ uses when you leave a model on **Auto**. It is one page in three parts.
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
   workflows, and Git
 
+A notice under the page header (`ProjectOverridesNotice`) appears when a project of the
+workspace has its own role models, task models, provider list or default provider: it
+names the project and what it pins, **Show** lists each project with a **Clear** of its
+own, and **Use this page instead** clears them all after a confirm. A failed write shows
+its reason under the confirm and leaves both buttons live.
+
 Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
 pin it: the picker then shows that model and an **x** that goes back to Auto. **Reset
@@ -177,7 +183,18 @@ model, the roles and the tasks of this workspace that use that provider.
 Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows one
 shape, the same as the chat row: the provider glyph, the model, its effort when the
 model has one, then how many more models follow (`Opus 5.5 · High +2`). The model is
-what Auto picks, or the first model of the role's set (`RoleModelSummary`). The chat row shows the same
+what will run, the answer of `resolveRoleRouting` with the page's policy and
+connection context (`roleResolution`, the same call `roleRunFacts` makes for Auto): the
+first model of the role's set that can run, or what Auto picks. A small chip after it
+reads **Pinned** when the row has a set and **Auto** when it has none. When the set's
+first model cannot run, the muted line under the label says why and what runs instead
+(`Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.`, built by `skippedPinLine`
+from `pinnedUnavailable`). A task row (`TaskModelRow`) carries the same chip and the
+same line, from `resolveTaskModel` and `providerStanding`. When some agents pin only
+models that cannot run, a line under the page title counts them (`With Codex as the only
+provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.`) and **Back to
+Auto for those 7** removes those pins after a confirm anchored to it; it is hidden when
+the count is 0. The chat row shows the same
 shape for Auto through `RoutingPicker`'s `autoTrigger="resolved"`. Open, it shows
 **How Scout runs**, read only, built from the engine and never from copy: the role's
 `explain` entry in `ROLE_REGISTRY`, the pick from `resolveRoleRouting`, and the split
