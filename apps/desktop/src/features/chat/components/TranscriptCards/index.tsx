@@ -19,6 +19,7 @@ import { ToolCallCard } from '../ToolCallCard';
 import { TurnFooter } from '../TurnFooter';
 import { AssistantText } from './AssistantText';
 import { DecisionNoteRow } from './DecisionNoteRow';
+import { StoppedProcessesLine } from './StoppedProcessesLine';
 import { TranscriptErrorRow } from './TranscriptErrorRow';
 import { FileEditBlock } from './FileEditBlock';
 import { UserText } from './UserText';
@@ -121,6 +122,8 @@ const TranscriptCardImpl = ({
     }
     case 'decision_note':
       return <DecisionNoteRow message={item.message} />;
+    case 'processes_stopped':
+      return <StoppedProcessesLine stopped={item.stopped} />;
     case 'artifact_capture_failed':
       return <ArtifactCaptureNoticeCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'auth_required':

@@ -40,6 +40,7 @@ fn pipe_stdio(command: &mut Command) {
 
 pub(crate) fn spawn(command: &mut Command) -> std::io::Result<Child> {
     pipe_stdio(command);
+    crate::aux_spawn::tag_spawn(command, crate::aux_spawn::SpawnKind::Probe);
     crate::process_group::isolate(command);
     command.spawn()
 }
@@ -48,6 +49,7 @@ pub(crate) fn spawn(command: &mut Command) -> std::io::Result<Child> {
 fn spawn_in_session(command: &mut Command) -> std::io::Result<Child> {
     use std::os::unix::process::CommandExt;
     pipe_stdio(command);
+    crate::aux_spawn::tag_spawn(command, crate::aux_spawn::SpawnKind::Probe);
     unsafe {
         command.pre_exec(|| {
             libc::setsid();

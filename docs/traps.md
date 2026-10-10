@@ -11,6 +11,26 @@ file holds those explanations. Everything below has been "fixed" at least once a
 
 ## Deliberate dead ends
 
+- A CLI's Bash tool runs each command as its own session leader (measured: a
+  shell under a Goodboy turn had a process group equal to its pid). Signalling
+  the CLI's group at the end of a turn misses the dev servers and watchers an
+  agent started, so `proc/reap.rs` also walks the tree and matches the
+  `GOODBOY_SPAWN_ID` tag. A child that clears its environment escapes the tag;
+  the tree snapshot covers it only while its parent lives. Do not shrink the
+  reap to `killpg`.
+- macOS hides the environment of Apple-signed binaries (`sh`, `bash`, `sleep`)
+  from other processes, even with `ps -E`. The tag therefore finds third-party
+  programs (node, bun, vite, the provider CLIs) and not shells; shells are
+  caught by the tree and the group. A reap test that uses `sleep` as the
+  straggler passes on Linux and fails on macOS. The tests use the test
+  executable as the child on purpose.
+- The reap waits for the leader with `waitid(WNOWAIT)` and only then calls
+  `child.wait()`. Calling `wait()` first frees the pid, the tree is lost, and
+  the leader can no longer be proven to be ours. Swapping the order brings
+  back the processes that outlive a turn.
+- A tagged process can be a daemon the agent started on purpose, such as a
+  file watcher daemon of the version control tool or an ssh control master. The
+  reap stops it too, and it restarts on demand. That is intended, not a bug.
 - `check-ignore -v --no-index` on a bare `.goodboy` answers "not ignored"
   for a directory-only rule (`.goodboy/`) whenever the folder does not exist
   yet on disk, because git cannot tell the probe is meant to be a directory.

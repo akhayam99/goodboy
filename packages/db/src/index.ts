@@ -274,6 +274,7 @@ export {
   setAgentDone,
   setAgentProviderSession,
   setAgentVerbosity,
+  stopGhostAgents,
   updateWorkflowNodeRouting,
   type AgentBatchInput,
   type AgentBatchOutcome,

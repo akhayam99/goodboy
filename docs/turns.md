@@ -309,7 +309,10 @@ continuation never resumes, because it runs in another directory.
 - **stderr drains on its own thread.** A CLI that fills the stderr pipe
   mid-stream would otherwise block stdout and hang the turn.
 - Each stdout line is emitted as a `turn_event`, capped per line, followed by
-  one end envelope carrying the exit code and stderr.
+  one end envelope carrying the exit code and stderr. When the end of the turn
+  stopped processes the CLI left running, a `reaped` envelope comes first (see
+  [architecture.md](architecture.md) → Processes Goodboy starts) and becomes a
+  `processes_stopped` event.
 
 ## Reading the stream
 

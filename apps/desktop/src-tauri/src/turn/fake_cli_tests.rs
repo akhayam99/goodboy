@@ -6,6 +6,7 @@ use serde_json::Value;
 
 use super::*;
 use crate::fake_cli::FakeCli;
+use crate::proc::reap::unix::test_support::publish_helper_env;
 
 static PARENT_ENV: Mutex<()> = Mutex::new(());
 
@@ -558,4 +559,144 @@ fn cursor_spawns_with_force_only_for_a_full_access_turn() {
 
     assert!(argv_of(&full).contains(&"--force".to_string()));
     assert!(!argv_of(&read_only).contains(&"--force".to_string()));
+}
+
+fn is_gone_within(pid: &str, budget: Duration) -> bool {
+    let deadline = Instant::now() + budget;
+    loop {
+        let listed = Command::new("ps")
+            .args(["-o", "stat=", "-p", pid])
+            .output()
+            .expect("run ps");
+        let state = String::from_utf8_lossy(&listed.stdout).trim().to_string();
+        if state.is_empty() || state.starts_with('Z') {
+            return true;
+        }
+        if Instant::now() >= deadline {
+            return false;
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
+fn wait_for_own_session(pid: &str) {
+    let pid: libc::pid_t = pid.parse().expect("a helper pid");
+    let deadline = Instant::now() + WAIT;
+    loop {
+        if unsafe { libc::getsid(pid) } == pid {
+            return;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "the helper never left the cli session"
+        );
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
+fn reaped_pids(events: &[Value]) -> Vec<u64> {
+    events
+        .iter()
+        .filter(|event| event["type"] == "reaped")
+        .flat_map(|event| event["stopped"].as_array().cloned().unwrap_or_default())
+        .filter_map(|process| process["pid"].as_u64())
+        .collect()
+}
+
+#[test]
+fn a_child_left_in_the_cli_group_is_gone_when_the_turn_ends() {
+    publish_helper_env();
+    let run = Run::new("exit-leaving-child");
+    run.spawn("claude", PROMPT).unwrap();
+
+    let events = run.turn_events_until_end();
+
+    let child = wait_for_sleeper_pid(&run);
+    assert!(
+        is_gone_within(&child, Duration::from_secs(1)),
+        "the child outlived the turn"
+    );
+    assert_eq!(end_of(&events)["exit_code"], 0);
+    assert!(reaped_pids(&events).contains(&child.parse::<u64>().unwrap()));
+}
+
+#[test]
+fn a_child_in_its_own_session_is_gone_when_the_turn_ends() {
+    publish_helper_env();
+    let run = Run::new("own-session-child");
+    run.spawn("claude", PROMPT).unwrap();
+    let child = wait_for_sleeper_pid(&run);
+    wait_for_own_session(&child);
+
+    let events = run.turn_events_until_end();
+
+    assert!(
+        is_gone_within(&child, Duration::from_secs(1)),
+        "the child outlived the turn"
+    );
+    assert!(reaped_pids(&events).contains(&child.parse::<u64>().unwrap()));
+}
+
+#[test]
+fn a_child_in_its_own_session_is_gone_after_a_cancel() {
+    publish_helper_env();
+    let run = Run::new("own-session-hang");
+    run.spawn("claude", PROMPT).unwrap();
+    let child = wait_for_sleeper_pid(&run);
+    wait_for_own_session(&child);
+
+    cancel_run(&run.registry.0, "run-1").unwrap();
+    run.turn_events_until_end();
+
+    assert!(
+        is_gone_within(&child, Duration::from_secs(1)),
+        "the child outlived the cancel"
+    );
+}
+
+#[test]
+fn a_child_in_its_own_session_is_gone_after_a_shutdown() {
+    publish_helper_env();
+    let run = Run::new("own-session-hang");
+    run.spawn("claude", PROMPT).unwrap();
+    let child = wait_for_sleeper_pid(&run);
+    wait_for_own_session(&child);
+
+    shutdown(&run.registry);
+
+    assert!(
+        is_gone_within(&child, Duration::from_secs(2)),
+        "the child outlived the shutdown"
+    );
+}
+
+#[test]
+fn a_child_that_holds_the_pipe_does_not_hold_the_turn_open() {
+    publish_helper_env();
+    let run = Run::new("holds-stdout");
+    let started = Instant::now();
+    run.spawn("claude", PROMPT).unwrap();
+
+    run.turn_events_until_end();
+
+    assert!(
+        started.elapsed() < Duration::from_secs(10),
+        "the turn waited for the child that held its pipe"
+    );
+    let child = wait_for_sleeper_pid(&run);
+    assert!(
+        is_gone_within(&child, Duration::from_secs(1)),
+        "the child that held the pipe survived"
+    );
+}
+
+#[test]
+fn a_clean_turn_reports_nothing_stopped() {
+    let run = Run::new("ok");
+    run.spawn("claude", PROMPT).unwrap();
+
+    let events = run.turn_events_until_end();
+
+    assert!(reaped_pids(&events).is_empty());
+    assert_eq!(end_of(&events)["exit_code"], 0);
 }

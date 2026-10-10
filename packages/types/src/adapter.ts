@@ -12,6 +12,12 @@ export type ProviderUsage = {
   readonly estimatedCostUsd: number;
 };
 
+export type StoppedProcess = {
+  readonly pid: number;
+  readonly name: string;
+  readonly port: number | null;
+};
+
 export type UserTurnSentVia = 'queued' | 'interrupt';
 
 export type TurnEvent =
@@ -69,6 +75,12 @@ export type TurnEvent =
       runId: ProviderRunId;
       code: string;
       message: string;
+      at: IsoDateTime;
+    }
+  | {
+      kind: 'processes_stopped';
+      runId: ProviderRunId;
+      stopped: ReadonlyArray<StoppedProcess>;
       at: IsoDateTime;
     }
   | { kind: 'done'; runId: ProviderRunId; at: IsoDateTime }
