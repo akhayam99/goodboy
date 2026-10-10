@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const REPO_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 const DEFAULT_BASE = 'origin/main';
 const EXCEPTIONS_FILE = 'baseline-exceptions.json';
+const SUPPRESSIONS_FILE = 'eslint-suppressions.json';
 const ALLOWED_ROOT = 'apps/desktop/src/__tests__';
 const SEPARATOR = ' > ';
 
@@ -22,7 +23,7 @@ const flatten = ({ value, trail }) => {
 };
 
 export const baselineEntries = ({ path, text }) => {
-  const rule = basename(path).replace(/\.baseline\.json$/, '');
+  const rule = basename(path).replace(/(\.baseline)?\.json$/, '');
   return flatten({ value: JSON.parse(text), trail: [] }).map(({ trail, count }) => ({
     key: trail.join(SEPARATOR),
     rule,
@@ -234,7 +235,10 @@ const trackedFiles = ({ pathspec }) =>
     .filter((path) => path !== '');
 
 export const discoverFiles = () => {
-  const baselines = trackedFiles({ pathspec: '*.baseline.json' }).map((path) => ({
+  const baselines = [
+    ...trackedFiles({ pathspec: '*.baseline.json' }),
+    ...trackedFiles({ pathspec: SUPPRESSIONS_FILE }),
+  ].map((path) => ({
     path,
     kind: 'json',
   }));
