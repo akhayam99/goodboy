@@ -75,6 +75,11 @@ describe('selectResolvedSettings', () => {
         model: 'ws-model',
         effort: 'high' as const,
       },
+      reviewer: {
+        providerId: 'anthropic' as ProviderId,
+        model: 'ws-reviewer',
+        effort: 'high' as const,
+      },
     };
     const projectRoles = {
       planner: {
@@ -91,7 +96,10 @@ describe('selectResolvedSettings', () => {
 
     const settings = selectResolvedSettings({ state, sessionId: SESSION_ID });
 
-    expect(settings?.roleModels).toBe(projectRoles);
+    expect(settings?.roleModels).toEqual({
+      planner: projectRoles.planner,
+      reviewer: workspaceRoles.reviewer,
+    });
     expect(settings?.defaultProviderId).toBe('cursor');
     expect(settings?.defaultProviderOverride).toBe('cursor');
     expect(settings?.defaultVerbosityOverride).toBe('brief');

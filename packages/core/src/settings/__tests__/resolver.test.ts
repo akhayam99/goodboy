@@ -321,8 +321,116 @@ describe('resolveSettings', () => {
       projectOverride: { ...NULL_OVERRIDE, roleModels: projectRoles },
       sessionOverride: { ...NULL_OVERRIDE, taskModels: sessionTasks },
     });
-    expect(result.roleModels).toBe(projectRoles);
-    expect(result.taskModels).toBe(sessionTasks);
+    expect(result.roleModels).toEqual(projectRoles);
+    expect(result.taskModels).toEqual(sessionTasks);
+  });
+
+  it('task models: a project that pins one task keeps the workspace pins of the others', () => {
+    const workspaceTasks = {
+      workflow_orchestrator: { providerId: 'anthropic' as ProviderId, model: 'claude-sonnet-5-5' },
+      summarizer: { providerId: 'anthropic' as ProviderId, model: 'claude-sonnet-5-5' },
+    };
+    const projectTasks = {
+      workflow_orchestrator: { providerId: 'anthropic' as ProviderId, model: 'claude-sonnet-5' },
+    };
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, taskModels: workspaceTasks },
+      projectOverride: { ...NULL_OVERRIDE, taskModels: projectTasks },
+    });
+    expect(result.taskModels).toEqual({
+      workflow_orchestrator: projectTasks.workflow_orchestrator,
+      summarizer: workspaceTasks.summarizer,
+    });
+  });
+
+  it('task models: a session key beats a project key beats a workspace key', () => {
+    const pin = (model: string) => ({ providerId: 'anthropic' as ProviderId, model });
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: {
+        ...NULL_OVERRIDE,
+        taskModels: { summarizer: pin('ws'), rebase: pin('ws'), recheck: pin('ws') },
+      },
+      projectOverride: {
+        ...NULL_OVERRIDE,
+        taskModels: { summarizer: pin('project'), rebase: pin('project') },
+      },
+      sessionOverride: { ...NULL_OVERRIDE, taskModels: { summarizer: pin('session') } },
+    });
+    expect(result.taskModels).toEqual({
+      summarizer: pin('session'),
+      rebase: pin('project'),
+      recheck: pin('ws'),
+    });
+  });
+
+  it('role models: merge key by key, project over workspace', () => {
+    const pin = (model: string) => ({
+      providerId: 'anthropic' as ProviderId,
+      model,
+      effort: 'high' as const,
+    });
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: {
+        ...NULL_OVERRIDE,
+        roleModels: { planner: pin('ws'), reviewer: pin('ws') },
+      },
+      projectOverride: { ...NULL_OVERRIDE, roleModels: { planner: pin('project') } },
+    });
+    expect(result.roleModels).toEqual({ planner: pin('project'), reviewer: pin('ws') });
+  });
+
+  it('role and task models: empty maps in every scope resolve to null', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, roleModels: {}, taskModels: {} },
+      projectOverride: { ...NULL_OVERRIDE, roleModels: {}, taskModels: null },
+    });
+    expect(result.roleModels).toBeNull();
+    expect(result.taskModels).toBeNull();
+  });
+
+  it('role and task models: an own __proto__ key stays data and never changes the prototype', () => {
+    const hostile = JSON.parse('{"__proto__":{"polluted":true}}') as OverrideSettings['taskModels'];
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, taskModels: hostile },
+    });
+    expect(Object.getPrototypeOf(result.taskModels)).toBe(Object.prototype);
+    expect(Reflect.get(result.taskModels ?? {}, 'polluted')).toBeUndefined();
+  });
+
+  it('role and task models: the same layers give the same object, so a store selector stays stable', () => {
+    const pin = (model: string) => ({ providerId: 'anthropic' as ProviderId, model });
+    const workspaceOverride = {
+      ...NULL_OVERRIDE,
+      taskModels: { summarizer: pin('ws'), rebase: pin('ws') },
+    };
+    const projectOverride = { ...NULL_OVERRIDE, taskModels: { rebase: pin('project') } };
+    const merged = () =>
+      resolveSettings({ global: GLOBAL, workspaceOverride, projectOverride }).taskModels;
+    const single = () => resolveSettings({ global: GLOBAL, workspaceOverride }).taskModels;
+
+    expect(merged()).toBe(merged());
+    expect(single()).toBe(workspaceOverride.taskModels);
+    expect(merged()).not.toBe(single());
+  });
+
+  it('provider pool stays whole: the project list replaces the workspace list', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: {
+        ...NULL_OVERRIDE,
+        providerPool: [
+          { id: 'anthropic', state: 'on' },
+          { id: 'codex', state: 'on' },
+        ],
+      },
+      projectOverride: { ...NULL_OVERRIDE, providerPool: [{ id: 'codex', state: 'on' }] },
+    });
+    expect(result.providerPool).toEqual([{ id: 'codex', state: 'on' }]);
   });
 
   it('role and task models and pool resolve to null when no scope sets them', () => {
