@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createLatestOnly } from '../../../../store/slices/state-writes/latestOnly';
 import { exploreList } from '../../explore';
 import { EXPLORE_ROOT_PATH, type ExploreListing } from '../../exploreRows';
 
@@ -44,8 +45,7 @@ const reasonOf = (error: unknown): string => {
 export const useExploreListing = ({ sessionDir }: Params): ExploreListingControls => {
   const [listing, setListing] = useState<ExploreListing>(() => initialListing({ sessionDir }));
   const generation = useRef(0);
-  const latestByPath = useRef(new Map<string, number>());
-  const counter = useRef(0);
+  const latest = useRef(createLatestOnly());
 
   const load = useCallback(
     async ({ relPath }: LoadParams) => {
@@ -53,28 +53,28 @@ export const useExploreListing = ({ sessionDir }: Params): ExploreListingControl
         return;
       }
       const owner = generation.current;
-      counter.current += 1;
-      const ticket = counter.current;
-      latestByPath.current.set(relPath, ticket);
-      const isCurrent = () =>
-        generation.current === owner && latestByPath.current.get(relPath) === ticket;
       setListing((previous) => ({
         ...previous,
         loadingByPath: { ...previous.loadingByPath, [relPath]: true },
         errorByPath: { ...previous.errorByPath, [relPath]: null },
       }));
       try {
-        const entries = await exploreList({ sessionDir, relPath });
-        if (!isCurrent()) {
-          return;
-        }
-        setListing((previous) => ({
-          entriesByPath: { ...previous.entriesByPath, [relPath]: entries },
-          loadingByPath: { ...previous.loadingByPath, [relPath]: false },
-          errorByPath: previous.errorByPath,
-        }));
+        await latest.current.run({
+          key: relPath,
+          request: () => exploreList({ sessionDir, relPath }),
+          apply: (entries) => {
+            if (generation.current !== owner) {
+              return;
+            }
+            setListing((previous) => ({
+              entriesByPath: { ...previous.entriesByPath, [relPath]: entries },
+              loadingByPath: { ...previous.loadingByPath, [relPath]: false },
+              errorByPath: previous.errorByPath,
+            }));
+          },
+        });
       } catch (error) {
-        if (!isCurrent()) {
+        if (generation.current !== owner) {
           return;
         }
         setListing((previous) => ({
@@ -89,7 +89,7 @@ export const useExploreListing = ({ sessionDir }: Params): ExploreListingControl
 
   useEffect(() => {
     generation.current += 1;
-    latestByPath.current = new Map();
+    latest.current = createLatestOnly();
     setListing(initialListing({ sessionDir }));
     if (hasDir(sessionDir)) {
       void load({ relPath: EXPLORE_ROOT_PATH });

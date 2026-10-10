@@ -8,7 +8,7 @@ type JoinParams = {
   readonly relPath: string;
 };
 
-export const joinExplorePath = ({ root, relPath }: JoinParams): string => {
+const joinExplorePath = ({ root, relPath }: JoinParams): string => {
   if (relPath === '') {
     return root;
   }

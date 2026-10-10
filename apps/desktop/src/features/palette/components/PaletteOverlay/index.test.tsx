@@ -23,7 +23,9 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { agentPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import { holdPaletteScope } from '../../heldPaletteScope';
-import type { CommitScope } from '../../types';
+import type { HeldScope } from '../../types';
+
+type CommitScope = Extract<HeldScope, { kind: 'commit' }>;
 import { PaletteOverlay } from './index';
 
 const elsewhere = vi.hoisted(() => ({ refs: [] as ReadonlyArray<SessionTitleRef> }));

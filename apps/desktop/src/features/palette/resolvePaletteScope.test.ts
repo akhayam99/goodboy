@@ -2,7 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { resolvePaletteScope } from './resolvePaletteScope';
-import type { CommitScope, HeldScope } from './types';
+import type { HeldScope } from './types';
+
+type CommitScope = Extract<HeldScope, { kind: 'commit' }>;
 
 const WORKSPACE = 'workspace-harborline' as WorkspaceId;
 const SESSION = 'session-payout' as SessionId;

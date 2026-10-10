@@ -10,8 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type FileGlyphKind =
-  'code' | 'data' | 'text' | 'image' | 'sheet' | 'lock' | 'archive' | 'generic';
+type FileGlyphKind = 'code' | 'data' | 'text' | 'image' | 'sheet' | 'lock' | 'archive' | 'generic';
 
 type Params = {
   readonly name: string;
@@ -91,7 +90,7 @@ const CODE_NAMES: ReadonlySet<string> = new Set(['dockerfile', 'gemfile', 'makef
 
 const ENV_FILE = /^\.env(\..+)?$/;
 
-export const fileGlyphKindOf = ({ name }: Params): FileGlyphKind => {
+const fileGlyphKindOf = ({ name }: Params): FileGlyphKind => {
   const lower = name.toLowerCase();
   if (ENV_FILE.test(lower)) {
     return 'lock';

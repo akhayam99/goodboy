@@ -2,8 +2,11 @@
 import { describe, expect, it } from 'vitest';
 import type { FileDiff } from '@goodboy/types';
 import { buildChangeTree } from './changeTree';
-import { ROW_PX, ROW_WITH_SOURCE_PX, rowHeightOf } from './rowHeightOf';
+import { rowHeightOf } from './rowHeightOf';
 import { layoutRows } from '../../../shared/utils/windowRows';
+
+const ROW_PX = 28;
+const ROW_WITH_SOURCE_PX = 44;
 
 const fileAt = (path: string, extra: Partial<FileDiff> = {}): FileDiff => ({
   path,

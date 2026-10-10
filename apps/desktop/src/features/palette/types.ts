@@ -19,7 +19,7 @@ type WorkspaceScope = {
   readonly workspaceId: WorkspaceId;
 };
 
-export type CommitScope = CommitActionTarget & {
+type CommitScope = CommitActionTarget & {
   readonly sessionId: SessionId;
 };
 
