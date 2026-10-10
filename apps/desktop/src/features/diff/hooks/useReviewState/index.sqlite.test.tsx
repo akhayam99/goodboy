@@ -56,6 +56,7 @@ const diffOf = (): SessionDiff => ({
   files: [file],
   patch: '',
   loading: false,
+  isRefreshing: false,
   error: null,
   view: { kind: 'branch' },
   setView: vi.fn(),

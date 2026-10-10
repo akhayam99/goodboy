@@ -17,6 +17,7 @@ export const STORAGE_KEYS = {
 
 export const STORAGE_PREFIXES = {
   diffReviewed: `${PREFIX}diff-reviewed:`,
+  diffFolds: `${PREFIX}diff-folds:v1:`,
   sessionView: `${PREFIX}session-view:`,
   sessionFilters: `${PREFIX}session-filters:`,
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,

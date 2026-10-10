@@ -31,7 +31,7 @@ vi.mock('../useDiffNotes', () => ({
   }),
 }));
 
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { FileDiff, IsoDateTime, SessionId } from '@goodboy/types';
 import { STORE_IMPORT_TIMEOUT_MS, importStore } from '../../../../store/storyHarness';
@@ -76,6 +76,7 @@ const diffOf = (): SessionDiff => ({
   files: [fileAt('src/ledger/export/page.tsx'), fileAt('src/ledger/ledger.ts')],
   patch: '',
   loading: false,
+  isRefreshing: false,
   error: null,
   view: { kind: 'branch' },
   setView: vi.fn(),
@@ -88,6 +89,8 @@ const diffOf = (): SessionDiff => ({
   focusPath: null,
   clearFocus: vi.fn(),
 });
+
+const STABLE_DIFF = diffOf();
 
 const run = () =>
   renderHook(() =>
@@ -104,12 +107,16 @@ beforeAll(async () => {
   store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+beforeEach(() => {
+  localStorage.clear();
+});
+
 afterEach(() => {
   h.threads = [];
 });
 
 describe('useReviewState', () => {
-  it('opens the folders above the file the diff scrolled to', () => {
+  it('leaves a closed folder closed when the diff scrolls to a file inside it', () => {
     const { result } = run();
     act(() => result.current.toggleFolder('dir:src/ledger/export'));
     act(() => result.current.toggleFolder('dir:src/ledger'));
@@ -117,9 +124,50 @@ describe('useReviewState', () => {
 
     act(() => result.current.setActivePath('src/ledger/export/page.tsx'));
 
-    expect(result.current.collapsed.has('dir:src/ledger')).toBe(false);
-    expect(result.current.collapsed.has('dir:src/ledger/export')).toBe(false);
+    expect(result.current.collapsed.has('dir:src/ledger')).toBe(true);
+    expect(result.current.collapsed.has('dir:src/ledger/export')).toBe(true);
     expect(result.current.activePath).toBe('src/ledger/export/page.tsx');
+  });
+
+  it('steps to a file inside a closed folder without opening it', () => {
+    const scroll = vi.fn();
+    const { result } = run();
+    act(() => result.current.registerScroller(scroll));
+    act(() => result.current.toggleFolder('dir:src/ledger/export'));
+
+    act(() => result.current.stepTo('src/ledger/export/page.tsx'));
+
+    expect(result.current.collapsed.has('dir:src/ledger/export')).toBe(true);
+    expect(result.current.activePath).toBe('src/ledger/export/page.tsx');
+    expect(scroll).toHaveBeenCalledWith('src/ledger/export/page.tsx');
+  });
+
+  it('opens the folders above a file a link from another page asks for', () => {
+    const { result, rerender } = renderHook(
+      ({ focusPath }: { readonly focusPath: string | null }) =>
+        useReviewState({
+          sessionId: 'session-1' as SessionId,
+          worktreePath: '/w/ledger',
+          diff: { ...STABLE_DIFF, focusPath },
+        }),
+      { initialProps: { focusPath: null as string | null } },
+    );
+    act(() => result.current.toggleFolder('dir:src/ledger/export'));
+    expect(result.current.collapsed.has('dir:src/ledger/export')).toBe(true);
+
+    rerender({ focusPath: 'src/ledger/export/page.tsx' });
+
+    expect(result.current.collapsed.has('dir:src/ledger/export')).toBe(false);
+  });
+
+  it('keeps the folds the reader closed after the view mounts again', () => {
+    const first = run();
+    act(() => first.result.current.toggleFolder('dir:src/ledger/export'));
+    first.unmount();
+
+    const second = run();
+
+    expect(second.result.current.collapsed.has('dir:src/ledger/export')).toBe(true);
   });
 
   it('jumps by marking the file active, opening its folder and calling the diff scroller', () => {
@@ -240,12 +288,14 @@ describe('useReviewState filters', () => {
     expect(result.current.query).toBe('');
   });
 
-  it('starts with the Generated row closed and opens it when a generated file is the target', () => {
+  it('starts with the Generated row closed, keeps it closed while scrolling and opens it on a jump', () => {
     const { result } = runStable();
     expect(result.current.collapsed.has('group:generated')).toBe(true);
 
     act(() => result.current.setActivePath('pnpm-lock.yaml'));
+    expect(result.current.collapsed.has('group:generated')).toBe(true);
 
+    act(() => result.current.jumpTo('pnpm-lock.yaml'));
     expect(result.current.collapsed.has('group:generated')).toBe(false);
   });
 
@@ -500,14 +550,14 @@ describe('useReviewState on a big change', () => {
     expect(result.current.collapsed.has('dir:apps/web')).toBe(false);
   });
 
-  it('closes the big folders again when a different set of files arrives', () => {
+  it('keeps what the reader opened when a different set of files arrives', () => {
     const { result, rerender } = runBig(bigFiles);
     act(() => result.current.toggleFolder('dir:apps/web'));
     expect(result.current.collapsed.size).toBe(0);
 
     rerender(reload([...bigFiles, fileAt('apps/web/new.ts')]));
 
-    expect([...result.current.collapsed]).toEqual(['dir:apps/web']);
+    expect(result.current.collapsed.size).toBe(0);
   });
 
   it('keeps what the reader opened when the same files reload', () => {

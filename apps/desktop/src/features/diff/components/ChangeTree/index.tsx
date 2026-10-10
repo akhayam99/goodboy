@@ -14,6 +14,8 @@ import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { MiddleText } from '../../../../shared/components/MiddleText';
 import {
+  folderPathOf,
+  foldedAncestorOf,
   visibleRows,
   type ChangeTree as ChangeTreeModel,
   type TreeGroup,
@@ -82,6 +84,14 @@ export const ChangeTree = ({
   noteCountOf,
 }: Props) => {
   const rows = useMemo(() => visibleRows({ rows: tree.rows, collapsed }), [tree.rows, collapsed]);
+  const markedId = useMemo(
+    () =>
+      activePath === null
+        ? null
+        : foldedAncestorOf({ rows: tree.rows, collapsed, path: activePath }),
+    [activePath, collapsed, tree.rows],
+  );
+  const trackedId = markedId ?? activePath;
   const states = useMemo(
     () => new Map(allFiles.map((file) => [file.path, stateOf(file)] as const)),
     [allFiles, stateOf],
@@ -129,7 +139,7 @@ export const ChangeTree = ({
 
   useEffect(() => {
     const element = viewportRef.current;
-    if (revealed.current || activePath === null) {
+    if (revealed.current || trackedId === null) {
       return;
     }
     if (!isWindowed || element === null) {
@@ -137,7 +147,7 @@ export const ChangeTree = ({
       revealed.current = activeRef.current !== null;
       return;
     }
-    const index = rows.findIndex((row) => row.id === activePath);
+    const index = rows.findIndex((row) => row.id === trackedId);
     const row = rows[index];
     if (row === undefined) {
       return;
@@ -153,7 +163,7 @@ export const ChangeTree = ({
     if (next !== element.scrollTop) {
       element.scrollTop = next;
     }
-  }, [activePath, isWindowed, layout, rows]);
+  }, [trackedId, isWindowed, layout, rows]);
 
   return (
     <nav aria-label="Changed files" className="flex min-h-0 w-full min-w-0 flex-col">
@@ -190,44 +200,62 @@ export const ChangeTree = ({
             const indent = BASE_PX + row.depth * INDENT_PX;
             if (row.kind === 'folder') {
               const isOpen = !collapsed.has(row.id);
+              const isMarked = row.id === markedId;
+              const folderPath = folderPathOf({ id: row.id });
+              const folderButton = (
+                <button
+                  ref={isMarked ? activeRef : undefined}
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() => onToggleFolder(row.id)}
+                  style={{ paddingLeft: indent }}
+                  className={cn(
+                    'flex h-7 w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-row',
+                    ROW_INTERACTIVE,
+                  )}
+                >
+                  <ChevronRight
+                    size={ICON_SIZE.row}
+                    aria-hidden
+                    className={cn(
+                      'shrink-0 text-muted-foreground duration-150 motion-safe:transition-transform',
+                      isOpen && 'rotate-90',
+                    )}
+                  />
+                  <ProgressRing
+                    viewed={row.paths.filter((path) => states.get(path) === 'viewed').length}
+                    total={row.fileCount}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                  {isMarked ? (
+                    <span
+                      role="img"
+                      aria-label="contains the file in view"
+                      className="size-1.5 shrink-0 rounded-full bg-primary"
+                    />
+                  ) : null}
+                  {isOpen ? null : (
+                    <>
+                      <span
+                        data-tone="muted"
+                        className="shrink-0 text-meta tabular-nums text-faint-foreground"
+                      >
+                        {row.fileCount}
+                      </span>
+                      <Delta additions={row.additions} deletions={row.deletions} isMuted />
+                    </>
+                  )}
+                </button>
+              );
               return (
                 <li key={row.id} className="list-none">
-                  <button
-                    type="button"
-                    aria-expanded={isOpen}
-                    title={row.id}
-                    onClick={() => onToggleFolder(row.id)}
-                    style={{ paddingLeft: indent }}
-                    className={cn(
-                      'flex h-7 w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-row',
-                      ROW_INTERACTIVE,
-                    )}
-                  >
-                    <ChevronRight
-                      size={ICON_SIZE.row}
-                      aria-hidden
-                      className={cn(
-                        'shrink-0 text-muted-foreground duration-150 motion-safe:transition-transform',
-                        isOpen && 'rotate-90',
-                      )}
-                    />
-                    <ProgressRing
-                      viewed={row.paths.filter((path) => states.get(path) === 'viewed').length}
-                      total={row.fileCount}
-                    />
-                    <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                    {isOpen ? null : (
-                      <>
-                        <span
-                          data-tone="muted"
-                          className="shrink-0 text-meta tabular-nums text-faint-foreground"
-                        >
-                          {row.fileCount}
-                        </span>
-                        <Delta additions={row.additions} deletions={row.deletions} isMuted />
-                      </>
-                    )}
-                  </button>
+                  {folderPath === null ? (
+                    folderButton
+                  ) : (
+                    <Tooltip content={<span className="text-code">{folderPath}</span>}>
+                      {folderButton}
+                    </Tooltip>
+                  )}
                 </li>
               );
             }
@@ -240,79 +268,80 @@ export const ChangeTree = ({
             const tone = tintClasses(STATUS_TONE[row.file.status]);
             return (
               <li key={row.id} className="group relative list-none">
-                <button
-                  ref={isActive ? activeRef : undefined}
-                  type="button"
-                  aria-current={isActive ? 'true' : undefined}
-                  title={row.id}
-                  onClick={() => onPick(row.id)}
-                  style={{ paddingLeft: indent + ICON_SIZE.row + 8, height: rowHeightOf(row) }}
-                  className={cn(
-                    'flex w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-body',
-                    ROW_INTERACTIVE,
-                    isActive && 'bg-overlay-selected',
-                    viewed ? 'text-muted-foreground' : 'text-foreground',
-                    canOpenNotes && 'pr-11',
-                  )}
-                >
-                  <span className="flex w-4 shrink-0 items-center justify-center">
-                    {viewed ? (
-                      <Check
-                        size={ICON_SIZE.row}
-                        aria-label="Viewed"
-                        className="text-muted-foreground"
-                      />
-                    ) : state === 'stale' ? (
-                      <span
-                        role="img"
-                        aria-label="Changed since viewed"
-                        className="size-2 rounded-full bg-warning"
-                      />
-                    ) : null}
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="flex min-w-0 items-baseline gap-2">
-                      <span
-                        className={cn(
-                          'truncate',
-                          row.file.status === 'deleted' && 'text-faint-foreground line-through',
+                <Tooltip content={<span className="text-code">{row.id}</span>}>
+                  <button
+                    ref={isActive ? activeRef : undefined}
+                    type="button"
+                    aria-current={isActive ? 'true' : undefined}
+                    onClick={() => onPick(row.id)}
+                    style={{ paddingLeft: indent + ICON_SIZE.row + 8, height: rowHeightOf(row) }}
+                    className={cn(
+                      'flex w-full min-w-0 items-center gap-2 rounded-sm pr-2 text-left text-body',
+                      ROW_INTERACTIVE,
+                      isActive && 'bg-overlay-selected',
+                      viewed ? 'text-muted-foreground' : 'text-foreground',
+                      canOpenNotes && 'pr-11',
+                    )}
+                  >
+                    <span className="flex w-4 shrink-0 items-center justify-center">
+                      {viewed ? (
+                        <Check
+                          size={ICON_SIZE.row}
+                          aria-label="Viewed"
+                          className="text-muted-foreground"
+                        />
+                      ) : state === 'stale' ? (
+                        <span
+                          role="img"
+                          aria-label="Changed since viewed"
+                          className="size-2 rounded-full bg-warning"
+                        />
+                      ) : null}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="flex min-w-0 items-baseline gap-2">
+                        <span
+                          className={cn(
+                            'truncate',
+                            row.file.status === 'deleted' && 'text-faint-foreground line-through',
+                          )}
+                        >
+                          <MiddleText value={row.name} tail={EXTENSION} />
+                        </span>
+                        {row.dir === null ? null : (
+                          <span className="min-w-0 truncate text-meta text-faint-foreground">
+                            {row.dir}
+                          </span>
                         )}
-                      >
-                        <MiddleText value={row.name} tail={EXTENSION} />
                       </span>
-                      {row.dir === null ? null : (
-                        <span className="min-w-0 truncate text-meta text-faint-foreground">
-                          {row.dir}
+                      {row.fromPath === null ? null : (
+                        <span className="flex min-w-0 gap-1 text-meta text-faint-foreground">
+                          <span className="sr-only">from {row.fromPath}</span>
+                          <span aria-hidden className="shrink-0">
+                            from
+                          </span>
+                          <MiddleText value={row.fromPath} tail={LAST_SEGMENT} />
                         </span>
                       )}
                     </span>
-                    {row.fromPath === null ? null : (
-                      <span className="flex min-w-0 gap-1 text-meta text-faint-foreground">
-                        <span className="sr-only">from {row.fromPath}</span>
-                        <span aria-hidden className="shrink-0">
-                          from
-                        </span>
-                        <MiddleText value={row.fromPath} tail={LAST_SEGMENT} />
+                    {notes > 0 && !canOpenNotes ? (
+                      <span
+                        aria-label={notesLabel}
+                        className="flex shrink-0 items-center gap-0.5 text-meta tabular-nums text-faint-foreground"
+                      >
+                        <MessageSquare size={ICON_SIZE.row} aria-hidden />
+                        {notes}
                       </span>
-                    )}
-                  </span>
-                  {notes > 0 && !canOpenNotes ? (
+                    ) : null}
+                    <Delta additions={row.file.additions} deletions={row.file.deletions} />
                     <span
-                      aria-label={notesLabel}
-                      className="flex shrink-0 items-center gap-0.5 text-meta tabular-nums text-faint-foreground"
+                      aria-label={STATUS_WORD[row.file.status]}
+                      className={cn('w-3 shrink-0 text-center text-chip', tone.text)}
                     >
-                      <MessageSquare size={ICON_SIZE.row} aria-hidden />
-                      {notes}
+                      {STATUS_LETTER[row.file.status]}
                     </span>
-                  ) : null}
-                  <Delta additions={row.file.additions} deletions={row.file.deletions} />
-                  <span
-                    aria-label={STATUS_WORD[row.file.status]}
-                    className={cn('w-3 shrink-0 text-center text-chip', tone.text)}
-                  >
-                    {STATUS_LETTER[row.file.status]}
-                  </span>
-                </button>
+                  </button>
+                </Tooltip>
                 {canOpenNotes ? (
                   <Tooltip
                     content="Open notes"
