@@ -69,11 +69,11 @@ Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md)
 
 - `pre-commit`: `prettier --write` on staged files, then stage them again. No eslint step, because the repo has no eslint config.
 - `commit-msg`: `commitlint`.
-- No tests in pre-commit (too slow). Tests run in CI.
+- No tests in pre-commit (too slow). Tests run in CI. Run `pnpm gate:quick` before each commit instead (see [CI parity](#ci-parity)).
 
 ## CI pipeline
 
-`.github/workflows/ci.yml` runs five kinds of job. The required check is the `gate` job; its name, `lint + typecheck + test + build`, is historical, because the repo has no linter. It passes only when every other job passed. A warning never counts as green.
+`.github/workflows/ci.yml` runs six kinds of job. The required check is the `gate` job; its name, `lint + typecheck + test + build`, is historical, because the repo has no linter. It passes only when every other job passed. A warning never counts as green.
 
 - `changes`: on a pull request it diffs `HEAD^1..HEAD` on the merge ref (`scripts/ci-changes.mjs`). The tests are skipped only when every changed path is inert: `docs/**` except `docs/changelog/**` and `docs/features/**` (scripts read them), `website/**` except the four files `brand-mark-is-centered-in-its-tile.test.ts` reads (`website/src/components/Logo.tsx`, `website/src/styles.css`, `website/public/favicon.svg`, `website/scripts/build-brand-assets.mjs`), the images in `.github/` and the pull request template. `scripts/ci-changes.test.mjs` scans every test under `apps/desktop/src` and `packages/*/src` for `join` and `resolve` calls into `website` or `docs` and fails when one of those paths counts as inert, so a new test that reads the site cannot be skipped silently. Markdown is not inert by itself: `CHANGELOG.md` is imported as code and tests read it. A push to `main`, a merge group, an empty diff or an unreadable diff runs everything. The workflow has `permissions: contents: read` and also triggers on `merge_group`.
 - `checks`: always runs, one job, in this order. Every step blocks except `audit`.
@@ -86,13 +86,32 @@ Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md)
   - `test shards cover every file`: `scripts/check-test-shards.mjs` replays vitest's sharding and fails unless the four desktop shards list every unit test file exactly once. Vitest slices the hash-sorted file list, so coverage holds by construction. The check guards an empty shard and a custom sequencer that drops or repeats a file.
   - `build`: `vite build` of the desktop app. The type check already ran in `typecheck`; `pnpm build` (`tsc -b && vite build`) stays for `tauri build`.
   - `audit`: `pnpm audit --prod`. It reports but does not block, so a new advisory never stops an unrelated pull request. The step times out after 2 minutes and a failure prints a `::warning::`.
+- `commits`: `commitlint` on the pull request commits (`origin/<base>..head`) and on the pull request title, with the same `commitlint.config.cjs` the `commit-msg` hook uses. It reports on every event; its steps run only on pull requests not opened by Dependabot, whose `chore(deps)` titles carry no allowed scope.
 - `test-desktop`: four parallel shards, `vitest run --project unit --shard=i/4`, `fail-fast: false`. Skipped when `changes` says so.
 - `test-packages`: `turbo run test` over `packages/*`, then the `a11y` suite (`pnpm --filter @goodboy/desktop test:a11y`, axe over the smoke cases and every mock scene, compared to the violation baseline). Skipped when `changes` says so. `a11y` runs with `--no-passWithNoTests`.
 - `gate`: `if: always()`, reads `needs` (`scripts/ci-gate.mjs`). It judges every key of `needs`, and `gate.needs` must list every other job of the workflow (a script test checks it). Red unless `changes` succeeded and every other job succeeded, or the test jobs were skipped because `changes` output `tests=false`. A missing or empty `tests` output is red. A cancelled, failed or otherwise skipped job is red.
 
 The shared setup (pnpm, Node 22, frozen install) lives in `.github/actions/setup-workspace`. The checkout stays in each job. The Turbo cache is restored in `checks` on pull requests and saved only on `main`, so pull requests add no Turbo cache entries. The pnpm store cache from `setup-node` is separate: each job saves it when the lockfile key misses.
 
-Outside `ci.yml`, `website.yml` builds `website/` (`pnpm install --ignore-workspace --frozen-lockfile && pnpm build`) on pull requests that touch it. It is not a required check, because a required check with a path filter blocks unrelated pull requests as "expected". `rust.yml` runs `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings` and `cargo test --locked`, and all three block. The job is always required and always reports; its steps skip when the merge ref touches nothing under `apps/desktop/src-tauri/`, `rust-toolchain.toml` or the Rust workflow files. It builds no frontend: a stub `apps/desktop/dist/index.html` satisfies `generate_context!`. The toolchain is pinned in `rust-toolchain.toml` and in the `toolchain:` input of the workflows that install Rust; bump them together in a deliberate pull request, never by floating on `stable`. `rust-version` in `Cargo.toml` is the real floor of the locked crates (1.95, from `libsqlite3-sys`). Tauri commands take flat arguments, which is the IPC contract, so each carries `#[allow(clippy::too_many_arguments)]` on its own; no crate-wide allow. A step in `rust.yml` fails when a `toolchain:` value in `rust.yml`, `release.yml` or `linux-build.yml` differs from `rust-toolchain.toml`.
+Outside `ci.yml`, `website.yml` builds `website/` (`pnpm install --ignore-workspace --frozen-lockfile && pnpm build`) on every pull request. Its steps skip when the merge ref touches nothing under `website/` or the website workflow, so the job always reports and can be a required check (the owner flips the setting). `rust.yml` runs `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings` and `cargo test --locked`, and all three block. The job is always required and always reports; its steps skip when the merge ref touches nothing under `apps/desktop/src-tauri/`, `rust-toolchain.toml` or the Rust workflow files. It builds no frontend: a stub `apps/desktop/dist/index.html` satisfies `generate_context!`. The toolchain is pinned in `rust-toolchain.toml` and in the `toolchain:` input of the workflows that install Rust; bump them together in a deliberate pull request, never by floating on `stable`. `rust-version` in `Cargo.toml` is the real floor of the locked crates (1.95, from `libsqlite3-sys`). Tauri commands take flat arguments, which is the IPC contract, so each carries `#[allow(clippy::too_many_arguments)]` on its own; no crate-wide allow. A step in `rust.yml` fails when a `toolchain:` value in `rust.yml`, `release.yml` or `linux-build.yml` differs from `rust-toolchain.toml`.
+
+## CI parity
+
+`scripts/gate.sh` runs the CI steps on your machine. `pnpm gate` is the full gate and prints `gate ok` or `gate failed at <step>: <log>`, with the logs under `.gate-logs/`. `pnpm gate:quick` is the two-minute version for the changed files: run it before each commit, and run the full gate before you push. `GATE_BASE` (default `origin/main`) sets the base, `GATE_WORKERS` (default 3) the vitest workers, and `CARGO_TARGET_DIR` from the environment is honored. `scripts/gate.test.mjs` fails when a command of the `checks`, `commits` or `rust` jobs is missing from the full gate.
+
+| Local step (`scripts/gate.sh`)                                         | CI job and step                                              |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `commits`: commitlint on `origin/main..HEAD`                           | `commits`: commit messages, pull request title               |
+| `prettier`: prettier `--check` on files changed against the base       | `checks`: formatting of changed files                        |
+| `rules`, `baselines`: `check:rules`, `check:baselines`                 | `checks`: forbidden patterns, baselines only fall            |
+| `typecheck`, `website-drift`, `tauri-commands`, `doc-refs`             | `checks`: the step of the same name                          |
+| `test-scripts`, `knip`, `knip-production`, `test-shards`, `vite-build` | `checks`: script tests, knip, knip production, shards, build |
+| `packages-tests`, `a11y`                                               | `test-packages`                                              |
+| `desktop-unit` (one run, not four shards)                              | `test-desktop`                                               |
+| `cargo-fmt`, `clippy`, `cargo-test` when Rust changed                  | `rust`: fmt, clippy, test                                    |
+| not run locally (`pnpm --dir website build` by hand)                   | `website`                                                    |
+
+`pnpm gate:quick` runs `check:rules`, prettier on changed files, the typecheck of the packages that own changed files, the regression folder, `vitest related` for changed files, and `cargo fmt --check` plus `cargo check` when Rust changed.
 
 ## Naming conventions
 

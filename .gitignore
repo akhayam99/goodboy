@@ -35,6 +35,9 @@ pnpm-debug.log*
 .claude/settings.local.json
 .claude/worktrees
 
+# gate
+.gate-logs/
+
 # test
 coverage/
 *.timestamp-*.mjs
