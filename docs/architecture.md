@@ -96,6 +96,25 @@ group terminated anyway.
   pid or app start, pid 1, this app, another user's process, a pid whose start
   time or tag changed since the table was read, and a leader that is not this
   app's child. Only a leader this app still holds brings its tree and group.
+- **The ledger.** `proc/ledger.rs` keeps one in-memory list of what the app
+  started and still holds: `{ spawnId, kind, pid, pgid, sessionId, mountPath,
+cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
+  `LiveChild::tagged`, a script and a terminal when their pty starts. The row
+  leaves when the run is reaped (`wait_and_remove`), when a script ends or is
+  stopped, and when a terminal closes, so a finished spawn is never listed.
+  The `process_ledger_list` command returns it. `LiveScriptRun` and
+  `LiveTerminal` carry the leader `pid`; a terminal also carries
+  `foregroundPid`, the leader of its foreground process group when the
+  platform reports it. A script's exit code is the real one: a signal reads as
+  128 plus its number (a SIGKILL is 137), where it used to collapse to 1.
+- **Windows.** Each CLI spawn is assigned to its own Job Object with
+  kill-on-close (`process_group::Job`), so a cancel ends the whole tree
+  (`TerminateJobObject`) and so does the app dying. The assignment happens
+  right after the spawn, so a grandchild started in that first instant can
+  escape it.
+- **Spawn sites.** `rust-spawn-sites.test.ts` counts `.spawn()` and `.kill()`
+  in `src-tauri/src` outside `proc/` against `rust-spawn-sites.baseline.json`.
+  It only falls: a new process is started through `proc/`.
 - **Side jobs** (planner, summary) are stopped when they go quiet. A job is
   quiet when it has written nothing to stdout or stderr and no process in its
   tree has used any CPU for 10 minutes (`SIDE_JOB_IDLE`, checked every 15
