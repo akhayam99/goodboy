@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
-use crate::live_child::{drain_lossy, wait_and_remove, LiveChild, LiveChildRegistry};
+use crate::live_child::{
+    drain_lossy, run_to_exit, LiveChild, LiveChildRegistry, SIDE_JOB_DEADLINE,
+};
 use crate::providers::cli_args::{side_job_args, ArgsError, Job, SideJob};
 
 #[derive(Debug, Error)]
@@ -96,6 +98,7 @@ pub(crate) fn run_planner(
 
     let mut command = crate::path_env::command(&args.binary);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+    let tag = crate::aux_spawn::tag_spawn(&mut command, crate::aux_spawn::SpawnKind::Planner);
     crate::process_group::isolate(&mut command);
     if let Some(dir) = args.working_dir.as_deref() {
         if !dir.is_empty() {
@@ -118,19 +121,23 @@ pub(crate) fn run_planner(
         .ok_or_else(|| PlannerError::Io(std::io::Error::other("no stderr")))?;
 
     let key = crate::live_child::anonymous_key("planner");
-    let live = LiveChild::new(child);
+    let live = LiveChild::tagged(child, &tag);
     crate::live_child::register(registry, &key, &live);
 
     let stdout_handle = thread::spawn(move || drain_lossy(stdout));
     let stderr_handle = thread::spawn(move || drain_lossy(stderr));
-    let stdout_buf = stdout_handle.join().unwrap_or_default();
-    let stderr_buf = stderr_handle.join().unwrap_or_default();
-    let exit_code = wait_and_remove(&live, registry, &key);
+    let ((stdout_buf, stderr_buf), exited) =
+        run_to_exit(&live, registry, &key, Some(SIDE_JOB_DEADLINE), || {
+            (
+                stdout_handle.join().unwrap_or_default(),
+                stderr_handle.join().unwrap_or_default(),
+            )
+        });
 
     Ok(PlannerResult {
         stdout: stdout_buf,
         stderr: stderr_buf,
-        exit_code,
+        exit_code: exited.code,
     })
 }
 

@@ -212,6 +212,16 @@ pub fn run() {
             logging::init(app.handle());
             query_bridge::start(app.handle().clone());
             std::thread::spawn(history::clean_stale_copies);
+            let sweep_handle = app.handle().clone();
+            std::thread::spawn(move || {
+                use tauri::Emitter;
+                let count = proc::reap::sweep_orphans();
+                if count == 0 {
+                    return;
+                }
+                log::info!("[reap] startup sweep stopped {count} orphaned processes");
+                let _ = sweep_handle.emit("orphans-swept", serde_json::json!({ "count": count }));
+            });
             #[cfg(target_os = "macos")]
             help_menu::install(app.handle())?;
             #[cfg(desktop)]
