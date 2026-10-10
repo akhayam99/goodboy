@@ -361,6 +361,9 @@ topbar-limits-overflow
 topbar-states
 transcript
 transcript-mount
+update-card
+update-card-long-version
+update-card-narrow
 update-confirm
 update-whats-new
 wireframe-failed
