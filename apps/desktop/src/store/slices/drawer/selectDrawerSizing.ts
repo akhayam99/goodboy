@@ -7,10 +7,13 @@ export const selectDrawerSizing = (
 ): DrawerSizing => {
   const drawer = selectOpenDrawer(state);
   if (drawer === null) {
-    return 'default';
+    return 'side';
+  }
+  if (drawer.kind === 'explore-file' || drawer.kind === 'file-diff') {
+    return 'reader';
   }
   if (drawer.kind !== 'artifact-document') {
-    return 'default';
+    return 'side';
   }
-  return state.documentDrawerExpanded?.[drawer.sessionId] === true ? 'full' : 'half';
+  return state.documentDrawerExpanded?.[drawer.sessionId] === true ? 'full' : 'reader';
 };

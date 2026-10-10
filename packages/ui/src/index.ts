@@ -1,6 +1,7 @@
 export { cn } from './cn';
 export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
+export { StudioSlotContext } from './studioSlotContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
 export { registerEscapeLayer } from './escape';
@@ -26,11 +27,18 @@ export {
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
-export { DrawerColumn, RIGHT_DRAWER_STORAGE_KEY } from './components/DrawerColumn';
-export type { DrawerColumnProps } from './components/DrawerColumn';
+export {
+  DrawerColumn,
+  READER_DRAWER_STORAGE_KEY,
+  RIGHT_DRAWER_STORAGE_KEY,
+} from './components/DrawerColumn';
+export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';
 export {
   COLUMN_FRAME,
   DRAWER_INSET,
+  READER_DRAWER_DEFAULT,
+  READER_DRAWER_MAX,
+  READER_DRAWER_MIN,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   canDrawerPush,
