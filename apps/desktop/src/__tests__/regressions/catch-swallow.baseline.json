@@ -17,7 +17,7 @@
   "apps/desktop/src/features/chat/turn.ts": 2,
   "apps/desktop/src/features/companion/commandExecutor.ts": 1,
   "apps/desktop/src/features/companion/components/CompanionStudio/index.tsx": 1,
-  "apps/desktop/src/features/diff/lib/highlight/index.ts": 1,
+  "apps/desktop/src/shared/lib/highlight/index.ts": 1,
   "apps/desktop/src/features/history/components/CommitsHistory/useHistoryScribe/index.ts": 1,
   "apps/desktop/src/features/impact/hooks/useImpactMetrics/index.ts": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/index.tsx": 1,

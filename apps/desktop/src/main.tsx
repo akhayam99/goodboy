@@ -11,7 +11,7 @@ import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider
 import { MOCK_ENABLED } from './store/mock-data';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
-import { APP_CODE_HIGHLIGHTER } from './features/diff/lib/highlight/codeHighlighter';
+import { APP_CODE_HIGHLIGHTER } from './shared/lib/highlight/codeHighlighter';
 import { CrashReport } from './features/bug-report/components/CrashReport';
 import {
   crashKind,
