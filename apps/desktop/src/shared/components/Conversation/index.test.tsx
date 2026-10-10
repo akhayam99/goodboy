@@ -83,6 +83,17 @@ describe('Conversation', () => {
     );
   });
 
+  it('focuses the composer without scrolling an ancestor when Reply is clicked', async () => {
+    const onPost = vi.fn(async () => undefined);
+    const focus = vi.spyOn(HTMLTextAreaElement.prototype, 'focus');
+    render(<Harness source={fixtureSource({ threads: [THREAD], onPost })} />);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reply' })[1]!);
+
+    await waitFor(() => expect(focus).toHaveBeenCalledWith({ preventScroll: true }));
+    focus.mockRestore();
+  });
+
   it('sets the reply target with r on a focused message and clears it with Escape', () => {
     render(
       <Harness

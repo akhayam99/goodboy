@@ -26,7 +26,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
     if (model.focusToken === 0) {
       return;
     }
-    boxRef.current?.querySelector('textarea')?.focus();
+    boxRef.current?.querySelector('textarea')?.focus({ preventScroll: true });
   }, [model.focusToken]);
 
   const submit = () => {
