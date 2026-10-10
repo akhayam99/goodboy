@@ -71,6 +71,12 @@ jobs:
       - name: doc refs
         run: pnpm run check:doc-refs
 
+      - name: forbidden patterns on the diff
+        run: git fetch --no-tags --depth=1 origin +main:refs/remotes/origin/main && pnpm run check:rules
+
+      - name: baselines only fall
+        run: pnpm run check:baselines
+
       - name: script tests
         run: pnpm run test:scripts
 
