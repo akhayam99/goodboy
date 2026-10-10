@@ -104,6 +104,7 @@ export const POLICY_ROWS: ReadonlyArray<Row> = [
   {
     name: 'policy: the spread option set in Providers is a link, not a second switch, in Run defaults',
     covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'scope:providers'],
+    door: 'palette',
     open: async () => {
       await flipSpreadInProviders();
       await openPalette(/^Run defaults/, 'run defaults');
@@ -113,6 +114,7 @@ export const POLICY_ROWS: ReadonlyArray<Row> = [
   {
     name: 'policy: the link in Run defaults opens Providers & models on the same policy',
     covers: ['openSettings', 'studio:workflow', 'palette:Run defaults', 'scope:providers'],
+    door: 'palette',
     open: async () => {
       await flipSpreadInProviders();
       await openPalette(/^Run defaults/, 'run defaults');

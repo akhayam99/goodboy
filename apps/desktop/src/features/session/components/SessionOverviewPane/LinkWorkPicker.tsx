@@ -40,6 +40,7 @@ type Props = {
   readonly lookedUp: ReadonlyArray<LinkWorkItem>;
   readonly linkedScopes: LinkedScopes;
   readonly sources: ReadonlyArray<SessionExternalTaskProvider>;
+  readonly initialSource?: SessionExternalTaskProvider;
   readonly isLoading: boolean;
   readonly isLinking: boolean;
   readonly error: string | null;
@@ -86,6 +87,7 @@ export const LinkWorkPicker = ({
   lookedUp,
   linkedScopes,
   sources,
+  initialSource,
   isLoading,
   isLinking,
   error,
@@ -95,7 +97,10 @@ export const LinkWorkPicker = ({
   const now = useNow(30_000);
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [source, setSource] = useState<LinkWorkSource>('all');
+  const [pickedSource, setSource] = useState<LinkWorkSource | null>(null);
+  const source: LinkWorkSource =
+    pickedSource ??
+    (initialSource !== undefined && sources.includes(initialSource) ? initialSource : 'all');
   const [activeIndex, setActiveIndex] = useState(0);
   const [scope, setScope] = useState<LinkScope>('session');
   const [isClosing, setIsClosing] = useState(true);

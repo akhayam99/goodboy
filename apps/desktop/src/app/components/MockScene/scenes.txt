@@ -184,6 +184,7 @@ inbox-empty
 inbox-error
 inbox-source
 inbox-states
+integration-issue-focused
 lens-switcher
 lens-switcher-closed
 link-scope
@@ -243,6 +244,7 @@ rail-draft-dot
 rail-flyout
 rail-pinned
 rail-ticket-ids
+railorder
 rebasedirty
 repo-status
 resolve

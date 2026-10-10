@@ -34,7 +34,6 @@
   "apps/desktop/src/features/diff/components/DiffView/index.test.tsx": 3,
   "apps/desktop/src/features/explore/components/ExplorePane/index.test.tsx": 3,
   "apps/desktop/src/features/integrations/components/IntegrationGlyph/index.test.tsx": 1,
-  "apps/desktop/src/features/integrations/components/IssuePicker/index.test.tsx": 1,
   "apps/desktop/src/features/notifications/components/NotificationCenter/index.test.tsx": 2,
   "apps/desktop/src/features/notifications/components/NotificationCenter/studioStacking.test.tsx": 4,
   "apps/desktop/src/features/notifications/components/NotificationsStudio/index.test.tsx": 2,

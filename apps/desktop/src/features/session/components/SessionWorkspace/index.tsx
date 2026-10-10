@@ -25,7 +25,7 @@ import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
 import { IntegrationPane } from './parts/IntegrationPane';
 import { GithubTaskDetail } from './parts/IntegrationPane/GithubTaskDetail';
-import { LinkTicketPopover } from './parts/IntegrationPane/LinkTicketPopover';
+import { LinkIssueAction } from '../SessionOverviewPane/LinkIssueAction';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
 import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
@@ -217,17 +217,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                       tone={CONCEPT_TONE.github}
                       title="No GitHub issue linked"
                       description="Link a GitHub issue to this session to see it here."
-                      action={
-                        <LinkTicketPopover
-                          sessionId={sessionId}
-                          workspaceId={session.workspaceId}
-                          provider="github"
-                          providerLabel="GitHub"
-                          noun="issue"
-                          nounPhrase="an issue"
-                          nounPlural="issues"
-                        />
-                      }
+                      action={<LinkIssueAction session={session} initialSource="github" />}
                     />
                   </PaneShell>
                 )

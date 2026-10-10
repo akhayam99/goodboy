@@ -17,10 +17,11 @@ const ACTIONS: ColumnActions = {
   openWorkflows: noop,
   openSettings: noop,
   openChangelog: noop,
+  openGuide: noop,
   openShortcuts: noop,
 };
 
-const HOVER_TARGET = '[data-rail-session]';
+const HOVER_TARGET = '[data-rail-session][aria-current="page"]';
 
 type Props = {
   readonly config: Partial<SidebarNavConfig>;

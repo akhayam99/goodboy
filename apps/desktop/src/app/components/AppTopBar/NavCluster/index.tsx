@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
 import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
+import { selectChatDoor } from '../../../../store/slices/chat-last-open/selectChatDoor';
 import { selectIsSessionDraftShown } from '../../../../store/slices/sessionDraft/selectIsSessionDraftShown';
 import { useGoToBoard } from '../../../hooks/useGoToBoard';
 import { BoardButton } from './BoardButton';
@@ -88,7 +89,11 @@ export const NavCluster = ({ hasDoors = false }: Props) => {
           isOnChat={studioKind === 'chat'}
           runningCount={chatActivity.runningCount}
           hasUnread={chatActivity.hasUnread}
-          onChat={() => switchStudio({ studio: { kind: 'chat', chatId: null } })}
+          onChat={() =>
+            switchStudio({
+              studio: { kind: 'chat', chatId: selectChatDoor({ state: useAppStore.getState() }) },
+            })
+          }
         />
       ) : null}
     </div>

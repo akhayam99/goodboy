@@ -25,6 +25,7 @@ export type ColumnActions = {
   readonly openWorkflows: () => void;
   readonly openSettings: () => void;
   readonly openChangelog: () => void;
+  readonly openGuide: () => void;
   readonly openShortcuts: () => void;
 };
 

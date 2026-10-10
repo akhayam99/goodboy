@@ -5,7 +5,7 @@ import { sessionNodeOf } from '../../../features/workspace/components/SessionAct
 import { SessionStateNode } from '../../../features/workspace/components/SessionActivityBar/SessionStateNode';
 import { useSessionSummary } from '../../../features/workspace/hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../features/session/sessionTitle';
-import { RAIL_BUTTON_CURRENT, RAIL_BUTTON_IDLE, RAIL_NODE_BUTTON } from './RailButton';
+import { RAIL_BUTTON_IDLE, RAIL_NODE_BUTTON, RAIL_NODE_CURRENT } from './RailButton';
 
 export type RailSessionSign = 'current' | 'remembered' | 'none';
 
@@ -55,7 +55,7 @@ export const RailSessionButton = ({
       onKeyDown={onKeyDown}
       className={cn(
         RAIL_NODE_BUTTON,
-        isCurrent ? RAIL_BUTTON_CURRENT : RAIL_BUTTON_IDLE,
+        isCurrent ? RAIL_NODE_CURRENT : RAIL_BUTTON_IDLE,
         sign === 'remembered' && 'text-foreground',
       )}
     >

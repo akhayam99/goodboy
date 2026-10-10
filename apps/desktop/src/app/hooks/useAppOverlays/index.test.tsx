@@ -253,6 +253,14 @@ describe('app overlay hook, navigation', () => {
     expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('shortcuts');
   });
 
+  it('opens the guide studio from its own opener', async () => {
+    renderHarness();
+
+    act(() => overlays().openGuide());
+
+    expect(await openStudios()).toEqual(['guide']);
+  });
+
   it('lands the inbox event on another workspace open', async () => {
     renderHarness();
     act(() => overlays().openSettings());

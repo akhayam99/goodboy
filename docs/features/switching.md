@@ -30,7 +30,7 @@ To switch without looking at the list, hold **Control** and press **Tab** to fli
 
 With many sessions, keep the ones you return to at the top of the list. Choose **Pin session** from a row's right-click menu or from the command palette, and the session moves to a **Pinned** group above the rest, in the order you pinned them, whatever the sort, grouping or project filter. **Unpin session** puts it back. A pinned session you archive comes back to Pinned when you restore it. Hover a row to pin it from the pin at its right end, or use the pin in the session's title row. **Move up** and **Move down** in the row menu and the command palette set the order. The same order shows on the Board card, which carries a small pin, in the **Pinned** section of the Control-Tab switcher, and on the rail.
 
-Fold the sidebar with the toggle and the rail keeps the open session and your pinned sessions as small signs under the doors. Hover or focus the open session to see its pages, its branches and your pinned sessions, and choose one. **New** shows a dot while a draft waits.
+Fold the sidebar with the toggle and the rail keeps your pinned sessions as small signs under the doors, always in pin order. The open one wears a quiet frame; if it is not pinned it sits after the others. Hover or focus the open session to see its pages, its branches and your pinned sessions, and choose one. **New** shows a dot while a draft waits.
 
 ### Now chip
 
