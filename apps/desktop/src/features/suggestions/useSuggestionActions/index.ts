@@ -57,7 +57,7 @@ export type SuggestionActionChoice = {
   readonly run: () => Promise<void>;
 };
 
-export type SuggestionExtraAction = {
+type SuggestionExtraAction = {
   readonly id: string;
   readonly label: string;
   readonly variant: 'secondary' | 'ghost';
