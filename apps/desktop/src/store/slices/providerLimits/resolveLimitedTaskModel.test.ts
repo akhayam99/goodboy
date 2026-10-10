@@ -6,6 +6,7 @@ import { resolveLimitedTaskModel } from './resolveLimitedTaskModel';
 
 const DESKTOP_SRC = join(__dirname, '..', '..', '..');
 const HELPER = join(__dirname, 'resolveLimitedTaskModel.ts');
+const ENTRYPOINT_SCANNER = join(DESKTOP_SRC, '__tests__', 'regressions', 'scanResolverImports.ts');
 
 const sourceFiles = (dir: string): ReadonlyArray<string> =>
   readdirSync(dir).flatMap((entry) => {
@@ -48,7 +49,7 @@ describe('resolveLimitedTaskModel', () => {
 
   it('is the only way the desktop resolves a task model', () => {
     const offenders = sourceFiles(DESKTOP_SRC)
-      .filter((file) => file !== HELPER)
+      .filter((file) => file !== HELPER && file !== ENTRYPOINT_SCANNER)
       .filter((file) => /\bresolveTaskModel\b/.test(readFileSync(file, 'utf8')))
       .map((file) => relative(DESKTOP_SRC, file));
 
