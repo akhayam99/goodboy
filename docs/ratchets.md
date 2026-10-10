@@ -63,25 +63,27 @@ counts of the original rules over files they did not scan before (tests, CSS,
 
 ## Baseline files
 
-| Baseline                                                 | Guards                                   |
-| -------------------------------------------------------- | ---------------------------------------- |
-| `forbidden-patterns.baseline.json`, `-guards`            | the table above                          |
-| `class-assertions.baseline.json`                         | class assertions in desktop tests        |
-| `truthy-queries.baseline.json`                           | `expect(getBy*(...)).toBeTruthy()`       |
-| `store-mocks.baseline.json`                              | tests that mock the store                |
-| `test-casts.baseline.json`                               | casts in tests                           |
-| `escape-and-keys-use-the-stack.baseline.json`            | `'Escape'` and window key listeners      |
-| `time-formatting-goes-through-the-module.baseline.json`  | own date and time formatting             |
-| `copy-budget.baseline.json`, `jargon-copy.baseline.json` | long or internal on-screen copy          |
-| `cross-feature-imports.baseline.json`                    | imports across features                  |
-| `control-heights.baseline.json`                          | a height class on a control              |
-| `popover-widths.baseline.json`                           | popover widths off the scale             |
-| `row-hover-copies.baseline.json`                         | hand-copied row hover styles             |
-| `scale-rules.baseline.json`                              | type, icon and spacing scale violations  |
-| `eslint-suppressions.json` (root)                        | the seven typed lint rules               |
-| `hand-made-chips.baseline.json`                          | hand-rolled status pills                 |
-| `hand-made-notices-and-empty-lines.baseline.json`        | hand-rolled notices and bare empty lines |
-| `hand-rolled-radio-groups.baseline.json`                 | radio groups outside `SegmentedTabs`     |
+| Baseline                                                 | Guards                                              |
+| -------------------------------------------------------- | --------------------------------------------------- |
+| `forbidden-patterns.baseline.json`, `-guards`            | the table above                                     |
+| `class-assertions.baseline.json`                         | class assertions in desktop tests                   |
+| `truthy-queries.baseline.json`                           | `expect(getBy*(...)).toBeTruthy()`                  |
+| `store-mocks.baseline.json`                              | tests that mock the store                           |
+| `test-casts.baseline.json`                               | casts in tests                                      |
+| `escape-and-keys-use-the-stack.baseline.json`            | `'Escape'` and window key listeners                 |
+| `time-formatting-goes-through-the-module.baseline.json`  | own date and time formatting                        |
+| `copy-budget.baseline.json`, `jargon-copy.baseline.json` | long or internal on-screen copy                     |
+| `cross-feature-imports.baseline.json`                    | imports across features                             |
+| `control-heights.baseline.json`                          | a height class on a control                         |
+| `popover-widths.baseline.json`                           | popover widths off the scale                        |
+| `row-hover-copies.baseline.json`                         | hand-copied row hover styles                        |
+| `scale-rules.baseline.json`                              | type, icon and spacing scale violations             |
+| `eslint-suppressions.json` (root)                        | the seven typed lint rules                          |
+| `hand-made-chips.baseline.json`                          | hand-rolled status pills                            |
+| `hand-made-notices-and-empty-lines.baseline.json`        | hand-rolled notices and bare empty lines            |
+| `hand-rolled-radio-groups.baseline.json`                 | radio groups outside `SegmentedTabs`                |
+| `ambient-target.baseline.json`                           | store slice reads of the current workspace or mount |
+| `catch-swallow.baseline.json`                            | `.catch(() => undefined \| null \| {})`             |
 
 All sit in `apps/desktop/src/__tests__/regressions/`.
 
