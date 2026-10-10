@@ -155,8 +155,12 @@ const SCRIBE_WRITING: ScribeWork = {
   updatedAt: clock.ms({ at: '2026-10-10T09:12:00.000Z' }),
 };
 
+type AnswerWithParams = {
+  readonly status: WorktreeStatus;
+};
+
 const answerWith =
-  ({ status }: { readonly status: WorktreeStatus }) =>
+  ({ status }: AnswerWithParams) =>
   (command: string): unknown => {
     switch (command) {
       case 'worktree_status':
@@ -168,7 +172,11 @@ const answerWith =
     }
   };
 
-const seed = ({ hasScribeJob }: { readonly hasScribeJob: boolean }): void => {
+type SeedParams = {
+  readonly hasScribeJob: boolean;
+};
+
+const seed = ({ hasScribeJob }: SeedParams): void => {
   useAppStore.setState({
     workspaces: [WORKSPACE],
     currentWorkspaceId: WORKSPACE_ID,
