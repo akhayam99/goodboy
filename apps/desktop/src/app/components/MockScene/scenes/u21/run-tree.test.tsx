@@ -77,7 +77,8 @@ describe('the u21 run tree scenes', () => {
       expect(
         tree.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Show run summary' })).toBeDefined();
+      expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+      expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
     },
   );
 

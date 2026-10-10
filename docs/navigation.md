@@ -466,8 +466,17 @@ the push confirm or any action confirm is open the primary turns secondary so
 the confirm holds the one filled button. A plan drawer reads
 `[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
 then closes the drawer on any page and raises one toast, and a plan whose run
-was approved reads Approved with no primary until the run starts the step. Scripts reads `[search] [New script]`. A page with no
-actions draws no `...`.
+was approved reads Approved with no primary until the run starts the step. The
+run page reads `[Stop run] [one primary] [...]` (`RunHeader`): **Stop run**
+only while the run is live (it asks first), the one primary from `runPrimaryOf`
+(**Review plan**, **Answer**, **Resume**, **Continue the run**, **Retry**,
+**Raise spend cap**, **Decide next step**, **Start step 2**, **Start run** or
+**Restore**, and nothing while a step runs or once the run is finished), and an
+overflow that holds View diff, Copy run summary, Pause run (live runs only),
+Step routing, Archive run and Delete run, never **Stop run** or **Approve plan**.
+The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
+Runs crumb or Esc goes back to the list, and no chevron on the page does.
+Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
 
 **Legacy layout.** Settings > App > General > Legacy layout (setting
 `shell.classicBars`, off by default; the stored key kept its name when the
@@ -2888,5 +2897,6 @@ The title reaches assistive tech through the toast card itself, which is a
 polite `status` region for every non-warning toast. Code that cannot call a
 hook builds the same params: `planRunToast` returns the Follow params for Run
 plan and marks the agent. Starts that already land on their page raise nothing
-new: the Runs page start navigates to the run (`useAgentsSection`), so
-`WorkflowRunStartButton` toasts only for a start that does not.
+new: the Start run primary of the run header navigates to the run page
+(`RunPrimaryAction`), so `WorkflowRunStartButton` toasts only for a start that
+does not.

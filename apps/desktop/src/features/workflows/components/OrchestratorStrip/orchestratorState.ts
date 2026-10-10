@@ -13,7 +13,7 @@ import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../orchestratorCopy';
 import { isRunPaused } from '../../isRunPaused';
 import { resolveRootAgent } from '../../../session/agent-kind';
 
-type OrchestratorPhase =
+export type OrchestratorPhase =
   | 'deciding'
   | 'paused'
   | 'stopping'

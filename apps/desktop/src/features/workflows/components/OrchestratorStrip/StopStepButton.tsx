@@ -9,10 +9,9 @@ type Props = {
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
   readonly agent: Agent;
-  readonly disabled: boolean;
 };
 
-export const StopStepButton = ({ sessionId, runId, agent, disabled }: Props) => {
+export const StopStepButton = ({ sessionId, runId, agent }: Props) => {
   const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
 
   return (
@@ -32,7 +31,6 @@ export const StopStepButton = ({ sessionId, runId, agent, disabled }: Props) => 
           tone="danger"
           testId="orchestrator-stop-step"
           title="Cancel the step in flight, the run waits for you"
-          disabled={disabled}
           onClick={arm}
         />
       )}

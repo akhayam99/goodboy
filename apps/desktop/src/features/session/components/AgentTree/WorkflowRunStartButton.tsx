@@ -1,5 +1,5 @@
 import { AlertTriangle, Play } from 'lucide-react';
-import { CardAction, ConfirmPopover, GhostActionButton } from '@goodboy/ui';
+import { Button, ConfirmPopover } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { useStartAnywayConfirm } from '../../../workflows/useStartAnywayConfirm';
@@ -13,7 +13,6 @@ import { sessionPlace } from '../../../../store/slices/navigation/place';
 import type { Place } from '../../../../store/slices/navigation/types';
 
 type Props = {
-  readonly variant: 'sidebar' | 'detail';
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
   readonly blockReason: WorkflowBlockReason | null;
@@ -28,13 +27,7 @@ const isAtPlace = ({ place }: AtPlaceParams): boolean =>
   locationKey({ place: captureLocation({ state: useAppStore.getState() }).place }) ===
   locationKey({ place });
 
-export const WorkflowRunStartButton = ({
-  variant,
-  sessionId,
-  runId,
-  blockReason,
-  onStart,
-}: Props) => {
+export const WorkflowRunStartButton = ({ sessionId, runId, blockReason, onStart }: Props) => {
   const followRun = useFollowToast();
   const start = useStartAnywayConfirm({
     blockReason,
@@ -70,26 +63,16 @@ export const WorkflowRunStartButton = ({
       isOpen={start.isConfirming}
       onConfirm={start.onConfirm}
       onCancel={start.onCancel}
-      trigger={() =>
-        variant === 'detail' ? (
-          <GhostActionButton
-            icon={isBlocked ? AlertTriangle : Play}
-            label="Start"
-            tone={isBlocked ? 'warning' : 'success'}
-            title={isBlocked ? start.description : undefined}
-            isBusy={start.isBusy}
-            onClick={start.onTrigger}
-          />
-        ) : (
-          <CardAction
-            icon={isBlocked ? AlertTriangle : Play}
-            label="Start run now"
-            tone={isBlocked ? 'warning' : 'success'}
-            disabled={start.isBusy}
-            onClick={start.onTrigger}
-          />
-        )
-      }
+      trigger={() => (
+        <Button size="sm" variant="primary" isBusy={start.isBusy} onClick={start.onTrigger}>
+          {isBlocked ? (
+            <AlertTriangle size={ICON_SIZE.control} aria-hidden />
+          ) : (
+            <Play size={ICON_SIZE.control} aria-hidden />
+          )}
+          Start run
+        </Button>
+      )}
     />
   );
 };
