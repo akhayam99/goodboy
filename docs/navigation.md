@@ -510,7 +510,7 @@ mounts editors and takes a title.
 
 **The projects section shows which projects a session has materialized.** It
 lives in the session overview and always has the Add project action, even
-before the first mount. Mounted projects show as dense rows. The empty section
+before the first mount. Each mounted project is one band under the section eyebrow, with its worktrees as dense rows indented by one constant (`MOUNT_CHILD_INDENT`) so a branch glyph sits under the project name; merged and closed ones sit behind `Show finished (n)`. The empty section
 is its header with a one-line hint: turns run in the session folder until you
 add a project. Sessions are created lazily
 on the workspace ([concepts.md](concepts.md) → Lazy sessions), and this section

@@ -296,12 +296,14 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   and `N to resolve` (only while review comments of
   that pull request wait) opens Review on them. `Rewrite history` sits in the
   row menu.
-- **Merged rows move under `Show completed`.** A row is merged when its
-  request merged, or when a pushed branch that tracks its own name has a
-  clean tree and nothing past the base. Ancestry alone never decides it while
+- **Finished rows move under `Show finished`.** A row is finished when its
+  request merged or closed, or when a pushed branch that tracks its own name has a
+  clean tree and nothing past the base. `classifyMountRows` in `mountRowModel.ts`
+  is the one place that decides, from the request first and the worktree status
+  second, so a row placed by its request never moves when its status arrives. Ancestry alone never decides it while
   the mount links an open request (draft, open, approved or queued):
   `isBranchMergedOf` takes `hasOpenRequest` and answers no, so such a row is
-  never under Completed and never reads `Merged`. A worktree with nothing past
+  never under Show finished and never reads `Merged`. A worktree with nothing past
   the base whose HEAD is not the open request's head sha reads `Not on the PR's
 commits` (`branchPresenceOf`, `openRequest`); on the request's head it reads
   as any row. A merged request whose branch moved
@@ -486,16 +488,15 @@ the state calls for, picked by its `inline` slot: `Rebase on main` when main
 moved, `Push N commits` when commits wait on a branch with a pull request,
 `Create PR` when the branch has commits and no pull request, `Close branch`
 once the pull request merged, `Reopen` on a closed row. A blocked action stays
-visible, disabled, with its reason in the tooltip. The always visible row menu
-(`⋯`, also on right click) lists every available action of the worktree: open
-the pull request, the diff, Review, the terminal, the editor (one submenu level
-of detected editors), scripts, Rebase, Push, Rewrite history, Switch branch,
-Start new turns here (only with two or more mounts), the copies, then Close
-worktree, or Remove from session on a closed row. There are no hover-only icons
+visible, disabled, with its reason in the tooltip. The row menu
+(`⋯`, also on right click) lists only the rare verbs of the worktree: the terminal, the editor (one submenu level
+of detected editors), scripts, Rewrite history, Switch branch,
+Start new turns here (only with two or more mounts) and the copies. It is not drawn when fewer than two would be left.
+The verbs of every day sit on the row: the state verb (Rebase, Push, Create PR), a quiet Close branch icon that asks in a `ConfirmPopover` (`MountConfirmAction`, from the action's own confirm), Reopen and a quiet Remove from session icon on a closed row, and Close branch as text on a finished row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
 and Abort rebase forward. Below a 28rem container New branch shows its icon
-only. The project menu (`MountActionsMenu`, the `project` kind) holds Remove from session
-and renders nothing when the project has no mount to remove.
+only. The project row has no menu: `MountActionsMenu` is the quiet Remove from session icon, a `ConfirmPopover` anchored to it
+(`DetachConfirm`), and renders nothing when the project has no mount to remove.
 
 With two or more mounts, a row shows its presence (`MountPresence`): the
 state node of each agent whose turn runs, waits on an answer or needs you in
