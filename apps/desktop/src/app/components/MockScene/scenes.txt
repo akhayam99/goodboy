@@ -383,6 +383,10 @@ toasts
 topbar-1100
 topbar-limits-overflow
 topbar-states
+trail-agent
+trail-artifact
+trail-artifact-create
+trail-run
 transcript
 transcript-mount
 turn-override-off
