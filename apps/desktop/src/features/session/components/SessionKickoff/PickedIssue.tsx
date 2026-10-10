@@ -18,7 +18,9 @@ type Props = {
 export const PickedIssue = ({ workspaceId, candidate, onDismiss }: Props) => {
   const requestIssueBrief = useAppStore((state) => state.requestIssueBrief);
   const source = issueBriefSource({ candidate });
-  const entry = useAppStore((state) => selectIssueBrief({ state, key: issueBriefKey({ source }) }));
+  const entry = useAppStore((state) =>
+    selectIssueBrief({ state, key: issueBriefKey({ sources: [source] }) }),
+  );
   const text = usePickedIssueText({ candidate, source, entry });
 
   return (
@@ -42,7 +44,7 @@ export const PickedIssue = ({ workspaceId, candidate, onDismiss }: Props) => {
         onUseBrief={text.applyBrief}
         onUseIssueText={text.applyIssueText}
         onRetry={() =>
-          void requestIssueBrief({ source, workspaceId, sessionId: null, isRetry: true })
+          void requestIssueBrief({ sources: [source], workspaceId, sessionId: null, isRetry: true })
         }
       />
       <HowToWorkOnIt

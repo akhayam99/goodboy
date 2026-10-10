@@ -1,6 +1,7 @@
 import { Inbox } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
-import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
+import { aSession, anAgent } from '@goodboy/types/testing';
 import { buildCommandList, flattenRows } from './commandList';
 import { EMPTY_FRECENCY } from './frecency';
 import { orderRunVerbs, paletteTierOf, type PaletteTier } from './paletteTiers';
@@ -18,7 +19,7 @@ const SESSION_ID = 'session-payout' as SessionId;
 const AGENT_ID = 'agent-implementer' as AgentId;
 
 const LIVE: SessionFacts = {
-  session: { id: SESSION_ID, goal: 'Speed up the payout export' } as Session,
+  session: aSession({ id: SESSION_ID, goal: 'Speed up the payout export' }),
   sessionId: SESSION_ID,
   title: 'Speed up the payout export',
   isArchived: false,
@@ -26,6 +27,7 @@ const LIVE: SessionFacts = {
   canMovePinUp: false,
   canMovePinDown: false,
   isBranchless: false,
+  hasLinkedIssues: false,
   hasMount: true,
   branch: 'feat/stream-payout-export',
   worktreePath: '/worktrees/ledger-core',
@@ -35,7 +37,7 @@ const LIVE: SessionFacts = {
 };
 
 const AGENT: AgentFacts = {
-  agent: { id: AGENT_ID, name: 'Implementer' } as Agent,
+  agent: anAgent({ id: AGENT_ID, name: 'Implementer' }),
   sessionId: SESSION_ID,
   name: 'Implementer',
   status: 'completed',

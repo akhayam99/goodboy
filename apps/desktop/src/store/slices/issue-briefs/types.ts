@@ -48,7 +48,7 @@ export type IssueBriefEntry =
     };
 
 export type RequestIssueBriefParams = {
-  readonly source: IssueBriefSource;
+  readonly sources: ReadonlyArray<IssueBriefSource>;
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId | null;
   readonly isRetry?: boolean;
