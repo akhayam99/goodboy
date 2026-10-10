@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { EmptyState, Eyebrow, PaneShell } from '@goodboy/ui';
+import { EmptyState, Eyebrow, HeaderActions, PaneShell } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
@@ -54,9 +54,9 @@ export const NotificationsStudio = ({ onClose }: Props) => {
   const setNotificationScope = useAppStore((state) => state.setNotificationScope);
   const markNotificationRead = useAppStore((state) => state.markNotificationRead);
   const markNotificationsRead = useAppStore((state) => state.markNotificationsRead);
-  const dismissNotification = useAppStore((state) => state.dismissNotification);
+  const reportError = useAppStore((state) => state.reportError);
+  const dismissNotificationGroup = useAppStore((state) => state.dismissNotificationGroup);
   const clearNotifications = useAppStore((state) => state.clearNotifications);
-  const [isArmed, setIsArmed] = useState(false);
   const [filters, setFilters] = useState<NotificationFilters>(NO_NOTIFICATION_FILTERS);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
@@ -100,9 +100,9 @@ export const NotificationsStudio = ({ onClose }: Props) => {
       const index = visibleKeys.indexOf(key);
       setSelectedKey(visibleKeys[index + 1] ?? visibleKeys[index - 1] ?? null);
     }
-    for (const notification of group) {
-      void dismissNotification(notification.id);
-    }
+    void dismissNotificationGroup({ ids: group.map((notification) => notification.id) }).catch(
+      (error: unknown) => reportError({ title: "Couldn't delete the notification", error }),
+    );
   };
 
   const markGroupRead = (key: string) => {
@@ -115,7 +115,6 @@ export const NotificationsStudio = ({ onClose }: Props) => {
 
   const selectGroup = (key: string) => {
     setSelectedKey(key);
-    markGroupRead(key);
     requestAnimationFrame(() => {
       document
         .querySelector(`[data-notification-key="${CSS.escape(key)}"]`)
@@ -129,6 +128,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
     onSelect: selectGroup,
     onDismiss: dismissGroup,
     onActivate: (key) => {
+      markGroupRead(key);
       const action = groupByKey(key)?.[0]?.action;
       if (action == null) {
         return;
@@ -154,38 +154,40 @@ export const NotificationsStudio = ({ onClose }: Props) => {
             title={VIEW_TITLE[filters.view]}
             meta={subtitle({ total: counts.total, unread: counts.unread })}
             actions={
-              <div className="flex min-w-0 items-center gap-2">
-                <NotificationFiltersButton
-                  activeCount={activeCount}
-                  facets={
-                    <NotificationFacetRail
-                      filters={filters}
-                      counts={counts}
-                      scope={scope}
-                      workspaceName={workspaceName}
-                      onFiltersChange={setFilters}
-                      onScopeChange={(next) => {
+              <HeaderActions
+                secondary={
+                  <NotificationFiltersButton
+                    activeCount={activeCount}
+                    facets={
+                      <NotificationFacetRail
+                        filters={filters}
+                        counts={counts}
+                        scope={scope}
+                        workspaceName={workspaceName}
+                        onFiltersChange={setFilters}
+                        onScopeChange={(next) => {
+                          setSelectedKey(null);
+                          void setNotificationScope(next);
+                        }}
+                      />
+                    }
+                  />
+                }
+                button={
+                  notifications.length > 0 ? (
+                    <NotificationsToolbar
+                      unreadCount={counts.unread}
+                      totalCount={counts.total}
+                      workspaceName={scope === 'workspace' ? workspaceName : null}
+                      onMarkAllRead={() => void markNotificationsRead()}
+                      onDeleteAll={async () => {
+                        await clearNotifications();
                         setSelectedKey(null);
-                        void setNotificationScope(next);
                       }}
                     />
-                  }
-                />
-                {notifications.length > 0 ? (
-                  <NotificationsToolbar
-                    unreadCount={counts.unread}
-                    isArmed={isArmed}
-                    onArm={() => setIsArmed(true)}
-                    onDisarm={() => setIsArmed(false)}
-                    onMarkAllRead={() => void markNotificationsRead()}
-                    onDeleteAll={async () => {
-                      await clearNotifications();
-                      setIsArmed(false);
-                      setSelectedKey(null);
-                    }}
-                  />
-                ) : null}
-              </div>
+                  ) : null
+                }
+              />
             }
           >
             {isLoading && notifications.length === 0 && <NotificationsSkeleton />}
@@ -248,6 +250,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                             density="cozy"
                             isSelected={selectedKey === key}
                             onOpen={() => {
+                              markGroupRead(key);
                               if (selectedKey === key) {
                                 setSelectedKey(null);
                                 return;

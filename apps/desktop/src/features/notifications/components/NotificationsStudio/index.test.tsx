@@ -21,7 +21,8 @@ const { state } = vi.hoisted(() => ({
     setNotificationScope: vi.fn(async () => undefined),
     markNotificationRead: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
-    dismissNotification: vi.fn(async () => undefined),
+    dismissNotificationGroup: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
     clearNotifications: vi.fn(async () => undefined),
     retrySummarizer: vi.fn(),
     retryStepSummary: vi.fn(async () => undefined),
@@ -98,7 +99,7 @@ beforeEach(() => {
   state.setNotificationScope.mockClear();
   state.markNotificationRead.mockClear();
   state.markNotificationsRead.mockClear();
-  state.dismissNotification.mockClear();
+  state.dismissNotificationGroup.mockClear();
   state.clearNotifications.mockClear();
 });
 
@@ -222,7 +223,7 @@ describe('NotificationsStudio', () => {
     expect(state.markNotificationRead).toHaveBeenCalledWith('second');
   });
 
-  it('dismisses every member in a group', async () => {
+  it('deletes every member in a group as one undoable call', async () => {
     seedNotifications({
       notifications: [
         buildNotification({ id: 'first', coalesceKey: 'retry' }),
@@ -232,15 +233,14 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /dismiss "summarizer failed"/i }));
+      fireEvent.click(screen.getByRole('button', { name: /delete "summarizer failed"/i }));
     });
 
-    expect(state.dismissNotification).toHaveBeenCalledTimes(2);
-    expect(state.dismissNotification).toHaveBeenCalledWith('first');
-    expect(state.dismissNotification).toHaveBeenCalledWith('second');
+    expect(state.dismissNotificationGroup).toHaveBeenCalledTimes(1);
+    expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['first', 'second'] });
   });
 
-  it('moves and dismisses with the list keys, and leaves the row list keyboard only', () => {
+  it('moves and deletes with the list keys, and leaves the row list keyboard only', () => {
     seedNotifications({
       notifications: [
         buildNotification({
@@ -263,7 +263,7 @@ describe('NotificationsStudio', () => {
     );
     pressShortcut({ id: 'list.dismiss', target: document.body });
 
-    expect(state.dismissNotification).toHaveBeenCalledWith('bottom');
+    expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['bottom'] });
   });
 
   it('reserves the unread slot on every row and fills it only on unread rows', () => {
@@ -302,7 +302,7 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     const slot = screen
-      .getByRole('button', { name: /dismiss "summarizer failed"/i })
+      .getByRole('button', { name: /delete "summarizer failed"/i })
       .closest('span');
     expect(slot?.className).toContain('group-hover:opacity-100');
     expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
@@ -321,19 +321,98 @@ describe('NotificationsStudio', () => {
     expect(state.loadOlderNotifications).toHaveBeenCalledOnce();
   });
 
-  it('keeps bulk mark-read and armed delete-all actions', async () => {
+  it('marks everything read from the header', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
     fireEvent.click(screen.getByRole('button', { name: /mark all read/i }));
-    expect(state.markNotificationsRead).toHaveBeenCalledOnce();
 
-    fireEvent.click(screen.getByRole('button', { name: /delete all/i }));
+    expect(state.markNotificationsRead).toHaveBeenCalledOnce();
+  });
+
+  it('hides Mark all read once nothing is unread', () => {
+    seedNotifications({ notifications: [buildNotification({ read: true })] });
+    renderStudio();
+
+    expect(screen.queryByRole('button', { name: /mark all read/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /^delete all$/i })).toBeDefined();
+  });
+
+  it('asks in a popover beside Delete all, not inside the title row', async () => {
+    seedNotifications({
+      notifications: [buildNotification({ id: 'a' }), buildNotification({ id: 'b', read: true })],
+    });
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+
+    const confirm = screen.getByRole('dialog', { name: 'Delete 2 notifications?' });
+    expect(confirm.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(confirm.closest('[data-slot="pane-title-row"]')).toBeNull();
+    expect(
+      within(confirm).getByText(/Clears the log in Harborline, read and unread/),
+    ).toBeDefined();
+    expect(within(confirm).getByText(/can't be undone/)).toBeDefined();
+    expect(document.activeElement).toBe(within(confirm).getByRole('button', { name: 'Cancel' }));
     expect(state.clearNotifications).not.toHaveBeenCalled();
+
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Delete 2' }));
     });
     expect(state.clearNotifications).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Delete 2 notifications?' })).toBeNull();
+  });
+
+  it('names every workspace when the scope is all', () => {
+    state.notificationScope = 'all';
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+
+    expect(screen.getByText(/Clears the log in every workspace/)).toBeDefined();
+    state.notificationScope = 'workspace';
+  });
+
+  it('leaves the list untouched when Cancel closes the popover', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(state.clearNotifications).not.toHaveBeenCalled();
+  });
+
+  it('moving the cursor with the list keys never marks a row read', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({
+          id: 'top',
+          title: 'Top row',
+          ts: at({ value: '2026-09-02T12:00:00.000Z' }),
+        }),
+        buildNotification({ id: 'bottom', title: 'Bottom row' }),
+      ],
+    });
+    renderStudio();
+
+    pressShortcut({ id: 'list.next', target: document.body });
+    pressShortcut({ id: 'list.next', target: document.body });
+    pressShortcut({ id: 'list.previous', target: document.body });
+
+    expect(state.markNotificationRead).not.toHaveBeenCalled();
+  });
+
+  it('marks a group read when Enter opens it', () => {
+    seedNotifications({ notifications: [buildNotification({ id: 'only' })] });
+    renderStudio();
+
+    pressShortcut({ id: 'list.next', target: document.body });
+    pressShortcut({ id: 'list.open', target: document.body });
+
+    expect(state.markNotificationRead).toHaveBeenCalledWith('only');
   });
 
   it('shows a filtered empty state and clears filters', () => {

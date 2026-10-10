@@ -1,7 +1,6 @@
 import { useId, useState } from 'react';
 import type { DiffComment, MountId } from '@goodboy/types';
-import { Trash2 } from 'lucide-react';
-import { Button, OverflowMenu } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 
 export type NoteTarget = {
   readonly mountId: MountId;
@@ -55,19 +54,9 @@ export const UnassignedNote = ({ note, targets, onMove, onDiscard }: Props) => {
               Move to
             </Button>
           )}
-          <OverflowMenu
-            label="Note actions"
-            items={[
-              {
-                kind: 'item',
-                key: 'discard',
-                label: 'Discard',
-                icon: Trash2,
-                destructive: true,
-                onClick: onDiscard,
-              },
-            ]}
-          />
+          <Button size="sm" variant="ghost" onClick={onDiscard}>
+            Discard
+          </Button>
         </div>
       </div>
       {isChoosing && (

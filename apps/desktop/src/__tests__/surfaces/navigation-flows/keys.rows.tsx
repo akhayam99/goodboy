@@ -436,6 +436,11 @@ const selectedIdentifier = (): string | undefined =>
     .find((row) => row.getAttribute('data-selected') === 'true')
     ?.textContent?.match(/HBL-\d+/)?.[0];
 
+const cursorIdentifier = (): string | undefined =>
+  inboxRows()
+    .find((row) => row.hasAttribute('data-cursor'))
+    ?.textContent?.match(/HBL-\d+/)?.[0];
+
 const inboxKey = (id: ShortcutId, target: () => Element = () => document.body): Row['open'] => {
   return async () => {
     await seedInbox();
@@ -553,7 +558,10 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       first.focus();
       await pressed('list.next', first);
     },
-    lands: async () => expect(selectedIdentifier()).toBe('HBL-502'),
+    lands: async () => {
+      expect(cursorIdentifier()).toBe('HBL-502');
+      expect(selectedIdentifier()).toBeUndefined();
+    },
   }),
   keyRow({
     id: 'list.previous',
@@ -565,7 +573,10 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('list.next', first);
       await pressed('list.previous', first);
     },
-    lands: async () => expect(selectedIdentifier()).toBe('HBL-502'),
+    lands: async () => {
+      expect(cursorIdentifier()).toBe('HBL-502');
+      expect(selectedIdentifier()).toBeUndefined();
+    },
   }),
   keyRow({
     id: 'list.open',

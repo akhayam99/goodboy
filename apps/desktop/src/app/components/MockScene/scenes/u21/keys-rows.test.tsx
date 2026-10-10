@@ -49,8 +49,7 @@ describe('the activity-run-hover scene', () => {
     expect(rows.length).toBeGreaterThan(1);
     expect(within(activity).getAllByRole('button', { name: /^Open: / }).length).toBeGreaterThan(0);
     expect(within(activity).queryByRole('button', { name: 'Answer' })).toBeNull();
-    expect(within(activity).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
-    fireEvent.click(within(activity).getByRole('button', { name: 'Activity actions' }));
-    expect(screen.getByRole('menuitem', { name: 'Mark all seen' })).toBeDefined();
+    expect(within(activity).queryByRole('button', { name: 'Activity actions' })).toBeNull();
+    expect(within(activity).getByRole('button', { name: 'Mark all seen' })).toBeDefined();
   });
 });

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ListFilter } from 'lucide-react';
-import { AnchoredPopover, Chip, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, Chip, cn, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -17,19 +17,17 @@ export const NotificationFiltersButton = ({ activeCount, facets }: Props) => {
       ariaLabel="Notification filters"
       className="max-h-[70vh] py-1"
       trigger={
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={filters.toggle}
           aria-expanded={filters.open}
-          className={cn(
-            'flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
-            filters.open && 'bg-selected text-foreground',
-          )}
+          className={cn(filters.open && 'bg-selected')}
         >
           <ListFilter size={ICON_SIZE.row} aria-hidden />
           Filters
           {activeCount > 0 ? <Chip kind="count" tone="neutral" label={activeCount} /> : null}
-        </button>
+        </Button>
       }
     >
       {facets}

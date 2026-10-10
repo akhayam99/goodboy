@@ -1375,7 +1375,7 @@ one is open at a time.
   members and Report this). Both lead with a fixed unread slot that holds
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
-  studio the time owns a fixed last column and Mark read and Dismiss swap in
+  studio the time owns a fixed last column and Mark read and Delete swap in
   over it on hover, so the row never changes width. A **Filters** button in the
   list header opens the facets (`NotificationFiltersButton`, with the count of
   active filters) by view, severity and source, with counts that come from SQL
@@ -1383,8 +1383,17 @@ one is open at a time.
   pages with a cursor. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
+  The studio header draws them through `HeaderActions`: `Filters`, then the ghost
+  `Mark all read` (only while something is unread), then the ghost danger
+  `Delete all`, which opens a `ConfirmPopover` anchored to it, aligned to its end
+  edge, titled with the scope's count ("Delete 7 notifications?") and naming the
+  workspace or "every workspace"; it never swaps the title row. A row's Delete acts
+  at once and pushes "Notification deleted" with Undo (`dismissNotificationGroup`
+  re-inserts the rows through `insertNotification`; ⌘Z works too).
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
-  J and K or the arrow keys move, Enter runs the row's action and E dismisses.
+  J and K or the arrow keys move, Enter runs the row's action and E deletes. The
+  cursor never marks a row read: a group is read when it opens (a click or
+  Enter) or from its own Mark read.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses all three: its facets filter by view,
@@ -1392,14 +1401,18 @@ one is open at a time.
   its row) behind the same Filters button in the list header, so Tasks is
   the list and the record beside the column, never a third column; its
   one-line rows are grouped by the same days in time order, and
-  J and K move the selection while the record follows beside the list. The
-  Tasks opens with its first row chosen, so those keys act at once; Enter opens
-  the launch popover on that row (⌘↵ in the panel launches) or the session once
-  one is linked, O opens the record in its tool, R focuses the reply box when
-  the record has one (a Sentry issue has none: the rail drops Reply and R does
-  nothing there, `recordCanReply`), S stars or unstars, / focuses the search, and Escape in
-  the search leaves the field. Escape closes a record you picked before the
-  studio, and closes the studio when the first row was only chosen for you.
+  J and K move a cursor, and the record follows beside the list only once one is
+  open. Tasks opens with a quiet cursor on its first row (`data-cursor`, the hover
+  fill, `aria-selected="false"`) and no drawer, so those keys act at once and
+  nothing opens by itself; a click, Enter or a record asked for on open
+  (`initialRecordKey`) opens the drawer (`aria-selected="true"`, `bg-selected`).
+  Enter opens the launch popover on the cursor row (⌘↵ in the panel launches) or
+  the session once one is linked, O opens the record in its tool, R opens the
+  record and focuses the reply box when the record has one (a Sentry issue has
+  none: the rail drops Reply and R does nothing there, `recordCanReply`), S stars
+  or unstars, / focuses the search, and Escape in the search leaves the field.
+  Escape closes the drawer first and keeps the cursor; a second Escape closes
+  the studio.
 - **A list that belongs to the page sits in the page.** Chat's list of chats,
   Changelog's releases and the guide's chapters are content beside their
   detail, not a second navigation column: `StudioRailLayout` with
@@ -1729,8 +1742,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `Keep both branches` and `Not now`. A card whose mounts have not loaded
   draws skeleton rows on the same tracks. `Add project` leaves the header once
   nothing is left to add and becomes an item of the `Project actions` menu.
-  `Mark all seen` is in the Activity menu and shows only while an agent is
-  unseen; a waiting question is answered from its Needs you row, never from a
+  `Mark all seen` is a ghost button in the Activity header and shows only
+  while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action

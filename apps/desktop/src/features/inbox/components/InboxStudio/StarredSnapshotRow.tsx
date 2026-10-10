@@ -12,11 +12,19 @@ type Props = {
   readonly issue: StarredIssue;
   readonly recordKey: string;
   readonly selected: boolean;
+  readonly isCursor?: boolean;
   readonly onSelect: () => void;
   readonly onUnstar: () => void;
 };
 
-export const StarredSnapshotRow = ({ issue, recordKey, selected, onSelect, onUnstar }: Props) => {
+export const StarredSnapshotRow = ({
+  issue,
+  recordKey,
+  selected,
+  isCursor = false,
+  onSelect,
+  onUnstar,
+}: Props) => {
   const isMissing = issue.state === 'missing';
   const toolLabel = integrationLabel({ provider: issue.provider });
   const canOpen = issue.url !== '';
@@ -24,9 +32,12 @@ export const StarredSnapshotRow = ({ issue, recordKey, selected, onSelect, onUns
     <div
       data-inbox-key={recordKey}
       data-selected={selected}
+      data-cursor={isCursor ? true : undefined}
       className={cn(
         'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_auto_48px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors',
-        selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',
+        selected && 'bg-selected text-foreground',
+        !selected && isCursor && 'bg-hover text-foreground',
+        !selected && !isCursor && 'hover:bg-hover hover:text-foreground',
       )}
     >
       <button
