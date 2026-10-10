@@ -2568,12 +2568,13 @@ the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.
 
 **Commits.** The home of history: the branch commits and the rewriter are one
-surface (`CommitsHistory`), with `Refresh` (ghost), `Backups` (secondary, both
-`xs`) and one horizontal `⋯` at the right end of the tab row, in the slot
-`BranchPage` hands down (`TabActionsSlotContext`, filled with `TabActions`), so
-the body starts with the graph itself. The legend sits on its own row under the
-scroller, never under its fade, and the body takes the page's column with no
-`px-6` of its own. Backups
+surface (`CommitsHistory`), with `Backups` (secondary, `xs`) alone at the right
+end of the tab row, in the slot `BranchPage` hands down
+(`TabActionsSlotContext`, filled with `TabActions`), so the body starts with the
+graph itself. There is no `Refresh` (the draft reloads by itself when the
+head of the worktree status moved and nothing is planned) and no overflow
+(`Open terminal` is on the mount menu). There is no legend. The body takes the
+page's column with no `px-6` of its own. Backups
 (`Restore previous history`, `Restore branch`) and the result of a run (`Undo
 rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
 address, the palette verb, a mount row's `Rewrite history` and an Activity
@@ -2600,11 +2601,28 @@ trunk with its head node (`main is here now`, how many commits it gained,
 `Rebase on main`), your branch leaving it at the real fork point, one
 row per commit newest first, and `Your branch starts here` at the fork. There
 is no row of fact chips over it: the graph already says how many commits are
-yours, how far main moved and what is online. The big list is always
-the branch as it is (Now) and never reorders while you plan; beside it, After
-Apply draws the planned result with a dashed lane, each node level with its
-own row when the order allows. Under 760px of content the side graph becomes
-a `Now | After Apply` toggle. Every action has one color (Keep green, Fold in
+yours, how far main moved and what is online. At rest the section is one
+column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): the first
+row is `main is here now` with its head node, `15 newer` and a secondary
+`Rebase on main`, then one row per commit (title, then sha, author and age in
+`text-meta`, a faint `Not pushed` chip only on a commit that is not on the
+online copy, the grip on hover and focus only), then `Your branch starts here`.
+Under the list one muted line, `Drag a commit to move it, drop it on another to
+fold it in.`, with a ghost `Keys` button that opens an anchored popover listing
+the keys of the focused row (`useHistoryKeys/historyKeys.ts`). There is no
+Planned changes block and no Apply at rest. The big list is always the branch as
+it is and never reorders while you plan. The first planned change (an edit, or
+`Rebase on main` from the list) turns the grid into
+`grid-cols-[minmax(0,1fr)_320px]` with a 200ms reveal (instant under reduced
+motion, `useHistoryPanelReveal`): the After panel, titled `After Apply · 7
+commits become 4`, draws the planned result with a dashed lane, each node level
+with its own row when the order allows (the Now rows and the After nodes share
+one row pitch), and under the list `Planned changes` shows its count and `Reset
+all`, the planned rows and one primary `Apply`. Resetting the last change slides
+the panel out. While a plan exists the Branch header's `Rebase on main` renders
+secondary (`isRebaseYielding`), so one rebase verb is primary at a time. Under
+760px of content the side graph becomes a `Now | After Apply` toggle, shown
+only while a plan exists. Every action has one color (Keep green, Fold in
 azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
 today's main grey) used on the row's change mark, its node, a 2px edge, the
 dot of its "what happens" line and its planned change. Drag a row between two
@@ -2632,7 +2650,8 @@ or newer; older git spawns one merge and one commit per step). A predicted
 conflict shows on its row (`may conflict in webhook.ts`) and in a notice with
 `Rewrite with an agent`. The action row sits at the end of the content
 (`FormActions`, no dock): `Apply`, or `Apply here only` and `Apply and update
-online` when the plan replaces commits that are already online, which also
+online` when the plan replaces commits that are already online and Apply is
+possible (a disabled Apply is one button), which also
 shows the notice about the pull request and the push with lease. Apply never
 rewrites the branch first. `history_plan_run` checks the worktree (right
 branch, nothing uncommitted, head where the plan started), replays the whole

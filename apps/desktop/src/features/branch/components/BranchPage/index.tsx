@@ -34,6 +34,7 @@ import { branchTabsOf } from '../../branchTabs';
 import { BranchChecks } from '../BranchChecks';
 import { BranchCommits } from '../BranchCommits';
 import { BranchFiles } from '../BranchFiles';
+import { deriveHistoryEdits } from '../../../history/historyEdits';
 import { BranchHeader } from '../BranchHeader';
 import { NoPullRequest } from '../PullRequestTab/NoPullRequest';
 import { PullRequestTab } from '../PullRequestTab';
@@ -77,6 +78,20 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const hasHistoryDraft = useAppStore(
     (s) => historyMountId !== null && s.historyDrafts[historyMountId] !== undefined,
   );
+  const hasHistoryPlan = useAppStore((s) => {
+    const draft = historyMountId === null ? undefined : s.historyDrafts[historyMountId];
+    if (draft === undefined) {
+      return false;
+    }
+    return (
+      deriveHistoryEdits({
+        items: draft.items,
+        original: [...draft.commits].reverse().map((commit) => commit.sha),
+        onto: draft.onto,
+        behind: draft.graph?.behind ?? 0,
+      }).length > 0
+    );
+  });
   const loadHistoryDraft = useAppStore((s) => s.loadHistoryDraft);
   const projectName = useAppStore(
     (s) => projectById(s.projects, identity.mount?.projectId ?? null)?.name ?? null,
@@ -365,6 +380,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                   controls={controls}
                   isPushBusy={isPushBusy}
                   isPrimaryYielding={isPrimaryYielding}
+                  isRebaseYielding={hasHistoryPlan}
                   tab={tab}
                   isActive={isActive}
                   canEditTitle={canEditTitle}

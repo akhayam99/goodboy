@@ -44,4 +44,25 @@ describe('history after layout', () => {
     expect(ys.every((y) => y > 100 && y < 200)).toBe(true);
     expect(ys[0]).toBeGreaterThan(ys[3] ?? 0);
   });
+
+  it('shares one row pitch with the Now list for an unchanged branch', () => {
+    const pitch = 56;
+    const rowY = new Map(
+      ['a', 'b', 'c', 'd'].map((sha, index) => [sha, 27 + pitch * (3 - index)] as const),
+    );
+    const positions = historyAfterLayout({
+      keep: ['a', 'b', 'c', 'd'],
+      rowY,
+      forkY: 27 + pitch * 4,
+      topY: 0,
+    });
+    const ys = [...positions.values()];
+    expect(ys.map((y, index) => (index === 0 ? pitch : ys[index - 1]! - y))).toEqual([
+      pitch,
+      pitch,
+      pitch,
+      pitch,
+    ]);
+    expect(ys).toEqual(['a', 'b', 'c', 'd'].map((sha) => rowY.get(sha)));
+  });
 });
