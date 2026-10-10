@@ -466,8 +466,17 @@ the push confirm or any action confirm is open the primary turns secondary so
 the confirm holds the one filled button. A plan drawer reads
 `[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
 then closes the drawer on any page and raises one toast, and a plan whose run
-was approved reads Approved with no primary until the run starts the step. Scripts reads `[search] [New script]`. A page with no
-actions draws no `...`.
+was approved reads Approved with no primary until the run starts the step. The
+run page reads `[Stop run] [one primary] [...]` (`RunHeader`): **Stop run**
+only while the run is live (it asks first), the one primary from `runPrimaryOf`
+(**Review plan**, **Answer**, **Resume**, **Continue the run**, **Retry**,
+**Raise spend cap**, **Decide next step**, **Start step 2**, **Start run** or
+**Restore**, and nothing while a step runs or once the run is finished), and an
+overflow that holds View diff, Copy run summary, Pause run (live runs only),
+Step routing, Archive run and Delete run, never **Stop run** or **Approve plan**.
+The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
+Runs crumb or Esc goes back to the list, and no chevron on the page does.
+Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
 
 **Legacy layout.** Settings > App > General > Legacy layout (setting
 `shell.classicBars`, off by default; the stored key kept its name when the
@@ -920,7 +929,8 @@ running.` on Merge, reads in the meta line as well as in the tooltip) over
 - **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
-  to that thing. The page segment (depth one, or `Session` when it is alone)
+  to that thing. A segment whose menu would hold fewer than two entries, rows plus
+  actions, is a plain crumb with no chevron. The page segment (depth one, or `Session` when it is alone)
   lists the session's pages with a count that names what it counts,
   grouped as pages, Tools and Linked. One pure table, `pageCountWordOf`
   (`features/session/pageCountWord.ts`), reads noun last and empty at zero:
@@ -2340,8 +2350,8 @@ run), so the crumb, the header and the body follow together and nothing of the
 branch it leaves carries over. `New branch` swaps the menu for a name field
 (empty names it automatically) and a `Create branch` that forks a worktree
 (`forkMount`) and lands on it on its landing tab; a folder project cannot fork and
-offers none. With one branch the chip has no chevron and its menu holds only
-`New branch`; with neither it is plain text.
+offers none. With one branch the chip has no chevron and opens the name field at
+once (a menu of one is not drawn); with neither it is plain text.
 
 The primary is the first that applies: `Rebase on main`
 (`Open terminal` while a rebase is stopped, with `Abort rebase` beside it),
@@ -2888,5 +2898,6 @@ The title reaches assistive tech through the toast card itself, which is a
 polite `status` region for every non-warning toast. Code that cannot call a
 hook builds the same params: `planRunToast` returns the Follow params for Run
 plan and marks the agent. Starts that already land on their page raise nothing
-new: the Runs page start navigates to the run (`useAgentsSection`), so
-`WorkflowRunStartButton` toasts only for a start that does not.
+new: the Start run primary of the run header navigates to the run page
+(`RunPrimaryAction`), so `WorkflowRunStartButton` toasts only for a start that
+does not.

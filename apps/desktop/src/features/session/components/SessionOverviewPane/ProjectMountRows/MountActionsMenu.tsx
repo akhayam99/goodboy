@@ -243,7 +243,7 @@ export const MountActionsMenu = ({
           variant="ghost"
           icon={Unlink}
           iconSize={ICON_SIZE.row}
-          label={`${NAMES.removeFromSession} for ${projectName}`}
+          label={`Remove ${projectName} from session`}
           tooltip={NAMES.removeFromSession}
           aria-haspopup="dialog"
           onClick={() => {

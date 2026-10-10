@@ -27,6 +27,7 @@ import { buildIssueGroups } from '../../../../../features/integrations/linear/Li
 import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
 import { StudioFrame } from '../StudioFrame';
 import { seedStudioChrome } from '../shellChrome';
+import { LINEAR_PICKER_ANSWERS } from '../linearPickerAnswers';
 
 type Variant = 'issue' | 'review';
 
@@ -181,6 +182,10 @@ export const startInboxIpc = ({
 }): unknown => {
   if (command === 'linear_fetch_issue_comments') {
     return [];
+  }
+  const pickerAnswer = LINEAR_PICKER_ANSWERS[command];
+  if (pickerAnswer !== undefined) {
+    return pickerAnswer();
   }
   if (command === 'gh_run') {
     return {

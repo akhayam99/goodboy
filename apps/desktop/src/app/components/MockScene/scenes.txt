@@ -302,6 +302,10 @@ review-modes
 role-model-set-add
 rules-no-limits
 rules-teleport
+run-header-archived
+run-header-failed
+run-header-held
+run-header-paused
 runs-list-empty
 runs-on-codex-default
 scribe-failed

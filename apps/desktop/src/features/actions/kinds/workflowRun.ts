@@ -3,6 +3,7 @@ import {
   CircleCheck,
   Copy,
   MessageCircleQuestion,
+  Pause,
   Play,
   RotateCcw,
   StepForward,
@@ -20,9 +21,12 @@ import { viewWorkflowAdvance } from '../../workflows/workflowAdvanceView';
 import { workflowRunOpenQuestions } from '../../context/openQuestionsGate';
 import { isWorkflowRunClosable } from '../../workflows/isWorkflowRunClosable';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
+import { isRunPaused } from '../../workflows/isRunPaused';
+import { STEP_ROUTING_REQUEST_EVENT, requestStepRouting } from '../../workflows/requestStepRouting';
 import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
 import { useOpenQuestions } from '../../context/components/QuestionsTab/useOpenQuestions';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
+import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 
 type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
@@ -38,6 +42,8 @@ export type WorkflowRunFacts = {
   readonly readyAgentId: AgentId | null;
   readonly readyStepName: string | null;
   readonly hasChanges: boolean;
+  readonly canPause: boolean;
+  readonly hasStepRouting: boolean;
   readonly summary: string;
 };
 
@@ -83,6 +89,24 @@ const runStateOf = ({
 const isLive = ({ facts }: { readonly facts: WorkflowRunFacts }): boolean =>
   facts.state !== 'discarded' && facts.state !== 'done';
 
+type RoutingParams = {
+  readonly env: ActionEnv;
+  readonly facts: WorkflowRunFacts;
+};
+
+const showStepRouting = ({ env, facts }: RoutingParams): void => {
+  const isViewing = env.viewing?.kind === 'workflowRun' && env.viewing.id === facts.run.id;
+  if (isViewing) {
+    requestStepRouting({ runId: facts.run.id });
+    return;
+  }
+  openRun({ env, facts });
+  dispatchAfterNavigation({
+    name: STEP_ROUTING_REQUEST_EVENT,
+    detail: { runId: facts.run.id },
+  });
+};
+
 export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, WorkflowRunFacts> = {
   noun: 'run',
   facts: ({ state, target }) => {
@@ -127,25 +151,35 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         : (agents.find((agent) => agent.stepId === manualStep.id && agent.status === 'pending') ??
           null);
     const stoppedAgent = agents.find((agent) => agent.status === 'stopped') ?? null;
+    const isOrchestrating = state.orchestratingWorkflowRuns?.[run.id] ?? false;
     const name = run.title ?? workflow?.name ?? 'Run';
     const mounts = state.sessionProjectMounts[target.sessionId] ?? [];
+    const runState = runStateOf({
+      isDiscarded: run.discardedAt != null,
+      isQueued: run.triggerMode !== 'immediate' && agents.length === 0,
+      isComplete: isWorkflowRunComplete({ run, workflow, agents }),
+      isHalted: agents.some((agent) => isAgentStatusHalted({ status: agent.status })),
+      isRunning,
+    });
+    const isEnded = runState === 'discarded' || runState === 'done';
+    const isInFlight = isOrchestrating || agents.some((agent) => agent.status === 'running');
     return {
       run,
       sessionId: target.sessionId,
       name,
-      state: runStateOf({
-        isDiscarded: run.discardedAt != null,
-        isQueued: run.triggerMode !== 'immediate' && agents.length === 0,
-        isComplete: isWorkflowRunComplete({ run, workflow, agents }),
-        isHalted: agents.some((agent) => isAgentStatusHalted({ status: agent.status })),
-        isRunning,
-      }),
+      state: runState,
       isClosable: workflow !== null && isWorkflowRunClosable({ run, workflow, agents }),
       openQuestionId: questions[0]?.id ?? null,
       stoppedAgentId: stoppedAgent?.id ?? null,
       readyAgentId: readyAgent?.id ?? null,
       readyStepName: manualStep?.name ?? null,
       hasChanges: mounts.length > 0,
+      canPause:
+        !isEnded &&
+        isInFlight &&
+        !isRunPaused({ run }) &&
+        run.orchestrationStop?.kind !== 'operator',
+      hasStepRouting: run.executionMode === 'dynamic' && !isEnded && agents.length > 0,
       summary: [name, ...agents.map((agent) => `- ${agent.name}: ${agent.status}`)].join('\n'),
     };
   },
@@ -244,6 +278,22 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
           });
         }
       },
+    },
+    {
+      id: 'workflowRun.pause',
+      label: 'Pause run',
+      icon: Pause,
+      group: 'act',
+      when: ({ facts }) => facts.canPause,
+      run: ({ facts, env }) => env.getState().pauseWorkflowRun(facts.sessionId, facts.run.id),
+    },
+    {
+      id: 'workflowRun.routing',
+      label: 'Step routing',
+      icon: CONCEPT_ICONS.providers,
+      group: 'act',
+      when: ({ facts }) => facts.hasStepRouting,
+      run: ({ facts, env }) => showStepRouting({ env, facts }),
     },
     {
       id: 'workflowRun.restore',

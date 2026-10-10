@@ -30,8 +30,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'revision picker inside the wireframe viewer',
   'features/workflows/components/StepTree/StepEditorMenu.tsx':
     'step draft actions inside the step editor, a draft is not an object in the map',
-  'features/workflows/components/RunControls/RunControlMenu.tsx':
-    'run control: when to ask and model routing, not an object in the map',
   'features/workflows/components/WorkflowStudio/WorkflowEditor/EditorTrail.tsx':
     'workflow editor band actions, studio chrome',
   'features/search/components/SearchMode/SearchHitActions.tsx':

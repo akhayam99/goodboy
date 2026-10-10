@@ -17,10 +17,6 @@
       "message": "[roles] unknown role \"unknown\"; using custom"
     },
     {
-      "file": "src/features/session/components/AgentTree/AgentsSection.test.tsx",
-      "message": "Each child in a list should have a unique \"key\" prop. | Check the render method of `MetaRow`. It was passed a child from WorkflowRow. See https://react.dev/link/warning-keys for more information."
-    },
-    {
       "file": "src/features/workflows/components/WorkflowBuilderView/index.test.tsx",
       "message": "[roles] unknown role \"engineer\"; using custom"
     },

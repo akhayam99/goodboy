@@ -116,7 +116,7 @@ const renderMenu = () =>
     />,
   );
 
-const TRIGGER = 'Remove from session for api';
+const TRIGGER = 'Remove api from session';
 
 const openConfirm = () => {
   fireEvent.click(screen.getByRole('button', { name: TRIGGER }));

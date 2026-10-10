@@ -166,7 +166,9 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               ) : null}
               {lens === 'questions' ? <QuestionsPane session={session} /> : null}
               {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
-              {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
+              {lens === 'workflows' ? (
+                <WorkflowsPane session={session} isActive={isActive && showLens} />
+              ) : null}
               {lens === 'scripts' ? (
                 <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}
