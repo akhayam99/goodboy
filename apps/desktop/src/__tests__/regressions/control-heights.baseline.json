@@ -16,7 +16,6 @@
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxListHeader.tsx": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/InboxRow.tsx": 1,
   "apps/desktop/src/features/inbox/components/InboxStudio/StarredSnapshotRow.tsx": 1,
-  "apps/desktop/src/features/integrations/components/IssuePicker/index.tsx": 2,
   "apps/desktop/src/features/integrations/components/TrackerStudioLinks.tsx": 1,
   "apps/desktop/src/features/notifications/components/NotificationRow/index.tsx": 1,
   "apps/desktop/src/features/notifications/components/NotificationsStudio/NotificationFiltersButton.tsx": 1,

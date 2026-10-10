@@ -31,6 +31,7 @@ export const ColumnFoot = ({ place, isPrimary, actions, onNavigate }: Props) => 
         variant="column"
         isPrimary={isPrimary}
         onOpenChangelog={actions.openChangelog}
+        onOpenGuide={actions.openGuide}
         onOpenShortcuts={actions.openShortcuts}
       />
       <ReportBugButton />

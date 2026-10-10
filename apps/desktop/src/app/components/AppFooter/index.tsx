@@ -28,6 +28,7 @@ type Props = {
   readonly onOpenImpact: () => void;
   readonly onOpenSettings: () => void;
   readonly onOpenChangelog: () => void;
+  readonly onOpenGuide: () => void;
   readonly onOpenShortcuts: () => void;
 };
 
@@ -41,6 +42,7 @@ export const AppFooter = ({
   onOpenImpact,
   onOpenSettings,
   onOpenChangelog,
+  onOpenGuide,
   onOpenShortcuts,
 }: Props) => {
   const connectedMembers = FOOTER_INTEGRATIONS.filter((member) => connected[member.provider]);
@@ -87,7 +89,11 @@ export const AppFooter = ({
         </div>
 
         <div className="flex items-center">
-          <GoodboyChip onOpenChangelog={onOpenChangelog} onOpenShortcuts={onOpenShortcuts} />
+          <GoodboyChip
+            onOpenChangelog={onOpenChangelog}
+            onOpenGuide={onOpenGuide}
+            onOpenShortcuts={onOpenShortcuts}
+          />
         </div>
 
         <div className="flex items-center gap-0.5">

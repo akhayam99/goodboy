@@ -115,6 +115,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Chat',
     covers: ['openStudio', 'studio:chat', 'palette:Chat'],
+    door: 'palette',
     open: () => openPalette(/^Chat$/),
     lands: () => band('Chat'),
   },
@@ -209,6 +210,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Tasks',
     covers: ['openStudio', 'studio:inbox', 'palette:Tasks'],
+    door: 'palette',
     open: () => openPalette(/^Tasks$/),
     lands: both(
       () => band('Tasks'),
@@ -218,6 +220,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Workflows',
     covers: ['openStudio', 'studio:workflow', 'palette:Workflows'],
+    door: 'palette',
     open: () => openPalette(/^Workflows$/),
     lands: both(
       () => band('Workflows'),
@@ -227,6 +230,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Run defaults',
     covers: ['studio:workflow', 'palette:Run defaults'],
+    door: 'palette',
     open: () => openPalette(/^Run defaults/, 'run defaults'),
     lands: both(
       () => band('Workflows'),
@@ -236,12 +240,14 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Impact',
     covers: ['openStudio', 'studio:impact', 'palette:Impact'],
+    door: 'palette',
     open: () => openPalette(/^Impact$/),
     lands: () => band('Impact'),
   },
   {
     name: 'palette: Impact: Spend',
     covers: ['openStudio', 'studio:impact', 'palette:Impact: Spend'],
+    door: 'palette',
     open: () => openPalette(/^Impact: Spend/, 'impact spend'),
     lands: both(
       () => band('Impact'),
@@ -251,6 +257,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: "palette: What's new",
     covers: ['openStudio', 'studio:changelog', "palette:What's new"],
+    door: 'palette',
     open: () => openPalette(/^What's new/),
     lands: both(
       () => band("What's new"),
@@ -260,6 +267,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Notifications',
     covers: ['openStudio', 'studio:notifications', 'palette:Notifications'],
+    door: 'palette',
     open: () => openPalette(/^Notifications/),
     lands: both(
       () => band('Notifications'),
@@ -269,6 +277,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Workspace settings',
     covers: ['openStudio', 'studio:settings', 'scope:workspace', 'palette:Workspace settings'],
+    door: 'palette',
     open: () => openPalette(/^Workspace settings: Projects/, 'workspace settings projects'),
     lands: both(
       () => settingsColumn(),
@@ -278,6 +287,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Settings',
     covers: ['openStudio', 'studio:settings', 'scope:home', 'palette:Settings'],
+    door: 'palette',
     open: () => openPalette(/^Settings$/),
     lands: both(
       () => settingsColumn(),
@@ -363,6 +373,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Pair your iPhone',
     covers: ['openStudio', 'studio:companion', 'palette:Pair your iPhone'],
+    door: 'palette',
     open: () => openPalette(/^Pair your iPhone/),
     lands: () => band('Pair device'),
   },
@@ -381,6 +392,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Guide',
     covers: ['openStudio', 'studio:guide', 'palette:Guide'],
+    door: 'palette',
     open: () => openPalette(/^Guide/),
     lands: () => band('Guide'),
   },

@@ -626,18 +626,24 @@ branch page stores no branch tab (`applyLocation`), so the tab always falls back
 to the landing rule. The rows carry no needs-you count because the resolve queue
 rows know their project and pull request number but not their mount.
 
-**The rail holds the open session and the pinned ones.** Under the doors, in the
-workspace scope only, the open session is a 28px node button (the same
-`SessionStateNode` as its row); a click opens the session, and hovering or
-focusing it opens a flyout card (`RailFlyout`, the overlay layer of the hover
+**The rail holds the pinned sessions and, when needed, the open one.** Under the
+doors, in the workspace scope only, the pinned sessions are 28px node buttons
+(the same `SessionStateNode` as their rows) in pin order, up to seven
+(`RAIL_PINNED_LIMIT`), whatever is open: opening another session never moves a
+node, only the marker. The open session, when it is one of those pins, keeps its
+slot and takes the current sign (`bg-selected`, a 1px inset hairline, the glyph
+at full foreground, `aria-current="page"`). When it is not pinned, or is pinned
+beyond the seventh, it is one extra node after the pins and before `+N`
+(`data-slot="rail-open-tail"`). A click opens the session; hovering or focusing
+the current node opens a flyout (`RailFlyout`, the overlay layer of the hover
 card) with the same pages list as the card (`SessionPages`, one source), the
 branches when there are several, and the pinned sessions. Esc closes it and
 returns focus to the button, and `→` or `↓` on the button moves into it. A studio
-over the session leaves its button `remembered`. The pinned sessions follow as
-28px node buttons in pin order (up to seven, the open one is not repeated), with
-the session title and the stage words in the tooltip, then `+N` which opens the
-same flyout with every pin. `New` shows the draft dot and reads `New session,
-draft in progress` while a written draft waits elsewhere.
+over the session leaves its button `remembered` (full foreground, no marker). The
+other nodes carry the session title and the stage words in their tooltip. `+N`
+counts the pins past the seventh and opens the same flyout with every pin. `New`
+shows the draft dot and reads `New session, draft in progress` while a written
+draft waits elsewhere.
 
 **Two keys switch sessions without the list.** `⌃Tab` opens a list of the
 pinned sessions (a **Pinned** section, up to eight, in pin order) and then the
@@ -984,8 +990,13 @@ covered.
   their old shape). Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
   board it closes the studio; in a session it navigates to the board as a
-  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on a
-  new chat; its row carries a running dot or a new-reply dot. The command
+  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on the
+  chat you had open last in this workspace (`lastChatByWorkspace`, memory only,
+  `selectChatDoor`), else the most recent chat by activity, else a new chat; after
+  you press New chat it opens a new one until you pick a chat again. The column
+  door, the top bar button and the palette entry share that rule. Archiving or
+  deleting the open chat lands on the next most recent one, not a blank page. Its
+  row carries a running dot or a new-reply dot. The command
   center opens the palette and shows ⌘K; it never takes typing itself. In the palette,
   every search with text and no prefix starts with `Ask in Chat`, which opens
   a new chat with the query as its first message. Inside a session (the
@@ -1098,7 +1109,9 @@ chip keeps only the mark and the version below the `chrome-labels` width. The ve
 and shows in mock scenes too. The update pill is soft, enters once and holds
 still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
-checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
+checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
+your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
+iPhone the pairing studio, so neither waits behind the palette. The
 addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the

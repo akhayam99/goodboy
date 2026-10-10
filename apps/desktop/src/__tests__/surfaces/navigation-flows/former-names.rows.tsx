@@ -4,6 +4,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'searching Rules finds Run defaults',
     covers: ['studio:workflow'],
+    door: 'palette',
     open: () => openPalette(/^Run defaults/, 'Rules'),
     lands: both(
       () => band('Workflows'),
@@ -13,6 +14,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'searching Workflow rules finds Run defaults',
     covers: ['studio:workflow'],
+    door: 'palette',
     open: () => openPalette(/^Run defaults/, 'Workflow rules'),
     lands: both(
       () => band('Workflows'),
@@ -34,6 +36,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
     name: "searching Changelog finds What's new",
     covers: ['studio:changelog'],
+    door: 'palette',
     open: () => openPalette(/^What's new/, 'Changelog'),
     lands: both(
       () => band("What's new"),
@@ -43,6 +46,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'searching Inbox finds Tasks',
     covers: ['studio:inbox'],
+    door: 'palette',
     open: () => openPalette(/^Tasks$/, 'Inbox'),
     lands: both(
       () => band('Tasks'),

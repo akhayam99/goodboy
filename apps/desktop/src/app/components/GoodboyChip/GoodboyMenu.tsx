@@ -1,4 +1,4 @@
-import { ExternalLink, Heart } from 'lucide-react';
+import { ExternalLink, Heart, Smartphone } from 'lucide-react';
 import { Button, Divider, Eyebrow, DogMascot, XIcon } from '@goodboy/ui';
 import { finish } from '../../../features/onboarding/onboarding-store';
 import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
@@ -16,6 +16,8 @@ type Props = {
   readonly hasUpdate: boolean;
   readonly hasDraft: boolean;
   readonly onReport: () => void;
+  readonly onOpenGuide: () => void;
+  readonly onPairDevice: () => void;
   readonly onOpenChangelog: () => void;
   readonly onOpenShortcuts: () => void;
   readonly onSponsor: () => void;
@@ -30,6 +32,8 @@ export const GoodboyMenu = ({
   hasUpdate,
   hasDraft,
   onReport,
+  onOpenGuide,
+  onPairDevice,
   onOpenChangelog,
   onOpenShortcuts,
   onSponsor,
@@ -85,6 +89,11 @@ export const GoodboyMenu = ({
         ) : null}
         <ul className="flex flex-col">
           <MenuRow
+            icon={<CONCEPT_ICONS.guide size={ICON_SIZE.row} aria-hidden />}
+            label="Guide"
+            onClick={onOpenGuide}
+          />
+          <MenuRow
             icon={<CONCEPT_ICONS.changelog size={ICON_SIZE.row} aria-hidden />}
             label={NAMES.whatsNew}
             onClick={onOpenChangelog}
@@ -98,6 +107,11 @@ export const GoodboyMenu = ({
               </kbd>
             }
             onClick={onOpenShortcuts}
+          />
+          <MenuRow
+            icon={<Smartphone size={ICON_SIZE.row} aria-hidden />}
+            label="Pair your iPhone"
+            onClick={onPairDevice}
           />
           <MenuRow
             icon={<Heart size={ICON_SIZE.row} aria-hidden />}

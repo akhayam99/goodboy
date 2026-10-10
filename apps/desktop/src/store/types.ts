@@ -64,6 +64,7 @@ import type { ProjectMountsState } from './slices/project-mounts/state';
 import type { OverridesState } from './slices/overrides/state';
 import type { SidebarState } from './slices/sidebar/state';
 import type { SettingsLastPageState } from './slices/settings-last-page/state';
+import type { ChatLastOpenState } from './slices/chat-last-open/state';
 import type { WorkflowsState } from './slices/workflows/state';
 import type { AgentsState } from './slices/agents/state';
 import type { AgentQueueState } from './slices/agentQueue/state';
@@ -168,6 +169,7 @@ type AppSliceState = ArtifactsState &
   OverridesState &
   SidebarState &
   SettingsLastPageState &
+  ChatLastOpenState &
   TurnSliceState &
   WorkflowsState &
   AgentsState &

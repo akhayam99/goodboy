@@ -94,9 +94,16 @@ afterEach(() => {
 
 const renderChip = () => {
   const onOpenChangelog = vi.fn();
+  const onOpenGuide = vi.fn();
   const onOpenShortcuts = vi.fn();
-  render(<GoodboyChip onOpenChangelog={onOpenChangelog} onOpenShortcuts={onOpenShortcuts} />);
-  return { onOpenChangelog, onOpenShortcuts };
+  render(
+    <GoodboyChip
+      onOpenChangelog={onOpenChangelog}
+      onOpenGuide={onOpenGuide}
+      onOpenShortcuts={onOpenShortcuts}
+    />,
+  );
+  return { onOpenChangelog, onOpenGuide, onOpenShortcuts };
 };
 
 const openMenu = () => {
@@ -161,7 +168,14 @@ describe('GoodboyChip', () => {
 
     within(menu).getByText(`Goodboy ${APP_VERSION}`);
     expect(within(menu).getByTestId('checklist')).toBeDefined();
-    ['Report a bug', "What's new", 'Keyboard shortcuts', 'Sponsor on GitHub'].forEach((row) => {
+    [
+      'Report a bug',
+      'Guide',
+      "What's new",
+      'Keyboard shortcuts',
+      'Pair your iPhone',
+      'Sponsor on GitHub',
+    ].forEach((row) => {
       expect(within(menu).getByText(row)).toBeDefined();
     });
     expect(within(menu).queryByRole('button', { name: 'Restart to update' })).toBeNull();
@@ -185,6 +199,34 @@ describe('GoodboyChip', () => {
     fireEvent.click(within(openMenu()).getByText('Keyboard shortcuts'));
     expect(onOpenShortcuts).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+  });
+
+  it('puts the guide first among the help rows and opens it', () => {
+    const { onOpenGuide } = renderChip();
+
+    const menu = openMenu();
+    const labels = within(menu)
+      .getAllByRole('button')
+      .map((button) => button.textContent ?? '');
+    expect(labels.indexOf('Guide')).toBeGreaterThan(-1);
+    expect(labels.indexOf('Guide')).toBeLessThan(labels.indexOf("What's new"));
+
+    fireEvent.click(within(menu).getByText('Guide'));
+
+    expect(onOpenGuide).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+  });
+
+  it('asks the app to open the pairing studio from Pair your iPhone', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-pair-device', listener);
+    renderChip();
+
+    fireEvent.click(within(openMenu()).getByText('Pair your iPhone'));
+
+    expect(listener).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    window.removeEventListener('goodboy:open-pair-device', listener);
   });
 
   it('opens the exact sponsor URL', () => {
@@ -259,7 +301,14 @@ describe('GoodboyChip', () => {
 describe('GoodboyChip in the column and on the rail', () => {
   it('spells Goodboy, beta and the version in the column row at every width', () => {
     mocks.progress.finished = true;
-    render(<GoodboyChip variant="column" onOpenChangelog={vi.fn()} onOpenShortcuts={vi.fn()} />);
+    render(
+      <GoodboyChip
+        variant="column"
+        onOpenChangelog={vi.fn()}
+        onOpenGuide={vi.fn()}
+        onOpenShortcuts={vi.fn()}
+      />,
+    );
 
     const chip = screen.getByRole('button', { name: REST_LABEL });
     expect(chip.textContent).toBe(`GoodboyBetav${APP_VERSION}`);
@@ -267,7 +316,14 @@ describe('GoodboyChip in the column and on the rail', () => {
   });
 
   it('keeps only the mark on the rail, with the state in its name', () => {
-    render(<GoodboyChip variant="rail" onOpenChangelog={vi.fn()} onOpenShortcuts={vi.fn()} />);
+    render(
+      <GoodboyChip
+        variant="rail"
+        onOpenChangelog={vi.fn()}
+        onOpenGuide={vi.fn()}
+        onOpenShortcuts={vi.fn()}
+      />,
+    );
 
     const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
     expect(chip.textContent).toBe('');
@@ -284,6 +340,7 @@ describe('GoodboyChip in the column and on the rail', () => {
           variant="column"
           isPrimary={false}
           onOpenChangelog={vi.fn()}
+          onOpenGuide={vi.fn()}
           onOpenShortcuts={vi.fn()}
         />,
       );
