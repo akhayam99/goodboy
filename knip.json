@@ -3,6 +3,7 @@
   "workspaces": {
     ".": {
       "entry": ["package.json"],
+      "ignore": ["scripts/rules/forbiddenPatterns.d.mts"],
       "ignoreDependencies": ["@commitlint/cli"]
     },
     "apps/desktop": {
