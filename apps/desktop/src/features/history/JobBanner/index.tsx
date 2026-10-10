@@ -1,9 +1,12 @@
 import { StatusDot, cn, tintClasses, type Tone } from '@goodboy/ui';
+import { useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { RebaseJobTone } from '../rebaseJob';
+import { useJobBannerActions } from '../hooks/useJobBannerActions';
 import { useRebaseJob } from '../useRebaseJob';
 import { JobBannerActions } from './JobBannerActions';
 import { JobBannerLine } from './JobBannerLine';
+import { JobBannerNote } from './JobBannerNote';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -19,10 +22,17 @@ const TONE_OF: Readonly<Record<RebaseJobTone, Tone>> = {
 
 export const JobBanner = ({ sessionId, worktreePath }: Props) => {
   const controls = useRebaseJob({ sessionId, worktreePath });
+  const actions = useJobBannerActions({
+    sessionId,
+    worktreePath,
+    agentId: controls?.agentId ?? null,
+  });
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
   if (controls === null) {
     return null;
   }
   const { job } = controls;
+  const isNoteShown = isNoteOpen && job.state === 'stuck';
   const tone = TONE_OF[job.tone];
   const isAlert = job.isSettled && (job.tone === 'warn' || job.tone === 'danger');
   return (
@@ -47,10 +57,25 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
           {job.title}
         </span>
         <div className="flex shrink-0 items-center gap-2">
-          <JobBannerActions controls={controls} />
+          <JobBannerActions
+            controls={controls}
+            actions={actions}
+            isNoteOpen={isNoteShown}
+            onToggleNote={() => setIsNoteOpen((isOpen) => !isOpen)}
+          />
         </div>
       </div>
       <JobBannerLine job={job} />
+      {isNoteShown ? (
+        <JobBannerNote
+          isPending={actions.pendingKeys.has('retry-note')}
+          onSubmit={({ note }) => {
+            actions.retryWithNote({ note });
+            setIsNoteOpen(false);
+          }}
+          onCollapse={() => setIsNoteOpen(false)}
+        />
+      ) : null}
     </section>
   );
 };

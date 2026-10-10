@@ -282,7 +282,7 @@ It includes:
 - History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
   `history_pushed`, `history_stopped` and `history_restored`
 
-History rows carry no verb and no `⋯`. They stay in Activity only while no
+History rows carry no verb and no `⋯`; the verbs live on the job banner of the Branch page (`docs/features/branch-history.md`). They stay in Activity only while no
 later outcome of the same branch settled them, and the row opens the Commits
 tab of the Branch page, where the recovery lives. The agent rows of those jobs
 read the job, not the turn of the agent (`jobFactsByAgentId`, the seam beside
@@ -294,9 +294,11 @@ open) and opens **Open overview**; the Scribe that refreshes a description or
 writes a commit message reads "Refresh pull request text" or "Commit message",
 muted and never in Needs you. `history_rewritten`, `history_pushed` and
 `history_stopped` carry the `agentId` of the rewriter, so a finished row still
-reads Done or Stopped after a restart. The recovery: `Undo rewrite` for a
-rewrite, `Retry` (or `Retry with a note` when History rewriter needs you), `Rewrite with an agent`,
-`Change the plan` and `Discard plan` for a stopped one, `Restore previous
+reads Done or Stopped after a restart. The recovery, on the banner: `Undo rewrite`
+for a rewrite, `Retry with a note` when History rewriter needs you, `Bring them
+into the plan` when the online copy moved, `Retry rebase` when the branch moved,
+`Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,
+`Change the plan` and `Discard plan` for a stopped plan, `Restore previous
 history` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
 of the engine points at the row with `Open in Activity`, so closing it loses
 nothing.
