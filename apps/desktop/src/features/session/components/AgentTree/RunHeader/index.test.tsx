@@ -69,6 +69,7 @@ const actionStubs = {
   setWorkflowRunAutonomy: vi.fn(async () => undefined),
   setWorkflowRunSpendLimit: vi.fn(async () => undefined),
   discardWorkflow: vi.fn(async () => undefined),
+  reportError: vi.fn(async () => undefined),
 };
 
 type Setup = {
@@ -258,6 +259,28 @@ describe('the run header primary', () => {
     expect(screen.getByRole('button', { name: 'Stop run' })).toBeDefined();
   });
 
+  it('reports a failed resume and leaves the button ready for another try', async () => {
+    seed({
+      run: { executionMode: 'dynamic', orchestrationStop: { kind: 'paused', message: 'paused' } },
+      agents: LIVE,
+    });
+    actionStubs.resumeWorkflowRun.mockRejectedValueOnce(new Error('The database is locked'));
+    renderHeader();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    });
+
+    expect(actionStubs.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't resume the run", sessionId: SESSION }),
+    );
+    expect(screen.getByRole('button', { name: 'Resume' }).hasAttribute('disabled')).toBe(false);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Resume' }));
+    });
+    expect(actionStubs.resumeWorkflowRun).toHaveBeenCalledTimes(2);
+  });
+
   it('asks for the first step on a dynamic run that has not started', () => {
     seed({ run: { executionMode: 'dynamic' }, agents: [] });
     renderHeader();
@@ -412,7 +435,7 @@ describe('the run header primary', () => {
     });
 
     expect(actionStubs.activateWorkflowAgent).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId: SESSION, agentId: 'agent-build' }),
+      expect.objectContaining({ sessionId: SESSION, agentId: 'agent-build', bypassGate: false }),
     );
   });
 

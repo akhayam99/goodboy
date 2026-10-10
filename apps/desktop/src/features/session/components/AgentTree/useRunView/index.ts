@@ -52,7 +52,6 @@ export type RunView = {
   readonly isCompleted: boolean;
   readonly isClosable: boolean;
   readonly isOrchestrating: boolean;
-  readonly isQueuedManual: boolean;
   readonly stepCount: number;
   readonly doneCount: number;
   readonly agentCount: number;
@@ -171,7 +170,6 @@ export const useRunView = ({ session, run, workflow }: Params): RunView => {
       agents: runsForWorkflowRun(phaseRuns, run.id),
     }),
     isOrchestrating,
-    isQueuedManual,
     stepCount,
     doneCount,
     agentCount: agents.reduce(

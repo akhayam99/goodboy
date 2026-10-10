@@ -257,14 +257,12 @@ describe('OrchestratorStrip state ladder', () => {
     renderStrip({ agents: [agent(0, 'completed'), agent(1, 'completed')] });
 
     expect(sentence()).toContain('Waiting for your go');
-    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
 
   it('offers no next step control while autorun drives the run', () => {
     renderStrip({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
 
     expect(sentence()).toContain('Continuing automatically');
-    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
 
   it('says a step failed instead of claiming autorun is still continuing', () => {
@@ -286,8 +284,6 @@ describe('OrchestratorStrip state ladder', () => {
     });
 
     expect(screen.queryByRole('button', { name: /skip/i })).toBeNull();
-    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
-    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
   });
 
   it('pulses on its rail while it decides, with no manual control', () => {
@@ -296,7 +292,6 @@ describe('OrchestratorStrip state ladder', () => {
     expect(sentence()).toContain('Choosing the next step');
     expect(screen.getByTestId('tone-bar').getAttribute('data-tone')).toBe('info');
     expect(screen.getByRole('img', { name: sentence() })).toBeDefined();
-    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
 
   it('names the step it waits on and the machine time it has worked', () => {
@@ -334,7 +329,6 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(sentence()).toContain('Waiting on step 2 · implement language-id remap');
     expect(screen.getByTestId('orchestrator-elapsed').textContent).toContain('3m');
-    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
 
   it('shows no time for a step that has not recorded any machine time', () => {
@@ -549,7 +543,6 @@ describe('OrchestratorStrip state ladder', () => {
     });
 
     expect(sentence()).toBe('Paused at the $12.00 spend cap for this run.');
-    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
     expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
   });
 
@@ -573,7 +566,6 @@ describe('OrchestratorStrip state ladder', () => {
     });
 
     expect(sentence()).toBe('Paused for your answer');
-    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
   });
 
   it('waits for your go once the question behind the stop is answered', () => {
@@ -602,8 +594,6 @@ describe('OrchestratorStrip state ladder', () => {
     });
 
     expect(sentence()).toContain('Stopped by you');
-    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
-    expect(screen.queryByTestId('orchestrator-resume')).toBeNull();
   });
 
   it('says it is stopping instead of still choosing, when stopped mid-decision', () => {
@@ -621,7 +611,6 @@ describe('OrchestratorStrip state ladder', () => {
     expect(sentence()).not.toContain('Choosing the next step');
     expect(sentence()).toContain('Stopping');
     expect(screen.getByTestId('orchestrator-strip').getAttribute('data-phase')).toBe('stopping');
-    expect(screen.queryByTestId('orchestrator-resume')).toBeNull();
 
     const dot = screen.getByRole('img', { name: sentence() });
     expect(dot.className).toContain('bg-warning');
@@ -656,7 +645,6 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(sentence()).toContain('Last decision failed');
     expect(screen.getByTestId('orchestrator-detail').textContent).toContain('usage limit reached');
-    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
   });
 
   it('asks for a human call when the orchestrator stopped the run', () => {
@@ -680,9 +668,53 @@ describe('OrchestratorStrip state ladder', () => {
     });
 
     expect(sentence()).toContain('Run complete · 3 steps · $1.28');
-    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
-    expect(screen.queryByTestId('orchestrator-continue')).toBeNull();
   });
+});
+
+describe('OrchestratorStrip draws no action of its own', () => {
+  const HELD_STOP = { kind: 'plan-approval', message: 'The plan is ready.' } as const;
+  const SCENARIOS: ReadonlyArray<{
+    readonly name: string;
+    readonly runOverride: WorkflowRun;
+  }> = [
+    { name: 'ready to plan', runOverride: run() },
+    { name: 'held for its plan', runOverride: run({ orchestrationStop: HELD_STOP }) },
+    {
+      name: 'paused by you',
+      runOverride: run({ orchestrationStop: { kind: 'paused', message: 'paused' } }),
+    },
+    {
+      name: 'stopped by you',
+      runOverride: run({ orchestrationStop: { kind: 'operator', message: 'stopped' } }),
+    },
+    {
+      name: 'failed',
+      runOverride: run({ orchestrationStop: { kind: 'failure', message: 'usage limit' } }),
+    },
+    {
+      name: 'paused at the spend cap',
+      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
+    },
+    { name: 'complete', runOverride: run({ orchestrationOutcome: 'done' }) },
+    { name: 'blocked', runOverride: run({ orchestrationOutcome: 'blocked' }) },
+  ];
+
+  it.each(SCENARIOS)(
+    'keeps the status line of a run $name free of buttons and menus',
+    (scenario) => {
+      renderStrip({ runOverride: scenario.runOverride, agents: [agent(0, 'completed')] });
+
+      const strip = screen.getByTestId('orchestrator-strip');
+      expect(strip.querySelectorAll('[data-variant="primary"]')).toHaveLength(0);
+      expect(
+        within(strip)
+          .queryAllByRole('button')
+          .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '')
+          .filter((name) => !/^Orchestrator routing/.test(name)),
+      ).toEqual([]);
+      expect(within(strip).queryByRole('menu')).toBeNull();
+    },
+  );
 });
 
 describe('OrchestratorStrip layout', () => {
@@ -732,7 +764,6 @@ describe('OrchestratorStrip layout', () => {
     renderStrip({ runOverride: run({ autoRun: true }) });
 
     expect(sentence()).toContain('Continuing automatically');
-    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
 });
 
