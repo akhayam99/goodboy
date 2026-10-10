@@ -49,6 +49,7 @@ mod project_relocation;
 mod project_scripts;
 mod provider_credentials;
 mod provider_lifecycle;
+mod provider_standing_log;
 mod providers;
 mod publish;
 mod qa_preview;
@@ -363,6 +364,7 @@ pub fn run() {
             providers::refresh_openrouter_status,
             providers::refresh_moonshot_status,
             providers::check_provider_auth,
+            provider_standing_log::log_provider_standing,
             provider_credentials::provider_api_key_validate,
             provider_lifecycle::provider_lifecycle_run,
             provider_lifecycle::provider_lifecycle_write,
