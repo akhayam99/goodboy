@@ -116,6 +116,8 @@ Run a plan part by part. An implementer given a plan splits into one sub-agent p
 
 Let two helpers work on your history and your pull request text without the power to push. Their git points at a push address that goes nowhere, and their GitHub tokens are removed. When the Scribe writes a pull request, its page shows the text as **Pull request text**, in the transcript and in the Brief, with **Creating**, **Created #N** or **Failed**. A failure reads "Couldn't write the pull request text" with the raw message behind **Details** and a **Retry**, and the agent's header says **Failed** too instead of Done. A later question to the Scribe does not erase it.
 
+While the Scribe writes, Create PR is held on the same branch with "Scribe is still writing the text.", the Manual and Draft with an agent choice cannot be switched, and a pull request cannot be opened by hand on that branch. When the Scribe fails, text you typed in the form stays as it is.
+
 ### One language per session
 
 Get agents and summaries in the language of your goal.
