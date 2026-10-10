@@ -848,8 +848,7 @@ When a provider ships or retires a model, update these together:
   `resolveTaskModel`, `resolveAuto` or their wrappers; it only falls. What remains are
   kind and step routing (`kindRouting` behind `selectKindRouting` for a spawned agent,
   `resolveStepRouting`, `suggestedRouting`), which read the same resolved settings and
-  scope and which the parity test checks against the row, and the one-line previews of
-  the workflow builder
+  scope and which the parity test checks against the row
 
 - **Auto** is one ladder for roles and tasks, `resolveAuto` in
   `packages/core/src/providers/autoRouting/resolveAuto.ts`. The curated picks live in

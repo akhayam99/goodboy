@@ -1,9 +1,5 @@
 {
   "apps/desktop/src/features/session/agent-kind.ts": 1,
   "apps/desktop/src/features/session/suggestedRouting.ts": 1,
-  "apps/desktop/src/features/workflows/components/WorkflowAddStep/RunStepDraft.tsx": 2,
-  "apps/desktop/src/features/workflows/components/WorkflowBuilderView/index.tsx": 2,
-  "apps/desktop/src/features/workflows/components/WorkflowStudio/SavedStepsList/index.tsx": 1,
-  "apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/index.tsx": 1,
   "apps/desktop/src/features/workflows/resolveStepRouting.ts": 2
 }

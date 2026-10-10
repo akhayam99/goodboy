@@ -1,5 +1,6 @@
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { discardSavedProjectModels } from './discardSavedProjectModels';
+import type { SavedModelsLatest } from './loadSavedProjectModels';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -7,7 +8,13 @@ type Params = {
   readonly workspaceId: WorkspaceId;
 };
 
-export const applySavedProjectModels = (set: SetFn, get: GetFn) => {
+type Deps = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly latest: SavedModelsLatest;
+};
+
+export const applySavedProjectModels = ({ set, get, latest }: Deps) => {
   return async ({ projectId, workspaceId }: Params): Promise<void> => {
     const saved = get().savedProjectModels[projectId];
     if (saved === undefined) {
@@ -23,6 +30,6 @@ export const applySavedProjectModels = (set: SetFn, get: GetFn) => {
         roleModels: Object.keys(roleModels).length > 0 ? roleModels : null,
       },
     });
-    await discardSavedProjectModels(set)({ projectId });
+    await discardSavedProjectModels({ set, latest })({ projectId });
   };
 };
