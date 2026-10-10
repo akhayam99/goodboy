@@ -93,7 +93,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['openInbox', 'studio:inbox'],
     open: () => click(doorIn('inbox')),
     lands: both(
-      () => heading('All items'),
+      () => heading('Tasks'),
       async () => expect(doorIn('inbox').getAttribute('aria-current')).toBe('page'),
     ),
   },
@@ -197,7 +197,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['studio:inbox'],
     bars: 'classic',
     open: () => clickButton('Tasks'),
-    lands: () => heading('All items'),
+    lands: () => heading('Tasks'),
   },
   {
     name: 'classic footer: integrations',
@@ -223,7 +223,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Notifications$/);
       await clickButton(/^Open all notifications/);
     },
-    lands: () => heading('All notifications'),
+    lands: () => heading('Notifications'),
   },
   {
     name: 'workspace switcher: workspace settings',

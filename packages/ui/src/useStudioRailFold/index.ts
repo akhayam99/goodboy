@@ -67,9 +67,9 @@ export const useStudioRailFold = ({
   }, []);
 
   const setFolded = useCallback(
-    (next: boolean) => {
-      setIsFolded(next);
-      writeFolded({ surface, isFolded: next });
+    (isNowFolded: boolean) => {
+      setIsFolded(isNowFolded);
+      writeFolded({ surface, isFolded: isNowFolded });
     },
     [surface],
   );
