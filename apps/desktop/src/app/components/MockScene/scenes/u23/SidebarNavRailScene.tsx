@@ -17,6 +17,7 @@ const ACTIONS: ColumnActions = {
   openWorkflows: noop,
   openSettings: noop,
   openChangelog: noop,
+  openGuide: noop,
   openShortcuts: noop,
 };
 

@@ -62,6 +62,7 @@ export const AppFrame = ({ view, isRailCollapsed, mode = sceneShellMode() }: Pro
       openWorkflows: overlays.openWorkflows,
       openSettings: overlays.openSettings,
       openChangelog: overlays.openChangelog,
+      openGuide: overlays.openGuide,
       openShortcuts: overlays.openShortcutHelp,
     }),
     [goToBoard, overlays],
@@ -108,6 +109,7 @@ export const AppFrame = ({ view, isRailCollapsed, mode = sceneShellMode() }: Pro
               onOpenSettings={overlays.openSettings}
               onOpenShortcuts={overlays.openShortcutHelp}
               onOpenChangelog={overlays.openChangelog}
+              onOpenGuide={overlays.openGuide}
             />
           )
         }

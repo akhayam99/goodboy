@@ -109,6 +109,8 @@ export const useAppOverlays = ({
 
   const openChangelog = useCallback(() => goTo({ overlay: { kind: 'changelog' } }), [goTo]);
 
+  const openGuide = useCallback(() => goTo({ overlay: { kind: 'guide' } }), [goTo]);
+
   const onOpenChangelogScreen = useCallback(
     ({ screen }: { readonly screen: ChangelogScreen }) =>
       open({ overlay: resolveChangelogScreenOverlay({ screen }) }),
@@ -245,6 +247,7 @@ export const useAppOverlays = ({
     openAddWorkspace,
     openChangelog,
     openChat,
+    openGuide,
     openImpact,
     openInbox,
     openIntegration,

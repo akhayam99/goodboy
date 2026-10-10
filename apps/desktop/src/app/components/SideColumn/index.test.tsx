@@ -32,6 +32,7 @@ const actions = (): ColumnActions => ({
   openWorkflows: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
+  openGuide: vi.fn(),
   openShortcuts: vi.fn(),
 });
 

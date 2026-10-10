@@ -1098,7 +1098,9 @@ chip keeps only the mark and the version below the `chrome-labels` width. The ve
 and shows in mock scenes too. The update pill is soft, enters once and holds
 still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
-checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
+checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
+your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
+iPhone the pairing studio, so neither waits behind the palette. The
 addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the

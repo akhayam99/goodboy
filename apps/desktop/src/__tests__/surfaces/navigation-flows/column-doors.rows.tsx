@@ -78,6 +78,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   {
     name: 'palette: Open a folder',
     covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:Open a folder'],
+    door: 'palette',
     open: () => openPalette(/^Open a folder/, 'Open a folder'),
     lands: () => band('Add workspace'),
   },
@@ -153,6 +154,26 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: () => heading(/^Goodboy \d/),
   },
   {
+    name: 'column: goodboy chip to the guide',
+    covers: ['openGuide', 'studio:guide'],
+    door: 'visible',
+    open: async () => {
+      await clickButton(/^Goodboy: setup/);
+      await clickButton(/^Guide/);
+    },
+    lands: () => band('Guide'),
+  },
+  {
+    name: 'column: goodboy chip to pair your iPhone',
+    covers: ['studio:companion'],
+    door: 'visible',
+    open: async () => {
+      await clickButton(/^Goodboy: setup/);
+      await clickButton(/^Pair your iPhone/);
+    },
+    lands: () => band('Pair device'),
+  },
+  {
     name: 'column: report a bug opens the sheet',
     covers: ['column:report'],
     open: () => clickButton('Report a bug'),
@@ -212,5 +233,15 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Workspace settings/);
     },
     lands: () => visible('textbox', 'Workspace name'),
+  },
+  {
+    name: 'workspace switcher: open a folder',
+    covers: ['studio:addWorkspace'],
+    door: 'visible',
+    open: async () => {
+      await clickButton(/^Switch workspace/);
+      await clickButton(/^Open a folder/);
+    },
+    lands: () => band('Add workspace'),
   },
 ];
