@@ -382,8 +382,10 @@ flashes at `0,0`. Second, recompute on `scroll` with capture `true`, because a
 scroll in any ancestor moves the trigger.
 
 **Confirmations never open a dialog.** A destructive action confirms through
-`InlineConfirm`. That way the thing being destroyed stays visible while the
-user decides. Its placements and trigger styling belong to
+`ConfirmPopover`, one placement anchored to its trigger, and a restorable one
+acts at once with Undo. That way the thing being destroyed stays visible while
+the user decides and the page under it never moves. Its behaviour and trigger
+styling belong to
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#action-zones).
 
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen
