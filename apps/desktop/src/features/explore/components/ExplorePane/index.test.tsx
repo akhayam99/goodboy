@@ -566,7 +566,7 @@ describe('ExplorePane', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Preview page.tsx' }));
       const open = await screen.findByRole('button', { name: 'Open in editor' });
       fireEvent.mouseEnter(open);
-      expect((await screen.findByRole('tooltip')).textContent).toBe('Open in VS Code');
+      expect((await screen.findByText('Open in VS Code')).getAttribute('role')).toBe('tooltip');
       fireEvent.click(open);
 
       await waitFor(() =>
