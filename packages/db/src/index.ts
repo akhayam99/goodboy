@@ -72,6 +72,7 @@ export {
   updateProjectDescription,
   updateProjectGoodboyIgnore,
   updateProjectIdentity,
+  clearProjectModelOverrides,
 } from './queries/project';
 export {
   recordSecurityFindings,
