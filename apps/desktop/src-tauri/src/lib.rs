@@ -51,6 +51,7 @@ mod provider_credentials;
 mod provider_lifecycle;
 mod provider_standing_log;
 mod providers;
+mod pty_ring;
 mod publish;
 mod qa_preview;
 mod query_bridge;
@@ -463,9 +464,11 @@ pub fn run() {
             scripts::workspace_script_run,
             scripts::workspace_script_run_adhoc,
             scripts::workspace_script_list_live,
+            scripts::workspace_script_snapshot,
             scripts::workspace_script_cancel,
             terminal::terminal_open,
             terminal::terminal_list_live,
+            terminal::terminal_snapshot,
             terminal::terminal_write,
             terminal::terminal_resize,
             terminal::terminal_close,
