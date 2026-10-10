@@ -234,7 +234,7 @@ export const TranscriptMountScene = () => {
   }
 
   return (
-    <div className="h-screen w-screen bg-background">
+    <div className="flex h-screen w-screen flex-col bg-background">
       <ChatView session={SESSION} />
     </div>
   );
