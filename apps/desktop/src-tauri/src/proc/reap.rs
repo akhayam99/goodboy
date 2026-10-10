@@ -139,8 +139,15 @@ pub(crate) mod unix {
         })
     }
 
+    fn ps() -> Command {
+        match std::path::Path::new("/bin/ps").exists() {
+            true => Command::new("/bin/ps"),
+            false => Command::new("ps"),
+        }
+    }
+
     fn snapshot_table() -> Vec<ProcRow> {
-        let Ok(output) = Command::new("/bin/ps")
+        let Ok(output) = ps()
             .args(["-A", "-o", "pid=,ppid=,pgid=,uid=,stat=,comm="])
             .output()
         else {
@@ -168,7 +175,7 @@ pub(crate) mod unix {
 
     #[cfg(not(target_os = "linux"))]
     pub(crate) fn scan_tagged(uid: u32) -> Vec<(u32, TagInfo)> {
-        let Ok(output) = Command::new("/bin/ps")
+        let Ok(output) = ps()
             .args(["-E", "-ww", "-U", &uid.to_string(), "-o", "pid=,command="])
             .output()
         else {
