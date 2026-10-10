@@ -1351,9 +1351,8 @@ mod tests {
         let _lock = orphan_lock();
         let id = unique_id("orphan-recycled");
         let bystander = helper_command().spawn().expect("spawn the new pid owner");
-        let before_this_pid_started =
-            kernel::identity(bystander.id()).expect("identity").start - 5_000_000;
-        let pid = orphan_with_own_group(&id, bystander.id(), before_this_pid_started);
+        let another_start = kernel::identity(bystander.id()).expect("identity").start + 1;
+        let pid = orphan_with_own_group(&id, bystander.id(), another_start);
         assert!(is_running(pid));
 
         sweep_with(&LIVE);
