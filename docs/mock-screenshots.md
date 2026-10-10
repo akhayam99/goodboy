@@ -228,7 +228,10 @@ once. Approving a plan is the real `approveWorkflowRunPlan`. The plan drawer
 scenes and the plan scenes of the run page install both. `plan-drawer-follow`
 opens the drawer over the Overview, so **Approve** raises the "Plan approved"
 toast with **Follow the run**; over the run page the toast has no action,
-because the page is already there.
+because the page is already there. `plan-drawer-approved` is the orchestrated
+case: the run has no next step yet, `?approve=1` presses **Approve** on its own,
+and reopening the plan through **Review plan** shows **Approved** with no
+primary.
 
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.

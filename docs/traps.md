@@ -272,6 +272,13 @@ fails silently at runtime.
 
 ## Traps in the store
 
+- A plan's run is found by its link (`plan.workflowRunId`, else the planner
+  agent's `workflowRunId`) in `planOwnerOf`, never by the next step of the
+  run's workflow. An orchestrated run creates its next step later, so a lookup
+  through the template returns nothing right after Approve and the plan falls
+  back to **Run plan**, a chip that says **Ready to run** and a **Start
+  implementer** card. Ask `planOwnerOf` and `planHandoffOf`; do not rebuild
+  the predicate.
 - A store helper named `select*` is not always safe as a `useAppStore`
   selector. `selectWritableMounts` maps `sessionMounts` views through
   `toProjectMounts`, so it and every helper built on it (`selectMountForPath`,

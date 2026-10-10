@@ -356,6 +356,29 @@ const askedPlanWaitsThenApproves = async (ctx: Ctx): Promise<void> => {
   expect(screen.queryByTestId('plan-drawer-question')).toBeNull();
 };
 
+const openPlanOverTheOverview = async (ctx: Ctx): Promise<void> => {
+  seedHeldRun(ctx);
+  act(() => useAppStore.getState().navigate({ to: sessionPlace({ sessionId: ctx.sessionId }) }));
+  await settle();
+  act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
+  await settle();
+  await visible('button', 'More plan actions');
+  expect(screen.getByTestId('plan-primary').textContent).toBe('Approve');
+  expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
+  await click(screen.getByTestId('plan-primary'));
+  await settle(6);
+};
+
+const approvedOffTheRunPage = async (ctx: Ctx): Promise<void> => {
+  await waitFor(() => expect(useAppStore.getState().drawer).toBeNull(), WAIT);
+  expect(screen.queryByTestId('plan-drawer')).toBeNull();
+  await waitFor(() => expect(screen.getAllByText('Plan approved')).toHaveLength(1), WAIT);
+  expect(screen.getAllByRole('button', { name: 'Follow the run' })).toHaveLength(1);
+  expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Start implementer' })).toBeNull();
+  expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBeNull();
+};
+
 export const PLAN_DRAWER_ROWS: ReadonlyArray<Row> = [
   {
     name: 'plan drawer: comment, re-plan, edit by hand, Approve closes the drawer and starts the step once',
@@ -368,5 +391,11 @@ export const PLAN_DRAWER_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate', 'openDrawer'],
     open: openPlanThePlannerAsksAbout,
     lands: askedPlanWaitsThenApproves,
+  },
+  {
+    name: 'plan drawer: Approve over the Overview closes the drawer, raises one toast and never offers Run plan',
+    covers: ['navigate', 'openDrawer'],
+    open: openPlanOverTheOverview,
+    lands: approvedOffTheRunPage,
   },
 ];

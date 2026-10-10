@@ -446,7 +446,9 @@ one ghost button with its word (it folds into the overflow below 560px) and
 on its last tab. A branch reads `[Abort rebase] [one primary] [...]`, and while
 the push confirm or any action confirm is open the primary turns secondary so
 the confirm holds the one filled button. A plan drawer reads
-`[Edit] [Approve] [...]`. Scripts reads `[search] [New script]`. A page with no
+`[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
+then closes the drawer on any page and raises one toast, and a plan whose run
+was approved reads Approved with no primary until the run starts the step. Scripts reads `[search] [New script]`. A page with no
 actions draws no `...`.
 
 **Legacy layout.** Settings > App > General > Legacy layout (setting

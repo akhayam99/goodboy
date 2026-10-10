@@ -226,6 +226,7 @@ palette-stable-height
 palette-stable-height-typing
 palette-state
 permissions-empty
+plan-drawer-approved
 plan-drawer-conflict
 plan-drawer-drafts
 plan-drawer-editing
