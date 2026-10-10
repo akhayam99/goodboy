@@ -23,7 +23,7 @@ import type { MountId, ProjectId } from '@goodboy/types';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertSession, insertWorkspace } from '@goodboy/db';
 import type { IsoDateTime, SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
-import { aSession } from '@goodboy/types/testing';
+import { aProject, aSession } from '@goodboy/types/testing';
 import {
   buildStoryWorkspace,
   importStore,
@@ -204,17 +204,49 @@ describe('task link controls', () => {
     expect(await storedLinks()).toHaveLength(3);
   });
 
-  it('takes off the last branch through the chip and undoes its generated session placement', async () => {
+  it('names the x on a sole branch placement Move to session and says the task is back', async () => {
     await useAppStore.getState().linkSessionExternalTask(SESSION_ID, TASK);
     renderChip({ branch: TASK.branch });
+    expect(screen.queryByRole('button', { name: /^Unlink/ })).toBeNull();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: `Unlink HBL-412 from ${TASK.branch}` }));
+      fireEvent.click(screen.getByRole('button', { name: 'Move to session' }));
     });
     expect(await storedLinks()).toEqual([{ scope: 'session', branch: TASK.branch }]);
+    screen.getByText('HBL-412 is on the session again');
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     });
     expect(await storedLinks()).toEqual([{ scope: 'branch', branch: TASK.branch }]);
+  });
+
+  it('names the x Take off project and branch when the task has another placement', async () => {
+    const projectId = 'project-payments-api' as ProjectId;
+    useAppStore.setState({
+      projects: [aProject({ id: projectId, workspaceId: WORKSPACE_ID, name: 'payments-api' })],
+    });
+    await useAppStore.getState().linkSessionExternalTask(SESSION_ID, { ...TASK, projectId });
+    await useAppStore
+      .getState()
+      .linkSessionExternalTask(SESSION_ID, { ...TASK, projectId, branch: 'hl/notify-retry' });
+    render(
+      <ToastProvider>
+        <UndoToastBridge />
+        <LinkedTaskChip
+          sessionId={SESSION_ID}
+          task={{ ...TASK, projectId }}
+          branch={TASK.branch ?? ''}
+          branches={[TASK.branch ?? '']}
+        />
+      </ToastProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Move to session' })).toBeNull();
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: `Take off payments-api / ${TASK.branch}` }),
+      );
+    });
+    expect(await storedLinks()).toEqual([{ scope: 'branch', branch: 'hl/notify-retry' }]);
+    screen.getByText(`HBL-412 is off payments-api / ${TASK.branch}`);
   });
 
   it('shows branch placement as a visible action and moves a session task onto that branch', async () => {

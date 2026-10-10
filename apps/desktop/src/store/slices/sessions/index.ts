@@ -9,6 +9,7 @@ import { deleteTask } from './deleteTask';
 import { evictSession } from './evictSession';
 import { assignSessionExternalTask } from './assignSessionExternalTask';
 import { linkSessionExternalTask } from './linkSessionExternalTask';
+import { moveSessionExternalTask } from './moveSessionExternalTask';
 import { renameTask } from './renameTask';
 import { setAgentConfig } from './setAgentConfig';
 import { setAgentVerbosity } from './setAgentVerbosity';
@@ -41,6 +42,7 @@ export const createSessionsSlice = ({ set, get }: SliceDeps) => {
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
     assignSessionExternalTask: assignSessionExternalTask({ set, get }),
+    moveSessionExternalTask: moveSessionExternalTask({ set, get }),
     takeOffSessionExternalTask: takeOffSessionExternalTask({ set, get }),
     setCurrentSession: setCurrentSession(set, get),
   };

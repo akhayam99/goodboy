@@ -1,4 +1,4 @@
-import { Minus, SquareArrowOutUpRight, Unlink } from 'lucide-react';
+import { ArrowRightLeft, Minus, SquareArrowOutUpRight, Unlink } from 'lucide-react';
 import type {
   ProjectId,
   SessionExternalTask,
@@ -6,7 +6,9 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { taskIdentityKey } from '../../../shared/utils/taskIdentityKey';
+import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 import type { ObjectKindDefinition, TaskActionTarget } from '../types';
+import { taskMoveTargets, type TaskMoveChoice } from './taskMoveTargets';
 
 export type TaskFacts = {
   readonly sessionId: SessionId;
@@ -17,6 +19,8 @@ export type TaskFacts = {
   readonly row: SessionExternalTask;
   readonly branch: string | null;
   readonly branchCount: number;
+  readonly moveTargets: ReadonlyArray<TaskMoveChoice>;
+  readonly isOnlyOnSession: boolean;
 };
 
 export const taskKeyOf = ({
@@ -51,6 +55,13 @@ const rowIsTarget = ({ candidate, target }: RowIsTargetParams): boolean =>
   taskIdentityKey({ task: candidate }) ===
   taskIdentityKey({ task: { ...target, projectId: target.projectId ?? undefined } });
 
+export const moveChoicesOf = ({
+  facts,
+}: {
+  readonly facts: TaskFacts;
+}): ReadonlyArray<TaskMoveChoice> =>
+  facts.moveTargets.filter((choice) => choice.to.kind !== 'session' || !facts.isOnlyOnSession);
+
 export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
   noun: 'task',
   facts: ({ state, target }) => {
@@ -74,6 +85,13 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
       row,
       branch: target.branch,
       branchCount: branchRows.length,
+      moveTargets: taskMoveTargets({
+        rows,
+        mounts: state.sessionProjectMounts[target.sessionId] ?? [],
+        projectName: (projectId) => selectProjectById(state, projectId)?.name ?? null,
+        branch: target.branch,
+      }),
+      isOnlyOnSession: branchRows.length === 0,
     };
   },
   actions: [
@@ -85,6 +103,28 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
       group: 'open',
       when: () => true,
       run: ({ facts, env }) => env.getState().openExternalTaskLens(facts.sessionId, facts.row),
+    },
+    {
+      id: 'task.moveTo',
+      slot: () => 'menu',
+      isUndoable: true,
+      label: 'Move to',
+      icon: ArrowRightLeft,
+      group: 'act',
+      when: ({ facts }) => moveChoicesOf({ facts }).length > 0,
+      choices: ({ facts }) =>
+        moveChoicesOf({ facts }).map(({ id, label, isCurrent }) => ({ id, label, isCurrent })),
+      run: async ({ facts, env, choice }) => {
+        const picked = moveChoicesOf({ facts }).find((candidate) => candidate.id === choice);
+        if (picked === undefined || picked.isCurrent) {
+          return;
+        }
+        await env.getState().moveSessionExternalTask({
+          sessionId: facts.sessionId,
+          task: facts.branch === null ? { ...facts.row, scope: 'session' } : facts.row,
+          to: picked.to,
+        });
+      },
     },
     {
       id: 'task.takeOff',
