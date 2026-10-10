@@ -13,6 +13,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -52,7 +53,7 @@ const retryOneStepSummary = (set: SetFn, get: GetFn) => {
           sessionDefaultProviderId: session.providerPreference.defaultProvider,
         }),
         connectedProviders: autoRoutableProviders({ providers: get().providers }),
-        enabledProviders: session.providerPreference.enabledProviders ?? null,
+        enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
         cooldowns: get().providerCooldowns,
         hidden: selectHiddenModels({ state: get() }),
         nowMs: Date.now(),

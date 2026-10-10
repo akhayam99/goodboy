@@ -13,6 +13,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 type Params = {
   readonly set: SetFn;
@@ -68,7 +69,7 @@ export const summarizeWorkflowAgentOutput = async ({
     return fallbackStepOutputSummary({ output });
   }
   const connectedProviders = autoRoutableProviders({ providers: get().providers });
-  const enabledProviders = session.providerPreference.enabledProviders ?? null;
+  const enabledProviders = liveEnabledProviders({ state: get(), sessionId }) ?? null;
   const resolved = resolveLimitedTaskModel({
     limitContext: autoLimitContext({ state: get() }),
     task: 'summarizer',

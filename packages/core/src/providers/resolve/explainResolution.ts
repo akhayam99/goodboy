@@ -42,6 +42,15 @@ const reasonOf = ({ skip, names }: SkipParams): string => {
   }
 };
 
+export const skippedPinNote = ({ resolution, names }: Params): string | null => {
+  const pinSkip = resolution.skipped.find((skip) => skip.source !== 'auto' && skip.model !== null);
+  if (pinSkip === undefined || pinSkip.model === null) {
+    return null;
+  }
+  const pinned = names.model({ provider: pinSkip.provider, model: pinSkip.model });
+  return `pinned ${pinned} skipped: ${reasonOf({ skip: pinSkip, names })}`;
+};
+
 export const explainResolution = ({ resolution, names }: Params): string | null => {
   const using = names.model({ provider: resolution.provider, model: resolution.model });
   const pinSkip = resolution.skipped.find((skip) => skip.source !== 'auto' && skip.model !== null);

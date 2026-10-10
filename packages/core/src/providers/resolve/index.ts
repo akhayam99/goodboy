@@ -1,4 +1,4 @@
-export { explainResolution, type ResolveNames } from './explainResolution';
+export { explainResolution, skippedPinNote, type ResolveNames } from './explainResolution';
 export { mergeLayers, type MergedLayers } from './layers';
 export { resolveSlot } from './resolveSlot';
 export type {

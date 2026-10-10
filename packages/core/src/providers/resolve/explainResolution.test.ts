@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderId } from '@goodboy/types';
-import { explainResolution, type ResolveNames } from './explainResolution';
+import { explainResolution, skippedPinNote, type ResolveNames } from './explainResolution';
 import type { Resolution } from './types';
 
 const LABELS: Partial<Record<ProviderId, string>> = {
@@ -100,6 +100,35 @@ describe('explainResolution', () => {
   it('is silent for a pin that runs', () => {
     expect(
       explainResolution({ names, resolution: { ...base, source: 'workspace', via: 'pin' } }),
+    ).toBeNull();
+  });
+});
+
+describe('skippedPinNote', () => {
+  it('names the pin that was passed over and why, in one clause', () => {
+    expect(
+      skippedPinNote({
+        names,
+        resolution: {
+          ...base,
+          skipped: [
+            { source: 'workspace', provider: 'anthropic', model: 'opus-5.5', reason: 'off' },
+          ],
+        },
+      }),
+    ).toBe('pinned Opus 5.5 skipped: Anthropic is Off');
+  });
+
+  it('is silent when only Auto passed a provider or nothing was skipped', () => {
+    expect(skippedPinNote({ names, resolution: base })).toBeNull();
+    expect(
+      skippedPinNote({
+        names,
+        resolution: {
+          ...base,
+          skipped: [{ source: 'auto', provider: 'anthropic', model: null, reason: 'at-limit' }],
+        },
+      }),
     ).toBeNull();
   });
 });

@@ -2,7 +2,7 @@ import type { AgentId, AuxTaskId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { discardHistoryCopy, prepareHistoryRewrite } from '../../../features/history/historyEngine';
 import { taskModelAgentSpawnConfig } from '../../../features/session/taskModelAgentSpawnConfig';
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { selectResolution } from '../models/selectResolution';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
 import { reportHistoryStop } from './reportHistoryStop';
@@ -26,19 +26,14 @@ type ConfigParams = {
   readonly sessionId: SessionId;
 };
 
-const rewriterConfig = ({ get, sessionId }: ConfigParams) => {
-  const state = get();
-  const session = sessionById(state.sessions, sessionId) ?? null;
-  const overrides =
-    session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
-  return taskModelAgentSpawnConfig({
-    task: REWRITER_TASK,
-    preferences: overrides?.taskModels,
-    workspaceDefaultProviderId: overrides?.defaultProviderId,
-    sessionDefaultProviderId: session?.providerPreference.defaultProvider ?? 'anthropic',
-    limitContext: autoLimitContext({ state }),
+const rewriterConfig = ({ get, sessionId }: ConfigParams) =>
+  taskModelAgentSpawnConfig({
+    resolution: selectResolution({
+      state: get(),
+      sessionId,
+      slot: { kind: 'task', id: REWRITER_TASK },
+    }),
   });
-};
 
 export type StartHistoryRewriterOutcome = ApplyHistoryRewriteOutcome | 'rewriting' | 'rewritten';
 

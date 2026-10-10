@@ -12,6 +12,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId): Promise<void> => {
@@ -54,7 +55,7 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
           sessionDefaultProviderId: session.providerPreference.defaultProvider,
         }),
         connectedProviders: autoRoutableProviders({ providers: state.providers }),
-        enabledProviders: session.providerPreference.enabledProviders ?? null,
+        enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
         cooldowns: state.providerCooldowns,
         hidden: selectHiddenModels({ state: get() }),
         nowMs: Date.now(),

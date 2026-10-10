@@ -19,6 +19,7 @@ import type {
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
 
@@ -81,7 +82,7 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
           DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
       }),
       connectedProviders,
-      enabledProviders: session?.providerPreference.enabledProviders ?? null,
+      enabledProviders: liveEnabledProviders({ state, sessionId }) ?? null,
       cooldowns: state.providerCooldowns,
       hidden: selectHiddenModels({ state }),
       nowMs: Date.now(),

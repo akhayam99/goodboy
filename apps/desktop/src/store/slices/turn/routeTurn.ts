@@ -13,6 +13,9 @@ import { encodeAuthRequiredMessage } from '../../../features/chat/turn';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { KIND_TO_ROLE, classifyAgent } from '../../../features/session/agent-kind';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
+import { liveSessionPreference } from '../models/liveSessionPreference';
+import { overrideOffNoticeMessage, type OverrideScope } from './overrideOffNoticeMessage';
+import { overrideScopeOf } from './overrideScopeOf';
 import { pickedTurnExecution } from './pickedTurnExecution';
 import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRoutingNoticeMessage';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -65,18 +68,24 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   const pickedOverride = turnOverride?.explicit === true ? turnOverride : undefined;
   const effectiveOverride =
     retryOverride ?? pickedOverride ?? nodeOverride ?? turnOverride ?? agentOverride;
+  const overrideScope: OverrideScope = overrideScopeOf({
+    effective: effectiveOverride,
+    node: nodeOverride,
+    agent: agentOverride,
+  });
 
   const connectedProviders = autoRoutableProviders({
     providers: get().providers,
     pinned: effectiveOverride?.providerId ?? null,
   });
 
+  const livePreference = liveSessionPreference({ state: get(), session });
   const routingPreference =
     (effectiveOverride === agentOverride && agentOverride !== undefined) ||
     (effectiveOverride === nodeOverride && nodeOverride !== undefined) ||
     retry != null
-      ? { ...session.providerPreference, allowTurnOverride: true }
-      : session.providerPreference;
+      ? { ...livePreference, allowTurnOverride: true }
+      : livePreference;
 
   const routingDecision = await resolveProviderForTurn({
     sessionPreference: routingPreference,
@@ -97,6 +106,18 @@ export const routeTurn = async ({ get, ctx }: Params) => {
       at: now(),
     });
     return turnDone({ result: { blockedOverBudget: true } });
+  }
+
+  if (routingDecision.reason === 'override-off') {
+    get().appendTurnEvent(activeAgentId, sessionId, {
+      kind: 'error',
+      runId: crypto.randomUUID() as ProviderRunId,
+      message: overrideOffNoticeMessage({
+        provider: routingDecision.selectedProvider,
+        scope: overrideScope,
+      }),
+      at: now(),
+    });
   }
 
   const movedForBudget = budgetRoutingReason({ reason: routingDecision.reason });

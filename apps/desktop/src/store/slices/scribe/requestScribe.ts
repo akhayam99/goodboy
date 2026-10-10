@@ -1,7 +1,7 @@
 import type { AgentId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { taskModelAgentSpawnConfig } from '../../../features/session/taskModelAgentSpawnConfig';
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { selectResolution } from '../models/selectResolution';
 import { selectMountById } from '../project-mounts/selectors';
 import { scribeKeyOf } from './scribeKeyOf';
 import { scribeKickoff } from './scribeKickoff';
@@ -60,14 +60,12 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
     }
     const session = sessionById(state.sessions, sessionId) ?? null;
     const project = selectProjectById(state, mount.projectId);
-    const overrides =
-      session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
     const resolved = taskModelAgentSpawnConfig({
-      task: 'pr_draft',
-      preferences: overrides?.taskModels,
-      workspaceDefaultProviderId: overrides?.defaultProviderId,
-      sessionDefaultProviderId: session?.providerPreference.defaultProvider ?? 'anthropic',
-      limitContext: autoLimitContext({ state }),
+      resolution: selectResolution({
+        state,
+        sessionId,
+        slot: { kind: 'task', id: 'pr_draft' },
+      }),
     });
     const config =
       routing !== undefined && routing.provider !== ''

@@ -28,6 +28,7 @@ import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { scheduleIdle } from './turnHelpers';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import type { GetFn, SetFn } from './types';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 type LearningEntry = Readonly<{
   role: AgentRole;
@@ -98,7 +99,7 @@ const runLearnings = async ({ set, get, sessionId, agentId, entries }: RunParams
       sessionDefaultProviderId: session.providerPreference.defaultProvider,
     }),
     connectedProviders: autoRoutableProviders({ providers: get().providers }),
-    enabledProviders: session.providerPreference.enabledProviders ?? null,
+    enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
     cooldowns: get().providerCooldowns,
     hidden: selectHiddenModels({ state: get() }),
     nowMs: Date.now(),

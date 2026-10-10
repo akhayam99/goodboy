@@ -30,7 +30,12 @@ type Store = {
   readonly sessionProjectMounts: Record<string, ReadonlyArray<never>>;
   readonly sessionActiveProject: Record<string, string>;
   readonly sessionWorktrees: Record<string, ReadonlyArray<string>>;
-  readonly sessions: ReadonlyArray<{ id: SessionId; workspaceId: string }>;
+  readonly sessions: ReadonlyArray<{
+    id: SessionId;
+    workspaceId: string;
+    providerPreference: { defaultProvider: string; allowTurnOverride: boolean };
+  }>;
+  readonly providers: ReadonlyArray<{ readonly id: string; readonly connection: 'connected' }>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   readonly workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: 'repo' }>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
@@ -79,7 +84,17 @@ const h = vi.hoisted(() => ({
     sessionProjectMounts: {},
     sessionActiveProject: {},
     sessionWorktrees: { 'session-2': ['/repo/.goodboy/worktrees/card-config'] },
-    sessions: [{ id: 'session-2' as SessionId, workspaceId: 'workspace-1' }],
+    sessions: [
+      {
+        id: 'session-2' as SessionId,
+        workspaceId: 'workspace-1',
+        providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
+      },
+    ],
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ],
     sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
     workspaceOverrides: {},

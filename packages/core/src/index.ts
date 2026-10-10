@@ -393,6 +393,7 @@ export {
   type AutoStep,
 } from './providers/autoRouting/resolveAuto';
 export {
+  enabledProvidersOf,
   firstOnProvider,
   providerCandidates,
   providerStanding,
@@ -815,6 +816,7 @@ export {
 } from './artifacts';
 export {
   explainResolution,
+  skippedPinNote,
   mergeLayers,
   resolveSlot,
   type LayerName,

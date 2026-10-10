@@ -94,6 +94,7 @@ import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskMod
 import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -422,7 +423,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     return;
   }
   const connectedProviders = autoRoutableProviders({ providers: get().providers });
-  const enabledProviders = session.providerPreference.enabledProviders ?? null;
+  const enabledProviders = liveEnabledProviders({ state: get(), sessionId }) ?? null;
   const taskModel =
     entry.taskModelOverride ??
     routeTaskModel({

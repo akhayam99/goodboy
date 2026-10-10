@@ -87,6 +87,24 @@ type PolicyParams = {
 export const firstOnProvider = ({ policy }: PolicyParams): ProviderId | null =>
   policy?.find((entry) => entry.state === 'on')?.id ?? null;
 
+type EnabledParams = {
+  readonly policy: ProviderPolicy | null | undefined;
+  readonly fallbackDefault: ProviderId;
+};
+
+export const enabledProvidersOf = ({
+  policy,
+  fallbackDefault,
+}: EnabledParams): ReadonlyArray<ProviderId> | undefined => {
+  if (policy == null) {
+    return undefined;
+  }
+  const first = firstOnProvider({ policy }) ?? fallbackDefault;
+  return Array.from(
+    new Set([first, ...policy.filter((entry) => entry.state !== 'off').map((entry) => entry.id)]),
+  );
+};
+
 const legacyCandidates = (context: ProviderCandidatesContext): ReadonlyArray<ProviderId> => {
   const order = context.fallbackOrder ?? ALL_PROVIDERS;
   const unique = [...new Set([context.defaultProvider, ...order])];
