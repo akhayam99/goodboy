@@ -57,4 +57,30 @@ describe('autoLimitContext', () => {
       'anthropic',
     );
   });
+
+  it('leaves a provider out of automatic routing while its breaker is open', () => {
+    const withBreaker = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'cursor', connection: 'connected', isBreakerOpen: true },
+    ] as unknown as ReadonlyArray<ProviderDisplayInfo>;
+    expect(
+      autoLimitContext({
+        state: { providers: withBreaker, providerLimits: { anthropic: CLAUDE_OUT } },
+        nowMs: NOW_MS,
+      })?.connected,
+    ).toEqual(['anthropic']);
+  });
+
+  it('keeps counting a cannot check provider that has a last good state as connected', () => {
+    const quiet = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'cursor', connection: 'connected', standing: 'cannot_check' },
+    ] as unknown as ReadonlyArray<ProviderDisplayInfo>;
+    expect(
+      autoLimitContext({
+        state: { providers: quiet, providerLimits: { anthropic: CLAUDE_OUT } },
+        nowMs: NOW_MS,
+      })?.connected,
+    ).toEqual(['anthropic', 'cursor']);
+  });
 });

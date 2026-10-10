@@ -215,6 +215,7 @@ export type {
   ModelPrice,
   ModelTier,
   ProviderConnectionState,
+  ProviderHealthStanding,
   ProviderInfo,
   ProviderId,
   ProviderRegistryCapabilities,

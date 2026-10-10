@@ -11,6 +11,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type Params = {
@@ -66,9 +67,7 @@ export const summarizeWorkflowAgentOutput = async ({
   if (session == null) {
     return fallbackStepOutputSummary({ output });
   }
-  const connectedProviders = get()
-    .providers.filter((provider) => provider.connection === 'connected')
-    .map((provider) => provider.id);
+  const connectedProviders = autoRoutableProviders({ providers: get().providers });
   const enabledProviders = session.providerPreference.enabledProviders ?? null;
   const resolved = resolveLimitedTaskModel({
     limitContext: autoLimitContext({ state: get() }),

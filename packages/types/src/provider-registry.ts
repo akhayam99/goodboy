@@ -19,7 +19,10 @@ type ProviderIdsAreTotal =
 type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
 
 export type ProviderConnectionState =
-  'connected' | 'installed_disconnected' | 'missing' | 'error' | 'unknown';
+  'connected' | 'installed_disconnected' | 'missing' | 'error' | 'unknown' | 'cannot_check';
+
+export type ProviderHealthStanding =
+  'connected' | 'signed_out' | 'cannot_check' | 'missing' | 'unknown';
 
 export type ModelFamily =
   'claude' | 'gpt' | 'codex' | 'gemini' | 'composer' | 'cursor-auto' | 'other';

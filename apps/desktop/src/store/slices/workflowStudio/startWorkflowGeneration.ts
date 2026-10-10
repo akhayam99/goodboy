@@ -19,6 +19,7 @@ import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAv
 import { formatError } from '@goodboy/ui';
 import type { ProviderId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import type { GetFn, SetFn, StartWorkflowGenerationParams } from './types';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type GenerationModelParams = {
@@ -31,9 +32,7 @@ const generationTaskModel = ({
   workspaceId,
 }: GenerationModelParams): TaskModelPreference => {
   const overrides = state.workspaceOverrides?.[workspaceId] ?? null;
-  const connected = state.providers
-    .filter((provider) => provider.connection === 'connected')
-    .map((provider) => provider.id);
+  const connected = autoRoutableProviders({ providers: state.providers });
   return resolveLimitedTaskModel({
     limitContext: autoLimitContext({ state }),
     task: 'plan_generation',

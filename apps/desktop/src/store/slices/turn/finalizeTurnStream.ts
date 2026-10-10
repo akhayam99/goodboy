@@ -10,6 +10,7 @@ import type { TurnState } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
+import { recordProviderRun } from '../providers/recordProviderRun';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
 import { captureMaterializeRequestsFromTurn } from './turnHelpers';
@@ -81,6 +82,9 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
       touchedMountIds: await touchedMountsForTurn(),
     },
   });
+  if (receivedProviderError === false && wasCancelled === false && assistantText.length > 0) {
+    recordProviderRun({ set, get, providerId: provider, runId, outcome: 'accepted' });
+  }
   if (
     provider === 'cursor' &&
     receivedProviderError === false &&

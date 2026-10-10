@@ -19,6 +19,7 @@ import { openUrl } from '../../../shared/lib/editor';
 import { clearStallTimer, disposeConnectRun, getConnectRun, openConnectRun } from './connectRuns';
 import type { ConnectRun } from './connectRuns';
 import { detectAuthUrl } from './detectAuthUrl';
+import { recordProviderSignedIn } from './recordProviderSignedIn';
 import { stripAnsi } from './stripAnsi';
 import {
   ACTIVE_CONNECT_PHASES,
@@ -156,7 +157,7 @@ const failRun = ({ set, get, providerId, run }: StepParams): void => {
   const errorTail = lastMeaningfulLine({ tail: run.outputTail });
   disposeConnectRun({ providerId });
   patchConnect({ set, providerId, patch: { phase: 'failed', errorTail } });
-  void get().refreshProviders();
+  void get().refreshProviders({ isFresh: true });
 };
 
 const runInstall = async ({ set, get, providerId, run }: StepParams): Promise<boolean> => {
@@ -213,6 +214,7 @@ const finishSuccess = ({ set, get, providerId, run, identity }: FinishSuccessPar
   const { runId } = run;
   disposeConnectRun({ providerId });
   patchConnect({ set, providerId, patch: { phase: 'success', identity, errorTail: null } });
+  recordProviderSignedIn({ set, get, providerId });
   if (runId !== null) {
     void invokeProviderLifecycleCancel(runId);
   }
@@ -222,7 +224,7 @@ const finishSuccess = ({ set, get, providerId, run, identity }: FinishSuccessPar
     title: `${PROVIDER_LABEL[providerId]} is connected`,
     body: identity ?? undefined,
   });
-  void get().refreshProviders();
+  void get().refreshProviders({ isFresh: true });
 };
 
 type ProbeParams = StepParams & {
@@ -404,7 +406,7 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
         disposeConnectRun({ providerId });
       }, POST_EXIT_PROBE_MS),
     );
-    void get().refreshProviders();
+    void get().refreshProviders({ isFresh: true });
   };
 
   try {
