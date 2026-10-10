@@ -308,8 +308,8 @@ anywhere; a debug build also prints to stdout.
   inside `file` covers paper). Every file on disk also carries its own
   `Content-Security-Policy` meta tag (`default-src 'none'; …`), so opening it
   in a browser makes no network call.
-- **The artifacts folder is one command away.** The lens's `More` menu opens
-  `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
+- **The artifacts folder is one command away.** The lens header's `Show in
+Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
   (`artifact_mirror_open_root`), since `~/.goodboy` itself is hidden.
 
 ### Frames

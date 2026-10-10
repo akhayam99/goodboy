@@ -191,7 +191,8 @@ about its effect is a worse defect than one that reads badly.
   stops where it was. Unknown shows a dash or nothing, never a guess.
 - **Reversible acts immediately, definitive asks first.** Archiving and
   similar actions happen at once, with an undo. Anything that destroys data for
-  good, or that acts on a remote provider, asks for confirmation inline. It
+  good, or that acts on a remote provider, asks for confirmation in a popover
+  anchored to its trigger. It
   states exactly what is lost or sent, including what stays on disk. The same
   action behaves the same way from every entry point.
 - **Durable changes land in the timeline.** A change of destination, an archive
@@ -249,7 +250,7 @@ about its effect is a worse defect than one that reads badly.
 - **One filled primary per surface.** A page header, a drawer, a card and a
   confirm each hold at most one filled button. While a header's own confirm is
   open, the header primary steps down to secondary and the confirm holds the
-  filled button. A confirm is a neutral card with a tone line, never a tinted
+  filled button. A confirm is neutral with a tone line, never a tinted
   box ([packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md) → Action
   zones).
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
@@ -321,7 +322,7 @@ Actions sit with the object they affect. The slots that carry each zone are in
   object-title row holds generic object actions (open folder, archive,
   restore, delete) at its far end. Lifecycle actions (close, reopen) sit
   there too, because they change the object, not the current section. A
-  destructive action confirms inline, next to its trigger.
+  destructive action confirms in a popover anchored to its trigger.
 - **The focused object's primary action sits in the fixed header.** It is the
   action that moves the object forward.
 - **A creation or edit flow commits in the flow.** Its one action row follows

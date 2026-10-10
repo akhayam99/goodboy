@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Copy, Save, Trash2 } from 'lucide-react';
-import { AnchoredPopover, IconButton, MenuItems, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, MenuItems, MenuTriggerButton, useDropdown } from '@goodboy/ui';
 import type { OverflowMenuItem } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -103,17 +103,16 @@ export const StepEditorMenu = ({
       anchorClassName="shrink-0"
       className="py-1"
       trigger={
-        <IconButton
-          variant="ghost"
-          icon={CONCEPT_ICONS.more}
-          iconSize={ICON_SIZE.control}
+        <MenuTriggerButton
           label={LABEL}
-          aria-haspopup="menu"
-          aria-expanded={dropdown.open}
+          tooltip={LABEL}
+          isOpen={dropdown.open}
+          size="control"
           disabled={disabled}
           onClick={dropdown.toggle}
-          className={cn(dropdown.open && 'bg-muted')}
-        />
+        >
+          <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
+        </MenuTriggerButton>
       }
     >
       <MenuItems items={items} onClose={dropdown.close} />

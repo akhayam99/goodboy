@@ -402,20 +402,24 @@ pub(crate) mod unix {
         group: u32,
         members: &[Selected],
         sig: libc::c_int,
-    ) -> bool {
+    ) -> Vec<u32> {
         if group <= 1 || group == me.pgid {
-            return false;
+            return Vec::new();
         }
-        let is_ours = members.iter().any(|selected| {
-            selected.row.pgid == group
-                && live_identity_if_same(probe, me, selected)
+        let proven: Vec<u32> = members
+            .iter()
+            .filter(|selected| selected.row.pgid == group)
+            .filter(|selected| {
+                live_identity_if_same(probe, me, selected)
                     .is_some_and(|identity| identity.pgid == group)
-        });
-        if !is_ours {
-            return false;
+            })
+            .map(|selected| selected.row.pid)
+            .collect();
+        if proven.is_empty() {
+            return Vec::new();
         }
         signal_group(group, sig);
-        true
+        proven
     }
 
     fn is_present(probe: &Probe, selected: &Selected, is_child: bool) -> bool {
@@ -460,19 +464,33 @@ pub(crate) mod unix {
         if targets.is_empty() {
             return Vec::new();
         }
+        let mut signalled: Vec<u32> = Vec::new();
         if let Some(group) = group {
-            signal_group_if_ours(probe, me, group, targets, libc::SIGTERM);
+            signalled.extend(signal_group_if_ours(
+                probe,
+                me,
+                group,
+                targets,
+                libc::SIGTERM,
+            ));
         }
-        let signalled = signal_selected(probe, me, targets, libc::SIGTERM);
+        signalled.extend(signal_selected(probe, me, targets, libc::SIGTERM));
         let survivors = wait_until_gone(probe, targets, children, TERM_GRACE);
-        if survivors.is_empty() {
-            return signalled;
+        if !survivors.is_empty() {
+            if let Some(group) = group {
+                signalled.extend(signal_group_if_ours(
+                    probe,
+                    me,
+                    group,
+                    &survivors,
+                    libc::SIGKILL,
+                ));
+            }
+            signalled.extend(signal_selected(probe, me, &survivors, libc::SIGKILL));
+            wait_until_gone(probe, &survivors, children, KILL_GRACE);
         }
-        if let Some(group) = group {
-            signal_group_if_ours(probe, me, group, &survivors, libc::SIGKILL);
-        }
-        signal_selected(probe, me, &survivors, libc::SIGKILL);
-        wait_until_gone(probe, &survivors, children, KILL_GRACE);
+        signalled.sort_unstable();
+        signalled.dedup();
         signalled
     }
 
@@ -1351,9 +1369,8 @@ mod tests {
         let _lock = orphan_lock();
         let id = unique_id("orphan-recycled");
         let bystander = helper_command().spawn().expect("spawn the new pid owner");
-        let before_this_pid_started =
-            kernel::identity(bystander.id()).expect("identity").start - 5_000_000;
-        let pid = orphan_with_own_group(&id, bystander.id(), before_this_pid_started);
+        let another_start = kernel::identity(bystander.id()).expect("identity").start + 1;
+        let pid = orphan_with_own_group(&id, bystander.id(), another_start);
         assert!(is_running(pid));
 
         sweep_with(&LIVE);
@@ -1457,6 +1474,56 @@ mod tests {
             &[live_selected(pid, None)],
             libc::SIGKILL,
         );
+        assert!(is_gone(pid));
+    }
+
+    static DYING: Mutex<Vec<(u32, usize)>> = Mutex::new(Vec::new());
+
+    fn dying_identity(pid: u32) -> Option<Identity> {
+        let calls = {
+            let mut watched = DYING.lock().expect("dying");
+            let Some(entry) = watched.iter_mut().find(|(watched, _)| *watched == pid) else {
+                return kernel::identity(pid);
+            };
+            entry.1 += 1;
+            entry.1
+        };
+        if calls < 2 {
+            return kernel::identity(pid);
+        }
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while kernel::identity(pid).is_some_and(|identity| !identity.is_zombie) {
+            assert!(
+                Instant::now() < deadline,
+                "the group signal never reached the member"
+            );
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        kernel::identity(pid)
+    }
+
+    #[test]
+    fn a_group_member_that_dies_of_the_group_signal_is_still_reported() {
+        use std::os::unix::process::CommandExt;
+        let mut leader_command = helper_command();
+        leader_command.process_group(0);
+        let mut leader = leader_command.spawn().expect("spawn the leader");
+        let group = leader.id();
+        let mut member_command = helper_command();
+        member_command.process_group(group as libc::pid_t);
+        let mut member = member_command.spawn().expect("spawn the member");
+        let pid = member.id();
+        DYING.lock().expect("dying").push((pid, 0));
+        let probe = Probe {
+            identity: dying_identity,
+            ..LIVE
+        };
+
+        let report = reap_with(&probe, params(Some(group), None));
+
+        let _ = leader.wait();
+        let _ = member.wait();
+        assert!(report.stopped.iter().any(|process| process.pid == pid));
         assert!(is_gone(pid));
     }
 

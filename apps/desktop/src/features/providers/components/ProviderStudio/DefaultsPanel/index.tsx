@@ -116,26 +116,24 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
       title={NAMES.models}
       meta={scopeLabel ?? undefined}
       actions={
-        <ConfirmPopover
-          role="danger"
-          icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
-          title={`Reset ${pinnedCount} pinned ${pinnedCount === 1 ? 'model' : 'models'} to Auto?`}
-          description="New chats, every agent role and background task go back to Auto."
-          confirmLabel="Reset all"
-          isBusy={busy}
-          align="end"
-          onConfirm={onResetAll}
-          trigger={({ arm }) => (
-            <Button
-              variant="ghost-danger"
-              size="sm"
-              disabled={busy || pinnedCount === 0}
-              onClick={arm}
-            >
-              Reset all to Auto
-            </Button>
-          )}
-        />
+        pinnedCount === 0 ? undefined : (
+          <ConfirmPopover
+            role="danger"
+            icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
+            title={`Reset ${pinnedCount} pinned ${pinnedCount === 1 ? 'model' : 'models'} to Auto?`}
+            description="New chats, every agent role and background task go back to Auto."
+            confirmLabel="Reset all"
+            isBusy={busy}
+            align="end"
+            onConfirm={onResetAll}
+            trigger={({ arm }) => (
+              <Button size="sm" variant="ghost" disabled={busy} onClick={arm}>
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
+                Reset all to Auto
+              </Button>
+            )}
+          />
+        )
       }
     >
       <ProjectOverridesNotice workspaceId={workspaceId} />

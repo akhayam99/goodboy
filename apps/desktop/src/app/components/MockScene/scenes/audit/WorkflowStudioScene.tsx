@@ -125,9 +125,7 @@ export const WorkflowStudioScene = () => {
 
   useSceneClicks({
     isReady,
-    labels: IS_CONFIRM_ERROR
-      ? ['Workflow actions', 'Restore built-in workflows', 'Restore 1']
-      : OPEN_LABELS,
+    labels: IS_CONFIRM_ERROR ? ['Restore built-in workflows', 'Restore 1'] : OPEN_LABELS,
     selector: '[data-studio-overlay] button',
     match: 'contains',
     intervalMs: 200,

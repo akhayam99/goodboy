@@ -55,7 +55,7 @@ const CLICKS: Readonly<Record<Variant, Match | null>> = {
   error: startsWithLabel({ prefix: 'Reopen for' }),
   mismatch: null,
   loading: null,
-  'add-project-empty': startsWithLabel({ prefix: 'Project actions' }),
+  'add-project-empty': startsWithLabel({ prefix: 'Add project' }),
   'long-branches': null,
   provenance: (button) => /^\+\d+ more$/.test(button.textContent ?? ''),
 };

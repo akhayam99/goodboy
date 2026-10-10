@@ -164,11 +164,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/__tests__/regressions/inline-confirm-placement.test.ts": {
-    "regexp/no-super-linear-backtracking": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/__tests__/regressions/lazy-boundaries.test.ts": {
     "regexp/no-super-linear-backtracking": {
       "count": 1
@@ -1863,11 +1858,6 @@
     }
   },
   "apps/desktop/src/features/artifacts/components/ArtifactDocumentDrawer/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
-  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListOverflowMenu.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
     }
@@ -7953,12 +7943,12 @@
   },
   "apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowList/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
+      "count": 7
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowsPanel/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 28
+      "count": 27
     }
   },
   "apps/desktop/src/features/workflows/components/WorkflowsPanel/index.tsx": {
