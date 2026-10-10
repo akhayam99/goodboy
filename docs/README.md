@@ -113,6 +113,8 @@ Below is the full index. Other docs and agents use it to find their way.
   variable or callback, or feel like adding a code comment.
 - [testing.md](testing.md): when you write or review tests, and how to
   write their checks.
+- [ratchets.md](ratchets.md): when a ratchet or `check:baselines` fails, or
+  you add a rule that counts something.
 - [dependencies.md](dependencies.md): when you add a new package, or check
   whether one is worth it.
 - [traps.md](traps.md): when something in the code or the tools looks like
