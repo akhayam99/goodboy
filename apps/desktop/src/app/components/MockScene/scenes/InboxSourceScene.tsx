@@ -228,8 +228,6 @@ type Variant = {
   readonly isLaunching: boolean;
 };
 
-const SOURCE_TITLE = { sentry: 'Sentry', linear: 'Linear' } as const;
-
 const readSource = ({ value }: { readonly value: string | null }): Variant['source'] => {
   if (value === 'linear' || value === 'sentry') {
     return value;
@@ -302,6 +300,32 @@ export const InboxSourceScene = () => {
   const visible = filterInboxRecords({ records, query: '', filters });
   const selected = visible[0] ?? null;
 
+  const facets = (
+    <InboxFacetRail
+      filters={filters}
+      counts={inboxFacetCounts({ records, query: '', filters })}
+      connected={variant.connected}
+      loading={NOT_LOADING}
+      errors={NO_ERRORS}
+      projects={projects}
+      canReply={recordCanReply({ record: selected })}
+      onFiltersChange={setFilters}
+      onClearFilters={() => setFilters(NO_INBOX_FILTERS)}
+    />
+  );
+
+  const header = {
+    query: '',
+    onQueryChange: noop,
+    searchRef,
+    sessionLabel: null,
+    onClearSession: noop,
+    isRefreshing: false,
+    onRefresh: noop,
+    activeFilterCount: activeFilterCount({ filters }),
+    facets,
+  };
+
   return (
     <StudioFrame
       target={{ place: 'inbox', tool: filters.source }}
@@ -315,38 +339,18 @@ export const InboxSourceScene = () => {
         >
           {() => (
             <InboxStudioLayout
-              list={
+              rail={facets}
+              railHeader={<InboxListHeader {...header} isRailCollapsed={false} isSearchOnly />}
+              list={({ isRailCollapsed, onDock }) => (
                 <PaneShell
                   scroll="body"
-                  title={
-                    filters.source === 'sentry' || filters.source === 'linear'
-                      ? SOURCE_TITLE[filters.source]
-                      : 'Tasks'
-                  }
+                  title="Tasks"
                   meta={`${visible.length} items`}
                   actions={
                     <InboxListHeader
-                      query=""
-                      onQueryChange={noop}
-                      searchRef={searchRef}
-                      sessionLabel={null}
-                      onClearSession={noop}
-                      isRefreshing={false}
-                      onRefresh={noop}
-                      activeFilterCount={activeFilterCount({ filters })}
-                      facets={
-                        <InboxFacetRail
-                          filters={filters}
-                          counts={inboxFacetCounts({ records, query: '', filters })}
-                          connected={variant.connected}
-                          loading={NOT_LOADING}
-                          errors={NO_ERRORS}
-                          projects={projects}
-                          canReply={recordCanReply({ record: selected })}
-                          onFiltersChange={setFilters}
-                          onClearFilters={() => setFilters(NO_INBOX_FILTERS)}
-                        />
-                      }
+                      {...header}
+                      isRailCollapsed={isRailCollapsed}
+                      onDock={onDock}
                     />
                   }
                 >
@@ -368,7 +372,7 @@ export const InboxSourceScene = () => {
                     onClearFilters={noop}
                   />
                 </PaneShell>
-              }
+              )}
               drawer={
                 selected === null ? null : (
                   <InboxDetail

@@ -1,16 +1,9 @@
 import { ISSUE_SEARCH_PLACEHOLDER } from '../../../integrations/issueCode/lookupCopy';
 import type { ReactNode, RefObject } from 'react';
-import { ListFilter, RefreshCw, X } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Chip,
-  IconButton,
-  KbdPill,
-  SearchField,
-  cn,
-  useDropdown,
-} from '@goodboy/ui';
+import { RefreshCw, X } from 'lucide-react';
+import { Chip, IconButton, KbdPill, SearchField } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { FilterButton } from '../../../../shared/components/FilterButton';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 type Props = {
@@ -23,6 +16,9 @@ type Props = {
   readonly onRefresh: () => void;
   readonly activeFilterCount: number;
   readonly facets: ReactNode;
+  readonly isRailCollapsed: boolean;
+  readonly onDock?: (() => void) | undefined;
+  readonly isSearchOnly?: boolean;
 };
 
 export const InboxListHeader = ({
@@ -35,8 +31,37 @@ export const InboxListHeader = ({
   onRefresh,
   activeFilterCount,
   facets,
+  isRailCollapsed,
+  onDock,
+  isSearchOnly = false,
 }: Props) => {
-  const filters = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 420 });
+  const search = (
+    <SearchField
+      inputRef={searchRef}
+      value={query}
+      onChange={onQueryChange}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape') {
+          return;
+        }
+        event.preventDefault();
+        if (query === '') {
+          event.currentTarget.blur();
+          return;
+        }
+        onQueryChange('');
+      }}
+      placeholder={ISSUE_SEARCH_PLACEHOLDER}
+      ariaLabel="Search tasks"
+      autoComplete="off"
+      hint={<KbdPill>{shortcutGlyphs('list.search')}</KbdPill>}
+      className="min-w-0 flex-1"
+    />
+  );
+
+  if (isSearchOnly) {
+    return search;
+  }
 
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -53,50 +78,15 @@ export const InboxListHeader = ({
           onClick={onClearSession}
         />
       ) : null}
-      <SearchField
-        inputRef={searchRef}
-        value={query}
-        onChange={onQueryChange}
-        onKeyDown={(event) => {
-          if (event.key !== 'Escape') {
-            return;
-          }
-          event.preventDefault();
-          if (query === '') {
-            event.currentTarget.blur();
-            return;
-          }
-          onQueryChange('');
-        }}
-        placeholder={ISSUE_SEARCH_PLACEHOLDER}
-        ariaLabel="Search tasks"
-        autoComplete="off"
-        hint={<KbdPill>{shortcutGlyphs('list.search')}</KbdPill>}
-        className="w-[200px] min-w-0"
-      />
-      <AnchoredPopover
-        dropdown={filters}
-        role="dialog"
-        ariaLabel="Task filters"
-        className="max-h-[70vh] py-1"
-        trigger={
-          <button
-            type="button"
-            onClick={filters.toggle}
-            aria-expanded={filters.open}
-            className={cn(
-              'flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
-              filters.open && 'bg-selected text-foreground',
-            )}
-          >
-            <ListFilter size={ICON_SIZE.row} aria-hidden />
-            Filters
-            {activeFilterCount > 0 ? <KbdPill>{activeFilterCount}</KbdPill> : null}
-          </button>
-        }
-      >
-        {facets}
-      </AnchoredPopover>
+      {isRailCollapsed ? <div className="flex w-[200px] min-w-0">{search}</div> : null}
+      {isRailCollapsed ? (
+        <FilterButton
+          popoverLabel="Task filters"
+          activeCount={activeFilterCount}
+          facets={facets}
+          onDock={onDock}
+        />
+      ) : null}
       <IconButton
         icon={RefreshCw}
         label="Refresh inbox"

@@ -1415,10 +1415,17 @@ in a flat one (the rest of the flat list then reads Other sessions, so the
 boundary is named, with no divider). A pinned row is the same row as any other,
 with no glyph at rest.
 
-A list that belongs to a studio's page (Chat's chats, Changelog's releases)
-uses `StudioRailLayout` with `placement="page"`: the list sits on the page
-background and the resize handle draws the only line between it and the
-detail.
+A list that belongs to a studio's page (Chat's chats, Changelog's releases) or
+its filters (Tasks, Notifications) uses `StudioRailLayout` with
+`placement="page"`: the rail sits on the page background and the resize handle
+draws the only line between it and the detail. Every page rail is 288 wide
+(`standard`), resizes between 220 and 420 unless the page passes `min` and
+`max`, and can take `railHeader` (Tasks' search) plus `onCollapsedChange`, which
+adds the fold control to the first row; `isCollapsed` hides the rail. The page
+owns the folded state through `useStudioRailFold` (remembered per surface, and
+forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
+title row: a 28px secondary button with the funnel and the count of active
+filters, opening the same facets in a popover.
 
 ## Pane anatomy
 

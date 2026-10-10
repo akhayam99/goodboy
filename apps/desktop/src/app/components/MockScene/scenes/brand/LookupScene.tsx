@@ -430,6 +430,18 @@ export const BrandLookupScene = () => {
     />
   );
 
+  const header = {
+    query: QUERY,
+    onQueryChange: noop,
+    searchRef,
+    sessionLabel: null,
+    onClearSession: noop,
+    isRefreshing: false,
+    onRefresh: noop,
+    activeFilterCount: 0,
+    facets,
+  };
+
   return (
     <StudioFrame
       target={{ place: 'inbox', tool: null }}
@@ -443,22 +455,18 @@ export const BrandLookupScene = () => {
         >
           {() => (
             <InboxStudioLayout
-              list={
+              rail={facets}
+              railHeader={<InboxListHeader {...header} isRailCollapsed={false} isSearchOnly />}
+              list={({ isRailCollapsed, onDock }) => (
                 <PaneShell
                   scroll="body"
-                  title="All items"
+                  title="Tasks"
                   meta={`${VISIBLE.length + STARRED.length} of ${COUNTED.length}`}
                   actions={
                     <InboxListHeader
-                      query={QUERY}
-                      onQueryChange={noop}
-                      searchRef={searchRef}
-                      sessionLabel={null}
-                      onClearSession={noop}
-                      isRefreshing={false}
-                      onRefresh={noop}
-                      activeFilterCount={0}
-                      facets={facets}
+                      {...header}
+                      isRailCollapsed={isRailCollapsed}
+                      onDock={onDock}
                     />
                   }
                 >
@@ -495,7 +503,7 @@ export const BrandLookupScene = () => {
                     onClearFilters={noop}
                   />
                 </PaneShell>
-              }
+              )}
               drawer={
                 <InboxDetail
                   record={LOOKUP_RECORD}
