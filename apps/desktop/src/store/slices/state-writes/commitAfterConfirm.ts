@@ -8,7 +8,8 @@ export type CommitTarget = {
 };
 
 export type CommitResult<Value> =
-  { readonly ok: true; readonly value: Value } | { readonly ok: false; readonly error: unknown };
+  | { readonly isOk: true; readonly value: Value }
+  | { readonly isOk: false; readonly error: unknown };
 
 type Params<Value> = {
   readonly get: GetFn;
@@ -32,8 +33,8 @@ export const commitAfterConfirm = async <Value>({
     if (!isReportedError(error)) {
       await get().reportError({ title: failureTitle, error, ...target });
     }
-    return { ok: false, error };
+    return { isOk: false, error };
   }
   commit(value);
-  return { ok: true, value };
+  return { isOk: true, value };
 };

@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertWorkspace } from '@goodboy/db';
-import type { WorkspaceId } from '@goodboy/types';
+import { nextWorkspaceId } from '@goodboy/types/testing';
 import {
   buildStoryWorkspace,
   importStore,
@@ -23,7 +23,7 @@ vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).sqliteDbLibModuleMock(),
 );
 
-const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
+const WORKSPACE_ID = nextWorkspaceId();
 
 let useAppStore: StoryStore;
 
@@ -67,7 +67,7 @@ describe('commitAfterConfirm applies state only after the step succeeded', () =>
 
     const result = await run({ step: async () => 'pinned', commit: (v) => committed.push(v) });
 
-    expect(result).toEqual({ ok: true, value: 'pinned' });
+    expect(result).toEqual({ isOk: true, value: 'pinned' });
     expect(committed).toEqual(['pinned']);
     expect(await storedErrors()).toEqual([]);
   });
@@ -100,7 +100,7 @@ describe('commitAfterConfirm applies state only after the step succeeded', () =>
       commit: (v: string) => committed.push(v),
     });
 
-    expect(result.ok).toBe(false);
+    expect(result.isOk).toBe(false);
     expect(committed).toEqual([]);
     const errors = await storedErrors();
     expect(errors).toHaveLength(1);
@@ -124,7 +124,7 @@ describe('commitAfterConfirm applies state only after the step succeeded', () =>
       commit: () => undefined,
     });
 
-    expect(result).toEqual({ ok: false, error: failure });
+    expect(result).toEqual({ isOk: false, error: failure });
   });
 
   it('does not report an error that was already shown', async () => {
@@ -135,7 +135,7 @@ describe('commitAfterConfirm applies state only after the step succeeded', () =>
       commit: () => undefined,
     });
 
-    expect(result.ok).toBe(false);
+    expect(result.isOk).toBe(false);
     expect(await storedErrors()).toEqual([]);
   });
 });

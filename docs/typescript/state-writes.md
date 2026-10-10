@@ -39,7 +39,7 @@ state and shows the error.
   `store/slices/state-writes/commitAfterConfirm.ts`. It runs `step`, calls
   `commit` with the result only on success, reports a failure through
   `reportError` (on the `target` session or workspace) and returns
-  `{ ok: true, value }` or `{ ok: false, error }`. An error that was already
+  `{ isOk: true, value }` or `{ isOk: false, error }`. An error that was already
   shown (`ReportedError`) is not reported twice.
 - `usePendingAction` is the UI half: it tracks the pending keys and disables
   the control.
