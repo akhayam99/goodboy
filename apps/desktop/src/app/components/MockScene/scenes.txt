@@ -15,6 +15,7 @@ agent-brief-door-transcript
 agent-brief-question
 agent-finished-model
 agent-running-stop
+agentlead
 agents-list-empty
 artifact-create-report
 artifact-create-wireframe
