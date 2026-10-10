@@ -1,9 +1,10 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Input, OverflowMenu, SegmentedTabs } from '@goodboy/ui';
+import { Button, Input, SegmentedTabs } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
+import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import {
   ACTIVITY_VIEWS,
   ACTIVITY_VIEW_LABEL,
@@ -102,19 +103,10 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
           />
           <SessionCostChip sessionId={sessionId} />
           {hasUnreadAgents ? (
-            <OverflowMenu
-              label="Activity actions"
-              align="left"
-              items={[
-                {
-                  kind: 'item',
-                  key: 'mark-all-seen',
-                  label: 'Mark all seen',
-                  icon: CheckCheck,
-                  onClick: () => void markAllAgentsSeen(sessionId),
-                },
-              ]}
-            />
+            <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
+              <CheckCheck size={ICON_SIZE.row} aria-hidden />
+              Mark all seen
+            </Button>
           ) : null}
         </div>
         {actions}
