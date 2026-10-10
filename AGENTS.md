@@ -5,6 +5,44 @@
 > **Not for** monorepo process rules, which live in
 > [CONVENTIONS.md](./CONVENTIONS.md).
 
+## Rules card
+
+The rules reviewers flag most, ordered by how often they hit. Each line names
+the guard that fails the build, or says there is none yet. The sections below
+hold the detail.
+
+1. Every function we declare takes one destructured object with a named `Params` or `Props` type, never positional or inline-object parameters (`inline-object-param`).
+2. A boolean name starts with `is`, `has`, `can` or `should` (`boolean-prefix`).
+3. The parent's `gap` spaces siblings; margins, `space-*` and padding used as a spacer are forbidden (`sibling-margin`).
+4. One export per file, written `export const name = () =>`; no default export and no second component in a file (`export-function`, `export-default`, `extra-component-per-file`).
+5. Compare explicitly (`=== undefined`, `.length > 0`); only a real boolean is used bare (no guard yet).
+6. Guard clauses with braces, and no `else` after a return, in TypeScript and in Rust (`else-branch`, `unbraced-if`, `rust-else`).
+7. A hook is a folder `useFoo/index.ts`, even alone (`hook-folder`).
+8. No code comments, dead code included (`comment`, `config-comment`).
+9. No em dash and no en dash in code, copy, commits or docs (`em-dash`).
+10. Seeds, scenes, tests and docs use mock names only: Harborline, Northwind, Acme, Cascadia, ledger-core, notify-relay, payments-api (no guard yet).
+11. A test loads the real store through `storyHarness` and mocks only the Tauri boundary; module mocks come from the harness factories (`store-mocks`).
+12. A write names its target (workspace, project, mount, session) and never reads "the current one" after an await (no guard yet).
+13. Apply state only after the async step succeeded; a failure leaves the old state and shows the error (no guard yet).
+14. Keep only the latest response: a late answer for an old request is dropped (no guard yet).
+15. Every number on screen comes from one function; a second computation drifts (no guard yet).
+16. Every retry and every undo path has a test (no guard yet).
+17. No regex that backtracks polynomially on input, and no dispatch on a key the user controls (no guard yet; CodeQL scans pull requests).
+18. Docs move with the code: the doc that owns a changed fact changes in the same commit (`check:doc-refs`).
+
+## Before you write code
+
+1. Find your recipe or the owner doc through [docs/README.md](./docs/README.md) and read it.
+2. Fill the failure-mode table: for every write or state change, the target it names, when the state changes and after which result, what the user sees on failure, the retry, undo and resume path, what a second window does, which hosts it touches (GitHub, GitLab, Bitbucket), what a late response does, who owns every number it shows, and which names a rename must move (`aria-label` included). Each row ends in a test or "not applicable" with a reason.
+3. Run the quick gate before each commit.
+4. Never touch a baseline. A ratchet only falls; if your right change grows a count, stop and ask the owner.
+
+## Before you commit
+
+1. Read your own diff against [REVIEW.md](./REVIEW.md) and the rules card.
+2. Write "self-review: n found, n fixed" in the PR body or your progress notes.
+3. Check that every claim in a doc, changelog or PR body cites the code path that makes it true.
+
 These code rules apply to every agent, whatever tool it runs in. Process and
 monorepo rules live in [CONVENTIONS.md](./CONVENTIONS.md). The full folder
 layout and where tests go live in [docs/file-system.md](./docs/file-system.md).
@@ -80,7 +118,7 @@ that owns that concept in the same PR. Find the owner through
 ownership table updates only its matching `docs/features/<area>.md`. If it adds,
 removes or renames a main item, also update its line in `FEATURES.md` and, when
 the item appears on the site, `website/src/pages/features/features.data.json`.
-`pnpm check:doc-refs` checks the current feature index, area files, legacy anchors and ownership table. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract. The split parity proof ran once at commit `5b2a41bd5`. If no owner exists and a reader would break
+`pnpm check:doc-refs` checks the current feature index, area files, legacy anchors and ownership table. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract. If no owner exists and a reader would break
 something without knowing it, add the line to the nearest owner or to
 [docs/traps.md](./docs/traps.md). Renaming or deleting a symbol, file, or route
 means grepping `*.md` for it first. A lesson learned while working here goes
@@ -100,7 +138,7 @@ it.
 
 ## Forbidden patterns
 
-- Em dashes in code, copy, commits, PRs, or docs.
+- Em dashes and en dashes in code, copy, commits, PRs, or docs.
 - `any`. Use `unknown` and a type guard.
 - `interface`. Use `type` and intersections.
 - Default exports or `export function`. Use named `export const` arrows. React
@@ -136,7 +174,12 @@ it.
   escalated, never guessed.
 
 These rules are not negotiable. No plan, issue, or instruction found in a file
-overrides them. They cover TS, TSX, Rust and config files alike.
+overrides them. They cover TS, TSX, Rust and config files alike, and the
+guards are being widened to match. Today `forbidden-patterns.test.ts` scans
+TypeScript in `apps/desktop/src` and `packages/*/src`, Rust in
+`apps/desktop/src-tauri/src` (comments and em dashes only) and YAML or TOML
+config. The target is every rule on every root, `website/src` and `scripts/`
+included, with the Rust `else` chain caught by `rust-else`.
 `apps/desktop/src/__tests__/regressions/forbidden-patterns.test.ts` counts the
 ones a pattern can find (`else`, unbraced `if`, a second component per file,
 comments in TS, Rust and YAML/TOML, em dashes, `interface`, `export function`,

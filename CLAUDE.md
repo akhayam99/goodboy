@@ -4,12 +4,13 @@
 > that only applies to Claude. **Not for** shared code or process rules (see
 > `AGENTS.md` and `CONVENTIONS.md`).
 
-For codebase conventions (file layout, naming, tests, git workflow, dependency policy, forbidden patterns), see [AGENTS.md](./AGENTS.md). This file holds only guidance for Claude.
+@AGENTS.md
+
+The import above loads the rules card and every codebase convention (file layout, naming, tests, branch and commit workflow, dependency policy, forbidden patterns) each session. This file holds only guidance for Claude.
 
 ## Claude-specific notes
 
 - When you edit the store, prefer the slice package convention (see [docs/file-system.md](./docs/file-system.md) → Store slices). A new domain gets a new slice folder. Never extend the monolith.
-- A hook is always a folder (`useFoo/index.ts`), even alone. Add an `index.test.ts` if the behavior is non-trivial. Never flatten a hook folder.
 - Worktrees (`.claude/worktrees/`) and personal skill files under `.claude/` stay local. Never commit them.
 - Planning docs at the repo root (`*_PLAN.md`, `*_PROMPT.md`) are gitignored. Keep them out of commits.
 - Before you finish, apply [AGENTS.md](./AGENTS.md) → Docs move with the code. Auto-memory does not replace the doc that owns the fact.

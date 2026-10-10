@@ -1,8 +1,11 @@
 # Mock screenshots
 
 > **Read this when** you need a real-app screenshot with fake, advanced,
-> non-empty state (for a social post, a README image, a deck). **Not for**
-> testing (see `docs/testing.md`).
+> non-empty state (for a social post, a README image, a deck), or you add a
+> mock scene. Scenes serve screenshots and tests: the a11y suite mounts and
+> scans every scene, and a scene with clickable writes is clicked by its twin
+> test. **Not for** proving behavior, which lives in harness tests (see
+> `docs/testing.md`).
 
 Every published screenshot follows one rule: real components, fake data, never
 an empty state, never real client or project names. Getting there the slow way

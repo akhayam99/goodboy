@@ -91,7 +91,7 @@ Rule: **1 file = 1 export = 1 definition**.
 
 - Hook reused across domains → `shared/hooks/useFoo/index.ts`
 - Hook used inside one domain → `features/<domain>/hooks/useFoo/index.ts`
-- A hook folder holding only `index.ts` is correct and stays. `index.test.ts` when the behavior is non-trivial.
+- A hook is always a folder, even alone, and a folder holding only `index.ts` is correct and stays. Never flatten it. `index.test.ts` when the behavior is non-trivial.
 - A hook tied closely to one parent component can stay as a sibling file in that component's folder (`Name/use<Name>.ts`).
 
 ## Modules

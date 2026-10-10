@@ -65,7 +65,7 @@ General rules live in [AGENTS.md](../../AGENTS.md) → Naming. For desktop only:
 
 ## Testing
 
-Rules live in [docs/testing.md](../../docs/testing.md). For this package: in component tests, mock the Tauri boundary (`invoke`), never internal modules. Store tests create a fresh store, call actions, and check the state.
+Rules live in [docs/testing.md](../../docs/testing.md). For this package: in component tests, mock the Tauri boundary (`invoke`). Module mocks of our own packages (`@goodboy/db` and the like) come only from the `storyHarness` factories, never from a private `vi.mock` body. Store tests create a fresh store, call actions, and check the state.
 
 ## Code rules
 

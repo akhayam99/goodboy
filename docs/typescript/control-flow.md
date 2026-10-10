@@ -71,7 +71,7 @@ if (!session) { ... }
 const pool = candidates.length ? candidates : fallback
 ```
 
-Booleans are the exception. A `boolean` already is the condition, so use it directly (`if (!open)`, `isRunning && <X/>`). Never inflate one to `=== true`. One more exception: coalescing (using `??` or `||` to fall back to a default) at a data boundary, like `raw ?? []` or `value || null`. That normalizes a value rather than branching on it, so the pattern stays.
+Booleans are the exception. A `boolean` already is the condition, so use it directly (`if (!isOpen)`, `isRunning && <X/>`). Never inflate one to `=== true`. One more exception: coalescing (using `??` or `||` to fall back to a default) at a data boundary, like `raw ?? []` or `value || null`. That normalizes a value rather than branching on it, so the pattern stays.
 
 ## Guard the short branch
 
