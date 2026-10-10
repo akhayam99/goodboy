@@ -97,7 +97,7 @@ describe('projectUpdateBlockReasonOf', () => {
     });
 
     expect(projectUpdateBlockReasonOf({ status })).toBe(
-      'commit or stash the uncommitted changes first',
+      '1 file has changes that are not committed. Commit or stash them first.',
     );
   });
 

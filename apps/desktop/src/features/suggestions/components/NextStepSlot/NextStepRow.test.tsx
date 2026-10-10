@@ -262,6 +262,80 @@ describe('NextStepRow', () => {
     expect(first).not.toHaveBeenCalled();
   });
 
+  it('shows the dirty line with Check again and Open terminal and no Rebase button', () => {
+    const check = vi.fn(async () => undefined);
+    const terminal = vi.fn(async () => undefined);
+    const actions: SuggestionActions = {
+      primary: null,
+      onDismiss: null,
+      extras: [
+        {
+          id: 'check-again',
+          label: 'Check again',
+          variant: 'secondary',
+          failureTitle: 'Failed',
+          run: check,
+        },
+        {
+          id: 'open-terminal',
+          label: 'Open terminal',
+          variant: 'ghost',
+          failureTitle: 'Failed',
+          run: terminal,
+        },
+      ],
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({
+          kind: 'rebase-project',
+          title: 'Rebase ledger-core on main',
+          detail: '11 files not committed',
+        })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    screen.getByText('11 files not committed');
+    expect(screen.queryByRole('button', { name: 'Rebase' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open terminal' }));
+
+    expect(check).toHaveBeenCalledTimes(1);
+    expect(terminal).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks the extra action that is running as busy', () => {
+    const actions: SuggestionActions = {
+      primary: null,
+      onDismiss: null,
+      extras: [
+        {
+          id: 'check-again',
+          label: 'Check again',
+          variant: 'secondary',
+          failureTitle: 'Failed',
+          run: vi.fn(async () => undefined),
+        },
+      ],
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'rebase-project' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        pendingExtraIds={new Set(['check-again'])}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Check again' }).hasAttribute('disabled')).toBe(true);
+  });
+
   it('names choices that share a label by their description', () => {
     const actions: SuggestionActions = {
       primary: {

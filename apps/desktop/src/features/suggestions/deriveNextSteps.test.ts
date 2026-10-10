@@ -366,6 +366,110 @@ describe('deriveNextSteps', () => {
       'mount-zulu',
     ]);
   });
+
+  describe('a rebase on a tree with changes that are not committed', () => {
+    const behindProject = ({
+      id,
+      isClean,
+      changedCount,
+      mainDistance = 4,
+    }: {
+      readonly id: string;
+      readonly isClean: boolean | null;
+      readonly changedCount: number | null;
+      readonly mainDistance?: number;
+    }) => ({
+      id: `mount:${id}`,
+      mountId: id as MountId,
+      projectId: `project-${id}` as ProjectId,
+      projectName: id,
+      branch: `feature/${id}`,
+      worktreePath: `/tmp/${id}`,
+      baseBranch: 'main',
+      mainDistance,
+      isClean,
+      changedCount,
+    });
+
+    const rebaseOf = (projects: ReadonlyArray<ReturnType<typeof behindProject>>) =>
+      deriveNextSteps({
+        sessionId,
+        workflowRuns: [],
+        plans: [],
+        consumedPlanIds: new Set<PlanId>(),
+        openQuestionCount: 0,
+        hasPullRequest: false,
+        eligibleThreadCount: 0,
+        mountEvents: [],
+        projects,
+      }).find((suggestion) => suggestion.kind === 'rebase-project');
+
+    it('states the count on its line and offers no Rebase target', () => {
+      const rebase = rebaseOf([
+        behindProject({ id: 'ledger-core', isClean: false, changedCount: 11 }),
+      ]);
+
+      expect(rebase?.detail).toBe('11 files not committed');
+      expect(rebase?.payload.targets.map((target) => target.dirtyCount)).toEqual([11]);
+    });
+
+    it('says one file in the singular', () => {
+      const rebase = rebaseOf([
+        behindProject({ id: 'ledger-core', isClean: false, changedCount: 1 }),
+      ]);
+
+      expect(rebase?.detail).toBe('1 file not committed');
+    });
+
+    it('keeps the plain behind line and a clean target when the tree is clean', () => {
+      const rebase = rebaseOf([
+        behindProject({ id: 'ledger-core', isClean: true, changedCount: 0 }),
+      ]);
+
+      expect(rebase?.detail).toBe('4 behind');
+      expect(rebase?.payload.targets.map((target) => target.dirtyCount)).toEqual([0]);
+    });
+
+    it('treats a tree it could not read as clean and leaves the guard to the store', () => {
+      const rebase = rebaseOf([
+        behindProject({ id: 'ledger-core', isClean: null, changedCount: null }),
+      ]);
+
+      expect(rebase?.detail).toBe('4 behind');
+      expect(rebase?.payload.targets.map((target) => target.dirtyCount)).toEqual([0]);
+    });
+
+    it('offers only the clean branches while another one is dirty', () => {
+      const rebase = rebaseOf([
+        behindProject({ id: 'notify-relay', isClean: false, changedCount: 3, mainDistance: 9 }),
+        behindProject({ id: 'payments-api', isClean: true, changedCount: 0, mainDistance: 2 }),
+      ]);
+
+      expect(rebase?.title).toBe('Rebase payments-api on main');
+      expect(rebase?.payload.targets.map((target) => target.mountId)).toEqual(['payments-api']);
+    });
+
+    it('counts the dirty branches on one line when none is clean', () => {
+      const rebase = rebaseOf([
+        behindProject({ id: 'notify-relay', isClean: false, changedCount: 3 }),
+        behindProject({ id: 'payments-api', isClean: false, changedCount: 5 }),
+      ]);
+
+      expect(rebase?.detail).toBe('2 branches have changes not committed');
+      expect(rebase?.payload.targets.every((target) => target.dirtyCount > 0)).toBe(true);
+    });
+
+    it('changes its fingerprint when the tree turns clean so a dismissal does not hide it', () => {
+      const dirty = rebaseOf([
+        behindProject({ id: 'ledger-core', isClean: false, changedCount: 11 }),
+      ]);
+      const clean = rebaseOf([
+        behindProject({ id: 'ledger-core', isClean: true, changedCount: 0 }),
+      ]);
+
+      expect(dirty?.fingerprint).not.toBe(clean?.fingerprint);
+    });
+  });
 });
 
 const BASE_PARAMS = {

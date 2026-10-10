@@ -33,7 +33,7 @@ const factsOf = (patch: Patch = {}): PullRequestFacts => {
     reviews: [],
     viewer: null,
     writeInFlight: null,
-    isDraftAgentRunning: false,
+    isScribeWriting: false,
   });
   return { ...base, ...rest };
 };
@@ -299,7 +299,7 @@ describe('evaluatePrMergeReadiness', () => {
         reviews: [],
         viewer: null,
         writeInFlight: null,
-        isDraftAgentRunning: false,
+        isScribeWriting: false,
       });
 
       expect(evaluatePrMergeReadiness({ facts }).status).toBe('blocked');

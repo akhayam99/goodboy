@@ -1,6 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import { pushWithLease, restoreHistoryBackup } from '../../../features/history/historyEngine';
 import { worktreeStatus } from '../../../features/worktree/worktree';
+import { assertCleanTree } from './assertCleanTree';
 import { historyTargetOf } from './historyTargetOf';
 import { remoteForPush } from './remoteForPush';
 import { recordHistoryEvent } from './recordHistoryEvent';
@@ -23,6 +24,7 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
     shouldPush,
   }: RestoreHistoryInput): Promise<RestoreHistoryOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
+    await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
     const origin = get().historyRuns[mountId]?.origin ?? 'plan';
     const stopWith = async (stop: HistoryStop): Promise<RestoreHistoryOutcome> => {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop } });

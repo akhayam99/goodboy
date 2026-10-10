@@ -4,7 +4,12 @@ import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { isStoppedByRestart } from '../../../store/slices/turn/isStoppedByRestart';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
-import { distanceAhead, distanceBehind, isWorkingTreeClean } from '../../../shared/lib/gitStatus';
+import {
+  changedCount,
+  distanceAhead,
+  distanceBehind,
+  isWorkingTreeClean,
+} from '../../../shared/lib/gitStatus';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
 import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
@@ -270,6 +275,10 @@ export const useSessionSuggestions = ({
               baseBranch: mount.baseBranch ?? project?.baseBranch ?? 'main',
               mainDistance:
                 status == null ? null : distanceBehind({ distance: status.mainDistance }),
+              isClean:
+                status == null ? null : isWorkingTreeClean({ workingTree: status.workingTree }),
+              changedCount:
+                status == null ? null : changedCount({ workingTree: status.workingTree }),
               rebaseRequest: mountRequest ?? projectRequest ?? null,
             };
           })

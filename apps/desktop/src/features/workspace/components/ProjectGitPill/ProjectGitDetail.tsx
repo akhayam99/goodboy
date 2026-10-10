@@ -97,6 +97,11 @@ const detailsOf = ({ status }: StatusParams): ReadonlyArray<Detail> => {
 const capitalize = ({ value }: CapitalizeParams): string =>
   `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 
+const sentenceOf = ({ value }: CapitalizeParams): string => {
+  const text = capitalize({ value });
+  return text.endsWith('.') ? text : `${text}.`;
+};
+
 export const ProjectGitDetail = ({ project, status }: Props) => {
   const [openError, setOpenError] = useState<string | null>(null);
   const [pullError, setPullError] = useState<string | null>(null);
@@ -227,11 +232,11 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               blockedReason === 'already up to date' ? (
                 <span className="flex items-center gap-1 px-1 text-meta text-muted-foreground">
                   <Check size={ICON_SIZE.mark} aria-hidden />
-                  {`${capitalize({ value: blockedReason })}.`}
+                  {sentenceOf({ value: blockedReason })}
                 </span>
               ) : (
                 <span className="px-1 text-meta text-muted-foreground">
-                  {`${capitalize({ value: blockedReason })}.`}
+                  {sentenceOf({ value: blockedReason })}
                 </span>
               )
             ) : null}

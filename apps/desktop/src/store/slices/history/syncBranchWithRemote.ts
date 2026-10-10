@@ -5,6 +5,8 @@ import {
   readRebasePlan,
   tryHistoryPlan,
 } from '../../../features/history/historyEngine';
+import { assertCleanTree } from './assertCleanTree';
+import { DirtyTreeError } from './DirtyTreeError';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
 import { isHistoryRunActive } from './isHistoryRunActive';
@@ -25,11 +27,19 @@ const failed = ({ message }: { readonly message: string }): SyncBranchOutcome =>
 
 export const syncBranchWithRemote = (_set: SetFn, get: GetFn) => {
   return async ({ sessionId, mountId }: HistoryMountInput): Promise<SyncBranchOutcome> => {
+    const target = historyTargetOf({ get, sessionId, mountId });
+    try {
+      await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
+    } catch (error) {
+      if (error instanceof DirtyTreeError) {
+        return failed({ message: error.message });
+      }
+      throw error;
+    }
     const current = get().historyRuns[mountId];
     if (current !== undefined && isHistoryRunActive({ phase: current.phase })) {
       return { kind: 'busy' };
     }
-    const target = historyTargetOf({ get, sessionId, mountId });
     const rebase = await readRebasePlan({
       worktreePath: target.worktreePath,
       baseBranch: target.branch,

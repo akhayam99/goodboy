@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { Button, FormActions, Kbd, Notice } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { dirtyTreeSentence } from '../../../../shared/lib/dirtyTreeCopy';
 import { commitCount } from '../../historyEditText';
 import type { HistoryEdit } from '../../historyEdits';
 import type { CombineMode } from '../../historyPlan';
@@ -62,7 +63,7 @@ export const HistoryPlannedChanges = ({
   const reason = !hasEdits
     ? null
     : dirtyCount > 0
-      ? 'Commit or stash your uncommitted changes first.'
+      ? dirtyTreeSentence({ count: dirtyCount })
       : null;
   const canApply = hasEdits && isInteractive && reason === null;
   return (
@@ -165,8 +166,8 @@ export const HistoryPlannedChanges = ({
         <Notice
           tone="warning"
           placement="inline"
-          title={`${dirtyCount} ${dirtyCount === 1 ? 'file has' : 'files have'} changes that are not committed`}
-          body="Rewriting needs a clean worktree. Commit or stash them first; nothing here touches them."
+          title={dirtyTreeSentence({ count: dirtyCount })}
+          body="Rewriting needs a clean worktree. Nothing here touches your changes."
         />
       ) : null}
       <FormActions

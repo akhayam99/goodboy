@@ -44,7 +44,7 @@ const mountFacts: MountFacts = {
   isRebasing: false,
   comments: 0,
   canStartTurnsHere: false,
-  isDraftAgentRunning: false,
+  isScribeWriting: false,
   blockers: [],
   editors: [],
 };

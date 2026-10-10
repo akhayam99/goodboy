@@ -177,6 +177,28 @@ describe('useSessionSuggestions rebase consumption', () => {
     expect(worktreeStatus).toHaveBeenCalledWith({ worktreePath: '/api-open', baseBranch: 'main' });
   });
 
+  it('carries the count of uncommitted files on the rebase row instead of a Rebase target', async () => {
+    worktreeStatus.mockResolvedValue({
+      branch: 'feat',
+      mainDistance: { kind: 'known', ahead: 0, behind: 4 },
+      upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+      workingTree: {
+        kind: 'known',
+        staged: 4,
+        unstaged: 5,
+        untracked: 2,
+        unmerged: 0,
+        changed: 11,
+      },
+    });
+    const view = renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() => {
+      const rebase = view.result.current.find((candidate) => candidate.kind === 'rebase-project');
+      expect(rebase?.detail).toBe('11 files not committed');
+    });
+  });
+
   it('hides the rebase after a request while the distance is unchanged', async () => {
     store.sessionEvents = { 'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1' })] };
     store.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', status: 'running' }] };
