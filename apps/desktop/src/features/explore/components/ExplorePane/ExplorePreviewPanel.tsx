@@ -1,9 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Button, CopyButton, Divider, Markdown, Skeleton, EmptyState } from '@goodboy/ui';
+import { Button, CopyButton, Divider, Markdown, Skeleton, EmptyState, Tooltip } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreEntry } from '../../explore';
 import type { ExplorePreviewState } from '../../hooks/useExplorePreview';
+import type { ExploreOpenAction } from '../../openAction';
+import type { ExploreOpenFailure } from '../../openFailure';
+import { ExploreOpenError } from '../ExploreOpenError';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
@@ -13,8 +16,9 @@ type Props = {
   readonly entry: ExploreEntry;
   readonly previewState: ExplorePreviewState;
   readonly absolutePath: string;
-  readonly openError: string | null;
-  readonly onOpenOutside: () => void;
+  readonly openAction: ExploreOpenAction;
+  readonly openFailure: ExploreOpenFailure | null;
+  readonly onOpen: () => void;
 };
 
 const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown']);
@@ -65,8 +69,9 @@ export const ExplorePreviewPanel = ({
   entry,
   previewState,
   absolutePath,
-  openError,
-  onOpenOutside,
+  openAction,
+  openFailure,
+  onOpen,
 }: Props) => {
   const now = useNow(30_000);
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
@@ -180,20 +185,21 @@ export const ExplorePreviewPanel = ({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="secondary" onClick={onOpenOutside}>
-          <ExternalLink size={ICON_SIZE.row} aria-hidden />
-          Open outside
-        </Button>
+        <Tooltip content={openAction.tooltip}>
+          <Button size="sm" variant="secondary" onClick={onOpen}>
+            {openAction.editor === null ? (
+              <ExternalLink size={ICON_SIZE.row} aria-hidden />
+            ) : (
+              <CONCEPT_ICONS.editor size={ICON_SIZE.row} aria-hidden />
+            )}
+            {openAction.label}
+          </Button>
+        </Tooltip>
         <CopyButton value={absolutePath} label={`path for ${entry.name}`} />
       </div>
-      {openError != null ? <p className="text-label text-danger">{openError}</p> : null}
+      {openFailure === null ? null : <ExploreOpenError failure={openFailure} />}
       <Divider />
       {renderPreviewBody()}
-      {previewKind === 'unsupported' ? (
-        <Button size="sm" variant="secondary" onClick={onOpenOutside}>
-          Open this file outside the app
-        </Button>
-      ) : null}
     </div>
   );
 };

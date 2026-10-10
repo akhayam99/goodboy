@@ -41,6 +41,6 @@ Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim,
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Browse the session folder as a file tree, with a preview of the selected file beside it, **Open outside** and **Copy**. **Ask an agent about this file** starts an agent on it from the row.
+Browse the session folder as a file tree, with a preview of the selected file beside it, **Open** and **Copy**. Each row shows three icons on hover, each with a tooltip: **Ask an agent** starts an agent on that file, **Open** opens it, and **Show in Finder** reveals it. In a repository, a text or code file reads **Open in editor** and opens in the editor you chose in Settings, General, Open with (VS Code and Cursor reuse the window you already have). Images, PDFs and other binary files, files of a folder project, and any file when no editor is installed read **Open** and use the default app. If the editor is gone, the error says so and offers **Choose editor**.
 
 The terminal page offers New terminal when no shell has been opened yet.
