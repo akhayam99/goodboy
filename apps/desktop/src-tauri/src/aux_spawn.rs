@@ -5,6 +5,7 @@ pub const CLAUDE_SETTING_SOURCES: &str = "project,local";
 pub const SPAWN_ID_ENV: &str = "GOODBOY_SPAWN_ID";
 pub const SPAWN_KIND_ENV: &str = "GOODBOY_SPAWN_KIND";
 pub const APP_PID_ENV: &str = "GOODBOY_APP_PID";
+pub const APP_START_ENV: &str = "GOODBOY_APP_START";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SpawnKind {
@@ -70,13 +71,23 @@ impl SpawnTag {
         }
     }
 
-    pub fn env(&self) -> [(&'static str, String); 3] {
+    pub fn env(&self) -> [(&'static str, String); 4] {
         [
             (SPAWN_ID_ENV, self.id.clone()),
             (SPAWN_KIND_ENV, self.kind.as_str().to_string()),
             (APP_PID_ENV, std::process::id().to_string()),
+            (APP_START_ENV, app_start().to_string()),
         ]
     }
+}
+
+pub fn app_start() -> u64 {
+    static START: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
+    *START.get_or_init(|| {
+        crate::proc::kernel::identity(std::process::id())
+            .map(|identity| identity.start)
+            .unwrap_or(0)
+    })
 }
 
 pub fn tag_spawn(command: &mut Command, kind: SpawnKind) -> SpawnTag {
@@ -133,6 +144,7 @@ mod tests {
         assert_eq!(envs[SPAWN_ID_ENV], tag.id);
         assert_eq!(envs[SPAWN_KIND_ENV], "planner");
         assert_eq!(envs[APP_PID_ENV], std::process::id().to_string());
+        assert_eq!(envs[APP_START_ENV], app_start().to_string());
         assert_eq!(tag.id.len(), 32);
     }
 

@@ -19,11 +19,25 @@ file holds those explanations. Everything below has been "fixed" at least once a
   the tree snapshot covers it only while its parent lives. Do not shrink the
   reap to `killpg`.
 - macOS hides the environment of Apple-signed binaries (`sh`, `bash`, `sleep`)
-  from other processes, even with `ps -E`. The tag therefore finds third-party
-  programs (node, bun, vite, the provider CLIs) and not shells; shells are
-  caught by the tree and the group. A reap test that uses `sleep` as the
-  straggler passes on Linux and fails on macOS. The tests use the test
+  from other processes, with `ps -E` and with `KERN_PROCARGS2` alike (System
+  Integrity Protection). The tag therefore finds third-party programs (node,
+  bun, vite, the provider CLIs) and not those binaries. They are covered by
+  the tree and the group while the run is alive, and the end-of-turn reap
+  signals the whole process group of the leader, so a restricted child in the
+  group dies there. A restricted child that left the group (its own session)
+  and whose parent is gone is not found by anything: that is a known limit,
+  not a bug to chase with a broader match. A reap test that uses `sleep` as
+  the straggler passes on Linux and fails on macOS. The tests use the test
   executable as the child on purpose.
+- Never signal a pid taken from an earlier read without asking the kernel
+  again. A pid is only a number: the process that had it may be gone and a
+  stranger may have it now. `reap.rs` compares the kernel start time and the
+  tag right before each TERM and each KILL, and `kill(pid, 0)` is not that
+  check. A zombie has no readable identity on macOS, so a zombie leader the
+  app still holds is kept in the table without one and is never signalled.
+- A side job that prints nothing is not stuck. The Claude CLI answers once, at
+  the end, so the idle cap watches the CPU of the whole tree as well as the
+  pipes. Do not turn it back into a wall clock.
 - The reap waits for the leader with `waitid(WNOWAIT)` and only then calls
   `child.wait()`. Calling `wait()` first frees the pid, the tree is lost, and
   the leader can no longer be proven to be ours. Swapping the order brings

@@ -1,14 +1,55 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::process::Child;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{channel, RecvTimeoutError};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
-use crate::proc::reap::{reap, ReapParams, StoppedProcess};
+use crate::proc::reap::{reap, tree_cpu, ReapParams, StoppedProcess};
 
-pub const SIDE_JOB_DEADLINE: Duration = Duration::from_secs(10 * 60);
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct IdlePolicy {
+    pub cap: Duration,
+    pub poll: Duration,
+}
+
+pub const SIDE_JOB_IDLE: IdlePolicy = IdlePolicy {
+    cap: Duration::from_secs(10 * 60),
+    poll: Duration::from_secs(15),
+};
+
+#[derive(Debug, Clone)]
+pub struct Activity(Arc<AtomicU64>);
+
+fn epoch() -> Instant {
+    static EPOCH: OnceLock<Instant> = OnceLock::new();
+    *EPOCH.get_or_init(Instant::now)
+}
+
+impl Activity {
+    pub fn new() -> Self {
+        let activity = Self(Arc::new(AtomicU64::new(0)));
+        activity.touch();
+        activity
+    }
+
+    pub fn touch(&self) {
+        let elapsed = u64::try_from(epoch().elapsed().as_millis()).unwrap_or(u64::MAX);
+        self.0.store(elapsed, Ordering::Relaxed);
+    }
+
+    pub fn idle_for(&self) -> Duration {
+        let now = u64::try_from(epoch().elapsed().as_millis()).unwrap_or(u64::MAX);
+        Duration::from_millis(now.saturating_sub(self.0.load(Ordering::Relaxed)))
+    }
+}
+
+impl Default for Activity {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 pub type ChildSlot = Arc<Mutex<Option<Child>>>;
 
@@ -17,12 +58,15 @@ pub struct LiveChild {
     pub pid: u32,
     pub slot: ChildSlot,
     pub spawn_id: Option<String>,
+    pub activity: Activity,
+    pub is_timed_out: Arc<AtomicBool>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Exited {
     pub code: Option<i32>,
     pub stopped: Vec<StoppedProcess>,
+    pub is_timed_out: bool,
 }
 
 pub type LiveChildRegistry = Arc<Mutex<HashMap<String, LiveChild>>>;
@@ -35,6 +79,8 @@ impl LiveChild {
             pid: child.id(),
             slot: Arc::new(Mutex::new(Some(child))),
             spawn_id: None,
+            activity: Activity::new(),
+            is_timed_out: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -57,15 +103,11 @@ impl LiveChild {
     }
 
     fn terminate_tree(&self) {
-        let report = reap(ReapParams {
+        reap(ReapParams {
             leader_pid: Some(self.pid),
             is_leader_exited: false,
             spawn_id: self.spawn_id.as_deref(),
         });
-        if report.is_scanned {
-            return;
-        }
-        crate::process_group::terminate(self.pid);
     }
 
     #[cfg(unix)]
@@ -171,41 +213,58 @@ fn wait_and_reap(live: &LiveChild) -> Exited {
     Exited {
         code: child.wait().ok().and_then(|status| status.code()),
         stopped: report.stopped,
+        is_timed_out: live.is_timed_out.load(Ordering::SeqCst),
     }
 }
 
-pub fn wait_with_deadline(
+pub fn wait_with_idle_cap(
     live: &LiveChild,
     registry: &LiveChildRegistry,
     key: &str,
-    deadline: Option<Duration>,
+    idle: Option<IdlePolicy>,
 ) -> Exited {
-    let Some(deadline) = deadline else {
+    let Some(policy) = idle else {
         return wait_and_remove(live, registry, key);
     };
     let (finished, watch) = channel::<()>();
     std::thread::scope(|scope| {
-        scope.spawn(move || {
-            if watch.recv_timeout(deadline) == Err(RecvTimeoutError::Timeout) {
-                log::warn!("[reap] a side job outlived its deadline, stopping it");
-                live.kill();
-            }
-        });
+        scope.spawn(move || watch_idle(live, &watch, policy));
         let exited = wait_and_remove(live, registry, key);
         drop(finished);
         exited
     })
 }
 
+fn watch_idle(live: &LiveChild, watch: &std::sync::mpsc::Receiver<()>, policy: IdlePolicy) {
+    let mut last_cpu = tree_cpu(live.pid);
+    loop {
+        if watch.recv_timeout(policy.poll) != Err(RecvTimeoutError::Timeout) {
+            return;
+        }
+        let cpu = tree_cpu(live.pid);
+        if cpu != last_cpu {
+            live.activity.touch();
+            last_cpu = cpu;
+        }
+        if live.activity.idle_for() < policy.cap {
+            continue;
+        }
+        log::warn!("[reap] a side job went quiet past its cap, stopping it");
+        live.is_timed_out.store(true, Ordering::SeqCst);
+        live.kill();
+        return;
+    }
+}
+
 pub fn run_to_exit<R>(
     live: &LiveChild,
     registry: &LiveChildRegistry,
     key: &str,
-    deadline: Option<Duration>,
+    idle: Option<IdlePolicy>,
     pump: impl FnOnce() -> R,
 ) -> (R, Exited) {
     std::thread::scope(|scope| {
-        let waiter = scope.spawn(|| wait_with_deadline(live, registry, key, deadline));
+        let waiter = scope.spawn(|| wait_with_idle_cap(live, registry, key, idle));
         let pumped = pump();
         let exited = waiter
             .join()
@@ -214,15 +273,44 @@ pub fn run_to_exit<R>(
     })
 }
 
-pub fn drain_lossy<R: Read>(mut source: R) -> String {
+fn read_to_end_touching<R: Read>(mut source: R, activity: Option<&Activity>) -> Vec<u8> {
     let mut buf = Vec::new();
-    let _ = source.read_to_end(&mut buf);
-    String::from_utf8_lossy(&buf).into_owned()
+    let mut chunk = [0u8; 8192];
+    loop {
+        match source.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(read) => {
+                buf.extend_from_slice(&chunk[..read]);
+                if let Some(activity) = activity {
+                    activity.touch();
+                }
+            }
+            Err(err) if err.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(_) => break,
+        }
+    }
+    buf
+}
+
+pub fn drain_lossy_active<R: Read>(source: R, activity: &Activity) -> String {
+    String::from_utf8_lossy(&read_to_end_touching(source, Some(activity))).into_owned()
 }
 
 pub const MAX_STDERR_BYTES: usize = 256 * 1024;
 
-pub fn drain_tail_lossy<R: Read>(mut source: R, max_bytes: usize) -> String {
+pub fn drain_tail_lossy<R: Read>(source: R, max_bytes: usize) -> String {
+    drain_tail_with(source, max_bytes, None)
+}
+
+pub fn drain_tail_active<R: Read>(source: R, max_bytes: usize, activity: &Activity) -> String {
+    drain_tail_with(source, max_bytes, Some(activity))
+}
+
+fn drain_tail_with<R: Read>(
+    mut source: R,
+    max_bytes: usize,
+    activity: Option<&Activity>,
+) -> String {
     let mut tail: Vec<u8> = Vec::new();
     let mut chunk = [0u8; 8192];
     loop {
@@ -230,6 +318,9 @@ pub fn drain_tail_lossy<R: Read>(mut source: R, max_bytes: usize) -> String {
             Ok(0) => break,
             Ok(read) => {
                 tail.extend_from_slice(&chunk[..read]);
+                if let Some(activity) = activity {
+                    activity.touch();
+                }
                 if tail.len() > max_bytes {
                     let excess = tail.len() - max_bytes;
                     tail.drain(..excess);
@@ -329,22 +420,135 @@ mod tests {
         assert_ne!(anonymous_key("planner"), anonymous_key("planner"));
     }
 
+    fn quick_policy(cap_ms: u64) -> IdlePolicy {
+        IdlePolicy {
+            cap: Duration::from_millis(cap_ms),
+            poll: Duration::from_millis(40),
+        }
+    }
+
+    fn piped_live(
+        registry: &LiveChildRegistry,
+        key: &str,
+        program: &str,
+        args: &[&str],
+    ) -> (LiveChild, impl FnOnce() -> (String, String)) {
+        use std::process::Stdio;
+        let mut child = std::process::Command::new(program)
+            .args(args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn the job");
+        let stdout = child.stdout.take().expect("stdout");
+        let stderr = child.stderr.take().expect("stderr");
+        let live = LiveChild::new(child);
+        register(registry, key, &live);
+        let out_activity = live.activity.clone();
+        let err_activity = live.activity.clone();
+        let pump = move || {
+            std::thread::scope(|scope| {
+                let out = scope.spawn(|| drain_lossy_active(stdout, &out_activity));
+                let err = scope.spawn(|| drain_lossy_active(stderr, &err_activity));
+                (
+                    out.join().unwrap_or_default(),
+                    err.join().unwrap_or_default(),
+                )
+            })
+        };
+        (live, pump)
+    }
+
     #[test]
-    fn a_side_job_past_its_deadline_is_stopped() {
+    fn a_silent_idle_job_is_stopped_and_reported_as_timed_out() {
         let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
         let live = register_sleeping(&registry, "side-1");
         let started = std::time::Instant::now();
 
-        let exited =
-            wait_with_deadline(&live, &registry, "side-1", Some(Duration::from_millis(200)));
+        let exited = wait_with_idle_cap(&live, &registry, "side-1", Some(quick_policy(250)));
 
         assert!(started.elapsed() < Duration::from_secs(5));
+        assert!(exited.is_timed_out);
         assert_eq!(exited.code, None);
         assert!(registry.lock().expect("registry").is_empty());
     }
 
     #[test]
-    fn a_job_that_ends_before_its_deadline_is_left_alone() {
+    fn a_killed_job_that_was_not_idle_is_not_reported_as_timed_out() {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let live = register_sleeping(&registry, "side-6");
+        let waiter = spawn_waiter(&registry, "side-6", &live);
+
+        assert!(kill_one(&registry, "side-6"));
+
+        assert_waiter_returns(
+            waiter,
+            Duration::from_secs(2),
+            "kill left the child running",
+        );
+        assert!(!live.is_timed_out.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn a_job_that_keeps_writing_is_not_stopped_by_the_idle_cap() {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let (live, pump) = piped_live(
+            &registry,
+            "side-3",
+            "/bin/sh",
+            &[
+                "-c",
+                "for i in 1 2 3 4 5 6 7 8 9 10 11 12; do echo tick; sleep 0.1; done",
+            ],
+        );
+        let started = std::time::Instant::now();
+
+        let ((out, _), exited) =
+            run_to_exit(&live, &registry, "side-3", Some(quick_policy(450)), pump);
+
+        assert!(started.elapsed() > Duration::from_millis(1000));
+        assert!(!exited.is_timed_out);
+        assert_eq!(exited.code, Some(0));
+        assert_eq!(out.lines().count(), 12);
+    }
+
+    #[test]
+    fn a_silent_job_that_is_busy_is_not_stopped_by_the_idle_cap() {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let (live, pump) = piped_live(
+            &registry,
+            "side-4",
+            "/usr/bin/perl",
+            &["-e", "my $until = time + 2; 1 while time < $until;"],
+        );
+
+        let (_, exited) = run_to_exit(&live, &registry, "side-4", Some(quick_policy(600)), pump);
+
+        assert!(!exited.is_timed_out);
+        assert_eq!(exited.code, Some(0));
+    }
+
+    #[test]
+    fn a_silent_job_whose_child_is_busy_is_not_stopped_by_the_idle_cap() {
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let (live, pump) = piped_live(
+            &registry,
+            "side-5",
+            "/bin/sh",
+            &[
+                "-c",
+                "/usr/bin/perl -e 'my $until = time + 2; 1 while time < $until;'",
+            ],
+        );
+
+        let (_, exited) = run_to_exit(&live, &registry, "side-5", Some(quick_policy(600)), pump);
+
+        assert!(!exited.is_timed_out);
+        assert_eq!(exited.code, Some(0));
+    }
+
+    #[test]
+    fn a_job_that_ends_before_its_cap_is_left_alone() {
         let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
         let child = std::process::Command::new("sh")
             .args(["-c", "exit 3"])
@@ -353,10 +557,11 @@ mod tests {
         let live = LiveChild::new(child);
         register(&registry, "side-2", &live);
 
-        let exited = wait_with_deadline(&live, &registry, "side-2", Some(Duration::from_secs(60)));
+        let exited = wait_with_idle_cap(&live, &registry, "side-2", Some(quick_policy(60_000)));
 
         assert_eq!(exited.code, Some(3));
         assert!(exited.stopped.is_empty());
+        assert!(!exited.is_timed_out);
     }
 
     #[test]
@@ -382,6 +587,44 @@ mod tests {
 
         assert_eq!(exited.code, Some(0));
         assert!(exited.stopped.iter().any(|process| process.pid == sleeper));
+        assert!(crate::proc::reap::unix::test_support::is_gone(sleeper));
+    }
+
+    #[test]
+    fn a_kill_reaches_a_restricted_child_in_its_own_session_while_its_parent_lives() {
+        use std::io::{BufRead, BufReader};
+        use std::process::Stdio;
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let mut command = std::process::Command::new("/bin/sh");
+        command
+            .args([
+                "-c",
+                "perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' -- /bin/sleep 30 & echo $!; wait",
+            ])
+            .stdout(Stdio::piped());
+        crate::process_group::isolate(&mut command);
+        let mut child = command.spawn().expect("spawn sh");
+        let mut line = String::new();
+        BufReader::new(child.stdout.take().expect("stdout"))
+            .read_line(&mut line)
+            .expect("read the pid");
+        let sleeper: u32 = line.trim().parse().expect("a pid");
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while unsafe { libc::getsid(sleeper as libc::pid_t) } != sleeper as libc::pid_t {
+            assert!(std::time::Instant::now() < deadline, "no new session");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let live = LiveChild::new(child);
+        register(&registry, "run-7", &live);
+        let waiter = spawn_waiter(&registry, "run-7", &live);
+
+        assert!(kill_one(&registry, "run-7"));
+
+        assert_waiter_returns(
+            waiter,
+            Duration::from_secs(3),
+            "the leader outlived the kill",
+        );
         assert!(crate::proc::reap::unix::test_support::is_gone(sleeper));
     }
 

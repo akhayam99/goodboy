@@ -59,20 +59,33 @@ on macOS and Linux.
 
 ### Processes Goodboy starts
 
-Every process the Rust shell starts for an agent carries three variables
+Every process the Rust shell starts for an agent carries four variables
 (`aux_spawn.rs`, `SpawnTag`): `GOODBOY_SPAWN_ID` (128 random bits, one per
 spawn), `GOODBOY_SPAWN_KIND` (`turn`, `chat`, `planner`, `summary`, `script`,
-`terminal` or `probe`) and `GOODBOY_APP_PID` (this app). The tag is set on
-every provider spawn whether or not the query bridge serves, and on the script
-and terminal commands where they are built. Their children inherit it.
+`terminal` or `probe`), `GOODBOY_APP_PID` (this app) and `GOODBOY_APP_START`
+(this app's start time from the kernel, so a recycled pid is not mistaken for
+this app). The tag is set on every provider spawn whether or not the query
+bridge serves, and on the script and terminal commands where they are built.
+Their children inherit it.
 
 `proc/reap.rs` ends everything a spawn started. `reap` reads one table of
-processes with `ps`, then signals in this order: the tree below the leader
-(read before any signal, while the leader is still ours), the leader's process
-group, then every straggler whose environment carries this spawn id and this
-app pid (`ps -E` on macOS, `/proc/<pid>/environ` on Linux). Each gets SIGTERM,
-300 ms to leave, then SIGKILL. It returns the processes it stopped, shells
-last.
+processes with `ps` and gives each row the start time the kernel reports for
+it (`proc/kernel.rs`: `proc_pidinfo` on macOS, `/proc/<pid>/stat` on Linux).
+It signals in this order: the tree below the leader (read before any signal,
+while the leader is still ours), the leader's process group, then every
+straggler whose environment carries this spawn id, this app pid and this app
+start. The environment is read on its own, never from the command line
+(`KERN_PROCARGS2` parsed past argc and argv on macOS, `/proc/<pid>/environ` on
+Linux) and the keys are matched exactly, so an argument that looks like a tag
+is not one. Each gets SIGTERM, 300 ms to leave, then SIGKILL. Before every
+signal, TERM and KILL alike, the reap asks the kernel again: the pid must still
+have the start time it had in the table and the tag must still be there, or the
+process is skipped. After each round it takes a new table and goes again until
+a round finds no new member (at most six rounds, then a warning in the log), so
+a descendant spawned while the cleanup ran is found. It returns the processes
+it signalled, shells last. If the table cannot be read, a leader the kernel
+still shows as this app's child and as its own group leader gets its whole
+group terminated anyway.
 
 - **When it runs.** After a normal exit, in `live_child::wait_and_remove`,
   which waits for the leader without reaping it (`waitid` with `WNOWAIT`) so
@@ -80,14 +93,22 @@ last.
   cancel, on shutdown, on script Stop and on terminal close. A turn does not
   wait for its stdout to close: the reap closes the pipe a stray child held.
 - **What it never touches.** A pid without this spawn id or with another app
-  pid, pid 1, this app, another user's process, and a leader that is not this
+  pid or app start, pid 1, this app, another user's process, a pid whose start
+  time or tag changed since the table was read, and a leader that is not this
   app's child. Only a leader this app still holds brings its tree and group.
-- **Side jobs** (planner, summary) are stopped after 10 minutes. Turns have no
-  cap.
+- **Side jobs** (planner, summary) are stopped when they go quiet. A job is
+  quiet when it has written nothing to stdout or stderr and no process in its
+  tree has used any CPU for 10 minutes (`SIDE_JOB_IDLE`, checked every 15
+  seconds). Output alone is not enough: the Claude CLI prints its whole answer
+  once, at the end, so a long healthy call is silent, and the CPU of the CLI
+  and of the tools it runs is what shows it is alive. A stopped job returns
+  `isTimedOut: true` (`exitCode` stays null) and the caller throws
+  `AuxTimedOutError`. Turns have no cap.
 - **Startup sweep.** At launch, tagged processes of kind `turn`, `chat`,
-  `planner`, `summary` or `probe` whose app pid is dead and whose parent is 1
-  are stopped (`sweep_orphans`). Scripts and terminals are left alone. The
-  count goes to the log and to the `orphans-swept` event.
+  `planner`, `summary` or `probe` whose app is dead and whose parent is 1 are
+  stopped (`sweep_orphans`). The app counts as dead when its pid is gone or
+  its start time is not the one in the tag. Scripts and terminals are left
+  alone. The count goes to the log and to the `orphans-swept` event.
 - **What the user sees.** When a turn's reap stopped something, the turn emits a
   `reaped` envelope before its end, and the transcript shows one line under the
   turn: "Stopped 2 processes this turn left running: next-server, 1 more."
