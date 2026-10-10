@@ -626,18 +626,24 @@ branch page stores no branch tab (`applyLocation`), so the tab always falls back
 to the landing rule. The rows carry no needs-you count because the resolve queue
 rows know their project and pull request number but not their mount.
 
-**The rail holds the open session and the pinned ones.** Under the doors, in the
-workspace scope only, the open session is a 28px node button (the same
-`SessionStateNode` as its row); a click opens the session, and hovering or
-focusing it opens a flyout card (`RailFlyout`, the overlay layer of the hover
+**The rail holds the pinned sessions and, when needed, the open one.** Under the
+doors, in the workspace scope only, the pinned sessions are 28px node buttons
+(the same `SessionStateNode` as their rows) in pin order, up to seven
+(`RAIL_PINNED_LIMIT`), whatever is open: opening another session never moves a
+node, only the marker. The open session, when it is one of those pins, keeps its
+slot and takes the current sign (`bg-selected`, a 1px inset hairline, the glyph
+at full foreground, `aria-current="page"`). When it is not pinned, or is pinned
+beyond the seventh, it is one extra node after the pins and before `+N`
+(`data-slot="rail-open-tail"`). A click opens the session; hovering or focusing
+the current node opens a flyout (`RailFlyout`, the overlay layer of the hover
 card) with the same pages list as the card (`SessionPages`, one source), the
 branches when there are several, and the pinned sessions. Esc closes it and
 returns focus to the button, and `→` or `↓` on the button moves into it. A studio
-over the session leaves its button `remembered`. The pinned sessions follow as
-28px node buttons in pin order (up to seven, the open one is not repeated), with
-the session title and the stage words in the tooltip, then `+N` which opens the
-same flyout with every pin. `New` shows the draft dot and reads `New session,
-draft in progress` while a written draft waits elsewhere.
+over the session leaves its button `remembered` (full foreground, no marker). The
+other nodes carry the session title and the stage words in their tooltip. `+N`
+counts the pins past the seventh and opens the same flyout with every pin. `New`
+shows the draft dot and reads `New session, draft in progress` while a written
+draft waits elsewhere.
 
 **Two keys switch sessions without the list.** `⌃Tab` opens a list of the
 pinned sessions (a **Pinned** section, up to eight, in pin order) and then the

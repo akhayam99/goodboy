@@ -19,6 +19,8 @@ const RAIL_BUTTON_BASE =
 
 export const RAIL_BUTTON_CURRENT = 'cursor-default bg-selected text-foreground';
 
+export const RAIL_NODE_CURRENT = cn(RAIL_BUTTON_CURRENT, 'ring-1 ring-inset ring-border');
+
 export const RAIL_BUTTON_IDLE = 'text-muted-foreground hover:bg-hover hover:text-foreground';
 
 export const RAIL_NODE_BUTTON = cn('size-7', RAIL_BUTTON_BASE);

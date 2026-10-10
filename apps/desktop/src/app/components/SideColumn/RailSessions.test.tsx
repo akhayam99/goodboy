@@ -65,6 +65,9 @@ afterEach(() => {
 const open = sessionOf({ goal: 'Fix webhook retries', lastOpenedAt: '2026-10-06T09:00:00.000Z' });
 const idOf = (session: Session) => session.id as SessionId;
 
+const pinnedId = (pinned: ReadonlyArray<Session>, index: number): SessionId =>
+  idOf(pinned[index] ?? open);
+
 const pinnedSessions = (count: number): ReadonlyArray<Session> =>
   Array.from({ length: count }, (_, index) =>
     sessionOf({
@@ -80,6 +83,21 @@ type RailParams = {
   readonly currentSessionId?: SessionId | null;
 };
 
+const railOf = ({
+  place = null,
+  scope = 'workspace',
+  currentSessionId = idOf(open),
+}: RailParams = {}) => (
+  <ColumnRail
+    scope={scope}
+    workspaceId={scope === 'workspace' ? harborline.id : null}
+    currentSessionId={currentSessionId}
+    place={place}
+    onToggle={vi.fn()}
+    actions={actions()}
+  />
+);
+
 const mountRail = ({
   place = null,
   scope = 'workspace',
@@ -93,17 +111,31 @@ const mountRail = ({
       [harborline.id]: pinned.map((session, index) => ({ id: idOf(session), at: index + 1 })),
     },
   });
-  return render(
-    <ColumnRail
-      scope={scope}
-      workspaceId={scope === 'workspace' ? harborline.id : null}
-      currentSessionId={currentSessionId}
-      place={place}
-      onToggle={vi.fn()}
-      actions={actions()}
-    />,
-  );
+  return render(railOf({ place, scope, currentSessionId }));
 };
+
+const showCurrent = ({
+  rerender,
+  sessionId,
+}: {
+  readonly rerender: (ui: React.ReactElement) => void;
+  readonly sessionId: SessionId;
+}) => {
+  act(() => {
+    useAppStore.setState({ currentSessionId: sessionId });
+  });
+  rerender(railOf({ currentSessionId: sessionId }));
+};
+
+const railOrder = (): ReadonlyArray<string | null> =>
+  Array.from(document.querySelectorAll<HTMLElement>('[data-rail-session]')).map((button) =>
+    button.getAttribute('data-rail-session'),
+  );
+
+const currentNodes = (): ReadonlyArray<string | null> =>
+  Array.from(document.querySelectorAll<HTMLElement>('[data-rail-session]'))
+    .filter((button) => button.getAttribute('aria-current') === 'page')
+    .map((button) => button.getAttribute('data-rail-session'));
 
 const wait = (ms: number) => {
   act(() => {
@@ -263,15 +295,55 @@ describe('the open session on the rail', () => {
 });
 
 describe('the pinned sessions on the rail', () => {
-  it('shows one node button per pin under the open session, in pin order', () => {
+  it('draws the pins in pin order and an unpinned open session as one extra node after them', () => {
     const pinned = pinnedSessions(3);
     mountRail({ pinned });
     const buttons = Array.from(document.querySelectorAll<HTMLElement>('[data-rail-session]'));
-    expect(buttons.map((button) => button.getAttribute('data-rail-session'))).toEqual([
-      open.id,
-      ...pinned.map((session) => session.id),
-    ]);
-    expect(buttons[1]?.getAttribute('aria-label')).toContain('Pinned work 1');
+    expect(railOrder()).toEqual([...pinned.map((session) => session.id), open.id]);
+    expect(buttons[0]?.getAttribute('aria-label')).toContain('Pinned work 1');
+    const tail = document.querySelector('[data-slot="rail-open-tail"]');
+    expect(tail?.querySelectorAll('[data-rail-session]')).toHaveLength(1);
+    expect(tail?.querySelector(`[data-rail-session="${open.id}"]`)).not.toBeNull();
+    expect(currentNodes()).toEqual([open.id]);
+  });
+
+  it('keeps the pin order whatever is open and moves only the marker', () => {
+    const pinned = pinnedSessions(5);
+    const { rerender } = mountRail({ pinned, currentSessionId: pinnedId(pinned, 0) });
+    const order = pinned.map((session) => session.id);
+    expect(railOrder()).toEqual(order);
+    expect(currentNodes()).toEqual([order[0]]);
+    expect(document.querySelector('[data-slot="rail-open-tail"]')).toBeNull();
+
+    showCurrent({ rerender, sessionId: pinnedId(pinned, 3) });
+
+    expect(railOrder()).toEqual(order);
+    expect(currentNodes()).toEqual([order[3]]);
+    expect(document.querySelector('[data-slot="rail-open-tail"]')).toBeNull();
+  });
+
+  it('adds the open session as a tail node when it is pinned beyond the limit', () => {
+    const pinned = pinnedSessions(9);
+    mountRail({ pinned, currentSessionId: pinnedId(pinned, 8) });
+    const tail = document.querySelector('[data-slot="rail-open-tail"]');
+    expect(tail?.querySelector(`[data-rail-session="${pinned[8]?.id}"]`)).not.toBeNull();
+    expect(railOrder().slice(0, 7)).toEqual(pinned.slice(0, 7).map((session) => session.id));
+    expect(document.querySelector<HTMLElement>('[data-rail-more]')?.textContent).toBe('+2');
+  });
+
+  it('opens the flyout from the current node and leaves the others to their tooltip', () => {
+    const pinned = pinnedSessions(5);
+    mountRail({ pinned, currentSessionId: pinnedId(pinned, 3) });
+    const other = document.querySelector(`[data-rail-session="${pinned[0]?.id}"]`) as HTMLElement;
+    fireEvent.mouseEnter(other);
+    wait(200);
+    expect(flyout()).toBeNull();
+
+    fireEvent.mouseEnter(
+      document.querySelector(`[data-rail-session="${pinned[3]?.id}"]`) as HTMLElement,
+    );
+    wait(200);
+    expect(flyout()).not.toBeNull();
   });
 
   it('shows seven pins and then +N for the rest, which opens every pin in a flyout', () => {

@@ -40,9 +40,9 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
     !hasOpenSession || currentSessionId === null
       ? null
       : (sessionById(sessions, currentSessionId) ?? null);
-  const others = pinned.filter((session) => session.id !== open?.id);
-  const shown = others.slice(0, RAIL_PINNED_LIMIT);
-  const extra = others.length - shown.length;
+  const shown = pinned.slice(0, RAIL_PINNED_LIMIT);
+  const extra = pinned.length - shown.length;
+  const hasOpenTail = open !== null && !shown.some((session) => session.id === open.id);
   const sign: RailSessionSign = place === null ? 'current' : 'remembered';
   const { target, close } = flyout;
 
@@ -72,32 +72,43 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
     window.requestAnimationFrame(focusFirstFlyoutRow);
   };
 
+  const openNodeOf = (session: Session) => (
+    <RailSessionButton
+      key={session.id}
+      session={session}
+      sign={sign}
+      hasFlyout
+      onSelect={() => select(session.id as SessionId)}
+      onEnter={enterWith('session')}
+      onLeave={flyout.leave}
+      onKeyDown={keysWith('session')}
+    />
+  );
+
   if (open === null && shown.length === 0 && extra <= 0) {
     return null;
   }
 
   return (
     <div className="flex flex-col items-center gap-1 pt-2" data-rail-sessions="">
-      {open === null ? null : (
-        <RailSessionButton
-          session={open}
-          sign={sign}
-          hasFlyout
-          onSelect={() => select(open.id as SessionId)}
-          onEnter={enterWith('session')}
-          onLeave={flyout.leave}
-          onKeyDown={keysWith('session')}
-        />
+      {shown.map((session) =>
+        session.id === open?.id ? (
+          openNodeOf(session)
+        ) : (
+          <RailSessionButton
+            key={session.id}
+            session={session}
+            sign="none"
+            hasFlyout={false}
+            onSelect={() => select(session.id as SessionId)}
+          />
+        ),
       )}
-      {shown.map((session) => (
-        <RailSessionButton
-          key={session.id}
-          session={session}
-          sign="none"
-          hasFlyout={false}
-          onSelect={() => select(session.id as SessionId)}
-        />
-      ))}
+      {hasOpenTail ? (
+        <div data-slot="rail-open-tail" className="contents">
+          {openNodeOf(open)}
+        </div>
+      ) : null}
       {extra > 0 ? (
         <RailMoreButton
           count={extra}
