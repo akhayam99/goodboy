@@ -11,7 +11,6 @@ const CASCADE_MS = 40;
 type Params = {
   readonly segments: ReadonlyArray<TrailSegmentModel>;
   readonly navRef: RefObject<HTMLElement | null>;
-  readonly leadRef: RefObject<HTMLElement | null>;
 };
 
 type Compaction = {
@@ -23,9 +22,8 @@ type Compaction = {
 const estimateFullWidth = (segment: TrailSegmentModel): number =>
   ICON_WIDTH + segment.label.length * CHARACTER_WIDTH + 14;
 
-export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compaction => {
+export const useTrailCompaction = ({ segments, navRef }: Params): Compaction => {
   const [available, setAvailable] = useState<number | null>(null);
-  const [leadWidth, setLeadWidth] = useState(0);
   const [measured, setMeasured] = useState<ReadonlyMap<string, number>>(new Map());
   const previousStates = useRef<ReadonlyMap<string, TrailSegmentState>>(new Map());
   const seenIds = useRef<ReadonlySet<string> | null>(null);
@@ -38,13 +36,12 @@ export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compa
     const read = () => {
       const width = nav.clientWidth;
       setAvailable(width > 0 ? width : null);
-      setLeadWidth(leadRef.current?.getBoundingClientRect().width ?? 0);
     };
     read();
     const observer = new ResizeObserver(read);
     observer.observe(nav);
     return () => observer.disconnect();
-  }, [navRef, leadRef]);
+  }, [navRef]);
 
   const keyOf = (segment: TrailSegmentModel) => `${segment.id}:${segment.label}`;
   const fullWidths = segments.map(
@@ -56,7 +53,6 @@ export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compa
     pinned: segments.map((segment) => segment.isPinned === true),
     separatorWidth: SEPARATOR_WIDTH,
     ellipsisWidth: ELLIPSIS_WIDTH,
-    leadWidth,
     available,
   });
 
