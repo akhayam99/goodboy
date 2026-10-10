@@ -26,7 +26,7 @@ fn standing_line(provider: &str, from: &str, to: &str, reason: &str) -> String {
 }
 
 #[tauri::command]
-pub fn log_provider_standing(provider: String, from: String, to: String, reason: String) {
+pub async fn log_provider_standing(provider: String, from: String, to: String, reason: String) {
     log::info!("{}", standing_line(&provider, &from, &to, &reason));
 }
 
