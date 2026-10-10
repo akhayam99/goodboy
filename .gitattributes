@@ -1,0 +1,7 @@
+*.baseline.json linguist-generated=true
+apps/desktop/src/app/components/MockScene/scenes.txt linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+apps/desktop/src-tauri/Cargo.lock linguist-generated=true
+docs/changelog/**/*.png linguist-generated=true
+docs/readme/**/*.png linguist-generated=true
+website/src/data/releases/*.json linguist-generated=true
