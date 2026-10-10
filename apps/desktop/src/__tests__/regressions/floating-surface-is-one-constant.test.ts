@@ -33,10 +33,6 @@ describe('the floating surface', () => {
         'SwitcherPanel.tsx',
       ),
     ],
-    [
-      'UpdateArrivalCard',
-      join(DESKTOP_SRC, 'features', 'updater', 'components', 'UpdateArrivalCard.tsx'),
-    ],
     ['AppOverlayRouter', join(DESKTOP_SRC, 'app', 'components', 'AppOverlayRouter', 'index.tsx')],
   ])('paints %s from the constant, with no surface of its own', (_name, path) => {
     const source = read(path);
@@ -56,6 +52,15 @@ describe('the floating surface', () => {
     const source = read(path);
 
     expect(source).toContain('<AnchoredPopover');
+    expect(source).not.toMatch(/bg-floating|border-border-soft|shadow-(?:md|lg|xl)/);
+  });
+
+  it('lets UpdateArrivalCard take the Popover surface without overriding it', () => {
+    const source = read(
+      join(DESKTOP_SRC, 'features', 'updater', 'components', 'UpdateArrivalCard.tsx'),
+    );
+
+    expect(source).toContain('<Popover');
     expect(source).not.toMatch(/bg-floating|border-border-soft|shadow-(?:md|lg|xl)/);
   });
 });
