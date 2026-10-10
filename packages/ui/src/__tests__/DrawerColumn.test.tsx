@@ -124,7 +124,7 @@ describe('DrawerColumn pushing', () => {
     expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
   });
 
-  it('shows the handle for the side tier and for the reader tier, never for full', () => {
+  it('shows the handle for the side tier and for the reader tier', () => {
     stubColumnWidth(2000);
     const side = renderSized('side');
     expect(handle()).not.toBeNull();
@@ -132,8 +132,6 @@ describe('DrawerColumn pushing', () => {
     const reader = renderSized('reader');
     expect(handle()).not.toBeNull();
     reader.unmount();
-    renderSized('full');
-    expect(handle()).toBeNull();
   });
 
   it('keeps the main content first and on its left edge, open or closed', () => {
@@ -240,14 +238,6 @@ describe('DrawerColumn over the page', () => {
     stubColumnWidth(600);
     renderSized('reader');
     expect(panel().style.width).toBe(`${600 - 16 + DRAWER_INSET}px`);
-  });
-
-  it('fills the whole column when expanded, over the page', () => {
-    stubColumnWidth(2000);
-    renderSized('full');
-
-    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel().style.width).toBe(`${2000 - DRAWER_INSET}px`);
   });
 
   it('covers the page with a scrim only while it lies over it', () => {
@@ -550,7 +540,7 @@ describe('DrawerColumn sizes', () => {
 
   const FIT_CASES = [1280, 1440].flatMap((windowPx) =>
     [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX].flatMap((sidebarPx) =>
-      (['side', 'reader', 'full'] as const).map((sizing) => ({
+      (['side', 'reader'] as const).map((sizing) => ({
         sizing,
         columnWidth: windowPx - sidebarPx,
       })),
