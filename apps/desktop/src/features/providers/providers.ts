@@ -9,10 +9,14 @@ import type {
 
 type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 
+export type ProbeErrorKind = 'notFound' | 'timeout' | 'exit';
+
 export type AuthState = {
   readonly state: AuthStateKind;
   readonly identity: string | null;
   readonly plan?: string | null;
+  readonly verified?: boolean;
+  readonly reason?: string | null;
 };
 
 export type { ProviderId, ProviderConnectionState };
@@ -24,6 +28,7 @@ export type ProviderStatus = {
   readonly version: string | null;
   readonly error: string | null;
   readonly path?: string | null;
+  readonly errorKind?: ProbeErrorKind | null;
 };
 
 export type ProviderDisplayInfo = ProviderInfoBase & {

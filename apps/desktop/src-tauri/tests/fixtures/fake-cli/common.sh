@@ -55,14 +55,19 @@ fake_turn() {
   esac
 }
 
+fake_hang() {
+  printf '%s\n' "$$" >> "$fake_dir/probe.pid"
+  exec sleep 30
+}
+
 fake_version() {
   case "$fake_mode" in
     version-fail)
       printf 'fake cli: cannot start\n' >&2
       exit 1
       ;;
-    version-hang)
-      exec sleep 30
+    version-hang | slow)
+      fake_hang
       ;;
     *)
       printf '%s\n' "$1"

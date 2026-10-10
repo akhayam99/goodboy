@@ -167,6 +167,7 @@ fn detect_provider_status(provider_id: &str) -> ProviderStatus {
             version: None,
             error: Some(format!("unknown provider: {}", provider_id)),
             path: None,
+            error_kind: None,
         },
     }
 }
