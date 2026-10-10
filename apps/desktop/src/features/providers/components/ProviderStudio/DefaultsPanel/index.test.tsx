@@ -872,6 +872,7 @@ describe('DefaultsPanel', () => {
 
       expect(roleRow('Planner').textContent).toContain('Pinned');
       expect(roleRow('Scout').textContent).toContain('Auto');
+      expect(screen.getAllByText('Pinned')).toHaveLength(2);
       expect(
         screen.getByText(/^Pinned Opus 5\.5 is skipped: Claude is Off\. Using /),
       ).toBeDefined();

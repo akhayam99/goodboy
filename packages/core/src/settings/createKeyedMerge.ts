@@ -13,36 +13,31 @@ type CacheNode<V> = {
 
 const newNode = <V>(): CacheNode<V> => ({ children: new WeakMap(), result: undefined });
 
-const isComplete = <V>(layer: KeyedLayer<V>): layer is KeyedMerged<V> =>
-  Object.values(layer).every((value) => value !== undefined);
-
-const isFilled = <V>(layer: KeyedLayer<V> | null | undefined): layer is KeyedLayer<V> =>
-  layer != null && Object.keys(layer).length > 0;
-
-const combine = <V>(layers: ReadonlyArray<KeyedLayer<V>>): KeyedMerged<V> =>
-  Object.fromEntries(
-    layers
-      .flatMap((layer) => Object.entries(layer))
-      .flatMap(([key, value]) => (value === undefined ? [] : [[key, value] as const])),
-  );
-
 export const createKeyedMerge = <V extends object>() => {
   const root = newNode<V>();
   return ({ layers }: MergeParams<V>): KeyedMerged<V> | null => {
-    const filled = layers.filter(isFilled);
-    const [first] = filled;
-    if (first === undefined) {
+    const filled = layers.filter(
+      (layer): layer is KeyedLayer<V> => layer != null && Object.keys(layer).length > 0,
+    );
+    if (filled.length === 0) {
       return null;
     }
-    if (filled.length === 1 && isComplete(first)) {
-      return first;
+    const [whole] = filled.filter((layer): layer is KeyedMerged<V> =>
+      Object.values(layer).every((value) => value !== undefined),
+    );
+    if (filled.length === 1 && whole !== undefined) {
+      return whole;
     }
     const node = filled.reduce<CacheNode<V>>((current, layer) => {
       const child = current.children.get(layer) ?? newNode<V>();
       current.children.set(layer, child);
       return child;
     }, root);
-    node.result ??= combine(filled);
+    node.result ??= Object.fromEntries(
+      filled
+        .flatMap((layer) => Object.entries(layer))
+        .flatMap(([key, value]) => (value === undefined ? [] : [[key, value] as const])),
+    );
     return Object.keys(node.result).length > 0 ? node.result : null;
   };
 };
