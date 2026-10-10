@@ -85,6 +85,17 @@ const surfaceChanges = ({
         target?.kind === 'terminal' ? target.mountPath : null,
       ),
     },
+    exploreMountPath:
+      lens === 'explore'
+        ? {
+            ...state.exploreMountPath,
+            [sessionId]: keep(
+              true,
+              state.exploreMountPath[sessionId] ?? null,
+              target?.kind === 'explore' ? target.mountPath : null,
+            ),
+          }
+        : state.exploreMountPath,
     focusedArtifactId: {
       ...state.focusedArtifactId,
       [sessionId]: keep(

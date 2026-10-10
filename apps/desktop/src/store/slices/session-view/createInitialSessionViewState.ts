@@ -27,4 +27,5 @@ export const createInitialSessionViewState = ({}: Params) => ({
   sessionCreations: {},
   sessionGroupExpanded: {},
   exploreExpanded: {},
+  exploreMountPath: {},
 });
