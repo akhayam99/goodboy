@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { AnchoredPopover, Chip, Tooltip, useDropdown } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { linkIssueEventName } from '../../../actions/kinds/session';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
@@ -10,9 +10,10 @@ import { LinkWorkPanel } from './LinkWorkPanel';
 
 type Props = {
   readonly session: Session;
+  readonly initialSource?: SessionExternalTaskProvider;
 };
 
-export const LinkIssueAction = ({ session }: Props) => {
+export const LinkIssueAction = ({ session, initialSource }: Props) => {
   const [initialQuery, setInitialQuery] = useState('');
   const dropdown = useDropdown({
     align: 'end',
@@ -87,6 +88,7 @@ export const LinkIssueAction = ({ session }: Props) => {
         <LinkWorkPanel
           key={initialQuery}
           initialQuery={initialQuery}
+          {...(initialSource !== undefined ? { initialSource } : {})}
           session={session}
           onLinked={dropdown.close}
           onClose={dropdown.close}

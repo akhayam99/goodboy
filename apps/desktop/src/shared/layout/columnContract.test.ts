@@ -141,7 +141,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/scripts/components/ScriptsPanel/index.tsx'],
   },
-  LinkTicketPopover: { kind: 'helper', files: [] },
+  LinkIssueAction: { kind: 'helper', files: [] },
   EmptyState: { kind: 'helper', files: [] },
 };
 

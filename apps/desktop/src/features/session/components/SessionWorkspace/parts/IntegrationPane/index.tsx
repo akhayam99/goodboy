@@ -9,6 +9,7 @@ import type {
 import { cn, CountToggle, formatError, PaneShell, PaneActionsContext } from '@goodboy/ui';
 import { EmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
+import { selectSessionById } from '../../../../../../store/slices/sessions/selectSessionById';
 import { selectActiveProjectPrs } from '../../../../../../store/slices/github/activeProjectPrs';
 import { ConnectIntegrationEmptyState } from '../../../../../integrations/ConnectIntegrationEmptyState';
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
@@ -21,9 +22,9 @@ import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';
 import { FocusedTaskBody } from './FocusedTaskBody';
 import { integrationTaskKey } from './integrationTaskKey';
-import { LinkTicketPopover } from './LinkTicketPopover';
 import { WorkItemList } from './WorkItemList';
 import { useSessionProjectScope } from '../../../../hooks/useSessionProjectScope';
+import { LinkIssueAction } from '../../../SessionOverviewPane/LinkIssueAction';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -33,8 +34,6 @@ type Props = {
 
 type ProviderMeta = Readonly<{
   label: string;
-  noun: string;
-  nounPhrase: string;
   nounPlural: string;
   linkHint: string;
 }>;
@@ -46,50 +45,36 @@ type UnlinkParams = {
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   linear: {
     label: 'Linear',
-    noun: 'issue',
-    nounPhrase: 'an issue',
     nounPlural: 'issues',
     linkHint: 'Search your assigned Linear issues or paste a URL to link one to this session.',
   },
   sentry: {
     label: 'Sentry',
-    noun: 'issue',
-    nounPhrase: 'an issue',
     nounPlural: 'issues',
     linkHint: 'Search your assigned Sentry issues or paste a URL to link one to this session.',
   },
   gitlab: {
     label: 'GitLab',
-    noun: 'issue',
-    nounPhrase: 'an issue',
     nounPlural: 'issues',
     linkHint: 'Search your assigned GitLab issues or paste a URL to link one to this session.',
   },
   jira: {
     label: 'Jira',
-    noun: 'issue',
-    nounPhrase: 'an issue',
     nounPlural: 'issues',
     linkHint: 'Search your assigned Jira issues or paste a URL to link one to this session.',
   },
   github: {
     label: 'GitHub',
-    noun: 'issue',
-    nounPhrase: 'an issue',
     nounPlural: 'issues',
     linkHint: 'Search your assigned GitHub issues or paste a URL to link one to this session.',
   },
   bitbucket: {
     label: 'Bitbucket',
-    noun: 'pull request',
-    nounPhrase: 'a pull request',
     nounPlural: 'pull requests',
     linkHint: 'Paste a Bitbucket pull request URL to link one to this session.',
   },
   slack: {
     label: 'Slack',
-    noun: 'thread',
-    nounPhrase: 'a thread',
     nounPlural: 'threads',
     linkHint: 'Pick a thread from a channel you are in, or paste a Slack permalink to link one.',
   },
@@ -134,17 +119,9 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       githubConnection.isResolved === false || githubConnection.isAuthenticated,
   });
   const hasTasks = tasks.length > 0;
-  const linkAction = (
-    <LinkTicketPopover
-      sessionId={sessionId}
-      workspaceId={workspaceId}
-      provider={provider}
-      providerLabel={meta.label}
-      noun={meta.noun}
-      nounPhrase={meta.nounPhrase}
-      nounPlural={meta.nounPlural}
-    />
-  );
+  const session = useAppStore((state) => selectSessionById(state, sessionId));
+  const linkAction =
+    session === null ? undefined : <LinkIssueAction session={session} initialSource={provider} />;
   const focusedTask = tasks.find((task) => integrationTaskKey({ task }) === focusedTaskKey) ?? null;
   const workItems = buildWorkItems({
     tasks,
@@ -183,7 +160,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               disabled={isUnlinking}
               onClick={() => void handleUnlink({ task: focusedTask })}
             />
-            {linkAction}
           </div>
         }
       >
