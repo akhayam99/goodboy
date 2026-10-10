@@ -37,6 +37,8 @@ import { InboxStarredGroup } from './InboxStarredGroup';
 import { useInboxStars } from '../../useInboxStars';
 import { InboxStudioLayout } from './InboxStudioLayout';
 
+const REPLY_FOCUS_FRAMES = 30;
+
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string;
@@ -142,10 +144,11 @@ export const InboxStudio = ({
   const [filters, setFilters] = useState<InboxFilters>(() =>
     initialFilters({ workspaceId, initialKind, initialProvider }),
   );
-  const [selectedKey, setSelectedKey] = useState<string | null>(initialRecordKey);
-  const [isFirstRowOff, setFirstRowOff] = useState(false);
+  const [openKey, setOpenKey] = useState<string | null>(initialRecordKey);
+  const [cursorKey, setCursorKey] = useState<string | null>(initialRecordKey);
   const [sessionFilter, setSessionFilter] = useState<SessionId | null>(initialSessionId);
   const [launchFocusRequest, setLaunchFocusRequest] = useState(0);
+  const [replyFocusRequest, setReplyFocusRequest] = useState(0);
   const filteredSession = useSessionById(sessionFilter);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const detailRef = useRef<HTMLElement | null>(null);
@@ -160,10 +163,10 @@ export const InboxStudio = ({
     onFocusChangeRef.current?.({
       provider: filters.source,
       kind: initialKind,
-      recordKey: selectedKey,
+      recordKey: openKey,
       sessionId: sessionFilter,
     });
-  }, [filters.source, initialKind, selectedKey, sessionFilter]);
+  }, [filters.source, initialKind, openKey, sessionFilter]);
 
   const scopedRecords = useMemo(
     () =>
@@ -253,15 +256,18 @@ export const InboxStudio = ({
     [lookup.state, linkedSessions],
   );
 
-  const pinnedRecord =
-    scopedRecords.find((record) => record.key === selectedKey) ??
-    starredRecords.find((record) => record.key === selectedKey) ??
-    lookupRecords.find((record) => record.key === selectedKey) ??
+  const openRecord =
+    scopedRecords.find((record) => record.key === openKey) ??
+    starredRecords.find((record) => record.key === openKey) ??
+    lookupRecords.find((record) => record.key === openKey) ??
     null;
-  const isFirstRowShown = selectedKey === null && !isFirstRowOff;
-  const selectedRecord = pinnedRecord ?? (isFirstRowShown ? (orderedRecords[0] ?? null) : null);
-  const activeKey = selectedRecord?.key ?? null;
-  const canReply = recordCanReply({ record: selectedRecord });
+  const activeCursorKey = cursorKey ?? orderedKeys[0] ?? null;
+  const cursorRecord =
+    openRecord?.key === activeCursorKey
+      ? openRecord
+      : ([...orderedRecords, ...lookupRecords].find((record) => record.key === activeCursorKey) ??
+        null);
+  const canReply = recordCanReply({ record: cursorRecord });
 
   const starOf = (record: InboxRecord): boolean | undefined =>
     canStar(record) ? isStarred(record) : undefined;
@@ -288,15 +294,12 @@ export const InboxStudio = ({
   };
 
   const deselect = (): void => {
-    setSelectedKey(null);
-    setFirstRowOff(true);
+    setOpenKey(null);
   };
 
-  useEscapeLayer(deselect, pinnedRecord != null);
+  useEscapeLayer(deselect, openRecord != null);
 
-  const selectKey = useCallback((key: string): void => {
-    setSelectedKey(key);
-    setFirstRowOff(false);
+  const scrollToKey = useCallback((key: string): void => {
     requestAnimationFrame(() => {
       document
         .querySelector(`[data-inbox-key="${CSS.escape(key)}"]`)
@@ -304,13 +307,31 @@ export const InboxStudio = ({
     });
   }, []);
 
+  const moveCursor = useCallback(
+    (key: string): void => {
+      setCursorKey(key);
+      setOpenKey((current) => (current === null ? null : key));
+      scrollToKey(key);
+    },
+    [scrollToKey],
+  );
+
+  const openKeyed = useCallback(
+    (key: string): void => {
+      setCursorKey(key);
+      setOpenKey(key);
+      scrollToKey(key);
+    },
+    [scrollToKey],
+  );
+
   const activate = useCallback((key: string): void => {
-    setSelectedKey(key);
-    setFirstRowOff(false);
+    setCursorKey(key);
+    setOpenKey(key);
     setLaunchFocusRequest((current) => current + 1);
   }, []);
 
-  const selectRecord = useCallback((record: InboxRecord) => selectKey(record.key), [selectKey]);
+  const selectRecord = useCallback((record: InboxRecord) => openKeyed(record.key), [openKeyed]);
 
   const activateRecord = useCallback((record: InboxRecord) => activate(record.key), [activate]);
 
@@ -325,10 +346,33 @@ export const InboxStudio = ({
     void openUrl(url);
   }, []);
 
+  const activeCursorKeyRef = useRef(activeCursorKey);
+  activeCursorKeyRef.current = activeCursorKey;
   const focusReply = useCallback((): void => {
-    const composer = detailRef.current?.querySelector('textarea');
-    composer?.focus();
+    setOpenKey(activeCursorKeyRef.current);
+    setReplyFocusRequest((current) => current + 1);
   }, []);
+
+  useEffect(() => {
+    if (replyFocusRequest === 0) {
+      return;
+    }
+    let frame = 0;
+    let attempts = 0;
+    const focusComposer = (): void => {
+      const composer = detailRef.current?.querySelector('textarea');
+      if (composer != null) {
+        composer.focus();
+        return;
+      }
+      attempts += 1;
+      if (attempts < REPLY_FOCUS_FRAMES) {
+        frame = requestAnimationFrame(focusComposer);
+      }
+    };
+    focusComposer();
+    return () => cancelAnimationFrame(frame);
+  }, [replyFocusRequest]);
 
   const focusSearch = useCallback((): void => {
     searchRef.current?.focus();
@@ -342,8 +386,8 @@ export const InboxStudio = ({
 
   useListKeys({
     keys: orderedKeys,
-    selectedKey: activeKey,
-    onSelect: selectKey,
+    selectedKey: activeCursorKey,
+    onSelect: moveCursor,
     onActivate: activate,
     onOpenInTool: openSelected,
     ...(canReply && { onReply: focusReply }),
@@ -387,7 +431,7 @@ export const InboxStudio = ({
       tone={CONCEPT_TONE.inbox}
       title={NAMES.tasks}
       closeLabel="Close tasks"
-      isEscapeEnabled={pinnedRecord == null}
+      isEscapeEnabled={openRecord == null}
       onClose={onClose}
     >
       {(requestClose) => (
@@ -419,15 +463,17 @@ export const InboxStudio = ({
               <InboxLookupGroup
                 lookup={lookup}
                 workspaceName={workspaceName}
-                selectedKey={activeKey}
-                onSelect={(hit) => selectKey(hit.record.key)}
+                selectedKey={openKey}
+                cursorKey={activeCursorKey}
+                onSelect={(hit) => openKeyed(hit.record.key)}
                 onActivate={activateRecord}
                 starOf={starOf}
                 onToggleStar={toggleStar}
               />
               <InboxStarredGroup
                 rows={starredRows}
-                selectedKey={activeKey}
+                selectedKey={openKey}
+                cursorKey={activeCursorKey}
                 unstarredCount={unstarredClosed.length}
                 onSelect={selectRecord}
                 onActivate={activateRecord}
@@ -449,7 +495,8 @@ export const InboxStudio = ({
                 isLoading={isLoading}
                 failures={failures}
                 hasFiltersActive={hasFiltersActive}
-                selectedKey={activeKey}
+                selectedKey={openKey}
+                cursorKey={activeCursorKey}
                 onSelect={selectRecord}
                 onActivate={activateRecord}
                 onToggleStar={toggleStar}
@@ -461,9 +508,9 @@ export const InboxStudio = ({
           }
           drawerRef={detailRef}
           drawer={
-            selectedRecord == null ? null : (
+            openRecord == null ? null : (
               <InboxDetail
-                record={selectedRecord}
+                record={openRecord}
                 workspaceId={workspaceId}
                 rootPath={rootPath}
                 errors={errors}

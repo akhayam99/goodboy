@@ -20,6 +20,7 @@ type Props = {
   readonly failures: ReadonlyArray<InboxLoadFailure>;
   readonly hasFiltersActive: boolean;
   readonly selectedKey: string | null;
+  readonly cursorKey?: string | null;
   readonly onSelect: (record: InboxRecord) => void;
   readonly onActivate?: (record: InboxRecord) => void;
   readonly onRetry: () => void;
@@ -37,6 +38,7 @@ export const InboxList = ({
   failures,
   hasFiltersActive,
   selectedKey,
+  cursorKey,
   onSelect,
   onActivate,
   onRetry,
@@ -49,9 +51,8 @@ export const InboxList = ({
   const isStateShown = hasMixedStates({ records: days.flatMap((day) => day.items) });
   const isShowingSkeleton = isLoading && totalCount === 0;
   const activeOptionId =
-    selectedKey != null &&
-    days.some((day) => day.items.some((record) => record.key === selectedKey))
-      ? inboxOptionId({ key: selectedKey })
+    cursorKey != null && days.some((day) => day.items.some((record) => record.key === cursorKey))
+      ? inboxOptionId({ key: cursorKey })
       : undefined;
   const failureNotice = inboxFailureNoticeOf({
     failures: failures.map((failure) => ({
@@ -149,6 +150,7 @@ export const InboxList = ({
                     <InboxRow
                       record={record}
                       selected={record.key === selectedKey}
+                      isCursor={record.key === cursorKey}
                       onSelect={onSelect}
                       onActivate={onActivate}
                       isStarred={starOf?.(record)}

@@ -15,6 +15,7 @@ type Props = {
   readonly lookup: WorkspaceIssueLookup;
   readonly workspaceName: string;
   readonly selectedKey: string | null;
+  readonly cursorKey?: string | null;
   readonly onSelect: (hit: LookupHit) => void;
   readonly onActivate?: (record: InboxRecord) => void;
   readonly starOf?: (record: InboxRecord) => boolean | undefined;
@@ -25,6 +26,7 @@ export const InboxLookupGroup = ({
   lookup,
   workspaceName,
   selectedKey,
+  cursorKey,
   onSelect,
   onActivate,
   starOf,
@@ -58,6 +60,7 @@ export const InboxLookupGroup = ({
             <InboxRow
               record={hit.record}
               selected={selectedKey === hit.record.key}
+              isCursor={cursorKey === hit.record.key}
               onSelect={() => onSelect(hit)}
               onActivate={onActivate}
               isStarred={starOf?.(hit.record)}

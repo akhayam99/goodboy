@@ -55,6 +55,17 @@ describe('InboxRow', () => {
     expect(screen.getByRole('option').getAttribute('aria-selected')).toBe('true');
   });
 
+  it('draws a cursor row quietly: not selected, with the hover fill', () => {
+    const { container } = render(
+      <InboxRow record={record} selected={false} isCursor onSelect={vi.fn()} />,
+    );
+
+    expect(screen.getByRole('option').getAttribute('aria-selected')).toBe('false');
+    const row = container.querySelector('[data-inbox-key]');
+    expect(row?.getAttribute('data-cursor')).toBe('true');
+    expect(row?.getAttribute('data-selected')).toBe('false');
+  });
+
   it('reports the record when clicked', () => {
     const onSelect = vi.fn();
     render(<InboxRow record={record} selected={false} onSelect={onSelect} />);
