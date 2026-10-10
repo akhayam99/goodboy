@@ -276,6 +276,30 @@ describe('plan document drawer header', () => {
   });
 });
 
+describe('a plan whose run was approved and has not chosen its next step', () => {
+  it('offers no primary and says the run is choosing the next step', () => {
+    seedAndRender({ run: 'orchestrated' });
+
+    expect(screen.queryByTestId('plan-primary')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    const chip = within(
+      screen.getByRole('region', { name: 'Retry-safe webhook credits' }),
+    ).getByTestId('artifact-state-chip');
+    expect(chip.textContent).toContain('Approved');
+    expect(screen.getByTestId('plan-drawer-reason').textContent).toContain(
+      'The run is choosing the next step',
+    );
+  });
+
+  it('keeps the same answer for a run that took the plan and has a step waiting', () => {
+    seedAndRender({ run: 'took' });
+
+    expect(screen.queryByTestId('plan-primary')).toBeNull();
+    expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Approved');
+  });
+});
+
 describe('approving from the drawer', () => {
   it('asks inline about unsent comments, and approves once it is confirmed', async () => {
     seedPlanDrawer({ run: 'held', drafts: [aPlanDraft(), aPlanDraft({ id: 'comment-2' })] });
@@ -342,7 +366,7 @@ describe('approving from the drawer', () => {
     expect(screen.queryByRole('button', { name: 'Follow the run' })).toBeNull();
   });
 
-  it('names the step that started, and keeps the drawer elsewhere with a Follow the run action', async () => {
+  it('names the step that started, closes the drawer wherever it is, and keeps a Follow the run action', async () => {
     seedPlanDrawer({ run: 'held' });
     stubApprove({ kind: 'approved', next: 'started', agentId: PLAN_IMPLEMENTER });
     useAppStore.setState({
@@ -358,10 +382,37 @@ describe('approving from the drawer', () => {
 
     expect(await screen.findByText('Implement started')).toBeDefined();
     expect(screen.getAllByText('Plan approved')).toHaveLength(1);
-    expect(useAppStore.getState().drawer).not.toBeNull();
+    expect(useAppStore.getState().drawer).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Follow the run' }));
     expect(useAppStore.getState().activeLens[PLAN_FIXTURE_SESSION]).toBe('workflows');
     expect(useAppStore.getState().focusedWorkflowRunId[PLAN_FIXTURE_SESSION]).toBe(PLAN_RUN_ID);
+  });
+
+  it('shows Approving, off, until the approval resolves, then closes the drawer', async () => {
+    seedPlanDrawer({ run: 'held' });
+    const gate: { release: (result: ApprovePlanResult) => void } = { release: () => undefined };
+    useAppStore.setState({
+      approveWorkflowRunPlan: () =>
+        new Promise<ApprovePlanResult>((resolve) => {
+          gate.release = resolve;
+        }),
+      drawer: {
+        kind: 'artifact-document',
+        sessionId: PLAN_FIXTURE_SESSION,
+        payload: { artifactId: PLAN_FIXTURE_ID, revision: null },
+      },
+    });
+    renderDrawer();
+
+    fireEvent.click(screen.getByTestId('plan-primary'));
+
+    const pending = await screen.findByRole('button', { name: 'Approving' });
+    expect(pending.hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Run plan' })).toBeNull();
+    expect(useAppStore.getState().drawer).not.toBeNull();
+    gate.release({ kind: 'approved', next: 'continues', agentId: null });
+    await waitFor(() => expect(useAppStore.getState().drawer).toBeNull());
+    expect(await screen.findAllByText('Plan approved')).toHaveLength(1);
   });
 
   it('raises nothing and closes nothing when there was nothing to approve', async () => {

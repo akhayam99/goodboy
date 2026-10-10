@@ -77,6 +77,7 @@ type SuggestionPlan = {
   readonly title: string;
   readonly status: string;
   readonly creatorHasOpenQuestions: boolean;
+  readonly isOwnedByRun: boolean;
 };
 
 export type SuggestionRebaseRequest = {
@@ -396,6 +397,7 @@ export const deriveNextSteps = ({
   if (
     activePlan != null &&
     !activePlan.creatorHasOpenQuestions &&
+    !activePlan.isOwnedByRun &&
     !consumedPlanIds.has(activePlan.id) &&
     !hasRunningWorkflow
   ) {

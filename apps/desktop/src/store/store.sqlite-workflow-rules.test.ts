@@ -26,6 +26,12 @@ import {
 import { EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import type { AgentInsertArgs } from '../features/workflows/workflows';
 import type { ProviderDisplayInfo } from '../features/providers/providers';
+import { artifactStateOf } from '../features/artifacts/artifactStateOf';
+import { planHandoffOf } from '../features/plans/planHandoffOf';
+import { planOwnerOf } from '../features/plans/planOwnerOf';
+import { planPrimaryOf } from '../features/plans/planPrimaryOf';
+import { NO_PLAN_STATE_INPUTS } from '../features/plans/planStateInputs';
+import { deriveNextSteps } from '../features/suggestions/deriveNextSteps';
 import { summarizerQueues } from './slices/turn/turnHelpers';
 import { WorkflowGateError } from './slices/workflows/workflowActivationGate';
 import {
@@ -272,6 +278,49 @@ const planFor = (workflowRunId: WorkflowRunId): PlanWithCount => ({
   consumptionCount: 0,
 });
 
+const surfacesOf = (plan: PlanWithCount) => {
+  const state = useAppStore.getState();
+  const session = state.sessions.find((candidate) => candidate.id === sessionId);
+  const owner = planOwnerOf({
+    plan,
+    agents: state.sessionPhaseRuns[sessionId] ?? [],
+    runs: session?.workflowRuns ?? [],
+    templates: state.phaseTemplates[WORKSPACE_ID] ?? [],
+  });
+  const chip = artifactStateOf({
+    kind: 'plan',
+    status: plan.status,
+    isNew: false,
+    openQuestionCount: 0,
+    ...NO_PLAN_STATE_INPUTS,
+    handoff: planHandoffOf({ plan, run: owner }),
+  });
+  const next = deriveNextSteps({
+    sessionId,
+    workflowRuns: [],
+    plans: [
+      {
+        id: plan.id,
+        title: plan.title,
+        status: plan.status,
+        creatorHasOpenQuestions: false,
+        isOwnedByRun: owner !== null,
+      },
+    ],
+    consumedPlanIds: new Set(),
+    openQuestionCount: 0,
+    hasPullRequest: false,
+    eligibleThreadCount: 0,
+    projects: [],
+    mountEvents: [],
+  });
+  return {
+    primary: planPrimaryOf({ plan, run: owner, drafts: [] }),
+    chip,
+    isNextOffered: next.some((suggestion) => suggestion.kind === 'plan-ready'),
+  };
+};
+
 const attachAutoRun = async ({ rules }: { readonly rules: WorkflowRules }) => {
   await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID, {
     autoRun: true,
@@ -364,6 +413,39 @@ describe('store on sqlite: ask after the plan', () => {
     const stored = await storedRun(workflowRunId);
     expect(stored?.orchestrationStop).toBeUndefined();
     expect(stored?.rulesSnapshot?.planApproved).toBe(true);
+  });
+
+  it('offers no Run plan, Approved chip and no Next card at any moment after an orchestrated run is approved', async () => {
+    await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID, {
+      autoRun: true,
+      triggerMode: 'manual',
+      executionMode: 'dynamic',
+      rulesSnapshot: PLAN_RULES,
+    });
+    const workflowRunId = runIdOfSession();
+    const plan = planFor(workflowRunId);
+    storySpies.listPlansForSession.mockResolvedValue([plan]);
+    useAppStore.setState({ sessionPlans: { [sessionId]: [plan] } });
+    await useAppStore.getState().orchestrateNextStep(sessionId, workflowRunId);
+    expect(runOf(workflowRunId)?.orchestrationStop?.kind).toBe('plan-approval');
+
+    const held = surfacesOf(plan);
+    expect(held.primary.kind).toBe('approve');
+    expect(held.isNextOffered).toBe(false);
+
+    await useAppStore.getState().approveWorkflowRunPlan(sessionId, workflowRunId);
+
+    expect(runOf(workflowRunId)?.rulesSnapshot?.planApproved).toBe(true);
+    const approved = surfacesOf(plan);
+    expect(approved.primary).toMatchObject({ kind: 'none', label: null });
+    expect(approved.chip).toMatchObject({ key: 'approved', label: 'Approved' });
+    expect(approved.isNextOffered).toBe(false);
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 150));
+    const deciding = surfacesOf(plan);
+    expect(deciding.primary.kind).toBe('none');
+    expect(deciding.chip?.key).toBe('approved');
+    expect(deciding.isNextOffered).toBe(false);
   });
 
   it('admits no work past the plan from the step button, a bypassing launch, a skip or a hint', async () => {

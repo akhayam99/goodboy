@@ -773,8 +773,9 @@ object menu read it through `artifact.runPlan` ([The run page](#the-run-page)).
 
 `planPrimaryOf({ plan, run, drafts })` (`features/plans/planPrimaryOf.ts`) is
 the one rule for the primary button of a plan, on every surface. `run` is the
-run the plan feeds (`planRunOf`): the run held for the plan, or the run whose
-planner step wrote it and whose next step consumes plans.
+run that owns the plan (`planOwnerOf`), found by the link the plan stores
+(`plan.workflowRunId`, else the run of the planner agent that wrote it), alive
+(not discarded, closed or done), whether or not it has a next step yet.
 
 | Plan and run                                      | Primary                                                | Label                                                 |
 | ------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------- |
@@ -782,7 +783,7 @@ planner step wrote it and whose next step consumes plans.
 | ran, replaced, deleted or running                 | `none`                                                 | none                                                  |
 | a run is held for it                              | `approve`                                              | `Approve`                                             |
 | its run's next step consumes it                   | `approve`                                              | `Approve`                                             |
-| its run took it already (`planApproved`, no hold) | `none`                                                 | none                                                  |
+| its run took it already (`planApproved`, no hold) | `none`, even before the run has a next step            | none                                                  |
 | its run was discarded                             | `run`                                                  | `Run plan`                                            |
 | a session plan                                    | `run`                                                  | `Run plan`                                            |
 
@@ -833,14 +834,27 @@ own **Open in Artifacts**.
   the Artifacts page run the same rule: `artifact.runPlan` reads
   `plannerQuestionCount` from its facts for the same off reason, and asks the
   same "N comments are not sent. Approve anyway?" before it approves.
-  **Run plan** on a session plan is `usePlanRun` and its own toast.
+  **Run plan** on a session plan is `usePlanRun` and its own toast. A plan a
+  live run owns is never offered as **Run plan**, **Start implementer** or a chat
+  nudge by any surface: the primary, the Overview Next card
+  (`deriveNextSteps` gets `isOwnedByRun` from `planOwnerOf`) and the nudge
+  (`useSuggestionCards` reads the same suggestion) all read the one owner
+  function, and `run-plan-label-comes-from-plan-primary.test.ts` fails when the
+  label is written anywhere but `planPrimaryOf`.
+- **Between Approve and the next step.** `planHandoffOf` names the gap
+  `approved-waiting`: the owning run has `planApproved` and the plan has no
+  consumption. For an orchestrated run the next step does not exist until the
+  orchestrator decides, often for minutes. The chip reads **Approved** (success
+  tone) with "The run is choosing the next step", the drawer line says the same
+  and there is no primary; when the step that consumes the plan starts the chip
+  reads **Running**.
 - **Approve.** `markUserStart` for the run first, then
   `approveWorkflowRunPlan` for the run held for the plan (a run that is not
-  held starts the step through `runPlan`). `approved` raises one
-  `useFollowToast` toast, "Plan approved" with "The run goes on" or
-  "<Step> started" and the action **Follow the run**, which the hook leaves
-  out when the run page is open and uncovered; when the drawer sits over that
-  run's page it closes first. `noop` closes and raises nothing. `failed`
+  held starts the step through `runPlan`). The button reads **Approving** and
+  stays off until that call resolves. `approved` closes the drawer, on any
+  page, and raises one `useFollowToast` toast, "Plan approved" with "The run
+  goes on" or "<Step> started" and the action **Follow the run**, which the
+  hook leaves out when the run page is open and uncovered. `noop` closes and raises nothing. `failed`
   goes to `reportError` ("Couldn't approve the plan") and the drawer stays.
 - **Comment and re-plan.** Drafts gather in the bar. Send dims the body and
   the chip reads "Revising to v3", with the reason beside the off primary and no
