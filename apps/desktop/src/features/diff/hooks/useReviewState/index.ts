@@ -9,7 +9,6 @@ import type { DiffComments, DiffThread, DiffViewed } from '../../components/Diff
 import {
   ancestorIds,
   buildChangeTree,
-  defaultCollapsed,
   filterFiles,
   type ChangeTree,
   type TreeGroup,
@@ -17,6 +16,7 @@ import {
 import type { SessionDiff } from '../useSessionDiff';
 import { useDiffNotes } from '../useDiffNotes';
 import { useDiffReviewThreads } from '../useDiffReviewThreads';
+import { useFoldState } from '../useFoldState';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -46,6 +46,7 @@ export type ReviewState = {
   readonly collapsed: ReadonlySet<string>;
   readonly toggleFolder: (id: string) => void;
   readonly jumpTo: (path: string) => void;
+  readonly stepTo: (path: string) => void;
   readonly registerScroller: (scroll: ((path: string) => void) | null) => void;
   readonly fileCommentPath: string | null;
   readonly commentOnFile: (path: string) => void;
@@ -114,20 +115,11 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
   const { stateOf } = diff.viewed;
   const isFiltering = query.trim() !== '' || unviewedOnly || notesOnly;
   const [activePath, setActivePath] = useState<string | null>(null);
-  const fullTree = useMemo(() => buildChangeTree({ files: diff.files }), [diff.files]);
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() =>
-    defaultCollapsed({ tree: fullTree }),
-  );
-  const pathsKey = useMemo(() => diff.files.map((file) => file.path).join('\n'), [diff.files]);
-  const seenPaths = useRef(pathsKey);
-
-  useEffect(() => {
-    if (seenPaths.current === pathsKey) {
-      return;
-    }
-    seenPaths.current = pathsKey;
-    setCollapsed(defaultCollapsed({ tree: fullTree }));
-  }, [pathsKey, fullTree]);
+  const { collapsed, toggleFolder, openFolders } = useFoldState({
+    sessionId,
+    mountId,
+    files: diff.files,
+  });
   const scroller = useRef<((path: string) => void) | null>(null);
   const registerScroller = useCallback((scroll: ((path: string) => void) | null) => {
     scroller.current = scroll;
@@ -169,35 +161,19 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     setNotesOnly(false);
   }, []);
 
-  const reveal = useCallback((path: string) => {
-    const ancestors = ancestorIds({ rows: rowsRef.current, path });
-    setCollapsed((current) => {
-      if (!ancestors.some((id) => current.has(id))) {
-        return current;
-      }
-      const next = new Set(current);
-      for (const id of ancestors) {
-        next.delete(id);
-      }
-      return next;
-    });
-  }, []);
+  const reveal = useCallback(
+    (path: string) => openFolders(ancestorIds({ rows: rowsRef.current, path })),
+    [openFolders],
+  );
 
+  const { focusPath } = diff;
+  const revealRef = useRef(reveal);
+  revealRef.current = reveal;
   useEffect(() => {
-    if (activePath !== null) {
-      reveal(activePath);
+    if (focusPath !== null) {
+      revealRef.current(focusPath);
     }
-  }, [activePath, reveal]);
-
-  const toggleFolder = useCallback((id: string) => {
-    setCollapsed((current) => {
-      const next = new Set(current);
-      if (!next.delete(id)) {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
+  }, [focusPath, tree]);
 
   const jumpTo = useCallback(
     (path: string) => {
@@ -207,6 +183,11 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     },
     [reveal],
   );
+
+  const stepTo = useCallback((path: string) => {
+    setActivePath(path);
+    scroller.current?.(path);
+  }, []);
 
   const [fileCommentPath, setFileCommentPath] = useState<string | null>(null);
   const commentOnFile = useCallback(
@@ -240,6 +221,7 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     collapsed,
     toggleFolder,
     jumpTo,
+    stepTo,
     registerScroller,
     fileCommentPath,
     commentOnFile,

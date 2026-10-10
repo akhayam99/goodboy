@@ -2,7 +2,7 @@
 
 import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { FileDiff } from '@goodboy/types';
 import { buildChangeTree } from '../../lib/changeTree';
 import { ChangeTree } from '.';
@@ -179,6 +179,66 @@ describe('ChangeTree', () => {
     );
   });
 
+  it('leaks no folder id into a native title', () => {
+    renderTree({ collapsed: new Set(['dir:src/ledger/export']) });
+
+    const titled = Array.from(document.querySelectorAll('[title]'));
+    expect(titled.filter((node) => (node.getAttribute('title') ?? '').startsWith('dir:'))).toEqual(
+      [],
+    );
+    expect(document.querySelector('[title="src/ledger/export/page.tsx"]')).toBeNull();
+  });
+
+  it('shows the full path of a folder and a file in a tooltip on hover', async () => {
+    vi.useFakeTimers();
+    try {
+      renderTree();
+
+      fireEvent.mouseEnter(screen.getByRole('button', { name: /\bexport\b/ }));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(600);
+      });
+      expect(screen.getByRole('tooltip').textContent).toBe('src/ledger/export');
+
+      fireEvent.mouseLeave(screen.getByRole('button', { name: /\bexport\b/ }));
+      fireEvent.mouseEnter(screen.getByRole('button', { name: /page\.tsx/ }));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(600);
+      });
+      expect(screen.getByRole('tooltip').textContent).toBe('src/ledger/export/page.tsx');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('dots the closed folder that holds the file in view and nothing else', () => {
+    renderTree({
+      activePath: 'src/ledger/export/page.tsx',
+      collapsed: new Set(['dir:src/ledger/export']),
+    });
+
+    const folder = screen.getByRole('button', { name: /\bexport\b/ });
+    expect(within(folder).getByRole('img', { name: 'contains the file in view' })).toBeDefined();
+    expect(screen.getAllByRole('img', { name: 'contains the file in view' })).toHaveLength(1);
+  });
+
+  it('dots the outermost closed folder when two are closed above the file', () => {
+    renderTree({
+      activePath: 'src/ledger/export/page.tsx',
+      collapsed: new Set(['dir:src/ledger/export', 'dir:src/ledger']),
+    });
+
+    const folder = screen.getByRole('button', { name: /\bledger\b/ });
+    expect(within(folder).getByRole('img', { name: 'contains the file in view' })).toBeDefined();
+    expect(screen.getAllByRole('img', { name: 'contains the file in view' })).toHaveLength(1);
+  });
+
+  it('shows no dot while the folder of the file in view is open', () => {
+    renderTree({ activePath: 'src/ledger/export/page.tsx' });
+
+    expect(screen.queryByRole('img', { name: 'contains the file in view' })).toBeNull();
+  });
+
   it('marks the active file and scrolls its row into view', () => {
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
@@ -328,7 +388,7 @@ describe('ChangeTree', () => {
   it('keeps the comment action a real button a keyboard can reach next to its row', () => {
     renderTree({ onCommentOnFile: vi.fn() });
 
-    const row = screen.getByTitle('src/ledger/export/page.tsx');
+    const row = screen.getByRole('button', { name: /^page\.tsx/ });
     const action = screen.getByRole('button', { name: 'Comment on page.tsx' });
 
     expect(action.tabIndex).toBe(0);
