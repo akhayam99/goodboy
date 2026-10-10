@@ -1,14 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Ellipsis } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Button,
-  IconButton,
-  ROW_INTERACTIVE,
-  cn,
-  tintClasses,
-  useDropdown,
-} from '@goodboy/ui';
+import { Button, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
@@ -57,7 +48,6 @@ export const NextStepRow = ({
 }: Props) => {
   const Icon = SUGGESTION_ICONS[suggestion.kind];
   const tone = BAND_TONE[suggestion.band];
-  const dropdown = useDropdown({ align: 'end', expectedWidth: 160, expectedHeight: 80 });
   const [isConfirming, setIsConfirming] = useState(false);
   const [routingOverride, setRoutingOverride] = useState<AgentKindRouting | null>(null);
 
@@ -157,35 +147,9 @@ export const NextStepRow = ({
           {primary.label}
         </Button>
       )}
-      <AnchoredPopover
-        dropdown={dropdown}
-        role="menu"
-        ariaLabel={`More actions for ${suggestion.title}`}
-        className="w-40 p-1"
-        trigger={
-          <IconButton
-            icon={Ellipsis}
-            label={`More actions for ${suggestion.title}`}
-            variant="ghost"
-            onClick={dropdown.toggle}
-          />
-        }
-      >
-        <button
-          type="button"
-          role="menuitem"
-          onClick={() => {
-            dropdown.close();
-            onNotNow();
-          }}
-          className={cn(
-            'flex w-full items-center rounded-md px-2 py-2 text-left text-body text-foreground',
-            ROW_INTERACTIVE,
-          )}
-        >
-          Not now
-        </button>
-      </AnchoredPopover>
+      <Button size="sm" variant="ghost" onClick={onNotNow}>
+        Not now
+      </Button>
     </div>
   );
 };

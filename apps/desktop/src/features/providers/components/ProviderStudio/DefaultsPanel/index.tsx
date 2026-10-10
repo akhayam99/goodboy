@@ -12,10 +12,10 @@ import {
 import {
   Band,
   BandStack,
+  Button,
   Eyebrow,
   FieldRow,
   InlineConfirm,
-  OverflowMenu,
   PaneShell,
   EmptyState,
 } from '@goodboy/ui';
@@ -137,21 +137,17 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
       title={NAMES.models}
       meta={scopeLabel ?? undefined}
       actions={
-        <OverflowMenu
-          label="Models actions"
-          disabled={busy}
-          items={[
-            {
-              kind: 'item',
-              key: 'reset-all',
-              label: 'Reset all to Auto',
-              icon: RotateCcw,
-              disabled: pinnedCount === 0,
-              destructive: true,
-              onClick: () => setIsConfirmingReset(true),
-            },
-          ]}
-        />
+        pinnedCount === 0 ? undefined : (
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => setIsConfirmingReset(true)}
+          >
+            <RotateCcw size={ICON_SIZE.row} aria-hidden />
+            Reset all to Auto
+          </Button>
+        )
       }
     >
       {isConfirmingReset ? (
