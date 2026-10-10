@@ -37,7 +37,7 @@ These hold for each change that touches a test, and they come from tests that st
 6. No new real wait with `setTimeout`. Use fake timers or wait on the condition.
 7. New behavior goes in a new test file beside the old one. The huge files (`buildTimelineStream.test.ts`, `WorkflowBuilderView/index.test.tsx`, `orchestrateNextStep.test.ts`) only get shorter.
 8. The PR body says "tests removed n, replaced by m, files converted k".
-9. A ratchet baseline never grows.
+9. A ratchet baseline never grows. `pnpm run check:baselines` fails on growth, and only the owner lists an exception: [ratchets.md](ratchets.md).
 
 ## Desktop unit tests run in four shards
 

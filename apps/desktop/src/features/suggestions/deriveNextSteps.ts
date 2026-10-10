@@ -99,10 +99,14 @@ type SuggestionProject = {
   readonly rebaseRequest?: SuggestionRebaseRequest | null;
 };
 
-const dirtyCountOf = ({ project }: { readonly project: SuggestionProject }): number =>
+type ProjectParams = {
+  readonly project: SuggestionProject;
+};
+
+const dirtyCountOf = ({ project }: ProjectParams): number =>
   project.isClean === false ? Math.max(project.changedCount ?? 1, 1) : 0;
 
-const isRebaseConsumed = ({ project }: { readonly project: SuggestionProject }): boolean => {
+const isRebaseConsumed = ({ project }: ProjectParams): boolean => {
   const request = project.rebaseRequest ?? null;
   if (request == null || request.agentStatus === 'failed') {
     return false;
