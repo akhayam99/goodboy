@@ -158,19 +158,14 @@ export const AppShell = ({
             )}
           </div>
         ) : null}
-        <main
-          data-sheet={isSheetWrapped ? 'wrapped' : 'flush'}
-          data-left-resize={isLeftResizeDisabled ? 'idle' : leftResize}
-          className={cn(
-            'flex min-h-0 min-w-0 flex-col overflow-hidden bg-background',
-            SHEET_CLASSES[isSheetWrapped ? 'wrapped' : 'flush'],
-          )}
-          style={{ gridArea: 'main' }}
-        >
+        <main className="flex min-h-0 min-w-0 flex-col" style={{ gridArea: 'main' }}>
           <DrawerColumn
             main={main}
             drawer={drawer ?? null}
             sizing={drawerSizing}
+            frame="sheet"
+            sheetEdge={isSheetWrapped ? 'wrapped' : 'flush'}
+            leftResize={isLeftResizeDisabled ? 'idle' : leftResize}
             ariaLabel="Side panel"
             resizeLabel="Resize side panel"
           />

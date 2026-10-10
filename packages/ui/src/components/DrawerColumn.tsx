@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { cn } from '../cn';
 import { dismissTopEscapeLayer } from '../escape';
+import { SHEET_CLASSES, type ResizeActivity, type SheetEdge } from '../sheet';
 import { ResizeHandle } from './ResizeHandle';
 import { useResizableWidth } from '../useResizableWidth';
 import {
-  RIGHT_DRAWER_DEFAULT,
-  RIGHT_DRAWER_MAX,
-  RIGHT_DRAWER_MIN,
+  DRAWER_TIERS,
   drawerAsideWidthOf,
   drawerLayoutOf,
+  drawerTierOf,
   type DrawerLayout,
   type DrawerMode,
   type DrawerSizing,
 } from '../drawerGeometry';
 
 export const RIGHT_DRAWER_STORAGE_KEY = 'goodboy:right-drawer-width:v1';
+export const READER_DRAWER_STORAGE_KEY = 'goodboy:reader-drawer-width:v1';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
@@ -39,11 +40,18 @@ const useMeasuredWidth = () => {
   return { ref, width };
 };
 
-const unmeasuredLayoutOf = ({ savedWidth }: { readonly savedWidth: number }): DrawerLayout => ({
+type UnmeasuredParams = {
+  readonly savedWidth: number;
+  readonly sizing: DrawerSizing;
+};
+
+const unmeasuredLayoutOf = ({ savedWidth, sizing }: UnmeasuredParams): DrawerLayout => ({
   mode: 'push',
   width: savedWidth,
-  dragMax: RIGHT_DRAWER_MAX,
+  dragMax: DRAWER_TIERS[drawerTierOf(sizing)].max,
 });
+
+export type DrawerColumnFrame = 'sheet' | 'none';
 
 export type DrawerColumnProps = {
   readonly main: ReactNode;
@@ -53,6 +61,9 @@ export type DrawerColumnProps = {
   readonly resizeLabel: string;
   readonly drawerRef?: Ref<HTMLElement>;
   readonly sizing?: DrawerSizing;
+  readonly frame?: DrawerColumnFrame;
+  readonly sheetEdge?: Exclude<SheetEdge, 'pushed'>;
+  readonly leftResize?: ResizeActivity;
   readonly className?: string;
 };
 
@@ -63,34 +74,43 @@ export const DrawerColumn = ({
   ariaLabel,
   resizeLabel,
   drawerRef,
-  sizing = 'default',
+  sizing = 'side',
+  frame = 'none',
+  sheetEdge = 'wrapped',
+  leftResize = 'idle',
   className,
 }: DrawerColumnProps) => {
   const column = useMeasuredWidth();
   const asideRef = useRef<HTMLElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const ceiling =
-    column.width === null
-      ? RIGHT_DRAWER_MAX
-      : drawerLayoutOf({ main: column.width, sizing, savedWidth: RIGHT_DRAWER_DEFAULT }).dragMax;
   const isOpen = drawer != null;
   const modeRef = useRef<DrawerMode>('closed');
-  const resizable = useResizableWidth<HTMLElement>({
+  const onPreview = (next: number) => {
+    const track = `${drawerAsideWidthOf({ width: next, mode: modeRef.current })}px`;
+    asideRef.current?.style.setProperty('width', track);
+    trackRef.current?.style.setProperty('min-width', track);
+  };
+  const side = useResizableWidth<HTMLElement>({
     storageKey: RIGHT_DRAWER_STORAGE_KEY,
-    defaultWidth: RIGHT_DRAWER_DEFAULT,
-    min: RIGHT_DRAWER_MIN,
-    max: ceiling,
+    defaultWidth: DRAWER_TIERS.side.fallback,
+    min: DRAWER_TIERS.side.min,
+    max: DRAWER_TIERS.side.max,
     cssVar: '--goodboy-drawer-width',
-    onPreview: (next) => {
-      const track = `${drawerAsideWidthOf({ width: next, mode: modeRef.current })}px`;
-      asideRef.current?.style.setProperty('width', track);
-      trackRef.current?.style.setProperty('min-width', track);
-    },
+    onPreview,
   });
+  const reader = useResizableWidth<HTMLElement>({
+    storageKey: READER_DRAWER_STORAGE_KEY,
+    defaultWidth: DRAWER_TIERS.reader.fallback,
+    min: DRAWER_TIERS.reader.min,
+    max: DRAWER_TIERS.reader.max,
+    cssVar: '--goodboy-reader-drawer-width',
+    onPreview,
+  });
+  const resizable = drawerTierOf(sizing) === 'reader' ? reader : side;
   const layout =
     column.width === null
-      ? unmeasuredLayoutOf({ savedWidth: resizable.width })
+      ? unmeasuredLayoutOf({ savedWidth: resizable.width, sizing })
       : drawerLayoutOf({ main: column.width, sizing, savedWidth: resizable.width });
   const mode: DrawerMode = isOpen ? layout.mode : 'closed';
   modeRef.current = mode;
@@ -119,12 +139,30 @@ export const DrawerColumn = ({
     (card.querySelector<HTMLElement>(FOCUSABLE) ?? card).focus({ preventScroll: true });
   }, [isOverlayOpen]);
 
+  const isPushed = mode === 'push';
+  const isSheet = frame === 'sheet';
+  const sheetState: SheetEdge = isPushed ? 'pushed' : sheetEdge;
+
   return (
     <div
       ref={column.ref}
-      className={cn('relative flex min-h-0 min-w-0 flex-1 overflow-hidden', className)}
+      className={cn(
+        'relative flex min-h-0 min-w-0 flex-1 overflow-hidden',
+        isSheet && isPushed && 'pb-2',
+        className,
+      )}
     >
-      <div data-drawer-main="" inert={isOverlay} className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div
+        data-container="page"
+        data-drawer-main=""
+        inert={isOverlay}
+        {...(isSheet && { 'data-sheet': sheetState, 'data-left-resize': leftResize })}
+        className={cn(
+          'flex min-h-0 min-w-0 flex-1 flex-col',
+          isSheet && 'overflow-hidden bg-background',
+          isSheet && SHEET_CLASSES[sheetState],
+        )}
+      >
         {main}
       </div>
       {isOverlayOpen ? (
@@ -153,31 +191,37 @@ export const DrawerColumn = ({
       >
         {isOpen ? (
           <div
-            className="flex min-h-0 min-w-0 flex-1"
+            className={cn(
+              'flex min-h-0 min-w-0 flex-1',
+              !isOverlay && 'pr-2',
+              !isOverlay && !isSheet && 'py-2',
+            )}
             ref={trackRef}
             style={{ minWidth: asideWidth }}
           >
             <div
               className={cn('flex w-2 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}
             >
-              {sizing === 'default' ? (
+              {sizing === 'full' ? null : (
                 <ResizeHandle
                   {...resizable.handleProps}
+                  max={layout.dragMax}
                   value={layout.width}
                   side="right"
                   ariaLabel={resizeLabel}
                 />
-              ) : null}
+              )}
             </div>
             <div
               ref={cardRef}
+              data-container="drawer"
               data-drawer-card=""
               tabIndex={isOverlay ? -1 : undefined}
               className={cn(
-                'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-subtle',
+                'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-drawer',
                 isOverlay
-                  ? 'pointer-events-auto rounded-l-frame border-l border-border shadow-xl focus-visible:outline-none motion-safe:animate-drawer-overlay-in'
-                  : 'my-2 mr-2 rounded-frame border border-border motion-safe:animate-drawer-card-in',
+                  ? 'pointer-events-auto rounded-l-frame border-l border-frame-edge shadow-xl focus-visible:outline-none motion-safe:animate-drawer-overlay-in'
+                  : 'rounded-frame border border-frame-edge motion-safe:animate-drawer-card-in',
               )}
             >
               <div
