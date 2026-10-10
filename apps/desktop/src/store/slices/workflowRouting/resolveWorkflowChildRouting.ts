@@ -1,7 +1,6 @@
 import type {
   AgentRole,
   ProviderId,
-  RoleModelPreferences,
   SessionId,
   WorkflowModelPick,
   WorkflowRoutingLock,
@@ -11,7 +10,6 @@ import type {
 } from '@goodboy/types';
 import {
   hintedRoutingOutcome,
-  resolveRoleRouting,
   resolveWorkflowRouting,
   type WorkflowMissingProposalPolicy,
   type WorkflowRoutingProposalParseOutcome,
@@ -20,10 +18,9 @@ import {
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { runProviderPool } from '../../../features/workflows/runProviderPool';
-import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 
-import { configuredRolePick } from './configuredRolePick';
+import { rolePicks } from './rolePicks';
 import { readHeadroom, type HeadroomMap } from '@goodboy/core';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
@@ -102,26 +99,17 @@ export const resolveWorkflowChildRouting = ({
           session.providerPreference?.defaultProvider ??
           null) as ProviderId | null);
   const headroom = childHeadroom({ state, sessionId, workflowRunId });
-  const compiled = resolveRoleRouting({
-    role,
-    prefs: null,
-    ...(defaultProvider !== null && {
-      auto: {
-        defaultProvider,
-        hidden: selectHiddenModels({ state }),
-        ...(headroom !== null && { headroom }),
-      },
-    }),
+  const providerPool = runProviderPool({
+    sessions: state.sessions ?? [],
+    sessionId,
+    workflowRunId,
   });
+  const picks = rolePicks({ state, sessionId, role, profile, providerPool, headroom });
   const resolution = resolveWorkflowRouting({
     agentLock: childLock,
     stepLock: null,
     proposal: outcome,
-    roleDefault: configuredRolePick({
-      role,
-      roleModels: selectResolvedSettings({ state, sessionId })?.roleModels ?? null,
-      profile,
-    }),
+    roleDefault: picks.roleDefault,
     sessionDefault:
       session === undefined ||
       session.modelOverride == null ||
@@ -133,7 +121,7 @@ export const resolveWorkflowChildRouting = ({
             model: session.modelOverride,
             effort: session.effort ?? null,
           },
-    kindDefault: { provider: compiled.provider, model: compiled.model, effort: compiled.effort },
+    kindDefault: picks.kindDefault,
     missingProposal,
     availability: workflowAvailabilitySnapshot({
       providers: state.providers ?? [],
@@ -144,7 +132,7 @@ export const resolveWorkflowChildRouting = ({
       isRunBudgetBlocked: false,
       nowMs: Date.now(),
       ...workspacePolicyAvailability({ state, sessionId }),
-      providerPool: runProviderPool({ sessions: state.sessions ?? [], sessionId, workflowRunId }),
+      providerPool,
       headroom,
     }),
     contextEstimate: null,

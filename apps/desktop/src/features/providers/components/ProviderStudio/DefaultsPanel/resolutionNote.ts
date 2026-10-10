@@ -1,18 +1,11 @@
-import { explainResolution, type Resolution, type ResolveNames } from '@goodboy/core';
-import { modelNameOf } from './modelNameOf';
-import { PROVIDER_LABEL } from '../../../providerLabel';
-
-export const RESOLVE_NAMES: ResolveNames = {
-  provider: (provider) => PROVIDER_LABEL[provider],
-  model: ({ provider, model }) => modelNameOf({ provider, model }),
-};
+import { explainResolution, type Resolution } from '@goodboy/core';
+import { RESOLVE_NAMES } from '../../../resolveNames';
 
 type Params = {
   readonly resolution: Resolution;
 };
 
 export const isResolutionNoted = ({ resolution }: Params): boolean =>
-  resolution.shadowed.length > 0 ||
   resolution.skipped.some((skip) => skip.source !== 'auto' && skip.model !== null);
 
 export const isPinUnrunnable = ({ resolution }: Params): boolean =>

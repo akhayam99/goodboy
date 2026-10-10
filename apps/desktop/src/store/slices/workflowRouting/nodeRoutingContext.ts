@@ -2,7 +2,6 @@ import type {
   Agent,
   AgentRole,
   ProviderId,
-  RoleModelPreferences,
   SessionId,
   Step,
   WorkflowModelPick,
@@ -11,19 +10,17 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import {
-  resolveRoleRouting,
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
 } from '@goodboy/core';
 import { KIND_TO_ROLE, classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
-import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 import type { WorkflowRoutingNodeRef } from './types';
 import { isWorkflowNodeRoutingMutable } from './workflowNodeRoutingMutability';
 import { sessionById } from '../sessions/sessionIndex';
-import { configuredRolePick } from './configuredRolePick';
+import { rolePicks } from './rolePicks';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
@@ -111,20 +108,15 @@ export const workflowNodeRoutingContext = ({
       ? 'generic'
       : classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null });
   const role = step?.role ?? (agent === null ? null : KIND_TO_ROLE[kind]);
-  const workspaceRoleModels = selectResolvedSettings({ state, sessionId })?.roleModels ?? null;
   const defaultProvider = (session.providerOverride ??
     session.providerPreference.defaultProvider) as ProviderId;
-  const compiled =
+  const taskProfile = agent?.taskProfile ?? step?.taskProfile ?? null;
+  const picks =
     role === null
       ? null
-      : resolveRoleRouting({
-          role,
-          prefs: null,
-          auto: { defaultProvider, hidden: selectHiddenModels({ state }) },
-        });
+      : rolePicks({ state, sessionId, role, size: step?.size ?? null, profile: taskProfile });
   const lock = agent?.routingLock ?? step?.routingLock ?? null;
   const decision = agent?.routingDecision ?? step?.routingDecision ?? null;
-  const taskProfile = agent?.taskProfile ?? step?.taskProfile ?? null;
   return {
     agent,
     step,
@@ -134,12 +126,7 @@ export const workflowNodeRoutingContext = ({
     decision,
     taskProfile,
     proposal: proposalOutcome({ decision, taskProfile }),
-    roleDefault: configuredRolePick({
-      role,
-      roleModels: workspaceRoleModels,
-      size: step?.size ?? null,
-      profile: taskProfile,
-    }),
+    roleDefault: picks?.roleDefault ?? null,
     sessionDefault:
       session.modelOverride == null
         ? null
@@ -148,10 +135,7 @@ export const workflowNodeRoutingContext = ({
             model: session.modelOverride,
             effort: session.effort ?? null,
           },
-    kindDefault:
-      compiled === null
-        ? null
-        : { provider: compiled.provider, model: compiled.model, effort: compiled.effort },
+    kindDefault: picks?.kindDefault ?? null,
     availability: workflowAvailabilitySnapshot({
       providers: state.providers ?? [],
       cooldowns: state.providerCooldowns ?? {},

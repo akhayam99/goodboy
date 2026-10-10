@@ -16,7 +16,7 @@ export type ResolveSlot =
   | { readonly kind: 'role'; readonly id: AgentRole }
   | { readonly kind: 'task'; readonly id: AuxTaskId };
 
-export type LayerName = 'workspace' | 'project' | 'session';
+export type LayerName = 'workspace' | 'session';
 
 export type ResolveLayer = Readonly<{
   roleModels?: RoleModelPreferences | null;
@@ -25,17 +25,10 @@ export type ResolveLayer = Readonly<{
   defaultProviderId?: ProviderId | null;
 }>;
 
-export type ScopedLayer = Readonly<{
-  kind: 'project' | 'session';
-  name: string;
-  layer: ResolveLayer;
-}>;
-
 export type ResolveLayers = Readonly<{
   workspace?: ResolveLayer | null;
   project?: ResolveLayer | null;
   session?: ResolveLayer | null;
-  scoped?: ReadonlyArray<ScopedLayer>;
 }>;
 
 export type ResolvePin = Readonly<{
@@ -80,14 +73,6 @@ export type ResolveSkip = Readonly<{
   reason: SkipReason;
 }>;
 
-export type ResolveShadow = Readonly<{
-  kind: 'project' | 'session';
-  name: string;
-  provider: ProviderId;
-  model: string;
-  effort: EffortLevel | null;
-}>;
-
 export type Resolution = Readonly<{
   slot: ResolveSlot;
   provider: ProviderId;
@@ -96,7 +81,6 @@ export type Resolution = Readonly<{
   source: ResolveSource;
   via: ResolveVia;
   skipped: ReadonlyArray<ResolveSkip>;
-  shadowed: ReadonlyArray<ResolveShadow>;
   defaultProvider: ProviderId;
   isBlockedByHidden: boolean;
 }>;
@@ -109,5 +93,5 @@ export type PassedOver = Readonly<{
 export type SkippedChoice = Readonly<{
   provider: ProviderId;
   model: string;
-  reason: 'off' | 'not-connected' | 'unknown-model';
+  reason: 'off' | 'not-connected' | 'backup-idle' | 'unknown-model';
 }>;

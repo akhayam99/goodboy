@@ -91,11 +91,11 @@ const project = ({ id, workspaceId, name, overrides }: ProjectParams): Project =
   updatedAt: clock.iso({ at: '2026-09-27T09:00:00.000Z' }),
 });
 
-type SeedParams = {
-  readonly hasProjectLayer: boolean;
-};
+const PAYMENTS_ID = 'mock-models-payments-api';
 
-const seedModelsPage = ({ hasProjectLayer }: SeedParams): void => {
+const SAVED_KEY = `legacy.projectModels.${PAYMENTS_ID}`;
+
+const seedModelsPage = (): void => {
   const { currentWorkspaceId: workspaceId } = useAppStore.getState();
   if (workspaceId === null) {
     return;
@@ -122,10 +122,10 @@ const seedModelsPage = ({ hasProjectLayer }: SeedParams): void => {
       refreshProviders: async () => undefined,
       projects: [
         project({
-          id: 'mock-models-payments-api',
+          id: PAYMENTS_ID,
           workspaceId,
           name: 'payments-api',
-          overrides: hasProjectLayer ? { ...empty, ...PROJECT_PINS } : empty,
+          overrides: empty,
         }),
         project({
           id: 'mock-models-ledger-core',
@@ -158,16 +158,18 @@ const seedModelsPage = ({ hasProjectLayer }: SeedParams): void => {
 };
 
 type Props = {
-  readonly hasProjectLayer: boolean;
+  readonly hasSavedModels: boolean;
 };
 
-const ModelsOverApp = ({ hasProjectLayer }: Props) => {
+const ModelsOverApp = ({ hasSavedModels }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    installSettingsInvokeMocks();
+    installSettingsInvokeMocks({
+      settings: hasSavedModels ? { [SAVED_KEY]: JSON.stringify(PROJECT_PINS) } : {},
+    });
     seedFrame({ context: 'session' });
-    seedModelsPage({ hasProjectLayer });
+    seedModelsPage();
     setIsReady(true);
   }, []);
 
@@ -192,6 +194,6 @@ const ModelsOverApp = ({ hasProjectLayer }: Props) => {
 };
 
 export const U24_P_MODELS_SCENES: Readonly<Record<string, ComponentType>> = {
-  modelswilluse: () => <ModelsOverApp hasProjectLayer />,
-  'modelswilluse-cleared': () => <ModelsOverApp hasProjectLayer={false} />,
+  modelswilluse: () => <ModelsOverApp hasSavedModels />,
+  'modelswilluse-cleared': () => <ModelsOverApp hasSavedModels={false} />,
 };

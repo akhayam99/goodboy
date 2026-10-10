@@ -1,13 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
-import {
-  DEFAULT_SESSION_PROVIDER_PREFERENCE,
-  detectRepoSlug,
-  learnReplyStyle,
-  listMyReviewReplies,
-} from '@goodboy/core';
-import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
-import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { detectRepoSlug, learnReplyStyle, listMyReviewReplies } from '@goodboy/core';
+import type { TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import { tauriGhRunner } from '../integrations/github/github';
 
 export const NO_WORKSPACE_REPO = 'No project in this workspace is a GitHub repository.';
@@ -17,17 +10,13 @@ export const NO_STYLE_NOTE = "Couldn't write a style note from your replies. Try
 type Params = {
   readonly workspaceId: WorkspaceId;
   readonly projectRoots: ReadonlyArray<string>;
-  readonly overrides: OverrideSettings | null;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly limitContext: AutoLimitContext | null;
+  readonly taskModel: TaskModelPreference;
 };
 
 export const learnWorkspaceReplyStyle = async ({
   workspaceId,
   projectRoots,
-  overrides,
-  connectedProviders,
-  limitContext,
+  taskModel,
 }: Params): Promise<string> => {
   const slugs = await Promise.all(
     projectRoots.map((root) => detectRepoSlug(tauriGhRunner, root, workspaceId).catch(() => null)),
@@ -44,15 +33,6 @@ export const learnWorkspaceReplyStyle = async ({
   if (replies.length === 0) {
     throw new Error(NO_REVIEW_REPLIES);
   }
-  const taskModel = resolveLimitedTaskModel({
-    limitContext,
-    task: 'prose_polish',
-    preferences: overrides?.taskModels,
-    workspaceDefaultProviderId: overrides?.defaultProviderId,
-    sessionDefaultProviderId:
-      connectedProviders[0] ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-    connectedProviders: connectedProviders.length > 0 ? connectedProviders : null,
-  });
   const note = await learnReplyStyle(
     {
       ...taskModel,

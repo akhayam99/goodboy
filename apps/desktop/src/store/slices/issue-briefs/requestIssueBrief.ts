@@ -1,13 +1,8 @@
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, generateIssueBrief } from '@goodboy/core';
+import { generateIssueBrief } from '@goodboy/core';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { cutAtBoundary } from '../../../shared/utils/cutAtBoundary';
-import {
-  selectResolvedSettings,
-  selectWorkspaceResolvedSettings,
-} from '../overrides/selectResolvedSettings';
 import { issueBriefKey } from './issueBriefKey';
 import type {
   GetFn,
@@ -16,9 +11,9 @@ import type {
   RequestIssueBriefParams,
   SetFn,
 } from './types';
-import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
 
@@ -64,24 +59,11 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const session = sessionId === null ? null : (sessionById(state.sessions, sessionId) ?? null);
-    const settings =
-      session === null
-        ? selectWorkspaceResolvedSettings({ state, workspaceId })
-        : selectResolvedSettings({ state, sessionId: session.id });
     const connectedProviders = autoRoutableProviders({ providers: state.providers });
     const taskModel = routeTaskModel({
-      taskModel: resolveLimitedTaskModel({
-        limitContext: autoLimitContext({ state: get() }),
-        task: 'issue_brief',
-        preferences: settings?.taskModels,
-        workspaceDefaultProviderId: settings?.defaultProviderOverride,
-        sessionDefaultProviderId:
-          session?.providerPreference.defaultProvider ??
-          DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-      }),
+      taskModel: selectTaskModel({ state, sessionId, workspaceId, task: 'issue_brief' }),
       connectedProviders,
-      enabledProviders: session?.providerPreference.enabledProviders ?? null,
+      enabledProviders: liveEnabledProviders({ state, sessionId, workspaceId }) ?? null,
       cooldowns: state.providerCooldowns,
       hidden: selectHiddenModels({ state }),
       nowMs: Date.now(),

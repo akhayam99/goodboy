@@ -1,56 +1,56 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import type { Resolution } from '@goodboy/core';
 import { taskModelAgentSpawnConfig } from './taskModelAgentSpawnConfig';
 
-describe('taskModelAgentSpawnConfig', () => {
-  it('passes the configured task effort into the spawn config', () => {
-    const config = taskModelAgentSpawnConfig({
-      task: 'pr_draft',
-      preferences: {
-        pr_draft: {
-          providerId: 'codex',
-          model: 'gpt-5.6-luna',
-          effort: 'xhigh',
-        },
-      },
-      workspaceDefaultProviderId: 'codex',
-      sessionDefaultProviderId: 'anthropic',
-      limitContext: null,
-    });
+const resolution = (overrides: Partial<Resolution>): Resolution => ({
+  slot: { kind: 'task', id: 'pr_draft' },
+  provider: 'codex',
+  model: 'gpt-5.6-luna',
+  effort: 'xhigh',
+  source: 'workspace',
+  via: 'pin',
+  skipped: [],
+  defaultProvider: 'codex',
+  isBlockedByHidden: false,
+  ...overrides,
+});
 
-    expect(config).toMatchObject({
+describe('taskModelAgentSpawnConfig', () => {
+  it('passes the resolved task effort into the spawn config', () => {
+    expect(taskModelAgentSpawnConfig({ resolution: resolution({}) })).toMatchObject({
       provider: 'codex',
       model: 'gpt-5.6-luna',
       effort: 'xhigh',
     });
   });
 
-  it('drafts a pr on the next provider when Auto meets an exhausted default', () => {
-    const base = {
-      task: 'pr_draft' as const,
-      preferences: null,
-      workspaceDefaultProviderId: 'anthropic' as const,
-      sessionDefaultProviderId: 'anthropic' as const,
-    };
+  it('runs on the provider the resolution picked, not the one it was pinned on', () => {
+    const config = taskModelAgentSpawnConfig({
+      resolution: resolution({
+        provider: 'codex',
+        model: 'gpt-6.1-sol',
+        effort: 'medium',
+        source: 'auto',
+        via: 'curated',
+        skipped: [{ source: 'workspace', provider: 'anthropic', model: 'opus-5.5', reason: 'off' }],
+      }),
+    });
 
-    expect(taskModelAgentSpawnConfig({ ...base, limitContext: null }).provider).toBe('anthropic');
-    expect(
-      taskModelAgentSpawnConfig({
-        ...base,
-        limitContext: { connected: ['anthropic', 'codex'], atLimit: ['anthropic'] },
-      }).provider,
-    ).toBe('codex');
+    expect(config).toMatchObject({ provider: 'codex', model: 'gpt-6.1-sol' });
+  });
+
+  it('asks for medium effort when the resolution holds none', () => {
+    const config = taskModelAgentSpawnConfig({
+      resolution: resolution({ provider: 'cursor', model: 'gemini-3.1-pro', effort: null }),
+    });
+
+    expect(config).toMatchObject({ provider: 'cursor', effort: 'medium' });
   });
 
   it('keeps the effort of a Cursor task on gemini-3.1-pro', () => {
     const config = taskModelAgentSpawnConfig({
-      task: 'pr_draft',
-      preferences: {
-        pr_draft: { providerId: 'cursor', model: 'gemini-3.1-pro', effort: 'medium' },
-      },
-      workspaceDefaultProviderId: 'cursor',
-      sessionDefaultProviderId: 'cursor',
-      limitContext: null,
+      resolution: resolution({ provider: 'cursor', model: 'gemini-3.1-pro', effort: 'medium' }),
     });
 
     expect(config).toMatchObject({ provider: 'cursor', effort: 'medium' });

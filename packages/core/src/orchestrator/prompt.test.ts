@@ -189,6 +189,42 @@ describe('buildOrchestratorUserPrompt', () => {
     expect(prompt).toContain('planner: anthropic/opus-5.5, codex/gpt-6.1-sol');
   });
 
+  it('adds one line for a pinned model that cannot run, after the role defaults', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        roleDefaults: [
+          {
+            role: 'implementer',
+            provider: 'codex',
+            model: 'gpt-6.1-sol',
+            effort: 'medium',
+            skippedPin: 'GPT-6.1 Sol (pinned Opus 5.5 skipped: Anthropic is Off)',
+          },
+          { role: 'planner', provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' },
+        ],
+      }),
+    );
+
+    expect(prompt).toContain('Pinned models that cannot run');
+    expect(prompt).toContain(
+      'implementer: GPT-6.1 Sol (pinned Opus 5.5 skipped: Anthropic is Off)',
+    );
+    expect(prompt).not.toContain('planner: GPT');
+    expect(prompt).toContain('implementer=codex/gpt-6.1-sol/medium');
+  });
+
+  it('leaves the pinned-model block out when every pin runs', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        roleDefaults: [
+          { role: 'planner', provider: 'anthropic', model: 'opus-5.5', effort: 'high' },
+        ],
+      }),
+    );
+
+    expect(prompt).not.toContain('Pinned models that cannot run');
+  });
+
   it('labels the goal as the source of the session language', () => {
     const prompt = buildOrchestratorUserPrompt(
       input({ goal: 'Porta il selettore di lingua dentro le impostazioni' }),

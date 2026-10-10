@@ -16,18 +16,18 @@ import type {
   TelemetryRecord,
   TelemetryRecordId,
 } from '@goodboy/types';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isLearningsOn } from '../../../features/context/contextSwitches';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { scheduleIdle } from './turnHelpers';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import type { GetFn, SetFn } from './types';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 type LearningEntry = Readonly<{
   role: AgentRole;
@@ -90,15 +90,9 @@ const runLearnings = async ({ set, get, sessionId, agentId, entries }: RunParams
   }
   const settings = selectResolvedSettings({ state: get(), sessionId });
   const taskModel = routeTaskModel({
-    taskModel: resolveLimitedTaskModel({
-      limitContext: autoLimitContext({ state: get() }),
-      task: 'learnings',
-      preferences: settings?.taskModels,
-      workspaceDefaultProviderId: settings?.defaultProviderOverride,
-      sessionDefaultProviderId: session.providerPreference.defaultProvider,
-    }),
+    taskModel: selectTaskModel({ state: get(), sessionId, task: 'learnings' }),
     connectedProviders: autoRoutableProviders({ providers: get().providers }),
-    enabledProviders: session.providerPreference.enabledProviders ?? null,
+    enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
     cooldowns: get().providerCooldowns,
     hidden: selectHiddenModels({ state: get() }),
     nowMs: Date.now(),

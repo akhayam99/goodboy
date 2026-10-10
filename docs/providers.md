@@ -150,8 +150,15 @@ uses when you leave a model on **Auto**. It is one page in three parts.
   provider by its handle or move it with Alt and an arrow, and set it **On**,
   **Backup only** or **Off**. The first On provider is the default for new work, so
   moving another On provider to the top changes the default in the same write.
-  Backup only runs only when no On provider can work; Off never runs, not even for a
-  role or task pinned to it. **Keep using after the limit** keeps the provider in the order at its limit. A
+  Backup only runs only when no On provider can work, and a role or task pinned to a
+  Backup provider waits for the same moment (it is skipped as `backup-idle` until then).
+  Off binds every saved pin: a role or task pinned to an Off provider is skipped and
+  Auto takes over. Only an explicit pick, one turn or one agent chosen by hand, may run
+  on a provider that is Off. It runs there, and the transcript says so once ("Running on
+  Cursor because you picked it for this turn. Cursor is Off in Settings."). A session
+  follows the policy as it is now, not as it was when the session started: routing
+  reads the workspace policy live and ignores the `enabledProviders` a session stored.
+  **Keep using after the limit** keeps the provider in the order at its limit. A
   provider connected later shows last as **New** and is unused until turned on.
   **Reset** goes back to every connected provider On. Under the list the same
   popover holds **Send new steps to the provider with the most room**, the
@@ -166,11 +173,12 @@ uses when you leave a model on **Auto**. It is one page in three parts.
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
   workflows, and Git
 
-A notice under the page header (`ProjectOverridesNotice`) appears when a project of the
-workspace has its own role models, task models, provider list or default provider: it
-names the project and what it pins, **Show** lists each project with a **Clear** of its
-own, and **Use this page instead** clears them all after a confirm. A failed write shows
-its reason under the confirm and leaves both buttons live.
+A notice under the page header (`SavedModelsNotice`) appears when a project of the
+workspace had its own role or task models before 0.24.0: "Model settings 2 projects had
+are saved. They no longer apply." **Show** lists each project with what it had, **Apply
+to this page** and **Discard**, each behind a confirm anchored to its button. A failed
+write shows its reason under the confirm and leaves both buttons live, and the saved
+settings stay until one of the two succeeds.
 
 Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
@@ -185,12 +193,14 @@ shape, the same as the chat row: the provider glyph, the model, its effort when 
 model has one, then how many more models follow (`Opus 5.5 · High +2`). The model is
 what will run: the answer of `useResolution({ role, workspaceId })`, the one resolver
 described under Defaults internals. A small chip after it reads **Pinned** when the
-row has a set and **Auto** when it has none. When the set's first model cannot run, or
-a project of the workspace pins another model for this role, the muted line under the
-label says so, printed by `explainResolution` through `resolutionNote`
-(`Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.`, `A project setting in
-payments-api overrides this: Sonnet 5.`). A task row (`TaskModelRow`) carries the same
-chip and the same line from the same hook. When some agents pin only
+row has a set and **Auto** when it has none. When the set's first model cannot run, the
+muted line under the label says so, printed by `explainResolution` through
+`resolutionNote` (`Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.`). A task
+row (`TaskModelRow`) carries the same chip and the same line from the same hook. The
+two background rows that name an agent say which one: **History rewriter** (task
+`rebase`, "Rewrites commits when you rebase or clean up history.") and **Scribe** (task
+`pr_draft`, "Writes the title and body of a pull or merge request."). Their ids did
+not change. When some agents pin only
 models that cannot run, a line under the page title counts them (`With Codex as the only
 provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.`) and **Back to
 Auto for those 7** removes those pins after a confirm anchored to it; it is hidden when
@@ -799,29 +809,46 @@ When a provider ships or retires a model, update these together:
 - **One resolver.** `resolveSlot({ slot, layers, context, pins })`
   (`packages/core/src/providers/resolve/`) answers what runs for a role or a task.
   `slot` is `{ kind: 'role' | 'task', id }`. `layers` are the workspace, project and
-  session override objects, merged per key by `mergeLayers` (the narrower layer wins
-  each role or task; `resolveSettings` uses the same merge). `context` holds what the
+  session override objects. Role and task models merge per key by `mergeLayers` over
+  the workspace and the session only (the session wins each role or task;
+  `resolveSettings` uses the same merge), because the project layer no longer holds
+  models (m228). The project layer still supplies the provider list and the default
+  provider. `context` holds what the
   machine knows: the provider policy, the connected and at-limit providers, hidden
   models, installed CLI versions, learned CLI requirements. `pins` are the per-turn,
-  per-agent, per-step and per-run models, in that order, before any layer. The answer is
-  `{ provider, model, effort, source, via, skipped, shadowed }`: `source` names who
-  decided (`turn`, `agent`, `step`, `run`, `session`, `project`, `workspace`, `auto`),
+  per-agent, per-step and per-run models, in that order, before any layer. The turn and
+  agent pins are explicit picks and may run on a provider that is Off (a provider that is
+  not connected still cannot run); a step or run pin is bound by Off like a saved pin.
+  The answer is `{ provider, model, effort, source, via, skipped }`: `source` names who
+  decided (`turn`, `agent`, `step`, `run`, `session`, `workspace`, `auto`),
   `via` how (`pin`, `backup` for a later model of the same set or a task fallback, or
   the Auto step), `skipped` every pin or Auto candidate passed over with its reason
-  (`off`, `not-connected`, `at-limit`, `hidden`, `cli-too-old`, `unknown-model`;
-  `backup-idle` is declared but never emitted, because a pin on a Backup provider runs
-  today), and `shadowed` the project values that win over a workspace page inside their
-  own project (`layers.scoped`). It is built on `resolveRoleRouting`, `traceTaskModel`
-  and `resolveAuto`, which keep the routing rules. `explainResolution` turns `skipped`
-  and `shadowed` into the one sentence rows print. The store builds the inputs once:
+  (`off`, `not-connected`, `at-limit`, `hidden`, `cli-too-old`, `unknown-model`,
+  `backup-idle`: a pin on a Backup provider is skipped while an On provider can work).
+  It is built on `resolveRoleRouting`, `traceTaskModel` and `resolveAuto`, which keep
+  the routing rules. `explainResolution` turns `skipped` into the one sentence rows
+  print, and `skippedPinNote` into the clause the orchestrator prompt carries. The
+  store builds the inputs once:
   `selectModelContext` and `selectResolution` (`store/slices/models/`), and components
   read them through `useResolution` (`features/providers/hooks/useResolution`). The
   Models page rows, the run page orchestrator pill and the workflow builder pill all
   read it, so they print the same model (`resolution.parity.test.tsx`). A lookup for
   the model Auto would pick on a provider the user chose is `autoModelOn`. The
+  runtime asks the same function: the orchestrator's role defaults and the planned
+  routing of its own task (`roleDefaultsFor`, `selectTaskModel`), the workflow child
+  and node picks (`rolePicks`, which hands `resolveWorkflowRouting` the resolved model
+  as both the configured default and the kind default, so there is no second recovery
+  for a pin that cannot run), the fallback model of a turn that changed provider
+  (`selectModelOnProvider`), the report and wireframe spawns, the History rewriter
+  (`historyRewriterConfig`), Scribe (`scribeModelConfig`) and every helper task
+  (`selectTaskModel`). A session's own layer reaches all of them.
+  `resolution.runtime.parity.test.ts` pins that they agree with the Models row on a
+  Codex-only workspace with Anthropic pins and a session made before the change. The
   `resolver-entrypoints` ratchet counts the files that still import `resolveRoleRouting`,
-  `resolveTaskModel`, `resolveAuto` or their wrappers; it only falls, and the runtime
-  call sites (`routeTurn`, workflow routing, spawns) move onto the resolver next
+  `resolveTaskModel`, `resolveAuto` or their wrappers; it only falls. What remains are
+  kind and step routing (`kindRouting` behind `selectKindRouting` for a spawned agent,
+  `resolveStepRouting`, `suggestedRouting`), which read the same resolved settings and
+  scope and which the parity test checks against the row
 
 - **Auto** is one ladder for roles and tasks, `resolveAuto` in
   `packages/core/src/providers/autoRouting/resolveAuto.ts`. The curated picks live in
@@ -893,6 +920,15 @@ When a provider ships or retires a model, update these together:
   the toast after the launch
 - **Re-checks** are the `recheck` task in Models, Review group. A re-check no
   longer pins the cheapest model of the draft's provider by hand
+- **Project model settings** no longer apply. Before 0.24.0 a project could pin its
+  own role and task models; m228 copied them to the settings keys
+  `legacy.projectModels.<projectId>` (`{ taskModels, roleModels }`) and cleared the two
+  project columns. `resolveSettings` and `mergeLayers` ignore the project for the two
+  maps. The Models page says "Model settings 2 projects had are saved. They no longer
+  apply." with **Show**: each project lists what it had, **Apply to this page** merges
+  it into the workspace (the saved value wins a role or task both set) after a confirm
+  anchored to the button, and **Discard** deletes the key after one. The
+  `saved-project-models` slice reads and writes the keys.
 - **Task models** are saved in `workspaces.task_models` and read through
   `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort and a `fallback`.
   A pin without an effort runs at `medium`, clamped to the model's ladder. Models

@@ -4868,16 +4868,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/ProjectOverridesNotice.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/ProjectOverridesNotice.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/RoleRow/RoleModelChip.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -4908,11 +4898,6 @@
   },
   "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/projectOverrideFacts.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 1
     }
   },
@@ -7673,7 +7658,7 @@
   },
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
+      "count": 6
     },
     "@typescript-eslint/naming-convention": {
       "count": 16
@@ -10838,11 +10823,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/projects/clearProjectModelOverrides.sqlite.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
   "apps/desktop/src/store/slices/projects/convertProjectToRepo.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -12240,7 +12220,7 @@
   },
   "apps/desktop/src/store/slices/turn/routeTurn.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
+      "count": 1
     },
     "@typescript-eslint/naming-convention": {
       "count": 2

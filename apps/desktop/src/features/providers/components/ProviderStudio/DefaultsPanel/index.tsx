@@ -22,7 +22,7 @@ import { RoleRow } from './RoleRow';
 import { TaskModelRow } from './TaskModelRow';
 import { ProvidersInOrder } from './ProvidersInOrder';
 import { PinnedOffLine } from './PinnedOffLine';
-import { ProjectOverridesNotice } from './ProjectOverridesNotice';
+import { SavedModelsNotice } from './SavedModelsNotice';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import {
   CONCEPT_ICONS,
@@ -136,7 +136,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         )
       }
     >
-      <ProjectOverridesNotice workspaceId={workspaceId} />
+      <SavedModelsNotice workspaceId={workspaceId} />
 
       <PinnedOffLine
         count={unrunnableRoles.length}

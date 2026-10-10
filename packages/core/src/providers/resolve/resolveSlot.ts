@@ -28,7 +28,6 @@ import type {
   ResolveLayers,
   ResolvePin,
   ResolvePins,
-  ResolveShadow,
   ResolveSkip,
   ResolveSlot,
   ResolveSource,
@@ -45,6 +44,8 @@ type Params = {
 };
 
 const PIN_ORDER: ReadonlyArray<PinSource> = ['turn', 'agent', 'step', 'run'];
+
+const EXPLICIT_PINS: ReadonlyArray<PinSource> = ['turn', 'agent'];
 
 const PIN_EFFORT: EffortLevel = 'medium';
 
@@ -102,6 +103,7 @@ type PinParams = {
   readonly slot: ResolveSlot;
   readonly pin: ResolvePin;
   readonly auto: AutoContext;
+  readonly isExplicit: boolean;
 };
 
 type PinEvaluation =
@@ -113,7 +115,7 @@ type PinEvaluation =
     }
   | { readonly kind: 'skipped'; readonly skip: SkippedChoice };
 
-const evaluatePin = ({ slot, pin, auto }: PinParams): PinEvaluation => {
+const evaluatePin = ({ slot, pin, auto, isExplicit }: PinParams): PinEvaluation => {
   const resolved =
     slot.kind === 'role'
       ? resolveRoleChoice({ choice: pin, effort: pin.effort ?? PIN_EFFORT })
@@ -131,7 +133,7 @@ const evaluatePin = ({ slot, pin, auto }: PinParams): PinEvaluation => {
     };
   }
   const reason = unusableReason({ provider: resolved.provider, context: auto });
-  if (reason !== null) {
+  if (reason !== null && (reason === 'not-connected' || !isExplicit)) {
     return {
       kind: 'skipped',
       skip: { provider: resolved.provider, model: resolved.model, reason },
@@ -173,7 +175,7 @@ const evaluatePins = ({ slot, pins, auto }: PinsParams): PinsResult => {
     if (pin == null) {
       continue;
     }
-    const evaluation = evaluatePin({ slot, pin, auto });
+    const evaluation = evaluatePin({ slot, pin, auto, isExplicit: EXPLICIT_PINS.includes(source) });
     if (evaluation.kind === 'skipped') {
       skipped.push({ source, ...evaluation.skip });
       continue;
@@ -322,33 +324,6 @@ const taskOutcome = ({ slot, trace, source, auto }: TaskParams): Outcome => {
   };
 };
 
-type ShadowParams = {
-  readonly slot: ResolveSlot;
-  readonly layers: ResolveLayers;
-  readonly outcome: Outcome;
-};
-
-const shadowedBy = ({ slot, layers, outcome }: ShadowParams): ReadonlyArray<ResolveShadow> =>
-  (layers.scoped ?? []).flatMap(({ kind, name, layer }): ResolveShadow[] => {
-    const preference =
-      slot.kind === 'role' ? layer.roleModels?.[slot.id] : layer.taskModels?.[slot.id];
-    if (preference == null) {
-      return [];
-    }
-    if (preference.providerId === outcome.provider && preference.model === outcome.model) {
-      return [];
-    }
-    return [
-      {
-        kind,
-        name,
-        provider: preference.providerId,
-        model: preference.model,
-        effort: preference.effort ?? null,
-      },
-    ];
-  });
-
 export const resolveSlot = ({
   slot,
   layers = {},
@@ -371,7 +346,6 @@ export const resolveSlot = ({
     source: outcome.source,
     via: outcome.via,
     skipped,
-    shadowed: shadowedBy({ slot, layers, outcome }),
     defaultProvider: policyDefaultProvider(auto),
     isBlockedByHidden: outcome.isBlockedByHidden,
   };

@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, formatError, EmptyState } from '@goodboy/ui';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, recommendedModelForRole } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import {
@@ -50,10 +51,10 @@ export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props)
     DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
 
   const recommendedModel = (draft: StepDraft): string =>
-    recommendedModelForRole({
+    modelOnProvider({
       role: draft.role,
       provider: draft.provider !== '' ? draft.provider : defaultProvider,
-      prefs: roleModels,
+      roleModels,
     });
 
   const open = (target: SavedStepTarget | null) => {

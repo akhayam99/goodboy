@@ -64,7 +64,7 @@ describe('the resolver scenes', () => {
     expect(MOCK_SCENES['models-codex-only']).toBe(U24_RESOLVER_SCENES['models-codex-only']);
   });
 
-  it('models-codex-only says why each Claude pin is skipped and names the project that wins', async () => {
+  it('models-codex-only says why each Claude pin is skipped', async () => {
     await mount('models-codex-only');
 
     expect(screen.getAllByText(/^Pinned Opus 5\.5 is skipped: Claude is Off\. Using /).length).toBe(
@@ -73,18 +73,14 @@ describe('the resolver scenes', () => {
     expect(screen.getAllByText(/^Pinned Sonnet 5 is skipped: Claude is Off\. Using /).length).toBe(
       1,
     );
-    expect(
-      screen.getByText('A project setting in payments-api overrides this: Sonnet 5.'),
-    ).toBeDefined();
+    expect(screen.queryByText(/A project setting/)).toBeNull();
   });
 
-  it('models-anthropic-on runs the pins and keeps the project line on the orchestrator', async () => {
+  it('models-anthropic-on runs the pins and prints no project line', async () => {
     await mount('models-anthropic-on');
 
     expect(screen.queryByText(/is skipped/)).toBeNull();
-    expect(
-      screen.getByText('A project setting in payments-api overrides this: Sonnet 5.'),
-    ).toBeDefined();
+    expect(screen.queryByText(/A project setting/)).toBeNull();
     const summaries = Array.from(
       document.querySelectorAll<HTMLElement>('[data-role-summary]'),
     ).filter((summary) => summary.textContent === 'Opus 5.5·High');

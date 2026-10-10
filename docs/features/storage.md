@@ -34,6 +34,8 @@ Clean up this workspace, other workspaces, removed ones or all of them, each wit
 
 Decide what to keep from sessions you deleted: their plans, reports and wireframes, with **Keep** or **Delete**.
 
+The same goes for the role and task models a project had before the project layer went away: they stay in the settings table under `legacy.projectModels.<projectId>` (migration m228), one small row per project, until you apply or discard them on **Models**. Nothing else reads them.
+
 ### Goodboy can free N GB
 
 Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk runs low. After a notice it waits 14 days and another 10 GB before speaking again.

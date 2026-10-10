@@ -8,7 +8,6 @@ import type {
 } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
-  clearProjectModelOverrides,
   disconnectProject,
   findDisconnectedProjectByIdentity,
   findProjectByRootPath,
@@ -158,43 +157,6 @@ describe('project queries', () => {
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBe('develop');
     await updateProjectBaseBranch({ db, projectId: project.id, baseBranch: null });
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBeNull();
-  });
-
-  it('clears the four model columns of one project and leaves every other column and project alone', async () => {
-    const db = await makeDb();
-    const pinned = {
-      ...EMPTY_OVERRIDES,
-      defaultProviderId: 'anthropic' as const,
-      defaultBranchPrefix: 'pay/',
-      parallelAgents: true,
-      taskModels: {
-        workflow_orchestrator: { providerId: 'anthropic' as const, model: 'claude-sonnet-5' },
-      },
-      roleModels: {
-        planner: {
-          providerId: 'anthropic' as const,
-          model: 'claude-opus-5-5',
-          effort: 'high' as const,
-        },
-      },
-      providerPool: [{ id: 'anthropic' as const, state: 'on' as const }],
-    };
-    const target = makeProject({ id: 'payments-api', overrides: { overrides: pinned } });
-    const sibling = makeProject({ id: 'ledger-core', overrides: { overrides: pinned } });
-    await insertProject({ db, project: target });
-    await insertProject({ db, project: sibling });
-
-    await clearProjectModelOverrides({ db, id: target.id });
-
-    const cleared = await getProjectById({ db, id: target.id });
-    expect(cleared?.overrides).toEqual({
-      ...pinned,
-      defaultProviderId: null,
-      taskModels: null,
-      roleModels: null,
-      providerPool: null,
-    });
-    expect((await getProjectById({ db, id: sibling.id }))?.overrides).toEqual(pinned);
   });
 
   it('updates and clears the project resolve commit style', async () => {
