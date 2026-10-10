@@ -37,22 +37,6 @@ export const setActiveLens = (set: SetFn) => {
   };
 };
 
-export const toggleWorkflowExpand = (set: SetFn) => {
-  return (sessionId: SessionId, runId: string, defaultExpanded: boolean): void => {
-    set((s) => {
-      const current = s.workflowExpand[sessionId] ?? {};
-      const next = !(current[runId] ?? defaultExpanded);
-      return {
-        workflowExpand: {
-          ...s.workflowExpand,
-          [sessionId]: { ...current, [runId]: next },
-        },
-        focusedWorkflowRunId: { ...s.focusedWorkflowRunId, [sessionId]: null },
-      };
-    });
-  };
-};
-
 export const setFocusedWorkflowRun = (set: SetFn) => {
   return (sessionId: SessionId, runId: string | null): void => {
     set((s) => ({

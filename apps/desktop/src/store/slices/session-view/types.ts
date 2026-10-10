@@ -190,7 +190,6 @@ type SessionViewSliceState = {
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
   readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
-  readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
@@ -232,7 +231,6 @@ type SessionViewSliceActions = {
     readonly isFolded: boolean;
   }): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
-  toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
   setArtifactFilter(params: {

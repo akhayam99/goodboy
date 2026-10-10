@@ -268,17 +268,6 @@ describe('store contract', () => {
       expect([...LENS_KINDS].sort()).toEqual(Object.keys(LENS_LABEL).sort());
     });
 
-    it('toggleWorkflowExpand flips around the supplied default and persists per run', async () => {
-      const store = useAppStore;
-      store.getState().toggleWorkflowExpand(SESSION_ID, 'run-a', true);
-      expect(store.getState().workflowExpand[SESSION_ID]?.['run-a']).toBe(false);
-      store.getState().toggleWorkflowExpand(SESSION_ID, 'run-a', true);
-      expect(store.getState().workflowExpand[SESSION_ID]?.['run-a']).toBe(true);
-      store.getState().toggleWorkflowExpand(SESSION_ID, 'run-b', false);
-      expect(store.getState().workflowExpand[SESSION_ID]?.['run-b']).toBe(true);
-      expect(store.getState().workflowExpand[SESSION_ID]?.['run-a']).toBe(true);
-    });
-
     it('setFocusedArtifactId and setSessionStudio update per-session state', async () => {
       const store = useAppStore;
       store.getState().setFocusedArtifactId(SESSION_ID, PLAN_ID);
