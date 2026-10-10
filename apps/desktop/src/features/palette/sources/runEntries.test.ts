@@ -24,6 +24,8 @@ const facts = (
   readyAgentId: null,
   readyStepName: null,
   hasChanges: false,
+  canPause: false,
+  hasStepRouting: false,
   summary: '',
   ...overrides,
 });
