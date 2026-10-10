@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Check, Trash2, X } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
 import { FOCUS_RING, StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -77,12 +77,12 @@ export const NotificationRow = ({
         {notifications.length}
       </span>
     ) : null;
-  const dismiss = (icon: ReactNode) => (
-    <Tooltip content="Dismiss">
+  const deleteControl = (icon: ReactNode) => (
+    <Tooltip content="Delete">
       <button
         type="button"
         onClick={onDismiss}
-        aria-label={`Dismiss "${latest.title}"`}
+        aria-label={`Delete "${latest.title}"`}
         className={cn(ICON_BUTTON, tintClasses('danger').hoverBg, 'hover:text-danger')}
       >
         {icon}
@@ -142,7 +142,7 @@ export const NotificationRow = ({
             </Tooltip>
           )}
           <span className="flex opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            {dismiss(<X size={ICON_SIZE.row} aria-hidden />)}
+            {deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}
           </span>
         </span>
       </li>
@@ -233,7 +233,7 @@ export const NotificationRow = ({
                 </button>
               </Tooltip>
             )}
-            {dismiss(<Trash2 size={ICON_SIZE.row} aria-hidden />)}
+            {deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}
           </span>
         </div>
       </div>

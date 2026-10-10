@@ -54,8 +54,7 @@ export const NotificationCenter = () => {
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
-  const dismissNotification = useAppStore((s) => s.dismissNotification);
-  const markNotificationRead = useAppStore((s) => s.markNotificationRead);
+  const dismissNotificationGroup = useAppStore((s) => s.dismissNotificationGroup);
   const dropdown = useDropdown({
     align: 'center',
     width: 'w-96',
@@ -210,10 +209,9 @@ export const NotificationCenter = () => {
                 }}
                 onActed={close}
                 onDismiss={() => {
-                  for (const notification of group) {
-                    void markNotificationRead(notification.id);
-                    void dismissNotification(notification.id);
-                  }
+                  void dismissNotificationGroup({
+                    ids: group.map((notification) => notification.id),
+                  });
                 }}
               />
             ))}

@@ -16,8 +16,7 @@ const { state } = vi.hoisted(() => ({
     loadNotifications: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
     clearNotifications: vi.fn(async () => undefined),
-    dismissNotification: vi.fn(async () => undefined),
-    markNotificationRead: vi.fn(async () => undefined),
+    dismissNotificationGroup: vi.fn(async () => undefined),
     retrySummarizer: vi.fn(),
     retryStepSummary: vi.fn(async () => undefined),
     sessions: [] as ReadonlyArray<{
@@ -89,8 +88,7 @@ beforeEach(() => {
   state.currentSessionId = null;
   state.loadNotifications.mockClear();
   state.markNotificationsRead.mockClear();
-  state.dismissNotification.mockClear();
-  state.markNotificationRead.mockClear();
+  state.dismissNotificationGroup.mockClear();
   state.navigate.mockClear();
   state.reportError.mockClear();
   state.workspaces = [];
@@ -285,22 +283,20 @@ describe('NotificationCenter', () => {
     );
   });
 
-  it('dismisses every notification in a group', async () => {
+  it('deletes every notification in a group in one call', async () => {
     state.notifications = [
       buildNotification({ id: 'n2', title: 'newest title', coalesceKey: 'shared' }),
       buildNotification({ id: 'n1', title: 'older title', coalesceKey: 'shared' }),
     ];
     render(<NotificationCenter />);
     await openCenter();
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss "newest title"' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete "newest title"' }));
 
-    expect(state.dismissNotification).toHaveBeenCalledTimes(2);
-    expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
-    expect(state.dismissNotification).toHaveBeenCalledWith('n2');
-    expect(state.dismissNotification).toHaveBeenCalledWith('n1');
+    expect(state.dismissNotificationGroup).toHaveBeenCalledTimes(1);
+    expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['n2', 'n1'] });
   });
 
-  it('keeps retry visible and reserves the hover slot for dismiss', async () => {
+  it('keeps retry visible and reserves the hover slot for delete', async () => {
     state.notifications = [
       {
         ...buildNotification({ id: 'n1', title: 'step summary failed', coalesceKey: 'retry' }),
@@ -315,7 +311,7 @@ describe('NotificationCenter', () => {
     await openCenter();
 
     const slot = screen
-      .getByRole('button', { name: 'Dismiss "step summary failed"' })
+      .getByRole('button', { name: 'Delete "step summary failed"' })
       .closest('span');
     expect(slot?.className).toContain('group-hover:opacity-100');
     expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
