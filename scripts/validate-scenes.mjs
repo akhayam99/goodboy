@@ -2,6 +2,15 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {
+  CALL_TIMEOUT_MS,
+  DevToolsTimeoutError,
+  WARM_UP_TIMEOUT_MS,
+  failingScenes,
+  measureScene,
+  readDevToolsPort,
+  summaryLine,
+} from './validateScenesBrowser.mjs';
 
 const CHROME =
   process.env.VALIDATE_CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -23,7 +32,8 @@ const PLAN_DRAWER_WIDTH = 1024;
 const ROW_TOLERANCE_PX = 2;
 const SETTLE_MS = 500;
 const OPEN_ATTEMPTS = 3;
-const CALL_TIMEOUT_MS = 60_000;
+const WARM_UP_SCENE = 'workspace';
+const WARM_UP_POLL_BUDGET_MS = 80_000;
 const CLOSE_GRACE_MS = 5_000;
 const FRAME_FALLBACK_MS = 100;
 const CLICK_PATIENCE_MS = 8000;
@@ -68,24 +78,24 @@ const connect = async (port) => {
       resolvePending(message);
     }
   });
-  return (method, params = {}) =>
+  const send = (method, params = {}, timeoutMs = CALL_TIMEOUT_MS) =>
     new Promise((resolvePromise, reject) => {
       id += 1;
       const callId = id;
       const timer = setTimeout(() => {
         pending.delete(callId);
-        reject(new Error(`Chrome DevTools call ${method} timed out`));
-      }, CALL_TIMEOUT_MS);
+        reject(new DevToolsTimeoutError({ method, timeoutMs }));
+      }, timeoutMs);
       pending.set(callId, (message) => {
         clearTimeout(timer);
         resolvePromise(message);
       });
       socket.send(JSON.stringify({ id: callId, method, params }));
     });
+  return { send, disconnect: () => socket.close() };
 };
 
 const browser = async () => {
-  const port = 9900 + Math.floor(Math.random() * 90);
   const profile = mkdtempSync(join(tmpdir(), 'validate-scenes-'));
   const child = spawn(
     CHROME,
@@ -94,43 +104,63 @@ const browser = async () => {
       '--disable-gpu',
       '--no-sandbox',
       '--hide-scrollbars',
-      `--remote-debugging-port=${port}`,
+      '--remote-debugging-port=0',
       `--user-data-dir=${profile}`,
       'about:blank',
     ],
-    { stdio: 'ignore' },
+    { stdio: 'ignore', detached: true },
   );
   const exited = new Promise((resolvePromise) => {
     child.once('exit', resolvePromise);
   });
-  const send = await connect(port);
-  const close = async () => {
-    if (child.exitCode === null && child.signalCode === null) {
-      child.kill('SIGTERM');
-      const patience = new Promise((resolvePromise) => {
-        setTimeout(() => resolvePromise(false), CLOSE_GRACE_MS).unref();
-      });
-      const isStopped = await Promise.race([exited.then(() => true), patience]);
-      if (!isStopped) {
-        child.kill('SIGKILL');
-        await exited;
-      }
+  const killGroup = (signal) => {
+    try {
+      process.kill(-child.pid, signal);
+    } catch {
+      return false;
     }
+    return true;
+  };
+  let disconnect = () => {};
+  const close = async () => {
+    disconnect();
+    killGroup('SIGTERM');
+    const patience = new Promise((resolvePromise) => {
+      setTimeout(() => resolvePromise(false), CLOSE_GRACE_MS).unref();
+    });
+    const isStopped = await Promise.race([exited.then(() => true), patience]);
+    if (!isStopped) {
+      killGroup('SIGKILL');
+      await exited;
+    }
+    killGroup('SIGKILL');
     try {
       rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     } catch {
       console.warn(`validate-scenes: could not remove ${profile}`);
     }
   };
-  return { send, close };
+  try {
+    const port = await readDevToolsPort({ profile });
+    const connection = await connect(port);
+    disconnect = connection.disconnect;
+    return { send: connection.send, close };
+  } catch (error) {
+    await close();
+    throw error;
+  }
 };
 
-const run = async (send, fn, argument) => {
-  const result = await send('Runtime.evaluate', {
-    expression: `(${fn.toString()})(${JSON.stringify(argument)})`,
-    awaitPromise: true,
-    returnByValue: true,
-  });
+const run = async (send, fn, argument, timeoutMs = CALL_TIMEOUT_MS) => {
+  const result = await send(
+    'Runtime.evaluate',
+    {
+      expression: `(${fn.toString()})(${JSON.stringify(argument)})`,
+      awaitPromise: true,
+      returnByValue: true,
+    },
+    timeoutMs,
+  );
   if (result.result?.exceptionDetails) {
     throw new Error(JSON.stringify(result.result.exceptionDetails).slice(0, 400));
   }
@@ -152,7 +182,8 @@ const attemptOpen = async ({ send, scene, readySelector }) => {
       },
       readySelector,
     );
-  } catch {
+  } catch (error) {
+    if (error instanceof DevToolsTimeoutError) throw error;
     return false;
   }
 };
@@ -450,100 +481,179 @@ const branchCellOverlaps = () =>
       : [];
   });
 
-const main = async () => {
-  const failures = [];
-  const session = await browser();
-  try {
-    for (const scene of only === undefined ? ['activity-run', 'activity-resolves'] : []) {
-      for (const zoom of ZOOMS) {
-        await open({ send: session.send, scene, width: WIDTHS[0], zoom });
-        const motion = await run(session.send, openEveryGroup, {
-          stillCap: STILL_CAP_PX,
-          settleMs: SETTLE_MS,
-          frameFallbackMs: FRAME_FALLBACK_MS,
-        });
-        if (motion.transformed.length > 0) {
-          failures.push({ scene, zoom, check: 'row keeps a transform', rows: motion.transformed });
-        }
-        if (motion.moved.length > 0) {
-          failures.push({ scene, zoom, check: 'group row moved', rows: motion.moved });
-        }
-        const seams = await run(session.send, railSeams, { tolerance: SEAM_TOLERANCE_PX });
-        if (seams.length > 0) {
-          failures.push({ scene, zoom, check: 'rail seam', seams });
-        }
-        console.log(
-          `${scene} at ${Math.round(zoom * 100)}%: ${motion.groups} groups, ${seams.length} seams`,
+const waitForRoot = async ({ budgetMs }) => {
+  const start = performance.now();
+  while (performance.now() - start < budgetMs) {
+    if (
+      document.readyState === 'complete' &&
+      (document.getElementById('root')?.childElementCount ?? 0) > 0
+    ) {
+      return true;
+    }
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  }
+  return false;
+};
+
+const warmUp = async ({ send }) => {
+  await measureScene({
+    scene: WARM_UP_SCENE,
+    task: async () => {
+      await send('Page.enable');
+      await send(
+        'Page.navigate',
+        { url: `${app}/?scene=${WARM_UP_SCENE}&brand=1` },
+        WARM_UP_TIMEOUT_MS,
+      );
+      const isRendered = await run(
+        send,
+        waitForRoot,
+        { budgetMs: WARM_UP_POLL_BUDGET_MS },
+        WARM_UP_TIMEOUT_MS,
+      );
+      if (isRendered !== true) {
+        throw new Error(
+          `scene ${WARM_UP_SCENE}: warm-up did not render in ${WARM_UP_TIMEOUT_MS / 1000}s`,
         );
       }
-      for (const width of WIDTHS) {
-        await open({ send: session.send, scene, width, zoom: 1 });
-        const gaps = await run(session.send, metaGaps, { cap: META_GAP_CAP_PX });
-        if (gaps.length > 0) {
-          failures.push({ scene, width, check: 'meta gap over the cap', gaps });
-        }
-        const clipped = await run(session.send, clippedTimes, null);
-        if (clipped.length > 0) {
-          failures.push({ scene, width, check: 'time wider than its column', clipped });
-        }
-      }
+    },
+  });
+};
+
+const measureActivity = async ({ send, scene }) => {
+  const failures = [];
+  for (const zoom of ZOOMS) {
+    await open({ send, scene, width: WIDTHS[0], zoom });
+    const motion = await run(send, openEveryGroup, {
+      stillCap: STILL_CAP_PX,
+      settleMs: SETTLE_MS,
+      frameFallbackMs: FRAME_FALLBACK_MS,
+    });
+    if (motion.transformed.length > 0) {
+      failures.push({ scene, zoom, check: 'row keeps a transform', rows: motion.transformed });
+    }
+    if (motion.moved.length > 0) {
+      failures.push({ scene, zoom, check: 'group row moved', rows: motion.moved });
+    }
+    const seams = await run(send, railSeams, { tolerance: SEAM_TOLERANCE_PX });
+    if (seams.length > 0) {
+      failures.push({ scene, zoom, check: 'rail seam', seams });
+    }
+    console.log(
+      `${scene} at ${Math.round(zoom * 100)}%: ${motion.groups} groups, ${seams.length} seams`,
+    );
+  }
+  for (const width of WIDTHS) {
+    await open({ send, scene, width, zoom: 1 });
+    const gaps = await run(send, metaGaps, { cap: META_GAP_CAP_PX });
+    if (gaps.length > 0) {
+      failures.push({ scene, width, check: 'meta gap over the cap', gaps });
+    }
+    const clipped = await run(send, clippedTimes, null);
+    if (clipped.length > 0) {
+      failures.push({ scene, width, check: 'time wider than its column', clipped });
+    }
+  }
+  return { failures, wraps: 0 };
+};
+
+const measureInbox = async ({ send, width }) => {
+  const failures = [];
+  await open({ send, scene: 'inbox', width, zoom: 1, readySelector: '[data-inbox-key]' });
+  const wrapped = await run(send, wrappedAges, null);
+  if (wrapped.length > 0) {
+    failures.push({ scene: 'inbox', width, check: 'task age wraps', wrapped });
+  }
+  return { failures, wraps: wrapped.length };
+};
+
+const measureLongBranches = async ({ send, width }) => {
+  const scene = 'overview-long-branches';
+  const failures = [];
+  await open({
+    send,
+    scene,
+    width,
+    zoom: 1,
+    readySelector: '[data-testid="project-mount-branch-cell"]',
+  });
+  const overlaps = await run(send, branchCellOverlaps, null);
+  if (overlaps.length > 0) {
+    failures.push({
+      scene,
+      width,
+      check: 'branch runs under the put on branch button',
+      overlaps,
+    });
+  }
+  return { failures, wraps: 0 };
+};
+
+const measurePlanDrawer = async ({ send, scene, until }) => {
+  const failures = [];
+  await open({
+    send,
+    scene,
+    width: PLAN_DRAWER_WIDTH,
+    zoom: 1,
+    readySelector: '[data-testid="plan-drawer-toolbar"]',
+  });
+  const header = await run(send, planDrawerHeader, { until, tolerance: ROW_TOLERANCE_PX });
+  const isBroken =
+    header.missing ||
+    header.rowSpread > ROW_TOLERANCE_PX ||
+    header.overflow > 0 ||
+    header.pastEdge.length > 0 ||
+    header.titleLines > 2;
+  if (isBroken) {
+    failures.push({ scene, check: 'plan drawer header wraps or overflows', header });
+  }
+  console.log(
+    `${scene}: card ${header.cardWidth}px, header row spread ${header.rowSpread}px, overflow ${header.overflow}px`,
+  );
+  return { failures, wraps: 0 };
+};
+
+const measureWorkflow = async ({ send, target }) => {
+  const failures = [];
+  const result = await validateWorkflowScroll({ send, ...target });
+  if (!result.reached) {
+    failures.push({ scene: target.scene, check: 'workflow bottom unreachable', result });
+  }
+  console.log(`${target.scene}: workflow bottom ${result.reached ? 'reached' : 'not reached'}`);
+  return { failures, wraps: 0 };
+};
+
+const main = async () => {
+  const failures = [];
+  let crash = null;
+  const session = await browser();
+  const { send } = session;
+  const measure = async ({ scene, task }) => {
+    const outcome = await measureScene({ scene, task });
+    failures.push(...outcome.failures);
+    return outcome;
+  };
+  try {
+    await warmUp({ send });
+    for (const scene of only === undefined ? ['activity-run', 'activity-resolves'] : []) {
+      await measure({ scene, task: () => measureActivity({ send, scene }) });
     }
     for (const width of only === undefined ? WIDTHS : []) {
-      await open({
-        send: session.send,
+      const inbox = await measure({
         scene: 'inbox',
-        width,
-        zoom: 1,
-        readySelector: '[data-inbox-key]',
+        task: () => measureInbox({ send, width }),
       });
-      const wrapped = await run(session.send, wrappedAges, null);
-      if (wrapped.length > 0) {
-        failures.push({ scene: 'inbox', width, check: 'task age wraps', wrapped });
-      }
-      await open({
-        send: session.send,
+      await measure({
         scene: 'overview-long-branches',
-        width,
-        zoom: 1,
-        readySelector: '[data-testid="project-mount-branch-cell"]',
+        task: () => measureLongBranches({ send, width }),
       });
-      const overlaps = await run(session.send, branchCellOverlaps, null);
-      if (overlaps.length > 0) {
-        failures.push({
-          scene: 'overview-long-branches',
-          width,
-          check: 'branch runs under the put on branch button',
-          overlaps,
-        });
-      }
-      console.log(`inbox and overview-long-branches at ${width}: ${wrapped.length} wraps`);
+      console.log(`inbox and overview-long-branches at ${width}: ${inbox.wraps} wraps`);
     }
     for (const { scene, until } of only === undefined || only === 'plan-drawer'
       ? PLAN_DRAWER_SCENES
       : []) {
-      await open({
-        send: session.send,
-        scene,
-        width: PLAN_DRAWER_WIDTH,
-        zoom: 1,
-        readySelector: '[data-testid="plan-drawer-toolbar"]',
-      });
-      const header = await run(session.send, planDrawerHeader, {
-        until,
-        tolerance: ROW_TOLERANCE_PX,
-      });
-      const isBroken =
-        header.missing ||
-        header.rowSpread > ROW_TOLERANCE_PX ||
-        header.overflow > 0 ||
-        header.pastEdge.length > 0 ||
-        header.titleLines > 2;
-      if (isBroken) {
-        failures.push({ scene, check: 'plan drawer header wraps or overflows', header });
-      }
-      console.log(
-        `${scene}: card ${header.cardWidth}px, header row spread ${header.rowSpread}px, overflow ${header.overflow}px`,
-      );
+      await measure({ scene, task: () => measurePlanDrawer({ send, scene, until }) });
     }
     for (const target of only === undefined || only === 'workflow'
       ? [
@@ -551,15 +661,15 @@ const main = async () => {
           { scene: 'frame&view=workflows', click: 'Run defaults' },
         ]
       : []) {
-      const result = await validateWorkflowScroll({ send: session.send, ...target });
-      if (!result.reached) {
-        failures.push({ scene: target.scene, check: 'workflow bottom unreachable', result });
-      }
-      console.log(`${target.scene}: workflow bottom ${result.reached ? 'reached' : 'not reached'}`);
+      await measure({ scene: target.scene, task: () => measureWorkflow({ send, target }) });
     }
+  } catch (error) {
+    crash = error;
   } finally {
     await session.close();
   }
+  console.log(summaryLine({ scenes: failingScenes({ failures, error: crash }) }));
+  if (crash !== null) throw crash;
   if (failures.length > 0) {
     console.error(JSON.stringify(failures, null, 2));
     console.error(`validate-scenes failed: ${failures.length} checks`);
