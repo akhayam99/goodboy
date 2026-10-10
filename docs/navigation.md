@@ -2402,10 +2402,21 @@ that hides everything leaves `No files match` with `Clear` in both panes
 in both groupings and at the end of the diff. Viewed marks are stored per session, mount and view, so two repos in one session
 keep their own; marks saved before that are read until the mount saves its own.
 Click a file and the
-diff scrolls to it; scroll the diff and the tree highlights the file in view and
-opens its folders. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
+diff scrolls to it; scroll the diff and the tree highlights the file in view but
+never opens a folder: when that file sits in a closed folder, the outermost
+closed folder shows a small primary dot (`contains the file in view`). Folds are
+remembered per session and project in `localStorage`
+(`goodboy:diff-folds:v1:<session>:<mount>`, only your changes from the default,
+at most 500 entries, in `useFoldState`), so closing and reopening the page, a
+new file or another view never undoes them. A click in the tree, next unviewed,
+`Viewed` and a link from another page open the folders above their file; `J`/`K`
+walk every file in diff order, also those in closed folders, and leave the folds
+as they are. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
 scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
-link from another page such as `Open in Files`. The diff resets its mounted
+link from another page such as `Open in Files`. A refresh keeps the tree and
+the diff on screen (`isRefreshing` on `useSessionDiff`); skeletons show only
+on the first load and when the scope changes. Hovering a row shows its full path
+in a tooltip, never a native `title`. The diff resets its mounted
 batch, its observer and its place only when the list of paths changes, never on
 a new array with the same paths, so marking a file viewed or a note changing
 neither shortens the page nor drops an open composer. Folder row ids start with

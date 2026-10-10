@@ -56,6 +56,18 @@ const visit = async ({ ctx, tab }: { readonly ctx: Ctx; readonly tab: 'comments'
   await branchTab(tab)(ctx);
 };
 
+const folderRow = ({
+  label,
+  isOpen,
+}: {
+  readonly label: RegExp;
+  readonly isOpen: boolean;
+}): HTMLElement =>
+  within(screen.getByRole('navigation', { name: 'Changed files' })).getByRole('button', {
+    name: label,
+    expanded: isOpen,
+  });
+
 const headerPart = (selector: string): HTMLElement => {
   const element = document.querySelector<HTMLElement>(`[data-slot="pane-header"] ${selector}`);
   if (element === null) {
@@ -185,6 +197,32 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
       await branchTab('files')(ctx);
       expect(await screen.findByRole('button', { name: FILES_BUTTON }, WAIT)).toBeDefined();
       expectSameFrame();
+    },
+  },
+  {
+    name: 'files rail: folders closed in the tree stay closed after a visit to Comments',
+    covers: ['navigate', 'files-rail:docked'],
+    open: async (ctx) => {
+      stubPane({ width: DOCKED_PANE });
+      await openBranchOnComments(ctx);
+      await visit({ ctx, tab: 'files' });
+      await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
+
+      await click(folderRow({ label: /\bwebhooks\b/, isOpen: true }));
+      await click(folderRow({ label: /\btest\b/, isOpen: true }));
+      expect(folderRow({ label: /\bwebhooks\b/, isOpen: false })).toBeDefined();
+      expect(folderRow({ label: /\btest\b/, isOpen: false })).toBeDefined();
+
+      await leaveAndComeBack(ctx);
+
+      await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
+      expect(folderRow({ label: /\bwebhooks\b/, isOpen: false })).toBeDefined();
+      expect(folderRow({ label: /\btest\b/, isOpen: false })).toBeDefined();
+      expect(folderRow({ label: /\bledger\b/, isOpen: true })).toBeDefined();
+    },
+    lands: async (ctx) => {
+      await branchTab('files')(ctx);
+      expect(await screen.findByRole('navigation', { name: 'Changed files' }, WAIT)).toBeDefined();
     },
   },
 ];

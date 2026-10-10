@@ -52,6 +52,7 @@ branch-commits-toolbar
 branch-description-open
 branch-files
 branch-files-button
+branch-files-deep
 branch-files-docked
 branch-files-notes
 branch-files-strip
