@@ -16,6 +16,7 @@ import {
   type SuggestionMountEvent,
 } from '../../store/slices/project-mounts/materializationProposals';
 import type { BranchPushState } from '../../shared/lib/branchPushState';
+import { dirtyTreeLine } from '../../shared/lib/dirtyTreeCopy';
 import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
@@ -93,8 +94,13 @@ type SuggestionProject = {
   readonly worktreePath: string;
   readonly baseBranch: string;
   readonly mainDistance: number | null;
+  readonly isClean?: boolean | null;
+  readonly changedCount?: number | null;
   readonly rebaseRequest?: SuggestionRebaseRequest | null;
 };
+
+const dirtyCountOf = ({ project }: { readonly project: SuggestionProject }): number =>
+  project.isClean === false ? Math.max(project.changedCount ?? 1, 1) : 0;
 
 const isRebaseConsumed = ({ project }: { readonly project: SuggestionProject }): boolean => {
   const request = project.rebaseRequest ?? null;
@@ -550,17 +556,28 @@ export const deriveNextSteps = ({
       worktreePath: project.worktreePath,
       baseBranch: project.baseBranch,
       behind: project.mainDistance,
+      dirtyCount: dirtyCountOf({ project }),
     });
   }
-  rebaseTargets.sort(
+  const cleanRebaseTargets = rebaseTargets.filter((target) => target.dirtyCount === 0);
+  const isRebaseBlocked = cleanRebaseTargets.length === 0;
+  const shownRebaseTargets = [...(isRebaseBlocked ? rebaseTargets : cleanRebaseTargets)].sort(
     (first, second) =>
       second.behind - first.behind || first.projectName.localeCompare(second.projectName),
   );
-  const firstRebaseTarget = rebaseTargets[0];
+  const firstRebaseTarget = shownRebaseTargets[0];
   if (firstRebaseTarget != null) {
-    const projectCount = new Set(rebaseTargets.map((target) => target.projectId)).size;
-    const isSingleTarget = rebaseTargets.length === 1;
+    const projectCount = new Set(shownRebaseTargets.map((target) => target.projectId)).size;
+    const isSingleTarget = shownRebaseTargets.length === 1;
     const isSingleProject = projectCount === 1;
+    const behindDetail = isSingleTarget
+      ? `${firstRebaseTarget.behind} behind`
+      : isSingleProject
+        ? `${shownRebaseTargets.length} branches behind`
+        : `${projectCount} projects behind`;
+    const blockedDetail = isSingleTarget
+      ? dirtyTreeLine({ count: firstRebaseTarget.dirtyCount })
+      : `${shownRebaseTargets.length} branches have changes not committed`;
     suggestions.push({
       id: `rebase-project:${sessionId}`,
       kind: 'rebase-project',
@@ -570,16 +587,12 @@ export const deriveNextSteps = ({
         ? `Rebase ${firstRebaseTarget.projectName} on ${firstRebaseTarget.baseBranch}`
         : isSingleProject
           ? `Rebase ${firstRebaseTarget.projectName}`
-          : `Rebase ${rebaseTargets.length} branches`,
-      detail: isSingleTarget
-        ? `${firstRebaseTarget.behind} behind`
-        : isSingleProject
-          ? `${rebaseTargets.length} branches behind`
-          : `${projectCount} projects behind`,
+          : `Rebase ${shownRebaseTargets.length} branches`,
+      detail: isRebaseBlocked ? blockedDetail : behindDetail,
       sessionId,
       targetKey: null,
-      fingerprint: `rebase-project:${sessionId}:${rebaseTargets.map((target) => `${target.id}:${target.behind}`).join(',')}`,
-      payload: { targets: rebaseTargets },
+      fingerprint: `rebase-project:${sessionId}:${isRebaseBlocked ? 'dirty:' : ''}${shownRebaseTargets.map((target) => `${target.id}:${target.behind}`).join(',')}`,
+      payload: { targets: shownRebaseTargets },
     });
   }
   const deduped = dedupeByTargetKey({ suggestions });

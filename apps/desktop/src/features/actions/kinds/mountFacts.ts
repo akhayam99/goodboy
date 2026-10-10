@@ -40,7 +40,7 @@ export type MountFacts = {
   readonly isRebasing: boolean;
   readonly comments: number;
   readonly canStartTurnsHere: boolean;
-  readonly isDraftAgentRunning: boolean;
+  readonly isScribeWriting: boolean;
   readonly blockers: ReadonlyArray<string>;
   readonly editors: ReadonlyArray<MountEditor>;
 };
@@ -93,7 +93,7 @@ type Params = {
   readonly remoteKind: RemoteHostKind | null;
   readonly comments: number;
   readonly canStartTurnsHere: boolean;
-  readonly isDraftAgentRunning: boolean;
+  readonly isScribeWriting: boolean;
   readonly blockers: ReadonlyArray<string>;
   readonly editors: ReadonlyArray<MountEditor>;
 };
@@ -115,7 +115,7 @@ export const mountFacts = ({
   remoteKind,
   comments,
   canStartTurnsHere,
-  isDraftAgentRunning,
+  isScribeWriting,
   blockers,
   editors,
 }: Params): MountFacts => {
@@ -148,7 +148,7 @@ export const mountFacts = ({
     isRebasing: status?.inProgress === 'rebase',
     comments,
     canStartTurnsHere,
-    isDraftAgentRunning,
+    isScribeWriting,
     blockers,
     editors,
   };

@@ -465,7 +465,11 @@ describe('CommitsHistory', () => {
       workingTree: { kind: 'known', staged: 1, unstaged: 1, untracked: 0, unmerged: 0, changed: 2 },
     };
     setup({ items: LEDGER_PRESET });
-    expect(screen.getByText('2 files have changes that are not committed')).toBeDefined();
+    expect(
+      screen.getAllByText(
+        '2 files have changes that are not committed. Commit or stash them first.',
+      ).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Apply here only' }).hasAttribute('disabled')).toBe(
       true,
     );

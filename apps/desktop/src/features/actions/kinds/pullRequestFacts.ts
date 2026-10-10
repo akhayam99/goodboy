@@ -34,7 +34,7 @@ export type PullRequestFacts = {
   readonly openComments: number;
   readonly isOwn: boolean;
   readonly writeInFlight: string | null;
-  readonly isDraftAgentRunning: boolean;
+  readonly isScribeWriting: boolean;
   readonly commentsNeedYou: number;
   readonly isFixRunLive: boolean;
   readonly mergeMethods: ReadonlyArray<PrMergeMethod>;
@@ -70,7 +70,7 @@ type Params = {
   readonly reviews: ReadonlyArray<PrReview>;
   readonly viewer: string | null;
   readonly writeInFlight: string | null;
-  readonly isDraftAgentRunning: boolean;
+  readonly isScribeWriting: boolean;
   readonly commentsNeedYou?: number;
   readonly isFixRunLive?: boolean;
   readonly mergeMethods?: ReadonlyArray<PrMergeMethod>;
@@ -147,7 +147,7 @@ export const pullRequestFacts = ({
   reviews,
   viewer,
   writeInFlight,
-  isDraftAgentRunning,
+  isScribeWriting,
   commentsNeedYou = 0,
   isFixRunLive = false,
   mergeMethods = ALL_MERGE_METHODS,
@@ -173,7 +173,7 @@ export const pullRequestFacts = ({
     openComments: openReviewThreadIds({ comments }).length,
     isOwn: author === null || viewer === null || author === viewer,
     writeInFlight,
-    isDraftAgentRunning,
+    isScribeWriting,
     commentsNeedYou,
     isFixRunLive,
     mergeMethods,
@@ -210,7 +210,7 @@ export const sessionMergeFacts = ({
     reviews: detail?.reviews ?? [],
     viewer: null,
     writeInFlight: null,
-    isDraftAgentRunning: false,
+    isScribeWriting: false,
     ...fixSignalsOf({ threads }),
     ...(mergeView === null
       ? {}

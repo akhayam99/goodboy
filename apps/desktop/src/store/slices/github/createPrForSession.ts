@@ -15,9 +15,11 @@ import { closingIssueReferences } from '../../../features/integrations/github/cl
 import { partOfReferences } from '../../../features/integrations/github/partOfReferences';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { isScribeWriting } from '../scribe/isScribeWriting';
 import { signScribeBody } from '../scribe/scribeSignature';
 import { mountRequestEventPayload } from '../project-mounts/mountRequests';
 import { githubRequestHost } from './mountPrLink';
+import { ScribeWritingError } from './ScribeWritingError';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 import { ReportedError } from '../notifications/reportedError';
@@ -105,6 +107,12 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       );
     }
     const { session, mount, cwd } = target;
+    if (
+      isScribeBody !== true &&
+      isScribeWriting({ scribeWork: get().scribeWork, mountId: mount.id })
+    ) {
+      throw new ScribeWritingError();
+    }
     const workspace = get().workspaces.find((candidate) => candidate.id === session.workspaceId);
     if (workspace === undefined) {
       throw new Error('Workspace not found for this session.');

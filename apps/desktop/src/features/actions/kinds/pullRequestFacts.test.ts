@@ -37,7 +37,7 @@ const factsOf = (patch: Partial<Parameters<typeof pullRequestFacts>[0]> = {}) =>
     reviews: [],
     viewer: null,
     writeInFlight: null,
-    isDraftAgentRunning: false,
+    isScribeWriting: false,
     ...patch,
   });
 

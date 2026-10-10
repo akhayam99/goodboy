@@ -1,6 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import { readOriginAhead, tryHistoryPlan } from '../../../features/history/historyEngine';
 import { worktreeStatus } from '../../../features/worktree/worktree';
+import { assertCleanTree } from './assertCleanTree';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
 import { reportHistoryStop } from './reportHistoryStop';
@@ -18,6 +19,7 @@ export type BringOriginOutcome = ApplyHistoryRewriteOutcome | 'rewriting' | 'not
 export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, mountId }: HistoryMountInput): Promise<BringOriginOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
+    await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
     const run = get().historyRuns[mountId];
     const origin = run?.origin ?? 'plan';
     const planId = run?.planId ?? null;
