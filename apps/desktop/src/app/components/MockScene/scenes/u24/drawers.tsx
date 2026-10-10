@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
-import { DrawerColumn } from '@goodboy/ui';
+import { AppShell } from '@goodboy/ui';
 import { ExplorePane } from '../../../../../features/explore/components/ExplorePane';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
@@ -16,7 +16,6 @@ import { seedPlanDrawerScene } from '../u21/planDrawerSeed';
 
 const clock = sceneClock({ anchor: '2026-10-06T09:40:00.000Z' });
 
-const SIDEBAR_PX = 240;
 const WIDE_WIDTH_PX = 1920;
 const NARROW_WIDTH_PX = 1280;
 const CONTEXT_WIDTH_PX = 1440;
@@ -46,23 +45,13 @@ const DrawerSplitStage = ({ width, prepare, main }: StageProps) => {
   }
 
   return (
-    <div
-      data-testid="drawer-split-stage"
-      className="flex h-screen bg-chrome text-foreground"
-      style={{ width }}
-    >
-      <div aria-hidden className="shrink-0 bg-chrome" style={{ width: SIDEBAR_PX }} />
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <DrawerColumn
-          main={main}
-          drawer={isDrawerOpen ? <DrawerHost /> : null}
-          sizing={sizing}
-          frame="sheet"
-          sheetEdge="wrapped"
-          ariaLabel="Side panel"
-          resizeLabel="Resize side panel"
-        />
-      </main>
+    <div data-testid="drawer-split-stage" className="[&>div]:w-full" style={{ width }}>
+      <AppShell
+        leftSidebar={<div aria-hidden />}
+        main={main}
+        drawer={isDrawerOpen ? <DrawerHost /> : null}
+        drawerSizing={sizing}
+      />
     </div>
   );
 };
