@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { ReactNode } from 'react';
+import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
@@ -23,19 +23,17 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-type LayoutProps = {
-  readonly surface?: string;
-  readonly detail?: ReactNode;
-};
+type LayoutProps = Partial<ComponentProps<typeof StudioRailLayout>>;
 
-const renderLayout = ({ surface = 'guide', detail = <p>Detail content</p> }: LayoutProps = {}) =>
+const renderLayout = (props: LayoutProps = {}) =>
   render(
     <StudioRailLayout
       rail={<p>Rail content</p>}
-      detail={detail}
+      detail={<p>Detail content</p>}
       railLabel="Project navigation"
       railWidth="standard"
-      surface={surface}
+      surface="guide"
+      {...props}
     />,
   );
 
@@ -155,5 +153,55 @@ describe('StudioRailLayout', () => {
       studioRailStorageKey({ surface: 'guide' }),
       String(STUDIO_RAIL_WIDTHS.standard + 49),
     );
+  });
+
+  it('draws no fold control and no header row unless the page asks for one', () => {
+    renderLayout();
+
+    const rail = screen.getByRole('complementary', { name: 'Project navigation' });
+
+    expect(screen.queryByRole('button', { name: 'Fold the rail' })).toBeNull();
+    expect(rail.firstElementChild?.textContent).toBe('Rail content');
+  });
+
+  it('clamps a saved width to the min and max a page passes', () => {
+    localStorage.setItem(studioRailStorageKey({ surface: 'guide' }), '9000');
+    const first = renderLayout({ min: 240, max: 360 });
+
+    expect(railWidth()).toBe('360px');
+
+    first.unmount();
+    localStorage.setItem(studioRailStorageKey({ surface: 'guide' }), '10');
+    renderLayout({ min: 240, max: 360 });
+
+    expect(railWidth()).toBe('240px');
+    expect(handle().getAttribute('aria-valuemin')).toBe('240');
+    expect(handle().getAttribute('aria-valuemax')).toBe('360');
+    expect(
+      readStudioRailWidth({ surface: 'guide', railWidth: 'standard', min: 240, max: 360 }),
+    ).toBe(240);
+  });
+
+  it('hides the rail and its handle while collapsed and keeps the detail', () => {
+    renderLayout({ isCollapsed: true, onCollapsedChange: vi.fn() });
+
+    expect(screen.queryByRole('complementary', { name: 'Project navigation' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize project navigation' })).toBeNull();
+    expect(screen.getByText('Detail content')).toBeDefined();
+  });
+
+  it('puts the header and a fold control in the first row and reports the fold', () => {
+    const onCollapsedChange = vi.fn();
+    renderLayout({ railHeader: <p>Header content</p>, onCollapsedChange });
+
+    const rail = screen.getByRole('complementary', { name: 'Project navigation' });
+    const row = rail.firstElementChild;
+
+    expect(row?.textContent).toContain('Header content');
+    expect(row?.contains(screen.getByRole('button', { name: 'Fold the rail' }))).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fold the rail' }));
+
+    expect(onCollapsedChange).toHaveBeenCalledWith(true);
   });
 });
