@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS } from '@goodboy/core';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { OverrideSettings, TaskModelPreference, WorkspaceId } from '@goodboy/types';
+import type { OverrideSettings, Project, TaskModelPreference, WorkspaceId } from '@goodboy/types';
+import { aProject } from '@goodboy/types/testing';
 import {
   mergeWorkspaceOverrides,
   type WorkspaceOverridesPatch,
@@ -20,6 +21,7 @@ const { state } = vi.hoisted(() => ({
       { id: 'anthropic', connection: 'connected' },
       { id: 'cursor', connection: 'connected' },
     ],
+    projects: [] as ReadonlyArray<Project>,
     settings: {} as Record<string, string>,
     providerLimits: {},
     loadSetting: vi.fn(async (_key: string) => null as string | null),
@@ -156,6 +158,7 @@ beforeEach(() => {
       }),
     );
   state.workspaceOverrides = { 'ws-1': EMPTY_OVERRIDES };
+  state.projects = [];
   state.settings = {};
   state.loadSetting.mockClear();
   state.saveSetting.mockClear();
@@ -791,5 +794,106 @@ describe('DefaultsPanel', () => {
       'chat.default_model.ws-1',
       JSON.stringify({ provider: 'anthropic', model: 'opus-5', effort: 'high' }),
     );
+  });
+
+  describe('with a provider turned off', () => {
+    const CURSOR_ONLY = [
+      { id: 'cursor', state: 'on' },
+      { id: 'anthropic', state: 'off' },
+    ] as const;
+
+    const OPUS_PIN = { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'high' } as const;
+
+    it('says how many agents pin a model that cannot run and puts only those back to Auto', async () => {
+      state.workspaceOverrides = {
+        'ws-1': {
+          ...EMPTY_OVERRIDES,
+          providerPool: CURSOR_ONLY,
+          roleModels: {
+            planner: OPUS_PIN,
+            reviewer: OPUS_PIN,
+            scout: { providerId: 'cursor', model: 'composer-2.5', effort: 'low' },
+          },
+        },
+      };
+      render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+      expect(
+        screen.getByText(
+          'With Cursor as the only provider, 2 of 11 agents use a pin that cannot run. Auto picks apply.',
+        ),
+      ).toBeDefined();
+      fireEvent.click(screen.getByRole('button', { name: 'Back to Auto for those 2' }));
+      const confirm = screen.getByRole('dialog', { name: 'Put 2 agents back to Auto?' });
+      expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Back to Auto' }));
+
+      await waitFor(() =>
+        expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+          'ws-1',
+          expect.objectContaining({
+            roleModels: {
+              scout: { providerId: 'cursor', model: 'composer-2.5', effort: 'low' },
+            },
+          }),
+        ),
+      );
+    });
+
+    it('stays quiet while every pin can run', () => {
+      state.workspaceOverrides = {
+        'ws-1': {
+          ...EMPTY_OVERRIDES,
+          providerPool: [
+            { id: 'anthropic', state: 'on' },
+            { id: 'cursor', state: 'on' },
+          ],
+          roleModels: { planner: OPUS_PIN },
+        },
+      };
+      render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+      expect(screen.queryByText(/use a pin that cannot run/)).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Back to Auto for/ })).toBeNull();
+    });
+
+    it('marks every row Pinned or Auto and names the skipped pin on a role and a task', () => {
+      state.workspaceOverrides = {
+        'ws-1': {
+          ...EMPTY_OVERRIDES,
+          providerPool: CURSOR_ONLY,
+          roleModels: { planner: OPUS_PIN },
+          taskModels: {
+            summarizer: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
+          },
+        },
+      };
+      render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+      expect(roleRow('Planner').textContent).toContain('Pinned');
+      expect(roleRow('Scout').textContent).toContain('Auto');
+      expect(
+        screen.getByText(/^Pinned Opus 5\.5 is skipped: Claude is Off\. Using /),
+      ).toBeDefined();
+      expect(
+        screen.getByText(/^Pinned Haiku 4\.5 is skipped: Claude is Off\. Using /),
+      ).toBeDefined();
+    });
+  });
+
+  it('puts the project notice on the page when a project of the workspace pins models', () => {
+    state.projects = [
+      aProject({
+        workspaceId: WORKSPACE_ID,
+        name: 'payments-api',
+        overrides: {
+          ...EMPTY_OVERRIDES,
+          taskModels: { summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-5' } },
+        },
+      }),
+    ];
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getByText('1 project has its own model settings')).toBeDefined();
   });
 });
