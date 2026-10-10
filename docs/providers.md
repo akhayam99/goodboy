@@ -475,7 +475,9 @@ request made because something just changed (`isFresh`: connect, sign-out, Check
 queues exactly one more run. Every run carries a sequence number and a result older than
 the last applied one is dropped. Triggers: boot, focus after 5 minutes (60 seconds while a
 provider is not healthy), **Check again**, connect and sign-out, and a click in the
-Settings rail only when the last confirmation is older than 60 seconds. Each standing
+Settings rail only when the last confirmation is older than 60 seconds. A first "not
+logged in" answer asks again by itself 12 seconds later, so the second answer does not
+wait for the next focus. Each standing
 change writes one line to the app log through `log_provider_standing`:
 `[providers] standing cursor connected -> cannot_check: <reason>`.
 

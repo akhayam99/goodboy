@@ -6,14 +6,18 @@ import {
 } from '../../../features/providers/providers';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { applyProviderProbe, takeProbeSeq } from './applyProviderProbe';
+import { SIGNED_OUT_CONFIRM_MS, hasPendingSignedOut } from './providerHealth';
 import type { GetFn, SetFn } from './types';
 
 export type RefreshProvidersParams = {
   readonly isFresh?: boolean;
 };
 
+const RECHECK_DELAY_MS = SIGNED_OUT_CONFIRM_MS + 2_000;
+
 let current: Promise<void> | null = null;
 let isRerunQueued = false;
+let recheckTimer: ReturnType<typeof setTimeout> | null = null;
 
 const probeAll = async (set: SetFn, get: GetFn): Promise<void> => {
   const seq = takeProbeSeq();
@@ -85,22 +89,33 @@ const probeAll = async (set: SetFn, get: GetFn): Promise<void> => {
 };
 
 export const refreshProviders = (set: SetFn, get: GetFn) => {
-  return ({ isFresh = false }: RefreshProvidersParams = {}): Promise<void> => {
+  const refresh = ({ isFresh = false }: RefreshProvidersParams = {}): Promise<void> => {
     if (current !== null) {
       if (isFresh) {
         isRerunQueued = true;
       }
       return current;
     }
+    if (recheckTimer !== null) {
+      clearTimeout(recheckTimer);
+      recheckTimer = null;
+    }
     current = (async () => {
       do {
         isRerunQueued = false;
         await probeAll(set, get);
       } while (isRerunQueued);
+      if (recheckTimer === null && hasPendingSignedOut({ map: get().providerHealth })) {
+        recheckTimer = setTimeout(() => {
+          recheckTimer = null;
+          void refresh().catch(() => undefined);
+        }, RECHECK_DELAY_MS);
+      }
     })().finally(() => {
       current = null;
       isRerunQueued = false;
     });
     return current;
   };
+  return refresh;
 };

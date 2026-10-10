@@ -94,7 +94,7 @@ const cursorRail = () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
   vi.setSystemTime(new Date('2026-10-10T10:00:00Z'));
   script = {
     cursorAuth: () => CONNECTED,
@@ -232,6 +232,16 @@ describe('signing out', () => {
     await refresh();
     expect(cursorInfo()?.connection).toBe('installed_disconnected');
     expect(cursorRail()).toEqual({ subtitle: 'Signed out', tone: 'warning' });
+  });
+
+  it('asks again by itself a few seconds after a first not logged in answer', async () => {
+    await refresh();
+    script.cursorAuth = () => SIGNED_OUT;
+    await refresh();
+    expect(cursorInfo()?.connection).toBe('connected');
+    await vi.advanceTimersByTimeAsync(12_000);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cursorInfo()?.connection).toBe('installed_disconnected');
   });
 
   it('says Not confirmed for local tokens that the server never vouched for', async () => {

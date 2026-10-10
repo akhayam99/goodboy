@@ -1,13 +1,13 @@
 import type { ProviderHealthStanding, ProviderId } from '@goodboy/types';
 import type { AuthState, ProviderStatus } from '../../../features/providers/providers';
 
-export const PROBE_FAILURE_WINDOW_MS = 10 * 60_000;
-export const PROBE_FAILURES_TO_CANNOT_CHECK = 3;
+const PROBE_FAILURE_WINDOW_MS = 10 * 60_000;
+const PROBE_FAILURES_TO_CANNOT_CHECK = 3;
 export const SIGNED_OUT_CONFIRM_MS = 10_000;
-export const SIGNED_OUT_PENDING_STALE_MS = 10 * 60_000;
-export const REFUSAL_WINDOW_MS = 10 * 60_000;
+const SIGNED_OUT_PENDING_STALE_MS = 10 * 60_000;
+const REFUSAL_WINDOW_MS = 10 * 60_000;
 export const REFUSALS_TO_OPEN_BREAKER = 3;
-export const HEALTH_EVENT_RING = 50;
+const HEALTH_EVENT_RING = 50;
 
 export type ProbeOutcome =
   | {
@@ -20,7 +20,7 @@ export type ProbeOutcome =
   | { readonly kind: 'missing' }
   | { readonly kind: 'no_answer'; readonly reason: string | null };
 
-export type ProbeOutcomeKind = ProbeOutcome['kind'];
+type ProbeOutcomeKind = ProbeOutcome['kind'];
 
 export type RunOutcome = 'accepted' | 'refused';
 
@@ -434,7 +434,7 @@ export const connectionOfHealth = ({
   }
 };
 
-export const isHealthUnhealthy = ({ health }: HealthParams): boolean =>
+const isHealthUnhealthy = ({ health }: HealthParams): boolean =>
   health.isBreakerOpen ||
   health.standing === 'cannot_check' ||
   (health.standing === 'signed_out' && health.evidence.lastGoodAt !== null);
@@ -453,3 +453,6 @@ type StaleParams = HealthParams & {
 
 export const isConfirmationStale = ({ health, nowMs, maxAgeMs }: StaleParams): boolean =>
   health.evidence.lastGoodAt === null || nowMs - health.evidence.lastGoodAt > maxAgeMs;
+
+export const hasPendingSignedOut = ({ map }: MapParams): boolean =>
+  Object.values(map).some((health) => health.pendingSignedOutAt !== null);

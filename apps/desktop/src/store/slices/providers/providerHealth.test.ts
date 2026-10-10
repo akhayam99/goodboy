@@ -2,7 +2,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderHealthStanding } from '@goodboy/types';
 import {
-  HEALTH_EVENT_RING,
   INITIAL_HEALTH,
   connectionOfHealth,
   hasUnhealthyProvider,
@@ -330,7 +329,7 @@ describe('reduceProviderHealth', () => {
       probe(index * MINUTE, index % 2 === 0 ? good : missing),
     );
     const health = play(flips);
-    expect(health.events).toHaveLength(HEALTH_EVENT_RING);
+    expect(health.events).toHaveLength(50);
     expect(health.events.at(-1)?.at).toBe(79 * MINUTE);
   });
 
