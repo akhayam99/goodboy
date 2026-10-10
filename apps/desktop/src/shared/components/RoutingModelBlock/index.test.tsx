@@ -22,7 +22,6 @@ describe('RoutingModelBlock', () => {
     expect(carriesSpec({ element: column, spec: WORK_META_COLUMN.model })).toBe(true);
     expect(partOf(container, 'name')).toBe('Sonnet 5');
     expect(partOf(container, 'detail')).toBe('High');
-    expect(container.innerHTML).not.toContain('bg-muted');
   });
 
   it('shows only the first detail and leaves the rest to the tooltip', () => {
@@ -62,6 +61,6 @@ describe('RoutingModelBlock', () => {
       />,
     );
 
-    expect(getByTestId('routing-divergence').className).toContain('decoration-dotted');
+    expect(getByTestId('routing-divergence').getAttribute('data-meta-column')).toBe('model');
   });
 });

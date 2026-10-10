@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { ICON_SIZE, Tooltip, cn } from '@goodboy/ui';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import { TriggerSeparator } from '../RoutingPicker/TriggerSeparator';
 import { routingNameText } from '../RoutingPicker/routingSummary';
@@ -37,7 +37,7 @@ export const RoutingLabel = ({
   const glyph =
     Glyph != null && shown.provider != null ? (
       <Glyph
-        size={11}
+        size={ICON_SIZE.row}
         className="shrink-0"
         style={{ color: brandColor(shown.provider) }}
         aria-hidden
