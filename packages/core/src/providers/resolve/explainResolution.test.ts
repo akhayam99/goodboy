@@ -27,7 +27,6 @@ const base: Resolution = {
   source: 'auto',
   via: 'curated',
   skipped: [],
-  shadowed: [],
   defaultProvider: 'codex',
   isBlockedByHidden: false,
 };
@@ -53,60 +52,17 @@ describe('explainResolution', () => {
     ['hidden', 'Opus 5.5 is hidden'],
     ['cli-too-old', 'Anthropic needs a newer CLI for Opus 5.5'],
     ['unknown-model', 'Opus 5.5 is not available'],
-    ['backup-idle', 'Anthropic is a backup'],
+    ['backup-idle', 'Anthropic is Backup only'],
   ] as const)('names the %s reason', (reason, text) => {
     expect(
       explainResolution({
         names,
         resolution: {
           ...base,
-          skipped: [{ source: 'project', provider: 'anthropic', model: 'opus-5.5', reason }],
+          skipped: [{ source: 'workspace', provider: 'anthropic', model: 'opus-5.5', reason }],
         },
       }),
     ).toBe(`Pinned Opus 5.5 is skipped: ${text}. Using GPT-6.1 Sol.`);
-  });
-
-  it('names the project that overrides this value', () => {
-    expect(
-      explainResolution({
-        names,
-        resolution: {
-          ...base,
-          source: 'workspace',
-          via: 'pin',
-          shadowed: [
-            {
-              kind: 'project',
-              name: 'payments-api',
-              provider: 'anthropic',
-              model: 'sonnet-5',
-              effort: null,
-            },
-          ],
-        },
-      }),
-    ).toBe('A project setting in payments-api overrides this: Sonnet 5.');
-  });
-
-  it('joins several projects in one sentence', () => {
-    const shadow = (name: string) => ({
-      kind: 'project' as const,
-      name,
-      provider: 'anthropic' as const,
-      model: 'sonnet-5',
-      effort: null,
-    });
-
-    expect(
-      explainResolution({
-        names,
-        resolution: {
-          ...base,
-          source: 'workspace',
-          shadowed: [shadow('payments-api'), shadow('ledger-core'), shadow('notify-relay')],
-        },
-      }),
-    ).toBe('Project settings in payments-api, ledger-core and notify-relay override this.');
   });
 
   it('says why Auto picked a model when it passed a provider', () => {

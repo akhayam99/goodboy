@@ -57,7 +57,8 @@ export type RoutingReason =
   | 'fallback-cooldown'
   | 'all-exceeded'
   | 'forced-over-budget'
-  | 'override';
+  | 'override'
+  | 'override-off';
 
 export type RoutingDecision = Readonly<{
   selectedProvider: ProviderId;

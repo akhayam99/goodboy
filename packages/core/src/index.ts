@@ -826,11 +826,9 @@ export {
   type ResolveNames,
   type ResolvePin,
   type ResolvePins,
-  type ResolveShadow,
   type ResolveSkip,
   type ResolveSlot,
   type ResolveSource,
   type ResolveVia,
-  type ScopedLayer,
   type SkipReason,
 } from './providers/resolve';

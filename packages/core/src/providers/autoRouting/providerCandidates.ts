@@ -62,11 +62,22 @@ export const providerStanding = ({ provider, context }: GateParams): ProviderSta
   return state === 'backup' ? 'backup' : 'usable';
 };
 
-export type UnusableReason = 'off' | 'not-connected';
+export type UnusableReason = 'off' | 'not-connected' | 'backup-idle';
+
+const hasUsableOnProvider = ({ provider, context }: GateParams): boolean =>
+  (context.policy ?? []).some(
+    (entry) =>
+      entry.id !== provider &&
+      entry.state === 'on' &&
+      providerStanding({ provider: entry.id, context }) === 'usable',
+  );
 
 export const unusableReason = ({ provider, context }: GateParams): UnusableReason | null => {
   const standing = providerStanding({ provider, context });
-  return standing === 'off' || standing === 'not-connected' ? standing : null;
+  if (standing === 'off' || standing === 'not-connected') {
+    return standing;
+  }
+  return standing === 'backup' && hasUsableOnProvider({ provider, context }) ? 'backup-idle' : null;
 };
 
 type PolicyParams = {

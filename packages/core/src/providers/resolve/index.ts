@@ -9,11 +9,9 @@ export type {
   ResolveLayers,
   ResolvePin,
   ResolvePins,
-  ResolveShadow,
   ResolveSkip,
   ResolveSlot,
   ResolveSource,
   ResolveVia,
-  ScopedLayer,
   SkipReason,
 } from './types';

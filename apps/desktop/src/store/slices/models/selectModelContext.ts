@@ -4,7 +4,6 @@ import {
   providersAtLimit,
   type ResolveContext,
   type ResolveLayers,
-  type ScopedLayer,
 } from '@goodboy/core';
 import { PROVIDER_IDS, type ProviderId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
@@ -39,19 +38,6 @@ type Params = {
   readonly nowMs?: number;
 };
 
-type ScopedParams = {
-  readonly state: ModelState;
-  readonly workspaceId: WorkspaceId;
-};
-
-const scopedProjects = ({ state, workspaceId }: ScopedParams): ReadonlyArray<ScopedLayer> =>
-  state.projects.flatMap((project): ScopedLayer[] => {
-    if (project.workspaceId !== workspaceId || project.disconnectedAt !== undefined) {
-      return [];
-    }
-    return [{ kind: 'project', name: project.name, layer: project.overrides }];
-  });
-
 export const selectModelContext = ({
   state,
   workspaceId = null,
@@ -62,13 +48,11 @@ export const selectModelContext = ({
   const scopeWorkspaceId = session?.workspaceId ?? workspaceId;
   const activeProjectId = session === undefined ? null : state.sessionActiveProject?.[session.id];
   const project = activeProjectId == null ? null : projectById(state.projects, activeProjectId);
-  const isWorkspacePage = session === undefined && scopeWorkspaceId !== null;
   const layers: ResolveLayers = {
     workspace:
       scopeWorkspaceId === null ? null : (state.workspaceOverrides?.[scopeWorkspaceId] ?? null),
     project: project?.overrides ?? null,
     session: session === undefined ? null : (state.sessionOverrides?.[session.id] ?? null),
-    ...(isWorkspacePage && { scoped: scopedProjects({ state, workspaceId: scopeWorkspaceId }) }),
   };
   const providers = state.providers ?? [];
   const cliVersions: Partial<Record<ProviderId, string | null>> = Object.fromEntries(

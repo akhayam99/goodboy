@@ -27,6 +27,10 @@ const { state } = vi.hoisted(() => ({
     loadSetting: vi.fn(async (_key: string) => null as string | null),
     saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
     reportError: vi.fn(),
+    savedProjectModels: {} as Record<string, unknown>,
+    loadSavedProjectModels: vi.fn(async () => undefined),
+    applySavedProjectModels: vi.fn(async () => undefined),
+    discardSavedProjectModels: vi.fn(async () => undefined),
     setWorkspaceOverrides: vi.fn<SetWorkspaceOverrides>(async () => undefined),
     patchWorkspaceOverrides: async (_params: {
       workspaceId: string;
@@ -159,6 +163,7 @@ beforeEach(() => {
     );
   state.workspaceOverrides = { 'ws-1': EMPTY_OVERRIDES };
   state.projects = [];
+  state.savedProjectModels = {};
   state.settings = {};
   state.loadSetting.mockClear();
   state.saveSetting.mockClear();
@@ -192,15 +197,15 @@ const TASK_LABELS = [
   'Prose polish',
   'Agent naming',
   'Workflow orchestrator',
-  'PR and MR drafts',
-  'Rebase',
+  'Scribe',
+  'History rewriter',
 ];
 
 const SONNET_TASK_LABELS: ReadonlySet<string> = new Set([
   'Plan drafting',
   'Workflow orchestrator',
-  'PR and MR drafts',
-  'Rebase',
+  'Scribe',
+  'History rewriter',
 ]);
 
 describe('DefaultsPanel', () => {
@@ -889,19 +894,25 @@ describe('DefaultsPanel', () => {
     });
   });
 
-  it('puts the project notice on the page when a project of the workspace pins models', () => {
-    state.projects = [
-      aProject({
-        workspaceId: WORKSPACE_ID,
-        name: 'payments-api',
-        overrides: {
-          ...EMPTY_OVERRIDES,
-          taskModels: { summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-5' } },
-        },
-      }),
-    ];
+  it('puts the saved-models notice on the page when a project of the workspace had model settings', () => {
+    const project = aProject({ workspaceId: WORKSPACE_ID, name: 'payments-api' });
+    state.projects = [project];
+    state.savedProjectModels = {
+      [project.id]: {
+        taskModels: { summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-5' } },
+        roleModels: null,
+      },
+    };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('1 project has its own model settings')).toBeDefined();
+    expect(screen.getByText('Model settings 1 project had are saved')).toBeDefined();
+  });
+
+  it('keeps the saved-models notice away when no project had model settings', () => {
+    state.projects = [aProject({ workspaceId: WORKSPACE_ID, name: 'payments-api' })];
+    state.savedProjectModels = {};
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.queryByText(/had are saved/)).toBeNull();
   });
 });

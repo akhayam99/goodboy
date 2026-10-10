@@ -83,23 +83,7 @@ describe('selectModelContext', () => {
     expect(context.cliVersions).toEqual({ anthropic: '2.1.200' });
   });
 
-  it('on a workspace page lists every connected project as a scoped layer', () => {
-    useAppStore.setState({
-      projects: [
-        { ...PAYMENTS, overrides: withOverrides({ defaultProviderId: 'codex' }) },
-        { ...LEDGER, disconnectedAt: WORKSPACE.createdAt },
-      ],
-    });
-
-    const { layers } = selectModelContext({
-      state: useAppStore.getState(),
-      workspaceId: WORKSPACE.id,
-    });
-
-    expect(layers.scoped?.map((layer) => layer.name)).toEqual(['payments-api']);
-  });
-
-  it('in a session reads the workspace, the active project and the session, and no scoped layer', () => {
+  it('in a session reads the workspace, the active project and the session', () => {
     useAppStore.setState({
       workspaceOverrides: { [WORKSPACE.id]: withOverrides({ defaultProviderId: 'anthropic' }) },
       sessionActiveProject: { [SESSION.id]: PAYMENTS.id },
@@ -115,7 +99,6 @@ describe('selectModelContext', () => {
     expect(layers.workspace?.defaultProviderId).toBe('anthropic');
     expect(layers.project).toBe(PAYMENTS.overrides);
     expect(layers.session?.defaultProviderId).toBe('codex');
-    expect(layers.scoped).toBeUndefined();
   });
 });
 
@@ -168,8 +151,13 @@ describe('selectResolution', () => {
     ]);
   });
 
-  it('on a workspace page names the projects whose pin wins inside them', () => {
+  it('never lets a project pin win: the workspace pin runs', () => {
     useAppStore.setState({
+      workspaceOverrides: {
+        [WORKSPACE.id]: withOverrides({
+          taskModels: { summarizer: { providerId: 'anthropic', model: 'claude-opus-5-5' } },
+        }),
+      },
       projects: [
         {
           ...PAYMENTS,
@@ -179,17 +167,16 @@ describe('selectResolution', () => {
         },
         LEDGER,
       ],
+      sessionActiveProject: { [SESSION.id]: PAYMENTS.id },
     });
 
     const resolution = selectResolution({
       state: useAppStore.getState(),
-      workspaceId: WORKSPACE.id,
+      sessionId: SESSION.id,
       slot: { kind: 'task', id: 'summarizer' },
     });
 
-    expect(resolution.shadowed.map((shadow) => [shadow.name, shadow.model])).toEqual([
-      ['payments-api', 'claude-sonnet-5'],
-    ]);
+    expect(resolution).toMatchObject({ model: 'opus-5.5', source: 'workspace' });
   });
 
   it('answers for Auto alone when asked, and keeps the provider policy', () => {

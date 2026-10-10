@@ -12,7 +12,6 @@ type Params = {
 };
 
 export const isResolutionNoted = ({ resolution }: Params): boolean =>
-  resolution.shadowed.length > 0 ||
   resolution.skipped.some((skip) => skip.source !== 'auto' && skip.model !== null);
 
 export const isPinUnrunnable = ({ resolution }: Params): boolean =>

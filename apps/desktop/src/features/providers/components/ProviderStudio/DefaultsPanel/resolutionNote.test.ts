@@ -93,28 +93,4 @@ describe('resolutionNote', () => {
     expect(resolutionNote({ resolution })).toBeNull();
     expect(isPinUnrunnable({ resolution })).toBe(false);
   });
-
-  it('prints the project whose pin wins inside it', () => {
-    const resolution = resolveSlot({
-      slot: { kind: 'task', id: 'summarizer' },
-      layers: {
-        workspace: {},
-        scoped: [
-          {
-            kind: 'project',
-            name: 'payments-api',
-            layer: {
-              taskModels: { summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-5' } },
-            },
-          },
-        ],
-      },
-      context: CLAUDE_ON,
-    });
-
-    expect(isResolutionNoted({ resolution })).toBe(true);
-    expect(resolutionNote({ resolution })).toBe(
-      'A project setting in payments-api overrides this: Sonnet 4.5.',
-    );
-  });
 });

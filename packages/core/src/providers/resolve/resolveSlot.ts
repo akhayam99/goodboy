@@ -28,7 +28,6 @@ import type {
   ResolveLayers,
   ResolvePin,
   ResolvePins,
-  ResolveShadow,
   ResolveSkip,
   ResolveSlot,
   ResolveSource,
@@ -322,33 +321,6 @@ const taskOutcome = ({ slot, trace, source, auto }: TaskParams): Outcome => {
   };
 };
 
-type ShadowParams = {
-  readonly slot: ResolveSlot;
-  readonly layers: ResolveLayers;
-  readonly outcome: Outcome;
-};
-
-const shadowedBy = ({ slot, layers, outcome }: ShadowParams): ReadonlyArray<ResolveShadow> =>
-  (layers.scoped ?? []).flatMap(({ kind, name, layer }): ResolveShadow[] => {
-    const preference =
-      slot.kind === 'role' ? layer.roleModels?.[slot.id] : layer.taskModels?.[slot.id];
-    if (preference == null) {
-      return [];
-    }
-    if (preference.providerId === outcome.provider && preference.model === outcome.model) {
-      return [];
-    }
-    return [
-      {
-        kind,
-        name,
-        provider: preference.providerId,
-        model: preference.model,
-        effort: preference.effort ?? null,
-      },
-    ];
-  });
-
 export const resolveSlot = ({
   slot,
   layers = {},
@@ -371,7 +343,6 @@ export const resolveSlot = ({
     source: outcome.source,
     via: outcome.via,
     skipped,
-    shadowed: shadowedBy({ slot, layers, outcome }),
     defaultProvider: policyDefaultProvider(auto),
     isBlockedByHidden: outcome.isBlockedByHidden,
   };
