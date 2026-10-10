@@ -8,10 +8,12 @@ import {
   DevToolsTimeoutError,
   WARM_UP_TIMEOUT_MS,
   failingScenes,
+  failureLines,
   measureScene,
   readDevToolsPort,
   summaryLine,
 } from './validateScenesBrowser.mjs';
+import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 
 const CHROME =
   process.env.VALIDATE_CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -41,9 +43,15 @@ const CLICK_PATIENCE_MS = 8000;
 const CONFIRM_VARIANTS = ['notifications', 'sessiondelete', 'chatrow', 'rich', 'activity', 'note'];
 const ARM_SETTLE_MS = 250;
 const LAYOUT_TOLERANCE_PX = 0.5;
-const MENU_SCENE_SETTLE_MS = 1200;
-const MENU_OPEN_MS = 200;
-const MENU_MIN_ROWS = 2;
+const MENU_SCENE_SETTLE_MS = 100;
+const MENU_PROBE_PARAMS = {
+  openMs: 1500,
+  closeMs: 800,
+  bootMs: 15_000,
+  perKind: 3,
+  maxTriggers: 60,
+  budgetMs: 40_000,
+};
 const SCENE_LIST = fileURLToPath(
   new URL('../apps/desktop/src/app/components/MockScene/scenes.txt', import.meta.url),
 );
@@ -683,36 +691,6 @@ const confirmLayoutProbe = async ({ settleMs, tolerance }) => {
   return results;
 };
 
-const menuRowsProbe = async ({ openMs }) => {
-  const pausePage = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
-  const isDrawn = (element) => {
-    const rect = element.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0 && element.disabled !== true;
-  };
-  const results = [];
-  for (const trigger of [...document.querySelectorAll('[aria-haspopup="menu"]')].filter(isDrawn)) {
-    trigger.click();
-    await pausePage(openMs);
-    const menu = [...document.querySelectorAll('[role="menu"]')].pop();
-    const rows =
-      menu === undefined
-        ? 0
-        : menu.querySelectorAll(
-            '[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]',
-          ).length;
-    results.push({
-      trigger: trigger.getAttribute('aria-label') ?? (trigger.textContent ?? '').trim(),
-      rows,
-    });
-    window.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }),
-    );
-    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    await pausePage(openMs / 2);
-  }
-  return results;
-};
-
 const measureConfirmPopover = async ({ send, variant }) => {
   const scene = `confirmpopover&v=${variant}`;
   const failures = [];
@@ -735,7 +713,7 @@ const measureConfirmPopover = async ({ send, variant }) => {
 };
 
 const measureMenuRows = async ({ send, scene }) => {
-  const failures = [];
+  const startedAt = Date.now();
   await open({
     send,
     scene,
@@ -744,18 +722,24 @@ const measureMenuRows = async ({ send, scene }) => {
     readySelector: 'body',
     settleMs: MENU_SCENE_SETTLE_MS,
   });
-  const results = await run(send, menuRowsProbe, { openMs: MENU_OPEN_MS });
-  const short = results.filter((result) => result.rows < MENU_MIN_ROWS);
-  if (short.length > 0) {
-    failures.push({ scene, check: 'a menu trigger opens to fewer than two rows', short });
-  }
-  return { failures, wraps: 0 };
+  const probe = await run(send, menuRowsProbe, MENU_PROBE_PARAMS);
+  console.log(
+    `${scene}: ${probe.tested} of ${probe.total} menu triggers opened in ${Date.now() - startedAt}ms`,
+  );
+  return { failures: menuRowsFailures({ scene, probe }), wraps: 0 };
 };
 
 const sceneIds = () =>
   readFileSync(SCENE_LIST, 'utf8')
     .split('\n')
     .filter((id) => id !== '');
+
+const menuScenes = ({ only: filter }) => {
+  const ids = sceneIds();
+  if (filter === undefined || filter === 'menus') return ids;
+  const wanted = filter.split(',');
+  return ids.filter((id) => wanted.includes(id));
+};
 
 const main = async () => {
   const failures = [];
@@ -802,7 +786,7 @@ const main = async () => {
         task: () => measureConfirmPopover({ send, variant }),
       });
     }
-    for (const scene of only === undefined || only === 'menus' ? sceneIds() : []) {
+    for (const scene of menuScenes({ only })) {
       await measure({ scene, task: () => measureMenuRows({ send, scene }) });
     }
   } catch (error) {
@@ -811,10 +795,15 @@ const main = async () => {
     await session.close();
   }
   console.log(summaryLine({ scenes: failingScenes({ failures, error: crash }) }));
-  if (crash !== null) throw crash;
   if (failures.length > 0) {
     console.error(JSON.stringify(failures, null, 2));
     console.error(`validate-scenes failed: ${failures.length} checks`);
+    for (const line of failureLines({ failures })) {
+      console.error(line);
+    }
+  }
+  if (crash !== null) throw crash;
+  if (failures.length > 0) {
     process.exitCode = 1;
     return;
   }

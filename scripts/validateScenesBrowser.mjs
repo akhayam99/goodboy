@@ -68,3 +68,8 @@ export const failingScenes = ({ failures, error }) => {
 
 export const summaryLine = ({ scenes }) =>
   scenes.length === 0 ? 'scene measures: ok' : `scene measures: failed in ${scenes.join(', ')}`;
+
+export const failureLines = ({ failures }) =>
+  failures.map(
+    ({ scene, check, ...details }) => `failure ${scene}: ${check} ${JSON.stringify(details)}`,
+  );
