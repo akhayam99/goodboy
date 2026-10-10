@@ -28,7 +28,6 @@
   "apps/desktop/src/features/session/ask/components/AskTrailButton.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentMuchLonger.tsx": 1,
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentTitle.tsx": 1,
-  "apps/desktop/src/features/session/components/AgentTree/SectionToggle.tsx": 1,
   "apps/desktop/src/features/session/components/ContextDrawer/ContextVisibility.tsx": 1,
   "apps/desktop/src/features/session/components/SessionNavSidebar/parts/SidebarToggleButton.tsx": 1,
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/NewBranchMountAction.tsx": 1,

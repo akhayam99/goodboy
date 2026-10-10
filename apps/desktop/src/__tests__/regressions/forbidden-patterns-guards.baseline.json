@@ -856,7 +856,6 @@
     "apps/desktop/src/features/session/components/AgentMetrics/index.tsx": 2,
     "apps/desktop/src/features/session/components/AgentSpawnConfig/index.tsx": 1,
     "apps/desktop/src/features/session/components/AgentTree/AgentRow.tsx": 1,
-    "apps/desktop/src/features/session/components/AgentTree/SectionToggle.tsx": 1,
     "apps/desktop/src/features/session/components/AgentTree/WorkflowRunAsk.tsx": 1,
     "apps/desktop/src/features/session/components/DeleteSessionConfirm/index.tsx": 1,
     "apps/desktop/src/features/session/components/RoleSelect/index.tsx": 1,

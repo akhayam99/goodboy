@@ -10,7 +10,7 @@ import { useAnswerQuestion } from '../../../../workflows/useAnswerQuestion';
 import { useApproveRunPlan } from '../../../../workflows/useApproveRunPlan';
 import type { RunView } from '../useRunView';
 
-export type RunButtonKind = Exclude<RunPrimaryKind, 'start-run' | 'start-step' | 'raise-cap'>;
+type RunButtonKind = Exclude<RunPrimaryKind, 'start-run' | 'start-step' | 'raise-cap'>;
 
 type Props = {
   readonly session: Session;
