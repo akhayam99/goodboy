@@ -52,7 +52,36 @@ fake_turn() {
       printf '%s\n' "$!" > "$PWD/fake-cli-sleeper.pid"
       wait
       ;;
+    exit-leaving-child)
+      head -n 1 "$fake_dir/streams/$stream"
+      fake_helper >/dev/null 2>&1 </dev/null &
+      printf '%s\n' "$!" > "$PWD/fake-cli-sleeper.pid"
+      sleep 0.5
+      ;;
+    own-session-child | own-session-hang)
+      head -n 1 "$fake_dir/streams/$stream"
+      fake_helper_own_session >/dev/null 2>&1 </dev/null &
+      printf '%s\n' "$!" > "$PWD/fake-cli-sleeper.pid"
+      sleep 0.5
+      if [ "$fake_mode" = own-session-hang ]; then
+        sleep 30
+      fi
+      ;;
+    holds-stdout)
+      head -n 1 "$fake_dir/streams/$stream"
+      fake_helper &
+      printf '%s\n' "$!" > "$PWD/fake-cli-sleeper.pid"
+      sleep 0.5
+      ;;
   esac
+}
+
+fake_helper() {
+  GOODBOY_REAP_HELPER=1 exec "$GOODBOY_REAP_HELPER_EXE" --exact "$GOODBOY_REAP_HELPER_TEST" --nocapture --test-threads=1
+}
+
+fake_helper_own_session() {
+  GOODBOY_REAP_HELPER=1 exec perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV' -- "$GOODBOY_REAP_HELPER_EXE" --exact "$GOODBOY_REAP_HELPER_TEST" --nocapture --test-threads=1
 }
 
 fake_hang() {

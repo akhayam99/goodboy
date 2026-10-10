@@ -257,6 +257,27 @@ export const recordAgentStatus = async (
   return requireAgent(db, id);
 };
 
+type StopGhostAgentsParams = {
+  readonly db: Database;
+  readonly keepRunIds: ReadonlyArray<string>;
+};
+
+export const stopGhostAgents = async ({
+  db,
+  keepRunIds,
+}: StopGhostAgentsParams): Promise<number> => {
+  const keep =
+    keepRunIds.length === 0
+      ? ''
+      : ` AND provider_run_id NOT IN (${keepRunIds.map(() => '?').join(', ')})`;
+  const { rowsAffected } = await db.execute(
+    `UPDATE agents SET status = 'stopped', stopped_at = ?, stopped_by = 'app'
+     WHERE status = 'running' AND provider_run_id IS NOT NULL${keep}`,
+    [Date.now(), ...keepRunIds],
+  );
+  return rowsAffected;
+};
+
 export const setAgentVerbosity = async (
   db: Database,
   id: AgentId,

@@ -14,7 +14,7 @@ use crate::attachment::sanitize_segment;
 use crate::chat_images::{ChatImageError, TurnImages};
 use crate::db::Db;
 use crate::live_child::{
-    drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
+    drain_tail_lossy, run_to_exit, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
 };
 use crate::providers::cli_args::{read_only_violations, turn_args, Cli, Job};
 use crate::turn::{
@@ -734,6 +734,7 @@ fn spawn_chat_turn(
     let mut command = crate::path_env::command(prepared.binary);
     command.current_dir(&prepared.working_dir);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+    let tag = crate::aux_spawn::tag_spawn(&mut command, crate::aux_spawn::SpawnKind::Chat);
     crate::process_group::isolate(&mut command);
     crate::turn::apply_push_block(&mut command);
     let mut child = command
@@ -751,7 +752,7 @@ fn spawn_chat_turn(
         .take()
         .ok_or_else(|| ChatError::Io(std::io::Error::other("no stderr")))?;
 
-    let live = LiveChild::new(child);
+    let live = LiveChild::tagged(child, &tag);
     registry
         .lock()
         .map_err(|_| ChatError::Poisoned)?
@@ -766,14 +767,15 @@ fn spawn_chat_turn(
     let registry_clone = Arc::clone(registry);
     let stderr_handle = thread::spawn(move || drain_tail_lossy(stderr, MAX_STDERR_BYTES));
     thread::spawn(move || {
-        forward_lines(&sink, &live, stdout);
+        let ((), exited) = run_to_exit(&live, &registry_clone, &sink.run_id, None, || {
+            forward_lines(&sink, &live, stdout)
+        });
         let stderr_buf = stderr_handle.join().unwrap_or_default();
-        let exit_code = wait_and_remove(&live, &registry_clone, &sink.run_id);
         if let Some(root) = cleanup_root.as_deref() {
             remove_staged_root(root);
         }
         sink.send(TurnEventPayload::End {
-            exit_code,
+            exit_code: exited.code,
             stderr: stderr_buf,
         });
     });

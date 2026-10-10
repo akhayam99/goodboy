@@ -20,6 +20,7 @@ import {
   SETTING_LAST_WORKSPACE_ID,
   SETTING_REOPEN_LAST,
 } from '../../../features/settings/settings';
+import { reconcileGhostAgents } from '../sessions/reconcileSessionRuns';
 import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVersions';
 import { applyQaDecidingPreview } from '../workflows/applyQaDecidingPreview';
 import { adoptLegacyIntegrationSecrets } from '../integrations/adoptLegacyIntegrationSecrets';
@@ -161,6 +162,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           });
         }
 
+        await reconcileGhostAgents().catch(() => 0);
         await applyQaDecidingPreview({ set }).catch(() => {});
         recordBootBreadcrumb({
           phase: 'loading-workspaces',

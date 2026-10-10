@@ -57,6 +57,45 @@ If a push fails because a variable is missing, do not skip hooks with
 `git push --no-verify`. Pass the environment through instead. This layer runs
 on macOS and Linux.
 
+### Processes Goodboy starts
+
+Every process the Rust shell starts for an agent carries three variables
+(`aux_spawn.rs`, `SpawnTag`): `GOODBOY_SPAWN_ID` (128 random bits, one per
+spawn), `GOODBOY_SPAWN_KIND` (`turn`, `chat`, `planner`, `summary`, `script`,
+`terminal` or `probe`) and `GOODBOY_APP_PID` (this app). The tag is set on
+every provider spawn whether or not the query bridge serves, and on the script
+and terminal commands where they are built. Their children inherit it.
+
+`proc/reap.rs` ends everything a spawn started. `reap` reads one table of
+processes with `ps`, then signals in this order: the tree below the leader
+(read before any signal, while the leader is still ours), the leader's process
+group, then every straggler whose environment carries this spawn id and this
+app pid (`ps -E` on macOS, `/proc/<pid>/environ` on Linux). Each gets SIGTERM,
+300 ms to leave, then SIGKILL. It returns the processes it stopped, shells
+last.
+
+- **When it runs.** After a normal exit, in `live_child::wait_and_remove`,
+  which waits for the leader without reaping it (`waitid` with `WNOWAIT`) so
+  its pid and group cannot be reused while the reap reads the table. Also on
+  cancel, on shutdown, on script Stop and on terminal close. A turn does not
+  wait for its stdout to close: the reap closes the pipe a stray child held.
+- **What it never touches.** A pid without this spawn id or with another app
+  pid, pid 1, this app, another user's process, and a leader that is not this
+  app's child. Only a leader this app still holds brings its tree and group.
+- **Side jobs** (planner, summary) are stopped after 10 minutes. Turns have no
+  cap.
+- **Startup sweep.** At launch, tagged processes of kind `turn`, `chat`,
+  `planner`, `summary` or `probe` whose app pid is dead and whose parent is 1
+  are stopped (`sweep_orphans`). Scripts and terminals are left alone. The
+  count goes to the log and to the `orphans-swept` event.
+- **What the user sees.** When a turn's reap stopped something, the turn emits a
+  `reaped` envelope before its end, and the transcript shows one line under the
+  turn: "Stopped 2 processes this turn left running: next-server, 1 more."
+- **Boot reconcile.** At boot one update marks every `running` agent row whose
+  provider run is not live as stopped (`reconcileGhostAgents`), in all
+  workspaces, not only the open one. Runs the backend still holds and runs
+  this window can reattach to are kept.
+
 ### Launching git
 
 Every git process the Rust shell starts goes through one builder,

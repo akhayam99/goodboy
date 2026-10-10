@@ -7,6 +7,7 @@ import {
   type ProviderId,
   type ProviderLimits,
   type ProviderRunId,
+  type StoppedProcess,
   type TurnEvent,
 } from '@goodboy/types';
 import { classifyProviderError } from './classifyProviderError';
@@ -125,7 +126,13 @@ type SpawnArgs = {
 type RawTurnEnvelope =
   | { runId: string; seq?: number; type: 'line'; line: string }
   | { runId: string; seq?: number; type: 'end'; exit_code: number | null; stderr: string }
-  | { runId: string; seq?: number; type: 'error'; message: string };
+  | { runId: string; seq?: number; type: 'error'; message: string }
+  | {
+      runId: string;
+      seq?: number;
+      type: 'reaped';
+      stopped: ReadonlyArray<StoppedProcess>;
+    };
 
 type WithoutRunId<T> = T extends unknown ? Omit<T, 'runId'> : never;
 
@@ -333,6 +340,12 @@ async function* streamTurn({
       case 'error':
         error = new Error(envelope.message);
         ended = true;
+        flush();
+        break;
+      case 'reaped':
+        push({
+          event: { kind: 'processes_stopped', runId, stopped: envelope.stopped, at: now() },
+        });
         flush();
         break;
     }

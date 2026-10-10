@@ -9,7 +9,7 @@ use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
 
 use crate::live_child::{
-    drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
+    drain_tail_lossy, run_to_exit, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
 };
 use crate::providers::cli_args::turn_args;
 use crate::turn_backlog::{AttachSnapshot, TurnBacklog};
@@ -149,6 +149,9 @@ pub enum TurnEventPayload {
     Error {
         message: String,
     },
+    Reaped {
+        stopped: Vec<crate::proc::reap::StoppedProcess>,
+    },
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -256,6 +259,7 @@ fn spawn_one<E: TurnEmitter>(
     let mut command = crate::path_env::command(args.binary);
     command.current_dir(args.working_dir);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+    let tag = crate::aux_spawn::tag_spawn(&mut command, crate::aux_spawn::SpawnKind::Turn);
     crate::process_group::isolate(&mut command);
 
     if let Some(directory) = max_mode_config_dir_for(args.binary, args.cursor_max_mode) {
@@ -320,7 +324,7 @@ fn spawn_one<E: TurnEmitter>(
         .take()
         .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
 
-    let live = LiveChild::new(child);
+    let live = LiveChild::tagged(child, &tag);
     backlog.open(args.run_id);
     registry
         .lock()
@@ -344,12 +348,18 @@ fn spawn_one<E: TurnEmitter>(
             backlog: &backlog_clone,
             run_id: &run_id_owned,
         };
-        forward_lines(&sink, &live, stdout);
+        let ((), exited) = run_to_exit(&live, &registry_clone, &run_id_owned, None, || {
+            forward_lines(&sink, &live, stdout)
+        });
         let stderr_buf = stderr_handle.join().unwrap_or_default();
-        let exit_code = wait_and_remove(&live, &registry_clone, &run_id_owned);
         if !is_exiting() {
+            if !exited.stopped.is_empty() {
+                sink.send(TurnEventPayload::Reaped {
+                    stopped: exited.stopped,
+                });
+            }
             sink.send(TurnEventPayload::End {
-                exit_code,
+                exit_code: exited.code,
                 stderr: stderr_buf,
             });
             backlog_clone.finish(&run_id_owned);

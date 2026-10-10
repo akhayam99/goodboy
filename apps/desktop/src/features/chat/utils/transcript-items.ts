@@ -8,6 +8,7 @@ import type {
   ProviderRunId,
   ProviderUsage,
   SessionId,
+  StoppedProcess,
   TurnEvent,
   UserTurnSentVia,
 } from '@goodboy/types';
@@ -70,6 +71,12 @@ export type TranscriptItem =
       retryable?: boolean;
     }
   | { kind: 'decision_note'; key: string; message: string; runId: ProviderRunId }
+  | {
+      kind: 'processes_stopped';
+      key: string;
+      runId: ProviderRunId;
+      stopped: ReadonlyArray<StoppedProcess>;
+    }
   | {
       kind: 'artifact_capture_failed';
       key: string;
@@ -411,6 +418,14 @@ export const reduceTranscript = (
           key: `decision-${i}`,
           message: event.message,
           runId: event.runId,
+        });
+        break;
+      case 'processes_stopped':
+        items.push({
+          kind: 'processes_stopped',
+          key: `processes-stopped-${i}`,
+          runId: event.runId,
+          stopped: event.stopped,
         });
         break;
       case 'artifact_capture_failed':
