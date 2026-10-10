@@ -405,7 +405,7 @@ pub async fn terminal_list_live(
 }
 
 #[tauri::command]
-pub fn terminal_snapshot(
+pub async fn terminal_snapshot(
     registry: State<'_, TerminalRegistry>,
     session_id: String,
 ) -> Result<OutputSnapshot, TerminalError> {
