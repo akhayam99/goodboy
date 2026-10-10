@@ -26,7 +26,7 @@ A check that times out says Can't check and keeps the last state it knew, never 
 #### The Models page shows each model
 <!-- gb area=settings screen=settings/providers image=models-will-use -->
 
-Each role and task prints the model it runs, marked Pinned or Auto, with the reason when a pin is skipped and Back to Auto for pins that cannot run. A project's own model settings show on the page with a Clear.
+Each role and task prints the model it runs, marked Pinned or Auto, with the reason when a pin is skipped and Back to Auto for pins that cannot run. A project's own model settings show on the page, with Use this page instead to clear them.
 
 ### Fixed
 
