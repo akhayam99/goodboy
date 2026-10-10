@@ -3,8 +3,8 @@ import { ChevronDown } from 'lucide-react';
 import { AnchoredPopover, Chip, useDropdown } from '@goodboy/ui';
 import type { CrumbMenuGroup } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { BranchName } from '../../../branch/components/BranchHeader/BranchName';
 import type { ExploreTarget } from '../../selectExploreMount';
+import { ExploreBranchName } from './ExploreBranchName';
 import { ExploreProjectMenu } from './ExploreProjectMenu';
 
 const MIN_MENU_ROWS = 2;
@@ -52,7 +52,7 @@ const labelOf = ({ target }: LabelParams): ChipLabel | null => {
         <span aria-hidden className="text-faint-foreground">
           ·
         </span>
-        <BranchName branch={target.branch} />
+        <ExploreBranchName branch={target.branch} />
       </span>
     ),
     text: `${target.projectName}, ${target.branch}`,

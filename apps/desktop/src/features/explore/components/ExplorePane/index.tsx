@@ -108,7 +108,7 @@ export const ExplorePane = ({ sessionId }: Props) => {
           tone={CONCEPT_TONE.explore}
           icon={CONCEPT_ICONS.explore}
           title="Nothing to browse yet"
-          description="Files show here once a project is mounted for this session."
+          description="Files show here once this session has a project."
         />
       );
     }

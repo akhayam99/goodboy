@@ -374,9 +374,7 @@ describe('the Explore project chip without a mounted project', () => {
     mountPane();
 
     expect(await screen.findByText('Nothing to browse yet')).toBeDefined();
-    expect(
-      screen.getByText('Files show here once a project is mounted for this session.'),
-    ).toBeDefined();
+    expect(screen.getByText('Files show here once this session has a project.')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(screen.queryByTestId('explore-project')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Refresh the files' })).toBeNull();

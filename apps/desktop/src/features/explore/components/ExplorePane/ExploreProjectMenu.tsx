@@ -1,5 +1,5 @@
 import type { CrumbMenuGroup, CrumbMenuRow } from '@goodboy/ui';
-import { BranchSwitcherRow } from '../../../branch/components/BranchHeader/BranchSwitcherRow';
+import { ExploreProjectRow } from './ExploreProjectRow';
 
 type Props = {
   readonly groups: ReadonlyArray<CrumbMenuGroup>;
@@ -21,7 +21,7 @@ export const ExploreProjectMenu = ({ groups, onChoose }: Props) => (
           </div>
         )}
         {group.rows.map((row) => (
-          <BranchSwitcherRow key={row.id} row={row} onChoose={onChoose} />
+          <ExploreProjectRow key={row.id} row={row} onChoose={onChoose} />
         ))}
       </div>
     ))}
