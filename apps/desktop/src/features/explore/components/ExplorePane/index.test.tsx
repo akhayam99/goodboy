@@ -302,6 +302,47 @@ describe('ExplorePane tree', () => {
     expect((await rowNamed('apps')).getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('opens the folders above a file that was opened from elsewhere', async () => {
+    list({ relPath: '', entries: [folder('apps'), entry({ relPath: 'package.json' })] });
+    list({ relPath: 'apps', entries: [folder('apps/ledger-core')] });
+    list({
+      relPath: 'apps/ledger-core',
+      entries: [entry({ relPath: 'apps/ledger-core/rounding.ts' })],
+    });
+    h.reads.push({ type: 'text', text: 'export {}', truncated: false });
+    useAppStore.getState().openDrawer({
+      kind: 'explore-file',
+      sessionId: SESSION_ID,
+      payload: { sessionDir: DIR, entry: entry({ relPath: 'apps/ledger-core/rounding.ts' }) },
+    });
+    mount();
+
+    const file = await rowNamed('rounding.ts');
+
+    expect(file.getAttribute('aria-level')).toBe('3');
+    expect(file.getAttribute('aria-selected')).toBe('true');
+    expect(useAppStore.getState().exploreExpanded[SESSION_ID]).toEqual({
+      apps: true,
+      'apps/ledger-core': true,
+    });
+  });
+
+  it('lets you close the folder of the open file and keeps it closed', async () => {
+    list({ relPath: '', entries: [folder('docs')] });
+    list({ relPath: 'docs', entries: [entry({ relPath: 'docs/README.md' })] });
+    h.reads.push({ type: 'text', text: '# Read me', truncated: false });
+    mount();
+    const docs = await rowNamed('docs');
+    fireEvent.click(docs);
+    fireEvent.click(await rowNamed('README.md'));
+    await screen.findByRole('heading', { name: 'Read me' });
+
+    fireEvent.click(docs);
+
+    await waitFor(() => expect(screen.queryByRole('treeitem', { name: 'README.md' })).toBeNull());
+    expect(docs.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('closes a folder and forgets it', async () => {
     list({ relPath: '', entries: [folder('docs')] });
     list({ relPath: 'docs', entries: [entry({ relPath: 'docs/README.md' })] });

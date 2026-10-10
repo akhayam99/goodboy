@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   Button,
   EmptyState,
@@ -13,7 +13,7 @@ import { useNow } from '../../../../shared/hooks/useNow';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import type { LoadFolderParams, SelectFileParams, SetExpandedParams } from '../../exploreHandlers';
-import { EXPLORE_ROOT_PATH } from '../../exploreRows';
+import { EXPLORE_ROOT_PATH, ancestorPathsOf } from '../../exploreRows';
 import { useExploreListing } from '../../hooks/useExploreListing';
 import { ExploreTree } from './ExploreTree';
 
@@ -37,6 +37,18 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
     }
     return drawer.payload.entry.relPath;
   });
+
+  useEffect(() => {
+    if (selectedRelPath === null) {
+      return;
+    }
+    const open = useAppStore.getState().exploreExpanded[sessionId] ?? NO_EXPANDED;
+    for (const path of ancestorPathsOf({ relPath: selectedRelPath })) {
+      if (open[path] !== true) {
+        setExploreExpanded({ sessionId, path, isExpanded: true });
+      }
+    }
+  }, [selectedRelPath, sessionId, setExploreExpanded]);
 
   const handleSetExpanded = useCallback(
     ({ path, isExpanded }: SetExpandedParams) =>

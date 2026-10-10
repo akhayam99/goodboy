@@ -1874,7 +1874,8 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   extension kept, a slot for change marks, the size and the age. The size
   hides under a 520px column and the age under 440px. The folders you opened
   are kept per session in the session-view slice (`exploreExpanded`) and open
-  again when you come back. The tree has one tab stop; Up and Down move, Right
+  again when you come back, and a file opened from elsewhere opens the folders
+  above it. The tree has one tab stop; Up and Down move, Right
   opens a folder or enters it, Left closes it or goes to its parent, Home and
   End jump, Enter and Space open the preview of a file or toggle a folder. Above
   120 rows it draws only the rows near the scroll position (`shared/utils/windowRows.ts`, the
