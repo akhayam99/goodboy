@@ -1,7 +1,6 @@
 import type { AgentId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { taskModelAgentSpawnConfig } from '../../../features/session/taskModelAgentSpawnConfig';
-import { selectResolution } from '../models/selectResolution';
+import { scribeModelConfig } from './scribeModelConfig';
 import { selectMountById } from '../project-mounts/selectors';
 import { scribeKeyOf } from './scribeKeyOf';
 import { scribeKickoff } from './scribeKickoff';
@@ -60,13 +59,7 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
     }
     const session = sessionById(state.sessions, sessionId) ?? null;
     const project = selectProjectById(state, mount.projectId);
-    const resolved = taskModelAgentSpawnConfig({
-      resolution: selectResolution({
-        state,
-        sessionId,
-        slot: { kind: 'task', id: 'pr_draft' },
-      }),
-    });
+    const resolved = scribeModelConfig({ state, sessionId });
     const config =
       routing !== undefined && routing.provider !== ''
         ? { provider: routing.provider, model: routing.model, effort: routing.effort }

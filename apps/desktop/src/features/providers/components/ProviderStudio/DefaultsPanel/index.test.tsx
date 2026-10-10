@@ -27,7 +27,7 @@ const { state } = vi.hoisted(() => ({
     loadSetting: vi.fn(async (_key: string) => null as string | null),
     saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
     reportError: vi.fn(),
-    savedProjectModels: {} as Record<string, unknown>,
+    savedProjectModels: Object.fromEntries([]),
     loadSavedProjectModels: vi.fn(async () => undefined),
     applySavedProjectModels: vi.fn(async () => undefined),
     discardSavedProjectModels: vi.fn(async () => undefined),

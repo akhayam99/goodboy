@@ -322,6 +322,69 @@ describe('resolveSlot matrix', () => {
         });
       });
 
+      it('an explicit turn or agent pick runs on a provider that is Off', () => {
+        const policy: ProviderPolicy = [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'off' },
+        ];
+
+        for (const source of ['turn', 'agent'] as const) {
+          const resolution = resolveSlot({
+            slot,
+            layers: { workspace: layerWith({ slot, pin: SOL }) },
+            pins: { [source]: OPUS },
+            context: { policy },
+          });
+
+          expect(resolution).toMatchObject({
+            provider: 'anthropic',
+            model: 'opus-5',
+            source,
+            via: 'pin',
+            skipped: [],
+          });
+        }
+      });
+
+      it('an explicit pick still needs a connected provider', () => {
+        const resolution = resolveSlot({
+          slot,
+          pins: { turn: OPUS },
+          context: { policy: ON, connected: ['codex'] },
+        });
+
+        expect(resolution).toMatchObject({ provider: 'codex', source: 'auto' });
+        expect(resolution.skipped).toContainEqual({
+          source: 'turn',
+          provider: 'anthropic',
+          model: 'opus-5',
+          reason: 'not-connected',
+        });
+      });
+
+      it('a step or run pin on a provider that is Off is skipped like a saved pin', () => {
+        const policy: ProviderPolicy = [
+          { id: 'codex', state: 'on' },
+          { id: 'anthropic', state: 'off' },
+        ];
+
+        for (const source of ['step', 'run'] as const) {
+          const resolution = resolveSlot({
+            slot,
+            pins: { [source]: OPUS },
+            context: { policy },
+          });
+
+          expect(resolution).toMatchObject({ provider: 'codex', source: 'auto' });
+          expect(resolution.skipped).toContainEqual({
+            source,
+            provider: 'anthropic',
+            model: 'opus-5',
+            reason: 'off',
+          });
+        }
+      });
+
       it('run pin over every layer; a skipped turn pin is listed first', () => {
         const resolution = resolveSlot({
           slot,

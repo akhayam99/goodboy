@@ -37,7 +37,6 @@ import {
   isAgentStatusSettled,
   runsForWorkflowRun,
   serializeRunSummary,
-  skippedPinNote,
   type BackgroundAttempt,
   type OrchestratorClientResult,
   type OrchestratorInput,
@@ -57,8 +56,8 @@ import {
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { roleDefaultsFor } from './roleDefaultsFor';
 import { rolePicks } from '../workflowRouting/rolePicks';
-import { RESOLVE_NAMES } from '../../../features/providers/resolveNames';
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
@@ -112,38 +111,6 @@ const setDeciding = ({ set, workflowRunId, isDeciding }: DecidingParams): void =
     orchestratingWorkflowRuns: { ...state.orchestratingWorkflowRuns, [workflowRunId]: isDeciding },
   }));
 };
-
-type RoleDefaultsParams = {
-  readonly state: ReturnType<GetFn>;
-  readonly sessionId: SessionId;
-  readonly roleModels: RoleModelPreferences | null;
-  readonly menu: ReadonlyArray<OrchestratorModelOption>;
-};
-
-const roleDefaultsFor = ({
-  state,
-  sessionId,
-  roleModels,
-  menu,
-}: RoleDefaultsParams): ReadonlyArray<OrchestratorRoleDefault> =>
-  SELECTABLE_AGENT_ROLES.filter((role) => ROLE_REGISTRY[role].workflowEligible).map((role) => {
-    const { resolution } = rolePicks({ state, sessionId, role });
-    const setMenu =
-      resolution.source === 'auto' ? null : roleModelSetMenu({ menu, role, prefs: roleModels });
-    const pinNote = skippedPinNote({ resolution, names: RESOLVE_NAMES });
-    return {
-      role,
-      provider: resolution.provider,
-      model: resolution.model,
-      effort: resolution.effort ?? 'medium',
-      ...(setMenu !== null && {
-        models: setMenu.map((option) => ({ provider: option.provider, model: option.model })),
-      }),
-      ...(pinNote !== null && {
-        skippedPin: `${RESOLVE_NAMES.model({ provider: resolution.provider, model: resolution.model })} (${pinNote})`,
-      }),
-    };
-  });
 
 type TaskProfileParams = {
   readonly decision: WorkflowRoutingDecision;

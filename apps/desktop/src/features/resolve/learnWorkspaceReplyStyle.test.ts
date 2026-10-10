@@ -12,17 +12,14 @@ const h = vi.hoisted(() => ({
   detectRepoSlug: vi.fn(),
   listMyReviewReplies: vi.fn(),
   learnReplyStyle: vi.fn(),
-  resolveTaskModel: vi.fn(() => ({ providerId: 'anthropic', model: 'claude-haiku-4-5' })),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('../integrations/github/github', () => ({ tauriGhRunner: { run: vi.fn() } }));
 vi.mock('@goodboy/core', () => ({
-  DEFAULT_SESSION_PROVIDER_PREFERENCE: { defaultProvider: 'anthropic' },
   detectRepoSlug: h.detectRepoSlug,
   listMyReviewReplies: h.listMyReviewReplies,
   learnReplyStyle: h.learnReplyStyle,
-  resolveTaskModel: h.resolveTaskModel,
 }));
 
 const WORKSPACE = 'workspace-1' as WorkspaceId;
@@ -31,9 +28,7 @@ const learn = () =>
   learnWorkspaceReplyStyle({
     workspaceId: WORKSPACE,
     projectRoots: ['/repos/ledger-core', '/repos/ledger-core-copy', '/notes'],
-    overrides: null,
-    connectedProviders: ['anthropic'],
-    limitContext: null,
+    taskModel: { providerId: 'anthropic', model: 'claude-haiku-4-5' },
   });
 
 beforeEach(() => {
@@ -54,9 +49,6 @@ describe('learnWorkspaceReplyStyle', () => {
     expect(await learn()).toBe('Short.');
     expect(h.listMyReviewReplies).toHaveBeenCalledWith(
       expect.objectContaining({ repoSlugs: ['acme/ledger-core'] }),
-    );
-    expect(h.resolveTaskModel).toHaveBeenCalledWith(
-      expect.objectContaining({ task: 'prose_polish', connectedProviders: ['anthropic'] }),
     );
     expect(h.learnReplyStyle).toHaveBeenCalledWith(
       expect.objectContaining({ providerId: 'anthropic', workingDir: '/repos/ledger-core' }),

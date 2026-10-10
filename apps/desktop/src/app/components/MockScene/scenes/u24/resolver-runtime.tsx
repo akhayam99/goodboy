@@ -1,12 +1,15 @@
 import { useEffect, useState, type ComponentType } from 'react';
-import type { AgentRole, ProviderId, ProviderPolicy, RoleModelPreference } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
 import { AppFrame } from '../audit/AppFrame';
 import { seedFrame } from '../audit/frameSeed';
 import { installSettingsInvokeMocks } from '../audit/installSettingsInvokeMocks';
+import { OverrideOffNoteScene } from './OverrideOffNoteScene';
 
 const OPEN_DELAY_MS = 30;
+
+const SAVED_PROJECTS = 2;
 
 const CAPABILITIES = {
   models: [],
@@ -33,35 +36,28 @@ const connected = ({ id, label, binary }: ProviderParams): ProviderDisplayInfo =
   docsUrl: '',
 });
 
-const OPUS_PIN: RoleModelPreference = {
-  providerId: 'anthropic',
-  model: 'claude-opus-5-5',
-  effort: 'high',
+const SAVED_MODELS = {
+  taskModels: {
+    workflow_orchestrator: { providerId: 'anthropic', model: 'claude-sonnet-5' },
+    summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
+  },
+  roleModels: {
+    planner: { providerId: 'anthropic', model: 'claude-opus-5-5', effort: 'high' },
+    reviewer: { providerId: 'anthropic', model: 'claude-sonnet-5', effort: 'medium' },
+  },
 };
 
-const SONNET_PIN: RoleModelPreference = {
-  providerId: 'anthropic',
-  model: 'claude-sonnet-5',
-  effort: 'medium',
+const seedSavedProjects = (): Readonly<Record<string, string>> => {
+  const { currentWorkspaceId: workspaceId, projects } = useAppStore.getState();
+  return Object.fromEntries(
+    projects
+      .filter((project) => project.workspaceId === workspaceId)
+      .slice(0, SAVED_PROJECTS)
+      .map((project) => [`legacy.projectModels.${project.id}`, JSON.stringify(SAVED_MODELS)]),
+  );
 };
 
-const PINNED_ROLES: ReadonlyArray<AgentRole> = ['planner', 'reviewer', 'investigator', 'tester'];
-
-const CODEX_ONLY: ProviderPolicy = [
-  { id: 'codex', state: 'on' },
-  { id: 'anthropic', state: 'off' },
-];
-
-const ANTHROPIC_ON: ProviderPolicy = [
-  { id: 'anthropic', state: 'on' },
-  { id: 'codex', state: 'on' },
-];
-
-type SeedParams = {
-  readonly policy: ProviderPolicy;
-};
-
-const seedModelsPage = ({ policy }: SeedParams): void => {
+const seedModelsPage = (): void => {
   const { currentWorkspaceId: workspaceId } = useAppStore.getState();
   if (workspaceId === null) {
     return;
@@ -83,34 +79,28 @@ const seedModelsPage = ({ policy }: SeedParams): void => {
         ...state.workspaceOverrides,
         [workspaceId]: {
           ...current,
-          defaultProviderId: policy[0]?.id ?? null,
-          providerPool: policy,
-          roleModels: {
-            ...Object.fromEntries(PINNED_ROLES.map((role) => [role, OPUS_PIN])),
-            resolver: SONNET_PIN,
-          },
-          taskModels: {
-            summarizer: { providerId: 'anthropic', model: 'claude-sonnet-4-5' },
-          },
+          defaultProviderId: 'codex',
+          providerPool: [
+            { id: 'codex', state: 'on' },
+            { id: 'anthropic', state: 'off' },
+          ],
+          roleModels: null,
+          taskModels: null,
         },
       },
     };
   });
 };
 
-type Props = {
-  readonly policy: ProviderPolicy;
-};
-
-const ModelsOverApp = ({ policy }: Props) => {
+const SavedModelsOverApp = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    installSettingsInvokeMocks();
     seedFrame({ context: 'session' });
-    seedModelsPage({ policy });
+    installSettingsInvokeMocks({ settings: seedSavedProjects() });
+    seedModelsPage();
     setIsReady(true);
-  }, [policy]);
+  }, []);
 
   useEffect(() => {
     if (!isReady) {
@@ -132,7 +122,7 @@ const ModelsOverApp = ({ policy }: Props) => {
   return <AppFrame view="settings-over-app" isRailCollapsed={false} />;
 };
 
-export const U24_RESOLVER_SCENES: Readonly<Record<string, ComponentType>> = {
-  'models-codex-only': () => <ModelsOverApp policy={CODEX_ONLY} />,
-  'models-anthropic-on': () => <ModelsOverApp policy={ANTHROPIC_ON} />,
+export const U24_RESOLVER_RUNTIME_SCENES: Readonly<Record<string, ComponentType>> = {
+  'models-saved-project': SavedModelsOverApp,
+  'turn-override-off': OverrideOffNoteScene,
 };

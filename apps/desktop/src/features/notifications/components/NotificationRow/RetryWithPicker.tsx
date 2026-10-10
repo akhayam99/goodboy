@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { NotificationAction } from '@goodboy/db';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
-import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { autoModelOn } from '../../../providers/autoModelOn';
+import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import type { EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -38,24 +39,12 @@ export const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
   if (providerId == null) {
     return null;
   }
-  const recommendedModel = resolveLimitedTaskModel({
-    limitContext: null,
-    task: 'summarizer',
-    preferences: null,
-    workspaceDefaultProviderId: providerId,
-    sessionDefaultProviderId: providerId,
-  }).model;
+  const automatic = resolutionAsTask({
+    resolution: autoModelOn({ slot: { kind: 'task', id: 'summarizer' }, provider: providerId }),
+  });
+  const recommendedModel = automatic.model;
   const dispatch = () => {
-    const taskModel =
-      model === ''
-        ? resolveLimitedTaskModel({
-            limitContext: null,
-            task: 'summarizer',
-            preferences: null,
-            workspaceDefaultProviderId: providerId,
-            sessionDefaultProviderId: providerId,
-          })
-        : { providerId, model };
+    const taskModel = model === '' ? automatic : { providerId, model };
     const override: TaskModelPreference = { ...taskModel, effort };
     const store = useAppStore.getState();
     switch (action.kind) {

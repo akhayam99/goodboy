@@ -1,5 +1,4 @@
 import {
-  autoModelForRole,
   extractSpawnModel,
   PROVIDER_ARG_FLAGS,
   resolveModelArgs,
@@ -14,6 +13,7 @@ import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { KIND_TO_ROLE, classifyAgent } from '../../../features/session/agent-kind';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { liveSessionPreference } from '../models/liveSessionPreference';
+import { selectModelOnProvider } from '../models/selectModelOnProvider';
 import { overrideOffNoticeMessage, type OverrideScope } from './overrideOffNoticeMessage';
 import { overrideScopeOf } from './overrideScopeOf';
 import { pickedTurnExecution } from './pickedTurnExecution';
@@ -28,8 +28,11 @@ import type { PreparedTurn } from './prepareTurn';
 
 type Params = Readonly<{
   get: GetFn;
-  ctx: WithInput & PreparedTurn;
+  ctx: WithInput &
+    Pick<PreparedTurn, 'session' | 'now' | 'activeAgentId' | 'activeAgent' | 'phaseDefinition'>;
 }>;
+
+const newRunId = (): ProviderRunId => crypto.randomUUID() as ProviderRunId;
 
 export const routeTurn = async ({ get, ctx }: Params) => {
   const { sessionId, override, force, retry } = ctx.input;
@@ -97,7 +100,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   });
 
   if (routingDecision.reason === 'all-exceeded') {
-    const runId = crypto.randomUUID() as ProviderRunId;
+    const runId = newRunId();
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'error',
       runId,
@@ -110,8 +113,8 @@ export const routeTurn = async ({ get, ctx }: Params) => {
 
   if (routingDecision.reason === 'override-off') {
     get().appendTurnEvent(activeAgentId, sessionId, {
-      kind: 'error',
-      runId: crypto.randomUUID() as ProviderRunId,
+      kind: 'decision_note',
+      runId: newRunId(),
       message: overrideOffNoticeMessage({
         provider: routingDecision.selectedProvider,
         scope: overrideScope,
@@ -129,7 +132,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   ) {
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'error',
-      runId: crypto.randomUUID() as ProviderRunId,
+      runId: newRunId(),
       message: budgetRoutingNoticeMessage({
         from: routingDecision.fallbackFrom,
         to: routingDecision.selectedProvider,
@@ -147,16 +150,18 @@ export const routeTurn = async ({ get, ctx }: Params) => {
       : (agentKindOverrideForTurn ?? 'generic');
   const autoStepModel =
     phaseDefinition != null && nodeModel === null
-      ? autoModelForRole({
+      ? selectModelOnProvider({
+          state: get(),
+          sessionId,
           role: phaseDefinition.role ?? 'custom',
-          providers: [provider],
-          prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
+          provider,
         })
       : phaseDefinition == null && routingDecision.fallbackUsed
-        ? autoModelForRole({
+        ? selectModelOnProvider({
+            state: get(),
+            sessionId,
             role: KIND_TO_ROLE[turnAgentKind],
-            providers: [provider],
-            prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
+            provider,
           })
         : null;
   const rawEffort = nodeEffort ?? get().agentEffortOverride[activeAgentId] ?? null;
@@ -216,7 +221,7 @@ export const routeTurn = async ({ get, ctx }: Params) => {
 
   const authState = get().authResults?.[provider] ?? null;
   if (authState?.state === 'disconnected' && !apiKeyBinding) {
-    const runId = crypto.randomUUID() as ProviderRunId;
+    const runId = newRunId();
     get().appendTurnEvent(activeAgentId, sessionId, {
       kind: 'error',
       runId,

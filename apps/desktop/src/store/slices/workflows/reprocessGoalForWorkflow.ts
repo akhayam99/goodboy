@@ -1,8 +1,7 @@
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import type { ContextSlot, SessionId } from '@goodboy/types';
 import { rewriteWorkflowGoal } from '@goodboy/core';
 import { upsertContextSlot } from '@goodboy/db';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
@@ -46,14 +45,7 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
 
       const worktreePath = getSessionRepo({ get, sessionId })?.worktreePath ?? null;
       const taskModel = routeTaskModel({
-        taskModel: resolveLimitedTaskModel({
-          limitContext: autoLimitContext({ state: get() }),
-          task: 'prose_polish',
-          preferences: selectResolvedSettings({ state, sessionId })?.taskModels,
-          workspaceDefaultProviderId: selectResolvedSettings({ state, sessionId })
-            ?.defaultProviderOverride,
-          sessionDefaultProviderId: session.providerPreference.defaultProvider,
-        }),
+        taskModel: selectTaskModel({ state: get(), sessionId, task: 'prose_polish' }),
         connectedProviders: autoRoutableProviders({ providers: state.providers }),
         enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
         cooldowns: state.providerCooldowns,

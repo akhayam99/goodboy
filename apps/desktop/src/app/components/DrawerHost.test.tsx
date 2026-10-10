@@ -273,7 +273,7 @@ describe('the Ask drawer header', () => {
 });
 
 describe('the explore file drawer across sessions', () => {
-  const OTHER = 'session-northwind' as SessionId;
+  const OTHER = aSession({ goal: 'Retire the notify digest' }).id;
 
   const exploreDrawer = (sessionId: SessionId): DrawerRequest => ({
     kind: 'explore-file',

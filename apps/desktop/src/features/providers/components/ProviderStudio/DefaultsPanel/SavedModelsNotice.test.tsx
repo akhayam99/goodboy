@@ -13,11 +13,10 @@ vi.mock('../../../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { getSetting, insertProject, insertWorkspace, setSetting } from '@goodboy/db';
-import type { Project, WorkspaceId } from '@goodboy/types';
-import { EMPTY_OVERRIDES, aProject } from '@goodboy/types/testing';
+import type { Project } from '@goodboy/types';
+import { EMPTY_OVERRIDES, aProject, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
-  buildStoryWorkspace,
   importStore,
   openStorySqlite,
   resetStoryStore,
@@ -27,18 +26,18 @@ import {
 } from '../../../../../store/storyHarness';
 import { SavedModelsNotice } from './SavedModelsNotice';
 
-const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
-const OTHER_WORKSPACE_ID = 'workspace-northwind' as WorkspaceId;
+const WORKSPACE = aWorkspace({ name: 'Harborline', slug: 'harborline' });
+const OTHER_WORKSPACE = aWorkspace({ name: 'Northwind', slug: 'northwind' });
+const WORKSPACE_ID = WORKSPACE.id;
+const OTHER_WORKSPACE_ID = OTHER_WORKSPACE.id;
 
 const PAYMENTS = aProject({
-  id: 'project-payments-api' as Project['id'],
   workspaceId: WORKSPACE_ID,
   name: 'payments-api',
   rootPath: '/tmp/payments-api',
 });
 
 const LEDGER = aProject({
-  id: 'project-ledger-core' as Project['id'],
   workspaceId: WORKSPACE_ID,
   name: 'ledger-core',
   rootPath: '/tmp/ledger-core',
@@ -69,18 +68,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   const db = await openStorySqlite();
-  await insertWorkspace({
-    db,
-    workspace: buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Harborline', slug: 'harborline' }),
-  });
-  await insertWorkspace({
-    db,
-    workspace: buildStoryWorkspace({
-      id: OTHER_WORKSPACE_ID,
-      name: 'Northwind',
-      slug: 'northwind',
-    }),
-  });
+  await insertWorkspace({ db, workspace: WORKSPACE });
+  await insertWorkspace({ db, workspace: OTHER_WORKSPACE });
   useAppStore.setState({
     workspaceOverrides: {
       [WORKSPACE_ID]: {

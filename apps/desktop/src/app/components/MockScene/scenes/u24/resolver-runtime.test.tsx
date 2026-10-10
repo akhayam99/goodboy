@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -18,7 +18,7 @@ import {
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
-import { U24_P_MODELS_SCENES } from './p-models';
+import { U24_RESOLVER_RUNTIME_SCENES } from './resolver-runtime';
 
 const SETTLE_MS = 2_000;
 
@@ -39,7 +39,7 @@ afterEach(() => {
 });
 
 const mount = async (name: string): Promise<Element> => {
-  const Scene = U24_P_MODELS_SCENES[name];
+  const Scene = U24_RESOLVER_RUNTIME_SCENES[name];
   if (Scene === undefined) {
     throw new Error(`no scene ${name}`);
   }
@@ -55,37 +55,48 @@ const mount = async (name: string): Promise<Element> => {
   return container;
 };
 
-describe('the Models page scenes', () => {
+describe('the resolver runtime scenes', () => {
   it('registers both scenes for the capture', () => {
-    expect(Object.keys(U24_P_MODELS_SCENES).sort()).toEqual([
-      'modelswilluse',
-      'modelswilluse-cleared',
+    expect(Object.keys(U24_RESOLVER_RUNTIME_SCENES).sort()).toEqual([
+      'models-saved-project',
+      'turn-override-off',
     ]);
-    expect(MOCK_SCENES.modelswilluse).toBe(U24_P_MODELS_SCENES.modelswilluse);
+    expect(MOCK_SCENES['turn-override-off']).toBe(U24_RESOLVER_RUNTIME_SCENES['turn-override-off']);
   });
 
-  it('modelswilluse shows the saved project settings, the skipped pins and the page line', async () => {
-    await mount('modelswilluse');
+  it('models-saved-project says the saved settings no longer apply and lists both projects', async () => {
+    await mount('models-saved-project');
 
-    expect(screen.getByText('Model settings 1 project had are saved')).toBeDefined();
+    expect(screen.getByText('Model settings 2 projects had are saved')).toBeDefined();
     expect(screen.getByText('They no longer apply.')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+
+    const list = screen.getByRole('list', { name: 'Projects with saved model settings' });
+    const rows = within(list).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      expect(
+        within(row).getByRole('button', { name: /^Apply the saved settings of / }),
+      ).toBeDefined();
+      expect(
+        within(row).getByRole('button', { name: /^Discard the saved settings of / }),
+      ).toBeDefined();
+    }
+  });
+
+  it('turn-override-off names the provider and the reason in one calm note', async () => {
+    await mount('turn-override-off');
+
     expect(
       screen.getByText(
-        'With Codex as the only provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.',
+        'Running on Cursor because you picked it for this turn. Cursor is Off in Settings.',
       ),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Back to Auto for those 7' })).toBeDefined();
-    expect(screen.getAllByText(/^Pinned Opus 5\.5 is skipped: Claude is Off\./).length).toBe(7);
+    expect(screen.queryByText('The turn stopped')).toBeNull();
   });
 
-  it('modelswilluse-cleared drops the notice and keeps the rows as they were', async () => {
-    await mount('modelswilluse-cleared');
-
-    expect(screen.queryByText(/had are saved/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Back to Auto for those 7' })).toBeDefined();
-  });
-
-  it.each(Object.keys(U24_P_MODELS_SCENES))(
+  it.each(Object.keys(U24_RESOLVER_RUNTIME_SCENES))(
     '%s has no accessibility violation once drawn',
     async (name) => {
       const container = await mount(name);

@@ -1,11 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { WorkspaceId } from '@goodboy/types';
-import { aProject } from '@goodboy/types/testing';
+import { aProject, aWorkspace } from '@goodboy/types/testing';
 import { savedModelFacts } from './savedModelFacts';
 
-const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
-const OTHER_WORKSPACE_ID = 'workspace-northwind' as WorkspaceId;
+const WORKSPACE_ID = aWorkspace({ name: 'Harborline' }).id;
+const OTHER_WORKSPACE_ID = aWorkspace({ name: 'Northwind' }).id;
 
 const NOTIFY_RELAY = aProject({ workspaceId: WORKSPACE_ID, name: 'notify-relay' });
 const LEDGER_CORE = aProject({ workspaceId: WORKSPACE_ID, name: 'ledger-core' });

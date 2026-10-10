@@ -1,7 +1,6 @@
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { fallbackStepOutputSummary } from '@goodboy/core';
 import type { Agent, AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
@@ -70,14 +69,7 @@ export const summarizeWorkflowAgentOutput = async ({
   }
   const connectedProviders = autoRoutableProviders({ providers: get().providers });
   const enabledProviders = liveEnabledProviders({ state: get(), sessionId }) ?? null;
-  const resolved = resolveLimitedTaskModel({
-    limitContext: autoLimitContext({ state: get() }),
-    task: 'summarizer',
-    preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
-    workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
-      ?.defaultProviderOverride,
-    sessionDefaultProviderId: session.providerPreference.defaultProvider,
-  });
+  const resolved = selectTaskModel({ state: get(), sessionId, task: 'summarizer' });
   const taskModel = routeTaskModel({
     taskModel: resolved,
     connectedProviders,

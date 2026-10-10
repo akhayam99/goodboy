@@ -1,7 +1,6 @@
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { fallbackStepOutputSummary } from '@goodboy/core';
 import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
@@ -44,14 +43,7 @@ const retryOneStepSummary = (set: SetFn, get: GetFn) => {
     const taskModel =
       taskModelOverride ??
       routeTaskModel({
-        taskModel: resolveLimitedTaskModel({
-          limitContext: autoLimitContext({ state: get() }),
-          task: 'summarizer',
-          preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
-          workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
-            ?.defaultProviderOverride,
-          sessionDefaultProviderId: session.providerPreference.defaultProvider,
-        }),
+        taskModel: selectTaskModel({ state: get(), sessionId, task: 'summarizer' }),
         connectedProviders: autoRoutableProviders({ providers: get().providers }),
         enabledProviders: liveEnabledProviders({ state: get(), sessionId }) ?? null,
         cooldowns: get().providerCooldowns,

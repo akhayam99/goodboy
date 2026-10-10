@@ -33,7 +33,7 @@ type Store = {
   readonly sessions: ReadonlyArray<{
     id: SessionId;
     workspaceId: string;
-    providerPreference: { defaultProvider: string; allowTurnOverride: boolean };
+    providerPreference: Readonly<Record<string, unknown>>;
   }>;
   readonly providers: ReadonlyArray<{ readonly id: string; readonly connection: 'connected' }>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;

@@ -45,7 +45,7 @@ export const SavedModelsNotice = ({ workspaceId }: Props) => {
           variant="ghost"
           size="sm"
           aria-expanded={isExpanded}
-          onClick={() => setIsExpanded((current) => !current)}
+          onClick={() => setIsExpanded((isOpen) => !isOpen)}
         >
           {isExpanded ? 'Hide' : 'Show'}
         </Button>

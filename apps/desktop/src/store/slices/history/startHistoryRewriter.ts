@@ -1,8 +1,7 @@
-import type { AgentId, AuxTaskId, SessionId } from '@goodboy/types';
+import type { AgentId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { discardHistoryCopy, prepareHistoryRewrite } from '../../../features/history/historyEngine';
-import { taskModelAgentSpawnConfig } from '../../../features/session/taskModelAgentSpawnConfig';
-import { selectResolution } from '../models/selectResolution';
+import { historyRewriterConfig } from './historyRewriterConfig';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
 import { reportHistoryStop } from './reportHistoryStop';
@@ -18,22 +17,6 @@ import type {
 import { sessionById } from '../sessions/sessionIndex';
 
 const HISTORY_REWRITER_NAME = 'History rewriter';
-
-const REWRITER_TASK: AuxTaskId = 'rebase';
-
-type ConfigParams = {
-  readonly get: GetFn;
-  readonly sessionId: SessionId;
-};
-
-const rewriterConfig = ({ get, sessionId }: ConfigParams) =>
-  taskModelAgentSpawnConfig({
-    resolution: selectResolution({
-      state: get(),
-      sessionId,
-      slot: { kind: 'task', id: REWRITER_TASK },
-    }),
-  });
 
 export type StartHistoryRewriterOutcome = ApplyHistoryRewriteOutcome | 'rewriting' | 'rewritten';
 
@@ -121,7 +104,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
     const copyPath = prepared.copyPath;
     const discard = () =>
       discardHistoryCopy({ worktreePath: target.worktreePath, copyPath }).catch(() => undefined);
-    const config = rewriterConfig({ get, sessionId });
+    const config = historyRewriterConfig({ state: get(), sessionId });
     if (config.provider === '') {
       await discard();
       return stopWith({
