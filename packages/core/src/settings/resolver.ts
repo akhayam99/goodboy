@@ -7,6 +7,22 @@ export type ResolveSettingsInput = {
   readonly sessionOverride?: OverrideSettings | null;
 };
 
+type Keyed<V> = Readonly<Record<string, V | undefined>>;
+
+type MergeKeyedParams<V> = {
+  readonly layers: ReadonlyArray<Keyed<V> | null | undefined>;
+};
+
+const mergeKeyed = <V extends object>({
+  layers,
+}: MergeKeyedParams<V>): Readonly<Record<string, V>> | null => {
+  const entries = layers.flatMap((layer) => Object.entries(layer ?? {}));
+  const merged: Record<string, V> = Object.fromEntries(
+    entries.flatMap(([key, value]) => (value === undefined ? [] : [[key, value] as const])),
+  );
+  return Object.keys(merged).length > 0 ? merged : null;
+};
+
 export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings => {
   const {
     global: g,
@@ -16,8 +32,12 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
   } = input;
 
   return {
-    roleModels: sess?.roleModels ?? project?.roleModels ?? ws?.roleModels ?? null,
-    taskModels: sess?.taskModels ?? project?.taskModels ?? ws?.taskModels ?? null,
+    roleModels: mergeKeyed({
+      layers: [ws?.roleModels, project?.roleModels, sess?.roleModels],
+    }),
+    taskModels: mergeKeyed({
+      layers: [ws?.taskModels, project?.taskModels, sess?.taskModels],
+    }),
     providerPool: sess?.providerPool ?? project?.providerPool ?? ws?.providerPool ?? null,
     parallelAgents: sess?.parallelAgents ?? project?.parallelAgents ?? ws?.parallelAgents ?? false,
     providerBindings: {
