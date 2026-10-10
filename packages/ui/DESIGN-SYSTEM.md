@@ -1579,7 +1579,7 @@ moves.
 meta, a state word with its dot or glyph, a 14px check on the current row on
 `overlay-selected`), and an action band on `fill` under the list with at most
 two 28px rows. Widths are 300, 380 and 460. It opens in 120ms (opacity and a
-4px drop) and closes without motion.
+4px drop) and closes without motion. A segment whose menu would hold fewer than two entries (rows plus actions) draws as a plain crumb with no chevron, so there is never a menu of one (`crumbMenuWithChoice`).
 
 ## Action zones
 

@@ -494,8 +494,10 @@ Start new turns here (only with two or more mounts), the copies, then Close
 worktree, or Remove from session on a closed row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
 and Abort rebase forward. Below a 28rem container New branch shows its icon
-only. The project menu (`MountActionsMenu`, the `project` kind) holds Remove from session
-and renders nothing when the project has no mount to remove.
+only. The project control (`MountActionsMenu`, the `project` kind) is one quiet button,
+`Remove <project> from session`, that opens the removal confirmation at once, because
+a menu of one action is not drawn. It renders nothing when the project has no mount
+to remove.
 
 With two or more mounts, a row shows its presence (`MountPresence`): the
 state node of each agent whose turn runs, waits on an answer or needs you in

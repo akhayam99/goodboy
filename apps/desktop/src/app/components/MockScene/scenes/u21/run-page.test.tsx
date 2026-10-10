@@ -164,7 +164,8 @@ describe('the u21 run page scenes', () => {
     );
     expect(stripPhase()).toBe('plan-approval');
     expect(within(header()).getByRole('button', { name: 'Review plan' })).toBeDefined();
-    expect(within(header()).queryByRole('button', { name: 'Approve plan' })).toBeNull();
+    expect(within(header()).getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    expect(within(header()).queryByRole('button', { name: 'Plan actions' })).toBeNull();
     expect((await screen.findByTestId('plan-primary')).textContent).toBe('Approve');
   });
 
