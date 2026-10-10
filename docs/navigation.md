@@ -2630,7 +2630,7 @@ in the tree rail that carries `data-diff-filter` (it opens the tree first when
 it is folded or an overlay); `⌘⇧B` folds or opens the tree (`⌘B` stays the column).
 A line under the tree lists them once, from the registry (`keyHelp.ts`).
 
-Big and folded cases (`treeRailMode.ts`, `useTreePanel`, `lib/windowRows.ts`).
+Big and folded cases (`treeRailMode.ts`, `useTreePanel`, `shared/utils/windowRows.ts`).
 Past 120 visible rows the tree draws only the rows in view plus a margin (fixed
 28px rows, 44px for a rename), so 512 files scroll as light as 20. A change
 over 300 files starts with its deepest folders over 50 files closed (a parent of
