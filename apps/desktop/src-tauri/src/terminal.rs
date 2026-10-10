@@ -140,23 +140,27 @@ fn signal_pty_session(sid: libc::pid_t, signal: libc::c_int) {
 }
 
 #[cfg(unix)]
-pub(crate) fn terminate_pty_session(leader_pid: u32) {
+pub(crate) fn terminate_pty_session(leader_pid: u32) -> usize {
     let sid = leader_pid as libc::pid_t;
-    if session_descendants(sid).is_empty() {
-        return;
+    let signalled = session_descendants(sid).len();
+    if signalled == 0 {
+        return 0;
     }
     signal_pty_session(sid, libc::SIGTERM);
     for _ in 0..SESSION_DRAIN_POLLS {
         thread::sleep(SESSION_DRAIN_INTERVAL);
         if session_descendants(sid).is_empty() {
-            return;
+            return signalled;
         }
     }
     signal_pty_session(sid, libc::SIGKILL);
+    signalled
 }
 
 #[cfg(not(unix))]
-pub(crate) fn terminate_pty_session(_leader_pid: u32) {}
+pub(crate) fn terminate_pty_session(_leader_pid: u32) -> usize {
+    0
+}
 
 #[tauri::command]
 pub async fn terminal_open(

@@ -105,7 +105,10 @@ fn open_in_editor_blocking(path: String, editor: Option<String>) -> Result<(), E
     cmd.arg(&abs_path);
 
     match cmd.spawn() {
-        Ok(_) => Ok(()),
+        Ok(child) => {
+            crate::proc::detach::detach(child);
+            Ok(())
+        }
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
             Err(EditorError::NotFound(binary))
         }
@@ -148,7 +151,10 @@ fn open_file_in_workspace_blocking(
     }
 
     match cmd.spawn() {
-        Ok(_) => Ok(()),
+        Ok(child) => {
+            crate::proc::detach::detach(child);
+            Ok(())
+        }
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
             Err(EditorError::NotFound(binary))
         }
@@ -360,7 +366,13 @@ pub fn run_browser_launch(launch: &BrowserLaunch) -> bool {
     if cfg!(target_os = "macos") {
         return command.status().map(|s| s.success()).unwrap_or(false);
     }
-    command.spawn().is_ok()
+    match command.spawn() {
+        Ok(child) => {
+            crate::proc::detach::detach(child);
+            true
+        }
+        Err(_) => false,
+    }
 }
 
 fn detected_browsers(platform: Platform) -> Vec<DetectedBrowser> {
@@ -410,7 +422,7 @@ fn open_url_blocking(app: &tauri::AppHandle, url: String) -> Result<(), MessageE
         .spawn();
 
     result
-        .map(|_| ())
+        .map(crate::proc::detach::detach)
         .map_err(|e| MessageError::Failed(e.to_string()))
 }
 

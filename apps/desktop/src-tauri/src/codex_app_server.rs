@@ -145,12 +145,15 @@ fn call_with(
     let (binary, rest) = program
         .split_first()
         .ok_or_else(|| CodexAppServerError::SpawnFailed("empty command".to_string()))?;
-    let mut child = path_env::command(binary)
+    let mut command = path_env::command(binary);
+    command
         .args(rest)
         .current_dir(cwd)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
+        .stderr(Stdio::null());
+    crate::process_group::isolate(&mut command);
+    let mut child = command
         .spawn()
         .map_err(|e| CodexAppServerError::SpawnFailed(e.to_string()))?;
     let result = (|| {
@@ -161,6 +164,7 @@ fn call_with(
             .ok_or_else(|| CodexAppServerError::SpawnFailed("no stdin".to_string()))?;
         converse(&mut stdin, &lines, method, params, Instant::now() + timeout)
     })();
+    crate::process_group::kill(child.id());
     let _ = child.kill();
     let _ = child.wait();
     result
@@ -250,6 +254,44 @@ sleep 5"#;
             Err(CodexAppServerError::Rpc(message)) => assert_eq!(message, "unexpected request"),
             other => panic!("expected Rpc, got {other:?}"),
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn call_with_kills_a_process_the_server_started() {
+        let pid_file = std::env::temp_dir().join(format!(
+            "goodboy-codex-fixture-{}-{}",
+            std::process::id(),
+            rand::random::<u32>()
+        ));
+        let server = format!(
+            "sleep 30 &\necho $! > '{}'\n{}",
+            pid_file.display(),
+            FAKE_SERVER
+        );
+        let result = call_with(
+            &["sh", "-c", &server],
+            &temp_cwd(),
+            "account/rateLimits/read",
+            json!({ "excludeResetCreditDetails": true }),
+            Duration::from_secs(5),
+        );
+        assert!(result.is_ok());
+        let helper: libc::pid_t = std::fs::read_to_string(&pid_file)
+            .expect("fixture wrote the helper pid")
+            .trim()
+            .parse()
+            .expect("helper pid");
+        let _ = std::fs::remove_file(&pid_file);
+        let mut alive = true;
+        for _ in 0..20 {
+            if unsafe { libc::kill(helper, 0) } != 0 {
+                alive = false;
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(!alive, "the server's helper process outlived the call");
     }
 
     #[test]
