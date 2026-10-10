@@ -13,6 +13,7 @@ import {
   type InboxStudioFocus,
   type StudioPlace,
 } from '../../../store';
+import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
 import type { StudioPlacement } from '../../components/StudioFrame/studioPlacement';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
@@ -126,7 +127,13 @@ export const useAppOverlays = ({
 
   const openInbox = useCallback(() => goTo({ overlay: { kind: 'inbox', focus: null } }), [goTo]);
 
-  const openChat = useCallback(() => goTo({ overlay: { kind: 'chat', chatId: null } }), [goTo]);
+  const openChat = useCallback(
+    () =>
+      goTo({
+        overlay: { kind: 'chat', chatId: selectChatDoor({ state: useAppStore.getState() }) },
+      }),
+    [goTo],
+  );
 
   const openShortcutHelp = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),

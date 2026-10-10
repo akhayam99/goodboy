@@ -984,8 +984,13 @@ covered.
   their old shape). Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
   board it closes the studio; in a session it navigates to the board as a
-  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on a
-  new chat; its row carries a running dot or a new-reply dot. The command
+  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on the
+  chat you had open last in this workspace (`lastChatByWorkspace`, memory only,
+  `selectChatDoor`), else the most recent chat by activity, else a new chat; after
+  you press New chat it opens a new one until you pick a chat again. The column
+  door, the top bar button and the palette entry share that rule. Archiving or
+  deleting the open chat lands on the next most recent one, not a blank page. Its
+  row carries a running dot or a new-reply dot. The command
   center opens the palette and shows ⌘K; it never takes typing itself. In the palette,
   every search with text and no prefix starts with `Ask in Chat`, which opens
   a new chat with the query as its first message. Inside a session (the
