@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AnchoredPopover, PANE_RHYTHM, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, MenuTriggerButton, useDropdown } from '@goodboy/ui';
 import type { Session, SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useSelectedProjectIds, useSessionViewPrefs } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -86,24 +86,14 @@ export const SessionViewMenu = ({
       className="max-h-96 py-1"
       hasBackdrop
       trigger={
-        <Tooltip content="Options for sessions" side="bottom">
-          <button
-            type="button"
-            onClick={toggle}
-            aria-haspopup="menu"
-            aria-expanded={open}
-            aria-label="Options for sessions"
-            className={cn(
-              PANE_RHYTHM.sessionList.menuTrigger,
-              'inline-flex shrink-0 items-center justify-center rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-              open
-                ? 'bg-selected text-foreground'
-                : 'text-faint-foreground hover:bg-hover hover:text-foreground',
-            )}
-          >
-            <MoreIcon size={ICON_SIZE.control} aria-hidden />
-          </button>
-        </Tooltip>
+        <MenuTriggerButton
+          label="Options for sessions"
+          isOpen={open}
+          size="control"
+          onClick={toggle}
+        >
+          <MoreIcon size={ICON_SIZE.control} aria-hidden />
+        </MenuTriggerButton>
       }
     >
       <MenuSection title="Sort">
