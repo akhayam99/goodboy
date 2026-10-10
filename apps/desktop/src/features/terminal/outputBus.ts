@@ -5,17 +5,17 @@ import {
   type TerminalOutputPayload,
 } from './terminal';
 
-export type TerminalBusChunk = {
+type TerminalBusChunk = {
   readonly bytes: Uint8Array;
   readonly offset: number;
 };
 
-export type TerminalBusTail = {
+type TerminalBusTail = {
   readonly bytes: Uint8Array;
   readonly offset: number;
 };
 
-export type TerminalBusSubscriber = {
+type TerminalBusSubscriber = {
   readonly onOutput?: (chunk: TerminalBusChunk) => void;
   readonly onExit?: (exitCode: number) => void;
 };
