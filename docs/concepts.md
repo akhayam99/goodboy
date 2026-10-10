@@ -1068,21 +1068,24 @@ Settings can be set at four levels. The level closest to the work wins:
   matches a tool call, the most specific one decides.
 - **Settings overrides** (default provider, branch prefix, verbosity, role
   and task models, provider pool, parallel agents, provider bindings) can be
-  set on a workspace, a project or a session, on top of the global defaults.
-  Anything you leave empty comes from the level above. The session engine
-  reads them only through `selectResolvedSettings`: session, then the
-  session's active project, then workspace, then global (`resolveSettings` in
-  core). Role models, task models and provider bindings merge key by key, so a
-  project that pins only the orchestrator keeps the workspace's pin for every
-  other task and role, and the closest level wins on a key both set. The
-  provider list stays whole: the closest level that sets one replaces the
-  list. A project override sets the branch prefix for that project's mounts.
-  The settings screens edit the workspace row and read that row back, since
-  it is what they change. When a project of the workspace has its own role
-  models, task models, provider list or default provider, **Models** says so in
-  a notice under its header, names what the project pins, and offers **Use
-  this page instead**, which clears those four settings of the project after a
-  confirm anchored to the button (`clearProjectModelOverrides`).
+  set on a workspace, a project or a session, on top of the global defaults,
+  except the role and task models, which a project no longer holds: they are
+  set on a workspace or a session. Anything you leave empty comes from the
+  level above. The session engine reads them only through
+  `selectResolvedSettings`: session, then the session's active project, then
+  workspace, then global (`resolveSettings` in core). Role models, task models
+  and provider bindings merge key by key, so a session that pins only the
+  orchestrator keeps the workspace's pin for every other task and role, and
+  the closest level wins on a key both set; the role and task maps skip the
+  project. The provider list stays whole: the closest level that sets one
+  replaces the list. A project override sets the branch prefix for that
+  project's mounts. The settings screens edit the workspace row and read that
+  row back, since it is what they change. A project that had its own role or
+  task models before 0.24.0 keeps them as saved settings
+  (`legacy.projectModels.<projectId>`, written by m228): **Models** says "Model
+  settings 2 projects had are saved. They no longer apply." and **Show** lists
+  each project with **Apply to this page** and **Discard**, both behind a
+  confirm anchored to the button.
 - **Workflows, saved steps and skills** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is
