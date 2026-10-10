@@ -1,15 +1,18 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type {
-  Agent,
-  AgentId,
-  ArtifactId,
-  IsoDateTime,
-  PlanWithCount,
-  SessionArtifact,
-  SessionId,
+import {
+  DEFAULT_WORKFLOW_RULES,
+  type Agent,
+  type AgentId,
+  type ArtifactId,
+  type IsoDateTime,
+  type PlanWithCount,
+  type SessionArtifact,
+  type SessionId,
+  type WorkflowRun,
+  type WorkflowRunId,
 } from '@goodboy/types';
-import { anAgent } from '@goodboy/types/testing';
+import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import type { PlanRevising } from '../plans/planRevising';
 import type { ArtifactGeneration } from './artifactCollection';
 import {
@@ -84,12 +87,15 @@ const build = (params: {
   readonly agents?: ReadonlyArray<Agent>;
   readonly openQuestionCount?: number;
   readonly revising?: ReadonlyMap<ArtifactId, PlanRevising>;
+  readonly runs?: ReadonlyArray<WorkflowRun>;
 }) =>
   buildArtifactListRows({
     plans: params.plans ?? [],
     artifacts: params.artifacts ?? [],
     generations: params.generations ?? [],
     agents: params.agents ?? AGENTS,
+    runs: params.runs ?? [],
+    templates: [],
     openQuestionCount: params.openQuestionCount ?? 0,
     askingAgentIds: NO_ASKING,
     revising: params.revising ?? new Map(),
@@ -108,6 +114,18 @@ describe('buildArtifactListRows', () => {
       'Wireframe 2',
       'Rounding drift in ledger-core postings',
     ]);
+  });
+
+  it('shows Approved, not Ready to run, for a plan whose approved run owns it', () => {
+    const owned = plan({ workflowRunId: 'run-orchestrated' as WorkflowRunId });
+    const approved = aWorkflowRun({
+      id: 'run-orchestrated' as WorkflowRunId,
+      executionMode: 'dynamic',
+      rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan', planApproved: true },
+    });
+    const [row] = build({ plans: [owned], runs: [approved], agents: [] });
+    expect(row?.state).toMatchObject({ key: 'approved', label: 'Approved' });
+    expect(row?.isPlanRunning).toBe(false);
   });
 
   it('says a ready plan is the next click and counts its parts', () => {

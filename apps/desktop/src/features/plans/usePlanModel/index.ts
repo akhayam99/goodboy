@@ -5,8 +5,10 @@ import { artifactStateOf, type ArtifactState } from '../../artifacts/artifactSta
 import type { PlanPartRow } from '../components/PlanParts/planPartRows';
 import { usePlanPartRows } from '../components/PlanParts/usePlanPartRows';
 import type { PlanRevising } from '../planRevising';
+import { planHandoffOf } from '../planHandoffOf';
 import { plannerQuestionsOf } from '../plannerQuestions';
 import { planStateInputsOf } from '../planStateInputs';
+import { usePlanOwner } from '../usePlanOwner';
 import { usePlanRevising } from '../useRevisingPlans';
 
 export type PlanModel = Readonly<{
@@ -38,6 +40,7 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
   const plan = plans.find((candidate) => candidate.id === planId) ?? null;
   const stored = artifacts.find((candidate) => candidate.id === planId) ?? null;
   const rows = usePlanPartRows({ sessionId, plan, agents });
+  const owner = usePlanOwner({ sessionId, plan });
   const openQuestionCount = openQuestions.length;
   const plannerQuestionCount =
     plan === null ? 0 : plannerQuestionsOf({ questions: openQuestions, plan }).length;
@@ -56,11 +59,17 @@ export const usePlanModel = ({ sessionId, planId }: Params): PlanModel | null =>
         status: plan.status,
         isNew: false,
         openQuestionCount,
-        ...planStateInputsOf({ plan, rows, revising, plannerQuestionCount }),
+        ...planStateInputsOf({
+          plan,
+          rows,
+          revising,
+          plannerQuestionCount,
+          handoff: planHandoffOf({ plan, run: owner }),
+        }),
       }),
       rows,
       agents,
       hasRun: plan.consumptionCount > 0,
     };
-  }, [plan, stored, revising, openQuestionCount, plannerQuestionCount, rows, agents]);
+  }, [plan, stored, revising, openQuestionCount, plannerQuestionCount, rows, agents, owner]);
 };

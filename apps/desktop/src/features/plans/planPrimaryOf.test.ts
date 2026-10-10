@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_WORKFLOW_RULES,
+  type AgentId,
   type ArtifactComment,
   type ArtifactId,
   type IsoDateTime,
   type SessionId,
+  type StepId,
+  type WorkflowRun,
+  type WorkflowRunId,
 } from '@goodboy/types';
-import { aWorkflowRun } from '@goodboy/types/testing';
+import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { aPlan } from '../../test/planFixtures';
+import { planOwnerOf } from './planOwnerOf';
 import { planPrimaryOf } from './planPrimaryOf';
 
 const AT = '2026-10-05T10:00:00.000Z' as IsoDateTime;
@@ -172,6 +177,55 @@ describe('planPrimaryOf', () => {
         plannerQuestionCount: 1,
       }).reason,
     ).toBe('The planner is revising this plan');
+  });
+
+  describe('composed with the run that owns the plan', () => {
+    const RUN_ID = 'run-orchestrated' as WorkflowRunId;
+    const PLANNER_ID = 'agent-planner' as AgentId;
+    const owned = aPlan({ agentId: PLANNER_ID, workflowRunId: RUN_ID });
+    const planner = anAgent({
+      id: PLANNER_ID,
+      stepId: 'step-plan' as StepId,
+      workflowRunId: RUN_ID,
+      status: 'completed',
+    });
+    const orchestrated = aWorkflowRun({
+      id: RUN_ID,
+      executionMode: 'dynamic',
+      orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
+      rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan' },
+    });
+    const ownerOf = (run: WorkflowRun) =>
+      planOwnerOf({ plan: owned, agents: [planner], runs: [run], templates: [] });
+
+    it('approves while the orchestrated run holds the plan', () => {
+      expect(planPrimaryOf({ plan: owned, run: ownerOf(orchestrated), drafts: [] }).kind).toBe(
+        'approve',
+      );
+    });
+
+    it('offers nothing the moment the hold is lifted and no next step exists yet', () => {
+      const justApproved = aWorkflowRun({
+        id: RUN_ID,
+        executionMode: 'dynamic',
+        rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan', planApproved: true },
+      });
+
+      expect(planPrimaryOf({ plan: owned, run: ownerOf(justApproved), drafts: [] })).toEqual({
+        kind: 'none',
+        label: null,
+        reason: null,
+        isSecondary: false,
+      });
+    });
+
+    it('still offers Run plan for a plan whose run was discarded', () => {
+      const discarded = aWorkflowRun({ ...orchestrated, discardedAt: AT });
+
+      expect(planPrimaryOf({ plan: owned, run: ownerOf(discarded), drafts: [] }).label).toBe(
+        'Run plan',
+      );
+    });
   });
 
   it('shows nothing for a plan that already ran, question or not', () => {

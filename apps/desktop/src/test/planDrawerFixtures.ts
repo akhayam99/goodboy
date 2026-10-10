@@ -106,7 +106,7 @@ export const aPlanWorkflow = (): Workflow => ({
   updatedAt: PLAN_FIXTURE_AT,
 });
 
-export type PlanRunKind = 'none' | 'held' | 'feeding' | 'took';
+export type PlanRunKind = 'none' | 'held' | 'feeding' | 'took' | 'orchestrated';
 
 export type PlanDrawerSeed = Readonly<{
   revision?: number;
@@ -138,6 +138,16 @@ const runOf = ({
       : {}),
     ...(kind === 'took'
       ? { rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, planApproved: true } }
+      : {}),
+    ...(kind === 'orchestrated'
+      ? {
+          executionMode: 'dynamic' as const,
+          rulesSnapshot: {
+            ...DEFAULT_WORKFLOW_RULES,
+            autonomy: 'plan' as const,
+            planApproved: true,
+          },
+        }
       : {}),
   });
 
@@ -204,7 +214,10 @@ export const seedPlanDrawer = ({
     phaseTemplates: { [PLAN_WORKSPACE_ID]: [aPlanWorkflow()] },
     sessionPlans: { [PLAN_FIXTURE_SESSION]: [plan] },
     sessionArtifacts: { [PLAN_FIXTURE_SESSION]: [stored] },
-    sessionPhaseRuns: { [PLAN_FIXTURE_SESSION]: isRunPlan ? [planner, implementer] : [planner] },
+    sessionPhaseRuns: {
+      [PLAN_FIXTURE_SESSION]:
+        isRunPlan && run !== 'orchestrated' ? [planner, implementer] : [planner],
+    },
     sessionOpenQuestions: { [PLAN_FIXTURE_SESSION]: [...questions] },
     agentTurnState: { [PLAN_FIXTURE_PLANNER]: turn },
     artifactComments: { [PLAN_FIXTURE_SESSION]: [...drafts] },

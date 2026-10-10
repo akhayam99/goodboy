@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import type {
-  Agent,
-  AgentId,
-  StepId,
-  Workflow,
-  WorkflowId,
-  WorkflowRunId,
-  WorkspaceId,
+import {
+  DEFAULT_WORKFLOW_RULES,
+  type Agent,
+  type AgentId,
+  type StepId,
+  type Workflow,
+  type WorkflowId,
+  type WorkflowRunId,
+  type WorkspaceId,
 } from '@goodboy/types';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { aPlan } from '../../test/planFixtures';
-import { planRunOf } from './planRunOf';
+import { planOwnerOf } from './planOwnerOf';
 
 const WORKFLOW_ID = 'workflow-retry' as WorkflowId;
 const RUN_ID = 'run-retry' as WorkflowRunId;
@@ -53,9 +54,9 @@ const stepAgent = ({
 const run = aWorkflowRun({ id: RUN_ID, workflowId: WORKFLOW_ID });
 const plan = aPlan({ agentId: 'agent-0' as AgentId });
 
-describe('planRunOf', () => {
+describe('planOwnerOf', () => {
   it('returns the run whose next step consumes the plan', () => {
-    const found = planRunOf({
+    const found = planOwnerOf({
       plan,
       agents: [
         stepAgent({ ordinal: 0, status: 'completed' }),
@@ -75,7 +76,7 @@ describe('planRunOf', () => {
       orchestrationStop: { kind: 'plan-approval', message: 'The plan is ready.' },
     });
 
-    const found = planRunOf({
+    const found = planOwnerOf({
       plan,
       agents: [
         stepAgent({ ordinal: 0, status: 'completed' }),
@@ -89,7 +90,7 @@ describe('planRunOf', () => {
   });
 
   it('returns nothing when the next step does not run plans', () => {
-    const found = planRunOf({
+    const found = planOwnerOf({
       plan,
       agents: [
         stepAgent({ ordinal: 0, status: 'completed' }),
@@ -103,7 +104,7 @@ describe('planRunOf', () => {
   });
 
   it('returns nothing when the run has no step left', () => {
-    const found = planRunOf({
+    const found = planOwnerOf({
       plan,
       agents: [stepAgent({ ordinal: 0, status: 'completed' })],
       runs: [run],
@@ -114,7 +115,7 @@ describe('planRunOf', () => {
   });
 
   it('returns nothing for a plan written outside a run step', () => {
-    const found = planRunOf({
+    const found = planOwnerOf({
       plan,
       agents: [anAgent({ id: 'agent-0' as AgentId })],
       runs: [run],
@@ -125,14 +126,99 @@ describe('planRunOf', () => {
   });
 
   it('returns nothing when the planner or the run is gone', () => {
-    expect(planRunOf({ plan, agents: [], runs: [run], templates: [] })).toBeNull();
+    expect(planOwnerOf({ plan, agents: [], runs: [run], templates: [] })).toBeNull();
     expect(
-      planRunOf({
+      planOwnerOf({
         plan,
         agents: [stepAgent({ ordinal: 0, status: 'completed' })],
         runs: [],
         templates: [workflow(['planner', 'implementer'])],
       }),
     ).toBeNull();
+  });
+
+  describe('by the stored link', () => {
+    const linked = aPlan({ agentId: 'agent-0' as AgentId, workflowRunId: RUN_ID });
+    const approved = aWorkflowRun({
+      id: RUN_ID,
+      workflowId: WORKFLOW_ID,
+      executionMode: 'dynamic',
+      rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan', planApproved: true },
+    });
+
+    it('returns an approved orchestrated run that has no next step yet', () => {
+      const found = planOwnerOf({
+        plan: linked,
+        agents: [stepAgent({ ordinal: 0, status: 'completed' })],
+        runs: [approved],
+        templates: [workflow(['planner'])],
+      });
+
+      expect(found?.id).toBe(RUN_ID);
+    });
+
+    it('returns the run whatever its next step is', () => {
+      const found = planOwnerOf({
+        plan: linked,
+        agents: [
+          stepAgent({ ordinal: 0, status: 'completed' }),
+          stepAgent({ ordinal: 1, status: 'pending' }),
+        ],
+        runs: [run],
+        templates: [workflow(['planner', 'scout'])],
+      });
+
+      expect(found?.id).toBe(RUN_ID);
+    });
+
+    it('finds the run when the planner is not a step agent', () => {
+      const found = planOwnerOf({
+        plan: linked,
+        agents: [anAgent({ id: 'agent-0' as AgentId })],
+        runs: [approved],
+        templates: [],
+      });
+
+      expect(found?.id).toBe(RUN_ID);
+    });
+
+    it('returns nothing for a discarded, closed or finished run', () => {
+      const dead = [
+        aWorkflowRun({ id: RUN_ID, workflowId: WORKFLOW_ID, discardedAt: AT }),
+        aWorkflowRun({
+          id: RUN_ID,
+          workflowId: WORKFLOW_ID,
+          orchestrationStop: { kind: 'closed', message: 'Closed' },
+        }),
+        aWorkflowRun({ id: RUN_ID, workflowId: WORKFLOW_ID, orchestrationOutcome: 'done' }),
+      ];
+
+      for (const candidate of dead) {
+        expect(
+          planOwnerOf({ plan: linked, agents: [], runs: [candidate], templates: [] }),
+        ).toBeNull();
+      }
+    });
+
+    it('returns nothing for a plan whose link points at no known run', () => {
+      expect(planOwnerOf({ plan: linked, agents: [], runs: [], templates: [] })).toBeNull();
+    });
+  });
+
+  it('returns the approved run of the planner even before the next step exists', () => {
+    const approved = aWorkflowRun({
+      id: RUN_ID,
+      workflowId: WORKFLOW_ID,
+      rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan', planApproved: true },
+    });
+
+    const found = planOwnerOf({
+      plan,
+      agents: [stepAgent({ ordinal: 0, status: 'completed' })],
+      runs: [approved],
+      templates: [workflow(['planner'])],
+    });
+
+    expect(found?.id).toBe(RUN_ID);
   });
 });

@@ -1,6 +1,7 @@
 import {
   Circle,
   CircleAlert,
+  CircleCheck,
   CircleDot,
   CircleDotDashed,
   CircleMinus,
@@ -20,6 +21,7 @@ import { planRevisingLabel } from '../plans/planRevising';
 type ArtifactStateKey =
   | 'needs'
   | 'ready'
+  | 'approved'
   | 'available'
   | 'running'
   | 'revising'
@@ -56,6 +58,14 @@ const ARTIFACT_STATE_PRESENTATION = {
     tone: 'info',
     icon: CirclePlay,
     group: 'ready',
+  },
+  approved: {
+    key: 'approved',
+    label: 'Approved',
+    reason: 'The run is choosing the next step',
+    tone: 'success',
+    icon: CircleCheck,
+    group: 'running',
   },
   running: {
     key: 'running',
@@ -207,6 +217,9 @@ const planState = (params: StoredParams): ArtifactState => {
       key: 'needs',
       detail: plural({ count: params.openQuestionCount, noun: 'question' }),
     });
+  }
+  if (params.handoff === 'approved-waiting') {
+    return withDetail({ key: 'approved', detail: partsDetail({ count: params.partCount }) });
   }
   return withDetail({ key: 'ready', detail: partsDetail({ count: params.partCount }) });
 };

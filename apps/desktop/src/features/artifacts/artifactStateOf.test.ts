@@ -27,6 +27,7 @@ const NO_PLAN = {
   progress: null,
   hasPartAgents: false,
   revising: NOT_REVISING,
+  handoff: 'none' as const,
 };
 
 const stored = (params: {
@@ -48,6 +49,49 @@ describe('artifactStateOf', () => {
   ] as const)('%s %s reads %s in the %s group', (kind, status, label, group) => {
     const state = stored({ kind, status });
     expect([state?.label, state?.group]).toEqual([label, group]);
+  });
+
+  it('says Approved in the success tone while the run chooses the next step', () => {
+    const state = artifactStateOf({
+      ...NO_PLAN,
+      kind: 'plan',
+      status: 'active',
+      isNew: false,
+      handoff: 'approved-waiting',
+    });
+    expect(state).toMatchObject({
+      key: 'approved',
+      label: 'Approved',
+      reason: 'The run is choosing the next step',
+      tone: 'success',
+      group: 'running',
+    });
+  });
+
+  it('turns Approved into Running once the consumer step started', () => {
+    const state = artifactStateOf({
+      ...NO_PLAN,
+      kind: 'plan',
+      status: 'consumed',
+      isNew: false,
+      handoff: 'none',
+      progress: { kind: 'running', part: 1, total: 2 },
+      partCount: 2,
+      hasPartAgents: true,
+    });
+    expect(state).toMatchObject({ key: 'running', label: 'Running' });
+  });
+
+  it('keeps a question above Approved', () => {
+    const state = artifactStateOf({
+      ...NO_PLAN,
+      kind: 'plan',
+      status: 'active',
+      isNew: false,
+      handoff: 'approved-waiting',
+      openQuestionCount: 1,
+    });
+    expect(state).toMatchObject({ key: 'needs' });
   });
 
   it('puts a plan with open questions under Needs you', () => {
@@ -264,6 +308,8 @@ describe('the list and the document agree', () => {
       artifacts: [],
       generations: [],
       agents,
+      runs: [],
+      templates: [],
       openQuestionCount: 0,
       askingAgentIds: NO_ASKING,
       revising: new Map(),

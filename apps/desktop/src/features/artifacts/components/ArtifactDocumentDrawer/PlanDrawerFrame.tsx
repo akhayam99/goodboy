@@ -89,6 +89,7 @@ export const PlanDrawerFrame = ({ sessionId, model, revision, onClose }: Props) 
   const reason = planDrawerReasonOf({
     isEditing: editor.isEditing,
     primary: action.primary,
+    state,
     drafts: action.drafts,
     editBlock: editAction?.blockedReason ?? null,
   });
