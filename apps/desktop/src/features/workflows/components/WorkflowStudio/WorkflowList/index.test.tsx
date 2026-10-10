@@ -117,8 +117,8 @@ describe('WorkflowList', () => {
         onRestore={onRestore}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Restore built-in workflows/ }));
+    expect(screen.queryByRole('button', { name: 'Workflow actions' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Restore built-in workflows' }));
     const confirm = screen.getByRole('group', {
       name: 'Restore built-in workflows in Harborline?',
     });
@@ -130,7 +130,7 @@ describe('WorkflowList', () => {
     await vi.waitFor(() => expect(onRestore).toHaveBeenCalledWith(['plan-and-ship', 'fix-a-bug']));
   });
 
-  it('disables the restore when every built-in is unchanged', () => {
+  it('shows no restore button when every built-in is unchanged', () => {
     const workflows = WORKFLOW_LIBRARY.map((entry) =>
       seeded({
         id: `wf_seed_${entry.slug}_ws-1` as Workflow['id'],
@@ -144,17 +144,13 @@ describe('WorkflowList', () => {
       }),
     );
     renderList(workflows);
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
-    const item = screen.getByRole('menuitem', { name: /Restore built-in workflows/ });
-    expect((item as HTMLButtonElement).disabled).toBe(true);
-    expect(item.textContent).toContain('Built-in workflows are unchanged');
+    expect(screen.queryByRole('button', { name: 'Restore built-in workflows' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Workflow actions' })).toBeNull();
   });
 
-  it('keeps the restore off when the missing built-ins were never there', () => {
+  it('keeps the restore button off when the missing built-ins were never there', () => {
     renderList([seeded()]);
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
-    const item = screen.getByRole('menuitem', { name: /Restore built-in workflows/ });
-    expect((item as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Restore built-in workflows' })).toBeNull();
   });
 
   it('shows the empty state when there is nothing to list', () => {

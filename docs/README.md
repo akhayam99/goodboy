@@ -109,6 +109,8 @@ Below is the full index. Other docs and agents use it to find their way.
   component's exports, props or ref pattern, or a function's parameters.
 - [typescript/control-flow.md](typescript/control-flow.md): when you
   structure conditionals, branches or early returns.
+- [typescript/state-writes.md](typescript/state-writes.md): when you write a
+  store action, a navigation address, a loader, an undo or a retry.
 - [typescript/readability.md](typescript/readability.md): when you name a
   variable or callback, or feel like adding a code comment.
 - [testing.md](testing.md): when you write or review tests, and how to
@@ -153,6 +155,9 @@ only when your task reaches the case it covers.
   window event, or open a studio from another feature.
 - [query-bridge.md](query-bridge.md): when you change what an agent can
   ask a connected tool, or how it asks.
+- [hosts.md](hosts.md): when you change what Goodboy does on GitHub, GitLab
+  or Bitbucket, or add a host, like merge methods, link shapes or draft
+  support.
 - [companion.md](companion.md): when you change how a phone pairs, what a
   paired phone may ask for, or when the pairing listener runs.
 - [mounts.md](mounts.md): when you change where a session writes on disk,

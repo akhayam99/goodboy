@@ -1,4 +1,5 @@
 import type { PrComment } from '@goodboy/types';
+import { HOST_CAPABILITIES } from './hostCapabilities';
 import type { PullRequestPort } from './pullRequestPort';
 
 export type ReviewSourceKind = 'github' | 'gitlab' | 'bitbucket' | 'local';
@@ -50,9 +51,9 @@ export type ReviewSource = Readonly<{
 }>;
 
 export const REVIEW_SOURCE_LABEL = {
-  github: 'GitHub',
-  gitlab: 'GitLab',
-  bitbucket: 'Bitbucket',
+  github: HOST_CAPABILITIES.github.label,
+  gitlab: HOST_CAPABILITIES.gitlab.label,
+  bitbucket: HOST_CAPABILITIES.bitbucket.label,
   local: 'this machine',
 } as const satisfies Readonly<Record<ReviewSourceKind, string>>;
 

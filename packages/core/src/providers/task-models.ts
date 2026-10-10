@@ -12,8 +12,9 @@ import { PROVIDER_CAPABILITIES } from './capabilities';
 import { clampEffortForModel } from './clampEffortForModel';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
-import { providerStanding } from './autoRouting/providerCandidates';
-import { resolveAuto, type AutoContext } from './autoRouting/resolveAuto';
+import { unusableReason } from './autoRouting/providerCandidates';
+import { resolveAuto, type AutoContext, type AutoPick } from './autoRouting/resolveAuto';
+import type { SkippedChoice } from './resolve/types';
 import type { HiddenModels } from './modelVisibility';
 
 type EffortParams = {
@@ -57,7 +58,7 @@ type AutomaticParams = {
   readonly auto: AutoContext;
 };
 
-const automaticTaskModel = ({ task, auto }: AutomaticParams): TaskModelPreference => {
+const automaticTaskPick = ({ task, auto }: AutomaticParams): AutoPick => {
   const pick =
     resolveAuto({ slot: { kind: 'task', id: task }, ...auto }) ??
     resolveAuto({
@@ -68,14 +69,16 @@ const automaticTaskModel = ({ task, auto }: AutomaticParams): TaskModelPreferenc
   if (pick == null) {
     throw new Error(`no automatic model for task ${task} on ${auto.defaultProvider}`);
   }
-  return {
-    providerId: pick.provider,
-    model: pick.model,
-    ...(pick.effort != null && { effort: pick.effort }),
-  };
+  return pick;
 };
 
-const preferredTaskModel = ({
+const preferenceOfPick = (pick: AutoPick): TaskModelPreference => ({
+  providerId: pick.provider,
+  model: pick.model,
+  ...(pick.effort != null && { effort: pick.effort }),
+});
+
+export const preferredTaskModel = ({
   task,
   preference,
   defaultProviderId,
@@ -109,14 +112,63 @@ const preferredTaskModel = ({
   };
 };
 
-type UsableParams = {
-  readonly provider: ProviderId;
+export type TaskModelTrace = Readonly<{
+  model: TaskModelPreference;
+  via: 'pin' | 'backup' | 'auto';
+  pick: AutoPick | null;
+  skipped: ReadonlyArray<SkippedChoice>;
+}>;
+
+type TraceParams = {
+  readonly task: AuxTaskId;
+  readonly preferences: TaskModelPreferences | null | undefined;
   readonly auto: AutoContext;
 };
 
-const isUsable = ({ provider, auto }: UsableParams): boolean => {
-  const standing = providerStanding({ provider, context: auto });
-  return standing !== 'off' && standing !== 'not-connected';
+const skippedOf = (
+  preference: TaskModelPreference | TaskModelFallback,
+  reason: SkippedChoice['reason'],
+): SkippedChoice => ({ provider: preference.providerId, model: preference.model, reason });
+
+export const traceTaskModel = ({ task, preferences, auto }: TraceParams): TaskModelTrace => {
+  const defaultProviderId = auto.defaultProvider;
+  const preference = preferences?.[task];
+  const preferred =
+    preference == null ? null : preferredTaskModel({ task, preference, defaultProviderId });
+  const preferredReason =
+    preferred == null ? null : unusableReason({ provider: preferred.providerId, context: auto });
+  if (preferred != null && preferredReason === null) {
+    return { model: preferred, via: 'pin', pick: null, skipped: [] };
+  }
+  const skipped: ReadonlyArray<SkippedChoice> =
+    preference == null
+      ? []
+      : [skippedOf(preference, preferred == null ? 'unknown-model' : (preferredReason ?? 'off'))];
+  const fallback =
+    preferred == null || preference?.fallback == null
+      ? null
+      : preferredTaskModel({ task, preference: preference.fallback, defaultProviderId });
+  const fallbackReason =
+    fallback == null ? null : unusableReason({ provider: fallback.providerId, context: auto });
+  if (fallback != null && fallbackReason === null) {
+    return { model: fallback, via: 'backup', pick: null, skipped };
+  }
+  const fallbackSkipped =
+    preference?.fallback == null || preferred == null
+      ? []
+      : [
+          skippedOf(
+            preference.fallback,
+            fallback == null ? 'unknown-model' : (fallbackReason ?? 'off'),
+          ),
+        ];
+  const pick = automaticTaskPick({ task, auto });
+  return {
+    model: preferenceOfPick(pick),
+    via: 'auto',
+    pick,
+    skipped: [...skipped, ...fallbackSkipped],
+  };
 };
 
 export const resolveTaskModel = ({
@@ -141,18 +193,5 @@ export const resolveTaskModel = ({
     ...(hiddenModels != null && { hidden: hiddenModels }),
     ...(cliVersions != null && { cliVersions }),
   };
-  const preference = preferences?.[task];
-  const preferred =
-    preference == null ? null : preferredTaskModel({ task, preference, defaultProviderId });
-  if (preferred != null && isUsable({ provider: preferred.providerId, auto })) {
-    return preferred;
-  }
-  const fallback =
-    preferred == null || preference?.fallback == null
-      ? null
-      : preferredTaskModel({ task, preference: preference.fallback, defaultProviderId });
-  if (fallback != null && isUsable({ provider: fallback.providerId, auto })) {
-    return fallback;
-  }
-  return automaticTaskModel({ task, auto });
+  return traceTaskModel({ task, preferences, auto }).model;
 };

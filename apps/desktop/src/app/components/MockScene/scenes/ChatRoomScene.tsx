@@ -19,7 +19,7 @@ import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 const noop = () => undefined;
 
-const CONSENT_CHAT_ID = `mock-chat-${WORKSPACE_ID}-consent` as ChatId;
+export const CONSENT_CHAT_ID = `mock-chat-${WORKSPACE_ID}-consent` as ChatId;
 
 const CLAUDE: ProviderDisplayInfo = {
   id: 'anthropic',

@@ -88,7 +88,10 @@ pub async fn open_in_editor(path: String, editor: Option<String>) -> Result<(), 
         .map_err(|e| EditorError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn open_in_editor_blocking(path: String, editor: Option<String>) -> Result<(), EditorError> {
+pub(crate) fn open_in_editor_blocking(
+    path: String,
+    editor: Option<String>,
+) -> Result<(), EditorError> {
     let binary = editor.unwrap_or_else(|| DEFAULT_EDITOR.to_string());
 
     // Resolve to absolute canonical path so editors load it as a workspace folder

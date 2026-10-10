@@ -103,7 +103,25 @@ beforeEach(() => {
   state.clearNotifications.mockClear();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+  vi.unstubAllGlobals();
+});
+
+const stubPaneWidth = (width: number): void => {
+  class StubObserver {
+    private readonly callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
+    constructor(callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void) {
+      this.callback = callback;
+    }
+    observe() {
+      this.callback([{ contentRect: { width } }]);
+    }
+    disconnect() {}
+  }
+  vi.stubGlobal('ResizeObserver', StubObserver);
+};
 
 describe('NotificationsStudio', () => {
   it('renders repeated notifications as one row with a count badge', () => {
@@ -421,9 +439,80 @@ describe('NotificationsStudio', () => {
 
     fireEvent.click(within(openFilterRail()).getByRole('button', { name: /warnings/i }));
     expect(screen.getByRole('heading', { name: 'No notifications match' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Filters/ }).textContent).toContain('1');
+    expect(
+      within(openFilterRail())
+        .getByRole('button', { name: /warnings/i })
+        .getAttribute('aria-current'),
+    ).toBe('true');
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
     expect(screen.getByText('Summarizer failed')).toBeDefined();
+  });
+
+  it('docks the facets in a rail beside the list, with no Filters button', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    const rail = screen.getByRole('complementary', { name: 'Notification filters' });
+    expect(within(rail).getByRole('navigation', { name: 'Filter notifications' })).toBeDefined();
+    expect(within(rail).getByRole('group', { name: 'Severity' })).toBeDefined();
+    expect(within(rail).getByRole('region', { name: 'Workspace' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Notifications' })).toBeDefined();
+  });
+
+  it('keeps the page title whichever view is picked', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    fireEvent.click(within(openFilterRail()).getByRole('button', { name: /^unread/i }));
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Notifications' })).toBeDefined();
+  });
+
+  it('reads the rail width saved under the notifications key', () => {
+    localStorage.setItem('goodboy:studio-rail-width:notifications:v1', '300');
+    renderStudio();
+
+    expect(
+      screen
+        .getByRole('separator', { name: 'Resize notification filters' })
+        .getAttribute('aria-valuenow'),
+    ).toBe('300');
+  });
+
+  it('folds the rail under 880 into one Filters button that opens the same facets', () => {
+    stubPaneWidth(800);
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'error', title: 'Error row' }),
+        buildNotification({ id: 'warning', title: 'Warning row', severity: 'warning' }),
+      ],
+    });
+    renderStudio();
+
+    expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }));
+    const popover = screen.getByRole('dialog', { name: 'Notification filters' });
+    fireEvent.click(within(popover).getByRole('button', { name: /warnings/i }));
+
+    expect(screen.getByRole('button', { name: 'Filters, 1 active' })).toBeDefined();
+    expect(screen.getByText('Warning row')).toBeDefined();
+    expect(screen.queryByText('Error row')).toBeNull();
+  });
+
+  it('folds the rail from its first row and docks it again', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fold the rail' }));
+
+    expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
+    expect(localStorage.getItem('goodboy:studio-rail-folded:notifications:v1')).toBe('1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dock the filters' }));
+
+    expect(screen.getByRole('complementary', { name: 'Notification filters' })).toBeDefined();
   });
 });

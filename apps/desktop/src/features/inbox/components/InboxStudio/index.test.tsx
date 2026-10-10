@@ -348,7 +348,22 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  vi.unstubAllGlobals();
 });
+
+const stubPaneWidth = (width: number): void => {
+  class StubObserver {
+    private readonly callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
+    constructor(callback: (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void) {
+      this.callback = callback;
+    }
+    observe() {
+      this.callback([{ contentRect: { width } }]);
+    }
+    disconnect() {}
+  }
+  vi.stubGlobal('ResizeObserver', StubObserver);
+};
 
 describe('InboxStudio', () => {
   it('names its close control after the Tasks page', () => {
@@ -428,7 +443,7 @@ describe('InboxStudio', () => {
         .closest('[data-inbox-key]')
         ?.hasAttribute('data-cursor'),
     ).toBe(false);
-    expect(document.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-inbox-key][data-selected="true"]')).toHaveLength(0);
   });
 
   it('opens the drawer on a click, with the row selected', () => {
@@ -777,5 +792,92 @@ describe('InboxStudio', () => {
     expect(detailText()).toBe('GBY-1');
     expect(screen.getByText('TypeError boom')).toBeDefined();
     expect(screen.queryByText('Ship the inbox')).toBeNull();
+  });
+
+  it('docks the facets in a rail beside the list, with no Filters button', () => {
+    renderStudio();
+
+    const rail = screen.getByRole('complementary', { name: 'Task filters' });
+    expect(within(rail).getByRole('navigation', { name: 'Filter tasks' })).toBeDefined();
+    expect(within(rail).getByRole('searchbox', { name: 'Search tasks' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Task filters' })).toBeNull();
+  });
+
+  it('keeps the page title Tasks whichever view is picked, and names the view in the rail', () => {
+    renderStudio();
+
+    fireEvent.click(facet('View', /^In progress/));
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Tasks' })).toBeDefined();
+    expect(facet('View', /^In progress/).getAttribute('aria-current')).toBe('true');
+  });
+
+  it('reads the rail width saved under the inbox key', () => {
+    localStorage.setItem('goodboy:studio-rail-width:inbox:v1', '340');
+
+    renderStudio();
+
+    expect(
+      screen.getByRole('separator', { name: 'Resize task filters' }).getAttribute('aria-valuenow'),
+    ).toBe('340');
+  });
+
+  it('keeps counts and filtering the same when the facets sit in the rail', () => {
+    renderStudio();
+
+    fireEvent.click(facet('Type', /Errors/));
+
+    expect(facet('Type', /Errors/).textContent).toContain('1');
+    expect(screen.getByText('TypeError boom')).toBeDefined();
+    expect(screen.queryByText('Ship the inbox')).toBeNull();
+  });
+
+  it('folds the rail under 880 into one Filters button that opens the same facets', () => {
+    stubPaneWidth(800);
+
+    renderStudio();
+
+    expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
+    const button = screen.getByRole('button', { name: 'Filters' });
+    expect(screen.getByRole('searchbox', { name: 'Search tasks' })).toBeDefined();
+
+    fireEvent.click(button);
+
+    const popover = screen.getByRole('dialog', { name: 'Task filters' });
+    fireEvent.click(within(popover).getByRole('button', { name: /GitHub/ }));
+    expect(screen.getByRole('button', { name: 'Filters, 1 active' })).toBeDefined();
+    expect(screen.getByText('Fix the flaky test')).toBeDefined();
+    expect(screen.queryByText('Ship the inbox')).toBeNull();
+  });
+
+  it('folds the rail from its first row, remembers it, and docks it again', () => {
+    const first = renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fold the rail' }));
+
+    expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
+    expect(localStorage.getItem('goodboy:studio-rail-folded:inbox:v1')).toBe('1');
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeDefined();
+
+    first.unmount();
+    renderStudio();
+
+    expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dock the filters' }));
+
+    expect(screen.getByRole('complementary', { name: 'Task filters' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
+  });
+
+  it('cannot dock a rail the pane has no room for', () => {
+    localStorage.setItem('goodboy:studio-rail-folded:inbox:v1', '1');
+    stubPaneWidth(800);
+
+    renderStudio();
+
+    expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Filters' })).toBeDefined();
   });
 });

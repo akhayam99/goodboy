@@ -27,6 +27,7 @@ import { buildIssueGroups } from '../../../../../features/integrations/linear/Li
 import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
 import { StudioFrame } from '../StudioFrame';
 import { seedStudioChrome } from '../shellChrome';
+import { LINEAR_PICKER_ANSWERS } from '../linearPickerAnswers';
 
 type Variant = 'issue' | 'review';
 
@@ -182,6 +183,10 @@ export const startInboxIpc = ({
   if (command === 'linear_fetch_issue_comments') {
     return [];
   }
+  const pickerAnswer = LINEAR_PICKER_ANSWERS[command];
+  if (pickerAnswer !== undefined) {
+    return pickerAnswer();
+  }
   if (command === 'gh_run') {
     return {
       stdout: isRepoSlugCall({ payload }) ? REPO_SLUG : '[]',
@@ -224,6 +229,36 @@ export const StartInboxScene = ({ variant }: Props) => {
   });
   const selected = visible[0] ?? null;
 
+  const facets = (
+    <InboxFacetRail
+      filters={NO_INBOX_FILTERS}
+      counts={inboxFacetCounts({
+        records: [...records],
+        query: '',
+        filters: NO_INBOX_FILTERS,
+      })}
+      connected={CONNECTED}
+      loading={NOT_LOADING}
+      errors={NO_ERRORS}
+      projects={[]}
+      canReply={recordCanReply({ record: selected })}
+      onFiltersChange={noop}
+      onClearFilters={noop}
+    />
+  );
+
+  const header = {
+    query: '',
+    onQueryChange: noop,
+    searchRef,
+    sessionLabel: null,
+    onClearSession: noop,
+    isRefreshing: false,
+    onRefresh: noop,
+    activeFilterCount: activeFilterCount({ filters: NO_INBOX_FILTERS }),
+    facets,
+  };
+
   return (
     <StudioFrame
       target={{ place: 'inbox', tool: null }}
@@ -237,38 +272,18 @@ export const StartInboxScene = ({ variant }: Props) => {
         >
           {() => (
             <InboxStudioLayout
-              list={
+              rail={facets}
+              railHeader={<InboxListHeader {...header} isRailCollapsed={false} isSearchOnly />}
+              list={({ isRailCollapsed, onDock }) => (
                 <PaneShell
                   scroll="body"
                   title="Tasks"
                   meta={`${visible.length} items`}
                   actions={
                     <InboxListHeader
-                      query=""
-                      onQueryChange={noop}
-                      searchRef={searchRef}
-                      sessionLabel={null}
-                      onClearSession={noop}
-                      isRefreshing={false}
-                      onRefresh={noop}
-                      activeFilterCount={activeFilterCount({ filters: NO_INBOX_FILTERS })}
-                      facets={
-                        <InboxFacetRail
-                          filters={NO_INBOX_FILTERS}
-                          counts={inboxFacetCounts({
-                            records: [...records],
-                            query: '',
-                            filters: NO_INBOX_FILTERS,
-                          })}
-                          connected={CONNECTED}
-                          loading={NOT_LOADING}
-                          errors={NO_ERRORS}
-                          projects={[]}
-                          canReply={recordCanReply({ record: selected })}
-                          onFiltersChange={noop}
-                          onClearFilters={noop}
-                        />
-                      }
+                      {...header}
+                      isRailCollapsed={isRailCollapsed}
+                      onDock={onDock}
                     />
                   }
                 >
@@ -290,7 +305,7 @@ export const StartInboxScene = ({ variant }: Props) => {
                     onClearFilters={noop}
                   />
                 </PaneShell>
-              }
+              )}
               drawer={
                 selected === null ? null : (
                   <InboxDetail

@@ -1,16 +1,19 @@
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   CALL_TIMEOUT_MS,
   DevToolsTimeoutError,
   WARM_UP_TIMEOUT_MS,
   failingScenes,
+  failureLines,
   measureScene,
   readDevToolsPort,
   summaryLine,
 } from './validateScenesBrowser.mjs';
+import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 
 const CHROME =
   process.env.VALIDATE_CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -37,6 +40,21 @@ const WARM_UP_POLL_BUDGET_MS = 80_000;
 const CLOSE_GRACE_MS = 5_000;
 const FRAME_FALLBACK_MS = 100;
 const CLICK_PATIENCE_MS = 8000;
+const CONFIRM_VARIANTS = ['notifications', 'sessiondelete', 'chatrow', 'rich', 'activity', 'note'];
+const ARM_SETTLE_MS = 250;
+const LAYOUT_TOLERANCE_PX = 0.5;
+const MENU_SCENE_SETTLE_MS = 100;
+const MENU_PROBE_PARAMS = {
+  openMs: 1500,
+  closeMs: 800,
+  bootMs: 15_000,
+  perKind: 3,
+  maxTriggers: 60,
+  budgetMs: 40_000,
+};
+const SCENE_LIST = fileURLToPath(
+  new URL('../apps/desktop/src/app/components/MockScene/scenes.txt', import.meta.url),
+);
 
 const args = Object.fromEntries(
   process.argv
@@ -167,10 +185,10 @@ const run = async (send, fn, argument, timeoutMs = CALL_TIMEOUT_MS) => {
   return result.result?.result?.value;
 };
 
-const attemptOpen = async ({ send, scene, readySelector }) => {
+const attemptOpen = async ({ send, scene, readySelector, settleMs }) => {
   try {
     await send('Page.navigate', { url: `${app}/?scene=${scene}&brand=1` });
-    await pause(wait);
+    await pause(settleMs);
     return await run(
       send,
       async (selector) => {
@@ -195,6 +213,7 @@ const open = async ({
   zoom,
   height = HEIGHT,
   readySelector = '[data-row-id]',
+  settleMs = wait,
 }) => {
   await send('Emulation.setDeviceMetricsOverride', {
     width: Math.round(width / zoom),
@@ -204,7 +223,7 @@ const open = async ({
   });
   await send('Page.enable');
   for (let attempt = 0; attempt < OPEN_ATTEMPTS; attempt += 1) {
-    const isReady = await attemptOpen({ send, scene, readySelector });
+    const isReady = await attemptOpen({ send, scene, readySelector, settleMs });
     if (isReady) return;
   }
 };
@@ -624,6 +643,104 @@ const measureWorkflow = async ({ send, target }) => {
   return { failures, wraps: 0 };
 };
 
+const confirmLayoutProbe = async ({ settleMs, tolerance }) => {
+  const pausePage = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+  const snapshot = () => ({
+    height: document.documentElement.scrollHeight,
+    slots: [...document.querySelectorAll('[data-slot]')]
+      .filter((element) => element.closest('[data-dropdown-portal]') === null)
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          name: element.dataset.slot,
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+        };
+      }),
+  });
+  const differences = ({ before, after }) => {
+    if (Math.abs(before.height - after.height) > tolerance) return ['scroll height'];
+    if (before.slots.length !== after.slots.length) return ['slot count'];
+    return before.slots.flatMap((slot, index) => {
+      const next = after.slots[index];
+      const hasMoved = ['left', 'top', 'width', 'height'].some(
+        (key) => Math.abs(slot[key] - next[key]) > tolerance,
+      );
+      return hasMoved ? [slot.name] : [];
+    });
+  };
+  const results = [];
+  for (const trigger of document.querySelectorAll('[data-confirm-trigger]')) {
+    const before = snapshot();
+    trigger.click();
+    await pausePage(settleMs);
+    const isArmed = document.querySelector('[data-dropdown-portal] [role="dialog"]') !== null;
+    const after = snapshot();
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }),
+    );
+    await pausePage(settleMs);
+    results.push({
+      trigger: trigger.getAttribute('aria-label') ?? (trigger.textContent ?? '').trim(),
+      isArmed,
+      changed: differences({ before, after }),
+    });
+  }
+  return results;
+};
+
+const measureConfirmPopover = async ({ send, variant }) => {
+  const scene = `confirmpopover&v=${variant}`;
+  const failures = [];
+  await open({ send, scene, width: WIDTHS[0], zoom: 1, readySelector: '[data-confirm-trigger]' });
+  const results = await run(send, confirmLayoutProbe, {
+    settleMs: ARM_SETTLE_MS,
+    tolerance: LAYOUT_TOLERANCE_PX,
+  });
+  const broken = results.filter((result) => !result.isArmed || result.changed.length > 0);
+  if (results.length === 0 || broken.length > 0) {
+    failures.push({
+      scene,
+      check: 'arming a confirm moves the page or opens no popover',
+      triggers: results.length,
+      broken,
+    });
+  }
+  console.log(`${scene}: ${results.length} confirms armed, ${broken.length} moved the page`);
+  return { failures, wraps: 0 };
+};
+
+const measureMenuRows = async ({ send, scene }) => {
+  const startedAt = Date.now();
+  await open({
+    send,
+    scene,
+    width: WIDTHS[0],
+    zoom: 1,
+    readySelector: 'body',
+    settleMs: MENU_SCENE_SETTLE_MS,
+  });
+  const probe = await run(send, menuRowsProbe, MENU_PROBE_PARAMS);
+  console.log(
+    `${scene}: ${probe.tested} of ${probe.total} menu triggers opened in ${Date.now() - startedAt}ms`,
+  );
+  return { failures: menuRowsFailures({ scene, probe }), wraps: 0 };
+};
+
+const sceneIds = () =>
+  readFileSync(SCENE_LIST, 'utf8')
+    .split('\n')
+    .filter((id) => id !== '');
+
+const menuScenes = ({ only: filter }) => {
+  const ids = sceneIds();
+  if (filter === undefined || filter === 'menus') return ids;
+  const wanted = filter.split(',');
+  return ids.filter((id) => wanted.includes(id));
+};
+
 const main = async () => {
   const failures = [];
   let crash = null;
@@ -663,16 +780,30 @@ const main = async () => {
       : []) {
       await measure({ scene: target.scene, task: () => measureWorkflow({ send, target }) });
     }
+    for (const variant of only === undefined || only === 'confirm' ? CONFIRM_VARIANTS : []) {
+      await measure({
+        scene: `confirmpopover&v=${variant}`,
+        task: () => measureConfirmPopover({ send, variant }),
+      });
+    }
+    for (const scene of menuScenes({ only })) {
+      await measure({ scene, task: () => measureMenuRows({ send, scene }) });
+    }
   } catch (error) {
     crash = error;
   } finally {
     await session.close();
   }
   console.log(summaryLine({ scenes: failingScenes({ failures, error: crash }) }));
-  if (crash !== null) throw crash;
   if (failures.length > 0) {
     console.error(JSON.stringify(failures, null, 2));
     console.error(`validate-scenes failed: ${failures.length} checks`);
+    for (const line of failureLines({ failures })) {
+      console.error(line);
+    }
+  }
+  if (crash !== null) throw crash;
+  if (failures.length > 0) {
     process.exitCode = 1;
     return;
   }

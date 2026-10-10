@@ -137,6 +137,7 @@ export const FileHeader = ({
         target={target}
         label={`More actions for ${file.path}`}
         anchorKey={`diff-file:${file.path}`}
+        hideWhenEmpty
       />
     </div>
   );

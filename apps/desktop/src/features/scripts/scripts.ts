@@ -52,6 +52,7 @@ export type LiveScriptRun = {
   readonly scriptId: string;
   readonly name: string;
   readonly sessionId: SessionId;
+  readonly pid: number | null;
   readonly startedAt: number;
 };
 

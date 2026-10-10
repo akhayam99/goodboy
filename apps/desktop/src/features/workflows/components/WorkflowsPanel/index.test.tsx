@@ -155,11 +155,11 @@ const openMenuItem = (name: string) => {
 };
 
 describe('WorkflowsPanel home', () => {
-  it('shows one primary, one import and one menu in the header', () => {
+  it('shows one primary and one import in the header, and no menu of one', () => {
     renderPanel();
     expect(screen.getByRole('button', { name: /new workflow/i })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Workflow actions' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Workflow actions' })).toBeNull();
     expect(screen.getByText(/no workflows yet/i)).toBeDefined();
   });
 
@@ -183,12 +183,10 @@ describe('WorkflowsPanel home', () => {
     expect(screen.queryByText('Draft workflow')).toBeNull();
   });
 
-  it('keeps the restore off in a workspace that never had the built-ins', () => {
+  it('keeps the restore button off in a workspace that never had the built-ins', () => {
     removed.ids = new Set();
     renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
-    const item = screen.getByRole('menuitem', { name: /Restore built-in workflows/ });
-    expect((item as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Restore built-in workflows' })).toBeNull();
   });
 });
 
@@ -241,6 +239,15 @@ describe('WorkflowsPanel editor', () => {
       description: 'Replay settled batches behind a dry run flag',
       workflow: null,
     });
+  });
+
+  it('draws a new workflow with a visible Discard and no menu of one', () => {
+    connectProvider();
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /new workflow/i }));
+
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Workflow actions' })).toBeNull();
   });
 
   it('asks before redrafting existing steps', async () => {

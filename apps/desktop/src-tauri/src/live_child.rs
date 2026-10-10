@@ -6,6 +6,7 @@ use std::sync::mpsc::{channel, RecvTimeoutError};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+use crate::proc::ledger::{self, LedgerContext};
 use crate::proc::reap::{reap, tree_cpu, ReapParams, StoppedProcess};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -60,6 +61,8 @@ pub struct LiveChild {
     pub spawn_id: Option<String>,
     pub activity: Activity,
     pub is_timed_out: Arc<AtomicBool>,
+    #[cfg(windows)]
+    job: Option<Arc<crate::process_group::Job>>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -77,6 +80,8 @@ impl LiveChild {
     pub fn new(child: Child) -> Self {
         Self {
             pid: child.id(),
+            #[cfg(windows)]
+            job: crate::process_group::Job::assign(&child).map(Arc::new),
             slot: Arc::new(Mutex::new(Some(child))),
             spawn_id: None,
             activity: Activity::new(),
@@ -84,11 +89,13 @@ impl LiveChild {
         }
     }
 
-    pub fn tagged(child: Child, tag: &crate::aux_spawn::SpawnTag) -> Self {
-        Self {
+    pub fn tagged(child: Child, tag: &crate::aux_spawn::SpawnTag, context: LedgerContext) -> Self {
+        let live = Self {
             spawn_id: Some(tag.id.clone()),
             ..Self::new(child)
-        }
+        };
+        ledger::record(tag, live.pid, context);
+        live
     }
 
     pub fn kill(&self) {
@@ -108,7 +115,19 @@ impl LiveChild {
             is_leader_exited: false,
             spawn_id: self.spawn_id.as_deref(),
         });
+        self.terminate_job();
     }
+
+    #[cfg(windows)]
+    fn terminate_job(&self) {
+        let Some(job) = self.job.as_ref() else {
+            return;
+        };
+        job.terminate();
+    }
+
+    #[cfg(not(windows))]
+    fn terminate_job(&self) {}
 
     #[cfg(unix)]
     fn kill_leader_fallback(&self) {}
@@ -184,6 +203,9 @@ fn hold_until_exited(_pid: u32) {}
 
 pub fn wait_and_remove(live: &LiveChild, registry: &LiveChildRegistry, key: &str) -> Exited {
     let exited = wait_and_reap(live);
+    if let Some(spawn_id) = live.spawn_id.as_deref() {
+        ledger::forget(spawn_id);
+    }
     if let Ok(mut map) = registry.lock() {
         map.remove(key);
     }
@@ -626,6 +648,50 @@ mod tests {
             "the leader outlived the kill",
         );
         assert!(crate::proc::reap::unix::test_support::is_gone(sleeper));
+    }
+
+    #[test]
+    fn a_tagged_child_is_in_the_ledger_until_it_is_reaped() {
+        use crate::aux_spawn::{tag_spawn, SpawnKind};
+        use crate::proc::ledger::{process_ledger_list, test_support::scratch_dir};
+        let registry: LiveChildRegistry = Arc::new(Mutex::new(HashMap::new()));
+        let dir = scratch_dir("turn");
+        let mut command = std::process::Command::new("sleep");
+        command.arg("30").current_dir(&dir);
+        let tag = tag_spawn(&mut command, SpawnKind::Turn);
+        crate::process_group::isolate(&mut command);
+        let child = command.spawn().expect("spawn sleep");
+        let live = LiveChild::tagged(
+            child,
+            &tag,
+            LedgerContext {
+                session_id: Some("session-5".to_string()),
+                mount_path: Some("/work/ledger-core".to_string()),
+                ..LedgerContext::from_command(&command)
+            },
+        );
+        register(&registry, "turn-1", &live);
+
+        let rows: Vec<_> = process_ledger_list()
+            .into_iter()
+            .filter(|row| row.spawn_id == tag.id)
+            .collect();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].kind, "turn");
+        assert_eq!(rows[0].pid, live.pid);
+        assert_eq!(rows[0].pgid, Some(live.pid));
+        assert_eq!(rows[0].session_id.as_deref(), Some("session-5"));
+        assert_eq!(rows[0].mount_path.as_deref(), Some("/work/ledger-core"));
+        assert_eq!(rows[0].cwd.as_deref(), Some(dir.to_string_lossy().as_ref()));
+
+        let waiter = spawn_waiter(&registry, "turn-1", &live);
+        assert!(kill_one(&registry, "turn-1"));
+        assert_waiter_returns(waiter, Duration::from_secs(3), "the turn outlived the kill");
+
+        assert!(!process_ledger_list()
+            .iter()
+            .any(|row| row.spawn_id == tag.id));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

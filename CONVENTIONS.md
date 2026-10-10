@@ -67,17 +67,18 @@ Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md)
 
 ## Pre-commit hooks (Lefthook)
 
-- `pre-commit`: `prettier --write` on staged files, then stage them again. No eslint step, because the repo has no eslint config.
+- `pre-commit`: `prettier --write` on staged files, then stage them again, then `check:rules` on the staged files. The typed lint (see [Typed lint](#typed-lint)) is not a hook: it takes about a minute, so `pnpm gate:quick` and CI run it.
 - `commit-msg`: `commitlint`.
 - No tests in pre-commit (too slow). Tests run in CI. Run `pnpm gate:quick` before each commit instead (see [CI parity](#ci-parity)).
 
 ## CI pipeline
 
-`.github/workflows/ci.yml` runs six kinds of job. The required check is the `gate` job; its name, `lint + typecheck + test + build`, is historical, because the repo has no linter. It passes only when every other job passed. A warning never counts as green.
+`.github/workflows/ci.yml` runs six kinds of job. The required check is the `gate` job; its name, `lint + typecheck + test + build`, is historical. It passes only when every other job passed. A warning never counts as green.
 
 - `changes`: on a pull request it diffs `HEAD^1..HEAD` on the merge ref (`scripts/ci-changes.mjs`). The tests are skipped only when every changed path is inert: `docs/**` except `docs/changelog/**` and `docs/features/**` (scripts read them), `website/**` except the four files `brand-mark-is-centered-in-its-tile.test.ts` reads (`website/src/components/Logo.tsx`, `website/src/styles.css`, `website/public/favicon.svg`, `website/scripts/build-brand-assets.mjs`), the images in `.github/` and the pull request template. `scripts/ci-changes.test.mjs` scans every test under `apps/desktop/src` and `packages/*/src` for `join` and `resolve` calls into `website` or `docs` and fails when one of those paths counts as inert, so a new test that reads the site cannot be skipped silently. Markdown is not inert by itself: `CHANGELOG.md` is imported as code and tests read it. A push to `main`, a merge group, an empty diff or an unreadable diff runs everything. The workflow has `permissions: contents: read` and also triggers on `merge_group`.
 - `checks`: always runs, one job, in this order. Every step blocks except `audit`.
   - `typecheck`: `turbo run typecheck`, `tsc --noEmit` in each package. The typecheck tasks run in parallel; each depends on the package's `transit` task (`turbo.json`), which chains to the `transit` of every dependency and has no script. That keeps a changed exported type in `core` in the desktop typecheck hash, so turbo never replays an old green. Do not swap it for `^typecheck` (serial) or drop it (stale cache).
+  - `typed lint`: `pnpm run lint:ts`, ESLint with type information over `apps/desktop/src`, `packages/*/src` and `website/src`. See [Typed lint](#typed-lint).
   - `tauri commands`: `check:tauri-commands`. Every frontend `invoke` name is registered in `generate_handler!`, and every registered command is invoked somewhere.
   - `doc refs`: `check:doc-refs`. Outside fenced code, every relative link in a tracked doc must resolve, every backticked repo path must exist, and every backticked PascalCase, camelCase or SCREAMING_SNAKE name must occur in tracked source. It also checks the current feature index, area files, legacy anchors and ownership table. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract. Each allowlist entry carries a reason: `vocabulary` for words that are not code, `stale` for a known dead reference that another change removes. An unused entry fails, so the list only shrinks.
   - `script tests`: `test:scripts`, `node --test` over the scripts, including the gate and the change classifier.
@@ -99,19 +100,35 @@ Outside `ci.yml`, `website.yml` builds `website/` (`pnpm install --ignore-worksp
 
 `scripts/gate.sh` runs the CI steps on your machine. `pnpm gate` is the full gate and prints `gate ok` or `gate failed at <step>: <log>`, with the logs under `.gate-logs/`. `pnpm gate:quick` is the two-minute version for the changed files: run it before each commit, and run the full gate before you push. `GATE_BASE` (default `origin/main`) sets the base, `GATE_WORKERS` (default 3) the vitest workers, and `CARGO_TARGET_DIR` from the environment is honored. `scripts/gate.test.mjs` fails when a command of the `checks`, `commits` or `rust` jobs is missing from the full gate.
 
-| Local step (`scripts/gate.sh`)                                         | CI job and step                                              |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `commits`: commitlint on `origin/main..HEAD`                           | `commits`: commit messages, pull request title               |
-| `prettier`: prettier `--check` on files changed against the base       | `checks`: formatting of changed files                        |
-| `rules`, `baselines`: `check:rules`, `check:baselines`                 | `checks`: forbidden patterns, baselines only fall            |
-| `typecheck`, `website-drift`, `tauri-commands`, `doc-refs`             | `checks`: the step of the same name                          |
-| `test-scripts`, `knip`, `knip-production`, `test-shards`, `vite-build` | `checks`: script tests, knip, knip production, shards, build |
-| `packages-tests`, `a11y`                                               | `test-packages`                                              |
-| `desktop-unit` (one run, not four shards)                              | `test-desktop`                                               |
-| `cargo-fmt`, `clippy`, `cargo-test` when Rust changed                  | `rust`: fmt, clippy, test                                    |
-| not run locally (`pnpm --dir website build` by hand)                   | `website`                                                    |
+| Local step (`scripts/gate.sh`)                                         | CI job and step                                                |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `commits`: commitlint on `origin/main..HEAD`                           | `commits`: commit messages, pull request title                 |
+| `prettier`: prettier `--check` on files changed against the base       | `checks`: formatting of changed files                          |
+| `rules`, `baselines`: `check:rules`, `check:baselines`                 | `checks`: forbidden patterns, baselines only fall              |
+| `typecheck`, `lint-ts`, `website-drift`, `tauri-commands`, `doc-refs`  | `checks`: typecheck, typed lint, and the step of the same name |
+| `test-scripts`, `knip`, `knip-production`, `test-shards`, `vite-build` | `checks`: script tests, knip, knip production, shards, build   |
+| `packages-tests`, `a11y`                                               | `test-packages`                                                |
+| `desktop-unit` (one run, not four shards)                              | `test-desktop`                                                 |
+| `cargo-fmt`, `clippy`, `cargo-test` when Rust changed                  | `rust`: fmt, clippy, test                                      |
+| not run locally (`pnpm --dir website build` by hand)                   | `website`                                                      |
 
-`pnpm gate:quick` runs `check:rules`, prettier on changed files, the typecheck of the packages that own changed files, the regression folder, `vitest related` for changed files, and `cargo fmt --check` plus `cargo check` when Rust changed.
+`pnpm gate:quick` runs `check:rules`, prettier on changed files, the typecheck of the packages that own changed files, the typed lint on changed files (the whole tree when the lint config, the suppressions file or the lockfile changed), the regression folder, `vitest related` for changed files, and `cargo fmt --check` plus `cargo check` when Rust changed.
+
+## Typed lint
+
+`eslint.config.mjs` at the root is a flat config, type-aware (`projectService`), over `apps/desktop/src`, `packages/*/src` and `website/src`. `pnpm run lint:ts` runs it. It checks seven rules and nothing else; formatting stays with prettier and the forbidden patterns with `check:rules`:
+
+- `@typescript-eslint/strict-boolean-expressions` (a nullable boolean is not a condition).
+- `@typescript-eslint/no-floating-promises` with `ignoreVoid: true`: `void run()` stays legal, a bare promise fails.
+- `@typescript-eslint/naming-convention`: a boolean variable, parameter or prop starts with `is`, `has`, `can`, `should`, `was` or `will`.
+- `@typescript-eslint/switch-exhaustiveness-check`.
+- `@typescript-eslint/consistent-type-assertions` with `assertionStyle: 'never'`: `as const` is the only assertion.
+- `react-hooks/exhaustive-deps`.
+- `regexp/no-super-linear-backtracking`.
+
+The debt that existed when the lint arrived sits in `eslint-suppressions.json`, ESLint's bulk suppressions: one count per file and rule. A new violation fails, a suppressed one passes. The file only falls, and `check:baselines` fails when a count grows like any other baseline. When you fix a suppressed violation ESLint fails with "suppressions left that do not occur" until you run `pnpm run lint:ts --prune-suppressions` and commit the smaller file. Never run `--suppress-all` again. A comment directive is not an option: comments are forbidden. Four test files that share a basename with a `.test.ts` twin (`index.test.tsx` and `useDropdown.test.tsx`) are outside the TypeScript program, so `UNTYPED_TWINS` in the config skips them.
+
+The lint needs a 6 GB heap on the whole tree and takes about a minute; the script sets it.
 
 ## Naming conventions
 

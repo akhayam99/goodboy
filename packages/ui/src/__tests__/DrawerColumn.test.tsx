@@ -3,9 +3,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
-import { DrawerColumn, RIGHT_DRAWER_STORAGE_KEY } from '../components/DrawerColumn';
+import {
+  DrawerColumn,
+  READER_DRAWER_STORAGE_KEY,
+  RIGHT_DRAWER_STORAGE_KEY,
+  type DrawerColumnFrame,
+} from '../components/DrawerColumn';
 import {
   DRAWER_INSET,
+  READER_DRAWER_DEFAULT,
+  READER_DRAWER_MAX,
+  READER_DRAWER_MIN,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
@@ -42,12 +50,13 @@ const renderColumn = (drawer: string | null) =>
     />,
   );
 
-const renderSized = (sizing: DrawerSizing) =>
+const renderSized = (sizing: DrawerSizing, frame: DrawerColumnFrame = 'none') =>
   render(
     <DrawerColumn
       main={<div>main</div>}
       drawer={<div>plan</div>}
       sizing={sizing}
+      frame={frame}
       ariaLabel="Side panel"
       resizeLabel="Resize side panel"
     />,
@@ -57,7 +66,9 @@ const panel = () => screen.getByRole('complementary', { name: 'Side panel' });
 const card = () => panel().querySelector<HTMLElement>('[data-drawer-card]');
 const scrim = () => document.querySelector<HTMLElement>('[data-drawer-scrim]');
 const pageOf = (container: HTMLElement) =>
-  container.querySelector<HTMLElement>('[data-drawer-main]') as HTMLElement;
+  container.querySelector<HTMLElement>('[data-container="page"]') as HTMLElement;
+const handle = () => screen.queryByRole('separator', { name: 'Resize side panel' });
+const handleOf = () => screen.getByRole('separator', { name: 'Resize side panel' });
 
 const cleanups: Array<() => void> = [];
 
@@ -80,8 +91,9 @@ describe('DrawerColumn pushing', () => {
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
     expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET * 2}px`);
+    expect(card()?.dataset['container']).toBe('drawer');
     expect(card()?.className).toContain('rounded-frame');
-    expect(card()?.className).toContain('bg-subtle');
+    expect(card()?.className).toContain('bg-drawer');
     expect(card()?.className).not.toContain('shadow');
   });
 
@@ -89,27 +101,39 @@ describe('DrawerColumn pushing', () => {
     stubColumnWidth(1094);
     renderColumn('drafts');
 
-    expect(card()?.className).toContain('my-2');
-    expect(card()?.className).toContain('mr-2');
+    expect(card()?.parentElement?.className).toContain('py-2');
+    expect(card()?.parentElement?.className).toContain('pr-2');
     expect(card()?.className).toMatch(/(^|\s)border(\s|$)/);
   });
 
-  it('opens a wide drawer at 560 and pushes it when the main area keeps its 560px', () => {
+  it('opens a reader drawer at 720 and pushes it when the page container keeps its room', () => {
     stubColumnWidth(2000);
-    renderSized('half');
+    renderSized('reader');
 
-    expect(panel().getAttribute('data-drawer-sizing')).toBe('half');
+    expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_INSET * 2}px`);
-    expect(screen.queryByRole('separator', { name: 'Resize side panel' })).toBeNull();
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET * 2}px`);
+    expect(handle()).not.toBeNull();
   });
 
-  it('narrows a wide drawer to the room left, so it still pushes', () => {
+  it('never squeezes a reader drawer: with too little room it lies over the page at 720', () => {
     stubColumnWidth(1100);
-    renderSized('half');
+    renderSized('reader');
 
-    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel().style.width).toBe('492px');
+    expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+  });
+
+  it('shows the handle for the side tier and for the reader tier, never for full', () => {
+    stubColumnWidth(2000);
+    const side = renderSized('side');
+    expect(handle()).not.toBeNull();
+    side.unmount();
+    const reader = renderSized('reader');
+    expect(handle()).not.toBeNull();
+    reader.unmount();
+    renderSized('full');
+    expect(handle()).toBeNull();
   });
 
   it('keeps the main content first and on its left edge, open or closed', () => {
@@ -194,9 +218,10 @@ describe('DrawerColumn over the page', () => {
     stubColumnWidth(678);
     renderColumn('drafts');
     const className = card()?.className ?? '';
+    expect(className).toContain('bg-drawer');
 
-    expect(className).not.toContain('my-2');
-    expect(className).not.toContain('mr-2');
+    expect(card()?.parentElement?.className).not.toContain('py-2');
+    expect(card()?.parentElement?.className).not.toContain('pr-2');
     expect(className).toContain('rounded-l-frame');
     expect(className).not.toMatch(/(^|\s)rounded-frame(\s|$)/);
     expect(className).toContain('border-l');
@@ -205,12 +230,16 @@ describe('DrawerColumn over the page', () => {
     expect(className).toContain('shadow-xl');
   });
 
-  it('keeps the wide drawer at 560 over a page too narrow to fit it beside', () => {
+  it('keeps the reader at min(saved, page - 16) over a page too narrow to fit it beside', () => {
     stubColumnWidth(900);
-    renderSized('half');
-
+    renderSized('reader');
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel().style.width).toBe(`${RIGHT_DRAWER_MAX + DRAWER_INSET}px`);
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET}px`);
+    cleanup();
+
+    stubColumnWidth(600);
+    renderSized('reader');
+    expect(panel().style.width).toBe(`${600 - 16 + DRAWER_INSET}px`);
   });
 
   it('fills the whole column when expanded, over the page', () => {
@@ -349,7 +378,7 @@ describe('DrawerColumn over the page', () => {
 });
 
 describe('DrawerColumn sizes', () => {
-  it('shares one saved width, read back clamped to its range', () => {
+  it('reads the side width back clamped to its range', () => {
     stubColumnWidth(2400);
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '900');
     renderColumn('drafts');
@@ -365,7 +394,84 @@ describe('DrawerColumn sizes', () => {
     expect(panel().style.width).toBe(`${RIGHT_DRAWER_MIN + DRAWER_INSET * 2}px`);
   });
 
-  it('saves a resize under the one drawer key', () => {
+  it('keeps the two tiers apart: each reads and writes only its own saved width', () => {
+    stubColumnWidth(2400);
+    localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '500');
+    const side = renderSized('side');
+    expect(panel().style.width).toBe(`${500 + DRAWER_INSET * 2}px`);
+    side.unmount();
+
+    const reader = renderSized('reader');
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET * 2}px`);
+    fireEvent.keyDown(handleOf(), { key: 'ArrowLeft' });
+
+    expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBe(String(READER_DRAWER_DEFAULT + 8));
+    expect(localStorage.getItem(RIGHT_DRAWER_STORAGE_KEY)).toBe('500');
+    reader.unmount();
+
+    renderSized('side');
+    expect(panel().style.width).toBe(`${500 + DRAWER_INSET * 2}px`);
+  });
+
+  it('reads the reader width back clamped to 480 and 1000', () => {
+    stubColumnWidth(2600);
+    localStorage.setItem(READER_DRAWER_STORAGE_KEY, '1500');
+    const high = renderSized('reader');
+    expect(panel().style.width).toBe(`${READER_DRAWER_MAX + DRAWER_INSET * 2}px`);
+    high.unmount();
+
+    localStorage.setItem(READER_DRAWER_STORAGE_KEY, '300');
+    renderSized('reader');
+    expect(panel().style.width).toBe(`${READER_DRAWER_MIN + DRAWER_INSET * 2}px`);
+  });
+
+  it('writes the reader width once, at the end of a drag', () => {
+    stubColumnWidth(2600);
+    renderSized('reader');
+    const setItem = vi.spyOn(localStorage, 'setItem');
+
+    fireEvent.mouseDown(handleOf(), { button: 0, clientX: 1000 });
+    fireEvent.mouseMove(window, { clientX: 900 });
+    fireEvent.mouseMove(window, { clientX: 800 });
+
+    expect(setItem).not.toHaveBeenCalled();
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + 200 + DRAWER_INSET * 2}px`);
+
+    fireEvent.mouseUp(window);
+
+    expect(setItem).toHaveBeenCalledOnce();
+    expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBe(
+      String(READER_DRAWER_DEFAULT + 200),
+    );
+  });
+
+  it('resets the reader to 720 on a double click', () => {
+    stubColumnWidth(2600);
+    localStorage.setItem(READER_DRAWER_STORAGE_KEY, '900');
+    renderSized('reader');
+    expect(panel().style.width).toBe(`${900 + DRAWER_INSET * 2}px`);
+
+    fireEvent.doubleClick(handleOf());
+
+    expect(panel().style.width).toBe(`${READER_DRAWER_DEFAULT + DRAWER_INSET * 2}px`);
+    expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBe(String(READER_DRAWER_DEFAULT));
+  });
+
+  it('stops a reader drag at min(1000, room) while it pushes, so it never flips to overlay', () => {
+    stubColumnWidth(1500);
+    renderSized('reader');
+    const { dragMax } = drawerLayoutOf({ main: 1500, sizing: 'reader', savedWidth: 720 });
+
+    fireEvent.mouseDown(handleOf(), { button: 0, clientX: 1000 });
+    fireEvent.mouseMove(window, { clientX: 0 });
+    fireEvent.mouseUp(window);
+
+    expect(dragMax).toBe(876);
+    expect(panel().getAttribute('data-drawer-mode')).toBe('push');
+    expect(localStorage.getItem(READER_DRAWER_STORAGE_KEY)).toBe(String(dragMax));
+  });
+
+  it('saves a resize under the side drawer key', () => {
     stubColumnWidth(2400);
     renderColumn('drafts');
 
@@ -380,9 +486,9 @@ describe('DrawerColumn sizes', () => {
     stubColumnWidth(2400);
     renderColumn('drafts');
     const setItem = vi.spyOn(localStorage, 'setItem');
-    const handle = screen.getByRole('separator', { name: 'Resize side panel' });
+    const resizer = handleOf();
 
-    fireEvent.mouseDown(handle, { button: 0, clientX: 1000 });
+    fireEvent.mouseDown(resizer, { button: 0, clientX: 1000 });
     Array.from({ length: 50 }).forEach((_, index) =>
       fireEvent.mouseMove(window, { clientX: 1000 - index }),
     );
@@ -401,7 +507,7 @@ describe('DrawerColumn sizes', () => {
     renderColumn('drafts');
     const room = drawerLayoutOf({
       main: 1100,
-      sizing: 'default',
+      sizing: 'side',
       savedWidth: RIGHT_DRAWER_DEFAULT,
     }).dragMax;
     const handle = screen.getByRole('separator', { name: 'Resize side panel' });
@@ -422,11 +528,11 @@ describe('DrawerColumn sizes', () => {
     stubColumnWidth(1100);
     localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, String(RIGHT_DRAWER_MAX));
     renderColumn('drafts');
-    const handle = screen.getByRole('separator', { name: 'Resize side panel' });
+    const resizer = handleOf();
 
-    expect(handle.getAttribute('aria-valuenow')).toBe('476');
-    expect(handle.getAttribute('aria-valuemin')).toBe(String(RIGHT_DRAWER_MIN));
-    expect(handle.getAttribute('aria-valuemax')).toBe('476');
+    expect(resizer.getAttribute('aria-valuenow')).toBe(String(RIGHT_DRAWER_MAX));
+    expect(resizer.getAttribute('aria-valuemin')).toBe(String(RIGHT_DRAWER_MIN));
+    expect(resizer.getAttribute('aria-valuemax')).toBe(String(RIGHT_DRAWER_MAX));
   });
 
   it('lets a drag over the page reach the scale max', () => {
@@ -444,7 +550,7 @@ describe('DrawerColumn sizes', () => {
 
   const FIT_CASES = [1280, 1440].flatMap((windowPx) =>
     [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX].flatMap((sidebarPx) =>
-      (['default', 'half', 'full'] as const).map((sizing) => ({
+      (['side', 'reader', 'full'] as const).map((sizing) => ({
         sizing,
         columnWidth: windowPx - sidebarPx,
       })),
@@ -467,24 +573,100 @@ describe('DrawerColumn sizes', () => {
       const { mode, width } = drawerLayoutOf({
         main: columnWidth,
         sizing,
-        savedWidth: RIGHT_DRAWER_DEFAULT,
+        savedWidth: sizing === 'reader' ? READER_DRAWER_DEFAULT : RIGHT_DRAWER_DEFAULT,
       });
       const aside = drawerAsideWidthOf({ width, mode });
       const inner = card()?.parentElement ?? null;
-      const handle = inner?.firstElementChild ?? null;
+      const gutter = inner?.firstElementChild ?? null;
 
       expect(aside).toBeLessThanOrEqual(columnWidth);
       expect(panel().getAttribute('data-drawer-mode')).toBe(mode);
       expect(panel().style.width).toBe(`${aside}px`);
       expect(inner?.style.minWidth).toBe(`${aside}px`);
-      expect(handle?.className).toContain('w-2');
-      expect(handle?.className).toContain('shrink-0');
+      expect(gutter?.className).toContain('w-2');
+      expect(gutter?.className).toContain('shrink-0');
       expect(card()?.className).toContain('min-w-0');
       expect(card()?.className).toContain('overflow-hidden');
       if (mode === 'push') {
         expect(panel().className).toContain('overflow-hidden');
-        expect(card()?.className).toContain('mr-2');
+        expect(card()?.parentElement?.className).toContain('pr-2');
       }
     },
   );
+});
+
+describe('DrawerColumn as two containers', () => {
+  const containers = (container: HTMLElement) => ({
+    page: container.querySelector<HTMLElement>('[data-container="page"]'),
+    drawer: container.querySelector<HTMLElement>('[data-container="drawer"]'),
+  });
+
+  it('stands the drawer container beside the page container, never inside it', () => {
+    stubColumnWidth(2000);
+    const { container } = renderSized('reader', 'sheet');
+    const { page, drawer } = containers(container);
+
+    expect(page).not.toBeNull();
+    expect(drawer).not.toBeNull();
+    expect(page?.contains(drawer)).toBe(false);
+    expect(drawer?.contains(page)).toBe(false);
+    expect(page?.parentElement).toBe(container.firstElementChild);
+    expect(panel().parentElement).toBe(container.firstElementChild);
+    expect(panel().contains(drawer)).toBe(true);
+  });
+
+  it('frames the page container as a sheet on all four corners while the drawer pushes', () => {
+    stubColumnWidth(2000);
+    const { container } = renderSized('reader', 'sheet');
+    const { page, drawer } = containers(container);
+
+    expect(page?.dataset['sheet']).toBe('pushed');
+    expect(page?.className).toContain('rounded-frame');
+    expect(page?.className).toContain('border-frame-edge');
+    expect(drawer?.className).toContain('rounded-frame');
+    expect(drawer?.className).toContain('border-frame-edge');
+    expect(drawer?.parentElement?.className).not.toContain('py-2');
+  });
+
+  it('keeps the wrapped sheet shape while the drawer is closed or lies over the page', () => {
+    stubColumnWidth(2000);
+    const closed = render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={null}
+        frame="sheet"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+    expect(containers(closed.container).page?.dataset['sheet']).toBe('wrapped');
+    expect(containers(closed.container).page?.className).toContain('rounded-l-frame');
+    closed.unmount();
+
+    stubColumnWidth(900);
+    const over = renderSized('reader', 'sheet');
+    expect(containers(over.container).page?.dataset['sheet']).toBe('wrapped');
+    expect(containers(over.container).drawer?.className).toContain('rounded-l-frame');
+  });
+
+  it('draws no frame around the page container when the host owns the sheet', () => {
+    stubColumnWidth(2000);
+    const { container } = renderSized('reader');
+    const { page } = containers(container);
+
+    expect(page?.hasAttribute('data-sheet')).toBe(false);
+    expect(page?.className).not.toContain('border');
+  });
+
+  it('paints the drawer container with the quieter drawer surface in every mode', () => {
+    stubColumnWidth(2000);
+    const pushed = renderSized('reader', 'sheet');
+    expect(containers(pushed.container).drawer?.className).toContain('bg-drawer');
+    expect(containers(pushed.container).page?.className).toContain('bg-background');
+    pushed.unmount();
+
+    stubColumnWidth(900);
+    const over = renderSized('reader', 'sheet');
+    expect(containers(over.container).drawer?.className).toContain('bg-drawer');
+  });
 });

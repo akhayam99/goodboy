@@ -124,7 +124,8 @@ moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode.
 
 - **Scope first.** It opens on a scope chip that names the surface you can see:
-  the focused commit row on the Commits tab, else the agent when the agent page
+  the focused commit row on the Commits tab, else the focused row of the Explore
+  tree (a file or a folder, with its Open, Show in Finder, Ask and Copy path), else the agent when the agent page
   is on screen (a stored selection under a studio or an artifact conversation
   does not count), else the run on the Runs page, else the pull request on the
   Branch page, else the session, else the workspace on the board and under any
@@ -264,6 +265,16 @@ provider })` returning the tabs the page shows in order. `BranchTab` includes
   `canonicalLocation` lands it, and the pull request page request, on
   `comments` (a review being written still lands on `files`), so a pasted or
   restored `pr` address never errors.
+- **An address carries its own mount.** `canonicalLocation` rewrites aliases
+  and never fills a missing mount: a Branch address with `mountPath: null`
+  stays `null`, and the page shows the active mount when it renders. A caller
+  that acts on a mount passes it (`branchPlace({ mountPath })`,
+  `lensPlace({ mountPath })`); a page door that means "the mount on screen"
+  leaves it out and `lensPlace` reads it once, through `doorMountPath`, at the
+  click. Back to an address with no mount does not move the write destination.
+  `docs/typescript/state-writes.md` has the rule; the rows of
+  `__tests__/surfaces/navigation-flows/target-identity.rows.tsx` hold the
+  journeys.
 - **Push, amend, replace.** A new place pushes: board and session, session to
   session, lens, a child, a sibling from a switcher, a session studio. Pushing
   the place you are on replaces it. Page state amends the current entry and
@@ -343,7 +354,8 @@ never exists on one surface only.
   from the list row too, plus Delete on any stored artifact that is not already
   deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, a Tasks record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
-  project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
+  project, the Diff of a branch (`diff`), a diff file, a file or folder row in
+  Explore (`exploreFile`), a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
   rendered text have their own kinds. One field says which available actions
   also get a visible control on their surface: `slot` (`primary`,
@@ -388,7 +400,11 @@ never exists on one surface only.
   keeps its own `review.select` and `review.selectAll`. The scroller of a
   surface takes a bottom margin while something is selected, so the bar never
   covers the last row.
-- **Confirm and undo.** A verb that loses work confirms inside the menu with
+- **Confirm and undo.** A confirm is one placement, anchored to its trigger
+  (`ConfirmPopover`): Cancel has focus on a danger confirm, `Cmd+Enter` confirms,
+  and a card still drawn by a call site is counted in
+  `inline-confirm-placement.baseline.json`, which only falls. A verb that loses
+  work confirms inside the menu with
   `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
   Delete script, Close branch, Remove from session, Abort rebase). Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
@@ -413,7 +429,9 @@ its slots.** The board, the session and the studios do not define their own
 frames. A surface that needs a different frame changes the shared one instead of
 forking a second (`app/shellArrangement`, which every shell mount, the app and
 the mock scenes alike, reads). **Two navigation columns at once is not the IA.
-The right drawer is context, never navigation.** A session draws one full-width
+A page rail is not one: filters or a list that belong to the page sit beside
+the detail, on the page background. The right drawer is context, never
+navigation.** A session draws one full-width
 pane, and its navigation lives in the left column. The right drawer holds
 reference material beside the page and closes with the pane that opened it.
 
@@ -902,7 +920,8 @@ running.` on Merge, reads in the meta line as well as in the tooltip) over
 - **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
-  to that thing. The page segment (depth one, or `Session` when it is alone)
+  to that thing. A segment whose menu would hold fewer than two entries, rows plus
+  actions, is a plain crumb with no chevron. The page segment (depth one, or `Session` when it is alone)
   lists the session's pages with a count that names what it counts,
   grouped as pages, Tools and Linked. One pure table, `pageCountWordOf`
   (`features/session/pageCountWord.ts`), reads noun last and empty at zero:
@@ -1391,15 +1410,16 @@ one is open at a time.
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
   studio the time owns a fixed last column and Mark read and Delete swap in
-  over it on hover, so the row never changes width. A **Filters** button in the
-  list header opens the facets (`NotificationFiltersButton`, with the count of
-  active filters) by view, severity and source, with counts that come from SQL
-  (`countNotifications`), so they stay true past the loaded page; Load older
-  pages with a cursor. Both surfaces default to this workspace: a row belongs to
+  over it on hover, so the row never changes width. The facets (view, severity,
+  source and the workspace scope) are a page rail docked beside the list, in
+  Chat's frame (`StudioRailLayout`, `placement="page"`, surface `notifications`,
+  288px), with counts that come from SQL (`countNotifications`), so they stay
+  true past the loaded page; Load older pages with a cursor. The title is
+  Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
-  The studio header draws them through `HeaderActions`: `Filters`, then the ghost
-  `Mark all read` (only while something is unread), then the ghost danger
+  The studio header draws them through `HeaderActions`: the shared `FilterButton`
+  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the ghost danger
   `Delete all`, which opens a `ConfirmPopover` anchored to it, aligned to its end
   edge, titled with the scope's count ("Delete 7 notifications?") and naming the
   workspace or "every workspace"; it never swaps the title row. A row's Delete acts
@@ -1412,9 +1432,10 @@ one is open at a time.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses all three: its facets filter by view,
-  type and source (one pick per section, a tool that did not load says so in
-  its row) behind the same Filters button in the list header, so Tasks is
-  the list and the record beside the column, never a third column; its
+  type, source and project (one pick per section, a tool that did not load says so
+  in its row) from a page rail docked beside the list (surface `inbox`, 288px,
+  the search field at its top), and the title stays Tasks, so Tasks is the rail,
+  the list and the record beside it, never a second navigation column; its
   one-line rows are grouped by the same days in time order, and
   J and K move a cursor, and the record follows beside the list only once one is
   open. Tasks opens with a quiet cursor on its first row (`data-cursor`, the hover
@@ -1432,10 +1453,21 @@ one is open at a time.
   Changelog's releases and the guide's chapters are content beside their
   detail, not a second navigation column: `StudioRailLayout` with
   `placement="page"` draws the list on the page background with the resize
-  edge as the only line. Chat's list opens at 288px.
+  edge as the only line. Tasks' and Notifications' filters are the same frame. Every page rail opens at
+  288px (`standard`); the skeleton reads the same constant.
+- **A page rail folds, and folds itself when there is no room.** A page may pass
+  `onCollapsedChange`: the rail's first row then holds a fold control (tooltip
+  "Fold the rail"), and `useStudioRailFold` remembers the choice per surface
+  (`goodboy:studio-rail-folded:<studio>:v1`). Under a pane of 880px the rail
+  folds without saving anything and docks again when the pane widens. A folded
+  rail leaves the shared `FilterButton` (28px tall, the funnel with the count of
+  active filters, "Dock the filters" beside it while the pane is wide enough)
+  in the title row, opening the same facets in a popover. The search field of
+  Tasks moves into the title row with it.
 - **Every studio list resizes.** `StudioRailLayout` (Settings in the legacy
-  layout, Guide, Chat, Changelog, Bitbucket) drags from its right edge
-  between 220 and 420px, step 8px (32 with Shift) with the arrow keys, and goes
+  layout, Guide, Chat, Changelog, Bitbucket, Tasks, Notifications) drags from
+  its right edge between 220 and 420px (a page may pass `min` and `max`), step
+  8px (32 with Shift) with the arrow keys, and goes
   back to its default (256 narrow, 288 standard) on a double click. Each studio
   keeps its own width
   (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
@@ -1533,8 +1565,8 @@ pageKeys.ts`), typed so a new override key does not compile until it has
   permission history or `bootstrap.*` keys. Restoring writes `null`; every
   override change of one copy or restore is one `patchWorkspaceOverrides`
   through the queued workspace writer. A field whose value differs from the
-  default shows a faint dot after its label (`Changed from default. Default:
-X`) and a `Reset` in its own ⋯ menu (`WorkspaceFieldRow`). Precedent:
+  default shows a small Reset button after its label (tooltip `Reset to
+default`, hidden while the value is the default, `WorkspaceFieldRow`). Precedent:
   JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
@@ -1755,8 +1787,9 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   (`danger`, title `Couldn't <verb> <project>`, `Details`, `Retry`) under its
   row; a branch mismatch is a `warning` `Notice` with `Use this branch here`,
   `Keep both branches` and `Not now`. A card whose mounts have not loaded
-  draws skeleton rows on the same tracks. `Add project` leaves the header once
-  nothing is left to add and becomes an item of the `Project actions` menu.
+  draws skeleton rows on the same tracks. `Add project` stays a button in the
+  header; once nothing is left to add its popover says every project is already in
+  and offers `Add workspace project`.
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
@@ -1857,7 +1890,21 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed and
-  browses the active working directory. Diff and the other branch lenses need a
+  browses the active working directory as a tree (`role="tree"`), rows 40px
+  high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
+  extension kept, a slot for change marks, the size and the age. The size
+  hides under a 520px column and the age under 440px. The folders you opened
+  are kept per session in the session-view slice (`exploreExpanded`) and open
+  again when you come back, and a file opened from elsewhere opens the folders
+  above it. The tree has one tab stop; Up and Down move, Right
+  opens a folder or enters it, Left closes it or goes to its parent, Home and
+  End jump, Enter and Space open the preview of a file or toggle a folder. Above
+  120 rows it draws only the rows near the scroll position (`shared/utils/windowRows.ts`, the
+  diff tree's math). A row's verbs come from the `exploreFile` kind: Ask an
+  agent (files), Open in editor or Open, Show in Finder and Copy path. A folder
+  offers Open only when an editor can take it (a repository with an editor),
+  and a linked folder is listed as a folder; the Rust containment check on
+  read and open stays. Diff and the other branch lenses need a
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from the trail's
@@ -1944,33 +1991,59 @@ The retired phrases are in `retiredNames.ts`.
 ## The right drawer
 
 Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
-split nested inside a pane. `AppShell` puts one beside the main area, and a
-studio body puts one beside its list. A side drawer (Ask, Context, a fix run
-or agent transcript, script output, a plan part) opens at 400px, resizes from
-384 to 560px from a handle on its left edge, and keeps one saved width
-(`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
-ends) for every side drawer. A wide drawer (`artifact-document`: plan, report,
-wireframe, file diff) is 560px with no handle, and **Expand** takes the whole
-column. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+split nested inside a pane. `AppShell` puts one beside the page container, and
+a studio body puts one beside its list.
 
-**One push rule.** `room = main - 16 - 48 - 560`: the main area (the
-`DrawerColumn`'s own width) minus the drawer's two 8px insets, the page's two
-24px gutters and the 560px the page keeps. While `room >= 384` the drawer
-pushes: a side drawer at `min(saved, room)`, a wide one at `min(560, room)`.
-Below that it lies over the page at `min(target, main - 16)`, where target is
-the saved width or 560. Expanded always lies over. The mode and width come
-from the committed width, never from a drag in progress, and while it pushes
-the handle stops at `min(560, room)`, so a drag never flips the mode. Once a
-drawer pushes at some width it pushes at every wider one. Pushing, it is a
-floating card: 8px from the top, right and bottom edges and from the column,
-radius 10 (`rounded-frame`), `bg-subtle`, a hairline border, no shadow. The
-column and measure pages are centred, and the column slides left to
+**Two containers, never a panel inside the content.** The page container is the
+sheet (its `bg-background`, its 1px `frame-edge` border, `data-container="page"`)
+and the drawer container is its sibling (`data-container="drawer"`), each with
+its own size, drawn from the same top to the same bottom. With no drawer the
+page container is today's sheet: rounded on the left where the chrome wraps it,
+flush with the window's right edge. While a drawer pushes, the page container
+rounds all four corners (`rounded-frame`), the drawer container stands 8px to
+its right (the resize handle sits in that gap) and 8px from the window's right
+edge, with the same edge and radius, and the pair keeps an 8px inset above the
+window's bottom edge. The drawer container is one step quieter than the page
+(`bg-drawer`, recessed between chrome and background in both themes): it reads
+as secondary, never louder, never tinted, and never a border to fake the
+difference. `AppShell` hosts it through `DrawerColumn`'s `frame="sheet"`. The
+Tasks and Chat studios do the same inside the studio slot: their body registers
+its drawer with the `StudioFrame` (`useStudioDrawer`), the frame draws one
+`DrawerColumn` with `frame="sheet"` around the band and the body, so the band and
+the list are the page container and the drawer container stands beside them from
+the slot's top to its bottom; the slot's own sheet steps aside
+(`data-studio-sheet-owner`). A studio body with no hosting frame (a studio that
+covers the left column) keeps `frame="none"`, which draws only the drawer
+container as a card inset 8px on its right, top and bottom.
+
+**Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
+transcript, script output, a plan part, an artifact) opens at 400px, resizes
+from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
+(the plan, report and wireframe document, an Explore file, a file diff) opens at
+720px, resizes from 480 to `min(1000, room)` while it pushes and to
+`min(1000, page - 16)` over the page, and keeps its own
+`goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
+drag ends; a double click on the handle resets to the tier default (400 or 720);
+the two saved widths never bleed. **Expand** (`full`) takes the whole column
+until the plan drawer drops it. `selectDrawerSizing` picks the tier from the
+drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+
+**One push rule.** `room = main - 16 - 48 - 560`: the pane (the `DrawerColumn`'s
+own width) minus the drawer's two 8px insets, the page's gutters and the 560px
+the page keeps. The drawer pushes only while the page container keeps 560 plus
+its 48px of gutters and `room` covers the drawer's saved width; it is never
+squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. Expanded
+always lies over. The mode reads the committed width, never a drag in progress,
+and while it pushes the handle stops at `min(tier max, room)`, so a drag never
+flips the mode. Once a drawer pushes at some width it pushes at every wider one.
+The column and measure pages are centred, and the column slides left to
 re-centre in the space left of the drawer (full tier work surfaces keep their
 left edge and give up their right).
 
-**Over the page, the card runs the full height of the sheet.** It has no
-inset: flush with the sheet's top, bottom and right edges, left corners
-rounded (`rounded-l-frame`), a left border only, `shadow-xl`. A scrim
+**Over the page, the drawer container runs the full height of the sheet.** It
+has no inset: flush with the sheet's top, bottom and right edges, left corners
+rounded (`rounded-l-frame`), a left border only, `shadow-xl`, the same
+`bg-drawer`; the page container goes back to its resting sheet shape under it. A scrim
 (`bg-scrim`, 120ms fade, none under reduced motion) covers the page below the
 card, and the page is `inert`, so nothing under it takes a click, a Tab or a
 screen reader. A click on the scrim asks the top layer of the escape stack
@@ -2202,7 +2275,7 @@ artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
 A studio covers the whole window grid, so it cannot use that column. Tasks
-record opens in the same `DrawerColumn` inside the studio body
+record opens in the same `DrawerColumn` beside the list, after the filter rail
 (`InboxStudioLayout`), with the same width, card and motion. Escape closes the
 record before the studio.
 
@@ -2268,8 +2341,8 @@ run), so the crumb, the header and the body follow together and nothing of the
 branch it leaves carries over. `New branch` swaps the menu for a name field
 (empty names it automatically) and a `Create branch` that forks a worktree
 (`forkMount`) and lands on it on its landing tab; a folder project cannot fork and
-offers none. With one branch the chip has no chevron and its menu holds only
-`New branch`; with neither it is plain text.
+offers none. With one branch the chip has no chevron and opens the name field at
+once (a menu of one is not drawn); with neither it is plain text.
 
 The primary is the first that applies: `Rebase on main`
 (`Open terminal` while a rebase is stopped, with `Abort rebase` beside it),
@@ -2594,7 +2667,7 @@ in the tree rail that carries `data-diff-filter` (it opens the tree first when
 it is folded or an overlay); `⌘⇧B` folds or opens the tree (`⌘B` stays the column).
 A line under the tree lists them once, from the registry (`keyHelp.ts`).
 
-Big and folded cases (`treeRailMode.ts`, `useTreePanel`, `lib/windowRows.ts`).
+Big and folded cases (`treeRailMode.ts`, `useTreePanel`, `shared/utils/windowRows.ts`).
 Past 120 visible rows the tree draws only the rows in view plus a margin (fixed
 28px rows, 44px for a rename), so 512 files scroll as light as 20. A change
 over 300 files starts with its deepest folders over 50 files closed (a parent of
@@ -2675,8 +2748,9 @@ left of `Write review`, N being the open notes of the displayed branch, hidden a
 to that file. Saving a note never opens the drawer, it only updates the count and
 the tree row. The drawer reads `Your notes` with `N open`; `Fix N` is its one
 primary (one fix run on the selected notes, all the open and fixable ones by
-default, each with a check when there are two or more) and `⋯` holds `Move N to
-review draft` (only with a pull request) and `Show closed`. Notes are grouped by
+default, each with a check when there are two or more) and `Show closed`
+is a labelled toggle; with a pull request, `⋯` holds `Move N to review draft` and
+`Show closed`. Notes are grouped by
 file, each the same review comment thread Comments draws, with `Jump to file`
 (the Files tab at the file): `Open note` (`Fix`, `Close`, `Delete` with Undo),
 working (the run line above the list holds `Stop` and `Open transcript`), ready

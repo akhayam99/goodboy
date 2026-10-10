@@ -686,8 +686,8 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.queryByText('Branch naming')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.queryByRole('button', { name: 'Models actions' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset all to Auto' }));
     expect(screen.getByText('Reset 1 pinned model to Auto?')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
@@ -697,6 +697,13 @@ describe('DefaultsPanel', () => {
       'ws-1',
       expect.objectContaining({ taskModels: null }),
     );
+  });
+
+  it('shows Reset all to Auto as a header button only while something is pinned', () => {
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.queryByRole('button', { name: 'Reset all to Auto' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Models actions' })).toBeNull();
   });
 
   it('counts pins across roles and tasks and resets them all to Auto after a confirm', async () => {
@@ -715,8 +722,8 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.queryByText(/\d pinned$/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.queryByRole('button', { name: 'Models actions' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset all to Auto' }));
     expect(screen.getByText('Reset 3 pinned models to Auto?')).toBeDefined();
     expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
@@ -738,8 +745,8 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Models actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(screen.queryByRole('button', { name: 'Models actions' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset all to Auto' }));
     expect(screen.getByText('Reset 1 pinned model to Auto?')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
 

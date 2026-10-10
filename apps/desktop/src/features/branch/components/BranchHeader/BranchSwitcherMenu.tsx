@@ -5,37 +5,33 @@ import { BranchSwitcherRow } from './BranchSwitcherRow';
 
 type Props = {
   readonly groups: ReadonlyArray<CrumbMenuGroup>;
-  readonly count: number;
   readonly canCreate: boolean;
   readonly onChoose: (row: CrumbMenuRow) => void;
   readonly onNewBranch: () => void;
 };
 
-export const BranchSwitcherMenu = ({ groups, count, canCreate, onChoose, onNewBranch }: Props) => {
-  const hasRows = count > 1;
+export const BranchSwitcherMenu = ({ groups, canCreate, onChoose, onNewBranch }: Props) => {
   const isGrouped = groups.length > 1;
   return (
     <div className="flex min-w-0 flex-col gap-1 p-1">
-      {hasRows
-        ? groups.map((group) => (
-            <div
-              key={group.id}
-              role="group"
-              aria-label={group.label ?? 'Branches'}
-              className="flex flex-col"
-            >
-              {isGrouped && group.label !== null ? (
-                <div className="flex h-6 items-center gap-1 px-2 text-eyebrow text-faint-foreground">
-                  <span className="truncate">{group.label}</span>
-                </div>
-              ) : null}
-              {group.rows.map((row) => (
-                <BranchSwitcherRow key={row.id} row={row} onChoose={onChoose} />
-              ))}
+      {groups.map((group) => (
+        <div
+          key={group.id}
+          role="group"
+          aria-label={group.label ?? 'Branches'}
+          className="flex flex-col"
+        >
+          {isGrouped && group.label !== null ? (
+            <div className="flex h-6 items-center gap-1 px-2 text-eyebrow text-faint-foreground">
+              <span className="truncate">{group.label}</span>
             </div>
-          ))
-        : null}
-      {hasRows && canCreate ? <div role="separator" className="h-px bg-border-soft" /> : null}
+          ) : null}
+          {group.rows.map((row) => (
+            <BranchSwitcherRow key={row.id} row={row} onChoose={onChoose} />
+          ))}
+        </div>
+      ))}
+      {canCreate ? <div role="separator" className="h-px bg-border-soft" /> : null}
       {canCreate ? (
         <button
           type="button"

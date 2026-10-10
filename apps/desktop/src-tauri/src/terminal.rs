@@ -7,7 +7,7 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Runtime, State};
 
 struct TerminalSession {
     spawn_id: String,
@@ -36,6 +36,7 @@ type SessionSlot = Arc<Mutex<Option<TerminalSession>>>;
 struct TerminalEntry {
     slot: SessionSlot,
     cwd: String,
+    pid: Option<u32>,
 }
 
 #[derive(Default)]
@@ -53,15 +54,37 @@ impl TerminalRegistry {
             .map(|(id, entry)| LiveTerminal {
                 id: id.clone(),
                 cwd: entry.cwd.clone(),
+                pid: entry.pid,
+                foreground_pid: foreground_leader(&entry.slot),
             })
             .collect())
     }
 }
 
+fn foreground_leader(slot: &SessionSlot) -> Option<u32> {
+    let guard = slot.try_lock().ok()?;
+    let session = guard.as_ref()?;
+    foreground_of(session.master.as_ref())
+}
+
+#[cfg(unix)]
+fn foreground_of(master: &dyn portable_pty::MasterPty) -> Option<u32> {
+    let leader = master.process_group_leader()?;
+    u32::try_from(leader).ok().filter(|pid| *pid > 0)
+}
+
+#[cfg(not(unix))]
+fn foreground_of(_master: &dyn portable_pty::MasterPty) -> Option<u32> {
+    None
+}
+
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct LiveTerminal {
     id: String,
     cwd: String,
+    pid: Option<u32>,
+    foreground_pid: Option<u32>,
 }
 
 /// Drains every live terminal, killing the whole pty session behind each
@@ -162,6 +185,7 @@ pub(crate) fn terminate_pty_session(_leader_pid: u32) -> usize {
 }
 
 pub(crate) fn reap_pty_session(leader_pid: Option<u32>, spawn_id: &str) -> usize {
+    crate::proc::ledger::forget(spawn_id);
     let signalled = leader_pid.map(terminate_pty_session).unwrap_or(0);
     let report = crate::proc::reap::reap(crate::proc::reap::ReapParams {
         leader_pid,
@@ -190,130 +214,172 @@ pub async fn terminal_open(
         }
     }
 
-    let registry_arc = Arc::clone(&registry.0);
-    let session_id_clone = session_id.clone();
+    let request = TerminalSpawnRequest {
+        app,
+        registry: Arc::clone(&registry.0),
+        session_id,
+        cwd,
+        cols,
+        rows,
+    };
+    tauri::async_runtime::spawn_blocking(move || spawn_terminal(request))
+        .await
+        .map_err(|e| TerminalError::Io(e.to_string()))?
+}
 
-    tauri::async_runtime::spawn_blocking(move || {
-        let pty_system = native_pty_system();
-        let pair = pty_system
-            .openpty(PtySize {
-                rows,
-                cols,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .map_err(|e| TerminalError::Io(e.to_string()))?;
+struct TerminalSpawnRequest<R: Runtime> {
+    app: AppHandle<R>,
+    registry: Arc<Mutex<HashMap<String, TerminalEntry>>>,
+    session_id: String,
+    cwd: Option<String>,
+    cols: u16,
+    rows: u16,
+}
 
-        let shell = login_shell();
-        let mut cmd = CommandBuilder::new(&shell);
-        cmd.arg("-l");
-        cmd.arg("-i");
+fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), TerminalError> {
+    let TerminalSpawnRequest {
+        app,
+        registry: registry_arc,
+        session_id: session_id_clone,
+        cwd,
+        cols,
+        rows,
+    } = request;
+    let pty_system = native_pty_system();
+    let pair = pty_system
+        .openpty(PtySize {
+            rows,
+            cols,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .map_err(|e| TerminalError::Io(e.to_string()))?;
 
-        let effective_cwd =
-            cwd.unwrap_or_else(|| std::env::var("HOME").unwrap_or_else(|_| "/".to_string()));
-        cmd.cwd(&effective_cwd);
+    let shell = login_shell();
+    let mut cmd = CommandBuilder::new(&shell);
+    cmd.arg("-l");
+    cmd.arg("-i");
 
-        for (key, value) in std::env::vars() {
-            cmd.env(key, value);
+    let effective_cwd =
+        cwd.unwrap_or_else(|| std::env::var("HOME").unwrap_or_else(|_| "/".to_string()));
+    cmd.cwd(&effective_cwd);
+
+    for (key, value) in std::env::vars() {
+        cmd.env(key, value);
+    }
+    cmd.env("PATH", crate::path_env::resolved_path());
+    cmd.env("TERM", "xterm-256color");
+    cmd.env("COLORTERM", "truecolor");
+    cmd.env("SHELL", &shell);
+    let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Terminal);
+
+    let child = pair
+        .slave
+        .spawn_command(cmd)
+        .map_err(|e| TerminalError::Io(e.to_string()))?;
+    drop(pair.slave);
+
+    let reader = pair
+        .master
+        .try_clone_reader()
+        .map_err(|e| TerminalError::Io(e.to_string()))?;
+    let writer = pair
+        .master
+        .take_writer()
+        .map_err(|e| TerminalError::Io(e.to_string()))?;
+
+    let pid = child.process_id();
+    if let Some(pid) = pid {
+        crate::proc::ledger::record(
+            &tag,
+            pid,
+            crate::proc::ledger::LedgerContext {
+                session_id: session_id_clone
+                    .rsplit_once("::")
+                    .map(|(owner, _)| owner.to_string()),
+                cwd: Some(effective_cwd.clone()),
+                ..Default::default()
+            },
+        );
+    }
+    let spawn_id = tag.id.clone();
+
+    let slot: SessionSlot = Arc::new(Mutex::new(Some(TerminalSession {
+        spawn_id: tag.id,
+        writer,
+        master: pair.master,
+        child,
+    })));
+
+    registry_arc
+        .lock()
+        .map_err(|_| TerminalError::Poisoned)?
+        .insert(
+            session_id_clone.clone(),
+            TerminalEntry {
+                slot: Arc::clone(&slot),
+                cwd: effective_cwd,
+                pid,
+            },
+        );
+
+    let sid = session_id_clone.clone();
+    let app_r = app.clone();
+    let registry_r = Arc::clone(&registry_arc);
+
+    thread::spawn(move || {
+        let mut reader = reader;
+        let mut buf = vec![0u8; 65536];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) | Err(_) => break,
+                Ok(n) => {
+                    let encoded = STANDARD.encode(&buf[..n]);
+                    let _ = app_r.emit(
+                        "terminal-output",
+                        TerminalOutputPayload {
+                            session_id: sid.clone(),
+                            data: encoded,
+                        },
+                    );
+                }
+            }
         }
-        cmd.env("PATH", crate::path_env::resolved_path());
-        cmd.env("TERM", "xterm-256color");
-        cmd.env("COLORTERM", "truecolor");
-        cmd.env("SHELL", &shell);
-        let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Terminal);
 
-        let child = pair
-            .slave
-            .spawn_command(cmd)
-            .map_err(|e| TerminalError::Io(e.to_string()))?;
-        drop(pair.slave);
-
-        let reader = pair
-            .master
-            .try_clone_reader()
-            .map_err(|e| TerminalError::Io(e.to_string()))?;
-        let writer = pair
-            .master
-            .take_writer()
-            .map_err(|e| TerminalError::Io(e.to_string()))?;
-
-        let slot: SessionSlot = Arc::new(Mutex::new(Some(TerminalSession {
-            spawn_id: tag.id,
-            writer,
-            master: pair.master,
-            child,
-        })));
-
-        registry_arc
-            .lock()
-            .map_err(|_| TerminalError::Poisoned)?
-            .insert(
-                session_id_clone.clone(),
-                TerminalEntry {
-                    slot: Arc::clone(&slot),
-                    cwd: effective_cwd,
-                },
-            );
-
-        let sid = session_id_clone.clone();
-        let app_r = app.clone();
-        let registry_r = Arc::clone(&registry_arc);
-
-        thread::spawn(move || {
-            let mut reader = reader;
-            let mut buf = vec![0u8; 65536];
-            loop {
-                match reader.read(&mut buf) {
-                    Ok(0) | Err(_) => break,
-                    Ok(n) => {
-                        let encoded = STANDARD.encode(&buf[..n]);
-                        let _ = app_r.emit(
-                            "terminal-output",
-                            TerminalOutputPayload {
-                                session_id: sid.clone(),
-                                data: encoded,
-                            },
-                        );
-                    }
-                }
-            }
-
-            let exit_code = {
-                let slot = {
-                    let guard = registry_r.lock().ok();
-                    guard
-                        .as_ref()
-                        .and_then(|m| m.get(&sid))
-                        .map(|entry| Arc::clone(&entry.slot))
-                };
-                if let Some(slot) = slot {
-                    let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
-                    g.as_mut()
-                        .and_then(|r| r.child.wait().ok())
-                        .map(|s| s.exit_code() as i32)
-                        .unwrap_or(-1)
-                } else {
-                    -1
-                }
+        let exit_code = {
+            let slot = {
+                let guard = registry_r.lock().ok();
+                guard
+                    .as_ref()
+                    .and_then(|m| m.get(&sid))
+                    .map(|entry| Arc::clone(&entry.slot))
             };
-
-            let _ = app_r.emit(
-                "terminal-exit",
-                TerminalExitPayload {
-                    session_id: sid.clone(),
-                    exit_code,
-                },
-            );
-
-            if let Ok(mut map) = registry_r.lock() {
-                map.remove(&sid);
+            if let Some(slot) = slot {
+                let mut g = slot.lock().unwrap_or_else(|e| e.into_inner());
+                g.as_mut()
+                    .and_then(|r| r.child.wait().ok())
+                    .map(|s| s.exit_code() as i32)
+                    .unwrap_or(-1)
+            } else {
+                -1
             }
-        });
+        };
 
-        Ok(())
-    })
-    .await
-    .map_err(|e| TerminalError::Io(e.to_string()))?
+        let _ = app_r.emit(
+            "terminal-exit",
+            TerminalExitPayload {
+                session_id: sid.clone(),
+                exit_code,
+            },
+        );
+
+        crate::proc::ledger::forget(&spawn_id);
+        if let Ok(mut map) = registry_r.lock() {
+            map.remove(&sid);
+        }
+    });
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -380,9 +446,16 @@ pub async fn terminal_close(
     registry: State<'_, TerminalRegistry>,
     session_id: String,
 ) -> Result<(), TerminalError> {
+    close_session(&registry.0, &session_id)
+}
+
+fn close_session(
+    registry: &Arc<Mutex<HashMap<String, TerminalEntry>>>,
+    session_id: &str,
+) -> Result<(), TerminalError> {
     let slot = {
-        let mut map = registry.0.lock().map_err(|_| TerminalError::Poisoned)?;
-        map.remove(&session_id).map(|entry| entry.slot)
+        let mut map = registry.lock().map_err(|_| TerminalError::Poisoned)?;
+        map.remove(session_id).map(|entry| entry.slot)
     };
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
@@ -408,6 +481,7 @@ mod tests {
             TerminalEntry {
                 slot,
                 cwd: "/worktrees/api".to_string(),
+                pid: Some(4321),
             },
         );
 
@@ -416,6 +490,8 @@ mod tests {
             vec![LiveTerminal {
                 id: "session-1::t1".to_string(),
                 cwd: "/worktrees/api".to_string(),
+                pid: Some(4321),
+                foreground_pid: None,
             }]
         );
     }
@@ -522,6 +598,7 @@ mod tests {
                     child,
                 }))),
                 cwd: "/".to_string(),
+                pid: None,
             },
         );
 
@@ -540,6 +617,40 @@ mod tests {
             !still_alive,
             "backgrounded descendant {background_pid} survived the app shutdown"
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn an_open_terminal_is_in_the_ledger_with_its_pid_and_cwd_until_it_closes() {
+        let dir = crate::proc::ledger::test_support::scratch_dir("terminal");
+        let cwd = dir.to_string_lossy().into_owned();
+        let app = tauri::test::mock_app();
+        let registry = TerminalRegistry::new();
+
+        spawn_terminal(TerminalSpawnRequest {
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            session_id: "session-7::t1".to_string(),
+            cwd: Some(cwd.clone()),
+            cols: 80,
+            rows: 24,
+        })
+        .expect("open the terminal");
+
+        let row = crate::proc::ledger::test_support::wait_for_row(&cwd);
+        assert_eq!(row.kind, "terminal");
+        assert_eq!(row.session_id.as_deref(), Some("session-7"));
+        assert!(row.pid > 0);
+        let live = registry.list_live().expect("list");
+        assert_eq!(live.len(), 1);
+        assert_eq!(live[0].pid, Some(row.pid));
+        assert!(live[0].foreground_pid.is_some());
+
+        close_session(&registry.0, "session-7::t1").expect("close");
+
+        crate::proc::ledger::test_support::assert_row_gone(&cwd);
+        assert!(registry.0.lock().unwrap().is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

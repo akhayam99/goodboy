@@ -124,6 +124,7 @@ comments-working
 commits-empty
 commits-loading
 companion
+confirmpopover
 context-drawer
 controls-fields
 controls-hints
@@ -139,8 +140,20 @@ diff-notes
 drawer-ask-draft
 drawer-headers
 drawer-overlay-narrow
+drawer-split-chat
+drawer-split-context
+drawer-split-explore
+drawer-split-plan
+drawer-split-plan-1280
+drawer-split-tasks
 drawer-wide-push
 explore
+explore-rows
+explore-rows-big
+explore-rows-compact
+explore-rows-empty
+explore-rows-keys
+explore-rows-narrow
 features-composer-menu
 features-impact-overview
 features-newer-data
@@ -196,6 +209,8 @@ model-picker-claude
 model-picker-codex
 model-picker-cursor
 model-picker-triggers
+models-anthropic-on
+models-codex-only
 modelswilluse
 modelswilluse-cleared
 mount-mismatch
@@ -204,6 +219,7 @@ needs-you-card
 notifications
 notifications-delete-all
 notifications-empty
+notifications-rail
 onboarding
 open-question-prose
 open-questions
@@ -333,6 +349,9 @@ task-links
 task-links-hover
 task-links-undo
 tasks-cursor
+tasks-rail
+tasks-rail-folded
+tasks-rail-open
 terminal-empty
 toast-over-drawer
 toast-over-drawer-overlay

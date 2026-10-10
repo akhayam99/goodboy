@@ -29,6 +29,7 @@ export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Pro
   const { open: isOpen } = dropdown;
   const hasChoices = switcher.count > 1;
   const isInteractive = hasChoices || switcher.canCreate;
+  const isFormShown = isNaming || !hasChoices;
 
   useEffect(() => {
     if (!isOpen) {
@@ -67,8 +68,8 @@ export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Pro
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role={isNaming ? 'dialog' : 'menu'}
-      ariaLabel={isNaming ? 'New branch' : 'Branches'}
+      role={isFormShown ? 'dialog' : 'menu'}
+      ariaLabel={isFormShown ? 'New branch' : 'Branches'}
       anchorClassName="flex min-w-0 max-w-full"
       trigger={
         <Chip
@@ -91,13 +92,13 @@ export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Pro
           }
           ariaLabel={`Branch ${branch}`}
           testId="branch-switcher"
-          hasPopup="menu"
+          hasPopup={hasChoices ? 'menu' : 'dialog'}
           expanded={isOpen}
           onClick={dropdown.toggle}
         />
       }
     >
-      {isNaming ? (
+      {isFormShown ? (
         <NewBranchForm
           repoName={repoName}
           onCreate={async (params) => {
@@ -107,12 +108,16 @@ export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Pro
             }
             return isCreated;
           }}
-          onCancel={() => setIsNaming(false)}
+          onCancel={() => {
+            setIsNaming(false);
+            if (!hasChoices) {
+              dropdown.close();
+            }
+          }}
         />
       ) : (
         <BranchSwitcherMenu
           groups={switcher.groups}
-          count={switcher.count}
           canCreate={switcher.canCreate}
           onChoose={(row) => {
             dropdown.close();

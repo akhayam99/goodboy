@@ -1,4 +1,4 @@
-import { OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
+import { Button, OverflowMenu } from '@goodboy/ui';
 import { REVIEW_NOTES_COPY } from '../../reviewNotesCopy';
 
 type Props = {
@@ -9,16 +9,22 @@ type Props = {
 };
 
 export const ReviewNotesMenu = ({ moveLabel, isClosedShown, onMove, onToggleClosed }: Props) => {
-  const items: ReadonlyArray<OverflowMenuItem> = [
-    ...(moveLabel === null
-      ? []
-      : [{ kind: 'item' as const, key: 'move', label: moveLabel, onClick: onMove }]),
-    {
-      kind: 'item',
-      key: 'closed',
-      label: isClosedShown ? REVIEW_NOTES_COPY.hideClosed : REVIEW_NOTES_COPY.showClosed,
-      onClick: onToggleClosed,
-    },
-  ];
-  return <OverflowMenu items={items} label={REVIEW_NOTES_COPY.moreActions} size="control" />;
+  const closedLabel = isClosedShown ? REVIEW_NOTES_COPY.hideClosed : REVIEW_NOTES_COPY.showClosed;
+  if (moveLabel === null) {
+    return (
+      <Button size="sm" variant="ghost" aria-pressed={isClosedShown} onClick={onToggleClosed}>
+        {closedLabel}
+      </Button>
+    );
+  }
+  return (
+    <OverflowMenu
+      label={REVIEW_NOTES_COPY.moreActions}
+      size="control"
+      items={[
+        { kind: 'item', key: 'move', label: moveLabel, onClick: onMove },
+        { kind: 'item', key: 'closed', label: closedLabel, onClick: onToggleClosed },
+      ]}
+    />
+  );
 };

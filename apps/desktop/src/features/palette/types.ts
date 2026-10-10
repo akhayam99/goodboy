@@ -5,6 +5,7 @@ import type {
   ActionConfirm,
   AgentActionTarget,
   CommitActionTarget,
+  ExploreFileActionTarget,
   ObjectTarget,
   PullRequestActionTarget,
   ResolvedAction,
@@ -18,9 +19,11 @@ type WorkspaceScope = {
   readonly workspaceId: WorkspaceId;
 };
 
-export type CommitScope = CommitActionTarget & {
+type CommitScope = CommitActionTarget & {
   readonly sessionId: SessionId;
 };
+
+export type HeldScope = CommitScope | ExploreFileActionTarget;
 
 export type PaletteScope =
   | WorkspaceScope
@@ -28,7 +31,7 @@ export type PaletteScope =
   | AgentActionTarget
   | WorkflowRunActionTarget
   | PullRequestActionTarget
-  | CommitScope;
+  | HeldScope;
 
 type PaletteGroup =
   'agent' | 'session' | 'workspace' | 'skill' | 'workflow' | 'script' | 'action' | 'help';

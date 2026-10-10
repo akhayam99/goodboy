@@ -37,9 +37,9 @@ describe('AppShell', () => {
 
     expect((container.firstElementChild as HTMLElement).className).toContain('bg-chrome');
     expect(screen.getByText('sessions').closest('aside')?.className).toContain('bg-chrome');
-    const main = screen.getByText('main').closest('main');
-    expect(main?.className).toContain('bg-background');
-    expect(main?.className).not.toContain('bg-chrome');
+    const page = screen.getByText('main').closest('[data-container="page"]');
+    expect(page?.className).toContain('bg-background');
+    expect(page?.className).not.toContain('bg-chrome');
   });
 
   it('renders the left overlay over the first grid row', () => {

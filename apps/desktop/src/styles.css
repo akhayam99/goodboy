@@ -21,12 +21,13 @@
   /* Dark palette (default), soft desaturated darks, lifted black base.
      Surface ladder, six roles, each step brighter than the one below it:
      chrome (top bar, sidebar, footer) < background (content column)
-     < subtle (panels, pushing drawer) < muted (opaque rails)
+     < subtle (panels) < muted (opaque rails)
      < elevated (cards) < floating (popovers, menus, dialogs, toasts).
      fill is one step inside whatever parent it sits on: brighter here, darker in light.
      idle is the single grey for pending, queued and off. */
   --color-chrome: oklch(0.17 0.006 255);
   --color-background: oklch(0.205 0.006 255);
+  --color-drawer: oklch(0.187 0.006 255);
   --color-foreground: oklch(0.93 0.006 90);
   --color-subtle: oklch(0.228 0.008 255);
   --color-muted: oklch(0.25 0.009 255);
@@ -454,6 +455,7 @@ html[data-theme-switching] *::after {
 html[data-theme='light'] {
   --color-chrome: oklch(0.952 0.005 250);
   --color-background: oklch(0.975 0.004 250);
+  --color-drawer: oklch(0.964 0.0045 250);
   --color-foreground: oklch(0.21 0.005 250);
   --color-subtle: oklch(0.958 0.004 250);
   --color-muted: oklch(0.94 0.005 250);

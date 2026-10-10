@@ -1,0 +1,17 @@
+{
+  "apps/desktop/src-tauri/src/chat.rs": 1,
+  "apps/desktop/src-tauri/src/codex_app_server.rs": 2,
+  "apps/desktop/src-tauri/src/editor.rs": 6,
+  "apps/desktop/src-tauri/src/explore.rs": 1,
+  "apps/desktop/src-tauri/src/external_terminal.rs": 3,
+  "apps/desktop/src-tauri/src/github.rs": 2,
+  "apps/desktop/src-tauri/src/history/merge_tree.rs": 2,
+  "apps/desktop/src-tauri/src/live_child.rs": 3,
+  "apps/desktop/src-tauri/src/planner.rs": 1,
+  "apps/desktop/src-tauri/src/provider_lifecycle.rs": 2,
+  "apps/desktop/src-tauri/src/scripts.rs": 2,
+  "apps/desktop/src-tauri/src/storage.rs": 3,
+  "apps/desktop/src-tauri/src/summarize.rs": 1,
+  "apps/desktop/src-tauri/src/terminal.rs": 2,
+  "apps/desktop/src-tauri/src/turn.rs": 2
+}

@@ -1,8 +1,6 @@
+import { HOST_CAPABILITIES, isHostKind } from './hostCapabilities';
 import type { ReviewSourceKind } from './types';
 
-const PULL_SUFFIX = '/pull/';
-const MR_SUFFIX = '/-/merge_requests/';
-const BITBUCKET_SUFFIX = '/pull-requests/';
 const DIGIT = /\d/;
 
 type Params = Readonly<{
@@ -35,17 +33,13 @@ const replaced = ({
 };
 
 export const commitLinkOf = ({ kind, url, sha }: Params): string | null => {
-  if (url === null) {
+  if (url === null || !isHostKind(kind)) {
     return null;
   }
-  if (kind === 'github') {
-    return replaced({ url, suffix: PULL_SUFFIX, path: `/commit/${sha}` });
-  }
-  if (kind === 'gitlab') {
-    return replaced({ url, suffix: MR_SUFFIX, path: `/-/commit/${sha}` });
-  }
-  if (kind === 'bitbucket') {
-    return replaced({ url, suffix: BITBUCKET_SUFFIX, path: `/commits/${sha}` });
-  }
-  return null;
+  const row = HOST_CAPABILITIES[kind];
+  return replaced({
+    url,
+    suffix: row.requestSegment,
+    path: `${row.commitSegment}${sha}`,
+  });
 };

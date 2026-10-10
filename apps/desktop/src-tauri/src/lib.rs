@@ -469,6 +469,7 @@ pub fn run() {
             terminal::terminal_write,
             terminal::terminal_resize,
             terminal::terminal_close,
+            proc::ledger::process_ledger_list,
             workflows::workflow_list,
             workflows::workflows_for_session,
             workflows::step_def_list,

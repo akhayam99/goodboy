@@ -25,7 +25,6 @@ import {
   inboxFacetCounts,
   type InboxFilters,
   type InboxKindFilter,
-  type InboxView,
 } from '../../kindFilter';
 import { readInboxFilters, writeInboxFilters } from '../../kindFilterStorage';
 import { InboxDetail } from './InboxDetail';
@@ -49,13 +48,6 @@ type Props = {
   readonly onFocusChange?: (focus: InboxStudioFocus) => void;
   readonly onClose: () => void;
 };
-
-const VIEW_TITLE = {
-  all: 'All items',
-  'in-progress': 'In progress',
-  'with-session': NAMES.hasASession,
-  closed: 'Closed',
-} satisfies Record<InboxView, string>;
 
 type KindToFilterParams = {
   readonly kind: InboxKind;
@@ -110,7 +102,7 @@ const summary = ({ total, visible, withSession }: SummaryParams): string => {
     return `${visible} of ${total}`;
   }
   const items = `${total} ${total === 1 ? 'item' : 'items'}`;
-  return withSession === 0 ? items : `${items} · ${withSession} with a session`;
+  return withSession === 0 ? items : `${items}, ${withSession} with a session`;
 };
 
 export const InboxStudio = ({
@@ -434,6 +426,18 @@ export const InboxStudio = ({
     />
   );
 
+  const headerParams = {
+    query,
+    onQueryChange: setQuery,
+    searchRef,
+    sessionLabel: sessionFilterLabel,
+    onClearSession: () => setSessionFilter(null),
+    isRefreshing: isLoading,
+    onRefresh: refetch,
+    activeFilterCount: activeFilterCount({ filters }),
+    facets,
+  };
+
   return (
     <StudioShell
       icon={CONCEPT_ICONS.inbox}
@@ -445,10 +449,12 @@ export const InboxStudio = ({
     >
       {(requestClose) => (
         <InboxStudioLayout
-          list={
+          rail={facets}
+          railHeader={<InboxListHeader {...headerParams} isRailCollapsed={false} isSearchOnly />}
+          list={({ isRailCollapsed, onDock }) => (
             <PaneShell
               scroll="body"
-              title={VIEW_TITLE[filters.view]}
+              title={NAMES.tasks}
               meta={summary({
                 total: scopedRecords.length,
                 visible: orderedRecords.length,
@@ -457,15 +463,9 @@ export const InboxStudio = ({
               })}
               actions={
                 <InboxListHeader
-                  query={query}
-                  onQueryChange={setQuery}
-                  searchRef={searchRef}
-                  sessionLabel={sessionFilterLabel}
-                  onClearSession={() => setSessionFilter(null)}
-                  isRefreshing={isLoading}
-                  onRefresh={refetch}
-                  activeFilterCount={activeFilterCount({ filters })}
-                  facets={facets}
+                  {...headerParams}
+                  isRailCollapsed={isRailCollapsed}
+                  onDock={onDock}
                 />
               }
             >
@@ -514,7 +514,7 @@ export const InboxStudio = ({
                 onClearFilters={clearFilters}
               />
             </PaneShell>
-          }
+          )}
           drawerRef={detailRef}
           drawer={
             openRecord == null ? null : (

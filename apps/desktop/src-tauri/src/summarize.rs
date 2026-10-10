@@ -137,7 +137,11 @@ pub(crate) fn run_summarize(
         .run_id
         .clone()
         .unwrap_or_else(|| crate::live_child::anonymous_key("summary"));
-    let live = LiveChild::tagged(child, &tag);
+    let live = LiveChild::tagged(
+        child,
+        &tag,
+        crate::proc::ledger::LedgerContext::from_command(&command),
+    );
     crate::live_child::register(registry, &key, &live);
 
     let stdout_activity = live.activity.clone();

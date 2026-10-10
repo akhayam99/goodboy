@@ -174,9 +174,18 @@
         "src/store/slices/workflows/clusterImplementation.ts": ["exports"],
         "src/store/slices/workflows/scoutTree.ts": ["exports"],
         "src/store/slices/workflows/summarizeAgentOutput.ts": ["exports"],
-        "src/store/slices/turn/turnHelpers.ts": ["exports"]
+        "src/store/slices/turn/turnHelpers.ts": ["exports"],
+        "src/features/providers/components/ProviderStudio/DefaultsPanel/resolutionNote.ts": [
+          "exports"
+        ],
+        "src/store/slices/models/selectResolution.ts": ["exports"],
+        "src/store/slices/state-writes/latestOnly.ts": ["types"]
       },
-      "ignoreDependencies": ["tailwindcss"]
+      "ignoreDependencies": ["tailwindcss"],
+      "ignore": [
+        "src/store/slices/state-writes/commitAfterConfirm.ts",
+        "src/store/slices/models/index.ts"
+      ]
     },
     "packages/core": {
       "entry": ["src/**/*.test.ts", "src/**/__tests__/**/*.test.ts"],

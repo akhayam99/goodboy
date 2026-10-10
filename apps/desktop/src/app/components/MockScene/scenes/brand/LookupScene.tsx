@@ -44,6 +44,7 @@ import { seedStudioChrome } from '../shellChrome';
 import { BRAND_PEOPLE, BRAND_PROJECTS, BRAND_SESSION, BRAND_WORKSPACE_NAME } from './canon';
 import { HBL_398, HBL_412, kickoffIsoAgo, linearBindingOf } from './kickoffIssues';
 import { SLACK_HEAD, SLACK_ONCALL_CHANNEL } from './slackThread';
+import { LINEAR_PICKER_ANSWERS } from '../linearPickerAnswers';
 
 const noop = () => undefined;
 const MINUTE = 60_000;
@@ -394,6 +395,10 @@ const installIpc = (): void => {
     if (cmd === 'linear_fetch_issue') {
       return LOOKUP_ISSUE;
     }
+    const pickerAnswer = LINEAR_PICKER_ANSWERS[cmd];
+    if (pickerAnswer !== undefined) {
+      return pickerAnswer();
+    }
     throw new Error(`${cmd} is not available in the brand scene`);
   });
 };
@@ -430,6 +435,18 @@ export const BrandLookupScene = () => {
     />
   );
 
+  const header = {
+    query: QUERY,
+    onQueryChange: noop,
+    searchRef,
+    sessionLabel: null,
+    onClearSession: noop,
+    isRefreshing: false,
+    onRefresh: noop,
+    activeFilterCount: 0,
+    facets,
+  };
+
   return (
     <StudioFrame
       target={{ place: 'inbox', tool: null }}
@@ -443,22 +460,18 @@ export const BrandLookupScene = () => {
         >
           {() => (
             <InboxStudioLayout
-              list={
+              rail={facets}
+              railHeader={<InboxListHeader {...header} isRailCollapsed={false} isSearchOnly />}
+              list={({ isRailCollapsed, onDock }) => (
                 <PaneShell
                   scroll="body"
-                  title="All items"
+                  title="Tasks"
                   meta={`${VISIBLE.length + STARRED.length} of ${COUNTED.length}`}
                   actions={
                     <InboxListHeader
-                      query={QUERY}
-                      onQueryChange={noop}
-                      searchRef={searchRef}
-                      sessionLabel={null}
-                      onClearSession={noop}
-                      isRefreshing={false}
-                      onRefresh={noop}
-                      activeFilterCount={0}
-                      facets={facets}
+                      {...header}
+                      isRailCollapsed={isRailCollapsed}
+                      onDock={onDock}
                     />
                   }
                 >
@@ -495,7 +508,7 @@ export const BrandLookupScene = () => {
                     onClearFilters={noop}
                   />
                 </PaneShell>
-              }
+              )}
               drawer={
                 <InboxDetail
                   record={LOOKUP_RECORD}

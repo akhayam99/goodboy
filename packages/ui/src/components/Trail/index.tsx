@@ -5,6 +5,7 @@ import { TrailCrumb } from './TrailCrumb';
 import { TrailFold } from './TrailFold';
 import { TrailSeparator } from './TrailSeparator';
 import { CrumbMenuTrigger } from './CrumbMenuTrigger';
+import { crumbMenuWithChoice } from './crumbMenuTypes';
 import { useTrailCompaction } from './useTrailCompaction';
 
 type Props = {
@@ -40,6 +41,7 @@ export const Trail = ({ segments, lead, className }: Props) => {
         const isIconOnly = state === 'icon';
         const delay = delays[index] ?? 0;
         const delayStyle = delay > 0 ? { transitionDelay: `${delay}ms` } : undefined;
+        const menu = crumbMenuWithChoice({ menu: segment.menu });
         return (
           <Fragment key={segment.id}>
             <span
@@ -51,10 +53,10 @@ export const Trail = ({ segments, lead, className }: Props) => {
                 enteringIds.has(segment.id) && 'motion-safe:animate-trail-crumb-in',
               )}
             >
-              {segment.menu != null ? (
+              {menu !== null ? (
                 <CrumbMenuTrigger
                   segment={segment}
-                  menu={segment.menu}
+                  menu={menu}
                   isCurrent={isCurrent}
                   isIconOnly={isIconOnly}
                 />

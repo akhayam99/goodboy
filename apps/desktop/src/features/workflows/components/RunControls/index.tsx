@@ -128,7 +128,18 @@ export const RunControls = ({
           onClick={() => void guard(approvePlan)}
         />
       ) : null}
-      {autonomyMenu === null && approveItem === null ? null : (
+      {autonomyMenu === null && approveItem !== null ? (
+        <OrchestratorAction
+          icon={Check}
+          label="Approve plan"
+          variant="ghost"
+          testId="run-approve-plan-ghost"
+          title={approveItem.reason ?? 'Approve the plan and move the run on'}
+          disabled={isBusy || approveItem.reason !== null}
+          onClick={approveItem.onApprove}
+        />
+      ) : null}
+      {autonomyMenu === null ? null : (
         <RunControlMenu
           label={autonomyMenu?.label ?? PLAN_MENU_LABEL}
           autonomy={
