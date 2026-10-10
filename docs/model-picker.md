@@ -34,7 +34,10 @@ The row above the provider chips is one component with two meanings.
   **Auto**. Saving Auto means "follow the ladder", not a model. The closed
   trigger reads `Auto` and the open row says what Auto picks right now
   (`Now: Claude · Sonnet 5.5 · Medium`). A pinned trigger shows the model and an
-  x back to Auto
+  x back to Auto. The row under a Models page label and the run page and builder
+  orchestrator pills read that answer from `useResolution`, so they name the same
+  model; when a pin is skipped or a project overrides it, the row's muted line says
+  why through `explainResolution` (see `docs/providers.md`, Defaults internals)
 - **Launching popovers** (Start agent, Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that
   decided (`suggestedRouting`): the role default on the default provider, a pin
