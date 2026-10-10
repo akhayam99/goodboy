@@ -2,6 +2,7 @@ activity
 activity-empty
 activity-groups
 activity-log
+activity-mark-seen
 activity-one-signal
 activity-question
 activity-resolves
@@ -197,6 +198,7 @@ mount-mismatch
 mounts
 needs-you-card
 notifications
+notifications-delete-all
 notifications-empty
 onboarding
 open-question-prose
@@ -321,6 +323,7 @@ switcher-pinned
 task-links
 task-links-hover
 task-links-undo
+tasks-cursor
 terminal-empty
 toast-over-drawer
 toast-over-drawer-overlay

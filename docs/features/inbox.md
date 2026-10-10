@@ -27,7 +27,7 @@ Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Line
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
-Work from one list instead of seven tabs. Issues, Slack threads and Sentry errors from your connected tools sit together, grouped by day, next to pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket. Narrow the list by **View**, **Type**, **Source** and **Project**, and move with **j** and **k**. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list. A row shows its status word only when the list mixes states, so a list of open items does not repeat Open on every row.
+Work from one list instead of seven tabs. Issues, Slack threads and Sentry errors from your connected tools sit together, grouped by day, next to pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket. Narrow the list by **View**, **Type**, **Source** and **Project**, and move with **j** and **k**. Tasks opens with a quiet cursor on the first row and nothing open beside the list; press **Enter** or click a row to open it, and **Esc** closes it before it closes Tasks. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list. A row shows its status word only when the list mixes states, so a list of open items does not repeat Open on every row.
 
 ### Find any issue by code or link
 
