@@ -7,7 +7,15 @@ case "$1" in
   auth)
     case "$fake_mode" in
       logged-out)
-        printf '{"loggedIn":false}\n'
+        printf '{"loggedIn":false,"authMethod":"none","apiProvider":"firstParty"}\n'
+        exit 1
+        ;;
+      slow)
+        fake_hang
+        ;;
+      garbage)
+        printf 'something new and unexpected\n'
+        exit 1
         ;;
       *)
         printf '{"loggedIn":true,"email":"avery@harborline.test","subscriptionType":"max"}\n'

@@ -1,10 +1,10 @@
-use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::path_env;
+use crate::proc::probe::{self, Budget, ProbeOutput};
 
 pub(crate) mod cli_args;
 
@@ -24,10 +24,43 @@ impl ProviderStatusError {
 
 crate::util::impl_error_serialize!(ProviderStatusError);
 
-const DETECT_TIMEOUT: Duration = Duration::from_secs(2);
-const AUTH_TIMEOUT: Duration = Duration::from_secs(5);
-const CODEX_AUTH_TIMEOUT: Duration = Duration::from_secs(8);
-const POLL_INTERVAL: Duration = Duration::from_millis(50);
+const DETECT_TIMEOUT: Duration = Duration::from_secs(5);
+const AUTH_TIMEOUT: Duration = Duration::from_secs(10);
+const CODEX_AUTH_TIMEOUT: Duration = Duration::from_secs(15);
+const RETRY_DELAY: Duration = Duration::from_secs(3);
+
+const DETECT_BUDGET: Budget = Budget {
+    timeout: DETECT_TIMEOUT,
+    retry_delay: RETRY_DELAY,
+};
+const AUTH_BUDGET: Budget = Budget {
+    timeout: AUTH_TIMEOUT,
+    retry_delay: RETRY_DELAY,
+};
+const CODEX_AUTH_BUDGET: Budget = Budget {
+    timeout: CODEX_AUTH_TIMEOUT,
+    retry_delay: RETRY_DELAY,
+};
+
+const REASON_LIMIT: usize = 160;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ProbeErrorKind {
+    NotFound,
+    Timeout,
+    Exit,
+}
+
+impl ProbeErrorKind {
+    fn label(self) -> &'static str {
+        match self {
+            ProbeErrorKind::NotFound => "not_found",
+            ProbeErrorKind::Timeout => "timeout",
+            ProbeErrorKind::Exit => "exit",
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ProviderStatus {
@@ -37,6 +70,34 @@ pub struct ProviderStatus {
     pub version: Option<String>,
     pub error: Option<String>,
     pub path: Option<String>,
+    #[serde(rename = "errorKind")]
+    pub error_kind: Option<ProbeErrorKind>,
+}
+
+impl ProviderStatus {
+    fn found(id: &str, binary: &str, version: String) -> Self {
+        Self {
+            id: id.to_string(),
+            binary: binary.to_string(),
+            available: true,
+            version: Some(version),
+            error: None,
+            path: None,
+            error_kind: None,
+        }
+    }
+
+    fn failed(id: &str, binary: &str, kind: ProbeErrorKind, error: String) -> Self {
+        Self {
+            id: id.to_string(),
+            binary: binary.to_string(),
+            available: false,
+            version: None,
+            error: Some(error),
+            path: None,
+            error_kind: Some(kind),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -52,6 +113,50 @@ pub struct AuthState {
     pub state: AuthStateKind,
     pub identity: Option<String>,
     pub plan: Option<String>,
+    pub verified: bool,
+    pub reason: Option<String>,
+}
+
+impl AuthState {
+    fn connected(identity: Option<String>, plan: Option<String>) -> Self {
+        Self {
+            state: AuthStateKind::Connected,
+            identity,
+            plan,
+            verified: true,
+            reason: None,
+        }
+    }
+
+    fn connected_unverified(reason: String) -> Self {
+        Self {
+            state: AuthStateKind::Connected,
+            identity: None,
+            plan: None,
+            verified: false,
+            reason: Some(reason),
+        }
+    }
+
+    fn disconnected() -> Self {
+        Self {
+            state: AuthStateKind::Disconnected,
+            identity: None,
+            plan: None,
+            verified: true,
+            reason: None,
+        }
+    }
+
+    fn unknown(reason: impl Into<String>) -> Self {
+        Self {
+            state: AuthStateKind::Unknown,
+            identity: None,
+            plan: None,
+            verified: false,
+            reason: Some(reason.into()),
+        }
+    }
 }
 
 pub fn detect_claude() -> ProviderStatus {
@@ -75,167 +180,122 @@ pub fn detect_opencode() -> ProviderStatus {
 }
 
 fn detect_binary(id: &str, binary: &str) -> ProviderStatus {
-    detect_binary_within(id, binary, DETECT_TIMEOUT)
+    detect_binary_within(id, binary, DETECT_BUDGET)
 }
 
-fn detect_binary_within(id: &str, binary: &str, timeout: Duration) -> ProviderStatus {
+fn detect_binary_within(id: &str, binary: &str, budget: Budget) -> ProviderStatus {
     ProviderStatus {
         path: path_env::which(binary),
-        ..probe_binary(id, binary, timeout)
+        ..probe_binary(id, binary, budget)
     }
 }
 
-fn probe_binary(id: &str, binary: &str, timeout: Duration) -> ProviderStatus {
-    let mut child = match path_env::command(binary)
-        .arg("--version")
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-    {
-        Ok(child) => child,
+fn log_probe_failure(provider: &str, kind: ProbeErrorKind, millis: u128) {
+    log::info!("[probe] {provider} {} {millis}ms", kind.label());
+}
+
+fn spawn_error_kind(err: &std::io::Error) -> ProbeErrorKind {
+    if err.kind() == std::io::ErrorKind::NotFound {
+        return ProbeErrorKind::NotFound;
+    }
+    ProbeErrorKind::Exit
+}
+
+fn probe_binary(id: &str, binary: &str, budget: Budget) -> ProviderStatus {
+    let started = Instant::now();
+    let result = probe::run_retrying(
+        || {
+            let mut command = path_env::command(binary);
+            command.arg("--version");
+            command
+        },
+        budget,
+    );
+    let out = match result {
+        Ok(out) => out,
         Err(err) => {
-            return ProviderStatus {
-                id: id.to_string(),
-                binary: binary.to_string(),
-                available: false,
-                version: None,
-                error: Some(err.to_string()),
-                path: None,
-            };
+            let kind = spawn_error_kind(&err);
+            log_probe_failure(id, kind, started.elapsed().as_millis());
+            return ProviderStatus::failed(id, binary, kind, err.to_string());
         }
     };
+    if out.timed_out {
+        log_probe_failure(id, ProbeErrorKind::Timeout, out.elapsed.as_millis());
+        return ProviderStatus::failed(
+            id,
+            binary,
+            ProbeErrorKind::Timeout,
+            "detection timed out".to_string(),
+        );
+    }
+    if out.code != Some(0) {
+        log_probe_failure(id, ProbeErrorKind::Exit, out.elapsed.as_millis());
+        return ProviderStatus::failed(
+            id,
+            binary,
+            ProbeErrorKind::Exit,
+            format!("exited with code {}", out.code.unwrap_or(-1)),
+        );
+    }
+    ProviderStatus::found(id, binary, out.stdout)
+}
 
-    let deadline = Instant::now() + timeout;
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                let stdout = child
-                    .stdout
-                    .take()
-                    .map(read_to_string)
-                    .unwrap_or_default()
-                    .trim()
-                    .to_string();
-                if status.success() {
-                    return ProviderStatus {
-                        id: id.to_string(),
-                        binary: binary.to_string(),
-                        available: true,
-                        version: Some(stdout),
-                        error: None,
-                        path: None,
-                    };
-                } else {
-                    return ProviderStatus {
-                        id: id.to_string(),
-                        binary: binary.to_string(),
-                        available: false,
-                        version: None,
-                        error: Some(format!("exited with code {}", status.code().unwrap_or(-1))),
-                        path: None,
-                    };
-                }
-            }
-            Ok(None) => {
-                if Instant::now() >= deadline {
-                    let _ = child.kill();
-                    return ProviderStatus {
-                        id: id.to_string(),
-                        binary: binary.to_string(),
-                        available: false,
-                        version: None,
-                        error: Some("detection timed out".to_string()),
-                        path: None,
-                    };
-                }
-                std::thread::sleep(POLL_INTERVAL);
-            }
-            Err(err) => {
-                return ProviderStatus {
-                    id: id.to_string(),
-                    binary: binary.to_string(),
-                    available: false,
-                    version: None,
-                    error: Some(err.to_string()),
-                    path: None,
-                };
-            }
-        }
+fn spawn_failure_reason(err: &std::io::Error) -> String {
+    if err.kind() == std::io::ErrorKind::NotFound {
+        return "the CLI is not installed".to_string();
+    }
+    err.to_string()
+}
+
+fn output_reason(out: &ProbeOutput) -> String {
+    let line = out
+        .primary_text()
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty());
+    if let Some(line) = line {
+        return line.chars().take(REASON_LIMIT).collect();
+    }
+    match out.code {
+        Some(0) => "the CLI printed nothing".to_string(),
+        Some(code) => format!("the CLI exited with code {code}"),
+        None => "the CLI ended without an exit code".to_string(),
     }
 }
 
-fn read_to_string<R: std::io::Read>(mut reader: R) -> String {
-    let mut buf = String::new();
-    let _ = reader.read_to_string(&mut buf);
-    buf
-}
-
-pub struct AuthCommandOutput {
-    pub stdout: String,
-    pub stderr: String,
-}
-
-impl AuthCommandOutput {
-    /// codex CLI v0.130 writes `codex login status` to stderr in non-TTY mode
-    /// (and Tauri children never have a TTY) — fall back when stdout is empty.
-    fn primary_text(&self) -> &str {
-        if self.stdout.trim().is_empty() {
-            &self.stderr
-        } else {
-            &self.stdout
-        }
+fn unrecognized(provider: &str, out: &ProbeOutput) -> AuthState {
+    if out.code != Some(0) {
+        log_probe_failure(provider, ProbeErrorKind::Exit, out.elapsed.as_millis());
     }
+    AuthState::unknown(output_reason(out))
 }
 
-fn run_auth_command(args: &[&str]) -> Result<AuthCommandOutput, String> {
-    run_auth_command_until(args, Instant::now() + AUTH_TIMEOUT)
-}
-
-fn run_auth_command_until(args: &[&str], deadline: Instant) -> Result<AuthCommandOutput, String> {
-    let (binary, rest) = args
-        .split_first()
-        .ok_or_else(|| "empty command".to_string())?;
-    let mut child = path_env::command(binary)
-        .args(rest)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| e.to_string())?;
-
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                let stdout = child
-                    .stdout
-                    .take()
-                    .map(read_to_string)
-                    .unwrap_or_default()
-                    .trim()
-                    .to_string();
-                let stderr = child
-                    .stderr
-                    .take()
-                    .map(read_to_string)
-                    .unwrap_or_default()
-                    .trim()
-                    .to_string();
-                if status.success() {
-                    return Ok(AuthCommandOutput { stdout, stderr });
-                } else {
-                    let msg = if stderr.is_empty() { stdout } else { stderr };
-                    return Err(msg);
-                }
-            }
-            Ok(None) => {
-                if Instant::now() >= deadline {
-                    let _ = child.kill();
-                    return Err("auth check timed out".to_string());
-                }
-                std::thread::sleep(POLL_INTERVAL);
-            }
-            Err(e) => return Err(e.to_string()),
+fn run_auth(provider: &str, args: &[&str], budget: Budget) -> Result<ProbeOutput, AuthState> {
+    let Some((binary, rest)) = args.split_first() else {
+        return Err(AuthState::unknown("empty command"));
+    };
+    let started = Instant::now();
+    let result = probe::run_retrying(
+        || {
+            let mut command = path_env::command(binary);
+            command.args(rest);
+            command
+        },
+        budget,
+    );
+    let out = match result {
+        Ok(out) => out,
+        Err(err) => {
+            let kind = spawn_error_kind(&err);
+            log_probe_failure(provider, kind, started.elapsed().as_millis());
+            return Err(AuthState::unknown(spawn_failure_reason(&err)));
         }
+    };
+    if out.timed_out {
+        log_probe_failure(provider, ProbeErrorKind::Timeout, out.elapsed.as_millis());
+        return Err(AuthState::unknown("the CLI did not answer in time"));
     }
+    Ok(out)
 }
 
 fn strip_ansi(s: &str) -> String {
@@ -337,155 +397,146 @@ fn extract_codex_identity_from_auth_json() -> Option<String> {
 }
 
 fn check_claude_auth() -> AuthState {
-    check_claude_auth_with("claude")
+    check_claude_auth_with("claude", AUTH_BUDGET)
 }
 
-fn check_claude_auth_with(binary: &str) -> AuthState {
-    match run_auth_command(&[binary, "auth", "status"]) {
-        Ok(out) => parse_claude_auth_output(&out.stdout),
-        Err(_) => AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
-        },
+fn check_claude_auth_with(binary: &str, budget: Budget) -> AuthState {
+    match run_auth("anthropic", &[binary, "auth", "status"], budget) {
+        Ok(out) => parse_claude_auth_output(&out),
+        Err(state) => state,
     }
 }
 
-fn parse_claude_auth_output(output: &str) -> AuthState {
-    let value: serde_json::Value = match serde_json::from_str(output) {
-        Ok(v) => v,
-        Err(_) => {
-            return AuthState {
-                state: AuthStateKind::Unknown,
-                identity: None,
-                plan: None,
-            };
-        }
+fn parse_claude_auth_output(out: &ProbeOutput) -> AuthState {
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(out.primary_text()) else {
+        return unrecognized("anthropic", out);
     };
-
-    if value.get("loggedIn").and_then(|v| v.as_bool()) != Some(true) {
-        return AuthState {
-            state: AuthStateKind::Disconnected,
-            identity: None,
-            plan: None,
-        };
-    }
-
-    let identity = ["email", "username", "accountName"]
-        .iter()
-        .find_map(|k| value.get(k).and_then(|v| v.as_str()).map(|s| s.to_string()));
-    let plan = value
-        .get("subscriptionType")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|s| s.to_string());
-    AuthState {
-        state: AuthStateKind::Connected,
-        identity,
-        plan,
+    match value.get("loggedIn").and_then(|v| v.as_bool()) {
+        Some(true) => {
+            let identity = ["email", "username", "accountName"]
+                .iter()
+                .find_map(|k| value.get(k).and_then(|v| v.as_str()).map(|s| s.to_string()));
+            let plan = value
+                .get("subscriptionType")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string());
+            AuthState::connected(identity, plan)
+        }
+        Some(false) => AuthState::disconnected(),
+        None => unrecognized("anthropic", out),
     }
 }
 
 fn check_cursor_auth() -> AuthState {
-    check_cursor_auth_with("cursor-agent")
+    check_cursor_auth_with("cursor-agent", AUTH_BUDGET)
 }
 
-fn check_cursor_auth_with(binary: &str) -> AuthState {
-    match run_auth_command(&[binary, "status"]) {
-        // Use primary_text() so a non-TTY child that writes status to stderr is
-        // still read (cursor-agent, like codex, can route to stderr headless).
-        Ok(out) => parse_cursor_auth_output(out.primary_text()),
-        Err(_) => AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
-        },
+fn check_cursor_auth_with(binary: &str, budget: Budget) -> AuthState {
+    match run_auth("cursor", &[binary, "status", "--format", "json"], budget) {
+        Ok(out) => {
+            if let Some(state) = parse_cursor_status_json(&out) {
+                return state;
+            }
+        }
+        Err(state) => return state,
+    }
+    match run_auth("cursor", &[binary, "status"], budget) {
+        Ok(out) => parse_cursor_auth_output(&out),
+        Err(state) => state,
     }
 }
 
-fn parse_cursor_auth_output(output: &str) -> AuthState {
-    let stripped = strip_ansi(output);
+fn json_text(value: &serde_json::Value, key: &str) -> Option<String> {
+    value
+        .get(key)
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn parse_cursor_status_json(out: &ProbeOutput) -> Option<AuthState> {
+    let stripped = strip_ansi(out.primary_text());
+    let start = stripped.find('{')?;
+    let end = stripped.rfind('}')?;
+    if end < start {
+        return None;
+    }
+    let value: serde_json::Value = serde_json::from_str(&stripped[start..=end]).ok()?;
+    let is_authenticated = value.get("isAuthenticated")?.as_bool()?;
+    if !is_authenticated {
+        return Some(AuthState::disconnected());
+    }
+    if value.get("hasAccessToken").and_then(|v| v.as_bool()) == Some(false) {
+        return Some(AuthState::unknown("Cursor holds no access token"));
+    }
+    let message = json_text(&value, "message");
+    let identity = json_text(&value, "email")
+        .or_else(|| message.as_deref().and_then(extract_email))
+        .or_else(|| {
+            json_text(&value, "about")
+                .as_deref()
+                .and_then(extract_email)
+        });
+    if let Some(identity) = identity {
+        return Some(AuthState::connected(Some(identity), None));
+    }
+    Some(AuthState::connected_unverified(message.unwrap_or_else(
+        || "Cursor did not confirm the account with its server".to_string(),
+    )))
+}
+
+fn parse_cursor_auth_output(out: &ProbeOutput) -> AuthState {
+    let stripped = strip_ansi(out.primary_text());
     let text = stripped.trim();
     if text.is_empty() {
-        return AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
-        };
+        return unrecognized("cursor", out);
     }
     let lower = text.to_lowercase();
-    // Negative checks first: a "not logged in" line must never be read as positive.
     if lower.contains("not logged in")
         || lower.contains("not authenticated")
         || lower.contains("not signed in")
         || lower.contains("logged out")
     {
-        return AuthState {
-            state: AuthStateKind::Disconnected,
-            identity: None,
-            plan: None,
-        };
+        return AuthState::disconnected();
     }
     let identity = extract_email(text)
         .or_else(|| extract_json_string(text, "email"))
         .or_else(|| extract_json_string(text, "username"));
-    // Only Connected on a positive signal (an identity or an explicit logged-in
-    // phrase). Unrecognized/empty output stays Unknown instead of silently
-    // reporting "connected" — the previous code fell through to Connected and
-    // showed a logged-out cursor as authenticated.
-    let positive = identity.is_some()
-        || lower.contains("logged in")
+    if let Some(identity) = identity {
+        return AuthState::connected(Some(identity), None);
+    }
+    let is_positive = lower.contains("logged in")
         || lower.contains("signed in")
         || lower.contains("authenticated as");
-    if positive {
-        AuthState {
-            state: AuthStateKind::Connected,
-            identity,
-            plan: None,
-        }
-    } else {
-        AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
-        }
+    if !is_positive {
+        return unrecognized("cursor", out);
     }
+    let first_line = text.lines().next().unwrap_or(text);
+    AuthState::connected_unverified(first_line.chars().take(REASON_LIMIT).collect())
 }
 
 fn check_codex_auth() -> AuthState {
-    check_codex_auth_with("codex", CODEX_AUTH_TIMEOUT)
+    check_codex_auth_with("codex", CODEX_AUTH_BUDGET)
 }
 
-fn check_codex_auth_with(binary: &str, total_timeout: Duration) -> AuthState {
-    // Subcommand layout shifted across codex versions; try most recent first.
-    let candidates: [&[&str]; 5] = [
-        &[binary, "login", "status"],
-        &[binary, "auth", "status"],
-        &[binary, "auth", "whoami"],
-        &[binary, "whoami"],
-        &[binary, "status"],
-    ];
-    let deadline = Instant::now() + total_timeout;
-    for cmd in candidates {
-        let now = Instant::now();
-        if now >= deadline {
-            break;
+fn check_codex_auth_with(binary: &str, budget: Budget) -> AuthState {
+    let candidates: [&[&str]; 2] = [&[binary, "login", "status"], &[binary, "status"]];
+    let mut last = AuthState::unknown("the CLI gave no status");
+    for args in candidates {
+        let out = match run_auth("codex", args, budget) {
+            Ok(out) => out,
+            Err(state) => return state,
+        };
+        let state = parse_codex_auth_output(&out);
+        if state.state != AuthStateKind::Unknown {
+            return state;
         }
-        let command_deadline = std::cmp::min(now + AUTH_TIMEOUT, deadline);
-        if let Ok(out) = run_auth_command_until(cmd, command_deadline) {
-            let text = out.primary_text();
-            if text.trim().is_empty() {
-                continue;
-            }
-            return parse_codex_auth_output(text);
-        }
+        last = state;
     }
-    AuthState {
-        state: AuthStateKind::Unknown,
-        identity: None,
-        plan: None,
-    }
+    last
 }
 
 fn gemini_creds_dir() -> Option<std::path::PathBuf> {
@@ -521,30 +572,13 @@ fn gemini_creds_present() -> bool {
 }
 
 fn check_gemini_auth() -> AuthState {
-    // antigravity (`agy`) persists session state under `~/.gemini/antigravity-cli/`
-    // after a successful login and clears it on logout, so the directory is the
-    // ground truth. Read it directly: fast, accurate, no interactive subprocess.
-    // API-key auth (GEMINI_API_KEY) leaves no creds dir and is surfaced as
-    // connected by the credential layer instead.
     if let Some(identity) = extract_gemini_identity_from_creds() {
-        return AuthState {
-            state: AuthStateKind::Connected,
-            identity: Some(identity),
-            plan: None,
-        };
+        return AuthState::connected(Some(identity), None);
     }
     if gemini_creds_present() {
-        return AuthState {
-            state: AuthStateKind::Connected,
-            identity: None,
-            plan: None,
-        };
+        return AuthState::connected(None, None);
     }
-    AuthState {
-        state: AuthStateKind::Disconnected,
-        identity: None,
-        plan: None,
-    }
+    AuthState::disconnected()
 }
 
 const OPENCODE_BOX_CHARS: &[char] = &['┌', '│', '└', '├', '┐', '┘', '─', '●', '○', '◆', '◇'];
@@ -580,28 +614,19 @@ fn parse_opencode_credentials(output: &str) -> Vec<String> {
     names
 }
 
+fn opencode_credentials(budget: Budget) -> Result<Vec<String>, AuthState> {
+    let out = run_auth("opencode", &["opencode", "auth", "list"], budget)?;
+    if out.code != Some(0) {
+        return Err(unrecognized("opencode", &out));
+    }
+    Ok(parse_opencode_credentials(out.primary_text()))
+}
+
 fn check_opencode_auth() -> AuthState {
-    match run_auth_command(&["opencode", "auth", "list"]) {
-        Ok(out) => {
-            let names = parse_opencode_credentials(out.primary_text());
-            if names.is_empty() {
-                return AuthState {
-                    state: AuthStateKind::Disconnected,
-                    identity: None,
-                    plan: None,
-                };
-            }
-            AuthState {
-                state: AuthStateKind::Connected,
-                identity: Some(names.join(", ")),
-                plan: None,
-            }
-        }
-        Err(_) => AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
-        },
+    match opencode_credentials(AUTH_BUDGET) {
+        Err(state) => state,
+        Ok(names) if names.is_empty() => AuthState::disconnected(),
+        Ok(names) => AuthState::connected(Some(names.join(", ")), None),
     }
 }
 
@@ -617,58 +642,26 @@ fn moonshot_credential(names: &[String]) -> Option<&String> {
         .find(|name| name.to_lowercase().replace(' ', "").contains("moonshot"))
 }
 
-fn check_openrouter_auth() -> AuthState {
-    match run_auth_command(&["opencode", "auth", "list"]) {
-        Ok(out) => {
-            let names = parse_opencode_credentials(out.primary_text());
-            match openrouter_credential(&names) {
-                Some(name) => AuthState {
-                    state: AuthStateKind::Connected,
-                    identity: Some(name.clone()),
-                    plan: None,
-                },
-                None => AuthState {
-                    state: AuthStateKind::Disconnected,
-                    identity: None,
-                    plan: None,
-                },
-            }
-        }
-        Err(_) => AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
+fn check_credential_auth(find: fn(&[String]) -> Option<&String>) -> AuthState {
+    match opencode_credentials(AUTH_BUDGET) {
+        Err(state) => state,
+        Ok(names) => match find(&names) {
+            Some(name) => AuthState::connected(Some(name.clone()), None),
+            None => AuthState::disconnected(),
         },
     }
+}
+
+fn check_openrouter_auth() -> AuthState {
+    check_credential_auth(openrouter_credential)
 }
 
 fn check_moonshot_auth() -> AuthState {
-    match run_auth_command(&["opencode", "auth", "list"]) {
-        Ok(out) => {
-            let names = parse_opencode_credentials(out.primary_text());
-            match moonshot_credential(&names) {
-                Some(name) => AuthState {
-                    state: AuthStateKind::Connected,
-                    identity: Some(name.clone()),
-                    plan: None,
-                },
-                None => AuthState {
-                    state: AuthStateKind::Disconnected,
-                    identity: None,
-                    plan: None,
-                },
-            }
-        }
-        Err(_) => AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
-        },
-    }
+    check_credential_auth(moonshot_credential)
 }
 
-fn parse_codex_auth_output(output: &str) -> AuthState {
-    let stripped: String = strip_ansi(output);
+fn parse_codex_auth_output(out: &ProbeOutput) -> AuthState {
+    let stripped: String = strip_ansi(out.primary_text());
     let first_line = stripped
         .lines()
         .map(|l| l.trim())
@@ -676,7 +669,6 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
         .unwrap_or("");
     let lower = first_line.to_lowercase();
 
-    // Disconnected before Connected: "you are not logged in" would match both.
     if lower.starts_with("not logged")
         || lower.starts_with("not signed")
         || lower.contains("not logged in")
@@ -684,11 +676,7 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
         || lower.contains("unauthenticated")
         || lower.contains("no credentials")
     {
-        return AuthState {
-            state: AuthStateKind::Disconnected,
-            identity: None,
-            plan: None,
-        };
+        return AuthState::disconnected();
     }
     if lower.starts_with("logged in")
         || lower.starts_with("signed in")
@@ -697,21 +685,13 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
         || extract_email(first_line).is_some()
     {
         let identity = extract_email(first_line)
-            .or_else(|| extract_json_string(output, "email"))
-            .or_else(|| extract_json_string(output, "username"))
+            .or_else(|| extract_json_string(&stripped, "email"))
+            .or_else(|| extract_json_string(&stripped, "username"))
             .or_else(extract_codex_identity_from_auth_json);
-        return AuthState {
-            state: AuthStateKind::Connected,
-            identity,
-            plan: None,
-        };
+        return AuthState::connected(identity, None);
     }
 
-    AuthState {
-        state: AuthStateKind::Unknown,
-        identity: None,
-        plan: None,
-    }
+    unrecognized("codex", out)
 }
 
 #[tauri::command]
@@ -773,11 +753,7 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
         "opencode" => check_opencode_auth(),
         "openrouter" => check_openrouter_auth(),
         "moonshot" => check_moonshot_auth(),
-        _ => AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
-        },
+        _ => AuthState::unknown("unknown provider"),
     }
 }
 
@@ -789,11 +765,7 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
 pub async fn check_provider_auth(provider_id: String) -> AuthState {
     tauri::async_runtime::spawn_blocking(move || check_provider_auth_blocking(&provider_id))
         .await
-        .unwrap_or(AuthState {
-            state: AuthStateKind::Unknown,
-            identity: None,
-            plan: None,
-        })
+        .unwrap_or_else(|_| AuthState::unknown("the check did not finish"))
 }
 
 #[cfg(all(test, unix))]
@@ -802,6 +774,22 @@ mod fake_cli_tests;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn out(code: Option<i32>, stdout: &str) -> ProbeOutput {
+        ProbeOutput {
+            code,
+            stdout: stdout.to_string(),
+            ..ProbeOutput::default()
+        }
+    }
+
+    fn err_out(code: Option<i32>, stderr: &str) -> ProbeOutput {
+        ProbeOutput {
+            code,
+            stderr: stderr.to_string(),
+            ..ProbeOutput::default()
+        }
+    }
 
     #[test]
     fn provider_status_error_serializes_kind_and_message() {
@@ -819,7 +807,7 @@ mod tests {
     #[test]
     fn claude_parses_logged_in_json() {
         let json = r#"{"loggedIn":true,"authMethod":"claude.ai","email":"a@b.com"}"#;
-        let s = parse_claude_auth_output(json);
+        let s = parse_claude_auth_output(&out(Some(0), json));
         assert_eq!(s.state, AuthStateKind::Connected);
         assert_eq!(s.identity.as_deref(), Some("a@b.com"));
         assert_eq!(s.plan, None);
@@ -828,71 +816,72 @@ mod tests {
     #[test]
     fn claude_reads_the_plan_from_subscription_type() {
         let json = r#"{"loggedIn":true,"authMethod":"claude.ai","email":"a@b.com","subscriptionType":"team"}"#;
-        let s = parse_claude_auth_output(json);
+        let s = parse_claude_auth_output(&out(Some(0), json));
         assert_eq!(s.plan.as_deref(), Some("team"));
     }
 
     #[test]
     fn claude_parses_logged_out_json() {
-        let s = parse_claude_auth_output(r#"{"loggedIn":false}"#);
+        let s = parse_claude_auth_output(&out(Some(0), r#"{"loggedIn":false}"#));
         assert_eq!(s.state, AuthStateKind::Disconnected);
         assert_eq!(s.identity, None);
     }
 
     #[test]
     fn claude_returns_unknown_on_non_json() {
-        let s = parse_claude_auth_output("garbage not json");
+        let s = parse_claude_auth_output(&out(Some(0), "garbage not json"));
         assert_eq!(s.state, AuthStateKind::Unknown);
     }
 
     #[test]
     fn claude_falls_back_to_username_when_email_missing() {
         let json = r#"{"loggedIn":true,"username":"alice"}"#;
-        let s = parse_claude_auth_output(json);
+        let s = parse_claude_auth_output(&out(Some(0), json));
         assert_eq!(s.state, AuthStateKind::Connected);
         assert_eq!(s.identity.as_deref(), Some("alice"));
     }
 
     #[test]
     fn codex_logged_in_with_chatgpt() {
-        let s = parse_codex_auth_output("Logged in using ChatGPT\n");
+        let s = parse_codex_auth_output(&out(Some(0), "Logged in using ChatGPT\n"));
         assert_eq!(s.state, AuthStateKind::Connected);
     }
 
     #[test]
     fn codex_logged_in_with_api_key() {
-        let s = parse_codex_auth_output("Logged in using API key\n");
+        let s = parse_codex_auth_output(&out(Some(0), "Logged in using API key\n"));
         assert_eq!(s.state, AuthStateKind::Connected);
     }
 
     #[test]
     fn codex_not_logged_in() {
-        let s = parse_codex_auth_output("Not logged in\n");
+        let s = parse_codex_auth_output(&out(Some(0), "Not logged in\n"));
         assert_eq!(s.state, AuthStateKind::Disconnected);
     }
 
     #[test]
     fn codex_handles_ansi_escapes() {
-        let s = parse_codex_auth_output("\u{1b}[1mLogged in using ChatGPT\u{1b}[0m\n");
+        let s =
+            parse_codex_auth_output(&out(Some(0), "\u{1b}[1mLogged in using ChatGPT\u{1b}[0m\n"));
         assert_eq!(s.state, AuthStateKind::Connected);
     }
 
     #[test]
     fn codex_extracts_email_when_present() {
-        let s = parse_codex_auth_output("Logged in as alice@example.com\n");
+        let s = parse_codex_auth_output(&out(Some(0), "Logged in as alice@example.com\n"));
         assert_eq!(s.state, AuthStateKind::Connected);
         assert_eq!(s.identity.as_deref(), Some("alice@example.com"));
     }
 
     #[test]
     fn codex_returns_unknown_on_unrecognized() {
-        let s = parse_codex_auth_output("whatever new wording\n");
+        let s = parse_codex_auth_output(&out(Some(0), "whatever new wording\n"));
         assert_eq!(s.state, AuthStateKind::Unknown);
     }
 
     #[test]
     fn codex_ignores_leading_blank_lines() {
-        let s = parse_codex_auth_output("\n\n  \nLogged in using ChatGPT\n");
+        let s = parse_codex_auth_output(&out(Some(0), "\n\n  \nLogged in using ChatGPT\n"));
         assert_eq!(s.state, AuthStateKind::Connected);
     }
 
@@ -945,73 +934,71 @@ mod tests {
 
     #[test]
     fn auth_output_prefers_stdout_when_present() {
-        let out = AuthCommandOutput {
+        let out = ProbeOutput {
             stdout: "Logged in using API key (sk-…)\n".to_string(),
-            stderr: String::new(),
+            ..ProbeOutput::default()
         };
         assert_eq!(out.primary_text(), "Logged in using API key (sk-…)\n");
     }
 
     #[test]
     fn auth_output_falls_back_to_stderr_when_stdout_empty() {
-        let out = AuthCommandOutput {
-            stdout: String::new(),
+        let out = ProbeOutput {
             stderr: "Logged in using ChatGPT\n".to_string(),
+            ..ProbeOutput::default()
         };
         assert_eq!(out.primary_text(), "Logged in using ChatGPT\n");
-        let parsed = parse_codex_auth_output(out.primary_text());
+        let parsed = parse_codex_auth_output(&out);
         assert_eq!(parsed.state, AuthStateKind::Connected);
     }
 
     #[test]
     fn auth_output_uses_stdout_when_only_whitespace_on_stderr() {
-        let out = AuthCommandOutput {
+        let out = ProbeOutput {
             stdout: "Logged in using ChatGPT\n".to_string(),
             stderr: "  \n".to_string(),
+            ..ProbeOutput::default()
         };
         assert_eq!(out.primary_text(), "Logged in using ChatGPT\n");
     }
 
     #[test]
     fn auth_output_returns_empty_when_both_streams_empty() {
-        let out = AuthCommandOutput {
-            stdout: String::new(),
-            stderr: String::new(),
-        };
+        let out = ProbeOutput::default();
         assert!(out.primary_text().trim().is_empty());
     }
 
     #[test]
     fn cursor_not_logged_in_is_disconnected() {
-        let s = parse_cursor_auth_output("Not logged in\n");
+        let s = parse_cursor_auth_output(&out(Some(0), "Not logged in\n"));
         assert_eq!(s.state, AuthStateKind::Disconnected);
     }
 
     #[test]
     fn cursor_empty_output_is_unknown_not_connected() {
         // Regression: empty/odd output used to fall through to Connected.
-        let s = parse_cursor_auth_output("");
+        let s = parse_cursor_auth_output(&out(Some(0), ""));
         assert_eq!(s.state, AuthStateKind::Unknown);
-        let s2 = parse_cursor_auth_output("   \n  \n");
+        let s2 = parse_cursor_auth_output(&out(Some(0), "   \n  \n"));
         assert_eq!(s2.state, AuthStateKind::Unknown);
     }
 
     #[test]
     fn cursor_unrecognized_output_is_unknown() {
-        let s = parse_cursor_auth_output("some unexpected banner line\n");
+        let s = parse_cursor_auth_output(&out(Some(0), "some unexpected banner line\n"));
         assert_eq!(s.state, AuthStateKind::Unknown);
     }
 
     #[test]
     fn cursor_logged_in_with_email_is_connected() {
-        let s = parse_cursor_auth_output("Logged in as alice@example.com\n");
+        let s = parse_cursor_auth_output(&out(Some(0), "Logged in as alice@example.com\n"));
         assert_eq!(s.state, AuthStateKind::Connected);
         assert_eq!(s.identity.as_deref(), Some("alice@example.com"));
     }
 
     #[test]
     fn cursor_logged_in_phrase_without_identity_is_connected() {
-        let s = parse_cursor_auth_output("Signed in\n");
+        let s = parse_cursor_auth_output(&out(Some(0), "Signed in\n"));
         assert_eq!(s.state, AuthStateKind::Connected);
     }
 
@@ -1062,5 +1049,156 @@ mod tests {
             openrouter_credential(&names),
             Some(&"OpenRouter".to_string())
         );
+    }
+
+    #[test]
+    fn claude_reads_a_logged_out_json_whatever_the_exit_code() {
+        let s = parse_claude_auth_output(&out(Some(1), r#"{"loggedIn":false}"#));
+        assert_eq!(s.state, AuthStateKind::Disconnected);
+        assert_eq!(s.reason, None);
+    }
+
+    #[test]
+    fn claude_json_without_a_logged_in_flag_is_unknown() {
+        let s = parse_claude_auth_output(&out(Some(0), r#"{"authMethod":"none"}"#));
+        assert_eq!(s.state, AuthStateKind::Unknown);
+        assert!(s.reason.is_some());
+    }
+
+    #[test]
+    fn claude_empty_output_is_unknown_with_the_exit_code_as_reason() {
+        let s = parse_claude_auth_output(&out(Some(2), ""));
+        assert_eq!(s.state, AuthStateKind::Unknown);
+        assert_eq!(s.reason.as_deref(), Some("the CLI exited with code 2"));
+    }
+
+    #[test]
+    fn codex_not_logged_in_with_exit_1_is_disconnected() {
+        let s = parse_codex_auth_output(&err_out(Some(1), "Not logged in\n"));
+        assert_eq!(s.state, AuthStateKind::Disconnected);
+    }
+
+    #[test]
+    fn codex_unrecognized_output_keeps_the_first_line_as_reason() {
+        let s = parse_codex_auth_output(&out(Some(0), "whatever new wording\nsecond line\n"));
+        assert_eq!(s.reason.as_deref(), Some("whatever new wording"));
+    }
+
+    #[test]
+    fn cursor_json_with_an_email_in_the_message_is_verified() {
+        let json = r#"{"isAuthenticated":true,"hasAccessToken":true,"message":"Logged in as avery@harborline.test"}"#;
+        let s = parse_cursor_status_json(&out(Some(0), json)).expect("recognised");
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert_eq!(s.identity.as_deref(), Some("avery@harborline.test"));
+        assert!(s.verified);
+    }
+
+    #[test]
+    fn cursor_json_reads_the_email_from_about_when_the_message_has_none() {
+        let json = r#"{"isAuthenticated":true,"hasAccessToken":true,"message":"Logged in","about":"Signed in as avery@harborline.test (Pro)"}"#;
+        let s = parse_cursor_status_json(&out(Some(0), json)).expect("recognised");
+        assert_eq!(s.identity.as_deref(), Some("avery@harborline.test"));
+        assert!(s.verified);
+    }
+
+    #[test]
+    fn cursor_json_without_user_details_is_connected_but_unverified() {
+        let json = r#"{"isAuthenticated":true,"hasAccessToken":true,"message":"Logged in (unable to fetch user details)"}"#;
+        let s = parse_cursor_status_json(&out(Some(0), json)).expect("recognised");
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert!(!s.verified);
+        assert_eq!(
+            s.reason.as_deref(),
+            Some("Logged in (unable to fetch user details)")
+        );
+    }
+
+    #[test]
+    fn cursor_json_that_is_not_authenticated_is_disconnected() {
+        let json = r#"{"isAuthenticated":false,"hasAccessToken":false,"message":"Not logged in"}"#;
+        let s = parse_cursor_status_json(&out(Some(1), json)).expect("recognised");
+        assert_eq!(s.state, AuthStateKind::Disconnected);
+    }
+
+    #[test]
+    fn cursor_json_without_an_access_token_is_unknown() {
+        let json = r#"{"isAuthenticated":true,"hasAccessToken":false,"message":"Logged in"}"#;
+        let s = parse_cursor_status_json(&out(Some(0), json)).expect("recognised");
+        assert_eq!(s.state, AuthStateKind::Unknown);
+    }
+
+    #[test]
+    fn cursor_json_survives_ansi_noise_around_the_object() {
+        let noisy = "\u{1b}[2mcursor-agent\u{1b}[0m\n{\"isAuthenticated\":false}\n";
+        let s = parse_cursor_status_json(&out(Some(0), noisy)).expect("recognised");
+        assert_eq!(s.state, AuthStateKind::Disconnected);
+    }
+
+    #[test]
+    fn cursor_json_parser_declines_what_is_not_a_status_object() {
+        assert!(parse_cursor_status_json(&out(Some(0), "")).is_none());
+        assert!(parse_cursor_status_json(&out(Some(0), "   \n")).is_none());
+        assert!(parse_cursor_status_json(&out(Some(0), "Logged in")).is_none());
+        assert!(parse_cursor_status_json(&out(Some(0), "{not json}")).is_none());
+        assert!(parse_cursor_status_json(&out(Some(0), r#"{"status":"x"}"#)).is_none());
+        assert!(parse_cursor_status_json(&out(Some(1), "usage: cursor-agent status")).is_none());
+    }
+
+    #[test]
+    fn cursor_json_parser_handles_a_huge_payload() {
+        let padding = "x".repeat(100_000);
+        let json = format!(r#"{{"isAuthenticated":true,"message":"{padding}"}}"#);
+        let s = parse_cursor_status_json(&out(Some(0), &json)).expect("recognised");
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert!(!s.verified);
+    }
+
+    #[test]
+    fn cursor_text_status_without_details_is_connected_but_unverified() {
+        let s =
+            parse_cursor_auth_output(&out(Some(0), "Logged in (unable to fetch user details)\n"));
+        assert_eq!(s.state, AuthStateKind::Connected);
+        assert!(!s.verified);
+        assert_eq!(
+            s.reason.as_deref(),
+            Some("Logged in (unable to fetch user details)")
+        );
+    }
+
+    #[test]
+    fn cursor_unrecognized_text_keeps_a_reason() {
+        let s = parse_cursor_auth_output(&out(Some(1), "some unexpected banner line\n"));
+        assert_eq!(s.state, AuthStateKind::Unknown);
+        assert_eq!(s.reason.as_deref(), Some("some unexpected banner line"));
+    }
+
+    #[test]
+    fn probe_error_kind_serializes_in_camel_case() {
+        let kinds = [
+            (ProbeErrorKind::NotFound, "notFound"),
+            (ProbeErrorKind::Timeout, "timeout"),
+            (ProbeErrorKind::Exit, "exit"),
+        ];
+        for (kind, name) in kinds {
+            assert_eq!(serde_json::to_value(kind).expect("serializes"), name);
+        }
+    }
+
+    #[test]
+    fn provider_status_serializes_its_error_kind_as_error_kind() {
+        let status =
+            ProviderStatus::failed("codex", "codex", ProbeErrorKind::NotFound, "gone".into());
+        let value = serde_json::to_value(status).expect("serializes");
+        assert_eq!(value["errorKind"], "notFound");
+        assert_eq!(value["available"], false);
+    }
+
+    #[test]
+    fn auth_state_serializes_verified_and_reason() {
+        let value = serde_json::to_value(AuthState::connected_unverified("local only".into()))
+            .expect("serializes");
+        assert_eq!(value["state"], "connected");
+        assert_eq!(value["verified"], false);
+        assert_eq!(value["reason"], "local only");
     }
 }

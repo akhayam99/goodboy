@@ -9,8 +9,12 @@ case "$1" in
     ;;
   login)
     case "$fake_mode" in
-      auth-hang)
-        exec sleep 30
+      auth-hang | slow)
+        fake_hang
+        ;;
+      logged-out)
+        printf 'Not logged in\n' >&2
+        exit 1
         ;;
       legacy-status | unsupported)
         fake_usage_error "$1"

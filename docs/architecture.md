@@ -43,6 +43,13 @@ gets it too, because a skill script is the user's own bash. `PATH`
 and `TERM` are set after the login environment is copied, so they win over
 anything your profile sets.
 
+The login shell is asked at most three times if it fails or times out. A good
+answer is cached for the life of the app. After three failures the static list is
+cached: Homebrew, `~/.local/bin`, `~/.cargo/bin`, `~/.volta/bin`, `~/.asdf/shims`,
+`~/.local/share/mise/shims` and every `~/.nvm/versions/node/*/bin`, newest first. The
+probe runs in its own session and is killed and reaped on its deadline
+(`apps/desktop/src-tauri/src/proc/probe.rs`).
+
 `login_shell()` is the one place that decides which shell to use. The built-in
 terminal and the environment check always agree because both ask it.
 

@@ -1,5 +1,3 @@
-use std::io::Read;
-use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
@@ -7,10 +5,10 @@ use thiserror::Error;
 
 use crate::aux_spawn::{scrub_nested_session_env, CLAUDE_SETTING_SOURCES};
 use crate::path_env;
+use crate::proc::probe;
 use crate::scratch_dir::{prepare_probe_dir, ScratchDirError};
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(15);
-const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Debug, Error)]
 pub enum UsageProbeError {
@@ -43,12 +41,6 @@ pub struct UsageProbeOutput {
     pub stderr: String,
 }
 
-fn read_to_string<R: Read>(mut reader: R) -> String {
-    let mut buf = String::new();
-    let _ = reader.read_to_string(&mut buf);
-    buf
-}
-
 fn run_probe_until(
     cwd: &str,
     args: &[&str],
@@ -58,41 +50,26 @@ fn run_probe_until(
         .split_first()
         .ok_or_else(|| UsageProbeError::SpawnFailed("empty command".to_string()))?;
     let mut command = path_env::command(binary);
-    command
-        .args(rest)
-        .current_dir(cwd)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+    command.args(rest).current_dir(cwd);
     scrub_nested_session_env(&mut command);
-    let mut child = command
-        .spawn()
-        .map_err(|e| UsageProbeError::SpawnFailed(e.to_string()))?;
-
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                let stdout = child.stdout.take().map(read_to_string).unwrap_or_default();
-                let stderr = child.stderr.take().map(read_to_string).unwrap_or_default();
-                if status.success() {
-                    return Ok(UsageProbeOutput { stdout, stderr });
-                }
-                let msg = if stderr.trim().is_empty() {
-                    stdout
-                } else {
-                    stderr
-                };
-                return Err(UsageProbeError::NonZeroExit(msg));
-            }
-            Ok(None) => {
-                if Instant::now() >= deadline {
-                    let _ = child.kill();
-                    return Err(UsageProbeError::TimedOut);
-                }
-                std::thread::sleep(POLL_INTERVAL);
-            }
-            Err(e) => return Err(UsageProbeError::SpawnFailed(e.to_string())),
-        }
+    let out =
+        probe::run(command, deadline).map_err(|e| UsageProbeError::SpawnFailed(e.to_string()))?;
+    if out.timed_out {
+        log::info!("[probe] usage timeout {}ms", out.elapsed.as_millis());
+        return Err(UsageProbeError::TimedOut);
     }
+    if out.code == Some(0) {
+        return Ok(UsageProbeOutput {
+            stdout: out.stdout,
+            stderr: out.stderr,
+        });
+    }
+    let msg = if out.stderr.trim().is_empty() {
+        out.stdout
+    } else {
+        out.stderr
+    };
+    Err(UsageProbeError::NonZeroExit(msg))
 }
 
 fn claude_usage_probe_blocking() -> Result<UsageProbeOutput, UsageProbeError> {
