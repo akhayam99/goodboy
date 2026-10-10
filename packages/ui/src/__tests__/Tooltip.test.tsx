@@ -2,8 +2,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, act } from '@testing-library/react';
 import { Tooltip } from '../components/Tooltip';
+import { registerEscapeLayer } from '../escape';
 
 afterEach(cleanup);
+
+const focusByKeyboard = (element: HTMLElement): void => {
+  act(() => {
+    element.focus();
+  });
+};
 
 const anchorOf = (trigger: HTMLElement): HTMLElement => {
   const anchor = trigger.parentElement;
@@ -98,7 +105,7 @@ describe('Tooltip', () => {
     vi.useRealTimers();
   });
 
-  it('keeps one pending show when hover and focus both arrive', () => {
+  it('opens at once when focus arrives during a pending hover, leaving no timer behind', () => {
     vi.useFakeTimers();
     render(
       <Tooltip content="test tip">
@@ -106,25 +113,38 @@ describe('Tooltip', () => {
       </Tooltip>,
     );
     fireEvent.mouseEnter(screen.getByRole('button'));
-    fireEvent.focus(screen.getByRole('button'));
     expect(vi.getTimerCount()).toBe(1);
-    fireEvent.mouseLeave(screen.getByRole('button'));
+    focusByKeyboard(screen.getByRole('button'));
+    expect(screen.getByRole('tooltip').textContent).toBe('test tip');
     expect(vi.getTimerCount()).toBe(0);
     vi.useRealTimers();
   });
 
-  it('shows tooltip on focus (keyboard navigation)', async () => {
+  it('shows tooltip on focus (keyboard navigation) with no delay', () => {
     vi.useFakeTimers();
     render(
       <Tooltip content="keyboard tip">
         <button type="button">btn</button>
       </Tooltip>,
     );
+    focusByKeyboard(screen.getByRole('button'));
+    expect(screen.getByRole('tooltip').textContent).toBe('keyboard tip');
+    vi.useRealTimers();
+  });
+
+  it('keeps the delay for a focus that is not from the keyboard', () => {
+    vi.useFakeTimers();
+    render(
+      <Tooltip content="tip">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
     fireEvent.focus(screen.getByRole('button'));
-    await act(async () => {
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    act(() => {
       vi.advanceTimersByTime(400);
     });
-    expect(screen.getByRole('tooltip').textContent).toBe('keyboard tip');
+    expect(screen.getByRole('tooltip').textContent).toBe('tip');
     vi.useRealTimers();
   });
 
@@ -221,6 +241,188 @@ describe('Tooltip', () => {
     const dialog = container.querySelector('dialog');
     expect(dialog?.contains(screen.getByRole('tooltip'))).toBe(true);
     vi.useRealTimers();
+  });
+});
+
+describe('Tooltip, dismissal and suppression', () => {
+  const advance = (ms: number) =>
+    act(() => {
+      vi.advanceTimersByTime(ms);
+    });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('hides on pointer down and stays hidden while the pointer is still on the control', () => {
+    vi.useFakeTimers();
+    render(
+      <Tooltip content="tip">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    const trigger = screen.getByRole('button');
+    fireEvent.mouseEnter(trigger);
+    advance(400);
+    expect(screen.getByRole('tooltip')).toBeDefined();
+
+    fireEvent.pointerDown(trigger);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    fireEvent.focus(trigger);
+    advance(1_000);
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('hides on Escape', () => {
+    vi.useFakeTimers();
+    render(
+      <Tooltip content="tip">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    focusByKeyboard(screen.getByRole('button'));
+    expect(screen.getByRole('tooltip')).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('closes with Escape without swallowing it from the layer beneath', () => {
+    const onEscape = vi.fn();
+    const unregister = registerEscapeLayer(onEscape);
+    render(
+      <Tooltip content="tip">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    focusByKeyboard(screen.getByRole('button'));
+    expect(screen.getByRole('tooltip')).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(onEscape).toHaveBeenCalledTimes(1);
+    unregister();
+  });
+
+  it('ignores other keys', () => {
+    render(
+      <Tooltip content="tip">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    focusByKeyboard(screen.getByRole('button'));
+
+    fireEvent.keyDown(document, { key: 'a' });
+
+    expect(screen.getByRole('tooltip')).toBeDefined();
+  });
+
+  it('does not open while suppressed, by hover or by focus', () => {
+    vi.useFakeTimers();
+    render(
+      <Tooltip content="tip" isSuppressed>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    const trigger = screen.getByRole('button');
+
+    fireEvent.mouseEnter(trigger);
+    focusByKeyboard(trigger);
+    advance(1_000);
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('closes an open tooltip the moment it becomes suppressed', () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <Tooltip content="tip">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    fireEvent.mouseEnter(screen.getByRole('button'));
+    advance(400);
+    expect(screen.getByRole('tooltip')).toBeDefined();
+
+    rerender(
+      <Tooltip content="tip" isSuppressed>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('does not pop open on the focus a closing menu hands back', () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <Tooltip content="tip" isSuppressed>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    rerender(
+      <Tooltip content="tip" isSuppressed={false}>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+
+    focusByKeyboard(screen.getByRole('button'));
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('opens with no delay when another tooltip closed less than 300ms ago', () => {
+    vi.useFakeTimers();
+    render(
+      <>
+        <Tooltip content="first">
+          <button type="button">one</button>
+        </Tooltip>
+        <Tooltip content="second">
+          <button type="button">two</button>
+        </Tooltip>
+      </>,
+    );
+    const one = screen.getByRole('button', { name: 'one' });
+    const two = screen.getByRole('button', { name: 'two' });
+    fireEvent.mouseEnter(one);
+    advance(400);
+    fireEvent.mouseLeave(one);
+    advance(299);
+
+    fireEvent.mouseEnter(two);
+
+    expect(screen.getByRole('tooltip').textContent).toBe('second');
+  });
+
+  it('is back to the full delay once 300ms have passed', () => {
+    vi.useFakeTimers();
+    render(
+      <>
+        <Tooltip content="first">
+          <button type="button">one</button>
+        </Tooltip>
+        <Tooltip content="second">
+          <button type="button">two</button>
+        </Tooltip>
+      </>,
+    );
+    const one = screen.getByRole('button', { name: 'one' });
+    const two = screen.getByRole('button', { name: 'two' });
+    fireEvent.mouseEnter(one);
+    advance(400);
+    fireEvent.mouseLeave(one);
+    advance(300);
+
+    fireEvent.mouseEnter(two);
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    advance(400);
+    expect(screen.getByRole('tooltip').textContent).toBe('second');
   });
 });
 

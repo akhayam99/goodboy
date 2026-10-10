@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MenuTriggerButton } from '../components/MenuTriggerButton';
 
 afterEach(cleanup);
@@ -83,5 +83,72 @@ describe('MenuTriggerButton', () => {
 
     fireEvent.click(trigger());
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('says More actions on hover while the contextual name stays in aria-label', () => {
+    vi.useFakeTimers();
+    render(
+      <MenuTriggerButton label="Branch actions" isOpen={false} onClick={vi.fn()}>
+        <svg />
+      </MenuTriggerButton>,
+    );
+
+    fireEvent.mouseEnter(trigger());
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+
+    expect(screen.getByRole('tooltip').textContent).toBe('More actions');
+    expect(trigger().getAttribute('aria-label')).toBe('Branch actions');
+    vi.useRealTimers();
+  });
+
+  it('keeps a caller tooltip over the default', () => {
+    vi.useFakeTimers();
+    render(
+      <MenuTriggerButton
+        label="Branch actions"
+        tooltip="Plan actions"
+        isOpen={false}
+        onClick={vi.fn()}
+      >
+        <svg />
+      </MenuTriggerButton>,
+    );
+
+    fireEvent.mouseEnter(trigger());
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+
+    expect(screen.getByRole('tooltip').textContent).toBe('Plan actions');
+    vi.useRealTimers();
+  });
+
+  it('shows no tooltip over its own open menu', () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <MenuTriggerButton label="Branch actions" isOpen={false} onClick={vi.fn()}>
+        <svg />
+      </MenuTriggerButton>,
+    );
+    fireEvent.mouseEnter(trigger());
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(screen.getByRole('tooltip')).toBeDefined();
+
+    rerender(
+      <MenuTriggerButton label="Branch actions" isOpen onClick={vi.fn()}>
+        <svg />
+      </MenuTriggerButton>,
+    );
+    fireEvent.mouseEnter(trigger());
+    act(() => {
+      vi.advanceTimersByTime(1_000);
+    });
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    vi.useRealTimers();
   });
 });

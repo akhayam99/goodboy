@@ -5,6 +5,8 @@ import { Tooltip } from './Tooltip';
 
 export type MenuTriggerSize = 'compact' | 'control';
 
+const DEFAULT_TOOLTIP = 'More actions';
+
 const TRIGGER_SIZE: Record<MenuTriggerSize, string> = { compact: 'size-6', control: 'size-7' };
 
 type Props = {
@@ -28,7 +30,7 @@ export const MenuTriggerButton = ({
   onClick,
   children,
 }: Props) => (
-  <Tooltip content={tooltip ?? label} anchorClassName="shrink-0">
+  <Tooltip content={tooltip ?? DEFAULT_TOOLTIP} anchorClassName="shrink-0" isSuppressed={isOpen}>
     <button
       type="button"
       onClick={onClick}
