@@ -2,7 +2,7 @@ import type { ReactNode, Ref } from 'react';
 import { DrawerColumn, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 
-export type InboxRailState = {
+type InboxRailState = {
   readonly isRailCollapsed: boolean;
   readonly onDock: (() => void) | undefined;
 };

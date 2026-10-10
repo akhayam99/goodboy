@@ -176,7 +176,11 @@
         "src/store/slices/workflows/summarizeAgentOutput.ts": ["exports"],
         "src/store/slices/turn/turnHelpers.ts": ["exports"]
       },
-      "ignoreDependencies": ["tailwindcss"]
+      "ignoreDependencies": ["tailwindcss"],
+      "ignore": [
+        "src/store/slices/state-writes/commitAfterConfirm.ts",
+        "src/store/slices/state-writes/latestOnly.ts"
+      ]
     },
     "packages/core": {
       "entry": ["src/**/*.test.ts", "src/**/__tests__/**/*.test.ts"],
