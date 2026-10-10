@@ -338,7 +338,9 @@ fn reveal_blocking(path: &Path) -> Result<(), WorktreeError> {
     let result = std::process::Command::new("explorer")
         .arg(format!("/select,{}", path.to_string_lossy()))
         .spawn();
-    result.map(|_| ()).map_err(WorktreeError::Io)
+    result
+        .map(crate::proc::detach::detach)
+        .map_err(WorktreeError::Io)
 }
 
 #[tauri::command]

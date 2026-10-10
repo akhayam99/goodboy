@@ -364,8 +364,17 @@ pub async fn workspace_script_list_live(
 // Command — interrupt an in-flight workspace script
 // ---------------------------------------------------------------------------
 
-/// Removes the run from the registry and kills the pty child. Dropping the
-/// master sends SIGHUP to the entire process group, cleaning up descendants.
+fn stop_run(mut run: PtyRun) -> usize {
+    let signalled = run
+        .child
+        .process_id()
+        .map(crate::terminal::terminate_pty_session)
+        .unwrap_or(0);
+    crate::logging::note_kill_failure("script kill", run.child.kill());
+    let _ = run.child.wait();
+    signalled
+}
+
 #[tauri::command]
 pub async fn workspace_script_cancel(
     registry: State<'_, ScriptRegistry>,
@@ -375,14 +384,22 @@ pub async fn workspace_script_cancel(
         let mut map = registry.0.lock().map_err(|_| ScriptError::Poisoned)?;
         map.remove(&run_id).map(|slot| slot.run)
     };
-    if let Some(slot) = slot {
-        if let Ok(mut guard) = slot.lock() {
-            if let Some(mut run) = guard.take() {
-                crate::logging::note_kill_failure("script kill", run.child.kill());
-                // Dropping `run.master` sends SIGHUP to the pty process group.
-            }
-        }
-    }
+    let Some(slot) = slot else {
+        return Ok(());
+    };
+    let stopped_run_id = run_id.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let Ok(mut guard) = slot.lock() else {
+            return;
+        };
+        let Some(run) = guard.take() else {
+            return;
+        };
+        let signalled = stop_run(run);
+        log::info!("[script] stop {stopped_run_id}: signalled {signalled} processes");
+    })
+    .await
+    .map_err(|error| ScriptError::Io(error.to_string()))?;
     Ok(())
 }
 
@@ -465,5 +482,67 @@ mod tests {
         );
 
         assert_eq!(registry.list_live().unwrap(), vec![metadata]);
+    }
+
+    #[cfg(unix)]
+    fn spawn_pty_run(body: &str) -> (PtyRun, Box<dyn Read + Send>) {
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .expect("open pty");
+        let cmd = build_script_command(body, "/tmp", &[]);
+        let child = pair.slave.spawn_command(cmd).expect("spawn script");
+        drop(pair.slave);
+        let reader = pair.master.try_clone_reader().expect("reader");
+        let writer = pair.master.take_writer().expect("writer");
+        let run = PtyRun {
+            _writer: writer,
+            _master: pair.master,
+            child,
+        };
+        (run, reader)
+    }
+
+    #[cfg(unix)]
+    fn read_background_pid(reader: &mut dyn Read) -> libc::pid_t {
+        let mut seen = String::new();
+        let mut buf = [0u8; 256];
+        loop {
+            let count = reader.read(&mut buf).expect("read pty");
+            assert!(count > 0, "pty closed before the pid was printed: {seen}");
+            seen.push_str(&String::from_utf8_lossy(&buf[..count]));
+            let pid = seen
+                .lines()
+                .filter_map(|line| line.trim().strip_prefix("pid=")?.parse().ok())
+                .next();
+            if let Some(pid) = pid {
+                return pid;
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn stop_run_kills_a_descendant_that_ignores_hangup() {
+        let (run, mut reader) = spawn_pty_run("trap \"\" HUP; sleep 30 & echo pid=$!; wait");
+        let descendant = read_background_pid(&mut reader);
+        assert_eq!(unsafe { libc::kill(descendant, 0) }, 0);
+
+        let signalled = stop_run(run);
+
+        assert!(signalled >= 1);
+        let mut alive = true;
+        for _ in 0..20 {
+            if unsafe { libc::kill(descendant, 0) } != 0 {
+                alive = false;
+                break;
+            }
+            thread::sleep(std::time::Duration::from_millis(50));
+        }
+        assert!(!alive, "the script's background process outlived Stop");
     }
 }
