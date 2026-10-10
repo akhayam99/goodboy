@@ -98,7 +98,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One page per provider',
-        desc: 'Usage, the models in your picker, permissions and your account, in one place. Providers billed per token say so instead of showing usage windows.',
+        desc: "Usage, the models in your picker, permissions and your account, in one place. Providers billed per token say so instead of showing usage windows. A check that times out says Can't check and keeps what Goodboy last knew, and a sign-in that no check has confirmed shows apart from one that has.",
       },
       {
         term: 'Auto',
@@ -154,7 +154,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'Chat, a door in the left column, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work from chat drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
+        desc: 'Chat, a door in the left column that reopens your last chat, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Make default in the picker saves them for new chats in the workspace. Start work from chat drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Paste, drop or attach up to 10 images to a message, and Claude or Codex reads them. Each chat row shows its model. Pin and archive a chat from its menu, delete it from its row or header, or select several and archive or delete them together.',
       },
       {
         term: 'Start blank',
@@ -204,7 +204,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Left column',
-        desc: 'New session, Board, Tasks, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
+        desc: 'New session, Board, Tasks, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
       },
       {
         term: 'Session rows',
