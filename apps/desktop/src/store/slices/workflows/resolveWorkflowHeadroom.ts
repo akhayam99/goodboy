@@ -1,6 +1,7 @@
 import { readHeadroom, type HeadroomMap } from '@goodboy/core';
 import type { SessionId, WorkflowRules } from '@goodboy/types';
 import { sessionById } from '../sessions/sessionIndex';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import type { GetFn } from './types';
 
 type Params = {
@@ -15,9 +16,7 @@ const readNow = ({ get, sessionId }: Pick<Params, 'get' | 'sessionId'>) => {
     sessionById(state.sessions, sessionId)?.workspaceId ?? state.currentWorkspaceId;
   const policy =
     workspaceId === null ? null : (state.workspaceOverrides?.[workspaceId]?.providerPool ?? null);
-  const connected = (state.providers ?? [])
-    .filter((provider) => provider.connection === 'connected')
-    .map((provider) => provider.id);
+  const connected = autoRoutableProviders({ providers: state.providers ?? [] });
   const reading = readHeadroom({ limits: state.providerLimits ?? {}, policy, nowMs: Date.now() });
   return {
     headroom: reading.headroom,

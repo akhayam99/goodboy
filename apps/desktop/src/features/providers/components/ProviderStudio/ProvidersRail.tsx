@@ -25,6 +25,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
     useShallow((store) => ({
       cliRequirements: store.cliRequirements,
       providerLimits: store.providerLimits,
+      providerHealth: store.providerHealth,
     })),
   );
   return (

@@ -242,6 +242,7 @@ planner-transcript-expanded
 planner-transcript-replaced
 planner-transcript-revising
 processes-stopped
+providerhealth
 providers
 questions-empty
 rail-draft-dot

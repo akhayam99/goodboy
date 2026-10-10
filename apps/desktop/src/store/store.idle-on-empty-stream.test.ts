@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { INITIAL_HEALTH_MAP } from './slices/providers/providerHealth';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -452,6 +453,68 @@ describe('sendTurn, terminal state guarantees', () => {
       providerId: 'anthropic',
       identity: 'test',
     });
+  });
+
+  it('counts a streamed OAuth 401 as one refused run for the provider', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
+      authErrorEventStream(args.runId),
+    );
+    useAppStore.setState({ providerHealth: INITIAL_HEALTH_MAP });
+    setupSession(useAppStore);
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
+
+    const health = useAppStore.getState().providerHealth.anthropic;
+    expect(health.refusals).toHaveLength(1);
+    expect(health.evidence.lastRunOutcome).toBe('refused');
+  });
+
+  it('counts a thrown OAuth 401 as one refused run for the provider', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
+      throwingAuthErrorStream(args.runId),
+    );
+    useAppStore.setState({ providerHealth: INITIAL_HEALTH_MAP });
+    setupSession(useAppStore);
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
+    ).rejects.toThrow();
+
+    expect(useAppStore.getState().providerHealth.anthropic.refusals).toHaveLength(1);
+  });
+
+  it('opens the breaker on the provider list after three refused runs', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
+      authErrorEventStream(args.runId),
+    );
+    useAppStore.setState({ providerHealth: INITIAL_HEALTH_MAP });
+    setupSession(useAppStore);
+
+    for (let turn = 0; turn < 3; turn += 1) {
+      await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: `hello ${turn}` });
+    }
+
+    const claude = useAppStore.getState().providers.find((p) => p.id === 'anthropic');
+    expect(useAppStore.getState().providerHealth.anthropic.isBreakerOpen).toBe(true);
+    expect(claude?.isBreakerOpen).toBe(true);
+  });
+
+  it('closes the breaker when a run is accepted', async () => {
+    useAppStore.setState({ providerHealth: INITIAL_HEALTH_MAP });
+    setupSession(useAppStore);
+    for (let turn = 0; turn < 3; turn += 1) {
+      runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) =>
+        authErrorEventStream(args.runId),
+      );
+      await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: `hello ${turn}` });
+    }
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => answerStream(args.runId));
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'again' });
+
+    const health = useAppStore.getState().providerHealth.anthropic;
+    expect(health.isBreakerOpen).toBe(false);
+    expect(health.evidence.lastRunOutcome).toBe('accepted');
   });
 
   it('surfaces the model and Max Mode action when the child exits with Max Mode stderr', async () => {

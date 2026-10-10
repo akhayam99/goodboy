@@ -1461,7 +1461,7 @@ one is open at a time.
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
   end, named for assistive tech by the sentence that used to sit under it
-  (Update needed, Not signed in, Error, Claude is about to run out); a quiet
+  (Update needed, Signed out, Can't check, Not confirmed, Refused your runs, Error, Claude is about to run out); a quiet
   row shows nothing. The sentence lives on the page: a provider about to run
   out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
   the usage notice that used to close the Usage band). Every page is also a palette entry

@@ -11,6 +11,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type Params = {
@@ -50,9 +51,7 @@ const retryOneStepSummary = (set: SetFn, get: GetFn) => {
             ?.defaultProviderOverride,
           sessionDefaultProviderId: session.providerPreference.defaultProvider,
         }),
-        connectedProviders: get()
-          .providers.filter((provider) => provider.connection === 'connected')
-          .map((provider) => provider.id),
+        connectedProviders: autoRoutableProviders({ providers: get().providers }),
         enabledProviders: session.providerPreference.enabledProviders ?? null,
         cooldowns: get().providerCooldowns,
         hidden: selectHiddenModels({ state: get() }),

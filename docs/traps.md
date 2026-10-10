@@ -246,6 +246,15 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   with `fill-mode: both` leaves one behind and puts the row on its own layer),
   and never give lines and elbows different `shape-rendering`. Grow rows with
   `Reveal`, which moves only the grid track.
+- The sign-in CLIs speak through their exit code. `claude auth status` and `codex login status`
+  exit 1 when you are signed out, with a perfectly good answer on stdout, and
+  `cursor-agent status` can say "Logged in (unable to fetch user details)" while every run
+  fails with "Authentication required". Reading a non-zero exit as "unknown", an unknown
+  as "not signed in", or a local token as proof of a server account each made providers
+  connect and disconnect on their own. `probeOutcomeOf` and `providerHealth.ts` keep the
+  three apart: a probe with no answer never changes the standing, a lost sign-in needs two
+  answers 10 seconds apart, and only a refused run or a `verified` answer speaks for the
+  server. Do not collapse them back into one connected flag.
 
 ## Hand-maintained lists the compiler does not check
 
