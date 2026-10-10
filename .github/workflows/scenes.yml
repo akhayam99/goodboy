@@ -27,9 +27,11 @@ jobs:
           cache: pnpm
       - name: install
         run: pnpm install --frozen-lockfile
+      - name: build mock bundle
+        run: VITE_GOODBOY_MOCK=1 pnpm --filter @goodboy/desktop exec vite build --outDir "$RUNNER_TEMP/scenes-dist" --emptyOutDir
       - name: scene measures
         run: |
-          VITE_GOODBOY_MOCK=1 pnpm --filter @goodboy/desktop exec vite --host 127.0.0.1 --port 5230 --strictPort &
+          pnpm --filter @goodboy/desktop exec vite preview --outDir "$RUNNER_TEMP/scenes-dist" --host 127.0.0.1 --port 5230 --strictPort &
           app_pid=$!
           trap 'kill "$app_pid"' EXIT
           for attempt in $(seq 1 60); do
@@ -39,4 +41,9 @@ jobs:
             sleep 1
           done
           curl --fail --silent http://127.0.0.1:5230 > /dev/null
-          VALIDATE_CHROME="$(command -v google-chrome)" node scripts/validate-scenes.mjs --app http://127.0.0.1:5230
+          status=0
+          VALIDATE_CHROME="$(command -v google-chrome)" node scripts/validate-scenes.mjs --app http://127.0.0.1:5230 > "$RUNNER_TEMP/scenes.out" 2>&1 || status=$?
+          cat "$RUNNER_TEMP/scenes.out"
+          summary="$(grep '^scene measures:' "$RUNNER_TEMP/scenes.out" | tail -n 1 || true)"
+          echo "${summary:-scene measures: failed}" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
