@@ -119,7 +119,7 @@ const sendInTheDrawerThenOpenTheArtifactsPage = async (ctx: Ctx): Promise<void> 
   seedPlanWithDraft(ctx);
   act(() => openPlanDrawer({ sessionId: ctx.sessionId, planId: PLAN_ID }));
   await settle();
-  await visible('button', 'More plan actions');
+  await visible('button', 'Open in Artifacts');
   await sendToPlanner();
   await waitFor(
     () =>
@@ -128,8 +128,7 @@ const sendInTheDrawerThenOpenTheArtifactsPage = async (ctx: Ctx): Promise<void> 
       ).toContain('Revising to v2'),
     WAIT,
   );
-  await click(screen.getByRole('button', { name: 'More plan actions' }));
-  await click(await screen.findByRole('menuitem', { name: 'Open in Artifacts' }, WAIT));
+  await click(await screen.findByRole('button', { name: 'Open in Artifacts' }, WAIT));
   await settle(6);
 };
 

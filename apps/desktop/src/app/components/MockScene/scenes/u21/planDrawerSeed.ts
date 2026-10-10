@@ -307,7 +307,6 @@ export const seedPlanDrawerScene = ({ variant }: { readonly variant: PlanDrawerV
     agentTurnState: { [PLANNER_ID]: turnOf({ variant }) },
     artifactComments: { [PLAN_DRAWER_SESSION_ID]: commentsOf({ variant }) },
     artifactCommentSends: {},
-    documentDrawerExpanded: { [PLAN_DRAWER_SESSION_ID]: false },
     activeLens: { [PLAN_DRAWER_SESSION_ID]: variant === 'follow' ? null : 'workflows' },
     focusedWorkflowRunId:
       variant === 'follow' ? {} : { [PLAN_DRAWER_SESSION_ID]: PLAN_DRAWER_RUN_ID },

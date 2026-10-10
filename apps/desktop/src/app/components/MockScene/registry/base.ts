@@ -176,7 +176,6 @@ import { AgentBriefScene } from '../scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from '../scenes/AgentBriefQuestionScene';
 import { PlannerTranscriptScene } from '../scenes/PlannerTranscriptScene';
 import { PlannerTranscriptDrawerScene } from '../scenes/PlannerTranscriptDrawerScene';
-import { PlannerTranscriptExpandedScene } from '../scenes/PlannerTranscriptExpandedScene';
 import { PlannerTranscriptReplacedScene } from '../scenes/PlannerTranscriptReplacedScene';
 import { PlannerTranscriptRevisingScene } from '../scenes/PlannerTranscriptRevisingScene';
 import { ScribeProposalCreatingScene } from '../scenes/ScribeProposalCreatingScene';
@@ -365,7 +364,6 @@ export const BASE_SCENES = {
   'planner-transcript-revising': PlannerTranscriptRevisingScene,
   'planner-transcript-replaced': PlannerTranscriptReplacedScene,
   'planner-transcript-drawer': PlannerTranscriptDrawerScene,
-  'planner-transcript-expanded': PlannerTranscriptExpandedScene,
   'scribe-proposal-creating': ScribeProposalCreatingScene,
   'scribe-proposal-failed': ScribeProposalFailedScene,
   'scribe-proposal-transcript': ScribeProposalTranscriptScene,

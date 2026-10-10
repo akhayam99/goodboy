@@ -18,7 +18,7 @@ import { useAppStore } from '../../../../store';
 import { selectDrawerSizing } from '../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../DrawerHost';
 
-type PlannerTranscriptVariant = 'ready' | 'revising' | 'replaced' | 'drawer' | 'expanded';
+type PlannerTranscriptVariant = 'ready' | 'revising' | 'replaced' | 'drawer';
 
 const WORKSPACE_ID = 'mock-planner-workspace' as WorkspaceId;
 const SESSION_ID = 'mock-planner-session' as SessionId;
@@ -134,7 +134,7 @@ const eventsFor = ({ variant }: { readonly variant: PlannerTranscriptVariant }) 
     },
     { kind: 'assistant_text' as const, runId: FIRST_RUN, delta: FIRST_REPLY, at: NOW },
   ];
-  if (variant === 'ready' || variant === 'drawer' || variant === 'expanded') {
+  if (variant === 'ready' || variant === 'drawer') {
     return first;
   }
   const ask = { kind: 'user_text' as const, runId: SECOND_RUN, text: ASK, at: NOW };
@@ -193,9 +193,8 @@ export const PlannerTranscriptScene = ({ variant = 'ready' }: Props) => {
       },
       sessionOpenQuestions: { [SESSION_ID]: [] },
       sessionAnsweredQuestions: { [SESSION_ID]: [] },
-      documentDrawerExpanded: { [SESSION_ID]: variant === 'expanded' },
       drawer:
-        variant === 'drawer' || variant === 'expanded'
+        variant === 'drawer'
           ? {
               kind: 'artifact-document',
               sessionId: SESSION_ID,
