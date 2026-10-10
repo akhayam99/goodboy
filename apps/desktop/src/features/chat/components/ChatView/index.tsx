@@ -37,6 +37,7 @@ import { classifyThinkingContext } from '../../utils/thinking-context';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { turnFootersFor } from '../../utils/turnOutcome';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
+import { useProviderHealth } from '../../../providers/hooks/useProviderHealth';
 import { ChatInput } from '../ChatInput';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { MountSuggestionCard } from '../MountSuggestionCard';
@@ -210,9 +211,9 @@ export const ChatView = ({
   const fadeHostRef = useRef<HTMLDivElement>(null);
 
   const provider = session.providerPreference.defaultProvider;
-  const providerAuthState = authResults?.[provider]?.state ?? null;
   const providerIdentity = authResults?.[provider]?.identity ?? null;
-  const isProviderDisconnected = providerAuthState === 'disconnected';
+  const providerHealth = useProviderHealth({ providerId: provider });
+  const isProviderDisconnected = providerHealth.standing === 'signed_out';
 
   const agentState = useAppStore((s) => {
     return selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null;

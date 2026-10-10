@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { useAppStore } from '../../../../store';
+import type { AppStore } from '../../../../store/store';
 import { TOOL_ORDER, toolRailEntries } from '../../../integrations/toolRailEntries';
 import { useToolConnections } from '../../../integrations/useToolConnections';
 import { orderProviders } from '../../../providers/orderProviders';
@@ -22,7 +23,7 @@ const STATUS_CLOCK_MS = 60_000;
 export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
   const nowMs = useNow(STATUS_CLOCK_MS);
   const state = useAppStore(
-    useShallow((store): RailSubtitleState => ({
+    useShallow((store): RailSubtitleState & Pick<AppStore, 'providerHealth'> => ({
       updaterStatus: store.updaterStatus,
       storageFolders: store.storageFolders,
       settings: store.settings,
@@ -31,6 +32,7 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
       providers: store.providers,
       cliRequirements: store.cliRequirements,
       providerLimits: store.providerLimits,
+      providerHealth: store.providerHealth,
       projects: store.projects,
       projectGitStatus: store.projectGitStatus,
     })),
