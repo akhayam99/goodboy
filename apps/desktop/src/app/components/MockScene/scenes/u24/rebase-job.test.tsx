@@ -16,7 +16,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
-import { REBASE_JOB_SCENE_STATES, type RebaseJobSceneState } from './rebaseJobSeed';
+import type { RebaseJobSceneState } from './rebaseJobSeed';
 import { U24_REBASE_JOB_SCENES } from './rebase-job';
 
 beforeAll(async () => {
@@ -83,16 +83,19 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
 };
 
 describe('the u24 rebase job scenes', () => {
-  it.each(REBASE_JOB_SCENE_STATES)('shows the %s state under the Branch header', async (state) => {
-    renderScene({ name: 'branch-rebase-job', query: `state=${state}` });
+  it.each(Object.entries(BANNER_TEXT))(
+    'shows the %s state under the Branch header',
+    async (state, texts) => {
+      renderScene({ name: 'branch-rebase-job', query: `state=${state}` });
 
-    const region = await screen.findByLabelText('Rebase job', undefined, { timeout: 4_000 });
-    await waitForSettledReads();
+      const region = await screen.findByLabelText('Rebase job', undefined, { timeout: 4_000 });
+      await waitForSettledReads();
 
-    for (const text of BANNER_TEXT[state]) {
-      expect(region.textContent).toContain(text);
-    }
-  });
+      for (const text of texts) {
+        expect(region.textContent).toContain(text);
+      }
+    },
+  );
 
   it('keeps the banner on the Overview section too', async () => {
     renderScene({ name: 'branch-rebase-job', query: 'state=merging&tab=pr' });

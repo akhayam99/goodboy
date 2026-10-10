@@ -2,7 +2,7 @@ import type { AgentId, MountId } from '@goodboy/types';
 import type { HistoryRun, HistoryStop } from '../../../../../store/slices/history/types';
 import { sceneClock } from '../../sceneClock';
 
-export const REBASE_JOB_SCENE_STATES = [
+const REBASE_JOB_SCENE_STATES = [
   'checking',
   'replaying',
   'merging',
@@ -26,9 +26,7 @@ export const REBASE_JOB_MOUNT_ID: MountId = JSON.parse(
   JSON.stringify('mock-u21-mount-fix-duplicate-credit'),
 );
 
-export const REBASE_JOB_AGENT_ID: AgentId = JSON.parse(
-  JSON.stringify('mock-u24-agent-history-rewriter'),
-);
+const REBASE_JOB_AGENT_ID: AgentId = JSON.parse(JSON.stringify('mock-u24-agent-history-rewriter'));
 
 const clock = sceneClock({ anchor: '2026-10-10T09:12:00.000Z' });
 
@@ -143,7 +141,7 @@ const DIRTY_STATES: ReadonlySet<RebaseJobSceneState> = new Set<RebaseJobSceneSta
   'done',
 ]);
 
-export const isRebaseJobSceneState = (value: string | null): value is RebaseJobSceneState =>
+const isRebaseJobSceneState = (value: string | null): value is RebaseJobSceneState =>
   REBASE_JOB_SCENE_STATES.some((state) => state === value);
 
 export const rebaseJobSceneStateOf = (): RebaseJobSceneState => {
