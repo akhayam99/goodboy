@@ -137,7 +137,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       selectedQuestionLabel == null
         ? {
             id: 'selected-child',
-            label: selectedChildHome === 'review' ? 'Fix run' : selectedChildLabel,
+            label: selectedChildHome === 'review' ? 'Fix run' : 'Agent',
             ...agentIcon(selectedChildTone),
           }
         : { id: 'delegated-answers', label: 'Answers', icon: CONCEPT_ICONS.agents };
@@ -199,7 +199,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     return sealLast([
       overview,
       workflowsList,
-      { id: 'workflow-run', label: focusedWorkflowName, icon: CONCEPT_ICONS.sessions },
+      { id: 'workflow-run', label: 'Run', icon: CONCEPT_ICONS.sessions },
     ]);
   }
 
@@ -207,7 +207,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     return sealLast([
       overview,
       plansList,
-      { id: 'artifact-create', label: artifactCreationLabel, icon: CONCEPT_ICONS.artifacts },
+      { id: 'artifact-create', label: 'New artifact', icon: CONCEPT_ICONS.artifacts },
     ]);
   }
 
@@ -215,7 +215,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     return sealLast([
       overview,
       plansList,
-      { id: 'artifact', label: focusedArtifactTitle, icon: CONCEPT_ICONS.artifacts },
+      { id: 'artifact', label: 'Artifact', icon: CONCEPT_ICONS.artifacts },
     ]);
   }
 
