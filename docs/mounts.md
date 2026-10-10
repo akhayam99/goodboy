@@ -513,12 +513,15 @@ tooltip. Copy branch name lives in the row menu.
 A branch row shows the tasks linked to that branch as chips (`LinkedTaskChip`, the
 `task` kind). The visible **Put on a branch** action opens an anchored picker for a linked
 task, with **Link work** for another task and **New branch for** to give a
-task its own branch. A task already on the session moves with
-`assignSessionExternalTask`: it links the branch row, then drops the session row.
-`takeOffSessionExternalTask` reverses it, and taking a task off its last branch
-restores the session row. The chip opens its task; its hover or focus unlink
-control takes it off this branch. Undo restores the exact placements in one
-transaction, including removing a generated session row. `forkMount` takes `taskIdentifier` and `taskTitle` so a
+task its own branch. Every placement change goes through
+`moveSessionExternalTask` (`to` a session or a branch of the task's own
+project, `isCopy` keeps the source): it computes the next rows of that task and
+writes them once, so one Undo restores the exact rows, including removing a
+generated session row. `assignSessionExternalTask` and
+`takeOffSessionExternalTask` are thin callers of it. A task of another project
+is refused. The chip opens its task; its context menu (Shift+F10) holds
+**Move to**, and its hover or focus x reads **Move to session** when the branch
+is the only placement and **Take off project / branch** otherwise. `forkMount` takes `taskIdentifier` and `taskTitle` so a
 worktree made for a task is named `{prefix}/{task-id}-{slug}`. The session header,
 Board card and sidebar dedupe by provider and external id (`distinctTasks`); the
 branch is visible only under its row in the Projects card.
