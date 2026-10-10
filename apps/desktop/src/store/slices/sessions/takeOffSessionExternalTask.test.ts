@@ -76,7 +76,28 @@ beforeEach(async () => {
   useAppStore.setState({ sessionExternalTasks: {} });
 });
 
+const lastNotice = () => useAppStore.getState().undoNotices.at(-1)?.toast.message;
+
 describe('takeOffSessionExternalTask', () => {
+  it('says the task is on the session again, never that it was unlinked', async () => {
+    const { linkSessionExternalTask, takeOffSessionExternalTask } = useAppStore.getState();
+    await linkSessionExternalTask(SESSION_ID, TASK);
+
+    await takeOffSessionExternalTask({ sessionId: SESSION_ID, task: TASK });
+
+    expect(lastNotice()).toBe('HBL-412 is on the session again');
+  });
+
+  it('says which branch the task left when others remain', async () => {
+    const { linkSessionExternalTask, takeOffSessionExternalTask } = useAppStore.getState();
+    await linkSessionExternalTask(SESSION_ID, TASK);
+    await linkSessionExternalTask(SESSION_ID, { ...TASK, branch: 'hl/notify-retry' });
+
+    await takeOffSessionExternalTask({ sessionId: SESSION_ID, task: TASK });
+
+    expect(lastNotice()).toBe('HBL-412 is off hl/ledger-export');
+  });
+
   it('gives the task back to the session when it leaves its last branch', async () => {
     const { linkSessionExternalTask, takeOffSessionExternalTask } = useAppStore.getState();
     await linkSessionExternalTask(SESSION_ID, TASK);

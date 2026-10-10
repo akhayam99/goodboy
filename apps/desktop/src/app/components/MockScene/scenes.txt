@@ -363,6 +363,8 @@ switcher-pinned
 task-links
 task-links-hover
 task-links-undo
+taskmove-issuepage
+taskmove-menu
 tasks-cursor
 tasks-rail
 tasks-rail-folded

@@ -1635,4 +1635,5 @@ An agent materializes a project through the query bridge like this:
 - `packages/db/src/queries/resolve-thread.ts`: review conversations
 
 Task-link removal uses **Unlink**, with **Unlinked** in its Undo toast and
-**Re-link** on the Activity event. **Link work** is the single linking entry.
+**Re-link** on the Activity event. A move says where the task is now (**HL-204
+is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). **Link work** is the single linking entry.

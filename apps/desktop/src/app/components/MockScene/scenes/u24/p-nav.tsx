@@ -30,7 +30,7 @@ const taskOf = ({
   createdAt: clock.iso({ at: '2026-10-08T09:00:00.000Z' }),
 });
 
-const seedLinearIssue = (): void => {
+export const seedLinearIssue = (): void => {
   const sessionId: SessionId = SESSION.id;
   const first = taskOf({ identifier: 'NW-142', title: 'Retry webhook deliveries on a 502' });
   const second = taskOf({

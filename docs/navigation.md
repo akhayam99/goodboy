@@ -327,7 +327,10 @@ never exists on one surface only.
   `⋯` holds copy and rare actions. A task chip opens the task; its unlink
   control appears on pointer hover and keyboard focus, with no kebab.
   Put on a branch lives on the branch row. Link work is the single entry
-  for linking work to a session or workspace.
+  for linking work to a session or workspace. Moving a task is one verb,
+  `Move to`: in the chip's menu (Shift+F10), in the focused issue's
+  `Linked to` row and in the palette; the x on a branch chip says what it
+  does (`Move to session`, or `Take off project / branch`).
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.
@@ -1802,6 +1805,12 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
+- **The focused issue page says where the issue lives.** Under the page
+  header (All issues, Unlink) a `Linked to` row (`w-28` label, muted) shows
+  `This session` or the branches; its value opens the same `Move to` menu as
+  the task chip, `This session` and one entry per open branch of the issue's
+  project (`project · branch`, middle cut), the current placement checked.
+  `LinkedToRow` draws it once for every tracker, not inside each detail.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
@@ -2873,7 +2882,9 @@ operation when focus is outside a text field or terminal. Dismissing the
 toast does not discard the operation. An Undo that fails stays retryable.
 
 Session unlink snapshots all placements of one task, including every branch.
-Take off snapshots the session placement it may create too. Undo compares the
+A move (`Move to`, Take off, Put on a branch) is one operation: it replaces the
+rows of that task in one write, so branch to branch is one Undo, and it
+snapshots the session placement it may create too. Undo compares the
 current placements with the operation's expected result and restores the
 snapshot in one guarded database transaction. A later re-link or changed row
 makes Undo do nothing and say why. Other tasks and projects stay untouched.

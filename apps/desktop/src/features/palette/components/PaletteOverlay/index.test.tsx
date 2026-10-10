@@ -618,3 +618,58 @@ describe('PaletteOverlay, Ask in Chat', () => {
     expect(optionNames()).not.toContain('Ask in Chat');
   });
 });
+
+describe('PaletteOverlay on a focused issue', () => {
+  const issueOf = () => {
+    const issue = Object.values(useAppStore.getState().sessionExternalTasks)
+      .flat()
+      .find((task) => task.identifier === 'HBL-412');
+    if (issue === undefined) {
+      throw new Error('Expected the HBL-412 issue in the board scene');
+    }
+    return issue;
+  };
+
+  const focusIssue = () => {
+    const { sessionId, provider, externalId } = issueOf();
+    act(() => {
+      useAppStore.setState((state) => ({
+        focusedExternalTask: {
+          ...state.focusedExternalTask,
+          [sessionId]: { provider, externalId, projectId: null },
+        },
+      }));
+    });
+  };
+
+  it('lists Move to with the open branches and moves the issue to the one picked', async () => {
+    const moveSessionExternalTask = vi.fn(async () => undefined);
+    useAppStore.setState({ moveSessionExternalTask });
+    const { input } = openIn(issueOf().sessionId);
+    focusIssue();
+    type(input, 'move to');
+
+    expect(optionNames()).toContain('Move to');
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(optionNames()).toEqual([
+      'payments-api · hl/fix-duplicate-credit',
+      'ledger-core · hl/reconcile-settlement-export',
+    ]);
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await vi.waitFor(() => expect(moveSessionExternalTask).toHaveBeenCalledOnce());
+    expect(moveSessionExternalTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: issueOf().sessionId,
+        to: expect.objectContaining({ kind: 'branch', branch: 'hl/fix-duplicate-credit' }),
+      }),
+    );
+  });
+
+  it('offers no Move to until an issue is focused', () => {
+    const { input } = openIn(issueOf().sessionId);
+    type(input, 'move to');
+
+    expect(screen.queryByRole('option', { name: 'Move to' })).toBeNull();
+  });
+});
