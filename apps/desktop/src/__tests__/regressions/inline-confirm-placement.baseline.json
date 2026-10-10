@@ -41,7 +41,6 @@
   "apps/desktop/src/features/storage/components/StoragePage/FolderRemoveConfirm.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/StorageHistory.tsx": 1,
   "apps/desktop/src/features/storage/components/StoragePage/WorktreeRow.tsx": 1,
-  "apps/desktop/src/features/updater/components/UpdateArrivalCard.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowStudio/SavedStepsList/SavedStepEditor.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowEditor/index.tsx": 2,
   "apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowList/index.tsx": 1,

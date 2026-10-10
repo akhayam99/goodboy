@@ -137,7 +137,10 @@ export const GoodboyChip = ({
   return (
     <>
       {isPrimary ? (
-        <GoodboyChipEffects onOpenChangelog={leaveFor({ action: onOpenChangelog })} />
+        <GoodboyChipEffects
+          anchorRef={dropdown.containerRef}
+          onOpenChangelog={leaveFor({ action: onOpenChangelog })}
+        />
       ) : null}
       <AnchoredPopover
         dropdown={dropdown}
