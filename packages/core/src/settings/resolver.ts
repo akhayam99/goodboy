@@ -1,4 +1,11 @@
-import type { GlobalSettings, OverrideSettings, ResolvedSettings } from '@goodboy/types';
+import type {
+  GlobalSettings,
+  OverrideSettings,
+  ResolvedSettings,
+  RoleModelPreference,
+  TaskModelPreference,
+} from '@goodboy/types';
+import { createKeyedMerge } from './createKeyedMerge';
 
 export type ResolveSettingsInput = {
   readonly global: GlobalSettings;
@@ -7,21 +14,9 @@ export type ResolveSettingsInput = {
   readonly sessionOverride?: OverrideSettings | null;
 };
 
-type Keyed<V> = Readonly<Record<string, V | undefined>>;
+const mergeRoleModels = createKeyedMerge<RoleModelPreference>();
 
-type MergeKeyedParams<V> = {
-  readonly layers: ReadonlyArray<Keyed<V> | null | undefined>;
-};
-
-const mergeKeyed = <V extends object>({
-  layers,
-}: MergeKeyedParams<V>): Readonly<Record<string, V>> | null => {
-  const entries = layers.flatMap((layer) => Object.entries(layer ?? {}));
-  const merged: Record<string, V> = Object.fromEntries(
-    entries.flatMap(([key, value]) => (value === undefined ? [] : [[key, value] as const])),
-  );
-  return Object.keys(merged).length > 0 ? merged : null;
-};
+const mergeTaskModels = createKeyedMerge<TaskModelPreference>();
 
 export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings => {
   const {
@@ -32,10 +27,10 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
   } = input;
 
   return {
-    roleModels: mergeKeyed({
+    roleModels: mergeRoleModels({
       layers: [ws?.roleModels, project?.roleModels, sess?.roleModels],
     }),
-    taskModels: mergeKeyed({
+    taskModels: mergeTaskModels({
       layers: [ws?.taskModels, project?.taskModels, sess?.taskModels],
     }),
     providerPool: sess?.providerPool ?? project?.providerPool ?? ws?.providerPool ?? null,

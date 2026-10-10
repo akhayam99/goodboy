@@ -402,6 +402,22 @@ describe('resolveSettings', () => {
     expect(Reflect.get(result.taskModels ?? {}, 'polluted')).toBeUndefined();
   });
 
+  it('role and task models: the same layers give the same object, so a store selector stays stable', () => {
+    const pin = (model: string) => ({ providerId: 'anthropic' as ProviderId, model });
+    const workspaceOverride = {
+      ...NULL_OVERRIDE,
+      taskModels: { summarizer: pin('ws'), rebase: pin('ws') },
+    };
+    const projectOverride = { ...NULL_OVERRIDE, taskModels: { rebase: pin('project') } };
+    const merged = () =>
+      resolveSettings({ global: GLOBAL, workspaceOverride, projectOverride }).taskModels;
+    const single = () => resolveSettings({ global: GLOBAL, workspaceOverride }).taskModels;
+
+    expect(merged()).toBe(merged());
+    expect(single()).toBe(workspaceOverride.taskModels);
+    expect(merged()).not.toBe(single());
+  });
+
   it('provider pool stays whole: the project list replaces the workspace list', () => {
     const result = resolveSettings({
       global: GLOBAL,
