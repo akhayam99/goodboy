@@ -8,6 +8,7 @@ import type {
   SessionId,
   SessionProjectMount,
 } from '@goodboy/types';
+import { aProject } from '@goodboy/types/testing';
 import { matrixOf } from '../../../__tests__/helpers/actionMatrix';
 import { TASK_KIND, type TaskFacts } from './task';
 
@@ -25,10 +26,20 @@ const row = (overrides: Partial<SessionExternalTask>): SessionExternalTask => ({
   ...overrides,
 });
 
-const PAYMENTS = 'project-payments-api' as ProjectId;
+const PAYMENTS: ProjectId = aProject().id;
+
+const isMountId = (value: string): value is MountId => value.startsWith('mount-');
+
+const mountIdOf = ({ branch }: { readonly branch: string }): MountId => {
+  const value = `mount-${branch}`;
+  if (!isMountId(value)) {
+    throw new Error('Expected a mount id');
+  }
+  return value;
+};
 
 const mountOn = (branch: string): SessionProjectMount => ({
-  mountId: `mount-${branch}` as MountId,
+  mountId: mountIdOf({ branch }),
   sessionId: SESSION,
   projectId: PAYMENTS,
   mountName: 'payments-api',
@@ -142,6 +153,8 @@ describe('task actions', () => {
     const label = moveTo?.choices?.({
       facts: facts({ task: row({}), branch: null, mounts: [mountOn(long)] }),
     })?.[0]?.label;
-    expect(label).toMatch(/^payments-api · hl\/a-very-long.+….+of-the-menu$/);
+    expect(label?.startsWith('payments-api · hl/a-very-long')).toBe(true);
+    expect(label?.endsWith('of-the-menu')).toBe(true);
+    expect(label).toContain('…');
   });
 });

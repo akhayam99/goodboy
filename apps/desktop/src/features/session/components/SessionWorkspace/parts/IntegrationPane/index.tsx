@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Check, Unlink } from 'lucide-react';
 import type {
   SessionExternalTask,
@@ -123,7 +123,20 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const session = useAppStore((state) => selectSessionById(state, sessionId));
   const linkAction =
     session === null ? undefined : <LinkIssueAction session={session} initialSource={provider} />;
-  const focusedTask = tasks.find((task) => integrationTaskKey({ task }) === focusedTaskKey) ?? null;
+  const lastFocused = useRef<SessionExternalTask | null>(null);
+  const anchor = lastFocused.current ?? (openedTask?.provider === provider ? openedTask : null);
+  const focusedTask =
+    tasks.find((task) => integrationTaskKey({ task }) === focusedTaskKey) ??
+    (focusedTaskKey === null || anchor === null
+      ? null
+      : (tasks.find(
+          (task) =>
+            task.externalId === anchor.externalId &&
+            (task.projectId ?? null) === (anchor.projectId ?? null),
+        ) ?? null));
+  useEffect(() => {
+    lastFocused.current = focusedTask;
+  }, [focusedTask]);
   const workItems = buildWorkItems({
     tasks,
     currentBranch: sessionBranch,

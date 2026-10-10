@@ -102,12 +102,7 @@ export const LinkedToRow = ({ sessionId, task }: Props) => {
     return null;
   }
   return (
-    <div
-      className={cn(
-        'flex min-h-9 shrink-0 items-center gap-3 border-b border-border-soft',
-        PANE_RHYTHM.detail.band,
-      )}
-    >
+    <div className={cn('flex min-h-9 shrink-0 items-center gap-3', PANE_RHYTHM.detail.band)}>
       <span className="w-28 shrink-0 text-label text-muted-foreground">Linked to</span>
       {choices.length < 2 ? (
         <span className="min-w-0 truncate text-label text-foreground">{placement}</span>

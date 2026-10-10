@@ -220,10 +220,9 @@ describe('task link controls', () => {
   });
 
   it('names the x Take off project and branch when the task has another placement', async () => {
-    const projectId = 'project-payments-api' as ProjectId;
-    useAppStore.setState({
-      projects: [aProject({ id: projectId, workspaceId: WORKSPACE_ID, name: 'payments-api' })],
-    });
+    const project = aProject({ workspaceId: WORKSPACE_ID, name: 'payments-api' });
+    const projectId = project.id;
+    useAppStore.setState({ projects: [project] });
     await useAppStore.getState().linkSessionExternalTask(SESSION_ID, { ...TASK, projectId });
     await useAppStore
       .getState()

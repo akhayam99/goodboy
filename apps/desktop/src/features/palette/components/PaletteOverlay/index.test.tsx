@@ -33,7 +33,6 @@ const elsewhere = vi.hoisted(() => ({ refs: [] as ReadonlyArray<SessionTitleRef>
 const PAYOUT = 'mock-board-session-payout-export' as SessionId;
 const IMPLEMENTER = 'mock-board-agent-export-implementer' as AgentId;
 const ARCHIVED = 'mock-board-session-refund-macros' as SessionId;
-const REVIEW = 'mock-board-session-admin-pagination' as SessionId;
 
 let useAppStore: StoryStore;
 
@@ -621,12 +620,23 @@ describe('PaletteOverlay, Ask in Chat', () => {
 });
 
 describe('PaletteOverlay on a focused issue', () => {
+  const issueOf = () => {
+    const issue = Object.values(useAppStore.getState().sessionExternalTasks)
+      .flat()
+      .find((task) => task.identifier === 'HBL-412');
+    if (issue === undefined) {
+      throw new Error('Expected the HBL-412 issue in the board scene');
+    }
+    return issue;
+  };
+
   const focusIssue = () => {
+    const { sessionId, provider, externalId } = issueOf();
     act(() => {
       useAppStore.setState((state) => ({
         focusedExternalTask: {
           ...state.focusedExternalTask,
-          [REVIEW]: { provider: 'linear', externalId: 'mock-board-HBL-412', projectId: null },
+          [sessionId]: { provider, externalId, projectId: null },
         },
       }));
     });
@@ -634,8 +644,8 @@ describe('PaletteOverlay on a focused issue', () => {
 
   it('lists Move to with the open branches and moves the issue to the one picked', async () => {
     const moveSessionExternalTask = vi.fn(async () => undefined);
-    useAppStore.setState({ moveSessionExternalTask } as never);
-    const { input } = openIn(REVIEW);
+    useAppStore.setState({ moveSessionExternalTask });
+    const { input } = openIn(issueOf().sessionId);
     focusIssue();
     type(input, 'move to');
 
@@ -650,14 +660,14 @@ describe('PaletteOverlay on a focused issue', () => {
     await vi.waitFor(() => expect(moveSessionExternalTask).toHaveBeenCalledOnce());
     expect(moveSessionExternalTask).toHaveBeenCalledWith(
       expect.objectContaining({
-        sessionId: REVIEW,
+        sessionId: issueOf().sessionId,
         to: expect.objectContaining({ kind: 'branch', branch: 'hl/fix-duplicate-credit' }),
       }),
     );
   });
 
   it('offers no Move to until an issue is focused', () => {
-    const { input } = openIn(REVIEW);
+    const { input } = openIn(issueOf().sessionId);
     type(input, 'move to');
 
     expect(screen.queryByRole('option', { name: 'Move to' })).toBeNull();

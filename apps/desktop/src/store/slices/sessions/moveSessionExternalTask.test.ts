@@ -1,13 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertSession, insertWorkspace } from '@goodboy/db';
-import type {
-  IsoDateTime,
-  ProjectId,
-  SessionExternalTask,
-  SessionId,
-  WorkspaceId,
-} from '@goodboy/types';
-import { aProject, aSession } from '@goodboy/types/testing';
+import type { SessionExternalTask } from '@goodboy/types';
+import { aProject, aSession, aWorkspace, TEST_NOW } from '@goodboy/types/testing';
 import {
   buildStoryWorkspace,
   importStore,
@@ -28,10 +22,10 @@ vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).sqliteDbLibModuleMock(),
 );
 
-const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
-const SESSION_ID = 'session-ledger-export' as SessionId;
-const PAYMENTS = 'project-payments-api' as ProjectId;
-const LEDGER = 'project-ledger-core' as ProjectId;
+const WORKSPACE_ID = aWorkspace().id;
+const SESSION_ID = aSession().id;
+const PAYMENTS = aProject().id;
+const LEDGER = aProject().id;
 
 const SESSION_ROW: SessionExternalTask = {
   sessionId: SESSION_ID,
@@ -40,7 +34,7 @@ const SESSION_ROW: SessionExternalTask = {
   identifier: 'HL-204',
   url: 'https://linear.app/harborline/issue/HL-204',
   title: 'Round ledger amounts once',
-  createdAt: '2026-10-02T09:00:00.000Z' as IsoDateTime,
+  createdAt: TEST_NOW,
   scope: 'session',
   projectId: PAYMENTS,
   relation: 'part-of',
@@ -53,7 +47,7 @@ const BARE_ROW: SessionExternalTask = {
   identifier: 'HL-204',
   url: 'https://linear.app/harborline/issue/HL-204',
   title: 'Round ledger amounts once',
-  createdAt: '2026-10-02T09:00:00.000Z' as IsoDateTime,
+  createdAt: TEST_NOW,
   scope: 'session',
   projectId: PAYMENTS,
 };
