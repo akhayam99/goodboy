@@ -28,7 +28,7 @@ const STATES: ReadonlyArray<{
     name: 'a code file in a repository with an editor',
     facts: facts({}),
     expected: [
-      'exploreFile.open hover',
+      'exploreFile.openInEditor hover',
       'exploreFile.reveal hover',
       'exploreFile.ask hover',
       'exploreFile.copyPath menu',
@@ -38,7 +38,7 @@ const STATES: ReadonlyArray<{
     name: 'a file the default app opens',
     facts: facts({ name: 'spec.pdf', openLabel: 'Open', editorLabel: null }),
     expected: [
-      'exploreFile.open hover',
+      'exploreFile.openInEditor hover',
       'exploreFile.reveal hover',
       'exploreFile.ask hover',
       'exploreFile.copyPath menu',
@@ -47,7 +47,11 @@ const STATES: ReadonlyArray<{
   {
     name: 'a folder in a repository with an editor',
     facts: facts({ name: 'apps', relPath: 'apps', isDir: true }),
-    expected: ['exploreFile.open hover', 'exploreFile.reveal hover', 'exploreFile.copyPath menu'],
+    expected: [
+      'exploreFile.openInEditor hover',
+      'exploreFile.reveal hover',
+      'exploreFile.copyPath menu',
+    ],
   },
   {
     name: 'a folder with no editor to open it in',
@@ -83,7 +87,7 @@ describe('exploreFile action matrix', () => {
   it('labels Open after where it goes', () => {
     const labelOf = (given: ExploreFileFacts) =>
       resolveActions({ definitions: EXPLORE_FILE_KIND.actions, facts: given }).find(
-        (action) => action.id === 'exploreFile.open',
+        (action) => action.id === 'exploreFile.openInEditor',
       );
     expect(labelOf(facts({}))?.label).toBe('Open in editor');
     expect(labelOf(facts({}))?.description).toBe('Open in VS Code');

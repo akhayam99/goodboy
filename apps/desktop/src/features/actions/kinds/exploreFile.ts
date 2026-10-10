@@ -19,7 +19,7 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
   facts: ({ target }) => target.facts,
   actions: [
     {
-      id: 'exploreFile.open',
+      id: 'exploreFile.openInEditor',
       label: ({ facts }) => facts.openLabel ?? 'Open',
       icon: ExternalLink,
       group: 'open',

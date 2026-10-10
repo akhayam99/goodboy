@@ -13,6 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -30,8 +31,8 @@ beforeEach(async () => {
   await resetStoryStore();
 });
 
-const SETTLEMENT = 'session-settlement' as SessionId;
-const PAYOUTS = 'session-payouts' as SessionId;
+const SETTLEMENT = aSession({ goal: 'Settlement rounding' }).id;
+const PAYOUTS = aSession({ goal: 'Payout export' }).id;
 
 const expandedOf = (sessionId: SessionId) => useAppStore.getState().exploreExpanded[sessionId];
 

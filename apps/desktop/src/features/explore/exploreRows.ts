@@ -1,4 +1,5 @@
 import type { ExploreEntry } from './explore';
+import type { ExploreOpenFailure } from './openFailure';
 
 export const EXPLORE_ROW_PX = 40;
 export const EXPLORE_ROOT_PATH = '';
@@ -11,6 +12,7 @@ export type ExploreListing = {
 
 type FlattenParams = ExploreListing & {
   readonly expanded: Readonly<Record<string, boolean>>;
+  readonly failureByPath?: Readonly<Record<string, ExploreOpenFailure | null>>;
 };
 
 export type ExploreEntryRow = {
@@ -23,12 +25,13 @@ export type ExploreEntryRow = {
 };
 
 export type ExploreStatusRow = {
-  readonly kind: 'loading' | 'error' | 'empty';
+  readonly kind: 'loading' | 'error' | 'empty' | 'failure';
   readonly id: string;
   readonly depth: number;
   readonly parentPath: string;
   readonly isFetching: boolean;
   readonly message: string | null;
+  readonly isEditorMissing: boolean;
 };
 
 export type ExploreRow = ExploreEntryRow | ExploreStatusRow;
@@ -39,6 +42,7 @@ type StatusRowParams = {
   readonly parentPath: string;
   readonly isFetching?: boolean;
   readonly message?: string | null;
+  readonly isEditorMissing?: boolean;
 };
 
 const statusRow = ({
@@ -47,6 +51,7 @@ const statusRow = ({
   parentPath,
   isFetching = false,
   message = null,
+  isEditorMissing = false,
 }: StatusRowParams): ExploreStatusRow => ({
   kind,
   id: `/status/${kind}/${parentPath}`,
@@ -54,6 +59,7 @@ const statusRow = ({
   parentPath,
   isFetching,
   message,
+  isEditorMissing,
 });
 
 type VisitParams = {
@@ -66,12 +72,25 @@ export const flattenExploreRows = ({
   loadingByPath,
   errorByPath,
   expanded,
+  failureByPath = {},
 }: FlattenParams): ReadonlyArray<ExploreRow> => {
   const rows: ExploreRow[] = [];
   const visit = ({ path, depth }: VisitParams): void => {
     for (const entry of entriesByPath[path] ?? []) {
       const isExpanded = entry.isDir && expanded[entry.relPath] === true;
       rows.push({ kind: 'entry', id: entry.relPath, entry, depth, parentPath: path, isExpanded });
+      const failure = failureByPath[entry.relPath] ?? null;
+      if (failure !== null) {
+        rows.push(
+          statusRow({
+            kind: 'failure',
+            depth: depth + 1,
+            parentPath: entry.relPath,
+            message: failure.message,
+            isEditorMissing: failure.isEditorMissing,
+          }),
+        );
+      }
       if (!isExpanded) {
         continue;
       }

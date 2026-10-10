@@ -156,6 +156,40 @@ describe('flattenExploreRows', () => {
     expect(pendingFoldersOf(rows)).toEqual([]);
   });
 
+  it('puts the failure of an open or reveal right under its row', () => {
+    const rows = flattenExploreRows({
+      entriesByPath: REPO,
+      ...NONE,
+      expanded: { apps: true },
+      failureByPath: {
+        'apps/readme.md': { message: "Couldn't open readme.md", isEditorMissing: true },
+        docs: null,
+      },
+    });
+    expect(shape(rows)).toEqual([
+      '0:apps',
+      '1:apps/ledger-core',
+      '1:apps/readme.md',
+      '2:failure',
+      '0:docs',
+      '0:package.json',
+    ]);
+    const failure = rows.find((row) => row.kind === 'failure');
+    expect(failure?.kind === 'failure' ? [failure.message, failure.isEditorMissing] : null).toEqual(
+      ["Couldn't open readme.md", true],
+    );
+  });
+
+  it('puts the failure of a folder before the rows inside it', () => {
+    const rows = flattenExploreRows({
+      entriesByPath: REPO,
+      ...NONE,
+      expanded: { apps: true },
+      failureByPath: { apps: { message: "Couldn't open apps", isEditorMissing: false } },
+    });
+    expect(shape(rows).slice(0, 3)).toEqual(['0:apps', '1:failure', '1:apps/ledger-core']);
+  });
+
   it('returns no rows for an empty root', () => {
     expect(flattenExploreRows({ entriesByPath: { '': [] }, ...NONE, expanded: {} })).toEqual([]);
     expect(flattenExploreRows({ entriesByPath: {}, ...NONE, expanded: {} })).toEqual([]);

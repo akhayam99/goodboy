@@ -124,7 +124,8 @@ moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode.
 
 - **Scope first.** It opens on a scope chip that names the surface you can see:
-  the focused commit row on the Commits tab, else the agent when the agent page
+  the focused commit row on the Commits tab, else the focused row of the Explore
+  tree (a file or a folder, with its Open, Show in Finder, Ask and Copy path), else the agent when the agent page
   is on screen (a stored selection under a studio or an artifact conversation
   does not count), else the run on the Runs page, else the pull request on the
   Branch page, else the session, else the workspace on the board and under any
@@ -353,7 +354,8 @@ never exists on one surface only.
   from the list row too, plus Delete on any stored artifact that is not already
   deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, a Tasks record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
-  project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
+  project, the Diff of a branch (`diff`), a diff file, a file or folder row in
+  Explore (`exploreFile`), a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
   rendered text have their own kinds. One field says which available actions
   also get a visible control on their surface: `slot` (`primary`,
@@ -1867,7 +1869,20 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed and
-  browses the active working directory. Diff and the other branch lenses need a
+  browses the active working directory as a tree (`role="tree"`), rows 40px
+  high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
+  extension kept, a slot for change marks, the size and the age. The size
+  hides under a 520px column and the age under 440px. The folders you opened
+  are kept per session in the session-view slice (`exploreExpanded`) and open
+  again when you come back. The tree has one tab stop; Up and Down move, Right
+  opens a folder or enters it, Left closes it or goes to its parent, Home and
+  End jump, Enter and Space open the preview of a file or toggle a folder. Above
+  120 rows it draws only the rows near the scroll position (`shared/utils/windowRows.ts`, the
+  diff tree's math). A row's verbs come from the `exploreFile` kind: Ask an
+  agent (files), Open in editor or Open, Show in Finder and Copy path. A folder
+  offers Open only when an editor can take it (a repository with an editor),
+  and a linked folder is listed as a folder; the Rust containment check on
+  read and open stays. Diff and the other branch lenses need a
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from the trail's
