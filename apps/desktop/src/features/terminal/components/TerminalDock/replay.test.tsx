@@ -1,10 +1,16 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
 type Listener = (event: { payload: unknown }) => void;
 
@@ -96,30 +102,6 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
   return { LazyGenericTerminalPanel: panel.GenericTerminalPanel };
 });
 
-type DockState = {
-  terminalTabs: Record<string, ReadonlyArray<unknown>>;
-  activeTerminalTab: Record<string, string | null>;
-  addTerminalTab: () => void;
-  closeTerminalTab: () => void;
-  setActiveTerminalTab: () => void;
-  setTerminalTabStatus: () => void;
-};
-
-const { state } = vi.hoisted((): { state: DockState } => ({
-  state: {
-    terminalTabs: {},
-    activeTerminalTab: {},
-    addTerminalTab: vi.fn(),
-    closeTerminalTab: vi.fn(),
-    setActiveTerminalTab: vi.fn(),
-    setTerminalTabStatus: vi.fn(),
-  },
-}));
-
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-}));
-
 import { TerminalDock } from './index';
 import { terminalOutputBus } from '../../outputBus';
 
@@ -179,17 +161,26 @@ const flush = async (): Promise<void> => {
   });
 };
 
+let store: StoryStore;
+
 const mountDock = (activeId: TerminalTabId) => {
-  state.activeTerminalTab = { [SESSION_ID]: activeId };
+  store.setState({ activeTerminalTab: { [SESSION_ID]: activeId } });
   return render(<TerminalDock sessionId={SESSION_ID} isActive cwd="/repo" />);
 };
 
-beforeEach(() => {
+beforeAll(async () => {
+  store = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
   installFakeResizeObserver();
   harness.writes.length = 0;
   harness.ring = { bytes: '', total: 0 };
   harness.snapshotGate = null;
-  state.terminalTabs = { [SESSION_ID]: [buildTab(BACKGROUND_ID), buildTab(FOREGROUND_ID)] };
+  store.setState({
+    terminalTabs: { [SESSION_ID]: [buildTab(BACKGROUND_ID), buildTab(FOREGROUND_ID)] },
+  });
 });
 
 afterEach(() => {
@@ -201,15 +192,14 @@ afterEach(() => {
 describe('terminal output while a tab is in the background', () => {
   it('shows the last line of a tab that printed 2000 chunks with no panel mounted', async () => {
     await terminalOutputBus.register();
-    const view = mountDock(FOREGROUND_ID);
+    mountDock(FOREGROUND_ID);
     await flush();
     for (let index = 0; index < 2000; index++) {
       emitOutput({ terminalId: BACKGROUND_ID, text: `line-${index}\n` });
     }
     harness.writes.length = 0;
 
-    state.activeTerminalTab = { [SESSION_ID]: BACKGROUND_ID };
-    view.rerender(<TerminalDock sessionId={SESSION_ID} isActive cwd="/repo" />);
+    act(() => store.setState({ activeTerminalTab: { [SESSION_ID]: BACKGROUND_ID } }));
     await flush();
 
     const shown = harness.writes.join('');
