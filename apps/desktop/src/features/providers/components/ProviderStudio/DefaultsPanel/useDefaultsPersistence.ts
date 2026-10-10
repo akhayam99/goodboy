@@ -30,6 +30,10 @@ type PersistRoleModelParams = {
   readonly preference: RoleModelPreference | null;
 };
 
+type ClearRoleModelsParams = {
+  readonly roles: ReadonlyArray<AgentRole>;
+};
+
 type KnownTaskModelsParams = {
   readonly taskModels: TaskModelPreferences | null;
 };
@@ -89,5 +93,15 @@ export const useDefaultsPersistence = ({ workspaceId }: Params) => {
     });
   };
 
-  return { busy, error, persistOverrides, persistTaskModel, persistRoleModel };
+  const clearRoleModels = ({ roles }: ClearRoleModelsParams) => {
+    const roleModels = { ...(currentOverrides()?.roleModels ?? {}) };
+    for (const role of roles) {
+      delete roleModels[role];
+    }
+    return persistOverrides({
+      patch: { roleModels: Object.keys(roleModels).length > 0 ? roleModels : null },
+    });
+  };
+
+  return { busy, error, persistOverrides, persistTaskModel, persistRoleModel, clearRoleModels };
 };

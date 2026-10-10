@@ -1,6 +1,7 @@
 import { addProject } from './addProject';
 import { addProjects } from './addProjects';
 import { adoptProject } from './adoptProject';
+import { clearProjectModelOverrides } from './clearProjectModelOverrides';
 import { checkGoodboyIgnore } from './checkGoodboyIgnore';
 import { convertProjectToRepo } from './convertProjectToRepo';
 import { describeProject } from './describeProject';
@@ -33,6 +34,7 @@ export const createProjectsSlice = ({ set, get }: SliceDeps) => ({
   fastForwardProjectCheckouts: fastForwardProjectCheckouts(set, get),
   updateProjectBaseBranch: updateProjectBaseBranch(set, get),
   updateProjectAfterMerge: updateProjectAfterMerge(set, get),
+  clearProjectModelOverrides: clearProjectModelOverrides(set, get),
   setProjectStarred: setProjectStarred(set, get),
   describeProject: describeProject(set, get),
   checkGoodboyIgnore: checkGoodboyIgnore(set, get),

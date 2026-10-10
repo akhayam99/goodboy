@@ -26,8 +26,11 @@ import { NAMES } from '../../../../../shared/names';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
 import { RoleRow } from './RoleRow';
+import { roleResolution } from './RoleRow/roleResolution';
 import { TaskModelRow } from './TaskModelRow';
 import { ProvidersInOrder } from './ProvidersInOrder';
+import { PinnedOffLine } from './PinnedOffLine';
+import { ProjectOverridesNotice } from './ProjectOverridesNotice';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
 import {
   CONCEPT_ICONS,
@@ -102,7 +105,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
   };
 
   const chatDefault = useChatDefaultModel({ workspaceId });
-  const { busy, error, persistOverrides, persistTaskModel, persistRoleModel } =
+  const { busy, error, persistOverrides, persistTaskModel, persistRoleModel, clearRoleModels } =
     useDefaultsPersistence({ workspaceId });
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
 
@@ -110,6 +113,16 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
   const pinnedRoleCount = Object.keys(overrides.roleModels ?? {}).length;
   const pinnedChatCount = chatDefault.saved === null ? 0 : 1;
   const pinnedCount = pinnedTaskCount + pinnedRoleCount + pinnedChatCount;
+
+  const shownRoles = DEFAULT_GROUPS.agents.flatMap((group) => group.members);
+  const unrunnableRoles = shownRoles.filter(
+    (role) =>
+      roleResolution({ role, preference: overrides.roleModels?.[role] ?? null, autoContext })
+        .isPinUnrunnable,
+  );
+  const onProviderIds = connectedProviderIds.filter(
+    (id) => policy == null || policy.some((entry) => entry.id === id && entry.state === 'on'),
+  );
 
   const onResetAll = async () => {
     chatDefault.clear();
@@ -153,6 +166,16 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
           onCancel={() => setIsConfirmingReset(false)}
         />
       ) : null}
+
+      <ProjectOverridesNotice workspaceId={workspaceId} />
+
+      <PinnedOffLine
+        count={unrunnableRoles.length}
+        total={shownRoles.length}
+        onProviderIds={onProviderIds}
+        isDisabled={busy}
+        onConfirm={() => clearRoleModels({ roles: unrunnableRoles })}
+      />
 
       <section aria-label="Providers" className="flex flex-col gap-1">
         <Eyebrow label="Providers" />

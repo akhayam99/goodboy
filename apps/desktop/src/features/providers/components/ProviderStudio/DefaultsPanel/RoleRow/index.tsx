@@ -7,12 +7,13 @@ import {
   type AutoContext,
 } from '@goodboy/core';
 import type { AgentRole, ProviderId, RoleModelChoice, RoleModelPreference } from '@goodboy/types';
-import { Collapsible, cn } from '@goodboy/ui';
+import { Chip, Collapsible, cn } from '@goodboy/ui';
 import { useHiddenModels } from '../../../../hooks/useHiddenModels';
 import { hiddenModelNote } from '../hiddenModelNote';
 import { RoleHowItRuns } from './RoleHowItRuns';
 import { RoleModelSet } from './RoleModelSet';
 import { RoleModelSummary } from './RoleModelSummary';
+import { roleResolution } from './roleResolution';
 import { roleRunFacts } from './roleRunFacts';
 import { roleSetEntries } from '../../../../roleSetEntries';
 import { roleSetNoun } from '../../../../roleSetNoun';
@@ -45,6 +46,10 @@ export const RoleRow = ({
     () => roleRunFacts({ role, autoContext, isParallelOn }),
     [role, autoContext, isParallelOn],
   );
+  const resolution = useMemo(
+    () => roleResolution({ role, preference, autoContext }),
+    [role, preference, autoContext],
+  );
   const entries = useMemo(() => roleSetEntries({ preference }), [preference]);
   const hidden = useHiddenModels();
   const firstLive = entries.find((entry) => !entry.isGone) ?? null;
@@ -58,13 +63,15 @@ export const RoleRow = ({
         id: firstLive.choice.model,
       }).selection.key,
     });
-  const summary =
+  const hiddenNote =
     isFirstHidden && firstLive !== null
       ? hiddenModelNote({
           provider: firstLive.choice.providerId,
           model: firstLive.choice.model,
         })
       : help;
+  const summary = resolution.skippedLine ?? hiddenNote;
+  const isSummaryNoted = isFirstHidden || resolution.skippedLine !== null;
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
@@ -74,23 +81,17 @@ export const RoleRow = ({
   };
   const choices = entries.map((entry) => entry.choice);
 
-  const shownEntry = firstLive ?? entries[0] ?? null;
-  const trailing =
-    shownEntry === null ? (
+  const trailing = (
+    <span className="flex min-w-0 items-center gap-2">
       <RoleModelSummary
-        provider={facts.auto.provider}
-        model={facts.auto.model}
-        effort={facts.auto.effort}
-        moreCount={0}
+        provider={resolution.provider}
+        model={resolution.model}
+        effort={resolution.effort}
+        moreCount={Math.max(entries.length - 1, 0)}
       />
-    ) : (
-      <RoleModelSummary
-        provider={shownEntry.choice.providerId}
-        model={shownEntry.choice.model}
-        effort={shownEntry.choice.effort ?? preference?.effort ?? null}
-        moreCount={entries.length - 1}
-      />
-    );
+      <Chip kind="state" tone="neutral" label={resolution.isPinned ? 'Pinned' : 'Auto'} />
+    </span>
+  );
 
   return (
     <Collapsible
@@ -102,7 +103,7 @@ export const RoleRow = ({
           <span
             className={cn(
               'min-w-0 flex-1 truncate text-label',
-              isFirstHidden ? 'text-muted-foreground' : 'text-faint-foreground',
+              isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
             title={summary}
           >
