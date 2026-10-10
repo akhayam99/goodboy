@@ -56,10 +56,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'Projects section menu: Add project once nothing is left to add, section chrome',
   'features/session/components/SessionOverviewPane/SessionHeaderMenu.tsx':
     'Overview title row menu: the same hooks as the session actions, worded as the retired title row icons (Archive session, Delete session...), Refresh has no registry action',
-  'features/session/components/SessionOverviewPane/UnassignedNote.tsx':
-    'Discard on a note written before notes belonged to a branch, which has no object in the map',
-  'features/session/components/SessionWorkspace/parts/TimelinePane/index.tsx':
-    'Activity header menu: Mark all seen acts on the feed, not on an object in the map',
 };
 
 const isSource = (path: string): boolean =>

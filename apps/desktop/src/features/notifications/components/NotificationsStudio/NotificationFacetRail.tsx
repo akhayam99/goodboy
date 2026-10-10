@@ -63,7 +63,7 @@ const KEY_SPECS: ReadonlyArray<{
 }> = [
   { ids: ['list.next', 'list.previous'], label: 'Next or previous' },
   { ids: ['list.open'], label: 'Run the action' },
-  { ids: ['list.dismiss'], label: 'Dismiss' },
+  { ids: ['list.dismiss'], label: 'Delete' },
 ];
 
 export const NotificationFacetRail = ({

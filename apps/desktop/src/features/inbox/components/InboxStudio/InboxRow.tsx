@@ -19,6 +19,7 @@ import { useNow } from '../../../../shared/hooks/useNow';
 type Props = {
   readonly record: InboxRecord;
   readonly selected: boolean;
+  readonly isCursor?: boolean;
   readonly onSelect: (record: InboxRecord) => void;
   readonly isStarred?: boolean;
   readonly onToggleStar?: (record: InboxRecord) => void;
@@ -36,6 +37,7 @@ export const inboxOptionId = ({ key }: OptionIdParams): string =>
 const InboxRowView = ({
   record,
   selected,
+  isCursor = false,
   onSelect,
   isStarred,
   onToggleStar,
@@ -79,6 +81,7 @@ const InboxRowView = ({
     <div
       data-inbox-key={record.key}
       data-selected={selected}
+      data-cursor={isCursor ? true : undefined}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
       className={cn(
@@ -86,7 +89,9 @@ const InboxRowView = ({
         isStateShown
           ? '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_56px]'
           : '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_56px]',
-        selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',
+        selected && 'bg-selected text-foreground',
+        !selected && isCursor && 'bg-hover text-foreground',
+        !selected && !isCursor && 'hover:bg-hover hover:text-foreground',
       )}
     >
       <button

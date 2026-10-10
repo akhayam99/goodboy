@@ -3,13 +3,21 @@ import { seedBoardScene } from '../BoardScene';
 import { AppFrame } from './AppFrame';
 import { seedFrameChromeStubs } from './frameSeed';
 import { seedNotifications } from './notificationsSeed';
-import { sceneParam } from './sceneParams';
+import { sceneParam, sceneParamList } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
 
 const IS_POPOVER_ONLY = sceneParam({ key: 'view' }) === 'center';
-const STUDIO_CLICKS: ReadonlyArray<string> = IS_POPOVER_ONLY ? [] : ['Open all'];
+const DEFAULT_CLICKS: ReadonlyArray<string> = ['Open all'];
+const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
 
-export const NotificationsScene = () => {
+type Props = {
+  readonly openLabels?: ReadonlyArray<string>;
+};
+
+export const NotificationsScene = ({ openLabels }: Props) => {
+  const studioClicks = IS_POPOVER_ONLY
+    ? []
+    : (openLabels ?? (OPEN_LABELS.length > 0 ? OPEN_LABELS : DEFAULT_CLICKS));
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     seedBoardScene();
@@ -29,7 +37,7 @@ export const NotificationsScene = () => {
   }, [isReady]);
   useSceneClicks({
     isReady,
-    labels: STUDIO_CLICKS,
+    labels: studioClicks,
     selector: 'button',
     match: 'prefix',
     intervalMs: 400,

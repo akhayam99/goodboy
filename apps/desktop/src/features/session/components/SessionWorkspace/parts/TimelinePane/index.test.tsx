@@ -541,24 +541,25 @@ describe('TimelinePane unread affordance', () => {
     expect(views.parentElement?.contains(within(activity).getByText('$3.47'))).toBe(true);
   });
 
-  it('puts Mark all seen in the Activity menu, only while an agent is unseen', () => {
+  it('shows Mark all seen as a button while an agent is unseen', () => {
     storeState.sessionPhaseRuns = { 'session-1': [COMPLETED_AGENT] };
     unread.current = true;
     render(<TimelinePane session={SESSION} actions={null} />);
     const activity = screen.getByRole('region', { name: 'Activity' });
 
-    expect(within(activity).queryByRole('button', { name: 'Mark all seen' })).toBeNull();
-    fireEvent.click(within(activity).getByRole('button', { name: 'Activity actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Mark all seen' }));
+    expect(screen.queryByRole('button', { name: 'Activity actions' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Mark all seen' })).toBeNull();
+    fireEvent.click(within(activity).getByRole('button', { name: 'Mark all seen' }));
 
     expect(storeState.markAllAgentsSeen).toHaveBeenCalledWith('session-1');
   });
 
-  it('drops the Activity menu when nothing is unseen', () => {
+  it('draws no Activity menu and no Mark all seen when nothing is unseen', () => {
     storeState.sessionPhaseRuns = { 'session-1': [COMPLETED_AGENT] };
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByRole('button', { name: 'Activity actions' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
   });
 
   it('hides the CTA once nothing is unread', () => {

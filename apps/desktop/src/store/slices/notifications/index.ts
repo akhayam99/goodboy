@@ -1,5 +1,6 @@
 import { clearNotifications } from './clearNotifications';
 import { dismissNotification } from './dismissNotification';
+import { dismissNotificationGroup } from './dismissNotificationGroup';
 import { emitNotification } from './emitNotification';
 import { loadNotifications } from './loadNotifications';
 import { loadOlderNotifications } from './loadOlderNotifications';
@@ -21,6 +22,7 @@ export const createNotificationsSlice = ({ set, get }: SliceDeps) => {
     markNotificationRead: markNotificationRead(set, get),
     markNotificationsRead: markNotificationsRead(set, get),
     dismissNotification: dismissNotification(set, get),
+    dismissNotificationGroup: dismissNotificationGroup(get),
     clearNotifications: clearNotifications(set, get),
   };
 };
