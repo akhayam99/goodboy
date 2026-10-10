@@ -1,12 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
-import { ancestorIds, visibleRows } from '../../lib/changeTree';
+import { ancestorIds } from '../../lib/changeTree';
 import { nextUnviewedPath, stepPath } from '../../lib/fileOrder';
 import type { ReviewState } from '../useReviewState';
 
 type DiffKeysReview = Pick<
   ReviewState,
-  'tree' | 'activePath' | 'collapsed' | 'toggleFolder' | 'jumpTo' | 'viewed'
+  'tree' | 'activePath' | 'collapsed' | 'toggleFolder' | 'jumpTo' | 'stepTo' | 'viewed'
 >;
 
 type Params = {
@@ -24,17 +24,8 @@ export const useDiffKeys = ({
   onFocusTree,
   onFocusFilter,
 }: Params): void => {
-  const { tree, activePath, collapsed, toggleFolder, jumpTo, viewed } = review;
+  const { tree, activePath, collapsed, toggleFolder, jumpTo, stepTo, viewed } = review;
   const order = useMemo(() => tree.files.map((file) => file.path), [tree.files]);
-  const shown = useMemo(
-    () =>
-      new Set(
-        visibleRows({ rows: tree.rows, collapsed })
-          .filter((row) => row.kind === 'file')
-          .map((row) => row.id),
-      ),
-    [tree.rows, collapsed],
-  );
 
   const move = useCallback(
     (delta: 1 | -1) => {
@@ -42,13 +33,13 @@ export const useDiffKeys = ({
         order,
         from: activePath,
         delta,
-        accepts: (path) => shown.has(path),
+        accepts: () => true,
       });
       if (target !== null) {
-        jumpTo(target);
+        stepTo(target);
       }
     },
-    [activePath, jumpTo, order, shown],
+    [activePath, order, stepTo],
   );
 
   const goToUnviewed = useCallback(() => {

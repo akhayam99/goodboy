@@ -93,6 +93,7 @@ export type SessionDiff = {
   readonly files: ReadonlyArray<FileDiff>;
   readonly patch: string;
   readonly loading: boolean;
+  readonly isRefreshing: boolean;
   readonly error: string | null;
   readonly view: DiffView;
   readonly setView: (view: DiffView) => void;
@@ -116,6 +117,8 @@ export const useSessionDiff = ({
   const [files, setFiles] = useState<ReadonlyArray<FileDiff>>([]);
   const [patch, setPatch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const loadedSource = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [view, setViewState] = useState<DiffView>(DEFAULT_VIEW);
   const [alternate, setAlternate] = useState<DiffAlternate | null>(null);
@@ -213,16 +216,21 @@ export const useSessionDiff = ({
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    const source = JSON.stringify([worktreePath, baseBranch, view]);
+    const isReload = loadedSource.current === source && loader === null;
+    setLoading(!isReload);
+    setIsRefreshing(isReload);
     setError(null);
     fetcher()
       .then((raw) => {
         if (cancelled) {
           return;
         }
+        loadedSource.current = source;
         setPatch(raw);
         setFiles(orderLikeTree({ files: parseUnifiedDiff(raw) }));
         setLoading(false);
+        setIsRefreshing(false);
       })
       .catch((err: unknown) => {
         if (cancelled) {
@@ -230,6 +238,7 @@ export const useSessionDiff = ({
         }
         setError(formatError(err));
         setLoading(false);
+        setIsRefreshing(false);
       });
     return () => {
       cancelled = true;
@@ -297,6 +306,7 @@ export const useSessionDiff = ({
     files,
     patch,
     loading,
+    isRefreshing,
     error,
     view,
     setView,
