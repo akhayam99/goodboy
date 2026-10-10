@@ -122,7 +122,11 @@ pub(crate) fn run_planner(
         .ok_or_else(|| PlannerError::Io(std::io::Error::other("no stderr")))?;
 
     let key = crate::live_child::anonymous_key("planner");
-    let live = LiveChild::tagged(child, &tag);
+    let live = LiveChild::tagged(
+        child,
+        &tag,
+        crate::proc::ledger::LedgerContext::from_command(&command),
+    );
     crate::live_child::register(registry, &key, &live);
 
     let stdout_activity = live.activity.clone();

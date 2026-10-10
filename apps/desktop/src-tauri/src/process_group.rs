@@ -52,6 +52,65 @@ fn group_alive(group: libc::pid_t) -> bool {
     unsafe { libc::kill(-group, 0) == 0 }
 }
 
+#[cfg(windows)]
+pub use job::Job;
+
+#[cfg(windows)]
+mod job {
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
+    use windows_sys::Win32::System::JobObjects::{
+        AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
+        SetInformationJobObject, TerminateJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    };
+
+    pub struct Job(HANDLE);
+
+    unsafe impl Send for Job {}
+    unsafe impl Sync for Job {}
+
+    impl Job {
+        pub fn assign(child: &std::process::Child) -> Option<Job> {
+            let handle = unsafe { CreateJobObjectW(std::ptr::null(), std::ptr::null()) };
+            if handle.is_null() {
+                return None;
+            }
+            let job = Job(handle);
+            let mut limits: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = unsafe { std::mem::zeroed() };
+            limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            let is_limited = unsafe {
+                SetInformationJobObject(
+                    handle,
+                    JobObjectExtendedLimitInformation,
+                    &limits as *const JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+                        as *const std::ffi::c_void,
+                    std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+                )
+            } != 0;
+            if !is_limited {
+                return None;
+            }
+            let is_assigned =
+                unsafe { AssignProcessToJobObject(handle, child.as_raw_handle() as HANDLE) } != 0;
+            if !is_assigned {
+                return None;
+            }
+            Some(job)
+        }
+
+        pub fn terminate(&self) {
+            unsafe { TerminateJobObject(self.0, 1) };
+        }
+    }
+
+    impl Drop for Job {
+        fn drop(&mut self) {
+            unsafe { CloseHandle(self.0) };
+        }
+    }
+}
+
 #[cfg(all(test, unix))]
 mod tests {
     use super::*;
