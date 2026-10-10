@@ -428,3 +428,9 @@ fails silently at runtime.
   that builds an object (`{ project, stage }`) loops the render; select the
   project and the stage separately. The mock scenes catch this, unit tests with
   a mocked store do not.
+- A terminal or script view subscribes to the output events before it asks
+  for the snapshot, and writes an event only when its `offset` plus length is
+  past the snapshot's end (the first bytes of a partly covered chunk are cut).
+  Subscribing after the snapshot loses what prints in between; writing every
+  event after it prints the overlap twice. Offsets are byte counts, so compare
+  them on bytes, never on decoded text.

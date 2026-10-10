@@ -20,10 +20,10 @@ import type { TerminalTabId } from '../../../../shared/types/terminal';
 import {
   invokeTerminalOpen,
   invokeTerminalResize,
+  invokeTerminalSnapshot,
   invokeTerminalWrite,
-  listenTerminalExit,
-  listenTerminalOutput,
 } from '../../terminal';
+import { terminalOutputBus } from '../../outputBus';
 import { disposeTerminalPty } from '../../closeTab';
 import { TerminalTabStrip } from '../TerminalTabStrip';
 
@@ -78,20 +78,36 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
         }
         void invokeTerminalResize(terminalId, cols, rows);
       },
-      onOutput: (handler) =>
-        listenTerminalOutput((payload) => {
-          if (payload.sessionId !== terminalId) {
-            return;
-          }
-          handler(base64ToBytes(payload.data));
-        }),
-      onExit: (handler) =>
-        listenTerminalExit((payload) => {
-          if (payload.sessionId !== terminalId) {
-            return;
-          }
-          handler(payload.exitCode);
-        }),
+      onOutput: async (handler) => {
+        await terminalOutputBus.register();
+        return terminalOutputBus.subscribe({
+          terminalId: terminalId ?? '',
+          subscriber: { onOutput: handler },
+        });
+      },
+      onExit: async (handler) => {
+        await terminalOutputBus.register();
+        return terminalOutputBus.subscribe({
+          terminalId: terminalId ?? '',
+          subscriber: { onExit: handler },
+        });
+      },
+      snapshot: async () => {
+        if (!terminalId) {
+          return null;
+        }
+        try {
+          const snapshot = await invokeTerminalSnapshot(terminalId);
+          return {
+            bytes: base64ToBytes(snapshot.data),
+            offset: snapshot.offset,
+            exitCode: snapshot.exitCode,
+          };
+        } catch {
+          const tail = terminalOutputBus.tailOf({ terminalId });
+          return tail === null ? null : { ...tail, exitCode: null };
+        }
+      },
     };
   }, [activeId]);
 

@@ -5914,11 +5914,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/AgentTree/SectionToggle.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowResumeStrip/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -8812,9 +8807,6 @@
     "@typescript-eslint/naming-convention": {
       "count": 4
     },
-    "@typescript-eslint/no-floating-promises": {
-      "count": 2
-    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
@@ -11439,7 +11431,7 @@
   },
   "apps/desktop/src/store/slices/scripts/registerScriptRunListeners.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
+      "count": 6
     }
   },
   "apps/desktop/src/store/slices/scripts/saveScript.ts": {
