@@ -7,7 +7,7 @@ use tauri::State;
 use thiserror::Error;
 
 use crate::live_child::{
-    drain_lossy, run_to_exit, LiveChild, LiveChildRegistry, SIDE_JOB_DEADLINE,
+    drain_lossy_active, run_to_exit, LiveChild, LiveChildRegistry, SIDE_JOB_IDLE,
 };
 use crate::providers::cli_args::{side_job_args, ArgsError, Job, SideJob};
 
@@ -77,6 +77,7 @@ pub struct PlannerResult {
     pub stdout: String,
     pub stderr: String,
     pub exit_code: Option<i32>,
+    pub is_timed_out: bool,
 }
 
 #[tauri::command]
@@ -124,10 +125,12 @@ pub(crate) fn run_planner(
     let live = LiveChild::tagged(child, &tag);
     crate::live_child::register(registry, &key, &live);
 
-    let stdout_handle = thread::spawn(move || drain_lossy(stdout));
-    let stderr_handle = thread::spawn(move || drain_lossy(stderr));
+    let stdout_activity = live.activity.clone();
+    let stderr_activity = live.activity.clone();
+    let stdout_handle = thread::spawn(move || drain_lossy_active(stdout, &stdout_activity));
+    let stderr_handle = thread::spawn(move || drain_lossy_active(stderr, &stderr_activity));
     let ((stdout_buf, stderr_buf), exited) =
-        run_to_exit(&live, registry, &key, Some(SIDE_JOB_DEADLINE), || {
+        run_to_exit(&live, registry, &key, Some(SIDE_JOB_IDLE), || {
             (
                 stdout_handle.join().unwrap_or_default(),
                 stderr_handle.join().unwrap_or_default(),
@@ -138,6 +141,7 @@ pub(crate) fn run_planner(
         stdout: stdout_buf,
         stderr: stderr_buf,
         exit_code: exited.code,
+        is_timed_out: exited.is_timed_out,
     })
 }
 

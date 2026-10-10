@@ -313,6 +313,16 @@ continuation never resumes, because it runs in another directory.
   stopped processes the CLI left running, a `reaped` envelope comes first (see
   [architecture.md](architecture.md) → Processes Goodboy starts) and becomes a
   `processes_stopped` event.
+- **What the end-of-turn cleanup can and cannot reach.** The reap signals the
+  leader's whole process group, the tree below the leader and every process
+  that still carries the turn's tag. On macOS the environment of Apple-signed
+  binaries (`sh`, `bash`, `sleep`) is hidden from other processes, so the tag
+  cannot find them. They are covered by the group and the tree: a restricted
+  child in the CLI's group or below a process we can still see dies with the
+  turn. A restricted child that started its own session and lost its parent
+  is out of reach; the tag is the only thing that would find it and the kernel
+  does not show it. Third-party programs (node, bun, vite) keep the tag
+  wherever they go.
 
 ## Reading the stream
 

@@ -145,4 +145,27 @@ describe('OrchestratorClient', () => {
       }),
     ).rejects.toThrow('orchestrator decision timed out');
   });
+
+  it('reports a timed out decision as its own error', async () => {
+    const invokeFn: OrchestratorClientDeps['invokeFn'] = async <T>(): Promise<T> =>
+      ({ stdout: '', stderr: '', exitCode: null, isTimedOut: true }) as T;
+    const client = new OrchestratorClient({
+      providerId: 'codex',
+      model: 'gpt-5.4-mini',
+      invokeFn,
+    });
+
+    await expect(
+      client.decide({
+        goal: 'Fix auth',
+        processText: 'Implement and test.',
+        completedSteps: [],
+        openQuestionCount: 0,
+        providerId: 'codex',
+        modelMenu: [],
+        roleDefaults: [],
+        stepsUsed: 0,
+      }),
+    ).rejects.toMatchObject({ name: 'AuxTimedOutError' });
+  });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_IDS, type CatalogModel, type ProviderId } from '@goodboy/types';
 import { runAuxOneShot } from './aux-spawn';
+import { AuxTimedOutError } from './auxTimedOut';
 import { cliModelId } from './cliModelId';
 import { getCheapModel } from './cli-defaults';
 import { MODEL_CATALOGS } from './catalogs';
@@ -147,5 +148,37 @@ describe('cliModelId', () => {
         expect(cliModelId({ provider, model: once })).toBe(once);
       }
     }
+  });
+
+  it('rejects with a timed out error when the job went quiet, not a silent null exit', async () => {
+    const invokeFn = async <T>(): Promise<T> =>
+      ({ stdout: '', stderr: '', exitCode: null, isTimedOut: true }) as T;
+
+    await expect(
+      runAuxOneShot({
+        providerId: 'anthropic',
+        model: 'haiku-4.5',
+        binary: 'claude',
+        userMessage: 'u',
+        systemPrompt: 's',
+        invokeFn,
+      }),
+    ).rejects.toBeInstanceOf(AuxTimedOutError);
+  });
+
+  it('hands back a result that did not time out', async () => {
+    const invokeFn = async <T>(): Promise<T> =>
+      ({ stdout: 'ok', stderr: '', exitCode: 0, isTimedOut: false }) as T;
+
+    const result = await runAuxOneShot({
+      providerId: 'anthropic',
+      model: 'haiku-4.5',
+      binary: 'claude',
+      userMessage: 'u',
+      systemPrompt: 's',
+      invokeFn,
+    });
+
+    expect(result.stdout).toBe('ok');
   });
 });
