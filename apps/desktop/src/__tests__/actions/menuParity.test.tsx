@@ -42,12 +42,14 @@ import {
   FIXTURE_NOW,
   RUN,
   SESSION,
+  STEP_PLAN,
   WORKSPACE,
   agentFixture,
   mountFixture,
   runFixture,
   seedActionState,
   sessionFixture,
+  stepAgent,
   workflowFixture,
 } from '../helpers/actionFixtures';
 
@@ -302,13 +304,24 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).toEqual(fromOverflow);
   });
 
-  it('run page: the ⋯ and the right click list every action, buttons included, never Open run', async () => {
-    const session = sessionFixture({ workflowRuns: [runFixture()] });
+  it('run page: the right click lists every action, and the ⋯ keeps what has no button of its own', async () => {
+    const session = sessionFixture({ workflowRuns: [runFixture({ executionMode: 'dynamic' })] });
     seedActionState({
       useAppStore,
-      seed: { session, workflows: [workflowFixture()], mounts: [mountFixture()] },
+      seed: {
+        session,
+        workflows: [workflowFixture()],
+        agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+        mounts: [mountFixture()],
+      },
     });
-    withMenus(<WorkflowRunDetail session={session} workflowRunId={RUN} />);
+    withMenus(
+      <WorkflowRunDetail
+        session={session}
+        run={session.workflowRuns[0]!}
+        workflow={workflowFixture()}
+      />,
+    );
     const registry = (
       bindTarget({
         state: useAppStore.getState(),
@@ -320,9 +333,17 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       context: screen.getByRole('heading', { name: 'Settlement export' }),
     });
 
-    expect(fromOverflow).not.toContain('Open run');
-    expect(fromOverflow).toEqual(registry);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(fromContext).toEqual(registry);
+    expect(fromContext).not.toContain('Open run');
+    expect(fromOverflow).toEqual([
+      'View diff',
+      'Pause run',
+      'Step routing',
+      'Copy run summary',
+      'Archive run',
+      'Delete run',
+    ]);
+    expect(fromOverflow.filter((label) => !fromContext.includes(label))).toEqual([]);
   });
 
   it('agent header: the ⋯ lists every action, buttons included, never Open agent', async () => {

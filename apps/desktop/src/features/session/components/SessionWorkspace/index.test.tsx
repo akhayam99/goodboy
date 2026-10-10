@@ -185,11 +185,6 @@ vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () =
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
-vi.mock('../AgentTree/AgentsSection', () => ({
-  AgentsSection: ({ only }: { only?: string }) => (
-    <div data-testid="agents-section" data-home={only} />
-  ),
-}));
 vi.mock('../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({
     session,
@@ -316,7 +311,6 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('navigation', { name: 'Workflow breadcrumb' })).toBeNull();
     expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
     expect(screen.getByTestId('agents-lane')).toBeDefined();
-    expect(screen.queryByTestId('agents-section')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
 

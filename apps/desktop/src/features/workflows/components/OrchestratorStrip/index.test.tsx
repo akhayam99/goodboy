@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -41,7 +41,6 @@ import {
 } from '../../../../store/storyHarness';
 
 import { WorkTimeContext, type WorkTimeSource } from '../../../workTreeModel/workTimeSource';
-import { agentPlace, sessionPlace } from '../../../../store';
 import { aPlan, aStoredPlan } from '../../../../test/planFixtures';
 
 const storeState: Record<string, unknown> = {};
@@ -53,6 +52,9 @@ beforeAll(async () => {
 }, STORE_IMPORT_TIMEOUT_MS);
 
 import { OrchestratorStrip } from './index';
+import { requestStepRouting } from '../../requestStepRouting';
+import { useOrchestratorState } from '../../useOrchestratorState';
+import { useRunPlan } from '../../useRunPlan';
 
 const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -139,6 +141,36 @@ type RenderParams = {
   readonly source?: WorkTimeSource | null;
 };
 
+type HarnessProps = {
+  readonly run: WorkflowRun;
+  readonly agents: ReadonlyArray<Agent>;
+  readonly steps: ReadonlyArray<Step>;
+  readonly costUsd: number;
+  readonly isOrchestrating: boolean;
+};
+
+const StripHarness = ({ run: shownRun, agents, steps, costUsd, isOrchestrating }: HarnessProps) => {
+  const plan = useRunPlan({ sessionId: SESSION_ID, runId: shownRun.id });
+  const { state } = useOrchestratorState({
+    sessionId: SESSION_ID,
+    run: shownRun,
+    agents,
+    plan,
+    isOrchestrating,
+    costUsd,
+  });
+  return (
+    <OrchestratorStrip
+      sessionId={SESSION_ID}
+      run={shownRun}
+      agents={agents}
+      steps={steps}
+      state={state}
+      isOrchestrating={isOrchestrating}
+    />
+  );
+};
+
 const renderStrip = ({
   runOverride = run(),
   agents = EMPTY_AGENTS,
@@ -150,8 +182,7 @@ const renderStrip = ({
   useAppStore.setState(storeState as Partial<AppStore>);
   return render(
     <WorkTimeContext.Provider value={source}>
-      <OrchestratorStrip
-        sessionId={SESSION_ID}
+      <StripHarness
         run={runOverride}
         agents={agents}
         steps={steps}
@@ -172,10 +203,6 @@ const hint = (over: Partial<OrchestratorHint>): OrchestratorHint => ({
 });
 
 const sentence = () => screen.getByTestId('orchestrator-state').textContent ?? '';
-
-const openMenu = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Orchestrator actions' }));
-};
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -216,26 +243,23 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('OrchestratorStrip state ladder', () => {
-  it('asks for the first step on a run that has not started', () => {
+  it('says the run is ready to plan the first step and draws no button of its own', () => {
     renderStrip();
 
     expect(sentence()).toContain('Ready to plan the first step');
-    expect(screen.getByTestId('workflow-orchestrate-next-cta').textContent).toContain(
-      'Decide next step',
-    );
-    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
-
-    expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(screen.queryByRole('button', { name: 'Decide next step' })).toBeNull();
+    expect(
+      screen.getByTestId('orchestrator-strip').querySelectorAll('[data-variant="primary"]'),
+    ).toHaveLength(0);
   });
 
-  it('says where the run got to before offering the next decision', () => {
+  it('says where the run got to and waits for your go', () => {
     renderStrip({ agents: [agent(0, 'completed'), agent(1, 'completed')] });
 
     expect(sentence()).toContain('Waiting for your go');
-    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
-
-    expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
   });
+
   it('offers no next step control while autorun drives the run', () => {
     renderStrip({ runOverride: run({ autoRun: true }), agents: [agent(0, 'completed')] });
 
@@ -361,6 +385,7 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(screen.queryByRole('button', { name: 'Stop step' })).toBeNull();
   });
+
   it('says it is paused and what finishes, and leaves Resume to the header', () => {
     renderStrip({
       runOverride: run({ autoRun: true, orchestrationStop: { kind: 'paused', message: 'paused' } }),
@@ -375,7 +400,8 @@ describe('OrchestratorStrip state ladder', () => {
     expect(screen.queryByRole('button', { name: 'Resume' })).toBeNull();
     expect(storeState['setWorkflowRunAutonomy']).not.toHaveBeenCalled();
   });
-  it('says the plan is ready and opens it from Open plan, leaving Review plan and Approve to the header', () => {
+
+  it('says the plan is ready and offers no plan button, which the header owns', () => {
     useAppStore.setState({ sessionPlans: { [SESSION_ID]: [PLAN] } });
     renderStrip({
       runOverride: run({
@@ -388,15 +414,8 @@ describe('OrchestratorStrip state ladder', () => {
     expect(sentence()).toBe('Plan ready · waiting for you');
     expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open plan' }));
-
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'artifact-document',
-      sessionId: SESSION_ID,
-      payload: { artifactId: PLAN.id },
-    });
-    expect(storeState['approveWorkflowRunPlan']).not.toHaveBeenCalled();
-    expect(storeState['orchestrateNextStep']).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Open plan' })).toBeNull();
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 
   it('offers no Review plan when the run holds no plan to open', () => {
@@ -432,7 +451,7 @@ describe('OrchestratorStrip state ladder', () => {
     expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
   });
 
-  it('says what the planner asked and answers it from the strip', () => {
+  it('says what the planner asked and leaves Answer to the header', () => {
     useAppStore.setState({
       sessionPlans: { [SESSION_ID]: [PLAN] },
       sessionArtifacts: { [SESSION_ID]: [STORED_PLAN] },
@@ -462,14 +481,11 @@ describe('OrchestratorStrip state ladder', () => {
     expect(screen.getByTestId('orchestrator-strip').getAttribute('data-phase')).toBe(
       'plan-question',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
-
-    expect(storeState['navigate']).toHaveBeenCalledWith({
-      to: agentPlace({ sessionId: SESSION_ID, agentId: PLAN.agentId, pane: 'brief' }),
-    });
+    expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
   });
-  it('names a gating question nobody asked and opens the questions on Answer', () => {
+
+  it('names a gating question nobody asked', () => {
     Object.assign(storeState, {
       sessionOpenQuestions: {
         [SESSION_ID]: [{ id: 'q-1', status: 'open', workflowRunId: RUN_ID }],
@@ -478,14 +494,10 @@ describe('OrchestratorStrip state ladder', () => {
     renderStrip({ agents: [agent(0, 'completed')] });
 
     expect(sentence()).toBe('Paused for your answer');
-    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
-
-    expect(storeState['navigate']).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'questions' }),
-    });
+    expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
   });
 
-  it('says which running step asked and opens it at its question on Answer', () => {
+  it('says which running step asked', () => {
     Object.assign(storeState, {
       sessionOpenQuestions: {
         [SESSION_ID]: [
@@ -514,11 +526,6 @@ describe('OrchestratorStrip state ladder', () => {
     expect(screen.getByTestId('orchestrator-strip').getAttribute('data-phase')).toBe(
       'needs-answer',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
-
-    expect(storeState['navigate']).toHaveBeenCalledWith({
-      to: expect.objectContaining({ at: 'agent', agentId: 'agent-0', sessionId: SESSION_ID }),
-    });
   });
 
   it('keeps Waiting on step when the running step has no question to answer', () => {
@@ -531,7 +538,7 @@ describe('OrchestratorStrip state ladder', () => {
     expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
   });
 
-  it('reads a budget pause as a pause, not as a failure', () => {
+  it('reads a budget pause as a pause, not as a failure, and holds no spend cap control', () => {
     renderStrip({
       runOverride: run({
         orchestrationStop: {
@@ -543,9 +550,7 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(sentence()).toBe('Paused at the $12.00 spend cap for this run.');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
-    fireEvent.click(screen.getByTestId('run-spend-limit-trigger'));
-
-    expect(screen.getByRole('dialog', { name: 'Spend cap for this run' })).toBeDefined();
+    expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
   });
 
   it('reads a budget pause worded differently as a pause all the same', () => {
@@ -554,12 +559,9 @@ describe('OrchestratorStrip state ladder', () => {
     });
 
     expect(sentence()).toBe('Paused at the spend cap');
-    expect(screen.getByTestId('run-spend-limit-trigger').textContent).toContain(
-      'Raise the spend cap',
-    );
   });
 
-  it('reads a question stop as a question to answer, with Answer and no retry on offer', () => {
+  it('reads a question stop as a question to answer, with no retry on offer', () => {
     storeState['sessionOpenQuestions'] = { [SESSION_ID]: [openQuestion()] };
     renderStrip({
       runOverride: run({
@@ -572,10 +574,9 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(sentence()).toBe('Paused for your answer');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Answer' })).toBeDefined();
   });
 
-  it('offers the next step again once the question behind the stop is answered', () => {
+  it('waits for your go once the question behind the stop is answered', () => {
     renderStrip({
       runOverride: run({
         orchestrationStop: {
@@ -587,11 +588,9 @@ describe('OrchestratorStrip state ladder', () => {
     });
 
     expect(sentence()).toContain('Waiting for your go');
-    fireEvent.click(screen.getByTestId('workflow-orchestrate-next-cta'));
-
-    expect(storeState['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
   });
-  it('reads an operator stop as a stop, and resumes hands-free from it', () => {
+
+  it('reads an operator stop as a stop', () => {
     renderStrip({
       runOverride: run({
         orchestrationStop: {
@@ -604,9 +603,7 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(sentence()).toContain('Stopped by you');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
-    fireEvent.click(screen.getByTestId('orchestrator-resume'));
-
-    expect(storeState['retryWorkflowOrchestration']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(screen.queryByTestId('orchestrator-resume')).toBeNull();
   });
 
   it('says it is stopping instead of still choosing, when stopped mid-decision', () => {
@@ -647,7 +644,7 @@ describe('OrchestratorStrip state ladder', () => {
     );
   });
 
-  it('shows the failure with its reason and offers a retry', () => {
+  it('shows the failure with its reason', () => {
     renderStrip({
       runOverride: run({
         orchestrationStop: {
@@ -658,11 +655,8 @@ describe('OrchestratorStrip state ladder', () => {
     });
 
     expect(sentence()).toContain('Last decision failed');
-    expect(screen.queryByTestId('orchestrator-review-budget')).toBeNull();
     expect(screen.getByTestId('orchestrator-detail').textContent).toContain('usage limit reached');
-    fireEvent.click(screen.getByTestId('orchestrator-retry'));
-
-    expect(storeState['retryWorkflowOrchestration']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
   });
 
   it('asks for a human call when the orchestrator stopped the run', () => {
@@ -676,10 +670,9 @@ describe('OrchestratorStrip state ladder', () => {
     expect(sentence()).toContain('Stopped · needs a human call');
     expect(screen.queryByTestId('orchestrator-detail')).toBeNull();
     expect(screen.queryByText('the migration needs a human call')).toBeNull();
-    expect(screen.getByTestId('orchestrator-retry')).toBeDefined();
   });
 
-  it('closes a complete run with its step count and spend, still extendable', () => {
+  it('closes a complete run with its step count and spend', () => {
     renderStrip({
       runOverride: run({ orchestrationOutcome: 'done' }),
       agents: [agent(0, 'completed'), agent(1, 'completed'), agent(2, 'completed')],
@@ -688,25 +681,23 @@ describe('OrchestratorStrip state ladder', () => {
 
     expect(sentence()).toContain('Run complete · 3 steps · $1.28');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
-
-    fireEvent.click(screen.getByTestId('orchestrator-continue'));
-
-    expect(storeState['continueWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(screen.queryByTestId('orchestrator-continue')).toBeNull();
   });
 });
 
 describe('OrchestratorStrip layout', () => {
-  it('reads as one row with the model and the overflow, and keeps the hint field for the dock', () => {
+  it('reads as one row with the model, and keeps the hint field for the dock', () => {
     renderStrip({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
 
     const row = screen.getByTestId('orchestrator-strip-row');
     expect(row.contains(screen.getByTestId('orchestrator-routing'))).toBe(true);
-    expect(row.contains(screen.getByRole('button', { name: 'Orchestrator actions' }))).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Orchestrator actions' })).toBeNull();
     expect(screen.queryByTestId('orchestrator-hint-input')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
     expect(screen.queryByRole('switch', { name: 'Run on its own' })).toBeNull();
   });
-  it('keeps when to ask and the model per step behind the overflow', () => {
+
+  it('opens the model per step panel when the run is asked to show its routing', () => {
     const running = agent(0, 'running', { name: 'Scout the parser' });
     Object.assign(storeState, {
       sessionPhaseRuns: { [SESSION_ID]: [running] },
@@ -716,26 +707,27 @@ describe('OrchestratorStrip layout', () => {
     renderStrip({ agents: [running], runOverride: run({ autoRun: true }) });
 
     expect(screen.queryByRole('region', { name: 'Model per step' })).toBeNull();
-    openMenu();
-    expect(
-      screen.getAllByRole('menuitemradio').map((item) => item.getAttribute('aria-checked')),
-    ).toEqual(['false', 'false', 'true']);
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-      'Model per step',
-    ]);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Model per step' }));
+    act(() => requestStepRouting({ runId: RUN_ID }));
 
     expect(screen.getByRole('region', { name: 'Model per step' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Hide model per step' }));
     expect(screen.queryByRole('region', { name: 'Model per step' })).toBeNull();
   });
-  it('offers when to ask before the first step, with no step to route', () => {
-    renderStrip();
 
-    openMenu();
-    expect(screen.getByRole('menuitemradio', { name: 'Ask before each step' })).toBeDefined();
-    expect(screen.queryByRole('menuitem', { name: 'Model per step' })).toBeNull();
+  it('ignores a routing request that names another run', () => {
+    const running = agent(0, 'running', { name: 'Scout the parser' });
+    Object.assign(storeState, {
+      sessionPhaseRuns: { [SESSION_ID]: [running] },
+      workflowNodeRoutingPending: {},
+      workflowNodeRoutingErrors: {},
+    });
+    renderStrip({ agents: [running], runOverride: run({ autoRun: true }) });
+
+    act(() => requestStepRouting({ runId: 'run-other' as WorkflowRunId }));
+
+    expect(screen.queryByRole('region', { name: 'Model per step' })).toBeNull();
   });
+
   it('offers no Decide next step while autorun is on, even before the first step', () => {
     renderStrip({ runOverride: run({ autoRun: true }) });
 
@@ -744,7 +736,7 @@ describe('OrchestratorStrip layout', () => {
   });
 });
 
-describe('OrchestratorStrip hints and money', () => {
+describe('OrchestratorStrip hints', () => {
   it('carries the routing pill on the orchestrator title row, unlabelled', () => {
     renderStrip();
 
@@ -777,6 +769,7 @@ describe('OrchestratorStrip hints and money', () => {
     expect(queuedRemove?.hasAttribute('disabled')).toBe(false);
     expect(readingRemove?.hasAttribute('disabled')).toBe(true);
   });
+
   it('keeps read hints behind a count with the steps that read them', () => {
     renderStrip({
       runOverride: run({
@@ -810,14 +803,7 @@ describe('OrchestratorStrip hints and money', () => {
       'queued',
     );
   });
-  it('changes when to ask from the overflow', () => {
-    renderStrip({ runOverride: run({ autoRun: false }), agents: [agent(0, 'completed')] });
 
-    openMenu();
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Run on its own' }));
-
-    expect(storeState['setWorkflowRunAutonomy']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, 'run');
-  });
   it('folds queued hints into one row that counts them, and opens them in place', () => {
     renderStrip({
       runOverride: run({ orchestratorHints: [hint({ id: 'queued-1' }), hint({ id: 'queued-2' })] }),
@@ -843,84 +829,12 @@ describe('OrchestratorStrip hints and money', () => {
     expect(screen.queryByTestId('orchestrator-hint-log')).toBeNull();
     expect(screen.queryByRole('button', { name: /queued/ })).toBeNull();
   });
-  it('keeps money controls off the card while the run is not paused on budget', () => {
-    renderStrip({ agents: [agent(0, 'completed')] });
-
-    expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
-    expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
-  });
-
-  it('leaves one spend cap control on a budget pause and no budget button', () => {
-    renderStrip({
-      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
-    });
-
-    expect(screen.getAllByTestId('run-spend-limit-trigger')).toHaveLength(1);
-    expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
-  });
-
-  it('renders one budget control when the session budget pauses the run', () => {
-    storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
-    renderStrip({
-      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
-    });
-
-    expect(screen.getByTestId('orchestrator-raise-session-limit')).toBeDefined();
-    expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
-  });
 
   it('keeps the spend cap out of the state sentence', () => {
     renderStrip({ runOverride: run({ spendLimitUsd: 12, spendLimitMode: 'notify' }) });
 
     expect(screen.queryByTestId('orchestrator-spend-limit')).toBeNull();
     expect(screen.getByTestId('orchestrator-strip').textContent).not.toContain('Spend cap');
-  });
-
-  it('sends a session limit pause to the session limit editor, not to the run limit', () => {
-    storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
-    renderStrip({
-      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
-    });
-    const opened = vi.fn();
-    window.addEventListener('goodboy:edit-session-spend-limit', opened);
-    fireEvent.click(screen.getByTestId('orchestrator-raise-session-limit'));
-    window.removeEventListener('goodboy:edit-session-spend-limit', opened);
-
-    expect(opened).toHaveBeenCalledTimes(1);
-    expect((opened.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ sessionId: SESSION_ID });
-    expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
-    expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
-  });
-
-  it('keeps the run limit on offer when the session limit only warns', () => {
-    storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
-    storeState['sessionBudgets'] = {
-      [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 5, onExceed: 'warn' },
-    };
-    renderStrip({
-      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
-    });
-
-    expect(screen.queryByTestId('orchestrator-raise-session-limit')).toBeNull();
-    expect(screen.getByTestId('run-spend-limit-trigger')).toBeDefined();
-  });
-
-  it('saves a spend cap for the run from the budget pause', () => {
-    renderStrip({
-      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
-    });
-
-    fireEvent.click(screen.getByTestId('run-spend-limit-trigger'));
-    fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '8' } });
-    fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
-    fireEvent.click(screen.getByTestId('run-spend-limit-save'));
-
-    expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(
-      SESSION_ID,
-      RUN_ID,
-      8,
-      'notify',
-    );
   });
 
   it('leaves the reasons for each step to the section under the goal', () => {

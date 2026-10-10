@@ -22,7 +22,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { invoke } from '@tauri-apps/api/core';
 import type { AgentId, ArtifactId, IsoDateTime, ReportArtifact, SessionId } from '@goodboy/types';
-import { aSession, anAgent } from '@goodboy/types/testing';
+import { aSession, anAgent, nextSessionId } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { ToastProvider } from '../../shared/components/Toast';
@@ -273,7 +273,7 @@ describe('the Ask drawer header', () => {
 });
 
 describe('the explore file drawer across sessions', () => {
-  const OTHER = 'session-northwind' as SessionId;
+  const OTHER = nextSessionId();
 
   const exploreDrawer = (sessionId: SessionId): DrawerRequest => ({
     kind: 'explore-file',

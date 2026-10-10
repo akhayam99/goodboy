@@ -237,16 +237,16 @@ export const RunTreeRow = ({
                         Answer
                       </Button>
                     )}
-                    {planAction === null ? null : (
+                    {planAction === null || isPlanHeld ? null : (
                       <Button
-                        variant={isPlanHeld ? 'secondary' : 'ghost'}
-                        size="sm"
-                        className="h-6 shrink-0"
+                        variant="ghost"
+                        size="xs"
+                        className="shrink-0"
                         onClick={() =>
                           openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
                         }
                       >
-                        {isPlanHeld ? 'Review plan' : 'Open plan'}
+                        Open plan
                       </Button>
                     )}
                   </span>

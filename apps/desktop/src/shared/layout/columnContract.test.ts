@@ -177,7 +177,7 @@ const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray
 
 const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
   'Runs > Create': ['features/workflows/components/WorkflowBuilderView/index.tsx'],
-  'Runs > a run': ['features/session/components/AgentTree/WorkflowRow.tsx'],
+  'Runs > a run': ['features/session/components/SessionWorkspace/parts/WorkflowRunDetail.tsx'],
   'Questions detail': ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
   'Branch > create pull request': [
     'features/integrations/github/components/PullRequest/CreatePrPanel.tsx',
@@ -218,7 +218,7 @@ const H1_ALLOWLIST: ReadonlySet<string> = new Set([
 const TITLE_ROW_PAGES: ReadonlyArray<string> = [
   'features/session/components/SessionOverviewPane/HeaderBand.tsx',
   'features/session/components/AgentDetailPane/AgentHeader.tsx',
-  'features/session/components/AgentTree/WorkflowRow.tsx',
+  'features/session/components/AgentTree/RunHeader/index.tsx',
   'features/workspace/components/StageBoard/index.tsx',
 ];
 

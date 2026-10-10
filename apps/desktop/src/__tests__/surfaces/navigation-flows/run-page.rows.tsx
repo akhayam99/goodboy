@@ -16,7 +16,8 @@ import {
 import { STORY_NOW } from '../../../store/storyHarness';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { aPlan, aStoredPlan } from '../../../test/planFixtures';
-import { type Ctx, type Row, WAIT, settle, useAppStore } from './harness';
+import userEvent from '@testing-library/user-event';
+import { type Ctx, type Row, WAIT, click, heading, settle, useAppStore } from './harness';
 
 const WORKFLOW_ID = 'journey-run-page-workflow' as WorkflowId;
 const RUN_ID = 'journey-run-page-run' as WorkflowRunId;
@@ -136,7 +137,7 @@ const statusOf = ({ sessionId }: Ctx, agentId: AgentId): Agent['status'] | undef
 const toastCount = (): number =>
   screen.queryAllByRole('button', { name: 'Dismiss notification' }).length;
 
-const header = () => screen.getByRole('group', { name: 'Run lifecycle actions' });
+const header = () => screen.getByTestId('run-header');
 
 const openRunHeldForItsPlan = async (ctx: Ctx): Promise<void> => {
   seedHeldRun(ctx);
@@ -144,10 +145,14 @@ const openRunHeldForItsPlan = async (ctx: Ctx): Promise<void> => {
   await settle();
 };
 
-const reviewThenApproveFromTheOverflow = async (ctx: Ctx): Promise<void> => {
+const reviewThenApproveFromTheDrawer = async (ctx: Ctx): Promise<void> => {
   await openRunHeldForItsPlan(ctx);
-  const lifecycle = await screen.findByRole('group', { name: 'Run lifecycle actions' }, WAIT);
-  fireEvent.click(within(lifecycle).getByRole('button', { name: 'Review plan' }));
+  const entry = await within(await screen.findByTestId('run-header', {}, WAIT)).findByRole(
+    'button',
+    { name: 'Review plan' },
+    WAIT,
+  );
+  fireEvent.click(entry);
   await settle();
   await waitFor(
     () =>
@@ -158,16 +163,11 @@ const reviewThenApproveFromTheOverflow = async (ctx: Ctx): Promise<void> => {
       }),
     WAIT,
   );
-  expect((await screen.findByTestId('plan-primary', {}, WAIT)).textContent).toBe('Approve');
   expect(useAppStore.getState().activeLens[ctx.sessionId] ?? null).toBe('workflows');
-
-  fireEvent.click(await screen.findByRole('button', { name: /^Close/ }, WAIT));
-  await settle();
-  await waitFor(() => expect(useAppStore.getState().drawer).toBeNull(), WAIT);
-
-  fireEvent.click(within(header()).getByRole('button', { name: /run controls$/ }));
+  const approve = await screen.findByTestId('plan-primary', {}, WAIT);
+  expect(approve.textContent).toBe('Approve');
   await act(async () => {
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Approve plan' }));
+    fireEvent.click(approve);
   });
   await settle(6);
 };
@@ -185,11 +185,57 @@ const stepStartedWithOneToast = async (ctx: Ctx): Promise<void> => {
   expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
 };
 
+const openRunPage = async (ctx: Ctx): Promise<void> => {
+  seedHeldRun(ctx);
+  act(() => useAppStore.getState().navigate({ to: runPage(ctx) }));
+  await settle();
+  await screen.findByTestId('run-header', {}, WAIT);
+};
+
+const backToTheList = async (ctx: Ctx): Promise<void> => {
+  await waitFor(
+    () => expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId]).toBeNull(),
+    WAIT,
+  );
+  await heading('Runs');
+  expect(screen.queryByTestId('run-header')).toBeNull();
+};
+
+const pressEscape = async (): Promise<void> => {
+  await userEvent.setup().keyboard('{Escape}');
+  await settle();
+};
+
+const clickRunsCrumb = async (): Promise<void> => {
+  const trail = await screen.findByRole('navigation', { name: 'Breadcrumb' }, WAIT);
+  await click(within(trail).getByRole('button', { name: /^Runs/ }));
+};
+
 export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'a run held for its plan: Review plan opens the drawer, Approve from the overflow starts the step with one toast',
+    name: 'a run held for its plan: Review plan opens the drawer, the drawer Approve starts the step with one toast',
     covers: ['navigate', 'openDrawer', 'toast:follow'],
-    open: reviewThenApproveFromTheOverflow,
+    open: reviewThenApproveFromTheDrawer,
     lands: stepStartedWithOneToast,
+  },
+  {
+    name: 'the run page draws no chevron to the other runs, and Esc goes back to the Runs list',
+    covers: ['navigate', 'setFocusedWorkflowRun'],
+    open: async (ctx) => {
+      await openRunPage(ctx);
+      expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
+      expect(within(header()).queryByRole('button', { name: /^Expand / })).toBeNull();
+      await pressEscape();
+    },
+    lands: backToTheList,
+  },
+  {
+    name: 'the Runs crumb goes back to the Runs list',
+    covers: ['navigate', 'setFocusedWorkflowRun'],
+    open: async (ctx) => {
+      await openRunPage(ctx);
+      await clickRunsCrumb();
+    },
+    lands: backToTheList,
   },
 ];
