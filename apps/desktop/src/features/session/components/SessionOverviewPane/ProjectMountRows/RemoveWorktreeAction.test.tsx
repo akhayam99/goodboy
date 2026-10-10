@@ -66,7 +66,7 @@ const ROW = {
   series: null,
   observation: null,
   observedBranchHolder: null,
-  isCompleted: true,
+  isFinished: true,
 } satisfies MountRowView;
 
 const MERGED = { kind: 'merged', base: 'origin/main' } satisfies BranchIntegration;

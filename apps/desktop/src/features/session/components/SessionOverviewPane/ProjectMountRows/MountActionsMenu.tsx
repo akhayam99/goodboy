@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Unlink } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, MenuTriggerButton, useDropdown } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
@@ -10,17 +11,15 @@ import {
   type MountCleanupBlocker,
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { ObjectOverflowList } from '../../../../actions/components/ObjectOverflowMenu/ObjectOverflowList';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/names';
 import {
   PROJECT_DETACH_EVENT,
   projectKeyOf,
   type ProjectDetachRequest,
 } from '../../../../actions/kinds/project';
-import type { ProjectActionTarget } from '../../../../actions/types';
 import { DetachConfirm } from './DetachConfirm';
 import {
-  BLOCKER_SENTENCE,
   REMOVAL_STAGE,
   buildDetachPlan,
   detachFailureMessage,
@@ -46,8 +45,6 @@ type DetachTarget = {
   readonly isOnDisk: boolean;
 };
 
-const NO_OMISSIONS: ReadonlyArray<string> = [];
-
 const isDetachRequest = (event: Event): event is CustomEvent<ProjectDetachRequest> =>
   event instanceof CustomEvent &&
   typeof event.detail === 'object' &&
@@ -67,18 +64,6 @@ export const MountActionsMenu = ({
   worktreePath,
 }: Props) => {
   const projectKey = projectKeyOf({ sessionId, projectId });
-  const openEvent = `goodboy:project-menu-open:${projectKey}`;
-  const target = useMemo<ProjectActionTarget>(
-    () => ({ kind: 'project', sessionId, projectId }),
-    [projectId, sessionId],
-  );
-  const dropdown = useDropdown({
-    align: 'end',
-    width: 'w-96',
-    expectedWidth: 384,
-    expectedHeight: 190,
-    openEvent,
-  });
   const detachProject = useAppStore((state) => state.detachProject);
   const reportError = useAppStore((state) => state.reportError);
   const projectKind = useAppStore((state) => projectById(state.projects, projectId)?.kind ?? null);
@@ -125,7 +110,6 @@ export const MountActionsMenu = ({
   const [stage, setStage] = useState<string | null>(null);
   const [assessments, setAssessments] = useState<ReadonlyArray<MountAssessment> | null>(null);
   const requestRef = useRef(0);
-  const label = `${projectName} actions`;
 
   const fail = ({ title, error }: { title: string; error: unknown }) => {
     void reportError({
@@ -189,11 +173,10 @@ export const MountActionsMenu = ({
       }
       setIsConfirming(true);
       assessRef.current();
-      window.dispatchEvent(new CustomEvent(openEvent));
     };
     window.addEventListener(PROJECT_DETACH_EVENT, onRequest);
     return () => window.removeEventListener(PROJECT_DETACH_EVENT, onRequest);
-  }, [openEvent, projectKey]);
+  }, [projectKey]);
 
   const cancelDetach = () => {
     requestRef.current = requestRef.current + 1;
@@ -201,16 +184,6 @@ export const MountActionsMenu = ({
     setStage(null);
     setIsConfirming(false);
   };
-
-  useEffect(() => {
-    if (dropdown.open) {
-      return;
-    }
-    requestRef.current = requestRef.current + 1;
-    setIsConfirming(false);
-    setAssessments(null);
-    setStage(null);
-  }, [dropdown.open]);
 
   const detach = async ({ disposition }: { readonly disposition: DetachDisposition }) => {
     setIsBusy(true);
@@ -235,7 +208,6 @@ export const MountActionsMenu = ({
           worktreePath: summarized?.worktreePath ?? worktreePath,
         }),
       });
-      dropdown.close();
       setIsConfirming(false);
     } catch (error) {
       fail({ title: "Couldn't remove the project from the session", error });
@@ -250,54 +222,36 @@ export const MountActionsMenu = ({
   }
 
   return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      ariaLabel={label}
-      anchorClassName="shrink-0"
-      trigger={
-        <MenuTriggerButton
-          label={label}
-          isOpen={dropdown.open}
-          size="control"
+    <DetachConfirm
+      projectName={projectName}
+      plan={buildDetachPlan({
+        projectName,
+        worktreePath,
+        isRepoProject,
+        blockers,
+        assessments,
+      })}
+      isOpen={isConfirming}
+      isBusy={isBusy}
+      stage={stage}
+      onConfirm={({ disposition }) => void detach({ disposition })}
+      onRecheck={assess}
+      onCancel={cancelDetach}
+      trigger={() => (
+        <IconButton
+          size="xs"
+          variant="ghost"
+          icon={Unlink}
+          iconSize={ICON_SIZE.row}
+          label={`${NAMES.removeFromSession} for ${projectName}`}
+          tooltip={NAMES.removeFromSession}
+          aria-haspopup="dialog"
           onClick={() => {
-            if (dropdown.open) {
-              dropdown.close();
-              setIsConfirming(false);
-              return;
-            }
-            dropdown.toggle();
+            setIsConfirming(true);
+            assess();
           }}
-        >
-          <CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />
-        </MenuTriggerButton>
-      }
-    >
-      {isConfirming ? (
-        <DetachConfirm
-          projectName={projectName}
-          plan={buildDetachPlan({
-            projectName,
-            worktreePath,
-            isRepoProject,
-            blockers,
-            assessments,
-          })}
-          isBusy={isBusy}
-          stage={stage}
-          onConfirm={({ disposition }) => void detach({ disposition })}
-          onRecheck={assess}
-          onCancel={cancelDetach}
-        />
-      ) : null}
-      {isConfirming ? null : (
-        <ObjectOverflowList
-          target={target}
-          label={label}
-          anchorKey={null}
-          omit={NO_OMISSIONS}
-          onClose={dropdown.close}
         />
       )}
-    </AnchoredPopover>
+    />
   );
 };
