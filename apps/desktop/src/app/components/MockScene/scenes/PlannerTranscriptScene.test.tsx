@@ -70,11 +70,11 @@ describe('planner transcript scenes', () => {
     expect(screen.queryByText('Plan not in this session')).toBeNull();
   });
 
-  it('drawer: the plan opens beside the transcript at half the window', async () => {
+  it('drawer: the plan opens beside the transcript in the reader tier', async () => {
     mount(PlannerTranscriptDrawerScene);
 
     await screen.findByTestId('plan-drawer');
-    expect(panel().getAttribute('data-drawer-sizing')).toBe('half');
+    expect(panel().getAttribute('data-drawer-sizing')).toBe('reader');
     expect(screen.getByTestId('plan-row').textContent).toContain('Retry-safe webhook credits');
   });
 
