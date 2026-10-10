@@ -6,6 +6,7 @@ const IN_MEMORY_SYNC_COMMANDS: &[&str] = &[
     "db.rs::db_path",
     "frame_protocol.rs::frame_release",
     "frame_protocol.rs::frame_stage",
+    "proc/ledger.rs::process_ledger_list",
     "provider_lifecycle.rs::provider_lifecycle_resize",
     "provider_lifecycle.rs::provider_lifecycle_write",
     "qa_preview.rs::qa_deciding_workflow_runs",
