@@ -22,6 +22,7 @@ import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';
 import { FocusedTaskBody } from './FocusedTaskBody';
 import { integrationTaskKey } from './integrationTaskKey';
+import { LinkedToRow } from './LinkedToRow';
 import { WorkItemList } from './WorkItemList';
 import { useSessionProjectScope } from '../../../../hooks/useSessionProjectScope';
 import { LinkIssueAction } from '../../../SessionOverviewPane/LinkIssueAction';
@@ -169,6 +170,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               {unlinkError}
             </p>
           ) : null}
+          <LinkedToRow sessionId={sessionId} task={focusedTask} />
           <FocusedTaskBody
             provider={provider}
             sessionId={sessionId}
