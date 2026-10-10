@@ -27,7 +27,7 @@ import {
 const WINDOWS = [1024, 1440, 1920] as const;
 const ZOOMS = [0.8, 1, 1.25] as const;
 const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
-const SIZINGS: ReadonlyArray<DrawerSizing> = ['side', 'reader', 'full'];
+const SIZINGS: ReadonlyArray<DrawerSizing> = ['side', 'reader'];
 const TIERS = ['side', 'reader'] as const;
 
 const paneOf = ({
@@ -254,15 +254,6 @@ describe('the named widths of the plan', () => {
       dragMax: 560,
     });
   });
-
-  it('covers the page when the drawer is expanded, at every width', () => {
-    const offenders = MAINS.filter((main) => {
-      const layout = drawerLayoutOf({ main, sizing: 'full', savedWidth: 400 });
-      return layout.mode !== 'overlay' || layout.width !== Math.max(RIGHT_DRAWER_MIN, main - 16);
-    });
-
-    expect(offenders).toEqual([]);
-  });
 });
 
 describe('the aside of each mode', () => {
@@ -315,14 +306,6 @@ describe('drawer geometry across the width matrix', () => {
 
     expect(at1920.mode).toBe('push');
     expect(at1440.mode).toBe('overlay');
-  });
-
-  it('covers the work when the drawer is expanded, at every width', () => {
-    const modes = MATRIX.filter(({ sizing }) => sizing === 'full').map(
-      ({ columnWidth }) => layoutOf({ columnWidth, sizing: 'full' }).mode,
-    );
-
-    expect(new Set(modes)).toEqual(new Set(['overlay']));
   });
 
   it('keeps a closed drawer closed whatever the width', () => {

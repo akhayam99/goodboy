@@ -8,9 +8,7 @@ export const COLUMN_MIN_PUSH = 560;
 export const COLUMN_GUTTERS = 48;
 export const DRAWER_INSET = 8;
 
-export type DrawerSizing = 'side' | 'reader' | 'full';
-
-export type DrawerTier = Exclude<DrawerSizing, 'full'>;
+export type DrawerSizing = 'side' | 'reader';
 
 export type DrawerMode = 'closed' | 'push' | 'overlay';
 
@@ -20,13 +18,10 @@ type TierBounds = {
   readonly fallback: number;
 };
 
-export const DRAWER_TIERS: Readonly<Record<DrawerTier, TierBounds>> = {
+export const DRAWER_TIERS: Readonly<Record<DrawerSizing, TierBounds>> = {
   side: { min: RIGHT_DRAWER_MIN, max: RIGHT_DRAWER_MAX, fallback: RIGHT_DRAWER_DEFAULT },
   reader: { min: READER_DRAWER_MIN, max: READER_DRAWER_MAX, fallback: READER_DRAWER_DEFAULT },
 };
-
-export const drawerTierOf = (sizing: DrawerSizing): DrawerTier =>
-  sizing === 'reader' ? 'reader' : 'side';
 
 export const drawerTrackOf = (drawerWidthPx: number): number => drawerWidthPx + DRAWER_INSET * 2;
 
@@ -54,14 +49,7 @@ type LayoutParams = {
 };
 
 export const drawerLayoutOf = ({ main, sizing, savedWidth }: LayoutParams): DrawerLayout => {
-  if (sizing === 'full') {
-    return {
-      mode: 'overlay',
-      width: Math.max(RIGHT_DRAWER_MIN, main - DRAWER_INSET * 2),
-      dragMax: RIGHT_DRAWER_MAX,
-    };
-  }
-  const tier = DRAWER_TIERS[drawerTierOf(sizing)];
+  const tier = DRAWER_TIERS[sizing];
   const room = pushRoomOf(main);
   if (room >= savedWidth) {
     return {

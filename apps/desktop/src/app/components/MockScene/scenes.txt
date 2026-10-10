@@ -252,9 +252,10 @@ plan-drawer-revising
 plan-drawer-split
 plan-drawer-unchanged
 plan-drawer-waiting
+plandrawer-1000
+plandrawer-720
 planner-transcript
 planner-transcript-drawer
-planner-transcript-expanded
 planner-transcript-replaced
 planner-transcript-revising
 processes-stopped
@@ -268,6 +269,7 @@ rail-ticket-ids
 railorder
 rebasedirty
 repo-status
+reportdrawer-720
 resolve
 resolve-bitbucket
 resolve-bulk-accepted

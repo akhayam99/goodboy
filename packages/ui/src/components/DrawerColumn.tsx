@@ -8,7 +8,6 @@ import {
   DRAWER_TIERS,
   drawerAsideWidthOf,
   drawerLayoutOf,
-  drawerTierOf,
   type DrawerLayout,
   type DrawerMode,
   type DrawerSizing,
@@ -48,7 +47,7 @@ type UnmeasuredParams = {
 const unmeasuredLayoutOf = ({ savedWidth, sizing }: UnmeasuredParams): DrawerLayout => ({
   mode: 'push',
   width: savedWidth,
-  dragMax: DRAWER_TIERS[drawerTierOf(sizing)].max,
+  dragMax: DRAWER_TIERS[sizing].max,
 });
 
 export type DrawerColumnFrame = 'sheet' | 'none';
@@ -107,7 +106,7 @@ export const DrawerColumn = ({
     cssVar: '--goodboy-reader-drawer-width',
     onPreview,
   });
-  const resizable = drawerTierOf(sizing) === 'reader' ? reader : side;
+  const resizable = sizing === 'reader' ? reader : side;
   const layout =
     column.width === null
       ? unmeasuredLayoutOf({ savedWidth: resizable.width, sizing })
@@ -202,15 +201,13 @@ export const DrawerColumn = ({
             <div
               className={cn('flex w-2 shrink-0 justify-center', isOverlay && 'pointer-events-auto')}
             >
-              {sizing === 'full' ? null : (
-                <ResizeHandle
-                  {...resizable.handleProps}
-                  max={layout.dragMax}
-                  value={layout.width}
-                  side="right"
-                  ariaLabel={resizeLabel}
-                />
-              )}
+              <ResizeHandle
+                {...resizable.handleProps}
+                max={layout.dragMax}
+                value={layout.width}
+                side="right"
+                ariaLabel={resizeLabel}
+              />
             </div>
             <div
               ref={cardRef}

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Maximize2, Minimize2 } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { DrawerFrame, IconButton } from '@goodboy/ui';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 import { sessionPlace, useAppStore } from '../../../store';
@@ -15,8 +15,6 @@ type Props = {
 
 export const ArtifactReadingDrawer = ({ sessionId, artifactId, onClose }: Props) => {
   const artifact = useAppStore((s) => readingArtifactOf({ state: s, sessionId, artifactId }));
-  const isExpanded = useAppStore((s) => s.documentDrawerExpanded[sessionId] === true);
-  const setDocumentDrawerExpanded = useAppStore((s) => s.setDocumentDrawerExpanded);
   const navigate = useAppStore((s) => s.navigate);
 
   if (artifact === null) {
@@ -31,30 +29,21 @@ export const ArtifactReadingDrawer = ({ sessionId, artifactId, onClose }: Props)
       count={`v${artifact.revision}`}
       onClose={onClose}
       action={
-        <span className="flex min-w-0 items-center gap-2">
-          <IconButton
-            icon={ArrowUpRight}
-            iconSize={ICON_SIZE.row}
-            label="Open in Artifacts"
-            variant="ghost"
-            onClick={() =>
-              navigate({
-                to: sessionPlace({
-                  sessionId,
-                  lens: 'plans',
-                  target: { kind: 'artifact', artifactId: artifact.id },
-                }),
-              })
-            }
-          />
-          <IconButton
-            icon={isExpanded ? Minimize2 : Maximize2}
-            iconSize={ICON_SIZE.row}
-            label={isExpanded ? 'Collapse' : 'Expand'}
-            variant="ghost"
-            onClick={() => setDocumentDrawerExpanded(sessionId, !isExpanded)}
-          />
-        </span>
+        <IconButton
+          icon={ArrowUpRight}
+          iconSize={ICON_SIZE.row}
+          label="Open in Artifacts"
+          variant="ghost"
+          onClick={() =>
+            navigate({
+              to: sessionPlace({
+                sessionId,
+                lens: 'plans',
+                target: { kind: 'artifact', artifactId: artifact.id },
+              }),
+            })
+          }
+        />
       }
     >
       <div

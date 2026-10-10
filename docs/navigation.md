@@ -2023,16 +2023,15 @@ from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
 `min(1000, page - 16)` over the page, and keeps its own
 `goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
 drag ends; a double click on the handle resets to the tier default (400 or 720);
-the two saved widths never bleed. **Expand** (`full`) takes the whole column
-until the plan drawer drops it. `selectDrawerSizing` picks the tier from the
-drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+the two saved widths never bleed. There is no third tier: no drawer expands over
+the whole column, the reader tier is the large one. `selectDrawerSizing` picks
+the tier from the drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
 
 **One push rule.** `room = main - 16 - 48 - 560`: the pane (the `DrawerColumn`'s
 own width) minus the drawer's two 8px insets, the page's gutters and the 560px
 the page keeps. The drawer pushes only while the page container keeps 560 plus
 its 48px of gutters and `room` covers the drawer's saved width; it is never
-squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. Expanded
-always lies over. The mode reads the committed width, never a drag in progress,
+squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. The mode reads the committed width, never a drag in progress,
 and while it pushes the handle stops at `min(tier max, room)`, so a drag never
 flips the mode. Once a drawer pushes at some width it pushes at every wider one.
 The column and measure pages are centred, and the column slides left to
@@ -2077,7 +2076,7 @@ drawer repeats its own name in the label. The one exception is the Context
 drawer in its versions view, whose control reads `Back to current` and goes
 back to the current view instead of closing. The Close button is a 28px target
 (`size-7`) with the 14px glyph, and so is every utility in the header (copy,
-open on its page, expand); a header holds at most one labelled button (Stop,
+open on its page); a header holds at most one labelled button (Stop,
 Run again, Open in Files, New) and utilities share one icon tone. The count slot
 is for a count or a version, never for the session title: Ask's header reads
 `Ask`.
@@ -2134,7 +2133,7 @@ sits beside it. The same goes for every artifact kind read from its work: a
 report or a wireframe row in Activity, and a report or wireframe chip in a
 transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
 report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
-the wireframe stage, with Open in Artifacts and Expand). **A plan always opens
+the wireframe stage, with Open in Artifacts as its one header action). **A plan always opens
 in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
 inside Ask, a plan row in the palette, a plan hit in search and the plan chip in
 a chat open it over the page you are on, unless you are already on the
@@ -2146,14 +2145,13 @@ the Artifacts page from a drawer is a command of its own, **Open in Artifacts**
 in the drawer header, and it is the only page change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
-drawer that can expand: it opens at 560px (`sizing="half"` on
-`DrawerColumn`, with no resize handle, narrowed to the room the page leaves
-when that is less, so the page keeps its 560px and the drawer still pushes),
-**Expand** takes the whole column and
-lies over the page (`sizing="full"`), and Expand toggles back. The choice is
-kept per session in `documentDrawerExpanded` and is forgotten when the session
-is archived. The header holds the title, `vN`, the state chip, **Run plan**,
-Open in Artifacts, Expand and Close; Escape closes it. While the planner
+drawer in the reader tier: it opens at 720px and you drag its edge from 480
+to 1000 (a double click resets it to 720), so there is no Expand. The body
+stays on the 720 reading measure whatever the width. The header holds the
+title, **Open in Artifacts** and **Copy markdown** as two 28px icon buttons,
+and Close; the second row holds the state chip, `vN`, the parts, **Edit** and
+**Run plan**. **Copy markdown** is absent when the plan has no copy action.
+Escape closes it. While the planner
 revises the plan the body is dimmed and Run plan waits.
 
 The `ask` kind carries no payload: the thread on screen lives in the `ask`
