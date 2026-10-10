@@ -155,6 +155,9 @@ only when your task reaches the case it covers.
   window event, or open a studio from another feature.
 - [query-bridge.md](query-bridge.md): when you change what an agent can
   ask a connected tool, or how it asks.
+- [hosts.md](hosts.md): when you change what Goodboy does on GitHub, GitLab
+  or Bitbucket, or add a host, like merge methods, link shapes or draft
+  support.
 - [companion.md](companion.md): when you change how a phone pairs, what a
   paired phone may ask for, or when the pairing listener runs.
 - [mounts.md](mounts.md): when you change where a session writes on disk,
