@@ -79,7 +79,7 @@ describe('the list scenes', () => {
     await screen.findByRole('listbox', { name: 'Task items' }, WAIT);
     const cursors = document.querySelectorAll('[data-inbox-key][data-cursor]');
     expect(cursors).toHaveLength(1);
-    expect(document.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-inbox-key][data-selected="true"]')).toHaveLength(0);
     expect(screen.queryByText(/Seen on 14 orders/)).toBeNull();
   });
 });

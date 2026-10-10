@@ -71,7 +71,7 @@ describe('the Tasks drawer split scene', () => {
     ).toBe('push');
     expect(page?.getAttribute('data-sheet')).toBe('pushed');
     expect(page?.querySelector('[data-studio-band]')).not.toBeNull();
-    expect(page?.textContent).toContain('All items');
+    expect(page?.textContent).toContain('Tasks');
     expect(drawer?.textContent).toContain('CAS-231');
     expect(page?.contains(drawer ?? null)).toBe(false);
   });

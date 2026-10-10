@@ -423,7 +423,9 @@ its slots.** The board, the session and the studios do not define their own
 frames. A surface that needs a different frame changes the shared one instead of
 forking a second (`app/shellArrangement`, which every shell mount, the app and
 the mock scenes alike, reads). **Two navigation columns at once is not the IA.
-The right drawer is context, never navigation.** A session draws one full-width
+A page rail is not one: filters or a list that belong to the page sit beside
+the detail, on the page background. The right drawer is context, never
+navigation.** A session draws one full-width
 pane, and its navigation lives in the left column. The right drawer holds
 reference material beside the page and closes with the pane that opened it.
 
@@ -1401,15 +1403,16 @@ one is open at a time.
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
   studio the time owns a fixed last column and Mark read and Delete swap in
-  over it on hover, so the row never changes width. A **Filters** button in the
-  list header opens the facets (`NotificationFiltersButton`, with the count of
-  active filters) by view, severity and source, with counts that come from SQL
-  (`countNotifications`), so they stay true past the loaded page; Load older
-  pages with a cursor. Both surfaces default to this workspace: a row belongs to
+  over it on hover, so the row never changes width. The facets (view, severity,
+  source and the workspace scope) are a page rail docked beside the list, in
+  Chat's frame (`StudioRailLayout`, `placement="page"`, surface `notifications`,
+  288px), with counts that come from SQL (`countNotifications`), so they stay
+  true past the loaded page; Load older pages with a cursor. The title is
+  Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
-  The studio header draws them through `HeaderActions`: `Filters`, then the ghost
-  `Mark all read` (only while something is unread), then the ghost danger
+  The studio header draws them through `HeaderActions`: the shared `FilterButton`
+  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the ghost danger
   `Delete all`, which opens a `ConfirmPopover` anchored to it, aligned to its end
   edge, titled with the scope's count ("Delete 7 notifications?") and naming the
   workspace or "every workspace"; it never swaps the title row. A row's Delete acts
@@ -1422,9 +1425,10 @@ one is open at a time.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses all three: its facets filter by view,
-  type and source (one pick per section, a tool that did not load says so in
-  its row) behind the same Filters button in the list header, so Tasks is
-  the list and the record beside the column, never a third column; its
+  type, source and project (one pick per section, a tool that did not load says so
+  in its row) from a page rail docked beside the list (surface `inbox`, 288px,
+  the search field at its top), and the title stays Tasks, so Tasks is the rail,
+  the list and the record beside it, never a second navigation column; its
   one-line rows are grouped by the same days in time order, and
   J and K move a cursor, and the record follows beside the list only once one is
   open. Tasks opens with a quiet cursor on its first row (`data-cursor`, the hover
@@ -1442,10 +1446,21 @@ one is open at a time.
   Changelog's releases and the guide's chapters are content beside their
   detail, not a second navigation column: `StudioRailLayout` with
   `placement="page"` draws the list on the page background with the resize
-  edge as the only line. Chat's list opens at 288px.
+  edge as the only line. Tasks' and Notifications' filters are the same frame. Every page rail opens at
+  288px (`standard`); the skeleton reads the same constant.
+- **A page rail folds, and folds itself when there is no room.** A page may pass
+  `onCollapsedChange`: the rail's first row then holds a fold control (tooltip
+  "Fold the rail"), and `useStudioRailFold` remembers the choice per surface
+  (`goodboy:studio-rail-folded:<studio>:v1`). Under a pane of 880px the rail
+  folds without saving anything and docks again when the pane widens. A folded
+  rail leaves the shared `FilterButton` (28px tall, the funnel with the count of
+  active filters, "Dock the filters" beside it while the pane is wide enough)
+  in the title row, opening the same facets in a popover. The search field of
+  Tasks moves into the title row with it.
 - **Every studio list resizes.** `StudioRailLayout` (Settings in the legacy
-  layout, Guide, Chat, Changelog, Bitbucket) drags from its right edge
-  between 220 and 420px, step 8px (32 with Shift) with the arrow keys, and goes
+  layout, Guide, Chat, Changelog, Bitbucket, Tasks, Notifications) drags from
+  its right edge between 220 and 420px (a page may pass `min` and `max`), step
+  8px (32 with Shift) with the arrow keys, and goes
   back to its default (256 narrow, 288 standard) on a double click. Each studio
   keeps its own width
   (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
@@ -2238,7 +2253,7 @@ artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
 A studio covers the whole window grid, so it cannot use that column. Tasks
-record opens in the same `DrawerColumn` inside the studio body
+record opens in the same `DrawerColumn` beside the list, after the filter rail
 (`InboxStudioLayout`), with the same width, card and motion. Escape closes the
 record before the studio.
 

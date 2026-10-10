@@ -65,7 +65,8 @@ export const STUDIO_META = {
     title: NAMES.tasks,
     closeLabel: 'Close tasks',
     tier: 'column',
-    skeleton: 'list',
+    skeleton: 'rail',
+    railWidth: 'standard',
     canHostDrawer: true,
   },
   impact: {
@@ -90,7 +91,8 @@ export const STUDIO_META = {
     title: 'Notifications',
     closeLabel: 'Close notifications',
     tier: 'column',
-    skeleton: 'list',
+    skeleton: 'rail',
+    railWidth: 'standard',
   },
   chat: {
     icon: CONCEPT_ICONS.chat,
@@ -99,7 +101,7 @@ export const STUDIO_META = {
     closeLabel: 'Close chat',
     tier: 'full',
     skeleton: 'rail',
-    railWidth: 'narrow',
+    railWidth: 'standard',
     canHostDrawer: true,
   },
 } as const satisfies Record<StudioKind, StudioMeta>;
