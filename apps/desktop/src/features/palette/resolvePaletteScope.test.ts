@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { resolvePaletteScope } from './resolvePaletteScope';
-import type { CommitScope } from './types';
+import type { CommitScope, HeldScope } from './types';
 
 const WORKSPACE = 'workspace-harborline' as WorkspaceId;
 const SESSION = 'session-payout' as SessionId;
@@ -123,5 +123,25 @@ describe('resolvePaletteScope', () => {
     expect(
       resolvePaletteScope({ ...base, hasAppStudio: true, lens: 'workflows', heldScope: held }),
     ).toBe(held);
+  });
+
+  it('keeps a focused Explore row above the lens it sits in', () => {
+    const held: HeldScope = {
+      kind: 'exploreFile',
+      sessionId: SESSION,
+      facts: {
+        name: 'rounding.ts',
+        relPath: 'apps/ledger-core/rounding.ts',
+        absolutePath: '/work/settlement/apps/ledger-core/rounding.ts',
+        isDir: false,
+        openLabel: 'Open in editor',
+        editorLabel: 'VS Code',
+        onAsk: null,
+        onOpen: null,
+        onReveal: null,
+      },
+    };
+
+    expect(resolvePaletteScope({ ...base, lens: 'explore', heldScope: held })).toBe(held);
   });
 });

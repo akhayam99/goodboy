@@ -14,6 +14,7 @@ import type { ArtifactGeneration } from '../artifacts/artifactCollection';
 import type { RecordFacts } from './kinds/record';
 import type { CommitFacts } from './kinds/commit';
 import type { DiffFileFacts } from './kinds/diffFile';
+import type { ExploreFileFacts } from './kinds/exploreFile';
 import type { WorktreeFacts } from './kinds/worktree';
 import type { ScriptFacts } from './kinds/script';
 import type { ChatFacts } from './kinds/chat';
@@ -258,6 +259,12 @@ export type DiffFileActionTarget = {
   readonly facts: DiffFileFacts;
 };
 
+export type ExploreFileActionTarget = {
+  readonly kind: 'exploreFile';
+  readonly sessionId: SessionId;
+  readonly facts: ExploreFileFacts;
+};
+
 export type MountActionTarget = {
   readonly kind: 'mount';
   readonly sessionId: SessionId;
@@ -342,6 +349,7 @@ export type ObjectTarget =
   | DiffActionTarget
   | CommitActionTarget
   | DiffFileActionTarget
+  | ExploreFileActionTarget
   | MountActionTarget
   | ProjectActionTarget
   | WorktreeActionTarget
