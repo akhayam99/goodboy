@@ -191,6 +191,8 @@ model-picker-claude
 model-picker-codex
 model-picker-cursor
 model-picker-triggers
+modelswilluse
+modelswilluse-cleared
 mount-mismatch
 mounts
 needs-you-card

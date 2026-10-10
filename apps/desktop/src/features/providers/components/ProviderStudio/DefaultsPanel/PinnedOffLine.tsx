@@ -41,7 +41,7 @@ export const PinnedOffLine = ({ count, total, onProviderIds, isDisabled, onConfi
         role="alert"
         icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
         title={`Put ${pluralize(count, 'agent')} back to Auto?`}
-        description="Their pinned models cannot run with the providers that are on. Auto picks the model."
+        description="Auto picks the model for each."
         confirmLabel="Back to Auto"
         align="end"
         onConfirm={onConfirm}
