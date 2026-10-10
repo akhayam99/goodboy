@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../../store/store';
+import { hasUnhealthyProvider } from '../../../store/slices/providers/providerHealth';
 import {
   ACTIVE_CONNECT_PHASES,
   ACTIVE_LIFECYCLE_PHASES,
@@ -7,7 +8,13 @@ import {
 
 const DEBOUNCE_MS = 500;
 const LIFECYCLE_RETRY_MS = 2_000;
-const REFRESH_TTL_MS = 60_000;
+const HEALTHY_TTL_MS = 5 * 60_000;
+const UNHEALTHY_TTL_MS = 60_000;
+
+const refreshTtlMs = (): number =>
+  hasUnhealthyProvider({ map: useAppStore.getState().providerHealth })
+    ? UNHEALTHY_TTL_MS
+    : HEALTHY_TTL_MS;
 
 type ScheduleParams = {
   readonly delayMs?: number;
@@ -27,9 +34,10 @@ export const useProviderRefreshOnFocus = (): void => {
       }
       timer = window.setTimeout(() => {
         timer = null;
+        const ttlMs = refreshTtlMs();
         const elapsed = Date.now() - lastRunAtRef.current;
-        if (elapsed < REFRESH_TTL_MS) {
-          schedule({ delayMs: REFRESH_TTL_MS - elapsed });
+        if (elapsed < ttlMs) {
+          schedule({ delayMs: ttlMs - elapsed });
           return;
         }
 

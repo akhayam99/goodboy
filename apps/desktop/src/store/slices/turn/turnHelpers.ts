@@ -92,6 +92,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { sessionById } from '../sessions/sessionIndex';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 type AttachmentsBlockParams = {
@@ -420,9 +421,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   if (!session) {
     return;
   }
-  const connectedProviders = get()
-    .providers.filter((provider) => provider.connection === 'connected')
-    .map((provider) => provider.id);
+  const connectedProviders = autoRoutableProviders({ providers: get().providers });
   const enabledProviders = session.providerPreference.enabledProviders ?? null;
   const taskModel =
     entry.taskModelOverride ??

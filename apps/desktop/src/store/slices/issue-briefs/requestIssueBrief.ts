@@ -17,6 +17,7 @@ import type {
   SetFn,
 } from './types';
 import { sessionById } from '../sessions/sessionIndex';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
@@ -68,9 +69,7 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
       session === null
         ? selectWorkspaceResolvedSettings({ state, workspaceId })
         : selectResolvedSettings({ state, sessionId: session.id });
-    const connectedProviders = state.providers
-      .filter((provider) => provider.connection === 'connected')
-      .map((provider) => provider.id);
+    const connectedProviders = autoRoutableProviders({ providers: state.providers });
     const taskModel = routeTaskModel({
       taskModel: resolveLimitedTaskModel({
         limitContext: autoLimitContext({ state: get() }),

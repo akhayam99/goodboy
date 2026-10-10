@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
@@ -15,6 +15,12 @@ const { state } = vi.hoisted(() => ({
     refreshProviders: vi.fn(async () => undefined),
     providerConnect: {} as Record<string, { phase: string }>,
     providerLimits: {},
+    providerHealth: Object.fromEntries(
+      ['anthropic', 'cursor', 'codex', 'gemini', 'opencode', 'openrouter', 'moonshot'].map((id) => [
+        id,
+        { standing: 'unknown', evidence: { lastGoodAt: null } },
+      ]),
+    ) as Record<string, unknown>,
   },
 }));
 
@@ -106,5 +112,45 @@ describe('ProviderSettingsScope', () => {
     render(<ProviderSettingsScope workspaceId={null} frame={plainFrame} />);
 
     expect(screen.getByTestId('scope').textContent).toBe('All workspaces');
+  });
+});
+
+describe('refreshing when a provider is opened', () => {
+  const confirmedAgo = (ms: number) => {
+    state.providerHealth.anthropic = {
+      standing: 'connected',
+      evidence: { lastGoodAt: Date.now() - ms },
+    };
+  };
+
+  beforeEach(() => {
+    state.refreshProviders.mockClear();
+  });
+
+  afterEach(() => {
+    state.providerHealth.anthropic = { standing: 'unknown', evidence: { lastGoodAt: null } };
+  });
+
+  it('skips the refresh when the provider was confirmed a few seconds ago', () => {
+    state.providers = [{ id: 'anthropic', connection: 'connected' }];
+    confirmedAgo(10_000);
+    render(<ProviderSettingsScope workspaceId={null} frame={plainFrame} />);
+
+    expect(state.refreshProviders).not.toHaveBeenCalled();
+  });
+
+  it('refreshes when the last confirmation is older than a minute', () => {
+    state.providers = [{ id: 'anthropic', connection: 'connected' }];
+    confirmedAgo(2 * 60_000);
+    render(<ProviderSettingsScope workspaceId={null} frame={plainFrame} />);
+
+    expect(state.refreshProviders).toHaveBeenCalledOnce();
+  });
+
+  it('refreshes a provider that was never confirmed', () => {
+    state.providers = [{ id: 'anthropic', connection: 'installed_disconnected' }];
+    render(<ProviderSettingsScope workspaceId={null} frame={plainFrame} />);
+
+    expect(state.refreshProviders).toHaveBeenCalledOnce();
   });
 });

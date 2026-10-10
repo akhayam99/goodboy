@@ -21,6 +21,7 @@ import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory
 import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
 import { captureMaterializeRequestsFromTurn } from './turnHelpers';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
+import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
@@ -100,6 +101,9 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce, r
     },
   });
   const failure = classifyProviderError({ message: rawMessage });
+  if (!cancelledBeforeFailure) {
+    feedAuthRefusal({ set, get, providerId: provider, runId, message: rawMessage });
+  }
   const usageLimitResetAtMs = failure.kind === 'usage_limit' ? (failure.resetAtMs ?? null) : null;
   if (failure.kind === 'usage_limit') {
     set((state) => ({

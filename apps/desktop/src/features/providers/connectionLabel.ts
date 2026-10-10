@@ -6,4 +6,5 @@ export const PROVIDER_CONNECTION_LABEL: Record<ProviderConnectionState, string> 
   missing: 'Not installed',
   error: 'Error',
   unknown: 'Checking',
+  cannot_check: "Can't check",
 };

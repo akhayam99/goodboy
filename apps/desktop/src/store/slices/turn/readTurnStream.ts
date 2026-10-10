@@ -11,6 +11,7 @@ import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
 import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
+import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
 import type { GetFn, SetFn } from './types';
@@ -131,6 +132,13 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
         get,
         providerId: provider,
         model: spawnModel,
+        message: rawEvent.message,
+      });
+      feedAuthRefusal({
+        set,
+        get,
+        providerId: provider,
+        runId,
         message: rawEvent.message,
       });
     }

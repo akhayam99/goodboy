@@ -173,3 +173,61 @@ describe('Gemini provider connection', () => {
     expect(gemini?.connection).toBe('connected');
   });
 });
+
+describe('a probe that gave no answer', () => {
+  const noAnswer = (errorKind: 'timeout' | 'exit'): ProviderStatus => ({
+    id: 'cursor',
+    binary: 'cursor-agent',
+    available: false,
+    version: null,
+    error: 'timed out',
+    errorKind,
+  });
+
+  it.each(['timeout', 'exit'] as const)('is never read as not installed after a %s', (kind) => {
+    const providers = buildProviderList({
+      ...statusesFor({ available: true }),
+      cursor: noAnswer(kind),
+    });
+    expect(providers.find((provider) => provider.id === 'cursor')?.connection).toBe('unknown');
+  });
+
+  it('is never read as not signed in when the auth answer is unknown', () => {
+    const providers = buildProviderList(
+      {
+        ...statusesFor({ available: true }),
+        cursor: {
+          id: 'cursor',
+          binary: 'cursor-agent',
+          available: true,
+          version: '1.0.0',
+          error: null,
+        },
+      },
+      { cursor: { state: 'unknown', identity: null, reason: 'the CLI exited with code 2' } },
+    );
+    expect(providers.find((provider) => provider.id === 'cursor')?.connection).toBe('unknown');
+  });
+
+  it('is never read as not signed in when there is no auth answer at all', () => {
+    const providers = buildProviderList({
+      ...statusesFor({ available: true }),
+      anthropic: {
+        id: 'anthropic',
+        binary: 'claude',
+        available: true,
+        version: '2.0.0',
+        error: null,
+      },
+    });
+    expect(providers.find((provider) => provider.id === 'anthropic')?.connection).toBe('unknown');
+  });
+
+  it('keeps a binary that is truly not found as missing', () => {
+    const providers = buildProviderList({
+      ...statusesFor({ available: true }),
+      cursor: { ...noAnswer('timeout'), errorKind: 'notFound' },
+    });
+    expect(providers.find((provider) => provider.id === 'cursor')?.connection).toBe('missing');
+  });
+});

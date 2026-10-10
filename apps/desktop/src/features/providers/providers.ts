@@ -3,6 +3,7 @@ import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { PROVIDER_LABEL } from './providerLabel';
 import type {
   ProviderConnectionState,
+  ProviderHealthStanding,
   ProviderInfo as ProviderInfoBase,
   ProviderId,
 } from '@goodboy/types';
@@ -35,6 +36,8 @@ export type ProviderDisplayInfo = ProviderInfoBase & {
   readonly label: string;
   readonly error: string | null;
   readonly docsUrl: string;
+  readonly standing?: ProviderHealthStanding;
+  readonly isBreakerOpen?: boolean;
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
@@ -88,6 +91,9 @@ export const checkProviderAuth = async (providerId: ProviderId): Promise<AuthSta
 
 export type ProviderAuthResults = Partial<Readonly<Record<ProviderId, AuthState | null>>>;
 
+const isNoAnswerStatus = (status: ProviderStatus): boolean =>
+  !status.available && (status.errorKind === 'timeout' || status.errorKind === 'exit');
+
 type ApiConnectionParams = {
   readonly status: ProviderStatus | null;
   readonly hasCredential: boolean;
@@ -101,21 +107,23 @@ export const connectionForApiProvider = ({
     return 'unknown';
   }
   if (status.available !== true) {
-    return 'missing';
+    return isNoAnswerStatus(status) ? 'unknown' : 'missing';
   }
   return hasCredential ? 'connected' : 'installed_disconnected';
 };
 
 function connectionFromDetectionAndAuth(
-  available: boolean,
-  detectionError: string | null,
+  status: ProviderStatus,
   auth: AuthState | null,
 ): ProviderConnectionState {
-  if (!available) {
-    return detectionError ? 'error' : 'missing';
+  if (isNoAnswerStatus(status)) {
+    return 'unknown';
+  }
+  if (!status.available) {
+    return status.error ? 'error' : 'missing';
   }
   if (!auth || auth.state === 'unknown') {
-    return 'installed_disconnected';
+    return 'unknown';
   }
   if (auth.state === 'disconnected') {
     return 'installed_disconnected';
@@ -143,7 +151,7 @@ function providerInfoFromStatus(
     if (!status) {
       return { ...base, connection: 'unknown', version: null, error: null };
     }
-    const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
+    const connection = connectionFromDetectionAndAuth(status, auth);
     return {
       ...base,
       connection,
@@ -155,7 +163,12 @@ function providerInfoFromStatus(
     return { ...base, connection: 'unknown', version: null, error: null };
   }
   if (!status.available) {
-    return { ...base, connection: 'missing', version: null, error: status.error ?? null };
+    return {
+      ...base,
+      connection: isNoAnswerStatus(status) ? 'unknown' : 'missing',
+      version: null,
+      error: status.error ?? null,
+    };
   }
   if (id === 'opencode') {
     return {
@@ -169,7 +182,7 @@ function providerInfoFromStatus(
   if (id === 'gemini' && hasCredential) {
     return { ...base, connection: 'connected', version: status.version, error: null };
   }
-  const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
+  const connection = connectionFromDetectionAndAuth(status, auth);
   return { ...base, connection, version: status.version, error: null };
 }
 

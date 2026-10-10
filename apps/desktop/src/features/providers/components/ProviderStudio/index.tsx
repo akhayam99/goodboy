@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { ProviderId, ProviderLifecycleAction, WorkspaceId } from '@goodboy/types';
+import {
+  PROVIDER_IDS,
+  type ProviderId,
+  type ProviderLifecycleAction,
+  type WorkspaceId,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { isConfirmationStale } from '../../../../store/slices/providers/providerHealth';
 import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
 import { ProvidersRail } from './ProvidersRail';
@@ -12,6 +18,7 @@ import { MODELS_SECTION } from './ProviderPage/ModelsGroup/constants';
 import { USAGE_SECTION } from './ProviderPage/UsageGroup/usageSectionId';
 
 const ALL_WORKSPACES = 'All workspaces';
+const CONFIRMATION_TTL_MS = 60_000;
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
@@ -58,6 +65,15 @@ export const ProviderSettingsScope = ({
       isConnectRunning({ phase: item.phase }),
     );
     if (isInFlight) {
+      return;
+    }
+    const { providerHealth } = useAppStore.getState();
+    const nowMs = Date.now();
+    const checked = focused === 'defaults' ? PROVIDER_IDS : [focused];
+    const isStale = checked.some((id) =>
+      isConfirmationStale({ health: providerHealth[id], nowMs, maxAgeMs: CONFIRMATION_TTL_MS }),
+    );
+    if (!isStale) {
       return;
     }
     void refreshProviders();

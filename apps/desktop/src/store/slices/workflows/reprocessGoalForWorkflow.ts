@@ -10,6 +10,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
@@ -52,9 +53,7 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
             ?.defaultProviderOverride,
           sessionDefaultProviderId: session.providerPreference.defaultProvider,
         }),
-        connectedProviders: state.providers
-          .filter((provider) => provider.connection === 'connected')
-          .map((provider) => provider.id),
+        connectedProviders: autoRoutableProviders({ providers: state.providers }),
         enabledProviders: session.providerPreference.enabledProviders ?? null,
         cooldowns: state.providerCooldowns,
         hidden: selectHiddenModels({ state: get() }),

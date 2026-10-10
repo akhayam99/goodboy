@@ -204,6 +204,8 @@ export const NON_SESSION_STATE_KEYS = [
   'geminiStatus',
   'authResults',
   'providers',
+  'providerHealth',
+  'providerProbeSeq',
   'providerLifecycle',
   'providerConnect',
   'cliRequirements',

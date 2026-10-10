@@ -1,5 +1,6 @@
 import { parseHiddenModels, providersAtLimit, type HiddenModels } from '@goodboy/core';
 import type { ProviderId, ProviderPolicy } from '@goodboy/types';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
 import type { AppStore } from '../../store';
 
@@ -56,9 +57,7 @@ export const autoLimitContext = ({
     return null;
   }
   return {
-    connected: providers
-      .filter((provider) => provider.connection === 'connected')
-      .map((provider) => provider.id),
+    connected: autoRoutableProviders({ providers }),
     atLimit,
     ...(hidden !== null && { hidden }),
     ...(hasCliVersions && { cliVersions }),
