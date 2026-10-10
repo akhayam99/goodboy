@@ -153,7 +153,7 @@ describe('the u23 frame scenes', () => {
     expect(screen.getAllByText(/Nothing is published yet/)).toHaveLength(1);
   });
 
-  it('puts Refresh, Backups and the overflow in the Commits tab row, with the legend visible', async () => {
+  it('puts Refresh, Backups and Open terminal here in the Commits tab row, with the legend visible', async () => {
     await renderScene('branch-commits-toolbar');
 
     const slot = (await waitFor(() => {
@@ -167,7 +167,8 @@ describe('the u23 frame scenes', () => {
       expect(within(slot).getByRole('button', { name: 'Refresh' })).toBeDefined(),
     );
     expect(within(slot).getByRole('button', { name: 'Backups' })).toBeDefined();
-    expect(within(slot).getByRole('button', { name: 'More history actions' })).toBeDefined();
+    expect(within(slot).getByRole('button', { name: 'Open terminal here' })).toBeDefined();
+    expect(within(slot).queryByRole('button', { name: 'More history actions' })).toBeNull();
     expect(screen.getByRole('group', { name: 'Legend' })).toBeDefined();
   });
 });
