@@ -26,8 +26,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'property picker: sets the assignee value from the control that shows it',
   'features/integrations/linear/LinearStateMenu.tsx':
     'property picker: sets the state value from the control that shows it',
-  'features/providers/components/ProviderStudio/DefaultsPanel/index.tsx':
-    'settings control, not an object in the map',
   'features/providers/components/ProviderStudio/ProviderPage/ProviderPageBody.tsx':
     'settings control, not an object in the map',
   'features/settings/components/SettingsStudio/WorkspaceFieldRow.tsx':
