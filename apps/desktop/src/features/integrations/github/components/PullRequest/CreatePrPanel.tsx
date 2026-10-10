@@ -15,7 +15,6 @@ import {
 } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight, PenLine, RotateCw } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
-import { usePrDraftAgentRunning } from '../../usePrDraftAgentRunning';
 import { closingIssueReferences } from '../../closingIssueReferences';
 import { AgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfigValue';
@@ -25,6 +24,7 @@ import { BranchCombobox } from '../../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../../worktree/worktree';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { scribeKeyOf } from '../../../../../store/slices/scribe/scribeKeyOf';
+import { SCRIBE_WRITING_REASON } from '../../../../../store/slices/scribe/scribeWritingReason';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { openUrl } from '../../../../../shared/lib/editor';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -50,7 +50,6 @@ export const CreatePrPanel = ({
   onCancel,
 }: Props) => {
   const createPrForSession = useAppStore((s) => s.createPrForSession);
-  const isDraftAgentRunning = usePrDraftAgentRunning({ sessionId });
   const repo = useSessionRepo({ sessionId });
   const branch = repo?.branch ?? null;
   const projectRoot = repo?.repoRoot ?? null;
@@ -95,6 +94,10 @@ export const CreatePrPanel = ({
   const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
   const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
   const [scribeBody, setScribeBody] = useState<string | null>(null);
+  const filledByScribe = useRef<{ title: string | null; body: string | null }>({
+    title: null,
+    body: null,
+  });
   const [hasAskedScribe, setHasAskedScribe] = useState(false);
   const requestScribe = useAppStore((s) => s.requestScribe);
   const openScribePullRequest = useAppStore((s) => s.openScribePullRequest);
@@ -117,15 +120,21 @@ export const CreatePrPanel = ({
     if (keptOutput === null) {
       return;
     }
-    if (keptOutput.prTitle !== null) {
-      setTitle(keptOutput.prTitle);
+    const keptTitle = keptOutput.prTitle;
+    const keptBody = keptOutput.prBody;
+    const previousTitle = filledByScribe.current.title;
+    const previousBody = filledByScribe.current.body;
+    if (keptTitle !== null) {
+      setTitle((typed) => (typed === defaultTitle || typed === previousTitle ? keptTitle : typed));
+      filledByScribe.current = { ...filledByScribe.current, title: keptTitle };
     }
-    if (keptOutput.prBody !== null) {
-      setBody(keptOutput.prBody);
-      setScribeBody(keptOutput.prBody);
+    if (keptBody !== null) {
+      setBody((typed) => (typed === '' || typed === previousBody ? keptBody : typed));
+      filledByScribe.current = { ...filledByScribe.current, body: keptBody };
+      setScribeBody(keptBody);
     }
     setMode('manual');
-  }, [keptOutput]);
+  }, [defaultTitle, keptOutput]);
 
   useEffect(() => {
     if (!hasAskedScribe || scribeWork?.status !== 'created') {
@@ -185,7 +194,7 @@ export const CreatePrPanel = ({
   }, [projectId, projectRoot, workspaceId]);
 
   const onCreate = async () => {
-    if (busy !== null || isDraftAgentRunning || isScribeBusy || title.trim().length === 0) {
+    if (busy !== null || isScribeBusy || title.trim().length === 0) {
       return;
     }
     setBusy('create');
@@ -218,7 +227,7 @@ export const CreatePrPanel = ({
   };
 
   const onCreateWithAi = async () => {
-    if (busy !== null || isDraftAgentRunning || isScribeBusy || scribeMountId === null) {
+    if (busy !== null || isScribeBusy || scribeMountId === null) {
       return;
     }
     setBusy('ai');
@@ -262,8 +271,20 @@ export const CreatePrPanel = ({
                   ariaLabel="Creation mode"
                   size="sm"
                   options={[
-                    { value: 'manual', label: 'Manual', icon: PenLine },
-                    { value: 'agent', label: 'Draft with an agent', icon: CONCEPT_ICONS.agents },
+                    {
+                      value: 'manual',
+                      label: 'Manual',
+                      icon: PenLine,
+                      disabled: isScribeBusy,
+                      tooltip: isScribeBusy ? SCRIBE_WRITING_REASON : undefined,
+                    },
+                    {
+                      value: 'agent',
+                      label: 'Draft with an agent',
+                      icon: CONCEPT_ICONS.agents,
+                      disabled: isScribeBusy,
+                      tooltip: isScribeBusy ? SCRIBE_WRITING_REASON : undefined,
+                    },
                   ]}
                   value={mode}
                   onChange={setMode}
@@ -405,12 +426,6 @@ export const CreatePrPanel = ({
                   {scribeFailure}
                 </span>
               )}
-              {error == null && isDraftAgentRunning && (
-                <span className="inline-flex min-w-0 items-center gap-2 truncate text-label text-muted-foreground">
-                  <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-                  An agent is already opening a pull request for this session.
-                </span>
-              )}
               {error != null && (
                 <span
                   role="alert"
@@ -449,9 +464,7 @@ export const CreatePrPanel = ({
           {mode === 'manual' ? (
             <Button
               onClick={() => void onCreate()}
-              disabled={
-                busy !== null || isDraftAgentRunning || isScribeBusy || title.trim().length === 0
-              }
+              disabled={busy !== null || isScribeBusy || title.trim().length === 0}
             >
               {busy === 'create' ? (
                 <span className="text-shimmer">Creating…</span>
@@ -465,9 +478,7 @@ export const CreatePrPanel = ({
           ) : (
             <Button
               onClick={() => void onCreateWithAi()}
-              disabled={
-                busy !== null || isDraftAgentRunning || isScribeBusy || scribeMountId === null
-              }
+              disabled={busy !== null || isScribeBusy || scribeMountId === null}
             >
               {busy === 'ai' || isScribeWriting ? (
                 <span className="text-shimmer">Writing…</span>

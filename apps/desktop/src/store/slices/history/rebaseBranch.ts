@@ -5,6 +5,7 @@ import {
   readRebasePlan,
   tryHistoryPlan,
 } from '../../../features/history/historyEngine';
+import { assertCleanTree } from './assertCleanTree';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
 import { isHistoryRunActive } from './isHistoryRunActive';
@@ -27,12 +28,13 @@ export const rebasePlanArgs = ({ worktreePath, rebase }: PlanParams): HistoryPla
 
 export const rebaseBranch = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, mountId }: HistoryMountInput): Promise<RebaseBranchOutcome> => {
+    const target = historyTargetOf({ get, sessionId, mountId });
+    await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
     const current = get().historyRuns[mountId];
     if (current !== undefined && isHistoryRunActive({ phase: current.phase })) {
       return 'busy';
     }
     const origin = 'rebase' as const;
-    const target = historyTargetOf({ get, sessionId, mountId });
     const stopWith = async (stop: HistoryStop): Promise<RebaseBranchOutcome> => {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop } });
       await reportHistoryStop({ get, set, target, origin, stop, planId: null });

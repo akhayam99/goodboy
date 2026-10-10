@@ -174,6 +174,9 @@ export const ensure = async ({
   if (isFresh && !entry.inflight) {
     return entry.value;
   }
+  if (maxAgeMs <= 0 && entry.inflight) {
+    await entry.inflight;
+  }
   await fetchInto(entry);
   return entry.value;
 };

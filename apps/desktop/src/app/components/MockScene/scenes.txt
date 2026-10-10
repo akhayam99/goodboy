@@ -76,6 +76,7 @@ branch-pr-merge-methods
 branch-pr-merged
 branch-pr-narrow
 branch-pr-none
+branch-pr-scribe-writing
 branch-push
 branch-reply-alone
 branch-reply-bundled
@@ -240,6 +241,7 @@ rail-draft-dot
 rail-flyout
 rail-pinned
 rail-ticket-ids
+rebasedirty
 repo-status
 resolve
 resolve-bitbucket

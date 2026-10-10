@@ -41,7 +41,7 @@ const facts = (overrides: Partial<PullRequestFacts> = {}): PullRequestFacts => (
   openComments: 0,
   isOwn: true,
   writeInFlight: null,
-  isDraftAgentRunning: false,
+  isScribeWriting: false,
   commentsNeedYou: 0,
   isFixRunLive: false,
   mergeMethods: ['squash', 'merge', 'rebase'],

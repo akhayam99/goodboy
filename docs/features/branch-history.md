@@ -80,6 +80,8 @@ Someone pushed after you applied? Goodboy lists their new commits and offers to 
 
 Rebase on main with the same engine, and bring in an agent only when there is a conflict.
 
+Goodboy checks your files first. With changes that are not committed, a rebase, a sync with the remote, a restore and bringing origin into a plan all stop before they start, and the message names how many files, as in "11 files have changes that are not committed. Commit or stash them first.", and the check reads the tree fresh each time and stops with "Couldn't check for uncommitted changes. Try again." when it cannot read it. Nothing is tried, no copy is made, no agent starts, and the stop leaves no entry in the history. On the Overview, the Next row then reads "11 files not committed" with **Check again** and **Open terminal** instead of a Rebase button.
+
 ### After a pull request merges
 
 Decide what happens to a merged branch, **Ask first**, **Delete on this Mac** or **Also on origin**, per workspace or project, with 14 days to restore it. A branch with later commits, uncommitted changes, or one Goodboy did not create is left alone.

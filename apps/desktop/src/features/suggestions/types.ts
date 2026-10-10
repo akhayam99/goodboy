@@ -64,6 +64,7 @@ export type RebaseSuggestionTarget = {
   readonly worktreePath: string;
   readonly baseBranch: string;
   readonly behind: number;
+  readonly dirtyCount: number;
 };
 
 export type SessionSuggestion =

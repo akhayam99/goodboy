@@ -32,6 +32,7 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 import { bindTarget, runObjectAction } from '../../features/actions/registry';
+import type { ScribeWork } from '../../store/slices/scribe/types';
 import {
   SESSION_ID as REVIEW_SESSION,
   seedResolveScene,
@@ -1207,8 +1208,8 @@ const MOUNT_STATES: ReadonlyArray<
     [
       ...WT_PR,
       ...WT_TOOLS,
-      'mount.rebase inline (Commit or discard the 2 uncommitted changes first.)',
-      'mount.rewriteHistory menu (Commit or discard the 2 uncommitted changes first.)',
+      'mount.rebase inline (2 files have changes that are not committed. Commit or stash them first.)',
+      'mount.rewriteHistory menu (2 files have changes that are not committed. Commit or stash them first.)',
       'mount.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
       'mount.putTaskOnBranch chip',
       ...WT_COPIES,
@@ -1303,6 +1304,71 @@ describe('worktree row actions in every state, on the real store', () => {
   });
 });
 
+const scribeJob = (status: ScribeWork['status']): Record<string, ScribeWork> => ({
+  [`pr:${LEDGER_MOUNT.mountId as string}`]: {
+    key: `pr:${LEDGER_MOUNT.mountId as string}`,
+    sessionId: SESSION,
+    mountId: LEDGER_MOUNT.mountId as MountId,
+    agentId: null,
+    task: { kind: 'pr', closedPrNumber: null, references: [], isDraft: true, base: null },
+    status,
+    output: null,
+    error: null,
+    pullRequest: null,
+    updatedAt: 0,
+  },
+});
+
+const SCRIBE_REASON = 'Scribe is still writing the text.';
+
+describe('Create PR while Scribe writes, on the real store', () => {
+  it.each(['writing', 'creating'] as const)(
+    'blocks the worktree row Create PR with its reason while the job is %s',
+    (status) => {
+      seedMount({ pr: null });
+      useAppStore.setState({ scribeWork: scribeJob(status) });
+      expect(matrixOf(mountRowTarget(gitStatus({ ahead: 3 })))).toContain(
+        `mount.createPullRequest (${SCRIBE_REASON})`,
+      );
+    },
+  );
+
+  it.each(['ready', 'failed', 'created'] as const)(
+    'leaves the worktree row Create PR open once the job is %s',
+    (status) => {
+      seedMount({ pr: null });
+      useAppStore.setState({ scribeWork: scribeJob(status) });
+      expect(matrixOf(mountRowTarget(gitStatus({ ahead: 3 })))).toContain(
+        'mount.createPullRequest',
+      );
+    },
+  );
+
+  it('leaves the worktree row Create PR open when no job runs', () => {
+    seedMount({ pr: null });
+    expect(matrixOf(mountRowTarget(gitStatus({ ahead: 3 })))).toContain('mount.createPullRequest');
+  });
+
+  it('blocks the pull request Create action with the same reason', () => {
+    seedMount({ pr: null });
+    useAppStore.setState({ scribeWork: scribeJob('writing') });
+    expect(matrixOf(PR_TARGET)).toContain(`pullRequest.create (${SCRIBE_REASON})`);
+  });
+
+  it('leaves the pull request Create action open when no job runs', () => {
+    seedMount({ pr: null });
+    expect(matrixOf(PR_TARGET)).toContain('pullRequest.create');
+  });
+
+  it('blocks the diff Create PR with the same reason', () => {
+    seedMount({ pr: null });
+    useAppStore.setState({ scribeWork: scribeJob('writing') });
+    expect(matrixOf(diffTarget(gitStatus({ ahead: 3 })))).toContain(
+      `diff.createPullRequest (${SCRIBE_REASON})`,
+    );
+  });
+});
+
 describe('project actions, on the real store', () => {
   it('offers Remove from session while the project has a mount', () => {
     seedMount({ pr: null });
@@ -1371,10 +1437,10 @@ const DIFF_STATES: ReadonlyArray<
     gitStatus({ behind: 4, changed: 2 }),
     [
       ...DIFF_TOOLS,
-      'diff.rebase primary (Commit or discard the 2 uncommitted changes first.)',
-      'diff.rewriteHistory secondary (Commit or discard the 2 uncommitted changes first.)',
+      'diff.rebase primary (2 files have changes that are not committed. Commit or stash them first.)',
+      'diff.rewriteHistory secondary (2 files have changes that are not committed. Commit or stash them first.)',
       'diff.changeBase menu',
-      'diff.restoreBackup menu (Commit or discard the 2 uncommitted changes first.)',
+      'diff.restoreBackup menu (2 files have changes that are not committed. Commit or stash them first.)',
       ...DIFF_COPIES,
     ],
   ],
@@ -1398,7 +1464,7 @@ const DIFF_STATES: ReadonlyArray<
       'diff.openInEditor menu',
       'diff.abortRebase secondary',
       'diff.rewriteHistory secondary (Finish or abort the rebase first.)',
-      'diff.restoreBackup menu (Commit or discard the 3 uncommitted changes first.)',
+      'diff.restoreBackup menu (3 files have changes that are not committed. Commit or stash them first.)',
       ...DIFF_COPIES,
     ],
   ],
