@@ -9,7 +9,7 @@ import type {
 
 type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 
-export type ProbeErrorKind = 'notFound' | 'timeout' | 'exit';
+type ProbeErrorKind = 'notFound' | 'timeout' | 'exit';
 
 export type AuthState = {
   readonly state: AuthStateKind;
