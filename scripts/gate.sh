@@ -88,6 +88,17 @@ check_rust_quick() {
   in_tauri cargo fmt --check && in_tauri cargo check --locked
 }
 
+check_lint_ts() {
+  local files
+  if changed_files | grep -qE '^(eslint\.config\.mjs|eslint-suppressions\.json|pnpm-lock\.yaml)$'; then
+    pnpm run lint:ts
+    return $?
+  fi
+  files=$(changed_files | grep -E '^(apps/desktop/src|packages/[^/]+/src|website/src)/.*\.tsx?$')
+  [ -z "$files" ] && return 0
+  echo "$files" | tr '\n' '\0' | xargs -0 node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js --no-warn-ignored
+}
+
 check_related_tests() {
   local desktop packages name status=0
   desktop=$(changed_files | grep -E '^apps/desktop/src/.*\.tsx?$' | sed 's#^apps/desktop/##')
@@ -112,6 +123,7 @@ if [ "$mode" = quick ]; then
   has_script check:rules && step rules pnpm run check:rules --diff "$BASE_REF"
   step prettier check_formatting
   step typecheck pnpm turbo run typecheck --filter="...[$MERGE_BASE]"
+  step lint-ts check_lint_ts
   step regressions pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions --maxWorkers="$WORKERS"
   step related-tests check_related_tests
   has_rust_changes && step rust-quick check_rust_quick
@@ -127,6 +139,7 @@ else
   echo "gate note: check:baselines is not in this tree yet, skipped" > "$LOG_DIR/baselines.log"
 fi
 step typecheck pnpm turbo run typecheck
+step lint-ts pnpm run lint:ts
 step website-drift check_website_drift
 step tauri-commands pnpm run check:tauri-commands
 step doc-refs pnpm run check:doc-refs
