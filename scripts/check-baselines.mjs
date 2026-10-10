@@ -206,7 +206,12 @@ export const parseExceptions = ({ text }) => {
 };
 
 const git = ({ args }) =>
-  execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  execFileSync('git', args, {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
 
 const readHead = ({ path }) => {
   const full = join(REPO_ROOT, path);

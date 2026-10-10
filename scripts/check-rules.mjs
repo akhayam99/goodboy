@@ -23,7 +23,12 @@ export const findOffenses = ({ files, baselines }) =>
   }).map((offense) => describeOffense({ offense }));
 
 const git = ({ args }) =>
-  execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  execFileSync('git', args, {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
 
 const splitNul = ({ output }) => output.split('\0').filter((entry) => entry !== '');
 
