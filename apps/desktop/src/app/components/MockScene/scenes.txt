@@ -156,6 +156,10 @@ explore-rows-compact
 explore-rows-empty
 explore-rows-keys
 explore-rows-narrow
+explorefile-binary
+explorefile-md
+explorefile-overlay
+explorefile-ts
 features-composer-menu
 features-impact-overview
 features-newer-data

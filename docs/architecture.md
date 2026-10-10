@@ -25,6 +25,15 @@ the whole repo, see [CONVENTIONS.md](../CONVENTIONS.md).
 
 ## Under the hood
 
+### Code highlighter
+
+`apps/desktop/src/shared/lib/highlight` is the one syntax highlighter. Shiki
+runs in a web worker behind `highlightCode`, with an in-process fallback; the
+caps (5,000 lines, 1,000 characters a line) live in `caps.ts` so a view can
+read them without loading Shiki. The diff (`SyntaxText`, `useDiffTokens`), the
+chat code blocks (`APP_CODE_HIGHLIGHTER`) and the Explore file view
+(`shared/components/SourceView`) all read it from there.
+
 ### Subprocess environment
 
 When you open an app from Finder or the Dock on macOS or Linux, it gets a
