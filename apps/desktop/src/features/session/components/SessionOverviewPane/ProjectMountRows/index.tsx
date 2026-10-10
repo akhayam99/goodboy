@@ -1,12 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
-import { Band, EmptyLine, IconButton, SectionHeader } from '@goodboy/ui';
+import { BandStack, EmptyLine, IconButton, SectionHeader } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../../store';
 import { MountCleanupProposals } from '../MountCleanupProposals';
 import { MountProjectAction } from './MountProjectAction';
 import { ArchivedGate } from '../ArchivedGate';
-import { MountTrackGrid } from './MountTrackGrid';
 import { MountSkeletonRows } from './MountSkeletonRows';
 import { ProjectMountGroup } from './ProjectMountGroup';
 import { LapProjectRow } from './LapProjectRow';
@@ -50,7 +49,7 @@ export const ProjectMountRows = ({ session }: Props) => {
   const worktreeTargets = useMemo(
     () =>
       worktreeStatusTargetsOf({
-        mounts: groups.flatMap((group) => [...group.rows, ...group.completedRows]),
+        mounts: groups.flatMap((group) => [...group.rows, ...group.finishedRows]),
         projects,
       }),
     [groups, projects],
@@ -90,7 +89,7 @@ export const ProjectMountRows = ({ session }: Props) => {
   };
 
   return (
-    <Band inset="content" ariaLabel="Projects">
+    <section aria-label="Projects" className="flex min-w-0 flex-col gap-2">
       <SectionHeader
         label="Projects"
         headingLevel={2}
@@ -126,7 +125,7 @@ export const ProjectMountRows = ({ session }: Props) => {
       {!areMountsLoaded && groups.length === 0 && !hasLapRow ? <MountSkeletonRows /> : null}
       {groups.length === 0 ? null : (
         <div className="@container min-w-0">
-          <MountTrackGrid className="gap-y-2">
+          <BandStack>
             {groups.map((group) => (
               <ProjectMountGroup
                 key={group.projectId}
@@ -139,10 +138,10 @@ export const ProjectMountRows = ({ session }: Props) => {
                 isSkeleton={isSkeleton}
               />
             ))}
-          </MountTrackGrid>
+          </BandStack>
         </div>
       )}
       <MountCleanupProposals sessionId={session.id} />
-    </Band>
+    </section>
   );
 };

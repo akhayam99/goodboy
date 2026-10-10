@@ -4,7 +4,7 @@ import { rebaseJobOf, type RebaseJobTone } from '../../../features/history/rebas
 import type { ScribeWork } from '../scribe/types';
 import type { HistoryRun } from './types';
 
-export type JobActivityPhase = 'running' | 'waiting' | 'failed' | 'done';
+type JobActivityPhase = 'running' | 'waiting' | 'failed' | 'done';
 
 export type JobActivityFacts = {
   readonly kind: 'rebase' | 'pull-request-text';
@@ -15,7 +15,7 @@ export type JobActivityFacts = {
   readonly mountId: string | null;
 };
 
-export type JobMountContext = {
+type JobMountContext = {
   readonly projectName: string;
   readonly baseBranch: string;
 };

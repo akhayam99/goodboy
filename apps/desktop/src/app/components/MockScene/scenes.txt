@@ -227,10 +227,13 @@ open-question-prose
 open-questions
 overview-add-project-empty
 overview-branch-tasks
+overview-closed-rows
+overview-finished-open
 overview-first-lap
 overview-full
 overview-header-provenance
 overview-long-branches
+overview-many-open
 overview-mount-error
 overview-mount-loading
 overview-mount-mismatch

@@ -22,7 +22,6 @@ type PhraseParams = {
   readonly status?: WorktreeStatus | null;
   readonly isPending?: boolean;
   readonly isSkeleton?: boolean;
-  readonly isMerged?: boolean;
   readonly commitsAfterMerge?: number | null;
   readonly isRepo?: boolean;
 };
@@ -31,7 +30,6 @@ const renderPhrase = ({
   status = statusOf(),
   isPending = false,
   isSkeleton = false,
-  isMerged = false,
   commitsAfterMerge = null,
   isRepo = true,
 }: PhraseParams = {}) =>
@@ -43,7 +41,6 @@ const renderPhrase = ({
       isRepo={isRepo}
       isPending={isPending}
       isSkeleton={isSkeleton}
-      isMerged={isMerged}
       isRebasing={false}
       commitsAfterMerge={commitsAfterMerge}
     />,
@@ -52,10 +49,11 @@ const renderPhrase = ({
 afterEach(cleanup);
 
 describe('MountStatusPhrase', () => {
-  it('says a clean pushed branch is up to date', () => {
+  it('stays silent for a clean pushed branch and keeps the words for screen readers', () => {
     renderPhrase();
 
-    screen.getByText('Up to date');
+    const silent = screen.getByText('Up to date');
+    expect(silent.getAttribute('data-slot')).toBe('mount-status-silent');
   });
 
   it('names how many commits wait to be pushed', () => {
@@ -78,15 +76,20 @@ describe('MountStatusPhrase', () => {
   });
 
   it('says merged, then the new commits, when the branch moved past its merge', () => {
-    renderPhrase({ isMerged: true, commitsAfterMerge: 2 });
+    renderPhrase({ commitsAfterMerge: 2 });
 
     screen.getByText('Merged, then 2 new commits');
   });
 
-  it('keeps the distance from main and the part of a split one hover away', () => {
-    renderPhrase({ status: statusOf({ mainDistance: { kind: 'known', ahead: 1, behind: 3 } }) });
+  it('keeps the distance from main and the part of a split one hover away on a warning', () => {
+    renderPhrase({
+      status: statusOf({
+        upstreamDistance: { kind: 'known', ahead: 2, behind: 0 },
+        mainDistance: { kind: 'known', ahead: 1, behind: 3 },
+      }),
+    });
 
-    const phrase = screen.getByText('Up to date');
+    const phrase = screen.getByText('2 to push');
     expect(tooltipTextOf({ element: phrase })).toContain('Behind main by 3');
     expect(tooltipTextOf({ element: phrase })).toContain('Part 2/3 of Retry rewrite');
   });

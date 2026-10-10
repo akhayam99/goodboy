@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Unlink } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, IconButton, useDropdown } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
@@ -12,6 +12,7 @@ import {
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/names';
 import {
   PROJECT_DETACH_EVENT,
   projectKeyOf,
@@ -19,7 +20,6 @@ import {
 } from '../../../../actions/kinds/project';
 import { DetachConfirm } from './DetachConfirm';
 import {
-  BLOCKER_SENTENCE,
   REMOVAL_STAGE,
   buildDetachPlan,
   detachFailureMessage,
@@ -64,14 +64,6 @@ export const MountActionsMenu = ({
   worktreePath,
 }: Props) => {
   const projectKey = projectKeyOf({ sessionId, projectId });
-  const openEvent = `goodboy:project-menu-open:${projectKey}`;
-  const dropdown = useDropdown({
-    align: 'end',
-    width: 'w-96',
-    expectedWidth: 384,
-    expectedHeight: 190,
-    openEvent,
-  });
   const detachProject = useAppStore((state) => state.detachProject);
   const reportError = useAppStore((state) => state.reportError);
   const projectKind = useAppStore((state) => projectById(state.projects, projectId)?.kind ?? null);
@@ -118,7 +110,6 @@ export const MountActionsMenu = ({
   const [stage, setStage] = useState<string | null>(null);
   const [assessments, setAssessments] = useState<ReadonlyArray<MountAssessment> | null>(null);
   const requestRef = useRef(0);
-  const label = `Remove ${projectName} from session`;
 
   const fail = ({ title, error }: { title: string; error: unknown }) => {
     void reportError({
@@ -182,29 +173,17 @@ export const MountActionsMenu = ({
       }
       setIsConfirming(true);
       assessRef.current();
-      window.dispatchEvent(new CustomEvent(openEvent));
     };
     window.addEventListener(PROJECT_DETACH_EVENT, onRequest);
     return () => window.removeEventListener(PROJECT_DETACH_EVENT, onRequest);
-  }, [openEvent, projectKey]);
+  }, [projectKey]);
 
   const cancelDetach = () => {
     requestRef.current = requestRef.current + 1;
     setAssessments(null);
     setStage(null);
     setIsConfirming(false);
-    dropdown.close();
   };
-
-  useEffect(() => {
-    if (dropdown.open) {
-      return;
-    }
-    requestRef.current = requestRef.current + 1;
-    setIsConfirming(false);
-    setAssessments(null);
-    setStage(null);
-  }, [dropdown.open]);
 
   const detach = async ({ disposition }: { readonly disposition: DetachDisposition }) => {
     setIsBusy(true);
@@ -229,7 +208,6 @@ export const MountActionsMenu = ({
           worktreePath: summarized?.worktreePath ?? worktreePath,
         }),
       });
-      dropdown.close();
       setIsConfirming(false);
     } catch (error) {
       fail({ title: "Couldn't remove the project from the session", error });
@@ -244,49 +222,36 @@ export const MountActionsMenu = ({
   }
 
   return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      role="dialog"
-      ariaLabel={label}
-      anchorClassName="shrink-0"
-      trigger={
+    <DetachConfirm
+      projectName={projectName}
+      plan={buildDetachPlan({
+        projectName,
+        worktreePath,
+        isRepoProject,
+        blockers,
+        assessments,
+      })}
+      isOpen={isConfirming}
+      isBusy={isBusy}
+      stage={stage}
+      onConfirm={({ disposition }) => void detach({ disposition })}
+      onRecheck={assess}
+      onCancel={cancelDetach}
+      trigger={() => (
         <IconButton
+          size="xs"
+          variant="ghost"
           icon={Unlink}
-          label={label}
           iconSize={ICON_SIZE.row}
+          label={`Remove ${projectName} from session`}
+          tooltip={NAMES.removeFromSession}
           aria-haspopup="dialog"
-          aria-expanded={dropdown.open}
           onClick={() => {
-            if (dropdown.open) {
-              cancelDetach();
-              return;
-            }
-            window.dispatchEvent(
-              new CustomEvent<ProjectDetachRequest>(PROJECT_DETACH_EVENT, {
-                detail: { projectKey },
-              }),
-            );
+            setIsConfirming(true);
+            assess();
           }}
         />
-      }
-    >
-      {isConfirming ? (
-        <DetachConfirm
-          projectName={projectName}
-          plan={buildDetachPlan({
-            projectName,
-            worktreePath,
-            isRepoProject,
-            blockers,
-            assessments,
-          })}
-          isBusy={isBusy}
-          stage={stage}
-          onConfirm={({ disposition }) => void detach({ disposition })}
-          onRecheck={assess}
-          onCancel={cancelDetach}
-        />
-      ) : null}
-    </AnchoredPopover>
+      )}
+    />
   );
 };

@@ -26,7 +26,7 @@ const pollUntil = (attempt: () => boolean): (() => void) => {
   return () => window.clearInterval(interval);
 };
 
-export const useShowCompletedMounts = ({ isReady }: RevealParams) => {
+export const useShowFinishedMounts = ({ isReady }: RevealParams) => {
   useEffect(() => {
     if (!isReady) {
       return;
@@ -34,13 +34,33 @@ export const useShowCompletedMounts = ({ isReady }: RevealParams) => {
     return pollUntil(() => {
       const toggle = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
         (button) =>
-          button.textContent?.startsWith('Completed') === true &&
-          button.getAttribute('aria-expanded') === 'false',
+          button.textContent?.startsWith('Show finished') === true &&
+          button.getAttribute('aria-pressed') === 'false',
       );
       if (toggle === undefined) {
         return false;
       }
       toggle.click();
+      return true;
+    });
+  }, [isReady]);
+};
+
+export const useOpenProjectDisclosures = ({ isReady }: RevealParams) => {
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+    return pollUntil(() => {
+      const toggles = [...document.querySelectorAll<HTMLButtonElement>('button')].filter(
+        (button) =>
+          button.getAttribute('aria-label')?.endsWith(' worktrees') === true &&
+          button.getAttribute('aria-expanded') === 'false',
+      );
+      if (toggles.length === 0) {
+        return false;
+      }
+      toggles.forEach((toggle) => toggle.click());
       return true;
     });
   }, [isReady]);

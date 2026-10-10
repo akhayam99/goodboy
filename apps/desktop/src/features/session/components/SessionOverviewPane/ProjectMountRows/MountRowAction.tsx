@@ -1,25 +1,19 @@
 import { Tooltip, cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { ActionControls } from '../../../../actions/useActionControls';
-import { RemoveWorktreeAction } from './RemoveWorktreeAction';
 
 type Props = {
-  readonly sessionId: SessionId;
-  readonly row: MountRowView;
   readonly label: string;
   readonly controls: ActionControls;
 };
 
-export const MountRowAction = ({ sessionId, row, label, controls }: Props) => {
+export const MountRowAction = ({ label, controls }: Props) => {
   const action =
-    controls.inSlot({ slot: 'inline' }).find((candidate) => candidate.group !== 'open') ?? null;
+    controls
+      .inSlot({ slot: 'inline' })
+      .find((candidate) => candidate.group !== 'open' && candidate.id !== 'mount.close') ?? null;
   if (action === null) {
     return null;
-  }
-  if (action.id === 'mount.close') {
-    return <RemoveWorktreeAction sessionId={sessionId} row={row} label={label} />;
   }
   const Icon = action.icon;
   const isPending = controls.pendingId === action.id;
