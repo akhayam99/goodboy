@@ -5,25 +5,21 @@ import type {
   ArtifactComment,
   PlanWithCount,
   SessionId,
-  Workflow,
   WorkflowRun,
 } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions } from '../../../store';
-import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { isRunHeldForPlan } from '../../../store/slices/workflows/workflowPlanApproval';
 import { useFollowToast } from '../../../shared/hooks/useFollowToast';
 import { markUserStart } from '../../../shared/lib/userStarts';
 import { planApprovedFollowOf } from '../planApprovedFollow';
 import { planPrimaryOf, type PlanPrimary } from '../planPrimaryOf';
 import { plannerQuestionsOf } from '../plannerQuestions';
-import { planRunOf } from '../planRunOf';
 import type { PlanRevising } from '../planRevising';
+import { usePlanOwner } from '../usePlanOwner';
 import { usePlanRun, usePlanRunToast } from '../usePlanRun';
 
 const NO_COMMENTS: ReadonlyArray<ArtifactComment> = [];
 const NO_AGENTS: ReadonlyArray<Agent> = [];
-const NO_RUNS: ReadonlyArray<WorkflowRun> = [];
-const NO_TEMPLATES: ReadonlyArray<Workflow> = [];
 
 const NEXT_STEP_NAME = 'The next step';
 
@@ -47,6 +43,7 @@ export type PlanPrimaryAction = Readonly<{
   run: WorkflowRun | null;
   drafts: ReadonlyArray<ArtifactComment>;
   isBusy: boolean;
+  isApproving: boolean;
   error: string | null;
   confirm: PlanApproveConfirm | null;
   press: () => void;
@@ -77,12 +74,6 @@ export const usePlanPrimaryAction = ({
   revising,
   isRunning,
 }: Params): PlanPrimaryAction => {
-  const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
-  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId]) ?? NO_AGENTS;
-  const templates =
-    useAppStore((state) =>
-      session === null ? undefined : state.phaseTemplates[session.workspaceId],
-    ) ?? NO_TEMPLATES;
   const comments = useAppStore((state) => state.artifactComments[sessionId]) ?? NO_COMMENTS;
   const openQuestions = useSessionOpenQuestions(sessionId);
   const plannerQuestionCount = plannerQuestionsOf({ questions: openQuestions, plan }).length;
@@ -101,16 +92,7 @@ export const usePlanPrimaryAction = ({
       comments.filter((comment) => comment.artifactId === plan.id && comment.status === 'draft'),
     [comments, plan.id],
   );
-  const run = useMemo(
-    () =>
-      planRunOf({
-        plan,
-        agents,
-        runs: session?.workflowRuns ?? NO_RUNS,
-        templates,
-      }),
-    [plan, agents, session, templates],
-  );
+  const run = usePlanOwner({ sessionId, plan });
   const primary = useMemo(
     () => planPrimaryOf({ plan, run, drafts, revising, isRunning, plannerQuestionCount }),
     [plan, run, drafts, revising, isRunning, plannerQuestionCount],
@@ -125,13 +107,9 @@ export const usePlanPrimaryAction = ({
       readonly agentId: AgentId | null;
     }) => {
       const state = useAppStore.getState();
-      const isOverRunPage =
-        state.currentSessionId === sessionId &&
-        state.activeLens[sessionId] === 'workflows' &&
-        state.focusedWorkflowRunId[sessionId] === approvedRun.id &&
-        state.drawer?.kind === 'artifact-document' &&
-        state.drawer.payload.artifactId === plan.id;
-      if (isOverRunPage) {
+      const isOverPlan =
+        state.drawer?.kind === 'artifact-document' && state.drawer.payload.artifactId === plan.id;
+      if (isOverPlan) {
         closeDrawer();
         await waitForRender();
       }
@@ -231,6 +209,7 @@ export const usePlanPrimaryAction = ({
     run,
     drafts,
     isBusy: isApproving || planRun.isSpawning,
+    isApproving,
     error: planRun.error,
     confirm,
     press,

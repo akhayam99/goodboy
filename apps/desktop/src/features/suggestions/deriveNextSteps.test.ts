@@ -52,6 +52,7 @@ const derive = ({
   openQuestionCount = 0,
   isRunning = false,
   creatorHasOpenQuestions = false,
+  isOwnedByRun = false,
   consumedPlanIds = new Set<PlanId>(),
   hasPullRequest = false,
   eligibleThreadCount = 0,
@@ -61,6 +62,7 @@ const derive = ({
   openQuestionCount?: number;
   isRunning?: boolean;
   creatorHasOpenQuestions?: boolean;
+  isOwnedByRun?: boolean;
   consumedPlanIds?: ReadonlySet<PlanId>;
   hasPullRequest?: boolean;
   eligibleThreadCount?: number;
@@ -77,7 +79,7 @@ const derive = ({
         isRunning,
       },
     ],
-    plans: [{ id: planId, title: 'Plan', status: 'active', creatorHasOpenQuestions }],
+    plans: [{ id: planId, title: 'Plan', status: 'active', creatorHasOpenQuestions, isOwnedByRun }],
     consumedPlanIds,
     openQuestionCount,
     hasPullRequest,
@@ -132,6 +134,17 @@ describe('deriveNextSteps', () => {
       ),
     ).toBe(false);
     expect(derive({}).some((suggestion) => suggestion.kind === 'plan-ready')).toBe(true);
+  });
+
+  it('never offers the plan while a live run owns it, running step or not', () => {
+    expect(
+      derive({ isOwnedByRun: true }).some((suggestion) => suggestion.kind === 'plan-ready'),
+    ).toBe(false);
+    expect(
+      derive({ isOwnedByRun: true, isRunning: false }).some(
+        (suggestion) => suggestion.kind === 'workflow-next-step',
+      ),
+    ).toBe(true);
   });
 
   it('carries the fixable comment count of the selected source, on any host', () => {

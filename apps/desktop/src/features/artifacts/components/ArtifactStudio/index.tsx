@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, SessionId, Workflow, WorkflowRun } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -38,6 +38,12 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const session = useAppStore((s) => sessionById(s.sessions, sessionId) ?? null);
+  const runs = session?.workflowRuns ?? (EMPTY_ARRAY as ReadonlyArray<WorkflowRun>);
+  const templates = useAppStore(
+    (s) =>
+      (session === null ? undefined : s.phaseTemplates[session.workspaceId]) ??
+      (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+  );
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
@@ -177,6 +183,8 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
         artifacts,
         generations,
         agents,
+        runs,
+        templates,
         openQuestionCount: openQuestions.length,
         askingAgentIds,
         revising,
@@ -185,7 +193,18 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     });
     rowCache.current = new Map(kept.map((row) => [row.id, row]));
     return kept;
-  }, [plans, artifacts, generations, agents, openQuestions.length, askingAgentIds, revising, now]);
+  }, [
+    plans,
+    artifacts,
+    generations,
+    agents,
+    runs,
+    templates,
+    openQuestions.length,
+    askingAgentIds,
+    revising,
+    now,
+  ]);
   const counts = useMemo(() => countArtifactRows({ rows }), [rows]);
   const visibleRows = useMemo(() => filterArtifactRows({ rows, filter }), [rows, filter]);
 

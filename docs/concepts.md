@@ -1578,7 +1578,7 @@ Other identifiers:
   OpenRouter and Moonshot
 - `ArtifactKind`: `plan`, `report`, `wireframe`
 - `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`. The UI
-  words are Ready to run or New, Ran, Replaced and Deleted
+  words are Ready to run or New, Approved, Ran, Replaced and Deleted
   (`artifactStateOf`); `discarded` is what Delete writes, for every kind
 - Plans sit between `<<plan>>` and `<</plan>>` markers
 - Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope.

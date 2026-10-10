@@ -11,6 +11,8 @@ import { HeaderPanel } from '../../../../shared/components/HeaderPanel';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { planHandoffOf } from '../../../plans/planHandoffOf';
+import { usePlanOwner } from '../../../plans/usePlanOwner';
 import { usePlanRevising } from '../../../plans/useRevisingPlans';
 import { usePlanRun } from '../../../plans/usePlanRun';
 import { artifactStateOf } from '../../artifactStateOf';
@@ -76,6 +78,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const [error, setError] = useState<string | null>(null);
   const [wireframeScreenId, setWireframeScreenId] = useState<string | null>(null);
   const partRows = usePlanPartRows({ sessionId, plan, agents });
+  const owner = usePlanOwner({ sessionId, plan });
   const hasRun = plan !== null && plan.consumptionCount > 0;
   const progress = planPartsProgress({ rows: partRows, hasRun });
   const isPlanRunning = progress.kind === 'running' || progress.kind === 'question';
@@ -258,7 +261,12 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
     openQuestionCount,
     ...(plan === null
       ? NO_PLAN_STATE_INPUTS
-      : planStateInputsOf({ plan, rows: partRows, revising })),
+      : planStateInputsOf({
+          plan,
+          rows: partRows,
+          revising,
+          handoff: planHandoffOf({ plan, run: owner }),
+        })),
   });
   const chip =
     subject.kind === 'wireframe' ? (
