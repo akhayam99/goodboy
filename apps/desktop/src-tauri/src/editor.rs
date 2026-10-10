@@ -70,7 +70,7 @@ pub enum EditorError {
 }
 
 impl EditorError {
-    fn kind(&self) -> &'static str {
+    pub(crate) fn kind(&self) -> &'static str {
         match self {
             EditorError::NotFound(_) => "editor_missing",
             EditorError::Spawn { .. } => "spawn",
@@ -131,7 +131,7 @@ pub async fn open_file_in_workspace(
     .map_err(|e| EditorError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn open_file_in_workspace_blocking(
+pub(crate) fn open_file_in_workspace_blocking(
     workspace_path: String,
     file_path: String,
     editor: Option<String>,
@@ -148,7 +148,12 @@ fn open_file_in_workspace_blocking(
     }
 
     match cmd.spawn() {
-        Ok(_) => Ok(()),
+        Ok(mut child) => {
+            std::thread::spawn(move || {
+                let _ = child.wait();
+            });
+            Ok(())
+        }
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
             Err(EditorError::NotFound(binary))
         }
