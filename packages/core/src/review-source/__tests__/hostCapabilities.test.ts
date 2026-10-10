@@ -154,8 +154,10 @@ describe('host capability table', () => {
     });
 
     it('reads the pull request back from its branch only if the row says so', () => {
-      const found = verbsOf({ row }).some((entry) => entry.verb === row.bridgeVerbs.forBranch);
-      expect(found).toBe(row.canReconcileByBranch);
+      const hasBranchVerb = verbsOf({ row }).some(
+        (entry) => entry.verb === row.bridgeVerbs.forBranch,
+      );
+      expect(hasBranchVerb).toBe(row.canReconcileByBranch);
     });
   });
 
