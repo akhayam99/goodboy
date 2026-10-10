@@ -28,7 +28,11 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const mount = (name: keyof typeof U24_P_LISTS_SCENES): void => {
+type MountParams = {
+  readonly name: keyof typeof U24_P_LISTS_SCENES;
+};
+
+const mount = ({ name }: MountParams): void => {
   const Scene = U24_P_LISTS_SCENES[name];
   render(
     <ToastProvider>
@@ -48,7 +52,7 @@ describe('the list scenes', () => {
   });
 
   it('notifications-delete-all arms the popover beside the button', async () => {
-    mount('notifications-delete-all');
+    mount({ name: 'notifications-delete-all' });
 
     const dialog = await screen.findByRole(
       'dialog',
@@ -61,7 +65,7 @@ describe('the list scenes', () => {
   });
 
   it('activity-mark-seen shows Mark all seen as a button, with no menu', async () => {
-    mount('activity-mark-seen');
+    mount({ name: 'activity-mark-seen' });
 
     const activity = await screen.findByRole('region', { name: 'Activity' }, WAIT);
     await within(activity).findByRole('button', { name: 'Mark all seen' }, WAIT);
@@ -70,7 +74,7 @@ describe('the list scenes', () => {
   });
 
   it('tasks-cursor shows a quiet cursor on the first row and no drawer', async () => {
-    mount('tasks-cursor');
+    mount({ name: 'tasks-cursor' });
 
     await screen.findByRole('listbox', { name: 'Task items' }, WAIT);
     const cursors = document.querySelectorAll('[data-inbox-key][data-cursor]');

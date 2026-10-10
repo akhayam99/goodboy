@@ -23,7 +23,11 @@ vi.mock('../../../shared/lib/db', async () =>
 
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
 
-const row = (overrides: Partial<Notification>): Notification => ({
+type RowParams = {
+  readonly overrides: Partial<Notification>;
+};
+
+const row = ({ overrides }: RowParams): Notification => ({
   id: 'n-1',
   ts: '2026-10-02T09:00:00.000Z' as IsoDateTime,
   kind: 'error',
@@ -51,8 +55,11 @@ beforeEach(async () => {
     db,
     workspace: buildStoryWorkspace({ id: WORKSPACE_ID, name: 'Harborline' }),
   });
-  await insertNotification(db, row({ id: 'n-1' }));
-  await insertNotification(db, row({ id: 'n-2', title: 'Sync stalled', coalesceKey: 'sync' }));
+  await insertNotification(db, row({ overrides: { id: 'n-1' } }));
+  await insertNotification(
+    db,
+    row({ overrides: { id: 'n-2', title: 'Sync stalled', coalesceKey: 'sync' } }),
+  );
   useAppStore.setState({ currentWorkspaceId: WORKSPACE_ID, undoStack: [] });
   await useAppStore.getState().loadNotifications();
 });
