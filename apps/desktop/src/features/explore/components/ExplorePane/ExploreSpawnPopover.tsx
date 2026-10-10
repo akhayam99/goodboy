@@ -1,6 +1,6 @@
 import { clampEffortForModel } from '@goodboy/core';
 import { useEffect, useMemo, useState } from 'react';
-import { AnchoredPopover, Button, FormActions, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, FormActions, IconButton, useDropdown } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
@@ -13,7 +13,7 @@ import type { AgentSpawnConfigValue } from '../../../session/agentSpawnConfigVal
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { type ExploreEntry } from '../../explore';
 import { buildExploreSpawnPrompt } from '../../buildExploreSpawnPrompt';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
@@ -109,14 +109,16 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
       ariaLabel={`Ask an agent about ${entry.name}`}
       className="flex flex-col gap-3 p-3"
       trigger={
-        <button
-          type="button"
+        <IconButton
+          icon={CONCEPT_ICONS.agents}
+          size="xs"
+          label={`Ask an agent about ${entry.name}`}
+          tooltip="Ask an agent"
+          isTooltipSuppressed={open}
+          aria-haspopup="dialog"
+          aria-expanded={open}
           onClick={toggle}
-          aria-label={`Ask an agent to work on ${entry.name}`}
-          className="rounded-md p-2 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
-        >
-          <CONCEPT_ICONS.agents size={ICON_SIZE.control} aria-hidden />
-        </button>
+        />
       }
     >
       <div className="flex flex-col gap-1">

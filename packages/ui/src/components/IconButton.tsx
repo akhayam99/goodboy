@@ -12,6 +12,7 @@ export type IconButtonProps = Omit<ComponentProps<'button'>, 'type' | 'children'
   icon: LucideIcon;
   label: string;
   tooltip?: string;
+  isTooltipSuppressed?: boolean;
   size?: IconButtonSize;
   iconSize?: number;
   busy?: boolean;
@@ -44,6 +45,7 @@ export const IconButton = ({
   icon: Icon,
   label,
   tooltip,
+  isTooltipSuppressed = false,
   size = 'sm',
   iconSize,
   busy = false,
@@ -55,7 +57,7 @@ export const IconButton = ({
   ...rest
 }: IconButtonProps) => {
   return (
-    <Tooltip content={tooltip ?? label}>
+    <Tooltip content={tooltip ?? label} isSuppressed={isTooltipSuppressed}>
       <button
         type={type}
         aria-label={label}

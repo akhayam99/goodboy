@@ -56,6 +56,11 @@ beforeEach(async () => {
   });
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     top: window.innerHeight - DOCK_HEIGHT,
+    bottom: window.innerHeight,
+    left: 0,
+    right: 0,
+    width: 0,
+    height: DOCK_HEIGHT,
   } as DOMRect);
 });
 

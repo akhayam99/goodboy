@@ -46,25 +46,44 @@ const openTagEnd = ({ source, from }: { source: string; from: number }): number 
   return -1;
 };
 
-const closeTagEnd = ({ source, from }: { source: string; from: number }): number => {
+const CONTROL_TAGS = ['button', 'a', 'Button'] as const;
+
+type ControlTag = (typeof CONTROL_TAGS)[number];
+
+const nextOpenOf = ({ source, tag, from }: { source: string; tag: ControlTag; from: number }) => {
+  const opener = new RegExp(`<${tag}\\b`, 'g');
+  opener.lastIndex = from;
+  return opener.exec(source)?.index ?? -1;
+};
+
+const closeTagEnd = ({
+  source,
+  from,
+  tag,
+}: {
+  source: string;
+  from: number;
+  tag: ControlTag;
+}): number => {
+  const closer = `</${tag}>`;
   let cursor = from + 1;
   let nested = 0;
   while (cursor < source.length) {
-    const nextOpen = source.indexOf('<button', cursor);
-    const nextClose = source.indexOf('</button>', cursor);
+    const nextOpen = nextOpenOf({ source, tag, from: cursor });
+    const nextClose = source.indexOf(closer, cursor);
     if (nextClose === -1) {
       return -1;
     }
     if (nextOpen !== -1 && nextOpen < nextClose) {
       nested++;
-      cursor = nextOpen + '<button'.length;
+      cursor = nextOpen + tag.length + 1;
       continue;
     }
     if (nested === 0) {
-      return nextClose + '</button>'.length;
+      return nextClose + closer.length;
     }
     nested--;
-    cursor = nextClose + '</button>'.length;
+    cursor = nextClose + closer.length;
   }
   return -1;
 };
@@ -124,7 +143,7 @@ const rendersOwnText = ({ body }: { body: string }): boolean => {
 };
 
 const rendersAnIcon = ({ body }: { body: string }): boolean =>
-  /<[A-Z]\w*\s[^>]*(size=|aria-hidden)/.test(body);
+  /<[A-Z][\w.]*\s[^>]*(size=|aria-hidden)/.test(body);
 
 const NO_TOOLTIP = -1;
 
@@ -150,54 +169,59 @@ type Offender = { location: string; reason: string };
 
 type Audit = { offenders: Offender[]; inspected: number };
 
-const auditFile = ({ file, root }: { file: string; root: string }): Audit => {
-  const source = readFileSync(file, 'utf8');
+const auditSource = ({ source, label }: { source: string; label: string }): Audit => {
   const offenders: Offender[] = [];
   let inspected = 0;
-  const buttons = /<button\b/g;
-  let match = buttons.exec(source);
-  while (match !== null) {
-    const start = match.index;
-    const tagEnd = openTagEnd({ source, from: start });
-    match = buttons.exec(source);
-    if (tagEnd === -1) {
-      continue;
-    }
-    const openTag = source.slice(start, tagEnd + 1);
-    if (!/aria-label/.test(openTag)) {
-      continue;
-    }
-    const selfClosing = openTag.trimEnd().endsWith('/>');
-    const end = selfClosing ? tagEnd + 1 : closeTagEnd({ source, from: tagEnd });
-    if (end === -1) {
-      continue;
-    }
-    const body = selfClosing ? '' : source.slice(tagEnd + 1, end - '</button>'.length);
-    if (rendersOwnText({ body }) || !rendersAnIcon({ body })) {
-      continue;
-    }
-    inspected++;
-    const line = source.slice(0, start).split('\n').length;
-    const location = `${relative(root, file)}:${line}`;
-    const canBeDisabled = /\sdisabled(?:=|\s|$)/.test(openTag);
-    if (/\stitle=/.test(openTag)) {
-      offenders.push({ location, reason: 'carries a native title' });
-      continue;
-    }
-    const hops = elementsUpToTooltip({ source, from: start });
-    if (hops === NO_TOOLTIP) {
-      offenders.push({ location, reason: 'has no Tooltip' });
-      continue;
-    }
-    if (canBeDisabled && hops > 0) {
-      offenders.push({
-        location,
-        reason: 'can go disabled behind a wrapper, where Tooltip cannot anchor it',
-      });
+  for (const tag of CONTROL_TAGS) {
+    const closer = `</${tag}>`;
+    const controls = new RegExp(`<${tag}\\b`, 'g');
+    let match = controls.exec(source);
+    while (match !== null) {
+      const start = match.index;
+      const tagEnd = openTagEnd({ source, from: start });
+      match = controls.exec(source);
+      if (tagEnd === -1) {
+        continue;
+      }
+      const openTag = source.slice(start, tagEnd + 1);
+      if (!/aria-label/.test(openTag)) {
+        continue;
+      }
+      const selfClosing = openTag.trimEnd().endsWith('/>');
+      const end = selfClosing ? tagEnd + 1 : closeTagEnd({ source, from: tagEnd, tag });
+      if (end === -1) {
+        continue;
+      }
+      const body = selfClosing ? '' : source.slice(tagEnd + 1, end - closer.length);
+      if (rendersOwnText({ body }) || !rendersAnIcon({ body })) {
+        continue;
+      }
+      inspected++;
+      const line = source.slice(0, start).split('\n').length;
+      const location = `${label}:${line}`;
+      const canBeDisabled = /\sdisabled(?:=|\s|$)/.test(openTag);
+      if (/\stitle=/.test(openTag)) {
+        offenders.push({ location, reason: 'carries a native title' });
+        continue;
+      }
+      const hops = elementsUpToTooltip({ source, from: start });
+      if (hops === NO_TOOLTIP) {
+        offenders.push({ location, reason: 'has no Tooltip' });
+        continue;
+      }
+      if (canBeDisabled && hops > 0) {
+        offenders.push({
+          location,
+          reason: 'can go disabled behind a wrapper, where Tooltip cannot anchor it',
+        });
+      }
     }
   }
   return { offenders, inspected };
 };
+
+const auditFile = ({ file, root }: { file: string; root: string }): Audit =>
+  auditSource({ source: readFileSync(file, 'utf8'), label: relative(root, file) });
 
 const auditEverything = (): Audit => {
   const offenders: Offender[] = [];
@@ -238,5 +262,58 @@ describe('an icon-only control', () => {
 
   it('is still being found, so the sweep above cannot pass by seeing nothing', () => {
     expect(auditEverything().inspected).toBeGreaterThanOrEqual(FLOOR);
+  });
+});
+
+describe('the audit itself', () => {
+  const reasonsFor = (source: string): string[] =>
+    auditSource({ source, label: 'fixture' }).offenders.map((offender) => offender.reason);
+
+  it('reports an icon-only button whose icon is a member expression', () => {
+    const source = '<button aria-label="x"><CONCEPT_ICONS.agents size={12} /></button>';
+
+    expect(reasonsFor(source)).toEqual(['has no Tooltip']);
+  });
+
+  it('reports an icon-only anchor with no tooltip', () => {
+    const source = '<a aria-label="x" href="/x"><ExternalLink size={12} /></a>';
+
+    expect(reasonsFor(source)).toEqual(['has no Tooltip']);
+  });
+
+  it('reports an icon-only Button with no tooltip', () => {
+    const source = '<Button aria-label="x"><CONCEPT_ICONS.agents size={12} /></Button>';
+
+    expect(reasonsFor(source)).toEqual(['has no Tooltip']);
+  });
+
+  it('reports a native title on each form', () => {
+    const source = [
+      '<button aria-label="x" title="x"><Icon size={12} /></button>',
+      '<a aria-label="x" title="x"><Icon size={12} /></a>',
+      '<Button aria-label="x" title="x"><Icon size={12} /></Button>',
+    ].join('\n');
+
+    expect(reasonsFor(source)).toEqual([
+      'carries a native title',
+      'carries a native title',
+      'carries a native title',
+    ]);
+  });
+
+  it('accepts each form inside a Tooltip', () => {
+    const source = [
+      '<Tooltip content="x"><button aria-label="x"><CONCEPT_ICONS.agents size={12} /></button></Tooltip>',
+      '<Tooltip content="x"><a aria-label="x" href="/x"><Icon size={12} /></a></Tooltip>',
+      '<Tooltip content="x"><Button aria-label="x"><Icon size={12} /></Button></Tooltip>',
+    ].join('\n');
+
+    expect(reasonsFor(source)).toEqual([]);
+  });
+
+  it('leaves a control that carries its own text alone', () => {
+    const source = '<Button aria-label="x"><Icon size={12} />Open</Button>';
+
+    expect(auditSource({ source, label: 'fixture' })).toEqual({ offenders: [], inspected: 0 });
   });
 });

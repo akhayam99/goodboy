@@ -1,6 +1,7 @@
 import { cloneElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../cn';
+import { dismissTopEscapeLayer, registerEscapeLayer } from '../escape';
 
 export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
 
@@ -13,12 +14,14 @@ export type TooltipProps = {
   anchorClassName?: string;
   restDelayMs?: number;
   isOpen?: boolean;
+  isSuppressed?: boolean;
   children: React.ReactElement<{
     ref?: React.Ref<HTMLElement>;
     disabled?: boolean;
     onMouseEnter?: React.MouseEventHandler;
     onMouseMove?: React.MouseEventHandler;
     onMouseLeave?: React.MouseEventHandler;
+    onPointerDown?: React.PointerEventHandler;
     onFocus?: React.FocusEventHandler;
     onBlur?: React.FocusEventHandler;
   }>;
@@ -27,6 +30,27 @@ export type TooltipProps = {
 const GAP = 6;
 
 const DEFAULT_DELAY_MS = 400;
+
+const WARM_WINDOW_MS = 300;
+
+const REFOCUS_WINDOW_MS = 200;
+
+let lastClosedAt = Number.NEGATIVE_INFINITY;
+
+let lastCloser: object | null = null;
+
+const isKeyboardFocus = (target: EventTarget): boolean => {
+  if (!(target instanceof Element)) {
+    return true;
+  }
+  try {
+    return target.matches(':focus-visible');
+  } catch {
+    return true;
+  }
+};
+
+const isWarm = (): boolean => Date.now() - lastClosedAt < WARM_WINDOW_MS;
 
 const assignRef = <T,>(ref: React.Ref<T> | undefined, value: T | null): void => {
   if (typeof ref === 'function') {
@@ -116,15 +140,19 @@ export const Tooltip = ({
   anchorClassName,
   restDelayMs,
   isOpen = false,
+  isSuppressed = false,
   children,
 }: TooltipProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const visible = isHovered || isOpen;
+  const visible = (isHovered || isOpen) && !isSuppressed;
   const isRestRequired = restDelayMs !== undefined;
   const [coords, setCoords] = useState<Coords | null>(null);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const anchorRef = useRef<HTMLElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
+  const identityRef = useRef({});
+  const isPointerDownRef = useRef(false);
+  const suppressionEndedAtRef = useRef(Number.NEGATIVE_INFINITY);
 
   const clearDelay = () => {
     if (delayRef.current === null) {
@@ -134,18 +162,48 @@ export const Tooltip = ({
     delayRef.current = null;
   };
 
-  const show = () => {
+  const open = () => {
     clearDelay();
+    setIsHovered(true);
+  };
+
+  const show = () => {
+    if (isSuppressed) {
+      return;
+    }
+    clearDelay();
+    if (!isRestRequired && isWarm()) {
+      setIsHovered(true);
+      return;
+    }
     delayRef.current = setTimeout(() => {
       delayRef.current = null;
       setIsHovered(true);
     }, restDelayMs ?? DEFAULT_DELAY_MS);
   };
 
+  const markClosed = () => {
+    lastClosedAt = Date.now();
+    lastCloser = identityRef.current;
+  };
+
   const hide = () => {
     clearDelay();
+    if (isHovered) {
+      markClosed();
+    }
     setIsHovered(false);
     setCoords(null);
+  };
+
+  const leave = () => {
+    isPointerDownRef.current = false;
+    hide();
+  };
+
+  const press = () => {
+    isPointerDownRef.current = true;
+    hide();
   };
 
   const rest = () => {
@@ -155,14 +213,67 @@ export const Tooltip = ({
     show();
   };
 
-  const focus = () => {
-    if (isRestRequired) {
+  const focus = (target: EventTarget) => {
+    if (isRestRequired || isSuppressed) {
       return;
     }
-    show();
+    if (isPointerDownRef.current) {
+      isPointerDownRef.current = false;
+      return;
+    }
+    if (Date.now() - suppressionEndedAtRef.current < REFOCUS_WINDOW_MS) {
+      return;
+    }
+    if (!isKeyboardFocus(target)) {
+      show();
+      return;
+    }
+    open();
   };
 
-  useEffect(() => clearDelay, []);
+  const blur = () => {
+    isPointerDownRef.current = false;
+    hide();
+  };
+
+  useEffect(() => {
+    const identity = identityRef.current;
+    return () => {
+      clearDelay();
+      if (lastCloser === identity) {
+        lastCloser = null;
+        lastClosedAt = Number.NEGATIVE_INFINITY;
+      }
+    };
+  }, []);
+
+  const wasSuppressedRef = useRef(isSuppressed);
+  useEffect(() => {
+    if (isSuppressed) {
+      clearDelay();
+      setIsHovered(false);
+      setCoords(null);
+    }
+    if (wasSuppressedRef.current && !isSuppressed) {
+      suppressionEndedAtRef.current = Date.now();
+    }
+    wasSuppressedRef.current = isSuppressed;
+  }, [isSuppressed]);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    const unregister = registerEscapeLayer(() => {
+      unregister();
+      clearDelay();
+      markClosed();
+      setIsHovered(false);
+      setCoords(null);
+      dismissTopEscapeLayer();
+    });
+    return unregister;
+  }, [visible]);
 
   const reposition = useCallback(() => {
     const anchor = anchorRef.current;
@@ -214,9 +325,10 @@ export const Tooltip = ({
       )}
       onMouseEnter={show}
       onMouseMove={rest}
-      onMouseLeave={hide}
-      onFocus={focus}
-      onBlur={hide}
+      onMouseLeave={leave}
+      onPointerDown={press}
+      onFocus={(e) => focus(e.target)}
+      onBlur={blur}
     >
       {cloneElement(children, { ref: mergedRef })}
     </span>
@@ -232,15 +344,19 @@ export const Tooltip = ({
         children.props.onMouseMove?.(e);
       },
       onMouseLeave: (e: React.MouseEvent) => {
-        hide();
+        leave();
         children.props.onMouseLeave?.(e);
       },
+      onPointerDown: (e: React.PointerEvent) => {
+        press();
+        children.props.onPointerDown?.(e);
+      },
       onFocus: (e: React.FocusEvent) => {
-        focus();
+        focus(e.target);
         children.props.onFocus?.(e);
       },
       onBlur: (e: React.FocusEvent) => {
-        hide();
+        blur();
         children.props.onBlur?.(e);
       },
     })

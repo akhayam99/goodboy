@@ -24,6 +24,8 @@ pub enum ExploreError {
     TooLarge(usize),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Editor(#[from] crate::editor::EditorError),
 }
 
 crate::util::impl_error_serialize!(ExploreError);
@@ -36,6 +38,7 @@ impl ExploreError {
             ExploreError::NotFile => "not_file",
             ExploreError::TooLarge(_) => "too_large",
             ExploreError::Io(_) => "io",
+            ExploreError::Editor(error) => error.kind(),
         }
     }
 }
@@ -210,6 +213,11 @@ fn read_binary(path: &Path, metadata: &Metadata) -> Result<ExploreContent, Explo
 }
 
 pub(crate) fn spawn_open(path: &Path, reveal: bool) -> std::io::Result<()> {
+    spawn_open_child(path, reveal)?;
+    Ok(())
+}
+
+fn spawn_open_child(path: &Path, reveal: bool) -> std::io::Result<std::process::Child> {
     #[cfg(target_os = "macos")]
     let mut command = Command::new("open");
     #[cfg(target_os = "macos")]
@@ -241,8 +249,7 @@ pub(crate) fn spawn_open(path: &Path, reveal: bool) -> std::io::Result<()> {
     #[cfg(target_os = "windows")]
     command.arg(path);
 
-    command.spawn()?;
-    Ok(())
+    command.spawn()
 }
 
 #[tauri::command]
@@ -318,9 +325,10 @@ pub async fn explore_open(
     session_dir: String,
     rel_path: String,
     reveal: bool,
+    editor: Option<String>,
 ) -> Result<(), ExploreError> {
     tauri::async_runtime::spawn_blocking(move || {
-        explore_open_blocking(session_dir, rel_path, reveal)
+        explore_open_blocking(session_dir, rel_path, reveal, editor)
     })
     .await
     .map_err(|error| ExploreError::Io(std::io::Error::other(error.to_string())))?
@@ -330,12 +338,24 @@ fn explore_open_blocking(
     session_dir: String,
     rel_path: String,
     reveal: bool,
+    editor: Option<String>,
 ) -> Result<(), ExploreError> {
     let path = resolve_path(&session_dir, &rel_path)?;
     if !path.is_file() {
         return Err(ExploreError::NotFile);
     }
-    spawn_open(&path, reveal)?;
+    if let Some(binary) = editor.filter(|_| !reveal) {
+        crate::editor::open_file_in_workspace_blocking(
+            session_dir,
+            path.to_string_lossy().into_owned(),
+            Some(binary),
+        )?;
+        return Ok(());
+    }
+    let mut child = spawn_open_child(&path, reveal)?;
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
     Ok(())
 }
 
@@ -344,7 +364,8 @@ mod tests {
     use std::fs;
 
     use super::{
-        explore_list_blocking, explore_read_blocking, ExploreContent, ExploreError, TEXT_MAX_BYTES,
+        explore_list_blocking, explore_open_blocking, explore_read_blocking, ExploreContent,
+        ExploreError, TEXT_MAX_BYTES,
     };
 
     fn test_root(name: &str) -> std::path::PathBuf {
@@ -449,6 +470,45 @@ mod tests {
 
         assert!(matches!(read, Err(ExploreError::NotFile)));
         assert!(matches!(list, Err(ExploreError::NotDirectory)));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn opening_with_an_editor_refuses_a_path_outside_the_session() {
+        let root = test_root("editor-outside");
+        fs::create_dir_all(&root).unwrap();
+
+        let result = explore_open_blocking(
+            root.to_string_lossy().into_owned(),
+            "../escape.txt".to_string(),
+            false,
+            Some("goodboy-test-no-such-editor".to_string()),
+        );
+
+        assert!(matches!(result, Err(ExploreError::OutsideSession)));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn opening_with_an_unknown_editor_reports_editor_missing() {
+        let root = test_root("editor-missing");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("page.tsx"), "export {}").unwrap();
+
+        let result = explore_open_blocking(
+            root.to_string_lossy().into_owned(),
+            "page.tsx".to_string(),
+            false,
+            Some("goodboy-test-no-such-editor".to_string()),
+        );
+
+        let error = result.expect_err("a missing editor must fail");
+        let serialized = serde_json::to_value(&error).unwrap();
+        assert_eq!(serialized["kind"], "editor_missing");
+        assert!(serialized["message"]
+            .as_str()
+            .unwrap()
+            .contains("goodboy-test-no-such-editor"));
         fs::remove_dir_all(root).unwrap();
     }
 }

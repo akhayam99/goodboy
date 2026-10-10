@@ -50,6 +50,8 @@ export const DrawerHost = () => {
     case 'explore-file':
       return (
         <ExploreFileDrawer
+          key={`${drawer.sessionId}:${drawer.payload.entry.relPath}`}
+          sessionId={drawer.sessionId}
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
           onClose={closeDrawer}

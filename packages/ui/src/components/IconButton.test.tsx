@@ -2,7 +2,7 @@
 
 import { Trash2 } from 'lucide-react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { IconButton } from './IconButton';
 
 describe('IconButton', () => {
@@ -44,5 +44,19 @@ describe('IconButton', () => {
     expect(svg?.getAttribute('width')).toBe('14');
     expect(svg?.getAttribute('height')).toBe('14');
     expect(svg?.getAttribute('class')).toMatch(/\bshrink-0\b/);
+  });
+
+  it('names itself on hover and stays quiet while its tooltip is suppressed', async () => {
+    const { rerender } = render(
+      <IconButton icon={Trash2} label="Delete notes.txt" tooltip="Delete" />,
+    );
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Delete notes.txt' }));
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Delete');
+
+    rerender(
+      <IconButton icon={Trash2} label="Delete notes.txt" tooltip="Delete" isTooltipSuppressed />,
+    );
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });
