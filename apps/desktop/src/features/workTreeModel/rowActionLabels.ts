@@ -13,5 +13,3 @@ export const ROW_ACTION_LABEL = {
   copyFailed: 'Failed',
   relink: 'Re-link',
 } as const satisfies Record<string, string>;
-
-export const ROW_ACTION_MAX_LENGTH = 9;

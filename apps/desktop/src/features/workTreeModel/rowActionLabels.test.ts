@@ -1,6 +1,8 @@
 import { WORK_META_COLUMN } from '@goodboy/ui';
 import { describe, expect, it } from 'vitest';
-import { ROW_ACTION_LABEL, ROW_ACTION_MAX_LENGTH } from './rowActionLabels';
+import { ROW_ACTION_LABEL } from './rowActionLabels';
+
+const ROW_ACTION_MAX_LENGTH = 9;
 
 describe('row action labels', () => {
   it('fit the action slot in nine characters', () => {
