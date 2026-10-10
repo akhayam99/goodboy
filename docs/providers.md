@@ -391,6 +391,27 @@ constant disagree, the constant is right.
 | gemini                         | none                           | delete the session folder | session folder        |
 | opencode, openrouter, moonshot | `opencode auth login`          | `opencode auth logout`    | `opencode auth list`  |
 
+### How the checks read the answer
+
+Every version and sign-in check runs through `proc/probe.rs`. It starts the CLI in its
+own process group. When the deadline passes it kills the whole group and waits for the
+child, so a timed-out check never leaves a `<defunct>` process behind. The budgets are 5
+seconds to detect a CLI, 10 seconds for a sign-in check and 15 seconds for codex. A
+timeout is retried once after 3 seconds. Each failure writes one `[probe]` line to the
+log with the provider, the kind and the milliseconds.
+
+- `ProviderStatus.errorKind` is `notFound`, `timeout` or `exit`. Only `notFound` means
+  the CLI is not installed.
+- The sign-in parsers read the exit code and the output together. `claude auth status`
+  and `codex login status` exit 1 when you are signed out, and that is read as
+  disconnected. Output the parser does not recognise is `unknown`, with a `reason`.
+- Cursor reads `cursor-agent status --format json` and falls back to the plain text.
+  `isAuthenticated` and `hasAccessToken` prove the local tokens. An email in `message`
+  or `about` proves the server knows the account. Tokens without an email give
+  `connected` with `verified: false`, which is how the CLI looks when it says "Logged
+  in (unable to fetch user details)" and still fails every run with "Authentication
+  required".
+
 Install commands:
 
 - anthropic: `npm install -g @anthropic-ai/claude-code`
@@ -492,8 +513,8 @@ codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s <SANDBOX> -- 
 - `--skip-git-repo-check` is required. Without it, codex refuses folders it does not trust
 - codex CLI v0.130 writes the `codex login status` output to stderr when no terminal
   (TTY) is attached. Processes that Tauri starts never have one. So the sign-in check
-  reads both streams through `AuthCommandOutput::primary_text()` in
-  `apps/desktop/src-tauri/src/providers.rs`
+  reads both streams through `ProbeOutput::primary_text()` in
+  `apps/desktop/src-tauri/src/proc/probe.rs`
 
 The Rust tests run codex against a scripted fake binary, not the real one. See
 [Fake CLI binaries](testing.md#fake-cli-binaries-for-the-rust-spawn-tests).

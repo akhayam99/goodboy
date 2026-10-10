@@ -1,14 +1,44 @@
 use std::collections::HashSet;
-use std::io::Read;
-use std::process::{Command, Stdio};
-use std::sync::OnceLock;
+use std::process::Command;
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-static RESOLVED_PATH: OnceLock<String> = OnceLock::new();
-static RESOLVED_ENV: OnceLock<Vec<(String, String)>> = OnceLock::new();
+use crate::proc::probe;
+
+struct Slot<T: 'static> {
+    value: Option<&'static T>,
+    failures: u8,
+}
+
+static RESOLVED_PATH: Mutex<Slot<String>> = Mutex::new(Slot {
+    value: None,
+    failures: 0,
+});
+static RESOLVED_ENV: Mutex<Slot<Vec<(String, String)>>> = Mutex::new(Slot {
+    value: None,
+    failures: 0,
+});
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
-const POLL_INTERVAL: Duration = Duration::from_millis(50);
+const MAX_PROBE_FAILURES: u8 = 3;
+
+fn resolve<T: 'static>(slot: &Mutex<Slot<T>>, compute: impl FnOnce() -> (T, bool)) -> &'static T {
+    let mut guard = slot.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(value) = guard.value {
+        return value;
+    }
+    let (value, is_complete) = compute();
+    let leaked: &'static T = Box::leak(Box::new(value));
+    if is_complete {
+        guard.value = Some(leaked);
+        return leaked;
+    }
+    guard.failures += 1;
+    if guard.failures >= MAX_PROBE_FAILURES {
+        guard.value = Some(leaked);
+    }
+    leaked
+}
 
 /// PATH inherited from the user's login shell, merged with the process's own
 /// PATH and common install locations, deduplicated, cached after first call.
@@ -19,7 +49,7 @@ const POLL_INTERVAL: Duration = Duration::from_millis(50);
 /// fails with ENOENT for `claude`, `cursor-agent`, `codex`, `gh`,
 /// brew-installed `git`, user editors, etc.
 pub fn resolved_path() -> &'static str {
-    RESOLVED_PATH.get_or_init(compute_path)
+    resolve(&RESOLVED_PATH, compute_path).as_str()
 }
 
 /// `Command` pre-wired with the resolved PATH. Drop-in replacement for
@@ -55,7 +85,7 @@ fn is_executable_file(path: &std::path::Path) -> bool {
 }
 
 pub fn resolved_env() -> &'static [(String, String)] {
-    RESOLVED_ENV.get_or_init(compute_env)
+    resolve(&RESOLVED_ENV, compute_env).as_slice()
 }
 
 pub fn command_with_login_env(binary: &str) -> Command {
@@ -82,9 +112,10 @@ pub fn login_shell() -> String {
     "/bin/sh".to_string()
 }
 
-fn compute_path() -> String {
+fn compute_path() -> (String, bool) {
     let inherited = std::env::var("PATH").unwrap_or_default();
     let (shell, npm_bin) = probe_login_shell();
+    let is_complete = shell.is_some();
     let shell = shell.unwrap_or_default();
     let npm_bin = npm_bin.unwrap_or_default();
     let common = common_install_paths();
@@ -104,7 +135,7 @@ fn compute_path() -> String {
             }
         }
     }
-    parts.join(":")
+    (parts.join(":"), is_complete)
 }
 
 #[cfg(target_os = "macos")]
@@ -173,8 +204,10 @@ fn parse_shell_probe(out: &str) -> (Option<String>, Option<String>) {
     (path, prefix)
 }
 
-fn compute_env() -> Vec<(String, String)> {
-    parse_env(&probe_login_shell_env().unwrap_or_default())
+fn compute_env() -> (Vec<(String, String)>, bool) {
+    let raw = probe_login_shell_env();
+    let is_complete = raw.is_some();
+    (parse_env(&raw.unwrap_or_default()), is_complete)
 }
 
 fn parse_env(raw: &str) -> Vec<(String, String)> {
@@ -218,38 +251,59 @@ fn probe_login_shell_env() -> Option<String> {
 }
 
 fn run_with_timeout(bin: &str, args: &[&str]) -> Option<String> {
-    let mut child = Command::new(bin)
-        .args(args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .stdin(Stdio::null())
-        .spawn()
-        .ok()?;
-
-    let deadline = Instant::now() + PROBE_TIMEOUT;
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                let mut buf = String::new();
-                if let Some(mut out) = child.stdout.take() {
-                    let _ = out.read_to_string(&mut buf);
-                }
-                return if status.success() { Some(buf) } else { None };
-            }
-            Ok(None) => {
-                if Instant::now() >= deadline {
-                    let _ = child.kill();
-                    return None;
-                }
-                std::thread::sleep(POLL_INTERVAL);
-            }
-            Err(_) => return None,
-        }
+    let mut command = Command::new(bin);
+    command.args(args);
+    let started = Instant::now();
+    let result = probe::run_in_session(command, Instant::now() + PROBE_TIMEOUT);
+    let millis = started.elapsed().as_millis();
+    let Ok(out) = result else {
+        log::info!("[path] login shell {bin} failed to start after {millis}ms");
+        return None;
+    };
+    if out.timed_out {
+        log::info!("[path] login shell {bin} timed out after {millis}ms");
+        return None;
     }
+    if out.code != Some(0) {
+        log::info!(
+            "[path] login shell {bin} exited {:?} after {millis}ms",
+            out.code
+        );
+        return None;
+    }
+    log::info!("[path] login shell {bin} answered in {millis}ms");
+    Some(out.stdout)
 }
 
 fn common_install_paths() -> String {
-    let home = std::env::var("HOME").unwrap_or_default();
+    common_install_paths_for(&std::env::var("HOME").unwrap_or_default())
+}
+
+fn node_version_key(name: &str) -> Vec<u64> {
+    name.trim_start_matches('v')
+        .split('.')
+        .map(|part| part.parse::<u64>().unwrap_or(0))
+        .collect()
+}
+
+fn nvm_bin_dirs(home: &str) -> Vec<String> {
+    let root = std::path::Path::new(home).join(".nvm/versions/node");
+    let Ok(entries) = std::fs::read_dir(&root) else {
+        return Vec::new();
+    };
+    let mut versions: Vec<String> = entries
+        .flatten()
+        .filter(|entry| entry.path().join("bin").is_dir())
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    versions.sort_by_key(|name| std::cmp::Reverse(node_version_key(name)));
+    versions
+        .into_iter()
+        .map(|name| root.join(name).join("bin").to_string_lossy().into_owned())
+        .collect()
+}
+
+fn common_install_paths_for(home: &str) -> String {
     let mut parts: Vec<String> = vec![
         "/opt/homebrew/bin".into(),
         "/opt/homebrew/sbin".into(),
@@ -268,9 +322,12 @@ fn common_install_paths() -> String {
             "/.deno/bin",
             "/.volta/bin",
             "/.npm-global/bin",
+            "/.asdf/shims",
+            "/.local/share/mise/shims",
         ] {
             parts.push(format!("{}{}", home, sub));
         }
+        parts.extend(nvm_bin_dirs(home));
     }
     parts.join(":")
 }
@@ -316,7 +373,7 @@ mod tests {
 
     #[test]
     fn compute_path_dedups_segments() {
-        let merged = compute_path();
+        let (merged, _) = compute_path();
         let segments: Vec<&str> = merged.split(':').collect();
         let mut unique = HashSet::new();
         for s in &segments {
@@ -376,5 +433,132 @@ mod tests {
         assert!(env.is_some(), "command must set PATH env var");
         let (_, val) = env.unwrap();
         assert_eq!(val, Some(std::ffi::OsStr::new(resolved_path())));
+    }
+
+    #[cfg(unix)]
+    fn temp_home(tag: &str) -> std::path::PathBuf {
+        let home =
+            std::env::temp_dir().join(format!("goodboy-path-env-{}-{}", std::process::id(), tag));
+        let _ = std::fs::remove_dir_all(&home);
+        std::fs::create_dir_all(&home).expect("create the temp home");
+        home
+    }
+
+    #[cfg(unix)]
+    fn install_binary(dir: &std::path::Path, name: &str) {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::create_dir_all(dir).expect("create the bin dir");
+        let file = dir.join(name);
+        std::fs::write(&file, "#!/bin/sh\n").expect("write the binary");
+        std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o755))
+            .expect("make it executable");
+    }
+
+    #[cfg(unix)]
+    fn finds_in(paths: &str, binary: &str) -> Option<String> {
+        std::env::split_paths(paths)
+            .map(|dir| dir.join(binary))
+            .find(|candidate| is_executable_file(candidate))
+            .map(|found| found.to_string_lossy().into_owned())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_static_list_finds_a_binary_installed_under_nvm() {
+        let home = temp_home("nvm");
+        install_binary(
+            &home.join(".nvm/versions/node/v22.0.0/bin"),
+            "goodboy-nvm-cli",
+        );
+
+        let paths = common_install_paths_for(&home.to_string_lossy());
+
+        let found =
+            finds_in(&paths, "goodboy-nvm-cli").expect("the binary must be on the static list");
+        assert!(found.contains(".nvm/versions/node/v22.0.0/bin"));
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_newest_nvm_node_comes_first() {
+        let home = temp_home("nvm-order");
+        for version in ["v20.9.0", "v22.0.0", "v9.11.2", "v22.10.1"] {
+            install_binary(
+                &home.join(".nvm/versions/node").join(version).join("bin"),
+                "goodboy-nvm-cli",
+            );
+        }
+
+        let paths = common_install_paths_for(&home.to_string_lossy());
+
+        let found =
+            finds_in(&paths, "goodboy-nvm-cli").expect("the binary must be on the static list");
+        assert!(found.contains("v22.10.1"), "got: {found}");
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_static_list_carries_the_asdf_and_mise_shims() {
+        let home = temp_home("shims");
+        install_binary(&home.join(".asdf/shims"), "goodboy-shim-a");
+        install_binary(&home.join(".local/share/mise/shims"), "goodboy-shim-b");
+
+        let paths = common_install_paths_for(&home.to_string_lossy());
+
+        assert!(finds_in(&paths, "goodboy-shim-a").is_some());
+        assert!(finds_in(&paths, "goodboy-shim-b").is_some());
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    #[test]
+    fn a_failed_probe_is_retried_and_then_cached_after_three_tries() {
+        let slot: Mutex<Slot<u32>> = Mutex::new(Slot {
+            value: None,
+            failures: 0,
+        });
+        let mut calls = 0;
+
+        for _ in 0..6 {
+            resolve(&slot, || {
+                calls += 1;
+                (calls, false)
+            });
+        }
+
+        assert_eq!(calls, 3);
+    }
+
+    #[test]
+    fn a_successful_probe_is_cached_at_once() {
+        let slot: Mutex<Slot<u32>> = Mutex::new(Slot {
+            value: None,
+            failures: 0,
+        });
+        let mut calls = 0;
+
+        for _ in 0..4 {
+            resolve(&slot, || {
+                calls += 1;
+                (calls, true)
+            });
+        }
+
+        assert_eq!(calls, 1);
+    }
+
+    #[test]
+    fn a_failed_probe_value_is_replaced_by_the_next_successful_one() {
+        let slot: Mutex<Slot<u32>> = Mutex::new(Slot {
+            value: None,
+            failures: 0,
+        });
+
+        let first = *resolve(&slot, || (1, false));
+        let second = *resolve(&slot, || (2, true));
+        let third = *resolve(&slot, || (3, true));
+
+        assert_eq!((first, second, third), (1, 2, 2));
     }
 }
