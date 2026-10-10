@@ -29,6 +29,20 @@ const providers = [
   { id: 'cursor', connection: 'missing' },
 ] as unknown as ReadonlyArray<ProviderDisplayInfo>;
 
+const info = (
+  overrides: Partial<ProviderDisplayInfo> & Pick<ProviderDisplayInfo, 'id'>,
+): ProviderDisplayInfo => ({
+  binary: overrides.id,
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  connection: 'connected',
+  version: null,
+  identity: null,
+  label: overrides.id,
+  error: null,
+  docsUrl: '',
+  ...overrides,
+});
+
 describe('autoLimitContext', () => {
   it('stays out of the way while no provider is at its limit', () => {
     expect(
@@ -59,10 +73,7 @@ describe('autoLimitContext', () => {
   });
 
   it('leaves a provider out of automatic routing while its breaker is open', () => {
-    const withBreaker = [
-      { id: 'anthropic', connection: 'connected' },
-      { id: 'cursor', connection: 'connected', isBreakerOpen: true },
-    ] as unknown as ReadonlyArray<ProviderDisplayInfo>;
+    const withBreaker = [info({ id: 'anthropic' }), info({ id: 'cursor', isBreakerOpen: true })];
     expect(
       autoLimitContext({
         state: { providers: withBreaker, providerLimits: { anthropic: CLAUDE_OUT } },
@@ -72,10 +83,7 @@ describe('autoLimitContext', () => {
   });
 
   it('keeps counting a cannot check provider that has a last good state as connected', () => {
-    const quiet = [
-      { id: 'anthropic', connection: 'connected' },
-      { id: 'cursor', connection: 'connected', standing: 'cannot_check' },
-    ] as unknown as ReadonlyArray<ProviderDisplayInfo>;
+    const quiet = [info({ id: 'anthropic' }), info({ id: 'cursor', standing: 'cannot_check' })];
     expect(
       autoLimitContext({
         state: { providers: quiet, providerLimits: { anthropic: CLAUDE_OUT } },

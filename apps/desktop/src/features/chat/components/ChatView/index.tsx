@@ -37,7 +37,7 @@ import { classifyThinkingContext } from '../../utils/thinking-context';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { turnFootersFor } from '../../utils/turnOutcome';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
-import { useProviderHealth } from '../../../providers/hooks/useProviderHealth';
+import { useProviderHealth } from '../../../../shared/hooks/useProviderHealth';
 import { ChatInput } from '../ChatInput';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { MountSuggestionCard } from '../MountSuggestionCard';

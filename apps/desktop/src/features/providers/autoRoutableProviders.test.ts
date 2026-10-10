@@ -5,15 +5,21 @@ import type { ProviderId, SessionProviderPreference, TurnProviderOverride } from
 import { autoRoutableProviders } from './autoRoutableProviders';
 import type { ProviderDisplayInfo } from './providers';
 
-const provider = (id: ProviderId, extra: Partial<ProviderDisplayInfo> = {}): ProviderDisplayInfo =>
-  ({
-    id,
-    connection: 'connected',
-    label: id,
-    error: null,
-    docsUrl: '',
-    ...extra,
-  }) as unknown as ProviderDisplayInfo;
+const provider = (
+  id: ProviderId,
+  extra: Partial<ProviderDisplayInfo> = {},
+): ProviderDisplayInfo => ({
+  id,
+  binary: id,
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  connection: 'connected',
+  version: null,
+  identity: null,
+  label: id,
+  error: null,
+  docsUrl: '',
+  ...extra,
+});
 
 const PROVIDERS = [
   provider('anthropic'),
@@ -37,7 +43,12 @@ const route = ({ pinned, override }: RouteParams) =>
     ...(override !== undefined && { turnOverride: override }),
     connectedProviders: autoRoutableProviders({ providers: PROVIDERS, pinned }),
     budgetChecker: {
-      checkProviderBudget: async () => ({ exceeded: false, overThreshold: false }) as never,
+      checkProviderBudget: async () => ({
+        remainingUsd: null,
+        pct: 0,
+        exceeded: false,
+        overThreshold: false,
+      }),
     },
     getDefaultModel: (id) => `${id}-default`,
   });

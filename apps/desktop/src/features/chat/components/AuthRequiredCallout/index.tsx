@@ -3,7 +3,7 @@ import { Button, Notice } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
-import { useProviderHealth } from '../../../providers/hooks/useProviderHealth';
+import { useProviderHealth } from '../../../../shared/hooks/useProviderHealth';
 
 type Props = {
   readonly providerId: ProviderId;

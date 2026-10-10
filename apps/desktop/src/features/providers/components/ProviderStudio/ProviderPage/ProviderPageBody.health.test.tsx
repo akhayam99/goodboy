@@ -62,23 +62,21 @@ type InfoParams = {
   readonly connection: ProviderDisplayInfo['connection'];
 };
 
-const info = ({ id = 'cursor', label = 'Cursor', connection }: InfoParams): ProviderDisplayInfo =>
-  ({
-    id,
-    label,
-    binary: 'cursor-agent',
-    version: '1.0.0',
-    connection,
-    identity: 'ada@harborline.dev',
-    error: null,
-    docsUrl: 'https://docs.cursor.com',
-    capabilities: {
-      models: [],
-      supportsTools: true,
-      supportsStream: true,
-      supportsCheapModel: true,
-    },
-  }) as unknown as ProviderDisplayInfo;
+const info = ({
+  id = 'cursor',
+  label = 'Cursor',
+  connection,
+}: InfoParams): ProviderDisplayInfo => ({
+  id,
+  label,
+  binary: 'cursor-agent',
+  version: '1.0.0',
+  connection,
+  identity: 'ada@harborline.dev',
+  error: null,
+  docsUrl: 'https://docs.cursor.com',
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+});
 
 type SeedParams = {
   readonly health: Partial<ProviderHealth>;
@@ -89,7 +87,7 @@ const seed = ({ health, refresh }: SeedParams) => {
   useAppStore.setState({
     providerHealth: { ...INITIAL_HEALTH_MAP, cursor: { ...INITIAL_HEALTH, ...health } },
     authResults: { cursor: { state: 'connected', identity: 'ada@harborline.dev' } },
-    ...(refresh !== undefined && { refreshProviders: refresh as never }),
+    ...(refresh !== undefined && { refreshProviders: refresh }),
   });
 };
 

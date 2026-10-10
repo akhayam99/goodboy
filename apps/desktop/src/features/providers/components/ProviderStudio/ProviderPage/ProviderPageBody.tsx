@@ -6,7 +6,7 @@ import type { ProviderDisplayInfo } from '../../../providers';
 import { useAppStore } from '../../../../../store';
 import { useCopyText } from '../../../../../shared/hooks/useCopyText';
 import { useNow } from '../../../../../shared/hooks/useNow';
-import { useProviderHealth } from '../../../hooks/useProviderHealth';
+import { useProviderHealth } from '../../../../../shared/hooks/useProviderHealth';
 import { confirmationLine } from '../../../providerHealthCopy';
 import { ProviderConnect } from '../../ProviderConnect';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';

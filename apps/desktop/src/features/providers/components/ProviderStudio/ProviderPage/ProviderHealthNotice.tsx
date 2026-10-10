@@ -1,7 +1,7 @@
 import { Button, Notice } from '@goodboy/ui';
 import type { ProviderDisplayInfo } from '../../../providers';
 import { useNow } from '../../../../../shared/hooks/useNow';
-import { useProviderHealth } from '../../../hooks/useProviderHealth';
+import { useProviderHealth } from '../../../../../shared/hooks/useProviderHealth';
 import {
   breakerBody,
   breakerTitle,
