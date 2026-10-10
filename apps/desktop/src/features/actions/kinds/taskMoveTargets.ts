@@ -15,7 +15,7 @@ export type TaskMoveChoice = {
 type Params = {
   readonly rows: ReadonlyArray<SessionExternalTask>;
   readonly mounts: ReadonlyArray<SessionProjectMount>;
-  readonly projectName: (projectId: ProjectId) => string | null;
+  readonly projectNames: Readonly<Record<string, string>>;
   readonly branch: string | null;
 };
 
@@ -42,7 +42,7 @@ const choiceIdOf = ({ projectId, branch }: PlaceParams): string =>
 export const taskMoveTargets = ({
   rows,
   mounts,
-  projectName,
+  projectNames,
   branch,
 }: Params): ReadonlyArray<TaskMoveChoice> => {
   const anchor = rows[0];
@@ -79,7 +79,7 @@ export const taskMoveTargets = ({
       ? !hasSession && isHeld({ place })
       : place.branch === branch && isHeld({ place });
   const branches = [...places.values()].map((place): TaskMoveChoice => {
-    const name = place.projectId === null ? null : projectName(place.projectId);
+    const name = place.projectId === null ? null : (projectNames[place.projectId] ?? null);
     const label = cutMiddle(place.branch);
     return {
       id: choiceIdOf(place),

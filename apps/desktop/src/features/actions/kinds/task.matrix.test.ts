@@ -1,9 +1,15 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, ProjectId, SessionExternalTask, SessionId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountId,
+  ProjectId,
+  SessionExternalTask,
+  SessionId,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { matrixOf } from '../../../__tests__/helpers/actionMatrix';
 import { TASK_KIND, type TaskFacts } from './task';
-import type { TaskMoveChoice } from './taskMoveTargets';
 
 const SESSION = 'session-ledger-export' as SessionId;
 
@@ -19,17 +25,32 @@ const row = (overrides: Partial<SessionExternalTask>): SessionExternalTask => ({
   ...overrides,
 });
 
-const facts = ({
-  task,
+const PAYMENTS = 'project-payments-api' as ProjectId;
+
+const mountOn = (branch: string): SessionProjectMount => ({
+  mountId: `mount-${branch}` as MountId,
+  sessionId: SESSION,
+  projectId: PAYMENTS,
+  mountName: 'payments-api',
+  worktreePath: '/worktrees/payments-api',
+  lastWorktreePath: null,
+  repoRoot: '/code/payments-api',
   branch,
-  branchCount = 0,
-  moveTargets = [],
-}: {
+  baseBranch: 'main',
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+});
+
+type FactsParams = {
   readonly task: SessionExternalTask;
   readonly branch: string | null;
   readonly branchCount?: number;
-  readonly moveTargets?: ReadonlyArray<TaskMoveChoice>;
-}): TaskFacts => ({
+  readonly mounts?: ReadonlyArray<SessionProjectMount>;
+};
+
+const facts = ({ task, branch, branchCount = 0, mounts = [] }: FactsParams): TaskFacts => ({
   sessionId: SESSION,
   provider: task.provider,
   externalId: task.externalId,
@@ -38,27 +59,11 @@ const facts = ({
   row: task,
   branch,
   branchCount,
-  moveTargets,
+  rows: [task],
+  mounts,
+  projectNames: { [PAYMENTS]: 'payments-api' },
   isOnlyOnSession: branchCount === 0,
 });
-
-const SESSION_CHOICE: TaskMoveChoice = {
-  id: 'session',
-  label: 'This session',
-  isCurrent: false,
-  to: { kind: 'session' },
-};
-
-const BRANCH_CHOICE: TaskMoveChoice = {
-  id: 'branch:project-payments-api:hl/ledger-rounding',
-  label: 'payments-api · hl/ledger-rounding',
-  isCurrent: false,
-  to: {
-    kind: 'branch',
-    projectId: 'project-payments-api' as ProjectId,
-    branch: 'hl/ledger-rounding',
-  },
-};
 
 describe('task actions', () => {
   it('offers open and unlink on a task not on a branch yet', () => {
@@ -70,7 +75,7 @@ describe('task actions', () => {
     ).toEqual(['task.open chip', 'task.unlink hover']);
   });
 
-  it('adds take off on a branch row', () => {
+  it('adds take off and Move to session on a branch row', () => {
     expect(
       matrixOf({
         definitions: TASK_KIND.actions,
@@ -80,7 +85,7 @@ describe('task actions', () => {
           branchCount: 1,
         }),
       }),
-    ).toEqual(['task.open chip', 'task.takeOff hover', 'task.unlink menu']);
+    ).toEqual(['task.open chip', 'task.moveTo menu', 'task.takeOff hover', 'task.unlink menu']);
   });
 
   it('runs reversible removals without confirmation', () => {
@@ -96,30 +101,47 @@ describe('task actions', () => {
     expect(
       matrixOf({
         definitions: TASK_KIND.actions,
-        facts: facts({ task: row({}), branch: null, moveTargets: [SESSION_CHOICE, BRANCH_CHOICE] }),
+        facts: facts({ task: row({}), branch: null, mounts: [mountOn('hl/ledger-rounding')] }),
       }),
     ).toEqual(['task.open chip', 'task.moveTo menu', 'task.unlink hover']);
   });
 
+  it('offers no Move to when no branch is open', () => {
+    expect(
+      matrixOf({ definitions: TASK_KIND.actions, facts: facts({ task: row({}), branch: null }) }),
+    ).not.toContain('task.moveTo menu');
+  });
+
   it('lists This session only when the task is on a branch, and checks the current one', () => {
-    const onBranch = row({ scope: 'branch', branch: 'hl/ledger-rounding' });
+    const onBranch = row({ scope: 'branch', branch: 'hl/ledger-rounding', projectId: PAYMENTS });
     const moveTo = TASK_KIND.actions.find((action) => action.id === 'task.moveTo');
-    const current = { ...BRANCH_CHOICE, isCurrent: true };
     const choices = moveTo?.choices?.({
       facts: facts({
         task: onBranch,
         branch: 'hl/ledger-rounding',
         branchCount: 1,
-        moveTargets: [SESSION_CHOICE, current],
+        mounts: [mountOn('hl/ledger-rounding'), mountOn('hl/fix-duplicate-credit')],
       }),
     });
     expect(choices?.map(({ label, isCurrent }) => [label, isCurrent])).toEqual([
       ['This session', false],
       ['payments-api · hl/ledger-rounding', true],
+      ['payments-api · hl/fix-duplicate-credit', false],
     ]);
     const sessionOnly = moveTo?.choices?.({
-      facts: facts({ task: row({}), branch: null, moveTargets: [SESSION_CHOICE, BRANCH_CHOICE] }),
+      facts: facts({ task: row({}), branch: null, mounts: [mountOn('hl/fix-duplicate-credit')] }),
     });
-    expect(sessionOnly?.map(({ label }) => label)).toEqual(['payments-api · hl/ledger-rounding']);
+    expect(sessionOnly?.map(({ label }) => label)).toEqual([
+      'payments-api · hl/fix-duplicate-credit',
+    ]);
+  });
+
+  it('cuts a long branch name in the middle', () => {
+    const long = 'hl/a-very-long-branch-name-that-keeps-going-past-the-limit-of-the-menu';
+    const moveTo = TASK_KIND.actions.find((action) => action.id === 'task.moveTo');
+    const label = moveTo?.choices?.({
+      facts: facts({ task: row({}), branch: null, mounts: [mountOn(long)] }),
+    })?.[0]?.label;
+    expect(label).toMatch(/^payments-api · hl\/a-very-long.+….+of-the-menu$/);
   });
 });

@@ -4,11 +4,14 @@ import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionId,
+  SessionProjectMount,
 } from '@goodboy/types';
 import { taskIdentityKey } from '../../../shared/utils/taskIdentityKey';
 import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 import type { ObjectKindDefinition, TaskActionTarget } from '../types';
 import { taskMoveTargets, type TaskMoveChoice } from './taskMoveTargets';
+
+const EMPTY_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
 
 export type TaskFacts = {
   readonly sessionId: SessionId;
@@ -19,7 +22,9 @@ export type TaskFacts = {
   readonly row: SessionExternalTask;
   readonly branch: string | null;
   readonly branchCount: number;
-  readonly moveTargets: ReadonlyArray<TaskMoveChoice>;
+  readonly rows: ReadonlyArray<SessionExternalTask>;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly projectNames: Readonly<Record<string, string>>;
   readonly isOnlyOnSession: boolean;
 };
 
@@ -55,12 +60,17 @@ const rowIsTarget = ({ candidate, target }: RowIsTargetParams): boolean =>
   taskIdentityKey({ task: candidate }) ===
   taskIdentityKey({ task: { ...target, projectId: target.projectId ?? undefined } });
 
-export const moveChoicesOf = ({
-  facts,
-}: {
+type FactsOnly = {
   readonly facts: TaskFacts;
-}): ReadonlyArray<TaskMoveChoice> =>
-  facts.moveTargets.filter((choice) => choice.to.kind !== 'session' || !facts.isOnlyOnSession);
+};
+
+export const moveChoicesOf = ({ facts }: FactsOnly): ReadonlyArray<TaskMoveChoice> =>
+  taskMoveTargets({
+    rows: facts.rows,
+    mounts: facts.mounts,
+    projectNames: facts.projectNames,
+    branch: facts.branch,
+  }).filter((choice) => choice.to.kind !== 'session' || !facts.isOnlyOnSession);
 
 export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
   noun: 'task',
@@ -76,6 +86,16 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
     if (row === undefined) {
       return null;
     }
+    const mounts = state.sessionProjectMounts[target.sessionId] ?? EMPTY_MOUNTS;
+    const projectNames = Object.fromEntries(
+      [
+        ...mounts.map((mount) => mount.projectId),
+        ...rows.flatMap((r) => r.projectId ?? []),
+      ].flatMap((projectId) => {
+        const name = selectProjectById(state, projectId)?.name;
+        return name === undefined ? [] : [[projectId, name] as const];
+      }),
+    );
     return {
       sessionId: target.sessionId,
       provider: target.provider,
@@ -85,12 +105,9 @@ export const TASK_KIND: ObjectKindDefinition<TaskActionTarget, TaskFacts> = {
       row,
       branch: target.branch,
       branchCount: branchRows.length,
-      moveTargets: taskMoveTargets({
-        rows,
-        mounts: state.sessionProjectMounts[target.sessionId] ?? [],
-        projectName: (projectId) => selectProjectById(state, projectId)?.name ?? null,
-        branch: target.branch,
-      }),
+      rows,
+      mounts,
+      projectNames,
       isOnlyOnSession: branchRows.length === 0,
     };
   },

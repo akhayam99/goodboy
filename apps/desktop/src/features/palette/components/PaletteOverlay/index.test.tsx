@@ -33,6 +33,7 @@ const elsewhere = vi.hoisted(() => ({ refs: [] as ReadonlyArray<SessionTitleRef>
 const PAYOUT = 'mock-board-session-payout-export' as SessionId;
 const IMPLEMENTER = 'mock-board-agent-export-implementer' as AgentId;
 const ARCHIVED = 'mock-board-session-refund-macros' as SessionId;
+const REVIEW = 'mock-board-session-admin-pagination' as SessionId;
 
 let useAppStore: StoryStore;
 
@@ -616,5 +617,49 @@ describe('PaletteOverlay, Ask in Chat', () => {
     expect(optionNames()).not.toContain('Ask in Chat');
     type(input, '>refresh');
     expect(optionNames()).not.toContain('Ask in Chat');
+  });
+});
+
+describe('PaletteOverlay on a focused issue', () => {
+  const focusIssue = () => {
+    act(() => {
+      useAppStore.setState((state) => ({
+        focusedExternalTask: {
+          ...state.focusedExternalTask,
+          [REVIEW]: { provider: 'linear', externalId: 'mock-board-HBL-412', projectId: null },
+        },
+      }));
+    });
+  };
+
+  it('lists Move to with the open branches and moves the issue to the one picked', async () => {
+    const moveSessionExternalTask = vi.fn(async () => undefined);
+    useAppStore.setState({ moveSessionExternalTask } as never);
+    const { input } = openIn(REVIEW);
+    focusIssue();
+    type(input, 'move to');
+
+    expect(optionNames()).toContain('Move to');
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(optionNames()).toEqual([
+      'payments-api · hl/fix-duplicate-credit',
+      'ledger-core · hl/reconcile-settlement-export',
+    ]);
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await vi.waitFor(() => expect(moveSessionExternalTask).toHaveBeenCalledOnce());
+    expect(moveSessionExternalTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: REVIEW,
+        to: expect.objectContaining({ kind: 'branch', branch: 'hl/fix-duplicate-credit' }),
+      }),
+    );
+  });
+
+  it('offers no Move to until an issue is focused', () => {
+    const { input } = openIn(REVIEW);
+    type(input, 'move to');
+
+    expect(screen.queryByRole('option', { name: 'Move to' })).toBeNull();
   });
 });
