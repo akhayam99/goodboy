@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MountId, ProjectId, Session, SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 import { SETTING_EDITOR_BINARY } from '../../settings/settings';
 import type { ActionDefinition, ActionEnv } from '../types';
 import { DIFF_KIND, type DiffFacts } from './diff';
@@ -52,7 +53,7 @@ const mountFacts: MountFacts = {
 const diffFacts: DiffFacts = { ...mountFacts, patch: 'diff --git a/a b/a', rebaseConflicts: 0 };
 
 const sessionFacts: SessionFacts = {
-  session: { id: 'session-harborline' } as Session,
+  session: aSession({ id: mountFacts.sessionId }),
   sessionId: 'session-harborline' as SessionId,
   title: 'Fix duplicate credit',
   isArchived: false,
@@ -61,6 +62,7 @@ const sessionFacts: SessionFacts = {
   canMovePinDown: false,
   isBranchless: false,
   hasMount: true,
+  hasLinkedIssues: false,
   branch: 'hl/fix-duplicate-credit',
   worktreePath: '/work/payments-api',
   mounts: [],

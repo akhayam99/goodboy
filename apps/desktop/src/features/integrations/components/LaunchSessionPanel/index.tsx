@@ -56,7 +56,7 @@ export const LaunchSessionPanel = ({
 }: Props) => {
   const createSession = useAppStore((state) => state.createSession);
   const requestIssueBrief = useAppStore((state) => state.requestIssueBrief);
-  const briefKey = briefSource === null ? null : issueBriefKey({ source: briefSource });
+  const briefKey = briefSource === null ? null : issueBriefKey({ sources: [briefSource] });
   const brief = useAppStore((state) => selectIssueBrief({ state, key: briefKey }));
   const followSession = useFollowToast();
   const [isShowingBrief, setIsShowingBrief] = useState(true);
@@ -105,7 +105,7 @@ export const LaunchSessionPanel = ({
     if (source === null || linkedSessionId !== null) {
       return;
     }
-    void requestIssueBrief({ source, workspaceId, sessionId: null });
+    void requestIssueBrief({ sources: [source], workspaceId, sessionId: null });
   }, [briefKey, briefSignature, linkedSessionId, requestIssueBrief, workspaceId]);
 
   const toggleBrief = () => {
@@ -120,7 +120,7 @@ export const LaunchSessionPanel = ({
     if (briefSource === null) {
       return;
     }
-    void requestIssueBrief({ source: briefSource, workspaceId, sessionId: null, isRetry: true });
+    void requestIssueBrief({ sources: [briefSource], workspaceId, sessionId: null, isRetry: true });
   };
 
   const canLaunch = goal.trim() !== '' && !isBusy;
