@@ -37,7 +37,12 @@ const facts = (overrides: Partial<MountFacts>): MountFacts => ({
   ...overrides,
 });
 
-const TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
+const TOOLS = [
+  'mount.openTerminal menu',
+  'mount.openInEditor menu',
+  'mount.scripts menu',
+  'mount.browseFiles menu',
+];
 const COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
 const ADD_TASK = 'mount.putTaskOnBranch chip';
 const HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip', ADD_TASK];
@@ -161,6 +166,7 @@ const STATES: ReadonlyArray<{
       'mount.openTerminal notice',
       'mount.openInEditor menu',
       'mount.scripts menu',
+      'mount.browseFiles menu',
       'mount.abortRebase notice',
       'mount.rewriteHistory menu (Finish or abort the rebase first.)',
       ADD_TASK,
