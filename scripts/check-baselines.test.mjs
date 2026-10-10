@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { allowedEntries, findGrowth, parseExceptions } from './check-baselines.mjs';
+import {
+  allowedEntries,
+  baselineEntries,
+  findGrowth,
+  parseExceptions,
+} from './check-baselines.mjs';
 
 const PATH = 'apps/desktop/src/__tests__/regressions/forbidden-patterns.baseline.json';
 
@@ -94,6 +99,34 @@ describe('findGrowth on a baseline json', () => {
       head: json({ 'a.ts': { count: 2, reason: 'agent' } }),
     });
     assert.equal(lines.length, 1);
+  });
+});
+
+describe('findGrowth on the eslint suppressions', () => {
+  const SUPPRESSIONS = 'eslint-suppressions.json';
+  const suppressions = (count) =>
+    json({ 'apps/desktop/src/a.ts': { '@typescript-eslint/no-floating-promises': { count } } });
+
+  it('fails when a suppression count grew', () => {
+    const lines = growth({
+      path: SUPPRESSIONS,
+      base: suppressions(1),
+      head: suppressions(2),
+    });
+    assert.equal(lines.length, 1);
+    assert.match(lines[0], /no-floating-promises > count: 2 \(base 1\)/);
+  });
+
+  it('passes when a suppression count falls', () => {
+    assert.deepEqual(
+      growth({ path: SUPPRESSIONS, base: suppressions(2), head: suppressions(1) }),
+      [],
+    );
+  });
+
+  it('names the rule after the file without the baseline suffix', () => {
+    const entries = baselineEntries({ path: SUPPRESSIONS, text: suppressions(3) });
+    assert.equal(entries[0].rule, 'eslint-suppressions');
   });
 });
 
