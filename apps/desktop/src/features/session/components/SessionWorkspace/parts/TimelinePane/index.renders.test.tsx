@@ -17,6 +17,8 @@ const { storeState, renders, attachedRuns, stable } = vi.hoisted(() => ({
     sessionExternalTasks: {},
     sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
     sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+    historyRuns: {},
+    scribeWork: {},
     selectedAgentId: {},
     transcripts: {},
     projects: [],

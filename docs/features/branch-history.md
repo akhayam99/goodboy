@@ -80,7 +80,30 @@ Someone pushed after you applied? Goodboy lists their new commits and offers to 
 
 Rebase on main with the same engine, and bring in an agent only when there is a conflict.
 
-Goodboy checks your files first. With changes that are not committed, a rebase, a sync with the remote, a restore and bringing origin into a plan all stop before they start, and the message names how many files, as in "11 files have changes that are not committed. Commit or stash them first.", and the check reads the tree fresh each time and stops with "Couldn't check for uncommitted changes. Try again." when it cannot read it. Nothing is tried, no copy is made, no agent starts, and the stop leaves no entry in the history. On the Overview, the Next row then reads "11 files not committed" with **Check again** and **Open terminal** instead of a Rebase button.
+Goodboy checks your files first. With changes that are not committed, a rebase, a sync with the remote, a restore and bringing origin into a plan all stop before they start, and the message names how many files, as in "11 files have changes that are not committed. Commit or stash them first.", and the check reads the tree fresh each time and stops with "Couldn't check for uncommitted changes. Try again." when it cannot read it. Nothing is tried, no copy is made and no agent starts. On the Overview, the Next row then reads "11 files not committed" with **Check again** and **Open terminal** instead of a Rebase button.
+
+A rebase is one job, and one banner under the Branch header tells it, on every section of the page (not only Commits). The banner is a quiet strip with a thin tone line on its inner left edge, a title, one line and the actions on the right:
+
+| State               | Title                                        | Line                                                                                                              | Actions                                         |
+| ------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Checking            | Rebasing payments-api on main                | Checking the branch                                                                                               | none                                            |
+| Replaying           | Rebasing payments-api on main                | Replaying 7 commits, or "Replaying 3 of 7" when the engine reports its steps                                      | none                                            |
+| Merging             | Rebasing payments-api on main                | History rewriter is merging webhook.ts in a copy                                                                  | **See what it did**                             |
+| Checking the result | Rebasing payments-api on main                | Checking the result against your branch                                                                           | none                                            |
+| Moving              | Rebasing payments-api on main                | Moving the branch. A backup is saved first.                                                                       | none                                            |
+| Updating online     | Rebasing payments-api on main                | Updating the online copy with a safe force push                                                                   | none                                            |
+| Done                | Rebased on main                              | 7 commits, and "Your 11 files were not touched." when changes were not committed, then "Backup kept for 30 days." | **Undo rewrite**, **Dismiss**                   |
+| Uncommitted files   | 11 files have changes that are not committed | Commit or stash them, then check again.                                                                           | **Check again**, **Open terminal**, **Dismiss** |
+| Needs you           | History rewriter needs you                   | It could not merge webhook.ts.                                                                                    | **See what it did**, **Dismiss**                |
+| No provider         | No provider is connected                     | History rewriter needs one to merge the conflict.                                                                 | **Open providers**, **Dismiss**                 |
+| Result differs      | The result did not match your branch         | Nothing was changed. Details has the output.                                                                      | **Dismiss**                                     |
+| Origin moved        | Someone pushed to the online copy            | Nothing was pushed.                                                                                               | **Dismiss**                                     |
+| Branch moved        | The branch moved                             | Nothing was changed.                                                                                              | **Refresh**, **Dismiss**                        |
+| Push failed         | Rebased, but the push failed                 | A pre-push hook stopped it, or "The online copy was not updated." Details has the output.                         | **Open terminal**, **Dismiss**                  |
+
+A running state shows a running dot and a shimmer on the title. A settled stop stays until you dismiss it, a new job starts, or its cause clears: the uncommitted-files banner leaves as soon as the tree reads clean. The banner replaces the red line under the header and the "Nothing was changed" notice inside Planned changes, which now only tells the stops of a plan you wrote.
+
+A rebase stop is also one event in Activity: "Rebase of feat/export stopped · uncommitted files", with a short cause (uncommitted files, needs you, result differs, origin moved, branch moved, hook stopped the push), never the engine sentence. The notification of a stop is raised only when you are not on that session's Branch page, because the banner already tells you there.
 
 ### After a pull request merges
 

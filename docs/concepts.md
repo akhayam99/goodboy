@@ -284,7 +284,17 @@ It includes:
 
 History rows carry no verb and no `⋯`. They stay in Activity only while no
 later outcome of the same branch settled them, and the row opens the Commits
-tab of the Branch page, where the recovery lives: `Undo rewrite` for a
+tab of the Branch page, where the recovery lives. The agent rows of those jobs
+read the job, not the turn of the agent (`jobFactsByAgentId`, the seam beside
+the resolver's in `buildTimelineStream`): History rewriter reads "Rebase on
+main" with the job's word (Replaying, Merging, Checking, Moving, Pushing,
+Done, or "Stopped: needs you" with the short cause) and opens **Open rebase**;
+Scribe reads "Pull request text" (Writing, Opening, Created #318, Couldn't
+open) and opens **Open overview**; the Scribe that refreshes a description or
+writes a commit message reads "Refresh pull request text" or "Commit message",
+muted and never in Needs you. `history_rewritten`, `history_pushed` and
+`history_stopped` carry the `agentId` of the rewriter, so a finished row still
+reads Done or Stopped after a restart. The recovery: `Undo rewrite` for a
 rewrite, `Retry` (or `Retry with a note` when History rewriter needs you), `Rewrite with an agent`,
 `Change the plan` and `Discard plan` for a stopped one, `Restore previous
 history` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
@@ -312,7 +322,8 @@ A **Needs you** block sits on top of Activity, and only while something waits
 on you: one row per owner, never per child. A pull request's fix runs read
 "#318 · 1 question · 5 to review" (the actions you owe, counted in comments), a
 run "Retry policy · 1 question", a stopped rebase
-"Rebase of feat/export stopped ×2". Each row has **Open**, which goes to
+"Rebase of feat/export stopped ×2 · needs you" (a short cause, never the engine
+sentence). Each row has **Open**, which goes to
 whoever owns the action (the first comment that waits on you, the exact
 question, the branch). A fix run's Activity row reads "Fix run · #318 · 9
 comments" with its tally, and there is one row per run, no per-agent burst. Push is
