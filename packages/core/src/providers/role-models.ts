@@ -17,13 +17,14 @@ import { normalizeAgentRole } from '../roles';
 import { resolveModelArgs } from './resolveModelArgs';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
-import { providerStanding } from './autoRouting/providerCandidates';
+import { unusableReason } from './autoRouting/providerCandidates';
 import {
   resolveAuto,
   type AutoContext,
   type AutoSlot,
   type AutoStep,
 } from './autoRouting/resolveAuto';
+import type { SkippedChoice } from './resolve/types';
 
 export type PinnedUnavailable = Readonly<{
   provider: ProviderId;
@@ -36,6 +37,8 @@ export type ResolvedRoleRouting = Readonly<{
   effort: AgentEffort;
   isOverride: boolean;
   autoStep?: AutoStep;
+  skippedAtLimit?: ReadonlyArray<ProviderId>;
+  skippedChoices?: ReadonlyArray<SkippedChoice>;
   pinnedUnavailable?: PinnedUnavailable;
   noAllowedModel?: true;
 }>;
@@ -195,22 +198,53 @@ const autoRoleRouting = ({ role, auto }: AutoRoleParams): ResolvedRoleRouting =>
     effort: pick.effort ?? AUTO_ROLE_EFFORT,
     isOverride: false,
     autoStep: pick.step,
+    ...(pick.skippedAtLimit !== undefined && { skippedAtLimit: pick.skippedAtLimit }),
     ...(isBlockedByHidden && { noAllowedModel: true as const }),
   };
 };
 
-type UsableParams = {
-  readonly provider: ProviderId;
+type ChoiceEntry = {
+  readonly index: number;
+  readonly choice: RoleModelChoice;
+  readonly resolved: ResolvedRoleChoice | null;
+  readonly reason: SkippedChoice['reason'] | null;
+};
+
+type EntryParams = {
+  readonly choice: RoleModelChoice;
+  readonly index: number;
+  readonly effort: AgentEffort;
   readonly auto: AutoContext | undefined;
 };
 
-const isUsable = ({ provider, auto }: UsableParams): boolean => {
-  if (auto == null) {
-    return true;
+const entryOf = ({ choice, index, effort, auto }: EntryParams): ChoiceEntry => {
+  const resolved = resolveRoleChoice({ choice, effort });
+  if (resolved === null) {
+    return { index, choice, resolved, reason: 'unknown-model' };
   }
-  const standing = providerStanding({ provider, context: auto });
-  return standing !== 'off' && standing !== 'not-connected';
+  const reason =
+    auto == null ? null : unusableReason({ provider: resolved.provider, context: auto });
+  return { index, choice, resolved, reason };
 };
+
+type SkippedParams = {
+  readonly entries: ReadonlyArray<ChoiceEntry>;
+  readonly pickedIndex: number | null;
+};
+
+const skippedChoicesOf = ({ entries, pickedIndex }: SkippedParams): ReadonlyArray<SkippedChoice> =>
+  entries.flatMap((entry): SkippedChoice[] => {
+    if (entry.reason === null || (pickedIndex !== null && entry.index > pickedIndex)) {
+      return [];
+    }
+    return [
+      {
+        provider: entry.resolved?.provider ?? entry.choice.providerId,
+        model: entry.resolved?.model ?? entry.choice.model,
+        reason: entry.reason,
+      },
+    ];
+  });
 
 type SetRoutingParams = {
   readonly role: string;
@@ -227,33 +261,47 @@ const setRoleRouting = ({
   auto,
   size,
 }: SetRoutingParams): ResolvedRoleRouting => {
-  const choices = roleModelChoices({ preference });
-  const known = choices.flatMap((choice) => {
-    const resolved = resolveRoleChoice({ choice, effort: preference.effort });
-    return resolved === null ? [] : [resolved];
-  });
+  const entries = roleModelChoices({ preference }).map((choice, index) =>
+    entryOf({ choice, index, effort: preference.effort, auto }),
+  );
+  const known = entries.filter((entry) => entry.resolved !== null);
   const [first] = known;
   if (first === undefined) {
-    const [stored] = choices;
+    const [stored] = entries;
     if (stored !== undefined) {
       devWarn(
-        PROVIDER_CAPABILITIES[stored.providerId] == null
-          ? `[role-models] invalid ${role} provider ${stored.providerId}; using the ${compiled.provider} default model`
-          : `[role-models] invalid ${role} model ${stored.model} for ${stored.providerId}; using the ${compiled.provider} default model`,
+        PROVIDER_CAPABILITIES[stored.choice.providerId] == null
+          ? `[role-models] invalid ${role} provider ${stored.choice.providerId}; using the ${compiled.provider} default model`
+          : `[role-models] invalid ${role} model ${stored.choice.model} for ${stored.choice.providerId}; using the ${compiled.provider} default model`,
       );
     }
-    return compiled;
+    const skippedChoices = skippedChoicesOf({ entries, pickedIndex: null });
+    return skippedChoices.length === 0 ? compiled : { ...compiled, skippedChoices };
   }
-  const usable = known.filter((choice) => isUsable({ provider: choice.provider, auto }));
-  const picked = choiceBySize({ usable, size });
+  const usable = known.filter((entry) => entry.reason === null);
+  const pickedResolved = choiceBySize({
+    usable: usable.flatMap((entry) => (entry.resolved === null ? [] : [entry.resolved])),
+    size,
+  });
+  const picked = usable.find((entry) => entry.resolved === pickedResolved) ?? null;
+  const skippedChoices = skippedChoicesOf({ entries, pickedIndex: picked?.index ?? null });
   const firstUsable = usable[0] === first;
-  const pinnedUnavailable = firstUsable ? null : { provider: first.provider, model: first.model };
-  if (picked === null) {
-    return { ...compiled, ...(pinnedUnavailable !== null && { pinnedUnavailable }) };
+  const pinnedUnavailable =
+    firstUsable || first.resolved === null
+      ? null
+      : { provider: first.resolved.provider, model: first.resolved.model };
+  const skippedPart = skippedChoices.length > 0 && { skippedChoices };
+  if (picked === null || pickedResolved === null) {
+    return {
+      ...compiled,
+      ...skippedPart,
+      ...(pinnedUnavailable !== null && { pinnedUnavailable }),
+    };
   }
   return {
-    ...picked,
+    ...pickedResolved,
     isOverride: true,
+    ...skippedPart,
     ...(pinnedUnavailable !== null && { pinnedUnavailable }),
   };
 };

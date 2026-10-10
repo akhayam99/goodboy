@@ -183,21 +183,21 @@ model, the roles and the tasks of this workspace that use that provider.
 Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows one
 shape, the same as the chat row: the provider glyph, the model, its effort when the
 model has one, then how many more models follow (`Opus 5.5 · High +2`). The model is
-what will run, the answer of `resolveRoleRouting` with the page's policy and
-connection context (`roleResolution`, the same call `roleRunFacts` makes for Auto): the
-first model of the role's set that can run, or what Auto picks. A small chip after it
-reads **Pinned** when the row has a set and **Auto** when it has none. When the set's
-first model cannot run, the muted line under the label says why and what runs instead
-(`Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.`, built by `skippedPinLine`
-from `pinnedUnavailable`). A task row (`TaskModelRow`) carries the same chip and the
-same line, from `resolveTaskModel` and `providerStanding`. When some agents pin only
+what will run: the answer of `useResolution({ role, workspaceId })`, the one resolver
+described under Defaults internals. A small chip after it reads **Pinned** when the
+row has a set and **Auto** when it has none. When the set's first model cannot run, or
+a project of the workspace pins another model for this role, the muted line under the
+label says so, printed by `explainResolution` through `resolutionNote`
+(`Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.`, `A project setting in
+payments-api overrides this: Sonnet 5.`). A task row (`TaskModelRow`) carries the same
+chip and the same line from the same hook. When some agents pin only
 models that cannot run, a line under the page title counts them (`With Codex as the only
 provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.`) and **Back to
 Auto for those 7** removes those pins after a confirm anchored to it; it is hidden when
 the count is 0. The chat row shows the same
 shape for Auto through `RoutingPicker`'s `autoTrigger="resolved"`. Open, it shows
 **How Scout runs**, read only, built from the engine and never from copy: the role's
-`explain` entry in `ROLE_REGISTRY`, the pick from `resolveRoleRouting`, and the split
+`explain` entry in `ROLE_REGISTRY`, the pick from `useResolution` with `isAutoOnly`, and the split
 limits from `roleSplitLimits` (`FAN_OUT_MAX_CHILDREN`, `SCOUT_DEPTH_CAP`,
 `FAN_OUT_DEPTH_CAP` in `@goodboy/core`, the same constants `scoutTree` enforces). When
 Parallel agents is off for the workspace, the split line says the role runs as one
@@ -795,6 +795,33 @@ When a provider ships or retires a model, update these together:
    the catalog layer writes a versioned id.
 
 ### Defaults internals
+
+- **One resolver.** `resolveSlot({ slot, layers, context, pins })`
+  (`packages/core/src/providers/resolve/`) answers what runs for a role or a task.
+  `slot` is `{ kind: 'role' | 'task', id }`. `layers` are the workspace, project and
+  session override objects, merged per key by `mergeLayers` (the narrower layer wins
+  each role or task; `resolveSettings` uses the same merge). `context` holds what the
+  machine knows: the provider policy, the connected and at-limit providers, hidden
+  models, installed CLI versions, learned CLI requirements. `pins` are the per-turn,
+  per-agent, per-step and per-run models, in that order, before any layer. The answer is
+  `{ provider, model, effort, source, via, skipped, shadowed }`: `source` names who
+  decided (`turn`, `agent`, `step`, `run`, `session`, `project`, `workspace`, `auto`),
+  `via` how (`pin`, `backup` for a later model of the same set or a task fallback, or
+  the Auto step), `skipped` every pin or Auto candidate passed over with its reason
+  (`off`, `not-connected`, `at-limit`, `hidden`, `cli-too-old`, `unknown-model`;
+  `backup-idle` is declared but never emitted, because a pin on a Backup provider runs
+  today), and `shadowed` the project values that win over a workspace page inside their
+  own project (`layers.scoped`). It is built on `resolveRoleRouting`, `traceTaskModel`
+  and `resolveAuto`, which keep the routing rules. `explainResolution` turns `skipped`
+  and `shadowed` into the one sentence rows print. The store builds the inputs once:
+  `selectModelContext` and `selectResolution` (`store/slices/models/`), and components
+  read them through `useResolution` (`features/providers/hooks/useResolution`). The
+  Models page rows, the run page orchestrator pill and the workflow builder pill all
+  read it, so they print the same model (`resolution.parity.test.tsx`). A lookup for
+  the model Auto would pick on a provider the user chose is `autoModelOn`. The
+  `resolver-entrypoints` ratchet counts the files that still import `resolveRoleRouting`,
+  `resolveTaskModel`, `resolveAuto` or their wrappers; it only falls, and the runtime
+  call sites (`routeTurn`, workflow routing, spawns) move onto the resolver next
 
 - **Auto** is one ladder for roles and tasks, `resolveAuto` in
   `packages/core/src/providers/autoRouting/resolveAuto.ts`. The curated picks live in

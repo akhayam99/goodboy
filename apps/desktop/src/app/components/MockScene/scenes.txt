@@ -203,6 +203,8 @@ model-picker-claude
 model-picker-codex
 model-picker-cursor
 model-picker-triggers
+models-anthropic-on
+models-codex-only
 modelswilluse
 modelswilluse-cleared
 mount-mismatch

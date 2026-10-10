@@ -699,6 +699,13 @@ describe('DefaultsPanel', () => {
     );
   });
 
+  it('shows Reset all to Auto as a header button only while something is pinned', () => {
+    render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.queryByRole('button', { name: 'Reset all to Auto' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Models actions' })).toBeNull();
+  });
+
   it('counts pins across roles and tasks and resets them all to Auto after a confirm', async () => {
     state.workspaceOverrides = {
       'ws-1': {

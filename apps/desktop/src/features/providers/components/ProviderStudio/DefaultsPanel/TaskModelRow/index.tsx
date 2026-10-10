@@ -4,14 +4,13 @@ import {
   isModelHidden,
   resolveStoredModelSelection,
 } from '@goodboy/core';
-import { resolveLimitedTaskModel } from '../../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import { Chip } from '@goodboy/ui';
 import type {
   AuxTaskId,
   EffortLevel,
   ProviderId,
-  ProviderPolicy,
   TaskModelPreference,
+  WorkspaceId,
 } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 import { savedRouteEffort } from '../../../../../../shared/components/RoutingPicker/savedRouteEffort';
@@ -22,72 +21,47 @@ import { DefaultRow } from '../DefaultRow';
 import { FallbackRow, type FallbackChoice } from '../FallbackRow';
 import { useHiddenModels } from '../../../../hooks/useHiddenModels';
 import { hiddenModelNote } from '../hiddenModelNote';
-import { taskSkippedLine } from './taskSkippedLine';
+import { useResolution } from '../../../../hooks/useResolution';
+import { autoModelOn } from '../../../../autoModelOn';
+import { resolutionAsTask } from '../../../../resolutionAsTask';
+import { resolutionNote } from '../resolutionNote';
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 
 type Props = {
+  readonly workspaceId: WorkspaceId;
   readonly task: AuxTaskId;
   readonly label: string;
   readonly help: string;
   readonly preference: TaskModelPreference | null;
-  readonly defaultProviderId: ProviderId;
-  readonly providerPolicy: ProviderPolicy | null;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly onChange: (preference: TaskModelPreference | null) => void;
 };
 
 export const TaskModelRow = ({
+  workspaceId,
   task,
   label,
   help,
   preference,
-  defaultProviderId,
-  providerPolicy,
   connectedProviderIds,
   disabled,
   onChange,
 }: Props) => {
   const limitContext = useAutoLimitContext();
-  const automatic = resolveLimitedTaskModel({
-    limitContext,
-    task,
-    preferences: null,
-    workspaceDefaultProviderId: defaultProviderId,
-    sessionDefaultProviderId: defaultProviderId,
-    connectedProviders: connectedProviderIds,
-    providerPolicy,
-  });
-  const resolved = resolveLimitedTaskModel({
-    limitContext,
-    task,
-    preferences: preference === null ? null : { [task]: preference },
-    workspaceDefaultProviderId: defaultProviderId,
-    sessionDefaultProviderId: defaultProviderId,
-    connectedProviders: connectedProviderIds,
-    providerPolicy,
-  });
-  const skippedLine = taskSkippedLine({
-    preference,
-    using: resolved,
-    context: {
-      defaultProvider: defaultProviderId,
-      connected: connectedProviderIds,
-      policy: providerPolicy,
-    },
-  });
+  const resolved = useResolution({ task, workspaceId });
+  const auto = useResolution({ task, workspaceId, isAutoOnly: true });
+  const automatic = resolutionAsTask({ resolution: auto });
+  const skippedLine = resolutionNote({ resolution: resolved });
   const providerId = preference?.providerId ?? automatic.providerId;
   const model = preference?.model ?? '';
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
-  const recommendedModel = resolveLimitedTaskModel({
-    limitContext: null,
-    task,
-    preferences: null,
-    workspaceDefaultProviderId: providerId,
-    sessionDefaultProviderId: defaultProviderId,
+  const recommendedModel = autoModelOn({
+    slot: { kind: 'task', id: task },
+    provider: providerId,
   }).model;
   const effortModel = model === '' ? recommendedModel : model;
   const effortValue = preference?.effort ?? automatic.effort ?? DEFAULT_EFFORT;
@@ -112,7 +86,7 @@ export const TaskModelRow = ({
       });
   const summary = skippedLine ?? hiddenNote;
   const limitReason = autoLimitReason({
-    defaultProvider: defaultProviderId,
+    defaultProvider: resolved.defaultProvider,
     pickedProvider: automatic.providerId,
     atLimit: limitContext?.atLimit ?? [],
   });

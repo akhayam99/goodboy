@@ -1,21 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
-import {
-  DEFAULT_GROUPS,
-  DEFAULT_SESSION_PROVIDER_PREFERENCE,
-  ROLE_REGISTRY,
-  TASKS,
-  firstOnProvider,
-  type AutoContext,
-} from '@goodboy/core';
+import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS } from '@goodboy/core';
 import {
   Band,
   BandStack,
   Button,
+  ConfirmPopover,
   Eyebrow,
   FieldRow,
-  InlineConfirm,
   PaneShell,
   EmptyState,
 } from '@goodboy/ui';
@@ -26,7 +19,6 @@ import { NAMES } from '../../../../../shared/names';
 import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultModel';
 import { ChatModelRow } from './ChatModelRow';
 import { RoleRow } from './RoleRow';
-import { roleResolution } from './RoleRow/roleResolution';
 import { TaskModelRow } from './TaskModelRow';
 import { ProvidersInOrder } from './ProvidersInOrder';
 import { PinnedOffLine } from './PinnedOffLine';
@@ -39,7 +31,9 @@ import {
 } from '../../../../../shared/components/conceptIcons';
 import { pluralize } from '../../../../../shared/utils/pluralize';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
-import { useAutoLimitContext } from '../../../hooks/useAutoLimitContext';
+import { useModelScope } from '../../../hooks/useModelScope';
+import { resolutionOf } from '../../../../../store/slices/models/selectResolution';
+import { isPinUnrunnable } from './resolutionNote';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -91,23 +85,11 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
   );
   const overrides = workspaceOverrides ?? EMPTY_OVERRIDES;
   const policy = overrides.providerPool;
-  const defaultProviderId =
-    firstOnProvider({ policy }) ??
-    overrides.defaultProviderId ??
-    DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
-  const limitContext = useAutoLimitContext();
-  const autoContext: AutoContext = {
-    defaultProvider: defaultProviderId,
-    connected: connectedProviderIds,
-    ...(policy != null && { policy }),
-    ...(limitContext?.hidden != null && { hidden: limitContext.hidden }),
-    ...(limitContext?.cliVersions != null && { cliVersions: limitContext.cliVersions }),
-  };
+  const scope = useModelScope({ workspaceId });
 
   const chatDefault = useChatDefaultModel({ workspaceId });
   const { busy, error, persistOverrides, persistTaskModel, persistRoleModel, clearRoleModels } =
     useDefaultsPersistence({ workspaceId });
-  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
 
   const pinnedTaskCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
   const pinnedRoleCount = Object.keys(overrides.roleModels ?? {}).length;
@@ -115,10 +97,8 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
   const pinnedCount = pinnedTaskCount + pinnedRoleCount + pinnedChatCount;
 
   const shownRoles = DEFAULT_GROUPS.agents.flatMap((group) => group.members);
-  const unrunnableRoles = shownRoles.filter(
-    (role) =>
-      roleResolution({ role, preference: overrides.roleModels?.[role] ?? null, autoContext })
-        .isPinUnrunnable,
+  const unrunnableRoles = shownRoles.filter((role) =>
+    isPinUnrunnable({ resolution: resolutionOf({ scope, slot: { kind: 'role', id: role } }) }),
   );
   const onProviderIds = connectedProviderIds.filter(
     (id) => policy == null || policy.some((entry) => entry.id === id && entry.state === 'on'),
@@ -127,7 +107,6 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
   const onResetAll = async () => {
     chatDefault.clear();
     await persistOverrides({ patch: { taskModels: null, roleModels: null } });
-    setIsConfirmingReset(false);
   };
 
   return (
@@ -138,31 +117,25 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
       meta={scopeLabel ?? undefined}
       actions={
         pinnedCount === 0 ? undefined : (
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={busy}
-            onClick={() => setIsConfirmingReset(true)}
-          >
-            <RotateCcw size={ICON_SIZE.row} aria-hidden />
-            Reset all to Auto
-          </Button>
+          <ConfirmPopover
+            role="danger"
+            icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
+            title={`Reset ${pinnedCount} pinned ${pinnedCount === 1 ? 'model' : 'models'} to Auto?`}
+            description="New chats, every agent role and background task go back to Auto."
+            confirmLabel="Reset all"
+            isBusy={busy}
+            align="end"
+            onConfirm={onResetAll}
+            trigger={({ arm }) => (
+              <Button size="sm" variant="ghost" disabled={busy} onClick={arm}>
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
+                Reset all to Auto
+              </Button>
+            )}
+          />
         )
       }
     >
-      {isConfirmingReset ? (
-        <InlineConfirm
-          role="danger"
-          icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
-          title={`Reset ${pinnedCount} pinned ${pinnedCount === 1 ? 'model' : 'models'} to Auto?`}
-          description="New chats, every agent role and background task go back to Auto."
-          confirmLabel="Reset all"
-          isBusy={busy}
-          onConfirm={onResetAll}
-          onCancel={() => setIsConfirmingReset(false)}
-        />
-      ) : null}
-
       <ProjectOverridesNotice workspaceId={workspaceId} />
 
       <PinnedOffLine
@@ -214,11 +187,11 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
                 {group.members.map((role) => (
                   <RoleRow
                     key={role}
+                    workspaceId={workspaceId}
                     role={role}
                     label={ROLE_LABEL[role]}
                     help={ROLE_REGISTRY[role].summary}
                     preference={overrides.roleModels?.[role] ?? null}
-                    autoContext={autoContext}
                     isParallelOn={overrides.parallelAgents === true}
                     connectedProviderIds={connectedProviderIds}
                     disabled={busy}
@@ -248,12 +221,11 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
                   return (
                     <TaskModelRow
                       key={task.id}
+                      workspaceId={workspaceId}
                       task={task.id}
                       label={task.label}
                       help={task.description}
                       preference={overrides.taskModels?.[task.id] ?? null}
-                      defaultProviderId={defaultProviderId}
-                      providerPolicy={policy}
                       connectedProviderIds={connectedProviderIds}
                       disabled={busy}
                       onChange={(preference) => persistTaskModel({ task: task.id, preference })}
