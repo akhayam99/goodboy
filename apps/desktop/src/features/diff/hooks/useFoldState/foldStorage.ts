@@ -6,9 +6,9 @@ export type Folds = {
   readonly opened: ReadonlyArray<string>;
 };
 
-export const MAX_FOLD_ENTRIES = 500;
+const MAX_FOLD_ENTRIES = 500;
 
-export const NO_FOLDS: Folds = { closed: [], opened: [] };
+const NO_FOLDS: Folds = { closed: [], opened: [] };
 
 const isStringArray = (value: unknown): value is ReadonlyArray<string> =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');

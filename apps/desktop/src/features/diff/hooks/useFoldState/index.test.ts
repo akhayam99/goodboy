@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import type { FileDiff, MountId, SessionId } from '@goodboy/types';
 import { useFoldState } from '.';
-import { MAX_FOLD_ENTRIES, foldKeyOf } from './foldStorage';
+import { foldKeyOf } from './foldStorage';
 
 const SESSION = 'session-ledger' as SessionId;
 const MOUNT = 'mount-ledger-core' as MountId;
@@ -167,7 +167,7 @@ describe('useFoldState', () => {
     }
 
     const saved = stored() as { readonly closed: ReadonlyArray<string> };
-    expect(saved.closed).toHaveLength(MAX_FOLD_ENTRIES);
+    expect(saved.closed).toHaveLength(500);
     expect(saved.closed.at(-1)).toBe('dir:pkg519/a');
     expect(saved.closed).not.toContain('dir:pkg0/a');
   });
