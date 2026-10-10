@@ -86,16 +86,12 @@ vi.mock('../../client', () => ({
   bitbucketPullRequestDiff: h.diff,
 }));
 
-vi.mock('../../../../../store', () => ({
-  EMPTY_ARRAY: [],
-  useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
-}));
-
 vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 
 const { PrDetailPanel } = await import('./index');
+const { useAppStore } = await import('../../../../../store');
 
 const PR: BitbucketPullRequest = {
   id: 42,
@@ -157,6 +153,7 @@ const openConversation = async () => {
 describe('PrDetailPanel', () => {
   beforeEach(() => {
     writeSpies().forEach((spy) => spy.mockClear());
+    useAppStore.setState(h.state);
   });
   afterEach(cleanup);
 

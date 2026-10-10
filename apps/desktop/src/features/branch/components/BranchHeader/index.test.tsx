@@ -490,7 +490,7 @@ describe('BranchHeader branch switcher', () => {
     await waitFor(() => expect(screen.queryByRole('menuitemradio')).toBeNull());
   });
 
-  it('shows a chevron with several branches and none with one, which opens only New branch', async () => {
+  it('shows a chevron with several branches and none with one, which opens the New branch form at once', async () => {
     withMounts([MOUNT, MOUNT_FIX]);
     status = statusOf({});
     renderHeader({ pr: PR });
@@ -504,7 +504,12 @@ describe('BranchHeader branch switcher', () => {
     fireEvent.click(chipOf());
 
     expect(screen.queryByRole('menuitemradio')).toBeNull();
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['New branch']);
+    expect(screen.queryByRole('menuitem')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Branch name' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('textbox', { name: 'Branch name' })).toBeNull();
   });
 
   it('creates a new branch from the chip and lands on it, on the same tab', async () => {

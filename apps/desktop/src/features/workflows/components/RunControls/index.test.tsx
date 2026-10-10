@@ -397,16 +397,15 @@ describe('RunControls while the run waits on its plan', () => {
     });
   });
 
-  it('gives a dynamic run its Approve plan overflow, without the strip owning it', () => {
+  it('gives a dynamic run a ghost Approve plan beside Review plan, with no one-item overflow', () => {
     const run = runOf({ executionMode: 'dynamic', orchestrationStop: HELD });
     seedRun({ run, agents: waiting() });
     renderPage({ run, agents: waiting(), withStrip: true });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Plan actions' }));
-
-    expect(screen.getByRole('menuitem', { name: 'Approve plan' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Plan actions' })).toBeNull();
     expect(
-      within(screen.getByTestId('orchestrator-strip')).queryByRole('menuitem', {
+      within(screen.getByTestId('orchestrator-strip')).queryByRole('button', {
         name: 'Approve plan',
       }),
     ).toBeNull();
@@ -430,21 +429,18 @@ describe('RunControls while the run waits on its plan', () => {
     });
     renderPage({ run, agents: waiting() });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Plan actions' }));
-    const approve = screen.getByRole('menuitem', { name: /Approve plan/ });
+    const approve = screen.getByRole('button', { name: 'Approve plan' });
 
     expect(approve.hasAttribute('disabled')).toBe(true);
-    expect(approve.textContent).toContain('The planner is revising this plan');
     fireEvent.click(approve);
     expect(mocks.approveWorkflowRunPlan).not.toHaveBeenCalled();
   });
 });
 
-describe('RunControls approve from the overflow', () => {
-  const approveFromOverflow = async (): Promise<void> => {
-    fireEvent.click(screen.getByRole('button', { name: 'Plan actions' }));
+describe('RunControls approve from the header', () => {
+  const approveFromHeader = async (): Promise<void> => {
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: 'Approve plan' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
     });
   };
 
@@ -458,7 +454,7 @@ describe('RunControls approve from the overflow', () => {
   it('raises one Plan approved toast with no action, because the run page is the one on screen', async () => {
     heldPage();
 
-    await approveFromOverflow();
+    await approveFromHeader();
 
     expect(mocks.approveWorkflowRunPlan).toHaveBeenCalledWith(sessionId, RUN_ID);
     expect(await screen.findByText('Plan approved')).toBeDefined();
@@ -472,7 +468,7 @@ describe('RunControls approve from the overflow', () => {
     heldPage();
     expect(isUserStart({ key: RUN_ID })).toBe(false);
 
-    await approveFromOverflow();
+    await approveFromHeader();
 
     expect(isUserStart({ key: RUN_ID })).toBe(true);
   });
@@ -485,7 +481,7 @@ describe('RunControls approve from the overflow', () => {
     });
     heldPage();
 
-    await approveFromOverflow();
+    await approveFromHeader();
 
     expect(await screen.findByText('Implement started')).toBeDefined();
     expect(screen.getByText('Plan approved')).toBeDefined();
@@ -497,7 +493,7 @@ describe('RunControls approve from the overflow', () => {
     act(() => useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) }));
     renderPage({ run, agents: waiting() });
 
-    await approveFromOverflow();
+    await approveFromHeader();
 
     expect(await screen.findByRole('button', { name: 'Follow the run' })).toBeDefined();
   });
@@ -506,7 +502,7 @@ describe('RunControls approve from the overflow', () => {
     mocks.approveWorkflowRunPlan.mockResolvedValueOnce({ kind: 'noop', reason: 'not-held' });
     heldPage();
 
-    await approveFromOverflow();
+    await approveFromHeader();
 
     expect(mocks.approveWorkflowRunPlan).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Plan approved')).toBeNull();
@@ -521,7 +517,7 @@ describe('RunControls approve from the overflow', () => {
     });
     heldPage();
 
-    await approveFromOverflow();
+    await approveFromHeader();
 
     expect(mocks.reportError).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Couldn't approve the plan", sessionId }),

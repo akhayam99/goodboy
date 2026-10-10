@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Unlink } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, MenuTriggerButton, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, IconButton, useDropdown } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
@@ -10,14 +11,12 @@ import {
   type MountCleanupBlocker,
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { ObjectOverflowList } from '../../../../actions/components/ObjectOverflowMenu/ObjectOverflowList';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import {
   PROJECT_DETACH_EVENT,
   projectKeyOf,
   type ProjectDetachRequest,
 } from '../../../../actions/kinds/project';
-import type { ProjectActionTarget } from '../../../../actions/types';
 import { DetachConfirm } from './DetachConfirm';
 import {
   BLOCKER_SENTENCE,
@@ -46,8 +45,6 @@ type DetachTarget = {
   readonly isOnDisk: boolean;
 };
 
-const NO_OMISSIONS: ReadonlyArray<string> = [];
-
 const isDetachRequest = (event: Event): event is CustomEvent<ProjectDetachRequest> =>
   event instanceof CustomEvent &&
   typeof event.detail === 'object' &&
@@ -68,10 +65,6 @@ export const MountActionsMenu = ({
 }: Props) => {
   const projectKey = projectKeyOf({ sessionId, projectId });
   const openEvent = `goodboy:project-menu-open:${projectKey}`;
-  const target = useMemo<ProjectActionTarget>(
-    () => ({ kind: 'project', sessionId, projectId }),
-    [projectId, sessionId],
-  );
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-96',
@@ -125,7 +118,7 @@ export const MountActionsMenu = ({
   const [stage, setStage] = useState<string | null>(null);
   const [assessments, setAssessments] = useState<ReadonlyArray<MountAssessment> | null>(null);
   const requestRef = useRef(0);
-  const label = `${projectName} actions`;
+  const label = `Remove ${projectName} from session`;
 
   const fail = ({ title, error }: { title: string; error: unknown }) => {
     void reportError({
@@ -200,6 +193,7 @@ export const MountActionsMenu = ({
     setAssessments(null);
     setStage(null);
     setIsConfirming(false);
+    dropdown.close();
   };
 
   useEffect(() => {
@@ -252,24 +246,28 @@ export const MountActionsMenu = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
+      role="dialog"
       ariaLabel={label}
       anchorClassName="shrink-0"
       trigger={
-        <MenuTriggerButton
+        <IconButton
+          icon={Unlink}
           label={label}
-          isOpen={dropdown.open}
-          size="control"
+          iconSize={ICON_SIZE.row}
+          aria-haspopup="dialog"
+          aria-expanded={dropdown.open}
           onClick={() => {
             if (dropdown.open) {
-              dropdown.close();
-              setIsConfirming(false);
+              cancelDetach();
               return;
             }
-            dropdown.toggle();
+            window.dispatchEvent(
+              new CustomEvent<ProjectDetachRequest>(PROJECT_DETACH_EVENT, {
+                detail: { projectKey },
+              }),
+            );
           }}
-        >
-          <CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />
-        </MenuTriggerButton>
+        />
       }
     >
       {isConfirming ? (
@@ -289,15 +287,6 @@ export const MountActionsMenu = ({
           onCancel={cancelDetach}
         />
       ) : null}
-      {isConfirming ? null : (
-        <ObjectOverflowList
-          target={target}
-          label={label}
-          anchorKey={null}
-          omit={NO_OMISSIONS}
-          onClose={dropdown.close}
-        />
-      )}
     </AnchoredPopover>
   );
 };
