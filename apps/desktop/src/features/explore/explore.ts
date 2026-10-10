@@ -47,12 +47,14 @@ type ExploreOpenParams = {
   readonly sessionDir: string;
   readonly relPath: string;
   readonly reveal: boolean;
+  readonly editor?: string | null;
 };
 
 export const exploreOpen = async ({
   sessionDir,
   relPath,
   reveal,
+  editor = null,
 }: ExploreOpenParams): Promise<void> => {
-  await invokeCommand('explore_open', { sessionDir, relPath, reveal });
+  await invokeCommand('explore_open', { sessionDir, relPath, reveal, editor });
 };

@@ -12,6 +12,8 @@ const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const VARIANT = sceneParam({ key: 'v' }) ?? 'populated';
 const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
+const HOVER_ROW = sceneParam({ key: 'hover' });
+const HOVER_ACTION = sceneParam({ key: 'tip' }) ?? 'ask';
 
 const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
 const SESSION_DIR = '~/code/harborline/sessions/settlement-rounding';
@@ -102,6 +104,34 @@ const installIpc = (): void => {
   });
 };
 
+const hoverLabel = ({ row }: { readonly row: string }): string => {
+  if (HOVER_ACTION === 'open') {
+    return `Open ${row}`;
+  }
+  if (HOVER_ACTION === 'show') {
+    return `Show ${row} in Finder`;
+  }
+  return `Ask an agent about ${row}`;
+};
+
+const useRowHover = ({ isReady }: { readonly isReady: boolean }): void => {
+  useEffect(() => {
+    if (!isReady || HOVER_ROW === null) {
+      return;
+    }
+    const label = hoverLabel({ row: HOVER_ROW });
+    const interval = window.setInterval(() => {
+      const target = window.document.querySelector(`button[aria-label="${CSS.escape(label)}"]`);
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      target.focus();
+      window.clearInterval(interval);
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, [isReady]);
+};
+
 export const ExploreScene = () => {
   const [isReady, setIsReady] = useState(false);
 
@@ -125,6 +155,8 @@ export const ExploreScene = () => {
     match: 'prefix',
     intervalMs: 250,
   });
+
+  useRowHover({ isReady });
 
   if (!isReady) {
     return null;

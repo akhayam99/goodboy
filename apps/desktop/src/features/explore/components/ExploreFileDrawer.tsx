@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { File } from 'lucide-react';
 import { DrawerFrame } from '@goodboy/ui';
-import { exploreOpen, type ExploreEntry } from '../explore';
+import type { SessionId } from '@goodboy/types';
+import type { ExploreEntry } from '../explore';
+import type { ExploreOpenFailure } from '../openFailure';
+import { useExploreOpen } from '../hooks/useExploreOpen';
 import { useExplorePreview } from '../hooks/useExplorePreview';
 import { ExplorePreviewPanel } from './ExplorePane/ExplorePreviewPanel';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly sessionDir: string;
   readonly entry: ExploreEntry;
   readonly onClose: () => void;
@@ -21,17 +25,13 @@ const joinPath = ({ root, relPath }: { readonly root: string; readonly relPath: 
   return `${root}/${relPath}`;
 };
 
-export const ExploreFileDrawer = ({ sessionDir, entry, onClose }: Props) => {
+export const ExploreFileDrawer = ({ sessionId, sessionDir, entry, onClose }: Props) => {
   const previewState = useExplorePreview({ sessionDir, entry });
-  const [openError, setOpenError] = useState<string | null>(null);
+  const exploreOpen = useExploreOpen({ sessionId, sessionDir });
+  const [openFailure, setOpenFailure] = useState<ExploreOpenFailure | null>(null);
 
-  const openOutside = () => {
-    exploreOpen({ sessionDir, relPath: entry.relPath, reveal: false })
-      .then(() => setOpenError(null))
-      .catch((error: unknown) => {
-        const reason = error instanceof Error ? error.message : 'Unknown error';
-        setOpenError(`Couldn't open "${entry.name}". ${reason}`);
-      });
+  const open = () => {
+    void exploreOpen.run({ entry, isReveal: false }).then(setOpenFailure);
   };
 
   return (
@@ -45,8 +45,9 @@ export const ExploreFileDrawer = ({ sessionDir, entry, onClose }: Props) => {
         entry={entry}
         previewState={previewState}
         absolutePath={joinPath({ root: sessionDir, relPath: entry.relPath })}
-        openError={openError}
-        onOpenOutside={openOutside}
+        openAction={exploreOpen.actionOf({ entry })}
+        openFailure={openFailure}
+        onOpen={open}
       />
     </DrawerFrame>
   );
