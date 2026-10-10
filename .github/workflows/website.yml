@@ -2,9 +2,6 @@ name: website
 
 on:
   pull_request:
-    paths:
-      - 'website/**'
-      - '.github/workflows/website.yml'
 
 permissions:
   contents: read
@@ -19,25 +16,48 @@ jobs:
         working-directory: website
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      - name: detect website changes
+        id: changes
+        working-directory: .
+        run: |
+          files=$(git diff --name-only HEAD^1 HEAD 2>/dev/null || echo "__ERR__")
+          if [ "$files" = "__ERR__" ]; then
+            echo "website=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s\n' "$files" | grep -qE '^(website/|\.github/workflows/website\.yml$)'; then
+            echo "website=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "website=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v4
+        if: steps.changes.outputs.website == 'true'
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: steps.changes.outputs.website == 'true'
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
 
       - name: install
+        if: steps.changes.outputs.website == 'true'
         run: pnpm install --ignore-workspace --frozen-lockfile
 
       - name: test
+        if: steps.changes.outputs.website == 'true'
         run: pnpm test
 
       - name: build
+        if: steps.changes.outputs.website == 'true'
         run: pnpm build
 
       - name: check pages
+        if: steps.changes.outputs.website == 'true'
         run: |
           pnpm preview --port 1561 --host 127.0.0.1 > /tmp/goodboy-website-preview.log 2>&1 &
           preview_pid=$!

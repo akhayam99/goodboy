@@ -30,6 +30,8 @@
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
     "check:rules": "node scripts/check-rules.mjs",
     "check:baselines": "node scripts/check-baselines.mjs",
+    "gate": "bash scripts/gate.sh",
+    "gate:quick": "bash scripts/gate.sh --quick",
     "check:doc-refs": "node scripts/check-doc-refs.mjs && node scripts/check-feature-docs.mjs && node scripts/check-feature-anchors.mjs && node scripts/check-figure-versions.mjs",
     "release:kind": "node scripts/release-kind.mjs",
     "changelog:shots": "node scripts/changelog-shots.mjs",
@@ -39,7 +41,7 @@
     "readme:hero": "node scripts/readme-hero.mjs",
     "features:check": "node scripts/split-features.mjs --check",
     "features:snapshot": "node scripts/snapshot-features.mjs",
-    "test:scripts": "node --test scripts/snapshot-features.test.mjs scripts/check-feature-anchors.test.mjs scripts/check-figure-versions.test.mjs scripts/ci-changes.test.mjs scripts/ci-gate.test.mjs scripts/check-test-shards.test.mjs scripts/rules/forbiddenPatterns.test.mjs scripts/check-rules.test.mjs scripts/check-baselines.test.mjs",
+    "test:scripts": "node --test scripts/snapshot-features.test.mjs scripts/check-feature-anchors.test.mjs scripts/check-figure-versions.test.mjs scripts/ci-changes.test.mjs scripts/ci-gate.test.mjs scripts/check-test-shards.test.mjs scripts/rules/forbiddenPatterns.test.mjs scripts/check-rules.test.mjs scripts/check-baselines.test.mjs scripts/gate.test.mjs",
     "codemod:type-roles": "node scripts/codemods/type-roles.mjs",
     "prepare": "lefthook install"
   },
