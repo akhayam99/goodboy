@@ -3291,25 +3291,12 @@
   },
   "apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
+      "count": 3
     }
   },
   "apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/explore/components/ExplorePane/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 14
-    }
-  },
-  "apps/desktop/src/features/explore/components/ExplorePane/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    },
-    "react-hooks/exhaustive-deps": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/explore/explore.ts": {

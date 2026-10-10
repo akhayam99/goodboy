@@ -277,7 +277,9 @@ fn explore_list_blocking(
             if name.starts_with('.') {
                 return None;
             }
-            let metadata = entry.metadata().ok()?;
+            let metadata = fs::metadata(entry.path())
+                .or_else(|_| entry.metadata())
+                .ok()?;
             let rel_path = Path::new(&rel_path)
                 .join(&name)
                 .to_string_lossy()
@@ -334,6 +336,35 @@ pub async fn explore_open(
     .map_err(|error| ExploreError::Io(std::io::Error::other(error.to_string())))?
 }
 
+fn open_folder(path: &Path, reveal: bool, editor: Option<String>) -> Result<(), ExploreError> {
+    if reveal {
+        return spawn_and_reap(path, true);
+    }
+    let Some(binary) = editor else {
+        return Err(ExploreError::NotFile);
+    };
+    let mut command = crate::path_env::command(&binary);
+    command.arg(path);
+    match command.spawn() {
+        Ok(child) => {
+            crate::proc::detach::detach(child);
+            Ok(())
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            Err(crate::editor::EditorError::NotFound(binary).into())
+        }
+        Err(source) => Err(crate::editor::EditorError::Spawn { binary, source }.into()),
+    }
+}
+
+fn spawn_and_reap(path: &Path, reveal: bool) -> Result<(), ExploreError> {
+    let mut child = spawn_open_child(path, reveal)?;
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(())
+}
+
 fn explore_open_blocking(
     session_dir: String,
     rel_path: String,
@@ -341,6 +372,9 @@ fn explore_open_blocking(
     editor: Option<String>,
 ) -> Result<(), ExploreError> {
     let path = resolve_path(&session_dir, &rel_path)?;
+    if path.is_dir() {
+        return open_folder(&path, reveal, editor);
+    }
     if !path.is_file() {
         return Err(ExploreError::NotFile);
     }
@@ -352,11 +386,7 @@ fn explore_open_blocking(
         )?;
         return Ok(());
     }
-    let mut child = spawn_open_child(&path, reveal)?;
-    std::thread::spawn(move || {
-        let _ = child.wait();
-    });
-    Ok(())
+    spawn_and_reap(&path, reveal)
 }
 
 #[cfg(test)]
@@ -509,6 +539,152 @@ mod tests {
             .as_str()
             .unwrap()
             .contains("goodboy-test-no-such-editor"));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn lists_a_linked_folder_as_a_folder() {
+        let root = test_root("linked-folder");
+        fs::create_dir_all(root.join("packages/ledger-core")).unwrap();
+        std::os::unix::fs::symlink(root.join("packages"), root.join("shared")).unwrap();
+        fs::write(root.join("notes.txt"), "notes").unwrap();
+
+        let entries =
+            explore_list_blocking(root.to_string_lossy().into_owned(), String::new()).unwrap();
+
+        let shared = entries.iter().find(|entry| entry.name == "shared").unwrap();
+        assert!(shared.is_dir);
+        let listed =
+            explore_list_blocking(root.to_string_lossy().into_owned(), "shared".to_string())
+                .unwrap();
+        assert_eq!(listed[0].name, "ledger-core");
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn keeps_a_broken_link_listed_as_a_file() {
+        let root = test_root("broken-link");
+        fs::create_dir_all(&root).unwrap();
+        std::os::unix::fs::symlink(root.join("gone"), root.join("dangling")).unwrap();
+
+        let entries =
+            explore_list_blocking(root.to_string_lossy().into_owned(), String::new()).unwrap();
+
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].name, "dangling");
+        assert!(!entries[0].is_dir);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_linked_folder_outside_the_session_lists_but_does_not_open() {
+        let root = test_root("linked-outside-root");
+        let outside = test_root("linked-outside-target");
+        fs::create_dir_all(&root).unwrap();
+        fs::create_dir_all(&outside).unwrap();
+        fs::write(outside.join("secret.txt"), "secret").unwrap();
+        std::os::unix::fs::symlink(&outside, root.join("escape")).unwrap();
+
+        let entries =
+            explore_list_blocking(root.to_string_lossy().into_owned(), String::new()).unwrap();
+        let opened =
+            explore_list_blocking(root.to_string_lossy().into_owned(), "escape".to_string());
+
+        assert!(entries[0].is_dir);
+        assert!(matches!(opened, Err(ExploreError::OutsideSession)));
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_dir_all(outside).unwrap();
+    }
+
+    #[test]
+    fn opening_a_folder_with_an_unknown_editor_reports_editor_missing() {
+        let root = test_root("folder-editor-missing");
+        fs::create_dir_all(root.join("apps")).unwrap();
+
+        let result = explore_open_blocking(
+            root.to_string_lossy().into_owned(),
+            "apps".to_string(),
+            false,
+            Some("goodboy-test-no-such-editor".to_string()),
+        );
+
+        let error = result.expect_err("a missing editor must fail");
+        assert_eq!(
+            serde_json::to_value(&error).unwrap()["kind"],
+            "editor_missing"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn opening_a_folder_without_an_editor_is_refused() {
+        let root = test_root("folder-no-editor");
+        fs::create_dir_all(root.join("apps")).unwrap();
+
+        let result = explore_open_blocking(
+            root.to_string_lossy().into_owned(),
+            "apps".to_string(),
+            false,
+            None,
+        );
+
+        assert!(matches!(result, Err(ExploreError::NotFile)));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn opening_a_folder_in_an_editor_refuses_a_path_outside_the_session() {
+        let root = test_root("folder-outside");
+        fs::create_dir_all(&root).unwrap();
+
+        let result = explore_open_blocking(
+            root.to_string_lossy().into_owned(),
+            "../".to_string(),
+            false,
+            Some("goodboy-test-no-such-editor".to_string()),
+        );
+
+        assert!(matches!(result, Err(ExploreError::OutsideSession)));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn opening_a_folder_hands_the_folder_to_the_editor() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = test_root("folder-editor-run");
+        fs::create_dir_all(root.join("apps/ledger-core")).unwrap();
+        let record = root.join("record.txt");
+        let editor = root.join("fake-editor.sh");
+        fs::write(
+            &editor,
+            format!("#!/bin/sh\nprintf '%s' \"$1\" > '{}'\n", record.display()),
+        )
+        .unwrap();
+        fs::set_permissions(&editor, fs::Permissions::from_mode(0o755)).unwrap();
+
+        explore_open_blocking(
+            root.to_string_lossy().into_owned(),
+            "apps/ledger-core".to_string(),
+            false,
+            Some(editor.to_string_lossy().into_owned()),
+        )
+        .unwrap();
+
+        let expected = fs::canonicalize(root.join("apps/ledger-core")).unwrap();
+        let mut received = String::new();
+        for _ in 0..100 {
+            received = fs::read_to_string(&record).unwrap_or_default();
+            if !received.is_empty() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        assert_eq!(received, expected.to_string_lossy());
         fs::remove_dir_all(root).unwrap();
     }
 }

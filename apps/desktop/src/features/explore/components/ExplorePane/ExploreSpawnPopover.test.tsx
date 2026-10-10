@@ -52,11 +52,12 @@ describe('ExploreSpawnPopover', () => {
     render(
       <ExploreSpawnPopover
         sessionId={SESSION_ID}
-        entry={{ name: 'retry.ts', relPath: 'src/retry.ts', kind: 'file' } as never}
+        name="retry.ts"
+        relPath="src/retry.ts"
+        onClosed={vi.fn()}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about retry.ts' }));
     fireEvent.change(
       screen.getByRole('textbox', { name: 'What should the agent do with this file?' }),
       {

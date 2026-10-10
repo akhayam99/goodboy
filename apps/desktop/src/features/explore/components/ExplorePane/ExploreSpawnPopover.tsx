@@ -1,5 +1,5 @@
 import { clampEffortForModel } from '@goodboy/core';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnchoredPopover, Button, FormActions, IconButton, useDropdown } from '@goodboy/ui';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { SessionId } from '@goodboy/types';
@@ -11,7 +11,6 @@ import { resolveSpawnRouting } from '../../../session/spawn-routing';
 import { useKindRouting } from '../../../../shared/hooks/useKindRouting';
 import type { AgentSpawnConfigValue } from '../../../session/agentSpawnConfigValue';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
-import { type ExploreEntry } from '../../explore';
 import { buildExploreSpawnPrompt } from '../../buildExploreSpawnPrompt';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -19,7 +18,9 @@ import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly entry: ExploreEntry;
+  readonly name: string;
+  readonly relPath: string;
+  readonly onClosed: () => void;
 };
 
 const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
@@ -29,7 +30,7 @@ const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
   return 'Unknown error';
 };
 
-export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
+export const ExploreSpawnPopover = ({ sessionId, name, relPath, onClosed }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 420,
@@ -63,14 +64,29 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
   const trimmedAsk = ask.trim();
   const canSpawn = trimmedAsk !== '' && isSpawning === false;
 
+  const hasOpened = useRef(false);
+  const wasOpen = useRef(false);
+
+  useEffect(() => {
+    if (hasOpened.current) {
+      return;
+    }
+    hasOpened.current = true;
+    toggle();
+  }, [toggle]);
+
   useEffect(() => {
     if (open) {
+      wasOpen.current = true;
       return;
+    }
+    if (wasOpen.current) {
+      onClosed();
     }
     setAsk('');
     setSpawnError(null);
     setConfig(defaultConfig);
-  }, [defaultConfig, open]);
+  }, [defaultConfig, onClosed, open]);
 
   const spawnFromFile = async () => {
     if (!canSpawn) {
@@ -79,7 +95,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
     setIsSpawning(true);
     setSpawnError(null);
     try {
-      const kickoff = buildExploreSpawnPrompt({ ask: trimmedAsk, relPath: entry.relPath });
+      const kickoff = buildExploreSpawnPrompt({ ask: trimmedAsk, relPath });
       const initialPrompt = appendOperatorNotes({ prompt: kickoff, hint: config.hint });
       const agentId = await spawnAgent(sessionId, {
         initialPrompt,
@@ -91,7 +107,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
       close();
       followAgent({
         title: 'Agent started',
-        message: `An agent is working on ${entry.name}.`,
+        message: `An agent is working on ${name}.`,
         target: { place: agentPlace({ sessionId, agentId }) },
         startKey: agentId,
         onFollow: () => window.dispatchEvent(openAgentRevealEvent()),
@@ -106,13 +122,13 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={`Ask an agent about ${entry.name}`}
+      ariaLabel={`Ask an agent about ${name}`}
       className="flex flex-col gap-3 p-3"
       trigger={
         <IconButton
           icon={CONCEPT_ICONS.agents}
           size="xs"
-          label={`Ask an agent about ${entry.name}`}
+          label={`Ask an agent about ${name}`}
           tooltip="Ask an agent"
           isTooltipSuppressed={open}
           aria-haspopup="dialog"
@@ -123,7 +139,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
     >
       <div className="flex flex-col gap-1">
         <p className="text-row text-foreground">Ask an agent about this file</p>
-        <p className="truncate font-mono text-meta text-muted-foreground">{entry.relPath}</p>
+        <p className="truncate font-mono text-meta text-muted-foreground">{relPath}</p>
       </div>
       <div className="flex flex-col gap-2">
         <PromptField
