@@ -4,9 +4,10 @@ import type {
   ProviderDisplayInfo,
 } from '../../../features/providers/providers';
 import { buildProviderList } from '../../../features/providers/providers';
-import type { ProviderLifecycleMap, ProviderConnectMap } from './types';
+import type { ProviderLifecycleMap, ProviderConnectMap, ConnectionTestState } from './types';
 import { INITIAL_HEALTH_MAP, type ProviderHealthMap } from './providerHealth';
 import { INITIAL_LIFECYCLE_MAP, INITIAL_CONNECT_MAP } from './types';
+import type { ProviderId } from '@goodboy/types';
 import type { CliRequirement } from '@goodboy/core';
 import type { ProviderCooldowns } from '../../../features/providers/routing';
 
@@ -18,6 +19,7 @@ export type ProvidersState = {
   readonly authResults: ProviderAuthResults | null;
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly providerHealth: ProviderHealthMap;
+  readonly providerConnectionTests: Partial<Readonly<Record<ProviderId, ConnectionTestState>>>;
   readonly providerProbeSeq: number;
   readonly providerLifecycle: ProviderLifecycleMap;
   readonly providerConnect: ProviderConnectMap;
@@ -43,6 +45,7 @@ export const providersInitialState: ProvidersState = {
   }),
   providerHealth: INITIAL_HEALTH_MAP,
   providerProbeSeq: 0,
+  providerConnectionTests: {},
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
   providerConnect: INITIAL_CONNECT_MAP,
   cliRequirements: [],
