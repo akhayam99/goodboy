@@ -160,13 +160,13 @@ describe('drawer slice', () => {
     expect(selectOpenDrawer(h.get())?.kind).toBe('artifact-document');
   });
 
-  it('sizes a plan document drawer to half the window, full once expanded, per session', () => {
+  it('sizes a plan document drawer in the reader tier, full once expanded, per session', () => {
     h.slice.openDrawer({
       kind: 'artifact-document',
       sessionId: SESSION_ID,
       payload: { artifactId: 'plan-1' as ArtifactId, revision: null },
     });
-    expect(selectDrawerSizing(h.get())).toBe('half');
+    expect(selectDrawerSizing(h.get())).toBe('reader');
 
     h.slice.setDocumentDrawerExpanded(SESSION_ID, true);
     expect(selectDrawerSizing(h.get())).toBe('full');
@@ -181,15 +181,15 @@ describe('drawer slice', () => {
 
     h.slice.setDocumentDrawerExpanded(OTHER_SESSION_ID, true);
     h.slice.setDocumentDrawerExpanded(SESSION_ID, false);
-    expect(selectDrawerSizing(h.get())).toBe('half');
+    expect(selectDrawerSizing(h.get())).toBe('reader');
     expect(h.get().documentDrawerExpanded[OTHER_SESSION_ID]).toBe(true);
   });
 
-  it('keeps every other drawer at its own saved width', () => {
+  it('keeps every other drawer in the side tier', () => {
     h.slice.setDocumentDrawerExpanded(SESSION_ID, true);
     h.slice.openDrawer(GOAL_HISTORY);
 
-    expect(selectDrawerSizing(h.get())).toBe('default');
+    expect(selectDrawerSizing(h.get())).toBe('side');
   });
 
   it('closes on request', () => {

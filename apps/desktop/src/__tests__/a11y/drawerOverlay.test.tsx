@@ -97,13 +97,13 @@ describe('a11y, the Ask drawer over the page', () => {
 });
 
 describe('a11y, the plan document drawer beside the page', () => {
-  it('pushes at 560 with the page kept beside it, and has no violation', async () => {
+  it('pushes at the reader width of 720 with the page kept beside it, and has no violation', async () => {
     const container = await mount({ width: 1440, scene: 'drawer-wide-push' });
     const aside = screen.getByRole('complementary', { name: 'Side panel' });
 
-    expect(aside.getAttribute('data-drawer-sizing')).toBe('half');
+    expect(aside.getAttribute('data-drawer-sizing')).toBe('reader');
     expect(aside.getAttribute('data-drawer-mode')).toBe('push');
-    expect(aside.style.width).toBe('576px');
+    expect(aside.style.width).toBe('736px');
     await expectBaseline({ name: 'drawer wide push', container });
   });
 });

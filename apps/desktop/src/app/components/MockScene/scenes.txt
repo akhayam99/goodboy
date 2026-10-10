@@ -139,6 +139,10 @@ diff-notes
 drawer-ask-draft
 drawer-headers
 drawer-overlay-narrow
+drawer-split-context
+drawer-split-explore
+drawer-split-plan
+drawer-split-plan-1280
 drawer-wide-push
 explore
 features-composer-menu

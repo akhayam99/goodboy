@@ -1944,33 +1944,54 @@ The retired phrases are in `retiredNames.ts`.
 ## The right drawer
 
 Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
-split nested inside a pane. `AppShell` puts one beside the main area, and a
-studio body puts one beside its list. A side drawer (Ask, Context, a fix run
-or agent transcript, script output, a plan part) opens at 400px, resizes from
-384 to 560px from a handle on its left edge, and keeps one saved width
-(`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
-ends) for every side drawer. A wide drawer (`artifact-document`: plan, report,
-wireframe, file diff) is 560px with no handle, and **Expand** takes the whole
-column. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+split nested inside a pane. `AppShell` puts one beside the page container, and
+a studio body puts one beside its list.
 
-**One push rule.** `room = main - 16 - 48 - 560`: the main area (the
-`DrawerColumn`'s own width) minus the drawer's two 8px insets, the page's two
-24px gutters and the 560px the page keeps. While `room >= 384` the drawer
-pushes: a side drawer at `min(saved, room)`, a wide one at `min(560, room)`.
-Below that it lies over the page at `min(target, main - 16)`, where target is
-the saved width or 560. Expanded always lies over. The mode and width come
-from the committed width, never from a drag in progress, and while it pushes
-the handle stops at `min(560, room)`, so a drag never flips the mode. Once a
-drawer pushes at some width it pushes at every wider one. Pushing, it is a
-floating card: 8px from the top, right and bottom edges and from the column,
-radius 10 (`rounded-frame`), `bg-subtle`, a hairline border, no shadow. The
-column and measure pages are centred, and the column slides left to
+**Two containers, never a panel inside the content.** The page container is the
+sheet (its `bg-background`, its 1px `frame-edge` border, `data-container="page"`)
+and the drawer container is its sibling (`data-container="drawer"`), each with
+its own size, drawn from the same top to the same bottom. With no drawer the
+page container is today's sheet: rounded on the left where the chrome wraps it,
+flush with the window's right edge. While a drawer pushes, the page container
+rounds all four corners (`rounded-frame`), the drawer container stands 8px to
+its right (the resize handle sits in that gap) and 8px from the window's right
+edge, with the same edge and radius, and the pair keeps an 8px inset above the
+window's bottom edge. The drawer container is one step quieter than the page
+(`bg-drawer`, recessed between chrome and background in both themes): it reads
+as secondary, never louder, never tinted, and never a border to fake the
+difference. `AppShell` and the studio slot's own sheet host it through
+`DrawerColumn`'s `frame="sheet"`; a studio body that hosts one inside its sheet
+(Tasks, Chat) keeps `frame="none"`, which draws only the drawer container as a
+card inset 8px on its right, top and bottom.
+
+**Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
+transcript, script output, a plan part, an artifact) opens at 400px, resizes
+from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
+(the plan, report and wireframe document, an Explore file, a file diff) opens at
+720px, resizes from 480 to `min(1000, room)` while it pushes and to
+`min(1000, page - 16)` over the page, and keeps its own
+`goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
+drag ends; a double click on the handle resets to the tier default (400 or 720);
+the two saved widths never bleed. **Expand** (`full`) takes the whole column
+until the plan drawer drops it. `selectDrawerSizing` picks the tier from the
+drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+
+**One push rule.** `room = main - 16 - 48 - 560`: the pane (the `DrawerColumn`'s
+own width) minus the drawer's two 8px insets, the page's gutters and the 560px
+the page keeps. The drawer pushes only while the page container keeps 560 plus
+its 48px of gutters and `room` covers the drawer's saved width; it is never
+squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. Expanded
+always lies over. The mode reads the committed width, never a drag in progress,
+and while it pushes the handle stops at `min(tier max, room)`, so a drag never
+flips the mode. Once a drawer pushes at some width it pushes at every wider one.
+The column and measure pages are centred, and the column slides left to
 re-centre in the space left of the drawer (full tier work surfaces keep their
 left edge and give up their right).
 
-**Over the page, the card runs the full height of the sheet.** It has no
-inset: flush with the sheet's top, bottom and right edges, left corners
-rounded (`rounded-l-frame`), a left border only, `shadow-xl`. A scrim
+**Over the page, the drawer container runs the full height of the sheet.** It
+has no inset: flush with the sheet's top, bottom and right edges, left corners
+rounded (`rounded-l-frame`), a left border only, `shadow-xl`, the same
+`bg-drawer`; the page container goes back to its resting sheet shape under it. A scrim
 (`bg-scrim`, 120ms fade, none under reduced motion) covers the page below the
 card, and the page is `inert`, so nothing under it takes a click, a Tab or a
 screen reader. A click on the scrim asks the top layer of the escape stack
