@@ -19,7 +19,8 @@ vi.mock('../../features/chat/components/ChatView', () => ({
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { invoke } from '@tauri-apps/api/core';
 import type { AgentId, ArtifactId, IsoDateTime, ReportArtifact, SessionId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
@@ -268,5 +269,47 @@ describe('the Ask drawer header', () => {
     const header = within(screen.getByRole('region', { name: 'Ask' })).getByRole('banner');
     expect(header.textContent).not.toContain('Fix webhook retries');
     expect(within(header).getByRole('heading', { name: 'Ask' })).toBeDefined();
+  });
+});
+
+describe('the explore file drawer across sessions', () => {
+  const OTHER = 'session-northwind' as SessionId;
+
+  const exploreDrawer = (sessionId: SessionId): DrawerRequest => ({
+    kind: 'explore-file',
+    sessionId,
+    payload: {
+      sessionDir: '/work/ledger-core',
+      entry: {
+        name: 'README.md',
+        relPath: 'README.md',
+        isDir: false,
+        sizeBytes: 120,
+        modifiedAt: null,
+      },
+    },
+  });
+
+  it('drops the open failure when another session shows the same path', async () => {
+    seedSession();
+    vi.mocked(invoke).mockImplementation(async (command: string) => {
+      if (command === 'explore_open') {
+        throw new Error('no app');
+      }
+      return new Promise<never>(() => undefined);
+    });
+    useAppStore.setState({ drawer: exploreDrawer(SESSION) });
+    renderHost();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Open/ }));
+    await waitFor(() => {
+      expect(screen.getByText(/Couldn't open README.md/)).toBeDefined();
+    });
+
+    act(() => {
+      useAppStore.setState({ currentSessionId: OTHER, drawer: exploreDrawer(OTHER) });
+    });
+
+    expect(screen.queryByText(/Couldn't open README.md/)).toBeNull();
   });
 });

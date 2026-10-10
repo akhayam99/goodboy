@@ -21,10 +21,11 @@ fn spawn_in_external_terminal(command: &str) -> Result<(), String> {
         "tell application \"Terminal\"\n  do script \"{}\"\n  activate\nend tell",
         escaped
     );
-    Command::new("osascript")
+    let child = Command::new("osascript")
         .args(["-e", &script])
         .spawn()
         .map_err(|e| e.to_string())?;
+    crate::proc::detach::detach(child);
     Ok(())
 }
 
@@ -39,7 +40,8 @@ fn spawn_in_external_terminal(command: &str) -> Result<(), String> {
         let mut args: Vec<&str> = base_args.to_vec();
         let cmd_with_pause = format!("{}; read -p 'press enter to close'", command);
         args.push(&cmd_with_pause);
-        if Command::new(term).args(&args).spawn().is_ok() {
+        if let Ok(child) = Command::new(term).args(&args).spawn() {
+            crate::proc::detach::detach(child);
             return Ok(());
         }
     }
@@ -48,10 +50,11 @@ fn spawn_in_external_terminal(command: &str) -> Result<(), String> {
 
 #[cfg(target_os = "windows")]
 fn spawn_in_external_terminal(command: &str) -> Result<(), String> {
-    Command::new("cmd")
+    let child = Command::new("cmd")
         .args(["/c", "start", "cmd", "/k", command])
         .spawn()
         .map_err(|e| e.to_string())?;
+    crate::proc::detach::detach(child);
     Ok(())
 }
 

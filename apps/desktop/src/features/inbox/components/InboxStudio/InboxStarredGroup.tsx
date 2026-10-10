@@ -8,6 +8,7 @@ import { StarredSnapshotRow } from './StarredSnapshotRow';
 type Props = {
   readonly rows: ReadonlyArray<StarredRow>;
   readonly selectedKey: string | null;
+  readonly cursorKey?: string | null;
   readonly unstarredCount: number;
   readonly onSelect: (record: InboxRecord) => void;
   readonly onActivate?: (record: InboxRecord) => void;
@@ -19,6 +20,7 @@ type Props = {
 export const InboxStarredGroup = ({
   rows,
   selectedKey,
+  cursorKey,
   unstarredCount,
   onSelect,
   onActivate,
@@ -60,6 +62,7 @@ export const InboxStarredGroup = ({
               key={row.record.key}
               record={row.record}
               selected={selectedKey === row.record.key}
+              isCursor={cursorKey === row.record.key}
               onSelect={onSelect}
               onActivate={onActivate}
               isStarred
@@ -77,6 +80,7 @@ export const InboxStarredGroup = ({
             issue={row.issue}
             recordKey={placeholder.key}
             selected={selectedKey === placeholder.key}
+            isCursor={cursorKey === placeholder.key}
             onSelect={() => onSelect(placeholder)}
             onUnstar={() => onUnstar(row)}
           />

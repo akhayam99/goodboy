@@ -678,4 +678,16 @@ describe('reduceTranscript handoff', () => {
       'user_text',
     ]);
   });
+
+  it('keeps what a turn left running as one item after the turn text', () => {
+    const stopped = [{ pid: 4101, name: 'next-server', port: null }];
+
+    const items = reduceTranscript([
+      assistantText({ delta: 'Done.' }),
+      { kind: 'processes_stopped', runId: RUN, stopped, at: AT },
+    ]);
+
+    expect(items.map((item) => item.kind)).toEqual(['assistant_text', 'processes_stopped']);
+    expect(items[1]).toMatchObject({ kind: 'processes_stopped', runId: RUN, stopped });
+  });
 });

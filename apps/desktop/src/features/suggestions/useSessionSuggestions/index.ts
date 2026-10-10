@@ -1,12 +1,25 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '@goodboy/types';
+import type {
+  Agent,
+  PlanId,
+  Session,
+  SessionEvent,
+  SessionProjectMount,
+  Workflow,
+} from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { isStoppedByRestart } from '../../../store/slices/turn/isStoppedByRestart';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
-import { distanceAhead, distanceBehind, isWorkingTreeClean } from '../../../shared/lib/gitStatus';
+import {
+  changedCount,
+  distanceAhead,
+  distanceBehind,
+  isWorkingTreeClean,
+} from '../../../shared/lib/gitStatus';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
+import { planOwnerOf } from '../../plans/planOwnerOf';
 import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../workflows/useWorkflowAdvanceStates';
@@ -116,6 +129,10 @@ export const useSessionSuggestions = ({
       const library = templates.find((template) => template.origin === 'library');
       return library == null ? null : { id: library.id, name: library.name };
     }),
+  );
+  const templates = useAppStore(
+    (state) =>
+      state.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
   const agentKindOverride = useAppStore((state) => state.agentKindOverride);
   const blockedAgentIds = useAppStore(
@@ -234,6 +251,13 @@ export const useSessionSuggestions = ({
           id: plan.id,
           title: plan.title,
           status: plan.status,
+          isOwnedByRun:
+            planOwnerOf({
+              plan,
+              agents: effectiveAgents,
+              runs: session.workflowRuns,
+              templates,
+            }) !== null,
           creatorHasOpenQuestions:
             workflow == null
               ? openQuestions.some((question) => question.status === 'open')
@@ -270,6 +294,10 @@ export const useSessionSuggestions = ({
               baseBranch: mount.baseBranch ?? project?.baseBranch ?? 'main',
               mainDistance:
                 status == null ? null : distanceBehind({ distance: status.mainDistance }),
+              isClean:
+                status == null ? null : isWorkingTreeClean({ workingTree: status.workingTree }),
+              changedCount:
+                status == null ? null : changedCount({ workingTree: status.workingTree }),
               rebaseRequest: mountRequest ?? projectRequest ?? null,
             };
           })
@@ -351,6 +379,8 @@ export const useSessionSuggestions = ({
     openQuestions,
     recommendedWorkflow,
     session.goal,
+    session.workflowRuns,
+    templates,
     planConsumptions,
     plans,
     projects,

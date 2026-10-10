@@ -446,7 +446,9 @@ one ghost button with its word (it folds into the overflow below 560px) and
 on its last tab. A branch reads `[Abort rebase] [one primary] [...]`, and while
 the push confirm or any action confirm is open the primary turns secondary so
 the confirm holds the one filled button. A plan drawer reads
-`[Edit] [Approve] [...]`. Scripts reads `[search] [New script]`. A page with no
+`[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
+then closes the drawer on any page and raises one toast, and a plan whose run
+was approved reads Approved with no primary until the run starts the step. Scripts reads `[search] [New script]`. A page with no
 actions draws no `...`.
 
 **Legacy layout.** Settings > App > General > Legacy layout (setting
@@ -626,18 +628,24 @@ branch page stores no branch tab (`applyLocation`), so the tab always falls back
 to the landing rule. The rows carry no needs-you count because the resolve queue
 rows know their project and pull request number but not their mount.
 
-**The rail holds the open session and the pinned ones.** Under the doors, in the
-workspace scope only, the open session is a 28px node button (the same
-`SessionStateNode` as its row); a click opens the session, and hovering or
-focusing it opens a flyout card (`RailFlyout`, the overlay layer of the hover
+**The rail holds the pinned sessions and, when needed, the open one.** Under the
+doors, in the workspace scope only, the pinned sessions are 28px node buttons
+(the same `SessionStateNode` as their rows) in pin order, up to seven
+(`RAIL_PINNED_LIMIT`), whatever is open: opening another session never moves a
+node, only the marker. The open session, when it is one of those pins, keeps its
+slot and takes the current sign (`bg-selected`, a 1px inset hairline, the glyph
+at full foreground, `aria-current="page"`). When it is not pinned, or is pinned
+beyond the seventh, it is one extra node after the pins and before `+N`
+(`data-slot="rail-open-tail"`). A click opens the session; hovering or focusing
+the current node opens a flyout (`RailFlyout`, the overlay layer of the hover
 card) with the same pages list as the card (`SessionPages`, one source), the
 branches when there are several, and the pinned sessions. Esc closes it and
 returns focus to the button, and `→` or `↓` on the button moves into it. A studio
-over the session leaves its button `remembered`. The pinned sessions follow as
-28px node buttons in pin order (up to seven, the open one is not repeated), with
-the session title and the stage words in the tooltip, then `+N` which opens the
-same flyout with every pin. `New` shows the draft dot and reads `New session,
-draft in progress` while a written draft waits elsewhere.
+over the session leaves its button `remembered` (full foreground, no marker). The
+other nodes carry the session title and the stage words in their tooltip. `+N`
+counts the pins past the seventh and opens the same flyout with every pin. `New`
+shows the draft dot and reads `New session, draft in progress` while a written
+draft waits elsewhere.
 
 **Two keys switch sessions without the list.** `⌃Tab` opens a list of the
 pinned sessions (a **Pinned** section, up to eight, in pin order) and then the
@@ -984,8 +992,13 @@ covered.
   their old shape). Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
   board it closes the studio; in a session it navigates to the board as a
-  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on a
-  new chat; its row carries a running dot or a new-reply dot. The command
+  history entry. ⌘⇧H does the same. Chat is a door to the `chat` studio on the
+  chat you had open last in this workspace (`lastChatByWorkspace`, memory only,
+  `selectChatDoor`), else the most recent chat by activity, else a new chat; after
+  you press New chat it opens a new one until you pick a chat again. The column
+  door, the top bar button and the palette entry share that rule. Archiving or
+  deleting the open chat lands on the next most recent one, not a blank page. Its
+  row carries a running dot or a new-reply dot. The command
   center opens the palette and shows ⌘K; it never takes typing itself. In the palette,
   every search with text and no prefix starts with `Ask in Chat`, which opens
   a new chat with the query as its first message. Inside a session (the
@@ -1098,7 +1111,9 @@ chip keeps only the mark and the version below the `chrome-labels` width. The ve
 and shows in mock scenes too. The update pill is soft, enters once and holds
 still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
-checklist, What's new, keyboard shortcuts, Sponsor and Follow on X. The
+checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
+your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
+iPhone the pairing studio, so neither waits behind the palette. The
 addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
@@ -1375,7 +1390,7 @@ one is open at a time.
   members and Report this). Both lead with a fixed unread slot that holds
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
-  studio the time owns a fixed last column and Mark read and Dismiss swap in
+  studio the time owns a fixed last column and Mark read and Delete swap in
   over it on hover, so the row never changes width. A **Filters** button in the
   list header opens the facets (`NotificationFiltersButton`, with the count of
   active filters) by view, severity and source, with counts that come from SQL
@@ -1383,8 +1398,17 @@ one is open at a time.
   pages with a cursor. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
+  The studio header draws them through `HeaderActions`: `Filters`, then the ghost
+  `Mark all read` (only while something is unread), then the ghost danger
+  `Delete all`, which opens a `ConfirmPopover` anchored to it, aligned to its end
+  edge, titled with the scope's count ("Delete 7 notifications?") and naming the
+  workspace or "every workspace"; it never swaps the title row. A row's Delete acts
+  at once and pushes "Notification deleted" with Undo (`dismissNotificationGroup`
+  re-inserts the rows through `insertNotification`; ⌘Z works too).
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
-  J and K or the arrow keys move, Enter runs the row's action and E dismisses.
+  J and K or the arrow keys move, Enter runs the row's action and E deletes. The
+  cursor never marks a row read: a group is read when it opens (a click or
+  Enter) or from its own Mark read.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses all three: its facets filter by view,
@@ -1392,14 +1416,18 @@ one is open at a time.
   its row) behind the same Filters button in the list header, so Tasks is
   the list and the record beside the column, never a third column; its
   one-line rows are grouped by the same days in time order, and
-  J and K move the selection while the record follows beside the list. The
-  Tasks opens with its first row chosen, so those keys act at once; Enter opens
-  the launch popover on that row (⌘↵ in the panel launches) or the session once
-  one is linked, O opens the record in its tool, R focuses the reply box when
-  the record has one (a Sentry issue has none: the rail drops Reply and R does
-  nothing there, `recordCanReply`), S stars or unstars, / focuses the search, and Escape in
-  the search leaves the field. Escape closes a record you picked before the
-  studio, and closes the studio when the first row was only chosen for you.
+  J and K move a cursor, and the record follows beside the list only once one is
+  open. Tasks opens with a quiet cursor on its first row (`data-cursor`, the hover
+  fill, `aria-selected="false"`) and no drawer, so those keys act at once and
+  nothing opens by itself; a click, Enter or a record asked for on open
+  (`initialRecordKey`) opens the drawer (`aria-selected="true"`, `bg-selected`).
+  Enter opens the launch popover on the cursor row (⌘↵ in the panel launches) or
+  the session once one is linked, O opens the record in its tool, R opens the
+  record and focuses the reply box when the record has one (a Sentry issue has
+  none: the rail drops Reply and R does nothing there, `recordCanReply`), S stars
+  or unstars, / focuses the search, and Escape in the search leaves the field.
+  Escape closes the drawer first and keeps the cursor; a second Escape closes
+  the studio.
 - **A list that belongs to the page sits in the page.** Chat's list of chats,
   Changelog's releases and the guide's chapters are content beside their
   detail, not a second navigation column: `StudioRailLayout` with
@@ -1433,7 +1461,7 @@ one is open at a time.
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
   no count and no identity. A row that needs something shows a 6px dot at its
   end, named for assistive tech by the sentence that used to sit under it
-  (Update needed, Not signed in, Error, Claude is about to run out); a quiet
+  (Update needed, Signed out, Can't check, Not confirmed, Refused your runs, Error, Claude is about to run out); a quiet
   row shows nothing. The sentence lives on the page: a provider about to run
   out or out opens on a notice at the top of its page (`ProviderAttentionNotice`,
   the usage notice that used to close the Usage band). Every page is also a palette entry
@@ -1729,8 +1757,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `Keep both branches` and `Not now`. A card whose mounts have not loaded
   draws skeleton rows on the same tracks. `Add project` leaves the header once
   nothing is left to add and becomes an item of the `Project actions` menu.
-  `Mark all seen` is in the Activity menu and shows only while an agent is
-  unseen; a waiting question is answered from its Needs you row, never from a
+  `Mark all seen` is a ghost button in the Activity header and shows only
+  while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
@@ -2402,10 +2430,21 @@ that hides everything leaves `No files match` with `Clear` in both panes
 in both groupings and at the end of the diff. Viewed marks are stored per session, mount and view, so two repos in one session
 keep their own; marks saved before that are read until the mount saves its own.
 Click a file and the
-diff scrolls to it; scroll the diff and the tree highlights the file in view and
-opens its folders. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
+diff scrolls to it; scroll the diff and the tree highlights the file in view but
+never opens a folder: when that file sits in a closed folder, the outermost
+closed folder shows a small primary dot (`contains the file in view`). Folds are
+remembered per session and project in `localStorage`
+(`goodboy:diff-folds:v1:<session>:<mount>`, only your changes from the default,
+at most 500 entries, in `useFoldState`), so closing and reopening the page, a
+new file or another view never undoes them. A click in the tree, next unviewed,
+`Viewed` and a link from another page open the folders above their file; `J`/`K`
+walk every file in diff order, also those in closed folders, and leave the folds
+as they are. A click, `J`/`K`, next unviewed and `Viewed` call the diff's
 scroller directly (`registerScroller` on `DiffView`); `focusPath` is only for a
-link from another page such as `Open in Files`. The diff resets its mounted
+link from another page such as `Open in Files`. A refresh keeps the tree and
+the diff on screen (`isRefreshing` on `useSessionDiff`); skeletons show only
+on the first load and when the scope changes. Hovering a row shows its full path
+in a tooltip, never a native `title`. The diff resets its mounted
 batch, its observer and its place only when the list of paths changes, never on
 a new array with the same paths, so marking a file viewed or a note changing
 neither shortens the page nor drops an open composer. Folder row ids start with

@@ -98,6 +98,7 @@ type FakeState = {
   sessionActiveProject: Record<string, string>;
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   mountGithub: Record<string, { pr: PullRequestState | null }>;
+  scribeWork: Record<string, { status: string }>;
   refreshSessionPr: ReturnType<typeof vi.fn>;
   editPr: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
@@ -141,6 +142,7 @@ const buildState = (overrides: Partial<FakeState> = {}): FakeState => ({
   sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
   sessionExternalTasks: {},
   mountGithub: {},
+  scribeWork: {},
   refreshSessionPr: vi.fn(async () => undefined),
   editPr: vi.fn(async () => undefined),
   emitNotification: vi.fn(async () => undefined),
@@ -531,5 +533,89 @@ describe('createPrForSession, series members', () => {
 
     expect(createArgs()).toContain('--fill');
     expect(state.editPr).not.toHaveBeenCalled();
+  });
+});
+
+describe('createPrForSession, while Scribe writes', () => {
+  it.each(['writing', 'creating'])(
+    'refuses on the same mount while the job is %s, with no push and no gh call',
+    async (status) => {
+      const state = buildState({ scribeWork: { [`pr:${MOUNT_ID}`]: { status } } });
+
+      await expect(
+        buildCreate(state)({
+          sessionId: SESSION_ID,
+          mountId: MOUNT_ID,
+          title: 'Fix cards',
+          body: '',
+        }),
+      ).rejects.toThrow('Scribe is still writing the text.');
+
+      expect(state.pushSessionBranch).not.toHaveBeenCalled();
+      expect(h.run).not.toHaveBeenCalled();
+      expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
+    },
+  );
+
+  it('refuses when Scribe starts writing while the branch is being pushed', async () => {
+    const state = buildState();
+    state.pushSessionBranch = vi.fn(async () => {
+      state.scribeWork = { [`pr:${MOUNT_ID}`]: { status: 'writing' } };
+      return { ok: true };
+    });
+
+    await expect(
+      buildCreate(state)({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        title: 'Fix cards',
+        body: '',
+      }),
+    ).rejects.toThrow('Scribe is still writing the text.');
+
+    expect(state.pushSessionBranch).toHaveBeenCalledTimes(1);
+    expect(h.run).not.toHaveBeenCalled();
+    expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
+  });
+
+  it('lets Scribe open its own pull request while its job is creating', async () => {
+    const state = buildState({ scribeWork: { [`pr:${MOUNT_ID}`]: { status: 'creating' } } });
+
+    await buildCreate(state)({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      title: 'Fix cards',
+      body: 'Written by Scribe.',
+      isScribeBody: true,
+    });
+
+    expect(state.pushSessionBranch).toHaveBeenCalledTimes(1);
+    expect(h.run).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens when the job of another mount is the one writing', async () => {
+    const state = buildState({ scribeWork: { [`pr:${OTHER_MOUNT_ID}`]: { status: 'writing' } } });
+
+    await buildCreate(state)({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      title: 'Fix cards',
+      body: '',
+    });
+
+    expect(h.run).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['ready', 'failed', 'created'])('opens once the job is %s', async (status) => {
+    const state = buildState({ scribeWork: { [`pr:${MOUNT_ID}`]: { status } } });
+
+    await buildCreate(state)({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      title: 'Fix cards',
+      body: '',
+    });
+
+    expect(h.run).toHaveBeenCalledTimes(1);
   });
 });

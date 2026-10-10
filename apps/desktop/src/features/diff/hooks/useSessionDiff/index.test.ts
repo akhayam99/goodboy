@@ -189,3 +189,62 @@ describe('useSessionDiff scope', () => {
     );
   });
 });
+
+describe('useSessionDiff refresh', () => {
+  const holdNextDiff = () => {
+    const held: { release: () => void } = { release: () => undefined };
+    stubStoryInvoke({
+      worktree_diff: ({ baseBranch }: BaseArgs) =>
+        new Promise<string>((resolve) => {
+          held.release = () => resolve(patchFor(baseBranch));
+        }),
+      worktree_diff_working: () =>
+        new Promise<string>((resolve) => {
+          held.release = () => resolve('');
+        }),
+      worktree_status: ({ baseBranch }: BaseArgs) => statusFor(baseBranch),
+      worktree_commits: [],
+    });
+    return held;
+  };
+
+  it('keeps the files on screen and flags a refresh instead of loading again', async () => {
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+    await waitFor(() => expect(result.current.files).toHaveLength(1));
+    const held = holdNextDiff();
+
+    act(() => result.current.refresh());
+
+    await waitFor(() => expect(result.current.isRefreshing).toBe(true));
+    expect(result.current.loading).toBe(false);
+    expect(result.current.files).toHaveLength(1);
+
+    act(() => held.release());
+
+    await waitFor(() => expect(result.current.isRefreshing).toBe(false));
+    expect(result.current.loading).toBe(false);
+    expect(result.current.files).toHaveLength(1);
+  });
+
+  it('loads from scratch when the scope changes', async () => {
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+    await waitFor(() => expect(result.current.files).toHaveLength(1));
+    const held = holdNextDiff();
+
+    act(() => result.current.setView({ kind: 'working', scope: 'all' }));
+
+    await waitFor(() => expect(result.current.loading).toBe(true));
+    expect(result.current.isRefreshing).toBe(false);
+
+    act(() => held.release());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+  });
+
+  it('shows the loading state on the first load', async () => {
+    const { result } = openWith({ mountBase: null, projectBase: 'main' });
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.isRefreshing).toBe(false);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+  });
+});

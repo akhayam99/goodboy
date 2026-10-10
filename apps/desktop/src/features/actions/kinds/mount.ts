@@ -14,6 +14,7 @@ import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { dirtyTreeSentence } from '../../../shared/lib/dirtyTreeCopy';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { NAMES } from '../../../shared/names';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
@@ -26,7 +27,8 @@ import {
   selectActiveMountId,
   selectTurnMountCount,
 } from '../../../store/slices/project-mounts/selectors';
-import { isPrDraftAgentRunning } from '../../integrations/github/prDraftAgent';
+import { isScribeWriting } from '../../../store/slices/scribe/isScribeWriting';
+import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
 import { mountReviewGithub } from '../../review/mountReviewGithub';
 import { eligibleReviewThreadCount } from '../../suggestions/eligibleThreads';
 import { BLOCKER_SENTENCE } from '../../session/components/SessionOverviewPane/ProjectMountRows/detachPlan';
@@ -213,7 +215,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     group: 'act',
     when: ({ facts }) => isOpen({ facts }) && facts.behind > 0 && !facts.isRebasing,
     blockedReason: ({ facts }) =>
-      facts.dirty > 0 ? `Commit or discard the ${changes({ count: facts.dirty })} first.` : null,
+      facts.dirty > 0 ? dirtyTreeSentence({ count: facts.dirty }) : null,
     slot: ({ facts }) => (facts.pr === 'merged' ? 'menu' : 'inline'),
     pendingLabel: ({ facts }) => `Rebasing on ${facts.baseBranch}…`,
     run: ({ facts, env }) =>
@@ -262,9 +264,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
       !facts.isRebasing &&
       facts.createProvider !== null,
     blockedReason: ({ facts }) =>
-      facts.createProvider === 'github' && facts.isDraftAgentRunning
-        ? 'An agent is already opening a pull request.'
-        : null,
+      facts.createProvider === 'github' && facts.isScribeWriting ? SCRIBE_WRITING_REASON : null,
     slot: ({ facts }) => (facts.behind === 0 ? 'inline' : 'menu'),
     run: async ({ facts, env }) => {
       if (facts.createProvider === null) {
@@ -306,9 +306,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
       if (facts.isRebasing) {
         return 'Finish or abort the rebase first.';
       }
-      return facts.dirty > 0
-        ? `Commit or discard the ${changes({ count: facts.dirty })} first.`
-        : null;
+      return facts.dirty > 0 ? dirtyTreeSentence({ count: facts.dirty }) : null;
     },
     run: ({ facts, env }) => env.getState().openRewriteHistory(facts.sessionId, facts.worktreePath),
   },
@@ -453,7 +451,6 @@ export const mountFactsFor = ({
   const github = mountReviewGithub({ state, sessionId, mountId });
   const isAttached = view.isAttached && view.worktreePath !== null;
   const path = view.worktreePath ?? view.lastWorktreePath ?? '';
-  const agents = state.sessionPhaseRuns[sessionId] ?? null;
   const label = view.branch === '' ? (project?.name ?? view.mountName) : view.branch;
   return mountFacts({
     sessionId,
@@ -481,7 +478,7 @@ export const mountFactsFor = ({
     canStartTurnsHere:
       selectTurnMountCount({ state, sessionId }) > 1 &&
       selectActiveMountId({ state, sessionId }) !== mountId,
-    isDraftAgentRunning: agents === null ? false : isPrDraftAgentRunning({ agents }),
+    isScribeWriting: isScribeWriting({ scribeWork: state.scribeWork, mountId }),
     editors: state.detectedEditors.filter((editor) => REFERENCE_EDITORS.has(editor.binary)),
     blockers: mountCleanupBlockers({
       state,

@@ -441,6 +441,7 @@ export {
 } from './providers/shared/createJsonLineAssembler';
 export { extractAuxOutput, type AuxOutput, type AuxUsage } from './providers/aux-output';
 export { runAuxOneShot, type AuxSpawnResult } from './providers/aux-spawn';
+export { AuxTimedOutError } from './providers/auxTimedOut';
 
 export { getModelDescriptor, getModelProvider } from './providers/model-display';
 export { computeProviderCostUsd } from './providers/provider-cost';

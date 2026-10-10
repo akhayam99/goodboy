@@ -49,7 +49,7 @@ Below is the full index. Other docs and agents use it to find their way.
 
 ## Feature-area ownership
 
-`pnpm check:doc-refs` checks the current index and area files. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract. The split parity proof ran once at commit `5b2a41bd5`.
+`pnpm check:doc-refs` checks the current index and area files. Run `node scripts/split-features.mjs --check` to verify the ongoing feature-doc contract.
 
 | Area           | Source glob                                   |
 | -------------- | --------------------------------------------- |
@@ -113,6 +113,8 @@ Below is the full index. Other docs and agents use it to find their way.
   variable or callback, or feel like adding a code comment.
 - [testing.md](testing.md): when you write or review tests, and how to
   write their checks.
+- [ratchets.md](ratchets.md): when a ratchet or `check:baselines` fails, or
+  you add a rule that counts something.
 - [dependencies.md](dependencies.md): when you add a new package, or check
   whether one is worth it.
 - [traps.md](traps.md): when something in the code or the tools looks like
@@ -189,7 +191,8 @@ An agent with no delivery role reads this section. It stops after the line
 that matches its task. Whoever starts the agent points it here.
 
 - Writing a component: `AGENTS.md`, `docs/typescript/components.md`,
-  `docs/file-system.md`.
+  `docs/file-system.md`, `docs/styling.md`, `packages/ui/DESIGN-SYSTEM.md`,
+  `docs/testing.md`.
 - Changing the schema: `AGENTS.md`, `docs/architecture.md`,
   `docs/testing.md`.
 - Touching a release: `docs/release-command.md`, `docs/release.md`,

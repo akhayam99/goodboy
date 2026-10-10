@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AuxTimedOutError } from '../providers/auxTimedOut';
 import { PlannerClient, type PlannerClientDeps } from './client';
 
 const RESPONSE = JSON.stringify({
@@ -63,5 +64,15 @@ describe('PlannerClient', () => {
 
     expect(result.model).toBe('gpt-5.4-mini');
     expect(result.usage.estimatedCostUsd).toBeCloseTo(5.25);
+  });
+
+  it('reports a timed out plan as its own error', async () => {
+    const invokeFn: PlannerClientDeps['invokeFn'] = async <T>(): Promise<T> =>
+      ({ stdout: '', stderr: '', exitCode: null, isTimedOut: true }) as T;
+    const client = new PlannerClient({ providerId: 'anthropic', model: 'haiku-4.5', invokeFn });
+
+    await expect(client.plan({ process: 'Fix authentication.' })).rejects.toBeInstanceOf(
+      AuxTimedOutError,
+    );
   });
 });

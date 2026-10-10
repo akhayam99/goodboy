@@ -30,5 +30,6 @@ export const SceneFooter = ({
     onOpenSettings={noop}
     onOpenShortcuts={noop}
     onOpenChangelog={noop}
+    onOpenGuide={noop}
   />
 );

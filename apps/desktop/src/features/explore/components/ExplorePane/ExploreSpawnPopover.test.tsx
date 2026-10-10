@@ -56,7 +56,7 @@ describe('ExploreSpawnPopover', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent to work on retry.ts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about retry.ts' }));
     fireEvent.change(
       screen.getByRole('textbox', { name: 'What should the agent do with this file?' }),
       {

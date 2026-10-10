@@ -274,9 +274,15 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
   }),
 ];
 
+const CURSOR_KEY = orderInboxRecords({ records: RECORDS })[0]?.key ?? null;
+
 const CONNECTED: ReadonlyArray<InboxProvider> = ['github', 'linear', 'jira', 'sentry', 'slack'];
 
-export const InboxScene = () => {
+type Props = {
+  readonly isDrawerClosed?: boolean;
+};
+
+export const InboxScene = ({ isDrawerClosed = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const projects = useAppStore((state) => state.projects);
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -350,7 +356,8 @@ export const InboxScene = () => {
                     isLoading={false}
                     failures={[]}
                     hasFiltersActive={false}
-                    selectedKey={SELECTED_RECORD.key}
+                    selectedKey={isDrawerClosed ? null : SELECTED_RECORD.key}
+                    cursorKey={isDrawerClosed ? CURSOR_KEY : SELECTED_RECORD.key}
                     onSelect={noop}
                     onRetry={noop}
                     onOpenSettings={noop}
@@ -359,16 +366,18 @@ export const InboxScene = () => {
                 </PaneShell>
               }
               drawer={
-                <InboxDetail
-                  record={SELECTED_RECORD}
-                  workspaceId={WORKSPACE_ID}
-                  rootPath={ROOT_PATH}
-                  errors={NO_ERRORS}
-                  onRefresh={noop}
-                  onClose={noop}
-                  onDeselect={noop}
-                  launchFocusRequest={0}
-                />
+                isDrawerClosed ? null : (
+                  <InboxDetail
+                    record={SELECTED_RECORD}
+                    workspaceId={WORKSPACE_ID}
+                    rootPath={ROOT_PATH}
+                    errors={NO_ERRORS}
+                    onRefresh={noop}
+                    onClose={noop}
+                    onDeselect={noop}
+                    launchFocusRequest={0}
+                  />
+                )
               }
             />
           )}

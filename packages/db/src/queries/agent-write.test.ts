@@ -24,6 +24,7 @@ import {
   setAgentDone,
   setAgentProviderSession,
   setAgentVerbosity,
+  stopGhostAgents,
   updateWorkflowNodeRouting,
   type AgentInsertInput,
 } from './agent-write';
@@ -553,6 +554,51 @@ describe('agent writes', () => {
       ).rejects.toThrow('Invalid routing lock');
 
       expect((await getAgentById(db, id))?.providerOverride).toBeUndefined();
+    });
+  });
+
+  describe('stopGhostAgents', () => {
+    const seedRunning = async (id: string, runId: string | null, status = 'running') => {
+      await seedAgent(id, status);
+      await db.execute('UPDATE agents SET provider_run_id = ? WHERE id = ?', [runId, id]);
+    };
+
+    const statusOf = async (id: string): Promise<string | undefined> =>
+      (await db.select<{ status: string }>('SELECT status FROM agents WHERE id = ?', [id]))[0]
+        ?.status;
+
+    it('stops the running rows whose run is not kept and leaves the others', async () => {
+      await seedRunning('ghost', 'run-ghost');
+      await seedRunning('live', 'run-live');
+      await seedRunning('unassigned', null);
+      await seedRunning('done', 'run-done', 'completed');
+
+      const stopped = await stopGhostAgents({ db, keepRunIds: ['run-live'] });
+
+      expect(stopped).toBe(1);
+      expect(await statusOf('ghost')).toBe('stopped');
+      expect(await statusOf('live')).toBe('running');
+      expect(await statusOf('unassigned')).toBe('running');
+      expect(await statusOf('done')).toBe('completed');
+    });
+
+    it('records who stopped the row and when', async () => {
+      await seedRunning('ghost', 'run-ghost');
+
+      await stopGhostAgents({ db, keepRunIds: [] });
+
+      const [row] = await db.select<{ stopped_by: string; stopped_at: number }>(
+        "SELECT stopped_by, stopped_at FROM agents WHERE id = 'ghost'",
+      );
+      expect(row?.stopped_by).toBe('app');
+      expect(row?.stopped_at).toBeGreaterThan(0);
+    });
+
+    it('is a no-op the second time', async () => {
+      await seedRunning('ghost', 'run-ghost');
+      await stopGhostAgents({ db, keepRunIds: [] });
+
+      expect(await stopGhostAgents({ db, keepRunIds: [] })).toBe(0);
     });
   });
 });

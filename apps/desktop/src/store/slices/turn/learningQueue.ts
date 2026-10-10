@@ -26,6 +26,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { scheduleIdle } from './turnHelpers';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import type { GetFn, SetFn } from './types';
 
 type LearningEntry = Readonly<{
@@ -96,9 +97,7 @@ const runLearnings = async ({ set, get, sessionId, agentId, entries }: RunParams
       workspaceDefaultProviderId: settings?.defaultProviderOverride,
       sessionDefaultProviderId: session.providerPreference.defaultProvider,
     }),
-    connectedProviders: get()
-      .providers.filter((provider) => provider.connection === 'connected')
-      .map((provider) => provider.id),
+    connectedProviders: autoRoutableProviders({ providers: get().providers }),
     enabledProviders: session.providerPreference.enabledProviders ?? null,
     cooldowns: get().providerCooldowns,
     hidden: selectHiddenModels({ state: get() }),

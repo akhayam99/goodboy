@@ -154,9 +154,12 @@ export type Ctx = {
   readonly sessionId: SessionId;
 };
 
+export type Door = 'visible' | 'palette';
+
 export type Row = {
   readonly name: string;
   readonly covers: ReadonlyArray<string>;
+  readonly door?: Door;
   readonly seed?: Seed;
   readonly bars?: Bars;
   readonly open: (ctx: Ctx) => Promise<void>;

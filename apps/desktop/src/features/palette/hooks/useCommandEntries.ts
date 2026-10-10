@@ -13,6 +13,7 @@ import {
   useSessions,
   useWorkspaces,
 } from '../../../store';
+import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { NAMES, formerNamesOf } from '../../../shared/names';
@@ -248,7 +249,10 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           kind: 'goto',
           group: null,
           icon: CONCEPT_ICONS.chat,
-          run: () => openStudio({ studio: { kind: 'chat', chatId: null } }),
+          run: () =>
+            openStudio({
+              studio: { kind: 'chat', chatId: selectChatDoor({ state: useAppStore.getState() }) },
+            }),
         },
         {
           key: 'goto:workflows',

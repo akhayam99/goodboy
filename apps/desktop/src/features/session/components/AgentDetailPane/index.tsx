@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { PageColumn, SegmentedTabs, PaneShell } from '@goodboy/ui';
+import { SegmentedTabs, PaneShell } from '@goodboy/ui';
 import { HeaderConfirm } from '../../../../shared/components/HeaderConfirm';
 import type { ArmedAction } from '../../../../shared/components/HeaderConfirm/armedAction';
 import type { Agent, Session } from '@goodboy/types';
@@ -110,6 +110,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   return (
     <PaneShell
       scroll={isTranscript ? 'self' : 'body'}
+      lead={isTranscript ? lead : undefined}
       header={
         <AgentHeader
           rootRef={headerRef}
@@ -168,10 +169,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       }
     >
       {isTranscript ? (
-        <>
-          <PageColumn className="flex shrink-0 flex-col gap-3 pb-3 empty:hidden">{lead}</PageColumn>
-          <ChatView session={session} isActive={isChatActive} topInset="tight" />
-        </>
+        <ChatView session={session} isActive={isChatActive} topInset="tight" />
       ) : (
         <>
           {lead}

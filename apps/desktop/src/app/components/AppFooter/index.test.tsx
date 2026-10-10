@@ -151,6 +151,7 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   onOpenImpact: vi.fn(),
   onOpenSettings: vi.fn(),
   onOpenChangelog: vi.fn(),
+  onOpenGuide: vi.fn(),
   onOpenShortcuts: vi.fn(),
   ...overrides,
 });

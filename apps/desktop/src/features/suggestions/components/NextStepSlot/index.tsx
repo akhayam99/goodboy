@@ -20,6 +20,14 @@ const choiceKey = ({
   readonly choiceId: string;
 }) => `${suggestion.id}:choice:${choiceId}`;
 
+const extraKey = ({
+  suggestion,
+  extraId,
+}: {
+  readonly suggestion: SessionSuggestion;
+  readonly extraId: string;
+}) => `${suggestion.id}:extra:${extraId}`;
+
 const pendingChoiceIds = ({
   suggestion,
   pendingKeys,
@@ -28,6 +36,19 @@ const pendingChoiceIds = ({
   readonly pendingKeys: ReadonlySet<string>;
 }): ReadonlySet<string> => {
   const prefix = choiceKey({ suggestion, choiceId: '' });
+  return new Set(
+    [...pendingKeys].flatMap((key) => (key.startsWith(prefix) ? [key.slice(prefix.length)] : [])),
+  );
+};
+
+const pendingExtraIds = ({
+  suggestion,
+  pendingKeys,
+}: {
+  readonly suggestion: SessionSuggestion;
+  readonly pendingKeys: ReadonlySet<string>;
+}): ReadonlySet<string> => {
+  const prefix = extraKey({ suggestion, extraId: '' });
   return new Set(
     [...pendingKeys].flatMap((key) => (key.startsWith(prefix) ? [key.slice(prefix.length)] : [])),
   );
@@ -104,7 +125,18 @@ export const NextStepSlot = ({
   };
 
   const trackedActions = (suggestion: SessionSuggestion): SuggestionActions => {
-    const actions = actionsFor({ suggestion });
+    const source = actionsFor({ suggestion });
+    const extras = source.extras?.map((extra) => ({
+      ...extra,
+      run: async () => {
+        await pending.run({
+          key: extraKey({ suggestion, extraId: extra.id }),
+          failureTitle: extra.failureTitle,
+          task: extra.run,
+        });
+      },
+    }));
+    const actions = extras === undefined ? source : { ...source, extras };
     const primary = actions.primary;
     if (primary === null) {
       return actions;
@@ -159,6 +191,7 @@ export const NextStepSlot = ({
         compact={isCompact}
         isPending={pending.pendingKeys.has(suggestion.id)}
         pendingChoiceIds={pendingChoiceIds({ suggestion, pendingKeys: pending.pendingKeys })}
+        pendingExtraIds={pendingExtraIds({ suggestion, pendingKeys: pending.pendingKeys })}
         onNotNow={() => onNotNow(suggestion, actions)}
       />
     );

@@ -15,6 +15,11 @@ const { store } = vi.hoisted(() => ({
     sessions: [] as ReadonlyArray<Session>,
     navigation: {} as Record<string, unknown>,
     chatStreams: {} as Record<string, unknown>,
+    chatsByWorkspace: {} as Record<
+      string,
+      ReadonlyArray<{ readonly id: string; readonly lastActivityAt: string }>
+    >,
+    lastChatByWorkspace: {} as Record<string, string | null>,
     unreadChatIds: [] as ReadonlyArray<string>,
     back: vi.fn(),
     forward: vi.fn(),
@@ -68,6 +73,8 @@ beforeEach(() => {
   store.appStudio = null;
   store.navigation = {};
   store.chatStreams = {};
+  store.chatsByWorkspace = {};
+  store.lastChatByWorkspace = {};
   store.unreadChatIds = [];
   store.sessions = [{ id: SESSION_ID, goal: 'Retry failed webhook deliveries' } as Session];
 });
@@ -85,6 +92,23 @@ describe('NavCluster', () => {
     expect(buttons.indexOf('Chat')).toBe(buttons.indexOf('Board') + 1);
     fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
     expect(store.switchStudio).toHaveBeenCalledWith({ studio: { kind: 'chat', chatId: null } });
+  });
+
+  it('opens the chat that was open last from the Chat button', () => {
+    store.chatsByWorkspace = {
+      'ws-1': [
+        { id: 'chat-new', lastActivityAt: '2026-09-30T10:00:00.000Z' },
+        { id: 'chat-old', lastActivityAt: '2026-09-29T10:00:00.000Z' },
+      ],
+    };
+    store.lastChatByWorkspace = { 'ws-1': 'chat-old' };
+    render(<NavCluster hasDoors />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
+
+    expect(store.switchStudio).toHaveBeenCalledWith({
+      studio: { kind: 'chat', chatId: 'chat-old' },
+    });
   });
 
   it('shows a pulsing dot and counts running chats on the Chat button', () => {

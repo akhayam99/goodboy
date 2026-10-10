@@ -81,6 +81,13 @@ const toTruncatedEvent = ({ event }: SerializeTurnEventParams): TurnEvent => {
       return { ...event, message: markTruncated(event.message) };
     case 'done':
       return event;
+    case 'processes_stopped':
+      return {
+        ...event,
+        stopped: event.stopped
+          .slice(0, 16)
+          .map((process) => ({ ...process, name: markTruncated(process.name) })),
+      };
     case 'provider_session_init':
       return { ...event, providerSessionId: markTruncated(event.providerSessionId) };
     case 'skill_invocation':

@@ -45,6 +45,7 @@ type RenderParams = {
   readonly isLoading?: boolean;
   readonly failures?: ReadonlyArray<InboxLoadFailure>;
   readonly selectedKey?: string | null;
+  readonly cursorKey?: string | null;
   readonly onRetry?: () => void;
   readonly onOpenSettings?: () => void;
   readonly onClearFilters?: () => void;
@@ -57,6 +58,7 @@ const renderList = ({
   isLoading = false,
   failures = [],
   selectedKey = null,
+  cursorKey = null,
   onRetry = vi.fn(),
   onOpenSettings = vi.fn(),
   onClearFilters = vi.fn(),
@@ -70,6 +72,7 @@ const renderList = ({
       failures={failures}
       hasFiltersActive
       selectedKey={selectedKey}
+      cursorKey={cursorKey}
       onSelect={vi.fn()}
       onRetry={onRetry}
       onOpenSettings={onOpenSettings}
@@ -110,13 +113,26 @@ describe('InboxList', () => {
     expect(screen.getByText('Done')).toBeDefined();
   });
 
-  it('points aria-activedescendant at the selected option', () => {
-    renderList({ selectedKey: 'CAS-2' });
+  it('points aria-activedescendant at the open option when the cursor sits on it', () => {
+    renderList({ selectedKey: 'CAS-2', cursorKey: 'CAS-2' });
 
     const listbox = screen.getByRole('listbox', { name: 'Task items' });
     const option = screen.getByRole('option', { name: /Old item/ });
     expect(listbox.getAttribute('aria-activedescendant')).toBe(option.id);
     expect(option.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('marks a cursor row quietly: not selected, and no open row', () => {
+    renderList({ cursorKey: 'CAS-1' });
+
+    const listbox = screen.getByRole('listbox', { name: 'Task items' });
+    const option = screen.getByRole('option', { name: /Today item/ });
+    expect(listbox.getAttribute('aria-activedescendant')).toBe(option.id);
+    expect(option.getAttribute('aria-selected')).toBe('false');
+    const row = option.closest('[data-inbox-key]');
+    expect(row?.getAttribute('data-cursor')).toBe('true');
+    expect(row?.getAttribute('data-selected')).toBe('false');
+    expect(document.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
   });
 
   it('says one tool did not load in one notice, with retry and settings', () => {

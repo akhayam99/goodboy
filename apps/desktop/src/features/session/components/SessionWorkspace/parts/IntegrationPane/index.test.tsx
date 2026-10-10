@@ -24,16 +24,6 @@ type TaskDetailProps = {
 
 const h = vi.hoisted(() => ({
   openUrl: vi.fn(async () => undefined),
-  loadCandidates: vi.fn(),
-  candidate: {
-    provider: 'linear',
-    externalId: 'GB-77',
-    identifier: 'GB-77',
-    title: 'Ship the issue picker',
-    url: 'https://linear.app/goodboy/issue/GB-77/ship-the-issue-picker',
-    goal: 'Ship the issue picker',
-    branchSlug: 'ship-the-issue-picker',
-  },
 }));
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -50,7 +40,7 @@ vi.mock('../../../../../integrations/linear/client', async () =>
 );
 
 vi.mock('../../../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
-  useWorkspaceIssueLookup: () => ({ code: null, settled: null }),
+  useWorkspaceIssueLookup: () => ({ code: null, settled: null, loadingProviders: [] }),
 }));
 
 vi.mock('../../../../../../shared/lib/editor', () => ({
@@ -92,16 +82,6 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   ),
 }));
 
-vi.mock('../../../../../integrations/hooks/useIssueCandidates', () => ({
-  useIssueCandidates: () => ({
-    rows: [h.candidate],
-    isLoading: false,
-    isLoaded: true,
-    error: null,
-    load: h.loadCandidates,
-  }),
-}));
-
 import { IntegrationPane } from './index';
 import { ToastProvider } from '../../../../../../shared/components/Toast';
 import { UndoToastBridge } from '../../../../../../app/components/UndoToastBridge';
@@ -116,6 +96,7 @@ import {
   importStore,
   resetStoryStore,
   storySpies,
+  stubStoryInvoke,
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../../../../../store/storyHarness';
@@ -236,6 +217,11 @@ beforeEach(async () => {
       ],
     },
   });
+  stubStoryInvoke({
+    gh_run: '',
+    gitlab_fetch_assigned_issues: [],
+    gitlab_fetch_assigned_mrs: [],
+  });
   h.openUrl.mockClear();
 });
 
@@ -355,8 +341,18 @@ describe('IntegrationPane', () => {
 
     expect(screen.queryByText('Linear')).toBeNull();
     expect(within(actions).getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Link issue' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+    expect(within(actions).getByRole('button', { name: 'All issues' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Link/ })).toBeNull();
+  });
+
+  it('puts Link work in the tracker list header and leaves it out of a focused issue', () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    expect(screen.getByRole('button', { name: 'Link work' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
+
+    expect(screen.queryByRole('button', { name: 'Link work' })).toBeNull();
   });
 
   it('lists every linked task as a card and focuses the clicked one', () => {
@@ -426,13 +422,18 @@ describe('IntegrationPane', () => {
     expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
   });
 
-  it('links a pasted provider URL from the picker and closes the popover', async () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Link an issue' }), {
+  const pasteLinearLink = () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search work to link' }), {
       target: { value: 'https://linear.app/goodboy/issue/GB-99/new-link' },
     });
+  };
+
+  it('links a pasted provider URL from Link work with the closing line kept', async () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    pasteLinearLink();
+    expect(screen.getByText('Will close GB-99 when merged ·')).toBeDefined();
     fireEvent.click(screen.getByRole('option', { name: 'Link GB-99' }));
 
     await waitFor(() =>
@@ -443,27 +444,46 @@ describe('IntegrationPane', () => {
         provider: 'linear',
         externalId: 'GB-99',
         identifier: 'GB-99',
-        title: 'GB-99',
+        relation: 'closes',
         url: 'https://linear.app/goodboy/issue/GB-99/new-link',
       }),
     );
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Link work' })).toBeNull());
+  });
+
+  it('writes part-of when the closing line is switched off', async () => {
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+
+    pasteLinearLink();
+    fireEvent.click(screen.getByRole('button', { name: 'Don’t close' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Link GB-99' }));
+
     await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: 'link Linear issue' })).toBeNull(),
+      expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toHaveLength(2),
+    );
+    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toContainEqual(
+      expect.objectContaining({ externalId: 'GB-99', relation: 'part-of' }),
     );
   });
 
-  it('keeps the connected empty state to a single link affordance', () => {
+  it('opens the empty state link picker filtered to the tracker', async () => {
     useAppStore.setState({ sessionExternalTasks: {} });
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="gitlab" />);
 
     expect(screen.getByText('No GitLab issues linked')).toBeDefined();
-    expect(screen.queryByRole('combobox', { name: 'Link an issue' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Link work' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Open GitLab studio' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
 
-    expect(screen.getByRole('dialog', { name: 'Link GitLab issue' })).toBeDefined();
-    expect(screen.getByRole('combobox', { name: 'Link an issue' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Link work' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Search work to link' })).toBeDefined();
+    const filter = await screen.findByRole('tablist', { name: 'Filter by source' });
+    expect(
+      within(filter)
+        .getByRole('tab', { name: /GitLab/ })
+        .getAttribute('aria-selected'),
+    ).toBe('true');
   });
 
   it('shows the provider connection form inline when disconnected', async () => {
@@ -475,7 +495,7 @@ describe('IntegrationPane', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
 
     expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
-    expect(screen.queryByRole('combobox', { name: 'Link an issue' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Search work to link' })).toBeNull();
     fireEvent.change(screen.getByLabelText('API key'), {
       target: { value: 'lin_api_test' },
     });
@@ -507,37 +527,4 @@ describe('IntegrationPane', () => {
       expect(screen.queryByText(detailText)).toBeNull();
     },
   );
-
-  it('links an issue picked from the assigned-issues search', async () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
-    fireEvent.focus(screen.getByRole('combobox', { name: 'Link an issue' }));
-    fireEvent.click(screen.getByText('Ship the issue picker'));
-
-    await waitFor(() =>
-      expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toHaveLength(2),
-    );
-    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toContainEqual(
-      expect.objectContaining({
-        provider: 'linear',
-        externalId: 'GB-77',
-        identifier: 'GB-77',
-        title: 'Ship the issue picker',
-        url: 'https://linear.app/goodboy/issue/GB-77/ship-the-issue-picker',
-      }),
-    );
-  });
-
-  it('links nothing when Enter is pressed in a closed issue picker', () => {
-    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
-    const picker = screen.getByRole('combobox', { name: 'Link an issue' });
-
-    fireEvent.focus(picker);
-    fireEvent.keyDown(picker, { key: 'Escape' });
-    fireEvent.keyDown(picker, { key: 'Enter' });
-
-    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
-  });
 });

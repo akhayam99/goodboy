@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { dirtyTreeSentence } from '../../../shared/lib/dirtyTreeCopy';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
+import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { ActionDefinition, DiffActionTarget, ObjectKindDefinition } from '../types';
@@ -40,9 +42,7 @@ export const diffEventName = ({
 const hasPr = ({ facts }: FactsOnly): boolean => facts.pr !== null;
 
 const dirtyReason = ({ facts }: FactsOnly): string | null =>
-  facts.dirty > 0
-    ? `Commit or discard the ${plural({ count: facts.dirty, one: 'uncommitted change', many: 'uncommitted changes' })} first.`
-    : null;
+  facts.dirty > 0 ? dirtyTreeSentence({ count: facts.dirty }) : null;
 
 const statusParams = ({ facts }: FactsOnly) => ({
   worktreePath: facts.worktreePath ?? '',
@@ -139,9 +139,7 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     when: ({ facts }) =>
       !hasPr({ facts }) && facts.ahead > 0 && !facts.isRebasing && facts.createProvider !== null,
     blockedReason: ({ facts }) =>
-      facts.createProvider === 'github' && facts.isDraftAgentRunning
-        ? 'An agent is already opening a pull request.'
-        : null,
+      facts.createProvider === 'github' && facts.isScribeWriting ? SCRIBE_WRITING_REASON : null,
     slot: ({ facts }) => (facts.behind === 0 ? 'primary' : 'menu'),
     run: async ({ facts, env }) => {
       if (facts.createProvider === null) {

@@ -4,8 +4,13 @@ import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../shared/components/StudioShell';
 import { useAppStore } from '../../../store';
+import { mostRecentChat } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { ChatList } from './ChatList';
 import { ChatRoom } from './ChatRoom';
+
+type LeaveParams = {
+  readonly removedIds: ReadonlyArray<ChatId>;
+};
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -23,6 +28,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   const loadChats = useAppStore((state) => state.loadChats);
   const amendStudio = useAppStore((state) => state.amendStudio);
   const markChatRead = useAppStore((state) => state.markChatRead);
+  const rememberLastChat = useAppStore((state) => state.rememberLastChat);
 
   useEffect(() => {
     void loadChats({ workspaceId });
@@ -34,8 +40,19 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
     }
   }, [chatId, markChatRead]);
 
+  useEffect(() => {
+    rememberLastChat({ workspaceId, chatId });
+  }, [workspaceId, chatId, rememberLastChat]);
+
   const select = (next: ChatId | null): void =>
     amendStudio({ studio: { kind: 'chat', chatId: next } });
+
+  const leave = ({ removedIds }: LeaveParams): void => {
+    if (chatId === null || !removedIds.includes(chatId)) {
+      return;
+    }
+    select(mostRecentChat({ chats, excluding: removedIds }));
+  };
 
   const activeChat =
     chats.find((chat) => chat.id === chatId) ??
@@ -63,16 +80,8 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
               selectedId={activeChat?.id ?? null}
               onSelect={select}
               onNew={() => select(null)}
-              onArchived={(archivedIds) => {
-                if (chatId !== null && archivedIds.includes(chatId)) {
-                  select(null);
-                }
-              }}
-              onDeleted={(deletedIds) => {
-                if (chatId !== null && deletedIds.includes(chatId)) {
-                  select(null);
-                }
-              }}
+              onArchived={(archivedIds) => leave({ removedIds: archivedIds })}
+              onDeleted={(deletedIds) => leave({ removedIds: deletedIds })}
             />
           }
           detail={
@@ -81,7 +90,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
               workspaceId={workspaceId}
               chat={activeChat}
               onCreated={select}
-              onRemoved={() => select(null)}
+              onRemoved={() => leave({ removedIds: chatId === null ? [] : [chatId] })}
             />
           }
         />

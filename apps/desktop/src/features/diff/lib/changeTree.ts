@@ -310,6 +310,24 @@ export const ancestorIds = ({
   return out;
 };
 
+type FolderPathParams = {
+  readonly id: string;
+};
+
+type FoldedAncestorParams = {
+  readonly rows: ReadonlyArray<TreeRow>;
+  readonly collapsed: ReadonlySet<string>;
+  readonly path: string;
+};
+
+export const folderPathOf = ({ id }: FolderPathParams): string | null =>
+  id.startsWith(FOLDER_ID_PREFIX) ? id.slice(FOLDER_ID_PREFIX.length) : null;
+
+export const foldedAncestorOf = ({ rows, collapsed, path }: FoldedAncestorParams): string | null =>
+  ancestorIds({ rows, path })
+    .filter((id) => collapsed.has(id))
+    .at(-1) ?? null;
+
 const BIG_CHANGE_FILES = 300;
 const BIG_FOLDER_FILES = 50;
 

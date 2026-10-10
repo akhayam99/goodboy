@@ -47,6 +47,13 @@ const connectionSpec = ({ connection }: SpecParams): PillSpec => {
         dotClassName: 'border border-idle bg-transparent',
         labelClass: 'text-muted-foreground',
       };
+    case 'cannot_check':
+      return {
+        label: PROVIDER_CONNECTION_LABEL.cannot_check,
+        tone: 'neutral',
+        dotClassName: 'bg-idle',
+        labelClass: 'text-muted-foreground',
+      };
     default: {
       const exhaustive: never = connection;
       return exhaustive;

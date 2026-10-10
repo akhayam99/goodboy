@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
-import { Button, cn, Skeleton, Tooltip, PaneShell, EmptyState } from '@goodboy/ui';
+import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderOpen } from 'lucide-react';
+import { Button, cn, IconButton, Skeleton, PaneShell, EmptyState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { exploreList, exploreOpen, type ExploreEntry } from '../../explore';
+import { exploreList, type ExploreEntry } from '../../explore';
+import type { ExploreOpenFailure } from '../../openFailure';
+import { useExploreOpen } from '../../hooks/useExploreOpen';
+import { ExploreOpenError } from '../ExploreOpenError';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { RefreshIconButton } from '@goodboy/ui';
@@ -39,8 +42,9 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
   const [loadingByPath, setLoadingByPath] = useState<Readonly<Record<string, boolean>>>({});
   const [errorByPath, setErrorByPath] = useState<Readonly<Record<string, string | null>>>({});
   const [actionErrorByPath, setActionErrorByPath] = useState<
-    Readonly<Record<string, string | null>>
+    Readonly<Record<string, ExploreOpenFailure | null>>
   >({});
+  const exploreOpen = useExploreOpen({ sessionId, sessionDir });
   const toggleDrawer = useAppStore((s) => s.toggleDrawer);
   const selectedRelPath = useAppStore((s) => {
     const drawer = selectOpenDrawer(s);
@@ -85,22 +89,11 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
   }, [loadDirectory, sessionDir, sessionId]);
 
   const runOpenAction = useCallback(
-    async ({ entry, reveal }: { readonly entry: ExploreEntry; readonly reveal: boolean }) => {
-      if (sessionDir == null || sessionDir.trim() === '') {
-        return;
-      }
-      try {
-        await exploreOpen({ sessionDir, relPath: entry.relPath, reveal });
-        setActionErrorByPath((previous) => ({ ...previous, [entry.relPath]: null }));
-      } catch (error) {
-        const verb = reveal ? 'reveal' : 'open';
-        setActionErrorByPath((previous) => ({
-          ...previous,
-          [entry.relPath]: `Couldn't ${verb} "${entry.name}". ${toErrorMessage({ error })}`,
-        }));
-      }
+    async ({ entry, isReveal }: { readonly entry: ExploreEntry; readonly isReveal: boolean }) => {
+      const failure = await exploreOpen.run({ entry, isReveal });
+      setActionErrorByPath((previous) => ({ ...previous, [entry.relPath]: failure }));
     },
-    [sessionDir],
+    [exploreOpen],
   );
 
   const selectFile = useCallback(
@@ -146,11 +139,12 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
         const age = entry.modifiedAt == null ? '' : formatAge({ from: entry.modifiedAt, now });
         const ageLabel = age === '' ? 'unknown age' : age;
         const sizeLabel = formatBytes({ bytes: entry.sizeBytes });
+        const metaTitle = `${sizeLabel} · ${ageLabel}`;
+        const openAction = exploreOpen.actionOf({ entry });
 
         return (
           <div key={entry.relPath} className="flex flex-col gap-0.5">
             <div
-              title={`${sizeLabel} · ${ageLabel}`}
               className={cn(
                 'group/explore-row flex items-center gap-2 rounded-md py-1 pl-1 pr-2 transition-colors',
                 isSelectedFile ? 'bg-muted text-foreground' : 'hover:bg-hover',
@@ -172,7 +166,10 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     )}
                   </span>
                   <Folder size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-                  <span className="min-w-0 flex-1 truncate text-row text-foreground">
+                  <span
+                    title={metaTitle}
+                    className="min-w-0 flex-1 truncate text-row text-foreground"
+                  >
                     {entry.name}
                   </span>
                 </button>
@@ -187,37 +184,38 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">
                     <File size={ICON_SIZE.control} aria-hidden />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-row text-foreground">
+                  <span
+                    title={metaTitle}
+                    className="min-w-0 flex-1 truncate text-row text-foreground"
+                  >
                     {entry.name}
                   </span>
                 </button>
               )}
               <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/explore-row:opacity-100 group-focus-within/explore-row:opacity-100">
                 {entry.isDir ? null : <ExploreSpawnPopover sessionId={sessionId} entry={entry} />}
-                <Tooltip content={`Open ${entry.name} outside the app`}>
-                  <button
-                    type="button"
-                    onClick={() => void runOpenAction({ entry, reveal: false })}
-                    aria-label={`Open ${entry.name} outside the app`}
-                    className="rounded-md p-2 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
-                  >
-                    <ExternalLink size={ICON_SIZE.control} aria-hidden />
-                  </button>
-                </Tooltip>
-                <Tooltip content={`Reveal ${entry.name} in file manager`}>
-                  <button
-                    type="button"
-                    onClick={() => void runOpenAction({ entry, reveal: true })}
-                    aria-label={`Reveal ${entry.name} in file manager`}
-                    className="rounded-md p-2 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
-                  >
-                    <FolderSearch size={ICON_SIZE.control} aria-hidden />
-                  </button>
-                </Tooltip>
+                <IconButton
+                  icon={openAction.editor === null ? ExternalLink : CONCEPT_ICONS.editor}
+                  size="xs"
+                  label={
+                    openAction.editor === null
+                      ? `Open ${entry.name}`
+                      : `Open ${entry.name} in ${openAction.editor.label}`
+                  }
+                  tooltip={openAction.label}
+                  onClick={() => void runOpenAction({ entry, isReveal: false })}
+                />
+                <IconButton
+                  icon={FolderOpen}
+                  size="xs"
+                  label={`Show ${entry.name} in Finder`}
+                  tooltip="Show in Finder"
+                  onClick={() => void runOpenAction({ entry, isReveal: true })}
+                />
               </div>
             </div>
             {actionError != null ? (
-              <p className="pl-8 text-label text-danger">{actionError}</p>
+              <ExploreOpenError failure={actionError} className="pl-8" />
             ) : null}
             {entry.isDir && isExpanded ? (
               <div className="flex flex-col gap-0.5 pl-5">
@@ -259,6 +257,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
       expandedByPath,
       loadingByPath,
       selectedRelPath,
+      exploreOpen,
       runOpenAction,
       selectFile,
       sessionId,

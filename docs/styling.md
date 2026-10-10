@@ -292,6 +292,15 @@ split. Each view owns its own `ScrollFade`. Never wrap the whole pane in one
 global scroller, because that pushes every view's header through the same
 mask.
 
+A flex-column child that fills the rest of its parent is `min-h-0 flex-1`,
+never `h-full`. `h-full` beside a `shrink-0` sibling makes the child as tall as
+the whole parent, so the pair overflows by the sibling's height and the sheet
+clips the bottom edge (the message box ends up half under the window).
+`PaneShell` takes a `lead` prop for blocks that sit above a self-scrolling
+body: the lead is `shrink-0` and the children sit in a `min-h-0 flex-1` fill
+slot. The `fill-child-uses-min-h-0` ratchet counts the remaining `flex h-full
+flex-col` roots and only ever falls.
+
 ## Scroll edges fade, never hard-cut
 
 Every scroll region is wrapped in `ScrollFade` from `@goodboy/ui`. Raw

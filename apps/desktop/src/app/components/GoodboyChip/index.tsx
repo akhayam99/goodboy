@@ -14,12 +14,14 @@ import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyChipEffects } from './GoodboyChipEffects';
 
 const OPEN_GOODBOY_MENU_EVENT = 'goodboy:open-goodboy-menu';
+const OPEN_PAIR_DEVICE_EVENT = 'goodboy:open-pair-device';
 import { GoodboyMenu } from './GoodboyMenu';
 
 type GoodboyChipVariant = 'footer' | 'column' | 'rail';
 
 type Props = {
   readonly onOpenChangelog: () => void;
+  readonly onOpenGuide: () => void;
   readonly onOpenShortcuts: () => void;
   readonly variant?: GoodboyChipVariant;
   readonly isPrimary?: boolean;
@@ -48,6 +50,7 @@ const DROPDOWN_ALIGN: Record<GoodboyChipVariant, 'start' | 'center'> = {
 
 export const GoodboyChip = ({
   onOpenChangelog,
+  onOpenGuide,
   onOpenShortcuts,
   variant = 'footer',
   isPrimary = true,
@@ -151,6 +154,10 @@ export const GoodboyChip = ({
           hasUpdate={hasUpdate}
           hasDraft={hasDraft}
           onReport={leaveFor({ action: () => openReportSheet() })}
+          onOpenGuide={leaveFor({ action: onOpenGuide })}
+          onPairDevice={leaveFor({
+            action: () => window.dispatchEvent(new CustomEvent(OPEN_PAIR_DEVICE_EVENT)),
+          })}
           onOpenChangelog={leaveFor({ action: onOpenChangelog })}
           onOpenShortcuts={leaveFor({ action: onOpenShortcuts })}
           onSponsor={() => {

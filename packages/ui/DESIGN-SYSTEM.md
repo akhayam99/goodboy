@@ -1597,7 +1597,7 @@ A verb blocked for a moment stays visible with its reason in the tooltip; a verb
 `InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone. It is the only confirmation body, and it shows in exactly one of three placements, picked by how much room the trigger has:
 
 - **Row swap**: a trigger inside a row with width (a `FieldRow`, a section footer) is replaced in the same slot by the `card` surface.
-- **Anchored**: a small trigger (icon button, sidebar row action, header action, rail row) opens `ConfirmPopover`, which shows the `plain` surface in an `AnchoredPopover`. Escape and a click outside cancel. The popover stays open and busy while the confirm runs.
+- **Anchored**: a small trigger (icon button, sidebar row action, header action, rail row) opens `ConfirmPopover`, which shows the `plain` surface in an `AnchoredPopover`. Escape and a click outside cancel. The popover stays open and busy while the confirm runs. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height.
 - **Menu swap**: a destructive item in an open menu or popover replaces the menu body with `InlineConfirm surface="plain"` in the same popover.
 - **Under the header**: a destructive or one-shot verb of a page header (Delete session, Delete agent, a plan's Run again) arms a card `InlineConfirm` in `HeaderPanel` directly under the title row, in place, with no modal and no popover over the control.
 - **Above the selection bar**: a destructive verb of a selection confirms in `SelectionConfirm`, a card `InlineConfirm` that sits directly above `SelectionBar`, because the verb lives in the bar and the confirmation must stay with it.
@@ -1771,8 +1771,19 @@ passes `restDelayMs` (the Activity feed uses 800): the pointer has to rest, each
 move restarts the wait, focus does not open it, and every other tooltip keeps
 its 400ms. `isOpen` forces a tooltip open from the outside, as `i` does on an
 Activity row.
+A tooltip never sits on top of what its control opened. `isSuppressed` hides it
+and keeps it from opening: `MenuTriggerButton` passes its open state, and
+`IconButton` takes `isTooltipSuppressed` for a trigger that opens a popover
+(the Explore ask button). A press on the control and Esc close an open tooltip,
+and the focus a closing menu hands back to its trigger does not reopen it.
+Keyboard focus (`:focus-visible`) opens the tooltip at once, and so does any
+tooltip that opens less than 300ms after another one closed, so a row of icons
+reads as one hover and not as four waits. A card with `restDelayMs` keeps its
+rest. The overflow tooltip says `More actions` unless the caller passes one; the
+contextual name stays in `aria-label`.
 That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
-enforces the rule.
+enforces the rule for `<button>`, `<a>` and `<Button>` controls, and sees icons
+written as member expressions such as `<CONCEPT_ICONS.agents />`.
 
 **One creation grammar.** Bare sections stacked in one column, never a bordered
 box around the whole thing. Secondary controls go in `SectionHeader`'s

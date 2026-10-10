@@ -12,6 +12,7 @@ import { resolveProviderForTurn } from '../../../features/providers/routing';
 import { encodeAuthRequiredMessage } from '../../../features/chat/turn';
 import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
 import { KIND_TO_ROLE, classifyAgent } from '../../../features/session/agent-kind';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { pickedTurnExecution } from './pickedTurnExecution';
 import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRoutingNoticeMessage';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -30,9 +31,6 @@ type Params = Readonly<{
 export const routeTurn = async ({ get, ctx }: Params) => {
   const { sessionId, override, force, retry } = ctx.input;
   const { session, now, activeAgentId, activeAgent, phaseDefinition } = ctx;
-  const connectedProviders = get()
-    .providers.filter((p) => p.connection === 'connected')
-    .map((p) => p.id);
 
   const nodeRouting = turnNodeRouting({
     agent:
@@ -67,6 +65,11 @@ export const routeTurn = async ({ get, ctx }: Params) => {
   const pickedOverride = turnOverride?.explicit === true ? turnOverride : undefined;
   const effectiveOverride =
     retryOverride ?? pickedOverride ?? nodeOverride ?? turnOverride ?? agentOverride;
+
+  const connectedProviders = autoRoutableProviders({
+    providers: get().providers,
+    pinned: effectiveOverride?.providerId ?? null,
+  });
 
   const routingPreference =
     (effectiveOverride === agentOverride && agentOverride !== undefined) ||

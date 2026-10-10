@@ -122,6 +122,7 @@ export const App = () => {
     openAddWorkspace,
     openChangelog,
     openChat,
+    openGuide,
     openInbox,
     openIntegration,
     openPalette,
@@ -152,9 +153,19 @@ export const App = () => {
       openWorkflows,
       openSettings,
       openChangelog,
+      openGuide,
       openShortcuts: openShortcutHelp,
     }),
-    [goToBoard, openInbox, openChat, openWorkflows, openSettings, openChangelog, openShortcutHelp],
+    [
+      goToBoard,
+      openInbox,
+      openChat,
+      openWorkflows,
+      openSettings,
+      openChangelog,
+      openGuide,
+      openShortcutHelp,
+    ],
   );
 
   useEffect(() => {
@@ -289,6 +300,7 @@ export const App = () => {
                 onOpenImpact={openImpact}
                 onOpenSettings={openSettings}
                 onOpenChangelog={openChangelog}
+                onOpenGuide={openGuide}
                 onOpenShortcuts={openShortcutHelp}
               />
             )

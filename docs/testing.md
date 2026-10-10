@@ -37,7 +37,7 @@ These hold for each change that touches a test, and they come from tests that st
 6. No new real wait with `setTimeout`. Use fake timers or wait on the condition.
 7. New behavior goes in a new test file beside the old one. The huge files (`buildTimelineStream.test.ts`, `WorkflowBuilderView/index.test.tsx`, `orchestrateNextStep.test.ts`) only get shorter.
 8. The PR body says "tests removed n, replaced by m, files converted k".
-9. A ratchet baseline never grows.
+9. A ratchet baseline never grows. `pnpm run check:baselines` fails on growth, and only the owner lists an exception: [ratchets.md](ratchets.md).
 
 ## Desktop unit tests run in four shards
 
@@ -69,7 +69,7 @@ An unexpected `console.error` or `console.warn` fails the test that produced it.
 
 Every desktop test that loads the real store goes through `apps/desktop/src/store/storyHarness.ts`. It is the only file allowed to `import()` the store module.
 
-- Module mocks come from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test, or passes its own stubs: `dbModuleMock({ listContextSlotsForSession: mine })` adds them over `storyDbStubs()`. It never keeps a private copy of the whole mock. The permission and plan modules are in the same set: `storySpies.invokePermissionRuleList`, `storySpies.invokeAuditRetryDrain`, `storySpies.upsertPlan` and the rest are the spies behind `permissionsModuleMock()` and `plansModuleMock()`. `tauriInvoke` answers the commands in `storyInvokeHandlers`; `stubStoryInvoke` adds or replaces one for a test.
+- Mock the Tauri boundary; a module mock of our own packages comes only from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test, or passes its own stubs: `dbModuleMock({ listContextSlotsForSession: mine })` adds them over `storyDbStubs()`. It never keeps a private copy of the whole mock. The permission and plan modules are in the same set: `storySpies.invokePermissionRuleList`, `storySpies.invokeAuditRetryDrain`, `storySpies.upsertPlan` and the rest are the spies behind `permissionsModuleMock()` and `plansModuleMock()`. `tauriInvoke` answers the commands in `storyInvokeHandlers`; `stubStoryInvoke` adds or replaces one for a test.
 - Spies live in `storySpies`, named after the function they stand in for (`storySpies.invokeBudgetRuleList`). `resetStorySpies()` restores every default.
 - The store loads once: `useAppStore = await importStore()` in `beforeAll` with `STORE_IMPORT_TIMEOUT_MS`. Then `await resetStoryStore()` runs in `beforeEach` (spies reset, `initialState` applied, local storage cleared) before the test seeds its own state.
 - `__tests__/regressions/store-import-pattern.test.ts` fails on any test that `import()`s the store module itself. A test that needs another export of the store module (`summarizerQueues`) takes it from `importStoreModule()`.

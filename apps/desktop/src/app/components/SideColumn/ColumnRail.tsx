@@ -116,6 +116,7 @@ export const ColumnRail = ({
       <GoodboyChip
         variant="rail"
         onOpenChangelog={actions.openChangelog}
+        onOpenGuide={actions.openGuide}
         onOpenShortcuts={actions.openShortcuts}
       />
     </nav>

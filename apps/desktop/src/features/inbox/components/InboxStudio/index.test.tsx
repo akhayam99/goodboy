@@ -294,6 +294,11 @@ const renderStudio = (overrides: Partial<Parameters<typeof InboxStudio>[0]> = {}
 
 const detailText = (): string => screen.queryByTestId('detail')?.textContent ?? 'none';
 
+const cursorKeys = (): ReadonlyArray<string> =>
+  Array.from(document.querySelectorAll('[data-inbox-key][data-cursor]')).map(
+    (row) => row.getAttribute('data-inbox-key') ?? '',
+  );
+
 const rowOrder = (): ReadonlyArray<string> =>
   within(screen.getByRole('listbox', { name: 'Task items' }))
     .getAllByRole('option')
@@ -411,11 +416,28 @@ describe('InboxStudio', () => {
     expect(screen.queryByText('Fix the flaky test')).toBeNull();
   });
 
-  it('opens with the first row selected, so the row keys act at once', () => {
+  it('opens with a quiet cursor on the first row and no drawer', () => {
     renderStudio();
 
-    expect(detailText()).toBe('GBY-1');
-    expect(openRow(/TypeError boom/).getAttribute('aria-selected')).toBe('true');
+    expect(detailText()).toBe('none');
+    const first = openRow(/TypeError boom/);
+    expect(first.getAttribute('aria-selected')).toBe('false');
+    expect(first.closest('[data-inbox-key]')?.getAttribute('data-cursor')).toBe('true');
+    expect(
+      openRow(/Ship the inbox/)
+        .closest('[data-inbox-key]')
+        ?.hasAttribute('data-cursor'),
+    ).toBe(false);
+    expect(document.querySelectorAll('[data-selected="true"]')).toHaveLength(0);
+  });
+
+  it('opens the drawer on a click, with the row selected', () => {
+    renderStudio();
+
+    fireEvent.click(openRow(/Ship the inbox/));
+
+    expect(openRow(/Ship the inbox/).getAttribute('aria-selected')).toBe('true');
+    expect(openRow(/TypeError boom/).getAttribute('aria-selected')).toBe('false');
   });
 
   it('opens the detail of another row on a click', () => {
@@ -432,38 +454,63 @@ describe('InboxStudio', () => {
     expect(detailText()).toBe('#1');
   });
 
-  it('starts empty and selects the first row once the records arrive', () => {
+  it('puts the cursor on the first row once the records arrive, with no drawer', () => {
     h.records = [];
     const view = renderStudio();
-    expect(detailText()).toBe('none');
+    expect(cursorKeys()).toEqual([]);
 
     h.records = [sentryError, linearIssue];
     view.rerender(<InboxStudio workspaceId={workspaceId} rootPath="/repo" onClose={vi.fn()} />);
 
-    expect(detailText()).toBe('GBY-1');
+    expect(cursorKeys()).toEqual([sentryError.key]);
+    expect(detailText()).toBe('none');
   });
 
-  it('closes the detail from its close control and keeps the list', () => {
+  it('closes the detail from its close control and keeps the list and the cursor', () => {
     renderStudio();
+    fireEvent.click(openRow(/Ship the inbox/));
+    expect(detailText()).toBe('ENG-1');
 
     fireEvent.click(screen.getByTestId('detail-deselect'));
 
     expect(detailText()).toBe('none');
     expect(screen.getByText('Ship the inbox')).toBeDefined();
+    expect(cursorKeys()).toEqual([linearIssue.key]);
   });
 
-  it('keeps the detail closed after a close, until a row is chosen again', () => {
+  it('keeps the detail closed after a close, until Enter or a click opens a row', () => {
     renderStudio();
-
+    fireEvent.click(openRow(/Ship the inbox/));
     fireEvent.click(screen.getByTestId('detail-deselect'));
     expect(detailText()).toBe('none');
 
     press('list.next');
-    expect(detailText()).toBe('GBY-1');
+    expect(detailText()).toBe('none');
+    expect(cursorKeys()).toEqual([slackThread.key]);
+
+    press('list.open');
+    expect(detailText()).toBe('#eng');
   });
 
-  it('moves with the next and previous keys and the detail follows', () => {
+  it('moves the cursor with the next and previous keys and opens nothing', () => {
     renderStudio();
+
+    press('list.next');
+    press('list.next');
+    press('list.next');
+    expect(detailText()).toBe('none');
+    expect(cursorKeys()).toEqual([githubIssue.key]);
+
+    press('list.previous');
+    expect(detailText()).toBe('none');
+    expect(cursorKeys()).toEqual([slackThread.key]);
+  });
+
+  it('makes the drawer follow the cursor once one is open', () => {
+    renderStudio();
+
+    fireEvent.click(openRow(/TypeError boom/));
+    expect(detailText()).toBe('GBY-1');
 
     press('list.next');
     expect(detailText()).toBe('ENG-1');
@@ -475,13 +522,24 @@ describe('InboxStudio', () => {
     expect(detailText()).toBe('ENG-1');
   });
 
-  it('launches on Enter from the first row without touching the list first', () => {
+  it('opens the cursor row and launches on Enter', () => {
     renderStudio();
-    expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('0');
+    expect(screen.queryByTestId('detail')).toBeNull();
 
     press('list.open');
 
+    expect(detailText()).toBe('GBY-1');
     expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('1');
+    expect(openRow(/TypeError boom/).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('opens the row the cursor moved to on Enter', () => {
+    renderStudio();
+
+    press('list.next');
+    press('list.open');
+
+    expect(detailText()).toBe('ENG-1');
   });
 
   it('opens the first row in its tool on o', () => {
@@ -491,6 +549,7 @@ describe('InboxStudio', () => {
     press('list.openInTool');
 
     expect(h.openUrl).toHaveBeenCalledWith('https://example.invalid/linear/ENG-1');
+    expect(screen.queryByTestId('detail')).toBeNull();
   });
 
   it('focuses the search on slash', () => {
@@ -524,7 +583,7 @@ describe('InboxStudio', () => {
 
     expect(next.defaultPrevented).toBe(false);
     expect(h.openUrl).not.toHaveBeenCalled();
-    expect(detailText()).toBe('GBY-1');
+    expect(cursorKeys()).toEqual([sentryError.key]);
   });
 
   it('leaves the search field on Escape and gives the keys back to the list', () => {
@@ -536,10 +595,10 @@ describe('InboxStudio', () => {
     expect(document.activeElement).not.toBe(search);
 
     press('list.next');
-    expect(detailText()).toBe('ENG-1');
+    expect(cursorKeys()).toEqual([linearIssue.key]);
   });
 
-  it('keeps the order of the rows while the keys move the selection', () => {
+  it('keeps the order of the rows while the keys move the cursor', () => {
     renderStudio();
     const ordered = h.orderCalls;
     expect(ordered).toBeGreaterThan(0);
@@ -551,7 +610,7 @@ describe('InboxStudio', () => {
     press('list.star');
     press('list.openInTool');
 
-    expect(detailText()).toBe('ENG-1');
+    expect(cursorKeys()).toEqual([linearIssue.key]);
     expect(h.orderCalls).toBe(ordered);
   });
 
@@ -574,7 +633,7 @@ describe('InboxStudio', () => {
     expect(h.toggleStar).toHaveBeenCalledTimes(1);
   });
 
-  it('closes the detail on Escape before the studio, once a row was chosen', () => {
+  it('closes the detail on Escape before the studio, and keeps the cursor', () => {
     renderStudio();
 
     expect(h.isEscapeEnabled).toBe(true);
@@ -585,6 +644,28 @@ describe('InboxStudio', () => {
 
     expect(detailText()).toBe('none');
     expect(h.isEscapeEnabled).toBe(true);
+    expect(cursorKeys()).toEqual([linearIssue.key]);
+  });
+
+  it('opens the cursor row and focuses the composer on R when no drawer is open', async () => {
+    h.records = [githubIssue];
+    renderStudio();
+    expect(screen.queryByTestId('detail')).toBeNull();
+
+    press('list.reply');
+
+    await vi.waitFor(() => expect(document.activeElement?.tagName).toBe('TEXTAREA'));
+    expect(detailText()).toBe('#1');
+  });
+
+  it('stars the cursor row on S without opening the drawer', () => {
+    renderStudio();
+
+    press('list.next');
+    press('list.star');
+
+    expect(h.toggleStar.mock.calls[0]?.[0]).toMatchObject({ identifier: 'ENG-1' });
+    expect(screen.queryByTestId('detail')).toBeNull();
   });
 
   it('keeps the selected record in the detail when the filters hide it', () => {

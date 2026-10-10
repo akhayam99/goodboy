@@ -3,6 +3,7 @@ import { Button, Notice } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
+import { useProviderHealth } from '../../../../shared/hooks/useProviderHealth';
 
 type Props = {
   readonly providerId: ProviderId;
@@ -12,14 +13,22 @@ type Props = {
 
 export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) => {
   const label = PROVIDER_LABEL[providerId];
+  const health = useProviderHealth({ providerId });
   const [isConnecting, setIsConnecting] = useState(false);
   const hasIdentity = identity !== undefined && identity !== null && identity !== '';
+  const isRefused = health.standing === 'signed_out' || health.isBreakerOpen;
+
+  if (!isRefused) {
+    return (
+      <p className="py-2 pl-4 pr-3 text-meta text-muted-foreground">{label} refused this run.</p>
+    );
+  }
 
   return (
     <Notice
       tone="warning"
       placement="transcript"
-      title={`${label} is not signed in`}
+      title={`${label} refused this run`}
       body={
         (hasIdentity || isConnecting) && (
           <div className="flex flex-col gap-2">
@@ -38,14 +47,9 @@ export const AuthRequiredCallout = ({ providerId, identity, onRefresh }: Props) 
       }
       actions={
         !isConnecting && (
-          <>
-            <Button size="sm" variant="secondary" onClick={() => setIsConnecting(true)}>
-              Connect now
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onRefresh}>
-              Refresh status
-            </Button>
-          </>
+          <Button size="sm" variant="secondary" onClick={() => setIsConnecting(true)}>
+            Sign in again
+          </Button>
         )
       }
     />

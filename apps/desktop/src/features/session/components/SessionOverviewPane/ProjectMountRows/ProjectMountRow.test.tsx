@@ -40,6 +40,7 @@ const { store, remoteKind } = vi.hoisted(() => ({
     >,
     scriptRuns: {} as Record<string, Record<string, { status: string }>>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ name: string; status: string }>>,
+    scribeWork: {} as Record<string, { status: string }>,
     projectScripts: {} as Record<string, ReadonlyArray<{ id: string; projectId: string }>>,
     sessions: [] as ReadonlyArray<Record<string, unknown>>,
     sessionActiveMount: {} as Record<string, string | null>,
@@ -217,6 +218,7 @@ beforeEach(() => {
   };
   store.sessionWorktrees = { [sessionId]: ['/session-root'] };
   store.sessionPhaseRuns = {};
+  store.scribeWork = {};
   store.detectedEditors = [{ binary: 'code', label: 'VS Code' }];
   store.sessions = [];
   store.sessionActiveMount = {};
@@ -339,15 +341,22 @@ describe('ProjectMountRow request action', () => {
     window.removeEventListener('goodboy:open-github-session', listener);
   });
 
-  it('holds create pr with its reason while an agent is opening one', () => {
-    store.sessionPhaseRuns = {
-      [sessionId]: [{ name: 'open pull request', status: 'running' }],
-    };
+  it('holds create pr with its reason while Scribe writes for this mount', () => {
+    store.scribeWork = { 'pr:mount-1': { status: 'writing' } };
     renderRow({ worktreeStatus: statusWith({}) });
 
     const action = screen.getByRole('button', { name: 'Create PR for API' });
     expect(action.hasAttribute('disabled')).toBe(true);
-    expect(tooltipTextOf({ element: action })).toBe('An agent is already opening a pull request.');
+    expect(tooltipTextOf({ element: action })).toBe('Scribe is still writing the text.');
+  });
+
+  it('leaves create pr open while Scribe writes for another mount', () => {
+    store.scribeWork = { 'pr:mount-9': { status: 'writing' } };
+    renderRow({ worktreeStatus: statusWith({}) });
+
+    expect(screen.getByRole('button', { name: 'Create PR for API' }).hasAttribute('disabled')).toBe(
+      false,
+    );
   });
 
   it('hides create pr while the branch has no commit of its own', () => {
@@ -419,7 +428,7 @@ describe('ProjectMountRow one action by state', () => {
     const rebase = screen.getByRole('button', { name: 'Rebase on main for API' });
     expect(rebase.hasAttribute('disabled')).toBe(true);
     expect(tooltipTextOf({ element: rebase })).toBe(
-      'Commit or discard the 2 uncommitted changes first.',
+      '2 files have changes that are not committed. Commit or stash them first.',
     );
   });
 

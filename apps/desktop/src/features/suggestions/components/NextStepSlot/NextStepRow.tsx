@@ -29,6 +29,7 @@ type Props = {
   readonly compact: boolean;
   readonly isPending: boolean;
   readonly pendingChoiceIds?: ReadonlySet<string>;
+  readonly pendingExtraIds?: ReadonlySet<string>;
   readonly onNotNow: () => void;
 };
 
@@ -51,6 +52,7 @@ export const NextStepRow = ({
   compact,
   isPending,
   pendingChoiceIds = NO_PENDING_CHOICES,
+  pendingExtraIds = NO_PENDING_CHOICES,
   onNotNow,
 }: Props) => {
   const Icon = SUGGESTION_ICONS[suggestion.kind];
@@ -94,6 +96,19 @@ export const NextStepRow = ({
           />
         )}
       </span>
+      {(actions.extras ?? []).map((extra) => (
+        <Button
+          key={extra.id}
+          size="sm"
+          variant={extra.variant}
+          isBusy={pendingExtraIds.has(extra.id)}
+          onClick={() => {
+            void extra.run();
+          }}
+        >
+          {extra.label}
+        </Button>
+      ))}
       {isArmed && !isPending && (
         <Button size="sm" variant="ghost" onClick={() => setIsConfirming(false)}>
           Cancel

@@ -12,6 +12,40 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.23.2
+
+Providers say what they know, the Models page shows the model each task runs, and a long list of small breakages is fixed.
+
+### Improved
+
+#### Providers say what they know
+<!-- gb area=providers screen=settings/providers image=provider-standing -->
+
+A check that times out says Can't check and keeps the last state it knew, never Not signed in. A first Not signed in answer is checked once more after 12 seconds. Tokens found on this Mac show apart from a confirmed sign-in. After three refused runs, Auto stops picking that provider, and a refused run leaves a quiet line in the transcript.
+
+#### The Models page shows each model
+<!-- gb area=settings screen=settings/providers image=models-will-use -->
+
+Each role and task prints the model it runs, marked Pinned or Auto, with the reason when a pin is skipped and Back to Auto for pins that cannot run. A project's own model settings show on the page, with Use this page instead to clear them.
+
+### Fixed
+
+- The model you set for the orchestrator is the one that runs when a project is mounted. <!-- gb area=agents -->
+- Run plan no longer comes back after you approve a plan. <!-- gb area=sessions -->
+- The message box stays inside the window on an agent page. <!-- gb area=agents -->
+- Delete all notifications opens beside its button and deletes what it says. <!-- gb area=inbox -->
+- Mark all seen and Discard are visible buttons instead of hidden in a menu. <!-- gb area=agents -->
+- Tasks opens without opening the first issue. <!-- gb area=inbox -->
+- The diff tree keeps your folds and never opens a folder as you scroll. <!-- gb area=review -->
+- A rebase checks for uncommitted files before it starts, and says which ones stop it. <!-- gb area=sessions -->
+- The pull request form cannot be raced while Scribe writes the text. <!-- gb area=review -->
+- Open in editor opens your editor. <!-- gb area=app -->
+- Tooltips no longer cover the menu they belong to. <!-- gb area=app -->
+- The Guide is in the Goodboy menu again. <!-- gb area=app -->
+- Chat reopens your last chat. <!-- gb area=sessions -->
+- The collapsed rail keeps your pins in place. <!-- gb area=sessions -->
+- Scripts stop with all their processes, and processes a turn started stop with it, leaving no zombies. A helper run that goes quiet stops after 10 minutes. <!-- gb area=scripts -->
+
 ## Goodboy v0.23.1
 
 Workflow steps, agent start and handoffs keep the provider you pick in the model picker.

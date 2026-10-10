@@ -1,7 +1,13 @@
 import type { Agent, IsoDateTime, ProviderRunId, Session, TurnState } from '@goodboy/types';
-import { recordAgentStatus, updateSessionState } from '@goodboy/db';
+import { recordAgentStatus, stopGhostAgents, updateSessionState } from '@goodboy/db';
 import { cancelTurn, isTurnStreamActive } from '../../../features/chat/turn';
-import { readTurnCursor, type TurnCursor, type TurnOwner } from '../../../features/chat/turnCursor';
+import {
+  listTurnCursorRunIds,
+  readTurnCursor,
+  type TurnCursor,
+  type TurnOwner,
+} from '../../../features/chat/turnCursor';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
 
 type ReconcileLoadedSessionsParams = Readonly<{
@@ -81,4 +87,23 @@ export const reconcileLoadedAgent = async ({
     stoppedBy: 'app',
   }).catch(() => undefined);
   return { ...agent, status: 'stopped', stoppedAt, stoppedBy: 'app' };
+};
+
+const readBackendRunIds = async (): Promise<ReadonlyArray<string> | null> => {
+  try {
+    return (await invokeCommand<string[]>('turn_list_live')) ?? [];
+  } catch {
+    return null;
+  }
+};
+
+export const reconcileGhostAgents = async (): Promise<number> => {
+  const liveRunIds = await readBackendRunIds();
+  if (liveRunIds === null) {
+    return 0;
+  }
+  return stopGhostAgents({
+    db: tauriDatabase,
+    keepRunIds: [...liveRunIds, ...listTurnCursorRunIds()],
+  });
 };

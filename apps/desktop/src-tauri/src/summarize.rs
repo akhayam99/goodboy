@@ -7,7 +7,8 @@ use tauri::State;
 use thiserror::Error;
 
 use crate::live_child::{
-    drain_lossy, drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
+    drain_lossy_active, drain_tail_active, run_to_exit, LiveChild, LiveChildRegistry,
+    MAX_STDERR_BYTES, SIDE_JOB_IDLE,
 };
 use crate::providers::cli_args::{side_job_args, ArgsError, Job, SideJob};
 
@@ -79,6 +80,7 @@ pub struct SummarizeResult {
     pub stdout: String,
     pub stderr: String,
     pub exit_code: Option<i32>,
+    pub is_timed_out: bool,
 }
 
 #[tauri::command]
@@ -109,6 +111,7 @@ pub(crate) fn run_summarize(
 
     let mut command = crate::path_env::command(&args.binary);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
+    let tag = crate::aux_spawn::tag_spawn(&mut command, crate::aux_spawn::SpawnKind::Summary);
     crate::process_group::isolate(&mut command);
     if let Some(dir) = args.working_dir.as_deref() {
         if !dir.is_empty() {
@@ -134,19 +137,27 @@ pub(crate) fn run_summarize(
         .run_id
         .clone()
         .unwrap_or_else(|| crate::live_child::anonymous_key("summary"));
-    let live = LiveChild::new(child);
+    let live = LiveChild::tagged(child, &tag);
     crate::live_child::register(registry, &key, &live);
 
-    let stdout_handle = thread::spawn(move || drain_lossy(stdout));
-    let stderr_handle = thread::spawn(move || drain_tail_lossy(stderr, MAX_STDERR_BYTES));
-    let stdout_buf = stdout_handle.join().unwrap_or_default();
-    let stderr_buf = stderr_handle.join().unwrap_or_default();
-    let exit_code = wait_and_remove(&live, registry, &key);
+    let stdout_activity = live.activity.clone();
+    let stderr_activity = live.activity.clone();
+    let stdout_handle = thread::spawn(move || drain_lossy_active(stdout, &stdout_activity));
+    let stderr_handle =
+        thread::spawn(move || drain_tail_active(stderr, MAX_STDERR_BYTES, &stderr_activity));
+    let ((stdout_buf, stderr_buf), exited) =
+        run_to_exit(&live, registry, &key, Some(SIDE_JOB_IDLE), || {
+            (
+                stdout_handle.join().unwrap_or_default(),
+                stderr_handle.join().unwrap_or_default(),
+            )
+        });
 
     Ok(SummarizeResult {
         stdout: stdout_buf,
         stderr: stderr_buf,
-        exit_code,
+        exit_code: exited.code,
+        is_timed_out: exited.is_timed_out,
     })
 }
 
@@ -358,7 +369,7 @@ mod tests {
         let slot = register_sleeping_child(&registry, "run-1");
         kill_run(&registry, "run-1");
 
-        wait_and_remove(&slot, &registry, "run-1");
+        crate::live_child::wait_and_remove(&slot, &registry, "run-1");
 
         assert!(registry.lock().expect("registry").is_empty());
     }

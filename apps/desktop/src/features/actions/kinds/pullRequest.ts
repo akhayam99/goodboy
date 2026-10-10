@@ -25,7 +25,8 @@ import {
 import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
 import { refreshActiveRequest } from '../../../store/slices/review-source/refreshActiveRequest';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
-import { isPrDraftAgentRunning } from '../../integrations/github/prDraftAgent';
+import { isScribeWriting } from '../../../store/slices/scribe/isScribeWriting';
+import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
 import { describePrWriteInFlight } from '../../review/prLifecycle';
 import {
   evaluatePrMergeReadiness,
@@ -411,8 +412,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
     icon: GitPullRequestCreate,
     group: 'act',
     when: ({ facts }) => facts.phase === 'none' && facts.host !== 'bitbucket',
-    blockedReason: ({ facts }) =>
-      facts.isDraftAgentRunning ? 'An agent is already drafting the pull request.' : null,
+    blockedReason: ({ facts }) => (facts.isScribeWriting ? SCRIBE_WRITING_REASON : null),
     slot: () => 'primary',
     run: ({ facts, env }) => openPrLens({ env, facts, mode: 'create_pr' }),
   },
@@ -498,7 +498,6 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
       pr === null || repo === null
         ? null
         : selectPrWrite({ state, target: { projectId: repo.projectId, prNumber: pr.number } });
-    const agents = state.sessionPhaseRuns[target.sessionId] ?? null;
     const signals = fixSignalsOf({
       threads: state.sessionResolveThreads?.[target.sessionId] ?? [],
     });
@@ -526,7 +525,9 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
               prNumber: pr.number,
               nouns: PULL_REQUEST_NOUNS[host],
             }),
-      isDraftAgentRunning: agents === null ? false : isPrDraftAgentRunning({ agents }),
+      isScribeWriting: sessionMountViews({ state, sessionId: target.sessionId }).some((view) =>
+        isScribeWriting({ scribeWork: state.scribeWork, mountId: view.id }),
+      ),
       ...signals,
       ...(view === null
         ? {}

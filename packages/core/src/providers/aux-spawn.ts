@@ -1,10 +1,12 @@
 import type { EffortLevel, ProviderId } from '@goodboy/types';
+import { AuxTimedOutError } from './auxTimedOut';
 import { cliModelId } from './cliModelId';
 
 export type AuxSpawnResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
+  readonly isTimedOut?: boolean;
 };
 
 type Params = {
@@ -29,8 +31,8 @@ export const runAuxOneShot = async ({
   workingDir,
   runId,
   invokeFn,
-}: Params): Promise<AuxSpawnResult> =>
-  invokeFn<AuxSpawnResult>('summarize_session', {
+}: Params): Promise<AuxSpawnResult> => {
+  const result = await invokeFn<AuxSpawnResult>('summarize_session', {
     args: {
       providerId,
       model: cliModelId({ provider: providerId, model }),
@@ -42,3 +44,8 @@ export const runAuxOneShot = async ({
       ...(runId != null && { runId }),
     },
   });
+  if (result.isTimedOut === true) {
+    throw new AuxTimedOutError();
+  }
+  return result;
+};

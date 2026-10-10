@@ -1,8 +1,11 @@
 # Mock screenshots
 
 > **Read this when** you need a real-app screenshot with fake, advanced,
-> non-empty state (for a social post, a README image, a deck). **Not for**
-> testing (see `docs/testing.md`).
+> non-empty state (for a social post, a README image, a deck), or you add a
+> mock scene. Scenes serve screenshots and tests: the a11y suite mounts and
+> scans every scene, and a scene with clickable writes is clicked by its twin
+> test. **Not for** proving behavior, which lives in harness tests (see
+> `docs/testing.md`).
 
 Every published screenshot follows one rule: real components, fake data, never
 an empty state, never real client or project names. Getting there the slow way
@@ -225,7 +228,10 @@ once. Approving a plan is the real `approveWorkflowRunPlan`. The plan drawer
 scenes and the plan scenes of the run page install both. `plan-drawer-follow`
 opens the drawer over the Overview, so **Approve** raises the "Plan approved"
 toast with **Follow the run**; over the run page the toast has no action,
-because the page is already there.
+because the page is already there. `plan-drawer-approved` is the orchestrated
+case: the run has no next step yet, `?approve=1` presses **Approve** on its own,
+and reopening the plan through **Review plan** shows **Approved** with no
+primary.
 
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.

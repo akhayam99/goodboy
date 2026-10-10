@@ -37,7 +37,7 @@ const facts = (overrides: Partial<PullRequestFacts>): PullRequestFacts => ({
   openComments: 0,
   isOwn: true,
   writeInFlight: null,
-  isDraftAgentRunning: false,
+  isScribeWriting: false,
   commentsNeedYou: 0,
   isFixRunLive: false,
   mergeMethods: ['squash', 'merge', 'rebase'],
@@ -201,5 +201,16 @@ describe('pull request, a write in flight', () => {
     expect(matrix).toContain('pullRequest.merge secondary (Goodboy is already merging #318.)');
     expect(matrix).toContain('pullRequest.convertToDraft menu (Goodboy is already merging #318.)');
     expect(matrix).toContain('pullRequest.openOnGithub secondary');
+  });
+});
+
+describe('pull request, Scribe writing the text', () => {
+  it('holds Create with the reason while the job runs', () => {
+    expect(
+      matrixOf({
+        definitions,
+        facts: facts({ phase: 'none', pr: null, number: null, isScribeWriting: true }),
+      }),
+    ).toEqual(['pullRequest.create primary (Scribe is still writing the text.)']);
   });
 });

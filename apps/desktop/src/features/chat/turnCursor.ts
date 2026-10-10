@@ -52,3 +52,19 @@ export const writeTurnCursor = ({ runId, cursor }: WriteParams): void =>
   cursorPref({ runId }).write(cursor);
 
 export const clearTurnCursor = ({ runId }: RunParams): void => cursorPref({ runId }).clear();
+
+export const listTurnCursorRunIds = (): ReadonlyArray<string> => {
+  try {
+    const prefix = STORAGE_PREFIXES.turnCursor;
+    const runIds: string[] = [];
+    for (let index = 0; index < sessionStorage.length; index += 1) {
+      const key = sessionStorage.key(index);
+      if (key !== null && key.startsWith(prefix)) {
+        runIds.push(key.slice(prefix.length));
+      }
+    }
+    return runIds;
+  } catch {
+    return [];
+  }
+};

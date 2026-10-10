@@ -31,7 +31,7 @@ const facts = (overrides: Partial<MountFacts>): MountFacts => ({
   isRebasing: false,
   comments: 0,
   canStartTurnsHere: false,
-  isDraftAgentRunning: false,
+  isScribeWriting: false,
   blockers: [],
   editors: [],
   ...overrides,
@@ -42,7 +42,7 @@ const COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
 const ADD_TASK = 'mount.putTaskOnBranch chip';
 const HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip', ADD_TASK];
 const WITH_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
-const DIRTY_2 = 'Commit or discard the 2 uncommitted changes first.';
+const DIRTY_2 = '2 files have changes that are not committed. Commit or stash them first.';
 
 const STATES: ReadonlyArray<{
   readonly name: string;
@@ -254,7 +254,7 @@ describe('mount, labels by state', () => {
     );
   });
 
-  it('holds Create PR while an agent is already opening one', () => {
+  it('holds Create PR while Scribe is still writing', () => {
     const create = resolveActions({
       definitions,
       facts: facts({
@@ -262,9 +262,9 @@ describe('mount, labels by state', () => {
         requestLabel: null,
         requestNumber: null,
         requestProvider: null,
-        isDraftAgentRunning: true,
+        isScribeWriting: true,
       }),
     }).find((action) => action.id === 'mount.createPullRequest');
-    expect(create?.blockedReason).toBe('An agent is already opening a pull request.');
+    expect(create?.blockedReason).toBe('Scribe is still writing the text.');
   });
 });

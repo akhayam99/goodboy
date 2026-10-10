@@ -13,6 +13,7 @@ import {
   type ProviderPolicy,
   type SessionId,
 } from '@goodboy/types';
+import { autoRoutableProviders } from '../providers/autoRoutableProviders';
 import type { ProviderDisplayInfo } from '../providers/providers';
 import { providersCoolingDown } from '../providers/taskModelRouting';
 import type { ProviderCooldowns } from '../providers/routing';
@@ -56,10 +57,9 @@ export const workflowAvailabilitySnapshot = ({
   const budgetBlockedProviders: ReadonlyArray<ProviderId> = PROVIDER_IDS.filter((provider) =>
     blockedNames.has(PROVIDER_ID_TO_NAME[provider]),
   );
-  const connected = providers
-    .filter((provider) => provider.connection === 'connected')
-    .map((provider) => provider.id)
-    .filter((provider) => providerPool === null || providerPool.includes(provider));
+  const connected = autoRoutableProviders({ providers }).filter(
+    (provider) => providerPool === null || providerPool.includes(provider),
+  );
   const working = workingProviders({
     defaultProvider: connected[0] ?? 'anthropic',
     connected,

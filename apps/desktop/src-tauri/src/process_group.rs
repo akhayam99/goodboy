@@ -37,6 +37,17 @@ pub fn terminate(pid: u32) {
 pub fn terminate(_pid: u32) {}
 
 #[cfg(unix)]
+pub fn kill(pid: u32) {
+    let group = pid as libc::pid_t;
+    if unsafe { libc::killpg(group, libc::SIGKILL) } != 0 {
+        unsafe { libc::kill(group, libc::SIGKILL) };
+    }
+}
+
+#[cfg(not(unix))]
+pub fn kill(_pid: u32) {}
+
+#[cfg(unix)]
 fn group_alive(group: libc::pid_t) -> bool {
     unsafe { libc::kill(-group, 0) == 0 }
 }

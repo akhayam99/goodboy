@@ -8,6 +8,7 @@ import {
   unknownReasonLabel,
   unmergedCount,
 } from './gitStatus';
+import { dirtyTreeSentence } from './dirtyTreeCopy';
 
 type Params = {
   readonly status: WorkspaceGitStatus | null;
@@ -65,7 +66,7 @@ export const projectUpdateBlockReasonOf = ({ status }: StatusParams): string | n
     return unknownReasonLabel({ reason: status.workingTree.reason });
   }
   if (!isWorkingTreeClean({ workingTree: status.workingTree })) {
-    return 'commit or stash the uncommitted changes first';
+    return dirtyTreeSentence({ count: status.workingTree.changed });
   }
   if (status.upstreamDistance.kind === 'unknown') {
     return unknownReasonLabel({ reason: status.upstreamDistance.reason });

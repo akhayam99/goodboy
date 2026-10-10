@@ -14,6 +14,14 @@ type TurnEnvelope = {
       readonly exit_code: number | null;
       readonly stderr: string;
     }
+  | {
+      readonly type: 'reaped';
+      readonly stopped: ReadonlyArray<{
+        readonly pid: number;
+        readonly name: string;
+        readonly port: number | null;
+      }>;
+    }
 );
 
 const { capturedListeners, invokeMock, unlistenMock } = vi.hoisted(() => ({
@@ -306,6 +314,54 @@ describe('runTurn', () => {
     await expect(iterator.next()).resolves.toMatchObject({
       done: false,
       value: { kind: 'error', message: 'stream\ndropped' },
+    });
+  });
+
+  it('turns what the backend stopped at the end of the turn into one event', async () => {
+    const runId = 'reaped-run' as ProviderRunId;
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        capturedListeners[0]?.({
+          runId,
+          type: 'line',
+          line: JSON.stringify({ type: 'system', subtype: 'init', session_id: 'session-reaped' }),
+        });
+        capturedListeners[0]?.({
+          runId,
+          type: 'reaped',
+          stopped: [
+            { pid: 4101, name: 'next-server', port: null },
+            { pid: 4102, name: 'sh', port: null },
+          ],
+        });
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 0, stderr: '' });
+      }
+      return runId;
+    });
+
+    const events = [];
+    for await (const event of runTurn({
+      runId,
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      workingDir: '/tmp/worktree',
+      writableRoots: [],
+      prompt: 'hello',
+    })) {
+      events.push(event);
+    }
+
+    expect(events.map((event) => event.kind)).toEqual([
+      'provider_session_init',
+      'processes_stopped',
+    ]);
+    expect(events[1]).toMatchObject({
+      kind: 'processes_stopped',
+      runId,
+      stopped: [
+        { pid: 4101, name: 'next-server', port: null },
+        { pid: 4102, name: 'sh', port: null },
+      ],
     });
   });
 

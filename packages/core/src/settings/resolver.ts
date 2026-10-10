@@ -1,4 +1,11 @@
-import type { GlobalSettings, OverrideSettings, ResolvedSettings } from '@goodboy/types';
+import type {
+  GlobalSettings,
+  OverrideSettings,
+  ResolvedSettings,
+  RoleModelPreference,
+  TaskModelPreference,
+} from '@goodboy/types';
+import { createKeyedMerge } from './createKeyedMerge';
 
 export type ResolveSettingsInput = {
   readonly global: GlobalSettings;
@@ -6,6 +13,10 @@ export type ResolveSettingsInput = {
   readonly projectOverride?: OverrideSettings | null;
   readonly sessionOverride?: OverrideSettings | null;
 };
+
+const mergeRoleModels = createKeyedMerge<RoleModelPreference>();
+
+const mergeTaskModels = createKeyedMerge<TaskModelPreference>();
 
 export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings => {
   const {
@@ -16,8 +27,12 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
   } = input;
 
   return {
-    roleModels: sess?.roleModels ?? project?.roleModels ?? ws?.roleModels ?? null,
-    taskModels: sess?.taskModels ?? project?.taskModels ?? ws?.taskModels ?? null,
+    roleModels: mergeRoleModels({
+      layers: [ws?.roleModels, project?.roleModels, sess?.roleModels],
+    }),
+    taskModels: mergeTaskModels({
+      layers: [ws?.taskModels, project?.taskModels, sess?.taskModels],
+    }),
     providerPool: sess?.providerPool ?? project?.providerPool ?? ws?.providerPool ?? null,
     parallelAgents: sess?.parallelAgents ?? project?.parallelAgents ?? ws?.parallelAgents ?? false,
     providerBindings: {

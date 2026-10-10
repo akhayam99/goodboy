@@ -6,6 +6,8 @@ import type {
   IsoDateTime,
   PlanWithCount,
   SessionArtifact,
+  Workflow,
+  WorkflowRun,
 } from '@goodboy/types';
 import type { ArtifactFilter, ArtifactGeneration } from './artifactCollection';
 import {
@@ -17,6 +19,8 @@ import {
 import { planConsumerLabel, resolvePlanConsumer } from '../../shared/utils/planConsumer';
 import type { WorkNodeState } from '@goodboy/ui';
 import { planPartRows } from '../plans/components/PlanParts/planPartRows';
+import { planHandoffOf } from '../plans/planHandoffOf';
+import { planOwnerOf } from '../plans/planOwnerOf';
 import { NO_PLAN_STATE_INPUTS, planStateInputsOf } from '../plans/planStateInputs';
 import { NOT_REVISING, type PlanRevising } from '../plans/planRevising';
 
@@ -54,6 +58,8 @@ type Params = Readonly<{
   artifacts: ReadonlyArray<SessionArtifact>;
   generations: ReadonlyArray<ArtifactGeneration>;
   agents: ReadonlyArray<Agent>;
+  runs: ReadonlyArray<WorkflowRun>;
+  templates: ReadonlyArray<Workflow>;
   openQuestionCount: number;
   askingAgentIds: ReadonlySet<AgentId>;
   revising: ReadonlyMap<ArtifactId, PlanRevising>;
@@ -104,18 +110,28 @@ const generationRow = ({
 const planRow = ({
   plan,
   agents,
+  runs,
+  templates,
   openQuestionCount,
   askingAgentIds,
   revising,
 }: {
   readonly plan: PlanWithCount;
   readonly agents: ReadonlyArray<Agent>;
+  readonly runs: ReadonlyArray<WorkflowRun>;
+  readonly templates: ReadonlyArray<Workflow>;
   readonly openQuestionCount: number;
   readonly askingAgentIds: ReadonlySet<AgentId>;
   readonly revising: PlanRevising;
 }): ArtifactListRow => {
   const partRows = planPartRows({ plan, agents, askingAgentIds });
-  const inputs = planStateInputsOf({ plan, rows: partRows, revising });
+  const owner = planOwnerOf({ plan, agents, runs, templates });
+  const inputs = planStateInputsOf({
+    plan,
+    rows: partRows,
+    revising,
+    handoff: planHandoffOf({ plan, run: owner }),
+  });
   const state = artifactStateOf({
     kind: 'plan',
     status: plan.status,
@@ -196,6 +212,8 @@ export const buildArtifactListRows = ({
   artifacts,
   generations,
   agents,
+  runs,
+  templates,
   openQuestionCount,
   askingAgentIds,
   revising,
@@ -207,6 +225,8 @@ export const buildArtifactListRows = ({
       planRow({
         plan,
         agents,
+        runs,
+        templates,
         openQuestionCount,
         askingAgentIds,
         revising: revising.get(plan.id) ?? NOT_REVISING,

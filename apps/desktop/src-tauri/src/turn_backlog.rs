@@ -46,6 +46,9 @@ fn event_bytes(event: &TurnEventPayload) -> usize {
         TurnEventPayload::Line { line } => line.len(),
         TurnEventPayload::End { stderr, .. } => stderr.len(),
         TurnEventPayload::Error { message } => message.len(),
+        TurnEventPayload::Reaped { stopped } => {
+            stopped.iter().map(|process| process.name.len()).sum()
+        }
     }
 }
 

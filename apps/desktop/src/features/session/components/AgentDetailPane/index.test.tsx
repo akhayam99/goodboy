@@ -377,6 +377,39 @@ describe('AgentDetailPane', () => {
     expect(screen.getByText('Brief body')).toBeDefined();
   });
 
+  it('keeps the lead out of the fill slot the transcript sits in, so the composer keeps its room', () => {
+    const { container } = render(
+      <AgentDetailPane
+        session={session}
+        agent={agent}
+        isChatActive
+        onBack={() => {}}
+        context={<span>Resolving thread 3</span>}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    const lead = container.querySelector('[data-slot="pane-lead"]') as HTMLElement;
+    const fill = container.querySelector('[data-slot="pane-fill"]') as HTMLElement;
+    expect(lead.contains(screen.getByText('Next action strip'))).toBe(true);
+    expect(lead.contains(screen.getByText('Resolving thread 3'))).toBe(true);
+    expect(fill.contains(screen.getByText('Transcript body'))).toBe(true);
+    expect(fill.contains(lead)).toBe(false);
+    expect(lead.parentElement).toBe(fill.parentElement);
+    expect(lead.contains(screen.getByText('Transcript body'))).toBe(false);
+  });
+
+  it('leaves the brief lead inline in the scrolling body', () => {
+    const { container } = render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />,
+    );
+
+    expect(container.querySelector('[data-slot="pane-lead"]')).toBeNull();
+    expect(container.querySelector('[data-slot="pane-body"]')?.textContent).toContain(
+      'Next action strip',
+    );
+  });
+
   it('renders the origin context as the first body block, below the agent title', () => {
     render(
       <AgentDetailPane

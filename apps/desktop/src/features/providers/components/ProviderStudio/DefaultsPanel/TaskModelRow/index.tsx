@@ -5,6 +5,7 @@ import {
   resolveStoredModelSelection,
 } from '@goodboy/core';
 import { resolveLimitedTaskModel } from '../../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { Chip } from '@goodboy/ui';
 import type {
   AuxTaskId,
   EffortLevel,
@@ -21,6 +22,7 @@ import { DefaultRow } from '../DefaultRow';
 import { FallbackRow, type FallbackChoice } from '../FallbackRow';
 import { useHiddenModels } from '../../../../hooks/useHiddenModels';
 import { hiddenModelNote } from '../hiddenModelNote';
+import { taskSkippedLine } from './taskSkippedLine';
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 
@@ -57,6 +59,24 @@ export const TaskModelRow = ({
     connectedProviders: connectedProviderIds,
     providerPolicy,
   });
+  const resolved = resolveLimitedTaskModel({
+    limitContext,
+    task,
+    preferences: preference === null ? null : { [task]: preference },
+    workspaceDefaultProviderId: defaultProviderId,
+    sessionDefaultProviderId: defaultProviderId,
+    connectedProviders: connectedProviderIds,
+    providerPolicy,
+  });
+  const skippedLine = taskSkippedLine({
+    preference,
+    using: resolved,
+    context: {
+      defaultProvider: defaultProviderId,
+      connected: connectedProviderIds,
+      policy: providerPolicy,
+    },
+  });
   const providerId = preference?.providerId ?? automatic.providerId;
   const model = preference?.model ?? '';
   const availableProviderIds = connectedProviderIds.filter(
@@ -84,12 +104,13 @@ export const TaskModelRow = ({
       key: resolveStoredModelSelection({ provider: shownModel.providerId, id: shownModel.model })
         .selection.key,
     });
-  const summary = !isShownHidden
+  const hiddenNote = !isShownHidden
     ? help
     : hiddenModelNote({
         provider: shownModel.providerId,
         model: shownModel.model,
       });
+  const summary = skippedLine ?? hiddenNote;
   const limitReason = autoLimitReason({
     defaultProvider: defaultProviderId,
     pickedProvider: automatic.providerId,
@@ -112,7 +133,13 @@ export const TaskModelRow = ({
   };
 
   return (
-    <DefaultRow label={label} summary={summary} isSummaryNoted={isShownHidden} anchor={task}>
+    <DefaultRow
+      label={label}
+      summary={summary}
+      isSummaryNoted={isShownHidden || skippedLine !== null}
+      anchor={task}
+      status={<Chip kind="state" tone="neutral" label={preference === null ? 'Auto' : 'Pinned'} />}
+    >
       <RoutingPicker
         ariaLabel={`${label} routing`}
         connectedProviders={availableProviderIds}

@@ -15,6 +15,7 @@ import {
 } from '../../../features/providers/taskModelRouting';
 import type { GetFn, SetFn } from '../../slice-types';
 import { sessionById } from '../sessions/sessionIndex';
+import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 
 const HELPER_FAILURE_WINDOW_MS = 3 * 60 * 1000;
@@ -42,9 +43,7 @@ const failingProviders = ({ get }: Pick<PoolParams, 'get'>): ReadonlyArray<Provi
 const poolFor = ({ get, sessionId }: PoolParams): BackgroundPool => {
   const session = sessionId == null ? null : sessionById(get().sessions, sessionId);
   return {
-    connectedProviders: get()
-      .providers.filter((provider) => provider.connection === 'connected')
-      .map((provider) => provider.id),
+    connectedProviders: autoRoutableProviders({ providers: get().providers }),
     enabledProviders: session?.providerPreference.enabledProviders ?? null,
     coolingDownProviders: [
       ...providersCoolingDown({ cooldowns: get().providerCooldowns, nowMs: Date.now() }),

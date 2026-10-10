@@ -156,6 +156,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'frame: the Workflows studio draws its band and its title on the column',
     covers: ['openStudio', 'studio:workflow', 'palette:Workflows'],
+    door: 'palette',
     open: () => openPalette(/^Workflows$/),
     lands: async () => {
       await band('Workflows');

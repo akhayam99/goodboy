@@ -11,6 +11,40 @@ file holds those explanations. Everything below has been "fixed" at least once a
 
 ## Deliberate dead ends
 
+- A CLI's Bash tool runs each command as its own session leader (measured: a
+  shell under a Goodboy turn had a process group equal to its pid). Signalling
+  the CLI's group at the end of a turn misses the dev servers and watchers an
+  agent started, so `proc/reap.rs` also walks the tree and matches the
+  `GOODBOY_SPAWN_ID` tag. A child that clears its environment escapes the tag;
+  the tree snapshot covers it only while its parent lives. Do not shrink the
+  reap to `killpg`.
+- macOS hides the environment of Apple-signed binaries (`sh`, `bash`, `sleep`)
+  from other processes, with `ps -E` and with `KERN_PROCARGS2` alike (System
+  Integrity Protection). The tag therefore finds third-party programs (node,
+  bun, vite, the provider CLIs) and not those binaries. They are covered by
+  the tree and the group while the run is alive, and the end-of-turn reap
+  signals the whole process group of the leader, so a restricted child in the
+  group dies there. A restricted child that left the group (its own session)
+  and whose parent is gone is not found by anything: that is a known limit,
+  not a bug to chase with a broader match. A reap test that uses `sleep` as
+  the straggler passes on Linux and fails on macOS. The tests use the test
+  executable as the child on purpose.
+- Never signal a pid taken from an earlier read without asking the kernel
+  again. A pid is only a number: the process that had it may be gone and a
+  stranger may have it now. `reap.rs` compares the kernel start time and the
+  tag right before each TERM and each KILL, and `kill(pid, 0)` is not that
+  check. A zombie has no readable identity on macOS, so a zombie leader the
+  app still holds is kept in the table without one and is never signalled.
+- A side job that prints nothing is not stuck. The Claude CLI answers once, at
+  the end, so the idle cap watches the CPU of the whole tree as well as the
+  pipes. Do not turn it back into a wall clock.
+- The reap waits for the leader with `waitid(WNOWAIT)` and only then calls
+  `child.wait()`. Calling `wait()` first frees the pid, the tree is lost, and
+  the leader can no longer be proven to be ours. Swapping the order brings
+  back the processes that outlive a turn.
+- A tagged process can be a daemon the agent started on purpose, such as a
+  file watcher daemon of the version control tool or an ssh control master. The
+  reap stops it too, and it restarts on demand. That is intended, not a bug.
 - `check-ignore -v --no-index` on a bare `.goodboy` answers "not ignored"
   for a directory-only rule (`.goodboy/`) whenever the folder does not exist
   yet on disk, because git cannot tell the probe is meant to be a directory.
@@ -226,6 +260,15 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   with `fill-mode: both` leaves one behind and puts the row on its own layer),
   and never give lines and elbows different `shape-rendering`. Grow rows with
   `Reveal`, which moves only the grid track.
+- The sign-in CLIs speak through their exit code. `claude auth status` and `codex login status`
+  exit 1 when you are signed out, with a perfectly good answer on stdout, and
+  `cursor-agent status` can say "Logged in (unable to fetch user details)" while every run
+  fails with "Authentication required". Reading a non-zero exit as "unknown", an unknown
+  as "not signed in", or a local token as proof of a server account each made providers
+  connect and disconnect on their own. `probeOutcomeOf` and `providerHealth.ts` keep the
+  three apart: a probe with no answer never changes the standing, a lost sign-in needs two
+  answers 10 seconds apart, and only a refused run or a `verified` answer speaks for the
+  server. Do not collapse them back into one connected flag.
 
 ## Hand-maintained lists the compiler does not check
 
@@ -272,6 +315,13 @@ fails silently at runtime.
 
 ## Traps in the store
 
+- A plan's run is found by its link (`plan.workflowRunId`, else the planner
+  agent's `workflowRunId`) in `planOwnerOf`, never by the next step of the
+  run's workflow. An orchestrated run creates its next step later, so a lookup
+  through the template returns nothing right after Approve and the plan falls
+  back to **Run plan**, a chip that says **Ready to run** and a **Start
+  implementer** card. Ask `planOwnerOf` and `planHandoffOf`; do not rebuild
+  the predicate.
 - A store helper named `select*` is not always safe as a `useAppStore`
   selector. `selectWritableMounts` maps `sessionMounts` views through
   `toProjectMounts`, so it and every helper built on it (`selectMountForPath`,

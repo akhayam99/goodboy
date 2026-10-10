@@ -37,6 +37,7 @@ import { classifyThinkingContext } from '../../utils/thinking-context';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { turnFootersFor } from '../../utils/turnOutcome';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
+import { useProviderHealth } from '../../../../shared/hooks/useProviderHealth';
 import { ChatInput } from '../ChatInput';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { MountSuggestionCard } from '../MountSuggestionCard';
@@ -210,9 +211,9 @@ export const ChatView = ({
   const fadeHostRef = useRef<HTMLDivElement>(null);
 
   const provider = session.providerPreference.defaultProvider;
-  const providerAuthState = authResults?.[provider]?.state ?? null;
   const providerIdentity = authResults?.[provider]?.identity ?? null;
-  const isProviderDisconnected = providerAuthState === 'disconnected';
+  const providerHealth = useProviderHealth({ providerId: provider });
+  const isProviderDisconnected = providerHealth.standing === 'signed_out';
 
   const agentState = useAppStore((s) => {
     return selectedAgentId ? (s.agentTurnState[selectedAgentId] ?? null) : null;
@@ -493,7 +494,7 @@ export const ChatView = ({
   ]);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
         <ScrollFade
           className="flex-1"

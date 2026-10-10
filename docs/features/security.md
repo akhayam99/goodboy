@@ -78,7 +78,7 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in 18 short chapters that follow a task, with search and links that open each screen. Open **Guide** from the palette.
+Learn how Goodboy works in 18 short chapters that follow a task, with search and links that open each screen. Open **Guide** from the Goodboy menu or the palette.
 
 **Also in this area**
 

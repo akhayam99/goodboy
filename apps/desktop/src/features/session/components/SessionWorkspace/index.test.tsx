@@ -248,10 +248,10 @@ vi.mock('./parts/IntegrationPane/GithubTaskDetail', () => ({
     <div data-testid="github-task-detail">{issueNumber}</div>
   ),
 }));
-vi.mock('./parts/IntegrationPane/LinkTicketPopover', () => ({
-  LinkTicketPopover: ({ provider }: { provider: string }) => (
-    <button type="button" data-testid="link-ticket-popover">
-      {`Link ${provider} issue`}
+vi.mock('../SessionOverviewPane/LinkIssueAction', () => ({
+  LinkIssueAction: ({ initialSource }: { initialSource?: string }) => (
+    <button type="button" data-testid="link-work-action">
+      {`Link work from ${initialSource ?? 'any tracker'}`}
     </button>
   ),
 }));
@@ -889,7 +889,7 @@ describe('SessionWorkspace github issue lens', () => {
 
     expect(screen.getByText('No GitHub issue linked')).toBeDefined();
     expect(screen.queryByTestId('github-task-detail')).toBeNull();
-    expect(screen.getByTestId('link-ticket-popover').textContent).toBe('Link github issue');
+    expect(screen.getByTestId('link-work-action').textContent).toBe('Link work from github');
   });
 
   it('swaps the empty state for the linked issue once linking writes an external task', () => {
@@ -900,7 +900,7 @@ describe('SessionWorkspace github issue lens', () => {
     const { rerender } = render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByText('No GitHub issue linked')).toBeDefined();
-    fireEvent.click(screen.getByTestId('link-ticket-popover'));
+    fireEvent.click(screen.getByTestId('link-work-action'));
 
     store.sessionExternalTasks = { [SESSION_ID]: [githubTask] };
     rerender(<SessionWorkspace session={session} isActive />);

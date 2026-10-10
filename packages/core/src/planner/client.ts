@@ -1,5 +1,6 @@
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
+import { AuxTimedOutError } from '../providers/auxTimedOut';
 import { computeProviderCostUsd } from '../providers/provider-cost';
 import { cliModelId } from '../providers/cliModelId';
 import { getDefaultBinary } from '../providers/cli-defaults';
@@ -46,6 +47,7 @@ type InvokeResult = {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number | null;
+  readonly isTimedOut?: boolean;
 };
 
 export class PlannerClient {
@@ -79,6 +81,9 @@ export class PlannerClient {
       },
     });
 
+    if (result.isTimedOut === true) {
+      throw new AuxTimedOutError();
+    }
     if (result.exitCode !== 0) {
       throw new PlannerClientSpawnError(result.exitCode, result.stderr);
     }

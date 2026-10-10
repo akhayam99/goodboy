@@ -27,6 +27,7 @@ type Setup = {
 
 const mount = ({ activePath, collapsed = [], viewedPaths = [] }: Setup) => {
   const jumpTo = vi.fn();
+  const stepTo = vi.fn();
   const toggleFolder = vi.fn();
   const onToggle = vi.fn();
   const onToggleTree = vi.fn();
@@ -39,6 +40,7 @@ const mount = ({ activePath, collapsed = [], viewedPaths = [] }: Setup) => {
     collapsed: new Set(collapsed),
     toggleFolder,
     jumpTo,
+    stepTo,
     viewed: {
       stateOf: (file: FileDiff): ViewedState =>
         viewedPaths.includes(file.path) ? 'viewed' : 'none',
@@ -48,7 +50,7 @@ const mount = ({ activePath, collapsed = [], viewedPaths = [] }: Setup) => {
   renderHook(() =>
     useDiffKeys({ enabled: true, review, onToggleTree, onFocusTree, onFocusFilter }),
   );
-  return { jumpTo, toggleFolder, onToggle, onToggleTree, onFocusTree, onFocusFilter };
+  return { jumpTo, stepTo, toggleFolder, onToggle, onToggleTree, onFocusTree, onFocusFilter };
 };
 
 afterEach(() => {
@@ -58,35 +60,41 @@ afterEach(() => {
 
 describe('useDiffKeys', () => {
   it('moves to the next and previous file in tree order', () => {
-    const { jumpTo } = mount({ activePath: 'api/b.ts' });
+    const { stepTo, jumpTo } = mount({ activePath: 'api/b.ts' });
     pressShortcut({ id: 'diff.fileDown' });
     pressShortcut({ id: 'diff.fileUp' });
-    expect(jumpTo.mock.calls.map(([path]) => path)).toEqual(['web/c.ts', 'api/a.ts']);
+    expect(stepTo.mock.calls.map(([path]) => path)).toEqual(['web/c.ts', 'api/a.ts']);
+    expect(jumpTo).not.toHaveBeenCalled();
   });
 
   it('keeps the bracket keys as aliases of j and k', () => {
-    const { jumpTo } = mount({ activePath: 'api/b.ts' });
+    const { stepTo } = mount({ activePath: 'api/b.ts' });
     pressShortcut({ id: 'diff.nextFile' });
     pressShortcut({ id: 'diff.previousFile' });
-    expect(jumpTo.mock.calls.map(([path]) => path)).toEqual(['web/c.ts', 'api/a.ts']);
+    expect(stepTo.mock.calls.map(([path]) => path)).toEqual(['web/c.ts', 'api/a.ts']);
   });
 
-  it('skips the files of a closed folder', () => {
-    const { jumpTo } = mount({ activePath: 'api/b.ts', collapsed: ['dir:web'] });
+  it('visits the files of a closed folder, going down and going up', () => {
+    const down = mount({ activePath: 'api/b.ts', collapsed: ['dir:web'] });
     pressShortcut({ id: 'diff.fileDown' });
-    expect(jumpTo).toHaveBeenCalledWith('root.ts');
+    expect(down.stepTo).toHaveBeenCalledWith('web/c.ts');
+    cleanup();
+
+    const up = mount({ activePath: 'root.ts', collapsed: ['dir:web'] });
+    pressShortcut({ id: 'diff.fileUp' });
+    expect(up.stepTo).toHaveBeenCalledWith('web/d.ts');
   });
 
   it('starts at the first file when none is in view', () => {
-    const { jumpTo } = mount({ activePath: null });
+    const { stepTo } = mount({ activePath: null });
     pressShortcut({ id: 'diff.fileDown' });
-    expect(jumpTo).toHaveBeenCalledWith('api/a.ts');
+    expect(stepTo).toHaveBeenCalledWith('api/a.ts');
   });
 
   it('stays put at the last file', () => {
-    const { jumpTo } = mount({ activePath: 'root.ts' });
+    const { stepTo } = mount({ activePath: 'root.ts' });
     pressShortcut({ id: 'diff.fileDown' });
-    expect(jumpTo).not.toHaveBeenCalled();
+    expect(stepTo).not.toHaveBeenCalled();
   });
 
   it('marks the file viewed and goes to the next unviewed one', () => {
@@ -141,7 +149,7 @@ describe('useDiffKeys', () => {
   });
 
   it('ignores the keys while typing in a field', () => {
-    const { jumpTo, onToggle, onFocusTree } = mount({ activePath: 'api/a.ts' });
+    const { jumpTo, stepTo, onToggle, onFocusTree } = mount({ activePath: 'api/a.ts' });
     const field = document.createElement('input');
     document.body.appendChild(field);
     field.focus();
@@ -149,6 +157,7 @@ describe('useDiffKeys', () => {
       pressShortcut({ id, target: field });
     }
     expect(jumpTo).not.toHaveBeenCalled();
+    expect(stepTo).not.toHaveBeenCalled();
     expect(onToggle).not.toHaveBeenCalled();
     expect(onFocusTree).not.toHaveBeenCalled();
   });

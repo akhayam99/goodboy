@@ -1,11 +1,60 @@
 #!/bin/sh
 . "$(dirname "$0")/common.sh"
+
+cursor_status_json() {
+  case "$fake_mode" in
+    unable-to-fetch)
+      printf '{\n  "status": "authenticated",\n  "isAuthenticated": true,\n  "hasAccessToken": true,\n  "hasRefreshToken": true,\n  "message": "Logged in (unable to fetch user details)"\n}\n'
+      ;;
+    logged-out)
+      printf '{\n  "status": "unauthenticated",\n  "isAuthenticated": false,\n  "hasAccessToken": false,\n  "hasRefreshToken": false,\n  "message": "Not logged in"\n}\n'
+      exit 1
+      ;;
+    *)
+      printf '{\n  "status": "authenticated",\n  "isAuthenticated": true,\n  "hasAccessToken": true,\n  "hasRefreshToken": true,\n  "message": "Logged in as avery@harborline.test"\n}\n'
+      ;;
+  esac
+}
+
+cursor_status_text() {
+  case "$fake_mode" in
+    unable-to-fetch)
+      printf 'Logged in (unable to fetch user details)\n' >&2
+      ;;
+    logged-out)
+      printf 'Not logged in\n' >&2
+      exit 1
+      ;;
+    *)
+      printf 'Logged in as avery@harborline.test\n' >&2
+      ;;
+  esac
+}
+
 case "$1" in
   --version)
     fake_version "2026.09.17-fake"
     ;;
   status)
-    printf 'Logged in as avery@harborline.test\n' >&2
+    case "$fake_mode" in
+      slow)
+        fake_hang
+        ;;
+      text-status)
+        if [ "$2" = "--format" ]; then
+          printf "error: unknown option '--format'\n" >&2
+          exit 1
+        fi
+        cursor_status_text
+        ;;
+      *)
+        if [ "$2" = "--format" ]; then
+          cursor_status_json
+        else
+          cursor_status_text
+        fi
+        ;;
+    esac
     ;;
   *)
     fake_turn cursor-agent.jsonl "$@"

@@ -1,5 +1,6 @@
 import type { ArtifactId, SearchHit } from '@goodboy/types';
 import type { AppState } from '../../store/types';
+import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { askingAgentIdsOf } from '../plans/askingAgentIdsOf';
 import { buildArtifactListRows } from '../artifacts/artifactListRows';
 import type { ObjectTarget } from '../actions/types';
@@ -13,11 +14,14 @@ export const hitPlanRunning = ({ hit, state }: Params): boolean => {
   if (hit.sessionId === null) {
     return false;
   }
+  const session = sessionById(state.sessions, hit.sessionId);
   const rows = buildArtifactListRows({
     plans: state.sessionPlans[hit.sessionId] ?? [],
     artifacts: state.sessionArtifacts[hit.sessionId] ?? [],
     generations: [],
     agents: state.sessionPhaseRuns[hit.sessionId] ?? [],
+    runs: session?.workflowRuns ?? [],
+    templates: session === undefined ? [] : (state.phaseTemplates[session.workspaceId] ?? []),
     openQuestionCount: (state.sessionOpenQuestions[hit.sessionId] ?? []).length,
     now: Date.now(),
     revising: new Map(),

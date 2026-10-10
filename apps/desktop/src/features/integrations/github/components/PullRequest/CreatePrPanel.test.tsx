@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
-  Agent,
-  AgentId,
   IsoDateTime,
   SessionExternalTask,
   SessionId,
@@ -28,7 +26,6 @@ type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
   readonly navigate: ReturnType<typeof vi.fn>;
   readonly loadAgentTranscript: ReturnType<typeof vi.fn>;
-  sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   readonly sessionBranches: Record<string, string>;
   readonly sessionProjectMounts: Record<string, ReadonlyArray<never>>;
   readonly sessionActiveProject: Record<string, string>;
@@ -78,7 +75,6 @@ const h = vi.hoisted(() => ({
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-2'),
     navigate: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
     sessionBranches: { 'session-2': 'ak/card-config' },
     sessionProjectMounts: {},
     sessionActiveProject: {},
@@ -158,14 +154,6 @@ const renderPanel = () =>
     <CreatePrPanel sessionId={SESSION_ID} defaultTitle="Refactor PR cards" onCreated={vi.fn()} />,
   );
 
-const draftingAgent = (): Agent => ({
-  id: 'agent-1' as AgentId,
-  sessionId: SESSION_ID,
-  ordinal: 1,
-  name: 'open pull request',
-  status: 'running',
-});
-
 const switchToAgentMode = () => {
   fireEvent.click(screen.getByRole('tab', { name: 'Draft with an agent' }));
 };
@@ -175,7 +163,6 @@ beforeEach(() => {
   h.store.createPrForSession.mockImplementation(async () => undefined);
   h.store.spawnAgent.mockClear();
   h.store.navigate.mockClear();
-  h.store.sessionPhaseRuns = {};
   h.store.requestScribe.mockClear();
   h.store.openScribePullRequest.mockClear();
   h.store.scribeWork = {};
@@ -424,21 +411,63 @@ describe('CreatePrPanel', () => {
     expect(onCreated).not.toHaveBeenCalled();
   });
 
-  it('blocks both create actions while a drafting agent or Scribe works', async () => {
-    h.store.sessionPhaseRuns = { 'session-2': [draftingAgent()] };
+  it('locks the creation mode and both create actions while Scribe writes', async () => {
+    h.store.scribeWork = { 'pr:mount-1': { status: 'writing', output: null, error: null } };
     renderPanel();
     await screen.findByRole('combobox', { name: 'Branch' });
 
+    expect(screen.getByRole('tab', { name: 'Manual' }).hasAttribute('disabled')).toBe(true);
+    const agentTab = screen.getByRole('tab', { name: 'Draft with an agent' });
+    expect(agentTab.hasAttribute('disabled')).toBe(true);
+    expect(agentTab.getAttribute('title')).toBe('Scribe is still writing the text.');
     expect(
       screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
     ).toBe(true);
-    expect(
-      screen.getByText('An agent is already opening a pull request for this session.'),
-    ).toBeDefined();
-    switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Write and open' }));
+    fireEvent.click(agentTab);
 
+    expect(screen.queryByRole('button', { name: 'Write and open' })).toBeNull();
     expect(h.store.requestScribe).not.toHaveBeenCalled();
+  });
+
+  it('leaves the mode control free when no Scribe job runs', async () => {
+    renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+
+    expect(screen.getByRole('tab', { name: 'Manual' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('tab', { name: 'Draft with an agent' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+  });
+
+  it('keeps the text the person typed when Scribe fails afterwards', async () => {
+    const view = renderPanel();
+    await screen.findByRole('combobox', { name: 'Branch' });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Pull request title' }), {
+      target: { value: 'My own title' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Pull request description' }), {
+      target: { value: 'My own description.' },
+    });
+
+    h.store.scribeWork = failedScribe('remote: Permission denied');
+    view.rerender(
+      <CreatePrPanel sessionId={SESSION_ID} defaultTitle="Refactor PR cards" onCreated={vi.fn()} />,
+    );
+
+    expect(
+      (screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement).value,
+    ).toBe('My own title');
+    expect(
+      (screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement)
+        .value,
+    ).toBe('My own description.');
+    fireEvent.click(screen.getByRole('button', { name: 'Create pull request' }));
+
+    await waitFor(() =>
+      expect(h.store.createPrForSession).toHaveBeenCalledWith(
+        expect.objectContaining({ body: 'My own description.', isScribeBody: false }),
+      ),
+    );
   });
 
   it('says Scribe is writing while its turn runs', async () => {

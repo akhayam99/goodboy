@@ -34,7 +34,7 @@ import { planEditBlockOf } from '../../plans/planEditBlock';
 import { planPrimaryOf, type PlanPrimary } from '../../plans/planPrimaryOf';
 import { plannerQuestionsOf } from '../../plans/plannerQuestions';
 import { unsentCommentsQuestion } from '../../plans/unsentCommentsQuestion';
-import { planRunOf } from '../../plans/planRunOf';
+import { planOwnerOf } from '../../plans/planOwnerOf';
 import { planRunToast } from '../../plans/planRunToast';
 import { openPlanDrawer } from '../../plans/openPlanDrawer';
 import { NOT_REVISING, planRevisingOf, type PlanRevising } from '../../plans/planRevising';
@@ -379,7 +379,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
   },
   {
     id: 'artifact.runPlan',
-    label: ({ facts }) => primaryOf({ facts }).label ?? NAMES.runPlan,
+    label: ({ facts }) => primaryOf({ facts }).label ?? NAMES.approve,
     icon: Play,
     group: 'act',
     slot: () => 'primary',
@@ -754,7 +754,7 @@ export const ARTIFACT_KIND: ObjectKindDefinition<ArtifactActionTarget, ArtifactF
       planRun:
         plan === null || session === null
           ? null
-          : planRunOf({
+          : planOwnerOf({
               plan,
               agents: state.sessionPhaseRuns[target.sessionId] ?? NO_AGENTS,
               runs: session.workflowRuns,

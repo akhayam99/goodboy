@@ -2,6 +2,7 @@ activity
 activity-empty
 activity-groups
 activity-log
+activity-mark-seen
 activity-one-signal
 activity-question
 activity-resolves
@@ -14,6 +15,7 @@ agent-brief-door-transcript
 agent-brief-question
 agent-finished-model
 agent-running-stop
+agentlead
 agents-list-empty
 artifact-create-report
 artifact-create-wireframe
@@ -52,6 +54,7 @@ branch-commits-toolbar
 branch-description-open
 branch-files
 branch-files-button
+branch-files-deep
 branch-files-docked
 branch-files-notes
 branch-files-strip
@@ -76,6 +79,7 @@ branch-pr-merge-methods
 branch-pr-merged
 branch-pr-narrow
 branch-pr-none
+branch-pr-scribe-writing
 branch-push
 branch-reply-alone
 branch-reply-bundled
@@ -182,6 +186,7 @@ inbox-empty
 inbox-error
 inbox-source
 inbox-states
+integration-issue-focused
 lens-switcher
 lens-switcher-closed
 link-scope
@@ -191,10 +196,13 @@ model-picker-claude
 model-picker-codex
 model-picker-cursor
 model-picker-triggers
+modelswilluse
+modelswilluse-cleared
 mount-mismatch
 mounts
 needs-you-card
 notifications
+notifications-delete-all
 notifications-empty
 onboarding
 open-question-prose
@@ -218,6 +226,7 @@ palette-stable-height
 palette-stable-height-typing
 palette-state
 permissions-empty
+plan-drawer-approved
 plan-drawer-conflict
 plan-drawer-drafts
 plan-drawer-editing
@@ -232,12 +241,16 @@ planner-transcript-drawer
 planner-transcript-expanded
 planner-transcript-replaced
 planner-transcript-revising
+processes-stopped
+providerhealth
 providers
 questions-empty
 rail-draft-dot
 rail-flyout
 rail-pinned
 rail-ticket-ids
+railorder
+rebasedirty
 repo-status
 resolve
 resolve-bitbucket
@@ -319,6 +332,7 @@ switcher-pinned
 task-links
 task-links-hover
 task-links-undo
+tasks-cursor
 terminal-empty
 toast-over-drawer
 toast-over-drawer-overlay

@@ -1,9 +1,12 @@
 pre-commit:
-  parallel: true
   commands:
     format:
+      priority: 1
       glob: '*.{ts,tsx,js,jsx,json,md,yml,yaml}'
       run: '"$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/node_modules/.bin/prettier" --write {staged_files} && git add {staged_files}'
+    rules:
+      priority: 2
+      run: node scripts/check-rules.mjs --staged
 
 commit-msg:
   commands:

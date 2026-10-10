@@ -10,6 +10,7 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter, State};
 
 struct TerminalSession {
+    spawn_id: String,
     writer: Box<dyn Write + Send>,
     master: Box<dyn portable_pty::MasterPty + Send>,
     child: Box<dyn portable_pty::Child + Send + Sync>,
@@ -77,9 +78,7 @@ pub fn shutdown(registry: &TerminalRegistry) {
         let Some(mut session) = guard.take() else {
             continue;
         };
-        if let Some(leader_pid) = session.child.process_id() {
-            terminate_pty_session(leader_pid);
-        }
+        reap_pty_session(session.child.process_id(), &session.spawn_id);
         crate::logging::note_kill_failure("terminal session kill", session.child.kill());
     }
 }
@@ -140,23 +139,37 @@ fn signal_pty_session(sid: libc::pid_t, signal: libc::c_int) {
 }
 
 #[cfg(unix)]
-pub(crate) fn terminate_pty_session(leader_pid: u32) {
+pub(crate) fn terminate_pty_session(leader_pid: u32) -> usize {
     let sid = leader_pid as libc::pid_t;
-    if session_descendants(sid).is_empty() {
-        return;
+    let signalled = session_descendants(sid).len();
+    if signalled == 0 {
+        return 0;
     }
     signal_pty_session(sid, libc::SIGTERM);
     for _ in 0..SESSION_DRAIN_POLLS {
         thread::sleep(SESSION_DRAIN_INTERVAL);
         if session_descendants(sid).is_empty() {
-            return;
+            return signalled;
         }
     }
     signal_pty_session(sid, libc::SIGKILL);
+    signalled
 }
 
 #[cfg(not(unix))]
-pub(crate) fn terminate_pty_session(_leader_pid: u32) {}
+pub(crate) fn terminate_pty_session(_leader_pid: u32) -> usize {
+    0
+}
+
+pub(crate) fn reap_pty_session(leader_pid: Option<u32>, spawn_id: &str) -> usize {
+    let signalled = leader_pid.map(terminate_pty_session).unwrap_or(0);
+    let report = crate::proc::reap::reap(crate::proc::reap::ReapParams {
+        leader_pid,
+        is_leader_exited: true,
+        spawn_id: Some(spawn_id),
+    });
+    signalled + report.stopped.len()
+}
 
 #[tauri::command]
 pub async fn terminal_open(
@@ -207,6 +220,7 @@ pub async fn terminal_open(
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
         cmd.env("SHELL", &shell);
+        let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Terminal);
 
         let child = pair
             .slave
@@ -224,6 +238,7 @@ pub async fn terminal_open(
             .map_err(|e| TerminalError::Io(e.to_string()))?;
 
         let slot: SessionSlot = Arc::new(Mutex::new(Some(TerminalSession {
+            spawn_id: tag.id,
             writer,
             master: pair.master,
             child,
@@ -372,9 +387,7 @@ pub async fn terminal_close(
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
             if let Some(mut session) = guard.take() {
-                if let Some(leader_pid) = session.child.process_id() {
-                    terminate_pty_session(leader_pid);
-                }
+                reap_pty_session(session.child.process_id(), &session.spawn_id);
                 crate::logging::note_kill_failure("terminal session kill", session.child.kill());
             }
         }
@@ -503,6 +516,7 @@ mod tests {
             "session-1".to_string(),
             TerminalEntry {
                 slot: Arc::new(Mutex::new(Some(TerminalSession {
+                    spawn_id: String::new(),
                     writer,
                     master: pair.master,
                     child,

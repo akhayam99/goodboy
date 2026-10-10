@@ -9,8 +9,26 @@ type Props = {
   readonly isReasonShown?: boolean;
 };
 
+const APPROVING_LABEL = 'Approving';
+
 export const PlanPrimaryButton = ({ action, isReasonShown = true }: Props) => {
-  const { primary, isBusy, error, press } = action;
+  const { primary, isBusy, isApproving, error, press } = action;
+  if (isApproving) {
+    return (
+      <Button
+        variant="primary"
+        size="sm"
+        disabled
+        isBusy
+        data-testid="plan-primary"
+        data-plan-primary="approving"
+        data-filled="true"
+      >
+        <Check size={ICON_SIZE.row} aria-hidden />
+        {APPROVING_LABEL}
+      </Button>
+    );
+  }
   if (primary.kind === 'none' || primary.label === null) {
     return null;
   }

@@ -3,7 +3,6 @@ import type { ProviderId, ProviderLifecycleAction } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { cliUpdateResultOf } from '../../../features/providers/cliUpdateResult';
 import {
-  buildProviderList,
   type ProviderAuthResults,
   type ProviderStatus,
   type ProviderStatuses,
@@ -15,7 +14,7 @@ import {
   resolveLifecycleCommand,
   type LifecycleExitPayload,
 } from '../../../features/providers/provider-lifecycle';
-import { clearStaleConnect } from './clearStaleConnect';
+import { applyProviderProbe, takeProbeSeq } from './applyProviderProbe';
 import { detectAuthUrl } from './detectAuthUrl';
 import { stripAnsi } from './stripAnsi';
 import type { GetFn, SetFn } from './types';
@@ -209,48 +208,51 @@ export const runLifecycle = async (
 
     const sharesOpencodeBinary = OPENCODE_BINARY_PROVIDERS.has(providerId);
 
-    set((state) => {
-      const statuses: ProviderStatuses = {
-        anthropic: providerId === 'anthropic' ? payload.status : state.providerStatus,
-        cursor: providerId === 'cursor' ? payload.status : state.cursorStatus,
-        codex: providerId === 'codex' ? payload.status : state.codexStatus,
-        gemini: providerId === 'gemini' ? payload.status : state.geminiStatus,
-        opencode: sharesOpencodeBinary
-          ? { ...payload.status, id: 'opencode' }
-          : storedStatus({ providerId: 'opencode', providers: state.providers }),
-        openrouter: sharesOpencodeBinary
-          ? { ...payload.status, id: 'openrouter' }
-          : storedStatus({ providerId: 'openrouter', providers: state.providers }),
-        moonshot: sharesOpencodeBinary
-          ? { ...payload.status, id: 'moonshot' }
-          : storedStatus({ providerId: 'moonshot', providers: state.providers }),
-      };
-      const authResults: ProviderAuthResults = {
-        ...(state.authResults ?? {}),
-        [providerId]: payload.auth,
-      };
-      const credentialProviderIds = new Set(
-        state.providerCredentials.map((item) => item.providerId),
-      );
-      return {
-        ...statusSlotPatch(providerId, payload.status),
-        authResults,
-        providers: buildProviderList(statuses, authResults, credentialProviderIds),
-        providerConnect: clearStaleConnect({ connect: state.providerConnect, authResults }),
-        providerLifecycle: {
-          ...state.providerLifecycle,
-          [providerId]: {
-            ...curr,
-            phase: finalPhase,
-            exitCode: payload.exitCode,
-            errorTail,
-            update,
-          },
+    const state = get();
+    const statuses: ProviderStatuses = {
+      anthropic: providerId === 'anthropic' ? payload.status : state.providerStatus,
+      cursor: providerId === 'cursor' ? payload.status : state.cursorStatus,
+      codex: providerId === 'codex' ? payload.status : state.codexStatus,
+      gemini: providerId === 'gemini' ? payload.status : state.geminiStatus,
+      opencode: sharesOpencodeBinary
+        ? { ...payload.status, id: 'opencode' }
+        : storedStatus({ providerId: 'opencode', providers: state.providers }),
+      openrouter: sharesOpencodeBinary
+        ? { ...payload.status, id: 'openrouter' }
+        : storedStatus({ providerId: 'openrouter', providers: state.providers }),
+      moonshot: sharesOpencodeBinary
+        ? { ...payload.status, id: 'moonshot' }
+        : storedStatus({ providerId: 'moonshot', providers: state.providers }),
+    };
+    const authResults: ProviderAuthResults = {
+      ...(state.authResults ?? {}),
+      [providerId]: payload.auth,
+    };
+    const exitPatch = {
+      ...statusSlotPatch(providerId, payload.status),
+      providerLifecycle: {
+        ...state.providerLifecycle,
+        [providerId]: {
+          ...curr,
+          phase: finalPhase,
+          exitCode: payload.exitCode,
+          errorTail,
+          update,
         },
-      };
+      },
+    };
+    applyProviderProbe({
+      set,
+      get,
+      seq: takeProbeSeq(),
+      statuses,
+      authResults,
+      only: sharesOpencodeBinary ? [...OPENCODE_BINARY_PROVIDERS] : [providerId],
+      isImmediate: true,
+      patch: exitPatch,
     });
     onExit?.(payload);
-    void get().refreshProviders();
+    void get().refreshProviders({ isFresh: true });
   });
 
   try {

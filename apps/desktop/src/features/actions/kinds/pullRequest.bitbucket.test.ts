@@ -31,7 +31,7 @@ const facts = (overrides: Partial<PullRequestFacts> = {}): PullRequestFacts => (
     reviews: [],
     viewer: null,
     writeInFlight: null,
-    isDraftAgentRunning: false,
+    isScribeWriting: false,
   }),
   ...overrides,
 });

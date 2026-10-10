@@ -1072,10 +1072,17 @@ Settings can be set at four levels. The level closest to the work wins:
   Anything you leave empty comes from the level above. The session engine
   reads them only through `selectResolvedSettings`: session, then the
   session's active project, then workspace, then global (`resolveSettings` in
-  core). Provider bindings merge per provider instead, and the closest level
-  wins. A project override sets the branch prefix for that project's mounts.
+  core). Role models, task models and provider bindings merge key by key, so a
+  project that pins only the orchestrator keeps the workspace's pin for every
+  other task and role, and the closest level wins on a key both set. The
+  provider list stays whole: the closest level that sets one replaces the
+  list. A project override sets the branch prefix for that project's mounts.
   The settings screens edit the workspace row and read that row back, since
-  it is what they change.
+  it is what they change. When a project of the workspace has its own role
+  models, task models, provider list or default provider, **Models** says so in
+  a notice under its header, names what the project pins, and offers **Use
+  this page instead**, which clears those four settings of the project after a
+  confirm anchored to the button (`clearProjectModelOverrides`).
 - **Workflows, saved steps and skills** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is
@@ -1571,7 +1578,7 @@ Other identifiers:
   OpenRouter and Moonshot
 - `ArtifactKind`: `plan`, `report`, `wireframe`
 - `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`. The UI
-  words are Ready to run or New, Ran, Replaced and Deleted
+  words are Ready to run or New, Approved, Ran, Replaced and Deleted
   (`artifactStateOf`); `discarded` is what Delete writes, for every kind
 - Plans sit between `<<plan>>` and `<</plan>>` markers
 - Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope.

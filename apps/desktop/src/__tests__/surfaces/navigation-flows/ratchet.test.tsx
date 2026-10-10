@@ -170,6 +170,20 @@ describe('navigation flow table ratchet', () => {
     expect(missing).toEqual([]);
   });
 
+  it('gives every studio a door that is visible on screen, not only in the palette', async () => {
+    const rows = await loadAllRows();
+    const missing = STUDIO_KINDS.filter(
+      (kind) =>
+        !rows.some(
+          (row) =>
+            row.door !== 'palette' &&
+            Array.isArray(row.covers) &&
+            row.covers.includes(`studio:${kind}`),
+        ),
+    );
+    expect(missing).toEqual([]);
+  });
+
   it('has a row for every crumb menu entry and palette destination', async () => {
     const declared = await declaredTokens();
     await boot({ seed: 'pr' });

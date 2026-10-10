@@ -166,6 +166,12 @@ uses when you leave a model on **Auto**. It is one page in three parts.
 - **Background tasks**: one row per side job, grouped as Writing for you, Running
   workflows, and Git
 
+A notice under the page header (`ProjectOverridesNotice`) appears when a project of the
+workspace has its own role models, task models, provider list or default provider: it
+names the project and what it pins, **Show** lists each project with a **Clear** of its
+own, and **Use this page instead** clears them all after a confirm. A failed write shows
+its reason under the confirm and leaves both buttons live.
+
 Each task row says what the job does and ends in a model picker. A row you have not
 pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
 pin it: the picker then shows that model and an **x** that goes back to Auto. **Reset
@@ -177,7 +183,18 @@ model, the roles and the tasks of this workspace that use that provider.
 Each role row (`DefaultsPanel/RoleRow`) is a `Collapsible`. Closed, it shows one
 shape, the same as the chat row: the provider glyph, the model, its effort when the
 model has one, then how many more models follow (`Opus 5.5 · High +2`). The model is
-what Auto picks, or the first model of the role's set (`RoleModelSummary`). The chat row shows the same
+what will run, the answer of `resolveRoleRouting` with the page's policy and
+connection context (`roleResolution`, the same call `roleRunFacts` makes for Auto): the
+first model of the role's set that can run, or what Auto picks. A small chip after it
+reads **Pinned** when the row has a set and **Auto** when it has none. When the set's
+first model cannot run, the muted line under the label says why and what runs instead
+(`Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.`, built by `skippedPinLine`
+from `pinnedUnavailable`). A task row (`TaskModelRow`) carries the same chip and the
+same line, from `resolveTaskModel` and `providerStanding`. When some agents pin only
+models that cannot run, a line under the page title counts them (`With Codex as the only
+provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.`) and **Back to
+Auto for those 7** removes those pins after a confirm anchored to it; it is hidden when
+the count is 0. The chat row shows the same
 shape for Auto through `RoutingPicker`'s `autoTrigger="resolved"`. Open, it shows
 **How Scout runs**, read only, built from the engine and never from copy: the role's
 `explain` entry in `ROLE_REGISTRY`, the pick from `resolveRoleRouting`, and the split
@@ -304,6 +321,12 @@ pays for every turn.
 - **Provider not detected**: Goodboy looks for CLIs on your `PATH`. Find where the
   CLI is (`which claude`, `npm root -g`), add that folder to your shell profile, open
   a new shell and restart Goodboy
+- **Can't check**: the CLI did not answer three times in 10 minutes. Goodboy keeps
+  showing what it last knew and asks again on the next focus or on **Check again**
+- **Refused your runs**: the CLI says you are signed in, and three runs in 10 minutes were
+  turned down for authentication. Auto and the fallbacks leave that provider alone. Use
+  **Sign in again**. Picking the provider yourself still runs on it, and one accepted run
+  closes the breaker
 - **Browser sign-in stuck**: after 4 seconds the card offers **Open the sign-in page again**.
   After two minutes, **Run in terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
@@ -390,6 +413,85 @@ constant disagree, the constant is right.
 | codex                          | `codex login`                  | `codex logout`            | `codex login status`  |
 | gemini                         | none                           | delete the session folder | session folder        |
 | opencode, openrouter, moonshot | `opencode auth login`          | `opencode auth logout`    | `opencode auth list`  |
+
+### How the checks read the answer
+
+Every version and sign-in check runs through `proc/probe.rs`. It starts the CLI in its
+own process group. When the deadline passes it kills the whole group and waits for the
+child, so a timed-out check never leaves a `<defunct>` process behind. The budgets are 5
+seconds to detect a CLI, 10 seconds for a sign-in check and 15 seconds for codex. A
+timeout is retried once after 3 seconds. Each failure writes one `[probe]` line to the
+log with the provider, the kind and the milliseconds.
+
+- `ProviderStatus.errorKind` is `notFound`, `timeout` or `exit`. Only `notFound` means
+  the CLI is not installed.
+- The sign-in parsers read the exit code and the output together. `claude auth status`
+  and `codex login status` exit 1 when you are signed out, and that is read as
+  disconnected. Output the parser does not recognise is `unknown`, with a `reason`.
+- Cursor reads `cursor-agent status --format json` and falls back to the plain text.
+  `isAuthenticated` and `hasAccessToken` prove the local tokens. An email in `message`
+  or `about` proves the server knows the account. Tokens without an email give
+  `connected` with `verified: false`, which is how the CLI looks when it says "Logged
+  in (unable to fetch user details)" and still fails every run with "Authentication
+  required".
+
+### Standing, evidence and the breaker
+
+A provider's standing is not one probe's answer. `providerHealth` (a map in the providers
+slice, `store/slices/providers/providerHealth.ts`) keeps, per provider id and never per
+identity, a `standing` and the `evidence` behind it, and the screen reads the standing.
+
+- `standing` is `connected`, `signed_out`, `cannot_check`, `missing` or `unknown` (nothing
+  answered yet)
+- `evidence` holds `localTokens`, `serverAccepted` (the CLI said the server knows the
+  account, or a run was accepted), `lastProbeAt`, `lastProbeOutcome`, `lastGoodAt`,
+  `lastRunOutcome` and `lastRunAt`. The reducer also keeps the probe failures and refusals of
+  the last 10 minutes, the last non-null identity, the last refusal message and a ring of
+  the last 50 standing changes
+
+The rules, all in the reducer and all pinned by `providerHealth.test.ts`:
+
+- a probe with no answer (timeout, a crash, output nobody recognises) never changes the
+  standing. Three of them in 10 minutes make `cannot_check`, and one good probe clears it
+- only `errorKind: notFound` means `missing`. A timeout never does
+- "not logged in" has to come twice, at least 10 seconds apart, before `signed_out`. It
+  counts at once right after a Goodboy sign-out or any lifecycle exit
+  (`isImmediate`), and for a provider that was never confirmed
+- a run the CLI refused for authentication adds a refusal (`feedAuthRefusal`, from the
+  stream and from `recoverTurnFailure`, counted once per run). Three in 10 minutes open the
+  breaker. A run that succeeds, or signing in again, closes it. A good probe does not: the
+  probe said "connected" for 95 Cursor runs that were all refused
+
+`ProviderConnectionState` is derived from the standing (`connectionOfHealth`), so every
+reader of `connection === 'connected'` keeps working. `cannot_check` with a last good state
+reads as `connected` (act on the last good state); without one it reads as `cannot_check`.
+An open breaker keeps `connected` and sets `isBreakerOpen` on the provider, and only
+automatic routing looks at it: `autoRoutableProviders` leaves that provider out of Auto, the
+fallbacks and the policy (`autoLimitContext`, `workflowAvailabilitySnapshot`, `routeTurn`
+and the helper tasks), while an explicit pick, an agent pin or a retry still runs on it.
+
+`refreshProviders` keeps one run in flight per app. A second caller joins it, and a
+request made because something just changed (`isFresh`: connect, sign-out, Check again)
+queues exactly one more run. Every run carries a sequence number and a result older than
+the last applied one is dropped. Triggers: boot, focus after 5 minutes (60 seconds while a
+provider is not healthy), **Check again**, connect and sign-out, and a click in the
+Settings rail only when the last confirmation is older than 60 seconds. A first "not
+logged in" answer asks again by itself 12 seconds later, so the second answer does not
+wait for the next focus. Each standing
+change writes one line to the app log through `log_provider_standing`:
+`[providers] standing cursor connected -> cannot_check: <reason>`.
+
+What the screen says:
+
+- the rail: nothing when confirmed, `Not confirmed` (local tokens only), `Can't check`,
+  `Signed out`, `Refused your runs`
+- the page keeps Usage and Models for `cannot_check`, with a notice `Can't reach Cursor
+right now` and **Check again**. An open breaker adds `Cursor refused your last 3 runs`
+  with **Sign in again** and **Details**, which holds the raw message
+- the page header says `Signed in on this Mac. Not confirmed by Cursor.` or `Signed in as
+<email>. Confirmed 2m ago`
+- the transcript card titled `Cursor refused this run` shows only for `signed_out` or an open
+  breaker
 
 Install commands:
 
@@ -492,8 +594,8 @@ codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s <SANDBOX> -- 
 - `--skip-git-repo-check` is required. Without it, codex refuses folders it does not trust
 - codex CLI v0.130 writes the `codex login status` output to stderr when no terminal
   (TTY) is attached. Processes that Tauri starts never have one. So the sign-in check
-  reads both streams through `AuthCommandOutput::primary_text()` in
-  `apps/desktop/src-tauri/src/providers.rs`
+  reads both streams through `ProbeOutput::primary_text()` in
+  `apps/desktop/src-tauri/src/proc/probe.rs`
 
 The Rust tests run codex against a scripted fake binary, not the real one. See
 [Fake CLI binaries](testing.md#fake-cli-binaries-for-the-rust-spawn-tests).
@@ -865,6 +967,8 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `packages/types/src/provider-registry.ts`: provider ids
 - `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
+- `apps/desktop/src/store/slices/providers/providerHealth.ts`: standing, evidence and the breaker (pure reducer); `applyProviderProbe.ts` and `recordProviderRun.ts` feed it
+- `apps/desktop/src-tauri/src/provider_standing_log.rs`: the log line for a standing change
 - `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Models** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `PermissionsGroup`, `AccountGroup`)
 - `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in

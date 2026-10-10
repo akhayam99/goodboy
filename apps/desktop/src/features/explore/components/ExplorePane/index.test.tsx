@@ -35,6 +35,8 @@ const h = vi.hoisted(() => ({
   navigate: vi.fn(),
   loadAgentTranscript: vi.fn(async () => undefined),
   resetStore: (): void => undefined,
+  patchStore: (_patch: Record<string, unknown>): void => undefined,
+  loadDetectedEditors: vi.fn(async () => undefined),
   showToast:
     vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
@@ -86,9 +88,24 @@ vi.mock('../../../../store', async () => {
     sessionPhaseRuns: {},
     agentKindOverride: {},
     drawer: null,
+    settings: {},
+    projects: [],
+    sessionProjectMounts: {},
+    sessionActiveMount: {},
+    detectedEditors: [],
+    loadDetectedEditors: h.loadDetectedEditors,
     ...createDrawerSlice({ set: set as never, get: get as never }),
   }));
-  h.resetStore = () => store.setState({ drawer: null });
+  h.resetStore = () =>
+    store.setState({
+      drawer: null,
+      settings: {},
+      projects: [],
+      sessionProjectMounts: {},
+      sessionActiveMount: {},
+      detectedEditors: [],
+    });
+  h.patchStore = (patch) => store.setState(patch);
   return {
     ...(await import('../../../../store/slices/navigation/place')),
     useAppStore: Object.assign(
@@ -115,6 +132,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
+import { CommandError } from '../../../../shared/lib/invokeCommand';
 import { ExplorePane } from '.';
 import { ExploreFileDrawer } from '../ExploreFileDrawer';
 import { useAppStore } from '../../../../store';
@@ -132,6 +150,7 @@ const PaneWithDrawer = () => {
       <ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />
       {drawer !== null && drawer.kind === 'explore-file' ? (
         <ExploreFileDrawer
+          sessionId={SESSION_ID}
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
           onClose={closeDrawer}
@@ -152,6 +171,7 @@ beforeEach(() => {
   h.navigate.mockClear();
   h.showToast.mockClear();
   h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
+  h.loadDetectedEditors.mockClear();
   h.resetStore();
 });
 
@@ -273,12 +293,13 @@ describe('ExplorePane', () => {
         ),
       ).toBeDefined(),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Open this file outside the app' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
     await waitFor(() =>
       expect(h.exploreOpen).toHaveBeenCalledWith({
         sessionDir: '/workspace/sessions/session-1',
         relPath: 'budget.xlsx',
         reveal: false,
+        editor: null,
       }),
     );
   });
@@ -320,7 +341,7 @@ describe('ExplorePane', () => {
     render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('budget.xlsx')).toBeDefined());
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent to work on budget.xlsx' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about budget.xlsx' }));
 
     fireEvent.change(
       screen.getByRole('textbox', { name: 'What should the agent do with this file?' }),
@@ -372,7 +393,7 @@ describe('ExplorePane', () => {
     render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent to work on notes.txt' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about notes.txt' }));
     expect(screen.getByRole('button', { name: 'Start agent' }).hasAttribute('disabled')).toBe(true);
   });
 
@@ -391,9 +412,9 @@ describe('ExplorePane', () => {
 
     await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
     const revealButton = screen.getByRole('button', {
-      name: 'Reveal notes.txt in file manager',
+      name: 'Show notes.txt in Finder',
     });
-    const actionsWrapper = revealButton.parentElement;
+    const actionsWrapper = revealButton.closest('div');
     expect(actionsWrapper?.className).toContain('opacity-0');
     expect(actionsWrapper?.className).toContain('group-focus-within/explore-row:opacity-100');
     expect(actionsWrapper?.className).toContain('group-hover/explore-row:opacity-100');
@@ -407,11 +428,12 @@ describe('ExplorePane', () => {
         sessionDir: '/workspace/sessions/session-1',
         relPath: 'notes.txt',
         reveal: true,
+        editor: null,
       }),
     );
   });
 
-  it('shows size and age in the title attribute instead of a permanent meta row', async () => {
+  it('puts size and age in the title of the name, and no title on the row or its buttons', async () => {
     h.exploreList.mockResolvedValueOnce([
       {
         name: 'notes.txt',
@@ -422,10 +444,200 @@ describe('ExplorePane', () => {
       },
     ]);
 
-    render(<PaneWithDrawer />);
+    const { container } = render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
-    const row = screen.getByText('notes.txt').closest('[title]');
-    expect(row?.getAttribute('title')).toMatch(/^20 B ·/);
+    const name = screen.getByText('notes.txt');
+    expect(name.getAttribute('title')).toMatch(/^20 B ·/);
+    const titled = Array.from(container.querySelectorAll('[title]'));
+    expect(titled).toEqual([name]);
+  });
+
+  it('names each row action on hover, one tooltip at a time', async () => {
+    h.exploreList.mockResolvedValueOnce([
+      {
+        name: 'notes.txt',
+        relPath: 'notes.txt',
+        isDir: false,
+        sizeBytes: 20,
+        modifiedAt: '2026-07-21T11:00:00Z',
+      },
+    ]);
+    render(<PaneWithDrawer />);
+    await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
+
+    const expected = [
+      { name: 'Ask an agent about notes.txt', tip: 'Ask an agent' },
+      { name: 'Open notes.txt', tip: 'Open' },
+      { name: 'Show notes.txt in Finder', tip: 'Show in Finder' },
+    ];
+    for (const { name, tip } of expected) {
+      const button = screen.getByRole('button', { name });
+      fireEvent.mouseEnter(button);
+      expect((await screen.findByRole('tooltip')).textContent).toBe(tip);
+      fireEvent.mouseLeave(button);
+      expect(screen.queryByRole('tooltip')).toBeNull();
+    }
+  });
+
+  it('shows no tooltip over the ask button while its popover is open', async () => {
+    h.exploreList.mockResolvedValueOnce([
+      {
+        name: 'notes.txt',
+        relPath: 'notes.txt',
+        isDir: false,
+        sizeBytes: 20,
+        modifiedAt: '2026-07-21T11:00:00Z',
+      },
+    ]);
+    render(<PaneWithDrawer />);
+    await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
+    const ask = screen.getByRole('button', { name: 'Ask an agent about notes.txt' });
+
+    fireEvent.click(ask);
+    fireEvent.mouseEnter(ask);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(screen.getByRole('dialog', { name: 'Ask an agent about notes.txt' })).toBeDefined();
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  describe('in a repository with an editor', () => {
+    const mountRepo = () => {
+      h.patchStore({
+        projects: [{ id: 'project-1', kind: 'repo' }],
+        sessionProjectMounts: {
+          'session-1': [
+            {
+              mountId: 'mount-1',
+              sessionId: 'session-1',
+              projectId: 'project-1',
+              mountName: 'ledger-core',
+              worktreePath: '/workspace/sessions/session-1',
+              lastWorktreePath: null,
+              repoRoot: '/workspace/ledger-core',
+              branch: 'ak/fix-retry',
+              baseBranch: 'main',
+              parallelIndex: 0,
+              isAttached: true,
+              diskState: 'present',
+              revision: 1,
+            },
+          ],
+        },
+        sessionActiveMount: { 'session-1': 'mount-1' },
+        detectedEditors: [{ binary: 'code', label: 'VS Code' }],
+      });
+    };
+
+    const listPage = (name: string) =>
+      h.exploreList.mockResolvedValueOnce([
+        { name, relPath: name, isDir: false, sizeBytes: 20, modifiedAt: '2026-07-21T11:00:00Z' },
+      ]);
+
+    it('offers Open in editor for code and opens it in that editor', async () => {
+      mountRepo();
+      listPage('page.tsx');
+      render(<PaneWithDrawer />);
+      await waitFor(() => expect(screen.getByText('page.tsx')).toBeDefined());
+
+      const open = screen.getByRole('button', { name: 'Open page.tsx in VS Code' });
+      fireEvent.mouseEnter(open);
+      expect((await screen.findByRole('tooltip')).textContent).toBe('Open in editor');
+      fireEvent.click(open);
+
+      await waitFor(() =>
+        expect(h.exploreOpen).toHaveBeenCalledWith({
+          sessionDir: '/workspace/sessions/session-1',
+          relPath: 'page.tsx',
+          reveal: false,
+          editor: 'code',
+        }),
+      );
+    });
+
+    it('labels the drawer button the same way and names the editor on hover', async () => {
+      mountRepo();
+      listPage('page.tsx');
+      h.exploreRead.mockResolvedValueOnce({ type: 'text', text: 'export {}', truncated: false });
+      render(<PaneWithDrawer />);
+      await waitFor(() => expect(screen.getByText('page.tsx')).toBeDefined());
+
+      fireEvent.click(screen.getByRole('button', { name: 'Preview page.tsx' }));
+      const open = await screen.findByRole('button', { name: 'Open in editor' });
+      fireEvent.mouseEnter(open);
+      expect((await screen.findByText('Open in VS Code')).getAttribute('role')).toBe('tooltip');
+      fireEvent.click(open);
+
+      await waitFor(() =>
+        expect(h.exploreOpen).toHaveBeenCalledWith({
+          sessionDir: '/workspace/sessions/session-1',
+          relPath: 'page.tsx',
+          reveal: false,
+          editor: 'code',
+        }),
+      );
+    });
+
+    it('keeps the default app for a PDF in a repository', async () => {
+      mountRepo();
+      listPage('spec.pdf');
+      render(<PaneWithDrawer />);
+      await waitFor(() => expect(screen.getByText('spec.pdf')).toBeDefined());
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open spec.pdf' }));
+
+      await waitFor(() =>
+        expect(h.exploreOpen).toHaveBeenCalledWith({
+          sessionDir: '/workspace/sessions/session-1',
+          relPath: 'spec.pdf',
+          reveal: false,
+          editor: null,
+        }),
+      );
+    });
+
+    it('says the editor is missing and offers to choose another', async () => {
+      mountRepo();
+      listPage('page.tsx');
+      h.exploreOpen.mockRejectedValueOnce(
+        new CommandError({
+          kind: 'editor_missing',
+          message: "editor binary 'code' not found in PATH",
+        }),
+      );
+      render(<PaneWithDrawer />);
+      await waitFor(() => expect(screen.getByText('page.tsx')).toBeDefined());
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open page.tsx in VS Code' }));
+
+      await waitFor(() =>
+        expect(screen.getByText(/^Couldn't open page.tsx in VS Code\./)).toBeDefined(),
+      );
+      expect(screen.getByRole('button', { name: 'Choose editor' })).toBeDefined();
+    });
+
+    it('names the file and leaves out the editor link for any other failure', async () => {
+      mountRepo();
+      listPage('page.tsx');
+      h.exploreOpen.mockRejectedValueOnce(new Error('permission denied'));
+      render(<PaneWithDrawer />);
+      await waitFor(() => expect(screen.getByText('page.tsx')).toBeDefined());
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open page.tsx in VS Code' }));
+
+      await waitFor(() =>
+        expect(
+          screen.getByText("Couldn't open page.tsx in VS Code. permission denied"),
+        ).toBeDefined(),
+      );
+      expect(screen.queryByRole('button', { name: 'Choose editor' })).toBeNull();
+    });
+  });
+
+  it('loads the detected editors when none are known yet', async () => {
+    render(<PaneWithDrawer />);
+
+    await waitFor(() => expect(h.loadDetectedEditors).toHaveBeenCalled());
   });
 });

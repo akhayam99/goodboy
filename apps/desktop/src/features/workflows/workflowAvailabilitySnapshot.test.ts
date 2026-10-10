@@ -39,6 +39,17 @@ const snapshot = (overrides: Partial<Parameters<typeof workflowAvailabilitySnaps
   });
 
 describe('workflowAvailabilitySnapshot', () => {
+  it('skips a provider whose breaker is open', () => {
+    const result = snapshot({
+      providers: [
+        provider('anthropic', 'connected'),
+        { ...provider('cursor', 'connected'), isBreakerOpen: true },
+      ],
+    });
+
+    expect(result.connectedProviders).toEqual(['anthropic']);
+  });
+
   it('counts only the providers that are actually connected', () => {
     const result = snapshot({
       providers: [provider('anthropic', 'connected'), provider('codex', 'missing')],

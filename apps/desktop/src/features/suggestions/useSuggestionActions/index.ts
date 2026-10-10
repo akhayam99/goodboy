@@ -5,6 +5,7 @@ import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
+import { refreshWorktreeStatuses } from '../../../store/slices/worktreeStatuses/cache';
 import { usePlanRunToast } from '../../plans/usePlanRun';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
 import { showsRunsOn } from '../../session/showsRunsOn';
@@ -56,9 +57,18 @@ export type SuggestionActionChoice = {
   readonly run: () => Promise<void>;
 };
 
+type SuggestionExtraAction = {
+  readonly id: string;
+  readonly label: string;
+  readonly variant: 'secondary' | 'ghost';
+  readonly failureTitle: string;
+  readonly run: () => Promise<void>;
+};
+
 export type SuggestionActions = {
   readonly primary: SuggestionAction | null;
   readonly onDismiss: (() => Promise<void>) | null;
+  readonly extras?: ReadonlyArray<SuggestionExtraAction>;
 };
 
 export type SuggestionActionResolver = (params: {
@@ -90,6 +100,7 @@ export const useSuggestionActions = ({
       ),
     ),
   );
+  const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const navigate = useAppStore((state) => state.navigate);
@@ -201,6 +212,31 @@ export const useSuggestionActions = ({
     }
     if (suggestion.kind === 'rebase-project') {
       const firstTarget = suggestion.payload.targets[0] ?? null;
+      if (firstTarget !== null && firstTarget.dirtyCount > 0) {
+        const worktreePaths = suggestion.payload.targets.map((target) => target.worktreePath);
+        return {
+          primary: null,
+          onDismiss: null,
+          extras: [
+            {
+              id: 'check-again',
+              label: 'Check again',
+              variant: 'secondary',
+              failureTitle: "Couldn't check the branch",
+              run: () => refreshWorktreeStatuses({ worktreePaths }),
+            },
+            {
+              id: 'open-terminal',
+              label: 'Open terminal',
+              variant: 'ghost',
+              failureTitle: "Couldn't open the terminal",
+              run: async () => {
+                openMountTerminal(sessionId, firstTarget.worktreePath);
+              },
+            },
+          ],
+        };
+      }
       return {
         primary: {
           label: rebase.isRunning ? 'Rebasing' : 'Rebase',

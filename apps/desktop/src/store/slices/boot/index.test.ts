@@ -236,6 +236,25 @@ describe('store contract', () => {
       );
     });
 
+    it('stops the running agents of every workspace except the runs the backend still holds', async () => {
+      const store = useAppStore;
+      const { stopGhostAgents } = await import('@goodboy/db');
+      const invokeImpl = storySpies.tauriInvoke.getMockImplementation();
+      storySpies.tauriInvoke.mockImplementation(async (command?: unknown, args?: unknown) => {
+        if (command === 'turn_list_live') {
+          return ['run-live'];
+        }
+        return invokeImpl?.(command, args);
+      });
+
+      await store.getState().hydrate();
+
+      expect(vi.mocked(stopGhostAgents)).toHaveBeenCalledWith({
+        db: expect.anything(),
+        keepRunIds: ['run-live'],
+      });
+    });
+
     it('reattaches live scripts and terminals during hydration', async () => {
       const store = useAppStore;
 
