@@ -273,7 +273,7 @@ describe('the Ask drawer header', () => {
 });
 
 describe('the explore file drawer across sessions', () => {
-  const OTHER = 'session-northwind' as SessionId;
+  const OTHER = CTX_SESSION_ID;
 
   const exploreDrawer = (sessionId: SessionId): DrawerRequest => ({
     kind: 'explore-file',
