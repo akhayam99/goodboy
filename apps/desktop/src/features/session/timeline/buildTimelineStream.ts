@@ -35,6 +35,8 @@ import type {
   RailGroupShape,
 } from '../../workTreeModel/railGeometry';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
+import type { JobActivityFacts } from '../../../store/slices/history/jobFactsByAgentId';
+import { jobRowState } from './jobActivity';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { decisionCountsText, isEmptyDecisionDiff } from './sessionEventPresentation';
 import { countGroupSummary, stepsGroupSummary, type GroupSummary } from './groupSummary';
@@ -156,6 +158,7 @@ type Params = {
   readonly dayLabelFor: (params: { readonly at: string }) => string | null;
   readonly showQuestions?: boolean;
   readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly jobFactsByAgentId?: ReadonlyMap<string, JobActivityFacts>;
   readonly expandedGroupIds?: ReadonlySet<string>;
   readonly fullGroupIds?: ReadonlySet<string>;
   readonly foldsFinished?: boolean;
@@ -559,6 +562,8 @@ const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
 
 const NO_RESOLVE_FACTS: ReadonlyMap<string, ResolveActivityFacts> = new Map();
 
+const NO_JOB_FACTS: ReadonlyMap<string, JobActivityFacts> = new Map();
+
 const NO_OUTPUTS: ReadonlyArray<TimelineOutputEntry> = [];
 
 const NO_OUTPUTS_BY_AGENT: ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>> = new Map();
@@ -643,6 +648,7 @@ type EmitContext = {
   readonly showQuestions: boolean;
   readonly questionRowIds: ReadonlySet<string>;
   readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly jobFactsByAgentId: ReadonlyMap<string, JobActivityFacts>;
   readonly outputsByAgentEntryId: ReadonlyMap<string, ReadonlyArray<TimelineOutputEntry>>;
   readonly expandedGroupIds: ReadonlySet<string>;
   readonly fullGroupIds: ReadonlySet<string>;
@@ -683,14 +689,19 @@ type EmitAgentParams = {
 const rowStateOfAgentRow = ({
   resolved,
   reviewFacts,
+  jobFacts,
   isSkippedUnderClosed,
 }: {
   readonly resolved: RowState;
   readonly reviewFacts: ResolveActivityFacts | undefined;
+  readonly jobFacts: JobActivityFacts | undefined;
   readonly isSkippedUnderClosed: boolean;
 }): RowState => {
   if (reviewFacts !== undefined && resolved.phase !== 'closed') {
     return resolverRowState({ facts: reviewFacts });
+  }
+  if (jobFacts !== undefined && resolved.phase !== 'closed') {
+    return jobRowState({ facts: jobFacts, resolved });
   }
   return isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
 };
@@ -718,8 +729,9 @@ const entryRowStateOf = ({
   });
   const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
   const reviewFacts = context.resolveFactsByAgentId.get(entry.agent.id);
+  const jobFacts = context.jobFactsByAgentId.get(entry.agent.id);
   return {
-    rowState: rowStateOfAgentRow({ resolved, reviewFacts, isSkippedUnderClosed }),
+    rowState: rowStateOfAgentRow({ resolved, reviewFacts, jobFacts, isSkippedUnderClosed }),
     isSkippedUnderClosed,
   };
 };
@@ -1905,6 +1917,7 @@ export const buildTimelineStream = ({
   dayLabelFor,
   showQuestions = true,
   resolveFactsByAgentId = NO_RESOLVE_FACTS,
+  jobFactsByAgentId = NO_JOB_FACTS,
   expandedGroupIds = NO_EXPANDED_GROUPS,
   fullGroupIds = NO_EXPANDED_GROUPS,
   foldsFinished = false,
@@ -1932,6 +1945,7 @@ export const buildTimelineStream = ({
     showQuestions,
     questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
     resolveFactsByAgentId,
+    jobFactsByAgentId,
     outputsByAgentEntryId: outputsByAgentEntryIdOf({ entries }),
     expandedGroupIds,
     fullGroupIds,
@@ -2112,6 +2126,7 @@ export const buildRunTreeStream = ({
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    jobFactsByAgentId: NO_JOB_FACTS,
     outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: NO_EXPANDED_GROUPS,
     fullGroupIds: NO_EXPANDED_GROUPS,
@@ -2165,6 +2180,7 @@ export const buildAgentTreeStream = ({
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    jobFactsByAgentId: NO_JOB_FACTS,
     outputsByAgentEntryId: NO_OUTPUTS_BY_AGENT,
     expandedGroupIds: NO_EXPANDED_GROUPS,
     fullGroupIds: NO_EXPANDED_GROUPS,

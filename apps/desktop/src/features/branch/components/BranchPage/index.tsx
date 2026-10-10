@@ -9,6 +9,7 @@ import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { DiffRailScope } from '../../../diff/DiffRailScope';
+import { JobBanner } from '../../../history/JobBanner';
 import { DiffBaseBranchRow } from '../../../diff/components/SessionDiffPane/DiffBaseBranchRow';
 import { useSessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
@@ -372,11 +373,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                 />
                 <PushBanner sessionId={sessionId} push={push} />
                 {baseRow}
-                {controls.rebaseError !== null && (
-                  <p role="alert" className="text-meta text-danger" title={controls.rebaseError}>
-                    {controls.rebaseError}
-                  </p>
-                )}
+                <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
                 <div className="flex min-w-0 items-center justify-between gap-2">
                   <SegmentedTabs<BranchTab>
                     ariaLabel="Branch"

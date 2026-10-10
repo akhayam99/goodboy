@@ -59,9 +59,7 @@ describe('history activity rows', () => {
     });
 
     expect(hasHistoryRecovery({ event: stuck, events: [stuck] })).toBe(true);
-    expect(text({ value: stuck })).toContain(
-      "History rewriter couldn't merge src/ledger/postings.ts",
-    );
+    expect(text({ value: stuck })).toBe('Rewrite of fix/ledger-postings stopped · needs you');
   });
 
   it('keeps a rewrite only while it has a backup to go back to', () => {
