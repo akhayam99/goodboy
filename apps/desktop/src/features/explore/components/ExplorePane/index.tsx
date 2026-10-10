@@ -15,45 +15,65 @@ import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDraw
 import type { LoadFolderParams, SelectFileParams, SetExpandedParams } from '../../exploreHandlers';
 import { EXPLORE_ROOT_PATH, ancestorPathsOf } from '../../exploreRows';
 import { useExploreListing } from '../../hooks/useExploreListing';
+import { useExploreRoot } from '../../hooks/useExploreRoot';
+import { ExploreProjectChip } from './ExploreProjectChip';
 import { ExploreTree } from './ExploreTree';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly sessionDir: string | null;
 };
+
+const GONE_SENTENCE = 'Closed. Its files were removed.';
 
 const NO_EXPANDED: Readonly<Record<string, boolean>> = Object.freeze({});
 
-export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
+export const ExplorePane = ({ sessionId }: Props) => {
   const now = useNow(30_000);
+  const root = useExploreRoot({ sessionId });
+  const { target } = root;
+  const sessionDir =
+    target.kind === 'mount' || target.kind === 'root' || target.kind === 'scratch'
+      ? target.path
+      : null;
   const { listing, load, reload } = useExploreListing({ sessionDir });
-  const expanded = useAppStore((state) => state.exploreExpanded[sessionId] ?? NO_EXPANDED);
+  const expanded = useAppStore(
+    (state) => state.exploreExpanded[sessionId]?.[sessionDir ?? ''] ?? NO_EXPANDED,
+  );
   const setExploreExpanded = useAppStore((state) => state.setExploreExpanded);
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
   const selectedRelPath = useAppStore((state) => {
     const drawer = selectOpenDrawer(state);
-    if (drawer === null || drawer.kind !== 'explore-file' || drawer.sessionId !== sessionId) {
+    if (
+      drawer === null ||
+      drawer.kind !== 'explore-file' ||
+      drawer.sessionId !== sessionId ||
+      drawer.payload.sessionDir !== sessionDir
+    ) {
       return null;
     }
     return drawer.payload.entry.relPath;
   });
 
   useEffect(() => {
-    if (selectedRelPath === null) {
+    if (selectedRelPath === null || sessionDir === null) {
       return;
     }
-    const open = useAppStore.getState().exploreExpanded[sessionId] ?? NO_EXPANDED;
+    const open = useAppStore.getState().exploreExpanded[sessionId]?.[sessionDir] ?? NO_EXPANDED;
     for (const path of ancestorPathsOf({ relPath: selectedRelPath })) {
       if (open[path] !== true) {
-        setExploreExpanded({ sessionId, path, isExpanded: true });
+        setExploreExpanded({ sessionId, mountPath: sessionDir, path, isExpanded: true });
       }
     }
-  }, [selectedRelPath, sessionId, setExploreExpanded]);
+  }, [selectedRelPath, sessionDir, sessionId, setExploreExpanded]);
 
   const handleSetExpanded = useCallback(
-    ({ path, isExpanded }: SetExpandedParams) =>
-      setExploreExpanded({ sessionId, path, isExpanded }),
-    [sessionId, setExploreExpanded],
+    ({ path, isExpanded }: SetExpandedParams) => {
+      if (sessionDir === null) {
+        return;
+      }
+      setExploreExpanded({ sessionId, mountPath: sessionDir, path, isExpanded });
+    },
+    [sessionDir, sessionId, setExploreExpanded],
   );
 
   const handleSelectFile = useCallback(
@@ -78,6 +98,38 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
   const rootError = listing.errorByPath[EXPLORE_ROOT_PATH] ?? null;
 
   const renderBody = () => {
+    if (root.isResolving) {
+      return <Skeleton className="h-6 w-full rounded-md" />;
+    }
+    if (target.kind === 'none') {
+      return (
+        <EmptyState
+          size="section"
+          tone={CONCEPT_TONE.explore}
+          icon={CONCEPT_ICONS.explore}
+          title="Nothing to browse yet"
+          description="Files show here once a project is mounted for this session."
+        />
+      );
+    }
+    if (target.kind === 'gone') {
+      return (
+        <EmptyState
+          size="section"
+          tone={CONCEPT_TONE.explore}
+          icon={CONCEPT_ICONS.explore}
+          title="This worktree is gone"
+          description={GONE_SENTENCE}
+          action={
+            root.rowCount > 0 ? (
+              <Button size="sm" variant="ghost" onClick={() => root.pick({ mountPath: null })}>
+                Show the current project
+              </Button>
+            ) : undefined
+          }
+        />
+      );
+    }
     if (isRootLoading && rootEntries === undefined) {
       return (
         <div className="flex flex-col gap-3">
@@ -133,16 +185,26 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
     );
   };
 
+  const chip =
+    target.kind === 'none' ? undefined : (
+      <div className="flex min-w-0 items-center">
+        <ExploreProjectChip target={target} groups={root.groups} rowCount={root.rowCount} />
+      </div>
+    );
+
   return (
     <PaneShell
       title="Explore"
       scroll="self"
+      subheader={chip}
       actions={
-        <RefreshIconButton
-          label="Refresh the files"
-          isLoading={isRootLoading}
-          onClick={handleRefresh}
-        />
+        sessionDir === null ? undefined : (
+          <RefreshIconButton
+            label="Refresh the files"
+            isLoading={isRootLoading}
+            onClick={handleRefresh}
+          />
+        )
       }
     >
       <PageColumn className="flex min-h-0 flex-1 flex-col pb-5">{renderBody()}</PageColumn>

@@ -55,6 +55,7 @@ const targetAddress = ({ target }: TargetParams): string => {
       return `${target.tab}${mount}${thread}${focus}${sha}${path}`;
     }
     case 'terminal':
+    case 'explore':
       return target.mountPath;
     case 'thread':
       return `t/${target.threadId}`;
