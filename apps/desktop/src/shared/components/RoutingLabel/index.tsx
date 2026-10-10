@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Tooltip, WORK_META_COLUMN, cn } from '@goodboy/ui';
+import { Tooltip, cn } from '@goodboy/ui';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import { TriggerSeparator } from '../RoutingPicker/TriggerSeparator';
 import { routingNameText } from '../RoutingPicker/routingSummary';
@@ -11,8 +11,6 @@ type Props = {
   readonly effort?: string | null;
   readonly planned?: PlannedRouting | null;
   readonly isEffortObserved?: boolean;
-  readonly isColumn?: boolean;
-  readonly hideName?: boolean;
   readonly glyphPlacement?: 'leading' | 'trailing';
   readonly prefix?: string;
   readonly muted?: boolean;
@@ -29,8 +27,6 @@ export const RoutingLabel = ({
   effort = null,
   planned = null,
   isEffortObserved = false,
-  isColumn = false,
-  hideName = false,
   glyphPlacement = 'leading',
   prefix,
   muted = false,
@@ -41,48 +37,12 @@ export const RoutingLabel = ({
   const glyph =
     Glyph != null && shown.provider != null ? (
       <Glyph
-        size={isColumn ? 12 : 11}
+        size={11}
         className="shrink-0"
         style={{ color: brandColor(shown.provider) }}
         aria-hidden
       />
     ) : null;
-
-  if (isColumn) {
-    if (shown.label == null) {
-      return <span aria-hidden className={cn(WORK_META_COLUMN.routing, className)} />;
-    }
-    const detail = shown.label.detail[0] ?? null;
-    return (
-      <Tooltip content={shown.tooltip}>
-        <span
-          data-meta-column="routing"
-          data-testid={shown.isDiverged ? 'routing-divergence' : undefined}
-          className={cn(WORK_META_COLUMN.routing, shown.isDiverged && DIVERGED_CLASS, className)}
-        >
-          {glyph}
-          <span
-            data-routing-part="name"
-            data-model-id={model ?? undefined}
-            className={cn(WORK_META_COLUMN.routingName, hideName && 'sr-only')}
-          >
-            {routingNameText(shown.label)}
-          </span>
-          {detail != null && (
-            <span
-              className={cn(
-                WORK_META_COLUMN.routingDetail,
-                !isEffortObserved && 'text-faint-foreground',
-              )}
-            >
-              <TriggerSeparator />
-              <span data-routing-part="detail">{detail}</span>
-            </span>
-          )}
-        </span>
-      </Tooltip>
-    );
-  }
 
   if (shown.label == null) {
     return (

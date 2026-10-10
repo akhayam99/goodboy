@@ -33,6 +33,7 @@ import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStr
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
+import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { rowSlotWidth } from './rowSlotWidth';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -223,7 +224,7 @@ export const RunTreeRow = ({
                 {state}
                 {meta}
                 {hasActionColumn ? (
-                  <span className={WORK_META_COLUMN.action}>
+                  <span data-meta-column="action" className={WORK_META_COLUMN.action}>
                     {isSkipShown && skip !== null ? (
                       <RunStepSkip agent={agent} skip={skip} />
                     ) : null}
@@ -234,7 +235,7 @@ export const RunTreeRow = ({
                         className="h-6 shrink-0"
                         onClick={() => onAnswer(answer.question)}
                       >
-                        Answer
+                        {ROW_ACTION_LABEL.answer}
                       </Button>
                     )}
                     {planAction === null || isPlanHeld ? null : (
@@ -246,7 +247,7 @@ export const RunTreeRow = ({
                           openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
                         }
                       >
-                        Open plan
+                        {ROW_ACTION_LABEL.openPlan}
                       </Button>
                     )}
                   </span>

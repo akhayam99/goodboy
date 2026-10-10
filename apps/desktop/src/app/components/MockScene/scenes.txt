@@ -360,6 +360,7 @@ start-pick-one-block
 start-review-row
 step-rows-activity
 step-rows-runs
+steprows-models
 storage-other-tools
 summarizer-failed
 switcher-pinned

@@ -5899,11 +5899,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/AgentTree/SectionToggle.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowResumeStrip/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -8945,7 +8940,7 @@
   },
   "apps/desktop/src/shared/components/RoutingLabel/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/shared/components/RoutingLabel/routingLabelModel.ts": {

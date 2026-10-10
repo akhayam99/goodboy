@@ -1409,7 +1409,7 @@ describe('TimelinePane row meta', () => {
     expect(meta.textContent).not.toContain('Step 1 of 2');
   });
 
-  it('sums up the models a run used as the first one plus the rest', () => {
+  it('sums up the models a run used as the busiest one and a count of the rest', () => {
     storeState.sessionTurnSpans = {
       'session-1': [
         {
@@ -1447,10 +1447,11 @@ describe('TimelinePane row meta', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
 
-    expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5 + 1');
+    expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
+    expect(meta.querySelector('[data-routing-part="detail"]')?.textContent).toBe('+ 1 model');
   });
 
-  it('lists a fallback in the order the models ran on the step row', () => {
+  it('names the model a step ended on and the one it started on', () => {
     const turn = (model: string, startedAtMs: number, endReason: string) => ({
       agentId: 'agent-plan',
       parentAgentId: null,
@@ -1472,9 +1473,8 @@ describe('TimelinePane row meta', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
 
-    expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe(
-      'Kimi K3 → Opus 4.5',
-    );
+    expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
+    expect(meta.querySelector('[data-routing-part="detail"]')?.textContent).toBe('from Kimi K3');
     expect(meta.querySelectorAll('[data-provider]')).toHaveLength(2);
   });
 

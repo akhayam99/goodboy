@@ -29,8 +29,8 @@ export type RunModel = {
 };
 
 export type ModelsSummary = {
-  readonly text: string;
-  readonly effort?: string | null;
+  readonly name: string;
+  readonly detail: string | null;
   readonly providers: ReadonlyArray<ProviderId>;
 };
 
@@ -163,12 +163,20 @@ export const runRanModels = ({ spans, runId }: RunParams): ReadonlyArray<RunMode
 
 type SummaryModel = Pick<RanModel, 'key' | 'provider' | 'name'> & {
   readonly effort?: string | null;
+  readonly stepCount?: number;
 };
 
 type SummaryParams = {
   readonly models: ReadonlyArray<SummaryModel>;
   readonly isRun?: boolean;
 };
+
+type OtherModelsParams = {
+  readonly count: number;
+};
+
+const otherModelsLabel = ({ count }: OtherModelsParams): string =>
+  count === 1 ? '+ 1 model' : `+ ${count} models`;
 
 export const modelsSummary = ({ models, isRun = false }: SummaryParams): ModelsSummary | null => {
   const distinct = new Map<string, SummaryModel>();
@@ -188,14 +196,18 @@ export const modelsSummary = ({ models, isRun = false }: SummaryParams): ModelsS
       providers.push(model.provider);
     }
   }
-  if (isRun && list.length === 2) {
-    return { text: `${first.name} + 1`, effort: null, providers };
-  }
   if (list.length === 1) {
-    return { text: first.name, effort: isRun ? null : (first.effort ?? null), providers };
+    return { name: first.name, detail: isRun ? null : (first.effort ?? null), providers };
+  }
+  if (isRun) {
+    const top = list.reduce((best, model) =>
+      (model.stepCount ?? 0) > (best.stepCount ?? 0) ? model : best,
+    );
+    return { name: top.name, detail: otherModelsLabel({ count: list.length - 1 }), providers };
   }
   if (list.length === 2) {
-    return { text: list.map((model) => model.name).join(' → '), effort: null, providers };
+    const last = list[1] ?? first;
+    return { name: last.name, detail: `from ${first.name}`, providers };
   }
-  return { text: `${list.length} models`, effort: null, providers };
+  return { name: `${list.length} models`, detail: null, providers };
 };
