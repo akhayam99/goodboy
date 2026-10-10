@@ -1,7 +1,7 @@
 import type { ProjectId, SessionExternalTask, SessionProjectMount } from '@goodboy/types';
 import type { TaskMoveTarget } from '../../../store/slices/sessions/moveSessionExternalTask';
 
-export const SESSION_CHOICE_ID = 'session';
+const SESSION_CHOICE_ID = 'session';
 
 const BRANCH_LABEL_LIMIT = 36;
 

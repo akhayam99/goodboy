@@ -64,7 +64,7 @@ type FactsOnly = {
   readonly facts: TaskFacts;
 };
 
-export const moveChoicesOf = ({ facts }: FactsOnly): ReadonlyArray<TaskMoveChoice> =>
+const moveChoicesOf = ({ facts }: FactsOnly): ReadonlyArray<TaskMoveChoice> =>
   taskMoveTargets({
     rows: facts.rows,
     mounts: facts.mounts,
