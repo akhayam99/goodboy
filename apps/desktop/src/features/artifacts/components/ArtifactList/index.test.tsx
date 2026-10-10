@@ -101,18 +101,19 @@ describe('ArtifactList states', () => {
 });
 
 describe('ArtifactList header row', () => {
-  it('holds the tab strip, New and More at one 28px control height', () => {
+  it('holds the tab strip, New and Show in Finder at one 28px control height', () => {
     renderList();
 
     const tabs = screen.getByRole('tablist', { name: 'Artifact kind' });
     const create = screen.getByTestId('artifact-new');
-    const more = screen.getByRole('button', { name: 'More' });
+    const folder = screen.getByRole('button', { name: 'Show in Finder' });
     expect(tabs.getAttribute('data-size')).toBe('xs');
     expect(create.getAttribute('data-size')).toBe('sm');
-    expect(more.getAttribute('data-size')).toBe('control');
+    expect(folder.getAttribute('data-size')).toBe('sm');
     const actions = create.closest('[class*="ml-auto"]');
     expect(actions).not.toBeNull();
-    expect(actions?.contains(more)).toBe(true);
+    expect(actions?.contains(folder)).toBe(true);
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
     expect(actions?.contains(tabs)).toBe(false);
   });
 });

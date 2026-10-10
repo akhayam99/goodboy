@@ -6,15 +6,21 @@ import { Button } from '../components/Button';
 import { HeaderActions } from '../components/HeaderActions';
 import { OverflowMenu } from '../components/OverflowMenu';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
-const ONE = [{ kind: 'item' as const, key: 'one', label: 'One', onClick: vi.fn() }];
+const TWO = [
+  { kind: 'item' as const, key: 'one', label: 'One', onClick: vi.fn() },
+  { kind: 'item' as const, key: 'two', label: 'Two', onClick: vi.fn() },
+];
 
 describe('HeaderActions', () => {
   it('draws secondary, button, primary and overflow in that order whatever the props order', () => {
     render(
       <HeaderActions
-        overflow={<OverflowMenu items={ONE} size="control" />}
+        overflow={<OverflowMenu items={TWO} size="control" />}
         primary={<Button variant="primary">Merge</Button>}
         button={<Button variant="secondary">Abort</Button>}
         secondary={<input aria-label="Filter" />}
@@ -46,6 +52,7 @@ describe('HeaderActions', () => {
   });
 
   it('draws no overflow content for an overflow without items', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(
       <HeaderActions primary={<Button>Merge</Button>} overflow={<OverflowMenu items={[]} />} />,
     );
@@ -57,6 +64,7 @@ describe('HeaderActions', () => {
   });
 
   it('hides the whole group when its only content renders nothing', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(<HeaderActions overflow={<OverflowMenu items={[]} />} />);
 
     const group = document.querySelector('[data-slot="header-actions"]');
@@ -70,7 +78,7 @@ describe('HeaderActions', () => {
         secondary={<span>filter</span>}
         button={<Button variant="secondary">Abort</Button>}
         primary={<Button variant="primary">Merge</Button>}
-        overflow={<OverflowMenu items={ONE} size="control" />}
+        overflow={<OverflowMenu items={TWO} size="control" />}
       />,
     );
 

@@ -1,5 +1,5 @@
 import { Check, Copy, Trash2, Undo2 } from 'lucide-react';
-import { OverflowMenu, tintClasses, type OverflowMenuItem } from '@goodboy/ui';
+import { Button, OverflowMenu, tintClasses, type OverflowMenuItem } from '@goodboy/ui';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -91,13 +91,19 @@ export const EditorTrail = ({
             {saveStatus === 'saved' ? <Check size={ICON_SIZE.row} aria-hidden /> : null}
             {STATUS_LABEL[saveStatus]}
           </span>
-          <OverflowMenu
-            label="Workflow actions"
-            disabled={disabled}
-            align="left"
-            trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
-            items={items}
-          />
+          {items.length > 1 ? (
+            <OverflowMenu
+              label="Workflow actions"
+              disabled={disabled}
+              align="left"
+              trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
+              items={items}
+            />
+          ) : (
+            <Button size="sm" variant="ghost-danger" disabled={disabled} onClick={onDelete}>
+              {deleteItem.label}
+            </Button>
+          )}
         </>
       }
     />

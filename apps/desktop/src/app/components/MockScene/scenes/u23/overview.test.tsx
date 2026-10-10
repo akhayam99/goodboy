@@ -91,12 +91,14 @@ describe('the u23 overview scenes', () => {
     expect(screen.queryAllByTestId('project-mount-row')).toHaveLength(0);
   });
 
-  it('overview-add-project-empty has no Add project in the header and the item in the overflow', async () => {
+  it('overview-add-project-empty keeps Add project a button whose popover says every project is in', async () => {
     renderScene('overview-add-project-empty');
 
-    const item = await screen.findByRole('menuitem', { name: /Add project/ }, WAIT);
-    expect(item).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Add project' })).toBeNull();
+    const popover = await screen.findByRole('dialog', { name: 'Add project' }, WAIT);
+    expect(
+      within(popover).getByText('Every workspace project is already in this session.'),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Project actions' })).toBeNull();
   });
 
   it('overview-long-branches keeps every row at 36px, tasks on one line with +N', async () => {

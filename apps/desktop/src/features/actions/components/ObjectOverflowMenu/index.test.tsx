@@ -89,6 +89,54 @@ describe('ObjectOverflowMenu', () => {
     expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
   });
 
+  it('draws nothing in a header when a single action is left after the omissions', () => {
+    const { container } = render(
+      <ObjectOverflowMenu
+        target={TARGET}
+        label="More actions"
+        size="control"
+        hideWhenEmpty
+        omit={[
+          'agent.open',
+          'agent.changes',
+          'agent.message',
+          'agent.interrupt',
+          'agent.close',
+          'agent.reopen',
+          'agent.model',
+          'agent.copyReply',
+          'agent.copyName',
+        ]}
+      />,
+    );
+
+    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+  });
+
+  it('keeps the header menu when two actions are left after the omissions', () => {
+    render(
+      <ObjectOverflowMenu
+        target={TARGET}
+        label="More actions"
+        size="control"
+        hideWhenEmpty
+        omit={[
+          'agent.open',
+          'agent.changes',
+          'agent.message',
+          'agent.interrupt',
+          'agent.close',
+          'agent.reopen',
+          'agent.model',
+          'agent.copyReply',
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'More actions' })).toBeDefined();
+  });
+
   it('hands a confirming action to the page instead of confirming inside the menu', () => {
     const onArm = vi.fn();
     render(

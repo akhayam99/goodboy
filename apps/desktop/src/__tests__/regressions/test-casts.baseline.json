@@ -269,7 +269,6 @@
     "apps/desktop/src/__tests__/sidebar.test.ts": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/useArtifactContextPreview/index.test.ts": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/useArtifactCreationDraft/index.test.ts": 5,
-    "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactListOverflowMenu.test.tsx": 2,
     "apps/desktop/src/features/artifacts/components/ArtifactShell/ArtifactRevisionsSection.test.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactStudio/index.test.tsx": 4,
     "apps/desktop/src/features/artifacts/hooks/useArtifactExport/index.test.ts": 2,

@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   CALL_TIMEOUT_MS,
   DevToolsTimeoutError,
@@ -37,6 +38,15 @@ const WARM_UP_POLL_BUDGET_MS = 80_000;
 const CLOSE_GRACE_MS = 5_000;
 const FRAME_FALLBACK_MS = 100;
 const CLICK_PATIENCE_MS = 8000;
+const CONFIRM_VARIANTS = ['notifications', 'sessiondelete', 'chatrow', 'rich', 'activity', 'note'];
+const ARM_SETTLE_MS = 250;
+const LAYOUT_TOLERANCE_PX = 0.5;
+const MENU_SCENE_SETTLE_MS = 1200;
+const MENU_OPEN_MS = 200;
+const MENU_MIN_ROWS = 2;
+const SCENE_LIST = fileURLToPath(
+  new URL('../apps/desktop/src/app/components/MockScene/scenes.txt', import.meta.url),
+);
 
 const args = Object.fromEntries(
   process.argv
@@ -167,10 +177,10 @@ const run = async (send, fn, argument, timeoutMs = CALL_TIMEOUT_MS) => {
   return result.result?.result?.value;
 };
 
-const attemptOpen = async ({ send, scene, readySelector }) => {
+const attemptOpen = async ({ send, scene, readySelector, settleMs }) => {
   try {
     await send('Page.navigate', { url: `${app}/?scene=${scene}&brand=1` });
-    await pause(wait);
+    await pause(settleMs);
     return await run(
       send,
       async (selector) => {
@@ -195,6 +205,7 @@ const open = async ({
   zoom,
   height = HEIGHT,
   readySelector = '[data-row-id]',
+  settleMs = wait,
 }) => {
   await send('Emulation.setDeviceMetricsOverride', {
     width: Math.round(width / zoom),
@@ -204,7 +215,7 @@ const open = async ({
   });
   await send('Page.enable');
   for (let attempt = 0; attempt < OPEN_ATTEMPTS; attempt += 1) {
-    const isReady = await attemptOpen({ send, scene, readySelector });
+    const isReady = await attemptOpen({ send, scene, readySelector, settleMs });
     if (isReady) return;
   }
 };
@@ -624,6 +635,128 @@ const measureWorkflow = async ({ send, target }) => {
   return { failures, wraps: 0 };
 };
 
+const confirmLayoutProbe = async ({ settleMs, tolerance }) => {
+  const pausePage = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+  const snapshot = () => ({
+    height: document.documentElement.scrollHeight,
+    slots: [...document.querySelectorAll('[data-slot]')]
+      .filter((element) => element.closest('[data-dropdown-portal]') === null)
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          name: element.dataset.slot,
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+        };
+      }),
+  });
+  const differences = ({ before, after }) => {
+    if (Math.abs(before.height - after.height) > tolerance) return ['scroll height'];
+    if (before.slots.length !== after.slots.length) return ['slot count'];
+    return before.slots.flatMap((slot, index) => {
+      const next = after.slots[index];
+      const hasMoved = ['left', 'top', 'width', 'height'].some(
+        (key) => Math.abs(slot[key] - next[key]) > tolerance,
+      );
+      return hasMoved ? [slot.name] : [];
+    });
+  };
+  const results = [];
+  for (const trigger of document.querySelectorAll('[data-confirm-trigger]')) {
+    const before = snapshot();
+    trigger.click();
+    await pausePage(settleMs);
+    const isArmed = document.querySelector('[data-dropdown-portal] [role="dialog"]') !== null;
+    const after = snapshot();
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }),
+    );
+    await pausePage(settleMs);
+    results.push({
+      trigger: trigger.getAttribute('aria-label') ?? (trigger.textContent ?? '').trim(),
+      isArmed,
+      changed: differences({ before, after }),
+    });
+  }
+  return results;
+};
+
+const menuRowsProbe = async ({ openMs }) => {
+  const pausePage = (ms) => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+  const isDrawn = (element) => {
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && element.disabled !== true;
+  };
+  const results = [];
+  for (const trigger of [...document.querySelectorAll('[aria-haspopup="menu"]')].filter(isDrawn)) {
+    trigger.click();
+    await pausePage(openMs);
+    const menu = [...document.querySelectorAll('[role="menu"]')].pop();
+    const rows =
+      menu === undefined
+        ? 0
+        : menu.querySelectorAll(
+            '[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]',
+          ).length;
+    results.push({
+      trigger: trigger.getAttribute('aria-label') ?? (trigger.textContent ?? '').trim(),
+      rows,
+    });
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }),
+    );
+    document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    await pausePage(openMs / 2);
+  }
+  return results;
+};
+
+const measureConfirmPopover = async ({ send, variant }) => {
+  const scene = `confirmpopover&v=${variant}`;
+  const failures = [];
+  await open({ send, scene, width: WIDTHS[0], zoom: 1, readySelector: '[data-confirm-trigger]' });
+  const results = await run(send, confirmLayoutProbe, {
+    settleMs: ARM_SETTLE_MS,
+    tolerance: LAYOUT_TOLERANCE_PX,
+  });
+  const broken = results.filter((result) => !result.isArmed || result.changed.length > 0);
+  if (results.length === 0 || broken.length > 0) {
+    failures.push({
+      scene,
+      check: 'arming a confirm moves the page or opens no popover',
+      triggers: results.length,
+      broken,
+    });
+  }
+  console.log(`${scene}: ${results.length} confirms armed, ${broken.length} moved the page`);
+  return { failures, wraps: 0 };
+};
+
+const measureMenuRows = async ({ send, scene }) => {
+  const failures = [];
+  await open({
+    send,
+    scene,
+    width: WIDTHS[0],
+    zoom: 1,
+    readySelector: 'body',
+    settleMs: MENU_SCENE_SETTLE_MS,
+  });
+  const results = await run(send, menuRowsProbe, { openMs: MENU_OPEN_MS });
+  const short = results.filter((result) => result.rows < MENU_MIN_ROWS);
+  if (short.length > 0) {
+    failures.push({ scene, check: 'a menu trigger opens to fewer than two rows', short });
+  }
+  return { failures, wraps: 0 };
+};
+
+const sceneIds = () =>
+  readFileSync(SCENE_LIST, 'utf8')
+    .split('\n')
+    .filter((id) => id !== '');
+
 const main = async () => {
   const failures = [];
   let crash = null;
@@ -662,6 +795,15 @@ const main = async () => {
         ]
       : []) {
       await measure({ scene: target.scene, task: () => measureWorkflow({ send, target }) });
+    }
+    for (const variant of only === undefined || only === 'confirm' ? CONFIRM_VARIANTS : []) {
+      await measure({
+        scene: `confirmpopover&v=${variant}`,
+        task: () => measureConfirmPopover({ send, variant }),
+      });
+    }
+    for (const scene of only === undefined || only === 'menus' ? sceneIds() : []) {
+      await measure({ scene, task: () => measureMenuRows({ send, scene }) });
     }
   } catch (error) {
     crash = error;
