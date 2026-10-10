@@ -216,4 +216,50 @@ describe('PaneShell', () => {
 
     expect(container.querySelector('[data-slot="pane-banner"]')).toBeNull();
   });
+
+  it('puts a lead before a fill slot that takes the rest of a self-scrolling pane', () => {
+    const { container } = render(
+      <PaneShell title="Agent" scroll="self" lead={<p>Stopped notice</p>}>
+        <p>Chat body</p>
+      </PaneShell>,
+    );
+
+    const lead = container.querySelector('[data-slot="pane-lead"]') as HTMLElement;
+    const fill = container.querySelector('[data-slot="pane-fill"]') as HTMLElement;
+    const body = container.querySelector('[data-slot="pane-body"]') as HTMLElement;
+    expect(lead.contains(screen.getByText('Stopped notice'))).toBe(true);
+    expect(fill.contains(screen.getByText('Chat body'))).toBe(true);
+    expect(lead.contains(fill)).toBe(false);
+    expect(lead.compareDocumentPosition(fill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(body.contains(lead)).toBe(true);
+    expect(fill.className.split(' ')).toEqual(
+      expect.arrayContaining(['min-h-0', 'min-w-0', 'flex-1', 'flex-col']),
+    );
+    expect(lead.className.split(' ')).toContain('shrink-0');
+  });
+
+  it('wraps the children of a self-scrolling pane in the fill slot with no lead', () => {
+    const { container } = render(
+      <PaneShell title="Agent" scroll="self">
+        <p>Chat body</p>
+      </PaneShell>,
+    );
+
+    expect(container.querySelector('[data-slot="pane-lead"]')).toBeNull();
+    const fill = container.querySelector('[data-slot="pane-fill"]') as HTMLElement;
+    expect(fill.contains(screen.getByText('Chat body'))).toBe(true);
+  });
+
+  it('hides the lead block when what it holds renders nothing', () => {
+    const Nothing = () => null;
+    const { container } = render(
+      <PaneShell title="Agent" scroll="self" lead={<Nothing />}>
+        <p>Chat body</p>
+      </PaneShell>,
+    );
+
+    const column = container.querySelector('[data-slot="pane-lead"] [data-page-column]');
+    expect(column?.className.split(' ')).toContain('empty:hidden');
+    expect(column?.childElementCount).toBe(0);
+  });
 });

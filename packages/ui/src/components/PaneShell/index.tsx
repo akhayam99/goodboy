@@ -14,6 +14,7 @@ type BaseProps = {
   readonly scroll?: 'pane' | 'body' | 'self';
   readonly tabs?: ReactNode;
   readonly dock?: ReactNode;
+  readonly lead?: ReactNode;
   readonly headerRhythm?: 'title' | 'section';
   readonly width?: PageColumnWidth;
   readonly children: ReactNode;
@@ -43,6 +44,7 @@ export const PaneShell = (props: Props) => {
     scroll = 'pane',
     tabs,
     dock,
+    lead,
     headerRhythm = 'title',
     width = 'column',
     children: content,
@@ -96,6 +98,15 @@ export const PaneShell = (props: Props) => {
     </div>
   );
 
+  const leadBlock =
+    lead == null ? null : (
+      <div data-slot="pane-lead" className="min-w-0 shrink-0 has-[[data-page-column]:empty]:hidden">
+        <PageColumn width={width} className="flex flex-col gap-3 pb-3 empty:hidden">
+          {lead}
+        </PageColumn>
+      </div>
+    );
+
   const dockBlock =
     dock != null ? (
       <>
@@ -116,6 +127,7 @@ export const PaneShell = (props: Props) => {
             {header}
             <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
               {banner}
+              {leadBlock}
               {children}
             </div>
           </PageColumn>
@@ -140,13 +152,17 @@ export const PaneShell = (props: Props) => {
               {banner}
             </PageColumn>
           )}
-          {children}
+          {leadBlock}
+          <div data-slot="pane-fill" className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {children}
+          </div>
         </div>
       ) : (
         <ScrollFade className="min-h-0 flex-1" fadeSize={24} edge="line">
           <PageColumn width={width} className="pb-5">
             <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
               {banner}
+              {leadBlock}
               {children}
             </div>
           </PageColumn>
