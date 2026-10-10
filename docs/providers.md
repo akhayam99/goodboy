@@ -321,6 +321,12 @@ pays for every turn.
 - **Provider not detected**: Goodboy looks for CLIs on your `PATH`. Find where the
   CLI is (`which claude`, `npm root -g`), add that folder to your shell profile, open
   a new shell and restart Goodboy
+- **Can't check**: the CLI did not answer three times in 10 minutes. Goodboy keeps
+  showing what it last knew and asks again on the next focus or on **Check again**
+- **Refused your runs**: the CLI says you are signed in, and three runs in 10 minutes were
+  turned down for authentication. Auto and the fallbacks leave that provider alone. Use
+  **Sign in again**. Picking the provider yourself still runs on it, and one accepted run
+  closes the breaker
 - **Browser sign-in stuck**: after 4 seconds the card offers **Open the sign-in page again**.
   After two minutes, **Run in terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
@@ -428,6 +434,62 @@ log with the provider, the kind and the milliseconds.
   `connected` with `verified: false`, which is how the CLI looks when it says "Logged
   in (unable to fetch user details)" and still fails every run with "Authentication
   required".
+
+### Standing, evidence and the breaker
+
+A provider's standing is not one probe's answer. `providerHealth` (a map in the providers
+slice, `store/slices/providers/providerHealth.ts`) keeps, per provider id and never per
+identity, a `standing` and the `evidence` behind it, and the screen reads the standing.
+
+- `standing` is `connected`, `signed_out`, `cannot_check`, `missing` or `unknown` (nothing
+  answered yet)
+- `evidence` holds `localTokens`, `serverAccepted` (the CLI said the server knows the
+  account, or a run was accepted), `lastProbeAt`, `lastProbeOutcome`, `lastGoodAt`,
+  `lastRunOutcome` and `lastRunAt`. The reducer also keeps the probe failures and refusals of
+  the last 10 minutes, the last non-null identity, the last refusal message and a ring of
+  the last 50 standing changes
+
+The rules, all in the reducer and all pinned by `providerHealth.test.ts`:
+
+- a probe with no answer (timeout, a crash, output nobody recognises) never changes the
+  standing. Three of them in 10 minutes make `cannot_check`, and one good probe clears it
+- only `errorKind: notFound` means `missing`. A timeout never does
+- "not logged in" has to come twice, at least 10 seconds apart, before `signed_out`. It
+  counts at once right after a Goodboy sign-out or any lifecycle exit
+  (`isImmediate`), and for a provider that was never confirmed
+- a run the CLI refused for authentication adds a refusal (`feedAuthRefusal`, from the
+  stream and from `recoverTurnFailure`, counted once per run). Three in 10 minutes open the
+  breaker. A run that succeeds, or signing in again, closes it. A good probe does not: the
+  probe said "connected" for 95 Cursor runs that were all refused
+
+`ProviderConnectionState` is derived from the standing (`connectionOfHealth`), so every
+reader of `connection === 'connected'` keeps working. `cannot_check` with a last good state
+reads as `connected` (act on the last good state); without one it reads as `cannot_check`.
+An open breaker keeps `connected` and sets `isBreakerOpen` on the provider, and only
+automatic routing looks at it: `autoRoutableProviders` leaves that provider out of Auto, the
+fallbacks and the policy (`autoLimitContext`, `workflowAvailabilitySnapshot`, `routeTurn`
+and the helper tasks), while an explicit pick, an agent pin or a retry still runs on it.
+
+`refreshProviders` keeps one run in flight per app. A second caller joins it, and a
+request made because something just changed (`isFresh`: connect, sign-out, Check again)
+queues exactly one more run. Every run carries a sequence number and a result older than
+the last applied one is dropped. Triggers: boot, focus after 5 minutes (60 seconds while a
+provider is not healthy), **Check again**, connect and sign-out, and a click in the
+Settings rail only when the last confirmation is older than 60 seconds. Each standing
+change writes one line to the app log through `log_provider_standing`:
+`[providers] standing cursor connected -> cannot_check: <reason>`.
+
+What the screen says:
+
+- the rail: nothing when confirmed, `Not confirmed` (local tokens only), `Can't check`,
+  `Signed out`, `Refused your runs`
+- the page keeps Usage and Models for `cannot_check`, with a notice `Can't reach Cursor
+right now` and **Check again**. An open breaker adds `Cursor refused your last 3 runs`
+  with **Sign in again** and **Details**, which holds the raw message
+- the page header says `Signed in on this Mac. Not confirmed by Cursor.` or `Signed in as
+<email>. Confirmed 2m ago`
+- the transcript card titled `Cursor refused this run` shows only for `signed_out` or an open
+  breaker
 
 Install commands:
 
@@ -903,6 +965,8 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `packages/types/src/provider-registry.ts`: provider ids
 - `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
+- `apps/desktop/src/store/slices/providers/providerHealth.ts`: standing, evidence and the breaker (pure reducer); `applyProviderProbe.ts` and `recordProviderRun.ts` feed it
+- `apps/desktop/src-tauri/src/provider_standing_log.rs`: the log line for a standing change
 - `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Models** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `PermissionsGroup`, `AccountGroup`)
 - `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
