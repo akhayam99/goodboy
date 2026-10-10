@@ -148,6 +148,7 @@ export const InboxStudio = ({
   const [cursorKey, setCursorKey] = useState<string | null>(initialRecordKey);
   const [sessionFilter, setSessionFilter] = useState<SessionId | null>(initialSessionId);
   const [launchFocusRequest, setLaunchFocusRequest] = useState(0);
+  const [shouldLaunch, setShouldLaunch] = useState(false);
   const [replyFocusRequest, setReplyFocusRequest] = useState(0);
   const filteredSession = useSessionById(sessionFilter);
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -328,8 +329,16 @@ export const InboxStudio = ({
   const activate = useCallback((key: string): void => {
     setCursorKey(key);
     setOpenKey(key);
-    setLaunchFocusRequest((current) => current + 1);
+    setShouldLaunch(true);
   }, []);
+
+  useEffect(() => {
+    if (!shouldLaunch || openRecord === null) {
+      return;
+    }
+    setShouldLaunch(false);
+    setLaunchFocusRequest((current) => current + 1);
+  }, [shouldLaunch, openRecord]);
 
   const selectRecord = useCallback((record: InboxRecord) => openKeyed(record.key), [openKeyed]);
 
