@@ -10890,7 +10890,7 @@
   },
   "apps/desktop/src/store/slices/providerLimits/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 14
+      "count": 4
     }
   },
   "apps/desktop/src/store/slices/providerLimits/markProbe.ts": {

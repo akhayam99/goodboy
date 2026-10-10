@@ -71,3 +71,8 @@ See what Goodboy got done and what it cost over **7 days**, **30 days** or **All
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
 Set a monthly cap per provider and hear about it before you reach it. In **Spend**, open a provider, enter the cap and the share of it where Goodboy warns you. Claude here has used $151.72 of a $170.00 cap, past its 80% alert. Past the threshold Goodboy routes the next turn to another provider with room, and if none has room, work continues where it is.
+
+**Test connection** on Claude, Codex and Cursor checks a real account call and shows
+its elapsed time or an inline failure (`ConnectionTest`).
+**History** lists the newest 20 provider changes in an anchored popover
+([Account history control](../../apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx)).

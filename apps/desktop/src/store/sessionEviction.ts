@@ -206,6 +206,7 @@ export const NON_SESSION_STATE_KEYS = [
   'authResults',
   'providers',
   'providerHealth',
+  'providerConnectionTests',
   'providerProbeSeq',
   'providerLifecycle',
   'providerConnect',

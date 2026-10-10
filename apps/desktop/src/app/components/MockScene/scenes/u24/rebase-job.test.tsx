@@ -16,7 +16,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
-import { REBASE_JOB_SCENE_STATES, type RebaseJobSceneState } from './rebaseJobSeed';
+import type { RebaseJobSceneState } from './rebaseJobSeed';
 import { U24_REBASE_JOB_SCENES } from './rebase-job';
 
 beforeAll(async () => {
@@ -49,6 +49,24 @@ const renderScene = ({
     </ToastProvider>,
   );
 };
+
+const SCENE_STATES = [
+  'checking',
+  'replaying',
+  'merging',
+  'checking-result',
+  'moving',
+  'updating-online',
+  'done',
+  'stuck',
+  'origin-moved',
+  'head-moved',
+  'push-failed',
+  'no-provider',
+  'dirty',
+  'result-differs',
+  'failed',
+] satisfies ReadonlyArray<RebaseJobSceneState>;
 
 const SETTLE_MS = 600;
 
@@ -83,7 +101,7 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
 };
 
 describe('the u24 rebase job scenes', () => {
-  it.each(REBASE_JOB_SCENE_STATES)('shows the %s state under the Branch header', async (state) => {
+  it.each(SCENE_STATES)('shows the %s state under the Branch header', async (state) => {
     renderScene({ name: 'branch-rebase-job', query: `state=${state}` });
 
     const region = await screen.findByLabelText('Rebase job', undefined, { timeout: 4_000 });

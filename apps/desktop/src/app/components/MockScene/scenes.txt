@@ -269,7 +269,10 @@ planner-transcript-replaced
 planner-transcript-revising
 processes-stopped
 providerhealth
+providerhistory
 providers
+providertest-ok
+providertest-refused
 questions-empty
 rail-draft-dot
 rail-flyout
