@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { DrawerHost } from '../../../DrawerHost';
+import { shellArrangement } from '../../../../shellArrangement';
 import { sceneClock } from '../../sceneClock';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
 import { SESSION_ID as ARTIFACT_SESSION_ID, seedArtifactScene } from '../artifactSeed';
@@ -23,6 +24,13 @@ const SESSION_DIR = '~/code/harborline/sessions/settlement-rounding';
 const MODIFIED_AT = clock.iso({ at: '2026-10-06T08:40:00.000Z' });
 
 const noop = () => undefined;
+
+const arrangement = shellArrangement({
+  hasWorkspace: true,
+  hasActiveSession: true,
+  isSidebarCollapsed: false,
+  mode: 'column',
+});
 
 type StageProps = {
   readonly width: number;
@@ -47,6 +55,8 @@ const DrawerSplitStage = ({ width, prepare, main }: StageProps) => {
   return (
     <div data-testid="drawer-split-stage" className="[&>div]:w-full" style={{ width }}>
       <AppShell
+        leftHidden={arrangement.leftHidden}
+        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={<div aria-hidden />}
         main={main}
         drawer={isDrawerOpen ? <DrawerHost /> : null}

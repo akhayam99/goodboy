@@ -1959,10 +1959,15 @@ edge, with the same edge and radius, and the pair keeps an 8px inset above the
 window's bottom edge. The drawer container is one step quieter than the page
 (`bg-drawer`, recessed between chrome and background in both themes): it reads
 as secondary, never louder, never tinted, and never a border to fake the
-difference. `AppShell` and the studio slot's own sheet host it through
-`DrawerColumn`'s `frame="sheet"`; a studio body that hosts one inside its sheet
-(Tasks, Chat) keeps `frame="none"`, which draws only the drawer container as a
-card inset 8px on its right, top and bottom.
+difference. `AppShell` hosts it through `DrawerColumn`'s `frame="sheet"`. The
+Tasks and Chat studios do the same inside the studio slot: their body registers
+its drawer with the `StudioFrame` (`useStudioDrawer`), the frame draws one
+`DrawerColumn` with `frame="sheet"` around the band and the body, so the band and
+the list are the page container and the drawer container stands beside them from
+the slot's top to its bottom; the slot's own sheet steps aside
+(`data-studio-sheet-owner`). A studio body with no hosting frame (a studio that
+covers the left column) keeps `frame="none"`, which draws only the drawer
+container as a card inset 8px on its right, top and bottom.
 
 **Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
 transcript, script output, a plan part, an artifact) opens at 400px, resizes

@@ -1,6 +1,7 @@
 export { cn } from './cn';
 export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
+export { StudioSlotContext } from './studioSlotContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
 export { registerEscapeLayer } from './escape';

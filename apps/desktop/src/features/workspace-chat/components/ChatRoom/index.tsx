@@ -28,6 +28,7 @@ import { ChatHeaderDelete } from './ChatHeaderDelete';
 import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
 import { useChatDrafts } from '../../hooks/useChatDrafts';
+import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
@@ -50,6 +51,7 @@ const NO_IMAGES: ChatComposerMessage['images'] = [];
 type SendParams = Pick<ChatComposerMessage, 'text'> & Partial<Pick<ChatComposerMessage, 'images'>>;
 
 const NEW_CHAT_HEADING = 'New chat';
+const RESIZE_LABEL = 'Resize the work panel';
 
 export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => {
   const chatId = chat?.id ?? null;
@@ -241,24 +243,35 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
     </section>
   );
 
+  const drawerNode =
+    work === null || chat === null ? null : (
+      <TurnIntoWorkPanel
+        chat={chat}
+        messages={shown}
+        anchorMessageId={work.anchorMessageId}
+        onClose={() => setWork(null)}
+        onDone={() => setWork(null)}
+      />
+    );
+  const drawerKey = String(work?.key ?? 0);
+  const isHosted = useStudioDrawer({
+    node: drawerNode,
+    drawerKey,
+    ariaLabel: TURN_INTO_WORK_LABEL,
+    resizeLabel: RESIZE_LABEL,
+  });
+  if (isHosted) {
+    return main;
+  }
+
   return (
     <DrawerColumn
       className="h-full"
       main={main}
-      drawerKey={String(work?.key ?? 0)}
+      drawerKey={drawerKey}
       ariaLabel={TURN_INTO_WORK_LABEL}
-      resizeLabel="Resize the work panel"
-      drawer={
-        work === null || chat === null ? null : (
-          <TurnIntoWorkPanel
-            chat={chat}
-            messages={shown}
-            anchorMessageId={work.anchorMessageId}
-            onClose={() => setWork(null)}
-            onDone={() => setWork(null)}
-          />
-        )
-      }
+      resizeLabel={RESIZE_LABEL}
+      drawer={drawerNode}
     />
   );
 };

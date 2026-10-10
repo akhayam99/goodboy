@@ -4,6 +4,7 @@ import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
 import { DrawerColumn } from './DrawerColumn';
 import type { DrawerSizing } from '../drawerGeometry';
 import { ResizeHandle } from './ResizeHandle';
+import { StudioSlotContext } from '../studioSlotContext';
 import { useResizableWidth } from '../useResizableWidth';
 
 export type AppShellProps = {
@@ -29,6 +30,9 @@ export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v3';
 export const COLLAPSED_RAIL_WIDTH = 44;
 
 const HANDLE_WIDTH = 6;
+
+const STUDIO_SHEET_OWNED =
+  'has-[[data-studio-sheet-owner]]:rounded-none has-[[data-studio-sheet-owner]]:border-0 has-[[data-studio-sheet-owner]]:bg-transparent';
 
 const LEFT_WIDTH_VAR = '--goodboy-left-sidebar-width';
 
@@ -185,12 +189,15 @@ export const AppShell = ({
               'relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden empty:hidden',
               !studioCoversLeft && 'bg-background',
               !studioCoversLeft && SHEET_CLASSES.wrapped,
+              !studioCoversLeft && STUDIO_SHEET_OWNED,
             )}
             style={
               studioCoversLeft ? { gridColumn: '1 / -1', gridRow: '1 / 2' } : { gridArea: 'main' }
             }
           >
-            {studio}
+            <StudioSlotContext.Provider value={!studioCoversLeft}>
+              {studio}
+            </StudioSlotContext.Provider>
           </div>
         ) : null}
         {leftOverlay != null && !studioCoversLeft ? (

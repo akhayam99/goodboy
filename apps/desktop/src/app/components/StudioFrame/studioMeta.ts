@@ -14,6 +14,7 @@ type StudioMeta = {
   readonly tier: 'column' | 'full';
   readonly skeleton: StudioSkeletonLayout;
   readonly railWidth?: 'narrow' | 'standard';
+  readonly canHostDrawer?: boolean;
 };
 
 export const STUDIO_META = {
@@ -65,6 +66,7 @@ export const STUDIO_META = {
     closeLabel: 'Close tasks',
     tier: 'column',
     skeleton: 'list',
+    canHostDrawer: true,
   },
   impact: {
     icon: CONCEPT_ICONS.impact,
@@ -98,5 +100,6 @@ export const STUDIO_META = {
     tier: 'full',
     skeleton: 'rail',
     railWidth: 'narrow',
+    canHostDrawer: true,
   },
 } as const satisfies Record<StudioKind, StudioMeta>;
