@@ -6,15 +6,12 @@ type Params = {
   readonly ids: ReadonlyArray<string>;
 };
 
+type OfferParams = {
+  readonly removed: ReadonlyArray<Notification>;
+};
+
 export const dismissNotificationGroup = (get: GetFn) => {
-  return async ({ ids }: Params): Promise<void> => {
-    const removed: Array<Notification> = [];
-    for (const id of ids) {
-      const row = await get().dismissNotification(id);
-      if (row !== undefined) {
-        removed.push(row);
-      }
-    }
+  const offerUndo = ({ removed }: OfferParams): void => {
     if (removed.length === 0) {
       return;
     }
@@ -30,5 +27,20 @@ export const dismissNotificationGroup = (get: GetFn) => {
         return true;
       },
     });
+  };
+  return async ({ ids }: Params): Promise<void> => {
+    const removed: Array<Notification> = [];
+    try {
+      for (const id of ids) {
+        const row = await get().dismissNotification(id);
+        if (row !== undefined) {
+          removed.push(row);
+        }
+      }
+    } catch (error) {
+      offerUndo({ removed });
+      throw error;
+    }
+    offerUndo({ removed });
   };
 };

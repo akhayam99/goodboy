@@ -557,6 +557,27 @@ describe('createPrForSession, while Scribe writes', () => {
     },
   );
 
+  it('refuses when Scribe starts writing while the branch is being pushed', async () => {
+    const state = buildState();
+    state.pushSessionBranch = vi.fn(async () => {
+      state.scribeWork = { [`pr:${MOUNT_ID}`]: { status: 'writing' } };
+      return { ok: true };
+    });
+
+    await expect(
+      buildCreate(state)({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        title: 'Fix cards',
+        body: '',
+      }),
+    ).rejects.toThrow('Scribe is still writing the text.');
+
+    expect(state.pushSessionBranch).toHaveBeenCalledTimes(1);
+    expect(h.run).not.toHaveBeenCalled();
+    expect(h.upsertMountPullRequestLink).not.toHaveBeenCalled();
+  });
+
   it('lets Scribe open its own pull request while its job is creating', async () => {
     const state = buildState({ scribeWork: { [`pr:${MOUNT_ID}`]: { status: 'creating' } } });
 

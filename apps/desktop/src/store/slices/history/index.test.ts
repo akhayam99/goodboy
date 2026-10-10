@@ -31,14 +31,38 @@ const engine = vi.hoisted(() => ({
 }));
 
 const worktree = vi.hoisted(() => ({
-  worktreeStatus: vi.fn(async (params: { worktreePath: string; baseBranch?: string | null }) => {
-    void params;
-    return {
-      upstream: 'origin/fix/ledger-postings',
-      head: 'head-sha',
-      workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
-    };
-  }),
+  worktreeStatus: vi.fn(
+    async (params: {
+      worktreePath: string;
+      baseBranch?: string | null;
+    }): Promise<{
+      upstream: string | null;
+      head: string;
+      workingTree: {
+        kind: string;
+        reason?: string;
+        staged?: number;
+        unstaged?: number;
+        untracked?: number;
+        unmerged?: number;
+        changed?: number;
+      };
+    }> => {
+      void params;
+      return {
+        upstream: 'origin/fix/ledger-postings',
+        head: 'head-sha',
+        workingTree: {
+          kind: 'known',
+          staged: 0,
+          unstaged: 0,
+          untracked: 0,
+          unmerged: 0,
+          changed: 0,
+        },
+      };
+    },
+  ),
   worktreeRemoteHead: vi.fn(async () => 'remote-sha'),
 }));
 
@@ -72,6 +96,7 @@ import { useAppStore, type AppStore } from '../../store';
 import { createHistorySlice } from './index';
 import { historyInitialState } from './state';
 import { resetWorktreeStatusCache } from '../worktreeStatuses/cache';
+import { assertCleanTree } from './assertCleanTree';
 import { rewriterCopyFor } from './rewriterCopyFor';
 import { rewriterKickoff } from './rewriterKickoff';
 import type { GetFn, SetFn } from './types';
@@ -795,6 +820,44 @@ describe('preflight on a dirty tree', () => {
     expect(engine.readOriginAhead).not.toHaveBeenCalled();
     expect(engine.tryHistoryPlan).not.toHaveBeenCalled();
     expect(read().historyRuns[MOUNT_ID]).toBeUndefined();
+  });
+
+  it('reads the tree again when a clean read just happened', async () => {
+    const target = { worktreePath: '/w/ledger', baseBranch: 'main' };
+    await expect(assertCleanTree(target)).resolves.toBeUndefined();
+    dirtyOnce();
+
+    await expect(assertCleanTree(target)).rejects.toThrow(DIRTY_SENTENCE);
+  });
+
+  it('refuses a rebase when the tree status cannot be read', async () => {
+    const { slice, read } = harness();
+    worktree.worktreeStatus.mockRejectedValueOnce(new Error('status read failed'));
+
+    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).rejects.toThrow(
+      "Couldn't check for uncommitted changes. Try again.",
+    );
+
+    expect(engine.readRebasePlan).not.toHaveBeenCalled();
+    expect(read().historyRuns[MOUNT_ID]).toBeUndefined();
+  });
+
+  it('refuses a sync with the reason when the working tree state is unknown', async () => {
+    const { slice } = harness();
+    worktree.worktreeStatus.mockResolvedValueOnce({
+      upstream: null,
+      head: 'head-sha',
+      workingTree: { kind: 'unknown', reason: 'status-read-failed' },
+    });
+
+    await expect(
+      slice.syncBranchWithRemote({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toEqual({
+      kind: 'failed',
+      message: "Couldn't check for uncommitted changes. Try again.",
+    });
+
+    expect(engine.readRebasePlan).not.toHaveBeenCalled();
   });
 
   it('lets a clean tree through to the rebase', async () => {

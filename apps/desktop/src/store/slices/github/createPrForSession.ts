@@ -107,10 +107,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       );
     }
     const { session, mount, cwd } = target;
-    if (
-      isScribeBody !== true &&
-      isScribeWriting({ scribeWork: get().scribeWork, mountId: mount.id })
-    ) {
+    const isBlockedByScribe = (): boolean =>
+      isScribeBody !== true && isScribeWriting({ scribeWork: get().scribeWork, mountId: mount.id });
+    if (isBlockedByScribe()) {
       throw new ScribeWritingError();
     }
     const workspace = get().workspaces.find((candidate) => candidate.id === session.workspaceId);
@@ -194,6 +193,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       throw new ReportedError(`Couldn't push ${mount.branch}: ${pushed.error}`);
     }
 
+    if (isBlockedByScribe()) {
+      throw new ScribeWritingError();
+    }
     const res = await tauriGhRunner.run(args, ghOptions);
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;

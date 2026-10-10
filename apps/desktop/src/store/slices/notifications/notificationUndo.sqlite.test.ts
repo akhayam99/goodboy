@@ -8,6 +8,7 @@ import {
   resetStoryStore,
   rowsOf,
   STORE_IMPORT_TIMEOUT_MS,
+  storySqlite,
   type StoryStore,
 } from '../../storyHarness';
 
@@ -103,6 +104,26 @@ describe('undoable notification delete on sqlite', () => {
 
     expect(await storedIds()).toEqual(['n-1', 'n-2']);
     expect(useAppStore.getState().notificationCounts.reduce((n, b) => n + b.count, 0)).toBe(2);
+  });
+
+  it('offers Undo for the rows already deleted when a later delete fails', async () => {
+    await storySqlite().exec(
+      `CREATE TRIGGER notification_delete_fails BEFORE DELETE ON notifications
+       WHEN OLD.id = 'n-2'
+       BEGIN SELECT RAISE(ABORT, 'database is locked'); END`,
+    );
+
+    await expect(
+      useAppStore.getState().dismissNotificationGroup({ ids: ['n-1', 'n-2'] }),
+    ).rejects.toThrow('database is locked');
+
+    expect(await storedIds()).toEqual(['n-2']);
+    expect(useAppStore.getState().undoStack).toHaveLength(1);
+    expect(useAppStore.getState().undoNotices.at(-1)?.toast.message).toBe('Notification deleted');
+
+    await useAppStore.getState().undoLastOperation({});
+
+    expect(await storedIds()).toEqual(['n-1', 'n-2']);
   });
 
   it('keeps the read flag a row had when it was deleted', async () => {

@@ -1,5 +1,4 @@
 import type { PlanWithCount, WorkflowRun } from '@goodboy/types';
-import { isRunHeldForPlan } from '../../store/slices/workflows/workflowPlanApproval';
 
 export type PlanHandoff = 'none' | 'approved-waiting';
 
@@ -12,7 +11,7 @@ export const planHandoffOf = ({ plan, run }: Params): PlanHandoff => {
   if (run === null || plan.status !== 'active' || plan.consumptionCount > 0) {
     return 'none';
   }
-  if (isRunHeldForPlan({ run }) || run.rulesSnapshot?.planApproved !== true) {
+  if (run.orchestrationStop !== undefined || run.rulesSnapshot?.planApproved !== true) {
     return 'none';
   }
   return 'approved-waiting';

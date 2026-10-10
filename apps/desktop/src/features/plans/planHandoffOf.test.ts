@@ -32,6 +32,25 @@ describe('planHandoffOf', () => {
     expect(planHandoffOf({ plan: aPlan(), run: halfWritten })).toBe('none');
   });
 
+  it('has no gap while the run is stopped for any other reason', () => {
+    const kinds = [
+      'failure',
+      'budget',
+      'questions',
+      'paused',
+      'operator',
+      'closed',
+      'needs-approval',
+    ] as const;
+    for (const kind of kinds) {
+      const stopped = aWorkflowRun({
+        ...approved,
+        orchestrationStop: { kind, message: 'Stopped.' },
+      });
+      expect(planHandoffOf({ plan: aPlan(), run: stopped })).toBe('none');
+    }
+  });
+
   it('has no gap for a plan no run owns or a run that was never approved', () => {
     expect(planHandoffOf({ plan: aPlan(), run: null })).toBe('none');
     expect(

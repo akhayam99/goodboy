@@ -7,6 +7,7 @@ import {
 } from '../../../features/history/historyEngine';
 import { assertCleanTree } from './assertCleanTree';
 import { DirtyTreeError } from './DirtyTreeError';
+import { TreeUnreadableError } from './TreeUnreadableError';
 import { historyTargetOf } from './historyTargetOf';
 import { identityOf } from './historyIdentity';
 import { isHistoryRunActive } from './isHistoryRunActive';
@@ -31,7 +32,7 @@ export const syncBranchWithRemote = (_set: SetFn, get: GetFn) => {
     try {
       await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
     } catch (error) {
-      if (error instanceof DirtyTreeError) {
+      if (error instanceof DirtyTreeError || error instanceof TreeUnreadableError) {
         return failed({ message: error.message });
       }
       throw error;
