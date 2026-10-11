@@ -64,6 +64,11 @@ const TerminalStudio = lazy(() =>
     default: module.TerminalStudio,
   })),
 );
+const MonitoringStudio = lazy(() =>
+  import('../../../features/monitoring/components/MonitoringStudio').then((module) => ({
+    default: module.MonitoringStudio,
+  })),
+);
 const CompanionStudio = lazy(() =>
   import('../../../features/companion/components/CompanionStudio').then((module) => ({
     default: module.CompanionStudio,
@@ -188,6 +193,8 @@ const renderStudio = ({
           onClose={close}
         />
       );
+    case 'monitoring':
+      return currentWorkspace === null ? null : <MonitoringStudio onClose={close} />;
     default: {
       const unreachable: never = overlay;
       return unreachable;

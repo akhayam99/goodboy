@@ -288,6 +288,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           run: () => openImpactStudio({ scope: { kind: 'spend' }, door: true }),
         },
         {
+          key: 'goto:monitoring',
+          label: 'Monitoring',
+          secondary: ['Go to Monitoring', 'Ports'],
+          kind: 'goto',
+          group: null,
+          icon: CONCEPT_ICONS.monitoring,
+          run: () => openStudio({ studio: { kind: 'monitoring' } }),
+        },
+        {
           key: 'goto:notifications',
           label: 'Notifications',
           kind: 'goto',

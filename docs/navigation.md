@@ -51,7 +51,7 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Tasks, Chat, Workflows and Terminal sit
+- **The column holds every door.** Board, Tasks, Chat, Workflows, Terminal and Monitoring sit
   under New session, the Sessions list follows, Settings and the Goodboy row sit at
   the foot. Board is home and the first door (⌘⇧H). The column is on every
   screen with a workspace: the board, a session, the draft and every studio but
@@ -88,7 +88,7 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Terminal, Settings), a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
@@ -442,7 +442,7 @@ reference material beside the page and closes with the pane that opened it.
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 New session (⌘N, the only emphasised control, selected while the draft is open,
 a primary dot and `Draft in progress` while a draft waits), the doors Board
-(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (icon and word, the
+(⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
 shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
 belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
@@ -500,7 +500,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): the toggle, New, Board, Tasks, Chat, Workflows and Terminal as icons
+  (`ColumnRail`): the toggle, New, Board, Tasks, Chat, Workflows, Terminal and Monitoring as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width

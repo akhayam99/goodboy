@@ -173,6 +173,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   ],
   notifications: ['features/notifications/components/NotificationsStudio/index.tsx'],
   chat: ['features/workspace-chat/components/ChatRoom/index.tsx'],
+  monitoring: ['features/monitoring/components/MonitoringStudio/MonitoringPage.tsx'],
 };
 
 const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray<string>>> = {
@@ -210,6 +211,7 @@ const STUDIO_TIERS: Readonly<Record<StudioKind, 'column' | 'full'>> = {
   changelog: 'column',
   notifications: 'column',
   chat: 'full',
+  monitoring: 'column',
 };
 
 const H1_ALLOWLIST: ReadonlySet<string> = new Set([

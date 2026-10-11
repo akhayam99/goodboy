@@ -61,6 +61,7 @@ export const AppFrame = ({ view, isRailCollapsed, mode = sceneShellMode() }: Pro
       openChat: overlays.openChat,
       openWorkflows: overlays.openWorkflows,
       openTerminalStudio: overlays.openTerminalStudio,
+      openMonitoring: overlays.openMonitoring,
       openSettings: overlays.openSettings,
       openChangelog: overlays.openChangelog,
       openGuide: overlays.openGuide,

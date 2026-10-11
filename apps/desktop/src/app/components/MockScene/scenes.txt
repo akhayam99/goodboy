@@ -233,6 +233,10 @@ models-codex-only
 models-saved-project
 modelswilluse
 modelswilluse-cleared
+monitoring-alsolistening
+monitoring-empty
+monitoring-failed
+monitoring-ports
 mount-mismatch
 mounts
 needs-you-card

@@ -144,6 +144,8 @@ export const useAppOverlays = ({
     [goTo],
   );
 
+  const openMonitoring = useCallback(() => goTo({ overlay: { kind: 'monitoring' } }), [goTo]);
+
   const openShortcutHelp = useCallback(
     () => goTo({ overlay: { kind: 'settings', focus: { scope: 'app', section: 'shortcuts' } } }),
     [goTo],
@@ -273,6 +275,7 @@ export const useAppOverlays = ({
     openShortcutHelp,
     openSpend,
     openTerminalStudio,
+    openMonitoring,
     openWorkflows,
     studio,
     layers,
