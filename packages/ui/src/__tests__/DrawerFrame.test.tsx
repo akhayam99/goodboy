@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { DrawerFrame } from '../components/DrawerFrame';
 import { dismissTopEscapeLayer } from '../escape';
+import { FRAME_BAND_PX, FRAME_DRAWER_ROW_PX } from '../frameGeometry';
 
 afterEach(cleanup);
 
@@ -268,5 +269,23 @@ describe('DrawerFrame Escape order', () => {
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws one close control in a 28px header row centred on the band', () => {
+    const { container } = render(
+      <DrawerFrame title="Drafts" count={3} onClose={vi.fn()}>
+        <p>payout.ts:13</p>
+      </DrawerFrame>,
+    );
+
+    expect(screen.getAllByRole('button', { name: 'Close' })).toHaveLength(1);
+    const header = container.querySelector<HTMLElement>('[data-drawer-header]');
+    const row = container.querySelector<HTMLElement>('[data-drawer-header-row]');
+    const rowHeight = Number.parseFloat(row?.style.minHeight ?? '');
+    const inset = Number.parseFloat(header?.style.paddingTop ?? '');
+    expect(rowHeight).toBe(FRAME_DRAWER_ROW_PX);
+    expect(rowHeight).toBe(28);
+    expect(inset + rowHeight / 2).toBe(FRAME_BAND_PX / 2);
+    expect(header?.style.paddingBottom).toBe(header?.style.paddingTop);
   });
 });

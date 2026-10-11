@@ -16,6 +16,7 @@ import {
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { GUIDE_CHAPTERS } from './guideChapters';
 import { peekGuideChapter, requestGuideChapter } from './guideChapterRequest';
+import { StudioFrame } from '../../../../app/components/StudioFrame';
 import { GuideStudio } from './index';
 
 let useAppStore: StoryStore;
@@ -144,5 +145,23 @@ describe('GuideStudio', () => {
     const board = screen.getByRole('region', { name: 'Board' });
     expect(within(board).getByText('needs you')).toBeDefined();
     expect(within(board).getByText('in review')).toBeDefined();
+  });
+
+  it('draws the crumb in the detail beside the rail, on the column of the first chapter title', () => {
+    const { container } = render(
+      <StudioFrame kind="guide" onClose={vi.fn()}>
+        <GuideStudio onClose={vi.fn()} />
+      </StudioFrame>,
+    );
+
+    const band = screen.getByRole('banner', { name: /guide/i });
+    const detail = container.querySelector<HTMLElement>('[data-studio-detail]');
+    const bandColumn = band.querySelector<HTMLElement>('[data-page-column]');
+    const bodyColumn = detail?.querySelector<HTMLElement>('[data-page-column]:not(header *)');
+    expect(detail?.contains(band)).toBe(true);
+    expect(detail?.firstElementChild).toBe(band);
+    expect(rail().closest('aside')?.contains(band)).toBe(false);
+    expect(bandColumn?.getAttribute('data-width')).toBe('column');
+    expect(bodyColumn?.getAttribute('data-width')).toBe(bandColumn?.getAttribute('data-width'));
   });
 });

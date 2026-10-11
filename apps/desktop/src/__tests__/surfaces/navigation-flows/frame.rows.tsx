@@ -47,8 +47,13 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   const row = titleRowOf(title);
   expect(row).not.toBeNull();
   expect(row?.firstElementChild).toBe(title);
-  if (geometry.titleLeft === 'column') {
+  if (geometry.titleLeft === 'column' || geometry.titleLeft === 'detail') {
     expect(columnOf(title)).toBe('column');
+  }
+  if (geometry.titleLeft === 'detail') {
+    const detail = title.closest('[data-studio-detail]');
+    expect(detail).not.toBeNull();
+    expect(detail?.firstElementChild?.matches('[data-studio-band]')).toBe(true);
   }
   const header = title.closest<HTMLElement>('[data-slot="pane-header"]');
   if (header !== null) {

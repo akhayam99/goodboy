@@ -1,4 +1,4 @@
-import { PageColumn, Skeleton } from '@goodboy/ui';
+import { FRAME_BAND_PX, PageColumn, Skeleton } from '@goodboy/ui';
 import type { StudioSkeletonLayout } from './studioMeta';
 
 const ROWS = [0, 1, 2, 3, 4, 5];
@@ -51,9 +51,10 @@ type Props = {
   readonly layout: StudioSkeletonLayout;
   readonly title: string;
   readonly railWidthPx: number;
+  readonly isBandInDetail?: boolean;
 };
 
-export const StudioSkeleton = ({ layout, title, railWidthPx }: Props) => (
+export const StudioSkeleton = ({ layout, title, railWidthPx, isBandInDetail = false }: Props) => (
   <div
     role="status"
     aria-label={`Loading ${title}`}
@@ -61,6 +62,15 @@ export const StudioSkeleton = ({ layout, title, railWidthPx }: Props) => (
     className="flex min-h-0 min-w-0 flex-1 bg-background"
   >
     {layout === 'rail' ? railSkeleton({ widthPx: railWidthPx }) : null}
-    {layout === 'grid' ? GRID : LIST_ROWS}
+    {layout === 'rail' && isBandInDetail ? (
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div style={{ height: FRAME_BAND_PX }} className="shrink-0" />
+        {LIST_ROWS}
+      </div>
+    ) : layout === 'grid' ? (
+      GRID
+    ) : (
+      LIST_ROWS
+    )}
   </div>
 );

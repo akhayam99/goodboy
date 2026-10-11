@@ -11,6 +11,7 @@ import {
 import {
   cn,
   DrawerColumn,
+  PAGE_FRAME,
   readStudioRailWidth,
   SHEET_CLASSES,
   StudioSlotContext,
@@ -18,6 +19,7 @@ import {
   useEscapeLayer,
 } from '@goodboy/ui';
 import { StudioBand } from '../../../shared/components/StudioShell/StudioBand';
+import { StudioBandContext } from '../../../shared/components/StudioShell/studioBandContext';
 import {
   StudioFrameContext,
   type StudioChrome,
@@ -95,25 +97,28 @@ export const StudioFrame = ({
   );
   const band = { ...meta, ...chrome };
 
+  const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
+  const bandNode = hasBand ? (
+    <StudioBand
+      crumbKey={kind}
+      icon={band.icon}
+      {...('tone' in band && band.tone !== undefined && { tone: band.tone })}
+      {...(chrome?.glyph !== undefined && { glyph: chrome.glyph })}
+      width={meta.tier}
+      title={band.title}
+      {...(chrome?.subtitle !== undefined && { subtitle: chrome.subtitle })}
+      closeLabel={band.closeLabel}
+      isClosable={isClosable}
+      accessory={chrome?.accessory}
+      isTrailClaimed={trailClaims > 0}
+      trailSlotRef={setTrailSlot}
+      onClose={requestClose}
+    />
+  ) : null;
+
   const framed = (
     <>
-      {hasBand ? (
-        <StudioBand
-          crumbKey={kind}
-          icon={band.icon}
-          {...('tone' in band && band.tone !== undefined && { tone: band.tone })}
-          {...(chrome?.glyph !== undefined && { glyph: chrome.glyph })}
-          width={meta.tier}
-          title={band.title}
-          {...(chrome?.subtitle !== undefined && { subtitle: chrome.subtitle })}
-          closeLabel={band.closeLabel}
-          isClosable={isClosable}
-          accessory={chrome?.accessory}
-          isTrailClaimed={trailClaims > 0}
-          trailSlotRef={setTrailSlot}
-          onClose={requestClose}
-        />
-      ) : null}
+      {isSplit ? null : bandNode}
       <div
         className={cn(
           'relative flex min-h-0 min-w-0 flex-1 bg-background',
@@ -125,6 +130,7 @@ export const StudioFrame = ({
           fallback={
             <StudioSkeleton
               layout={hasBand ? meta.skeleton : 'list'}
+              isBandInDetail={isSplit}
               title={meta.title}
               railWidthPx={readStudioRailWidth({
                 surface: kind,
@@ -133,11 +139,13 @@ export const StudioFrame = ({
             />
           }
         >
-          {hasBand ? (
-            <UnderTrailContext.Provider value>{children}</UnderTrailContext.Provider>
-          ) : (
-            children
-          )}
+          <StudioBandContext.Provider value={isSplit ? bandNode : null}>
+            {hasBand ? (
+              <UnderTrailContext.Provider value>{children}</UnderTrailContext.Provider>
+            ) : (
+              children
+            )}
+          </StudioBandContext.Provider>
         </Suspense>
       </div>
     </>
