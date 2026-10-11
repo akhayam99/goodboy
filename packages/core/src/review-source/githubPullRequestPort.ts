@@ -17,6 +17,7 @@ import {
   type PullRequestFailureKind,
   type PullRequestPort,
 } from './pullRequestPort';
+import { HOST_CAPABILITIES } from './hostCapabilities';
 import { pullRequestReviewersOf } from './pullRequestReviewers';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSourceCapabilities } from './types';
 
@@ -63,7 +64,7 @@ const MERGE_FLAG: Readonly<Record<PrMergeMethod, string>> = {
   rebase: '--rebase',
 };
 
-const MERGE_METHOD_ORDER: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
+const MERGE_METHOD_ORDER: ReadonlyArray<PrMergeMethod> = HOST_CAPABILITIES.github.mergeMethods;
 
 type RawView = RawPullRequest & {
   readonly createdAt?: string | null;

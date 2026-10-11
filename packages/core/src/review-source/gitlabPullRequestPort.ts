@@ -18,6 +18,7 @@ import {
   requirePullRequestCapability,
   type PullRequestPort,
 } from './pullRequestPort';
+import { HOST_CAPABILITIES } from './hostCapabilities';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSourceCapabilities } from './types';
 
 export type GitlabPersonPayload = Readonly<{
@@ -105,7 +106,7 @@ type Params = Readonly<{
 
 const FIRST_FILES = 7;
 
-const MERGE_METHOD_ORDER: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
+const MERGE_METHOD_ORDER: ReadonlyArray<PrMergeMethod> = HOST_CAPABILITIES.gitlab.mergeMethods;
 
 const SET_BY_THE_PROJECT = 'Set by the project';
 
@@ -217,7 +218,7 @@ export const gitlabMergeMethodsOf = ({
 };
 
 const FALLBACK_MERGE_METHODS: Pick<PullRequestView, 'mergeMethods' | 'mergeMethodReasons'> = {
-  mergeMethods: ['merge', 'squash'],
+  mergeMethods: HOST_CAPABILITIES.gitlab.fallbackMergeMethods,
   mergeMethodReasons: {},
 };
 

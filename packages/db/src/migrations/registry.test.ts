@@ -403,6 +403,134 @@ describe('table rebuild data tests', () => {
   });
 });
 
+const CHECK_LIST = /(\w+)\s+IN\s*\(([^)]*)\)/gi;
+
+const QUOTED_VALUE = /'([^']*)'/g;
+
+const TABLE_NAME = /^\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?(\w+)/i;
+
+type CheckListsParams = {
+  readonly db: Database;
+};
+
+type CheckLists = {
+  readonly columns: ReadonlySet<string>;
+  readonly lists: ReadonlyMap<string, ReadonlySet<string>>;
+};
+
+const checkListsOf = async ({ db }: CheckListsParams): Promise<CheckLists> => {
+  const rows = await db.select<{ readonly sql: string | null }>(
+    "SELECT sql FROM sqlite_master WHERE type = 'table' AND sql IS NOT NULL AND name NOT LIKE 'sqlite_%'",
+  );
+  const lists = new Map<string, Set<string>>();
+  const columns = new Set(
+    (
+      await db.select<{ readonly key: string }>(
+        `SELECT m.name || '.' || p.name AS key
+         FROM sqlite_master m, pragma_table_info(m.name) p
+         WHERE m.type = 'table' AND m.name NOT LIKE 'sqlite_%'`,
+      )
+    ).map((row) => row.key),
+  );
+  for (const row of rows) {
+    const sql = row.sql ?? '';
+    const table = TABLE_NAME.exec(sql)?.[1];
+    if (table === undefined) {
+      continue;
+    }
+    for (const match of sql.matchAll(CHECK_LIST)) {
+      const key = `${table}.${match[1] ?? ''}`;
+      const values = lists.get(key) ?? new Set<string>();
+      for (const value of (match[2] ?? '').matchAll(QUOTED_VALUE)) {
+        values.add(value[1] ?? '');
+      }
+      lists.set(key, values);
+    }
+  }
+  return { columns, lists };
+};
+
+type LostCheckValuesParams = {
+  readonly before: CheckLists;
+  readonly after: CheckLists;
+};
+
+const lostCheckValues = ({ before, after }: LostCheckValuesParams): ReadonlyArray<string> => {
+  const lost: string[] = [];
+  for (const [key, values] of before.lists) {
+    if (!after.columns.has(key)) {
+      continue;
+    }
+    const kept = after.lists.get(key);
+    if (kept === undefined) {
+      lost.push(`${key}:*`);
+      continue;
+    }
+    for (const value of values) {
+      if (!kept.has(value)) {
+        lost.push(`${key}:${value}`);
+      }
+    }
+  }
+  return lost.sort();
+};
+
+const REBUILDS_THAT_NARROW_A_CHECK: Readonly<Record<number, ReadonlyArray<string>>> = {
+  31: [
+    'budget_alerts.kind:task-exceeded',
+    'budget_alerts.kind:task-threshold',
+    'permission_rules.scope:task',
+  ],
+  123: ['diff_comments.status:deleted'],
+  126: ['provider_runs.provider:*', 'session_external_tasks.provider:*'],
+  131: ['integration_credentials.provider:*'],
+};
+
+describe('table rebuild CHECK lists', () => {
+  it('reads the lists a rebuild must carry from a table definition', async () => {
+    const db = makeTestDatabase();
+    await db.exec(
+      "CREATE TABLE kinds (id TEXT PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('a', 'b')), state TEXT CHECK (state IN ('x')))",
+    );
+    const lists = await checkListsOf({ db });
+    expect([...(lists.lists.get('kinds.kind') ?? [])]).toEqual(['a', 'b']);
+    expect([...(lists.lists.get('kinds.state') ?? [])]).toEqual(['x']);
+  });
+
+  it('names a value a rebuild drops from a list', () => {
+    const before: CheckLists = {
+      columns: new Set(['events.kind']),
+      lists: new Map([['events.kind', new Set(['a', 'b', 'c'])]]),
+    };
+    const narrowed: CheckLists = {
+      columns: new Set(['events.kind']),
+      lists: new Map([['events.kind', new Set(['a', 'c'])]]),
+    };
+    const unchecked: CheckLists = { columns: new Set(['events.kind']), lists: new Map() };
+    const dropped: CheckLists = { columns: new Set(), lists: new Map() };
+    expect(lostCheckValues({ before, after: narrowed })).toEqual(['events.kind:b']);
+    expect(lostCheckValues({ before, after: unchecked })).toEqual(['events.kind:*']);
+    expect(lostCheckValues({ before, after: dropped })).toEqual([]);
+    expect(lostCheckValues({ before, after: before })).toEqual([]);
+  });
+
+  it('keeps every value of every CHECK list across each rebuild unless listed', async () => {
+    const db = makeTestDatabase();
+    const losses: Record<number, ReadonlyArray<string>> = {};
+    for (const version of rebuildVersions) {
+      const at = migrations.findIndex((migration) => migration.version === version);
+      await migrate(db, migrations.slice(0, at));
+      const before = await checkListsOf({ db });
+      await migrate(db, migrations.slice(0, at + 1));
+      const lost = lostCheckValues({ before, after: await checkListsOf({ db }) });
+      if (lost.length > 0) {
+        losses[version] = lost;
+      }
+    }
+    expect(losses).toEqual(REBUILDS_THAT_NARROW_A_CHECK);
+  }, 120_000);
+});
+
 describe('migration convergence', () => {
   it('applies every version once on a fresh database', async () => {
     const db = makeTestDatabase();

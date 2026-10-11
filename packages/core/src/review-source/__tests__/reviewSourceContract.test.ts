@@ -7,6 +7,8 @@ import {
   type BitbucketReviewTransport,
 } from '../bitbucketReviewSource';
 import { githubReviewSource } from '../githubReviewSource';
+import { commitLinkOf } from '../commitLink';
+import { HOST_CAPABILITIES, hostsWithoutRow } from '../hostCapabilities';
 import { fakeBitbucketTransport } from './bitbucketPullRequestFixture';
 import { PULL_REQUEST_CAPABILITY_METHODS, type PullRequestCapability } from '../pullRequestPort';
 import { PR_VIEW_JSON } from './githubPullRequestFixture';
@@ -257,13 +259,39 @@ const bitbucketFake = (): Fake => {
   };
 };
 
-const SOURCES: ReadonlyArray<readonly [string, () => Fake]> = [
+const SOURCES: ReadonlyArray<readonly ['github' | 'gitlab' | 'bitbucket', () => Fake]> = [
   ['github', githubFake],
   ['gitlab', gitlabFake],
   ['bitbucket', bitbucketFake],
 ];
 
-describe.each(SOURCES)('review source contract on %s', (_name, build) => {
+describe('review source contract coverage', () => {
+  it('walks every host row and every walked host has a row', () => {
+    const walked = SOURCES.map(([name]) => name);
+    expect(hostsWithoutRow({ hosts: walked })).toEqual([]);
+    expect([...walked].sort()).toEqual(Object.keys(HOST_CAPABILITIES).sort());
+  });
+
+  it('fails for a fourth host that has a fake but no row', () => {
+    const walked = [...SOURCES.map(([name]) => name), 'forgejo'];
+    expect(hostsWithoutRow({ hosts: walked })).toEqual(['forgejo']);
+  });
+});
+
+describe.each(SOURCES)('review source contract on %s', (name, build) => {
+  it('links a commit and reads merge methods through its host row', async () => {
+    const fake = build();
+    const row = HOST_CAPABILITIES[name];
+    const url = `https://example.test/harborline/ledger-core${row.requestSegment}12`;
+    expect(commitLinkOf({ kind: name, url, sha: fake.head })).toBe(
+      `https://example.test/harborline/ledger-core${row.commitSegment}${fake.head}`,
+    );
+    const view = await fake.source.pullRequest?.read();
+    expect(view?.mergeMethods.every((method) => row.mergeMethods.includes(method))).toBe(true);
+    expect(fake.source.capabilities.canResolve).toBe(row.canResolveThreads);
+    expect(fake.source.capabilities.canSetDraft).toBe(row.draft !== 'none');
+  });
+
   it('lists the open review threads with their provider ids', async () => {
     const fake = build();
     const threads = await fake.source.listThreads();
