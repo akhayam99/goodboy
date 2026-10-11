@@ -177,6 +177,24 @@ files and re-exports their items, so callers keep writing
 helper another file needs is `pub(super)`; nothing else leaves its file. Tests
 sit in a `tests.rs` beside the file they cover.
 
+### Diff file sides
+
+`worktree_file_sides` reads local file contents for unchanged context expansion.
+An omitted old revision uses the same configured merge base as the branch diff;
+an omitted new revision reads the working file. Explicit revisions are resolved
+before reading their git objects. The missing first parent of a root commit is
+an absent side. The `:0` revision names the index, so staged and unstaged
+comparisons read their own sides. A detected rename or copy reads the old path
+for the old side, following the repository's diff configuration. Missing files
+return an absent side. The read rejects absolute paths, traversal and symlinks
+outside the worktree, including a missing file below an escaping symlink.
+Either side over 2 MB or 20,000 lines, or containing invalid UTF-8 or NUL bytes,
+makes the entire result too large with no text. The frontend loader names the
+worktree and revision pair, fetches once
+per file and diff refresh, and discards late results after its source changes.
+The command lives in `apps/desktop/src-tauri/src/worktree/file_sides.rs`;
+`features/diff/hooks/useFileSides` owns the expansion cache and retry state.
+
 ### History module
 
 Rewrite history and Rebase on main run in one Rust module,

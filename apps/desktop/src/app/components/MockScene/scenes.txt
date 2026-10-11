@@ -138,6 +138,9 @@ design-comments
 design-controls-scale
 design-scale
 design-scale-ladders
+diff-gaps
+diff-gaps-expanded
+diff-gaps-toolarge
 diff-notes
 drawer-ask-draft
 drawer-headers

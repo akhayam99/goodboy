@@ -1,10 +1,10 @@
 import { Fragment, useMemo, type ReactNode } from 'react';
 import { cn, type DiffLayoutMode } from '@goodboy/ui';
 import type { DiffCommentSide, DiffHunkLine, FileDiff } from '@goodboy/types';
-import { buildDiffRows, type DiffRow } from '../../../../shared/utils/diffRows';
-import { buildDiffPairRows, type DiffPairRow } from '../../../../shared/utils/diffPairRows';
 import { pairDiffLines } from '../../../../shared/utils/diffLinePairs';
-import { visibleDiffRows } from '../../../../shared/utils/visibleDiffRows';
+import { windowRows } from '../../lib/windowRows';
+import { GapRow } from './GapRow';
+import type { useFileSides } from '../../hooks/useFileSides';
 import { tokensForLine, type DiffTokenMap } from '../../hooks/useDiffTokens';
 import { LINE_PREFIX } from '../../lib/fileStatus';
 import {
@@ -33,6 +33,8 @@ export type LineSelection = {
 
 type Props = {
   readonly file: FileDiff;
+  readonly context: ReturnType<typeof useFileSides>;
+  readonly onOpenInEditor: (() => void) | null;
   readonly layout: DiffLayoutMode;
   readonly wrap: boolean;
   readonly tokens: DiffTokenMap | null;
@@ -81,6 +83,8 @@ const buildWordMarks = (file: FileDiff): ReadonlyMap<DiffHunkLine, CharRange> =>
 
 export const DiffRows = ({
   file,
+  context,
+  onOpenInEditor,
   layout,
   wrap,
   tokens,
@@ -95,12 +99,9 @@ export const DiffRows = ({
 }: Props) => {
   const isSplit = layout === 'split';
   const effectiveWrap = isSplit || wrap;
-  const rows = useMemo<ReadonlyArray<DiffRow | DiffPairRow>>(
-    () =>
-      isSplit
-        ? visibleDiffRows({ rows: buildDiffPairRows({ hunks: file.hunks }), visibleLines })
-        : visibleDiffRows({ rows: buildDiffRows({ hunks: file.hunks }), visibleLines }),
-    [file.hunks, isSplit, visibleLines],
+  const rows = useMemo(
+    () => windowRows({ hunks: file.hunks, gaps: context.gaps, isSplit, visibleLines }),
+    [file.hunks, context.gaps, isSplit, visibleLines],
   );
   const marks = useMemo(() => buildWordMarks(file), [file]);
 
@@ -176,6 +177,23 @@ export const DiffRows = ({
       className={cn('flex flex-col', !effectiveWrap && 'w-max min-w-full')}
     >
       {rows.map((row) => {
+        if (row.type === 'gap') {
+          return (
+            <GapRow
+              key={`g${row.index}`}
+              gap={row}
+              hasNextHunk={row.index < file.hunks.length}
+              hasPreviousHunk={row.index > 0}
+              rowIndex={nextIndex()}
+              isPending={context.pending.has(row.index)}
+              hasError={context.errors.has(row.index)}
+              retryDirection={context.errors.get(row.index) ?? 'all'}
+              isTooLarge={context.sides?.isTooLarge === true}
+              onExpand={context.expand}
+              onOpenInEditor={onOpenInEditor}
+            />
+          );
+        }
         if (row.type === 'header') {
           return <HunkHeader key={`h${row.hunkIndex}`} label={row.header} rowIndex={nextIndex()} />;
         }

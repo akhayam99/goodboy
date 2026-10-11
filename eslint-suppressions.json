@@ -3124,11 +3124,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/diff/components/FileDiffDrawer/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/diff/components/SessionDiffPane/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 9
