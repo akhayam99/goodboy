@@ -3786,7 +3786,7 @@
       "count": 4
     },
     "@typescript-eslint/naming-convention": {
-      "count": 5
+      "count": 3
     }
   },
   "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx": {
