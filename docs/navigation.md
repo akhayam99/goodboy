@@ -1925,7 +1925,26 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   Explore on a given mount from the Projects rows. Rows are 40px
   high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
   extension kept, a slot for change marks, the size and the age. The size
-  hides under a 520px column and the age under 440px. The folders you opened
+  hides under a 520px column and the age under 440px.
+  A 16px slot before the size carries the change marks. Changed means what the
+  Files tab means: against the base branch, with uncommitted and untracked
+  work (`worktree_changed_files`, whose `entries` give each path a status:
+  added, modified, deleted or renamed, untracked files count as added). A
+  changed file shows the diff's letter (`M`, `A`, `R`; `D` in the Changed
+  filter) in the diff's tone, named for assistive tech by the word
+  ("Modified"); names are never tinted. A closed folder holding changes shows a
+  6px dot, filled with `text-muted-foreground` and a 1px ring so it is never
+  mistaken for the diff tree's warning dot (changed since viewed), with the
+  tooltip "3 changed files"; an open folder shows none. The mark comes from
+  `useExploreChanges`, which shares one request per mount and revision with
+  `useMountDiffStats` (same 30s tick, turn finished and focus signals, no second
+  timer). The header's `All files | Changed 7` tabs show only for a mount whose
+  git answers and that has changes (or while you are in Changed). Changed
+  filters the same tree to the changed paths and their folders, all open, with
+  deleted files as faint struck rows that do not open; with nothing left it
+  says "No changes against main." A changed file's drawer offers
+  `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
+  presentation with a ghost Open in Files that opens the Files tab on the file. The folders you opened
   are kept per session and project in the session-view slice (`exploreExpanded`,
   keyed by session, mount path and folder) and open again when you come back,
   and a file opened from elsewhere opens the folders above it. The file drawer
