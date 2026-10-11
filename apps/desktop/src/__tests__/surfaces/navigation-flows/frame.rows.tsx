@@ -22,9 +22,6 @@ const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
 const titleRowOf = (title: HTMLElement): HTMLElement | null =>
   title.closest<HTMLElement>('[data-slot="pane-title-row"]');
 
-const columnOf = (title: HTMLElement): string | null =>
-  title.closest<HTMLElement>('[data-page-column]')?.getAttribute('data-width') ?? null;
-
 const onlyH1 = ({ scope }: { readonly scope: ParentNode }): HTMLElement => {
   const titles = [...scope.querySelectorAll<HTMLElement>('h1')].filter(
     (title) => title.closest('.invisible, [inert], [hidden]') === null,
@@ -48,9 +45,6 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   const row = titleRowOf(title);
   expect(row).not.toBeNull();
   expect(row?.firstElementChild).toBe(title);
-  if (geometry.titleLeft === 'column' || geometry.titleLeft === 'detail') {
-    expect(columnOf(title)).toBe('column');
-  }
   if (geometry.titleLeft === 'detail') {
     const detail = title.closest('[data-studio-detail]');
     expect(detail).not.toBeNull();

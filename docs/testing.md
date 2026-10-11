@@ -252,3 +252,17 @@ The scene measures workflow is advisory, with a job that can fail without
 blocking a pull request. It must never be configured as a required check. It
 starts the mock app on the runner and uses the runner's installed Chrome to run
 the existing measures. It uploads no artifacts.
+
+### Frame probe
+
+A layout claim is proved by geometry, here, and by no class or attribute in a unit test. `scripts/validateScenesFrame.mjs` exports `FRAME_SCENES`, the one list of about two dozen scenes, and the scene job measures each at 1100, 1440 and 1920 wide with the sidebar pinned and on the rail (one viewport change and one reload per pair). A failure names the scene, the width, the sidebar and the rule. The rules, with a tolerance of 1px:
+
+- the trail's first crumb, the h1 and the first body column share one left edge;
+- every `[data-slot]` inside the page container lies inside it (a slot under a scroller may sit below the fold);
+- no left rail rect overlaps the trail;
+- the crumb row centre equals the drawer header centre when a drawer is open;
+- a composer's bottom is at or above the sheet bottom;
+- a `data-container="drawer"` is a sibling of its `data-container="page"`, never inside one;
+- on the empty chat scene, the stage centre is on the detail centre in x and at 40 to 52 percent of the detail height in y.
+
+To add a scene, add its id to `scenes.txt` through the scene registry, then one entry to `FRAME_SCENES`: `{ scene, rail }`, where `rail` is the query that collapses the sidebar (`&rail=1` for a scene on `WorkspaceFrame` or `BoardShellScene`, `&ctx=rail` for `frame&view=...`) or `null` when the scene draws no sidebar. A scene with no `data-container="page"` fails the probe, and an id missing from `scenes.txt` fails before any measure, because an unknown id would silently render the workspace scene. Run one scene with `pnpm validate:scenes --only frames:<text>` against `vite preview` of a mock build; the rule functions have fixtures in `scripts/validate-scenes.test.mjs`.

@@ -296,6 +296,8 @@ React mocks. The README hero is the exception that goes the other way:
 `SessionMock` from the website dev server on port 1499 and writes
 `docs/readme/readme-hero-{dark,light}.webp` at three times the README width. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
 
+The scenes listed in `FRAME_SCENES` (`scripts/validateScenesFrame.mjs`) are also measured by the scene job at three window widths, so changing their layout can fail the frame probe: [testing.md](./testing.md) → Frame probe.
+
 ## Pictures for feature-area guides
 
 Every figure in a feature-area guide sits in a stage frame: the teal-to-dark gradient
