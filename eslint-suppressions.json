@@ -11544,7 +11544,7 @@
   },
   "apps/desktop/src/store/slices/session-view/selectors.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 2
     }
   },
   "apps/desktop/src/store/slices/session-view/sessionCreation.ts": {
