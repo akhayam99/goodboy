@@ -129,6 +129,10 @@ commits-planned
 commits-rest
 commits-rest-1920
 companion
+confirm-action-panel
+confirm-chat-delete
+confirm-session-delete
+confirm-worktree-remove
 confirmpopover
 context-drawer
 controls-fields
