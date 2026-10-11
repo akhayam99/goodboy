@@ -56,7 +56,7 @@ export const IssueCandidateRow = ({
         className={cn(
           'absolute inset-0 items-center justify-center rounded-sm border border-border',
           isSelecting ? 'flex' : 'hidden group-hover:flex',
-          isSelected && 'border-transparent bg-primary text-primary-foreground',
+          isSelected && 'border-transparent bg-primary text-on-tone',
         )}
       >
         {isSelected ? <Check className="size-3" /> : null}
