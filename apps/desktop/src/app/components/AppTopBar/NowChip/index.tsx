@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import {
   AnchoredPopover,
+  Button,
   Divider,
   ScrollFade,
   StatusDot,
@@ -69,6 +70,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
   const scripts = useRunningScripts();
   const navigate = useAppStore((state) => state.navigate);
   const cancelScript = useAppStore((state) => state.cancelScript);
+  const openStudio = useAppStore((state) => state.openStudio);
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-90',
@@ -106,6 +108,11 @@ export const NowChip = ({ onOpenScript }: Props) => {
   const openScript = (run: RunningScript) => {
     close();
     onOpenScript(run);
+  };
+
+  const openMonitoring = () => {
+    close();
+    openStudio({ studio: { kind: 'monitoring' } });
   };
 
   const stopScript = (run: RunningScript) => {
@@ -209,6 +216,11 @@ export const NowChip = ({ onOpenScript }: Props) => {
           </NowGroup>
         ) : null}
       </ScrollFade>
+      <div className="flex px-1 py-1">
+        <Button size="sm" variant="ghost" onClick={openMonitoring}>
+          Open Monitoring
+        </Button>
+      </div>
     </AnchoredPopover>
   );
 };
