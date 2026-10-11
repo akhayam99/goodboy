@@ -18,6 +18,7 @@ import { columnDriftFailures, columnEdgesProbe } from './validateScenesColumns.m
 import {
   FRAME_SCENES,
   frameFailures,
+  frameProbe,
   frameSceneVariants,
   missingFrameScenes,
 } from './validateScenesFrame.mjs';
@@ -411,6 +412,45 @@ const rulesOf = (measured) =>
   frameFailures({ scene: 'fixture', width: 1440, sidebar: 'pinned', measured }).map(
     (failure) => failure.rule,
   );
+
+describe('frameProbe body edge', () => {
+  const bodyLeft = async (html, lefts) => {
+    const window = new Window();
+    window.document.body.innerHTML = html;
+    window.document.getAnimations = () => [];
+    for (const [id, left] of Object.entries(lefts)) {
+      window.document.getElementById(id).getBoundingClientRect = () => ({
+        left,
+        right: left + 600,
+        top: 0,
+        bottom: 100,
+        width: 600,
+      });
+    }
+    const measured = await window.eval(`(${frameProbe.toString()})()`);
+    await window.happyDOM.close();
+    return measured.bodyChild.left;
+  };
+
+  it('adds the gutter of a padded body column', async () => {
+    const html =
+      '<div data-slot="pane-body"><div id="outer" data-page-column style="padding-left:24px"></div></div>';
+    assert.equal(await bodyLeft(html, { outer: 340 }), 364);
+  });
+
+  it('reads the content edge inside a zero-padding body column', async () => {
+    const html =
+      '<div data-slot="pane-body"><div id="outer" data-page-column style="padding-left:0px">' +
+      '<div id="inner" data-page-column style="padding-left:24px"></div></div></div>';
+    assert.equal(await bodyLeft(html, { outer: 340, inner: 340 }), 364);
+  });
+
+  it('falls back to the column edge when a zero-padding column holds no column', async () => {
+    const html =
+      '<div data-slot="pane-body"><div id="outer" data-page-column style="padding-left:0px"></div></div>';
+    assert.equal(await bodyLeft(html, { outer: 340 }), 340);
+  });
+});
 
 describe('frameFailures', () => {
   it('passes a frame whose crumb, title and body share one edge', () => {

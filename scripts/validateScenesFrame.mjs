@@ -139,6 +139,16 @@ export const frameProbe = async () => {
       ...box(element),
     }))
     .filter((slot) => slot.right - slot.left > 0 && slot.bottom - slot.top > 0);
+  const contentEdge = (column) => {
+    const padding = parseFloat(getComputedStyle(column).paddingLeft);
+    if (padding > 0) {
+      return column.getBoundingClientRect().left + padding;
+    }
+    const inner = [...column.querySelectorAll('[data-page-column]')].find(
+      (nested) => nested.getBoundingClientRect().width > 0,
+    );
+    return inner === undefined ? column.getBoundingClientRect().left : contentEdge(inner);
+  };
   const bodyColumn =
     bodyElement === null
       ? null
@@ -147,7 +157,7 @@ export const frameProbe = async () => {
         ) ?? null);
   const bodyChild = bodyColumn === null ? null : box(bodyColumn);
   if (bodyChild !== null) {
-    bodyChild.left += parseFloat(getComputedStyle(bodyColumn).paddingLeft);
+    bodyChild.left = contentEdge(bodyColumn);
   }
   return {
     hasSheet: sheetElement !== null,
