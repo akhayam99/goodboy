@@ -21,7 +21,7 @@ export const AlsoListeningSection = ({ rows, processOf, now, isForcedOpen, onWat
       <button
         type="button"
         aria-expanded={isOpen}
-        onClick={() => setIsToggledOpen((current) => !current)}
+        onClick={() => setIsToggledOpen((wasOpen) => !wasOpen)}
         className={cn(
           'flex items-center gap-2 rounded-md px-2 py-1 text-left text-label text-muted-foreground',
           ROW_INTERACTIVE,

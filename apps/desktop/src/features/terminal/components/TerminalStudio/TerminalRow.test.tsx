@@ -2,14 +2,16 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import type { WorkspaceId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
+import { brandedId } from '../../../history/testing/brandedId';
 import { TerminalRow } from './TerminalRow';
 
 afterEach(cleanup);
 
 const TAB: TerminalTab = {
-  id: 'mock-session::t1' as TerminalTabId,
-  owner: { kind: 'workspace', workspaceId: 'mock-workspace' as never },
+  id: brandedId<TerminalTabId>({ value: 'mock-session::t1' }),
+  owner: { kind: 'workspace', workspaceId: brandedId<WorkspaceId>({ value: 'mock-workspace' }) },
   title: 'payments-api',
   cwd: '/mock/harborline/payments-api',
   status: 'running',

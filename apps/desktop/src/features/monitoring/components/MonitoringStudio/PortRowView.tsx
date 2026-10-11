@@ -71,7 +71,7 @@ export const PortRowView = ({ row, process, now, onWatch }: Props) => {
               label={isCommandOpen ? 'Hide command line' : 'Show command line'}
               aria-expanded={isCommandOpen}
               className={cn(isCommandOpen && 'rotate-90')}
-              onClick={() => setIsCommandOpen((current) => !current)}
+              onClick={() => setIsCommandOpen((wasOpen) => !wasOpen)}
             />
           )}
         </div>
