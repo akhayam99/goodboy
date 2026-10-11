@@ -1,6 +1,7 @@
 import { TASKS, isAgentRole } from '@goodboy/core';
 import {
   PROVIDER_IDS,
+  isEffortLevel,
   type RoleModelPreference,
   type RoleModelPreferences,
   type TaskModelPreference,
@@ -25,7 +26,10 @@ const isPreference = (value: unknown): value is TaskModelPreference =>
   PROVIDER_IDS.some((id) => id === value['providerId']);
 
 const isRolePreference = (value: unknown): value is RoleModelPreference =>
-  isPreference(value) && 'effort' in value && typeof value.effort === 'string';
+  isPreference(value) &&
+  'effort' in value &&
+  typeof value.effort === 'string' &&
+  isEffortLevel(value.effort);
 
 const TASK_IDS: ReadonlyArray<string> = TASKS.map((task) => task.id);
 

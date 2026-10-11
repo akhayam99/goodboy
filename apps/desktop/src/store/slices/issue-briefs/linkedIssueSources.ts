@@ -1,4 +1,5 @@
 import type { SessionExternalTask } from '@goodboy/types';
+import { taskIdentityKey } from '../../../shared/utils/taskIdentityKey';
 import type { IssueBriefSource } from './types';
 
 type Params = { readonly tasks: ReadonlyArray<SessionExternalTask> };
@@ -9,7 +10,7 @@ export const linkedIssueSources = ({ tasks }: Params): ReadonlyArray<IssueBriefS
     if (task.provider === 'slack' || task.provider === 'bitbucket') {
       return [];
     }
-    const key = `${task.provider}:${task.externalId}`;
+    const key = taskIdentityKey({ task });
     if (seen.has(key)) {
       return [];
     }

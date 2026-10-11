@@ -131,6 +131,22 @@ describe('parseSavedProjectModels', () => {
     });
   });
 
+  it('drops a role whose effort is not a known level', () => {
+    expect(
+      parseSavedProjectModels({
+        raw: JSON.stringify({
+          roleModels: {
+            planner: { providerId: 'codex', model: 'gpt-6.1-sol', effort: 'turbo' },
+            reviewer: { providerId: 'codex', model: 'gpt-6.1-sol', effort: 'high' },
+          },
+        }),
+      }),
+    ).toEqual({
+      taskModels: null,
+      roleModels: { reviewer: { providerId: 'codex', model: 'gpt-6.1-sol', effort: 'high' } },
+    });
+  });
+
   it('is null for empty, whitespace, a scalar, an array and a broken string', () => {
     for (const raw of ['', '   ', '5', '[]', 'null', '{"taskModels":', '{}']) {
       expect(parseSavedProjectModels({ raw })).toBeNull();
