@@ -31,6 +31,7 @@ import {
   fixOfferKey,
   selectFixOffers,
 } from '../../../../../../../store/slices/agents/selectFixOffers';
+import { selectCheckMount } from '../../../../../../../store/slices/agents/selectCheckMount';
 import { startCheckFix } from '../../../../../../branch/checks/startCheckFix';
 import type { TimelineRows } from '../useTimelineRows';
 
@@ -190,7 +191,11 @@ export const useTimelineRowProps = ({
     }
     if (entry.kind === 'agent' && entry.agent.sourceCommentUrl !== undefined) {
       const url = entry.agent.sourceCommentUrl;
-      if (fixOffers.split('\n').includes(fixOfferKey({ agentId: entry.agent.id, url }))) {
+      const checkMountId = selectCheckMount({ state: useAppStore.getState(), url });
+      if (
+        checkMountId !== null &&
+        fixOffers.split('\n').includes(fixOfferKey({ agentId: entry.agent.id, url }))
+      ) {
         return {
           label: ROW_ACTION_LABEL.startFix,
           variant: 'secondary',
@@ -199,7 +204,7 @@ export const useTimelineRowProps = ({
             void pending.run({
               key: `fix:${entry.agent.id}`,
               failureTitle: "Couldn't start the Implementer",
-              task: () => startCheckFix({ sessionId, url }),
+              task: () => startCheckFix({ sessionId, url, mountId: checkMountId }),
             }),
         };
       }

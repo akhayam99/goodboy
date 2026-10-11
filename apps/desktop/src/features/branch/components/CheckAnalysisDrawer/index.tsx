@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Bug } from 'lucide-react';
 import { Button, Chip, DrawerFrame, Markdown, SectionHeader, ScrollFade } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { AgentChain } from '../../../../shared/components/AgentChain';
@@ -16,11 +16,12 @@ import { Proposal } from './Proposal';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId;
   readonly checkUrl: string;
   readonly onClose: () => void;
 };
 
-export const CheckAnalysisDrawer = ({ sessionId, checkUrl, onClose }: Props) => {
+export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: Props) => {
   const { chain, events, turnState } = useCheckChain({ sessionId, url: checkUrl });
   const agent = chain.debugger;
   const fixRouting = useKindRouting({ sessionId, kind: 'implementer' });
@@ -33,7 +34,7 @@ export const CheckAnalysisDrawer = ({ sessionId, checkUrl, onClose }: Props) => 
     }
     setIsStarting(true);
     try {
-      await startCheckFix({ sessionId, url: checkUrl });
+      await startCheckFix({ sessionId, url: checkUrl, mountId });
     } catch (error: unknown) {
       if (!isReportedError(error)) {
         void reportError({ title: "Couldn't start the Implementer", error, sessionId });

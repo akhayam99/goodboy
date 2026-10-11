@@ -42,6 +42,7 @@ export const DrawerHost = () => {
       return (
         <CheckAnalysisDrawer
           sessionId={drawer.payload.sessionId}
+          mountId={drawer.payload.mountId}
           checkUrl={drawer.payload.checkUrl}
           onClose={closeDrawer}
         />

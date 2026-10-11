@@ -156,6 +156,7 @@ describe('Start fix with the real store and SQLite', () => {
     expect(spawn.mock.calls[0]?.[1].initialPrompt).toContain(
       'Make this fix on this branch, commit it, and push nothing.',
     );
+    expect(spawn.mock.calls[0]?.[1].mountId).toBe(seed.repo.mountId);
     await waitFor(() => expect(implementers().length).toBe(1));
     const child = implementers()[0];
     if (child === undefined) {
@@ -214,7 +215,11 @@ describe('Start fix with the real store and SQLite', () => {
     ).toBeDefined();
   });
   it('reads as one tree in Activity: the Debugger on top, the Implementer its only child', async () => {
-    await startCheckFix({ sessionId: seed.sessionId, url: seed.check.detailsUrl ?? '' });
+    await startCheckFix({
+      sessionId: seed.sessionId,
+      url: seed.check.detailsUrl ?? '',
+      mountId: seed.repo.mountId,
+    });
     const agents = store.getState().sessionPhaseRuns[seed.sessionId] ?? [];
     const { entries } = buildTimelineGroups({
       sessionId: seed.sessionId,
@@ -264,11 +269,13 @@ describe('Start fix with the real store and SQLite', () => {
     const spawn = vi.spyOn(store.getState(), 'spawnAgent');
     const url = seed.check.detailsUrl ?? '';
     const [first, second] = await Promise.all([
-      startCheckFix({ sessionId: seed.sessionId, url }),
-      startCheckFix({ sessionId: seed.sessionId, url }),
+      startCheckFix({ sessionId: seed.sessionId, url, mountId: seed.repo.mountId }),
+      startCheckFix({ sessionId: seed.sessionId, url, mountId: seed.repo.mountId }),
     ]);
     expect(first).toBe(second);
-    expect(await startCheckFix({ sessionId: seed.sessionId, url })).toBe(first);
+    expect(
+      await startCheckFix({ sessionId: seed.sessionId, url, mountId: seed.repo.mountId }),
+    ).toBe(first);
     expect(spawn).toHaveBeenCalledTimes(1);
     expect(implementers().length).toBe(1);
     show();
@@ -277,7 +284,11 @@ describe('Start fix with the real store and SQLite', () => {
   it('refuses when there is no proposal and spawns nothing', async () => {
     seed = checksAnalyzeSeed({ phase: 'no-fix' });
     await expect(
-      startCheckFix({ sessionId: seed.sessionId, url: seed.check.detailsUrl ?? '' }),
+      startCheckFix({
+        sessionId: seed.sessionId,
+        url: seed.check.detailsUrl ?? '',
+        mountId: seed.repo.mountId,
+      }),
     ).rejects.toThrow('The proposal is no longer available');
     expect(implementers()).toEqual([]);
   });

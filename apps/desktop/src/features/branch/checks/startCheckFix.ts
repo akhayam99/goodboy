@@ -6,7 +6,7 @@ import { selectKindRouting } from '../../../store/slices/agents/selectKindRoutin
 type Params = {
   readonly sessionId: SessionId;
   readonly url: string;
-  readonly mountId?: MountId;
+  readonly mountId: MountId;
 };
 
 const FIX_INSTRUCTION = 'Make this fix on this branch, commit it, and push nothing.';
@@ -25,6 +25,6 @@ export const startCheckFix = ({ sessionId, url, mountId }: Params): Promise<Agen
     seed: `${chain.proposal}\n\n${FIX_INSTRUCTION}`,
     origin: { sourceKind: 'failed_check', sourceCommentUrl: url },
     focus: 'none',
-    ...(mountId !== undefined && { mountId }),
+    mountId,
   });
 };

@@ -139,7 +139,11 @@ export const checksAnalyzeSeed = ({ phase, shouldOpenDrawer = false }: Params) =
       ? {
           kind: 'check-analysis',
           sessionId: SESSION_ID,
-          payload: { sessionId: SESSION_ID, checkUrl: check.detailsUrl ?? pullRequest.url },
+          payload: {
+            sessionId: SESSION_ID,
+            mountId: repo.mountId,
+            checkUrl: check.detailsUrl ?? pullRequest.url,
+          },
         }
       : null,
   });
