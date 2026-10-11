@@ -18,11 +18,11 @@ const GOAL_HISTORY: DrawerRequest = {
   payload: { tab: 'goal', view: 'versions' },
 };
 
-const README_PREVIEW: DrawerRequest = {
+const readmeIn = ({ sessionDir }: { readonly sessionDir: string }): DrawerRequest => ({
   kind: 'explore-file',
   sessionId: SESSION_ID,
   payload: {
-    sessionDir: '/work/ledger-core',
+    sessionDir,
     entry: {
       name: 'README.md',
       relPath: 'README.md',
@@ -31,7 +31,9 @@ const README_PREVIEW: DrawerRequest = {
       modifiedAt: null,
     },
   },
-};
+});
+
+const README_PREVIEW = readmeIn({ sessionDir: '/work/ledger-core' });
 
 type Harness = {
   readonly get: () => AppState;
@@ -96,6 +98,14 @@ describe('drawer slice', () => {
 
     h.slice.toggleDrawer(GOAL_HISTORY);
     expect(h.get().drawer).toBeNull();
+  });
+
+  it('replaces the preview when the same relative path opens in another project', () => {
+    const notifyReadme = readmeIn({ sessionDir: '/work/notify-relay' });
+    h.slice.toggleDrawer(README_PREVIEW);
+    h.slice.toggleDrawer(notifyReadme);
+
+    expect(selectOpenDrawer(h.get())).toEqual(notifyReadme);
   });
 
   it('keeps the drawer when another session changes lens', () => {

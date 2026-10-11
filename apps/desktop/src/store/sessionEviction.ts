@@ -97,6 +97,7 @@ export const SESSION_EVICTION = [
   { key: 'activeLens', keyedBy: 'session', evictOn: 'archive' },
   { key: 'workflowExpand', keyedBy: 'session', evictOn: 'archive' },
   { key: 'exploreExpanded', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'exploreMountPath', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedWorkflowRunId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffFocus', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffMountPath', keyedBy: 'session', evictOn: 'archive' },

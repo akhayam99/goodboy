@@ -150,12 +150,15 @@ drawer-split-plan-1280
 drawer-split-tasks
 drawer-wide-push
 explore
+explore-nomount
 explore-rows
 explore-rows-big
 explore-rows-compact
 explore-rows-empty
 explore-rows-keys
 explore-rows-narrow
+explorefirstlap
+exploremulti
 features-composer-menu
 features-impact-overview
 features-newer-data

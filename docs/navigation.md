@@ -237,7 +237,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent, session studio and one target
-  (artifact, run, issue, diff focus, terminal mount). Its `studio` is the app
+  (artifact, run, issue, diff focus, terminal mount, Explore project). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
@@ -1899,13 +1899,29 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed and
-  browses the active working directory as a tree (`role="tree"`), rows 40px
+  browses one project of the session at a time as a tree (`role="tree"`). A
+  project chip under the title (`ExploreProjectChip`) names it, `ledger-core ·
+hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
+  project; a first-lap session reads `ledger-core, project folder` and a
+  session without a project reads `Session scratch folder`. Picking a row is
+  view only: it sets `exploreMountPath` in the session-view slice and never
+  calls `switchBranchMount` or `setSessionActiveMount`, and an agent run never
+  moves it. Until you pick, Explore follows the write destination
+  (`selectExploreMount` in `features/explore`, built on
+  `resolveWriteDestination`). A pick whose worktree lost its files reads
+  "This worktree is gone", and a session with nothing to browse reads "Nothing
+  to browse yet". The pick is captured as the `explore` target of a place
+  (`s/{session}/explore/{mount}`), so Back restores the project and the file
+  drawer together, and the `mount.browseFiles` action (Browse files) opens
+  Explore on a given mount from the Projects rows. Rows are 40px
   high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
   extension kept, a slot for change marks, the size and the age. The size
   hides under a 520px column and the age under 440px. The folders you opened
-  are kept per session in the session-view slice (`exploreExpanded`) and open
-  again when you come back, and a file opened from elsewhere opens the folders
-  above it. The tree has one tab stop; Up and Down move, Right
+  are kept per session and project in the session-view slice (`exploreExpanded`,
+  keyed by session, mount path and folder) and open again when you come back,
+  and a file opened from elsewhere opens the folders above it. The file drawer
+  key holds the project (`explore-file:{mount}:{path}`), so the same relative
+  path in a second project replaces the drawer instead of closing it. The tree has one tab stop; Up and Down move, Right
   opens a folder or enters it, Left closes it or goes to its parent, Home and
   End jump, Enter and Space open the preview of a file or toggle a folder. Above
   120 rows it draws only the rows near the scroll position (`shared/utils/windowRows.ts`, the

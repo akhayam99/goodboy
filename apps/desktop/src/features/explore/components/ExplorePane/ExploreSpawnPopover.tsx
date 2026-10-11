@@ -20,6 +20,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly name: string;
   readonly relPath: string;
+  readonly absolutePath: string;
   readonly onClosed: () => void;
 };
 
@@ -30,7 +31,13 @@ const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
   return 'Unknown error';
 };
 
-export const ExploreSpawnPopover = ({ sessionId, name, relPath, onClosed }: Props) => {
+export const ExploreSpawnPopover = ({
+  sessionId,
+  name,
+  relPath,
+  absolutePath,
+  onClosed,
+}: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 420,
@@ -95,7 +102,7 @@ export const ExploreSpawnPopover = ({ sessionId, name, relPath, onClosed }: Prop
     setIsSpawning(true);
     setSpawnError(null);
     try {
-      const kickoff = buildExploreSpawnPrompt({ ask: trimmedAsk, relPath });
+      const kickoff = buildExploreSpawnPrompt({ ask: trimmedAsk, relPath, absolutePath });
       const initialPrompt = appendOperatorNotes({ prompt: kickoff, hint: config.hint });
       const agentId = await spawnAgent(sessionId, {
         initialPrompt,

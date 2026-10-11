@@ -59,6 +59,7 @@ export const ExploreRowActions = ({ sessionId, target, isAskOpen, onRun, onAskCl
               sessionId={sessionId}
               name={target.facts.name}
               relPath={target.facts.relPath}
+              absolutePath={target.facts.absolutePath}
               onClosed={onAskClosed}
             />
           );

@@ -5,7 +5,7 @@ export const drawerKey = (content: DrawerContent): string => {
     case 'context':
       return 'context';
     case 'explore-file':
-      return `explore-file:${content.payload.entry.relPath}`;
+      return `explore-file:${content.payload.sessionDir}:${content.payload.entry.relPath}`;
     case 'artifact':
       return `artifact:${content.payload.artifactId}:${content.payload.tab}`;
     case 'artifact-document':

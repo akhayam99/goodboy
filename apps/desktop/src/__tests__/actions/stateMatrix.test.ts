@@ -1191,7 +1191,12 @@ const mountRowTarget = (status: WorktreeStatus | null): ObjectTarget => ({
   remoteKind: 'github',
 });
 
-const WT_TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
+const WT_TOOLS = [
+  'mount.openTerminal menu',
+  'mount.openInEditor menu',
+  'mount.scripts menu',
+  'mount.browseFiles menu',
+];
 const WT_COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
 const WT_HISTORY = [
   'mount.rewriteHistory menu',
@@ -1297,6 +1302,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.openTerminal notice',
       'mount.openInEditor menu',
       'mount.scripts menu',
+      'mount.browseFiles menu',
       'mount.abortRebase notice',
       'mount.rewriteHistory menu (Finish or abort the rebase first.)',
       'mount.putTaskOnBranch chip',

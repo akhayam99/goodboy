@@ -204,14 +204,22 @@ type SessionViewSliceState = {
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
-  readonly exploreExpanded: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
+  readonly exploreExpanded: Readonly<
+    Record<SessionId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
+  >;
+  readonly exploreMountPath: Readonly<Record<SessionId, string | null>>;
 };
 
 type SessionViewSliceActions = {
   setExploreExpanded(params: {
     readonly sessionId: SessionId;
+    readonly mountPath: string;
     readonly path: string;
     readonly isExpanded: boolean;
+  }): void;
+  setExploreMountPath(params: {
+    readonly sessionId: SessionId;
+    readonly mountPath: string | null;
   }): void;
   setAgentTab(params: { readonly agentId: AgentId; readonly pane: AgentPane }): void;
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;

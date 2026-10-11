@@ -231,9 +231,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   onClose={onSelectOverview}
                 />
               ) : null}
-              {lens === 'explore' ? (
-                <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
-              ) : null}
+              {lens === 'explore' ? <ExplorePane sessionId={sessionId} /> : null}
               <Pane visible={lens === 'agents'}>
                 <PaneBannerContext.Provider
                   value={lens === 'agents' && !showAgentOverlay ? banner : null}

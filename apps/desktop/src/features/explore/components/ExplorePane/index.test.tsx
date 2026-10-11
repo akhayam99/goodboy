@@ -77,12 +77,12 @@ const failList = ({ relPath, message }: { relPath: string; message: string }) =>
 
 const callsTo = (command: string) => h.invoke.mock.calls.filter(([name]) => name === command);
 
-const PaneWithDrawer = ({ sessionDir = DIR }: { readonly sessionDir?: string }) => {
+const PaneWithDrawer = () => {
   const drawer = useAppStore((state) => selectOpenDrawer(state));
   const closeDrawer = useAppStore((state) => state.closeDrawer);
   return (
     <>
-      <ExplorePane sessionId={SESSION_ID} sessionDir={sessionDir} />
+      <ExplorePane sessionId={SESSION_ID} />
       {drawer !== null && drawer.kind === 'explore-file' ? (
         <ExploreFileDrawer
           sessionId={SESSION_ID}
@@ -95,10 +95,10 @@ const PaneWithDrawer = ({ sessionDir = DIR }: { readonly sessionDir?: string }) 
   );
 };
 
-const Shell = ({ sessionDir }: { readonly sessionDir?: string }) => (
+const Shell = () => (
   <ToastProvider>
     <ObjectMenuProvider>
-      <PaneWithDrawer {...(sessionDir === undefined ? {} : { sessionDir })} />
+      <PaneWithDrawer />
     </ObjectMenuProvider>
   </ToastProvider>
 );
@@ -107,16 +107,24 @@ const mount = () => render(<Shell />);
 
 const rowNamed = async (name: string) => screen.findByRole('treeitem', { name });
 
-const mountRepo = () => {
-  const project = aProject({ id: mountFixture().projectId, kind: 'repo' });
+type MountParams = {
+  readonly kind: 'repo' | 'folder';
+  readonly worktreePath: string;
+  readonly branch: string;
+};
+
+const mountProject = ({ kind, worktreePath, branch }: MountParams) => {
+  const project = aProject({ id: mountFixture().projectId, kind });
   useAppStore.setState({
     projects: [project],
-    sessionProjectMounts: {
-      [SESSION_ID]: [mountFixture({ worktreePath: DIR, branch: 'ak/fix-retry' })],
-    },
+    sessionProjectMounts: { [SESSION_ID]: [mountFixture({ worktreePath, branch })] },
     sessionActiveMount: { [SESSION_ID]: mountFixture().mountId },
-    detectedEditors: [{ binary: 'code', label: 'VS Code' }],
   });
+};
+
+const mountRepo = () => {
+  mountProject({ kind: 'repo', worktreePath: DIR, branch: 'ak/fix-retry' });
+  useAppStore.setState({ detectedEditors: [{ binary: 'code', label: 'VS Code' }] });
 };
 
 beforeAll(async () => {
@@ -166,6 +174,7 @@ beforeEach(async () => {
         provider.id === 'anthropic' ? { ...provider, connection: 'connected' } : provider,
       ),
   });
+  mountProject({ kind: 'folder', worktreePath: DIR, branch: '' });
 });
 
 afterEach(cleanup);
@@ -272,8 +281,8 @@ describe('ExplorePane tree', () => {
     list({ relPath: '', entries: [entry({ relPath: 'old.txt' })] });
     h.lists.set(`${OTHER_DIR}\n`, [entry({ relPath: 'fresh.txt' })]);
 
-    const view = render(<Shell />);
-    view.rerender(<Shell sessionDir={OTHER_DIR} />);
+    render(<Shell />);
+    act(() => mountProject({ kind: 'folder', worktreePath: OTHER_DIR, branch: '' }));
 
     expect(await rowNamed('fresh.txt')).toBeDefined();
     await act(async () => {
@@ -292,7 +301,7 @@ describe('ExplorePane tree', () => {
 
     fireEvent.click(await rowNamed('docs'));
     await rowNamed('README.md');
-    expect(useAppStore.getState().exploreExpanded[SESSION_ID]).toEqual({ docs: true });
+    expect(useAppStore.getState().exploreExpanded[SESSION_ID]?.[DIR]).toEqual({ docs: true });
     first.unmount();
 
     mount();
@@ -321,7 +330,7 @@ describe('ExplorePane tree', () => {
 
     expect(file.getAttribute('aria-level')).toBe('3');
     expect(file.getAttribute('aria-selected')).toBe('true');
-    expect(useAppStore.getState().exploreExpanded[SESSION_ID]).toEqual({
+    expect(useAppStore.getState().exploreExpanded[SESSION_ID]?.[DIR]).toEqual({
       apps: true,
       'apps/ledger-core': true,
     });
@@ -354,7 +363,7 @@ describe('ExplorePane tree', () => {
     fireEvent.click(docs);
 
     await waitFor(() => expect(screen.queryByRole('treeitem', { name: 'README.md' })).toBeNull());
-    expect(useAppStore.getState().exploreExpanded[SESSION_ID]).toEqual({});
+    expect(useAppStore.getState().exploreExpanded[SESSION_ID]?.[DIR]).toEqual({});
   });
 });
 
