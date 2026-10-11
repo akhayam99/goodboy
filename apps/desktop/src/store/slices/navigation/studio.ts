@@ -21,6 +21,7 @@ export type StudioPlace =
   | { readonly kind: 'impact'; readonly scope: ImpactScope | null }
   | { readonly kind: 'changelog' }
   | { readonly kind: 'notifications' }
+  | { readonly kind: 'monitoring' }
   | { readonly kind: 'chat'; readonly chatId: ChatId | null }
   | {
       readonly kind: 'terminal';
@@ -57,6 +58,7 @@ export const studioKey = ({ studio }: KeyParams): string => {
     case 'companion':
     case 'changelog':
     case 'notifications':
+    case 'monitoring':
       return studio.kind;
     default: {
       const unreachable: never = studio;

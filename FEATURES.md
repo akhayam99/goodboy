@@ -67,7 +67,7 @@ Find any session, message, plan or action, and reach it from the keyboard.
 
 [More on search and navigation](docs/features/search.md)
 
-<a id="start-a-project-from-nothing"></a><a id="workspace-with-several-projects"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-projects"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a>
+<a id="start-a-project-from-nothing"></a><a id="workspace-with-several-projects"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-projects"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a>
 
 ## Workspace and projects
 
@@ -76,6 +76,7 @@ Keep your repos together, and let sessions work across them.
 - Workspace with several projects
 - Worktrees
 - Repo status across projects
+- Monitoring
 
 [More on workspace and projects](docs/features/workspace.md)
 

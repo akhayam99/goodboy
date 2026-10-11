@@ -125,4 +125,13 @@ export const STUDIO_META = {
     skeleton: 'rail',
     railWidth: 'standard',
   },
+  monitoring: {
+    icon: CONCEPT_ICONS.monitoring,
+    tone: CONCEPT_TONE.monitoring,
+    title: 'Monitoring',
+    closeLabel: 'Close monitoring',
+    tier: 'column',
+    page: 'monitoring',
+    skeleton: 'list',
+  },
 } as const satisfies Record<StudioKind, StudioMeta>;

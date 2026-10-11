@@ -31,6 +31,7 @@ const actions = (): ColumnActions => ({
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openTerminalStudio: vi.fn(),
+  openMonitoring: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
@@ -95,7 +96,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks the toggle, New session, the five doors, the sessions, then Settings and the Goodboy row', () => {
+  it('stacks the toggle, New session, the six doors, the sessions, then Settings and the Goodboy row', () => {
     mountColumn();
     const nav = navLayer();
 
@@ -109,6 +110,7 @@ describe('SideColumn', () => {
       'chat',
       'workflows',
       'terminal',
+      'monitoring',
       'settings',
     ]);
     expect(nav.querySelector('[data-column-sessions]')).not.toBeNull();
@@ -124,6 +126,7 @@ describe('SideColumn', () => {
     ['chat', ['chat']],
     ['workflows', ['workflows']],
     ['terminal', ['terminal']],
+    ['monitoring', ['monitoring']],
     ['settings', ['settings']],
     ['new', ['new']],
     ['impact', []],
@@ -142,6 +145,7 @@ describe('SideColumn', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
     fireEvent.click(screen.getByRole('button', { name: 'Workflows' }));
     fireEvent.click(screen.getByRole('button', { name: 'Terminal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Monitoring' }));
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
 
@@ -149,6 +153,7 @@ describe('SideColumn', () => {
     expect(doors.openChat).toHaveBeenCalledOnce();
     expect(doors.openWorkflows).toHaveBeenCalledOnce();
     expect(doors.openTerminalStudio).toHaveBeenCalledOnce();
+    expect(doors.openMonitoring).toHaveBeenCalledOnce();
     expect(doors.openSettings).toHaveBeenCalledOnce();
     expect(doors.openInbox).not.toHaveBeenCalled();
   });
@@ -222,7 +227,7 @@ describe('ColumnRail', () => {
   } = {}) =>
     render(<ColumnRail scope={scope} place={place} onToggle={vi.fn()} actions={actions()} />);
 
-  it('keeps every door at 44px: toggle, New, the five doors, then Settings, the bug and the mark', () => {
+  it('keeps every door at 44px: toggle, New, the six doors, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -237,6 +242,7 @@ describe('ColumnRail', () => {
       'chat',
       'workflows',
       'terminal',
+      'monitoring',
       'settings',
     ]);
     expect(within(rail).getByRole('button', { name: 'Report a bug' })).toBeDefined();

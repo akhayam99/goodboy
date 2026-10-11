@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { Project } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import {
+  Activity,
   Archive,
   ArchiveRestore,
   ArrowRight,
@@ -184,6 +185,7 @@ export const CONCEPT_ICONS = {
   slack: SlackIcon,
   storage: Database,
   suggestion: Lightbulb,
+  monitoring: Activity,
   terminal: SquareTerminal,
   timeline: GitCommitVertical,
   checks: ListChecks,
@@ -283,6 +285,7 @@ export const CONCEPT_TONE = {
   slack: 'primary',
   storage: 'neutral',
   suggestion: 'info',
+  monitoring: 'neutral',
   terminal: 'neutral',
   timeline: 'neutral',
   checks: 'success',

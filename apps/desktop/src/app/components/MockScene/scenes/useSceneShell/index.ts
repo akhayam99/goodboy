@@ -45,6 +45,7 @@ export const useSceneShell = ({ arrangement }: Params): SceneShell => {
       openChat: overlays.openChat,
       openWorkflows: overlays.openWorkflows,
       openTerminalStudio: overlays.openTerminalStudio,
+      openMonitoring: overlays.openMonitoring,
       openSettings: overlays.openSettings,
       openChangelog: overlays.openChangelog,
       openGuide: overlays.openGuide,
