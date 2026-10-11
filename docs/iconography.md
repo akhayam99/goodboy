@@ -292,12 +292,9 @@ both use it. They used to disagree on four of six kinds.
 
 ## Scripts and Tasks
 
-Script categories own their glyphs in `SCRIPT_CATEGORIES`
-(`features/scripts/classifyScript.ts`): `dev` `Play`, `build` `Hammer`, `test`
-`FlaskConical`, `lint` `SearchCheck`, `typecheck` `ShieldCheck`, `format`
-`Brush`, `db` `Database`, `generate` `FileCode2`, `install` `Package`, `deploy`
-`Rocket`, `clean` `Trash2`, `docs` `BookOpen`, `other` `Terminal`. Import that
-list, never restate it.
+Script rows carry no category glyph. Their actions use `Play` to run, `Square`
+to stop and `RotateCw` to restart a service (`features/scripts/components/ScriptRow/`);
+a suggested script offers `Pin`.
 
 Tasks rows lead with the tool's brand glyph, never a kind icon. The kind icons
 live on the Type facets in `InboxFacetRail.tsx`: `issue` `CircleDot`, pull
