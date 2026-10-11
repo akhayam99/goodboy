@@ -82,8 +82,8 @@ export const PortRowView = ({ row, process, now, onWatch }: Props) => {
         <span className="text-right tabular-nums text-muted-foreground">
           {process === null ? '' : formatMemory({ bytes: process.rssBytes })}
         </span>
+        {isCommandOpen && process !== null ? <CommandLine args={process.argsMasked} /> : null}
       </div>
-      {isCommandOpen && process !== null ? <CommandLine args={process.argsMasked} /> : null}
     </li>
   );
 };

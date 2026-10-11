@@ -27,6 +27,7 @@ export type ShortcutScope =
   | 'overview'
   | 'row'
   | 'activityRow'
+  | 'scripts'
   | 'workspace'
   | 'codeSession'
   | 'exploreSession';
@@ -43,6 +44,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   overview: 'On a session overview',
   row: 'On a focused row',
   activityRow: 'On an activity row',
+  scripts: 'On the Scripts page',
   workspace: 'With a workspace open',
   codeSession: 'In a session with a branch',
   exploreSession: 'In an explore session',
@@ -376,6 +378,21 @@ export const SHORTCUTS = {
     label: 'Slack threads',
     plane: 'lens',
     group: 'views',
+  },
+
+  'scripts.run': {
+    combo: 'KeyR',
+    label: 'Run or restart the script',
+    plane: 'pane',
+    group: 'session',
+    scope: 'scripts',
+  },
+  'scripts.stop': {
+    combo: 'KeyX',
+    label: 'Stop the script',
+    plane: 'pane',
+    group: 'session',
+    scope: 'scripts',
   },
 
   'list.next': {

@@ -5450,14 +5450,6 @@
   "apps/desktop/src/features/scripts/components/ScriptRow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/scripts/components/ScriptRow/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/scripts/components/ScriptRunDrawer/RunButton.test.tsx": {
@@ -5478,11 +5470,6 @@
   "apps/desktop/src/features/scripts/components/ScriptsPanel/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 13
-    }
-  },
-  "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/scripts/components/ScriptsPanel/pins.test.tsx": {

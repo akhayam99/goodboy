@@ -121,7 +121,7 @@ describe('the u23 list scenes', () => {
     }
   });
 
-  it('puts every script row action on one right edge and keeps Stop for the running one', async () => {
+  it('keeps Run and Stop visible on one right edge and the overflow on hover', async () => {
     renderScene('scripts-rows');
 
     const stops = await screen.findAllByRole('button', { name: /^Stop / });
@@ -130,16 +130,18 @@ describe('the u23 list scenes', () => {
       expect(stop.closest('[data-reveal]')).toBeNull();
     }
     const run = screen.getAllByRole('button', { name: /^Run / })[0]!;
-    expect(run.closest('[data-reveal="hover"]')).not.toBeNull();
+    expect(run.closest('[data-reveal]')).toBeNull();
+    const more = screen.getAllByRole('button', { name: /^More for / })[0]!;
+    expect(more.closest('[data-reveal="hover"]')).not.toBeNull();
     expect(screen.getAllByRole('button', { name: /scripts again$/ })).toHaveLength(1);
   });
 
-  it('opens the scripts of an empty project inline from Pin a script', async () => {
+  it('suggests scripts for a project with nothing pinned and opens the rest from Pin a script', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
     renderScene('scripts-empty-group');
     await settle();
 
-    expect(screen.getByText('No scripts in northwind-storefront')).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Suggested' })).toBeDefined();
     expect(screen.queryByText(/Settings/)).toBeNull();
     const picker = screen.getByRole('region', { name: 'Scripts of northwind-storefront' });
     expect(within(picker).getAllByRole('button', { name: /^Pin / }).length).toBeGreaterThan(0);

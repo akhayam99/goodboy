@@ -132,26 +132,30 @@ beforeEach(async () => {
     project_scripts_scan: ({ worktreePath }: { readonly worktreePath: string }) =>
       worktreePath === RELAY.rootPath ? [] : LEDGER_SCRIPTS,
     workspace_script_run_adhoc: 'run-1',
+    monitor_watched_ports: [],
+    monitor_snapshot: { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true },
+    process_ledger_list: [],
+    workspace_script_list_live: [],
   });
 });
 
 afterEach(cleanup);
 
 describe('script pins in the Scripts lens', () => {
-  it('pins from the empty project inline, shows the script once, and keeps it in a session on another worktree', async () => {
+  it('pins from the Suggested band, shows the script once, and keeps it in a session on another worktree', async () => {
     renderLens(FIRST.id);
-    await screen.findByText('No scripts in ledger-core');
+    const suggested = await screen.findByRole('region', { name: 'Suggested' });
     expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show test output' })).toBeNull();
+    expect(within(suggested).getByText('dev')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pin a script of ledger-core' }));
-    const picker = await screen.findByRole('region', { name: 'Scripts of ledger-core' });
-    fireEvent.click(within(picker).getByRole('button', { name: 'Pin test' }));
+    fireEvent.click(within(suggested).getByRole('button', { name: 'Pin test' }));
 
     await waitFor(async () => expect(await savedPins()).toHaveLength(1));
     expect((await savedPins())[0]).not.toContain('worktrees');
     expect(await screen.findAllByRole('button', { name: 'Show test output' })).toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Pinned scripts' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Suggested' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show dev output' })).toBeNull();
     cleanup();
 
