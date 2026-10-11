@@ -1,13 +1,8 @@
-import { autoLimitContext } from '../providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, generateIssueBrief } from '@goodboy/core';
+import { generateIssueBrief } from '@goodboy/core';
+import { selectTaskModel } from '../models/selectTaskModel';
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { cutAtBoundary } from '../../../shared/utils/cutAtBoundary';
-import {
-  selectResolvedSettings,
-  selectWorkspaceResolvedSettings,
-} from '../overrides/selectResolvedSettings';
 import { issueBriefKey } from './issueBriefKey';
 import type {
   GetFn,
@@ -16,18 +11,39 @@ import type {
   RequestIssueBriefParams,
   SetFn,
 } from './types';
-import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
+import { createLatestOnly } from '../state-writes/latestOnly';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { liveEnabledProviders } from '../models/liveEnabledProviders';
 
 const ISSUE_BRIEF_BODY_CAP = 12_000;
 
 type SignatureParams = {
-  readonly source: IssueBriefSource;
+  readonly sources: ReadonlyArray<IssueBriefSource>;
 };
 
-const briefSignature = ({ source }: SignatureParams): string =>
-  `${source.title.trim()}\n${source.body.trim()}`;
+const briefSignature = ({ sources }: SignatureParams): string => {
+  const single = sources.length === 1 ? sources[0] : undefined;
+  if (single !== undefined) {
+    return `${single.title.trim()}\n${single.body.trim()}`;
+  }
+  return JSON.stringify(
+    [...sources]
+      .sort(
+        (left, right) =>
+          left.identifier.localeCompare(right.identifier) ||
+          left.provider.localeCompare(right.provider) ||
+          left.externalId.localeCompare(right.externalId),
+      )
+      .map((source) => [
+        source.provider,
+        source.externalId,
+        source.identifier.trim(),
+        source.title.trim(),
+        source.body.trim(),
+      ]),
+  );
+};
 
 type WriteParams = {
   readonly set: SetFn;
@@ -43,15 +59,18 @@ const writeIfCurrent = ({ set, get, key, entry }: WriteParams): void => {
   set((state) => ({ issueBriefs: { ...state.issueBriefs, [key]: entry } }));
 };
 
-export const requestIssueBrief = (set: SetFn, get: GetFn) => {
+type Params = { readonly set: SetFn; readonly get: GetFn };
+
+export const requestIssueBrief = ({ set, get }: Params) => {
+  const latest = createLatestOnly();
   return async ({
-    source,
+    sources,
     workspaceId,
     sessionId,
     isRetry = false,
   }: RequestIssueBriefParams): Promise<void> => {
-    const key = issueBriefKey({ source });
-    const signature = briefSignature({ source });
+    const key = issueBriefKey({ sources });
+    const signature = briefSignature({ sources });
     const state = get();
     const existing = state.issueBriefs[key];
     const isReusable =
@@ -64,29 +83,17 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const session = sessionId === null ? null : (sessionById(state.sessions, sessionId) ?? null);
-    const settings =
-      session === null
-        ? selectWorkspaceResolvedSettings({ state, workspaceId })
-        : selectResolvedSettings({ state, sessionId: session.id });
     const connectedProviders = autoRoutableProviders({ providers: state.providers });
     const taskModel = routeTaskModel({
-      taskModel: resolveLimitedTaskModel({
-        limitContext: autoLimitContext({ state: get() }),
-        task: 'issue_brief',
-        preferences: settings?.taskModels,
-        workspaceDefaultProviderId: settings?.defaultProviderOverride,
-        sessionDefaultProviderId:
-          session?.providerPreference.defaultProvider ??
-          DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-      }),
+      taskModel: selectTaskModel({ state, sessionId, workspaceId, task: 'issue_brief' }),
       connectedProviders,
-      enabledProviders: session?.providerPreference.enabledProviders ?? null,
+      enabledProviders: liveEnabledProviders({ state, sessionId, workspaceId }) ?? null,
       cooldowns: state.providerCooldowns,
       hidden: selectHiddenModels({ state }),
       nowMs: Date.now(),
     });
     if (taskModel == null || !connectedProviders.includes(taskModel.providerId)) {
+      latest.cancel({ key });
       if (existing?.status === 'unavailable' && existing.signature === signature) {
         return;
       }
@@ -101,40 +108,49 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
       issueBriefs: { ...current.issueBriefs, [key]: { status: 'loading', signature, route } },
     }));
 
-    const result = await generateIssueBrief({
-      deps: { ...taskModel, invokeFn: invokeCommand },
-      input: {
-        identifier: source.identifier,
-        title: source.title,
-        body: cutAtBoundary({ text: source.body.trim(), capChars: ISSUE_BRIEF_BODY_CAP }).text,
-      },
-    });
-    if (result.kind === 'failed') {
-      writeIfCurrent({
-        set,
-        get,
-        key,
-        entry: {
-          status: 'failed',
-          signature,
-          route,
-          failure: result.failure,
-          detail: result.detail,
-        },
-      });
-      return;
-    }
-    writeIfCurrent({
-      set,
-      get,
+    await latest.run({
       key,
-      entry: {
-        status: 'ready',
-        signature,
-        route,
-        brief: result.brief,
-        durationMs: result.durationMs,
-        costUsd: result.costUsd,
+      request: () =>
+        generateIssueBrief({
+          deps: { ...taskModel, invokeFn: invokeCommand },
+          input: {
+            items: sources.map((source) => ({
+              identifier: source.identifier,
+              title: source.title,
+              body: cutAtBoundary({ text: source.body.trim(), capChars: ISSUE_BRIEF_BODY_CAP })
+                .text,
+            })),
+          },
+        }),
+      apply: (result) => {
+        if (result.kind === 'failed') {
+          writeIfCurrent({
+            set,
+            get,
+            key,
+            entry: {
+              status: 'failed',
+              signature,
+              route,
+              failure: result.failure,
+              detail: result.detail,
+            },
+          });
+          return;
+        }
+        writeIfCurrent({
+          set,
+          get,
+          key,
+          entry: {
+            status: 'ready',
+            signature,
+            route,
+            brief: result.brief,
+            durationMs: result.durationMs,
+            costUsd: result.costUsd,
+          },
+        });
       },
     });
   };

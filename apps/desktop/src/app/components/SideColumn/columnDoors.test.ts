@@ -9,12 +9,14 @@ describe('the column doors', () => {
     expect(door?.label).toBe('Tasks');
   });
 
-  it('lists Board, Tasks, Chat and Workflows in that order', () => {
+  it('lists Board, Tasks, Chat, Workflows, Terminal and Monitoring in that order', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
       'Board',
       'Tasks',
       'Chat',
       'Workflows',
+      'Terminal',
+      'Monitoring',
     ]);
   });
 });

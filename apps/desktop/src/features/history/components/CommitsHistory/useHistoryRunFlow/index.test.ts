@@ -43,6 +43,7 @@ const RUN: HistoryRun = {
   identity: IDENTITY,
   movedHead: null,
   threadShas: [],
+  commitCount: null,
   updatedAt: 1,
 };
 

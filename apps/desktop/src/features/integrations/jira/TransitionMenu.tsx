@@ -9,6 +9,7 @@ import {
   tintClasses,
   useDropdown,
   type StateTone,
+  Tooltip,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useJiraTransitions } from './useJiraTransitions';
@@ -86,42 +87,52 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
       className="flex flex-col"
       hasBackdrop
       trigger={
-        <button
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded={isOpen}
-          aria-disabled={isBlocked}
-          aria-label={`${state.label}, move this issue`}
-          title={reason ?? 'Move this issue through its Jira workflow'}
-          onClick={toggle}
-          className={cn(
-            'inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip',
-            tintClasses(state.tone).bg,
-            tintClasses(state.tone).text,
-            (isBlocked || busyId != null) && 'opacity-50',
-          )}
+        <Tooltip
+          content={reason ?? 'Move this issue through its Jira workflow'}
+          isSuppressed={isOpen}
         >
-          {state.label}
-          <ChevronDown size={ICON_SIZE.mark} aria-hidden />
-        </button>
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={isOpen}
+            aria-disabled={isBlocked}
+            aria-label={`${state.label}, move this issue`}
+            onClick={toggle}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-chip',
+              tintClasses(state.tone).bg,
+              tintClasses(state.tone).text,
+              (isBlocked || busyId != null) && 'opacity-50',
+            )}
+          >
+            {state.label}
+            <ChevronDown size={ICON_SIZE.mark} aria-hidden />
+          </button>
+        </Tooltip>
       }
     >
       <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">
         {transitions.map((transition) => (
-          <button
+          <Tooltip
             key={transition.id}
-            type="button"
-            role="menuitem"
-            disabled={busyId != null}
-            title={transition.hasScreen ? SCREEN_HINT : undefined}
-            onClick={() => void move(transition.id)}
-            className={MENU_ROW}
+            content={transition.hasScreen ? SCREEN_HINT : undefined}
+            anchorClassName="w-full"
           >
-            <span className="min-w-0 truncate">{transition.name}</span>
-            {transition.to != null && (
-              <span className="shrink-0 text-meta text-muted-foreground">{transition.to.name}</span>
-            )}
-          </button>
+            <button
+              type="button"
+              role="menuitem"
+              disabled={busyId != null}
+              onClick={() => void move(transition.id)}
+              className={MENU_ROW}
+            >
+              <span className="min-w-0 truncate">{transition.name}</span>
+              {transition.to != null && (
+                <span className="shrink-0 text-meta text-muted-foreground">
+                  {transition.to.name}
+                </span>
+              )}
+            </button>
+          </Tooltip>
         ))}
       </ScrollFade>
       {moveError != null && (

@@ -73,6 +73,8 @@ const thread = (overrides: Partial<DiffThread> = {}): DiffThread => ({
   tone: 'primary',
   author: 'You',
   isAgent: false,
+  source: 'note',
+  host: null,
   createdAt: '2026-09-25T10:00:00.000Z' as IsoDateTime,
   statusLabel: 'Open note',
   isResolved: false,
@@ -300,12 +302,12 @@ describe('DiffView comments', () => {
     );
   });
 
-  it('gives focus back to Comment on file when the file composer closes', () => {
+  it('gives focus back to the Comment control when the file composer closes', () => {
     render(<DiffView files={[LEDGER]} comments={commentsWith([])} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Comment on file' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
 
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Comment on file' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Comment' }));
   });
 
   it.each([
@@ -423,13 +425,30 @@ describe('DiffView comments', () => {
     expect(comments.onReopen).toHaveBeenCalledWith('n1');
   });
 
-  it('asks before deleting a thread', () => {
+  it('asks in a popover beside Delete before deleting a thread it cannot restore', () => {
     const comments = commentsWith([thread()]);
-    render(<DiffView files={[LEDGER]} comments={comments} />);
+    const { container } = render(<DiffView files={[LEDGER]} comments={comments} />);
+    const before = container.innerHTML;
+
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Delete this comment?' });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(container.innerHTML.replace(/ aria-expanded="true"/g, '')).toBe(
+      before.replace(/ aria-expanded="true"/g, ''),
+    );
     expect(comments.onDelete).not.toHaveBeenCalled();
-    const confirm = screen.getAllByRole('button', { name: 'Delete' }).at(-1);
-    fireEvent.click(confirm as HTMLElement);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete comment' }));
+    expect(comments.onDelete).toHaveBeenCalledWith('n1');
+  });
+
+  it('deletes at once a thread the provider can restore, with no question', () => {
+    const comments = commentsWith([thread({ canRestore: true })]);
+    render(<DiffView files={[LEDGER]} comments={comments} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(comments.onDelete).toHaveBeenCalledWith('n1');
   });
 });
@@ -545,17 +564,17 @@ describe('DiffView file-level comments', () => {
   const fileThread = (): DiffThread =>
     thread({ id: 'file-note', anchor: null, body: 'Split this file before it grows' });
 
-  it('shows a visible Comment on file action on every file header', () => {
+  it('shows a visible Comment action on every file header', () => {
     render(<DiffView files={[LEDGER, RELAY]} comments={commentsWith([])} />);
 
-    expect(screen.getAllByRole('button', { name: 'Comment on file' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Comment' })).toHaveLength(2);
   });
 
   it('opens a composer under the header and saves the text against the file with no anchor', () => {
     const comments = commentsWith([]);
     render(<DiffView files={[LEDGER]} comments={comments} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Comment on file' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
     expect(screen.getByText('Note on this file')).toBeDefined();
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Split this file' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
@@ -574,45 +593,25 @@ describe('DiffView file-level comments', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Comment on file' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
 
     expect(screen.getByText('Draft on this file')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add draft' })).toBeDefined();
   });
 
-  it('opens the composer for a file the tree asked for, once, and says it was opened', () => {
-    const onOpened = vi.fn();
-    render(
-      <DiffView
-        files={[LEDGER, RELAY]}
-        comments={commentsWith([])}
-        fileCommentPath={RELAY.path}
-        onFileCommentOpened={onOpened}
-      />,
-    );
-
-    expect(onOpened).toHaveBeenCalledTimes(1);
-    expect(screen.getAllByText('Note on this file')).toHaveLength(1);
-    const section = screen.getByRole('region', { name: RELAY.path });
-    expect(within(section).getByText('Note on this file')).toBeDefined();
-  });
-
-  it('opens the composer on a collapsed file when the tree asks', () => {
+  it('opens the composer on a collapsed file from its Comment control', () => {
     const viewed = {
       stateOf: (file: FileDiff) =>
         file.path === LEDGER.path ? ('viewed' as const) : ('none' as const),
       onToggle: vi.fn(),
     };
-    render(
-      <DiffView
-        files={[LEDGER]}
-        viewed={viewed}
-        comments={commentsWith([])}
-        fileCommentPath={LEDGER.path}
-      />,
-    );
+    render(<DiffView files={[LEDGER]} viewed={viewed} comments={commentsWith([])} />);
+    expect(screen.queryByRole('grid')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
 
     expect(screen.getByText('Note on this file')).toBeDefined();
+    screen.getByRole('grid');
   });
 
   it('shows a file-level note under the header and counts it in the header', () => {
@@ -620,13 +619,13 @@ describe('DiffView file-level comments', () => {
 
     const section = screen.getByRole('region', { name: LEDGER.path });
     expect(within(section).getByText('Split this file before it grows')).toBeDefined();
-    expect(within(section).getByLabelText('1 comment')).toBeDefined();
+    expect(within(section).getByRole('button', { name: 'Comment 1' })).toBeDefined();
   });
 
   it('has no Comment on file action when the comments do not allow file level', () => {
     render(<DiffView files={[LEDGER]} comments={{ ...commentsWith([]), allowFileLevel: false }} />);
 
-    expect(screen.queryByRole('button', { name: 'Comment on file' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Comment' })).toBeNull();
   });
 });
 

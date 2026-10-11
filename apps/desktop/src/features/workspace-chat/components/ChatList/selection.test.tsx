@@ -373,18 +373,18 @@ describe('ChatList delete on the row', () => {
     expect(screen.queryByRole('button', { name: /^Delete / })).toBeNull();
   });
 
-  it('asks in the row after one click, then deletes with the second', async () => {
+  it('asks in a popover beside the row button, then deletes with the second click', async () => {
     const { onDeleted } = await renderList();
 
     revealDelete();
     fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
 
-    const confirm = within(rowOf('lunch'));
-    expect(confirm.getByText('Delete chat?')).toBeDefined();
-    expect(rowOf('lunch').textContent).toContain(TITLES.lunch);
-    expect(rowOf('changes').textContent).not.toContain('Delete chat?');
+    const dialog = screen.getByRole('dialog', { name: `Delete "${TITLES.lunch}"?` });
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(rowOf('lunch').contains(dialog)).toBe(false);
+    expect(within(rowOf('lunch')).getByRole('button', { name: TITLES.lunch ?? '' })).toBeDefined();
 
-    fireEvent.click(confirm.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete chat' }));
     await waitFor(() => expect(onDeleted).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
     expect(rowOf('lunch')).toBeNull();
   });
@@ -394,7 +394,7 @@ describe('ChatList delete on the row', () => {
     revealDelete();
     fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
 
-    fireEvent.click(within(rowOf('lunch')).getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
 
     expect(within(rowOf('lunch')).getByRole('button', { name: TITLES.lunch ?? '' })).toBeDefined();
     expect(onDeleted).not.toHaveBeenCalled();
@@ -405,7 +405,9 @@ describe('ChatList delete on the row', () => {
     revealDelete();
     fireEvent.click(screen.getByRole('button', { name: `Delete ${TITLES.lunch}` }));
 
-    fireEvent.click(within(rowOf('lunch')).getByRole('button', { name: 'Archive instead' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Archive instead' }),
+    );
 
     await waitFor(() => expect(onArchived).toHaveBeenCalledWith([chatIdOf({ key: 'lunch' })]));
     expect(

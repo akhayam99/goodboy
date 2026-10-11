@@ -11,7 +11,7 @@ Move between the tasks of a workspace, and see from any screen which one needs y
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
-Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, an amber **?**, shield or **!** means you must answer, approve or act, a green check means the pull request is ready to merge, a red **!** means something broke, a filled violet check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow the one you opened last.
+Move between tasks without losing your place. The list in the left column holds the sessions of the workspace, one line each: a small sign and the title. A turning ring means an agent is working, an amber **?**, shield or **!** means you must answer, approve or act, a green check means the pull request is ready to merge, a red **!** means something broke, a filled violet check means it is done, and a plain ring means it is quiet. The sessions that need you sit on top, and the rest follow their last activity, so the list holds still while you click through it.
 
 Rest the pointer on a row for half a second, or move the keyboard focus to it, and a card shows where it stands: the stage, the pull request and its checks, the linked tasks, the projects, the agents, the spend and the last activity. The session you have open sits in a card with its pages under its row, **Overview**, **Branch**, **Runs**, **Agents** and **Artifacts**, each with its count, so it is clear they belong to that session. **Questions** joins them while one is open. A chevron at the right end of the open session's row folds and shows its pages, and Goodboy remembers the choice for each session. Whatever you have open, one row shows where you are: the page, or the session itself when the page is a tool such as Terminal. A session with several branches lists them under **Branch** while you are on that page, and choosing one opens that branch on the tab it lands on.
 
@@ -22,7 +22,7 @@ Rest the pointer on a row for half a second, or move the keyboard focus to it, a
 
 <sub>Screenshot from Goodboy 0.21.1</sub>
 
-The options button in the **Sessions** header sorts the list by **Needs you first**, **Alphabetical**, **Last activity** or **Created**, groups it by **None**, **PR state**, **Stage** or **Project**, narrows it to a project and shows archived sessions. Goodboy keeps your choice for each workspace. The first eight rows show, and **Show more** opens the rest.
+The funnel in the **Sessions** header, **Filter sessions**, narrows the list by status (**Needs you**, **Running**, **In review**, **Building**, **Done**) or by project, shows archived sessions, sorts it by **Needs you first**, **Alphabetical**, **Last activity** or **Created** and groups it by **None**, **PR state**, **Stage** or **Project**. A badge counts the active filters, and a filter never hides a pinned session or the one you have open. A quiet line under the list says how many sessions the filters hide, with **Clear**. Goodboy keeps your choice for each workspace. The first eight rows show, and **Show more** opens the rest.
 
 To switch without looking at the list, hold **Control** and press **Tab** to flip through your recent sessions, then let go to open one. **Option Command Down** jumps to the next session that needs you.
 

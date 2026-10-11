@@ -30,6 +30,10 @@ const actions = (): ColumnActions => ({
   openInbox: vi.fn(),
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
+  openTerminalStudio: vi.fn(),
+  openNewChat: vi.fn(),
+  openNewTerminal: vi.fn(),
+  openMonitoring: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
@@ -94,14 +98,22 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks the toggle, New session, the four doors, the sessions, then Settings and the Goodboy row', () => {
+  it('stacks the toggle, the create row, the six doors, the sessions, then Settings and the Goodboy row', () => {
     mountColumn();
     const nav = navLayer();
 
     expect(within(nav).getAllByRole('button')[0]?.getAttribute('aria-label')).toMatch(
       /^Hide sidebar/,
     );
-    expect(doorNames(nav)).toEqual(['new', 'board', 'inbox', 'chat', 'workflows', 'settings']);
+    expect(doorNames(nav)).toEqual([
+      'board',
+      'inbox',
+      'chat',
+      'workflows',
+      'terminal',
+      'monitoring',
+      'settings',
+    ]);
     expect(nav.querySelector('[data-column-sessions]')).not.toBeNull();
     const foot = nav.querySelector('[data-column-foot]') as HTMLElement;
     expect(within(foot).getByRole('button', { name: 'Settings' })).toBeDefined();
@@ -114,8 +126,10 @@ describe('SideColumn', () => {
     ['inbox', ['inbox']],
     ['chat', ['chat']],
     ['workflows', ['workflows']],
+    ['terminal', ['terminal']],
+    ['monitoring', ['monitoring']],
     ['settings', ['settings']],
-    ['new', ['new']],
+    ['new', []],
     ['impact', []],
     [null, []],
   ] as const)('marks only the %s door current', (place, expected) => {
@@ -131,17 +145,21 @@ describe('SideColumn', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Board' }));
     fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
     fireEvent.click(screen.getByRole('button', { name: 'Workflows' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Terminal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Monitoring' }));
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
 
     expect(doors.openBoard).toHaveBeenCalledOnce();
     expect(doors.openChat).toHaveBeenCalledOnce();
     expect(doors.openWorkflows).toHaveBeenCalledOnce();
+    expect(doors.openTerminalStudio).toHaveBeenCalledOnce();
+    expect(doors.openMonitoring).toHaveBeenCalledOnce();
     expect(doors.openSettings).toHaveBeenCalledOnce();
     expect(doors.openInbox).not.toHaveBeenCalled();
   });
 
-  it('asks for a new session from the emphasised row', () => {
+  it('asks for a new session from the primary create button', () => {
     const onNew = vi.fn();
     window.addEventListener('goodboy:new-session', onNew);
     mountColumn();
@@ -150,6 +168,41 @@ describe('SideColumn', () => {
 
     expect(onNew).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:new-session', onNew);
+  });
+
+  it('opens a new chat and a new terminal from the create row', () => {
+    const doors = actions();
+    mountColumn({ doors });
+
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New terminal' }));
+
+    expect(doors.openNewChat).toHaveBeenCalledOnce();
+    expect(doors.openNewTerminal).toHaveBeenCalledOnce();
+    expect(doors.openChat).not.toHaveBeenCalled();
+    expect(doors.openTerminalStudio).not.toHaveBeenCalled();
+  });
+
+  it('has no full-width New session row and no create button inside a door row', () => {
+    mountColumn();
+    const nav = navLayer();
+
+    expect(nav.querySelector('[data-column-door="new"]')).toBeNull();
+    const doorRows = Array.from(nav.querySelectorAll('[data-column-door]'));
+    for (const door of doorRows) {
+      expect(door.getAttribute('aria-label')).not.toMatch(/^New /);
+      expect(door.querySelector('button')).toBeNull();
+    }
+  });
+
+  it('lays the three create buttons in one grid row', () => {
+    mountColumn();
+    const buttons = ['New session', 'New chat', 'New terminal'].map((name) =>
+      within(navLayer()).getByRole('button', { name }),
+    );
+
+    expect(new Set(buttons.map((button) => button.parentElement)).size).toBe(1);
+    expect(buttons[0]?.parentElement?.hasAttribute('data-column-create')).toBe(true);
   });
 
   it('opens the report sheet from the bug button beside the Goodboy row', () => {
@@ -210,7 +263,7 @@ describe('ColumnRail', () => {
   } = {}) =>
     render(<ColumnRail scope={scope} place={place} onToggle={vi.fn()} actions={actions()} />);
 
-  it('keeps every door at 44px: toggle, New, the four doors, then Settings, the bug and the mark', () => {
+  it('keeps every door at 44px: toggle, New, the six doors, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -218,7 +271,16 @@ describe('ColumnRail', () => {
     expect(within(rail).getAllByRole('button')[0]?.getAttribute('aria-label')).toMatch(
       /^Show sidebar/,
     );
-    expect(doorNames(rail)).toEqual(['new', 'board', 'inbox', 'chat', 'workflows', 'settings']);
+    expect(doorNames(rail)).toEqual([
+      'new',
+      'board',
+      'inbox',
+      'chat',
+      'workflows',
+      'terminal',
+      'monitoring',
+      'settings',
+    ]);
     expect(within(rail).getByRole('button', { name: 'Report a bug' })).toBeDefined();
     expect(rail.querySelector('[data-goodboy-chip="rail"]')).not.toBeNull();
   });

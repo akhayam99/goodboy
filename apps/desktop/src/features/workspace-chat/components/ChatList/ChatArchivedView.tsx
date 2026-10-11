@@ -31,7 +31,6 @@ export const ChatArchivedView = ({
   onDelete,
 }: Props) => {
   const [query, setQuery] = useState('');
-  const [isPurging, setIsPurging] = useState(false);
   const now = useNow(60_000);
   const needle = query.trim().toLowerCase();
   const shown = useMemo(() => chats.filter((chat) => matches({ chat, needle })), [chats, needle]);
@@ -88,25 +87,21 @@ export const ChatArchivedView = ({
       </ScrollFade>
       {chats.length === 0 ? null : (
         <div className="shrink-0 pb-2">
-          {isPurging ? (
-            <ChatPurgeConfirm
-              count={chats.length}
-              onDelete={async () => {
-                await onDelete(chats.map((chat) => chat.id));
-                setIsPurging(false);
-              }}
-              onCancel={() => setIsPurging(false)}
-            />
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-danger"
-              onClick={() => setIsPurging(true)}
-            >
-              Delete all archived
-            </Button>
-          )}
+          <ChatPurgeConfirm
+            count={chats.length}
+            onDelete={() => onDelete(chats.map((chat) => chat.id))}
+            trigger={({ arm }) => (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-danger"
+                aria-haspopup="dialog"
+                onClick={arm}
+              >
+                Delete all archived
+              </Button>
+            )}
+          />
         </div>
       )}
     </div>

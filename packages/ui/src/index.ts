@@ -1,6 +1,7 @@
 export { cn } from './cn';
 export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
+export { StudioSlotContext } from './studioSlotContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
 export { registerEscapeLayer } from './escape';
@@ -8,7 +9,8 @@ export { useEscapeLayer } from './useEscapeLayer';
 export { copyToClipboard } from './copyToClipboard';
 export { useCopyLink } from './useCopyLink';
 export { useDropdown } from './useDropdown';
-export { PopoverPortalProvider } from './PopoverPortalContext';
+export { useDropdownDirection } from './useDropdownDirection';
+export { PopoverPortalProvider, usePopoverPortalTarget } from './PopoverPortalContext';
 export type { DropdownController } from './useDropdown';
 export { ICON_SIZE } from './iconSize';
 export { TEXT_ROLE } from './textRoles';
@@ -26,11 +28,18 @@ export {
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
-export { DrawerColumn, RIGHT_DRAWER_STORAGE_KEY } from './components/DrawerColumn';
-export type { DrawerColumnProps } from './components/DrawerColumn';
+export {
+  DrawerColumn,
+  READER_DRAWER_STORAGE_KEY,
+  RIGHT_DRAWER_STORAGE_KEY,
+} from './components/DrawerColumn';
+export type { DrawerColumnFrame, DrawerColumnProps } from './components/DrawerColumn';
 export {
   COLUMN_FRAME,
   DRAWER_INSET,
+  READER_DRAWER_DEFAULT,
+  READER_DRAWER_MAX,
+  READER_DRAWER_MIN,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   canDrawerPush,
@@ -111,6 +120,8 @@ export {
   studioRailStorageKey,
 } from './components/StudioRailLayout';
 export { useResizableWidth } from './useResizableWidth';
+export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
+export type { StudioRailFold } from './useStudioRailFold';
 export { StudioWidget } from './components/StudioWidget';
 export {
   ClaudeIcon,
@@ -283,9 +294,14 @@ export { ToneBar } from './components/ToneBar';
 export type { ToneBarDensity } from './components/ToneBar';
 export { StarToggle } from './components/StarToggle';
 export { Tooltip } from './components/Tooltip';
+export { TruncatedText } from './components/TruncatedText';
+export type { TruncatedTextProps, TruncatedTextTag } from './components/TruncatedText';
+export { registerShortcutGlyphs } from './shortcutGlyphs';
+export type { ShortcutGlyphLookup } from './shortcutGlyphs';
 export type { TooltipProps, TooltipSide, TooltipVariant } from './components/Tooltip';
 export { tintClasses } from './tint';
 export type { TintClasses, Tone } from './tint';
+export { ModelBlock } from './components/WorkTree/ModelBlock';
 export { WorkMeta } from './components/WorkTree/WorkMeta';
 export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
 export { WorkNode } from './components/WorkTree/WorkNode';
@@ -313,10 +329,24 @@ export { FLOATING_SURFACE } from './floatingSurface';
 
 export {
   FRAME_BAND_PX,
+  FRAME_DRAWER_INSET_PX,
+  FRAME_DRAWER_ROW_PX,
   FRAME_PAGES,
   FRAME_TITLE_CENTRE_PX,
   FRAME_TITLE_ROW_PX,
+  FRAME_TYPES,
+  PAGE_FRAME,
   frameGeometryOf,
+  frameTierOf,
 } from './frameGeometry';
-export type { FrameGeometry, FramePage, FrameTitleLeft } from './frameGeometry';
+export type {
+  FrameGeometry,
+  FramePage,
+  FrameTier,
+  FrameTitleLeft,
+  FrameType,
+} from './frameGeometry';
 export { HeaderActions } from './components/HeaderActions';
+
+export { Disclosure } from './components/Disclosure';
+export type { DisclosureProps } from './components/Disclosure';

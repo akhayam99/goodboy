@@ -20,12 +20,19 @@ import type { ExplodeGroups } from '../../../../../hooks/useExplodeGroups';
 import { useAgentTouchedWorktrees } from '../../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../../hooks/useTimelineOpen';
 import { RAIL_COUNT_RADIUS, railInsetOf } from '../../../../../../workTreeModel/railGeometry';
+import { ROW_ACTION_LABEL } from '../../../../../../workTreeModel/rowActionLabels';
 import type { TimelineEntryRowHandlers } from '../TimelineEntryRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from '../TimelineRail';
 import type { TimelineRowProps } from '../TimelineRow';
 import type { TimelineRowAction } from '../TimelineStreamRow';
 import type { NeedsYouOwner } from '../../../../../timeline/needsYou';
 import { openReview } from '../../../../../../review/openReview';
+import {
+  fixOfferKey,
+  selectFixOffers,
+} from '../../../../../../../store/slices/agents/selectFixOffers';
+import { selectCheckMount } from '../../../../../../../store/slices/agents/selectCheckMount';
+import { startCheckFix } from '../../../../../../branch/checks/startCheckFix';
 import type { TimelineRows } from '../useTimelineRows';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -44,6 +51,7 @@ type RowParams = {
 
 type RowPropsControl = {
   readonly rowPropsFor: (params: RowParams) => TimelineRowProps | null;
+  readonly hasActionColumn: boolean;
   readonly openNeedsYou: (params: { readonly owner: NeedsYouOwner }) => void;
 };
 
@@ -70,6 +78,7 @@ export const useTimelineRowProps = ({
   const sessionProvider = session.providerPreference?.defaultProvider ?? null;
   const sessionEffort = session.effort ?? null;
   const { worktrees, laneRuns, stream } = rows;
+  const fixOffers = useAppStore((state) => selectFixOffers({ state, sessionId }));
 
   const latestLaneRuns = useRef(laneRuns);
   latestLaneRuns.current = laneRuns;
@@ -152,7 +161,7 @@ export const useTimelineRowProps = ({
     readonly question: OpenQuestion | null;
     readonly isAskerOffScreen: boolean;
   }): TimelineRowAction => ({
-    label: 'Answer',
+    label: ROW_ACTION_LABEL.answer,
     variant: 'secondary',
     onAct: () => {
       if (question != null && isAskerOffScreen) {
@@ -177,7 +186,27 @@ export const useTimelineRowProps = ({
         if (target == null) {
           return null;
         }
-        return { label: target.label, onAct: target.open };
+        return { label: ROW_ACTION_LABEL.relink, onAct: target.open };
+      }
+    }
+    if (entry.kind === 'agent' && entry.agent.sourceCommentUrl !== undefined) {
+      const url = entry.agent.sourceCommentUrl;
+      const checkMountId = selectCheckMount({ state: useAppStore.getState(), url });
+      if (
+        checkMountId !== null &&
+        fixOffers.split('\n').includes(fixOfferKey({ agentId: entry.agent.id, url }))
+      ) {
+        return {
+          label: ROW_ACTION_LABEL.startFix,
+          variant: 'secondary',
+          isBusy: pending.pendingKeys.has(`fix:${entry.agent.id}`),
+          onAct: () =>
+            void pending.run({
+              key: `fix:${entry.agent.id}`,
+              failureTitle: "Couldn't start the Implementer",
+              task: () => startCheckFix({ sessionId, url, mountId: checkMountId }),
+            }),
+        };
       }
     }
     const mountPath = mountPathFor({ item });
@@ -185,17 +214,17 @@ export const useTimelineRowProps = ({
       const stat = diffStatFor({ item });
       if (stat != null && (stat.additions > 0 || stat.deletions > 0)) {
         return {
-          label: 'View diff',
+          label: ROW_ACTION_LABEL.viewDiff,
           onAct: () => openMountDiff(sessionId, mountPath),
         };
       }
       return {
         label:
           copiedKey === mountPath
-            ? 'Copied'
+            ? ROW_ACTION_LABEL.copied
             : failedKey === mountPath
-              ? 'Copy failed'
-              : 'Copy path',
+              ? ROW_ACTION_LABEL.copyFailed
+              : ROW_ACTION_LABEL.copyPath,
         onAct: () => void copy({ text: mountPath }),
       };
     }
@@ -214,12 +243,12 @@ export const useTimelineRowProps = ({
         if (target == null) {
           return null;
         }
-        return { label: 'Restart the step', onAct: target.open };
+        return { label: ROW_ACTION_LABEL.retry, onAct: target.open };
       }
       case 'runStep': {
         const { agent } = ask;
         return {
-          label: `Start ${ask.step.name}`,
+          label: ROW_ACTION_LABEL.start,
           isBusy: pending.pendingKeys.has(agent.id),
           onAct: () =>
             void pending.run({
@@ -232,7 +261,7 @@ export const useTimelineRowProps = ({
       case 'continue': {
         const { agent } = ask;
         return {
-          label: agent.stoppedBy === 'app' ? 'Resume' : 'Continue',
+          label: agent.stoppedBy === 'app' ? ROW_ACTION_LABEL.resume : ROW_ACTION_LABEL.continue,
           isBusy: pending.pendingKeys.has(agent.id),
           onAct: () =>
             void pending.run({
@@ -391,5 +420,9 @@ export const useTimelineRowProps = ({
     };
   };
 
-  return { rowPropsFor, openNeedsYou };
+  const hasActionColumn = stream.items.some(
+    (item) => item.kind === 'row' && actionFor({ item }) !== null,
+  );
+
+  return { rowPropsFor, openNeedsYou, hasActionColumn };
 };

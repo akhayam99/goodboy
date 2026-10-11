@@ -181,15 +181,12 @@ vi.mock('../AgentDetailPane', () => ({
     </div>
   ),
 }));
-vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () => null }));
+vi.mock('../../../terminal/components/TerminalStudio/SessionTerminalLens', () => ({
+  SessionTerminalLens: () => null,
+}));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
-vi.mock('../AgentTree/AgentsSection', () => ({
-  AgentsSection: ({ only }: { only?: string }) => (
-    <div data-testid="agents-section" data-home={only} />
-  ),
-}));
 vi.mock('../StandaloneAgentsLane', () => ({
   StandaloneAgentsLane: ({
     session,
@@ -228,9 +225,13 @@ vi.mock('../CreateAgentPopover', () => ({
 vi.mock('../SessionOverviewPane', () => ({
   SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
 }));
-vi.mock('../../../branch/components/BranchPage', () => ({
-  BranchPage: () => <div data-testid="branch-page" />,
-}));
+vi.mock('../../../branch/components/BranchPage', async () => {
+  const { useStudioBand } =
+    await import('../../../../shared/components/StudioShell/studioBandContext');
+  return {
+    BranchPage: () => <div data-testid="branch-page">{useStudioBand()}</div>,
+  };
+});
 vi.mock('../SessionTrail/SessionCrumbs', () => ({
   SessionCrumbs: () => <div data-testid="session-crumb-bar" />,
 }));
@@ -316,7 +317,6 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('navigation', { name: 'Workflow breadcrumb' })).toBeNull();
     expect(screen.getByTestId('agent-detail-pane')).toBeDefined();
     expect(screen.getByTestId('agents-lane')).toBeDefined();
-    expect(screen.queryByTestId('agents-section')).toBeNull();
     expect(screen.queryByRole('separator', { name: 'Resize agent inspector' })).toBeNull();
   });
 
@@ -395,11 +395,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('button', { name: 'Release flow' })).toBeNull();
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Session',
-      'Agents',
-      'Selected agent',
-    ]);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Agents', 'Agent']);
   });
 
   it('shows the selected resolver in the overlay without an inspector rail', () => {
@@ -555,7 +551,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
   });
 
-  it('puts the crumb on the column for the branch page like every other page', () => {
+  it('puts the crumb on the column for the branch page, inside its detail, like every other page', () => {
     store.selectedAgentId = {};
     store.activeLens = { [SESSION_ID]: null };
     const view = render(<SessionWorkspace session={session} isActive />);
@@ -568,6 +564,10 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     view.rerender(<SessionWorkspace session={session} isActive />);
     expect(width()).toBe('column');
+    expect(view.container.querySelectorAll('[data-slot="trail-bar"]')).toHaveLength(1);
+    expect(
+      screen.getByTestId('branch-page').querySelector('[data-slot="trail-bar"]'),
+    ).not.toBeNull();
 
     store.activeLens = { [SESSION_ID]: 'files' };
     view.rerender(<SessionWorkspace session={session} isActive />);
@@ -680,7 +680,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
       'Session',
       'Runs',
       'Release flow',
-      'Selected agent',
+      'Agent',
     ]);
 
     act(() => result.current[2]!.onClick!());
@@ -702,11 +702,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     const { result } = renderHook(() => useSessionCrumbs({ session }));
 
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Session',
-      'Runs',
-      'Selected agent',
-    ]);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Runs', 'Agent']);
   });
 
   it('goes up on Escape while the trail still names the run', () => {
@@ -743,7 +739,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
       'Session',
       'Runs',
       'Release flow',
-      'Selected agent',
+      'Agent',
     ]);
   });
 

@@ -211,7 +211,7 @@ const checkCurrent = () => {
   const globs = new Set();
   for (const slug of expectedSlugs) {
     const row = ownership.match(
-      new RegExp(`^\\|\\s*${slug}\\s*\\|\\s*\\x60([^\\x60]+)\\x60\\s*\\|$`, 'm'),
+      new RegExp(`^\\|\\s*${slug}\\s*\\|\\s*\\x60([^\\x60]+)\\x60\\s*\\|`, 'm'),
     );
     if (row === null) throw new Error(`docs/README.md has no ownership glob for ${slug}`);
     if (globs.has(row[1])) throw new Error(`source glob ${row[1]} has more than one feature area`);

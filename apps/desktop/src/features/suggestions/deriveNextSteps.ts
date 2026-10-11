@@ -16,13 +16,13 @@ import {
   type SuggestionMountEvent,
 } from '../../store/slices/project-mounts/materializationProposals';
 import type { BranchPushState } from '../../shared/lib/branchPushState';
-import { dirtyTreeLine } from '../../shared/lib/dirtyTreeCopy';
 import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
 import type {
   RebaseSuggestionTarget,
+  ScribeRequestState,
   SessionSuggestion,
   SuggestionKind,
   SuggestionQuestion,
@@ -57,6 +57,7 @@ export type SuggestionMount = {
   readonly isClean: boolean | null;
   readonly pr: PullRequestState | null;
   readonly fetchedAt: string | null;
+  readonly scribe?: ScribeRequestState | null;
 };
 
 type SuggestionRecommendedWorkflow = {
@@ -116,6 +117,25 @@ const isRebaseConsumed = ({ project }: ProjectParams): boolean => {
     return false;
   }
   return request.behind === project.mainDistance;
+};
+
+const SCRIBE_DETAIL = {
+  writing: 'Scribe is writing the text',
+  creating: 'Opening the pull request',
+  ready: 'Scribe wrote the text, review it',
+} as const satisfies Readonly<Record<ScribeRequestState, string>>;
+
+const openPrDetailOf = ({
+  mount,
+  ahead,
+}: {
+  readonly mount: SuggestionMount;
+  readonly ahead: number;
+}): string => {
+  if (mount.scribe !== undefined && mount.scribe !== null) {
+    return SCRIBE_DETAIL[mount.scribe];
+  }
+  return `${ahead} ${ahead === 1 ? 'commit' : 'commits'} ahead`;
 };
 
 type PushSuggestionParams = {
@@ -503,7 +523,7 @@ export const deriveNextSteps = ({
           priority: 42,
           band: 2,
           title: `Open a pull request for ${mount.projectName}`,
-          detail: `${mount.aheadOfBase} ${mount.aheadOfBase === 1 ? 'commit' : 'commits'} ahead`,
+          detail: openPrDetailOf({ mount, ahead: mount.aheadOfBase }),
           sessionId,
           targetKey: `pr:${mount.mountId}`,
           fingerprint: `open-pr:${mount.mountId}:${mount.aheadOfBase}`,
@@ -512,6 +532,7 @@ export const deriveNextSteps = ({
             projectId: mount.projectId,
             projectName: mount.projectName,
             ahead: mount.aheadOfBase,
+            scribe: mount.scribe ?? null,
           },
         });
       }
@@ -565,9 +586,7 @@ export const deriveNextSteps = ({
       dirtyCount: dirtyCountOf({ project }),
     });
   }
-  const cleanRebaseTargets = rebaseTargets.filter((target) => target.dirtyCount === 0);
-  const isRebaseBlocked = cleanRebaseTargets.length === 0;
-  const shownRebaseTargets = [...(isRebaseBlocked ? rebaseTargets : cleanRebaseTargets)].sort(
+  const shownRebaseTargets = [...rebaseTargets].sort(
     (first, second) =>
       second.behind - first.behind || first.projectName.localeCompare(second.projectName),
   );
@@ -581,9 +600,6 @@ export const deriveNextSteps = ({
       : isSingleProject
         ? `${shownRebaseTargets.length} branches behind`
         : `${projectCount} projects behind`;
-    const blockedDetail = isSingleTarget
-      ? dirtyTreeLine({ count: firstRebaseTarget.dirtyCount })
-      : `${shownRebaseTargets.length} branches have changes not committed`;
     suggestions.push({
       id: `rebase-project:${sessionId}`,
       kind: 'rebase-project',
@@ -594,10 +610,10 @@ export const deriveNextSteps = ({
         : isSingleProject
           ? `Rebase ${firstRebaseTarget.projectName}`
           : `Rebase ${shownRebaseTargets.length} branches`,
-      detail: isRebaseBlocked ? blockedDetail : behindDetail,
+      detail: behindDetail,
       sessionId,
       targetKey: null,
-      fingerprint: `rebase-project:${sessionId}:${isRebaseBlocked ? 'dirty:' : ''}${shownRebaseTargets.map((target) => `${target.id}:${target.behind}`).join(',')}`,
+      fingerprint: `rebase-project:${sessionId}:${shownRebaseTargets.map((target) => `${target.id}:${target.behind}`).join(',')}`,
       payload: { targets: shownRebaseTargets },
     });
   }

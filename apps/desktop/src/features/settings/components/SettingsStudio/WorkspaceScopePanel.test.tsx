@@ -242,15 +242,14 @@ describe('changed from default', () => {
     seed({ harborline: overrides({ defaultBranchPrefix: 'hl', defaultVerbosity: 'normal' }) });
     renderPage({ section: 'general' });
 
-    screen.getByRole('img', { name: 'Changed from default. Default: goodboy' });
-    expect(screen.getAllByRole('img', { name: /Changed from default/ })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^Reset .* to default$/ })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Branch prefix options' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Branch prefix options' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Reset/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset Branch prefix to default' }));
 
     await waitFor(() => expect(savedOverrides()).toHaveLength(1));
     expect(savedOverrides()[0]?.defaultBranchPrefix).toBeNull();
-    expect(screen.queryByRole('img', { name: /Changed from default/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Reset .* to default$/ })).toBeNull();
   });
 });
 

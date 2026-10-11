@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { WireframeProvenanceRow } from './WireframeProvenanceRow';
 
 afterEach(cleanup);
@@ -28,7 +29,8 @@ describe('WireframeProvenanceRow', () => {
     expect(provenance.textContent).toContain('abcdef1');
     const chip = screen.getByTestId('wireframe-source-chip');
     expect(chip.textContent).toBe('styles.css');
-    expect(chip.getAttribute('title')).toBe('packages/ui/src/styles.css');
+    expect(chip.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: chip })).toBe('packages/ui/src/styles.css');
   });
 
   it('keeps every design source on one row and reveals the rest on demand', () => {

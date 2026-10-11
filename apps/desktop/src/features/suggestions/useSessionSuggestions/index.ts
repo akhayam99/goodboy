@@ -35,6 +35,7 @@ import { toMountEvents } from '../../../store/slices/project-mounts/materializat
 import { pendingAgentSignal } from '../pendingAgentSignal';
 import { useNextStepOutcomes } from '../useNextStepOutcomes';
 import { shouldDemote } from '../nextStepGates';
+import { scribeRequestStateOf } from '../scribeRequestStateOf';
 import { SUGGESTION_KINDS, type SuggestionKind } from '../types';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 
@@ -118,6 +119,7 @@ export const useSessionSuggestions = ({
     useShallow((state) => plans.map((plan) => state.planConsumptions[plan.id] ?? EMPTY_ARRAY)),
   );
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
+  const scribeWork = useAppStore((state) => state.scribeWork);
   const fixableCount = useReviewTally({ sessionId }).fixable;
   const mounts = useAppStore(
     (state) =>
@@ -337,6 +339,7 @@ export const useSessionSuggestions = ({
                 status == null ? null : isWorkingTreeClean({ workingTree: status.workingTree }),
               pr: githubState?.pr ?? null,
               fetchedAt: githubState?.fetchedAt ?? null,
+              scribe: scribeRequestStateOf({ scribeWork, mountId: mount.mountId }),
             };
           })
         : [],
@@ -375,6 +378,7 @@ export const useSessionSuggestions = ({
     effectiveAgents,
     events,
     github,
+    scribeWork,
     mountGithubByMountId,
     openQuestions,
     recommendedWorkflow,

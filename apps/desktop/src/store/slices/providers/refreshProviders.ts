@@ -1,12 +1,14 @@
 import {
   checkProviderAuth,
   refreshProviderDetection,
-  type ProviderAuthResults,
-  type ProviderStatuses,
+  type ProviderStatus,
+  type AuthState,
 } from '../../../features/providers/providers';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { applyProviderProbe, takeProbeSeq } from './applyProviderProbe';
 import { SIGNED_OUT_CONFIRM_MS, hasPendingSignedOut } from './providerHealth';
+import { probeLock } from './probeLock';
+import type { ProviderId } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 
 export type RefreshProvidersParams = {
@@ -19,66 +21,90 @@ let current: Promise<void> | null = null;
 let isRerunQueued = false;
 let recheckTimer: ReturnType<typeof setTimeout> | null = null;
 
-const probeAll = async (set: SetFn, get: GetFn): Promise<void> => {
+type ProbeParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly isFresh: boolean;
+};
+
+type StoredParams = { readonly get: GetFn; readonly providerId: ProviderId };
+
+const storedStatus = ({ get, providerId }: StoredParams): ProviderStatus | null => {
+  const provider = get().providers.find((item) => item.id === providerId);
+  if (provider === undefined) {
+    return null;
+  }
+  return {
+    id: providerId,
+    binary: provider.binary,
+    available: provider.version !== null && provider.version !== undefined,
+    version: provider.version ?? null,
+    error: provider.error,
+  };
+};
+
+const probeAll = async ({ set, get, isFresh }: ProbeParams): Promise<void> => {
   const seq = takeProbeSeq();
   const previousAuthResults = get().authResults;
   const previousCursorIdentity = previousAuthResults?.cursor?.identity ?? null;
   const previousCursorState = previousAuthResults?.cursor?.state ?? null;
-  const [providerStatus, cursorStatus, codexStatus, geminiStatus, opencodeStatus] =
-    await Promise.all([
-      refreshProviderDetection({ id: 'anthropic' }),
-      refreshProviderDetection({ id: 'cursor' }),
-      refreshProviderDetection({ id: 'codex' }),
-      refreshProviderDetection({ id: 'gemini' }),
-      refreshProviderDetection({ id: 'opencode' }),
-    ]);
-  const statuses: ProviderStatuses = {
+  const statuses: Record<ProviderId, ProviderStatus | null> = {
+    anthropic: get().providerStatus,
+    cursor: get().cursorStatus,
+    codex: get().codexStatus,
+    gemini: get().geminiStatus,
+    opencode: storedStatus({ get, providerId: 'opencode' }),
+    openrouter: storedStatus({ get, providerId: 'openrouter' }),
+    moonshot: storedStatus({ get, providerId: 'moonshot' }),
+  };
+  const authResults: Partial<Record<ProviderId, AuthState | null>> = { ...previousAuthResults };
+  const only: ProviderId[] = [];
+  const ids: ReadonlyArray<ProviderId> = ['anthropic', 'cursor', 'codex', 'gemini', 'opencode'];
+  await Promise.all(
+    ids.map((id) =>
+      probeLock({
+        get,
+        providerId: id,
+        kind: 'status',
+        isAutomatic: !isFresh,
+        run: async () => {
+          const status = await refreshProviderDetection({ id });
+          statuses[id] = status;
+          authResults[id] = await checkProviderAuth(id);
+          only.push(id);
+          if (id === 'opencode') {
+            for (const apiId of ['openrouter', 'moonshot'] satisfies ReadonlyArray<ProviderId>) {
+              statuses[apiId] = { ...status, id: apiId };
+              authResults[apiId] = await checkProviderAuth(apiId);
+              only.push(apiId);
+            }
+          }
+        },
+      }),
+    ),
+  );
+  const {
     anthropic: providerStatus,
     cursor: cursorStatus,
     codex: codexStatus,
     gemini: geminiStatus,
-    opencode: opencodeStatus,
-    openrouter: { ...opencodeStatus, id: 'openrouter' },
-    moonshot: { ...opencodeStatus, id: 'moonshot' },
-  };
-  const [
-    anthropicAuth,
-    cursorAuth,
-    codexAuth,
-    geminiAuth,
-    opencodeAuth,
-    openrouterAuth,
-    moonshotAuth,
-  ] = await Promise.all([
-    checkProviderAuth('anthropic'),
-    checkProviderAuth('cursor'),
-    checkProviderAuth('codex'),
-    checkProviderAuth('gemini'),
-    checkProviderAuth('opencode'),
-    checkProviderAuth('openrouter'),
-    checkProviderAuth('moonshot'),
-  ]);
-  const authResults: ProviderAuthResults = {
-    anthropic: anthropicAuth,
-    cursor: cursorAuth,
-    codex: codexAuth,
-    gemini: geminiAuth,
-    opencode: opencodeAuth,
-    openrouter: openrouterAuth,
-    moonshot: moonshotAuth,
-  };
+  } = statuses;
+  const cursorAuth = authResults.cursor;
   const isApplied = applyProviderProbe({
     set,
     get,
     seq,
     statuses,
     authResults,
+    only,
     patch: { providerStatus, cursorStatus, codexStatus, geminiStatus },
   });
   if (!isApplied) {
     return;
   }
   if (
+    cursorAuth !== null &&
+    cursorAuth !== undefined &&
     previousAuthResults !== null &&
     previousAuthResults !== undefined &&
     (previousCursorIdentity !== cursorAuth.identity ||
@@ -88,7 +114,9 @@ const probeAll = async (set: SetFn, get: GetFn): Promise<void> => {
   }
 };
 
-export const refreshProviders = (set: SetFn, get: GetFn) => {
+type Params = { readonly set: SetFn; readonly get: GetFn };
+
+export const refreshProviders = ({ set, get }: Params) => {
   const refresh = ({ isFresh = false }: RefreshProvidersParams = {}): Promise<void> => {
     if (current !== null) {
       if (isFresh) {
@@ -102,8 +130,9 @@ export const refreshProviders = (set: SetFn, get: GetFn) => {
     }
     current = (async () => {
       do {
+        const shouldForce = isFresh || isRerunQueued;
         isRerunQueued = false;
-        await probeAll(set, get);
+        await probeAll({ set, get, isFresh: shouldForce });
       } while (isRerunQueued);
       if (recheckTimer === null && hasPendingSignedOut({ map: get().providerHealth })) {
         recheckTimer = setTimeout(() => {

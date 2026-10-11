@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it } from 'vitest';
 import type { SessionStudio, StudioKind } from '../../store';
+import { PAGE_FRAME, frameTierOf } from '@goodboy/ui';
 import { STUDIO_META } from '../../app/components/StudioFrame/studioMeta';
 
 const SRC = join(__dirname, '..', '..');
@@ -93,7 +94,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx',
     ],
   },
-  TerminalDock: { kind: 'shell', files: ['features/terminal/components/TerminalDock/index.tsx'] },
+  SessionTerminalLens: {
+    kind: 'shell',
+    files: ['features/terminal/components/TerminalStudio/SessionTerminalLens.tsx'],
+  },
   ArtifactStudio: {
     kind: 'dispatch',
     files: [
@@ -125,6 +129,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     files: ['features/session/components/SessionWorkspace/parts/SessionStudioLayer.tsx'],
   },
   PaneShell: { kind: 'helper', files: [] },
+  StudioBandContext: { kind: 'helper', files: [] },
   TrailBar: { kind: 'helper', files: [] },
   AskTrailButton: { kind: 'helper', files: [] },
   FirstLapBanner: {
@@ -157,6 +162,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   addWorkspace: ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
   workflow: ['features/workflows/components/WorkflowsPanel/index.tsx'],
   inbox: ['features/inbox/components/InboxStudio/index.tsx'],
+  terminal: ['features/terminal/components/TerminalStudio/SessionTerminalLens.tsx'],
   impact: [
     'features/impact/components/ImpactStudio/OverviewPanel.tsx',
     'features/impact/components/ImpactStudio/FlowPanel.tsx',
@@ -169,6 +175,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   ],
   notifications: ['features/notifications/components/NotificationsStudio/index.tsx'],
   chat: ['features/workspace-chat/components/ChatRoom/index.tsx'],
+  monitoring: ['features/monitoring/components/MonitoringStudio/MonitoringPage.tsx'],
 };
 
 const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray<string>>> = {
@@ -177,14 +184,10 @@ const SESSION_STUDIO_ROOTS: Readonly<Record<SessionStudio['kind'], ReadonlyArray
 
 const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
   'Runs > Create': ['features/workflows/components/WorkflowBuilderView/index.tsx'],
-  'Runs > a run': ['features/session/components/AgentTree/WorkflowRow.tsx'],
+  'Runs > a run': ['features/session/components/SessionWorkspace/parts/WorkflowRunDetail.tsx'],
   'Questions detail': ['features/session/components/SessionWorkspace/parts/QuestionsPane.tsx'],
-  'Branch > create pull request': [
-    'features/integrations/github/components/PullRequest/CreatePrPanel.tsx',
-  ],
-  'Create merge request': [
-    'features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx',
-  ],
+  'Branch > create pull request': ['features/branch/components/BranchPage/index.tsx'],
+  'Create merge request': ['features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx'],
   'Artifacts > create': ['features/artifacts/components/ArtifactCreationPane/index.tsx'],
   'Session overview loading': [
     'features/session/components/SessionWorkspace/parts/SessionOverviewSkeleton.tsx',
@@ -194,17 +197,14 @@ const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
 
 const COLUMN_ROOT = /<(PaneShell|PageColumn|FormPage)\b/;
 
-const STUDIO_TIERS: Readonly<Record<StudioKind, 'column' | 'full'>> = {
-  settings: 'column',
-  guide: 'column',
-  companion: 'full',
-  addWorkspace: 'column',
-  workflow: 'column',
-  inbox: 'column',
-  impact: 'column',
-  changelog: 'column',
-  notifications: 'column',
-  chat: 'full',
+const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['companion', 'addWorkspace']);
+
+const SPLIT_DETAIL_FILES: Readonly<Partial<Record<StudioKind, ReadonlyArray<string>>>> = {
+  guide: ['features/settings/components/GuideStudio/index.tsx'],
+  changelog: ['features/changelog/components/ChangelogStudio/index.tsx'],
+  chat: ['features/workspace-chat/components/ChatStudio.tsx'],
+  inbox: ['features/inbox/components/InboxStudio/InboxStudioLayout.tsx'],
+  notifications: ['features/notifications/components/NotificationsStudio/index.tsx'],
 };
 
 const H1_ALLOWLIST: ReadonlySet<string> = new Set([
@@ -218,7 +218,7 @@ const H1_ALLOWLIST: ReadonlySet<string> = new Set([
 const TITLE_ROW_PAGES: ReadonlyArray<string> = [
   'features/session/components/SessionOverviewPane/HeaderBand.tsx',
   'features/session/components/AgentDetailPane/AgentHeader.tsx',
-  'features/session/components/AgentTree/WorkflowRow.tsx',
+  'features/session/components/AgentTree/RunHeader/index.tsx',
   'features/workspace/components/StageBoard/index.tsx',
 ];
 
@@ -367,13 +367,33 @@ describe('content column contract', () => {
     expect(read('app/components/StudioFrame/StudioSkeleton.tsx')).toMatch(/<PageColumn\b/);
   });
 
-  it('gives every studio a tier, and puts only the rail studios that align to the gutter on full', () => {
-    const tiers = Object.fromEntries(
-      Object.entries(STUDIO_META).map(([kind, meta]) => [kind, meta.tier]),
+  it('agrees every studio tier with the frame type of its page', () => {
+    const disagreeing = Object.entries(STUDIO_META).flatMap(([kind, meta]) =>
+      meta.page === null || meta.tier === frameTierOf({ type: PAGE_FRAME[meta.page] })
+        ? []
+        : [`${kind}: tier ${meta.tier} is not the tier of ${PAGE_FRAME[meta.page]}`],
+    );
+    const untyped = Object.entries(STUDIO_META).flatMap(([kind, meta]) =>
+      meta.page === null && !PAGELESS_STUDIOS.has(kind) ? [kind] : [],
     );
 
-    expect(tiers).toEqual(STUDIO_TIERS);
-    expect(Object.keys(STUDIO_TIERS).sort()).toEqual(Object.keys(STUDIO_ROOTS).sort());
+    expect(disagreeing).toEqual([]);
+    expect(untyped).toEqual([]);
+    expect(Object.keys(STUDIO_META).sort()).toEqual(Object.keys(STUDIO_ROOTS).sort());
+  });
+
+  it('draws every split studio detail through StudioDetail, so the crumb sits beside the rail', () => {
+    const splitStudios = Object.entries(STUDIO_META).filter(
+      ([, meta]) => meta.page !== null && PAGE_FRAME[meta.page] === 'split',
+    );
+    const missing = Object.values(SPLIT_DETAIL_FILES).flatMap((files) =>
+      files.filter((file) => !/<StudioDetail>/.test(read(file))),
+    );
+
+    expect(splitStudios.map(([kind]) => kind).sort()).toEqual(
+      Object.keys(SPLIT_DETAIL_FILES).sort(),
+    );
+    expect(missing).toEqual([]);
   });
 
   it('draws the studio band inside a PageColumn, never on its own gutter', () => {
@@ -383,7 +403,6 @@ describe('content column contract', () => {
     expect(header).toMatch(/<header[^>]*>\s*<PageColumn\b/);
     expect(header).toContain('width={width}');
     expect(header).not.toMatch(/\bpx-\d/);
-    expect(read('app/components/StudioFrame/index.tsx')).toContain('width={meta.tier}');
   });
 
   it('hands the studio frame the under-trail context so no studio title sits lower than a session title', () => {

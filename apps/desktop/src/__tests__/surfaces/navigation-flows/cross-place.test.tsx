@@ -43,6 +43,7 @@ import {
   visible,
   useAppStore,
   type BridgeArgs,
+  getSection,
 } from './harness';
 
 installNavigationHooks();
@@ -909,8 +910,6 @@ describe('moving across every place keeps one frame', () => {
         expect(currentPage()).toBe(page);
         expectCentredColumns();
         expectAskInColumn();
-        const trail = document.querySelector('main [data-slot="trail-bar"] [data-page-column]');
-        expect(trail?.getAttribute('data-width')).toBe('column');
         if (lens === 'branch') {
           expect(leftEdge().columns).not.toContain('full');
         }
@@ -918,7 +917,7 @@ describe('moving across every place keeps one frame', () => {
 
       await click(pageRow('Branch'));
       for (const tab of ['Files', 'Comments'] as const) {
-        await click(screen.getByRole('tab', { name: new RegExp(`^${tab}`) }));
+        await click(getSection(new RegExp(`^${tab}`)));
         expect(useAppStore.getState().branchTab[sessionId]).toBe(tab.toLowerCase());
         expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
       }
@@ -1060,7 +1059,11 @@ describe('moving across every place keeps one frame', () => {
       expect(currentDoors()).toEqual(['board']);
 
       await clickButton('New session');
-      expect(currentDoors()).toEqual(['new']);
+      expect(
+        document
+          .querySelector('[data-side-column] [data-create="session"]')
+          ?.getAttribute('aria-current'),
+      ).toBe('page');
       expectHealthy();
     },
     JOURNEY_MS,

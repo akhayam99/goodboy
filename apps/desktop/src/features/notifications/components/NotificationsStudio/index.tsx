@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
-import { EmptyState, Eyebrow, HeaderActions, PaneShell } from '@goodboy/ui';
+import {
+  EmptyState,
+  Eyebrow,
+  HeaderActions,
+  PaneShell,
+  StudioRailLayout,
+  useStudioRailFold,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
+import { FilterButton } from '../../../../shared/components/FilterButton';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
@@ -16,19 +25,12 @@ import {
 } from '../../facets';
 import { NotificationRow } from '../NotificationRow';
 import { NotificationFacetRail } from './NotificationFacetRail';
-import { NotificationFiltersButton } from './NotificationFiltersButton';
 import { NotificationsSkeleton } from './NotificationsSkeleton';
 import { NotificationsToolbar } from './NotificationsToolbar';
 
 type Props = {
   readonly onClose: () => void;
 };
-
-const VIEW_TITLE = {
-  all: 'All notifications',
-  unread: 'Unread notifications',
-  action: 'Needs action',
-} satisfies Record<NotificationFilters['view'], string>;
 
 type SubtitleParams = {
   readonly total: number;
@@ -59,6 +61,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
   const clearNotifications = useAppStore((state) => state.clearNotifications);
   const [filters, setFilters] = useState<NotificationFilters>(NO_NOTIFICATION_FILTERS);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const fold = useStudioRailFold({ surface: 'notifications' });
 
   useEffect(() => {
     void loadNotifications();
@@ -139,150 +142,169 @@ export const NotificationsStudio = ({ onClose }: Props) => {
 
   const clearFilters = () => setFilters(NO_NOTIFICATION_FILTERS);
 
+  const facets = (
+    <NotificationFacetRail
+      filters={filters}
+      counts={counts}
+      scope={scope}
+      workspaceName={workspaceName}
+      onFiltersChange={setFilters}
+      onScopeChange={(next) => {
+        setSelectedKey(null);
+        void setNotificationScope(next);
+      }}
+    />
+  );
+
   return (
     <StudioShell
       icon={CONCEPT_ICONS.notifications}
       tone={CONCEPT_TONE.notifications}
       title="Notifications"
-      closeLabel="Close notifications"
       onClose={onClose}
     >
       {() => (
-        <div className="flex min-h-0 min-w-0 flex-1">
-          <PaneShell
-            scroll="body"
-            title={VIEW_TITLE[filters.view]}
-            meta={subtitle({ total: counts.total, unread: counts.unread })}
-            actions={
-              <HeaderActions
-                secondary={
-                  <NotificationFiltersButton
-                    activeCount={activeCount}
-                    facets={
-                      <NotificationFacetRail
-                        filters={filters}
-                        counts={counts}
-                        scope={scope}
-                        workspaceName={workspaceName}
-                        onFiltersChange={setFilters}
-                        onScopeChange={(next) => {
-                          setSelectedKey(null);
-                          void setNotificationScope(next);
-                        }}
-                      />
-                    }
-                  />
-                }
-                button={
-                  notifications.length > 0 ? (
-                    <NotificationsToolbar
-                      unreadCount={counts.unread}
-                      totalCount={counts.total}
-                      workspaceName={scope === 'workspace' ? workspaceName : null}
-                      onMarkAllRead={() => void markNotificationsRead()}
-                      onDeleteAll={async () => {
-                        await clearNotifications();
-                        setSelectedKey(null);
-                      }}
-                    />
-                  ) : null
-                }
-              />
-            }
-          >
-            {isLoading && notifications.length === 0 && <NotificationsSkeleton />}
-            {!isLoading && notifications.length === 0 && (
-              <EmptyState
-                icon={CONCEPT_ICONS.notifications}
-                tone={CONCEPT_TONE.notifications}
-                title="No notifications"
-                size="page"
-                headingLevel={2}
-              />
-            )}
-            {notifications.length > 0 && visibleGroups.length === 0 && (
-              <EmptyState
-                icon={CONCEPT_ICONS.notifications}
-                tone={CONCEPT_TONE.notifications}
-                title="No notifications match"
-                description={
-                  hasOlder
-                    ? 'Nothing loaded matches these filters. Older notifications may.'
-                    : 'Try another filter or include notifications you have already read.'
-                }
-                action={
-                  isFiltered ? (
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="rounded-md px-2 py-1 text-label font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
-                    >
-                      Clear filters
-                    </button>
-                  ) : undefined
-                }
-                size="page"
-                headingLevel={2}
-              />
-            )}
-            {days.length > 0 && (
-              <div className="flex flex-col gap-4">
-                {days.map((entry) => (
-                  <section
-                    key={entry.day}
-                    aria-label={entry.label}
-                    className="flex flex-col gap-0.5"
-                  >
-                    <div className="flex items-baseline gap-2 px-3 pb-1">
-                      <Eyebrow label={entry.label} />
-                      <span className="text-meta tabular-nums text-faint-foreground">
-                        {entry.items.length}
-                      </span>
-                    </div>
-                    <ul className="flex flex-col gap-0.5">
-                      {entry.items.map((group) => {
-                        const key = notificationGroupKey({ group });
-                        return (
-                          <NotificationRow
-                            key={key}
-                            scrollKey={key}
-                            notifications={group}
-                            density="cozy"
-                            isSelected={selectedKey === key}
-                            onOpen={() => {
-                              markGroupRead(key);
-                              if (selectedKey === key) {
-                                setSelectedKey(null);
-                                return;
-                              }
-                              selectGroup(key);
-                            }}
-                            onMarkRead={() => markGroupRead(key)}
-                            onDismiss={() => dismissGroup(key)}
+        <div ref={fold.paneRef} className="flex h-full min-h-0 min-w-0 flex-1">
+          <StudioRailLayout
+            railLabel="Notification filters"
+            railWidth="standard"
+            surface="notifications"
+            placement="page"
+            rail={facets}
+            railHeader={<Eyebrow label="Filters" muted />}
+            isCollapsed={fold.isCollapsed}
+            onCollapsedChange={fold.setFolded}
+            detail={
+              <StudioDetail>
+                <PaneShell
+                  scroll="body"
+                  title="Notifications"
+                  meta={subtitle({ total: counts.total, unread: counts.unread })}
+                  actions={
+                    <HeaderActions
+                      secondary={
+                        fold.isCollapsed ? (
+                          <FilterButton
+                            popoverLabel="Notification filters"
+                            activeCount={activeCount}
+                            facets={facets}
+                            onDock={fold.canDock ? () => fold.setFolded(false) : undefined}
                           />
-                        );
-                      })}
-                    </ul>
-                  </section>
-                ))}
-              </div>
-            )}
-            {hasOlder && notifications.length > 0 && (
-              <div className="flex items-center justify-between gap-3 px-3 text-meta text-muted-foreground">
-                <span className="tabular-nums">
-                  Showing {loadedMatching} of {counts.matching}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => void loadOlderNotifications()}
-                  disabled={isLoading}
-                  className="rounded-md px-2 py-1 font-medium text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover disabled:opacity-50"
+                        ) : null
+                      }
+                      button={
+                        notifications.length > 0 ? (
+                          <NotificationsToolbar
+                            unreadCount={counts.unread}
+                            totalCount={counts.total}
+                            workspaceName={scope === 'workspace' ? workspaceName : null}
+                            onMarkAllRead={() => void markNotificationsRead()}
+                            onDeleteAll={async () => {
+                              await clearNotifications();
+                              setSelectedKey(null);
+                            }}
+                          />
+                        ) : null
+                      }
+                    />
+                  }
                 >
-                  Load older
-                </button>
-              </div>
-            )}
-          </PaneShell>
+                  {isLoading && notifications.length === 0 && <NotificationsSkeleton />}
+                  {!isLoading && notifications.length === 0 && (
+                    <EmptyState
+                      icon={CONCEPT_ICONS.notifications}
+                      tone={CONCEPT_TONE.notifications}
+                      title="No notifications"
+                      size="page"
+                      headingLevel={2}
+                    />
+                  )}
+                  {notifications.length > 0 && visibleGroups.length === 0 && (
+                    <EmptyState
+                      icon={CONCEPT_ICONS.notifications}
+                      tone={CONCEPT_TONE.notifications}
+                      title="No notifications match"
+                      description={
+                        hasOlder
+                          ? 'Nothing loaded matches these filters. Older notifications may.'
+                          : 'Try another filter or include notifications you have already read.'
+                      }
+                      action={
+                        isFiltered ? (
+                          <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="rounded-md px-2 py-1 text-label font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
+                          >
+                            Clear filters
+                          </button>
+                        ) : undefined
+                      }
+                      size="page"
+                      headingLevel={2}
+                    />
+                  )}
+                  {days.length > 0 && (
+                    <div className="flex flex-col gap-4">
+                      {days.map((entry) => (
+                        <section
+                          key={entry.day}
+                          aria-label={entry.label}
+                          className="flex flex-col gap-0.5"
+                        >
+                          <div className="flex items-baseline gap-2 px-3 pb-1">
+                            <Eyebrow label={entry.label} />
+                            <span className="text-meta tabular-nums text-faint-foreground">
+                              {entry.items.length}
+                            </span>
+                          </div>
+                          <ul className="flex flex-col gap-0.5">
+                            {entry.items.map((group) => {
+                              const key = notificationGroupKey({ group });
+                              return (
+                                <NotificationRow
+                                  key={key}
+                                  scrollKey={key}
+                                  notifications={group}
+                                  density="cozy"
+                                  isSelected={selectedKey === key}
+                                  onOpen={() => {
+                                    markGroupRead(key);
+                                    if (selectedKey === key) {
+                                      setSelectedKey(null);
+                                      return;
+                                    }
+                                    selectGroup(key);
+                                  }}
+                                  onMarkRead={() => markGroupRead(key)}
+                                  onDismiss={() => dismissGroup(key)}
+                                />
+                              );
+                            })}
+                          </ul>
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                  {hasOlder && notifications.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 px-3 text-meta text-muted-foreground">
+                      <span className="tabular-nums">
+                        Showing {loadedMatching} of {counts.matching}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void loadOlderNotifications()}
+                        disabled={isLoading}
+                        className="rounded-md px-2 py-1 font-medium text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover disabled:opacity-50"
+                      >
+                        Load older
+                      </button>
+                    </div>
+                  )}
+                </PaneShell>
+              </StudioDetail>
+            }
+          />
         </div>
       )}
     </StudioShell>

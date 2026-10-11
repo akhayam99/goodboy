@@ -7,6 +7,7 @@ import { CHATS_KIND } from './kinds/chats';
 import { COMMIT_KIND } from './kinds/commit';
 import { DIFF_KIND } from './kinds/diff';
 import { DIFF_FILE_KIND } from './kinds/diffFile';
+import { EXPLORE_FILE_KIND } from './kinds/exploreFile';
 import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
@@ -120,6 +121,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: COMMIT_KIND, state, target });
     case 'diffFile':
       return bind({ definition: DIFF_FILE_KIND, state, target });
+    case 'exploreFile':
+      return bind({ definition: EXPLORE_FILE_KIND, state, target });
     case 'mount':
       return bind({ definition: MOUNT_KIND, state, target });
     case 'project':

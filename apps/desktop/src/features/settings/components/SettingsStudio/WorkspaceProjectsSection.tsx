@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
-import { Star } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import { GoodboyIgnoreCard } from '../../../workspace/components/GoodboyIgnoreCard';
@@ -11,7 +9,8 @@ import { SentryLinkedBadge } from '../../../integrations/sentry/SentryLinkedBadg
 import { Button, Notice } from '@goodboy/ui';
 import { useProjectGitStatuses } from '../../../workspace/hooks/useProjectGitStatuses';
 import { LocateMovedProjects } from '../../../workspace/components/LocateMovedProjects';
-import { ProjectScriptsFold } from '../../../scripts';
+import { ProjectScriptsField } from '../../../scripts';
+import { WorkspaceTerminalFolderRow } from './WorkspaceTerminalFolderRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -50,7 +49,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   }, [hasSentry, loadProjectSentryLinks, workspaceId]);
 
   return (
-    <section aria-label="Projects" className="flex flex-col gap-2">
+    <section aria-label="Workspace projects" className="flex flex-col gap-2">
       {!isRelocationOpen && missing.length > 0 && (
         <Notice
           tone="warning"
@@ -66,6 +65,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       )}
       <LocateMovedProjects workspaceId={workspaceId} onChoose={() => void chooseFolder()} />
       <GoodboyIgnoreCard workspaceId={workspaceId} />
+      {hasProjects ? <WorkspaceTerminalFolderRow workspaceId={workspaceId} /> : null}
       <ProjectLinkList
         workspaceId={workspaceId}
         density="compact"
@@ -74,14 +74,8 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
           project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null
         }
         rowBadge={({ project }) => <SentryLinkedBadge project={project} />}
-        rowFooter={({ project }) => <ProjectScriptsFold project={project} />}
+        editorScripts={({ project }) => <ProjectScriptsField project={project} />}
       />
-      {hasProjects && (
-        <p className="flex items-center gap-2 px-2 text-label text-faint-foreground">
-          <Star size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          Starred projects come first for agents and in pickers.
-        </p>
-      )}
     </section>
   );
 };

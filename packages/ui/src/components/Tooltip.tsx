@@ -2,6 +2,8 @@ import { cloneElement, useCallback, useEffect, useLayoutEffect, useRef, useState
 import { createPortal } from 'react-dom';
 import { cn } from '../cn';
 import { dismissTopEscapeLayer, registerEscapeLayer } from '../escape';
+import { glyphsOfShortcut } from '../shortcutGlyphs';
+import { Kbd } from './Kbd';
 
 export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
 
@@ -9,6 +11,7 @@ export type TooltipVariant = 'label' | 'card';
 
 export type TooltipProps = {
   content: React.ReactNode;
+  shortcut?: string;
   variant?: TooltipVariant;
   side?: TooltipSide;
   anchorClassName?: string;
@@ -135,6 +138,7 @@ const positionFor = (anchor: DOMRect, tip: DOMRect, side: TooltipSide): Coords =
 
 export const Tooltip = ({
   content,
+  shortcut,
   variant = 'label',
   side = 'top',
   anchorClassName,
@@ -144,7 +148,9 @@ export const Tooltip = ({
   children,
 }: TooltipProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const visible = (isHovered || isOpen) && !isSuppressed;
+  const hasContent =
+    content !== undefined && content !== null && content !== false && content !== '';
+  const visible = (isHovered || isOpen) && !isSuppressed && hasContent;
   const isRestRequired = restDelayMs !== undefined;
   const [coords, setCoords] = useState<Coords | null>(null);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -361,6 +367,7 @@ export const Tooltip = ({
       },
     })
   );
+  const keys = shortcut === undefined ? '' : glyphsOfShortcut({ id: shortcut });
   const portalTarget =
     typeof document === 'undefined'
       ? null
@@ -383,12 +390,19 @@ export const Tooltip = ({
               className={cn(
                 'pointer-events-none z-tooltip',
                 variant === 'label' &&
-                  'whitespace-nowrap rounded-sm bg-foreground px-2 py-0.5 text-label font-medium text-background shadow-sm',
+                  'w-max max-w-md whitespace-pre-line break-words rounded-sm bg-foreground px-2 py-0.5 text-label font-medium text-background shadow-sm',
                 variant === 'card' &&
                   'w-65 rounded-md border border-border-soft bg-elevated p-3 text-label text-foreground shadow-md',
               )}
             >
-              {content}
+              {keys === '' ? (
+                content
+              ) : (
+                <span className="inline-flex items-baseline gap-2">
+                  <span>{content}</span>
+                  <Kbd className="text-background/60">{keys}</Kbd>
+                </span>
+              )}
             </span>,
             portalTarget,
           )

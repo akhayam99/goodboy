@@ -11,7 +11,6 @@ import {
   formatCombo,
   shortcutGlyphs,
   shortcutRangeGlyphs,
-  withShortcutHint,
 } from './registry';
 import type { ShortcutEntry } from './registry';
 
@@ -198,7 +197,7 @@ describe('shortcut registry', () => {
     for (const [id, entry] of entries) {
       const key = entry.combo.split('+').at(-1) ?? '';
       expect(
-        /^(Key[A-Z]|Digit[0-9]|F[0-9]{1,2}|Comma|Period|Slash|Minus|Equal|BracketLeft|BracketRight|Backspace|Delete|Escape|Enter|Tab|Arrow(Up|Down|Left|Right))$/.test(
+        /^(Key[A-Z]|Digit[0-9]|F[0-9]{1,2}|Comma|Period|Slash|Minus|Equal|Backquote|BracketLeft|BracketRight|Backspace|Delete|Escape|Enter|Tab|Arrow(Up|Down|Left|Right))$/.test(
           key,
         ),
         `${id} uses ${key}, which is a character rather than a key code`,
@@ -298,13 +297,5 @@ describe('shortcut registry', () => {
     expect(shortcutGlyphs('session.switcher')).toBe('Ctrl+Tab');
     expect(shortcutGlyphs('session.switcherBack')).toBe('Ctrl+Shift+Tab');
     expect(shortcutGlyphs('session.nextNeedsYou')).toBe('Ctrl+Alt+Down');
-  });
-
-  it('hangs the chord off the control that triggers it', () => {
-    platform.current = 'darwin';
-
-    expect(withShortcutHint({ label: 'Delete session', shortcut: 'session.delete' })).toBe(
-      'Delete session (⌘⇧⌫)',
-    );
   });
 });

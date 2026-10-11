@@ -16,7 +16,7 @@ Get from install to a first agent: connect a provider, check what it can do, lin
 
 [More on set up](docs/features/setup.md)
 
-<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a>
+<a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
 
 ## Start a task
 
@@ -26,6 +26,7 @@ Begin from an issue, a workflow or a question, in one draft that turns into a se
 - Review a pull request
 - Run a workflow
 - Ask an agent
+- Start one session from several issues
 
 [More on starting a task](docs/features/start.md)
 
@@ -67,7 +68,7 @@ Find any session, message, plan or action, and reach it from the keyboard.
 
 [More on search and navigation](docs/features/search.md)
 
-<a id="start-a-project-from-nothing"></a><a id="workspace-with-several-projects"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-projects"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a>
+<a id="start-a-project-from-nothing"></a><a id="workspace-with-several-projects"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-projects"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a>
 
 ## Workspace and projects
 
@@ -76,6 +77,7 @@ Keep your repos together, and let sessions work across them.
 - Workspace with several projects
 - Worktrees
 - Repo status across projects
+- Monitoring
 
 [More on workspace and projects](docs/features/workspace.md)
 
@@ -83,7 +85,7 @@ Keep your repos together, and let sessions work across them.
 
 ## Commits and history
 
-The Commits tab of the Branch page shapes a branch before it goes to review: fold, move, reword and drop commits, see what would conflict, and apply with a backup one click away.
+The Commits section of the Branch page shapes a branch before it goes to review: fold, move, reword and drop commits, see what would conflict, and apply with a backup one click away.
 
 - Shape the history
 - Safe apply
@@ -95,7 +97,7 @@ The Commits tab of the Branch page shapes a branch before it goes to review: fol
 
 ## Review and resolve on the Branch page
 
-One Branch page per branch holds the Pull request, Comments, Files, Commits and Checks tabs. Edit the pull request in place, merge it your way, turn review comments into commits with a Fix run, push them back with one Push, and read your own diff and notes before anyone else does. On GitLab the same page reads Merge request, MR !42 and Open on GitLab: you edit it, ask reviewers, mark it ready, merge it the ways the project allows and read the jobs of its pipeline. On Bitbucket it works the same on a pull request.
+One Branch page per branch holds the Overview, Comments, Files, Commits and Checks sections in a rail on its left, and only the ones that make sense: with no pull request it shows Overview, Files and Commits, and Comments once a note exists. Edit the pull request in place, merge it your way, turn review comments into commits with a Fix run, push them back with one Push, and read your own diff and notes before anyone else does. On GitLab the same page reads Merge request, MR !42 and Open on GitLab: you edit it, ask reviewers, mark it ready, merge it the ways the project allows and read the jobs of its pipeline. On Bitbucket it works the same on a pull request.
 
 - Resolve
 - Review sources
@@ -234,7 +236,7 @@ The best support is running Goodboy on the work you already have. When something
 
 ## Keyboard and terminal
 
-Open a real login shell in the session's worktree. **⌘⌥T** opens the Terminal view, **⌘T** adds a tab, and the shell is still there after a reload. **⌘F** finds in its scrollback.
+Open a real login shell in the workspace folder or in any worktree. **⌃`** opens the Terminal studio with every terminal of the workspace, **⌘T** adds one, and the shells and their output are still there after a reload. **⌘F** finds in its scrollback.
 
 - Terminal
 - Keyboard shortcuts, back and forward

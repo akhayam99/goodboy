@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { runsForWorkflowRun } from '@goodboy/core';
 import {
-  Button,
   FormPage,
   PANE_RHYTHM,
   SectionHeader,
@@ -15,7 +13,6 @@ import {
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';
 import { selectSelectedMountId } from '../../../../store/slices/project-mounts/selectedMountId';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailabilitySnapshot';
 import { workspacePolicyAvailability } from '../../../../store/slices/providerLimits/workspacePolicyAvailability';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
@@ -245,16 +242,7 @@ export const ArtifactCreationPane = ({
   };
 
   return (
-    <PaneShell
-      scroll="self"
-      title={adapter.crumbLabel}
-      actions={
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <ArrowLeft size={ICON_SIZE.row} aria-hidden />
-          All artifacts
-        </Button>
-      }
-    >
+    <PaneShell scroll="self" title={adapter.crumbLabel}>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <FormPage>
           <div data-testid="artifact-creation-pane" className={cn(PANE_RHYTHM.stack, 'min-w-0')}>

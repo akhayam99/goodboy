@@ -60,3 +60,17 @@ export type CrumbMenuModel = {
   readonly width: CrumbMenuWidth;
   readonly filterPlaceholder: string | null;
 };
+
+const MIN_CRUMB_MENU_ENTRIES = 2;
+
+type ChoiceParams = {
+  readonly menu: CrumbMenuModel | null | undefined;
+};
+
+export const crumbMenuWithChoice = ({ menu }: ChoiceParams): CrumbMenuModel | null => {
+  if (menu == null) {
+    return null;
+  }
+  const rowCount = menu.groups.reduce((sum, group) => sum + group.rows.length, 0);
+  return rowCount + menu.actions.length >= MIN_CRUMB_MENU_ENTRIES ? menu : null;
+};

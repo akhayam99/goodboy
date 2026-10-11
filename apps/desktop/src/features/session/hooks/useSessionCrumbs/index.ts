@@ -59,6 +59,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const plans = useSessionPlans(sessionId);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
+  const closeArtifactCreation = useAppStore((s) => s.closeArtifactCreation);
   const navigate = useAppStore((s) => s.navigate);
   const pullRequestMode = useAppStore((s) => s.pullRequestModes?.[sessionId] ?? 'overview');
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
@@ -91,6 +92,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     }
     if (pullRequestMode === 'create_pr') {
       return { id: 'branch-new-pr', label: 'New pull request', icon: CONCEPT_ICONS.pr };
+    }
+    if (pullRequestMode === 'write_review' && branchTab === 'files') {
+      return { id: 'branch-write-review', label: 'Write review', icon: CONCEPT_ICONS.pr };
     }
     if (branchTab === 'comments' && branchThreadId !== null) {
       return {
@@ -226,6 +230,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
           },
           toArtifactsList: () => {
             setFocusedArtifactId(sessionId, null);
+            closeArtifactCreation({ sessionId });
             openLens({ sessionId, lens: 'plans' });
           },
           toParentAgent: () => {
@@ -288,6 +293,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       sessionId,
       setFocusedWorkflowRun,
       setFocusedArtifactId,
+      closeArtifactCreation,
       navigate,
       setPullRequestMode,
     ],

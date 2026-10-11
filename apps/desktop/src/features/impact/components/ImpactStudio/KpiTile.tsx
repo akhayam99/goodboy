@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
-import { StatCard, cn, tintClasses } from '@goodboy/ui';
+import { StatCard, cn, tintClasses, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ImpactDelta } from '../../utils/impactDelta';
 
@@ -33,16 +33,18 @@ export const KpiTile = ({ label, value, delta, title, hint, onSelect }: Props) =
       </span>
     );
   return (
-    <div title={title} className="flex min-w-0">
-      <StatCard
-        label={label}
-        value={value}
-        {...(status !== undefined && { status })}
-        {...(hint !== undefined && { hint })}
-        reservesDeltaRow
-        onClick={onSelect}
-        className="w-full"
-      />
-    </div>
+    <Tooltip content={title}>
+      <div className="flex min-w-0">
+        <StatCard
+          label={label}
+          value={value}
+          {...(status !== undefined && { status })}
+          {...(hint !== undefined && { hint })}
+          reservesDeltaRow
+          onClick={onSelect}
+          className="w-full"
+        />
+      </div>
+    </Tooltip>
   );
 };

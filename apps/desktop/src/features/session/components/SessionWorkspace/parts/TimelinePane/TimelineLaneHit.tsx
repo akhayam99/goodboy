@@ -1,5 +1,4 @@
 import { Tooltip } from '@goodboy/ui';
-import { shortcutGlyphs } from '../../../../../../shared/keyboard/registry';
 import { railColumnX, type RailLaneSpan } from '../../../../../workTreeModel/railGeometry';
 import { LANE_HIT_WIDTH } from './timelineLayout';
 import type { TimelineLaneTarget } from './TimelineRail';
@@ -12,7 +11,7 @@ type Props = {
 export const TimelineLaneHit = ({ span, target }: Props) => {
   const label = `Open run: ${target.title}`;
   return (
-    <Tooltip content={`${label} (${shortcutGlyphs('activity.openRun')})`} side="right">
+    <Tooltip content={label} shortcut="activity.openRun" side="right">
       <button
         type="button"
         tabIndex={-1}

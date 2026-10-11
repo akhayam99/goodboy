@@ -1,3 +1,4 @@
+import { OptionalTooltip } from './OptionalTooltip';
 import { useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
@@ -115,42 +116,47 @@ export const SegmentedTabs = <T extends string>({
           ) : null;
 
         return (
-          <button
+          <OptionalTooltip
             key={option.value}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            tabIndex={isActive ? 0 : -1}
-            disabled={option.disabled}
-            title={option.tooltip ?? option.hint}
-            onClick={() => onChange(option.value)}
-            onKeyDown={(event) => moveTabFocus({ event, index, options, tablistRef, onChange })}
-            style={activeStyle}
-            className={cn(
-              'relative flex items-center justify-center gap-2 rounded-sm border border-transparent text-label motion-safe:transition-colors',
-              TAB_CLASSES[step],
-              FOCUS_RING,
-              isActive
-                ? 'bg-selected text-foreground'
-                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
-              option.disabled === true &&
-                'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',
-            )}
+            content={option.tooltip ?? option.hint}
+            anchorClassName={fill ? 'w-full' : undefined}
           >
-            {mark}
-            <span className="min-w-0">
-              <span className="block truncate">{option.label}</span>
-            </span>
-            {option.badge != null ? (
-              typeof option.badge === 'string' ? (
-                <span className="rounded-md bg-fill px-2 py-0.5 text-eyebrow text-muted-foreground">
-                  {option.badge}
-                </span>
-              ) : (
-                option.badge
-              )
-            ) : null}
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
+              disabled={option.disabled}
+              onClick={() => onChange(option.value)}
+              onKeyDown={(event) => moveTabFocus({ event, index, options, tablistRef, onChange })}
+              style={activeStyle}
+              className={cn(
+                'relative flex items-center justify-center gap-2 rounded-sm border border-transparent text-label motion-safe:transition-colors',
+                fill && 'w-full',
+                TAB_CLASSES[step],
+                FOCUS_RING,
+                isActive
+                  ? 'bg-selected text-foreground'
+                  : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+                option.disabled === true &&
+                  'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',
+              )}
+            >
+              {mark}
+              <span className="min-w-0">
+                <span className="block truncate">{option.label}</span>
+              </span>
+              {option.badge != null ? (
+                typeof option.badge === 'string' ? (
+                  <span className="rounded-md bg-fill px-2 py-0.5 text-eyebrow text-muted-foreground">
+                    {option.badge}
+                  </span>
+                ) : (
+                  option.badge
+                )
+              ) : null}
+            </button>
+          </OptionalTooltip>
         );
       })}
     </div>

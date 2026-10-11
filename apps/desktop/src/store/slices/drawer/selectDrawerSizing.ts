@@ -3,14 +3,18 @@ import type { AppState } from '../../types';
 import { selectOpenDrawer } from './selectOpenDrawer';
 
 export const selectDrawerSizing = (
-  state: Pick<AppState, 'drawer' | 'currentSessionId' | 'documentDrawerExpanded'>,
+  state: Pick<AppState, 'drawer' | 'currentSessionId'>,
 ): DrawerSizing => {
   const drawer = selectOpenDrawer(state);
   if (drawer === null) {
-    return 'default';
+    return 'side';
   }
-  if (drawer.kind !== 'artifact-document') {
-    return 'default';
+  if (
+    drawer.kind === 'explore-file' ||
+    drawer.kind === 'file-diff' ||
+    drawer.kind === 'artifact-document'
+  ) {
+    return 'reader';
   }
-  return state.documentDrawerExpanded?.[drawer.sessionId] === true ? 'full' : 'half';
+  return 'side';
 };

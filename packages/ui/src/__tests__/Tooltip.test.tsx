@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, act } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, act, within } from '@testing-library/react';
 import { Tooltip } from '../components/Tooltip';
 import { registerEscapeLayer } from '../escape';
+import { registerShortcutGlyphs } from '../shortcutGlyphs';
 
 afterEach(cleanup);
 
@@ -533,6 +534,57 @@ describe('Tooltip, rest delay', () => {
         <button type="button">btn</button>
       </Tooltip>,
     );
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+});
+
+describe('Tooltip shortcut', () => {
+  const hover = (): void => {
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(screen.getByRole('button'));
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    vi.useRealTimers();
+  };
+
+  it('draws the label and the keys as separate nodes with no parentheses', () => {
+    registerShortcutGlyphs({ lookup: ({ id }) => (id === 'ask.open' ? '⌘L' : '') });
+    render(
+      <Tooltip content="Ask an agent" shortcut="ask.open">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    hover();
+
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toBe('Ask an agent⌘L');
+    expect(tip.textContent).not.toContain('(');
+    expect(within(tip).getByText('Ask an agent').tagName).toBe('SPAN');
+    expect(tip.querySelector('kbd')?.textContent).toBe('⌘L');
+  });
+
+  it('prints the label alone when the shortcut has no keys', () => {
+    registerShortcutGlyphs({ lookup: () => '' });
+    render(
+      <Tooltip content="Ask an agent" shortcut="ask.open">
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    hover();
+
+    expect(screen.getByRole('tooltip').textContent).toBe('Ask an agent');
+    expect(screen.getByRole('tooltip').querySelector('kbd')).toBeNull();
+  });
+
+  it('shows nothing while its content is empty', () => {
+    render(
+      <Tooltip content={undefined}>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    hover();
+
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 });

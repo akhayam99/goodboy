@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
-import { withShortcutHint, type ShortcutId } from '../../keyboard/registry';
+import type { ShortcutId } from '../../keyboard/registry';
 import { ChevronDown, X } from 'lucide-react';
 import { MODEL_CATALOGS } from '@goodboy/core';
-import { AnchoredPopover, cn, Tooltip, useDropdown, tintClasses } from '@goodboy/ui';
+import { AnchoredPopover, cn, Tooltip, useDropdown, tintClasses, IconButton } from '@goodboy/ui';
 import type { ProviderId, VerbosityLevel } from '@goodboy/types';
 import { TriggerLabel } from './TriggerLabel';
 import { AUTO_LABEL, AutoTriggerLabel } from './AutoTriggerLabel';
@@ -190,27 +190,25 @@ export const RoutingPicker = ({
       trigger={
         <>
           {onReset != null && hasTriggerReset && isOverridden && !disabled && (
-            <Tooltip
-              content={defaultSummary != null ? `${resetCopy} (${defaultSummary})` : resetCopy}
-            >
-              <button
-                type="button"
-                onClick={onReset}
-                aria-label={resetAriaLabel}
-                className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
-              >
-                <X size={ICON_SIZE.mark} aria-hidden />
-              </button>
-            </Tooltip>
+            <IconButton
+              icon={X}
+              label={resetAriaLabel}
+              tooltip={defaultSummary != null ? `${resetCopy} (${defaultSummary})` : resetCopy}
+              size="xs"
+              iconSize={ICON_SIZE.mark}
+              onClick={onReset}
+              className="rounded-full"
+            />
           )}
           <Tooltip
             content={
               disabled
                 ? (disabledTitle ?? summary)
                 : shortcut !== undefined
-                  ? withShortcutHint({ label: summary, shortcut })
+                  ? summary
                   : `${summary}. Click to change.`
             }
+            shortcut={disabled ? undefined : shortcut}
             anchorClassName={variant === 'field' ? 'w-full' : undefined}
           >
             <button

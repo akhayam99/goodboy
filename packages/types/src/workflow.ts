@@ -45,7 +45,12 @@ export const isAgentStoppedBy = (value: unknown): value is AgentStoppedBy =>
   typeof value === 'string' && AGENT_STOPPED_BY.some((by) => by === value);
 
 export type AgentSourceKind =
-  'review_comment' | 'issue_comment' | 'diff_comment' | 'open_question' | 'comment_recheck';
+  | 'review_comment'
+  | 'issue_comment'
+  | 'diff_comment'
+  | 'open_question'
+  | 'comment_recheck'
+  | 'failed_check';
 
 export type StepDef = Readonly<{
   id: StepDefId;

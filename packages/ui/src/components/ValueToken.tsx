@@ -1,3 +1,4 @@
+import { TruncatedText } from './TruncatedText';
 import { cn } from '../cn';
 
 export type ValueTokenProps = {
@@ -7,13 +8,13 @@ export type ValueTokenProps = {
 };
 
 export const ValueToken = ({ value, title, className }: ValueTokenProps) => (
-  <span
-    title={title ?? value}
+  <TruncatedText
+    tooltip={title ?? value}
     className={cn(
       'inline-block max-w-full min-w-0 truncate rounded-md bg-muted px-1 align-middle font-mono text-[0.92em] leading-[1.35] text-foreground',
       className,
     )}
   >
     {value}
-  </span>
+  </TruncatedText>
 );

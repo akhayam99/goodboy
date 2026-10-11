@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { IconButton } from '@goodboy/ui';
 import type { ChatSummary } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -16,7 +15,6 @@ export const ChatHeaderDelete = ({ chat, onRemoved }: Props) => {
   const archiveChats = useAppStore((state) => state.archiveChats);
   const restoreChats = useAppStore((state) => state.restoreChats);
   const showToast = useShowToast();
-  const [isConfirming, setIsConfirming] = useState(false);
   const { id: chatId, workspaceId, title } = chat;
 
   const remove = async (): Promise<void> => {
@@ -38,27 +36,23 @@ export const ChatHeaderDelete = ({ chat, onRemoved }: Props) => {
   };
 
   return (
-    <span className="relative flex shrink-0">
-      <IconButton
-        icon={CONCEPT_ICONS.delete}
-        label="Delete chat"
-        tooltip="Delete chat"
-        variant="ghost"
-        aria-expanded={isConfirming}
-        className="hover:text-danger"
-        onClick={() => setIsConfirming((current) => !current)}
-      />
-      {isConfirming ? (
-        <div className="absolute right-0 top-full z-20 mt-2 w-80 max-w-[calc(100cqw-2rem)] rounded-lg bg-background shadow-lg">
-          <ChatDeleteConfirm
-            title={title}
-            canArchive={chat.archivedAt === null}
-            onDelete={remove}
-            onArchive={archive}
-            onCancel={() => setIsConfirming(false)}
-          />
-        </div>
-      ) : null}
-    </span>
+    <ChatDeleteConfirm
+      title={title}
+      canArchive={chat.archivedAt === null}
+      onDelete={remove}
+      onArchive={archive}
+      trigger={({ isArmed, arm }) => (
+        <IconButton
+          icon={CONCEPT_ICONS.delete}
+          label="Delete chat"
+          tooltip="Delete chat"
+          variant="ghost"
+          aria-expanded={isArmed}
+          aria-haspopup="dialog"
+          className="hover:text-danger"
+          onClick={arm}
+        />
+      )}
+    />
   );
 };

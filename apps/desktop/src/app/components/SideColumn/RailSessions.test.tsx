@@ -40,6 +40,10 @@ const actions = (): ColumnActions => ({
   openInbox: vi.fn(),
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
+  openTerminalStudio: vi.fn(),
+  openNewChat: vi.fn(),
+  openNewTerminal: vi.fn(),
+  openMonitoring: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
@@ -198,7 +202,16 @@ describe('the open session on the rail', () => {
     const doors = Array.from(document.querySelectorAll('[data-column-door]')).map((door) =>
       door.getAttribute('data-column-door'),
     );
-    expect(doors).toEqual(['new', 'board', 'inbox', 'chat', 'workflows', 'settings']);
+    expect(doors).toEqual([
+      'new',
+      'board',
+      'inbox',
+      'chat',
+      'workflows',
+      'terminal',
+      'monitoring',
+      'settings',
+    ]);
   });
 
   it('shows nothing on the Board, where no session is open', () => {

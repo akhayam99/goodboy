@@ -39,6 +39,7 @@ vi.mock('../../../../store', () => {
 });
 
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { SkillsPanel } from './index';
 
 const buildSkill = (): Skill => ({
@@ -80,10 +81,12 @@ describe('SkillsPanel', () => {
     expect(lifecycleSlot.contains(screen.getByRole('button', { name: 'Delete my-skill' }))).toBe(
       true,
     );
-    expect(screen.getByTitle('Edit my-skill')).toBeDefined();
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Edit my-skill' }) })).toBe(
+      'Edit my-skill',
+    );
   });
 
-  it('arms the delete with an inline confirmation before calling deleteSkill', async () => {
+  it('asks in a popover beside the delete button before calling deleteSkill', async () => {
     render(
       <ToastProvider>
         <SkillsPanel workspaceId={'ws-1' as never} />
@@ -92,7 +95,9 @@ describe('SkillsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete my-skill' }));
     expect(state.deleteSkill).not.toHaveBeenCalled();
-    const confirmation = screen.getByRole('group', { name: 'Delete "my-skill"?' });
+    const dialog = screen.getByRole('dialog', { name: 'Delete "my-skill"?' });
+    expect(screen.getByRole('list').contains(dialog)).toBe(false);
+    const confirmation = within(dialog).getByRole('group', { name: 'Delete "my-skill"?' });
 
     await act(async () => {
       fireEvent.click(within(confirmation).getByRole('button', { name: 'Delete my-skill' }));

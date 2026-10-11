@@ -49,11 +49,27 @@ const STUDIO_SCENES = [
   'frame-studio-guide',
 ] as const;
 
+const RUN_SCENES = [
+  'header-run',
+  'workflow-run',
+  'workflow-run-finished-sets',
+  'workflow-run-nested',
+  'workflow-run-plan-question',
+  'workflow-run-plan-review',
+  'workflow-run-scrolled',
+  'workflow-run-step-question',
+  'run-header-held',
+  'run-header-paused',
+  'run-header-failed',
+  'run-header-archived',
+] as const;
+
 const ONE_H1_SCENES: ReadonlyArray<string> = [
   'workflow-studio',
   'inbox-states',
   'impact-scopes',
   ...STUDIO_SCENES,
+  ...RUN_SCENES,
 ];
 
 type SceneId = string;
@@ -153,7 +169,7 @@ describe('the u23 frame scenes', () => {
     expect(screen.getAllByText(/Nothing is published yet/)).toHaveLength(1);
   });
 
-  it('puts Refresh, Backups and the overflow in the Commits tab row, with the legend visible', async () => {
+  it('puts Backups alone in the Commits tab row, with no legend', async () => {
     await renderScene('branch-commits-toolbar');
 
     const slot = (await waitFor(() => {
@@ -164,10 +180,11 @@ describe('the u23 frame scenes', () => {
       return found;
     })) as HTMLElement;
     await waitFor(() =>
-      expect(within(slot).getByRole('button', { name: 'Refresh' })).toBeDefined(),
+      expect(within(slot).getByRole('button', { name: 'Backups' })).toBeDefined(),
     );
-    expect(within(slot).getByRole('button', { name: 'Backups' })).toBeDefined();
-    expect(within(slot).getByRole('button', { name: 'More history actions' })).toBeDefined();
-    expect(screen.getByRole('group', { name: 'Legend' })).toBeDefined();
+    expect(within(slot).queryByRole('button', { name: 'Refresh' })).toBeNull();
+    expect(within(slot).queryByRole('button', { name: 'Open terminal here' })).toBeNull();
+    expect(within(slot).queryByRole('button', { name: 'More history actions' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Legend' })).toBeNull();
   });
 });

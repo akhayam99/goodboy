@@ -1,13 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FolderPlus } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Button,
-  IconButton,
-  OverflowMenu,
-  useDropdown,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
+import { AnchoredPopover, Button, IconButton, useDropdown } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../../store';
@@ -30,17 +23,6 @@ const openWorkspaceProjects = () => {
   );
 };
 
-const ADD_PROJECT_ITEMS: ReadonlyArray<OverflowMenuItem> = [
-  {
-    kind: 'item',
-    key: 'add-project',
-    label: 'Add project',
-    description: 'Every workspace project is already in this session.',
-    icon: FolderPlus,
-    onClick: openWorkspaceProjects,
-  },
-];
-
 export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 320 });
   const [isComplete, setIsComplete] = useState(false);
@@ -56,17 +38,13 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
     }),
   );
   const orderedProjects = useMemo(
-    () => starredProjectsFirst({ projects: availableProjects }),
+    () => starredProjectsFirst({ projects: availableProjects, inside: 'recency' }),
     [availableProjects],
   );
   const hasWorkspaceProjects = useAppStore((state) =>
     state.projects.some((project) => project.workspaceId === workspaceId),
   );
   const label = 'Add project';
-
-  if (presentation === 'button' && hasWorkspaceProjects && availableProjects.length === 0) {
-    return <OverflowMenu label="Project actions" items={ADD_PROJECT_ITEMS} />;
-  }
 
   return (
     <AnchoredPopover

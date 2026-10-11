@@ -9,6 +9,7 @@ type Params = {
 export const primaryProjectRoot = ({ projects, workspaceId }: Params): string | null => {
   const owned = starredProjectsFirst({
     projects: (projects ?? []).filter((project) => project.workspaceId === workspaceId),
+    inside: 'recency',
   });
   const repo = owned.find((project) => project.kind === 'repo');
   return repo?.rootPath ?? owned[0]?.rootPath ?? null;

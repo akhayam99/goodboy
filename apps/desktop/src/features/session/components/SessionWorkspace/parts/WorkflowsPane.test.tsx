@@ -17,7 +17,6 @@ type Store = {
   lensGo: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   restoreWorkflow: ReturnType<typeof vi.fn>;
-  makeWorkflowPreset: ReturnType<typeof vi.fn>;
 };
 
 type ButtonMockProps = React.ComponentProps<'button'>;
@@ -31,7 +30,7 @@ type CountToggleMockProps = {
   readonly isShown: boolean;
   readonly onChange: (isShown: boolean) => void;
 };
-type AgentsSectionMockProps = { readonly workflowRunId?: string };
+type RunDetailMockProps = { readonly run: { readonly id: string } };
 type BuildWorkflowParams = { readonly id: string; readonly name: string };
 type BuildSessionParams = {
   readonly runIds: ReadonlyArray<string>;
@@ -51,7 +50,6 @@ const store: Store = {
   lensGo: vi.fn(),
   setFocusedWorkflowRun: vi.fn(),
   restoreWorkflow: vi.fn(),
-  makeWorkflowPreset: vi.fn(),
 };
 
 vi.mock('../../../../../store', () => ({
@@ -108,12 +106,13 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
 }));
 
 vi.mock('./WorkflowRunDetail', () => ({
-  WorkflowRunDetail: ({ workflowRunId }: AgentsSectionMockProps) => (
-    <div data-testid="workflow-detail" data-run-id={workflowRunId} />
+  WorkflowRunDetail: ({ run }: RunDetailMockProps) => (
+    <div data-testid="workflow-detail" data-run-id={run.id} />
   ),
 }));
 
 import { TERMINAL_DIM } from '@goodboy/ui';
+import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { WorkflowsPane } from './WorkflowsPane';
 
 const SESSION_ID = 'session-1';
@@ -161,7 +160,6 @@ beforeEach(() => {
   store.focusedWorkflowRunId = {};
   store.orchestratingWorkflowRuns = {};
   store.setFocusedWorkflowRun.mockReset();
-  store.makeWorkflowPreset.mockReset();
   store.restoreWorkflow.mockReset();
 });
 
@@ -272,7 +270,7 @@ describe('WorkflowsPane', () => {
     expect(screen.getByText('2 of 2 steps run')).toBeDefined();
     expect(screen.getByText('3m')).toBeDefined();
     expect(screen.getByText('Last: Second')).toBeDefined();
-    expect(screen.getByTitle('$0.30 for this run')).toBeDefined();
+    expect(tooltipTextOf({ element: screen.getByText('$0.30') })).toBe('$0.30 for this run');
   });
 
   it('shows dynamic run progress without a fixed total', () => {
@@ -312,33 +310,6 @@ describe('WorkflowsPane', () => {
 
     expect(screen.getByTestId('workflow-detail').getAttribute('data-run-id')).toBe('run-2');
     expect(screen.queryByText('First workflow')).toBeNull();
-  });
-
-  it('offers make preset only for a workflow the user declined to save', () => {
-    store.phaseTemplates = {
-      [WORKSPACE_ID]: [
-        { ...firstWorkflow, isPreset: false } as Workflow,
-        { ...secondWorkflow, isPreset: true } as Workflow,
-      ],
-    };
-    store.focusedWorkflowRunId = { [SESSION_ID]: 'run-1' };
-    render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Make preset' }));
-    expect(store.makeWorkflowPreset).toHaveBeenCalledWith(WORKSPACE_ID, 'workflow-1');
-  });
-
-  it('hides make preset for a workflow that already is one', () => {
-    store.phaseTemplates = {
-      [WORKSPACE_ID]: [
-        { ...firstWorkflow, isPreset: false } as Workflow,
-        { ...secondWorkflow, isPreset: true } as Workflow,
-      ],
-    };
-    store.focusedWorkflowRunId = { [SESSION_ID]: 'run-2' };
-    render(<WorkflowsPane session={buildSession({ runIds: ['run-1', 'run-2'] })} />);
-
-    expect(screen.queryByRole('button', { name: 'Make preset' })).toBeNull();
   });
 
   it('focuses a run when its card is clicked', () => {

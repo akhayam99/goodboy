@@ -1,7 +1,5 @@
 export const clickOptions = (): boolean => {
-  const trigger = document.querySelector<HTMLButtonElement>(
-    'button[aria-label="Options for sessions"]',
-  );
+  const trigger = document.querySelector<HTMLButtonElement>('button[aria-label="Filter sessions"]');
   if (trigger === null) {
     return false;
   }

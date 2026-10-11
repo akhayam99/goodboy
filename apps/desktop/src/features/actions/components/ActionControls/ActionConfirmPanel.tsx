@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChoiceCards, InlineConfirm } from '@goodboy/ui';
+import { ChoiceCards, ConfirmPopover } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ActionControls } from '../../useActionControls';
 
@@ -14,26 +14,29 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
 
   useEffect(() => setPicked(null), [confirmingId]);
 
-  if (action === null || action.confirm === null) {
-    return null;
-  }
-  const Icon = action.icon;
-  const choice = action.confirm.choice ?? null;
+  const confirm = action?.confirm ?? null;
+  const Icon = action?.icon;
+  const choice = confirm?.choice ?? null;
   const selected = picked ?? choice?.defaultId ?? null;
+  const notes = confirm?.notes ?? [];
   return (
-    <InlineConfirm
-      role={action.confirm.role}
-      icon={<Icon size={ICON_SIZE.row} aria-hidden />}
-      title={action.confirm.title}
-      description={action.confirm.description}
-      confirmLabel={action.confirm.confirmLabel}
+    <ConfirmPopover
+      isOpen={action !== null && confirm !== null}
+      align="end"
+      anchorClassName="absolute right-0 top-0 size-0"
+      trigger={() => <span aria-hidden className="size-0" />}
+      role={confirm?.role ?? 'primary'}
+      icon={Icon === undefined ? null : <Icon size={ICON_SIZE.row} aria-hidden />}
+      title={confirm?.title ?? ''}
+      description={confirm?.description}
+      confirmLabel={confirm?.confirmLabel ?? ''}
       onConfirm={() => controls.confirm({ choice: selected })}
       onCancel={controls.cancel}
-      isBusy={controls.pendingId === action.id}
+      isBusy={action !== null && controls.pendingId === action.id}
       note={
-        (action.confirm.notes ?? []).length === 0 ? undefined : (
+        notes.length === 0 ? undefined : (
           <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-            {(action.confirm.notes ?? []).map((note) => (
+            {notes.map((note) => (
               <p key={note}>{note}</p>
             ))}
           </div>
@@ -53,6 +56,6 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
           }))}
         />
       )}
-    </InlineConfirm>
+    </ConfirmPopover>
   );
 };

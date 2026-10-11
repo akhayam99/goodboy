@@ -9,6 +9,14 @@ export type ContextDrawerView = 'current' | 'versions';
 
 export type DrawerContent =
   | {
+      readonly kind: 'check-analysis';
+      readonly payload: {
+        readonly sessionId: SessionId;
+        readonly mountId: MountId;
+        readonly checkUrl: string;
+      };
+    }
+  | {
       readonly kind: 'context';
       readonly payload: {
         readonly tab: ContextDrawerTab;
@@ -18,7 +26,11 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'explore-file';
-      readonly payload: { readonly sessionDir: string; readonly entry: ExploreEntry };
+      readonly payload: {
+        readonly sessionDir: string;
+        readonly entry: ExploreEntry;
+        readonly line?: number;
+      };
     }
   | {
       readonly kind: 'artifact';
@@ -49,11 +61,11 @@ export type DrawerContent =
       readonly payload: { readonly agentId: AgentId };
     }
   | {
-      readonly kind: 'review-notes';
+      readonly kind: 'fix-comments';
       readonly payload: {
-        readonly mountPath: string | null;
-        readonly focusPath?: string | null;
+        readonly mountId: MountId | null;
         readonly focusThreadId?: string | null;
+        readonly threadIds?: ReadonlyArray<string>;
       };
     }
   | {
@@ -73,10 +85,8 @@ export type OpenDrawer = DrawerRequest;
 
 export type DrawerSliceState = {
   readonly drawer: OpenDrawer | null;
-  readonly documentDrawerExpanded: Readonly<Record<SessionId, boolean>>;
 };
 
 export const initialDrawerState: DrawerSliceState = {
   drawer: null,
-  documentDrawerExpanded: {},
 };

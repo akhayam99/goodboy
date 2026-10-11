@@ -25,6 +25,15 @@ the whole repo, see [CONVENTIONS.md](../CONVENTIONS.md).
 
 ## Under the hood
 
+### Code highlighter
+
+`apps/desktop/src/shared/lib/highlight` is the one syntax highlighter. Shiki
+runs in a web worker behind `highlightCode`, with an in-process fallback; the
+caps (5,000 lines, 1,000 characters a line) live in `caps.ts` so a view can
+read them without loading Shiki. The diff (`SyntaxText`, `useDiffTokens`), the
+chat code blocks (`APP_CODE_HIGHLIGHTER`) and the Explore file view
+(`shared/components/SourceView`) all read it from there.
+
 ### Subprocess environment
 
 When you open an app from Finder or the Dock on macOS or Linux, it gets a
@@ -96,6 +105,62 @@ group terminated anyway.
   pid or app start, pid 1, this app, another user's process, a pid whose start
   time or tag changed since the table was read, and a leader that is not this
   app's child. Only a leader this app still holds brings its tree and group.
+- **The ledger.** `proc/ledger.rs` keeps one in-memory list of what the app
+  started and still holds: `{ spawnId, kind, pid, pgid, sessionId, mountPath,
+cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
+  `LiveChild::tagged`, a script and a terminal when their pty starts. The row
+  leaves when the run is reaped (`wait_and_remove`), when a script ends or is
+  stopped, and when a terminal closes, so a finished spawn is never listed.
+  The `process_ledger_list` command returns it. `LiveScriptRun` and
+  `LiveTerminal` carry the leader `pid`; a terminal also carries
+  `foregroundPid`, the leader of its foreground process group when the
+  platform reports it. A script's exit code is the real one: a signal reads as
+  128 plus its number (a SIGKILL is 137), where it used to collapse to 1.
+- **The monitor snapshot.** `monitor/mod.rs` answers `monitor_snapshot` with
+  `{ listeners, processes, taken_at, platform_supported }` (the last one is `isPlatformSupported` on the wire) from one read of the
+  machine: on macOS `lsof -nP -iTCP -sTCP:LISTEN -Fpn`, one `ps -axo`, one
+  batched `lsof -a -d cwd -p` and one `ps -o pid=,args=`; on Linux
+  `/proc/net/tcp`, `tcp6` and the `/proc/<pid>/fd` socket inodes; on Windows
+  nothing and `platform_supported: false`. Every tool call runs through
+  `proc::probe::run` with a 2 second deadline. `processes` holds only the
+  listener holders and every process in a process group the ledger knows, so
+  the page can tell a leftover from a stranger. `args_masked` replaces the
+  value of `--token=`, `--password=`, `--secret=`, a bare flag followed by its
+  value, and any `KEY=value` whose key contains TOKEN, SECRET, PASSWORD or KEY
+  with `***`; it is never logged. `monitor_watched_ports(project_root)` reads
+  the ports a project declares (package.json scripts, `PORT` and `*_PORT`
+  integers in `.env`, `.env.local`, `.env.development`, `server.port` in the
+  vite config, published compose ports) and keeps nothing else from those
+  files.
+- **Stopping a process.** `monitor_stop(pid, force)` (`monitor/stop.rs`)
+  answers `{ outcome: "stopped" | "still-running" | "refused", reason }`. It
+  refuses pid 1, this app, the processes that started it, a pid whose uid is
+  not the app's and a pid missing from a fresh snapshot, then sends SIGTERM
+  (SIGKILL with `force`) and polls for up to 3 seconds; a zombie counts as
+  gone. On Windows the same refusals sit in front of `TerminateProcess`. The
+  Goodboy rows never call it first: `stopGoodboyRow` routes to the script
+  cancel, the terminal close or the turn cancel, and falls back to
+  `monitor_stop` only when the app owns nothing for that process.
+- **The port join.** `attributePorts` (`packages/core/src/monitoring`) joins
+  the snapshot, the ledger, the sessions' worktrees and the projects into one
+  row per listener, first match wins: a Goodboy script, terminal or agent turn
+  (the ledger row holding the pid, its parent or its group), a session
+  worktree by the longest cwd prefix, a project's main checkout, else an
+  external process by name. A watched port held by one worktree while another
+  worktree of the same project is running carries `collision: { others }`.
+  Watched ports nobody holds come back as `free` rows. A port a Goodboy-owned
+  process held joins the project's learned set (`monitor.learnedPorts.<id>`);
+  the user's own set lives in `monitor.watchedPorts.<id>`. The store slice
+  `store/slices/monitoring/` keeps the snapshot and applies a result only if
+  its `takenAt` is not older than the one held.
+- **Windows.** Each CLI spawn is assigned to its own Job Object with
+  kill-on-close (`process_group::Job`), so a cancel ends the whole tree
+  (`TerminateJobObject`) and so does the app dying. The assignment happens
+  right after the spawn, so a grandchild started in that first instant can
+  escape it.
+- **Spawn sites.** `rust-spawn-sites.test.ts` counts `.spawn()` and `.kill()`
+  in `src-tauri/src` outside `proc/` against `rust-spawn-sites.baseline.json`.
+  It only falls: a new process is started through `proc/`.
 - **Side jobs** (planner, summary) are stopped when they go quiet. A job is
   quiet when it has written nothing to stdout or stderr and no process in its
   tree has used any CPU for 10 minutes (`SIDE_JOB_IDLE`, checked every 15
@@ -116,6 +181,41 @@ group terminated anyway.
   provider run is not live as stopped (`reconcileGhostAgents`), in all
   workspaces, not only the open one. Runs the backend still holds and runs
   this window can reattach to are kept.
+
+### Terminal and script output
+
+A pty never loses what it printed. Each terminal and each script run owns an
+`OutputRing` (`pty_ring.rs`): the last 262144 bytes it wrote and `total`, the
+running count of every byte since the start. The reader thread pushes each
+read into the ring first, then emits `terminal-output` or `script-output`
+with `offset`, the running offset of the chunk's first byte. A ring survives
+its process: on exit the pair (ring, exit code) stays in the `exited` store
+for 10 minutes, and the entry leaves the registry before `terminal-exit` or
+`script-exit` fires, so a snapshot read after the event always carries the
+exit code.
+
+`terminal_snapshot(sessionId)` and `workspace_script_snapshot(runId)` return
+`{ data, offset, exitCode }`: the ring as base64, the offset of its first
+byte, and the exit code once the process ended (`null` while it runs). An
+unknown id returns an empty snapshot at offset 0.
+
+The app listens once per event kind. `features/terminal/outputBus.ts` is
+registered at boot (`reattachTerminalTabs`) and by every terminal driver; it
+keeps a 256KB tail per terminal and hands each chunk to that terminal's
+subscribers. `GenericTerminalPanel` subscribes first, buffers what arrives,
+writes the snapshot, then writes only the bytes past the snapshot's end. When
+the snapshot call fails the bus tail stands in. The scripts slice does the
+same for every live run on boot (`registerScriptRunListeners` with
+`shouldReplay`); what a script's transcript shows stays capped at 64KB.
+
+Provider login and CLI update runs have no Rust ring. `invokeProviderLifecycleRun`
+starts `features/providers/lifecycleOutputBuffer.ts` before the run, which keeps
+the last 256KB per `runId` with the same running `offset`, and `InlineTerminal`
+replays it through the same snapshot path, so a remount during a login still
+shows the device code once. The buffer of an exited run is dropped when its
+terminal unmounts, and only the newest four exited runs are kept.
+
+`shared/components/GenericTerminalPanel/index.tsx` keeps the normal terminal renderer when WebGL addon construction or activation fails, and disposes the failed addon. Acceleration is optional; an unavailable WebGL2 context does not close the terminal.
 
 ### Launching git
 
@@ -157,6 +257,38 @@ files and re-exports their items, so callers keep writing
 `crate::worktree::git` and lib.rs registers `worktree::worktree_create`. A
 helper another file needs is `pub(super)`; nothing else leaves its file. Tests
 sit in a `tests.rs` beside the file they cover.
+
+### Diff file sides
+
+`worktree_file_sides` reads local file contents for unchanged context expansion.
+An omitted old revision uses the same configured merge base as the branch diff;
+an omitted new revision reads the working file. Explicit revisions are resolved
+before reading their git objects. The missing first parent of a root commit is
+an absent side. The `:0` revision names the index, so staged and unstaged
+comparisons read their own sides. A detected rename or copy reads the old path
+for the old side, following the repository's diff configuration. Missing files
+return an absent side. The read rejects absolute paths, traversal and symlinks
+outside the worktree, including a missing file below an escaping symlink.
+Either side over 2 MB or 20,000 lines, or containing invalid UTF-8 or NUL bytes,
+makes the entire result too large with no text. The frontend loader names the
+worktree and revision pair, fetches once
+per file and diff refresh, and discards late results after its source changes.
+The command lives in `apps/desktop/src-tauri/src/worktree/file_sides.rs`;
+`features/diff/hooks/useFileSides` owns the expansion cache and retry state.
+
+### Identifier peek
+
+`worktree_grep_word` backs the double click on a name in a diff line. It refuses
+a word that is not an identifier of 2 to 128 characters (`A-Za-z_$` first, then
+`A-Za-z0-9_$`) before any process starts, then runs
+`git grep -n --column -z -w -I -F --untracked -e <word> --` in the worktree
+through the `Git` helper with an argument array and a 3 second deadline. It keeps
+the first 300 matches (`truncated` says more existed) and trims each line to 240
+characters. Exit 1 is an empty list. The definition guess is
+`features/diff/lib/definitionOf.ts`: it reads declaration keywords for TS and JS,
+Rust, Python and Go, and does not guess class methods or Go receivers. The
+command lives in `apps/desktop/src-tauri/src/worktree/grep.rs`;
+`features/diff/hooks/useIdentifierUses` keeps only the latest answer.
 
 ### History module
 
@@ -308,8 +440,8 @@ anywhere; a debug build also prints to stdout.
   inside `file` covers paper). Every file on disk also carries its own
   `Content-Security-Policy` meta tag (`default-src 'none'; …`), so opening it
   in a browser makes no network call.
-- **The artifacts folder is one command away.** The lens's `More` menu opens
-  `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
+- **The artifacts folder is one command away.** The lens header's `Show in
+Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
   (`artifact_mirror_open_root`), since `~/.goodboy` itself is hidden.
 
 ### Frames
@@ -363,9 +495,7 @@ anywhere; a debug build also prints to stdout.
 
 ### Database migrations
 
-Each migration is one file, `mNNN-kebab-name.ts`, in
-`packages/db/src/migrations/`. It exports one SQL string named `mNNNName`.
-Register it in `index.ts` with the version number from its filename. Once a
+To add one, follow [recipes/migration.md](recipes/migration.md). Once a
 migration has shipped, never edit it.
 
 The runner (`runner.ts`) keeps a list of every version it has applied, not
@@ -538,7 +668,6 @@ cleanup) and moving those calls behind the commands is not done yet.
 | `telemetry_records`           | ts     |                                                                                                                     |
 | `turn_events`                 | ts     |                                                                                                                     |
 | `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                  |
-| `workspace_external_tasks`    | ts     | Tasks linked to the whole workspace. They show on the Board and never close from a PR.                              |
 | `workspace_profiles`          | ts     | Exception: the backup import.                                                                                       |
 | `workspace_starred_issues`    | ts     |                                                                                                                     |
 | `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                    |

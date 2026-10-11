@@ -79,6 +79,24 @@ export const useHistoryPlan = ({ sessionId, worktreePath }: Params) => {
   const applied = run !== null && run.phase !== 'restored' ? run.applied : null;
   const isDone = applied !== null;
   const isInteractive = draft !== null && !isBusy && !isDone && commits.length > 0;
+  const statusHead = status?.head ?? null;
+  const draftHead = draft?.headSha ?? null;
+  const hasEdits = edits.length > 0;
+
+  useEffect(() => {
+    if (
+      mountId === null ||
+      statusHead === null ||
+      draftHead === null ||
+      draftHead === '' ||
+      statusHead === draftHead ||
+      hasEdits ||
+      isBusy
+    ) {
+      return;
+    }
+    void loadHistoryDraft({ sessionId, mountId });
+  }, [draftHead, hasEdits, isBusy, loadHistoryDraft, mountId, sessionId, statusHead]);
 
   return {
     mount,

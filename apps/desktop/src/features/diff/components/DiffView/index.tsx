@@ -16,6 +16,8 @@ import { effectiveDiffLayout } from '../../../../shared/hooks/useDiffLayoutMode/
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
+import type { FileSidesLoader } from '../../hooks/useFileSides';
+import { PeekHost, type IdentifierPeekConfig } from '../IdentifierPeek/PeekHost';
 import { DiffFile } from './DiffFile';
 import { DisplayMenu } from './DisplayMenu';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
@@ -29,28 +31,31 @@ const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'pointerdown', 'keydown'] as c
 
 type Props = {
   readonly files: ReadonlyArray<FileDiff>;
+  readonly loadFileSides?: FileSidesLoader | null;
+  readonly registerExpandAll?:
+    ((path: string, expand: (() => Promise<void>) | null) => void) | null;
   readonly comments?: DiffComments | null;
   readonly viewed?: DiffViewed | null;
   readonly fileActions?: DiffFileActions | null;
   readonly focusPath?: string | null;
+  readonly focusThreadId?: string | null;
   readonly onFocusHandled?: () => void;
   readonly registerScroller?: (scroll: ((path: string) => void) | null) => void;
+  readonly registerFileFocus?: (focus: ((path: string) => void) | null) => void;
   readonly onActivePathChange?: (path: string) => void;
   readonly presentation?: 'pane' | 'peek' | 'inline';
   readonly footer?: ReactNode;
-  readonly fileCommentPath?: string | null;
-  readonly onFileCommentOpened?: () => void;
+  readonly isReadOnly?: boolean;
   readonly toolbarStart?: ReactNode;
   readonly toolbarEnd?: ReactNode;
   readonly belowToolbar?: ReactNode;
   readonly columnWidth?: 'column' | 'full';
+  readonly identifierPeek?: IdentifierPeekConfig | null;
 };
 
 const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
 
 const SPLIT_TOO_NARROW = 'Split needs a wider window';
-
-const NOOP = () => undefined;
 
 const matchPath = (files: ReadonlyArray<FileDiff>, path: string): string | null =>
   files.find((file) => file.path === path || path.endsWith(`/${file.path}`))?.path ?? null;
@@ -63,21 +68,25 @@ const snapToTop = (element: HTMLElement) =>
 
 export const DiffView = ({
   files,
+  loadFileSides = null,
+  registerExpandAll = null,
   comments = null,
   viewed = null,
   fileActions = null,
   focusPath = null,
+  focusThreadId = null,
   onFocusHandled,
   registerScroller,
+  registerFileFocus,
   onActivePathChange,
   presentation = 'pane',
   footer,
-  fileCommentPath = null,
-  onFileCommentOpened = NOOP,
+  isReadOnly = false,
   toolbarStart,
   toolbarEnd,
   belowToolbar = null,
   columnWidth = 'column',
+  identifierPeek = null,
 }: Props) => {
   const isPeek = presentation === 'peek';
   const [savedLayout, setLayout] = useDiffLayoutMode();
@@ -89,6 +98,8 @@ export const DiffView = ({
   const [mountedCount, setMountedCount] = useState(BATCH_SIZE);
   const [activePath, setActivePath] = useState<string | null>(null);
   const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set());
+  const [pendingThreadId, setPendingThreadId] = useState<string | null>(null);
+  const clearPendingThread = useCallback(() => setPendingThreadId(null), []);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const fileRefs = useRef(new Map<string, HTMLElement>());
   const refCallbacks = useRef(new Map<string, RefCallback<HTMLElement>>());
@@ -100,19 +111,59 @@ export const DiffView = ({
   const focusFrame = useRef<number | null>(null);
   const onActivePathChangeRef = useRef(onActivePathChange);
   onActivePathChangeRef.current = onActivePathChange;
+  const expandersRef = useRef(new Map<string, () => Promise<void>>());
+  const registerExpandAllRef = useRef(registerExpandAll);
+  registerExpandAllRef.current = registerExpandAll;
+  const trackExpandAll = useCallback((path: string, expand: (() => Promise<void>) | null) => {
+    registerExpandAllRef.current?.(path, expand);
+    if (expand === null) {
+      expandersRef.current.delete(path);
+      return;
+    }
+    expandersRef.current.set(path, expand);
+  }, []);
   const filesRef = useRef(files);
   filesRef.current = files;
   const pathsKey = useMemo(() => files.map((file) => file.path).join('\n'), [files]);
 
+  const shownComments = useMemo<DiffComments | null>(() => {
+    if (comments === null || !isReadOnly) {
+      return comments;
+    }
+    return {
+      threads: comments.threads,
+      submitLabel: comments.submitLabel,
+      composerLabel: comments.composerLabel,
+      allowFileLevel: false,
+      onSubmit: comments.onSubmit,
+      ...(comments.noun !== undefined && { noun: comments.noun }),
+      ...(comments.onOpenInComments !== undefined && {
+        onOpenInComments: comments.onOpenInComments,
+      }),
+    };
+  }, [comments, isReadOnly]);
+
   const threadsByFile = useMemo(() => {
     const map = new Map<string, DiffThread[]>();
-    for (const thread of comments?.threads ?? []) {
+    for (const thread of shownComments?.threads ?? []) {
       const list = map.get(thread.filePath) ?? [];
       list.push(thread);
       map.set(thread.filePath, list);
     }
     return map;
-  }, [comments?.threads]);
+  }, [shownComments?.threads]);
+
+  const threadFocusOf = useMemo(() => {
+    const map = new Map<string, string>();
+    const thread =
+      pendingThreadId === null
+        ? undefined
+        : (shownComments?.threads ?? []).find((candidate) => candidate.id === pendingThreadId);
+    if (thread !== undefined) {
+      map.set(thread.filePath, thread.id);
+    }
+    return map;
+  }, [pendingThreadId, shownComments?.threads]);
 
   useEffect(() => {
     if (activePath !== null) {
@@ -341,6 +392,18 @@ export const DiffView = ({
     return () => registerScroller?.(null);
   }, [registerScroller, scrollToFile]);
 
+  const focusFile = useCallback((path: string) => {
+    fileRefs.current
+      .get(path)
+      ?.querySelector<HTMLElement>('[data-slot="diff-file-header"] button')
+      ?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    registerFileFocus?.(focusFile);
+    return () => registerFileFocus?.(null);
+  }, [focusFile, registerFileFocus]);
+
   useEffect(() => {
     const path = pendingScroll.current;
     if (path === null) {
@@ -368,6 +431,7 @@ export const DiffView = ({
       return;
     }
     const target = matchPath(filesRef.current, focusPath);
+    setPendingThreadId(target === null ? null : focusThreadId);
     onFocusHandled?.();
     if (target === null) {
       return;
@@ -379,24 +443,27 @@ export const DiffView = ({
       focusFrame.current = null;
       scrollToFile(target);
     });
-  }, [focusPath, onFocusHandled, pathsKey, scrollToFile]);
+  }, [focusPath, focusThreadId, onFocusHandled, pathsKey, scrollToFile]);
 
   const body = (
-    <div ref={inner.ref} className="flex flex-col gap-3 pb-6">
+    <div ref={inner.ref} className="flex flex-col gap-2 pb-6">
       {files.slice(0, mountedCount).map((file) => (
         <DiffFile
           key={file.path}
           file={file}
+          loadFileSides={loadFileSides}
+          registerExpandAll={trackExpandAll}
           layout={layout}
           wrap={wrap}
           threads={threadsByFile.get(file.path) ?? EMPTY_THREADS}
-          comments={comments}
+          comments={shownComments}
           viewed={viewed}
           fileActions={fileActions}
           registerRef={registerRef(file.path)}
           isVisible={seen.has(file.path)}
-          wantsFileComment={fileCommentPath === file.path}
-          onFileCommentOpened={onFileCommentOpened}
+          isReadOnly={isReadOnly}
+          focusThreadId={threadFocusOf.get(file.path) ?? null}
+          onThreadFocused={clearPendingThread}
         />
       ))}
       {mountedCount < files.length ? (
@@ -411,10 +478,19 @@ export const DiffView = ({
     </div>
   );
 
+  const content =
+    identifierPeek === null ? (
+      body
+    ) : (
+      <PeekHost config={identifierPeek} files={files} expandersRef={expandersRef}>
+        {body}
+      </PeekHost>
+    );
+
   if (isPeek) {
     return (
       <ScrollFade className="min-h-0 flex-1" viewportRef={viewportRef} fadeSize={24}>
-        <div className="px-3 pt-1">{body}</div>
+        <div className="px-3 pt-1">{content}</div>
       </ScrollFade>
     );
   }
@@ -446,7 +522,7 @@ export const DiffView = ({
       <div data-slot="diff-view" className="flex min-w-0 flex-col gap-3">
         {toolbar}
         {belowToolbar}
-        {body}
+        {content}
       </div>
     );
   }
@@ -465,7 +541,7 @@ export const DiffView = ({
         fadeSize={24}
         fadeEdges="end"
       >
-        <PageColumn width={columnWidth}>{body}</PageColumn>
+        <PageColumn width={columnWidth}>{content}</PageColumn>
       </ScrollFade>
     </div>
   );

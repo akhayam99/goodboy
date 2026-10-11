@@ -638,6 +638,65 @@ const RUN_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArray<stri
     [
       'workflowRun.open',
       'workflowRun.diff',
+      'workflowRun.pause',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'orchestrated and running',
+    withRun({
+      run: { executionMode: 'dynamic' },
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+      turnStates: { 'agent-plan': RUNNING },
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.pause',
+      'workflowRun.routing',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'orchestrated and paused by you',
+    withRun({
+      run: {
+        executionMode: 'dynamic',
+        orchestrationStop: { kind: 'paused', message: 'Paused by you.' },
+      },
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+      turnStates: { 'agent-plan': RUNNING },
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.routing',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'orchestrated and stopped by you',
+    withRun({
+      run: {
+        executionMode: 'dynamic',
+        orchestrationStop: { kind: 'operator', message: 'You stopped this run.' },
+      },
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+      turnStates: { 'agent-plan': RUNNING },
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.routing',
       'workflowRun.copySummary',
       'workflowRun.close',
       'workflowRun.discard',
@@ -1132,7 +1191,12 @@ const mountRowTarget = (status: WorktreeStatus | null): ObjectTarget => ({
   remoteKind: 'github',
 });
 
-const WT_TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
+const WT_TOOLS = [
+  'mount.openTerminal menu',
+  'mount.openInEditor menu',
+  'mount.scripts menu',
+  'mount.browseFiles menu',
+];
 const WT_COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
 const WT_HISTORY = [
   'mount.rewriteHistory menu',
@@ -1238,6 +1302,7 @@ const MOUNT_STATES: ReadonlyArray<
       'mount.openTerminal notice',
       'mount.openInEditor menu',
       'mount.scripts menu',
+      'mount.browseFiles menu',
       'mount.abortRebase notice',
       'mount.rewriteHistory menu (Finish or abort the rebase first.)',
       'mount.putTaskOnBranch chip',
@@ -1610,6 +1675,7 @@ const worktreeTarget = (fields: {
     onKeep: noop,
     onStopKeeping: noop,
     onRemove: noop,
+    onLearn: noop,
   },
 });
 
@@ -1686,15 +1752,25 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     'diff file in the Diff lens',
     {
       kind: 'diffFile',
-      facts: { path: 'src/importer.ts', onOpenInEditor: noop, onCommentOnFile: noop },
+      facts: {
+        path: 'src/importer.ts',
+        onOpenInEditor: noop,
+        onShowWhole: noop,
+        onOpenInDrawer: noop,
+      },
     },
-    ['diffFile.openInEditor', 'diffFile.comment', 'diffFile.copyPath'],
+    ['diffFile.openInEditor', 'diffFile.openInDrawer', 'diffFile.showWhole', 'diffFile.copyPath'],
   ],
   [
     'diff file in the drawer',
     {
       kind: 'diffFile',
-      facts: { path: 'src/importer.ts', onOpenInEditor: null, onCommentOnFile: null },
+      facts: {
+        path: 'src/importer.ts',
+        onOpenInEditor: null,
+        onShowWhole: null,
+        onOpenInDrawer: null,
+      },
     },
     ['diffFile.copyPath'],
   ],
@@ -1704,6 +1780,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.learn',
       'worktree.keepDays',
       'worktree.keep',
       'worktree.copyPath',
@@ -1715,6 +1792,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.learn',
       'worktree.keepDays',
       'worktree.keep',
       'worktree.copyPath',
@@ -1727,6 +1805,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.learn',
       'worktree.stopKeeping',
       'worktree.copyPath',
       'worktree.remove',
@@ -1735,7 +1814,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
   [
     'worktree in use by a session',
     worktreeTarget({ isInUse: true, isKept: false, removeIntent: null }),
-    ['worktree.reveal', 'worktree.editor', 'worktree.copyPath'],
+    ['worktree.reveal', 'worktree.editor', 'worktree.learn', 'worktree.copyPath'],
   ],
   [
     'saved script, idle',
@@ -2069,11 +2148,11 @@ describe('actions run against the real store', () => {
     expect(useAppStore.getState().sessions).toEqual([]);
   });
 
-  it('opens Review and Diff through the one door', async () => {
+  it('opens Review and Diff through the one door, Review landing on Files while nothing is commented', async () => {
     seed({ mounts: [mountFixture()] });
     await run(SESSION_TARGET, 'session.review');
     expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
-    expect(useAppStore.getState().branchTab[SESSION]).toBe('comments');
+    expect(useAppStore.getState().branchTab[SESSION]).toBe('files');
     await run(SESSION_TARGET, 'session.diff');
     expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
     expect(useAppStore.getState().branchTab[SESSION]).toBe('files');

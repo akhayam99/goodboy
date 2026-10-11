@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
-import { clearTerminalCache } from '../../../shared/components/GenericTerminalPanel/outputCache';
+import { terminalOutputBus } from '../../../features/terminal/outputBus';
 import type { SetFn, GetFn } from './types';
 
 export const closeSessionTerminals = (set: SetFn, get: GetFn) => {
@@ -8,7 +8,7 @@ export const closeSessionTerminals = (set: SetFn, get: GetFn) => {
     const closing: Array<Promise<void>> = [];
     for (const tab of get().terminalTabs[sessionId] ?? []) {
       closing.push(invokeTerminalClose(tab.id).catch(() => undefined));
-      clearTerminalCache(tab.id);
+      terminalOutputBus.forget({ terminalId: tab.id });
     }
     if (get().terminalSessions[sessionId] === 'open') {
       closing.push(invokeTerminalClose(sessionId).catch(() => undefined));

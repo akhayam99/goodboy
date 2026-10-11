@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { historyStopCause } from '../../history/historyStopCause';
 import {
   PULL_REQUEST_PRESENTATION,
   type PullRequestPresentationState,
@@ -218,13 +219,11 @@ const branchSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
 
 const stopDetail = ({ payload }: PayloadParams): string => {
   const files = payload?.files ?? [];
-  if (payload?.reason === 'stuck' && files.length > 0) {
-    return ` · History rewriter couldn't merge ${files.join(', ')}, it needs you`;
-  }
-  if (files.length > 0) {
+  if (payload?.reason !== 'stuck' && files.length > 0) {
     return ` · conflict in ${files.join(', ')}`;
   }
-  return payload?.title == null ? '' : ` · ${payload.title}`;
+  const cause = historyStopCause({ reason: payload?.reason, message: payload?.title });
+  return cause === null ? '' : ` · ${cause}`;
 };
 
 const historyEventLabel = ({

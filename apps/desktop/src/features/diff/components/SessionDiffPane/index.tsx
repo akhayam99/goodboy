@@ -1,26 +1,22 @@
 import { useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { PencilLine } from 'lucide-react';
 import { Button, ErrorStrip, EmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { reviewNotesDrawer } from '../../../resolve/notes/notesDrawer';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
 import { useDiffKeys } from '../../hooks/useDiffKeys';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
-import { useTreePanel } from '../../hooks/useTreePanel';
-import { DiffRailContext } from '../../diffRailContext';
+import { useTreeFocus } from '../../hooks/useTreeFocus';
+import { DiffRailContext } from '../../diffRailHost';
+import { nextUnviewedPath } from '../../lib/fileOrder';
 import { ChangeTree } from '../ChangeTree';
-import { TreeFilesButton } from '../ChangeTree/TreeFilesButton';
 import { TreeLoading } from '../ChangeTree/TreeLoading';
-import { TreeRail } from '../ChangeTree/TreeRail';
-import { TreeResizer } from '../ChangeTree/TreeResizer';
-import { TreeStrip } from '../ChangeTree/TreeStrip';
+import { worktreeFileSides, type GrepMatch } from '../../../worktree/worktree';
 import { DiffView } from '../DiffView';
 import { DiffEmptyState } from './DiffEmptyState';
 
@@ -29,8 +25,8 @@ type Props = {
   readonly workingDir: string | null;
   readonly worktreePath: string;
   readonly diff: SessionDiff;
-  readonly onWriteReview: (() => void) | null;
-  readonly toolbarExtra?: ReactNode;
+  readonly isReadOnly?: boolean;
+  readonly toolbarEnd?: ReactNode;
 };
 
 export const SessionDiffPane = ({
@@ -38,8 +34,8 @@ export const SessionDiffPane = ({
   workingDir,
   worktreePath,
   diff,
-  onWriteReview,
-  toolbarExtra = null,
+  isReadOnly = false,
+  toolbarEnd,
 }: Props) => {
   const review = useReviewState({ sessionId, worktreePath, diff });
   const editorBinary = useAppStore((s) => resolveEditorBinary({ settings: s.settings }));
@@ -50,7 +46,7 @@ export const SessionDiffPane = ({
 
   const filterRef = useRef<HTMLInputElement | null>(null);
   const rail = useContext(DiffRailContext);
-  const panel = useTreePanel({ mode: rail.mode });
+  const panel = useTreeFocus({ host: rail.host, open: rail.open, dismiss: rail.dismiss });
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
@@ -61,8 +57,8 @@ export const SessionDiffPane = ({
       onQuery: review.setQuery,
       unviewedOnly: review.unviewedOnly,
       onUnviewedOnly: review.setUnviewedOnly,
-      notesOnly: review.notesOnly,
-      onNotesOnly: review.setNotesOnly,
+      commentedOnly: review.commentedOnly,
+      onCommentedOnly: review.setCommentedOnly,
       group: review.group,
       onGroup: review.setGroup,
       isFiltering: review.isFiltering,
@@ -72,10 +68,10 @@ export const SessionDiffPane = ({
       review.clearFilters,
       review.group,
       review.isFiltering,
-      review.notesOnly,
+      review.commentedOnly,
       review.query,
+      review.setCommentedOnly,
       review.setGroup,
-      review.setNotesOnly,
       review.setQuery,
       review.setUnviewedOnly,
       review.unviewedOnly,
@@ -85,32 +81,11 @@ export const SessionDiffPane = ({
   useDiffKeys({
     enabled: hasTree,
     review,
-    onToggleTree: panel.toggle,
     onFocusTree: panel.focus,
     onFocusFilter: panel.focusFilter,
   });
 
-  const viewedCount = useMemo(
-    () => review.allFiles.filter((file) => review.viewed.stateOf(file) === 'viewed').length,
-    [review.allFiles, review.viewed],
-  );
-
-  const commentOnFile = useCallback(
-    (path: string) => {
-      review.commentOnFile(path);
-      panel.dismiss();
-    },
-    [panel, review],
-  );
-
   const openDrawer = useAppStore((s) => s.openDrawer);
-  const openNotes = useCallback(
-    (path: string) => {
-      openDrawer(reviewNotesDrawer({ sessionId, mountPath: worktreePath, focusPath: path }));
-      panel.dismiss();
-    },
-    [openDrawer, panel, sessionId, worktreePath],
-  );
 
   const pickFile = useCallback(
     (path: string) => {
@@ -140,10 +115,69 @@ export const SessionDiffPane = ({
     },
     [editorBinary, emitNotification, sessionId, workingDir],
   );
+  const openInDrawer = useCallback(
+    (path: string) =>
+      openDrawer({
+        kind: 'file-diff',
+        sessionId,
+        payload: { source: { kind: 'worktree', worktreePath }, path },
+      }),
+    [openDrawer, sessionId, worktreePath],
+  );
   const fileActions = useMemo(
+    () => ({
+      onOpenInDrawer: openInDrawer,
+      ...(workingDir !== null && { onOpenInEditor: (path: string) => void openInEditor(path) }),
+    }),
+    [openInDrawer, openInEditor, workingDir],
+  );
+
+  const isCommitView = diff.view.kind === 'commit';
+  const identifierPeek = useMemo(
     () =>
-      workingDir === null ? null : { onOpenInEditor: (path: string) => void openInEditor(path) },
-    [openInEditor, workingDir],
+      isCommitView
+        ? null
+        : {
+            worktreePath,
+            onOpenElsewhere: (match: GrepMatch) =>
+              openDrawer({
+                kind: 'explore-file',
+                sessionId,
+                payload: {
+                  sessionDir: worktreePath,
+                  entry: {
+                    name: match.path.slice(match.path.lastIndexOf('/') + 1),
+                    relPath: match.path,
+                    isDir: false,
+                    sizeBytes: 0,
+                    modifiedAt: null,
+                  },
+                  line: match.line,
+                },
+              }),
+          },
+    [isCommitView, openDrawer, sessionId, worktreePath],
+  );
+
+  const loadFileSides = useCallback(
+    (file: FileDiff) => {
+      const oldRev =
+        diff.view.kind === 'commit'
+          ? `${diff.view.sha}^`
+          : diff.view.kind === 'working'
+            ? diff.view.scope === 'unstaged'
+              ? ':0'
+              : 'HEAD'
+            : null;
+      const newRev =
+        diff.view.kind === 'commit'
+          ? diff.view.sha
+          : diff.view.kind === 'working' && diff.view.scope === 'staged'
+            ? ':0'
+            : null;
+      return worktreeFileSides({ worktreePath, path: file.path, oldRev, newRev, baseBranch });
+    },
+    [baseBranch, diff.view, worktreePath],
   );
 
   const selector = (
@@ -153,22 +187,10 @@ export const SessionDiffPane = ({
       commits={diff.commits}
       status={diff.status}
       baseBranch={baseBranch}
-      branch={diff.status?.branch ?? null}
       loading={diff.loading}
     />
   );
   const showsDiff = !diff.loading && diff.error === null && !isEmpty && !isFilteredOut;
-  const showsButton = hasTree && rail.mode === 'button';
-  const filesButton = showsButton ? (
-    <TreeFilesButton
-      triggerRef={panel.triggerRef}
-      viewed={viewedCount}
-      total={review.allFiles.length}
-      isOpen={panel.isOpen}
-      onToggle={panel.toggle}
-    />
-  ) : null;
-
   const metaNotice =
     diff.metaError === null ? null : (
       <PageColumn className="pb-2">
@@ -218,36 +240,46 @@ export const SessionDiffPane = ({
   ) : (
     <DiffView
       files={review.tree.files}
+      loadFileSides={loadFileSides}
       comments={review.comments}
       viewed={review.viewed}
       fileActions={fileActions}
       focusPath={diff.focusPath}
+      focusThreadId={diff.focusThreadId}
       onFocusHandled={diff.clearFocus}
       registerScroller={review.registerScroller}
+      registerFileFocus={review.registerFileFocus}
       onActivePathChange={review.setActivePath}
-      fileCommentPath={review.fileCommentPath}
-      onFileCommentOpened={review.clearFileComment}
+      isReadOnly={isReadOnly}
       columnWidth="full"
-      toolbarStart={
-        <>
-          {filesButton}
-          {selector}
-        </>
-      }
-      toolbarEnd={
-        onWriteReview === null && toolbarExtra === null ? undefined : (
-          <>
-            {toolbarExtra}
-            {onWriteReview === null ? null : (
-              <Button size="sm" variant="secondary" onClick={onWriteReview}>
-                <PencilLine size={ICON_SIZE.row} aria-hidden />
-                Write review
-              </Button>
-            )}
-          </>
-        )
-      }
+      identifierPeek={identifierPeek}
+      toolbarStart={selector}
+      toolbarEnd={toolbarEnd}
     />
+  );
+
+  const nextUnviewed = useCallback(() => {
+    const target = nextUnviewedPath({
+      files: review.tree.files,
+      from: review.activePath,
+      stateOf: review.viewed.stateOf,
+      wrap: true,
+    });
+    if (target !== null) {
+      pickFile(target);
+    }
+  }, [pickFile, review.activePath, review.tree.files, review.viewed.stateOf]);
+
+  const leaveTree = useCallback(() => {
+    if (review.activePath !== null) {
+      review.focusFile(review.activePath);
+    }
+    panel.dismiss();
+  }, [panel, review]);
+
+  const toggleViewed = useCallback(
+    (file: FileDiff) => review.viewed.onToggle(file, review.viewed.stateOf(file) !== 'viewed'),
+    [review.viewed],
   );
 
   const tree = (
@@ -260,77 +292,23 @@ export const SessionDiffPane = ({
       collapsed={review.collapsed}
       onToggleFolder={review.toggleFolder}
       onPick={pickFile}
-      onCommentOnFile={review.comments.allowFileLevel ? commentOnFile : null}
-      onOpenNotes={openNotes}
-      hasNotesIn={review.hasNotesIn}
       stateOf={review.viewed.stateOf}
-      noteCountOf={review.noteCountOf}
+      commentCountOf={review.commentCountOf}
+      kindsOf={review.kindsOf}
+      isReadOnly={isReadOnly}
+      onToggleViewed={toggleViewed}
+      onNextUnviewed={nextUnviewed}
+      onLeave={leaveTree}
     />
   );
 
-  const treeColumn = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
-
-  const isDockedMode = rail.mode === 'docked';
-  const showsRail = isDockedMode && treeColumn !== null && (panel.isOpen || !hasTree);
-  const showsStrip = hasTree && (rail.mode === 'strip' || (isDockedMode && !panel.isOpen));
-  const showsOverlay = hasTree && !isDockedMode && panel.isOpen;
-
-  const railNodes = (
-    <>
-      {showsRail && (
-        <TreeRail
-          variant="docked"
-          asideRef={panel.asideRef}
-          width={rail.width}
-          count={hasTree ? review.allFiles.length : null}
-          isAfterStrip={false}
-          onFold={hasTree ? panel.fold : null}
-          resizer={
-            hasTree ? (
-              <TreeResizer
-                asideRef={panel.asideRef}
-                width={rail.width}
-                paneWidth={rail.paneWidth}
-                onResize={rail.resizeTo}
-              />
-            ) : null
-          }
-        >
-          {treeColumn}
-        </TreeRail>
-      )}
-      {showsStrip && (
-        <TreeStrip
-          ref={panel.triggerRef}
-          viewed={viewedCount}
-          total={review.allFiles.length}
-          isOpen={panel.isOpen}
-          onToggle={panel.toggle}
-        />
-      )}
-      {showsOverlay && (
-        <TreeRail
-          variant="overlay"
-          asideRef={panel.asideRef}
-          width={rail.width}
-          count={review.allFiles.length}
-          isAfterStrip={rail.mode === 'strip'}
-          onFold={panel.fold}
-        >
-          {tree}
-        </TreeRail>
-      )}
-    </>
-  );
+  const railNode = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {rail.host === null ? null : createPortal(railNodes, rail.host)}
+      {rail.host === null || railNode === null ? null : createPortal(railNode, rail.host)}
       {showsDiff || isEmpty ? null : (
-        <PageColumn className="flex min-w-0 items-center gap-2 pb-3">
-          {filesButton}
-          {selector}
-        </PageColumn>
+        <PageColumn className="flex min-w-0 items-center gap-2 pb-3">{selector}</PageColumn>
       )}
       {metaNotice}
       {body}

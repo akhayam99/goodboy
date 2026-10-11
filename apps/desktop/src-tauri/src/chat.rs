@@ -752,7 +752,11 @@ fn spawn_chat_turn(
         .take()
         .ok_or_else(|| ChatError::Io(std::io::Error::other("no stderr")))?;
 
-    let live = LiveChild::tagged(child, &tag);
+    let live = LiveChild::tagged(
+        child,
+        &tag,
+        crate::proc::ledger::LedgerContext::from_command(&command),
+    );
     registry
         .lock()
         .map_err(|_| ChatError::Poisoned)?

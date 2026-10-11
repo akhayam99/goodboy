@@ -5,69 +5,129 @@ import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
 import { payloadString } from './ipcPayload';
 import { sceneParam, sceneParamList } from './sceneParams';
+import { SCRATCH_DIR, isExploreRoots, seedExploreRoots, type ExploreRoots } from './exploreRoots';
 import { useSceneClicks } from './useSceneClicks';
 import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
-const VARIANT = sceneParam({ key: 'v' }) ?? 'populated';
-const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
-const HOVER_ROW = sceneParam({ key: 'hover' });
-const HOVER_ACTION = sceneParam({ key: 'tip' }) ?? 'ask';
-
 const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
-const SESSION_DIR = '~/code/harborline/sessions/settlement-rounding';
-const MODIFIED_AT = clock.iso({ at: '2026-09-14T15:40:00.000Z' });
+const BIG_COUNT = 3000;
+
+const AGES: ReadonlyArray<string> = [
+  '2026-09-14T15:40:00.000Z',
+  '2026-09-14T02:40:00.000Z',
+  '2026-09-12T16:40:00.000Z',
+  '2026-09-08T16:40:00.000Z',
+];
 
 type EntryParams = {
-  readonly name: string;
   readonly relPath: string;
-  readonly isDir: boolean;
-  readonly sizeBytes: number;
+  readonly isDir?: boolean;
+  readonly sizeBytes?: number;
+  readonly age?: number;
 };
 
-const entry = ({ name, relPath, isDir, sizeBytes }: EntryParams) => ({
-  name,
+const entry = ({ relPath, isDir = false, sizeBytes = 0, age = 0 }: EntryParams) => ({
+  name: relPath.slice(relPath.lastIndexOf('/') + 1),
   relPath,
   isDir,
   sizeBytes,
-  modifiedAt: MODIFIED_AT,
+  modifiedAt: clock.iso({ at: AGES[age % AGES.length] ?? AGES[0] ?? '' }),
 });
 
+const folder = (relPath: string, age = 0) => entry({ relPath, isDir: true, age });
+
 const ROOT = [
-  entry({ name: 'notes', relPath: 'notes', isDir: true, sizeBytes: 0 }),
-  entry({ name: 'exports', relPath: 'exports', isDir: true, sizeBytes: 0 }),
-  entry({ name: 'brief.md', relPath: 'brief.md', isDir: false, sizeBytes: 2140 }),
-  entry({
-    name: 'settlement-batches.csv',
-    relPath: 'settlement-batches.csv',
-    isDir: false,
-    sizeBytes: 482113,
-  }),
-  entry({
-    name: 'drift-summary.xlsx',
-    relPath: 'drift-summary.xlsx',
-    isDir: false,
-    sizeBytes: 90211,
-  }),
+  folder('apps'),
+  folder('docs', 1),
+  folder('src', 2),
+  entry({ relPath: 'README.md', sizeBytes: 3180, age: 1 }),
+  entry({ relPath: 'package.json', sizeBytes: 1204, age: 0 }),
+  entry({ relPath: 'pnpm-lock.yaml', sizeBytes: 482113, age: 3 }),
+  entry({ relPath: 'tsconfig.json', sizeBytes: 612, age: 3 }),
 ];
 
-const NOTES = [
-  entry({
-    name: 'northwind-call.md',
-    relPath: 'notes/northwind-call.md',
-    isDir: false,
-    sizeBytes: 1804,
-  }),
-  entry({
-    name: 'open-questions.md',
-    relPath: 'notes/open-questions.md',
-    isDir: false,
-    sizeBytes: 640,
-  }),
+const FOLDERS: Readonly<Record<string, ReadonlyArray<ReturnType<typeof entry>>>> = {
+  apps: [folder('apps/ledger-core'), folder('apps/notify-relay', 1)],
+  'apps/ledger-core': [
+    entry({ relPath: 'apps/ledger-core/package.json', sizeBytes: 902 }),
+    entry({ relPath: 'apps/ledger-core/schema.sql', sizeBytes: 14820, age: 2 }),
+  ],
+  'apps/notify-relay': [entry({ relPath: 'apps/notify-relay/package.json', sizeBytes: 871 })],
+  docs: [
+    entry({ relPath: 'docs/settlement-rules.md', sizeBytes: 9412, age: 1 }),
+    entry({ relPath: 'docs/rounding-notes.md', sizeBytes: 2140 }),
+    entry({ relPath: 'docs/ledger-diagram.png', sizeBytes: 218331, age: 3 }),
+  ],
+  src: [folder('src/settlement'), entry({ relPath: 'src/index.ts', sizeBytes: 388, age: 2 })],
+  'src/settlement': [
+    entry({ relPath: 'src/settlement/rounding.ts', sizeBytes: 4120 }),
+    entry({ relPath: 'src/settlement/rounding.test.ts', sizeBytes: 2764, age: 1 }),
+    entry({ relPath: 'src/settlement/batches.csv', sizeBytes: 482113, age: 2 }),
+  ],
+};
+
+const NOTIFY_ROOT = [
+  folder('docs', 1),
+  folder('src', 2),
+  entry({ relPath: 'README.md', sizeBytes: 2410, age: 1 }),
+  entry({ relPath: 'package.json', sizeBytes: 988, age: 0 }),
+  entry({ relPath: 'retry-policy.md', sizeBytes: 5320, age: 2 }),
 ];
 
-const BRIEF = `# Settlement rounding brief
+const NOTIFY_FOLDERS: Readonly<Record<string, ReadonlyArray<ReturnType<typeof entry>>>> = {
+  docs: [entry({ relPath: 'docs/delivery-states.md', sizeBytes: 3880, age: 1 })],
+  src: [
+    entry({ relPath: 'src/deliveries.ts', sizeBytes: 6120 }),
+    entry({ relPath: 'src/retry.ts', sizeBytes: 2764, age: 1 }),
+  ],
+};
+
+const NODE_MODULES = Array.from({ length: BIG_COUNT }, (_, index) =>
+  entry({
+    relPath: `node_modules/pkg-${String(index).padStart(4, '0')}.js`,
+    sizeBytes: 1024 + index * 7,
+    age: index,
+  }),
+);
+
+const CHANGED_ENTRIES = [
+  { path: 'src/settlement/rounding.ts', status: 'modified', from: null },
+  { path: 'src/settlement/rounding.test.ts', status: 'modified', from: null },
+  { path: 'src/settlement/batches.csv', status: 'added', from: null },
+  { path: 'docs/rounding-notes.md', status: 'modified', from: null },
+  { path: 'docs/settlement-rules.md', status: 'renamed', from: 'docs/rules.md' },
+  { path: 'src/settlement/legacy-rounding.ts', status: 'deleted', from: null },
+  { path: 'apps/ledger-core/schema.sql', status: 'modified', from: null },
+];
+
+type SummaryParams = {
+  readonly isEmpty: boolean;
+};
+
+const changedSummary = ({ isEmpty }: SummaryParams) => ({
+  paths: isEmpty ? [] : CHANGED_ENTRIES.map((change) => change.path),
+  entries: isEmpty ? [] : CHANGED_ENTRIES,
+  additions: 42,
+  deletions: 9,
+  numstat: '',
+});
+
+const ROUNDING_DIFF = `diff --git a/src/settlement/rounding.ts b/src/settlement/rounding.ts
+index 3f2a1b0..9c4d7e2 100644
+--- a/src/settlement/rounding.ts
++++ b/src/settlement/rounding.ts
+@@ -10,7 +10,9 @@ export const roundPosting = ({ cents }: Posting) => {
+   const whole = Math.floor(cents);
+-  return Math.round(cents);
++  const drift = cents - whole;
++  const isHalf = drift === 0.5;
++  return isHalf ? whole : Math.round(cents);
+ };
+`;
+
+const BRIEF = `# Settlement rounding
 
 Northwind finance sees one cent drift on split batches.
 
@@ -76,43 +136,41 @@ Northwind finance sees one cent drift on split batches.
 `;
 
 type ListParams = {
+  readonly sessionDir: string;
   readonly relPath: string;
+  readonly variant: string;
+  readonly isBig: boolean;
 };
 
-const listFolder = ({ relPath }: ListParams) => {
-  if (VARIANT === 'error') {
+const listFolder = ({ sessionDir, relPath, variant, isBig }: ListParams) => {
+  if (variant === 'error') {
     throw new Error('Permission denied reading the session folder');
   }
-  if (VARIANT === 'empty' || relPath === 'exports') {
+  if (variant === 'empty') {
     return [];
   }
-  if (relPath === 'notes') {
-    return NOTES;
+  if (sessionDir.includes('notify-relay')) {
+    return relPath === '' ? NOTIFY_ROOT : (NOTIFY_FOLDERS[relPath] ?? []);
   }
-  return ROOT;
-};
-
-const installIpc = (): void => {
-  mockIPC((cmd, payload) => {
-    if (cmd === 'explore_list') {
-      return listFolder({ relPath: payloadString({ payload, key: 'relPath' }) ?? '' });
-    }
-    if (cmd === 'explore_read') {
-      return { type: 'text', text: BRIEF, truncated: false };
-    }
-    return null;
-  });
+  if (relPath === '') {
+    return isBig ? [...ROOT, folder('node_modules', 3)] : ROOT;
+  }
+  if (relPath === 'node_modules') {
+    return NODE_MODULES;
+  }
+  return FOLDERS[relPath] ?? [];
 };
 
 type HoverLabelParams = {
   readonly row: string;
+  readonly action: string;
 };
 
-const hoverLabel = ({ row }: HoverLabelParams): string => {
-  if (HOVER_ACTION === 'open') {
+const hoverLabel = ({ row, action }: HoverLabelParams): string => {
+  if (action === 'open') {
     return `Open ${row}`;
   }
-  if (HOVER_ACTION === 'show') {
+  if (action === 'show') {
     return `Show ${row} in Finder`;
   }
   return `Ask an agent about ${row}`;
@@ -120,14 +178,16 @@ const hoverLabel = ({ row }: HoverLabelParams): string => {
 
 type RowHoverParams = {
   readonly isReady: boolean;
+  readonly row: string | null;
+  readonly action: string;
 };
 
-const useRowHover = ({ isReady }: RowHoverParams): void => {
+const useRowHover = ({ isReady, row, action }: RowHoverParams): void => {
   useEffect(() => {
-    if (!isReady || HOVER_ROW === null) {
+    if (!isReady || row === null) {
       return;
     }
-    const label = hoverLabel({ row: HOVER_ROW });
+    const label = hoverLabel({ row, action });
     const interval = window.setInterval(() => {
       const target = window.document.querySelector(`button[aria-label="${CSS.escape(label)}"]`);
       if (!(target instanceof HTMLElement)) {
@@ -137,14 +197,98 @@ const useRowHover = ({ isReady }: RowHoverParams): void => {
       window.clearInterval(interval);
     }, 250);
     return () => window.clearInterval(interval);
-  }, [isReady]);
+  }, [action, isReady, row]);
 };
 
-export const ExploreScene = () => {
+type RowFocusParams = {
+  readonly isReady: boolean;
+  readonly row: string | null;
+};
+
+const useRowFocus = ({ isReady, row }: RowFocusParams): void => {
+  useEffect(() => {
+    if (!isReady || row === null) {
+      return;
+    }
+    const interval = window.setInterval(() => {
+      const target = [...window.document.querySelectorAll('[role="treeitem"]')].find(
+        (candidate) => candidate.getAttribute('aria-label') === row,
+      );
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      target.focus();
+      window.clearInterval(interval);
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, [isReady, row]);
+};
+
+type Props = {
+  readonly variant?: string;
+  readonly openLabels?: ReadonlyArray<string>;
+  readonly hoverRow?: string | null;
+  readonly hoverAction?: string;
+  readonly focusRow?: string | null;
+  readonly isBig?: boolean;
+  readonly widthPx?: number | null;
+  readonly roots?: ExploreRoots;
+  readonly changes?: 'none' | 'some' | 'clears';
+};
+
+const rootsParam = (): ExploreRoots => {
+  const value = sceneParam({ key: 'roots' });
+  return isExploreRoots(value) ? value : 'single';
+};
+
+export const ExploreScene = (props: Props) => {
   const [isReady, setIsReady] = useState(false);
+  const [resolved] = useState(() => ({
+    variant: props.variant ?? sceneParam({ key: 'v' }) ?? 'populated',
+    openLabels: props.openLabels ?? sceneParamList({ key: 'open', separator: ',' }),
+    hoverRow: props.hoverRow ?? sceneParam({ key: 'hover' }),
+    hoverAction: props.hoverAction ?? sceneParam({ key: 'tip' }) ?? 'ask',
+    focusRow: props.focusRow ?? sceneParam({ key: 'focus' }),
+    isBig: props.isBig ?? sceneParam({ key: 'big' }) === '1',
+    widthPx: props.widthPx ?? null,
+    roots: props.roots ?? rootsParam(),
+    changes: props.changes ?? 'none',
+  }));
+  const { variant, openLabels, hoverRow, hoverAction, focusRow, isBig, widthPx, roots, changes } =
+    resolved;
 
   useEffect(() => {
-    installIpc();
+    let changedCalls = 0;
+    mockIPC((cmd, payload) => {
+      if (cmd === 'worktree_changed_files') {
+        changedCalls += 1;
+        if (changes === 'none') {
+          throw new Error('cannot resolve base branch merge-base');
+        }
+        return changedSummary({ isEmpty: changes === 'clears' && changedCalls > 1 });
+      }
+      if (cmd === 'worktree_diff') {
+        return ROUNDING_DIFF;
+      }
+      if (cmd === 'explore_list') {
+        return listFolder({
+          sessionDir: payloadString({ payload, key: 'sessionDir' }) ?? '',
+          relPath: payloadString({ payload, key: 'relPath' }) ?? '',
+          variant,
+          isBig,
+        });
+      }
+      if (cmd === 'scratch_dir_prepare') {
+        if (roots === 'none') {
+          throw new Error('The scratch folder is not available');
+        }
+        return SCRATCH_DIR;
+      }
+      if (cmd === 'explore_read') {
+        return { type: 'text', text: BRIEF, truncated: false };
+      }
+      return null;
+    });
     seedArtifactScene({ focusedArtifactId: null });
     seedShellChrome({
       session: SESSION,
@@ -153,27 +297,39 @@ export const ExploreScene = () => {
       telemetryAt: NOW,
       lens: 'explore',
     });
+    seedExploreRoots({ roots });
     setIsReady(true);
-  }, []);
+  }, [changes, isBig, roots, variant]);
 
   useSceneClicks({
     isReady,
-    labels: OPEN_LABELS,
+    labels: openLabels,
     selector: 'button, [role="treeitem"]',
     match: 'prefix',
     intervalMs: 250,
   });
 
-  useRowHover({ isReady });
+  useRowHover({ isReady, row: hoverRow, action: hoverAction });
+  useRowFocus({ isReady, row: focusRow });
 
   if (!isReady) {
     return null;
   }
 
+  const pane = <ExplorePane sessionId={SESSION_ID} />;
+
   return (
     <ShellFrame
       session={SESSION}
-      main={<ExplorePane sessionId={SESSION_ID} sessionDir={SESSION_DIR} />}
+      main={
+        widthPx === null ? (
+          pane
+        ) : (
+          <div style={{ width: widthPx }} className="flex h-full min-w-0 flex-col">
+            {pane}
+          </div>
+        )
+      }
     />
   );
 };

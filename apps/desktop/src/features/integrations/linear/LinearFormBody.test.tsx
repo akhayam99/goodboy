@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
@@ -133,7 +133,9 @@ describe('LinearFormBody', () => {
     it('disconnects Linear for the workspace once the confirm is confirmed', async () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /disconnect linear/i }));
-      fireEvent.click(screen.getByRole('button', { name: /^disconnect linear$/i }));
+      fireEvent.click(
+        within(screen.getByRole('dialog')).getByRole('button', { name: /^disconnect linear$/i }),
+      );
       await waitFor(() =>
         expect(state.disconnectIntegration).toHaveBeenCalledWith({
           workspaceId: WS_ID,

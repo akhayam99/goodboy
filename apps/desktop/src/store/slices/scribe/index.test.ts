@@ -11,6 +11,12 @@ vi.mock('../../../features/session/taskModelAgentSpawnConfig', () => ({
   }),
 }));
 
+const liveRuns = vi.hoisted((): { ids: Array<string> } => ({ ids: [] }));
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(async (command: string) => (command === 'turn_list_live' ? liveRuns.ids : null)),
+}));
+
 import { createScribeSlice } from './index';
 import { scribeInitialState } from './state';
 import { isUntouchedScribeBody, referenceLinesOf, signScribeBody } from './scribeSignature';
@@ -32,6 +38,7 @@ const harness = ({
 }) => {
   let state: Record<string, unknown> = {
     ...scribeInitialState,
+    agentTurnState: {},
     sessions: [
       {
         id: SESSION_ID,
@@ -83,7 +90,10 @@ const harness = ({
   const get = (() => state) as unknown as GetFn;
   const slice = createScribeSlice({ set, get });
   state = { ...state, ...slice };
-  return { slice, read: () => state as unknown as ReturnType<GetFn> };
+  const patch = (next: Record<string, unknown>): void => {
+    state = { ...state, ...next };
+  };
+  return { slice, patch, read: () => state as unknown as ReturnType<GetFn> };
 };
 
 const PR_KEY = 'pr:mount-ledger';
@@ -165,6 +175,144 @@ describe('scribe slice', () => {
       output: { prTitle: 'Guard postings', prBody: 'Body' },
       pullRequest: { number: 418, url: CREATED_URL },
     });
+  });
+
+  it('stops at the text for a form that only asks Scribe to write', async () => {
+    const built = harness({ prBody: '', hasPr: false });
+    await built.slice.requestScribe({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      task: {
+        kind: 'pr',
+        closedPrNumber: null,
+        references: [],
+        isDraft: false,
+        base: null,
+        isTextOnly: true,
+      },
+    });
+
+    await built.slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    expect(built.read().createPrForSession).not.toHaveBeenCalled();
+    expect(built.read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'ready',
+      error: null,
+      output: { prTitle: 'Guard postings', prBody: 'Body' },
+      pullRequest: null,
+    });
+  });
+
+  it('drops the job and the agent link when the person stops the writing', async () => {
+    const built = harness({ prBody: '', hasPr: false });
+    await built.slice.requestScribe({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      task: {
+        kind: 'pr',
+        closedPrNumber: null,
+        references: [],
+        isDraft: false,
+        base: null,
+        isTextOnly: true,
+      },
+    });
+
+    await built.slice.stopScribe({ key: PR_KEY });
+
+    expect(built.read().scribeWork[PR_KEY]).toBeUndefined();
+    expect(built.read().scribeAgents[AGENT_ID]).toBeUndefined();
+    await built.slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+    expect(built.read().scribeWork[PR_KEY]).toBeUndefined();
+    expect(built.read().createPrForSession).not.toHaveBeenCalled();
+  });
+
+  it('keeps the job with a note when the agent cannot be confirmed stopped, then clears it on a retry', async () => {
+    const built = harness({ prBody: '', hasPr: false });
+    await built.slice.requestScribe({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      task: {
+        kind: 'pr',
+        closedPrNumber: null,
+        references: [],
+        isDraft: false,
+        base: null,
+        isTextOnly: true,
+      },
+    });
+    built.patch({ agentTurnState: { [AGENT_ID]: { kind: 'running', runId: 'run-scribe' } } });
+    liveRuns.ids = ['run-scribe'];
+    vi.useFakeTimers();
+
+    const stopping = built.slice.stopScribe({ key: PR_KEY });
+    await vi.advanceTimersByTimeAsync(5000);
+    await stopping;
+    vi.useRealTimers();
+
+    expect(built.read().scribeWork[PR_KEY]).toMatchObject({
+      status: 'writing',
+      agentId: AGENT_ID,
+      error: "Couldn't stop the writing. Stop it again.",
+    });
+    expect(built.read().scribeAgents[AGENT_ID]).toBe(PR_KEY);
+
+    liveRuns.ids = [];
+    await built.slice.stopScribe({ key: PR_KEY });
+
+    expect(built.read().scribeWork[PR_KEY]).toBeUndefined();
+    expect(built.read().scribeAgents[AGENT_ID]).toBeUndefined();
+  });
+
+  it('forgets a ready job when the person discards the text, and leaves one that is opening', async () => {
+    const built = harness({ prBody: '', hasPr: false });
+    await built.slice.requestScribe({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      task: {
+        kind: 'pr',
+        closedPrNumber: null,
+        references: [],
+        isDraft: false,
+        base: null,
+        isTextOnly: true,
+      },
+    });
+    await built.slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+
+    await built.slice.stopScribe({ key: PR_KEY });
+
+    expect(built.read().scribeWork[PR_KEY]).toBeUndefined();
+  });
+
+  it('never drops a job that already opened the pull request', async () => {
+    const built = await askedForPr({ hasPr: false });
+    await built.slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+    expect(built.read().scribeWork[PR_KEY]).toMatchObject({ status: 'created' });
+
+    await built.slice.stopScribe({ key: PR_KEY });
+
+    expect(built.read().scribeWork[PR_KEY]).toMatchObject({ status: 'created' });
   });
 
   it('opens it ready for review when the person did not ask for a draft', async () => {

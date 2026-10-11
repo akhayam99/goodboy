@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { AgentId, IsoDateTime, MountId, SearchHit } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
 import { currentPlatform } from '../../../shared/platform';
@@ -191,6 +191,22 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     },
     lands: () => heading(`Create ${kind.toLowerCase()}`),
   })),
+  {
+    name: 'artifact creation: the Artifacts crumb goes back and no All artifacts button exists',
+    covers: ['openArtifactCreation'],
+    open: async () => {
+      await clickButton(/^New$/);
+      await click(await screen.findByRole('menuitem', { name: /^Report/ }));
+      await heading('Create report');
+      expect(screen.queryByRole('button', { name: 'All artifacts' })).toBeNull();
+      const trail = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+      await click(within(trail).getByRole('button', { name: /^Artifacts/ }));
+    },
+    lands: async () => {
+      await heading('Artifacts');
+      expect(screen.queryByRole('heading', { name: 'Create report' })).toBeNull();
+    },
+  },
   {
     name: 'search: Cmd+F opens search scoped to the session',
     covers: ['search.open'],

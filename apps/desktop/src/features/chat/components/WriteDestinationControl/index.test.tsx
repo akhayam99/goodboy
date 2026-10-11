@@ -30,6 +30,7 @@ vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { WriteDestinationControl } from './index';
 
 const trigger = () =>
@@ -104,9 +105,9 @@ describe('WriteDestinationControl', () => {
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
     expect(trigger().textContent).toBe('Starts in web / main / ak/feat-thing');
-    expect(
-      screen.getByTitle('Starts in web / main / ak/feat-thing (/sessions/one/main).'),
-    ).toBeDefined();
+    expect(tooltipTextOf({ element: trigger() })).toBe(
+      'Starts in web / main / ak/feat-thing (/sessions/one/main).',
+    );
   });
 
   it('falls back to the session scratch folder when there are no mounted projects', async () => {
@@ -116,9 +117,9 @@ describe('WriteDestinationControl', () => {
     expect(trigger().disabled).toBe(true);
 
     await waitFor(() => {
-      expect(
-        screen.getByTitle('Starts in session scratch folder (/goodboy/scratch/session-1).'),
-      ).toBeDefined();
+      expect(tooltipTextOf({ element: trigger() })).toBe(
+        'Starts in session scratch folder (/goodboy/scratch/session-1).',
+      );
     });
   });
 
@@ -161,11 +162,9 @@ describe('WriteDestinationControl', () => {
 
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    expect(
-      screen.getByTitle(
-        'This turn runs in web / main / ak/feat-thing (/sessions/one/main). New turns start there too.',
-      ),
-    ).toBeDefined();
+    expect(tooltipTextOf({ element: trigger() })).toBe(
+      'This turn runs in web / main / ak/feat-thing (/sessions/one/main). New turns start there too.',
+    );
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
 
@@ -180,11 +179,9 @@ describe('WriteDestinationControl', () => {
 
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    expect(
-      screen.getByTitle(
-        'Starts in web / main / ak/feat-thing (/sessions/one/main). Can also write in web / feature.',
-      ),
-    ).toBeDefined();
+    expect(tooltipTextOf({ element: trigger() })).toBe(
+      'Starts in web / main / ak/feat-thing (/sessions/one/main). Can also write in web / feature.',
+    );
     fireEvent.click(trigger());
     expect(screen.getByText('New turns start in')).toBeDefined();
     expect(
@@ -275,11 +272,9 @@ describe('WriteDestinationControl with siblings and no choice', () => {
     );
 
     expect(trigger().textContent).toBe('Starts in web / feature / ak/two');
-    expect(
-      screen.getByTitle(
-        'Starts in web / feature / ak/two (/sessions/one/feature). Picked automatically. Can also write in web / main.',
-      ),
-    ).toBeDefined();
+    expect(tooltipTextOf({ element: trigger() })).toBe(
+      'Starts in web / feature / ak/two (/sessions/one/feature). Picked automatically. Can also write in web / main.',
+    );
     expect(trigger().disabled).toBe(false);
   });
 });

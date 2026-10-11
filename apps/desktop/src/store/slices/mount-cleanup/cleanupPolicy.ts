@@ -1,3 +1,4 @@
+import type { MonitorProcess } from '@goodboy/core';
 import type {
   MountCleanupDecision,
   MountDiskState,
@@ -9,6 +10,7 @@ import type {
 import { formatError } from '@goodboy/ui';
 import { removeWorktreeChecked } from '../../../features/worktree/worktree';
 import type { AppState } from '../../types';
+import { trimTrailingSeparators } from '../terminal/terminalOwner';
 import type { CleanupTarget, GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
@@ -17,7 +19,7 @@ export type MountCleanupResult = {
   readonly diskState: MountDiskState;
 };
 
-export type MountCleanupBlocker = 'agent-running' | 'terminal-open';
+export type MountCleanupBlocker = 'agent-running' | 'terminal-open' | 'process-running';
 
 type BlockerState = Pick<
   AppState,
@@ -26,6 +28,7 @@ type BlockerState = Pick<
   | 'sessionPhaseRuns'
   | 'agentTurnDestination'
   | 'sessionResolveAttempts'
+  | 'monitorSnapshot'
 >;
 
 type BlockerParams = {
@@ -53,6 +56,7 @@ const LEASING_ATTEMPT_PHASES: ReadonlyArray<ResolveAttemptPhase> = ['running', '
 export const MOUNT_CLEANUP_BLOCKER_REASON = {
   'agent-running': 'an agent is still writing to this mount',
   'terminal-open': 'a terminal is open in the worktree',
+  'process-running': 'a process is running in the worktree',
 } satisfies Record<MountCleanupBlocker, string>;
 
 const holdsTurn = ({ state, sessionId, mountId }: MountParams): boolean => {
@@ -84,6 +88,25 @@ const holdsAttempt = ({ state, sessionId, mountId }: MountParams): boolean =>
     return attempt.mountTarget === null || attempt.mountTarget.mountId === mountId;
   });
 
+type WorktreeProcessesParams = {
+  readonly snapshot: BlockerState['monitorSnapshot'];
+  readonly worktreePath: string;
+};
+
+export const processesInWorktree = ({
+  snapshot,
+  worktreePath,
+}: WorktreeProcessesParams): ReadonlyArray<MonitorProcess> => {
+  const root = trimTrailingSeparators({ path: worktreePath });
+  if (snapshot === null || snapshot === undefined || root === '') {
+    return [];
+  }
+  return snapshot.processes.filter(
+    (process) =>
+      process.cwd !== null && (process.cwd === root || process.cwd.startsWith(`${root}/`)),
+  );
+};
+
 export const mountCleanupBlockers = ({
   state,
   sessionId,
@@ -99,6 +122,9 @@ export const mountCleanupBlockers = ({
   );
   if (usesMount) {
     blockers.push('terminal-open');
+  }
+  if (processesInWorktree({ snapshot: state.monitorSnapshot, worktreePath }).length > 0) {
+    blockers.push('process-running');
   }
   return blockers;
 };

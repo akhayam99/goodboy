@@ -47,30 +47,32 @@ const waitForSettledReads = (): Promise<void> =>
   act(() => new Promise<void>((resolve) => window.setTimeout(resolve, SETTLE_MS)));
 
 describe('the u24 preflight scenes', () => {
-  it('shows the Next row with the count of files not committed and no Rebase button', async () => {
+  it('keeps Rebase available in Next while files are not committed', async () => {
     renderScene('rebasedirty');
 
+    expect(await screen.findByRole('button', { name: 'Rebase' }, { timeout: 3_000 })).toBeDefined();
+
+    await waitForSettledReads();
+    expect(screen.getByText('18 behind')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Rebase' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Check again' })).toBeNull();
+    expect(screen.queryByText('11 files not committed')).toBeNull();
+  });
+
+  it('shows Scribe writing inside the card and keeps Create off while it writes', async () => {
+    renderScene('branch-pr-scribe-writing');
+
     expect(
-      await screen.findByText('11 files not committed', undefined, { timeout: 3_000 }),
+      await screen.findByText(
+        'Scribe is reading the commits and writing the text',
+        {},
+        { timeout: 3_000 },
+      ),
     ).toBeDefined();
 
     await waitForSettledReads();
-    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open terminal' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Rebase' })).toBeNull();
-  });
-
-  it('locks the creation mode while Scribe writes the text', async () => {
-    renderScene('branch-pr-scribe-writing');
-
-    const manual = await screen.findByRole('tab', { name: 'Manual' }, { timeout: 3_000 });
-
-    await waitForSettledReads();
-    expect(manual.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('tab', { name: 'Draft with an agent' }).getAttribute('title')).toBe(
-      'Scribe is still writing the text.',
-    );
-    expect(screen.getByText('Scribe is writing the title and description.')).toBeDefined();
+    expect(screen.queryByRole('tab', { name: 'Manual' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Stop' })).toBeDefined();
     expect(
       screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
     ).toBe(true);

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { EmptyLine, Button, Eyebrow, InlineConfirm } from '@goodboy/ui';
+import { EmptyLine, Button, ConfirmPopover, Eyebrow, Tooltip } from '@goodboy/ui';
 import type { HistoryBackup } from '@goodboy/types';
 import { listHistoryBackups } from '../../historyEngine';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -23,7 +24,6 @@ export const HistoryBackups = ({
   onClose,
 }: Props) => {
   const [backups, setBackups] = useState<ReadonlyArray<HistoryBackup> | null>(null);
-  const [confirming, setConfirming] = useState<string | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -73,36 +73,33 @@ export const HistoryBackups = ({
                 })}
               </span>
               {backup.isLegacy ? (
-                <span
-                  title="Made by an older Goodboy before backups named their branch, so it is shown read-only."
-                  className="shrink-0 text-meta text-faint-foreground"
-                >
-                  Older backup, read-only
-                </span>
+                <Tooltip content="Made by an older Goodboy before backups named their branch, so it is shown read-only.">
+                  <span className="shrink-0 text-meta text-faint-foreground">
+                    Older backup, read-only
+                  </span>
+                </Tooltip>
               ) : (
-                <Button size="sm" variant="ghost" onClick={() => setConfirming(backup.refName)}>
-                  Restore previous history
-                </Button>
+                <ConfirmPopover
+                  role="danger"
+                  icon={<CONCEPT_ICONS.backup size={ICON_SIZE.row} aria-hidden />}
+                  title={`Restore the backup from ${formatDayMonth({ at: backup.createdAt * 1000 })}?`}
+                  description="Your branch goes back to that state."
+                  note={
+                    <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
+                      <p>The current one is kept as a backup.</p>
+                      {hasUpstream ? <p>It goes online only if nothing newer is there.</p> : null}
+                    </div>
+                  }
+                  confirmLabel="Restore backup"
+                  onConfirm={() => onRestore(backup)}
+                  trigger={({ arm }) => (
+                    <Button size="sm" variant="ghost" onClick={arm}>
+                      Restore previous history
+                    </Button>
+                  )}
+                />
               )}
             </div>
-            {confirming === backup.refName ? (
-              <InlineConfirm
-                role="danger"
-                icon={<CONCEPT_ICONS.backup size={ICON_SIZE.row} aria-hidden />}
-                title="Put this history back on the branch?"
-                description={
-                  hasUpstream
-                    ? 'The branch moves back here. It goes online only if the online copy has nothing newer than this backup; otherwise it stays here and you are told. The history you leave is kept as a backup.'
-                    : 'The branch moves back here. The history you leave is kept as a backup.'
-                }
-                confirmLabel="Restore"
-                onConfirm={() => {
-                  setConfirming(null);
-                  onRestore(backup);
-                }}
-                onCancel={() => setConfirming(null)}
-              />
-            ) : null}
           </li>
         ))}
       </ul>

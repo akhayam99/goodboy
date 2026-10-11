@@ -1,22 +1,21 @@
-import { Fragment, useRef, type ReactNode } from 'react';
+import { Fragment, useRef } from 'react';
 import { cn } from '../../cn';
 import type { TrailSegmentModel } from './types';
 import { TrailCrumb } from './TrailCrumb';
 import { TrailFold } from './TrailFold';
 import { TrailSeparator } from './TrailSeparator';
 import { CrumbMenuTrigger } from './CrumbMenuTrigger';
+import { crumbMenuWithChoice } from './crumbMenuTypes';
 import { useTrailCompaction } from './useTrailCompaction';
 
 type Props = {
   readonly segments: ReadonlyArray<TrailSegmentModel>;
-  readonly lead?: ReactNode;
   readonly className?: string;
 };
 
-export const Trail = ({ segments, lead, className }: Props) => {
+export const Trail = ({ segments, className }: Props) => {
   const navRef = useRef<HTMLElement>(null);
-  const leadRef = useRef<HTMLSpanElement>(null);
-  const { states, delays, enteringIds } = useTrailCompaction({ segments, navRef, leadRef });
+  const { states, delays, enteringIds } = useTrailCompaction({ segments, navRef });
   const folded = segments.filter((_, index) => states[index] === 'folded');
 
   return (
@@ -26,11 +25,6 @@ export const Trail = ({ segments, lead, className }: Props) => {
       data-slot="trail"
       className={cn('flex h-6 min-w-0 flex-1 items-center gap-1 overflow-hidden', className)}
     >
-      {lead != null ? (
-        <span ref={leadRef} className="flex shrink-0 items-center">
-          {lead}
-        </span>
-      ) : null}
       {segments.map((segment, index) => {
         const state = states[index] ?? 'full';
         if (state === 'folded') {
@@ -40,6 +34,7 @@ export const Trail = ({ segments, lead, className }: Props) => {
         const isIconOnly = state === 'icon';
         const delay = delays[index] ?? 0;
         const delayStyle = delay > 0 ? { transitionDelay: `${delay}ms` } : undefined;
+        const menu = crumbMenuWithChoice({ menu: segment.menu });
         return (
           <Fragment key={segment.id}>
             <span
@@ -51,10 +46,10 @@ export const Trail = ({ segments, lead, className }: Props) => {
                 enteringIds.has(segment.id) && 'motion-safe:animate-trail-crumb-in',
               )}
             >
-              {segment.menu != null ? (
+              {menu !== null ? (
                 <CrumbMenuTrigger
                   segment={segment}
-                  menu={segment.menu}
+                  menu={menu}
                   isCurrent={isCurrent}
                   isIconOnly={isIconOnly}
                 />

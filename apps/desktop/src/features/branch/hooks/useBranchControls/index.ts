@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ProjectId, PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
+import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { projectById } from '../../../../store/slices/projects/projectIndex';
@@ -13,7 +14,8 @@ import { useRebasePrediction } from '../../../history/useRebasePrediction';
 import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
-import { branchPrimaryOf, type BranchPrimary, type BranchReviewCounts } from '../../branchPrimary';
+import { branchActionsOf, type BranchPrimary, type BranchReviewCounts } from '../../branchPrimary';
+import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -28,10 +30,10 @@ export type BranchControls = {
   readonly diffControls: ActionControls;
   readonly pullRequestControls: ActionControls;
   readonly primary: BranchPrimary | null;
-  readonly press: () => void;
+  readonly secondary: BranchPrimary | null;
+  readonly press: (action: BranchPrimary) => void;
   readonly isChangingBase: boolean;
   readonly closeChangingBase: () => void;
-  readonly rebaseError: string | null;
   readonly projectId: ProjectId | null;
   readonly projectRoot: string;
   readonly projectBaseBranch: string | null;
@@ -45,6 +47,8 @@ export const useBranchControls = ({
   review,
   remoteHost,
 }: Params): BranchControls => {
+  const state: PullRequestPresentationState =
+    pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });
   const mountId = useAppStore((s) =>
     worktreePath === null
       ? null
@@ -122,41 +126,45 @@ export const useBranchControls = ({
     (s) => projectById(s.projects, projectId)?.baseBranch ?? null,
   );
 
-  const primary = useMemo(
+  const { primary, secondary } = useMemo(
     () =>
-      branchPrimaryOf({
+      branchActionsOf({
         diff: diffControls.actions,
         pullRequest: pullRequestControls.actions,
         review,
         hasPullRequest: pr !== null && !isRequestMerged,
+        state,
       }),
-    [diffControls.actions, isRequestMerged, pr, pullRequestControls.actions, review],
+    [diffControls.actions, isRequestMerged, pr, pullRequestControls.actions, review, state],
   );
 
-  const press = useCallback(() => {
-    if (primary === null || primary.blockedReason !== null) {
-      return;
-    }
-    if (primary.source === 'review') {
-      requestReview({
-        getState: useAppStore.getState,
-        sessionId,
-        request: { kind: 'push' },
-      });
-      return;
-    }
-    const controls = primary.source === 'diff' ? diffControls : pullRequestControls;
-    controls.trigger({ actionId: primary.actionId });
-  }, [diffControls, primary, pullRequestControls, sessionId]);
+  const press = useCallback(
+    (action: BranchPrimary) => {
+      if (action.blockedReason !== null) {
+        return;
+      }
+      if (action.source === 'review') {
+        requestReview({
+          getState: useAppStore.getState,
+          sessionId,
+          request: { kind: 'push' },
+        });
+        return;
+      }
+      const controls = action.source === 'diff' ? diffControls : pullRequestControls;
+      controls.trigger({ actionId: action.actionId });
+    },
+    [diffControls, pullRequestControls, sessionId],
+  );
 
   return {
     diffControls,
     pullRequestControls,
     primary,
+    secondary,
     press,
     isChangingBase,
     closeChangingBase,
-    rebaseError: rebase.error,
     projectId,
     projectRoot,
     projectBaseBranch,

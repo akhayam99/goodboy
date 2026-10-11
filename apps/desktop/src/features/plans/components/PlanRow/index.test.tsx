@@ -140,7 +140,7 @@ describe('PlanRow primary for a plan that belongs to a run', () => {
     await waitFor(() => expect(approve).toHaveBeenCalledWith(PLAN_FIXTURE_SESSION, PLAN_RUN_ID));
   });
 
-  it('asks under the row about unsent comments before it approves', () => {
+  it('asks in a popover beside Approve about unsent comments before it approves', () => {
     seedPlanDrawer({ run: 'held', drafts: [aPlanDraft()] });
     const approve = vi.fn();
     useAppStore.setState({ approveWorkflowRunPlan: approve });
@@ -149,9 +149,9 @@ describe('PlanRow primary for a plan that belongs to a run', () => {
     fireEvent.click(screen.getByTestId('plan-primary'));
 
     expect(approve).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole('group', { name: '1 comment is not sent. Approve anyway?' }),
-    ).toBeDefined();
+    const dialog = screen.getByRole('dialog', { name: '1 comment is not sent. Approve anyway?' });
+    expect(screen.getByTestId('plan-row').contains(dialog)).toBe(false);
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
     expect(screen.getByTestId('plan-primary').getAttribute('data-filled')).toBe('false');
   });
 

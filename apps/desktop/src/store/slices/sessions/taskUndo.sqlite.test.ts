@@ -62,6 +62,16 @@ const storedLinks = () =>
     sql: 'SELECT scope, branch FROM session_external_tasks ORDER BY scope, branch',
   });
 
+const starsOf = () =>
+  rowsOf<{
+    external_id: string;
+    identifier: string;
+    state: string;
+    refreshed_at: number | null;
+  }>({
+    sql: 'SELECT external_id, identifier, state, refreshed_at FROM workspace_starred_issues ORDER BY external_id',
+  });
+
 const seed = async () => {
   await useAppStore.getState().linkSessionExternalTask(SESSION_ID, { ...TASK, scope: 'session' });
   await useAppStore.getState().linkSessionExternalTask(SESSION_ID, TASK);
@@ -71,52 +81,85 @@ const seed = async () => {
 };
 
 describe('undoable task placements on sqlite', () => {
-  it('restores Stop tracking without changing session placements', async () => {
+  it('stars the issue for the workspace, leaves session placements alone and undoes it', async () => {
     await seed();
     const task = {
-      workspaceId: WORKSPACE_ID,
       provider: TASK.provider,
       externalId: TASK.externalId,
       identifier: TASK.identifier,
       title: TASK.title,
       url: TASK.url,
-      createdAt: TASK.createdAt,
     };
-    await useAppStore.getState().linkWorkspaceExternalTask({ task });
-    await useAppStore.getState().unlinkWorkspaceExternalTask({
-      workspaceId: WORKSPACE_ID,
-      provider: TASK.provider,
-      externalId: TASK.externalId,
-    });
-    expect(useAppStore.getState().workspaceExternalTasks[WORKSPACE_ID]).toEqual([]);
+
+    expect(await useAppStore.getState().starExternalTask({ workspaceId: WORKSPACE_ID, task })).toBe(
+      true,
+    );
+    expect(await starsOf()).toEqual([
+      { external_id: 'lin-412', identifier: 'HBL-412', state: 'open', refreshed_at: null },
+    ]);
+    expect(
+      useAppStore.getState().starredIssues[WORKSPACE_ID]?.map((issue) => issue.identifier),
+    ).toEqual(['HBL-412']);
+    expect(await storedLinks()).toHaveLength(3);
+
     await useAppStore.getState().undoLastOperation({});
-    expect(useAppStore.getState().workspaceExternalTasks[WORKSPACE_ID]).toEqual([task]);
+
+    expect(await starsOf()).toEqual([]);
+    expect(useAppStore.getState().starredIssues[WORKSPACE_ID]).toEqual([]);
     expect(await storedLinks()).toHaveLength(3);
   });
 
-  it('leaves a workspace re-link unchanged when Stop tracking is undone', async () => {
-    const task = {
-      workspaceId: WORKSPACE_ID,
-      provider: TASK.provider,
-      externalId: TASK.externalId,
-      identifier: TASK.identifier,
-      title: TASK.title,
-      url: TASK.url,
-      createdAt: TASK.createdAt,
-    };
-    await useAppStore.getState().linkWorkspaceExternalTask({ task });
-    await useAppStore.getState().unlinkWorkspaceExternalTask({
-      workspaceId: WORKSPACE_ID,
-      provider: TASK.provider,
-      externalId: TASK.externalId,
-    });
-    await useAppStore
-      .getState()
-      .linkWorkspaceExternalTask({ task: { ...task, title: 'New title' } });
-    expect(await useAppStore.getState().undoLastOperation({})).toBe(false);
-    expect(useAppStore.getState().workspaceExternalTasks[WORKSPACE_ID]?.[0]?.title).toBe(
-      'New title',
+  it('keeps the state of an issue that is already starred', async () => {
+    await storySqlite().execute(
+      `INSERT INTO workspace_starred_issues
+         (workspace_id, provider, external_id, identifier, container, title, url, state, state_label, starred_at, refreshed_at)
+       VALUES (?, 'linear', 'lin-412', 'HBL-412', NULL, 'Duplicate credit', 'https://linear.app/x', 'active', 'In progress', 1, 2)`,
+      [WORKSPACE_ID],
     );
+
+    const isNew = await useAppStore.getState().starExternalTask({
+      workspaceId: WORKSPACE_ID,
+      task: {
+        provider: 'linear',
+        externalId: 'lin-412',
+        identifier: 'HBL-412',
+        title: 'Renamed',
+        url: 'https://linear.app/x',
+      },
+    });
+
+    expect(isNew).toBe(false);
+    expect(await starsOf()).toEqual([
+      { external_id: 'lin-412', identifier: 'HBL-412', state: 'active', refreshed_at: 2 },
+    ]);
+    expect(useAppStore.getState().undoStack).toHaveLength(0);
+  });
+
+  it('stars a GitHub issue under the key Tasks uses and refuses a pull request', async () => {
+    const issue = await useAppStore.getState().starExternalTask({
+      workspaceId: WORKSPACE_ID,
+      task: {
+        provider: 'github',
+        externalId: '88',
+        identifier: 'northwind/ledger-core#88',
+        title: 'Retry webhook delivery',
+        url: 'https://github.com/northwind/ledger-core/issues/88',
+      },
+    });
+    const isPullStarred = await useAppStore.getState().starExternalTask({
+      workspaceId: WORKSPACE_ID,
+      task: {
+        provider: 'github',
+        externalId: '89',
+        identifier: 'northwind/ledger-core#89',
+        title: 'Retry webhook delivery',
+        url: 'https://github.com/northwind/ledger-core/pull/89',
+      },
+    });
+
+    expect(issue).toBe(true);
+    expect(isPullStarred).toBe(false);
+    expect((await starsOf()).map((row) => row.external_id)).toEqual(['northwind/ledger-core#88']);
   });
 
   it('unlinks the session and every branch in one operation and restores all rows', async () => {

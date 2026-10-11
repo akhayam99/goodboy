@@ -178,6 +178,16 @@ export const reopenDiffComment = async (db: Database, id: string): Promise<void>
   );
 };
 
+type UpdateBodyParams = {
+  readonly db: Database;
+  readonly id: string;
+  readonly body: string;
+};
+
+export const updateDiffCommentBody = async ({ db, id, body }: UpdateBodyParams): Promise<void> => {
+  await db.execute(`UPDATE diff_comments SET body = ? WHERE id = ?`, [body, id]);
+};
+
 export const deleteDiffComment = async (db: Database, id: string): Promise<void> => {
   await db.execute(`DELETE FROM diff_comments WHERE id = ?`, [id]);
 };

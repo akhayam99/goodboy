@@ -298,6 +298,35 @@ export const InboxScene = ({ isDrawerClosed = false }: Props) => {
     return null;
   }
 
+  const facets = (
+    <InboxFacetRail
+      filters={NO_INBOX_FILTERS}
+      counts={inboxFacetCounts({
+        records: RECORDS,
+        query: '',
+        filters: NO_INBOX_FILTERS,
+      })}
+      connected={CONNECTED}
+      loading={NOT_LOADING}
+      errors={NO_ERRORS}
+      projects={projects}
+      onFiltersChange={noop}
+      onClearFilters={noop}
+    />
+  );
+
+  const header = {
+    query: '',
+    onQueryChange: noop,
+    searchRef,
+    sessionLabel: null,
+    onClearSession: noop,
+    isRefreshing: false,
+    onRefresh: noop,
+    activeFilterCount: 0,
+    facets,
+  };
+
   return (
     <StudioFrame
       target={{ place: 'inbox', tool: null }}
@@ -311,37 +340,18 @@ export const InboxScene = ({ isDrawerClosed = false }: Props) => {
         >
           {() => (
             <InboxStudioLayout
-              list={
+              rail={facets}
+              railHeader={<InboxListHeader {...header} isRailCollapsed={false} isSearchOnly />}
+              list={({ isRailCollapsed, onDock }) => (
                 <PaneShell
                   scroll="body"
-                  title="All items"
+                  title="Tasks"
                   meta={`${RECORDS.length} items`}
                   actions={
                     <InboxListHeader
-                      query=""
-                      onQueryChange={noop}
-                      searchRef={searchRef}
-                      sessionLabel={null}
-                      onClearSession={noop}
-                      isRefreshing={false}
-                      onRefresh={noop}
-                      activeFilterCount={0}
-                      facets={
-                        <InboxFacetRail
-                          filters={NO_INBOX_FILTERS}
-                          counts={inboxFacetCounts({
-                            records: RECORDS,
-                            query: '',
-                            filters: NO_INBOX_FILTERS,
-                          })}
-                          connected={CONNECTED}
-                          loading={NOT_LOADING}
-                          errors={NO_ERRORS}
-                          projects={projects}
-                          onFiltersChange={noop}
-                          onClearFilters={noop}
-                        />
-                      }
+                      {...header}
+                      isRailCollapsed={isRailCollapsed}
+                      onDock={onDock}
                     />
                   }
                 >
@@ -364,7 +374,7 @@ export const InboxScene = ({ isDrawerClosed = false }: Props) => {
                     onClearFilters={noop}
                   />
                 </PaneShell>
-              }
+              )}
               drawer={
                 isDrawerClosed ? null : (
                   <InboxDetail

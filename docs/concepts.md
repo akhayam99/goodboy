@@ -20,6 +20,8 @@ The other docs link here instead of explaining them again.
 - **Lens**: one view of a session, such as its plans, questions or diff
 - **Turn**: one message from you and one answer from the agent
 
+The Guide's Words chapter mirrors this section in the app's voice.
+
 ## How they fit together
 
 A workspace holds projects and sessions. A session holds agents, workflow
@@ -282,11 +284,31 @@ It includes:
 - History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
   `history_pushed`, `history_stopped` and `history_restored`
 
-History rows carry no verb and no `⋯`. They stay in Activity only while no
+History rows carry no verb and no `⋯`; the verbs live on the job banner of the Branch page (`docs/features/branch-history.md`). They stay in Activity only while no
 later outcome of the same branch settled them, and the row opens the Commits
-tab of the Branch page, where the recovery lives: `Undo rewrite` for a
-rewrite, `Retry` (or `Retry with a note` when History rewriter needs you), `Rewrite with an agent`,
-`Change the plan` and `Discard plan` for a stopped one, `Restore previous
+tab of the Branch page, where the recovery lives. The agent rows of those jobs
+read the job, not the turn of the agent (`jobFactsByAgentId`, the seam beside
+the resolver's in `buildTimelineStream`): History rewriter reads "Rebase on
+main" with the job's word (Replaying, Merging, Checking, Moving, Pushing,
+Done, or "Stopped: needs you" with the short cause) and opens **Open rebase**;
+Scribe reads "Pull request text" (Writing, Opening, Created #318, Couldn't
+open) and opens **Open overview**; the Scribe that refreshes a description or
+writes a commit message reads "Refresh pull request text" or "Commit message",
+muted and never in Needs you. `history_rewritten`, `history_pushed` and
+`history_stopped` carry the `agentId` of the rewriter, so a finished row still
+reads Done or Stopped after a restart. The history journal records expected head, target head, backup ref and branch.
+Its optional fifth line records the stash SHA; a following line records the
+exact ownership message. The journal is replaced atomically and synchronized
+before files are set aside. A pending intent can find that stash after a crash
+before its SHA was recorded. A `restoring` marker, cleared on conflict, lets bring-back detect an
+interrupted restore; a restored marker prevents applying it twice if cleanup
+was interrupted. A pending intent with no stash is rolled back, never kept. `pending_stash` and `write_journal` own this contract.
+
+The recovery, on the banner: `Undo rewrite`
+for a rewrite, `Retry with a note` when History rewriter needs you, `Bring them
+into the plan` when the online copy moved, `Retry rebase` when the branch moved,
+`Retry push` when the push failed. In the Commits section: `Rewrite with an agent`,
+`Change the plan` and `Discard plan` for a stopped plan, `Restore previous
 history` for a push. A stopped rewrite waits in Needs you until a later outcome settles it. Every notification
 of the engine points at the row with `Open in Activity`, so closing it loses
 nothing.
@@ -312,7 +334,8 @@ A **Needs you** block sits on top of Activity, and only while something waits
 on you: one row per owner, never per child. A pull request's fix runs read
 "#318 · 1 question · 5 to review" (the actions you owe, counted in comments), a
 run "Retry policy · 1 question", a stopped rebase
-"Rebase of feat/export stopped ×2". Each row has **Open**, which goes to
+"Rebase of feat/export stopped ×2 · needs you" (a short cause, never the engine
+sentence). Each row has **Open**, which goes to
 whoever owns the action (the first comment that waits on you, the exact
 question, the branch). A fix run's Activity row reads "Fix run · #318 · 9
 comments" with its tally, and there is one row per run, no per-agent burst. Push is
@@ -377,7 +400,7 @@ whether you clicked it on the board or in the session overview.
   landed on the same engine, not a second one: approve a pending permission,
   sign back in after `auth_required`, resume every agent a restart stopped
   (one **Resume all**, band 0, standalone and workflow agents alike), retry
-  the last standalone agent that failed, fix a pull request's failing checks,
+  the last standalone agent that failed, analyze a pull request's failing checks,
   push unpushed commits on a clean worktree (counted against the branch's
   own copy on origin by `branchPushStateOf`; `Push the branch` with `Not
 pushed yet` when origin has no copy, and `Branch diverged from origin`
@@ -418,8 +441,8 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   resolver replaced it in E7-5, restored here.
 - The resolve-threads card ("Fix N") never starts an agent: it
   sends a `fix` request (`requestReview`) with the fixable comments and opens
-  the launch panel on the Comments tab, pre-filled. The board card "Fix N"
-  does the same. N and the comments come from the fixable part of `reviewTally`
+  the **Fix comments** drawer on the Comments tab, with those comments checked.
+  The board card "Fix N" does the same. N and the comments come from the fixable part of `reviewTally`
   (`useFixableThreadIds`) for the selected review source, so a GitLab or Bitbucket
   pull request counts like a GitHub one.
 
@@ -485,15 +508,31 @@ pick it when you start the agent.
   points `origin` at a push URL that always fails, it has no GitHub token and
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
   `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
-  and authors, checks the count, and moves the branch itself
+  and authors, checks the count, and moves the branch itself.
+
+  When the checked result changes files outside the plan, the copy is kept
+  for 24 hours from that check. The deadline survives restart; cleanup respects
+  it and removes the copy after it expires. Reviewing does not extend the
+  deadline. A review accepts only the head it showed, while it is still alive.
+  Copy retention is owned by `apps/desktop/src-tauri/src/history/copies.rs`;
+  the [Branch history](features/branch-history.md) guide owns the review actions.
+
 - **Scribe** is hidden too: it writes text about the code and never code.
-  `Write it` in the pull request panel asks it for the title and body; when
-  its first turn ends, `settleScribe` hands them to `openScribePullRequest`,
-  which calls `createPrForSession` (that pushes the branch with
-  `--set-upstream` first, for every writer: the panel, the suggestion and an
-  agent through the bridge). The work moves `writing`, `creating`, then
-  `created` with the request number, or `failed` with the reason and the text
-  kept, and `Retry` runs the same step again. It can also
+  `Write with Scribe` in the create form asks it for the title and body as a
+  text-only job (`isTextOnly`): when its first turn ends the work is `ready`
+  and `settleScribe` stops, so writing never creates. The form hydrates its
+  two fields from `scribeWork[key]`, which is why leaving the page and coming
+  back shows the same state, and `stopScribe` drops a running job. Creating is
+  the form's own step: `createPrForSession` (that pushes the branch with
+  `--set-upstream` first, for every writer: the form, the suggestion and an
+  agent through the bridge) or `createMrForSession` on GitLab, with the text
+  you kept. A Scribe started from its own chat card still opens the request:
+  `settleScribe` hands the text to `openScribePullRequest`, and the work moves
+  `writing`, `creating`, then `created` with the request number, or `failed`
+  with the reason and the text kept, and `Retry` runs the same step again. The
+  Next row's Open PR opens the create form and never creates; while the job
+  writes or creates its line shows the state with no button, and `Review text`
+  once it is ready. It can also
   write a commit message for a squash or a reword and a changelog entry. It
   answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
   `<<changelog-entry>>` blocks, runs with push blocked like History rewriter,
@@ -596,7 +635,7 @@ the PDF. Goodboy also keeps a copy of every artifact on disk, under the
 workspace folder described in
 [architecture.md](architecture.md#on-disk-data-layout): the Details panel
 shows its path under **File**, with **Open in browser** and **Show in
-Finder** next to it. The lens's `⋯` also has **Open artifacts folder**, for
+Finder** next to it. The lens header also has **Show in Finder**, a button, for
 the whole workspace folder at once. Every write to a plan, report or
 wireframe keeps its own row in `artifact_revisions`
 ([architecture.md](architecture.md#on-disk-data-layout)): the Details panel
@@ -759,13 +798,14 @@ answer it.
 Review exists with or without a pull request. Without one, Comments reads `No
 pull request yet` with `Create pull request`. On GitLab the words are `merge
 request`, `MR` and `!42` (`PULL_REQUEST_NOUNS`), and the Branch page, its
-header and its merge ask read them from the host. With a pull request, Comments holds
-the GitHub threads only. Your notes never mix with them: they live in the Notes
-drawer of the Files tab, where every open note gets a conversation, and deleting
-or resolving the note closes it. An agent reviewer's comments on a branch without
-a pull request are kept as notes. When a pull request arrives the notes stay
-notes; `Move N to review draft` in the drawer turns them into draft review
-comments (a note on a whole file too), never on its own.
+header and its merge ask read them from the host. Comments exists whenever a
+pull request or a comment does, so a branch with only your notes has the section too. It lists the
+pull request threads and your notes together, told apart by a chip (`Note`, `On GitHub`) and
+filtered by `All`, `Notes` and `On GitHub`. Your notes also sit under their line in Files, where
+every open note gets a conversation, and deleting or resolving the note closes it. An agent
+reviewer's comments on a branch without a pull request are kept as notes. When a pull request
+arrives the notes stay notes; `Post to GitHub` on a note in Comments turns it into a draft review
+comment (a note on a whole file too), never on its own.
 
 A note goes through the same flow with the same resolver, but there is no
 reply to write: `Accept` keeps the fix on the branch and closes the note, with
@@ -867,7 +907,7 @@ Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply only` (R, drops the change and sends a reply; `Reply`, which opens the text box, where there is no change to drop) and `Skip` (S), plus `Undo` (U, `Undo skip` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the launch panel. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
+the Fix comments drawer. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
 can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Accept 3` accepts the pick to review, and
@@ -930,16 +970,24 @@ with a local commit and never pushes.
   needs you is answered, never relaunched, and a failed push is retried from
   the push. The header has no separate fix button: a batch is
   born from the comments you pick. Opening Review never starts an agent.
-  `Fix` opens the **launch panel** in the right column of the Comments tab, in
-  place of the thread (never above the columns, never a dialog): the page does
-  not move and the comment you had open stays selected. It is bound to the
-  selection: the included comments are checked rows (uncheck one to drop it,
-  check another in the list to add it), `Runs on <model> · <effort> · Change`
-  (the shared picker with every connected provider and a **Suggested** row), an
-  optional note that lands in Operator notes (no autofocus), and `Start fixing
-N` on Cmd+Enter (Esc closes, Cancel too). The commit style has no control in
-  the panel: it comes from the settings or the last batch. Clicking another
-  comment closes the panel. The palette and the object menu do not raise a
+  `Fix` opens the **Fix comments** drawer (kind `fix-comments`, side tier, never
+  a dialog; `openFixComments`): the page does not move and the comment you had
+  open stays selected. The drawer lists every open comment, host threads and
+  local notes together, grouped by file, each with a check, the `Note` or
+  `On GitHub` chip, the author and `file:line`; `All`, `Notes` and `On GitHub`
+  filter and `Select all` checks the shown ones. The comments that opened it
+  start checked. The header model chip opens the shared picker for the resolver
+  role (every connected provider and a **Suggested** row). Two actions sit at the
+  end of the list: `Analyze only`, a resolver run in `propose` mode that edits
+  nothing on the branch and keeps its changes as proposals, and `Start fix for
+N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
+  (`apply` when absent, so older batches and callers are unchanged); the
+  candidate is captured as a proposal in `recordResolveAttempt` when the batch
+  says `propose`. Activity shows each launch as a chain row: the resolver is
+  named `Fix comments · N comments`, and a later launch on a comment of an
+  earlier batch is spawned with `parentAgentId` of that resolver so it nests under
+  it. The commit style has no control in the drawer: it comes from the settings
+  or the last batch. Clicking another comment leaves the drawer open.
   window event: `requestReview` with a `fix` request writes a pending launch
   request into the `review-launch` slice (`reviewLaunchRequests`) and the
   Comments tab consumes it when it mounts, so a request raised from another
@@ -1068,21 +1116,24 @@ Settings can be set at four levels. The level closest to the work wins:
   matches a tool call, the most specific one decides.
 - **Settings overrides** (default provider, branch prefix, verbosity, role
   and task models, provider pool, parallel agents, provider bindings) can be
-  set on a workspace, a project or a session, on top of the global defaults.
-  Anything you leave empty comes from the level above. The session engine
-  reads them only through `selectResolvedSettings`: session, then the
-  session's active project, then workspace, then global (`resolveSettings` in
-  core). Role models, task models and provider bindings merge key by key, so a
-  project that pins only the orchestrator keeps the workspace's pin for every
-  other task and role, and the closest level wins on a key both set. The
-  provider list stays whole: the closest level that sets one replaces the
-  list. A project override sets the branch prefix for that project's mounts.
-  The settings screens edit the workspace row and read that row back, since
-  it is what they change. When a project of the workspace has its own role
-  models, task models, provider list or default provider, **Models** says so in
-  a notice under its header, names what the project pins, and offers **Use
-  this page instead**, which clears those four settings of the project after a
-  confirm anchored to the button (`clearProjectModelOverrides`).
+  set on a workspace, a project or a session, on top of the global defaults,
+  except the role and task models, which a project no longer holds: they are
+  set on a workspace or a session. Anything you leave empty comes from the
+  level above. The session engine reads them only through
+  `selectResolvedSettings`: session, then the session's active project, then
+  workspace, then global (`resolveSettings` in core). Role models, task models
+  and provider bindings merge key by key, so a session that pins only the
+  orchestrator keeps the workspace's pin for every other task and role, and
+  the closest level wins on a key both set; the role and task maps skip the
+  project. The provider list stays whole: the closest level that sets one
+  replaces the list. A project override sets the branch prefix for that
+  project's mounts. The settings screens edit the workspace row and read that
+  row back, since it is what they change. A project that had its own role or
+  task models before 0.24.0 keeps them as saved settings
+  (`legacy.projectModels.<projectId>`, written by m228): **Models** says "Model
+  settings 2 projects had are saved. They no longer apply." and **Show** lists
+  each project with **Apply to this page** and **Discard**, both behind a
+  confirm anchored to the button.
 - **Workflows, saved steps and skills** belong to the workspace. Built-in
   steps live in code and are the same everywhere. They are read only: **Save a
   copy** puts one copy in the workspace, and that copy remembers what it is
@@ -1482,7 +1533,7 @@ before a change adds a word.
 
 - **Fix**: start fixing comments. The count is the comments a fix can start now
   (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
-  the launch panel title. The panel's own button, **Start fixing 3**, stays.
+  the **Fix comments** button (**Fix comments 3**). The drawer's own button, **Start fix for 3**, stays.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
@@ -1558,7 +1609,7 @@ Agent kinds, in `AGENT_KIND_ORDER`:
 | `planner`     | Plan             | spawn menu                                        |
 | `scout`       | Scout            | spawn menu                                        |
 | `implementer` | Implement        | spawn menu                                        |
-| `debugger`    | Debug            | spawn menu                                        |
+| `debugger`    | Debug            | spawn menu and failing check Analyze              |
 | `tester`      | Test             | spawn menu                                        |
 | `reviewer`    | Review           | spawn menu                                        |
 | `pr-reviewer` | PR reviewer      | PR review session                                 |
@@ -1621,4 +1672,7 @@ An agent materializes a project through the query bridge like this:
 - `packages/db/src/queries/resolve-thread.ts`: review conversations
 
 Task-link removal uses **Unlink**, with **Unlinked** in its Undo toast and
-**Re-link** on the Activity event. **Link work** is the single linking entry.
+**Re-link** on the Activity event. A move says where the task is now (**HL-204
+is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). **Link work** is the single linking entry.
+
+A check analysis agent has `sourceKind` `failed_check` and keeps the originating check URL in `sourceCommentUrl`. The latest non-deleted agent for that session and URL owns the check row status; its transcript owns the finding and **Proposed fix**. The source type is in `packages/types/src/workflow.ts`, and the selector is `apps/desktop/src/store/slices/agents/selectCheckAnalysis.ts`.

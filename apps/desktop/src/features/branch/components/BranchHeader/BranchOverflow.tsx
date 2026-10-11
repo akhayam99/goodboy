@@ -19,6 +19,7 @@ type Props = {
 };
 
 const MENU_LABEL = 'Branch actions';
+const MIN_DRAWN_ENTRIES = 2;
 
 export const BranchOverflow = ({ diffControls, pullRequestControls }: Props) => {
   const dropdown = useDropdown({
@@ -54,7 +55,7 @@ export const BranchOverflow = ({ diffControls, pullRequestControls }: Props) => 
     );
   }, [diffControls, env, pullRequestControls]);
 
-  if (entries.length === 0) {
+  if (entries.filter((entry) => entry.kind === 'item').length < MIN_DRAWN_ENTRIES) {
     return null;
   }
 

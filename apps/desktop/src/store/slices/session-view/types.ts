@@ -74,7 +74,7 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
 export type DiffFocus =
   | { readonly kind: 'commit'; readonly sha: string; readonly path: string | null }
   | { readonly kind: 'working'; readonly path: string | null }
-  | { readonly kind: 'branch'; readonly path: string | null };
+  | { readonly kind: 'branch'; readonly path: string | null; readonly threadId?: string | null };
 
 export type FocusedExternalTask = {
   readonly provider: SessionExternalTaskProvider;
@@ -107,6 +107,7 @@ export const DEFAULT_PREFS: SessionViewPrefs = {
   group: 'none',
   isArchivedShown: false,
   isFoldOpen: false,
+  statusFilter: [],
 };
 
 export const VALID_SORTS: ReadonlyArray<SessionSortKey> = [
@@ -114,6 +115,14 @@ export const VALID_SORTS: ReadonlyArray<SessionSortKey> = [
   'updatedAt',
   'goal',
   'createdAt',
+];
+
+export const VALID_STAGES: ReadonlyArray<SessionStage> = [
+  'attention',
+  'running',
+  'review',
+  'building',
+  'done',
 ];
 
 export const VALID_GROUPS: ReadonlyArray<SessionGroupKey> = ['none', 'pr', 'stage', 'project'];
@@ -190,7 +199,6 @@ type SessionViewSliceState = {
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
   readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
-  readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
@@ -200,13 +208,33 @@ type SessionViewSliceState = {
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
   readonly sessionPagesFolded: Readonly<Record<SessionId, boolean>>;
+  readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
+  readonly exploreExpanded: Readonly<
+    Record<SessionId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
+  >;
+  readonly exploreMountPath: Readonly<Record<SessionId, string | null>>;
+};
+
+type DismissCheckProposalParams = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
 };
 
 type SessionViewSliceActions = {
+  setExploreExpanded(params: {
+    readonly sessionId: SessionId;
+    readonly mountPath: string;
+    readonly path: string;
+    readonly isExpanded: boolean;
+  }): void;
+  setExploreMountPath(params: {
+    readonly sessionId: SessionId;
+    readonly mountPath: string | null;
+  }): void;
   setAgentTab(params: { readonly agentId: AgentId; readonly pane: AgentPane }): void;
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
@@ -217,8 +245,8 @@ type SessionViewSliceActions = {
     readonly sessionId: SessionId;
     readonly isFolded: boolean;
   }): void;
+  dismissCheckProposal(params: DismissCheckProposalParams): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
-  toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
   setArtifactFilter(params: {

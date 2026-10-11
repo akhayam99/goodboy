@@ -16,6 +16,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { WorkflowNextStepCta } from './index';
 
 afterEach(cleanup);
@@ -83,7 +84,7 @@ describe('WorkflowNextStepCta', () => {
       />,
     );
     expect(screen.getByTestId('workflow-next-step-blocked')).toBeDefined();
-    expect(screen.getByTestId('workflow-next-step-cta').getAttribute('title')).toMatch(
+    expect(tooltipTextOf({ element: screen.getByTestId('workflow-next-step-cta') })).toMatch(
       /open questions are waiting/i,
     );
     expect(
@@ -148,10 +149,12 @@ describe('WorkflowNextStepCta', () => {
       <WorkflowNextStepCta workflow={wf()} runs={ctaRuns} onAdvance={vi.fn()} consumesActivePlan />,
     );
 
-    const marker = screen.getByTitle('Advancing will consume the active plan');
-    expect(marker.querySelector('svg')?.getAttribute('class')).toContain(
+    const cta = screen.getByTestId('workflow-next-step-cta');
+    const icons = cta.querySelectorAll('svg');
+    expect(icons[icons.length - 1]?.getAttribute('class')).toContain(
       tintClasses(CONCEPT_TONE.plans).icon,
     );
+    expect(tooltipTextOf({ element: cta })).toMatch(/Advancing will consume the active plan/);
   });
 
   it('renders nothing while a failed step blocks the chain, the next action strip owns it', () => {

@@ -10,6 +10,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { WORK_META_COLUMN } from '@goodboy/ui';
 import { carriesSpec } from '../../../../../test/classTokens';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { asCutText, tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -73,16 +74,16 @@ describe('the u23 step row scenes', () => {
     expect(container.querySelector('[data-meta-column="stack"]')).not.toBeNull();
   });
 
-  it('keeps a long title on one line and shows a handoff chain compactly', async () => {
+  it('keeps a long title on one line and names where a handoff chain started', async () => {
     renderScene('step-rows-runs');
 
     const tree = await screen.findByTestId('run-tree', undefined, WAIT);
 
     const title = within(tree).getByText(/^Agree where the dedupe belongs between/u);
-    expect(title.getAttribute('title')).toBe(
+    expect(tooltipTextOf({ element: asCutText({ element: title }) })).toBe(
       'Agree where the dedupe belongs between the webhook handler, the credit writer and the ledger posting in payments-api',
     );
-    expect(namesIn({ root: tree }).some((text) => text?.includes('→'))).toBe(true);
+    expect(effortsIn({ root: tree }).some((text) => text?.startsWith('from '))).toBe(true);
   });
 
   it('turns the time warm on a slow running step without a note word in the row', async () => {

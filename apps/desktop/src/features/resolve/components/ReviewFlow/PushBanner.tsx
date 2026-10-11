@@ -46,6 +46,7 @@ const RECOVERY_ICON: Record<keyof typeof RECOVERY_LABEL, LucideIcon> = {
   sync: GitMerge,
 };
 
+const BANNER_SURFACE = 'rounded-lg bg-subtle';
 const PUSH_LABEL = 'Push';
 const DISMISS_LABEL = 'Dismiss';
 
@@ -65,6 +66,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
         confirmLabel={SYNC_COPY.confirmLabel}
         onConfirm={push.confirmSync}
         onCancel={push.dismiss}
+        className={BANNER_SURFACE}
       />
     );
   }
@@ -172,6 +174,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
       isBusy={phase.kind === 'pushing'}
       onConfirm={push.confirm}
       onCancel={push.cancel}
+      className={BANNER_SURFACE}
       note={
         <div className="flex min-w-0 flex-col gap-2">
           {tip !== null && (

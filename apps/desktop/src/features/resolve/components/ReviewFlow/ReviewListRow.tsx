@@ -1,4 +1,17 @@
-import { Button, ROW_INTERACTIVE, SelectionCheckbox, Tooltip, WorkNode, cn } from '@goodboy/ui';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import {
+  Button,
+  Chip,
+  ROW_INTERACTIVE,
+  SelectionCheckbox,
+  Tooltip,
+  WorkNode,
+  cn,
+  TruncatedText,
+} from '@goodboy/ui';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { useNow } from '../../../../shared/hooks/useNow';
+import type { ResolveConversationSource } from '../../buildResolveQueueRows';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
@@ -23,7 +36,15 @@ type Props = {
 const fileOf = ({ path }: { readonly path: string | null }): string | null =>
   path === null ? null : (path.split('/').at(-1) ?? path);
 
+type KindParams = {
+  readonly source: ResolveConversationSource;
+};
+
+const kindLabelOf = ({ source }: KindParams): string =>
+  source === 'note' ? 'Note' : `On ${REVIEW_SOURCE_LABEL[source]}`;
+
 export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }: Props) => {
+  const now = useNow(60_000);
   const note = entry.row.reviewerNote;
   const body = entryBodyOf({ entry });
   const title = entryTitleOf({ entry });
@@ -79,6 +100,19 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
                 {note.author}
               </span>
             )}
+            {note !== null && (
+              <Chip
+                tone="neutral"
+                kind="state"
+                bordered={false}
+                label={kindLabelOf({ source: note.source })}
+              />
+            )}
+            {note !== null && (
+              <span data-row-age className="shrink-0 whitespace-nowrap text-faint-foreground">
+                {formatAge({ from: note.createdAtMs, now })}
+              </span>
+            )}
             {file !== null && (
               <span
                 data-row-file
@@ -90,9 +124,12 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
             )}
             {qualifier === null ? stateWord : <Tooltip content={qualifier}>{stateWord}</Tooltip>}
           </span>
-          <span className="min-w-0 truncate text-body text-foreground" title={body ?? undefined}>
+          <TruncatedText
+            tooltip={body ?? undefined}
+            className="min-w-0 truncate text-body text-foreground"
+          >
             {title}
-          </span>
+          </TruncatedText>
         </span>
       </button>
       {selection !== null && (

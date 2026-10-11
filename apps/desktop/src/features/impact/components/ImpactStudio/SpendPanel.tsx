@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ProviderName, SessionId } from '@goodboy/types';
-import { SectionHeader, formatUsd, formatUsdPrecise, PaneShell } from '@goodboy/ui';
+import { SectionHeader, formatUsd, formatUsdPrecise, PaneShell, Tooltip } from '@goodboy/ui';
 import { SpendSection } from '../../../budget/components/spend/SpendSection';
 import type { WorkspaceSpend } from '../../../budget/hooks/useWorkspaceSpend';
 import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
@@ -36,18 +36,22 @@ export const SpendPanel = ({
   return (
     <PaneShell scroll="body" {...frame}>
       <div className="flex items-baseline gap-8">
-        <div className="flex flex-col" title={formatUsdPrecise(totals.windowUsd)}>
-          <span className="text-label text-muted-foreground">{windowLabel}</span>
-          <span className="text-display tabular-nums text-foreground">
-            {formatUsd(totals.windowUsd)}
-          </span>
-        </div>
-        <div className="flex flex-col" title={formatUsdPrecise(totals.todayUsd)}>
-          <span className="text-label text-muted-foreground">Today</span>
-          <span className="text-title tabular-nums text-foreground">
-            {formatUsd(totals.todayUsd)}
-          </span>
-        </div>
+        <Tooltip content={formatUsdPrecise(totals.windowUsd)}>
+          <div className="flex flex-col">
+            <span className="text-label text-muted-foreground">{windowLabel}</span>
+            <span className="text-display tabular-nums text-foreground">
+              {formatUsd(totals.windowUsd)}
+            </span>
+          </div>
+        </Tooltip>
+        <Tooltip content={formatUsdPrecise(totals.todayUsd)}>
+          <div className="flex flex-col">
+            <span className="text-label text-muted-foreground">Today</span>
+            <span className="text-title tabular-nums text-foreground">
+              {formatUsd(totals.todayUsd)}
+            </span>
+          </div>
+        </Tooltip>
       </div>
       <SpendSection
         providers={spend.providers}

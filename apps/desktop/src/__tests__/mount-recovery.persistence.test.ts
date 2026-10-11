@@ -134,7 +134,7 @@ describe('mount recovery persistence', () => {
     expect(restoredSeries[0]?.members.filter((member) => member.mountId === null)).toHaveLength(2);
     expect(group).toMatchObject({
       rows: [{ mountId: 'mount-3' }, { mountId: 'mount-4' }],
-      completedRows: [{ mountId: 'mount-1' }, { mountId: 'mount-2' }],
+      finishedRows: [{ mountId: 'mount-1' }, { mountId: 'mount-2' }],
       seriesName: 'ENG-3240 split',
     });
   });

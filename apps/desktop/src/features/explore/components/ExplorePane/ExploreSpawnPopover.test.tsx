@@ -27,8 +27,14 @@ const h = vi.hoisted(() => ({
     cliRequirements: [] as ReadonlyArray<unknown>,
     authResults: {},
     spawnAgent: vi.fn(
-      async (_sessionId: string, _args: { readonly provider?: string; readonly model: string }) =>
-        'agent-1',
+      async (
+        _sessionId: string,
+        _args: {
+          readonly provider?: string;
+          readonly model: string;
+          readonly initialPrompt?: string;
+        },
+      ) => 'agent-1',
     ),
   },
 }));
@@ -52,11 +58,13 @@ describe('ExploreSpawnPopover', () => {
     render(
       <ExploreSpawnPopover
         sessionId={SESSION_ID}
-        entry={{ name: 'retry.ts', relPath: 'src/retry.ts', kind: 'file' } as never}
+        name="retry.ts"
+        relPath="src/retry.ts"
+        absolutePath="/work/ledger-core/src/retry.ts"
+        onClosed={vi.fn()}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Ask an agent about retry.ts' }));
     fireEvent.change(
       screen.getByRole('textbox', { name: 'What should the agent do with this file?' }),
       {
@@ -76,5 +84,6 @@ describe('ExploreSpawnPopover', () => {
     const args = h.state.spawnAgent.mock.calls[0]?.[1];
     expect(args?.provider).toBe('codex');
     expect(args?.model).toBe('gpt-5.6-luna');
+    expect(args?.initialPrompt).toContain('- src/retry.ts (/work/ledger-core/src/retry.ts)');
   });
 });

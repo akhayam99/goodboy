@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -37,7 +37,7 @@ describe('the run step question scene', () => {
     expect(Object.keys(U23_RUN_STEP_QUESTION_SCENES)).toEqual(['workflow-run-step-question']);
   });
 
-  it('says which running step waits on you instead of waiting on it, and offers Answer', async () => {
+  it('says which running step waits on you instead of waiting on it, and offers Answer in the header', async () => {
     const Scene = U23_RUN_STEP_QUESTION_SCENES['workflow-run-step-question'];
     if (Scene === undefined) {
       throw new Error('no workflow-run-step-question scene');
@@ -57,6 +57,10 @@ describe('the run step question scene', () => {
       'Paused for your answer · step 4 · Record the attempts on each delivery in notify-relay',
     );
     expect(screen.getByTestId('orchestrator-state').textContent).not.toContain('Waiting on step');
-    expect(screen.getByTestId('orchestrator-answer-question').textContent).toContain('Answer');
+    const header = screen.getByTestId('run-header');
+    expect(within(header).getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(
+      within(screen.getByTestId('orchestrator-strip')).queryByRole('button', { name: 'Answer' }),
+    ).toBeNull();
   });
 });

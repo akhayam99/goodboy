@@ -69,6 +69,10 @@ const captureLensTarget = ({ state, sessionId, lens }: TargetParams): SessionTar
     }
     return { kind: 'diff', mountPath, focus };
   }
+  if (lens === 'explore') {
+    const mountPath = state.exploreMountPath[sessionId] ?? null;
+    return mountPath === null ? null : { kind: 'explore', mountPath };
+  }
   if (lens === 'terminal') {
     const mountPath = state.terminalMountPath[sessionId] ?? null;
     return mountPath === null ? null : { kind: 'terminal', mountPath };

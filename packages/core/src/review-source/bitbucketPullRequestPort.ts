@@ -27,6 +27,7 @@ import {
   requirePullRequestCapability,
   type PullRequestPort,
 } from './pullRequestPort';
+import { HOST_CAPABILITIES } from './hostCapabilities';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSourceCapabilities } from './types';
 
 export type BitbucketPullRequestTransport = Readonly<{
@@ -58,7 +59,7 @@ const MERGE_STRATEGY: Readonly<Record<PrMergeMethod, BitbucketMergeStrategy>> = 
   rebase: 'rebase_merge',
 };
 
-const MERGE_METHODS: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
+const MERGE_METHODS: ReadonlyArray<PrMergeMethod> = HOST_CAPABILITIES.bitbucket.mergeMethods;
 
 const personOf = ({ user }: { readonly user: BitbucketPortUser }): PullRequestPerson => ({
   login: user.nickname,

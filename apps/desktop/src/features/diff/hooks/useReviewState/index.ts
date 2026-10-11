@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { FileDiff, PrReviewDraft, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { isFileLevelDraft } from '../../../../store/slices/review-drafts/fileLevel';
 import { resolveReviewTarget } from '../../../../store/slices/review-drafts/resolveReviewTarget';
 import { draftThread } from '../../lib/draftThreads';
+import { NO_KINDS, type CommentKinds } from '../../lib/commentKinds';
 import type { DiffComments, DiffThread, DiffViewed } from '../../components/DiffView/types';
 import {
   ancestorIds,
@@ -31,16 +33,16 @@ export type ReviewState = {
   readonly setQuery: (query: string) => void;
   readonly unviewedOnly: boolean;
   readonly setUnviewedOnly: (next: boolean) => void;
-  readonly notesOnly: boolean;
-  readonly setNotesOnly: (next: boolean) => void;
+  readonly commentedOnly: boolean;
+  readonly setCommentedOnly: (next: boolean) => void;
   readonly group: TreeGroup;
   readonly setGroup: (group: TreeGroup) => void;
   readonly isFiltering: boolean;
   readonly clearFilters: () => void;
   readonly comments: DiffComments;
   readonly viewed: DiffViewed;
-  readonly noteCountOf: (path: string) => number;
-  readonly hasNotesIn: (path: string) => boolean;
+  readonly commentCountOf: (path: string) => number;
+  readonly kindsOf: (path: string) => CommentKinds;
   readonly activePath: string | null;
   readonly setActivePath: (path: string) => void;
   readonly collapsed: ReadonlySet<string>;
@@ -48,19 +50,19 @@ export type ReviewState = {
   readonly jumpTo: (path: string) => void;
   readonly stepTo: (path: string) => void;
   readonly registerScroller: (scroll: ((path: string) => void) | null) => void;
-  readonly fileCommentPath: string | null;
-  readonly commentOnFile: (path: string) => void;
-  readonly clearFileComment: () => void;
+  readonly registerFileFocus: (focus: ((path: string) => void) | null) => void;
+  readonly focusFile: (path: string) => void;
 };
 
 const NO_THREADS: ReadonlyArray<DiffThread> = [];
 
 export const useReviewState = ({ sessionId, worktreePath, diff }: Params): ReviewState => {
-  const { comments: noteComments, fixes } = useDiffNotes({ sessionId });
+  const noteComments = useDiffNotes({ sessionId });
   const mountId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
   );
-  const reviewThreads = useDiffReviewThreads({ sessionId, mountId });
+  const review = useDiffReviewThreads({ sessionId, mountId });
+  const reviewThreads = review.threads;
   const hasPullRequest = useAppStore((s) => resolveReviewTarget({ state: s, sessionId }) !== null);
   const reviewDrafts = useAppStore(
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
@@ -87,17 +89,24 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
 
   const comments = useMemo<DiffComments>(() => {
     const threads = [...noteComments.threads, ...reviewThreads, ...fileDraftThreads];
+    const withHost: DiffComments = {
+      ...noteComments,
+      threads,
+      onReply: review.onReply,
+      onResolve: review.onResolve,
+      onOpenInComments: review.onOpenInComments,
+    };
     if (fileDraftThreads.length === 0) {
-      return reviewThreads.length === 0 ? noteComments : { ...noteComments, threads };
+      return withHost;
     }
     const draftIds = new Set(fileDraftThreads.map((thread) => thread.id));
     return {
-      ...noteComments,
-      threads,
+      ...withHost,
       onEdit: (id, body) => {
         if (draftIds.has(id)) {
-          void updateReviewDraft(id, body);
+          return updateReviewDraft(id, body);
         }
+        return noteComments.onEdit?.(id, body) ?? Promise.resolve();
       },
       onDelete: (id) => {
         if (draftIds.has(id)) {
@@ -107,13 +116,20 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
         noteComments.onDelete?.(id);
       },
     };
-  }, [discardReviewDraft, fileDraftThreads, noteComments, reviewThreads, updateReviewDraft]);
+  }, [
+    discardReviewDraft,
+    fileDraftThreads,
+    noteComments,
+    review,
+    reviewThreads,
+    updateReviewDraft,
+  ]);
   const [query, setQuery] = useState('');
   const [unviewedOnly, setUnviewedOnly] = useState(false);
-  const [notesOnly, setNotesOnly] = useState(false);
+  const [commentedOnly, setCommentedOnly] = useState(false);
   const [group, setGroup] = useState<TreeGroup>('folders');
   const { stateOf } = diff.viewed;
-  const isFiltering = query.trim() !== '' || unviewedOnly || notesOnly;
+  const isFiltering = query.trim() !== '' || unviewedOnly || commentedOnly;
   const [activePath, setActivePath] = useState<string | null>(null);
   const { collapsed, toggleFolder, openFolders } = useFoldState({
     sessionId,
@@ -124,22 +140,41 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
   const registerScroller = useCallback((scroll: ((path: string) => void) | null) => {
     scroller.current = scroll;
   }, []);
+  const fileFocuser = useRef<((path: string) => void) | null>(null);
+  const registerFileFocus = useCallback((focus: ((path: string) => void) | null) => {
+    fileFocuser.current = focus;
+  }, []);
+  const focusFile = useCallback((path: string) => fileFocuser.current?.(path), []);
 
-  const noteCounts = useMemo(() => {
-    const counts = new Map<string, number>();
+  const kindCounts = useMemo(() => {
+    const counts = new Map<string, CommentKinds>();
     for (const thread of comments.threads) {
-      if (!thread.isResolved) {
-        counts.set(thread.filePath, (counts.get(thread.filePath) ?? 0) + 1);
+      if (thread.isResolved) {
+        continue;
       }
+      const current = counts.get(thread.filePath) ?? NO_KINDS;
+      counts.set(
+        thread.filePath,
+        thread.source === 'host'
+          ? {
+              ...current,
+              host: current.host + 1,
+              hostLabel:
+                thread.host === null ? current.hostLabel : REVIEW_SOURCE_LABEL[thread.host],
+            }
+          : { ...current, notes: current.notes + 1 },
+      );
     }
     return counts;
   }, [comments.threads]);
-  const noteCountOf = useCallback((path: string) => noteCounts.get(path) ?? 0, [noteCounts]);
-  const notePaths = useMemo(
-    () => new Set(fixes.filter((fix) => !fix.isClosed).map((fix) => fix.note.filePath)),
-    [fixes],
+  const kindsOf = useCallback((path: string) => kindCounts.get(path) ?? NO_KINDS, [kindCounts]);
+  const commentCountOf = useCallback(
+    (path: string) => {
+      const kinds = kindCounts.get(path) ?? NO_KINDS;
+      return kinds.notes + kinds.host;
+    },
+    [kindCounts],
   );
-  const hasNotesIn = useCallback((path: string) => notePaths.has(path), [notePaths]);
 
   const shownFiles = useMemo(() => {
     if (!isFiltering) {
@@ -148,9 +183,9 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     return filterFiles({ files: diff.files, query }).filter(
       (file) =>
         (!unviewedOnly || stateOf(file) !== 'viewed') &&
-        (!notesOnly || (noteCounts.get(file.path) ?? 0) > 0),
+        (!commentedOnly || commentCountOf(file.path) > 0),
     );
-  }, [diff.files, isFiltering, noteCounts, notesOnly, query, stateOf, unviewedOnly]);
+  }, [commentCountOf, commentedOnly, diff.files, isFiltering, query, stateOf, unviewedOnly]);
   const tree = useMemo(() => buildChangeTree({ files: shownFiles, group }), [group, shownFiles]);
   const rowsRef = useRef(tree.rows);
   rowsRef.current = tree.rows;
@@ -158,7 +193,7 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
   const clearFilters = useCallback(() => {
     setQuery('');
     setUnviewedOnly(false);
-    setNotesOnly(false);
+    setCommentedOnly(false);
   }, []);
 
   const reveal = useCallback(
@@ -189,16 +224,6 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     scroller.current?.(path);
   }, []);
 
-  const [fileCommentPath, setFileCommentPath] = useState<string | null>(null);
-  const commentOnFile = useCallback(
-    (path: string) => {
-      jumpTo(path);
-      setFileCommentPath(path);
-    },
-    [jumpTo],
-  );
-  const clearFileComment = useCallback(() => setFileCommentPath(null), []);
-
   return {
     tree,
     allFiles: diff.files,
@@ -206,16 +231,16 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     setQuery,
     unviewedOnly,
     setUnviewedOnly,
-    notesOnly,
-    setNotesOnly,
+    commentedOnly,
+    setCommentedOnly,
     group,
     setGroup,
     isFiltering,
     clearFilters,
     comments,
     viewed: diff.viewed,
-    noteCountOf,
-    hasNotesIn,
+    commentCountOf,
+    kindsOf,
     activePath,
     setActivePath,
     collapsed,
@@ -223,8 +248,7 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
     jumpTo,
     stepTo,
     registerScroller,
-    fileCommentPath,
-    commentOnFile,
-    clearFileComment,
+    registerFileFocus,
+    focusFile,
   };
 };

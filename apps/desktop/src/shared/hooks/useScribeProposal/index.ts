@@ -33,6 +33,9 @@ const stateOf = ({
   readonly work: ScribeWork | null;
   readonly pr: PullRequestState | null;
 }): ScribeProposalState => {
+  if (work?.status === 'ready' && work.task.kind === 'pr' && work.task.isTextOnly === true) {
+    return { kind: 'idle' };
+  }
   if (work?.status === 'creating' || work?.status === 'ready') {
     return { kind: 'creating' };
   }

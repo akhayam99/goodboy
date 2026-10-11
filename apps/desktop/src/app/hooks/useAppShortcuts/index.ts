@@ -11,6 +11,7 @@ import {
   useWorkspaces,
   type LensKind,
 } from '../../../store';
+import { doorMountPath } from '../../../store/slices/navigation/doorMountPath';
 import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
@@ -28,6 +29,8 @@ type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
   readonly openPalette: (params?: OpenPaletteParams) => void;
   readonly openSettings: () => void;
+  readonly openTerminalStudio: () => void;
+  readonly openNewChat: () => void;
   readonly openShortcutHelp: () => void;
   readonly toggleSidebar: () => void;
   readonly sidebarToggleScope?: 'everywhere' | 'session';
@@ -56,6 +59,8 @@ export const useAppShortcuts = ({
   armDeleteConfirm,
   openPalette,
   openSettings,
+  openTerminalStudio,
+  openNewChat,
   openShortcutHelp,
   toggleSidebar,
   sidebarToggleScope = 'session',
@@ -105,7 +110,13 @@ export const useAppShortcuts = ({
       branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
     const isLeaving = kind != null && (active === kind || isBranchDoor);
     if (kind === 'review' && !isLeaving) {
-      state.navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+      state.navigate({
+        to: branchPlace({
+          sessionId,
+          mountPath: doorMountPath({ state, sessionId }),
+          tab: 'comments',
+        }),
+      });
       return;
     }
     openLens({ sessionId, lens: isLeaving ? null : kind });
@@ -150,6 +161,7 @@ export const useAppShortcuts = ({
     openPalette({ mode: 'search' });
   });
   useShortcut('session.new', openNewSession);
+  useShortcut('chat.new', openNewChat);
   useShortcut('workspace.switcher', () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),
   );
@@ -188,6 +200,7 @@ export const useAppShortcuts = ({
   useShortcut('session.prev', () => navigateSession({ delta: -1 }));
   useShortcut('session.next', () => navigateSession({ delta: 1 }));
   useShortcut('session.board', goToBoard);
+  useShortcut('terminal.studio', openTerminalStudio);
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => toggleContext({}));

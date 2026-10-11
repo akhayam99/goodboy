@@ -11,7 +11,7 @@ Free disk space and clean up branches, with what is safe to remove spelled out.
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Free disk space without guessing. **Worktrees** lists the checkout folders of archived, deleted or gone sessions by repo, with their size, when each last changed, why it exists and whether it is safe to remove. **Remove 3 safe folders in Harborline** clears them together, and it takes only clean folders idle for over 30 days. Folders with changes, running agents or a git operation in progress are skipped, with the reason.
+Free disk space without guessing. **Worktrees** lists the checkout folders of archived, deleted or gone sessions by repo, with their size, when each last changed, why it exists and whether it is safe to remove. **Remove 3 safe folders in Harborline** clears them together, and it takes only clean folders idle for over 30 days. Folders with changes, running agents, a git operation in progress or a process running inside them (a dev server, say) are skipped, with the reason. Closing a branch from a session says the same and offers **Stop it**, which stops the processes and checks again.
 
 ### Branches
 
@@ -33,6 +33,10 @@ Clean up this workspace, other workspaces, removed ones or all of them, each wit
 ### Artifacts from deleted sessions
 
 Decide what to keep from sessions you deleted: their plans, reports and wireframes, with **Keep** or **Delete**.
+
+The same goes for the role and task models a project had before the project layer went away: they stay in the settings table under `legacy.projectModels.<projectId>` (migration m228), one small row per project, until you apply or discard them on **Models**. Nothing else reads them.
+
+The tasks a workspace used to track in the Board's Ongoing row are stars now: migration m229 copied each one into the workspace's starred issues (open, dated by when it was linked, and an existing star wins) and dropped the old table. The next refresh fills in their state.
 
 ### Goodboy can free N GB
 

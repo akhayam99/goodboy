@@ -31,7 +31,11 @@ import type {
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
-import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
+import {
+  useHoveredMountRow,
+  useOpenProjectDisclosures,
+  useShowFinishedMounts,
+} from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { sceneClock } from '../sceneClock';
 import { overviewFullSeed } from './overviewFullSeed';
@@ -198,7 +202,15 @@ const EXTRA_SEEDS: ReadonlyArray<MountSeed> = [
 ];
 
 type MountsVariant =
-  'mounts' | 'many' | 'refreshing' | 'full' | 'branch-tasks' | 'task-split' | 'unassigned-notes';
+  | 'mounts'
+  | 'many'
+  | 'many-open'
+  | 'closed-rows'
+  | 'refreshing'
+  | 'full'
+  | 'branch-tasks'
+  | 'task-split'
+  | 'unassigned-notes';
 
 const UNASSIGNED_NOTES: ReadonlyArray<DiffComment> = [
   {
@@ -689,11 +701,17 @@ const DEFAULT_VARIANT: MountsVariant =
 export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const seeds =
-    variant === 'many'
+    variant === 'many' || variant === 'many-open'
       ? [...MOUNT_SEEDS, ...EXTRA_SEEDS]
-      : variant === 'task-split'
-        ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
-        : MOUNT_SEEDS;
+      : variant === 'closed-rows'
+        ? [MOUNT_SEEDS[1], MOUNT_SEEDS[2], MOUNT_SEEDS[3]]
+            .filter((seed) => seed !== undefined)
+            .map((seed) =>
+              seed.id === RELAY_MOUNT ? { ...seed, worktreePath: null, isAttached: false } : seed,
+            )
+        : variant === 'task-split'
+          ? [MOUNT_SEEDS[2]].filter((seed) => seed !== undefined)
+          : MOUNT_SEEDS;
   const views = viewsOf(seeds);
 
   useEffect(() => {
@@ -847,7 +865,8 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
     setIsReady(true);
   }, []);
 
-  useShowCompletedMounts({ isReady });
+  useShowFinishedMounts({ isReady });
+  useOpenProjectDisclosures({ isReady: isReady && variant === 'many-open' });
   useHoveredMountRow({ isReady, rowLabel: 'fix/notify-relay' });
 
   if (!isReady) {

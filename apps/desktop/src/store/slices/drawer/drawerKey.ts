@@ -2,10 +2,12 @@ import type { DrawerContent } from './state';
 
 export const drawerKey = (content: DrawerContent): string => {
   switch (content.kind) {
+    case 'check-analysis':
+      return `check-analysis:${content.payload.sessionId}:${content.payload.checkUrl}`;
     case 'context':
       return 'context';
     case 'explore-file':
-      return `explore-file:${content.payload.entry.relPath}`;
+      return `explore-file:${content.payload.sessionDir}:${content.payload.entry.relPath}`;
     case 'artifact':
       return `artifact:${content.payload.artifactId}:${content.payload.tab}`;
     case 'artifact-document':
@@ -20,8 +22,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return 'ask';
     case 'transcript':
       return `transcript:${content.payload.agentId}`;
-    case 'review-notes':
-      return `review-notes:${content.payload.mountPath ?? ''}`;
+    case 'fix-comments':
+      return `fix-comments:${content.payload.mountId ?? ''}`;
     case 'file-diff':
       return `file-diff:${
         content.payload.source.kind === 'commit'

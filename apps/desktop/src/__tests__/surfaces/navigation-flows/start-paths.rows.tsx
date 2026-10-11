@@ -232,7 +232,7 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       const workspaceId = useAppStore.getState().currentWorkspaceId as WorkspaceId;
       const draft = useAppStore.getState().sessionDrafts[workspaceId];
       expect(draft?.choice).toBe('task');
-      expect(draft?.pickedIssue?.identifier).toBe('HBL-415');
+      expect(draft?.pickedIssues[0]?.identifier).toBe('HBL-415');
       expect(startCalls.briefs).toHaveLength(1);
       expect(screen.getByText('Writing a brief')).toBeDefined();
       expect(startCalls.sessions).toHaveLength(0);

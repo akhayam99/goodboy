@@ -1,7 +1,7 @@
 import { Button } from '@goodboy/ui';
 import type { ScriptGroup } from '../../scripts';
 import { scriptPinId } from '../../scriptPinId';
-import { ProjectScriptRow } from '../ProjectScriptsFold/ProjectScriptRow';
+import { ProjectScriptRow } from '../ProjectScriptsField/ProjectScriptRow';
 
 type Props = {
   readonly projectName: string;

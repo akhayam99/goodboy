@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId, selectMountById } from '../project-mounts/selectors';
 import { branchPlace } from '../navigation/place';
+import { noteLandingPlace } from './noteLandingPlace';
 import { setPullRequestMode } from './setPullRequestMode';
 import {
   REVIEW_HOME,
@@ -78,17 +79,18 @@ export const openReviewTarget = async ({
         return { kind: 'failed', error: formatError(error) };
       }
     }
+    try {
+      await get().loadDiffComments(sessionId);
+    } catch (error) {
+      return { kind: 'failed', error: formatError(error) };
+    }
     get().navigate({
-      to: branchPlace({ sessionId, mountPath, tab: 'files' }),
-      drawer: {
-        kind: 'review-notes',
+      to: noteLandingPlace({
+        state: get(),
         sessionId,
-        payload: {
-          mountPath,
-          focusPath: null,
-          focusThreadId: reviewThreadIds({ destination })[0] ?? null,
-        },
-      },
+        mountPath,
+        threadId: reviewThreadIds({ destination })[0] ?? null,
+      }),
     });
     return { kind: 'opened' };
   }

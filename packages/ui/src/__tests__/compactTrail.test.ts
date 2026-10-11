@@ -5,7 +5,6 @@ const FULL = 120;
 const ICON = 24;
 const SEPARATOR = 18;
 const ELLIPSIS = 24;
-const LEAD = 14;
 
 const run = (depth: number, available: number | null, pinned?: ReadonlyArray<boolean>) =>
   compactTrail({
@@ -14,7 +13,6 @@ const run = (depth: number, available: number | null, pinned?: ReadonlyArray<boo
     ...(pinned !== undefined && { pinned }),
     separatorWidth: SEPARATOR,
     ellipsisWidth: ELLIPSIS,
-    leadWidth: LEAD,
     available,
   });
 
@@ -76,7 +74,6 @@ describe('compactTrail', () => {
       iconWidths: [24, 24, 24, 24],
       separatorWidth: SEPARATOR,
       ellipsisWidth: ELLIPSIS,
-      leadWidth: LEAD,
       available: 520,
     });
     expect(states[0]).toBe('full');

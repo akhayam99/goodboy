@@ -7,6 +7,7 @@ import {
   WORK_ROW,
   cn,
   tintClasses,
+  TruncatedText,
 } from '@goodboy/ui';
 import type {
   EffortLevel,
@@ -33,6 +34,7 @@ import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStr
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
+import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { rowSlotWidth } from './rowSlotWidth';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -185,8 +187,7 @@ export const RunTreeRow = ({
                 </span>
                 {glyph}
                 <span className="flex min-w-0 flex-1 items-center gap-2">
-                  <span
-                    title={agent.name}
+                  <TruncatedText
                     className={cn(
                       WORK_ROW.title,
                       'flex-1 truncate',
@@ -199,7 +200,7 @@ export const RunTreeRow = ({
                     )}
                   >
                     {agent.name}
-                  </span>
+                  </TruncatedText>
                   {guidance === null ? null : (
                     <Tooltip content={guidanceTagTip({ text: guidance })} side="top">
                       <span
@@ -223,7 +224,7 @@ export const RunTreeRow = ({
                 {state}
                 {meta}
                 {hasActionColumn ? (
-                  <span className={WORK_META_COLUMN.action}>
+                  <span data-meta-column="action" className={WORK_META_COLUMN.action}>
                     {isSkipShown && skip !== null ? (
                       <RunStepSkip agent={agent} skip={skip} />
                     ) : null}
@@ -234,19 +235,19 @@ export const RunTreeRow = ({
                         className="h-6 shrink-0"
                         onClick={() => onAnswer(answer.question)}
                       >
-                        Answer
+                        {ROW_ACTION_LABEL.answer}
                       </Button>
                     )}
-                    {planAction === null ? null : (
+                    {planAction === null || isPlanHeld ? null : (
                       <Button
-                        variant={isPlanHeld ? 'secondary' : 'ghost'}
-                        size="sm"
-                        className="h-6 shrink-0"
+                        variant="ghost"
+                        size="xs"
+                        className="shrink-0"
                         onClick={() =>
                           openPlanDrawer({ sessionId: agent.sessionId, planId: planAction.id })
                         }
                       >
-                        {isPlanHeld ? 'Review plan' : 'Open plan'}
+                        {ROW_ACTION_LABEL.openPlan}
                       </Button>
                     )}
                   </span>

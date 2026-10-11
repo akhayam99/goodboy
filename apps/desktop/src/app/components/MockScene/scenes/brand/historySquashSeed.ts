@@ -211,5 +211,6 @@ export const SQUASH_APPLIED_RUN: HistoryRun = {
   identity: null,
   movedHead: null,
   threadShas: [],
+  commitCount: null,
   updatedAt: 1,
 };

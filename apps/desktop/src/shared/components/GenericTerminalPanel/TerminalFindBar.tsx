@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { IconButton } from '@goodboy/ui';
-import { shortcutGlyphs } from '../../keyboard/registry';
 import { terminalFindKey } from './terminalFindKey';
 
 export type TerminalFindResults = {
@@ -124,7 +123,7 @@ export const TerminalFindBar = ({ controller, step, onClose }: Props) => {
       <IconButton
         icon={ChevronUp}
         label="Previous match"
-        tooltip={`Previous match (${shortcutGlyphs('find.previous')})`}
+        shortcut="find.previous"
         variant="ghost"
         disabled={term.length === 0}
         onClick={() => walk({ isForward: false })}
@@ -132,7 +131,7 @@ export const TerminalFindBar = ({ controller, step, onClose }: Props) => {
       <IconButton
         icon={ChevronDown}
         label="Next match"
-        tooltip={`Next match (${shortcutGlyphs('find.next')})`}
+        shortcut="find.next"
         variant="ghost"
         disabled={term.length === 0}
         onClick={() => walk({ isForward: true })}

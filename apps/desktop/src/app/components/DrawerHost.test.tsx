@@ -21,17 +21,26 @@ import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { invoke } from '@tauri-apps/api/core';
-import type { AgentId, ArtifactId, IsoDateTime, ReportArtifact, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  IsoDateTime,
+  MountId,
+  ReportArtifact,
+  SessionId,
+} from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../store';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { ToastProvider } from '../../shared/components/Toast';
-import { CTX_PAYMENTS_WORKTREE, CTX_SESSION_ID } from './MockScene/scenes/brand/contextBase';
-import { seedNotesScene } from './MockScene/scenes/u23/notesSeed';
+import { CTX_SESSION_ID } from './MockScene/scenes/brand/contextBase';
+import { SESSION_ID as RESOLVE_SESSION_ID } from './MockScene/scenes/resolveSeed';
+import { seedBulkScene } from './MockScene/scenes/bulkSeed';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION } from '../../test/planFixtures';
 import { seedPlanDrawer } from '../../test/planDrawerFixtures';
 import { DrawerHost } from './DrawerHost';
 
+const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION = 'session-harborline' as SessionId;
 const REPORT = 'artifact-report' as ArtifactId;
 const AGENT = 'agent-resolver' as AgentId;
@@ -75,6 +84,20 @@ const seedSession = (): void => {
 };
 
 const ENTRIES: ReadonlyArray<Entry> = [
+  {
+    kind: 'check-analysis',
+    region: 'Debugger',
+    seed: seedSession,
+    drawer: {
+      kind: 'check-analysis',
+      sessionId: SESSION,
+      payload: {
+        sessionId: SESSION,
+        mountId: MOUNT_ID,
+        checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
+      },
+    },
+  },
   {
     kind: 'ask',
     region: 'Ask',
@@ -172,15 +195,15 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
-    kind: 'review-notes',
-    region: 'Your notes',
+    kind: 'fix-comments',
+    region: 'Fix comments',
     seed: () => {
-      seedNotesScene({ variant: 'empty' });
+      seedBulkScene({ stage: 'launch' });
     },
     drawer: {
-      kind: 'review-notes',
-      sessionId: CTX_SESSION_ID,
-      payload: { mountPath: CTX_PAYMENTS_WORKTREE },
+      kind: 'fix-comments',
+      sessionId: RESOLVE_SESSION_ID,
+      payload: { mountId: null },
     },
   },
   {
@@ -230,7 +253,9 @@ describe('every drawer names its close control Close', () => {
 
   it('covers every drawer kind the host can open', () => {
     const hosted = Array.from(
-      readFileSync(join(__dirname, 'DrawerHost.tsx'), 'utf8').matchAll(/case '([\w-]+)':/g),
+      readFileSync(join(__dirname, 'DrawerHost.tsx'), 'utf8').matchAll(
+        /case '([\w-]+)':(?!\s*return null;)/g,
+      ),
       (match) => match[1],
     );
     const covered = new Set(ENTRIES.map((entry) => entry.kind));
@@ -273,7 +298,7 @@ describe('the Ask drawer header', () => {
 });
 
 describe('the explore file drawer across sessions', () => {
-  const OTHER = 'session-northwind' as SessionId;
+  const OTHER = CTX_SESSION_ID;
 
   const exploreDrawer = (sessionId: SessionId): DrawerRequest => ({
     kind: 'explore-file',

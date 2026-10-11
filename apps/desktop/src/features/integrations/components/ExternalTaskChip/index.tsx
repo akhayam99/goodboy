@@ -1,4 +1,4 @@
-import { Chip, cn } from '@goodboy/ui';
+import { Chip, cn, Tooltip } from '@goodboy/ui';
 import type { SessionExternalTask, SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../IntegrationGlyph';
 import { ExternalRefActions } from '../../../../shared/components/ExternalRefActions';
@@ -82,30 +82,30 @@ export const ExternalTaskChip = ({
 
   if (variant === 'icon') {
     return (
-      <span
-        title={tooltip}
-        aria-label={`${task.identifier} from ${meta.label}`}
-        className="inline-flex shrink-0 items-center"
-      >
-        {glyph}
-      </span>
+      <Tooltip content={tooltip}>
+        <span
+          aria-label={`${task.identifier} from ${meta.label}`}
+          className="inline-flex shrink-0 items-center"
+        >
+          {glyph}
+        </span>
+      </Tooltip>
     );
   }
 
   if (variant === 'compact') {
     return (
-      <span
-        title={tooltip}
-        className="inline-flex min-w-0 shrink-0 items-center gap-1 text-meta text-muted-foreground"
-      >
-        <span aria-hidden className="inline-flex">
-          {glyph}
+      <Tooltip content={tooltip}>
+        <span className="inline-flex min-w-0 shrink-0 items-center gap-1 text-meta text-muted-foreground">
+          <span aria-hidden className="inline-flex">
+            {glyph}
+          </span>
+          <span aria-hidden className={cn('font-mono', identifierClassName)}>
+            {task.identifier}
+          </span>
+          <span className="sr-only">{`${task.identifier} from ${meta.label}`}</span>
         </span>
-        <span aria-hidden className={cn('font-mono', identifierClassName)}>
-          {task.identifier}
-        </span>
-        <span className="sr-only">{`${task.identifier} from ${meta.label}`}</span>
-      </span>
+      </Tooltip>
     );
   }
 
@@ -146,22 +146,23 @@ export const ExternalTaskChip = ({
   }
 
   return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        handleClick();
-      }}
-      title={tooltip}
-      aria-label={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
-      className={cn(
-        'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 text-chip transition-colors',
-        meta.colorClasses,
-      )}
-    >
-      {glyph}
-      <span className="shrink-0 font-mono">{task.identifier}</span>
-      {variant === 'full' ? <span className="truncate">{task.title}</span> : null}
-    </button>
+    <Tooltip content={tooltip}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleClick();
+        }}
+        aria-label={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
+        className={cn(
+          'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 text-chip transition-colors',
+          meta.colorClasses,
+        )}
+      >
+        {glyph}
+        <span className="shrink-0 font-mono">{task.identifier}</span>
+        {variant === 'full' ? <span className="truncate">{task.title}</span> : null}
+      </button>
+    </Tooltip>
   );
 };

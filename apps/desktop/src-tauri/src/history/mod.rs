@@ -3,6 +3,7 @@ mod backups;
 mod check;
 mod commits;
 mod copies;
+mod dirty;
 #[cfg(test)]
 mod fixtures;
 mod journal;

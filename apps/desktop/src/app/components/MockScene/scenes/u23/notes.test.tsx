@@ -35,70 +35,32 @@ const renderScene = ({ name }: { readonly name: keyof typeof U23_NOTES_SCENES })
   );
 };
 
-const drawer = async (): Promise<HTMLElement> =>
-  screen.findByRole('region', { name: 'Your notes' }, WAIT);
-
 describe('the u23 notes scenes', () => {
-  it('registers the five scenes under the names the plan uses', () => {
-    expect(Object.keys(U23_NOTES_SCENES)).toEqual([
-      'branch-files-notes',
-      'branch-notes-fixing',
-      'branch-notes-ready',
-      'branch-notes-empty',
-      'branch-comments-no-pr',
-    ]);
+  it('registers the two scenes the notes keep after the drawer went', () => {
+    expect(Object.keys(U23_NOTES_SCENES)).toEqual(['branch-files-notes', 'branch-comments-no-pr']);
     for (const name of Object.keys(U23_NOTES_SCENES)) {
       expect(Object.keys(MOCK_SCENES)).toContain(name);
     }
   });
 
-  it('opens Files with the drawer on three notes of two files and the count in the toolbar', async () => {
+  it('opens Files with the three notes under their lines and no drawer beside it', async () => {
     renderScene({ name: 'branch-files-notes' });
 
-    const panel = await drawer();
-    expect(within(panel).getByText('3 open')).toBeDefined();
-    expect(within(panel).getAllByRole('region').length).toBeGreaterThanOrEqual(2);
-    expect(within(panel).getAllByText('Open note').length).toBeGreaterThanOrEqual(1);
-    expect(within(panel).getByRole('button', { name: 'Fix 2' })).toBeDefined();
-    expect(within(panel).getAllByRole('button', { name: 'Close' }).length).toBeGreaterThan(1);
-    expect(within(panel).getAllByRole('button', { name: 'Delete' }).length).toBe(2);
-    expect(screen.getByRole('button', { name: 'Notes 3' })).toBeDefined();
-  });
-
-  it('shows a fix running on two notes with the lane line and Stop', async () => {
-    renderScene({ name: 'branch-notes-fixing' });
-
-    const panel = await drawer();
-    expect(within(panel).getByTestId('resolve-run-status').textContent).toContain('Fixing 1 of 2');
-    expect(within(panel).getByRole('button', { name: 'Stop' })).toBeDefined();
-    expect(within(panel).getByText('Queued, after the current fix')).toBeDefined();
-  });
-
-  it('shows a ready note with Accept and Skip beside one that could not be fixed with Retry', async () => {
-    renderScene({ name: 'branch-notes-ready' });
-
-    const panel = await drawer();
-    expect(within(panel).getByRole('button', { name: 'Accept' })).toBeDefined();
-    expect(within(panel).getByRole('button', { name: 'Skip' })).toBeDefined();
-    expect(within(panel).getByRole('button', { name: 'Close the note' })).toBeDefined();
-    expect(within(panel).getAllByRole('button', { name: /^Retry/ }).length).toBeGreaterThan(0);
-  });
-
-  it('keeps the empty drawer to one line and no Notes button', async () => {
-    renderScene({ name: 'branch-notes-empty' });
-
-    const panel = await drawer();
-    expect(
-      within(panel).getByText('No open notes. Add one with Add note on a line or a file.'),
-    ).toBeDefined();
+    const notes = await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
+    expect(notes.length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole('region', { name: 'Your notes' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Notes \d/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
   });
 
-  it('reads No pull request yet on Comments and lists no note there', async () => {
+  it('lists the notes on Comments before a pull request, with no empty state in their place', async () => {
     renderScene({ name: 'branch-comments-no-pr' });
 
-    expect(await screen.findByText('No pull request yet', undefined, WAIT)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
-    expect(screen.queryByText(/Cap the backoff/)).toBeNull();
+    const list = await screen.findByRole('navigation', { name: 'Comments' }, WAIT);
+    expect(within(list).getAllByText('Note').length).toBeGreaterThan(0);
+    expect(screen.queryByText('No pull request yet')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Create pull request' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /^On GitHub/ })).toBeNull();
+    expect(screen.getByRole('tab', { name: /^Notes/ })).toBeDefined();
   });
 });

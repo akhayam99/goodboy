@@ -1,4 +1,4 @@
-import { Chip, cn, tintClasses } from '@goodboy/ui';
+import { Chip, cn, tintClasses, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import type { ArtifactState } from '../../artifactStateOf';
@@ -20,35 +20,36 @@ export const ArtifactStateBadge = ({ state }: Props) => {
       />
     );
   return (
-    <span
-      data-testid="artifact-row-state"
-      data-state={state.key}
-      title={stateDescription({ presentation: state })}
-      className="flex min-w-0 flex-col items-start justify-center text-label"
-    >
-      {state.tone === 'warning' ? (
-        <Chip
-          tone="warning"
-          size="xs"
-          bordered={false}
-          icon={mark}
-          label={state.label}
-          className="shrink-0"
-        />
-      ) : (
-        <span className="inline-flex shrink-0 items-center gap-2 px-2 whitespace-nowrap text-muted-foreground">
-          {mark}
-          {state.label}
-        </span>
-      )}
-      {state.detail === null ? null : (
-        <span
-          data-testid="artifact-row-progress"
-          className="max-w-full min-w-0 truncate px-2 text-meta text-faint-foreground"
-        >
-          {state.detail}
-        </span>
-      )}
-    </span>
+    <Tooltip content={stateDescription({ presentation: state })}>
+      <span
+        data-testid="artifact-row-state"
+        data-state={state.key}
+        className="flex min-w-0 flex-col items-start justify-center text-label"
+      >
+        {state.tone === 'warning' ? (
+          <Chip
+            tone="warning"
+            size="xs"
+            bordered={false}
+            icon={mark}
+            label={state.label}
+            className="shrink-0"
+          />
+        ) : (
+          <span className="inline-flex shrink-0 items-center gap-2 px-2 whitespace-nowrap text-muted-foreground">
+            {mark}
+            {state.label}
+          </span>
+        )}
+        {state.detail === null ? null : (
+          <span
+            data-testid="artifact-row-progress"
+            className="max-w-full min-w-0 truncate px-2 text-meta text-faint-foreground"
+          >
+            {state.detail}
+          </span>
+        )}
+      </span>
+    </Tooltip>
   );
 };

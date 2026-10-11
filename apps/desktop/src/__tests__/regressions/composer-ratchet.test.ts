@@ -13,6 +13,7 @@ const ANY_PROMPT_FIELD = /<PromptField\b/g;
 
 const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/chat/components/ChatInput/index.tsx': ['message'],
+  'features/history/JobBanner/JobBannerNote.tsx': ['document'],
   'features/workspace-chat/components/ChatComposer/index.tsx': ['message'],
   'features/session/ask/components/AskDrawer/AskComposer.tsx': ['message'],
   'features/workflows/components/OrchestratorStrip/OrchestratorHintComposer.tsx': ['message'],
@@ -23,7 +24,8 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/context/components/QuestionsTab/DelegateAnswerRow/index.tsx': ['document'],
   'features/diff/components/DiffView/CommentComposer.tsx': ['document'],
   'features/resolve/components/ReviewFlow/ReviewComment.tsx': ['document', 'document'],
-  'features/resolve/components/ReviewFlow/LaunchPanel/index.tsx': ['document'],
+  'features/resolve/components/FixCommentsDrawer/OutcomeQuestion.tsx': ['document'],
+  'features/resolve/components/FixCommentsDrawer/OutcomeReply.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/GoalField.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/GuidanceDisclosure.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/PlannerDraftRow.tsx': ['document'],
@@ -52,10 +54,8 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
     'a review on GitHub, read by people',
   'features/branch/components/PullRequestTab/PullRequestDescription.tsx':
     'the pull request body, read by people',
-  'features/integrations/github/components/PullRequest/CreatePrPanel.tsx':
+  'features/integrations/components/CreateReviewForm/ReviewTextCard.tsx':
     'the pull request body, read by people',
-  'features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx':
-    'the merge request body, read by people',
   'features/chat/components/ChatView/SlackDraftCard.tsx': 'a Slack reply, read by people',
   'features/history/components/CommitsHistory/RewordEditor.tsx': 'a commit message',
   'features/scripts/components/ScriptEditor/index.tsx': 'a shell script',
@@ -66,6 +66,8 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
     'an artifact document edited in place',
   'features/artifacts/components/PlanEditor/index.tsx': 'a plan edited in place',
   'features/session/components/ContextDrawer/GoalTab.tsx': 'saved session context, edited in place',
+  'features/session/components/SessionOverviewPane/GoalFromWorkCard.tsx':
+    'a proposed title and saved session goal, edited before applying',
   'features/session/components/ContextDrawer/BlockEditor.tsx':
     'saved session context, edited in place',
   'features/workflows/components/WorkflowBuilderView/parts/BuilderTitleField.tsx': 'a title',

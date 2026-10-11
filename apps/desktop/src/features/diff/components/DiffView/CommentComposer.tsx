@@ -9,6 +9,8 @@ type Props = {
   readonly onSubmit: (body: string) => void;
   readonly onCancel: () => void;
   readonly onAskAgent?: (body: string) => void;
+  readonly isBusy?: boolean;
+  readonly error?: string | null;
 };
 
 export const CommentComposer = ({
@@ -18,12 +20,14 @@ export const CommentComposer = ({
   onSubmit,
   onCancel,
   onAskAgent,
+  isBusy = false,
+  error = null,
 }: Props) => {
   const [body, setBody] = useState(initialBody);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const trimmed = body.trim();
   const submit = () => {
-    if (trimmed.length > 0) {
+    if (trimmed.length > 0 && !isBusy) {
       onSubmit(trimmed);
     }
   };
@@ -61,6 +65,11 @@ export const CommentComposer = ({
           }
         }}
       />
+      {error === null ? null : (
+        <p role="alert" className="text-meta text-danger">
+          {error}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-auto flex items-center gap-1 text-meta text-faint-foreground">
           <Kbd look="inline">⌘↵</Kbd>
@@ -77,7 +86,7 @@ export const CommentComposer = ({
             Ask agent
           </Button>
         ) : null}
-        <Button size="sm" onClick={submit} disabled={trimmed.length === 0}>
+        <Button size="sm" onClick={submit} disabled={trimmed.length === 0} isBusy={isBusy}>
           {submitLabel}
         </Button>
       </div>

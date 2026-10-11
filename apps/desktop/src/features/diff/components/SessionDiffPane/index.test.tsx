@@ -56,27 +56,21 @@ vi.mock('../../../../store/slices/project-mounts/selectors', async (importOrigin
 }));
 
 vi.mock('../../hooks/useDiffReviewThreads', () => ({
-  useDiffReviewThreads: () => [],
-}));
-
-vi.mock('../../hooks/useDiffNotes', () => ({
-  useDiffNotes: () => ({
-    comments: { threads: [], allowFileLevel: h.store['allowFileLevel'] === true },
-    fixes: [],
+  useDiffReviewThreads: () => ({
+    threads: [],
+    onReply: vi.fn(),
+    onResolve: vi.fn(),
+    onOpenInComments: vi.fn(),
   }),
 }));
 
+vi.mock('../../hooks/useDiffNotes', () => ({
+  useDiffNotes: () => ({ threads: [], allowFileLevel: h.store['allowFileLevel'] === true }),
+}));
+
 vi.mock('../../../permissions/components/DiffViewSelector', () => ({
-  DiffViewSelector: ({
-    baseBranch,
-    branch,
-  }: {
-    readonly baseBranch: string | null;
-    readonly branch: string | null;
-  }) => (
-    <button type="button">
-      Comparing {baseBranch ?? 'none'} ← {branch ?? 'none'}
-    </button>
+  DiffViewSelector: ({ baseBranch }: { readonly baseBranch: string | null }) => (
+    <button type="button">Compared with {baseBranch ?? 'its base branch'}</button>
   ),
 }));
 
@@ -110,7 +104,7 @@ vi.mock('../DiffView', async () => {
   };
 });
 
-import { DiffRailScope } from '../../DiffRailScope';
+import { DiffRailHarness } from '../../../../__tests__/helpers/DiffRailHarness';
 import { SessionDiffPane } from './index';
 
 const diffOf = (files: ReadonlyArray<FileDiff> = []): SessionDiff => ({
@@ -128,6 +122,7 @@ const diffOf = (files: ReadonlyArray<FileDiff> = []): SessionDiff => ({
   refresh: vi.fn(),
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
   focusPath: null,
+  focusThreadId: null,
   clearFocus: vi.fn(),
 });
 
@@ -142,21 +137,24 @@ const FILE: FileDiff = {
 
 const renderPane = ({
   diff = diffOf(),
-  onWriteReview = null,
+  isReadOnly = false,
+  isOverlay = false,
 }: {
   readonly diff?: SessionDiff;
-  readonly onWriteReview?: (() => void) | null;
+  readonly isReadOnly?: boolean;
+  readonly isOverlay?: boolean;
 }) =>
   render(
-    <DiffRailScope isActive>
+    <DiffRailHarness isOverlay={isOverlay}>
       <SessionDiffPane
         sessionId={SESSION_ID}
         workingDir="/w/ledger"
         worktreePath={MOUNT.worktreePath}
         diff={diff}
-        onWriteReview={onWriteReview}
+        isReadOnly={isReadOnly}
+        toolbarEnd={<button type="button">Fix comments 2</button>}
       />
-    </DiffRailScope>,
+    </DiffRailHarness>,
   );
 
 afterEach(() => {
@@ -196,10 +194,9 @@ describe('SessionDiffPane states', () => {
     renderPane({});
 
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
     expect(screen.queryByText('0 files')).toBeNull();
     expect(screen.getByText('Branch matches its base branch')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: /Comparing/ })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /Compared with/ })).toHaveLength(1);
   });
 });
 
@@ -214,7 +211,7 @@ describe('SessionDiffPane empty working tree', () => {
     renderPane({ diff: cleanWorking() });
 
     expect(screen.getByText('No changes on this branch yet')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Comparing/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Compared with/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: /Show branch vs/ })).toBeNull();
   });
 
@@ -244,69 +241,62 @@ describe('SessionDiffPane empty working tree', () => {
 
 const FILES: ReadonlyArray<FileDiff> = [FILE, { ...FILE, path: 'src/ledger/export.ts' }];
 
-const STRIP_PANE = 1196;
-const BUTTON_PANE = 1100;
-const DOCKED_PANE = 1920;
-
-const paneAt = (width: number) =>
-  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
-    width,
-    height: 600,
-    top: 0,
-    left: 0,
-    right: width,
-    bottom: 600,
-    x: 0,
-    y: 0,
-  } as DOMRect);
-
-const railOf = (): HTMLElement => screen.getByRole('complementary', { name: 'Files' });
-
 const treeOf = (): HTMLElement => screen.getByRole('navigation', { name: 'Changed files' });
 
-const toolbarFilesButton = (): HTMLElement | null =>
-  within(screen.getByTestId('diff-toolbar')).queryByRole('button', { name: /^Files, / });
+const hostOf = (): HTMLElement => screen.getByTestId('rail-host');
 
-describe('SessionDiffPane with the tree in a strip', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('keeps the tree in a strip with the reading progress', () => {
-    paneAt(STRIP_PANE);
+describe('SessionDiffPane with the tree in the docked rail', () => {
+  it('draws the tree, the filter and Next unviewed in the rail host, never in the diff column', () => {
     renderPane({ diff: diffOf(FILES) });
 
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Files, 0 of 2 viewed' })).toBeDefined();
-    expect(screen.getByText('0/2')).toBeDefined();
-    expect(toolbarFilesButton()).toBeNull();
+    expect(hostOf().contains(treeOf())).toBe(true);
+    expect(within(hostOf()).getByRole('textbox', { name: 'Filter files' })).toBeDefined();
+    expect(within(hostOf()).getByRole('tablist', { name: 'Show files' })).toBeDefined();
+    expect(within(hostOf()).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
+    expect(screen.getByTestId('diff-view').contains(treeOf())).toBe(false);
   });
 
-  it('opens the tree over the diff from the strip and closes it on a pick', () => {
-    paneAt(STRIP_PANE);
+  it('puts no Files button, strip or rail head in the toolbar or the host', () => {
     renderPane({ diff: diffOf(FILES) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Files, 0 of 2 viewed' }));
-    expect(railOf().getAttribute('data-rail')).toBe('overlay');
-    fireEvent.click(within(treeOf()).getByRole('button', { name: /export\.ts/ }));
+    expect(
+      within(screen.getByTestId('diff-toolbar')).queryByRole('button', { name: /^Files/ }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Fold the file rail/ })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'Resize the file rail' })).toBeNull();
+    expect(screen.queryByText(/of 2 viewed/)).toBeNull();
+  });
+
+  it('keeps the tree after a pick, and Escape does not hide it', () => {
+    renderPane({ diff: diffOf(FILES) });
+
+    fireEvent.click(within(treeOf()).getByRole('button', { name: /^export\.ts/ }));
+    fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(h.scroll).toHaveBeenCalledWith('src/ledger/export.ts');
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    expect(treeOf()).toBeDefined();
   });
 
-  it('closes the tree overlay when a file comment is requested from a row', () => {
-    paneAt(STRIP_PANE);
-    h.store['allowFileLevel'] = true;
+  it('puts focus in the tree with the focus key', () => {
     renderPane({ diff: diffOf(FILES) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Files, 0 of 2 viewed' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Comment on export.ts' }));
+    pressShortcut({ id: 'diff.focusTree' });
 
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    expect(treeOf().contains(document.activeElement)).toBe(true);
   });
 
-  it('keeps the strip on the whole review while the tree is filtered', () => {
-    paneAt(STRIP_PANE);
+  it('focuses the filter with the slash and with T', () => {
+    renderPane({ diff: diffOf(FILES) });
+
+    pressShortcut({ id: 'diff.focusFilter' });
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
+    (document.activeElement as HTMLElement).blur();
+
+    pressShortcut({ id: 'diff.focusFilterAlias' });
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
+  });
+
+  it('counts the unviewed files on the filter and the footer, from the whole review', () => {
     const diff = {
       ...diffOf(FILES),
       viewed: {
@@ -317,292 +307,72 @@ describe('SessionDiffPane with the tree in a strip', () => {
     };
     renderPane({ diff });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Files, 1 of 2 viewed' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter files' }), {
       target: { value: 'postings' },
     });
 
-    expect(screen.getByText('1/2')).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('1');
+    expect(screen.getByRole('button', { name: /^Next unviewed/ }).textContent).toContain('1');
   });
 
-  it('opens the tree and puts focus in it with the focus key', () => {
-    paneAt(STRIP_PANE);
-    renderPane({ diff: diffOf(FILES) });
+  it('jumps to the next unviewed file from the footer and keeps the rail in place', () => {
+    const diff = {
+      ...diffOf(FILES),
+      viewed: {
+        stateOf: (file: FileDiff) =>
+          file.path === FILE.path ? ('viewed' as const) : ('none' as const),
+        onToggle: vi.fn(),
+      },
+    };
+    renderPane({ diff });
 
-    pressShortcut({ id: 'diff.focusTree' });
-
-    expect(treeOf().contains(document.activeElement)).toBe(true);
-    expect(railOf().getAttribute('data-rail')).toBe('overlay');
-  });
-
-  it('opens the tree and puts focus in the filter field with the slash key', () => {
-    paneAt(STRIP_PANE);
-    renderPane({ diff: diffOf(FILES) });
-    const strip = screen.getByRole('button', { name: 'Files, 0 of 2 viewed' });
-
-    pressShortcut({ id: 'diff.focusFilter' });
-
-    expect(strip.getAttribute('aria-expanded')).toBe('true');
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
-  });
-
-  it('focuses the filter with T too, the same as the slash', () => {
-    paneAt(STRIP_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    pressShortcut({ id: 'diff.focusFilterAlias' });
-
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
-  });
-
-  it('closes the open tree with Escape and hands focus back to the strip', () => {
-    paneAt(STRIP_PANE);
-    renderPane({ diff: diffOf(FILES) });
-    const strip = screen.getByRole('button', { name: 'Files, 0 of 2 viewed' });
-
-    fireEvent.click(strip);
-    fireEvent.keyDown(window, { key: 'Escape' });
-
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-    expect(document.activeElement).toBe(strip);
-  });
-
-  it('closes the open tree on a click outside it, and leaves it open on a click inside', () => {
-    paneAt(STRIP_PANE);
-    renderPane({ diff: diffOf(FILES) });
-    fireEvent.click(screen.getByRole('button', { name: 'Files, 0 of 2 viewed' }));
-
-    fireEvent.pointerDown(screen.getByRole('textbox', { name: 'Filter files' }));
-    expect(treeOf()).toBeDefined();
-
-    fireEvent.pointerDown(screen.getByTestId('diff-view'));
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-  });
-
-  it('closes the open tree with the strip itself, and with the close button in its head', () => {
-    paneAt(STRIP_PANE);
-    renderPane({ diff: diffOf(FILES) });
-    const strip = screen.getByRole('button', { name: 'Files, 0 of 2 viewed' });
-
-    fireEvent.click(strip);
-    fireEvent.click(strip);
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-
-    fireEvent.click(strip);
-    fireEvent.click(screen.getByRole('button', { name: 'Close the file rail' }));
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-    expect(document.activeElement).toBe(strip);
-  });
-
-  it('opens and closes the overlay with the toggle key, where the rail cannot dock', () => {
-    paneAt(STRIP_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    pressShortcut({ id: 'diff.toggleTree' });
-    expect(railOf().getAttribute('data-rail')).toBe('overlay');
-
-    pressShortcut({ id: 'diff.toggleTree' });
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-  });
-
-  it('offers no resize handle on the overlay', () => {
-    paneAt(STRIP_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Files, 0 of 2 viewed' }));
-
-    expect(screen.queryByRole('separator', { name: 'Resize the file rail' })).toBeNull();
-  });
-});
-
-describe('SessionDiffPane with the tree as a toolbar button', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('shows no strip and puts Files 0/2 first in the toolbar, before the comparison', () => {
-    paneAt(BUTTON_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    const buttons = within(screen.getByTestId('diff-toolbar')).getAllByRole('button');
-    expect(buttons[0]?.getAttribute('aria-label')).toBe('Files, 0 of 2 viewed');
-    expect(buttons[0]?.textContent).toBe('Files0/2');
-    expect(buttons[1]?.textContent).toMatch(/^Comparing/);
-    expect(screen.getAllByRole('button', { name: 'Files, 0 of 2 viewed' })).toHaveLength(1);
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-  });
-
-  it('opens the same overlay from the button and closes it on a pick', () => {
-    paneAt(BUTTON_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    fireEvent.click(toolbarFilesButton() as HTMLElement);
-    expect(toolbarFilesButton()?.getAttribute('aria-expanded')).toBe('true');
-    expect(railOf().getAttribute('data-rail')).toBe('overlay');
-    fireEvent.click(within(treeOf()).getByRole('button', { name: /export\.ts/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Next unviewed/ }));
 
     expect(h.scroll).toHaveBeenCalledWith('src/ledger/export.ts');
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-  });
-
-  it('opens the overlay with F and puts focus in the tree', () => {
-    paneAt(BUTTON_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    pressShortcut({ id: 'diff.focusTree' });
-
-    expect(treeOf().contains(document.activeElement)).toBe(true);
-  });
-
-  it('opens the overlay with the slash and focuses the filter', () => {
-    paneAt(BUTTON_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    pressShortcut({ id: 'diff.focusFilter' });
-
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
-  });
-
-  it('closes the overlay with Escape and hands focus back to the button', () => {
-    paneAt(BUTTON_PANE);
-    renderPane({ diff: diffOf(FILES) });
-    const button = toolbarFilesButton() as HTMLElement;
-
-    fireEvent.click(button);
-    fireEvent.keyDown(window, { key: 'Escape' });
-
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-    expect(document.activeElement).toBe(button);
-  });
-
-  it('closes the overlay on a click outside, but not on the button that opened it', () => {
-    paneAt(BUTTON_PANE);
-    renderPane({ diff: diffOf(FILES) });
-    const button = toolbarFilesButton() as HTMLElement;
-    fireEvent.click(button);
-
-    fireEvent.pointerDown(button);
     expect(treeOf()).toBeDefined();
-    fireEvent.pointerDown(screen.getByTestId('diff-view'));
-
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
   });
 
-  it('toggles the overlay with the toggle key', () => {
-    paneAt(BUTTON_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    pressShortcut({ id: 'diff.toggleTree' });
-    expect(treeOf()).toBeDefined();
-    pressShortcut({ id: 'diff.toggleTree' });
-
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-  });
-
-  it('keeps the button next to the comparison while the filter hides every file', () => {
-    paneAt(BUTTON_PANE);
-    renderPane({ diff: diffOf(FILES) });
-    fireEvent.click(toolbarFilesButton() as HTMLElement);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter files' }), {
-      target: { value: 'zzz' },
-    });
-
-    expect(screen.getByText('No files match')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Files, 0 of 2 viewed' })).toHaveLength(1);
-    expect(screen.getByRole('button', { name: /^Comparing/ })).toBeDefined();
-  });
-
-  it('shows the same empty state, with no tree control, when nothing changed', () => {
-    paneAt(BUTTON_PANE);
+  it('shows the same empty state, with no tree, when nothing changed', () => {
     renderPane({});
 
     expect(screen.getByText('Branch matches its base branch')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Files/ })).toBeNull();
-  });
-
-  it('shows the same empty state in a strip width, with no strip', () => {
-    paneAt(STRIP_PANE);
-    renderPane({});
-
-    expect(screen.getByText('Branch matches its base branch')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Files/ })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
   });
 });
 
-describe('SessionDiffPane with the tree docked in the rail', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+describe('SessionDiffPane with the rail hidden behind Sections', () => {
+  it('draws no tree until the rail is open', () => {
+    renderPane({ diff: diffOf(FILES), isOverlay: true });
 
-  it('docks the tree with a head naming the files and their number, and a resize handle', () => {
-    paneAt(DOCKED_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    expect(railOf().getAttribute('data-rail')).toBe('docked');
-    expect(within(railOf()).getByText('Files')).toBeDefined();
-    expect(within(railOf()).getByText('2')).toBeDefined();
-    expect(within(railOf()).getByText('0 of 2 viewed')).toBeDefined();
-    expect(screen.getByRole('separator', { name: 'Resize the file rail' })).toBeDefined();
-    expect(toolbarFilesButton()).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Files, 0 of 2 viewed' })).toBeNull();
-  });
-
-  it('folds the rail to the strip with the toggle key and docks it again with the same key', () => {
-    paneAt(DOCKED_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    pressShortcut({ id: 'diff.toggleTree' });
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Files, 0 of 2 viewed' })).toBeDefined();
-
-    pressShortcut({ id: 'diff.toggleTree' });
-    expect(railOf().getAttribute('data-rail')).toBe('docked');
-    expect(screen.queryByRole('button', { name: 'Files, 0 of 2 viewed' })).toBeNull();
+    expect(
+      within(screen.getByTestId('diff-toolbar')).queryByRole('button', { name: /^Files/ }),
+    ).toBeNull();
   });
 
-  it('folds with the button in the head and hands focus to the strip', () => {
-    paneAt(DOCKED_PANE);
-    renderPane({ diff: diffOf(FILES) });
+  it('opens the rail and puts focus in the tree with the focus key', () => {
+    renderPane({ diff: diffOf(FILES), isOverlay: true });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fold the file rail' }));
-
-    const strip = screen.getByRole('button', { name: 'Files, 0 of 2 viewed' });
-    expect(strip.getAttribute('aria-expanded')).toBe('false');
-    expect(document.activeElement).toBe(strip);
-  });
-
-  it('docks a folded rail again from the strip, and with F, which then focuses the tree', () => {
-    paneAt(DOCKED_PANE);
-    renderPane({ diff: diffOf(FILES) });
-    pressShortcut({ id: 'diff.toggleTree' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Files, 0 of 2 viewed' }));
-    expect(railOf().getAttribute('data-rail')).toBe('docked');
-
-    pressShortcut({ id: 'diff.toggleTree' });
     pressShortcut({ id: 'diff.focusTree' });
-    expect(railOf().getAttribute('data-rail')).toBe('docked');
+
     expect(treeOf().contains(document.activeElement)).toBe(true);
   });
 
-  it('keeps the rail docked after a pick, and Escape does not fold it', () => {
-    paneAt(DOCKED_PANE);
-    renderPane({ diff: diffOf(FILES) });
-
-    fireEvent.click(within(treeOf()).getByRole('button', { name: /export\.ts/ }));
-    fireEvent.keyDown(window, { key: 'Escape' });
-
-    expect(h.scroll).toHaveBeenCalledWith('src/ledger/export.ts');
-    expect(railOf().getAttribute('data-rail')).toBe('docked');
-  });
-
-  it('focuses the filter with the slash while docked', () => {
-    paneAt(DOCKED_PANE);
-    renderPane({ diff: diffOf(FILES) });
+  it('opens the rail and puts focus in the filter field with the slash key', () => {
+    renderPane({ diff: diffOf(FILES), isOverlay: true });
 
     pressShortcut({ id: 'diff.focusFilter' });
 
     expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
+  });
+
+  it('closes the rail on a pick', () => {
+    renderPane({ diff: diffOf(FILES), isOverlay: true });
+
+    pressShortcut({ id: 'diff.focusTree' });
+    fireEvent.click(within(treeOf()).getByRole('button', { name: /^export\.ts/ }));
+    expect(h.scroll).toHaveBeenCalledWith('src/ledger/export.ts');
+    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
   });
 });
 
@@ -616,9 +386,7 @@ describe('SessionDiffPane files', () => {
     renderPane({ diff });
 
     const toolbar = screen.getByTestId('diff-toolbar');
-    expect(
-      within(toolbar).getByRole('button', { name: 'Comparing develop ← feat/ledger-export' }),
-    ).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: 'Compared with develop' })).toBeDefined();
     expect(screen.queryByText('1 file')).toBeNull();
     expect(within(toolbar).queryByText('+3')).toBeNull();
   });
@@ -626,16 +394,16 @@ describe('SessionDiffPane files', () => {
   it('keeps the comparison line when there is nothing to draw under it', () => {
     renderPane({});
 
-    expect(screen.getByRole('button', { name: /Comparing/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Compared with/ })).toBeDefined();
     expect(screen.queryByTestId('diff-view')).toBeNull();
   });
 
-  it('lists the changed files in a tree beside the code', () => {
+  it('lists the changed files in a tree in the rail beside the code', () => {
     renderPane({ diff: diffOf([FILE]) });
 
     const tree = screen.getByRole('navigation', { name: 'Changed files' });
-    expect(within(tree).getByText('0 of 1 viewed')).toBeDefined();
-    expect(within(tree).getByRole('button', { name: /postings\.ts/ })).toBeDefined();
+    expect(within(tree).getByRole('treeitem', { name: /postings\.ts/ })).toBeDefined();
+    expect(within(tree).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
   });
 
   it('filters the tree and the diff together, then restores both on Clear', () => {
@@ -648,7 +416,7 @@ describe('SessionDiffPane files', () => {
 
     expect(screen.getByText('Showing 1 of 2')).toBeDefined();
     expect(screen.getByTestId('diff-view').getAttribute('data-files')).toBe('src/ledger/export.ts');
-    expect(screen.queryByRole('button', { name: /postings\.ts/ })).toBeNull();
+    expect(screen.queryByRole('treeitem', { name: /postings\.ts/ })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
 
@@ -658,7 +426,7 @@ describe('SessionDiffPane files', () => {
     expect(screen.queryByText(/Showing/)).toBeNull();
   });
 
-  it('keeps only unviewed files when the Unviewed chip is on', () => {
+  it('keeps only unviewed files when Unviewed is on', () => {
     const other: FileDiff = { ...FILE, path: 'src/ledger/export.ts' };
     const diff = {
       ...diffOf([FILE, other]),
@@ -670,7 +438,7 @@ describe('SessionDiffPane files', () => {
     };
     renderPane({ diff });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unviewed' }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Unviewed/ }));
 
     expect(screen.getByTestId('diff-view').getAttribute('data-files')).toBe('src/ledger/export.ts');
     expect(screen.getByText('Showing 1 of 2')).toBeDefined();
@@ -688,18 +456,24 @@ describe('SessionDiffPane files', () => {
     expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(3);
   });
 
-  it('puts Write review in the file toolbar when a pull request can take one', () => {
-    const onWriteReview = vi.fn();
-    renderPane({ diff: diffOf([FILE]), onWriteReview });
+  it('ends the toolbar with the entry it is given and carries no Write review', () => {
+    renderPane({ diff: diffOf([FILE]) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Write review' }));
-    expect(onWriteReview).toHaveBeenCalledOnce();
+    const toolbar = screen.getByTestId('diff-toolbar');
+    expect(within(toolbar).getByRole('button', { name: 'Fix comments 2' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Write review' })).toBeNull();
   });
 
-  it('carries no Fix, Push, Rewrite, PR or Open in Review control of its own', () => {
-    renderPane({ diff: diffOf([FILE]), onWriteReview: vi.fn() });
+  it('carries no Push, Rewrite, PR or Open in Review control of its own', () => {
+    renderPane({ diff: diffOf([FILE]) });
 
     const names = screen.getAllByRole('button').map((button) => button.textContent ?? '');
-    expect(names.filter((name) => /Fix|Push|Rewrite|PR #|Open in Review/.test(name))).toEqual([]);
+    expect(names.filter((name) => /Push|Rewrite|PR #|Open in Review/.test(name))).toEqual([]);
+  });
+
+  it('draws no viewed toggle in the rail of a merged or closed pull request', () => {
+    renderPane({ diff: diffOf([FILE]), isReadOnly: true });
+
+    expect(screen.queryByRole('button', { name: /^Viewed:/ })).toBeNull();
   });
 });

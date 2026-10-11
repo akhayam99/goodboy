@@ -22,17 +22,19 @@ hold the detail.
 9. No em dash and no en dash in code, copy, commits or docs (`em-dash`).
 10. Seeds, scenes, tests and docs use mock names only: Harborline, Northwind, Acme, Cascadia, ledger-core, notify-relay, payments-api (no guard yet).
 11. A test loads the real store through `storyHarness` and mocks only the Tauri boundary; module mocks come from the harness factories (`store-mocks`).
-12. A write names its target (workspace, project, mount, session) and never reads "the current one" after an await (no guard yet).
-13. Apply state only after the async step succeeded; a failure leaves the old state and shows the error (no guard yet).
+12. A write names its target (workspace, project, mount, session) and never reads "the current one" after an await (`ambient-target` ratchet).
+13. Apply state only after the async step succeeded; a failure leaves the old state and shows the error (`catch-swallow` ratchet).
 14. Keep only the latest response: a late answer for an old request is dropped (no guard yet).
 15. Every number on screen comes from one function; a second computation drifts (no guard yet).
 16. Every retry and every undo path has a test (no guard yet).
 17. No regex that backtracks polynomially on input, and no dispatch on a key the user controls (no guard yet; CodeQL scans pull requests).
 18. Docs move with the code: the doc that owns a changed fact changes in the same commit (`check:doc-refs`).
 
+Rules 12 to 16 are written out, each with its helper and its test, in [docs/typescript/state-writes.md](./docs/typescript/state-writes.md).
+
 ## Before you write code
 
-1. Find your recipe or the owner doc through [docs/README.md](./docs/README.md) and read it.
+1. Find your recipe in [docs/recipes/](./docs/recipes/) and the owner doc through [docs/README.md](./docs/README.md), and read them.
 2. Fill the failure-mode table: for every write or state change, the target it names, when the state changes and after which result, what the user sees on failure, the retry, undo and resume path, what a second window does, which hosts it touches (GitHub, GitLab, Bitbucket), what a late response does, who owns every number it shows, and which names a rename must move (`aria-label` included). Each row ends in a test or "not applicable" with a reason.
 3. Run the quick gate before each commit.
 4. Never touch a baseline. A ratchet only falls; if your right change grows a count, stop and ask the owner.

@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
-import { AnchoredPopover, Chip, cn, ScrollFade, useDropdown, tintClasses } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  Chip,
+  cn,
+  ScrollFade,
+  useDropdown,
+  tintClasses,
+  Tooltip,
+  TruncatedText,
+} from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
@@ -13,7 +22,6 @@ type Props = {
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly status: WorktreeStatus | null;
   readonly baseBranch?: string | null;
-  readonly branch?: string | null;
   readonly loading?: boolean;
 };
 
@@ -41,7 +49,6 @@ type ViewLabelParams = {
   readonly view: DiffView;
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly baseBranch: string | null;
-  readonly branch: string | null;
 };
 
 type ViewEqualsParams = {
@@ -68,7 +75,7 @@ const SCOPE_LABEL: Record<'working' | 'unstaged' | 'staged' | 'all', string> = {
 
 const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
 
-const viewLabel = ({ view, commits, baseBranch, branch }: ViewLabelParams): string => {
+const viewLabel = ({ view, commits, baseBranch }: ViewLabelParams): string => {
   if (view.kind === 'working') {
     return SCOPE_LABEL[view.scope];
   }
@@ -82,7 +89,7 @@ const viewLabel = ({ view, commits, baseBranch, branch }: ViewLabelParams): stri
     return `Commit ${view.sha.slice(0, 7)}`;
   }
 
-  return `Comparing ${baseWord(baseBranch)} ← ${branch ?? 'this branch'}`;
+  return `Compared with ${baseWord(baseBranch)}`;
 };
 
 const commitsLabel = ({
@@ -131,7 +138,6 @@ export const DiffViewSelector = ({
   commits,
   status,
   baseBranch = null,
-  branch = null,
   loading,
 }: Props) => {
   const now = useNow(30_000);
@@ -318,7 +324,7 @@ export const DiffViewSelector = ({
     }
   };
 
-  const label = viewLabel({ view, commits, baseBranch, branch });
+  const label = viewLabel({ view, commits, baseBranch });
   const countLabel = commitsLabel({ view, commits });
   let optionIndex = -1;
 
@@ -329,28 +335,31 @@ export const DiffViewSelector = ({
       ariaLabel="Diff view"
       className="flex flex-col bg-subtle"
       trigger={
-        <button
-          type="button"
-          onClick={toggle}
-          className={cn(
-            'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label text-muted-foreground',
-            'hover:bg-hover hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          )}
-          title="Change diff view"
-        >
-          <span className="truncate">{label}</span>
-          {loading ? (
-            <span className="text-faint-foreground">…</span>
-          ) : countLabel === null ? null : (
-            <span className="shrink-0 text-faint-foreground tabular-nums">· {countLabel}</span>
-          )}
-          <ChevronDown
-            size={ICON_SIZE.row}
-            aria-hidden
-            className="shrink-0 text-faint-foreground"
-          />
-        </button>
+        <Tooltip content="Change diff view" isSuppressed={open} anchorClassName="min-w-0">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            className={cn(
+              'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label text-muted-foreground',
+              'hover:bg-hover hover:text-foreground',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            )}
+          >
+            <span className="truncate">{label}</span>
+            {loading ? (
+              <span className="text-faint-foreground">…</span>
+            ) : countLabel === null ? null : (
+              <span className="shrink-0 text-faint-foreground tabular-nums">· {countLabel}</span>
+            )}
+            <ChevronDown
+              size={ICON_SIZE.row}
+              aria-hidden
+              className="shrink-0 text-faint-foreground"
+            />
+          </button>
+        </Tooltip>
       }
     >
       <div className="flex items-center gap-2 px-3 py-2">
@@ -418,9 +427,9 @@ export const DiffViewSelector = ({
                           <span className="shrink-0 font-mono text-meta text-muted-foreground">
                             {row.commit.shortSha}
                           </span>
-                          <span className="min-w-0 flex-1 truncate" title={row.commit.subject}>
+                          <TruncatedText className="min-w-0 flex-1 truncate">
                             {row.commit.subject}
-                          </span>
+                          </TruncatedText>
                           {row.commit.pushed && (
                             <Chip
                               tone="neutral"

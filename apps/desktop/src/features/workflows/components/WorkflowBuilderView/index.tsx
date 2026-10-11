@@ -15,12 +15,12 @@ import {
   type PlannerOutput,
   clampEffortForModel,
   isAgentStatusHalted,
-  recommendedModelForRole,
-  resolveRoleRouting,
   runsForWorkflowRun,
 } from '@goodboy/core';
-import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
-import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { useResolution } from '../../../providers/hooks/useResolution';
+import { autoModelOn } from '../../../providers/autoModelOn';
+import { modelOnProvider, roleResolutionOf } from '../../../providers/roleResolution';
+import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import type {
   EffortLevel,
   ProviderId,
@@ -37,6 +37,7 @@ import type {
 } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
+import { deleteWorkflowWithUndo } from '../../deleteWorkflowWithUndo';
 import { createWorkflowPlanner, polishWorkflowGoalText } from '../../workflows';
 import { usePolish } from '../../hooks/usePolish';
 import { useStepDeleteUndo } from '../../hooks/useStepDeleteUndo';
@@ -136,7 +137,7 @@ type StepsFromPlanParams = {
 const stepsFromPlan = ({ plan, roleModels }: StepsFromPlanParams): ReadonlyArray<StepDraft> =>
   draftFromPlannerSteps({ steps: plan.steps }).map((step) => ({
     ...step,
-    effort: resolveRoleRouting({ role: step.role, prefs: roleModels }).effort as EffortLevel,
+    effort: roleResolutionOf({ role: step.role, roleModels }).effort ?? 'medium',
   }));
 
 const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
@@ -157,7 +158,7 @@ const isDraftEmpty = (d: WorkflowBuilderDraft, rules: WorkflowRules): boolean =>
   d.orchestratorModel.effortOverride === null &&
   d.providerPool === null;
 
-const PLANNER_EFFORT: EffortLevel = resolveRoleRouting({ role: 'planner', prefs: null }).effort;
+const PLANNER_EFFORT: EffortLevel = roleResolutionOf({ role: 'planner' }).effort ?? 'medium';
 const ORCHESTRATOR_EFFORT: EffortLevel = 'medium';
 const DYNAMIC_EXECUTION_MODE: WorkflowExecutionMode = 'dynamic';
 const DYNAMIC_WORKFLOW_NAME = 'Orchestrated workflow';
@@ -190,6 +191,7 @@ export const WorkflowBuilderView = (props: Props) => {
       : kickoffDraftKey({ workspaceId, lane: props.kickoff.lane ?? 'workflow' });
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const deleteWorkflow = useAppStore((s) => s.deleteWorkflow);
+  const restoreWorkflowSnapshot = useAppStore((s) => s.restoreWorkflowSnapshot);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const generateWorkflowTitle = useAppStore((s) => s.generateWorkflowTitle);
   const suggestWorkflowTitle = useAppStore((s) => s.suggestWorkflowTitle);
@@ -208,7 +210,7 @@ export const WorkflowBuilderView = (props: Props) => {
   const { rules: workflowRules, patch: patchWorkflowRules } = useWorkflowRules({ workspaceId });
   const roleModels = workspaceOverrides?.roleModels ?? null;
   const roleEffort = (role: StepDraft['role']): EffortLevel =>
-    resolveRoleRouting({ role, prefs: roleModels }).effort as EffortLevel;
+    roleResolutionOf({ role, roleModels }).effort ?? 'medium';
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
   const sessionSlots = useSessionSlots(session?.id ?? null);
@@ -331,30 +333,17 @@ export const WorkflowBuilderView = (props: Props) => {
     [providers],
   );
 
-  const limitContext = useAutoLimitContext();
-
+  const resolutionScope = session === null ? { workspaceId } : { sessionId: session.id };
+  const planResolution = useResolution({ task: 'plan_generation', ...resolutionScope });
   const resolvedPlanTaskModel = useMemo(
-    () =>
-      resolveLimitedTaskModel({
-        limitContext,
-        task: 'plan_generation',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: providerId,
-      }),
-    [limitContext, workspaceOverrides, providerId],
+    () => resolutionAsTask({ resolution: planResolution }),
+    [planResolution],
   );
 
+  const prosePolishResolution = useResolution({ task: 'prose_polish', ...resolutionScope });
   const resolvedProsePolishTaskModel = useMemo(
-    () =>
-      resolveLimitedTaskModel({
-        limitContext,
-        task: 'prose_polish',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: providerId,
-      }),
-    [limitContext, workspaceOverrides, providerId],
+    () => resolutionAsTask({ resolution: prosePolishResolution }),
+    [prosePolishResolution],
   );
 
   const plannerEffectiveProviderId: ProviderId =
@@ -363,12 +352,9 @@ export const WorkflowBuilderView = (props: Props) => {
   const plannerRecommendedModel = useMemo(
     () =>
       plannerProviderOverride !== ''
-        ? resolveLimitedTaskModel({
-            limitContext: null,
-            task: 'plan_generation',
-            preferences: null,
-            workspaceDefaultProviderId: plannerProviderOverride,
-            sessionDefaultProviderId: providerId,
+        ? autoModelOn({
+            slot: { kind: 'task', id: 'plan_generation' },
+            provider: plannerProviderOverride,
           }).model
         : resolvedPlanTaskModel.model,
     [plannerProviderOverride, providerId, resolvedPlanTaskModel],
@@ -376,16 +362,13 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const plannerEffort = plannerEffortOverride ?? resolvedPlanTaskModel.effort ?? PLANNER_EFFORT;
 
+  const orchestratorResolution = useResolution({
+    task: 'workflow_orchestrator',
+    ...resolutionScope,
+  });
   const resolvedOrchestratorTaskModel = useMemo(
-    () =>
-      resolveLimitedTaskModel({
-        limitContext,
-        task: 'workflow_orchestrator',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: providerId,
-      }),
-    [limitContext, workspaceOverrides, providerId],
+    () => resolutionAsTask({ resolution: orchestratorResolution }),
+    [orchestratorResolution],
   );
 
   const workspacePolicy = workspaceOverrides?.providerPool ?? null;
@@ -413,12 +396,9 @@ export const WorkflowBuilderView = (props: Props) => {
   const recommendedOrchestratorModel = useMemo(
     () =>
       orchestratorProviderOverride !== ''
-        ? resolveLimitedTaskModel({
-            limitContext: null,
-            task: 'workflow_orchestrator',
-            preferences: null,
-            workspaceDefaultProviderId: orchestratorProviderOverride,
-            sessionDefaultProviderId: providerId,
+        ? autoModelOn({
+            slot: { kind: 'task', id: 'workflow_orchestrator' },
+            provider: orchestratorProviderOverride,
           }).model
         : resolvedOrchestratorTaskModel.model,
     [orchestratorProviderOverride, resolvedOrchestratorTaskModel],
@@ -652,10 +632,10 @@ export const WorkflowBuilderView = (props: Props) => {
   const resolvedProvider = (step: StepDraft): ProviderId =>
     step.provider !== '' ? step.provider : providerId;
   const recommendedModel = (step: StepDraft): string =>
-    recommendedModelForRole({
+    modelOnProvider({
       role: step.role ?? 'custom',
       provider: resolvedProvider(step),
-      prefs: roleModels,
+      roleModels,
     });
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);
@@ -740,14 +720,19 @@ export const WorkflowBuilderView = (props: Props) => {
   const onDeletePreset = async (t: Workflow) => {
     setError(null);
     try {
-      await deleteWorkflow(t.id, workspaceId);
+      await deleteWorkflowWithUndo({
+        workflow: t,
+        workspaceId,
+        showToast,
+        deleteWorkflow,
+        restoreWorkflowSnapshot,
+      });
       if (selectedPresetId === t.id) {
         setSelectedPresetId(null);
         setBasePresetId(null);
         setSteps([]);
         setExpandedKey(null);
       }
-      showToast({ kind: 'success', message: `Deleted the ${t.name} preset.` });
     } catch (err) {
       setError({ title: "Couldn't delete the preset", message: formatError(err) });
     }

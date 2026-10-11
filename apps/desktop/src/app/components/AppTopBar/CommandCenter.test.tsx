@@ -9,6 +9,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, render, screen } from '@testing-library/react';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
+import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { CommandCenter } from './CommandCenter';
 
 beforeAll(async () => {
@@ -37,8 +38,10 @@ describe('CommandCenter', () => {
     });
 
     expect(button.textContent).toBe(`Search${shortcutGlyphs('palette.open')}`);
-    expect(button.getAttribute('title')).toContain('Search ');
-    expect(button.getAttribute('title')).toContain(shortcutGlyphs('palette.open'));
+    expect(button.getAttribute('title')).toBeNull();
+    const tip = tooltipTextOf({ element: button });
+    expect(tip).toContain('Search ');
+    expect(tip).toContain(shortcutGlyphs('palette.open'));
     expect(screen.queryByText(/Search or ask/)).toBeNull();
   });
 });

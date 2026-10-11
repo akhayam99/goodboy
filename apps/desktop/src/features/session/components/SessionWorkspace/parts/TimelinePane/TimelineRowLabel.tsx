@@ -1,4 +1,4 @@
-import { ValueToken, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
+import { ValueToken, WORK_ROW, cn, tintClasses, Tooltip } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { agentDisplayName } from '../../../../../../shared/utils/agentDisplayName';
@@ -17,6 +17,7 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
+import type { RowStateReason } from '../../../../../workTreeModel/rowState';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineRoleGlyph } from './TimelineRoleGlyph';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
@@ -191,6 +192,17 @@ const chipOf = ({ entry, identity, isCardOpen }: ChipParams) => {
   );
 };
 
+type ReasonTitleOfParams = {
+  readonly reason: RowStateReason | null;
+};
+
+const reasonTitleOf = ({ reason }: ReasonTitleOfParams): string | null => {
+  if (reason?.kind === 'review') {
+    return reason.runTitle ?? null;
+  }
+  return reason?.kind === 'job' ? reason.title : null;
+};
+
 export const TimelineRowLabel = ({
   item,
   diffStat = null,
@@ -208,10 +220,9 @@ export const TimelineRowLabel = ({
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
   const head = factHeadOf({ entry, grade });
   const detail = detailOf({ entry, grade });
-  const runTitle =
-    entry.kind === 'agent' && item.rowState.reason?.kind === 'review'
-      ? (item.rowState.reason.runTitle ?? null)
-      : null;
+  const reason = item.rowState.reason;
+  const runTitle = entry.kind !== 'agent' ? null : reasonTitleOf({ reason });
+  const isMutedJob = reason?.kind === 'job' && reason.isMuted;
   const segments: ReadonlyArray<TimelineLabelSegment> =
     runTitle !== null
       ? [{ kind: 'text', text: runTitle }]
@@ -221,49 +232,50 @@ export const TimelineRowLabel = ({
   const title = titleOf({ entry, segments });
   const isAgent = entry.kind === 'agent';
   const titleNode = (
-    <span
-      title={detail === null ? title : `${title} · ${detail}`}
-      className={cn(
-        'flex items-center overflow-hidden',
-        isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
-        isStep ? 'text-label' : 'text-body',
-        emphasis === 'muted' || isQueued || grade === 'fact'
-          ? 'text-muted-foreground'
-          : item.rowState.phase === 'running' || item.hasUnread
-            ? 'font-medium text-foreground'
-            : 'text-foreground',
-      )}
-    >
-      {segments.map((segment, index) =>
-        segment.kind === 'value' ? (
-          <ValueToken
-            key={`${segment.variant}:${index}`}
-            value={segment.text}
-            className={cn(index < segments.length - 1 && 'shrink-0')}
-          />
-        ) : (
-          <span
-            key={`text:${index}`}
-            className={cn(
-              'min-w-0 overflow-hidden text-ellipsis whitespace-pre',
-              (index < segments.length - 1 || detail !== null) && 'shrink-0',
-            )}
-          >
-            {segment.text}
-          </span>
-        ),
-      )}
-      {detail === null ? null : (
-        <>
-          <span aria-hidden className="shrink-0 whitespace-pre text-faint-foreground">
-            {' · '}
-          </span>
-          <span className="min-w-0 overflow-hidden text-ellipsis whitespace-pre text-faint-foreground">
-            {detail}
-          </span>
-        </>
-      )}
-    </span>
+    <Tooltip content={detail === null ? title : `${title} · ${detail}`}>
+      <span
+        className={cn(
+          'flex items-center overflow-hidden',
+          isAgent ? cn(WORK_ROW.title, 'flex-1') : 'min-w-0',
+          isStep ? 'text-label' : 'text-body',
+          emphasis === 'muted' || isQueued || grade === 'fact' || isMutedJob
+            ? 'text-muted-foreground'
+            : item.rowState.phase === 'running' || item.hasUnread
+              ? 'font-medium text-foreground'
+              : 'text-foreground',
+        )}
+      >
+        {segments.map((segment, index) =>
+          segment.kind === 'value' ? (
+            <ValueToken
+              key={`${segment.variant}:${index}`}
+              value={segment.text}
+              className={cn(index < segments.length - 1 && 'shrink-0')}
+            />
+          ) : (
+            <span
+              key={`text:${index}`}
+              className={cn(
+                'min-w-0 overflow-hidden text-ellipsis whitespace-pre',
+                (index < segments.length - 1 || detail !== null) && 'shrink-0',
+              )}
+            >
+              {segment.text}
+            </span>
+          ),
+        )}
+        {detail === null ? null : (
+          <>
+            <span aria-hidden className="shrink-0 whitespace-pre text-faint-foreground">
+              {' · '}
+            </span>
+            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-pre text-faint-foreground">
+              {detail}
+            </span>
+          </>
+        )}
+      </span>
+    </Tooltip>
   );
   return (
     <>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
+  Button,
   Eyebrow,
   EmptyState,
   PANE_RHYTHM,
@@ -30,11 +31,13 @@ import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { sessionGroupPresentation } from './groupPresentation';
-import { SessionViewMenu } from './SessionViewMenu';
+import { SessionFilterPopover } from './SessionFilterPopover';
+import { useClearSessionFilters } from './useClearSessionFilters';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
 import { OpenSessionCard } from './OpenSessionCard';
 
+const SUB_ROW_INSET = 'pl-7';
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
 
 const EMPTY_SESSIONS: ReadonlyArray<Session> = [];
@@ -68,6 +71,7 @@ export const SessionActivityBar = ({
   const navigate = useAppStore((s) => s.navigate);
   const prefs = useSessionViewPrefs(workspaceId);
   const column = useSessionColumn(workspaceId, sessions);
+  const clearFilters = useClearSessionFilters({ workspaceId });
   const hover = useHoverCardTarget();
   const { close: closeHover } = hover;
 
@@ -262,7 +266,7 @@ export const SessionActivityBar = ({
         )}
       >
         <Eyebrow label="Sessions" muted />
-        <SessionViewMenu
+        <SessionFilterPopover
           workspaceId={workspaceId}
           sessions={filterSessions}
           archivedCount={archivedSessions.length}
@@ -322,12 +326,27 @@ export const SessionActivityBar = ({
               aria-expanded={prefs.isFoldOpen}
               onClick={toggleFold}
               className={cn(
-                'flex h-7 w-full items-center gap-2 rounded-md pl-7 pr-2 text-left text-meta text-faint-foreground hover:text-foreground',
+                'flex h-7 w-full items-center gap-2 rounded-md pr-2 text-left text-meta text-faint-foreground hover:text-foreground',
+                SUB_ROW_INSET,
                 ROW_INTERACTIVE,
               )}
             >
               <span>{prefs.isFoldOpen ? 'Show fewer' : `Show ${column.hiddenCount} more`}</span>
             </button>
+          ) : null}
+
+          {column.hiddenByFilters > 0 ? (
+            <div
+              className={cn(
+                'flex items-center justify-between gap-2 pr-1 text-meta text-faint-foreground',
+                SUB_ROW_INSET,
+              )}
+            >
+              <span>{column.hiddenByFilters} hidden by filters</span>
+              <Button variant="ghost" size="xs" onClick={clearFilters}>
+                Clear
+              </Button>
+            </div>
           ) : null}
 
           {shownArchived.length > 0 ? (
@@ -365,7 +384,7 @@ export const SessionActivityBar = ({
               size="section"
               icon={CONCEPT_ICONS.sessions}
               tone={CONCEPT_TONE.sessions}
-              title="No sessions yet"
+              title={column.hiddenByFilters > 0 ? 'No sessions match' : 'No sessions yet'}
             />
           ) : null}
         </div>

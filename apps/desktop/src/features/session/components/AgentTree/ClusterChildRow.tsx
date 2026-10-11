@@ -1,4 +1,4 @@
-import { StatusDot, cn, formatUsd, formatUsdPrecise, tintClasses } from '@goodboy/ui';
+import { StatusDot, cn, formatUsd, formatUsdPrecise, tintClasses, Tooltip } from '@goodboy/ui';
 import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../store';
@@ -77,16 +77,17 @@ export const ClusterChildRow = ({
       {icon}
       <span className="min-w-0 flex-1 truncate text-left">{child.name}</span>
       {startAttempt > 1 && child.status !== 'completed' && child.status !== 'skipped' ? (
-        <span
-          className={cn(
-            'shrink-0 rounded-sm',
-            tintClasses('warning').bg,
-            'px-1 py-0.5 text-meta font-normal text-warning',
-          )}
-          title={`This subagent failed to start and is on attempt ${startAttempt}`}
-        >
-          attempt {startAttempt}
-        </span>
+        <Tooltip content={`This subagent failed to start and is on attempt ${startAttempt}`}>
+          <span
+            className={cn(
+              'shrink-0 rounded-sm',
+              tintClasses('warning').bg,
+              'px-1 py-0.5 text-meta font-normal text-warning',
+            )}
+          >
+            attempt {startAttempt}
+          </span>
+        </Tooltip>
       ) : null}
       {visibleDomains.map((domain, domainIndex) => (
         <span
@@ -102,12 +103,9 @@ export const ClusterChildRow = ({
         </span>
       ) : null}
       {costUsd > 0 ? (
-        <span
-          className="shrink-0 tabular-nums text-faint-foreground"
-          title={formatUsdPrecise(costUsd)}
-        >
-          {formatUsd(costUsd)}
-        </span>
+        <Tooltip content={formatUsdPrecise(costUsd)}>
+          <span className="shrink-0 tabular-nums text-faint-foreground">{formatUsd(costUsd)}</span>
+        </Tooltip>
       ) : null}
     </button>
   );

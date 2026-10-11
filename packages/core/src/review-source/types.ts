@@ -1,4 +1,5 @@
 import type { PrComment } from '@goodboy/types';
+import { HOST_CAPABILITIES } from './hostCapabilities';
 import type { PullRequestPort } from './pullRequestPort';
 
 export type ReviewSourceKind = 'github' | 'gitlab' | 'bitbucket' | 'local';
@@ -14,6 +15,7 @@ export type ReviewSourceCapabilities = Readonly<{
   canChooseMergeMethod: boolean;
   canClose: boolean;
   canReopen: boolean;
+  canCancelAutoMerge: boolean;
 }>;
 
 export type ReviewSourceThread = Readonly<{
@@ -50,9 +52,9 @@ export type ReviewSource = Readonly<{
 }>;
 
 export const REVIEW_SOURCE_LABEL = {
-  github: 'GitHub',
-  gitlab: 'GitLab',
-  bitbucket: 'Bitbucket',
+  github: HOST_CAPABILITIES.github.label,
+  gitlab: HOST_CAPABILITIES.gitlab.label,
+  bitbucket: HOST_CAPABILITIES.bitbucket.label,
   local: 'this machine',
 } as const satisfies Readonly<Record<ReviewSourceKind, string>>;
 
@@ -65,6 +67,7 @@ const NO_PULL_REQUEST_WRITES = {
   canChooseMergeMethod: false,
   canClose: false,
   canReopen: false,
+  canCancelAutoMerge: false,
 } as const;
 
 export const REVIEW_SOURCE_CAPABILITIES = {
@@ -79,6 +82,7 @@ export const REVIEW_SOURCE_CAPABILITIES = {
     canChooseMergeMethod: true,
     canClose: true,
     canReopen: true,
+    canCancelAutoMerge: true,
   },
   gitlab: {
     canReply: true,
@@ -91,6 +95,7 @@ export const REVIEW_SOURCE_CAPABILITIES = {
     canChooseMergeMethod: true,
     canClose: true,
     canReopen: true,
+    canCancelAutoMerge: true,
   },
   bitbucket: {
     canReply: true,
@@ -103,6 +108,7 @@ export const REVIEW_SOURCE_CAPABILITIES = {
     canChooseMergeMethod: true,
     canClose: true,
     canReopen: false,
+    canCancelAutoMerge: false,
   },
   local: { canReply: false, canResolve: true, ...NO_PULL_REQUEST_WRITES },
 } as const satisfies Readonly<Record<ReviewSourceKind, ReviewSourceCapabilities>>;

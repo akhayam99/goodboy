@@ -196,34 +196,40 @@ describe('the order of the list', () => {
     expect(titlesOnScreen()).toEqual(['Waiting long', 'Waiting short', 'Quiet one']);
   });
 
-  it('follows the last session you opened for the rest', () => {
-    const older = sessionOf({ goal: 'Opened Monday', lastOpenedAt: '2026-10-05T09:00:00.000Z' });
-    const newer = sessionOf({ goal: 'Opened today', lastOpenedAt: '2026-10-06T09:00:00.000Z' });
+  it('follows the last activity for the rest', () => {
+    const older = sessionOf({ goal: 'Active Monday', updatedAt: '2026-10-05T09:00:00.000Z' });
+    const newer = sessionOf({ goal: 'Active today', updatedAt: '2026-10-06T09:00:00.000Z' });
     seedColumn({ store: useAppStore, sessions: [older, newer] });
     renderBar();
-    expect(titlesOnScreen()).toEqual(['Opened today', 'Opened Monday']);
+    expect(titlesOnScreen()).toEqual(['Active today', 'Active Monday']);
   });
 
-  it('floats a session up the moment it is opened and writes the open', () => {
-    const first = sessionOf({ goal: 'Opened today', lastOpenedAt: '2026-10-02T09:00:00.000Z' });
-    const second = sessionOf({ goal: 'Opened Monday', lastOpenedAt: '2026-10-01T09:00:00.000Z' });
-    seedColumn({ store: useAppStore, sessions: [first, second] });
+  it('leaves the list still when a session is opened and writes the open', () => {
+    const letters = ['A', 'B', 'C', 'D', 'E'].map((letter, index) =>
+      sessionOf({ goal: `Session ${letter}`, updatedAt: `2026-10-0${5 - index}T09:00:00.000Z` }),
+    );
+    seedColumn({ store: useAppStore, sessions: letters });
     renderBar();
-    expect(titlesOnScreen()).toEqual(['Opened today', 'Opened Monday']);
+    const before = titlesOnScreen();
+    expect(before).toEqual(['Session A', 'Session B', 'Session C', 'Session D', 'Session E']);
+    const fourth = letters[3];
+    if (fourth === undefined) {
+      throw new Error('missing fourth session');
+    }
     act(() => {
-      useAppStore.getState().markSessionOpened({ sessionId: second.id as SessionId });
+      useAppStore.getState().markSessionOpened({ sessionId: fourth.id as SessionId });
     });
-    expect(titlesOnScreen()).toEqual(['Opened Monday', 'Opened today']);
+    expect(titlesOnScreen()).toEqual(before);
     expect(storySpies.markSessionOpened).toHaveBeenCalledTimes(1);
   });
 
-  it('does not move a running session while its agent writes', () => {
+  it('moves a running session up when its agent writes', () => {
     const running = sessionOf({
       goal: 'Fix webhook retries',
       state: runningState(),
-      lastOpenedAt: '2026-10-05T09:00:00.000Z',
+      updatedAt: '2026-10-05T09:00:00.000Z',
     });
-    const other = sessionOf({ goal: 'Other work', lastOpenedAt: '2026-10-06T09:00:00.000Z' });
+    const other = sessionOf({ goal: 'Other work', updatedAt: '2026-10-06T09:00:00.000Z' });
     seedColumn({ store: useAppStore, sessions: [running, other] });
     renderBar();
     expect(titlesOnScreen()).toEqual(['Other work', 'Fix webhook retries']);
@@ -232,12 +238,12 @@ describe('the order of the list', () => {
         sessions: [{ ...running, updatedAt: at('2026-10-06T12:00:00.000Z') }, other],
       });
     });
-    expect(titlesOnScreen()).toEqual(['Other work', 'Fix webhook retries']);
+    expect(titlesOnScreen()).toEqual(['Fix webhook retries', 'Other work']);
   });
 
   it('moves a session to the top the moment it starts needing you', () => {
-    const first = sessionOf({ goal: 'First', lastOpenedAt: '2026-10-06T09:00:00.000Z' });
-    const second = sessionOf({ goal: 'Second', lastOpenedAt: '2026-10-05T09:00:00.000Z' });
+    const first = sessionOf({ goal: 'First', updatedAt: '2026-10-06T09:00:00.000Z' });
+    const second = sessionOf({ goal: 'Second', updatedAt: '2026-10-05T09:00:00.000Z' });
     seedColumn({ store: useAppStore, sessions: [first, second] });
     renderBar();
     expect(titlesOnScreen()).toEqual(['First', 'Second']);

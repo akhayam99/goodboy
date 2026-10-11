@@ -143,7 +143,6 @@ export type {
   Workspace,
   WorkspaceGitState,
   WorkspaceGitStatus,
-  WorkspaceExternalTask,
   WorkspaceProfile,
   WorkflowRun,
   WorkflowExecutionMode,
@@ -337,6 +336,7 @@ export type {
   HistoryCommitFiles,
   HistoryGraph,
   HistoryGraphCommit,
+  HistoryForgetOutcome,
   HistoryMoveOutcome,
   HistoryOriginAhead,
   HistoryPlan,
@@ -546,6 +546,7 @@ export type {
   ResolveFailureCause,
   ResolveBatch,
   ResolveLaunchChoice,
+  ResolveLaunchMode,
   ResolveThreadGitState,
   ResolveSourceKind,
   ResolveVerdict,
@@ -575,7 +576,7 @@ export type {
   ResolvePublicationThread,
   PublicationBlocker,
 } from './resolve';
-export { RESOLVE_FAILURE_CAUSES } from './resolve';
+export { RESOLVE_FAILURE_CAUSES, RESOLVE_LAUNCH_MODES } from './resolve';
 export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './security-finding';
 export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';
 export type { DeletedBranch } from './deleted-branch';

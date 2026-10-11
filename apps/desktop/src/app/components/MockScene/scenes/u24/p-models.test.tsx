@@ -64,15 +64,11 @@ describe('the Models page scenes', () => {
     expect(MOCK_SCENES.modelswilluse).toBe(U24_P_MODELS_SCENES.modelswilluse);
   });
 
-  it('modelswilluse shows the project that wins, the skipped pins and the page line', async () => {
+  it('modelswilluse shows the saved project settings, the skipped pins and the page line', async () => {
     await mount('modelswilluse');
 
-    expect(screen.getByText('1 project has its own model settings')).toBeDefined();
-    expect(
-      screen.getByText(
-        'It wins over this page when you work in it: orchestrator Sonnet 5, summaries Sonnet 4.5 and 6 roles in payments-api.',
-      ),
-    ).toBeDefined();
+    expect(screen.getByText('Model settings 1 project had are saved')).toBeDefined();
+    expect(screen.getByText('They no longer apply.')).toBeDefined();
     expect(
       screen.getByText(
         'With Codex as the only provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.',
@@ -85,7 +81,7 @@ describe('the Models page scenes', () => {
   it('modelswilluse-cleared drops the notice and keeps the rows as they were', async () => {
     await mount('modelswilluse-cleared');
 
-    expect(screen.queryByText(/has its own model settings/)).toBeNull();
+    expect(screen.queryByText(/had are saved/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Back to Auto for those 7' })).toBeDefined();
   });
 

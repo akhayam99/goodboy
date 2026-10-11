@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { cn, formatError } from '@goodboy/ui';
+import { cn, formatError, TruncatedText } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ArtifactExport } from '../../hooks/useArtifactExport';
@@ -9,7 +9,6 @@ import { folderExportNote } from '../../../wireframes/useWireframeFolderExport/f
 import { openWireframeInBrowser } from '../../../wireframes/openWireframeInBrowser';
 import type { WireframeFidelity } from '../../../wireframes/wireframeFidelity';
 import type { ArtifactActionTarget } from '../../../actions/types';
-import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
 import { ArtifactShellActions } from './ArtifactShellActions';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
@@ -19,9 +18,7 @@ type Props = {
   readonly target: ArtifactActionTarget;
   readonly exporter: ArtifactExport;
   readonly screenId: string | null;
-  readonly onArm: OnArm;
   readonly details?: ReactNode;
-  readonly isPrimaryYielding?: boolean;
 };
 
 type Note = Readonly<{ text: string; isError: boolean }>;
@@ -32,9 +29,7 @@ export const WireframeShellActions = ({
   target,
   exporter,
   screenId,
-  onArm,
   details = null,
-  isPrimaryYielding = false,
 }: Props) => {
   const { fidelity, isRespawning, error, respawn } = useWireframeRespawn({ sessionId, artifact });
   const folderExport = useWireframeFolderExport({ artifact });
@@ -64,21 +59,18 @@ export const WireframeShellActions = ({
   return (
     <span className="flex min-w-0 items-center gap-2">
       {message === null ? null : (
-        <span
+        <TruncatedText
           role={message.isError ? 'alert' : 'status'}
-          title={message.text}
           className={cn(
             'min-w-0 max-w-48 truncate text-meta',
             message.isError ? 'text-danger' : 'text-muted-foreground',
           )}
         >
           {message.text}
-        </span>
+        </TruncatedText>
       )}
       <ArtifactShellActions
-        onArm={onArm}
         details={details}
-        isPrimaryYielding={isPrimaryYielding}
         target={{
           ...target,
           ports: {

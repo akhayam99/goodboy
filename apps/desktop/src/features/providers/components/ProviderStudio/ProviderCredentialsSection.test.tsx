@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { CredentialId, ProviderId } from '@goodboy/types';
 
 type Credential = { id: CredentialId; providerId: ProviderId; label: string; hint: string };
@@ -40,15 +40,46 @@ vi.mock('../../../../shared/components/Toast', () => ({
 
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 
+const ANTHROPIC = 'anthropic' as ProviderId;
+
 afterEach(cleanup);
 
 describe('ProviderCredentialsSection', () => {
   it('reveals the remove control on keyboard focus, not only on hover', () => {
-    render(<ProviderCredentialsSection providerId={'anthropic' as ProviderId} />);
+    render(<ProviderCredentialsSection providerId={ANTHROPIC} />);
     const remove = screen.getByRole('button', { name: 'Remove work' });
 
     expect(remove.className).toContain('opacity-0');
     expect(remove.className).toContain('focus-visible:opacity-100');
     expect(remove.className).toContain('group-hover:opacity-100');
+  });
+
+  it('asks in a popover beside the key and removes it on confirm', async () => {
+    render(<ProviderCredentialsSection providerId={ANTHROPIC} />);
+    const list = screen.getByRole('list');
+    const rowsBefore = list.children.length;
+
+    const trigger = screen.getByRole('button', { name: 'Remove work' });
+    fireEvent.click(trigger);
+
+    const dialog = screen.getByRole('dialog', { name: 'Remove "work"?' });
+    expect(list.contains(dialog)).toBe(false);
+    expect(list.children.length).toBe(rowsBefore);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove work' }));
+
+    await waitFor(() => expect(state.deleteCredential).toHaveBeenCalledWith('cred-1'));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('keeps the key when the popover is cancelled', async () => {
+    state.deleteCredential.mockClear();
+    render(<ProviderCredentialsSection providerId={ANTHROPIC} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove work' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(state.deleteCredential).not.toHaveBeenCalled();
   });
 });

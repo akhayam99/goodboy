@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Smartphone, Unplug } from 'lucide-react';
-import { Button, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
+import { Button, ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -28,33 +28,32 @@ export const PairedDevices = ({ enrolled, revoking, onRevoke, onPairAnother }: P
       <p className="max-w-[18rem] text-center text-meta text-muted-foreground">
         A paired phone can send messages, start agents and workflows, and merge pull requests.
       </p>
-      {isConfirming ? (
-        <InlineConfirm
+      <div className="flex items-center gap-2">
+        {onPairAnother !== undefined && (
+          <Button variant="secondary" size="sm" onClick={onPairAnother}>
+            <Smartphone size={ICON_SIZE.row} aria-hidden /> Pair another device
+          </Button>
+        )}
+        <ConfirmPopover
           role="danger"
-          icon={<Unplug size={ICON_SIZE.row} />}
+          icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
           title="Disconnect all paired devices?"
           description="Each phone must scan a new code to reconnect."
           confirmLabel="Disconnect"
           isBusy={revoking}
+          isOpen={isConfirming}
           onConfirm={async () => {
             await onRevoke();
             setIsConfirming(false);
           }}
           onCancel={() => setIsConfirming(false)}
-          className="w-full max-w-[20rem]"
-        />
-      ) : (
-        <div className="flex items-center gap-2">
-          {onPairAnother !== undefined && (
-            <Button variant="secondary" size="sm" onClick={onPairAnother}>
-              <Smartphone size={ICON_SIZE.row} aria-hidden /> Pair another device
+          trigger={() => (
+            <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
+              <Unplug size={ICON_SIZE.row} aria-hidden /> Disconnect
             </Button>
           )}
-          <Button variant="ghost-danger" size="sm" onClick={() => setIsConfirming(true)}>
-            <Unplug size={ICON_SIZE.row} aria-hidden /> Disconnect
-          </Button>
-        </div>
-      )}
+        />
+      </div>
     </div>
   );
 };

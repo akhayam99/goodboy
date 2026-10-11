@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo } from 'react';
 import { ArchiveRestore } from 'lucide-react';
 import { IconButton, InteractiveRow, cn } from '@goodboy/ui';
 import type { ChatId } from '@goodboy/types';
@@ -26,28 +26,6 @@ const ChatArchivedRowView = ({
   onRestore,
   onDelete,
 }: Props) => {
-  const [isConfirming, setIsConfirming] = useState(false);
-  const confirmRef = useRef<HTMLLIElement>(null);
-
-  useEffect(() => {
-    if (isConfirming) {
-      confirmRef.current?.scrollIntoView?.({ block: 'nearest' });
-    }
-  }, [isConfirming]);
-
-  if (isConfirming) {
-    return (
-      <li ref={confirmRef} data-chat-row={chatId}>
-        <ChatDeleteConfirm
-          title={title}
-          canArchive={false}
-          onDelete={() => onDelete(chatId)}
-          onArchive={() => setIsConfirming(false)}
-          onCancel={() => setIsConfirming(false)}
-        />
-      </li>
-    );
-  }
   return (
     <li data-chat-row={chatId} data-archived="true">
       <InteractiveRow
@@ -71,7 +49,7 @@ const ChatArchivedRowView = ({
           </span>
         </span>
         <span className="truncate text-meta text-faint-foreground">{snippet}</span>
-        <span className="absolute right-0 top-0 flex items-center opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <span className="absolute right-0 top-0 flex items-center opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 has-[[aria-expanded=true]]:opacity-100">
           <IconButton
             icon={ArchiveRestore}
             label={`Restore ${title}`}
@@ -80,13 +58,22 @@ const ChatArchivedRowView = ({
             iconSize={12}
             onClick={() => onRestore(chatId)}
           />
-          <IconButton
-            icon={CONCEPT_ICONS.delete}
-            label={`Delete ${title}`}
-            tooltip="Delete"
-            variant="ghost"
-            iconSize={12}
-            onClick={() => setIsConfirming(true)}
+          <ChatDeleteConfirm
+            title={title}
+            canArchive={false}
+            onDelete={() => onDelete(chatId)}
+            onArchive={() => undefined}
+            trigger={({ arm }) => (
+              <IconButton
+                icon={CONCEPT_ICONS.delete}
+                label={`Delete ${title}`}
+                tooltip="Delete"
+                variant="ghost"
+                iconSize={12}
+                aria-haspopup="dialog"
+                onClick={arm}
+              />
+            )}
           />
         </span>
       </InteractiveRow>

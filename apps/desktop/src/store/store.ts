@@ -27,6 +27,8 @@ import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createSlackDraftsSlice } from './slices/slack-drafts';
 import { createBudgetSlice } from './slices/budget';
+import { createMonitoringSlice } from './slices/monitoring';
+import { monitoringInitialState } from './slices/monitoring/state';
 import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
 import { createDiffCommentsSlice } from './slices/diff-comments';
@@ -50,6 +52,8 @@ import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
 import { createSessionViewSlice } from './slices/session-view';
+import { createSavedProjectModelsSlice } from './slices/saved-project-models';
+import { savedProjectModelsInitialState } from './slices/saved-project-models/state';
 import { createSessionPinsSlice } from './slices/session-pins';
 import { sessionPinsInitialState } from './slices/session-pins/state';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
@@ -106,7 +110,6 @@ import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
 import { createBranchCleanupSlice } from './slices/branch-cleanup';
 import { createStarredIssuesSlice } from './slices/starred-issues';
-import { createWorkspaceTasksSlice } from './slices/workspace-tasks';
 import { createSearchIndexSlice } from './slices/search-index';
 import { createChatsSlice } from './slices/chats';
 import { createAskSlice } from './slices/ask';
@@ -223,7 +226,6 @@ export type AppStore = AppState &
   ReturnType<typeof createSecurityFindingsSlice> &
   ReturnType<typeof createBranchCleanupSlice> &
   ReturnType<typeof createStarredIssuesSlice> &
-  ReturnType<typeof createWorkspaceTasksSlice> &
   ReturnType<typeof createSearchIndexSlice> &
   ReturnType<typeof createChatsSlice> &
   ReturnType<typeof createAskSlice> &
@@ -249,6 +251,7 @@ export type AppStore = AppState &
   ReturnType<typeof createScriptsSlice> &
   ReturnType<typeof createPermissionsSlice> &
   ReturnType<typeof createSessionViewSlice> &
+  ReturnType<typeof createSavedProjectModelsSlice> &
   ReturnType<typeof createSessionPinsSlice> &
   ReturnType<typeof createSessionsSlice> &
   ReturnType<typeof createTranscriptsSlice> &
@@ -277,6 +280,7 @@ export type AppStore = AppState &
   ReturnType<typeof createArtifactDraftsSlice> &
   ReturnType<typeof createSkillsSlice> &
   ReturnType<typeof createBudgetSlice> &
+  ReturnType<typeof createMonitoringSlice> &
   ReturnType<typeof createGithubSlice> &
   ReturnType<typeof createGitlabMrSlice> &
   ReturnType<typeof createBitbucketPrSlice> &
@@ -305,7 +309,9 @@ export const initialState: AppState = {
   ...projectRelocationInitialState,
   ...backupInitialState,
   ...budgetInitialState,
+  ...monitoringInitialState,
   ...createInitialSessionViewState({}),
+  ...savedProjectModelsInitialState,
   ...sessionPinsInitialState,
   ...sessionFiltersInitialState,
   ...workspacesInitialState,
@@ -388,6 +394,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createOpenQuestionsSlice({ set, get }),
   ...createSlackDraftsSlice({ set, get }),
   ...createBudgetSlice({ set, get }),
+  ...createMonitoringSlice({ set, get }),
   ...createSkillsSlice({ set, get }),
   ...createStorageSlice({ set, get }),
   ...createDiffCommentsSlice({ set, get }),
@@ -405,6 +412,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSettingsLastPageSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
   ...createSessionViewSlice({ set, get }),
+  ...createSavedProjectModelsSlice({ set, get }),
   ...createSessionPinsSlice({ set, get }),
   ...createSessionFiltersSlice({ set, get }),
   ...createTerminalSlice({ set, get }),
@@ -452,7 +460,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSecurityFindingsSlice({ set, get }),
   ...createBranchCleanupSlice({ set, get }),
   ...createStarredIssuesSlice({ set, get }),
-  ...createWorkspaceTasksSlice({ set, get }),
   ...createSearchIndexSlice({ set, get }),
   ...createChatsSlice({ set, get }),
   ...createAskSlice({ set, get }),

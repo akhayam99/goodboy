@@ -42,6 +42,8 @@ export const recordResolveAttempt = async ({
   );
   const previous = ofAgent.at(-1);
   const now = Date.now();
+  const launchChoice =
+    batch?.launchChoice ?? queued?.launchChoice ?? previous?.launchChoice ?? null;
   const attempt: ResolveAttempt = {
     id: queued?.id ?? crypto.randomUUID(),
     sessionId,
@@ -68,10 +70,10 @@ export const recordResolveAttempt = async ({
     launchId: launch?.launchId ?? queued?.launchId ?? previous?.launchId ?? null,
     retryOfLaunchId: queued?.retryOfLaunchId ?? previous?.retryOfLaunchId ?? null,
     copyPath: copyPath ?? queued?.copyPath ?? null,
-    launchChoice: batch?.launchChoice ?? queued?.launchChoice ?? previous?.launchChoice ?? null,
+    launchChoice,
   };
   await insertResolveAttempt({ db, attempt });
-  if (phase === 'running' && candidateMode === 'propose') {
+  if (phase === 'running' && (candidateMode === 'propose' || launchChoice?.mode === 'propose')) {
     try {
       const baseSha =
         attempt.copyPath === null

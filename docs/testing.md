@@ -24,6 +24,7 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 - `__tests__/regressions/store-mocks.test.ts` counts the `vi.mock` and `vi.doMock` calls in `apps/desktop/src` whose target resolves to `store/store`, `store/index`, the `store` folder or a module under `store/slices/`, per file, against `store-mocks.baseline.json`. A mock of another module that only has `store` in its name (`onboarding-store`) is not counted. A file may keep what it has or shed it, and a new file starts at zero. It is a static scan and runs in well under a second. Regenerate the baseline only on the integration branch, with `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions/store-mocks.test.ts`, so that parallel changes do not edit the same rows. Never regenerate it to absorb a new mock.
 - `__tests__/regressions/truthy-queries.test.ts` counts `expect(getBy*(...)).toBeTruthy()` and `getAllBy*` in `apps/desktop` test files, per file, against `truthy-queries.baseline.json`. The query throws when the node is missing, so the assertion adds nothing. A count may fall and never grow, and a new file starts at zero. Regenerate the baseline when a change removes occurrences: `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions/truthy-queries.test.ts`.
 - `__tests__/regressions/class-assertions.test.ts` counts `toHaveClass`, `classList.contains` and `className` or `class` attribute checks in `apps/desktop` test files, per file, against `class-assertions.baseline.json`. A class pins the look, not the behavior, and the class contract belongs to `packages/ui`. A count may fall and never grow, and a new file starts at zero. Regenerate it the same way with `src/__tests__/regressions/class-assertions.test.ts` when a change removes assertions.
+- `__tests__/regressions/rust-spawn-sites.test.ts` counts `.spawn()` and `.kill()` in the Rust sources under `apps/desktop/src-tauri/src`, outside `proc/`, per file, against `rust-spawn-sites.baseline.json`. Comment lines and the trailing test module of a file are not counted. A count may fall and never grow, and a new file starts at zero. A process is started and stopped through `proc/` (`docs/architecture.md`, Processes Goodboy starts). Regenerate the baseline when a change removes call sites: `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions/rust-spawn-sites.test.ts`.
 
 ## Rules for every change
 
@@ -32,12 +33,15 @@ These hold for each change that touches a test, and they come from tests that st
 1. A bug fix starts from a test that fails on the old code. The PR body names that test.
 2. Assert behavior: role, text, aria, or the state of the store or the database after an action. Never a CSS class in `apps/desktop`, never `expect(getBy*(...)).toBeTruthy()`.
 3. A new test does not fake the store. It loads the real one through `storyHarness` (`importStore`, `resetStoryStore`, `stubStoryInvoke`). A file whose assertions you change moves to the harness in the same change. A file that only sits next to your change stays as it is. `store-mocks.test.ts` fails on any file that mocks the store beyond its baseline.
-4. A mock scene proves that a surface mounts with no console error and no error boundary, in both themes, and nothing more. A scene test that must see the scene's own IPC answers mocks `@tauri-apps/api/core` with `sceneInvoke` (`src/test/sceneInvoke.ts`), which forwards to the `mockIPC` bridge the scene installed, because an `invoke` that never answers hides a crash the browser shows. A scene with clickable writes installs `installSceneDatabase` and `installScenePlanEngine` ([mock-screenshots.md](./mock-screenshots.md)), and its test clicks the real controls. Behavior is proved in harness tests, and geometry by capturing the scene and looking at it.
+4. A mock scene proves that a surface mounts with no console error and no error boundary, in both themes, and nothing more. A scene test that must see the scene's own IPC answers mocks `@tauri-apps/api/core` with `sceneInvoke` (`src/test/sceneInvoke.ts`), which forwards to the `mockIPC` bridge the scene installed, because an `invoke` that never answers hides a crash the browser shows. A scene with clickable writes installs `installSceneDatabase` and `installScenePlanEngine` ([mock-screenshots.md](./mock-screenshots.md)), and its test clicks the real controls. Behavior is proved in harness tests, and geometry by capturing the scene and looking at it. Add a scene with [recipes/mock-scene.md](recipes/mock-scene.md).
 5. Delete a test that only checks that a fake function was called, one that repeats a ratchet, and one for text you removed.
 6. No new real wait with `setTimeout`. Use fake timers or wait on the condition.
 7. New behavior goes in a new test file beside the old one. The huge files (`buildTimelineStream.test.ts`, `WorkflowBuilderView/index.test.tsx`, `orchestrateNextStep.test.ts`) only get shorter.
 8. The PR body says "tests removed n, replaced by m, files converted k".
 9. A ratchet baseline never grows. `pnpm run check:baselines` fails on growth, and only the owner lists an exception: [ratchets.md](ratchets.md).
+10. A layout claim (width, position, which column) is proved by geometry in a scene probe (`scripts/validate-scenes.mjs`), never by `data-width` or a class in a test. `no-layout-by-attribute.test.ts` counts the claims left in `__tests__/surfaces` and only falls.
+11. A control that starts async work is `disabled` or `isBusy` and says why in a tooltip ("Wait for the turn to finish"), or runs through `usePendingAction`. `busy-controls.test.ts` counts the ones left. A ternary with two identical branches fails the same guard.
+12. A page's close control is named from its title: `StudioShell` builds `Close <title>` unless `closeLabel` is given. `retiredNames.ts` matches a former name in any casing, `aria-label` and `title` included.
 
 ## Desktop unit tests run in four shards
 
@@ -121,6 +125,8 @@ A test that needs a `Session`, `Agent`, `Project`, `Workspace` or `WorkflowRun` 
 
 The `apps/desktop/src/__tests__/surfaces/navigation-flows/` folder mounts the whole `App` on the real store, with only the Tauri bridge mocked. Each row of its tables clicks a real control (crumb menu, palette, footer, settings rail, mount row, back arrow) and checks that a heading or landmark of the destination renders. A row fails on React #185, "Maximum update depth", "getSnapshot should be cached", the error boundary, or a store action it lists in `covers` that the click never called.
 
+The `target-identity` rows are the template for "view mount A, act on mount B": open mount A, trigger an action that names mount B, and assert that B is the mount shown or written (`docs/typescript/state-writes.md`).
+
 `__tests__/surfaces/one-home.test.tsx` guards the "one home per thing" rule of `docs/navigation.md`. It renders the board, the linked-work row and the providers menu from the mock scene seeds, on the real store, and fails when the workspace name shows outside the top bar, a task id shows twice in one row, a stage default (`no PR yet`, `awaiting review`) is given as a reason, or a limit figure shows twice in the providers menu. When a scene seed changes, change the test with it.
 
 - The rows live in the `*.rows.tsx` files of the folder, one per group of controls; each has a `*.test.tsx` twin that runs them, so the suite splits across workers. The ratchet finds every `*.rows.tsx` in the folder and fails when one has no twin that calls `runNavigationRows`. `harness.tsx` holds the bridge mock, `boot` and the click helpers. A new page, studio, lens, settings section or navigation action adds one row to the group it belongs to, in the same commit.
@@ -133,6 +139,11 @@ A `packages/db` test that needs a migrated schema calls `await makeMigratedTestD
 ## Migration convergence sampling
 
 For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the intermediate versions instead of all of them. That sample does not replace the per-version sql hash manifest checked into the same file. The manifest is what really stops anyone from editing a migration after release. The sample has its own minimum number of intermediate points it must reach. So if someone cuts the sample size, the test fails, instead of quietly shrinking to the first and last version. No test pins the sampled versions or the total number of migrations. Both change every release. A test that goes red for that reason teaches people to edit the expected values, and that is exactly how a hash manifest gets regenerated without anyone looking.
+
+Rust repository fixtures reserve a unique directory before Git initialization.
+Timestamp-only names can collide in parallel tests. The helper in
+`apps/desktop/src-tauri/src/worktree/file_sides/tests.rs` combines a per-process
+counter with a timestamp and uses `create_dir` to reject reuse.
 
 ## Fake CLI binaries for the Rust spawn tests
 
@@ -241,3 +252,17 @@ The scene measures workflow is advisory, with a job that can fail without
 blocking a pull request. It must never be configured as a required check. It
 starts the mock app on the runner and uses the runner's installed Chrome to run
 the existing measures. It uploads no artifacts.
+
+### Frame probe
+
+A layout claim is proved by geometry, here, and by no class or attribute in a unit test. `scripts/validateScenesFrame.mjs` exports `FRAME_SCENES`, the one list of about thirty scenes, and the scene job measures each at 1100, 1440 and 1920 wide with the sidebar pinned and on the rail (one viewport change and one reload per pair). A failure names the scene, the width, the sidebar and the rule. The rules, with a tolerance of 1px:
+
+- the trail's first crumb, the h1 and the first body column share one left edge, and a scene with no crumb or no h1 fails this rule instead of skipping it (an entry marked `isBare: true` is a pane mounted without its studio frame, so it is held to the sheet rules only);
+- every `[data-slot]` inside the page container lies inside it (a slot under a scroller may sit below the fold);
+- no left rail rect overlaps the trail;
+- the crumb row centre equals the drawer header centre when a drawer is open;
+- a composer's bottom is at or above the sheet bottom;
+- a `data-container="drawer"` is a sibling of its `data-container="page"`, never inside one;
+- on the empty chat scene, the stage centre is on the detail centre in x and at 40 to 52 percent of the detail height in y.
+
+To add a scene, add its id to `scenes.txt` through the scene registry, then one entry to `FRAME_SCENES`: `{ scene, rail }`, where `rail` is the query that collapses the sidebar (`&rail=1` for a scene on `WorkspaceFrame` or `BoardShellScene`, `&ctx=rail` for `frame&view=...`) or `null` when the scene draws no sidebar. A scene with no `data-container="page"` fails the probe (wrap a bare scene in `PageSheet`, which is the real `DrawerColumn`), and a crumb that sits outside the detail column is not measured, so a split page scene passes `isTrailInDetail` to `ShellFrame`, and an id missing from `scenes.txt` fails before any measure, because an unknown id would silently render the workspace scene. Run one scene with `pnpm validate:scenes --only frames:<text>` against `vite preview` of a mock build; the rule functions have fixtures in `scripts/validate-scenes.test.mjs`.

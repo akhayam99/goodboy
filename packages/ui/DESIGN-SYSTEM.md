@@ -41,7 +41,7 @@ between them instead of mixing one surface through opacity.
 | ---- | -------- | --------------- | ----------------------------------------------------- |
 | 0    | chrome   | `bg-chrome`     | the app frame: top bar, left column and its rail      |
 | 1    | sheet    | `bg-background` | the content sheet, a studio's detail, viewer dialogs  |
-| 2    | panel    | `bg-subtle`     | a drawer that pushes the column                       |
+| 2    | panel    | `bg-subtle`     | grouped content on the sheet                          |
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
 | 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                        |
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
@@ -52,6 +52,15 @@ Light mode is ink on paper, read on two axes. On the elevation axis (what sits
 in front) chrome < content < raised = floating: nothing is brighter than white,
 so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
 (what sits inside) content > panel > inset: the deeper, the darker.
+
+`drawer` sits beside the page surface, not on the ladder: a right drawer is its
+own container next to the sheet and is painted one step quieter than
+`background`, between `chrome` and `background` in both themes (dark
+`oklch(0.187 0.006 255)`, light `oklch(0.964 0.0045 250)`: the same hue and no
+more chroma than `background`, so it recedes and never tints). It carries every
+text token at 4.5:1 and every border at the floors of the ladder, held by
+`token-contrast-floor.test.ts`. A drawer container never fakes the difference
+with a border.
 
 Two tokens are relations, not steps. `fill` is one step inside whatever parent
 it sits on (white 6% in dark, black 5% in light), so a neutral chip, a
@@ -69,8 +78,8 @@ Three borders, each with one job:
 | `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
 
 Three translucent tokens paint over whatever sits below them: `frame-edge`
-(white 8% in dark, black 8.5% in light) draws the content sheet and the
-floating drawer at 1.2:1 or more on chrome and background, and
+(white 8% in dark, black 8.5% in light) draws the content sheet and the right
+drawer container at 1.2:1 or more on chrome and background, and
 `scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
 background, panel and floating.
 
@@ -237,7 +246,7 @@ Bare `rounded` comes out at 3.75px on the 15px root, so it is always written
 
 | token           | value | used for                                                        |
 | --------------- | ----- | --------------------------------------------------------------- |
-| `rounded-frame` | 10px  | only the content sheet and the floating drawer                  |
+| `rounded-frame` | 10px  | only the content sheet and the right drawer container           |
 | `rounded-lg`    | 8px   | surfaces: cards, popovers, menus, bands, notices, toasts        |
 | `rounded-md`    | 6px   | controls: buttons, inputs, triggers, icon buttons, sidebar rows |
 | `rounded-sm`    | 4px   | role pill, kbd, inline code, checkbox, rows inside a popover    |
@@ -248,16 +257,16 @@ Bare `rounded` comes out at 3.75px on the 15px root, so it is always written
 Five levels plus the tooltip. A level sets surface, shadow, border and radius
 together, and there is no arbitrary shadow.
 
-| level      | surface                          | shadow      | border                        | radius                     | holds                            |
-| ---------- | -------------------------------- | ----------- | ----------------------------- | -------------------------- | -------------------------------- |
-| 0 frame    | `chrome`                         | none        | none                          | n/a                        | top bar, left column, rail       |
-| 1 sheet    | `background`                     | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
-| 2 band     | `fill` (band), `subtle` (drawer) | none        | none                          | `lg` band, `frame` drawer  | groups, a drawer that pushes     |
-| 3 card     | `elevated`                       | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`          |
-| 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
-| 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                         |
+| level      | surface                         | shadow      | border                        | radius                     | holds                            |
+| ---------- | ------------------------------- | ----------- | ----------------------------- | -------------------------- | -------------------------------- |
+| 0 frame    | `chrome`                        | none        | none                          | n/a                        | top bar, left column, rail       |
+| 1 sheet    | `background`                    | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail           |
+| 2 band     | `fill` (band), `subtle` (panel) | none        | none                          | `lg`                       | groups, panels on the sheet      |
+| 3 card     | `elevated`                      | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`          |
+| 4 floating | `floating`                      | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
+| 5 tooltip  | `foreground`                    | `shadow-md` | none                          | `md`                       | tooltips                         |
 
-A drawer over the page is flush with the sheet (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
+A right drawer is its own container, never a card inside the sheet: it takes `drawer` (see Surfaces), `frame-edge` and `rounded-frame` like the sheet it stands beside. Over the page it is flush with the window edge (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
 
 **One floating surface.** Level 4 is the constant `FLOATING_SURFACE`
@@ -801,8 +810,8 @@ string on their one clickable element. `InteractiveRow` splits it, because its
 frame is not the control: the frame takes `ROW_HOVER` so the wash stays while
 the pointer is over an inner link or button, and the overlay button that opens
 the row takes the ring. A row that opens nothing carries none of it, and no
-pseudo-element stands in for the layer. The Files tree rows and strip of a
-diff (`ChangeTree`, `TreeStrip`) take the shared string; a Board card washes
+pseudo-element stands in for the layer. The Files tree rows of a
+diff (`ChangeTree`) take the shared string; a Board card washes
 whole through `sessionCardShell` and its title button shows the pointer. An unread row keeps its tint under the
 pointer: hovering it for 450ms marks it seen when the pointer leaves, never
 while it is still on the row.
@@ -941,16 +950,15 @@ The right end of a work row is `WorkMeta` in
 `$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
 running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                                                                               | in a narrow row                                |
-| ---------- | ----- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; the workflow builder and plan parts only | glyph only under 840px, gone under 360px       |
-| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                         | "left" goes under 640px, gone under 500px      |
-| cost       | 48px  | what the row has spent, empty before anything is spent                                                              | under 620px it leaves the row                  |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                        | under 620px it leaves the row                  |
-| model      | 176px | Activity and Runs: the provider glyphs, the models that ran in run order and the effort (`Opus 5.5 · High`)         | glyphs only under 640px                        |
-| stack      | 72px  | Activity and Runs: duration on top (meta size, muted), cost under it (chip size, faint)                             | cost leaves under 620px, all of it under 500px |
-| action     | 76px  | the one visible action, reserved for the tree of a live run                                                         | never drops                                    |
-| menu       | 24px  | the row menu, like Stop run on a run row                                                                            | never drops                                    |
+| column     | width | holds                                                                                                                                                 | in a narrow row                                |
+| ---------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                                                           | "left" goes under 640px, gone under 500px      |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                                                                | under 620px it leaves the row                  |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                                                          | under 620px it leaves the row                  |
+| model      | 136px | `ModelBlock`: a 24px provider glyph cell, then model and version on line 1 (meta size), variant and effort on line 2 (chip size, faint), left aligned | lines hide under 640px, glyphs stay            |
+| stack      | 72px  | Activity and Runs: duration on top (meta size, muted), cost under it (chip size, faint)                                                               | cost leaves under 620px, all of it under 500px |
+| action     | 80px  | the one verb of the row (`ROW_ACTION_LABEL`, at most nine characters), right aligned; present only in a feed that has an actionable row               | never drops                                    |
+| menu       | 24px  | the row menu, like Stop run on a run row                                                                                                              | never drops                                    |
 
 The state slot of a work row (`WORK_ROW.stateSlot`) is not a column: it is
 `min-w-28 max-w-64` (112 to 256px), so a long state such as "3 ready · 4
@@ -962,8 +970,7 @@ A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
 drops it, as the builder does for a plan with no measured estimate yet. A
-run row has no routing column: it takes the time column and the cost column
-like any other row.
+run row takes the time column and the cost column like any other row.
 
 The step rows of the activity timeline and of the run tree (Runs, the run page
 and a Brief's Subagents) are one grammar: role icon, step title, model with
@@ -975,21 +982,29 @@ The role is an icon only, never a coloured role-name pill: the 18px glyph has
 the role as its accessible name (`role="img"`) and in the card header. The
 workflow builder keeps its role pill because the role is a field there.
 
-The right side uses two columns, in this order after the state
-word: the model cell (`TimelineModelCell`) and the stacked time and cost column
-(`TimelineRowMeta`). The model cell holds the provider glyph, the model that
-actually ran, read from the turn spans of the agent in run order, and its effort
-after a dot (`Opus 5.5 · High`, effort in faint). When several
-ran (a fallback, a retry, a routing change) it holds one glyph per provider and
-the names joined by an arrow ("Kimi K3 → Sonnet 5.5"), or "3 models" past two,
-with no effort (the card lists each one with its own). The name truncates before
-the effort does, and the title always truncates before the model cell does: the
-cell only drops to its glyphs under 640px. A
-live agent ends on its current routing; an agent that has not started shows its
-planned model in faint. A run row shows the distinct models of its steps ("Sonnet
-5.5 + 2", glyphs side by side). Every row holds both columns, empty when it has
-nothing to say, so duration and cost line up down the feed. A row reserves an
-action slot only when it has one. It has no menu slot.
+The right side uses three columns, in this order after the state word: the
+model block (`ModelBlock`, drawn by `TimelineModelCell`), the stacked time and
+cost column (`TimelineRowMeta`) and the action column. `ModelBlock` is the same
+trick as the time and cost stack: a 24px glyph cell centred on the row midline
+(14px icons, two providers overlap by 6px), then two 16px lines. Line 1 is the
+model and version and sits on the baseline of the time, line 2 is the variant
+and effort (`Thinking · High`, faint) and sits on the baseline of the cost; it
+is left out when empty. The models are read from the turn spans of the agent in
+run order. An agent that ran on two models shows the one it ended on with "from
+Kimi K3" on line 2, and "3 models" from three. A run row shows the model with
+most steps and "+ 2 models" under it. The card lists each model in order. The
+name truncates before the title does, and under 640px the lines go and the
+glyph cell stays. A live agent ends on its current routing; an agent that has
+not started shows its planned model in faint. Every row holds the model and the
+stack, empty when it has nothing to say, so duration and cost line up down the
+feed. The action column is a fixed 80px, `justify-end`, and a feed draws it on
+every row as soon as one row has an action, so the model and the stack end on
+the same edge in every row (`scripts/validate-scenes.mjs` measures it on
+`step-rows-activity`, `step-rows-runs` and `workflow-run-plan-review` at 1100,
+1440 and 1920). Action labels are verbs from `ROW_ACTION_LABEL`
+(`features/workTreeModel/rowActionLabels.ts`): Answer, Skip, Open plan, Open,
+Start, Resume, Retry. A label never passes nine characters and the row title
+names the object ("Start", never "Start implementer"). A row has no menu slot.
 
 The role glyph before the title and the model cell are the only two hover
 targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`),
@@ -1029,8 +1044,8 @@ it is not a word in the row: the duration turns to the warning tone, the note
 leads its tooltip and screen readers hear it after the time, so it never pushes
 the model column.
 What leaves the row stays in the routing tooltip, which
-always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
-is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
+always reads the whole route ("Claude · Opus 5.5 · High"). The builder and the plan
+parts draw the same block through `RoutingModelBlock`, with no fill and no chip. Its words come from
 `routingLabelParts`, the same function behind the model picker trigger, so a
 row, the trigger, the queue and a header say a route the same way: the catalog
 label is the model name (`GPT-5.6 Sol`), the Cursor
@@ -1140,7 +1155,7 @@ Impact`): there is no Impact icon and no theme toggle in the bar. The command
 centre says `Search` with its chord as bare text; the workspace name lives in its
 tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
 number. The trail keeps the first crumb's word until every other ancestor has
-shrunk to an icon and folded (`compactTrail`). The bell's count badge sits 2px
+shrunk to an icon and folded (`compactTrail`). `Trail` has no lead slot: nothing sits before the first segment, and no crumb carries a back glyph. The bell's count badge sits 2px
 inside the bell's box. The session trail band keeps its 24 controls, and trail,
 rail and tree-row buttons are 24.
 
@@ -1245,7 +1260,7 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
   or left when there is no room), with a check on the current value. Nothing
   nests deeper.
 - **Confirm in place**: a verb with a confirm swaps the menu body for
-  `InlineConfirm surface="plain"`, the menu swap placement below; Escape
+  `InlineConfirm`, the menu swap placement below; Escape
   cancels the confirm first, then closes.
 - **Keyboard and ARIA**: `role="menu"` with `menuitem` rows (`menuitemradio` in
   a submenu). The first row takes focus on open; the arrows, Home and End move;
@@ -1415,10 +1430,17 @@ in a flat one (the rest of the flat list then reads Other sessions, so the
 boundary is named, with no divider). A pinned row is the same row as any other,
 with no glyph at rest.
 
-A list that belongs to a studio's page (Chat's chats, Changelog's releases)
-uses `StudioRailLayout` with `placement="page"`: the list sits on the page
-background and the resize handle draws the only line between it and the
-detail.
+A list that belongs to a studio's page (Chat's chats, Changelog's releases) or
+its filters (Tasks, Notifications) uses `StudioRailLayout` with
+`placement="page"`: the rail sits on the page background and the resize handle
+draws the only line between it and the detail. Every page rail is 288 wide
+(`standard`), resizes between 220 and 420 unless the page passes `min` and
+`max`, and can take `railHeader` (Tasks' search) plus `onCollapsedChange`, which
+adds the fold control to the first row; `isCollapsed` hides the rail. The page
+owns the folded state through `useStudioRailFold` (remembered per surface, and
+forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
+title row: a 28px secondary button with the funnel and the count of active
+filters, opening the same facets in a popover.
 
 ## Pane anatomy
 
@@ -1439,7 +1461,10 @@ left, Ask or Close at its right edge), a 32px title row directly under it with t
 page's `h1` at `text-title` and the actions at its right, and an optional 12px muted
 meta line 4px under the row. The title's centre is therefore 56px under the pane top
 and its left edge is the column's content edge on every page; `frameGeometryOf`
-(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Inside
+(`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Every
+page has one of four frame types in `PAGE_FRAME` (column 1008, reader 768, stage, split
+`[rail 288][detail]`), see [the frame map](../../docs/styling.md#the-frame-map); in a split page the
+band is the first child of the detail, never over the rail. Inside
 a session the band is the `TrailBar`, and in a studio `StudioFrame` draws it inside a
 `PageColumn` of the studio's tier and hands its body `UnderTrailContext`, so the header
 adds no top padding; outside both, a bare page keeps 12px above. The Board has an
@@ -1490,27 +1515,31 @@ its track from the main area and the centred column re-centres in the space
 left of it, at its full width while that space is wide enough, in one 180ms
 ease-out move (none under reduced motion). A full tier work surface keeps its
 left edge and only gives up its right. One rule decides the mode: with
-`room = main - 16 - 48 - 560`, the drawer pushes while `room >= 384` (a side
-drawer at `min(saved, room)`, a wide one at `min(560, room)`) and otherwise
-lies over the page. Pushing it is the inset card of the Elevation table. Over
-the page it spends no pixels on an inset: the card runs the full height of the
-sheet, flush with its top, bottom and right edges, with `rounded-l-frame`, a
-left border only and `shadow-xl`, over a `scrim` that fades in in 120ms. The
+`room = main - 16 - 48 - 560`, the drawer pushes while `room` covers its saved
+width (side tier 400 by default, reader tier 720) and otherwise lies over the
+page at `min(saved, main - 16)`; it is never squeezed. Pushing, the drawer is
+its own container beside the page container: both rounded on all four corners
+with `frame-edge`, 8px apart, the drawer 8px from the window's right edge, the
+drawer on `bg-drawer`. Over the page it spends no pixels on an inset: the
+container runs the full height of the sheet, flush with its top, bottom and
+right edges, with `rounded-l-frame`, a left border only and `shadow-xl`, over a
+`scrim` that fades in in 120ms. The
 page under it is `inert`, a click on the scrim dismisses the top escape layer
 like Esc, and focus moves into the card on open and back to the trigger on
 close.
 
-**The drawer card.** `DrawerFrame` is the card's one frame: a 44px header, a
+**The drawer container.** `DrawerFrame` is its one frame: a header whose 28px row is centred on the
+band's centre line (`FRAME_DRAWER_ROW_PX`), a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
 then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px
-glyph); every utility in the header (copy, open on its page, expand) is a 28px
+glyph); every utility in the header (copy, open on its page) is a 28px
 icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
 composer, a transcript reply field and a script run's status line. The first
 control takes focus when the drawer opens (the composer of the dock when it has
 one, `Close` otherwise); Esc blurs a non-empty text field first and closes on
 the next press, and a click on the scrim does the same through the escape
-stack. A toast beside a pushing drawer stops at the card's left edge less the
+stack. A toast beside a pushing drawer stops at the container's left edge less the
 12px gutter.
 
 **A form opens where you clicked.** One placement rule for every inline form:
@@ -1560,7 +1589,7 @@ moves.
 meta, a state word with its dot or glyph, a 14px check on the current row on
 `overlay-selected`), and an action band on `fill` under the list with at most
 two 28px rows. Widths are 300, 380 and 460. It opens in 120ms (opacity and a
-4px drop) and closes without motion.
+4px drop) and closes without motion. A segment whose menu would hold fewer than two entries (rows plus actions) draws as a plain crumb with no chevron, so there is never a menu of one (`crumbMenuWithChoice`).
 
 ## Action zones
 
@@ -1579,9 +1608,9 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Run on its own uses it everywhere (`WorkflowAutorunToggle`).
 
-**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with no items draws nothing, so a page with no actions shows no lone `...`. Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete opens its `InlineConfirm` card directly under the title row (`HeaderPanel`: focus lands on Cancel, Escape and Cancel close it and give focus back to the overflow trigger). A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
+**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete asks in a `ConfirmPopover` anchored to the overflow trigger (focus lands on Cancel, Escape and Cancel close it and give focus back to the trigger). A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
 
-**One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` is a neutral card (`bg-subtle`, `border-border-soft`) with a `ToneBar` in the role's tone as its inner line: the card never takes a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
+**One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` has no card of its own: a host that wants a surface (the push banner) gives it `bg-subtle`, never a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
 
 **Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
 
@@ -1592,18 +1621,18 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 | Overflow  | rare tool verbs, Refresh and Copy link                               | the `⋯` menu on the identity line                  |
 | Utilities | Open in the tool, `⋯`, close                                         | icon buttons at the end of the identity line       |
 
-A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms under the action row, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
+A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms in a `ConfirmPopover` on its button, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
 
-`InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone. It is the only confirmation body, and it shows in exactly one of three placements, picked by how much room the trigger has:
+**Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch, Remove from session), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two. Rows nest by one constant: a child row's leading glyph sits under the parent's name, `MOUNT_CHILD_INDENT = 22` (the 14px parent glyph and its 8px gap, `ProjectMountRows/mountGrid.ts`), every row of a band has the same 8px left edge and every trailing control ends 8px from the band's right edge. A "Show finished (n)" `CountToggle` and an empty line start on the child rail too.
 
-- **Row swap**: a trigger inside a row with width (a `FieldRow`, a section footer) is replaced in the same slot by the `card` surface.
-- **Anchored**: a small trigger (icon button, sidebar row action, header action, rail row) opens `ConfirmPopover`, which shows the `plain` surface in an `AnchoredPopover`. Escape and a click outside cancel. The popover stays open and busy while the confirm runs. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height.
-- **Menu swap**: a destructive item in an open menu or popover replaces the menu body with `InlineConfirm surface="plain"` in the same popover.
-- **Under the header**: a destructive or one-shot verb of a page header (Delete session, Delete agent, a plan's Run again) arms a card `InlineConfirm` in `HeaderPanel` directly under the title row, in place, with no modal and no popover over the control.
-- **Above the selection bar**: a destructive verb of a selection confirms in `SelectionConfirm`, a card `InlineConfirm` that sits directly above `SelectionBar`, because the verb lives in the bar and the confirmation must stay with it.
+A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
 
-A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The card is neutral: `bg-subtle` with a soft border and a `ToneBar` in the tone of its role (primary, warning for `alert`, danger), never a tinted fill. The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
-When confirmation fails, `InlineConfirm` stays open and shows the formatted reason with `role="alert"`. The same controls become available for a retry. An automatic disarm pauses until the error is cancelled or a retry succeeds.
+- **Focus**: on open it lands on Cancel for `role="danger"` and on the confirm button for `primary` and `alert`. Enter activates the focused button, `Cmd+Enter` confirms from anywhere inside, Tab cycles between the buttons, Escape and a click outside cancel. After the confirm, if the trigger is gone, `returnFocusTo={{ rowSelector }}` puts focus on the next row, else the previous one, else the list; otherwise it returns to the trigger.
+- **Trigger**: it takes the open state (`aria-expanded`), so a hover-revealed trigger stays visible while its popover is open (`group-has-[[aria-expanded=true]]/slot:opacity-100`, as in `ChatListRow`).
+- **States**: busy keeps the popover open with the confirm busy, Cancel disabled and Escape ignored; failed keeps it open with the reason under the text in `role="alert"`; done closes it and shows no toast.
+
+There is no card confirm: `InlineConfirm` draws one plain surface (no border, no fill, no tone line), and the one placement is the anchored `ConfirmPopover`. `InlineConfirm` stays for in-place confirms that never move the page: a plain menu swap inside a popover, the row of a palette, a banner that is itself a review step (the push review), and the floating confirm above a selection bar. `inline-confirm-placement.baseline.json` is empty and `inline-confirm-placement.test.ts` fails any confirm that asks for a card surface or a delay, and `absolute top-full` next to a confirm stays banned (`confirmpopover` scenes check that arming moves nothing). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
+When confirmation fails, `InlineConfirm` stays open and shows the formatted reason with `role="alert"`. The same controls become available for a retry. A confirm never disarms by itself: it waits for Cancel, Escape or a click outside.
 
 **Selection bar.** `SelectionBar` is the one bar of every list that can pick rows (Board, session list, Review, Branches, Storage). It is a `floating` surface (level 4) of `rounded-lg` that sits at the bottom centre of the surface that owns the selection: `placement="overlay"` inside a `relative` region, `"sticky"` inside a scrolling page, `"flow"` where neither fits. Left to right it holds the X (Clear, tooltip with Esc), the count, `Select all N` while some rows are left, and the verbs as ghost buttons. A verb that undoes runs at once; a verb that does not passes a `confirm` node, which renders above the bar, takes focus on Cancel and gives it back to the verb when it closes. Escape closes the confirmation first, then clears the selection, through the escape stack. Rows carry `SelectionCheckbox`: a 16px box in a 20px target, revealed by `group/select-row` hover or focus and on every row once the list carries `group/select-list` with `data-selecting`, never a tab stop (the keys are X, Cmd+A, Esc and Delete, in the `selection` group of the shortcut registry). On a Board card the box sits out of the title row (`absolute`) in a 28px left gutter (`pl-7`), 6px from the card edge and from the title, and the tone rail starts below it (`top-9`) whenever the box shows, so the title lines up with the meta line and nothing moves when the box appears. The row element carries `data-select-id` so the lasso and the keys find it, and the scroller takes `pb-24` while something is selected, so the bar never covers the last row. A list whose bar can grow taller than that (a narrow column wraps it, a note stacks above it) passes `onHeightChange` and ends its scroll content with a spacer of that height plus 24px, so the last row always scrolls clear. A surface fed by the action registry renders `ObjectSelectionBar`, so the bar's words are the menu's words.
 
@@ -1687,7 +1716,7 @@ usage windows and Models in the picker stripe this way.
 
 A metadata line is not a section and does not get a band.
 
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. Its `marker` slot sits right after the label (the faint changed-from-default dot of workspace settings) and its `menu` slot right after the control (the field's ⋯ with `Reset`), or at the end of the label line when the row is `stacked` and the control spans the width. Inside a `Band` its rows sit on an 8px rhythm, so a marker, a menu or a wider control never makes one row look taller than its neighbour. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. Its `marker` slot sits right after the label (the Reset button of workspace settings, shown only while the value differs from the default) and its `menu` slot right after the control, or at the end of the label line when the row is `stacked` and the control spans the width. Inside a `Band` its rows sit on an 8px rhythm, so a marker, a menu or a wider control never makes one row look taller than its neighbour. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
 
 ## Prose disclosure
 
@@ -1752,6 +1781,35 @@ themselves, and a hand-rolled icon button wraps itself in `Tooltip`. The native
 positioned or styled. Pass `tooltip` when the control needs to say more than
 its accessible name. `IconButton` refuses a `title` at the type level.
 
+An icon-only control is an `IconButton` by construction: the
+`hand-rolled-icon-buttons` ratchet counts a `<button>` whose only child is an
+icon outside `packages/ui`, and its baseline only falls. Convert such a button to
+`IconButton` (`tooltipSide` moves its tooltip to the side of a rail).
+
+**One shortcut format.** A tooltip that names a key takes `shortcut="<id>"`, a
+registry id, on `Tooltip`, `IconButton` or a wrapper such as `FooterButton`. The
+tooltip draws the label, then the keys from `shortcutGlyphs` as faint `Kbd` text
+a `gap-2` after it: `Ask an agent  ⌘L`, two nodes, never `Ask an agent (⌘L)`
+and never a key typed into the string. `tooltip-shortcuts-use-the-prop` fails on
+a key written into a `tooltip`, `content` or `title` string and on a `shortcut`
+literal that is not an id. A key with no registered keys prints the label alone.
+
+**No native `title` on a DOM node.** `native-title` counts `title=` on a lowercase
+element in `apps/desktop/src` and `packages/ui/src` (an `<iframe title>` is its
+accessible name and is not counted), and its baseline only falls. A control or
+a label with a different meaning goes behind `Tooltip`. Text that a `truncate`
+cuts goes behind `TruncatedText`: it renders the element (`as` takes `span`, `div`,
+`p`, `h3`, `code`, `li`, `dd` or `td`; a page `h1` stays an `h1` inside `Tooltip`), measures it when the pointer
+enters, and shows its text (or `tooltip`) only when `scrollWidth` is wider than
+`clientWidth` or `scrollHeight` is taller than `clientHeight`. A control with a
+`title` prop (`Chip`, `StatusDot`, `GhostActionButton`, `SelectableRow`,
+`ValueToken`, a `SegmentedTabs` option, a `SelectionBar` verb) shows it in a
+`Tooltip`, never as an attribute. An empty tooltip shows nothing, so a
+conditional reason is `content={reason}` with `reason` possibly `undefined`.
+A long label wraps at 28rem and keeps a line break it is given. `Button` still
+forwards a `title` as the native attribute, so a `Button` that needs a reason
+stands inside a `Tooltip` instead.
+
 There is no exception for a control that can go `disabled`, and no native
 `title` for that state either. A disabled element sends no mouse events and
 cuts the event path above itself. So listeners on the control stop working in
@@ -1779,8 +1837,10 @@ and the focus a closing menu hands back to its trigger does not reopen it.
 Keyboard focus (`:focus-visible`) opens the tooltip at once, and so does any
 tooltip that opens less than 300ms after another one closed, so a row of icons
 reads as one hover and not as four waits. A card with `restDelayMs` keeps its
-rest. The overflow tooltip says `More actions` unless the caller passes one; the
-contextual name stays in `aria-label`.
+rest. The overflow tooltip always says `More actions`: `OverflowMenu` and
+`ObjectOverflowMenu` take no `tooltip`, and the contextual name stays in
+`aria-label`. Only a choice menu that is not an overflow (`ObjectChoiceMenu`) names
+itself.
 That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
 enforces the rule for `<button>`, `<a>` and `<Button>` controls, and sees icons
 written as member expressions such as `<CONCEPT_ICONS.agents />`.
@@ -1826,8 +1886,11 @@ it:
 - **`FormPage`** is the scrolling body of a page-sized form: a `ScrollFade`
   holding a centred `PageColumn` with `gap-8` between the blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
 - **`FormActions`** is the action row. `leading` holds the quiet options or the
-  status line on the left (Starts, Run on its own, Spend cap, routing, "Scribe is
-  writing", an error with `role="alert"`). The children sit right-aligned in
+  status line on the left (Starts, Run on its own, Spend cap, routing, an error
+  with `role="alert"`). A job that runs longer than a few seconds shows its
+  status inside the input card, never in this row: the create form's card holds
+  Scribe's running dot, seconds and `Stop` in its bottom row, and the actions
+  stay inline at the end of the content with no bar. The children sit right-aligned in
   order: secondary first (Discard, Cancel, Back as `ghost` with
   `text-muted-foreground`), alternates as `secondary`, and the one primary
   last. `reason` puts the disabled primary's explanation under the buttons and
@@ -1900,6 +1963,10 @@ drawn as an empty list.
    with nothing the person can start (Questions) has no primary. Inside a
    section of a page, `EmptyState size="section"`: one line, no card and no
    padding block.
+   A stage may hold its input. The empty chat is one stage centred both ways and
+   lifted 24px above the optical centre: the bare glyph, the title, one
+   sentence, the composer itself and up to three quiet suggestion rows. The
+   first message docks the composer at the bottom.
 3. **Nothing matches.** A filter or a search hides everything. `EmptyLine`
    with `Clear filter` (or `Clear search`), or the next place to look. It never
    uses the first-time shape: the list exists, the filter is the cause.
@@ -1993,8 +2060,11 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Pull request page
 
-The Pull request tab of the Branch page is a document on the 960px column with
-a properties column: Linear's pull request page in our register. The main column
+The Overview of the Branch page is a document on the 960px column with
+a properties column, the page example of the split frame: a rail of sections on the left
+(`BranchRail` in `StudioRailLayout`, 288, `aria-current="page"` on the section on screen) and,
+on its right, the crumb band, the header with its state chip and one 640 + 296 grid with a 24px gap
+that ends at the column's right edge: Linear's pull request page in our register. The main column
 is the description (`SectionHeader` with `Edit` beside it, a markdown editor with
 Write and Preview and `Save`, `Cancel` at its end) and the Activity: plain rows
 of a 20px glyph, one muted line with the person in `text-row`, and the age at the
@@ -2002,13 +2072,12 @@ right in `tabular-nums`; a row that opens something takes `ROW_INTERACTIVE` and
 says what it opens (`Open Comments`, `View checks`), a row that opens nothing has
 no hover. The title is the page's `h1` in the fixed 32px title row
 (`PaneTitleRow`): editing swaps its content for an input of the same height, so
-the page never jumps. The properties column is 280px from 928px of pane
-(`@container` query, not the window) and a two-column compact grid above the
-description below it. Each block is a faint label, one value row of 28px or
-more and nothing else: Status carries the state word and the one readiness word
-(a `StatusDot` only where the tone says something: danger for a failing check or
-a conflict, warning for changes requested or comments that wait, info for a live
-run, a check for ready). Labels are not headings, so the outline reads `h1`, then
+the page never jumps. The properties column is 296px from 800px of pane
+(`@container` query, not the window) and follows the main column below it. Each block is a
+faint label, one value row of 28px or more and nothing else: Reviewers, Checks as one line (`4
+passed · 1 failing`, a `StatusDot` only where the tone says something: danger for a failing
+check, info for a live run, a check for passed), Linked issues with their relation and Base.
+The state is the chip after the title, never a block. Labels are not headings, so the outline reads `h1`, then
 the `h2`s of Description and Activity.
 
 **The capability rule.** The page never branches on the host. It reads the
@@ -2061,7 +2130,7 @@ conversation is the wrapped sheet, and "Start work from chat" is the
 - **The composer** is the only pinned row: a `bg-subtle` box with the
   textarea, the app `RoutingPicker` in its `pill` variant (chat providers
   only, effort editable, a one-line footer for the providers that cannot
-  chat), the faint "Read-only · N projects" hint from `@2xl/chat`, and a
+  chat), the faint "Read only. Nothing is changed." hint from `@2xl/chat`, and a
   square send button that turns into Stop while an answer streams. The Enter
   and Shift+Enter keys live in the send button's tooltip.
 
@@ -2081,14 +2150,22 @@ collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
 
+`Disclosure` is the toggle-and-body pair for a row that opens its detail: a
+14px chevron, an 8px gap and a label on one `px-2` line, and a body inside
+`Reveal` whose left indent is measured from them (`pl-[calc(8px+14px+8px)]`,
+never a typed `pl-5`, `pl-7` or `pl-9`). A body that sits under a control
+measures its indent the same way, from that control's own padding, width and
+gap. The ratchet `hand-indent.test.ts` counts `pl-5`, `pl-7` and `pl-9` in
+`features/` and only falls.
+
 A theme switch is one paint, a class swap on `<html>` and nothing else:
 `applyDocumentTheme` writes the `light` or `dark` class, `data-theme` and
 `color-scheme` once each in a single task, and the CSS variables repaint the
 page in that frame. There is no React state for it (the zustand store keeps
 only the preference, set in the same call, so the palette, the Settings field
 and the footer chip commit once together). Every route into a switch (the
-palette, Settings, the system, another window) goes through that
-one function, and it writes nothing when the resolved theme is already
+top bar toggle, the palette, Settings, the system, another window) goes through
+that one function (`switchTheme`), and it writes nothing when the resolved theme is already
 applied. `html[data-theme-switching]` turns every element transition off from
 before the swap until two painted frames later (a timer guards a window that
 never paints), so no `transition-colors` surface animates on its own and a
@@ -2101,7 +2178,11 @@ against 16, 7 and 114ms for the instant swap; WebKit dropped to 28 frames
 with a 500ms freeze on a large diff, against 80 frames with the swap alone),
 and a window that repaints for a fade reads as the UI flickering, worst on
 the busiest pages. A circular reveal and a cross-fade were both tried and
-dropped for that reason. The few things
+dropped for that reason. A fixed full-window cover fading over the swap
+(`opacity` only, 100ms in, 200ms out) was specified as a third try, gated on
+a WebKit frame-gap spike (no gap above 50ms on Settings, an Overview of 30
+sessions and a 3,000 line diff). The spike was not measured, so the cover did
+not ship and the switch stays the instant swap. The few things
 that paint with JS colors (the xterm terminal, the changelog image) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
 update only themselves.
 

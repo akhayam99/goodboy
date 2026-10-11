@@ -34,7 +34,13 @@ export const SelectionConfirm = ({
   const shown = items.slice(0, SHOWN_ITEMS);
   const more = items.length - shown.length;
   return (
-    <InlineConfirm {...rest} className={cn('w-full max-w-sm bg-floating shadow-lg', className)}>
+    <InlineConfirm
+      {...rest}
+      className={cn(
+        'w-full max-w-sm rounded-lg border border-border bg-floating shadow-lg',
+        className,
+      )}
+    >
       {goes === undefined && stays === undefined ? null : (
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-muted-foreground">
           {goes === undefined ? null : (

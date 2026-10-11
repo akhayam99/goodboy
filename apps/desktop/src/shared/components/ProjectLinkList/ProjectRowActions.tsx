@@ -1,6 +1,6 @@
 import { ExternalLink, Unplug } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import { CopyButton, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
+import { CopyButton, IconButton } from '@goodboy/ui';
 import { openInEditor } from '../../lib/editor';
 import { resolveEditorBinary } from '../../lib/editorSettings';
 import { useAppStore } from '../../../store';
@@ -10,15 +10,10 @@ import { NAMES } from '../../names';
 type Props = {
   readonly project: Project;
   readonly busy: boolean;
-  readonly onArmUnlink: () => void;
+  readonly onUnlink: () => void;
 };
 
-const actionButtonClass = cn(
-  'rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground disabled:opacity-50',
-  FOCUS_RING,
-);
-
-export const ProjectRowActions = ({ project, busy, onArmUnlink }: Props) => {
+export const ProjectRowActions = ({ project, busy, onUnlink }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
   const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
 
@@ -33,17 +28,14 @@ export const ProjectRowActions = ({ project, busy, onArmUnlink }: Props) => {
 
   return (
     <span className="flex shrink-0 items-center gap-0.5 text-faint-foreground">
-      <Tooltip content="Open in editor">
-        <button
-          type="button"
-          aria-label={`Open ${project.name} in editor`}
-          disabled={busy}
-          onClick={(event) => void openProject(event)}
-          className={actionButtonClass}
-        >
-          <ExternalLink size={ICON_SIZE.row} aria-hidden />
-        </button>
-      </Tooltip>
+      <IconButton
+        icon={ExternalLink}
+        label={`Open ${project.name} in editor`}
+        tooltip="Open in editor"
+        size="xs"
+        disabled={busy}
+        onClick={(event) => void openProject(event)}
+      />
       <CopyButton
         value={project.rootPath}
         label="path"
@@ -52,20 +44,17 @@ export const ProjectRowActions = ({ project, busy, onArmUnlink }: Props) => {
         className="text-faint-foreground hover:text-foreground"
       />
       <span className="w-2" aria-hidden />
-      <Tooltip content={`${NAMES.removeLink} to ${project.name}`}>
-        <button
-          type="button"
-          aria-label={`${NAMES.removeLink} to ${project.name}`}
-          disabled={busy}
-          onClick={(event) => {
-            event.stopPropagation();
-            onArmUnlink();
-          }}
-          className={cn(actionButtonClass, 'hover:text-danger')}
-        >
-          <Unplug size={ICON_SIZE.row} aria-hidden />
-        </button>
-      </Tooltip>
+      <IconButton
+        icon={Unplug}
+        label={`${NAMES.removeLink} to ${project.name}`}
+        size="xs"
+        disabled={busy}
+        onClick={(event) => {
+          event.stopPropagation();
+          onUnlink();
+        }}
+        className="hover:text-danger"
+      />
     </span>
   );
 };

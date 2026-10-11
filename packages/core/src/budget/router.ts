@@ -73,10 +73,16 @@ export const resolveProvider = async (input: ResolveProviderInput): Promise<Rout
   const preferredAllowed = useOverride || isEnabled(preferredProvider);
   const preferredResult = await budgetChecker.checkProviderBudget(preferredName, 'monthly');
 
+  const keptReason: RoutingReason = useOverride
+    ? isEnabled(preferredProvider)
+      ? 'override'
+      : 'override-off'
+    : 'preferred';
+
   const keepPreferred: RoutingDecision = {
     selectedProvider: preferredProvider,
     selectedModel: preferredModel,
-    reason: useOverride ? 'override' : 'preferred',
+    reason: keptReason,
     fallbackUsed: false,
   };
 

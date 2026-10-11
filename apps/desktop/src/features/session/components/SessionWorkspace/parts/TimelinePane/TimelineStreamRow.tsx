@@ -1,6 +1,14 @@
-import type { KeyboardEvent, ReactNode } from 'react';
+import { useContext, type KeyboardEvent, type ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import { Button, ROW_INTERACTIVE, Tooltip, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
+import {
+  Button,
+  ROW_INTERACTIVE,
+  Tooltip,
+  WORK_META_COLUMN,
+  WORK_ROW,
+  cn,
+  tintClasses,
+} from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
@@ -12,6 +20,7 @@ import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
 import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
+import { ActionColumnContext } from './ActionColumnContext';
 import { TIMELINE_GUTTER } from './timelineLayout';
 import { clockTooltipOf, isClocklessRow } from './timelineClock';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
@@ -80,6 +89,7 @@ export const TimelineStreamRow = ({
   contextMenu,
   identity = null,
 }: Props) => {
+  const hasActionColumn = useContext(ActionColumnContext);
   const card = useRowCard({ isEnabled: identity !== null });
   const hover = useHoverMarkViewed({
     sessionId,
@@ -177,13 +187,7 @@ export const TimelineStreamRow = ({
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
-        <div
-          className={cn(
-            WORK_ROW.container,
-            'flex min-w-0 flex-1 items-end gap-1',
-            item.grade !== 'entry' && 'pr-1',
-          )}
-        >
+        <div className={cn(WORK_ROW.container, 'flex min-w-0 flex-1 items-end gap-1')}>
           {openTarget == null ? (
             <div className={contentClassName} style={{ height: boxHeight }}>
               {content}
@@ -210,23 +214,26 @@ export const TimelineStreamRow = ({
               {content}
             </button>
           )}
-          {action == null ? null : (
+          {hasActionColumn ? (
             <span
               data-testid="timeline-row-action"
               data-action-slot
-              className="flex shrink-0 items-center"
+              data-meta-column="action"
+              className={WORK_META_COLUMN.action}
               style={{ height: boxHeight }}
             >
-              <Button
-                variant={action.variant ?? 'ghost'}
-                size="xs"
-                isBusy={action.isBusy === true}
-                onClick={action.onAct}
-              >
-                {action.label}
-              </Button>
+              {action == null ? null : (
+                <Button
+                  variant={action.variant ?? 'ghost'}
+                  size="xs"
+                  isBusy={action.isBusy === true}
+                  onClick={action.onAct}
+                >
+                  {action.label}
+                </Button>
+              )}
             </span>
-          )}
+          ) : null}
         </div>
         {detail}
       </div>

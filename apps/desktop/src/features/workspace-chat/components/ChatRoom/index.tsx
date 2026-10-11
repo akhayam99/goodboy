@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Play } from 'lucide-react';
 import { parseHiddenModels } from '@goodboy/core';
 import { useShallow } from 'zustand/react/shallow';
@@ -28,6 +28,7 @@ import { ChatHeaderDelete } from './ChatHeaderDelete';
 import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
 import { useChatDrafts } from '../../hooks/useChatDrafts';
+import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
 import { SETTING_HIDDEN_MODELS } from '../../../settings/settings';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 
@@ -50,6 +51,7 @@ const NO_IMAGES: ChatComposerMessage['images'] = [];
 type SendParams = Pick<ChatComposerMessage, 'text'> & Partial<Pick<ChatComposerMessage, 'images'>>;
 
 const NEW_CHAT_HEADING = 'New chat';
+const RESIZE_LABEL = 'Resize the work panel';
 
 export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => {
   const chatId = chat?.id ?? null;
@@ -83,6 +85,8 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
   const restoreChats = useAppStore((state) => state.restoreChats);
   const setChatModel = useAppStore((state) => state.setChatModel);
   const navigate = useAppStore((state) => state.navigate);
+  const openStudio = useAppStore((state) => state.openStudio);
+  const wasEmptyRef = useRef(false);
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const [work, setWork] = useState<WorkRequest | null>(null);
   const linked = useChatSessions({ chatId });
@@ -164,6 +168,35 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
     setWork((current) => ({ anchorMessageId, key: (current?.key ?? 0) + 1 }));
   const openSession = (sessionId: SessionId): void => navigate({ to: sessionPlace({ sessionId }) });
 
+  const isEmpty = shown.length === 0;
+  useEffect(() => {
+    wasEmptyRef.current = isEmpty;
+  }, [isEmpty]);
+  const composer = (
+    <div className="flex w-full flex-col gap-2">
+      {chat === null || chat.archivedAt === null ? null : (
+        <ChatArchivedBanner
+          onRestore={() => void restoreChats({ workspaceId, chatIds: [chat.id] })}
+        />
+      )}
+      <ChatComposer
+        workspaceId={workspaceId}
+        placeholder="Ask a question"
+        routing={model}
+        isStreaming={stream !== undefined}
+        isStopping={stream?.isStopping === true}
+        isAutoFocused={chatId === null || wasEmptyRef.current}
+        onSend={send}
+        onStop={() => {
+          if (chatId !== null) {
+            void stopChatReply({ chatId });
+          }
+        }}
+        onRouting={pickRouting}
+      />
+    </div>
+  );
+
   const main = (
     <section
       aria-label={chat?.title ?? NEW_CHAT_HEADING}
@@ -194,71 +227,69 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, onRemoved }: Props) => 
           )
         }
       />
-      {shown.length === 0 ? (
+      {isEmpty ? (
         <PageColumn className="flex min-h-0 flex-1 flex-col">
           <ChatEmpty
             workspaceName={workspaceName}
             projectNames={projectNames}
             suggestions={chatSuggestions({ projectNames })}
+            isLoading={chatId !== null && messages === undefined}
+            composer={composer}
             onAsk={(question) => void send({ text: question })}
+            onAddProject={() =>
+              openStudio({
+                studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
+              })
+            }
           />
         </PageColumn>
       ) : (
-        <ChatThread
-          messages={shown}
-          workspaceName={workspaceName}
-          onStartWork={openWork}
-          sessions={linked.entries}
-          onOpenSession={openSession}
-          drafts={drafts}
-        />
-      )}
-      <div className="shrink-0 pb-4 pt-2">
-        <PageColumn className="flex flex-col gap-2">
-          {chat === null || chat.archivedAt === null ? null : (
-            <ChatArchivedBanner
-              onRestore={() => void restoreChats({ workspaceId, chatIds: [chat.id] })}
-            />
-          )}
-          <ChatComposer
-            workspaceId={workspaceId}
-            placeholder={`Ask anything about ${workspaceName}`}
-            routing={model}
-            projectCount={projectNames.length}
-            isStreaming={stream !== undefined}
-            isStopping={stream?.isStopping === true}
-            isAutoFocused={chatId === null}
-            onSend={send}
-            onStop={() => {
-              if (chatId !== null) {
-                void stopChatReply({ chatId });
-              }
-            }}
-            onRouting={pickRouting}
+        <>
+          <ChatThread
+            messages={shown}
+            workspaceName={workspaceName}
+            onStartWork={openWork}
+            sessions={linked.entries}
+            onOpenSession={openSession}
+            drafts={drafts}
           />
-        </PageColumn>
-      </div>
+          <div className="shrink-0 pb-4 pt-2">
+            <PageColumn className="flex flex-col gap-2">{composer}</PageColumn>
+          </div>
+        </>
+      )}
     </section>
   );
+
+  const drawerNode =
+    work === null || chat === null ? null : (
+      <TurnIntoWorkPanel
+        chat={chat}
+        messages={shown}
+        anchorMessageId={work.anchorMessageId}
+        onClose={() => setWork(null)}
+        onDone={() => setWork(null)}
+      />
+    );
+  const drawerKey = String(work?.key ?? 0);
+  const isHosted = useStudioDrawer({
+    node: drawerNode,
+    drawerKey,
+    ariaLabel: TURN_INTO_WORK_LABEL,
+    resizeLabel: RESIZE_LABEL,
+  });
+  if (isHosted) {
+    return main;
+  }
 
   return (
     <DrawerColumn
       className="h-full"
       main={main}
-      drawerKey={String(work?.key ?? 0)}
+      drawerKey={drawerKey}
       ariaLabel={TURN_INTO_WORK_LABEL}
-      resizeLabel="Resize the work panel"
-      drawer={
-        work === null || chat === null ? null : (
-          <TurnIntoWorkPanel
-            chat={chat}
-            messages={shown}
-            anchorMessageId={work.anchorMessageId}
-            onClose={() => setWork(null)}
-            onDone={() => setWork(null)}
-          />
-        )
-      }
+      resizeLabel={RESIZE_LABEL}
+      drawer={drawerNode}
     />
   );
 };

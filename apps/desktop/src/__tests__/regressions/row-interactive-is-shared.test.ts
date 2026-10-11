@@ -13,7 +13,7 @@ const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   'apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx',
   'apps/desktop/src/app/components/GoodboyChip/MenuRow.tsx',
   'apps/desktop/src/features/onboarding/SetupChecklist/StepRow.tsx',
-  'apps/desktop/src/features/resolve/components/ReviewFlow/LaunchPanel/LaunchPanelRow.tsx',
+  'apps/desktop/src/features/resolve/components/FixCommentsDrawer/FixCommentRow.tsx',
   'apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowList/WorkflowListRow.tsx',
   'apps/desktop/src/shared/components/Conversation/ResolvedThreadRow.tsx',
   'apps/desktop/src/shared/components/ProjectLinkList/ProjectLinkCompactRow.tsx',
@@ -24,8 +24,8 @@ const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   `${TIMELINE}/TimelineMoreRow.tsx`,
   `${SESSION_BAR}/SessionActivityItem.tsx`,
   `${SESSION_BAR}/index.tsx`,
-  `${CHANGE_TREE}/index.tsx`,
-  `${CHANGE_TREE}/TreeStrip.tsx`,
+  `${CHANGE_TREE}/FileRow.tsx`,
+  `${CHANGE_TREE}/FolderRow.tsx`,
 ];
 
 const COMPOSED_ROWS: ReadonlyArray<string> = [`${SESSION_BAR}/SessionPages.tsx`];

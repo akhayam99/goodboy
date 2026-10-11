@@ -7,8 +7,9 @@ export type StartChoice = 'task' | 'workflow' | 'scout';
 export type SessionDraft = {
   readonly choice: StartChoice | null;
   readonly issueQuery: string;
-  readonly issueKey: string | null;
-  readonly pickedIssue: IssueCandidate | null;
+  readonly pickedIssues: ReadonlyArray<IssueCandidate>;
+  readonly focusedIssueKey: string | null;
+  readonly hasPickedStep: boolean;
   readonly workflowGoal: string;
   readonly workflowId: WorkflowId | null;
   readonly agentPrompt: string;
@@ -20,8 +21,9 @@ export type SessionDraft = {
 export const EMPTY_SESSION_DRAFT: SessionDraft = {
   choice: null,
   issueQuery: '',
-  issueKey: null,
-  pickedIssue: null,
+  pickedIssues: [],
+  focusedIssueKey: null,
+  hasPickedStep: false,
   workflowGoal: '',
   workflowId: null,
   agentPrompt: '',

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import {
   AnchoredPopover,
+  Button,
   Divider,
   ScrollFade,
   StatusDot,
@@ -10,6 +11,7 @@ import {
   cn,
   tintClasses,
   useDropdown,
+  Tooltip,
 } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
@@ -69,6 +71,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
   const scripts = useRunningScripts();
   const navigate = useAppStore((state) => state.navigate);
   const cancelScript = useAppStore((state) => state.cancelScript);
+  const openStudio = useAppStore((state) => state.openStudio);
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-90',
@@ -108,6 +111,11 @@ export const NowChip = ({ onOpenScript }: Props) => {
     onOpenScript(run);
   };
 
+  const openMonitoring = () => {
+    close();
+    openStudio({ studio: { kind: 'monitoring' } });
+  };
+
   const stopScript = (run: RunningScript) => {
     void cancelScript(run.sessionId, run.scriptId);
   };
@@ -126,42 +134,47 @@ export const NowChip = ({ onOpenScript }: Props) => {
       ariaLabel="Now"
       hasBackdrop
       trigger={
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={label}
-          title={label}
-          aria-expanded={isOpen}
-          className={cn(
-            TOP_BAR_CONTROL.height,
-            TOP_BAR_CONTROL.radius,
-            FOCUS_RING,
-            'flex shrink-0 items-center gap-3 px-2 text-meta motion-safe:transition-colors',
-            isOpen ? 'bg-muted' : 'hover:bg-hover',
-          )}
-        >
-          {needsYou.length > 0 ? (
-            <span className={SEGMENT}>
-              <StatusDot tone="warning" size="sm" pulsing />
-              <span className="font-medium tabular-nums text-foreground">{needsYou.length}</span>
-              <span className={SEGMENT_WORD}>{needsYouWord({ count: needsYou.length })}</span>
-            </span>
-          ) : null}
-          {running.length > 0 ? (
-            <span className={SEGMENT}>
-              <StatusDot tone="info" size="sm" pulsing />
-              <span className="font-medium tabular-nums text-foreground">{running.length}</span>
-              <span className={SEGMENT_WORD}>running</span>
-            </span>
-          ) : null}
-          {scripts.length > 0 ? (
-            <span className={SEGMENT}>
-              <ScriptsIcon size={ICON_SIZE.row} aria-hidden className={tintClasses('info').icon} />
-              <span className="font-medium tabular-nums text-foreground">{scripts.length}</span>
-              <span className={SEGMENT_WORD}>scripts</span>
-            </span>
-          ) : null}
-        </button>
+        <Tooltip content={label} isSuppressed={isOpen}>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={label}
+            aria-expanded={isOpen}
+            className={cn(
+              TOP_BAR_CONTROL.height,
+              TOP_BAR_CONTROL.radius,
+              FOCUS_RING,
+              'flex shrink-0 items-center gap-3 px-2 text-meta motion-safe:transition-colors',
+              isOpen ? 'bg-muted' : 'hover:bg-hover',
+            )}
+          >
+            {needsYou.length > 0 ? (
+              <span className={SEGMENT}>
+                <StatusDot tone="warning" size="sm" pulsing />
+                <span className="font-medium tabular-nums text-foreground">{needsYou.length}</span>
+                <span className={SEGMENT_WORD}>{needsYouWord({ count: needsYou.length })}</span>
+              </span>
+            ) : null}
+            {running.length > 0 ? (
+              <span className={SEGMENT}>
+                <StatusDot tone="info" size="sm" pulsing />
+                <span className="font-medium tabular-nums text-foreground">{running.length}</span>
+                <span className={SEGMENT_WORD}>running</span>
+              </span>
+            ) : null}
+            {scripts.length > 0 ? (
+              <span className={SEGMENT}>
+                <ScriptsIcon
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className={tintClasses('info').icon}
+                />
+                <span className="font-medium tabular-nums text-foreground">{scripts.length}</span>
+                <span className={SEGMENT_WORD}>scripts</span>
+              </span>
+            ) : null}
+          </button>
+        </Tooltip>
       }
     >
       <header className="flex items-center gap-2 px-3 py-2">
@@ -209,6 +222,11 @@ export const NowChip = ({ onOpenScript }: Props) => {
           </NowGroup>
         ) : null}
       </ScrollFade>
+      <div className="flex px-1 py-1">
+        <Button size="sm" variant="ghost" onClick={openMonitoring}>
+          Open Monitoring
+        </Button>
+      </div>
     </AnchoredPopover>
   );
 };

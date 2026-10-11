@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Button, InlineConfirm } from '@goodboy/ui';
+import { Button, ConfirmPopover } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { AskAction } from '../../hooks/useAskActions';
 
@@ -10,45 +9,33 @@ type Props = {
 const ConfirmIcon = CONCEPT_ICONS.ask;
 
 export const AskActions = ({ actions }: Props) => {
-  const [armedKey, setArmedKey] = useState<string | null>(null);
-  const armed = actions.find((action) => action.key === armedKey) ?? null;
   if (actions.length === 0) {
     return null;
   }
-  if (armed !== null && armed.confirm !== null) {
-    return (
-      <InlineConfirm
-        role={armed.confirm.role}
-        icon={<ConfirmIcon size={ICON_SIZE.row} aria-hidden />}
-        title={armed.confirm.title}
-        description={armed.confirm.description}
-        confirmLabel={armed.confirm.confirmLabel}
-        onConfirm={() => {
-          setArmedKey(null);
-          armed.run();
-        }}
-        onCancel={() => setArmedKey(null)}
-      />
-    );
-  }
   return (
     <div data-testid="ask-actions" className="flex flex-wrap gap-2">
-      {actions.map((action) => (
-        <Button
-          key={action.key}
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            if (action.confirm !== null) {
-              setArmedKey(action.key);
-              return;
-            }
-            action.run();
-          }}
-        >
-          {action.label}
-        </Button>
-      ))}
+      {actions.map((action) =>
+        action.confirm === null ? (
+          <Button key={action.key} variant="secondary" size="sm" onClick={action.run}>
+            {action.label}
+          </Button>
+        ) : (
+          <ConfirmPopover
+            key={action.key}
+            role={action.confirm.role}
+            icon={<ConfirmIcon size={ICON_SIZE.row} aria-hidden />}
+            title={action.confirm.title}
+            description={action.confirm.description}
+            confirmLabel={action.confirm.confirmLabel}
+            onConfirm={action.run}
+            trigger={({ arm }) => (
+              <Button variant="secondary" size="sm" onClick={arm}>
+                {action.label}
+              </Button>
+            )}
+          />
+        ),
+      )}
     </div>
   );
 };

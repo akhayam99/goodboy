@@ -232,8 +232,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   with `--no-track` and the in-app push passes `--set-upstream`, but old
   branches still track main, so do not "simplify" back to `@{u}`.
 
-- Rewrite history drags rows with pointer events and its own hit testing
-  (`useHistoryDrag`), not HTML5 drag and drop. In the Tauri window the native
+- Rewrite history and the issue chip drag with pointer events on one shared
+  engine (`usePointerDrag`: 5 px threshold, window listeners that are removed
+  on finish, an Esc layer, an opt-in to start on a button that still clicks).
+  Each keeps its own hit test (`useHistoryDrag` for commit rows,
+  `useTaskDrag` for `data-task-drop` targets). Neither uses HTML5 drag and
+  drop. In the Tauri window the native
   file drop handler owns every drag session while `dragDropEnabled` is on, so
   WebKit never sends `dragover` or `drop` to the page: an HTML5 drag starts and
   then does nothing, while jsdom tests stay green. Turning `dragDropEnabled`
@@ -269,6 +273,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   three apart: a probe with no answer never changes the standing, a lost sign-in needs two
   answers 10 seconds apart, and only a refused run or a `verified` answer speaks for the
   server. Do not collapse them back into one connected flag.
+- Explore decides text from content, not from the extension. `explore_read`
+  sends an image or a PDF extension as a data URL, and reads the first 8 KB of
+  anything else: a NUL byte or invalid UTF-8 returns `Binary { size }` with no
+  payload; a multibyte sequence cut at the 8 KB edge still counts as text. Do
+  not bring back an extension list, and do not widen the data URL list: a
+  `.mts`, a `.jsonc` or a file with no extension must stay readable.
 
 ## Hand-maintained lists the compiler does not check
 
@@ -428,3 +438,57 @@ fails silently at runtime.
   that builds an object (`{ project, stage }`) loops the render; select the
   project and the stage separately. The mock scenes catch this, unit tests with
   a mocked store do not.
+- A terminal or script view subscribes to the output events before it asks
+  for the snapshot, and writes an event only when its `offset` plus length is
+  past the snapshot's end (the first bytes of a partly covered chunk are cut).
+  Subscribing after the snapshot loses what prints in between; writing every
+  event after it prints the overlap twice. Offsets are byte counts, so compare
+  them on bytes, never on decoded text.
+- `lsof` exits 1 when it finds nothing: no listener, or a pid that died between
+  the two reads. The monitor reads exit 0 and 1 as success and anything else,
+  or a timeout, as a failed snapshot; treating 1 as an error would show a
+  broken monitor on a quiet machine.
+
+## History stashes are shared across worktrees
+
+`refs/stash` belongs to the repository's common directory. Another worktree
+or a terminal may push or drop an entry while a rewrite runs. History saves
+and applies the exact stash SHA and verifies its unique message. It never
+pops an entry or restores whichever stash happens to be first. Cleanup in
+`drop_own_stash` finds the entry's index by SHA, runs `git stash drop` on it
+and checks that the SHA Git printed is the one it meant to drop; if another
+worktree shifted the slot, it puts the dropped entry back with
+`git stash store` and keeps ours. Ambiguous entries are retained rather than
+deleting a user's stash. Goodboy never writes `refs/stash` or its reflog by
+hand. Ignored files
+must be checked against both the current HEAD and target: stash push's
+cleanup can overwrite a directory that HEAD tracks as a file, even when
+the rewrite does not change that path.
+`overlap_for_repo` in `apps/desktop/src-tauri/src/history/dirty.rs` also
+honors `core.ignorecase` when checking these file and directory collisions.
+
+If the shared entry disappears before verification, `find_stash` in
+`apps/desktop/src-tauri/src/history/dirty.rs` searches commit objects for the
+exact unique message and verifies the stash parents against the captured HEAD.
+`move_branch_with` protects the verified commit in `refs/goodboy/stash/<sha>`.
+The guard ref outlives a clean restore: `prune_guards` removes guards older
+than 14 days (by the stash commit date) on the next job, never the one a
+journal still names. A `stash pending` intent whose stash does not exist (the
+push failed on an `index.lock`, or the app died before it) is rolled back by
+`roll_back_intent`: the backup ref is deleted and the journal removed, so it
+never blocks a later rebase, undo or plan load. `pending_stash` reads
+"pending, nothing found" as none. Object discovery before the private ref
+exists cannot survive simultaneous immediate Git object pruning.
+
+The journal's seventh line is `restoring` while a restore runs and is cleared
+when the restore reports a conflict or fails, so it survives only a crash
+between applying the stash and recording `restored`. `bring_back` then asks
+`is_restored` (no unmerged paths, untracked files byte-equal to the stash,
+a stash path now changed) and finishes instead of applying twice. **Done,
+forget it** (`forget_saved`) clears the journal and keeps the guard ref; a
+stash whose object is gone is clearable, never an error.
+
+`history/dirty.rs` uses Git's stash capture and cleanup command. The writer
+lease covers cooperating Goodboy writers; an external editor writing during
+Git's capture and reset is outside that lease. Do not treat the lease as a
+filesystem write lock. Cleanup failure retains the stash instead of repeating restoration.

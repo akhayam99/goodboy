@@ -12,7 +12,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { GitMerge, XCircle } from 'lucide-react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -33,6 +33,8 @@ import { WorkflowRunDetail } from '../../features/session/components/SessionWork
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
 import type { ArtifactActionTarget, CommitActionTarget } from '../../features/actions/types';
 import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
+import { NO_EXPLORE_CHANGES } from '../../features/explore/exploreChanges';
+import { ExploreTree } from '../../features/explore/components/ExplorePane/ExploreTree';
 import { PaletteOverlay } from '../../features/palette/components/PaletteOverlay';
 import { ToastProvider } from '../../shared/components/Toast';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';
@@ -41,12 +43,14 @@ import {
   FIXTURE_NOW,
   RUN,
   SESSION,
+  STEP_PLAN,
   WORKSPACE,
   agentFixture,
   mountFixture,
   runFixture,
   seedActionState,
   sessionFixture,
+  stepAgent,
   workflowFixture,
 } from '../helpers/actionFixtures';
 
@@ -174,12 +178,14 @@ describe('every ⋯ menu and its right click list the same actions in the same o
           binary: false,
           hunks: [],
         }}
-        collapsed={false}
+        isCollapsed={false}
         onToggleCollapsed={vi.fn()}
         commentCount={0}
         viewed={null}
         onToggleViewed={null}
         onOpenInEditor={vi.fn()}
+        onShowWhole={vi.fn()}
+        onOpenInDrawer={vi.fn()}
         onCommentOnFile={vi.fn()}
       />,
     );
@@ -188,7 +194,12 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       overflow: screen.getByRole('button', { name: /More actions for/ }),
       context: header,
     });
-    expect(fromOverflow).toEqual(['Open in editor', 'Comment on file', 'Copy path']);
+    expect(fromOverflow).toEqual([
+      'Open in editor',
+      'Open in a drawer',
+      'Show whole file',
+      'Copy path',
+    ]);
     expect(fromContext).toEqual(fromOverflow);
   });
 
@@ -211,7 +222,10 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         record={null}
         now={0}
         isSelected={false}
-        showSource
+        expectedPort={null}
+        portHolder={null}
+        facts={null}
+        onRestart={vi.fn()}
         blockedReason={null}
         isPinned={false}
         onTogglePin={vi.fn()}
@@ -279,7 +293,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         kind="plan"
         title="Speed up the payout export"
         chip={null}
-        actions={<ArtifactShellActions target={target} onArm={() => undefined} />}
+        actions={<ArtifactShellActions target={target} />}
         meta={null}
       />,
     );
@@ -301,13 +315,24 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).toEqual(fromOverflow);
   });
 
-  it('run page: the ⋯ and the right click list every action, buttons included, never Open run', async () => {
-    const session = sessionFixture({ workflowRuns: [runFixture()] });
+  it('run page: the right click lists every action, and the ⋯ keeps what has no button of its own', async () => {
+    const session = sessionFixture({ workflowRuns: [runFixture({ executionMode: 'dynamic' })] });
     seedActionState({
       useAppStore,
-      seed: { session, workflows: [workflowFixture()], mounts: [mountFixture()] },
+      seed: {
+        session,
+        workflows: [workflowFixture()],
+        agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+        mounts: [mountFixture()],
+      },
     });
-    withMenus(<WorkflowRunDetail session={session} workflowRunId={RUN} />);
+    withMenus(
+      <WorkflowRunDetail
+        session={session}
+        run={session.workflowRuns[0]!}
+        workflow={workflowFixture()}
+      />,
+    );
     const registry = (
       bindTarget({
         state: useAppStore.getState(),
@@ -319,22 +344,23 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       context: screen.getByRole('heading', { name: 'Settlement export' }),
     });
 
-    expect(fromOverflow).not.toContain('Open run');
-    expect(fromOverflow).toEqual(registry);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(fromContext).toEqual(registry);
+    expect(fromContext).not.toContain('Open run');
+    expect(fromOverflow).toEqual([
+      'View diff',
+      'Pause run',
+      'Step routing',
+      'Copy run summary',
+      'Archive run',
+      'Delete run',
+    ]);
+    expect(fromOverflow.filter((label) => !fromContext.includes(label))).toEqual([]);
   });
 
   it('agent header: the ⋯ lists every action, buttons included, never Open agent', async () => {
     const agent = agentFixture({ status: 'failed' });
     seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
-    withMenus(
-      <AgentHeaderActions
-        agent={agent}
-        sessionId={SESSION}
-        allowInterrupt
-        onArm={() => undefined}
-      />,
-    );
+    withMenus(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
     const registry = (
       bindTarget({
         state: useAppStore.getState(),
@@ -438,6 +464,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         takenIn={[]}
         pills={{ isHead: true, remote: null, prNumber: null }}
         isNew={false}
+        canShowUnpushed={false}
         isHighlighted={false}
         isLifted={false}
         isDropInto={false}
@@ -485,6 +512,71 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).toEqual(fromOverflow);
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(fromPalette).toEqual(fromOverflow);
+  });
+});
+
+describe('an Explore row lists the same verbs on its buttons, its right click and ⌘K', () => {
+  it('file row: the hover buttons are the right click without Copy path, and ⌘K on the focused row lists them all', async () => {
+    seedActionState({ useAppStore, seed: {} });
+    withMenus(
+      <ExploreTree
+        sessionId={SESSION}
+        sessionDir="/work/harborline/settlement"
+        listing={{
+          entriesByPath: {
+            '': [
+              {
+                name: 'rounding.ts',
+                relPath: 'src/rounding.ts',
+                isDir: false,
+                sizeBytes: 4120,
+                modifiedAt: '2026-09-14T15:40:00Z',
+              },
+            ],
+          },
+          loadingByPath: {},
+          errorByPath: {},
+        }}
+        expanded={{}}
+        selectedRelPath={null}
+        changes={NO_EXPLORE_CHANGES}
+        now={Date.parse('2026-09-14T16:40:00Z')}
+        onSetExpanded={vi.fn()}
+        onLoad={vi.fn()}
+        onSelectFile={vi.fn()}
+      />,
+    );
+    const row = screen.getByRole('treeitem', { name: 'rounding.ts' });
+    fireEvent.contextMenu(row);
+    const fromContext = menuLabels();
+    await closeMenus();
+    const buttons = within(row)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label'));
+    act(() => row.focus());
+    render(
+      <ToastProvider>
+        <PaletteOverlay onClose={vi.fn()} />
+      </ToastProvider>,
+    );
+    const fromPalette = screen
+      .getAllByRole('option')
+      .map((option) => option.getAttribute('aria-label') ?? '')
+      .slice(0, fromContext.length);
+
+    expect(fromContext).toEqual([
+      'Open',
+      'Show in Finder',
+      'Ask an agent about this file',
+      'Copy path',
+    ]);
+    expect(buttons).toEqual([
+      'Ask an agent about rounding.ts',
+      'Open rounding.ts',
+      'Show rounding.ts in Finder',
+    ]);
+    expect(fromPalette).toEqual(fromContext);
+    expect(screen.getByText('For this file')).toBeDefined();
   });
 });
 

@@ -1,21 +1,3 @@
-import type { LucideIcon } from 'lucide-react';
-import {
-  BookOpen,
-  Brush,
-  Database,
-  FileCode2,
-  FlaskConical,
-  Hammer,
-  Package,
-  Play,
-  Rocket,
-  SearchCheck,
-  ShieldCheck,
-  Terminal,
-  Trash2,
-} from 'lucide-react';
-import type { Tone } from '@goodboy/ui';
-
 export type ScriptCategory =
   | 'dev'
   | 'build'
@@ -31,13 +13,6 @@ export type ScriptCategory =
   | 'docs'
   | 'other';
 
-type ScriptCategoryDefinition = {
-  readonly id: ScriptCategory;
-  readonly label: string;
-  readonly icon: LucideIcon;
-  readonly tone: Tone;
-};
-
 type ClassifyScriptParams = {
   readonly name: string;
   readonly command: string;
@@ -47,22 +22,6 @@ type CategoryRule = {
   readonly id: Exclude<ScriptCategory, 'other'>;
   readonly terms: ReadonlyArray<string>;
 };
-
-export const SCRIPT_CATEGORIES: ReadonlyArray<ScriptCategoryDefinition> = [
-  { id: 'dev', label: 'Dev', icon: Play, tone: 'info' },
-  { id: 'build', label: 'Build', icon: Hammer, tone: 'neutral' },
-  { id: 'test', label: 'Test', icon: FlaskConical, tone: 'success' },
-  { id: 'lint', label: 'Lint', icon: SearchCheck, tone: 'warning' },
-  { id: 'typecheck', label: 'Typecheck', icon: ShieldCheck, tone: 'info' },
-  { id: 'format', label: 'Format', icon: Brush, tone: 'neutral' },
-  { id: 'db', label: 'Database', icon: Database, tone: 'neutral' },
-  { id: 'generate', label: 'Generate', icon: FileCode2, tone: 'neutral' },
-  { id: 'install', label: 'Install', icon: Package, tone: 'neutral' },
-  { id: 'deploy', label: 'Deploy', icon: Rocket, tone: 'danger' },
-  { id: 'clean', label: 'Clean', icon: Trash2, tone: 'neutral' },
-  { id: 'docs', label: 'Docs', icon: BookOpen, tone: 'info' },
-  { id: 'other', label: 'Other', icon: Terminal, tone: 'neutral' },
-];
 
 const CATEGORY_RULES: ReadonlyArray<CategoryRule> = [
   {
@@ -106,3 +65,12 @@ const categoryForValue = ({ value }: { readonly value: string }): ScriptCategory
 
 export const classifyScript = ({ name, command }: ClassifyScriptParams): ScriptCategory =>
   categoryForValue({ value: name }) ?? categoryForValue({ value: command }) ?? 'other';
+
+const SERVICE_NAMES: ReadonlySet<string> = new Set(['start', 'serve', 'watch', 'preview']);
+
+type IsServiceParams = {
+  readonly script: { readonly name: string; readonly category: ScriptCategory };
+};
+
+export const isService = ({ script }: IsServiceParams): boolean =>
+  script.category === 'dev' || SERVICE_NAMES.has(script.name.trim().toLocaleLowerCase());

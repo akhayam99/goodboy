@@ -1,16 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import {
-  Button,
-  HeaderActions,
-  InlineConfirm,
-  Textarea,
-  formatError,
-  PaneShell,
-} from '@goodboy/ui';
-import { HeaderPanel } from '../../../../shared/components/HeaderPanel';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Button, HeaderActions, Textarea, formatError, PaneShell } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { planHandoffOf } from '../../../plans/planHandoffOf';
 import { usePlanOwner } from '../../../plans/usePlanOwner';
 import { usePlanRevising } from '../../../plans/useRevisingPlans';
@@ -39,7 +30,7 @@ import { ArtifactDrawerToggles } from './ArtifactDrawerToggles';
 import { ArtifactExportStatus } from './ArtifactExportStatus';
 import { ArtifactShellActions } from './ArtifactShellActions';
 import { ARTIFACT_EDIT_EVENT } from '../../../actions/kinds/artifact';
-import type { ArtifactActionTarget, ArtifactPorts, ResolvedAction } from '../../../actions/types';
+import type { ArtifactActionTarget, ArtifactPorts } from '../../../actions/types';
 import { ArtifactShellHeader } from './ArtifactShellHeader';
 import { ArtifactShellMeta } from './ArtifactShellMeta';
 import { ArtifactStateChip } from './ArtifactStateChip';
@@ -49,11 +40,6 @@ type Props = {
   readonly subject: ArtifactDocumentSubject;
   readonly agents: ReadonlyArray<Agent>;
 };
-
-type Armed = {
-  readonly action: ResolvedAction;
-  readonly run: () => Promise<void>;
-} | null;
 
 const COPY_NOT_READY = 'The saved copy is not ready yet';
 
@@ -72,8 +58,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const revising = usePlanRevising({ sessionId, planId: plan === null ? null : plan.id });
   const editor = usePlanEditor({ sessionId, plan, revision: artifact.revision });
   const [draft, setDraft] = useState<string | null>(null);
-  const [armed, setArmed] = useState<Armed>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wireframeScreenId, setWireframeScreenId] = useState<string | null>(null);
@@ -175,27 +159,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
     return () => window.removeEventListener(ARTIFACT_EDIT_EVENT, onEditRequest);
   });
 
-  const armedConfirm = armed?.action.confirm ?? null;
-  const confirm =
-    armed !== null && armedConfirm !== null ? (
-      <HeaderPanel triggerWithin={headerRef} onClose={() => setArmed(null)}>
-        <InlineConfirm
-          role={armedConfirm.role}
-          icon={<armed.action.icon size={ICON_SIZE.row} aria-hidden />}
-          title={armedConfirm.title}
-          description={armedConfirm.description}
-          confirmLabel={armedConfirm.confirmLabel}
-          autoDisarmMs={4000}
-          isBusy={planRun.isSpawning}
-          onConfirm={async () => {
-            await armed.run();
-            setArmed(null);
-          }}
-          onCancel={() => setArmed(null)}
-        />
-      </HeaderPanel>
-    ) : null;
-
   const details = <ArtifactDrawerToggles sessionId={sessionId} artifactId={artifact.id} />;
 
   const readerActions = (
@@ -208,17 +171,10 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           target={target}
           exporter={exporter}
           screenId={wireframeScreenId}
-          onArm={setArmed}
           details={details}
-          isPrimaryYielding={armed !== null}
         />
       ) : (
-        <ArtifactShellActions
-          target={target}
-          onArm={setArmed}
-          details={details}
-          isPrimaryYielding={armed !== null}
-        />
+        <ArtifactShellActions target={target} details={details} />
       )}
     </span>
   );
@@ -288,8 +244,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           title={artifact.title}
           chip={chip}
           actions={actions}
-          below={confirm}
-          rootRef={headerRef}
           meta={
             <ArtifactShellMeta
               artifact={artifact}

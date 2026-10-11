@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, tintClasses, type Tone, Tooltip } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import type { AgentCardDensity } from './agentCardDensity';
 import type { AgentCardTone } from './agentCardTone';
@@ -122,14 +122,15 @@ export const AgentCard = ({
             className="absolute inset-0 cursor-pointer rounded-lg focus-visible:outline-none"
           />
         )}
-        <div
-          className={cn('relative col-start-1 row-start-1 flex min-w-0 items-center gap-2')}
-          id={titleId}
-          title={rowTitle}
-        >
-          {leading}
-          {title}
-        </div>
+        <Tooltip content={rowTitle}>
+          <div
+            className={cn('relative col-start-1 row-start-1 flex min-w-0 items-center gap-2')}
+            id={titleId}
+          >
+            {leading}
+            {title}
+          </div>
+        </Tooltip>
         <CardActionSlot
           label="Agent navigation actions"
           className="relative col-start-2 row-start-1 self-start"

@@ -1,7 +1,7 @@
 import { ArrowUpRight, FileEdit } from 'lucide-react';
 import { displayPath } from '../../../../shared/utils/display-path';
 import { TranscriptShell } from '../TranscriptShell';
-import { tintClasses, Eyebrow } from '@goodboy/ui';
+import { tintClasses, Eyebrow, TruncatedText } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const infoAccent = tintClasses('info');
@@ -25,9 +25,13 @@ export const FileEditBlock = ({ path, editType, workingDir, onOpenDiff }: Props)
     <>
       <FileEdit size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
       <Eyebrow label={EDIT_LABEL[editType]} className={infoAccent.text} />
-      <code className="min-w-0 truncate text-code text-foreground" title={path}>
+      <TruncatedText
+        as="code"
+        tooltip={path}
+        className="min-w-0 truncate text-code text-foreground"
+      >
         {rel}
-      </code>
+      </TruncatedText>
       {onOpenDiff ? (
         <ArrowUpRight
           size={ICON_SIZE.row}

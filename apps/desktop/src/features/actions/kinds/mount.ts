@@ -18,6 +18,7 @@ import { dirtyTreeSentence } from '../../../shared/lib/dirtyTreeCopy';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { NAMES } from '../../../shared/names';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
+import { sessionPlace } from '../../../store/slices/navigation/place';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
   mountRequestOf,
@@ -424,6 +425,26 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     }),
     run: async ({ facts, env }) => {
       await env.getState().forgetMount({ sessionId: facts.sessionId, mountId: facts.mountId });
+    },
+  },
+  {
+    id: 'mount.browseFiles',
+    label: 'Browse files',
+    icon: CONCEPT_ICONS.explore,
+    group: 'open',
+    shortcut: 'lens.explore',
+    when: isOpen,
+    run: ({ facts, env }) => {
+      if (facts.worktreePath === null) {
+        return;
+      }
+      env.getState().navigate({
+        to: sessionPlace({
+          sessionId: facts.sessionId,
+          lens: 'explore',
+          target: { kind: 'explore', mountPath: facts.worktreePath },
+        }),
+      });
     },
   },
 ];

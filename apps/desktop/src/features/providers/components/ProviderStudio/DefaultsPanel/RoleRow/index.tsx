@@ -4,26 +4,32 @@ import {
   isModelHidden,
   resolveStoredModelSelection,
   roleModelSetPreference,
-  type AutoContext,
 } from '@goodboy/core';
-import type { AgentRole, ProviderId, RoleModelChoice, RoleModelPreference } from '@goodboy/types';
-import { Chip, Collapsible, cn } from '@goodboy/ui';
+import type {
+  AgentRole,
+  ProviderId,
+  RoleModelChoice,
+  RoleModelPreference,
+  WorkspaceId,
+} from '@goodboy/types';
+import { Chip, Collapsible, cn, TruncatedText } from '@goodboy/ui';
 import { useHiddenModels } from '../../../../hooks/useHiddenModels';
+import { useResolution } from '../../../../hooks/useResolution';
 import { hiddenModelNote } from '../hiddenModelNote';
 import { RoleHowItRuns } from './RoleHowItRuns';
 import { RoleModelSet } from './RoleModelSet';
 import { RoleModelSummary } from './RoleModelSummary';
-import { roleResolution } from './roleResolution';
 import { roleRunFacts } from './roleRunFacts';
+import { resolutionNote } from '../resolutionNote';
 import { roleSetEntries } from '../../../../roleSetEntries';
 import { roleSetNoun } from '../../../../roleSetNoun';
 
 type Props = {
+  readonly workspaceId: WorkspaceId;
   readonly role: AgentRole;
   readonly label: string;
   readonly help: string;
   readonly preference: RoleModelPreference | null;
-  readonly autoContext: AutoContext;
   readonly isParallelOn: boolean;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
@@ -31,25 +37,24 @@ type Props = {
 };
 
 export const RoleRow = ({
+  workspaceId,
   role,
   label,
   help,
   preference,
-  autoContext,
   isParallelOn,
   connectedProviderIds,
   disabled,
   onChange,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
+  const resolution = useResolution({ role, workspaceId });
+  const auto = useResolution({ role, workspaceId, isAutoOnly: true });
   const facts = useMemo(
-    () => roleRunFacts({ role, autoContext, isParallelOn }),
-    [role, autoContext, isParallelOn],
+    () => roleRunFacts({ role, auto, isParallelOn }),
+    [role, auto, isParallelOn],
   );
-  const resolution = useMemo(
-    () => roleResolution({ role, preference, autoContext }),
-    [role, preference, autoContext],
-  );
+  const skippedLine = resolutionNote({ resolution });
   const entries = useMemo(() => roleSetEntries({ preference }), [preference]);
   const hidden = useHiddenModels();
   const firstLive = entries.find((entry) => !entry.isGone) ?? null;
@@ -70,8 +75,8 @@ export const RoleRow = ({
           model: firstLive.choice.model,
         })
       : help;
-  const summary = resolution.skippedLine ?? hiddenNote;
-  const isSummaryNoted = isFirstHidden || resolution.skippedLine !== null;
+  const summary = skippedLine ?? hiddenNote;
+  const isSummaryNoted = isFirstHidden || skippedLine !== null;
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
@@ -89,7 +94,7 @@ export const RoleRow = ({
         effort={resolution.effort}
         moreCount={Math.max(entries.length - 1, 0)}
       />
-      <Chip kind="state" tone="neutral" label={resolution.isPinned ? 'Pinned' : 'Auto'} />
+      <Chip kind="state" tone="neutral" label={preference === null ? 'Auto' : 'Pinned'} />
     </span>
   );
 
@@ -100,15 +105,14 @@ export const RoleRow = ({
       trigger={
         <span className="flex min-w-0 items-center gap-3">
           <span className="w-32 shrink-0 truncate text-body text-foreground">{label}</span>
-          <span
+          <TruncatedText
             className={cn(
               'min-w-0 flex-1 truncate text-label',
               isSummaryNoted ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
-            title={summary}
           >
             {summary}
-          </span>
+          </TruncatedText>
           <span className="flex max-w-[45%] shrink-0 justify-end">{trailing}</span>
         </span>
       }

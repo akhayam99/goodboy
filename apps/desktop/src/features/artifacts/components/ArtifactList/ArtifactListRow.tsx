@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, IconButton, InteractiveRow, InlineConfirm, Tooltip, cn } from '@goodboy/ui';
+import { Button, IconButton, InteractiveRow, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
 import type { ArtifactState } from '../../artifactStateOf';
@@ -15,6 +15,7 @@ import { useActionControls } from '../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 import { ArtifactKindGlyph } from './ArtifactKindGlyph';
+import { ArtifactRowConfirm } from './ArtifactRowConfirm';
 import { ARTIFACT_ROW_GRID } from './artifactRowGrid';
 import { ArtifactRowParts } from './ArtifactRowParts';
 import { ArtifactStateBadge } from './ArtifactStateBadge';
@@ -117,7 +118,6 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
   const anchorKey = `artifact-row:${row.id}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
   const controls = useActionControls({ target, anchorKey });
-  const { confirming } = controls;
   const isDeleted = row.group === 'deleted';
   const hasParts = row.kind === 'plan' && row.partCount > 0 && !isDeleted;
   const rowLabel = `${ARTIFACT_KIND_MARKER_LABEL[row.kind]} ${row.title}${row.state === null ? '' : `, ${row.state.label}`}`;
@@ -141,7 +141,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
       : `${isDeleted ? 'Deleted ' : ''}${formatDateTime({ at, hasYear: true })}`;
 
   return (
-    <div className="@container flex min-w-0 flex-col" data-testid="artifact-row-frame">
+    <div className="@container relative flex min-w-0 flex-col" data-testid="artifact-row-frame">
       <InteractiveRow
         menu={menu}
         label={rowLabel}
@@ -178,15 +178,16 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
           size={ICON_SIZE.control}
           className={cn(ARTIFACT_ROW_GRID.glyph, row.isFaint && 'text-faint-foreground')}
         />
-        <span
-          title={row.title}
-          className={cn(
-            ARTIFACT_ROW_GRID.title,
-            row.isFaint ? 'text-faint-foreground' : 'text-foreground',
-          )}
-        >
-          {row.title}
-        </span>
+        <Tooltip content={row.title}>
+          <span
+            className={cn(
+              ARTIFACT_ROW_GRID.title,
+              row.isFaint ? 'text-faint-foreground' : 'text-foreground',
+            )}
+          >
+            {row.title}
+          </span>
+        </Tooltip>
         <span data-testid="artifact-row-kind" className={ARTIFACT_ROW_GRID.kind}>
           {ARTIFACT_KIND_MARKER_LABEL[row.kind]}
         </span>
@@ -264,18 +265,7 @@ const RowComponent = ({ row, sessionId, isPartsOpen, onTogglePartsOf, onOpenRow 
           </span>
         )}
       </InteractiveRow>
-      {confirming === null || confirming.confirm === null ? null : (
-        <InlineConfirm
-          role={confirming.confirm.role}
-          icon={<confirming.icon size={ICON_SIZE.row} aria-hidden />}
-          title={confirming.confirm.title}
-          description={confirming.confirm.description}
-          confirmLabel={confirming.confirm.confirmLabel}
-          onConfirm={controls.confirm}
-          onCancel={controls.cancel}
-          isBusy={controls.pendingId === confirming.id}
-        />
-      )}
+      <ArtifactRowConfirm controls={controls} />
       {controls.failure === null ? null : (
         <p role="alert" className="px-8 pb-1 text-meta text-danger">
           {controls.failure.message}

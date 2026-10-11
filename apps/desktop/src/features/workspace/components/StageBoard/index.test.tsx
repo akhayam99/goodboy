@@ -22,10 +22,6 @@ const { state, gitStatuses, groups } = vi.hoisted(() => ({
     workspaces: [] as ReadonlyArray<Workspace>,
     projects: [] as ReadonlyArray<Project>,
     bulkUnarchiveTask: vi.fn(async () => undefined),
-    workspaceExternalTasks: {},
-    sessionExternalTasks: {},
-    loadWorkspaceExternalTasks: vi.fn(async () => undefined),
-    unlinkWorkspaceExternalTask: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
   },
   gitStatuses: { current: {} as Record<string, WorkspaceGitStatus | null> },
@@ -234,10 +230,12 @@ describe('StageBoard loading gate', () => {
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 
-  it('leaves the total out of the title and the empty Ongoing row off the board', () => {
+  it('leaves the total out of the title and has no Ongoing row on the board', () => {
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.queryByText(/^\d+ sessions?$/)).toBeNull();
     expect(screen.queryByRole('group', { name: 'Ongoing' })).toBeNull();
+    expect(screen.queryByText('Ongoing')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Stop tracking/ })).toBeNull();
   });
 
   it('renders the board with the archived column instead of the hero when only archived sessions exist', () => {

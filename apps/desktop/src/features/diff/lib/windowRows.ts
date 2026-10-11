@@ -1,81 +1,70 @@
-import type { TreeRow } from './changeTree';
+import type { DiffHunk, DiffHunkLine } from '@goodboy/types';
+import { buildDiffRows, type DiffRow } from '../../../shared/utils/diffRows';
+import { buildDiffPairRows, type DiffPairRow } from '../../../shared/utils/diffPairRows';
+import { visibleDiffRows } from '../../../shared/utils/visibleDiffRows';
+import type { ContextGap } from './contextGaps';
 
-const ROW_PX = 28;
-const ROW_WITH_SOURCE_PX = 44;
-export const WINDOW_MIN_ROWS = 120;
-const OVERSCAN_PX = 280;
-const FALLBACK_VIEWPORT_PX = 800;
-
-export const rowHeightOf = (row: TreeRow): number =>
-  row.kind === 'file' && row.fromPath !== null ? ROW_WITH_SOURCE_PX : ROW_PX;
-
-export type RowLayout = {
-  readonly offsets: ReadonlyArray<number>;
-  readonly total: number;
+type Params = {
+  readonly hunks: ReadonlyArray<DiffHunk>;
+  readonly gaps: ReadonlyArray<ContextGap>;
+  readonly isSplit: boolean;
+  readonly visibleLines: number;
 };
 
-export const layoutRows = (rows: ReadonlyArray<TreeRow>): RowLayout => {
-  const offsets: number[] = [];
-  let total = 0;
-  for (const row of rows) {
-    offsets.push(total);
-    total += rowHeightOf(row);
-  }
-  return { offsets, total };
-};
+type AppendGapParams = { readonly gap: ContextGap | undefined };
 
-type WindowParams = {
-  readonly layout: RowLayout;
-  readonly count: number;
-  readonly scrollTop: number;
-  readonly viewport: number;
-};
-
-export type RowWindow = {
-  readonly start: number;
-  readonly end: number;
-};
-
-export const windowOf = ({ layout, count, scrollTop, viewport }: WindowParams): RowWindow => {
-  const from = Math.max(0, scrollTop - OVERSCAN_PX);
-  const to = scrollTop + (viewport > 0 ? viewport : FALLBACK_VIEWPORT_PX) + OVERSCAN_PX;
-  let low = 0;
-  let high = count;
-  while (low < high) {
-    const mid = (low + high) >> 1;
-    const isAbove = (layout.offsets[mid] ?? 0) + ROW_PX <= from;
-    low = isAbove ? mid + 1 : low;
-    high = isAbove ? high : mid;
-  }
-  let end = low;
-  while (end < count && (layout.offsets[end] ?? 0) < to) {
-    end += 1;
-  }
-  return { start: low, end };
-};
-
-type RevealParams = {
-  readonly layout: RowLayout;
+type ContextRowsParams = {
+  readonly lines: ReadonlyArray<DiffHunkLine>;
   readonly index: number;
-  readonly rowPx: number;
-  readonly scrollTop: number;
-  readonly viewport: number;
+  readonly isSplit: boolean;
 };
 
-export const scrollTopToReveal = ({
-  layout,
+const contextRows = ({
+  lines,
   index,
-  rowPx,
-  scrollTop,
-  viewport,
-}: RevealParams): number => {
-  const top = layout.offsets[index];
-  if (top === undefined || viewport <= 0) {
-    return scrollTop;
+  isSplit,
+}: ContextRowsParams): ReadonlyArray<DiffRow | DiffPairRow> =>
+  lines.map((line) =>
+    isSplit
+      ? {
+          type: 'pair',
+          hunkIndex: -index - 1,
+          rowIndex: line.newLine ?? line.oldLine ?? 0,
+          pair: { old: line, new: line },
+        }
+      : { type: 'line', hunkIndex: -index - 1, rowIndex: line.newLine ?? line.oldLine ?? 0, line },
+  );
+
+export const windowRows = ({
+  hunks,
+  gaps,
+  isSplit,
+  visibleLines,
+}: Params): ReadonlyArray<DiffRow | DiffPairRow | ContextGap> => {
+  const original = visibleDiffRows<DiffRow | DiffPairRow>({
+    rows: isSplit ? buildDiffPairRows({ hunks }) : buildDiffRows({ hunks }),
+    visibleLines,
+  });
+  const rows: (DiffRow | DiffPairRow | ContextGap)[] = [];
+  const appendGap = ({ gap }: AppendGapParams) => {
+    if (gap === undefined) {
+      return;
+    }
+    rows.push(...contextRows({ lines: gap.before, index: gap.index, isSplit }));
+    if (gap.count === null || gap.count > 0) {
+      rows.push(gap);
+    }
+    rows.push(...contextRows({ lines: gap.after, index: gap.index, isSplit }));
+  };
+  for (const row of original) {
+    if (row.type === 'header') {
+      appendGap({ gap: gaps[row.hunkIndex] });
+    }
+    rows.push(row);
   }
-  if (top < scrollTop) {
-    return top;
+  const sourceCount = hunks.reduce((count, hunk) => count + hunk.lines.length, 0);
+  if (visibleLines >= sourceCount) {
+    appendGap({ gap: gaps[hunks.length] });
   }
-  const bottom = top + rowPx;
-  return bottom > scrollTop + viewport ? bottom - viewport : scrollTop;
+  return rows;
 };

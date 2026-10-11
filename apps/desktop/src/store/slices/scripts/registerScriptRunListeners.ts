@@ -1,5 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import {
+  invokeScriptSnapshot,
   listenScriptExit,
   listenScriptOutput,
   type ScriptRunRecord,
@@ -16,6 +17,12 @@ type Params = {
   readonly startedAt: number;
   readonly name?: string;
   readonly mountId?: MountId;
+  readonly shouldReplay?: boolean;
+};
+
+type OutputChunk = {
+  readonly text: string;
+  readonly offset: number;
 };
 
 type WriteRunParams = {
@@ -41,6 +48,7 @@ export const registerScriptRunListeners = async ({
   startedAt,
   name,
   mountId,
+  shouldReplay = false,
 }: Params): Promise<RegisteredScriptRun> => {
   const writeRun = ({ record }: WriteRunParams): void => {
     set((state) => ({
@@ -69,12 +77,14 @@ export const registerScriptRunListeners = async ({
     writeRun({ record: { ...current, output: stdoutBuffer.replace(ANSI_PATTERN, '') } });
   };
 
-  unlistenOutput = await listenScriptOutput((payload) => {
-    if (payload.runId !== runId) {
-      return;
-    }
+  let isReplaying = shouldReplay;
+  let snapshotEnd: number | null = null;
+  let pendingExitCode: number | null = null;
+  const pendingChunks: OutputChunk[] = [];
+
+  const append = (text: string): void => {
     const body = isTruncated ? stdoutBuffer.slice(TRUNCATED_PREFIX.length) : stdoutBuffer;
-    const next = body + atob(payload.data);
+    const next = body + text;
     const isOverCap = next.length > STDOUT_CAP;
     stdoutBuffer = isOverCap
       ? TRUNCATED_PREFIX + next.slice(-(STDOUT_CAP - TRUNCATED_PREFIX.length))
@@ -83,12 +93,21 @@ export const registerScriptRunListeners = async ({
     if (flushTimer === null) {
       flushTimer = setTimeout(flush, OUTPUT_FLUSH_MS);
     }
-  });
+  };
 
-  unlistenExit = await listenScriptExit((payload) => {
-    if (payload.runId !== runId) {
+  const applyChunk = ({ text, offset }: OutputChunk): void => {
+    if (snapshotEnd === null) {
+      append(text);
       return;
     }
+    const skip = snapshotEnd - offset;
+    if (skip >= text.length) {
+      return;
+    }
+    append(skip > 0 ? text.slice(skip) : text);
+  };
+
+  const finishRun = (exitCode: number): void => {
     unlistenExit();
     unlistenOutput();
     if (flushTimer !== null) {
@@ -100,11 +119,10 @@ export const registerScriptRunListeners = async ({
       return;
     }
     const stdout = stdoutBuffer.replace(ANSI_PATTERN, '');
-    const completed: ScriptRunResult = { stdout, stderr: '', exitCode: payload.exitCode };
+    const completed: ScriptRunResult = { stdout, stderr: '', exitCode };
     writeRun({
       record: {
-        status:
-          current.status === 'cancelled' ? 'cancelled' : payload.exitCode === 0 ? 'ok' : 'error',
+        status: current.status === 'cancelled' ? 'cancelled' : exitCode === 0 ? 'ok' : 'error',
         result: completed,
         runId,
         startedAt,
@@ -114,7 +132,49 @@ export const registerScriptRunListeners = async ({
       },
     });
     resolveResult?.(completed);
+  };
+
+  unlistenOutput = await listenScriptOutput((payload) => {
+    if (payload.runId !== runId) {
+      return;
+    }
+    const chunk = { text: atob(payload.data), offset: payload.offset };
+    if (isReplaying) {
+      pendingChunks.push(chunk);
+      return;
+    }
+    applyChunk(chunk);
   });
+
+  unlistenExit = await listenScriptExit((payload) => {
+    if (payload.runId !== runId) {
+      return;
+    }
+    if (isReplaying) {
+      pendingExitCode = payload.exitCode;
+      return;
+    }
+    finishRun(payload.exitCode);
+  });
+
+  if (shouldReplay) {
+    let snapshotExitCode: number | null = null;
+    try {
+      const snapshot = await invokeScriptSnapshot(runId);
+      snapshotEnd = snapshot.offset + atob(snapshot.data).length;
+      append(atob(snapshot.data));
+      snapshotExitCode = snapshot.exitCode;
+    } finally {
+      isReplaying = false;
+      for (const chunk of pendingChunks.splice(0)) {
+        applyChunk(chunk);
+      }
+    }
+    const exitCode = pendingExitCode ?? snapshotExitCode;
+    if (exitCode !== null) {
+      finishRun(exitCode);
+    }
+  }
 
   return {
     result,

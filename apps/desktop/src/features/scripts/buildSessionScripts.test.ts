@@ -260,4 +260,72 @@ describe('buildSessionScripts', () => {
 
     expect(group?.scripts).toEqual([]);
   });
+
+  it('suggests one root script per category, in a fixed order, when nothing is pinned', () => {
+    const groups = [
+      {
+        source: 'package-json' as const,
+        packageName: 'ledger-core',
+        relDir: '',
+        manager: 'pnpm',
+        scripts: [
+          { name: 'lint', command: 'pnpm run lint', body: 'eslint .' },
+          { name: 'test:unit', command: 'pnpm run test:unit', body: 'vitest run' },
+          { name: 'test', command: 'pnpm run test', body: 'vitest' },
+          { name: 'dev', command: 'pnpm run dev', body: 'vite' },
+          { name: 'format', command: 'pnpm run format', body: 'prettier .' },
+          { name: 'build', command: 'pnpm run build', body: 'tsc -b' },
+          { name: 'typecheck', command: 'pnpm run typecheck', body: 'tsc --noEmit' },
+        ],
+      },
+      {
+        source: 'package-json' as const,
+        packageName: '@acme/web',
+        relDir: 'apps/web',
+        manager: 'pnpm',
+        scripts: [{ name: 'dev', command: 'pnpm run dev', body: 'vite' }],
+      },
+    ];
+    const [group] = buildSessionScripts({
+      mounts: [mount('a', LEDGER, '/work/ledger')],
+      projects: PROJECTS,
+      saved: [],
+      discovered: { '/work/ledger': groups },
+      pins: {},
+    });
+
+    expect(group?.scripts).toEqual([]);
+    expect(group?.suggested.map((script) => script.name)).toEqual([
+      'dev',
+      'build',
+      'test',
+      'lint',
+      'typecheck',
+    ]);
+    expect(group?.suggested.every((script) => script.relDir === '')).toBe(true);
+  });
+
+  it('suggests nothing once a script is pinned, and nothing for a mount still preparing', () => {
+    const [pinned] = buildSessionScripts({
+      mounts: [mount('a', LEDGER, '/work/ledger')],
+      projects: PROJECTS,
+      saved: [],
+      discovered: { '/work/ledger': MANIFEST },
+      pins: {
+        [LEDGER]: [
+          scriptPinId({ source: 'package-json', relDir: '', name: 'test', savedId: null }),
+        ],
+      },
+    });
+    const [preparing] = buildSessionScripts({
+      mounts: [mount('b', LEDGER, '')],
+      projects: PROJECTS,
+      saved: [],
+      discovered: {},
+      pins: {},
+    });
+
+    expect(pinned?.suggested).toEqual([]);
+    expect(preparing?.suggested).toEqual([]);
+  });
 });

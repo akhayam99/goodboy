@@ -13,8 +13,8 @@
   capability stays one step away.
 - **The board frame.** The header has the pane title grade (`Board` alone, no
   total: each lane carries its own count), with the repository summary as quiet
-  meta text after it and the project filter and New session on the right. The
-  Ongoing row shows only while the workspace tracks a task. Header and lanes
+  meta text after it and the project filter and New session on the right.
+  Nothing else sits on that line, and no row sits under it. Header and lanes
   share one frame centred in the pane, so the title's left edge is the first
   lane's left edge and the actions' right edge is the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
@@ -51,11 +51,12 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Tasks, Chat and Workflows sit under
-  New session, the Sessions list follows, Settings and the Goodboy row sit at
-  the foot. Board is home and the first door (⌘⇧H). The column is on every
-  screen with a workspace: the board, a session, the draft and every studio but
-  Settings, which swaps the column's content (see Studios).
+- **The column holds every door.** One create row of three labelled buttons (+ Session,
+  - Chat, + Terminal) sits under the toggle; Board, Tasks, Chat, Workflows, Terminal and
+    Monitoring sit under it with no plus of their own, the Sessions list follows, Settings and the Goodboy row sit at
+    the foot. Board is home and the first door (⌘⇧H). The column is on every
+    screen with a workspace: the board, a session, the draft and every studio but
+    Settings, which swaps the column's content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. Neither the column nor a studio
@@ -88,7 +89,7 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Settings), a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Terminal, Monitoring, Settings), a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
@@ -99,7 +100,7 @@
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself.
-- **One selected sign.** The open studio's door, New session while the draft is
+- **One selected sign.** The open studio's door, + Session while the draft is
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
@@ -124,7 +125,8 @@ moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode.
 
 - **Scope first.** It opens on a scope chip that names the surface you can see:
-  the focused commit row on the Commits tab, else the agent when the agent page
+  the focused commit row on the Commits tab, else the focused row of the Explore
+  tree (a file or a folder, with its Open, Show in Finder, Ask and Copy path), else the agent when the agent page
   is on screen (a stored selection under a studio or an artifact conversation
   does not count), else the run on the Runs page, else the pull request on the
   Branch page, else the session, else the workspace on the board and under any
@@ -212,7 +214,17 @@ opens it on a mode. Commands is the first mode.
 In the composer, `$` lists the scripts of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then the `package.json` and
 `composer.json` scripts pinned for the project, by category. The Scripts lens
-lists the same set. Scripts that are not pinned stay on the workspace Projects
+lists the same set in two bands per project: **Services** (category `dev`, or a
+script named `start`, `serve`, `watch` or `preview`, decided by `isService`) and
+**Tasks** (the rest), each with a count. A running service row shows the last
+output line, uptime, CPU and memory (the monitor snapshot for the run's pid,
+polled only while the lens is open), its port as a link once a listener owned by
+the run exists, and **Stop** and **Restart**; an idle one shows its expected
+port as a chip, or `:5005 in use` in warning when another worktree holds it.
+A task row shows a result glyph, its duration and age, and the last line of a
+failure. A project with nothing pinned shows a dimmed **Suggested** band (its
+root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
+**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
@@ -236,11 +248,11 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent, session studio and one target
-  (artifact, run, issue, diff focus, terminal mount). Its `studio` is the app
+  (artifact, run, issue, diff focus, terminal mount, Explore project). Its `studio` is the app
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
-  `s/{session}/branch/pr` (the Pull request tab, see below),
+  `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
   `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
@@ -256,14 +268,27 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   view redirects after it mounts. The pull request and Comments are two lenses
   and never alias each other: a door to the pull request lands on `pr`, a door
   to comments lands on `review`. On a code-host branch both are rewritten to a
-  Branch tab. The Branch tabs are addresses and have one registry,
+  Branch section. The Branch sections are addresses and have one registry,
   `BRANCH_TAB_REGISTRY` in `features/branch/branchTabs.ts` (id, label, address
-  token, shortcut, availability), with `branchTabsOf({ hasPullRequest,
-provider })` returning the tabs the page shows in order. `BranchTab` includes
-  `pr`; while `pr` is not available the `pr` address parses and prints but
-  `canonicalLocation` lands it, and the pull request page request, on
-  `comments` (a review being written still lands on `files`), so a pasted or
-  restored `pr` address never errors.
+  token, shortcut, availability), with `branchTabsOf({ state, hasComments })`
+  returning the sections the page shows in order (see The Branch page below).
+  One resolver decides every door, `unavailableBranchTab` in
+  `canonicalLocation.ts` through `resolveBranchTab`: a section the state does not
+  have is replaced before the place is recorded, `comments` with no pull request
+  and no comment by `files`, `checks` with no pull request by `pr`; every other
+  address stays. `BranchTab` includes `pr`; while `pr` is not available the `pr`
+  address parses and prints but lands on `comments` (a review being written still
+  lands on `files`), so a pasted or restored `pr` address never errors.
+- **An address carries its own mount.** `canonicalLocation` rewrites aliases
+  and never fills a missing mount: a Branch address with `mountPath: null`
+  stays `null`, and the page shows the active mount when it renders. A caller
+  that acts on a mount passes it (`branchPlace({ mountPath })`,
+  `lensPlace({ mountPath })`); a page door that means "the mount on screen"
+  leaves it out and `lensPlace` reads it once, through `doorMountPath`, at the
+  click. Back to an address with no mount does not move the write destination.
+  `docs/typescript/state-writes.md` has the rule; the rows of
+  `__tests__/surfaces/navigation-flows/target-identity.rows.tsx` hold the
+  journeys.
 - **Push, amend, replace.** A new place pushes: board and session, session to
   session, lens, a child, a sibling from a switcher, a session studio. Pushing
   the place you are on replaces it. Page state amends the current entry and
@@ -316,7 +341,10 @@ never exists on one surface only.
   `⋯` holds copy and rare actions. A task chip opens the task; its unlink
   control appears on pointer hover and keyboard focus, with no kebab.
   Put on a branch lives on the branch row. Link work is the single entry
-  for linking work to a session or workspace.
+  for linking work to a session or workspace. Moving a task is one verb,
+  `Move to`: in the chip's menu (Shift+F10), in the focused issue's
+  `Linked to` row and in the palette; the x on a branch chip says what it
+  does (`Move to session`, or `Take off project / branch`).
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.
@@ -343,7 +371,8 @@ never exists on one surface only.
   from the list row too, plus Delete on any stored artifact that is not already
   deleted (Undo, no confirm) and Delete permanently on a deleted one (confirmed). A plan part, a Tasks record (with the tool verbs of
   an open record), a pull request, a worktree row of the Overview (`mount`), a
-  project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
+  project, the Diff of a branch (`diff`), a diff file, a file or folder row in
+  Explore (`exploreFile`), a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
   rendered text have their own kinds. One field says which available actions
   also get a visible control on their surface: `slot` (`primary`,
@@ -388,9 +417,16 @@ never exists on one surface only.
   keeps its own `review.select` and `review.selectAll`. The scroller of a
   surface takes a bottom margin while something is selected, so the bar never
   covers the last row.
-- **Confirm and undo.** A verb that loses work confirms inside the menu with
-  `InlineConfirm` (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
-  Delete script, Close branch, Remove from session, Abort rebase). Remove
+- **Confirm and undo.** A confirm is one placement, anchored to its trigger
+  (`ConfirmPopover`): Cancel has focus on a danger confirm, `Cmd+Enter` confirms,
+  and no card confirm exists any more (`inline-confirm-placement.baseline.json`
+  is empty). A verb that loses work confirms in a `ConfirmPopover` on its button
+  (Delete, Delete permanently, Discard, Close run, Merge, Close pull request,
+  Delete script, Close branch, Remove from session, Abort rebase, Restore a
+  backup). The Branch header's Merge asks "Merge #318 into main?" and Close
+  asks "Close #318 without merging?" beside their buttons. Deleting a diff note
+  acts at once with Undo, which posts the same note again; a pull request
+  review draft asks in a popover. Remove
   from session and a storage worktree's Remove keep their detailed confirm (the
   removal plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive, Delete on an artifact,
   Close agent, Unlink, Stop tracking, Take off this branch). The toast lasts
@@ -413,15 +449,20 @@ its slots.** The board, the session and the studios do not define their own
 frames. A surface that needs a different frame changes the shared one instead of
 forking a second (`app/shellArrangement`, which every shell mount, the app and
 the mock scenes alike, reads). **Two navigation columns at once is not the IA.
-The right drawer is context, never navigation.** A session draws one full-width
+A page rail is not one: filters or a list that belong to the page sit beside
+the detail, on the page background. The right drawer is context, never
+navigation.** A session draws one full-width
 pane, and its navigation lives in the left column. The right drawer holds
 reference material beside the page and closes with the pane that opened it.
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
-New session (⌘N, the only emphasised control, selected while the draft is open,
-a primary dot and `Draft in progress` while a draft waits), the doors Board
-(⌘⇧H), Tasks, Chat and Workflows as one 28px row each (icon and word, the
+the create row, three equal buttons side by side, each a 12px plus and a word
+(`CreateRow`): + Session (⌘N, the only emphasised control, selected while the draft is
+open, a primary dot and `Draft in progress` while a draft waits), + Chat (⌘⇧N, always a
+new chat, never the last one) and + Terminal (a new terminal in the workspace folder);
+then the doors Board
+(⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
 shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
 belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
@@ -438,7 +479,7 @@ drawer header (`HeaderActions`): secondary controls, at most one secondary
 button, at most one filled primary, then the overflow `...`, all 28 tall, the
 last one on the column edge. The Session overview holds only the overflow
 (Refresh, Pin session, Archive session, Delete session...); Delete session...
-opens its confirm as a card under the title row, and Escape or Cancel gives
+opens its confirm beside the overflow trigger without moving the page, and Escape or Cancel gives
 focus back to the overflow. The Agent page keeps Interrupt, Close or Reopen as
 one ghost button with its word (it folds into the overflow below 560px) and
 `Delete agent` in the overflow. The artifact header reads
@@ -448,8 +489,17 @@ the push confirm or any action confirm is open the primary turns secondary so
 the confirm holds the one filled button. A plan drawer reads
 `[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
 then closes the drawer on any page and raises one toast, and a plan whose run
-was approved reads Approved with no primary until the run starts the step. Scripts reads `[search] [New script]`. A page with no
-actions draws no `...`.
+was approved reads Approved with no primary until the run starts the step. The
+run page reads `[Stop run] [one primary] [...]` (`RunHeader`): **Stop run**
+only while the run is live (it asks first), the one primary from `runPrimaryOf`
+(**Review plan**, **Answer**, **Resume**, **Continue the run**, **Retry**,
+**Raise spend cap**, **Decide next step**, **Start step 2**, **Start run** or
+**Restore**, and nothing while a step runs or once the run is finished), and an
+overflow that holds View diff, Copy run summary, Pause run (live runs only),
+Step routing, Archive run and Delete run, never **Stop run** or **Approve plan**.
+The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
+Runs crumb or Esc goes back to the list, and no chevron on the page does.
+Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
 
 **Legacy layout.** Settings > App > General > Legacy layout (setting
 `shell.classicBars`, off by default; the stored key kept its name when the
@@ -470,7 +520,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): the toggle, New, Board, Tasks, Chat and Workflows as icons
+  (`ColumnRail`): the toggle, New, Board, Tasks, Chat, Workflows, Terminal and Monitoring as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
@@ -492,7 +542,7 @@ mounts editors and takes a title.
 
 **The projects section shows which projects a session has materialized.** It
 lives in the session overview and always has the Add project action, even
-before the first mount. Mounted projects show as dense rows. The empty section
+before the first mount. Each mounted project is one band under the section eyebrow, with its worktrees as dense rows indented by one constant (`MOUNT_CHILD_INDENT`) so a branch glyph sits under the project name; merged and closed ones sit behind `Show finished (n)`. The empty section
 is its header with a one-line hint: turns run in the session folder until you
 add a project. Sessions are created lazily
 on the workspace ([concepts.md](concepts.md) → Lazy sessions), and this section
@@ -558,21 +608,37 @@ card. The row, the card and the board card all read `useSessionSummary`, so they
 say the same things in the same words. The board card keeps the whole summary
 and the session header keeps its chips.
 
-**The user chooses the order of the list.** The Sessions header holds one `⋯`
-menu: Sort (Needs you first then the session you opened last [default],
-Alphabetical, Last activity, Created), Group (None [default], PR state, Stage,
-Project), Filter by project (the same selection as the board's project filter)
-and Show archived. The choices persist per workspace in the browser storage
-(`goodboy:session-view:<workspace id>`, version 2); nothing goes to the
-database. By default the sessions that need you sit on top, the one that has
-waited longest first, and the rest follow `sessions.last_opened_at`, written
-when a session opens (a session never opened falls back to its last activity).
-A running session does not move, and a row moves only when you open a session
-or a session starts needing you. With no grouping the first eight rows show and
-the rest sit under **Show N more**, remembered per workspace. A session that
-needs you and the open session are never folded. A grouped list shows every
-group, finished groups start collapsed, and nothing folds. `⌘⇧[` and `⌘⇧]` walk
-this same order and skip folded rows, so they match what you see.
+**The user chooses what the list shows and in what order.** The Sessions header
+holds one funnel button, **Filter sessions** (`SessionFilterPopover`), with the
+count of active filters as a small badge, like the Board's project filter. Its
+popover is a labelled dialog, not a menu of menus. Status lists Needs you,
+Running, In review, Building and Done with their counts (`statusFilter` in the
+prefs). Project lists the projects of the sessions with their counts and shows
+only when two or more projects have sessions (the same selection as the board's
+project filter). Archive holds Show archived. Sort offers Needs you first
+[default], Alphabetical, Last activity and Created; Group offers None
+[default], PR state, Stage and Project. **Clear filters** shows while a filter
+is active. The choices persist per workspace in the browser storage
+(`goodboy:session-view:<workspace id>`, version 3: a version 2 record loads with
+an empty status filter); nothing goes to the database.
+
+A filter never hides a pinned session or the open session
+(`withExemptSessions`, `filterSessionsByStatus`). When filters hide other
+sessions, one quiet line under the list reads "N hidden by filters" with a
+ghost **Clear**; a list that filters out everything says "No sessions match".
+
+By default the sessions that need you sit on top, the one that has waited longest
+first, and the rest follow their last activity (`activityKeyOf`: the later of
+the last finished turn and `sessions.updated_at`). Opening a session writes
+`sessions.last_opened_at` and never moves a row, so the list holds still while
+you click through it. A row moves only when its session has new activity or
+starts needing you. `last_opened_at` feeds `⌃Tab` and the switcher's recents
+only. The Board's default order uses the same key. With no grouping the first
+eight rows show and the rest sit under **Show N more**, remembered per
+workspace. A session that needs you and the open session are never folded. A
+grouped list shows every group, finished groups start collapsed, and nothing
+folds. `⌘⇧[` and `⌘⇧]` walk this same displayed order and skip folded rows, so
+pressing `⌘⇧]` four times from the first row visits the next four sessions.
 
 **Pin a session and it stays at the top of the list.** **Pin session** and
 **Unpin session** are session actions (the row's right-click menu, `⌘K` and
@@ -604,7 +670,7 @@ or `remembered` for the open session. A page that has a row in the card
 takes `bg-selected` and `aria-current="page"` alone. Where no row matches (the
 Tools Explore, Scripts and Terminal, a linked record, Questions with nothing
 open) or the pages are folded, the session row takes the sign. While a studio
-(Tasks, Chat, Workflows, Impact) sits over the session the row is `remembered`:
+(Tasks, Chat, Workflows, Terminal, Impact) sits over the session the row is `remembered`:
 medium weight, no fill, no `aria-current`; closing the studio returns the sign to
 the page. The session row also carries `data-current-sign`. Questions renders in
 the card only while something is open, warning-toned with the count word
@@ -833,7 +899,16 @@ activity yet show the plain overview with its actions.
   name through the `Trail` primitive from `@goodboy/ui`. A studio body that
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
   `Workflows > Ship a fix` with its save state and actions), so the app has one
-  breadcrumb.
+  breadcrumb. In a split studio (Chat, Guide, What's new, Tasks, Notifications) the band
+  is the first child of the detail beside the page rail, not a bar across the rail, so
+  the crumb, the title and the body share one x ([frame map](./styling.md#the-frame-map)).
+- **The parent crumb is Up, and the last crumb names the kind.** No crumb
+  carries a back glyph and `Trail` has no lead slot, so a page never draws its
+  own back link above its content. The last crumb of a run, an artifact, an
+  artifact being created and a selected agent reads `Run`, `Artifact`,
+  `New artifact` and `Agent`; the page title holds the name.
+  `no-back-glyph-in-trail.test.tsx` fails on a chevron or arrow to the left
+  inside a trail.
 - **Every crumb has an icon, and depth compacts the trail.** Agents carry the
   agent glyph in their kind's colour, runs the run glyph, artifacts, questions
   and pull request modes their own. The last crumb and its parent always stay
@@ -874,14 +949,15 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   feed, the palette, a notification, a linked-work chip and a restored session
   are shortcuts into a place that already has a parent. None of them may
   rewrite it. History is what Back is for.
-- **The Branch is one page with its tabs in the address.** A branch is shaped
-  like a pull request: a header (title, `Draft · project · head ▾ → base ·
-checks`, where `project · head ▾` is the branch switcher, one primary by
-  state, `⋯` for the rare pull request lifecycle; the primary and `⋯` are both
-  28px, `⋯` last, and a blocked primary's reason, such as `1 check still
-running.` on Merge, reads in the meta line as well as in the tooltip) over
-  the tabs `Comments · Files · Commits · Checks`
-  (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
+- **The Branch is one page with its sections in the address.** A branch is shaped
+  like a pull request: a split page, a rail of sections on the left and one centred
+  column on the right, whose header (title and state chip, `project · head ▾ → base
+· #318 by nadia-p · 7 commits`, where `project · head ▾` is the branch switcher,
+  one primary by state, `⋯` for the rare pull request lifecycle; the primary and
+  `⋯` are both 28px, `⋯` last, and a blocked primary's reason, such as `1 check
+still running.` on Merge, reads in the meta line as well as in the tooltip) sits
+  over the section body
+  (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A section switch and a
   thread selection replace the entry, so Back never walks them. The trail is
   `Session > Branch ▾ > {thread or file}`, the same from
   every door and always reading `Branch`, never the branch or pull request name
@@ -902,7 +978,8 @@ running.` on Merge, reads in the meta line as well as in the tooltip) over
 - **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
-  to that thing. The page segment (depth one, or `Session` when it is alone)
+  to that thing. A segment whose menu would hold fewer than two entries, rows plus
+  actions, is a plain crumb with no chevron. The page segment (depth one, or `Session` when it is alone)
   lists the session's pages with a count that names what it counts,
   grouped as pages, Tools and Linked. One pure table, `pageCountWordOf`
   (`features/session/pageCountWord.ts`), reads noun last and empty at zero:
@@ -935,6 +1012,20 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   (a squash merge), in the menu and in the Branch header alike
   (`isMountRequestMerged`). It never
   turns into an icon. The Files tab opened without a branch lands on the active mount.
+- **Files can reveal unchanged context.** Each hidden range offers the next 20
+  lines beside either hunk, or all of its lines. Small ranges use one action.
+  The file's final range stays uncounted until its sides load. Expansion stays
+  with the file while scrolling and resets on a diff refresh. A failed read
+  keeps the existing lines and offers Retry; oversized files offer the editor.
+  The per-file expand-all registration in
+  `features/diff/components/DiffView` lets file actions reveal the whole file.
+- **A double click on a name in a diff line shows where it is defined and used.**
+  Alt click does the same. An anchored popover under the word lists a Defined in
+  group and a Used in group from the worktree, marks files of this change, and
+  says when it shows only the first 300. A result in this diff scrolls to its
+  line and flashes it, expanding the hidden range first when the line sits in
+  one; any other result opens the Explore file drawer on that line. The commit
+  view has no peek, because its lines are not the working tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
 - **In the legacy layout, Settings claims its studio band** with Settings, the
@@ -996,7 +1087,7 @@ covered.
   chat you had open last in this workspace (`lastChatByWorkspace`, memory only,
   `selectChatDoor`), else the most recent chat by activity, else a new chat; after
   you press New chat it opens a new one until you pick a chat again. The column
-  door, the top bar button and the palette entry share that rule. Archiving or
+  door, the top bar button and the palette entry share that rule. A chat with no message is one centred stage (the glyph, **Ask about {workspace}**, one sentence, the composer and up to three suggestions); the first message docks the composer at the bottom. Archiving or
   deleting the open chat lands on the next most recent one, not a blank page. Its
   row carries a running dot or a new-reply dot. The command
   center opens the palette and shows ⌘K; it never takes typing itself. In the palette,
@@ -1084,11 +1175,15 @@ only drop under zoom.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
-- **Theme is not in the bar.** The theme changes a few times a week, not per
-  click, and the swap is one paint (`theme-switch-is-one-paint`), so a
-  permanent icon bought little. The three-way choice (dark, light, Match
-  system) lives in Settings > App > General and in the palette (`Switch to
-light mode`, `Switch to dark mode`). No shortcut is bound to it.
+- **Theme is in the bar.** A 28px square `ThemeToggle` sits between spend and
+  the bell, because the owner switches often: Sun in light, Moon in dark,
+  Monitor while following the system. The tooltip names the state and the
+  action (`Dark theme. Switch to light`, `Matching system (dark). Switch to
+light`) and a click writes the explicit opposite of what shows. Settings >
+  App > General keeps the three-way choice and the palette keeps its entry;
+  all three call `switchTheme({ to })` in `shared/lib/theme.ts`, the only
+  writer. The swap stays one paint (`theme-switch-is-one-paint`). No shortcut
+  is bound to it.
 - The top bar never edits. Reporting a bug, the setup checklist, the update
   and the version are about Goodboy itself, so they live at the foot of the
   column: the Goodboy row and the bug icon beside it.
@@ -1113,8 +1208,16 @@ still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
 checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
 your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
-iPhone the pairing studio, so neither waits behind the palette. The
-addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
+iPhone the pairing studio, so neither waits behind the palette. Every
+studio keeps a door you can see: the flow table in
+`__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
+`door` of `visible` or `palette`, and `studio-doors.test.ts` fails when a studio
+kind has no `visible` row. Three links open the Guide on a chapter and Back
+returns to the page you were on: the session hover card's "What do these marks
+mean?" (Legend), Impact's Spend tab "How cost is counted" (Tokens and cost) and
+the Storage worktree row's "What is a worktree?" (Words). They share
+`features/settings/openGuideChapter.ts`. The addresses live in
+`shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card. Only the pinned row does that (and reports the
@@ -1294,7 +1397,7 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
 
-Utility studios (Tasks, Chat, Workflows, Impact, Notifications, Changelog,
+Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
 the guide, pairing, Add workspace) render in the shell's studio slot, which
 covers the content area only, beside the column, as its own sheet with the
 studio band on top. The column stays live, so another door or a session row is
@@ -1364,6 +1467,22 @@ one is open at a time.
   under it (the band keeps the crumb and Close only), the guide `Guide`, What's new and
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
+- **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)
+opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId }`in`TerminalStudio`:
+`StudioShell`plus`StudioRailLayout surface="terminal"`(the rail folds like Tasks).
+The rail lists a`Workspace`group first (terminals that belong to the workspace), then one
+group per session that has terminals, headed by the session title, its branch and a count;
+the open session's group is expanded and the others folded. A row is a state dot (idle,
+busy, exited), the name (the cwd's last folder, renamed by double click, Enter saves, Esc
+cancels), the command a busy shell runs and, once exited,`exited 127`with Restart. The
+close x shows on hover and focus: an idle shell closes at once, a busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). The detail is a 32px location
+row, the cwd trimmed to the workspace folder, chips for `Workspace folder`, one per mount of
+the session (`ledger-core · hl/ledger-rounding`) and `Main checkout`, then the shell. A
+chip opens a new terminal there and selects it; it never types into a shell, and the `cd`menu does that only while the shell is idle.`New terminal`in the header opens in the
+workspace folder, its chevron lists the same targets. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace (`terminalOwner.ts`); both
+reattach after a reload with their owners and renamed names (setting `terminal.names`).
+The session Terminal lens is the same body (`SessionTerminalLens`) focused on that session.
+`⌘T` (`terminal.newTab`) still adds a terminal in both places.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every
@@ -1391,15 +1510,16 @@ one is open at a time.
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
   studio the time owns a fixed last column and Mark read and Delete swap in
-  over it on hover, so the row never changes width. A **Filters** button in the
-  list header opens the facets (`NotificationFiltersButton`, with the count of
-  active filters) by view, severity and source, with counts that come from SQL
-  (`countNotifications`), so they stay true past the loaded page; Load older
-  pages with a cursor. Both surfaces default to this workspace: a row belongs to
+  over it on hover, so the row never changes width. The facets (view, severity,
+  source and the workspace scope) are a page rail docked beside the list, in
+  Chat's frame (`StudioRailLayout`, `placement="page"`, surface `notifications`,
+  288px), with counts that come from SQL (`countNotifications`), so they stay
+  true past the loaded page; Load older pages with a cursor. The title is
+  Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
-  The studio header draws them through `HeaderActions`: `Filters`, then the ghost
-  `Mark all read` (only while something is unread), then the ghost danger
+  The studio header draws them through `HeaderActions`: the shared `FilterButton`
+  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the ghost danger
   `Delete all`, which opens a `ConfirmPopover` anchored to it, aligned to its end
   edge, titled with the scope's count ("Delete 7 notifications?") and naming the
   workspace or "every workspace"; it never swaps the title row. A row's Delete acts
@@ -1412,9 +1532,10 @@ one is open at a time.
   The rail rows (`packages/ui` `FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
   are shared primitives. Tasks uses all three: its facets filter by view,
-  type and source (one pick per section, a tool that did not load says so in
-  its row) behind the same Filters button in the list header, so Tasks is
-  the list and the record beside the column, never a third column; its
+  type, source and project (one pick per section, a tool that did not load says so
+  in its row) from a page rail docked beside the list (surface `inbox`, 288px,
+  the search field at its top), and the title stays Tasks, so Tasks is the rail,
+  the list and the record beside it, never a second navigation column; its
   one-line rows are grouped by the same days in time order, and
   J and K move a cursor, and the record follows beside the list only once one is
   open. Tasks opens with a quiet cursor on its first row (`data-cursor`, the hover
@@ -1432,10 +1553,21 @@ one is open at a time.
   Changelog's releases and the guide's chapters are content beside their
   detail, not a second navigation column: `StudioRailLayout` with
   `placement="page"` draws the list on the page background with the resize
-  edge as the only line. Chat's list opens at 288px.
+  edge as the only line. Tasks' and Notifications' filters are the same frame. Every page rail opens at
+  288px (`standard`); the skeleton reads the same constant.
+- **A page rail folds, and folds itself when there is no room.** A page may pass
+  `onCollapsedChange`: the rail's first row then holds a fold control (tooltip
+  "Fold the rail"), and `useStudioRailFold` remembers the choice per surface
+  (`goodboy:studio-rail-folded:<studio>:v1`). Under a pane of 880px the rail
+  folds without saving anything and docks again when the pane widens. A folded
+  rail leaves the shared `FilterButton` (28px tall, the funnel with the count of
+  active filters, "Dock the filters" beside it while the pane is wide enough)
+  in the title row, opening the same facets in a popover. The search field of
+  Tasks moves into the title row with it.
 - **Every studio list resizes.** `StudioRailLayout` (Settings in the legacy
-  layout, Guide, Chat, Changelog, Bitbucket) drags from its right edge
-  between 220 and 420px, step 8px (32 with Shift) with the arrow keys, and goes
+  layout, Guide, Chat, Changelog, Bitbucket, Tasks, Notifications) drags from
+  its right edge between 220 and 420px (a page may pass `min` and `max`), step
+  8px (32 with Shift) with the arrow keys, and goes
   back to its default (256 narrow, 288 standard) on a double click. Each studio
   keeps its own width
   (`goodboy:studio-rail-width:<studio>:v1`), and the rail skeleton opens at
@@ -1533,8 +1665,8 @@ pageKeys.ts`), typed so a new override key does not compile until it has
   permission history or `bootstrap.*` keys. Restoring writes `null`; every
   override change of one copy or restore is one `patchWorkspaceOverrides`
   through the queued workspace writer. A field whose value differs from the
-  default shows a faint dot after its label (`Changed from default. Default:
-X`) and a `Reset` in its own ⋯ menu (`WorkspaceFieldRow`). Precedent:
+  default shows a small Reset button after its label (tooltip `Reset to
+default`, hidden while the value is the default, `WorkspaceFieldRow`). Precedent:
   JetBrains Copy to Project and VS Code's Modified marker with Reset Setting.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
@@ -1602,7 +1734,7 @@ then N new commits`, unmerged and gone on origin, local only for over 30
   holds reads Protected, so its folder goes first from Worktrees.
   In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
-  Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
+  Keep (30 days or always) and Delete, which asks in a `ConfirmPopover` beside its button. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
 - **Security findings is its own App page, workspace-scoped.** It scans the
   text Goodboy keeps for a workspace (saved scripts today; workflow steps,
@@ -1639,15 +1771,31 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
-  renamed in place. Projects group Starred ahead of All (never in both), each
-  a 32px grid row (star, kind, name, description, a base-branch chip only
-  when set by hand, a Folder-not-found flag) with Open in editor, Copy path
-  and Remove link in a reserved column, dim at rest; clicking the name opens an
-  inline editor below the row for the rest (description, base branch, After
-  merge for repos, folder, facts, footer actions). New session defaults sit in a
+  renamed in place. One `Terminal folder` row sits above the projects: the
+  computed folder (`workspaceFolder`) with `Change` (the folder dialog) and,
+  when overridden, `Use the default` (`setTerminalWorkspaceFolder`). Projects
+  group `Starred` ahead of `Other projects` (never in both; one `Projects`
+  heading with `Star the ones you use most.` while nothing is starred), 16px
+  apart with no divider, each a `SectionHeader` with its count and, for
+  Starred, `Agents and pickers list these first.`; Starred is never folded and
+  `Show N more` stays under Other projects. Each project is a 32px row on the
+  group grid (star, kind, name, description, a base-branch chip only when set
+  by hand, a Folder-not-found flag) with Open in editor, Copy path and Remove
+  link in a reserved column, dim at rest. The star shows at rest only on
+  starred rows (filled, warning tone); on the others it appears on hover and
+  focus in the same 24px slot (`StarToggle isQuietAtRest`). Clicking the name
+  opens an inline editor card below the row for the rest (description, base
+  branch, After merge for repos, folder, scripts, facts, footer actions); the
+  card starts at the name column (`grid-cols-subgrid`) so its content sits 12px
+  right of the name. `starredProjectsFirst({ projects, inside })` is the one
+  order: starred first, then the rest, by `name` in Settings and by `recency`
+  in pickers (`groupProjects` calls it). A project picker (the session Add
+  project list, the Sessions project filter) with a starred project and six or
+  more projects shows the same two headings and a small filled star on starred
+  rows (`shouldGroupStarred`); a search flattens them. New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
   `After a pull request merges` segmented control, and disconnecting is a
-  ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
+  ghost row at the bottom that asks in a `ConfirmPopover` beside its button. Onboarding keeps the
   comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
@@ -1755,11 +1903,18 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   (`danger`, title `Couldn't <verb> <project>`, `Details`, `Retry`) under its
   row; a branch mismatch is a `warning` `Notice` with `Use this branch here`,
   `Keep both branches` and `Not now`. A card whose mounts have not loaded
-  draws skeleton rows on the same tracks. `Add project` leaves the header once
-  nothing is left to add and becomes an item of the `Project actions` menu.
+  draws skeleton rows on the same tracks. `Add project` stays a button in the
+  header; once nothing is left to add its popover says every project is already in
+  and offers `Add workspace project`.
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
+- **The focused issue page says where the issue lives.** Under the page
+  header (All issues, Unlink) a `Linked to` row (`w-28` label, muted) shows
+  `This session` or the branches; its value opens the same `Move to` menu as
+  the task chip, `This session` and one entry per open branch of the issue's
+  project (`project · branch`, middle cut), the current placement checked.
+  `LinkedToRow` draws it once for every tracker, not inside each detail.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
@@ -1777,8 +1932,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   itself, never in a drawer. A comment reads one word (Question, To review,
   Push failed, Couldn't fix, Working, Ready, Done, Left open, Open) and
   `reviewTally` is the one count behind every number of them. A thread in the address is
-  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the launch panel
-  in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
+  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the **Fix comments** drawer
+  (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Accept N` for comments to review. With no fix run
   the line under the tabs says `Fix N`; the Overview card and
@@ -1848,8 +2003,9 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }`, like a `threads` set made only of notes,
-  opens the Files tab of the branch with the Notes drawer on the first note, so
-  it lands on your notes even with a pull request open. Back, or Up when
+  lands on the first note (`noteLandingPlace`): the Files section at its card,
+  scrolled to it, when the branch has no pull request, and its thread in
+  Comments when it has one. No drawer opens. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and a fix run transcript come back through Back.
@@ -1857,7 +2013,71 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed and
-  browses the active working directory. Diff and the other branch lenses need a
+  browses one project of the session at a time as a tree (`role="tree"`). A
+  project chip under the title (`ExploreProjectChip`) names it, `ledger-core ·
+hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
+  project; a first-lap session reads `ledger-core, project folder` and a
+  session without a project reads `Session scratch folder`. Picking a row is
+  view only: it sets `exploreMountPath` in the session-view slice and never
+  calls `switchBranchMount` or `setSessionActiveMount`, and an agent run never
+  moves it. Until you pick, Explore follows the write destination
+  (`selectExploreMount` in `features/explore`, built on
+  `resolveWriteDestination`). A pick whose worktree lost its files reads
+  "This worktree is gone", and a session with nothing to browse reads "Nothing
+  to browse yet". The pick is captured as the `explore` target of a place
+  (`s/{session}/explore/{mount}`), so Back restores the project and the file
+  drawer together, and the `mount.browseFiles` action (Browse files) opens
+  Explore on a given mount from the Projects rows. Rows are 40px
+  high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
+  extension kept, a slot for change marks, the size and the age. The size
+  hides under a 520px column and the age under 440px.
+  A 16px slot before the size carries the change marks. Changed means what the
+  Files tab means: against the base branch, with uncommitted and untracked
+  work (`worktree_changed_files`, whose `entries` give each path a status:
+  added, modified, deleted or renamed, untracked files count as added). A
+  changed file shows the diff's letter (`M`, `A`, `R`; `D` in the Changed
+  filter) in the diff's tone, named for assistive tech by the word
+  ("Modified"); names are never tinted. A closed folder holding changes shows a
+  6px dot, filled with `text-muted-foreground` and a 1px ring so it is never
+  mistaken for the diff tree's warning dot (changed since viewed), with the
+  tooltip "3 changed files"; an open folder shows none. The mark comes from
+  `useExploreChanges`, which shares one request per mount and revision with
+  `useMountDiffStats` (same 30s tick, turn finished and focus signals, no second
+  timer). The header's `All files | Changed 7` tabs show only for a mount whose
+  git answers and that has changes (or while you are in Changed). Changed
+  filters the same tree to the changed paths and their folders, all open, with
+  deleted files as faint struck rows that do not open; with nothing left it
+  says "No changes against main." A changed file's drawer offers
+  `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
+  presentation with a ghost Open in Files that opens the Files tab on the file. The folders you opened
+  are kept per session and project in the session-view slice (`exploreExpanded`,
+  keyed by session, mount path and folder) and open again when you come back,
+  and a file opened from elsewhere opens the folders above it. The file drawer
+  key holds the project (`explore-file:{mount}:{path}`), so the same relative
+  path in a second project replaces the drawer instead of closing it. The tree has one tab stop; Up and Down move, Right
+  opens a folder or enters it, Left closes it or goes to its parent, Home and
+  End jump, Enter and Space open the preview of a file or toggle a folder. Above
+  120 rows it draws only the rows near the scroll position (`shared/utils/windowRows.ts`, the
+  diff tree's math). A row's verbs come from the `exploreFile` kind: Ask an
+  agent (files), Open in editor or Open, Show in Finder and Copy path. A folder
+  offers Open only when an editor can take it (a repository with an editor),
+  and a linked folder is listed as a folder; the Rust containment check on
+  read and open stays. A file opens in a reader drawer whose header reads like
+  the diff drawer's: the type glyph, the file name, the one labelled open
+  button (`openActionOf`), then 28px ghost buttons for Copy path, Wrap lines
+  (code only, `aria-pressed`) and Close. A second row of `Preview | Source`
+  tabs shows only for Markdown and SVG, which open as Preview. The open
+  failure line and its Choose editor link sit under the header. The body starts
+  with the relative path in `text-code`, the folders cut first so the file name
+  stays whole, then the size and age faint; there is no divider and no button
+  in the body. Code and Source render in `SourceView`: a `bg-muted` well that
+  scrolls both ways, a gutter of line numbers drawn by a CSS counter so a copy
+  never holds them, and colours from the shared highlighter. Wrap is off for
+  code and on for prose, and the code choice is kept in
+  `goodboy:explore-wrap:v1`. Past 5,000 lines or a line over 1,000 characters
+  the text stays plain and one line says so. A file that is not an image or a
+  PDF and is not text says "This file is binary. Open it in the app that owns it."
+  Diff and the other branch lenses need a
   branch. Pull request is listed on every code host, GitHub included. A tool
   lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from the trail's
@@ -1944,33 +2164,58 @@ The retired phrases are in `retiredNames.ts`.
 ## The right drawer
 
 Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
-split nested inside a pane. `AppShell` puts one beside the main area, and a
-studio body puts one beside its list. A side drawer (Ask, Context, a fix run
-or agent transcript, script output, a plan part) opens at 400px, resizes from
-384 to 560px from a handle on its left edge, and keeps one saved width
-(`goodboy:right-drawer-width:v1`, clamped on read and written once when a drag
-ends) for every side drawer. A wide drawer (`artifact-document`: plan, report,
-wireframe, file diff) is 560px with no handle, and **Expand** takes the whole
-column. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+split nested inside a pane. `AppShell` puts one beside the page container, and
+a studio body puts one beside its list.
 
-**One push rule.** `room = main - 16 - 48 - 560`: the main area (the
-`DrawerColumn`'s own width) minus the drawer's two 8px insets, the page's two
-24px gutters and the 560px the page keeps. While `room >= 384` the drawer
-pushes: a side drawer at `min(saved, room)`, a wide one at `min(560, room)`.
-Below that it lies over the page at `min(target, main - 16)`, where target is
-the saved width or 560. Expanded always lies over. The mode and width come
-from the committed width, never from a drag in progress, and while it pushes
-the handle stops at `min(560, room)`, so a drag never flips the mode. Once a
-drawer pushes at some width it pushes at every wider one. Pushing, it is a
-floating card: 8px from the top, right and bottom edges and from the column,
-radius 10 (`rounded-frame`), `bg-subtle`, a hairline border, no shadow. The
-column and measure pages are centred, and the column slides left to
+**Two containers, never a panel inside the content.** The page container is the
+sheet (its `bg-background`, its 1px `frame-edge` border, `data-container="page"`)
+and the drawer container is its sibling (`data-container="drawer"`), each with
+its own size, drawn from the same top to the same bottom. With no drawer the
+page container is today's sheet: rounded on the left where the chrome wraps it,
+flush with the window's right edge. While a drawer pushes, the page container
+rounds all four corners (`rounded-frame`), the drawer container stands 8px to
+its right (the resize handle sits in that gap) and 8px from the window's right
+edge, with the same edge and radius, and the pair keeps an 8px inset above the
+window's bottom edge. The drawer container is one step quieter than the page
+(`bg-drawer`, recessed between chrome and background in both themes): it reads
+as secondary, never louder, never tinted, and never a border to fake the
+difference. `AppShell` hosts it through `DrawerColumn`'s `frame="sheet"`. The
+Tasks and Chat studios do the same inside the studio slot: their body registers
+its drawer with the `StudioFrame` (`useStudioDrawer`), the frame draws one
+`DrawerColumn` with `frame="sheet"` around the band and the body, so the band and
+the list are the page container and the drawer container stands beside them from
+the slot's top to its bottom; the slot's own sheet steps aside
+(`data-studio-sheet-owner`). A studio body with no hosting frame (a studio that
+covers the left column) keeps `frame="none"`, which draws only the drawer
+container as a card inset 8px on its right, top and bottom.
+
+**Two tiers, one width each.** A side drawer (Ask, Context, a fix run or agent
+transcript, script output, a plan part, an artifact) opens at 400px, resizes
+from 384 to 560px and keeps `goodboy:right-drawer-width:v1`. A reader drawer
+(the plan, report and wireframe document, an Explore file, a file diff) opens at
+720px, resizes from 480 to `min(1000, room)` while it pushes and to
+`min(1000, page - 16)` over the page, and keeps its own
+`goodboy:reader-drawer-width:v1`. Both are clamped on read and written once when a
+drag ends; a double click on the handle resets to the tier default (400 or 720);
+the two saved widths never bleed. There is no third tier: no drawer expands over
+the whole column, the reader tier is the large one. `selectDrawerSizing` picks
+the tier from the drawer kind. The pure rule lives in `drawerLayoutOf` (`drawerGeometry.ts`).
+
+**One push rule.** `room = main - 16 - 48 - 560`: the pane (the `DrawerColumn`'s
+own width) minus the drawer's two 8px insets, the page's gutters and the 560px
+the page keeps. The drawer pushes only while the page container keeps 560 plus
+its 48px of gutters and `room` covers the drawer's saved width; it is never
+squeezed. Otherwise it lies over the page at `min(saved, main - 16)`. The mode reads the committed width, never a drag in progress,
+and while it pushes the handle stops at `min(tier max, room)`, so a drag never
+flips the mode. Once a drawer pushes at some width it pushes at every wider one.
+The column and measure pages are centred, and the column slides left to
 re-centre in the space left of the drawer (full tier work surfaces keep their
 left edge and give up their right).
 
-**Over the page, the card runs the full height of the sheet.** It has no
-inset: flush with the sheet's top, bottom and right edges, left corners
-rounded (`rounded-l-frame`), a left border only, `shadow-xl`. A scrim
+**Over the page, the drawer container runs the full height of the sheet.** It
+has no inset: flush with the sheet's top, bottom and right edges, left corners
+rounded (`rounded-l-frame`), a left border only, `shadow-xl`, the same
+`bg-drawer`; the page container goes back to its resting sheet shape under it. A scrim
 (`bg-scrim`, 120ms fade, none under reduced motion) covers the page below the
 card, and the page is `inert`, so nothing under it takes a click, a Tab or a
 screen reader. A click on the scrim asks the top layer of the escape stack
@@ -1993,7 +2238,7 @@ forward move that stays in its session keeps it open (`keepAskDrawer` in
 `navigate`), so a chip in an answer changes the page beside it; leaving the
 session closes it, and Back brings it back like any drawer. Another drawer
 opened from the page replaces it. `app/components/DrawerHost` turns a `kind` into its content, framed
-by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
+by `DrawerFrame` from `@goodboy/ui`: a header whose 28px row is centred on the band (icon, title, count, at most
 one labelled action, close), one divider, a `ScrollFade` body and an optional
 `dock`. A body that scrolls itself, such as a chat, passes `scroll="self"` and
 fills the frame instead. A new kind adds a variant to `DrawerContent` and a
@@ -2005,7 +2250,7 @@ drawer repeats its own name in the label. The one exception is the Context
 drawer in its versions view, whose control reads `Back to current` and goes
 back to the current view instead of closing. The Close button is a 28px target
 (`size-7`) with the 14px glyph, and so is every utility in the header (copy,
-open on its page, expand); a header holds at most one labelled button (Stop,
+open on its page); a header holds at most one labelled button (Stop,
 Run again, Open in Files, New) and utilities share one icon tone. The count slot
 is for a count or a version, never for the session title: Ask's header reads
 `Ask`.
@@ -2054,6 +2299,8 @@ card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
 off-scale widths a floating surface declares per file and never lets one
 grow.
 
+**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy chip with 12px to the window edge and never wider than `min(384px, window - 24px)`: it carries the title `<version> is ready` and the Later, What's new and Restart now actions, no lead and no bullets. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the
 row in its chat, in its Brief, or a plan row in Activity) stays on the agent
@@ -2062,7 +2309,7 @@ sits beside it. The same goes for every artifact kind read from its work: a
 report or a wireframe row in Activity, and a report or wireframe chip in a
 transcript, open the same `artifact-document` drawer (`DrawerHost` hands a
 report or a wireframe to `ArtifactReadingDrawer`, which shows the report or
-the wireframe stage, with Open in Artifacts and Expand). **A plan always opens
+the wireframe stage, with Open in Artifacts as its one header action). **A plan always opens
 in the drawer** (`openPlanDrawer`): the object menu's **Open**, the plan view
 inside Ask, a plan row in the palette, a plan hit in search and the plan chip in
 a chat open it over the page you are on, unless you are already on the
@@ -2074,14 +2321,13 @@ the Artifacts page from a drawer is a command of its own, **Open in Artifacts**
 in the drawer header, and it is the only page change. The `artifact-document` kind
 carries `{ artifactId, revision }`; `revision` is `null` for the current
 version and a number for an earlier one read from the revisions. It is the one
-drawer that can expand: it opens at 560px (`sizing="half"` on
-`DrawerColumn`, with no resize handle, narrowed to the room the page leaves
-when that is less, so the page keeps its 560px and the drawer still pushes),
-**Expand** takes the whole column and
-lies over the page (`sizing="full"`), and Expand toggles back. The choice is
-kept per session in `documentDrawerExpanded` and is forgotten when the session
-is archived. The header holds the title, `vN`, the state chip, **Run plan**,
-Open in Artifacts, Expand and Close; Escape closes it. While the planner
+drawer in the reader tier: it opens at 720px and you drag its edge from 480
+to 1000 (a double click resets it to 720), so there is no Expand. The body
+stays on the 720 reading measure whatever the width. The header holds the
+title, **Open in Artifacts** and **Copy markdown** as two 28px icon buttons,
+and Close; the second row holds the state chip, `vN`, the parts, **Edit** and
+**Run plan**. **Copy markdown** is absent when the plan has no copy action.
+Escape closes it. While the planner
 revises the plan the body is dimmed and Run plan waits.
 
 The `ask` kind carries no payload: the thread on screen lives in the `ask`
@@ -2202,7 +2448,7 @@ artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
 A studio covers the whole window grid, so it cannot use that column. Tasks
-record opens in the same `DrawerColumn` inside the studio body
+record opens in the same `DrawerColumn` beside the list, after the filter rail
 (`InboxStudioLayout`), with the same width, card and motion. Escape closes the
 record before the studio.
 
@@ -2234,10 +2480,9 @@ page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Files`, which opens the Files tab of the Branch page on that mount with the file in focus.
-`review-notes` (payload `{ mountPath, focusPath, focusThreadId }`) lists your
-notes of a branch, apart from the pull request comments; the Branch page
-section, Review notes, owns it. A note without a branch sits in `Unassigned
-notes` on the Session overview.
+There is no drawer for notes: a note lives on its line in Files and as a row in
+Comments, and `Fix comments` (kind `fix-comments`) is the one fix action. A note
+without a branch sits in `Unassigned notes` on the Session overview.
 
 ## The Branch page
 
@@ -2249,14 +2494,30 @@ Files tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
+**Frame.** The Branch page is a `split` page (`PAGE_FRAME.branch`): a rail of
+sections, always docked, and one detail beside it. The crumb band
+(`Session › Branch ▾`, Ask at its end) moves into the detail, so the rail starts at the top
+of the sheet: `SessionWorkspace` hands the band to `BranchPage` through
+`StudioBandContext` while the Branch lens is on screen, and `BranchDetail` draws it
+first. The rail is `StudioRailLayout` (surface `branch`, 288 wide, drag 220 to 420, a double click
+resets it, no fold control). Its first row sits on the crumb band's line and reads the eyebrow
+`Sections`. When the detail would fall under 560 (the page under 780, measured by
+`useBranchRailDock`) the rail leaves and a ghost `Sections` button at the left of the crumb band
+opens it over the detail, with a scrim: `Esc`, a click outside or a pick closes it, and it docks again as
+soon as the window allows. The header, the banners and every section body sit on the 960px
+column of the detail; nothing moves from one section to the next.
+
 **Header.** Title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on
-the Pull request tab and it becomes an input in the same 32px row, `Enter` saves
-to the host, `Esc` cancels, a failure is an inline notice with Retry), the line
-`Open · nadia-p wants to merge payments-api · hl/fix-credit ▾ → main · 11d ago
-· ✓ N checks` (the state word, `Draft` for a draft and `No pull request` without
-one, the author, then the switcher chip, the base, the age and the checks), one
-primary and `⋯`. The branch name prints once in that line, in `text-code`: the
+the Overview and it becomes an input in the same 32px row, `Enter` saves
+to the host, `Esc` cancels, a failure is an inline notice with Retry), then the state
+chip right after it, read from `PULL_REQUEST_PRESENTATION` (`Draft` neutral, `In review` and
+`Approved` success, `Queued` primary, `Merged` in the merged purple, `Closed` danger, `No pull
+request` when there is none), and the line
+`payments-api · hl/fix-credit ▾ → main · #318 by nadia-p · 7 commits · 11d ago`
+(the switcher chip, the base, the number and author, the commit count and the age;
+a queued request ends it with `Queued to merge, 3rd in line` or `Merges when checks pass`), one
+primary and `⋯`. The checks never print in that line: the Overview and the rail say them. The branch name prints once in that line, in `text-code`: the
 trail reads `Branch` and the title is the pull request's. **The switcher chip** (`BranchSwitcher`)
 is the repo and the branch of the page. It opens a menu of the session's
 branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
@@ -2268,14 +2529,17 @@ run), so the crumb, the header and the body follow together and nothing of the
 branch it leaves carries over. `New branch` swaps the menu for a name field
 (empty names it automatically) and a `Create branch` that forks a worktree
 (`forkMount`) and lands on it on its landing tab; a folder project cannot fork and
-offers none. With one branch the chip has no chevron and its menu holds only
-`New branch`; with neither it is plain text.
+offers none. With one branch the chip has no chevron and opens the name field at
+once (a menu of one is not drawn); with neither it is plain text.
 
-The primary is the first that applies: `Rebase on main`
-(`Open terminal` while a rebase is stopped, with `Abort rebase` beside it),
-`Push N` (accepted threads, then unpushed commits), `Publish N replies` (the
-fix is already on origin), `Retry N`, `Create PR`, `Ready for review`, `Merge`
-(`branchPrimaryOf`). `Merge` is a filled primary only when the pull request is
+The header holds at most one secondary and one primary (`branchActionsOf`). The secondary is
+the first push that applies: `Push N` (accepted threads, then unpushed commits), `Publish N
+replies` (the fix is already on origin), `Retry N`; a merged or closed request has none. The
+primary follows the state: `Mark ready for review` on a draft, `Merge` on an open or approved
+request, `Reopen` on a closed one (where the host allows it), none on a merged or queued one and none
+without a pull request, where the create form owns `Create pull request`. A stopped rebase
+shows `Continue rebase` as the primary (`Open terminal` with `Abort rebase` beside it);
+`Rebase on main` lives in Commits and in the Overview's Base block, not in the header. `Merge` is a filled primary only when the pull request is
 ready; while comments need you or a fix run is live it turns secondary and counts
 (`Merge · 3 open`), never disabled, and while a check fails, a review is
 missing or the branch conflicts it is disabled with the reason in the meta line.
@@ -2291,7 +2555,12 @@ method the repository forbids shown disabled with its reason
 (`Turned off in payments-api`). Merging raises one plain `info` toast with no
 Follow. Push, Publish and Retry go through the existing publish
 machinery: a frozen preview in line under the header (`PushBanner`, the only
-one), drift and the result per thread. Only the header pushes: a thread has no
+push one), drift and the result per thread. Under it sits the rebase job banner
+(`JobBanner`, `features/history/JobBanner`): one strip for a rebase
+on main, on every tab of the page, which replaces the red line that used to
+tell a stop. It reads the run of the branch (`historyRuns`), never local state,
+and its stops carry only the actions that exist today (Dismiss, Refresh, Open
+terminal, Open providers, Check again, Undo rewrite, See what it did). Only the header pushes: a thread has no
 Push, Push again or Sync button. With an accepted thread opened in Comments the
 primary reads `Push 1` (it counts threads) and pushes just that fix
 (`preparePublication` with `isolated`, `isolatedPushOf` unchanged); the preview
@@ -2301,26 +2570,39 @@ still need you. With none opened it reads `Push N` for every accepted thread.
 reason. `⋯` holds the rare lifecycle (Edit title and description, Request
 review, Convert to draft, Close or Reopen, Open on GitHub, Copy link) and the
 branch actions (Change base branch…, Open terminal, Open in editor, Copy
-branch name, Copy patch).
+branch name, Copy patch); a queued request with auto-merge adds `Cancel auto-merge`.
 
-**Tabs and landing.** Five tabs, in this order, with and without a pull
-request: `Pull request`, `Comments N`, `Files N`, `Commits N`, `Checks`
-(`branchTabsOf`, `features/branch/branchTabs.ts`; the label of the first is the
-registry's, `Pull request`, and the key is ⌥⌘1). Every door that means "go to the
+**Sections and landing.** The rail lists the sections the state has, in this order
+(`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
+pull request and no comment `Overview`, `Files N`, `Commits N`; with a local note or a thread
+and still no pull request `Comments N` joins them; Draft, Open, Approved, Queued, Merged and
+Closed show all five, `Overview`, `Comments N`, `Files N`, `Commits N`, `Checks`. The first is
+always labelled `Overview` (its key is ⌥⌘1, Comments ⌥⌘R, Files ⌥⌘F, shown in the
+row's tooltip) and Checks never appears without a pull request. A row is 32px with an icon, the label and a
+right-aligned count (a muted `-` named `Not loaded` until it is known); Files shows its viewed
+ring and `12/39`; Checks adds a dot while one fails. The current row carries `aria-current="page"`,
+Up and Down move between rows while the rail has focus, and a pick replaces the address. Merged and
+Closed make the page read only (`isBranchReadOnly`): Commits shows its list without Rebase or Apply. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
-`features/branch/branchLandingTab.ts`): an explicit tab in the place wins, else
-`Pull request` when the active mount has a pull request, else `Files`. The
+`features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
+`Overview` when the active mount has a pull request, else `Files`; then the door resolver
+above drops a section the state lacks. The
 sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
 pull request chip, an approved or changes-requested mark and a mount's
-`Create PR` land on `Pull request`; a comment, a thread, a fix run, a note, ⌥⌘R
-(`Open Comments`) and a draft comments chip name `Comments` themselves, `Files`
-and `Commits` doors name theirs, and a CI failure names `Checks`. The chosen tab
+`Create PR` land on `Overview`; a comment, a thread, a fix run, a note, ⌥⌘R
+(`Open Comments`) and a draft comments chip name `Comments` themselves (with no pull
+request and no comment they land on `Files`), `Files`
+and `Commits` doors name theirs, and a CI failure names `Checks` (with no pull request,
+`Overview`). The chosen section
 is stored per session and is read through `branchTabOf` (`useBranchTab` in a
-component), never from `branchTab[sessionId]` directly, so a tab is only
-remembered once the person has chosen one.
+component), never from `branchTab[sessionId]` directly, so a section is only
+remembered once the person has chosen one; the page shows the section the state has
+when the stored one is gone, without writing history.
 
-**Pull request.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`). With a pull request, the main
+**Overview.** The pull request itself, on the 960px column
+(`features/branch/components/PullRequestTab`). On the 960 content it is one grid in every state,
+`grid-cols-[minmax(0,640px)_296px]` with a 24px gap, that starts at the h1's x and ends at the column's right
+edge, from 800px of pane (below it the properties follow the main column). With a pull request, the main
 column holds the description rendered as markdown with `Edit` beside its heading
 (a click on the text also opens it; the editor is a textarea with Write and
 Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
@@ -2328,20 +2610,29 @@ Retry; an empty description reads `No description yet` with `Add description`)
 and the Activity, oldest first: who opened it, the pushes grouped by day, the
 reviews, one line `4 comments on files, 2 need you` that opens Comments, one line
 for the checks that opens Checks, your edits of this session and the merge. Rows
-that open something carry `ROW_INTERACTIVE`. The properties column is 280px on
-the right from 928px of pane and a compact grid above the description below it:
-Status (the state and the one readiness word, `Ready to merge`, `Blocked: 2
-checks failing`, `Changes requested`, `Draft, not open for review yet`, `A run is
-live on this branch`, `Waiting on checks and review`), Resolves (the linked
-issues; `Link issue` opens the popover), Reviewers (a glyph and a word each; `+`
-opens the picker that searches the host's collaborators), Checks (the rollup,
-opens the tab; `Checks unknown` when the read failed), Branch (`3 behind main`
-with `Rebase on main`) and Files changed (the count and the first seven with
-`+N -N`, each opens Files at that file). Without a pull request the tab is a
-first-time empty state (`No pull request yet`, one sentence) over the create
-form (title from the session goal, description with `Draft with an agent`, base
-branch, `Open as draft`, `Create pull request`); creating it raises a `Follow`
-toast only when the page is not already on screen. Every write goes through the
+that open something carry `ROW_INTERACTIVE`. The properties column is 296px on
+the right and holds four blocks: Reviewers (a glyph and a word each; `+`
+opens the picker that searches the host's collaborators), Checks (one line, `4 passed ·
+1 failing`, that opens the Checks section; `Checks unknown` when the read failed), Linked issues
+(each with its relation, `Closes #412`; `Link issue` opens the popover) and Base (`main`, `3 behind main`
+with `Rebase on main`). The state is the chip and the readiness word is the blocked reason in the
+header's meta line; the file count is the rail's. Without a pull request the section is the create
+form alone, with no block above it (the state reads `No pull request` in the header chip), and it
+fills the same grid: one input card (the title from the session goal as a large
+borderless field, the description growing from 6 to 16 lines, and in the card's
+bottom row `Write with Scribe` with its routing and a faint `Markdown`), then
+the settings as labelled properties in the side column (`Into`; `Opens as` with
+`Ready for review | Draft` only where the host can set a draft; `Reviewers` only
+where it can request them, requested right after creation; `Closes` with the
+linked issues as chips; the changelog entry under `More options` when Scribe
+wrote one) and the actions inline at the end, right aligned, with no bar:
+`Discard text` (with Undo) and `Create pull request`, which reads `Create draft
+pull request` with Draft. Scribe's job shows inside the card (skeleton lines
+while it writes, a running dot with the seconds and `Stop`, a danger notice with
+`Retry` when it failed); creating shows `Pushed <branch>` and `Opening the pull
+request` in the same row, and a failure keeps the text under a danger notice
+with `Details`. Creating it raises a `Follow` toast ("Pull request #318 opened")
+only when the page is not already on screen. Every write goes through the
 host-neutral `PullRequestPort` (`packages/core/src/review-source`), a facet of
 the review source built per host in
 `store/slices/review-source/pullRequestPortFor.ts`; the page reads the
@@ -2349,79 +2640,80 @@ capability table (`REVIEW_SOURCE_CAPABILITIES`) and never the host. A control
 the host forbids on an object that exists is shown disabled with its reason
 (`Bitbucket has no draft pull requests`, `Turned off in payments-api`, `Set by the
 project`), and a concept the host does not have is left out. GitLab uses the same
-page with its own calls and words (the tab reads `Merge request`, the header
+page with its own calls and words (the chip and the form read `merge request`, the header
 `MR !42`, `Open on GitLab`): `gitlabPullRequestPort` reads and writes through
 Tauri commands that hold the stored token, `Mark ready` and `Convert to draft`
 change the `Draft:` prefix of the title, Merge lists the ways the project
 allows, and a token without the `api` scope reads `Goodboy can't read this merge
 request` with `Open GitLab settings`. A branch with no merge request shows the
-GitLab create form under `No merge request yet`. Bitbucket uses the same page through its own adapter
+same create form with `Create merge request`, the same Scribe job and no
+reviewers. Bitbucket uses the same page through its own adapter
 (`bitbucketPullRequestPort`, built by `bitbucketPortOf` from the mount's
 request): merge offers its three strategies, `Close` declines, and the draft and
 reopen controls are left out. `E` edits the title in scope
-`pullRequest`, live only on this tab.
+`pullRequest`, live only on this section.
 
-**Comments.** The list (`Needs you`, `Working`, `Ready to push`, `Open`, `Done`, `Left open on GitHub`;
-the pull request conversation only, your notes live in the Notes drawer of
-Files) and the open thread with the code
-around the commented line above it (`hunkAround`, linking to Files). The
+**Comments.** The section header holds a segmented control `All 9 · Notes 3 · On GitHub 6`
+(the host's name; the host tab only while a pull request exists) and `Open · Resolved`,
+with `Fix comments N` at its right, the one fix action. The list (`Needs you`,
+`Working`, `Ready to push`, `Open`, `Left open on GitHub`; `Done` shows under
+`Resolved`) lists your notes and the pull request threads together, each row with
+its file and line, the first line of the body, a kind chip (`Note`, `On GitHub`),
+the author and its age. A note keeps `Post to GitHub` (it moves the note into
+the pull request's review draft and closes it) and `Delete` under its thread, and a
+note shows even while the host is still loading or failed to load. The open thread has the code
+around the commented line above it (`hunkAround`, linking to Files). Comments exists when a pull
+request exists or at least one comment exists, a local note or a thread open or resolved; its count is
+the notes alone while there is no pull request. The
 properties (Origin, Attempts, Fix commit) sit inline under the thread at every width, never in a margin rail. The
 actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Accept is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
-Every Branch tab sits on the 960px column (`PaneShell width="column"`, bodies in
-`PageColumn width="column"`), the header, the tabs and Ask included, so nothing
-moves from one tab to the next. The Comments tab reads the width of its own pane
-(`branchLayoutOf`, so a wide sidebar or an open drawer narrows it): from 900px a
-300px list beside a wide thread; under 900px the list, then the thread with
-`‹ Comments` (Up). The selected row stays selected on the way back.
+Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
+`PageColumn width="column"`), the header and Ask included, so nothing
+moves from one section to the next. The Comments section reads the width of its own pane
+(`branchLayoutOf`, so a wide sidebar, the rail or an open drawer narrows it): from 900px a
+300px list beside a wide thread; under 900px the list, then the thread, with no back link: the
+`Branch` crumb, with the thread's own crumb after it, is the way back to the list. The selected row stays selected on the way back.
 `branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
-and an open drawer. The tab counts (Comments, Files, Commits) read a muted `-`
+and an open drawer. The rail counts (Comments, Files, Commits) read a muted `-`
 named `Not loaded` until the data arrives, then the number, never 0 for an
-unknown (`TabCount`). All three arrive without a tab visit: `BranchPage` loads
+unknown (`RailCount`). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
-draft is not there yet, so the Commits count is a number on the Comments tab too. Fix launches from the list or the thread bar, never from Files.
+draft is not there yet, so the Commits count is a number on the Comments section too. `Fix comments N`, in the section header and in the Files toolbar, is the one fix launch.
 
-**Files.** The branch against its base, on the column like every other tab, with
-the change tree in a rail of its own at the pane's left edge, outside the column.
-`BranchPage` wraps its `PaneShell` in `DiffRailScope`, which measures the lens
-body (the sidebar and a pushed drawer are already out of it) and renders the
-rail host as a sibling of the `PaneShell`, on the Files tab only; `SessionDiffPane`
-portals `ChangeTree` into it, so the tree and the diff still share one
-`useReviewState` and the keys stay in `useDiffKeys`. The rail never moves the
-column: no mode, no resize and no tab change the title, the tabs, Ask or the
-diff's left edge. `treeRailModeOf` (`features/diff/treeRailMode.ts`) picks the
-mode from the pane width alone, with `margin = (pane - 1008) / 2` (1008 is
-`COLUMN_FRAME`): `docked` when `rail + 24 <= margin`, else `strip` when
-`44 + 16 <= margin`, else `button`. Docked, the rail is open beside the column,
-280px by default; drag its right edge or use the arrow keys between 240 and 400,
-never past what still docks (`rail <= margin - 24`), saved as
-`goodboy:diff-tree-width`. Its head reads `Files 6` and a fold button
-(`⌘⇧B`), then `N of M viewed`, the filter and the chips below. The strip is
-44px in the margin with the progress ring and `1/6`. The button is `Files 1/6`,
-the first control of the Files toolbar. The strip and the button open the same
-overlay over the diff: 280px from the strip's right edge (the pane's left edge
-when there is no strip), no scrim, `shadow-lg`; `Esc` or a click outside closes
-it and hands focus back to the strip or the button, and picking a file closes
-it. `F` opens it and focuses the tree, `/` and `T` open it on the filter, `⌘⇧B`
-opens and closes it. Docked, `⌘⇧B` and the fold button fold the rail to the
-strip and back, and `F` docks it again; `useTreePanel` keeps that choice while
-the Files tab stays open. A pane that has not been measured yet reads as docked.
-The toolbar on the column reads `Compared with main · All 5 commits`, then
-`Display`, `Notes N` and `Write review`. Folders first, then files, alphabetical,
+**Files.** The branch against its base, on the column like every other section, with
+the change tree in the rail, under the sections, outside the column.
+`BranchPage` renders the rail's Files group host (`data-slot="branch-rail-files"`) only while
+Files is the section and hands it to `SessionDiffPane` through `DiffRailContext`
+(`features/diff/diffRailHost.ts`); `SessionDiffPane` portals `ChangeTree` into it, so the
+tree and the diff still share one `useReviewState` and the keys stay in `useDiffKeys`. The rail
+never moves the column: no section and no resize change the title, Ask or the diff's left
+edge. The rail is docked from a page of 780 and up; under it the tree lives in the same rail
+behind the `Sections` button, `F` and `/` open it on the tree or the filter (`useTreeFocus`), and
+picking a file closes it. The group reads the filter field (`/`) with the sort of the tree
+beside it, `All | Unviewed N | Commented N` (one at a time), the tree and `Next unviewed N`;
+the viewed ring and `12/39` are the Files row's, so the head no longer prints them. A pane that has not been measured yet reads as docked.
+The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
+then `Display ⌄` and `Fix comments N` (every open note and host thread, in every
+state; hidden at 0). Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
 viewed`), the path and, only while it is collapsed, its file count and its
 `+N −N` in one muted tone (no green or red; an open folder shows none, its files
-carry them); a file row holds a small
-check when viewed (its name goes grey) or an amber dot when it changed after
-it was viewed, the name (a rename shows `from <old path>` under it, a deleted
-file is struck through), its open notes, `+N −N` and the status letter.
-A long name is cut in the middle so its extension stays (the full path is the tooltip),
-and one key hint line ends the tree (`? all keys` opens the full list).
-`N of M viewed` and a 2px bar head the tree, and no longer sit in the toolbar.
-Under the head a filter field (`T` focuses it, `Esc` clears it) matches a
-subsequence of the path, `Unviewed` and `With notes` chips narrow it further,
-and `Folders | Kind` (on the chips' line) regroups the tree under Source, Tests, Config and
+carry them); a file row (28 high, 8 per level with a 1px guide) leads with the viewed
+toggle (a checkbox button, `Viewed: <name>`; an amber dot when the file changed after
+it was viewed; none on a merged or closed pull request), then the name (a rename shows
+`from <old path>` under it, a deleted file is struck through), a comment count chip whose
+tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 340 or more, and
+the status letter. A name too long for the rail keeps its first six characters and its last
+six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`); the full name stays
+for a screen reader and the full path is the tooltip. The tree is a `tree`: Up and Down move
+its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
+the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
+returns to the diff. One key hint line ends the tree (`? all keys` opens the full list).
+Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
+subsequence of the path, `All | Unviewed N | Commented N` narrows it further,
+and `Folders | Kind` (beside the field) regroups the tree under Source, Tests, Config and
 Docs (each file then shows its folder beside the name). The filter narrows the
 diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
 that hides everything leaves `No files match` with `Clear` in both panes
@@ -2450,18 +2742,26 @@ a new array with the same paths, so marking a file viewed or a note changing
 neither shortens the page nor drops an open composer. Folder row ids start with
 `dir:`, so a folder and a file with the same path never share a key. The tree and the diff share one `useReviewState` (active
 file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
-builds the rows. `Viewed`, notes on
-lines and files, the `Notes N` drawer and `Write review` (which swaps
-the tab body for the review form with line drafts). It carries no Fix, Push,
-Rewrite or `PR #N` control.
+builds the rows. The file cards sit 8 apart on the 960 column (never the pane's width); a
+card header is 44 high on the panel surface and holds the fold chevron, the status square,
+the path (folders faint, the name whole, cut from the left, with a real tooltip) and
+`+N −N`, then three 28px controls that are always there: `Viewed` (a checkbox with the
+word; checked folds the file, tooltip `Changed since you viewed it` when it went stale),
+`Comment` with the count of both kinds, and one `⋯` (Open in editor, Open in a drawer, Show
+whole file, Copy path). A merged or closed pull request hides Viewed, Comment, Reply and
+the other writes. Split needs a column content of 880 or more, otherwise `Display` says
+`Split needs a wider window`. The write review form is not on this toolbar: it opens from the
+pull request's `Write review` action and swaps the tab body for the review form with line
+drafts. The section carries no Fix, Push, Rewrite or `PR #N` control of its own.
 
 **Commits.** The home of history: the branch commits and the rewriter are one
-surface (`CommitsHistory`), with `Refresh` (ghost), `Backups` (secondary, both
-`xs`) and one horizontal `⋯` at the right end of the tab row, in the slot
-`BranchPage` hands down (`TabActionsSlotContext`, filled with `TabActions`), so
-the body starts with the graph itself. The legend sits on its own row under the
-scroller, never under its fade, and the body takes the page's column with no
-`px-6` of its own. Backups
+surface (`CommitsHistory`), with `Backups` (secondary, `xs`) alone at the right
+end of the tab row, in the slot `BranchPage` hands down
+(`TabActionsSlotContext`, filled with `TabActions`), so the body starts with the
+graph itself. There is no `Refresh` (the draft reloads by itself when the
+head of the worktree status moved and nothing is planned) and no overflow
+(`Open terminal` is on the mount menu). There is no legend. The body takes the
+page's column with no `px-6` of its own. Backups
 (`Restore previous history`, `Restore branch`) and the result of a run (`Undo
 rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
 address, the palette verb, a mount row's `Rewrite history` and an Activity
@@ -2488,11 +2788,27 @@ trunk with its head node (`main is here now`, how many commits it gained,
 `Rebase on main`), your branch leaving it at the real fork point, one
 row per commit newest first, and `Your branch starts here` at the fork. There
 is no row of fact chips over it: the graph already says how many commits are
-yours, how far main moved and what is online. The big list is always
-the branch as it is (Now) and never reorders while you plan; beside it, After
-Apply draws the planned result with a dashed lane, each node level with its
-own row when the order allows. Under 760px of content the side graph becomes
-a `Now | After Apply` toggle. Every action has one color (Keep green, Fold in
+yours, how far main moved and what is online. At rest the section is one
+column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): the first
+row is `main is here now` with its head node, `15 newer` and a secondary
+`Rebase on main`, then one row per commit (title, then sha, author and age in
+`text-meta`, a faint `Not pushed` chip only on a commit that is not on the
+online copy, the grip on hover and focus only), then `Your branch starts here`.
+Under the list one muted line, `Drag a commit to move it, drop it on another to
+fold it in.`, with a ghost `Keys` button that opens an anchored popover listing
+the keys of the focused row (`useHistoryKeys/historyKeys.ts`). There is no
+Planned changes block and no Apply at rest. The big list is always the branch as
+it is and never reorders while you plan. The first planned change (an edit, or
+`Rebase on main` from the list) turns the grid into
+`grid-cols-[minmax(0,1fr)_320px]` with a 200ms reveal (instant under reduced
+motion, `useHistoryPanelReveal`): the After panel, titled `After Apply · 7
+commits become 4`, draws the planned result with a dashed lane, each node level
+with its own row when the order allows (the Now rows and the After nodes share
+one row pitch), and under the list `Planned changes` shows its count and `Reset
+all`, the planned rows and one primary `Apply`. Resetting the last change slides
+the panel out. The Branch header carries no `Rebase on main`: it lives in this section's list. Under
+760px of content the side graph becomes a `Now | After Apply` toggle, shown
+only while a plan exists. Every action has one color (Keep green, Fold in
 azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
 today's main grey) used on the row's change mark, its node, a 2px edge, the
 dot of its "what happens" line and its planned change. Drag a row between two
@@ -2502,8 +2818,8 @@ Separate`: `Keep both` combines (squash) and `Separate` makes it its own commit
 again, the same edit as `Separate` in its menu; its planned change keeps
 `Keep title | Keep both`. The row buttons (icons) and the `⋯` menu sit in a
 slot reserved at the end of the row, so they never cover the control; a folded
-row shows only the menu. The drag is pointer events with our own hit testing
-(`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
+row shows only the menu. The drag is pointer events on the shared `usePointerDrag` engine with our
+own hit testing (`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
 owns the drag session on macOS, and the composer's file drop needs it on. Keys
 on a focused row: Alt with the arrows moves, C folds into the one below, S
 combines keeping both messages, R or Enter renames, Delete or Backspace
@@ -2520,7 +2836,8 @@ or newer; older git spawns one merge and one commit per step). A predicted
 conflict shows on its row (`may conflict in webhook.ts`) and in a notice with
 `Rewrite with an agent`. The action row sits at the end of the content
 (`FormActions`, no dock): `Apply`, or `Apply here only` and `Apply and update
-online` when the plan replaces commits that are already online, which also
+online` when the plan replaces commits that are already online and Apply is
+possible (a disabled Apply is one button), which also
 shows the notice about the pull request and the push with lease. Apply never
 rewrites the branch first. `history_plan_run` checks the worktree (right
 branch, nothing uncommitted, head where the plan started), replays the whole
@@ -2575,11 +2892,11 @@ file records the copy's git admin folder when the copy is made; the rewriter's
 roots and the cleanup use it only while it is `<common>/worktrees/<name>` and
 its `gitdir` names exactly that reserved copy, never the copy's own `.git`.
 Codex rewriter turns also lose write access to the temp folders. One line sits
-above the code and replaces the old toolbar and its counts: `Comparing <base> ←
-<branch> · All N commits ▾` on the left (the base is the mount's own base branch,
+above the code and replaces the old toolbar and its counts: `Compared with <base> ·
+All N commits ⌄` on the left (the base is the mount's own base branch,
 never a fixed `main`; a commit view reads `Commit abc1234`, the working tree
-`Working tree`, `Staged only` or `Unstaged only`), and `Display ▾`, `Notes N`
-and `Write review` on the right, because the view decides which files you see,
+`Working tree`, `Staged only` or `Unstaged only`), and `Display ⌄` and `Fix comments N`
+on the right, because the view decides which files you see,
 not what you do to the branch. `Display` holds `Unified | Split` and `Wrap long
 lines` (on by default, saved as `goodboy:diff-wrap`; split always wraps). The
 file count and the `+N -M` sums live in the change tree only. The diff scope has its own
@@ -2590,11 +2907,10 @@ previous file and skip the files of a closed folder, `[` and `]` are aliases;
 viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
 wrapping to the first; `F` puts focus on the tree; `/` and `T` are one action
 (`diff.focusFilter`, `T` is its alias) and focus the filter field, the one input
-in the tree rail that carries `data-diff-filter` (it opens the tree first when
-it is folded or an overlay); `⌘⇧B` folds or opens the tree (`⌘B` stays the column).
-A line under the tree lists them once, from the registry (`keyHelp.ts`).
+in the tree rail that carries `data-diff-filter` (it opens the rail first when
+it is hidden behind `Sections`). The rail has no fold key. A line under the tree lists them once, from the registry (`keyHelp.ts`).
 
-Big and folded cases (`treeRailMode.ts`, `useTreePanel`, `lib/windowRows.ts`).
+Big and folded cases (`shared/utils/windowRows.ts`).
 Past 120 visible rows the tree draws only the rows in view plus a margin (fixed
 28px rows, 44px for a rename), so 512 files scroll as light as 20. A change
 over 300 files starts with its deepest folders over 50 files closed (a parent of
@@ -2602,13 +2918,8 @@ a big folder stays open), and starts that way again when a different set of
 files arrives, not on a reload of the same files. The diff keeps its own
 progressive mounting; the patch parse stays on the main thread because a
 512-file patch parses and becomes a tree in about 2ms (`largeChange.test.ts`
-fails over 100ms, the point where a worker earns its cost). Where the margin
-cannot hold the rail (a 1440px window with the sidebar pinned gets a strip, a
-1100px pane gets the `Files 12/46` button) the tree opens as the overlay with no
-scrim; picking a file or `Esc` closes it. `⌘⇧B` on a pane that docks folds the
-rail to the strip. While the diff loads the rail shows skeleton rows and
-`Loading files…`. An empty scope drops the tree, the strip, the button and the
-toolbar and shows one centred empty state on the page column
+fails over 100ms, the point where a worker earns its cost). While the diff loads the rail shows skeleton rows and
+`Loading files…`. An empty scope drops the tree and the toolbar and shows one centred empty state on the page column
 (`DiffEmptyState`): what is empty in plain words, the scope picker inline and,
 when the other scope has files, one button that switches to it (`Show branch vs
 main (6 files)`, `Show working tree (2 files)`; `alternate` on `useSessionDiff`
@@ -2626,14 +2937,13 @@ start from it. Each file has a sticky header (status letter, path, `from <old pa
 changes, comment count, a visible `Comment on file` button, `Viewed`, `⋯` with
 Open in editor, Copy path, Comment on file); a viewed file collapses and opens again when you unmark it, from the
 header or from anywhere else, and generated or binary files start collapsed.
-`Comment on file` (the header button, the `⋯` entry, and a button on the file's
-tree row on hover or keyboard focus) opens a composer under the header and
-scrolls to it. It always saves a local note on the file (the same note a line
+`Comment` (the header button, with the count of both kinds; the tree rows carry no comment
+button) opens a composer under the header and scrolls to it. It always saves a local note on the file (the same note a line
 gets, without an anchor), with a pull request or without one; the composer reads
 `Note on this file` and `Add note` in both cases. The note sits under the file
-header, counts in the header and the tree row, and lists in the Notes drawer
-with the file path and no line. Reaching the pull request is explicit: `Move N
-to review draft` in the drawer turns a file note into a `pr_review_drafts` row
+header, counts in the header and the tree row, and lists in Comments
+with the file path and no line. Reaching the pull request is explicit: `Post to GitHub` under the note
+in Comments turns a file note into a `pr_review_drafts` row
 with `line` 0 (no migration), sent with the next review as a GitHub `FILE`
 thread (pending review, `addPullRequestReviewThread` with `subjectType: FILE`,
 then submit) or a GitLab discussion with `position_type: file`. A file draft
@@ -2643,11 +2953,12 @@ Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
 `+ Add note` on a line saves the note with the project and branch of the active
-mount (`diff_comments.project_id` and `branch`, m223). A note shows `Close note`
-and `Delete` in the diff; Fix lives on the note's item in the Notes drawer. While a fixer
-works on a note, Close note and Delete are disabled with "A fixer is working on
-this note". Close note goes through `closeResolvedNote`, the same path the
-Notes drawer uses. The Files tab shows only the notes of its own branch; a note
+mount (`diff_comments.project_id` and `branch`, m223). A note shows `Edit`,
+`Close note` and `Delete` in the diff (`Edit` rewrites the text through
+`updateDiffCommentBody`; Delete acts at once and offers Undo, which posts the same note again); the one fix action is `Fix comments` in the toolbar. While a fixer
+works on a note, Edit, Close note and Delete are disabled with "A fixer is working on
+this note". Close note goes through `closeResolvedNote`, the same path
+Comments uses. The Files tab shows only the notes of its own branch; a note
 written before m223 is assigned to a branch only when a resolver run on a known
 mount used it, and the rest wait in `Unassigned notes` on the Session overview,
 each with `Move to` and `Discard`. `Move to` names the branch when the session
@@ -2666,31 +2977,21 @@ in the diff toolbar holds Discard review, which confirms. The actions are
 the `writeReview` kind of the action registry. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 
-**Review notes.** Your notes, apart from the pull request, in a right drawer of
-the Files tab (kind `review-notes`, default width, one drawer at a time). The
-Comments tab holds the pull request conversation only, so resolving a note never
-touches a provider thread. `Notes N` (secondary, `sm`) sits in the Files toolbar
-left of `Write review`, N being the open notes of the displayed branch, hidden at
-0 and a toggle; the note count on a file row in the tree opens the drawer scrolled
-to that file. Saving a note never opens the drawer, it only updates the count and
-the tree row. The drawer reads `Your notes` with `N open`; `Fix N` is its one
-primary (one fix run on the selected notes, all the open and fixable ones by
-default, each with a check when there are two or more) and `⋯` holds `Move N to
-review draft` (only with a pull request) and `Show closed`. Notes are grouped by
-file, each the same review comment thread Comments draws, with `Jump to file`
-(the Files tab at the file): `Open note` (`Fix`, `Close`, `Delete` with Undo),
-working (the run line above the list holds `Stop` and `Open transcript`), ready
-(`Accept` keeps the fix on the branch and closes the note, `Skip`, `Close the
-note`; a note has no reply to write), `Couldn't fix` (`Retry`) and the run's
-question, answered inline. The lane line (`useLaneStatus`) sits above the list, so
-a note fix and a pull request comment fix stack in one lane and read the same
-in both places; a chain accept that crosses kinds names both, `Accept 3 fixes ·
-1 is a note`. Older file drafts, written before notes took over Comment on file,
-show one quiet line at the end, `2 older drafts are in your review draft`, with
-`Open review draft`. The doors that used to land a note on Comments land here:
-`openReviewTarget` for a `notes` destination (or a `threads` one made of notes),
-`fixRunTranscript` of a note thread (Files with the transcript drawer) and a fix
-request on notes. Opening the run transcript from a note replaces the drawer.
+**Notes and host threads in Files.** The diff draws both kinds of thread under their line, in one
+card shell (`CommentThread`), told apart by words and glyph, never by colour alone. A
+note is the `You` tile, the chip `Note`, its state and its age, with `Edit`, `Close note` and
+`Delete`; a host thread is the host's glyph, the author's avatar and name, the chip `On GitHub`
+(`On GitLab`, `On Bitbucket`), `Open` or `Resolved`, `3 replies` with the replies listed, and
+`Reply` (an inline composer posting through the reply verb, only where the host can
+take a reply), `Resolve` (only where it can resolve) and `Open in Comments`. A thread
+carries an outcome slot after its kind chip, which `Fix comments` fills with the state of a fix.
+Outdated host threads stay out of the diff and read `Outdated` in Comments. Threads of every host
+with threads show, not only GitHub's (`useDiffReviewThreads`). There is no
+Notes drawer: a note's home is its line, and Comments lists every thread. The doors that used to land
+a note in a drawer land on the note: Files at its card (the card scrolls into view and takes focus) when
+the branch has no pull request, its thread in Comments when it has one (`openReviewTarget` for a
+`notes` destination, `reviewRequest` for a compose request, `Open in Files` from a thread).
+Opening the run transcript of a note keeps its drawer beside Files.
 
 ## The Scripts lens
 
@@ -2754,11 +3055,14 @@ shows once: in the `Pinned` strip at the top of the lens only when the session
 has more than one project (one click runs one in its group's worktree), and
 only in the rows otherwise. The palette lists pinned scripts under `$` with the
 project name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
-their project name too). On the workspace Projects page every row has a
-`Scripts` fold (`ProjectScriptsFold`, closed by default) that reads the
-project folder only when it opens (`loadProjectRootScripts`, kept in memory
-by root path) and says `Scripts on <base>`, with the same pin; a project with
-no package.json or composer.json says so.
+their project name too). On the workspace Projects page the open editor card
+of a project ends with a `Scripts` field (`ProjectScriptsField`, label
+`Scripts · N pinned`): it reads the project folder when the card opens
+(`loadProjectRootScripts`, kept in memory by root path), says `On <base>` and
+where a pin shows, and lists the scripts with the same pin; a package label
+shows only with several packages, a project with no package.json or
+composer.json says so, and a failed scan is an inline `Notice` with `Retry`.
+The row itself stays 32px and carries no scripts control.
 
 ## Undo operations
 
@@ -2769,7 +3073,9 @@ operation when focus is outside a text field or terminal. Dismissing the
 toast does not discard the operation. An Undo that fails stays retryable.
 
 Session unlink snapshots all placements of one task, including every branch.
-Take off snapshots the session placement it may create too. Undo compares the
+A move (`Move to`, Take off, Put on a branch) is one operation: it replaces the
+rows of that task in one write, so branch to branch is one Undo, and it
+snapshots the session placement it may create too. Undo compares the
 current placements with the operation's expected result and restores the
 snapshot in one guarded database transaction. A later re-link or changed row
 makes Undo do nothing and say why. Other tasks and projects stay untouched.
@@ -2810,5 +3116,6 @@ The title reaches assistive tech through the toast card itself, which is a
 polite `status` region for every non-warning toast. Code that cannot call a
 hook builds the same params: `planRunToast` returns the Follow params for Run
 plan and marks the agent. Starts that already land on their page raise nothing
-new: the Runs page start navigates to the run (`useAgentsSection`), so
-`WorkflowRunStartButton` toasts only for a start that does not.
+new: the Start run primary of the run header navigates to the run page
+(`RunPrimaryAction`), so `WorkflowRunStartButton` toasts only for a start that
+does not.

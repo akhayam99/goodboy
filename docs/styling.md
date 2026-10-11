@@ -125,8 +125,10 @@ containers. So hiding or resizing a column is one template declaration, and
 nothing inside it needs to know. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
 
-Top bar and left column are one chrome field, and `main` is a **sheet** on
-it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`). A sheet corner rounds only
+Top bar and left column are one chrome field, and the page container is a
+**sheet** on it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`, drawn by
+`DrawerColumn` with `frame="sheet"`; `AppShell`'s `main` is the grid cell it
+sits in). A sheet corner rounds only
 where the chrome wraps it on two sides: with the sidebar, the top-left and
 bottom-left corners take `rounded-frame` (10px) and one uniform 1px
 `frame-edge` border runs along the top, left and bottom; the right side meets
@@ -142,18 +144,24 @@ equal flexible outer columns around the command center. Page breadcrumbs stay
 in the content column of the pane that owns them and do not set the top bar's
 size.
 
-The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
-area beside the page, 0px wide while closed. Pushing, its aside is the card
-width plus two 8px insets; over the page it is the card width plus the 8px
-handle gutter, because the card is flush with the sheet's right edge. It opens
-beside the page: the main area gives up the drawer's track and the centred
+The sheet is drawn by `DrawerColumn`, not by `main`: `AppShell`'s `main` is a
+plain grid cell and `DrawerColumn` with `frame="sheet"` draws the page
+container (`data-container="page"`, the sheet shape above) and, beside it, the
+drawer container (`data-container="drawer"`), 0px wide while closed. While a
+drawer pushes, the page container rounds all four corners and the drawer
+container stands 8px to its right and 8px from the window's right edge, both
+with `frame-edge` and `rounded-frame`; the drawer container takes `bg-drawer`,
+one step quieter than `bg-background`. Pushing, its aside is the container
+width plus two 8px insets; over the page it is the container width plus the 8px
+handle gutter, because the container is flush with the window's right edge. It
+opens beside the page: the pane gives up the drawer's track and the centred
 column slides left to re-centre in what is left of it (see The content
-column). While the page keeps 560px plus its 48px of gutters beside the
-narrowest drawer (384px, insets counted) the drawer pushes; below that it lies
-over the page, full height, with a scrim and an `inert` page. `sizing` on
-`DrawerColumn` is `default` (the saved width, with the resize handle), `half`
-(560px, narrowed to the room the page leaves, no handle) or `full` (the whole
-column, always over the page). The pure geometry lives in
+column). The drawer pushes only while the page container keeps 560px plus its
+48px of gutters and the room covers the drawer's saved width; below that it
+lies over the page, full height, with a scrim and an `inert` page, never
+squeezed. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
+(720, drag 480 to 1000) or `full` (the whole column, always over the page); each
+tier has its own saved width and a handle. The pure geometry lives in
 `packages/ui/src/drawerGeometry.ts` (`drawerLayoutOf`, with `drawerWidthOf`,
 `drawerModeOf` and `mainWidthOf` on top of it) and `drawerGeometry.test.ts`
 sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
@@ -162,9 +170,9 @@ sweeps every main from 600 to 2400 and runs a width matrix: 1024, 1440 and
 checks the pushing card ends 8px inside the aside and the overlay card ends on
 the column edge. `drawer-card-in` and `drawer-overlay-in` slide at most the
 8px inset; the overlay card starts that far outside the sheet and is clipped by
-it. `DrawerColumn.test.tsx` pins the classes that math assumes (an 8px `w-2`
-handle, the pushing card's `my-2 mr-2`, the overlay card's `rounded-l-frame`
-and `border-l`, the track's min width).
+it. `DrawerColumn.test.tsx` pins the structure that math assumes (the two
+containers as siblings, an 8px `w-2` handle gutter, the track's `pr-2`, the
+overlay container's `rounded-l-frame` and `border-l`, the track's min width).
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's 6px left padding puts the workspace tile on the collapsed rail's
@@ -195,14 +203,41 @@ pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
 
-The band above the title sits on that same column. The session trail band draws
-inside the page's `PageColumn`, and a studio's band does too, at the studio's tier
-(`STUDIO_META[kind].tier`: `column` for the page studios, `full` for the rail-plus-detail
-Chat and pairing), so the crumb starts where the title starts and Close ends where the
-column ends. The title row under it is one fixed 32px row (`PaneTitleRow`: `h-8`,
-centred, no wrap, a long title truncates), 40px below the pane top, which puts every
-title centre at 56px with its left edge on the column. A banner for the page (the first
-lap notice) is the first block of the body, inside the same column.
+## The frame map
+
+`packages/ui/src/frameGeometry.ts` holds one typed map, `PAGE_FRAME: Record<FramePage, FrameType>`.
+A page with no entry fails typecheck. Four frame types:
+
+| Type   | Pages                                                                                                                             | Width                               | Title left                         |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------- |
+| column | Overview, Runs, a run, Agents, an agent, Questions, Workflows, Impact, Settings, Scripts, Artifacts, Explore, Storage, Monitoring | 1008, centred                       | column + 24                        |
+| reader | a plan, a report, a wireframe page, a release, a Guide chapter body                                                               | 768, centred in its detail          | reader + 24                        |
+| stage  | Board, Terminal                                                                                                                   | fluid from the sheet inset, to 1856 | 24                                 |
+| split  | Chat, Guide, What's new, Tasks, Notifications, Branch                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
+
+`frameGeometryOf({ page })` returns the type, the band (40px), the title row (32px),
+the title centre (56px), the drawer row (28px) and `titleLeft` read from the type.
+`STUDIO_META[kind].page` names the page of a studio and `frameTierOf` gives the tier its band
+draws at; a test fails when the two disagree.
+
+Five rules:
+
+1. **Crumb, title and first body edge share one x.** In a split page the crumb band moves
+   into the detail (`StudioDetail`, first child of the detail) and the rail starts at the top of
+   the sheet, so the crumb never sits over the rail. A split studio wraps its detail in
+   `StudioDetail`; `StudioFrame` hands it the band through `StudioBandContext`.
+2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
+   (288, resizable 220 to 420). No page draws a second rail column.
+3. **Stage pages are only the Board and the Terminal.** Nothing else is fluid.
+4. **The crumb row and the drawer header share one centre line.** `DrawerFrame` draws a 28px
+   row centred in the band's 40px (`FRAME_DRAWER_ROW_PX`, `FRAME_DRAWER_INSET_PX`), with one
+   close control.
+5. **First-time states centre in the body**, in one `EmptyState` layout.
+
+The Branch page is a split page: its rail lists the sections the state has and its detail holds the
+crumb band and one 960 column (`SessionWorkspace` hands the band to `BranchPage` through
+`StudioBandContext`, and `BranchDetail` draws it first). Under 780 the rail leaves and a
+`Sections` button at the left of the crumb band opens it as an overlay.
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
 on `full`). No view centres itself. Sub-pages follow the same tiers as their
@@ -262,13 +297,12 @@ A Session or Agent page reads as one centred column: every child, banner, card
 and footer sits on the same edges. Only prose keeps the 720px measure, aligned
 left inside the column. Tables, code and cards take the whole column.
 
-**The Branch page** sits on the column like every other page: its header, the
-tabs, the trail and the Ask button, and every tab body share the 960px column,
-so nothing moves from one tab to the next. Files puts its file tree in a rail of
-its own at the pane's left edge, outside the column: open in the margin where the
-rail and 24px fit, else a 44px strip in the margin, else a `Files 1/6` button in
-the toolbar, the last two opening it over the diff (`treeRailModeOf`), so the
-diff keeps the column in every mode; Comments puts the list and the thread side by
+**The Branch page** is a split page: a rail of sections, always docked from a page of 780, and one
+detail whose header, trail, Ask button and every section body share the 960px column, so nothing
+moves from one section to the next. Files puts its file tree in the rail, under the sections and outside the
+column, so the diff keeps the column; under 780 the rail opens over the detail from a
+`Sections` button. The Overview is one grid of a 640 main column and a 296 properties column in
+every state. Comments puts the list and the thread side by
 side from 900px, the thread's properties inline under it at every width. Both
 read the width of their own pane (`branchLayoutOf`), so a wide sidebar or an
 open drawer narrows them.
@@ -382,8 +416,10 @@ flashes at `0,0`. Second, recompute on `scroll` with capture `true`, because a
 scroll in any ancestor moves the trigger.
 
 **Confirmations never open a dialog.** A destructive action confirms through
-`InlineConfirm`. That way the thing being destroyed stays visible while the
-user decides. Its placements and trigger styling belong to
+`ConfirmPopover`, one placement anchored to its trigger, and a restorable one
+acts at once with Undo. That way the thing being destroyed stays visible while
+the user decides and the page under it never moves. Its behaviour and trigger
+styling belong to
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#action-zones).
 
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen

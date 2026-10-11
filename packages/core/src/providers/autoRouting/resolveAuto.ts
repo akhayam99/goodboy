@@ -14,6 +14,7 @@ import { MODEL_COST_RANK } from '../modelCostRank';
 import { isModelHidden, type HiddenModels } from '../modelVisibility';
 import { resolvedStoredModelId } from '../resolvedStoredModelId';
 import { strongestModelForTier } from '../strongestModelForTier';
+import type { PassedOver } from '../resolve/types';
 import { AUTO_DEFAULTS, isCuratedProvider, type AutoChoice } from './defaults';
 import {
   policyDefaultProvider,
@@ -310,3 +311,42 @@ const resolvePass = ({ slot, context, isCeilingKept }: PassParams): AutoPick | n
 export const resolveAuto = ({ slot, ...context }: Params): AutoPick | null =>
   resolvePass({ slot, context, isCeilingKept: true }) ??
   (slot.kind === 'task' ? resolvePass({ slot, context, isCeilingKept: false }) : null);
+
+type PassedOverParams = {
+  readonly slot: AutoSlot;
+  readonly pick: AutoPick;
+  readonly context: AutoContext;
+};
+
+export const autoPassedOver = ({
+  slot,
+  pick,
+  context,
+}: PassedOverParams): ReadonlyArray<PassedOver> => {
+  const { provider } = pick;
+  if (!isCuratedProvider(provider)) {
+    return [];
+  }
+  const choices = AUTO_DEFAULTS[provider][slot.id];
+  const at = choices.findIndex(
+    (choice) =>
+      resolvedStoredModelId({ provider, selection: selectionOf({ choice }) }) === pick.model,
+  );
+  return choices.slice(0, Math.max(at, 0)).flatMap((choice): PassedOver[] => {
+    const model = resolvedStoredModelId({ provider, selection: selectionOf({ choice }) });
+    if (catalogModelOf({ provider, choice }) == null) {
+      return [{ model, reason: 'unknown-model' }];
+    }
+    const isTooOld =
+      cliGate({
+        provider,
+        modelKey: choice.key,
+        installedVersion: context.cliVersions?.[provider] ?? null,
+        learned: context.learned ?? [],
+      }) !== null;
+    if (isTooOld) {
+      return [{ model, reason: 'cli-too-old' }];
+    }
+    return isChoiceHidden({ provider, choice, context }) ? [{ model, reason: 'hidden' }] : [];
+  });
+};

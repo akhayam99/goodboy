@@ -149,3 +149,28 @@ describe('StudioShell subtitle', () => {
     expect(header.textContent?.replace(/\s+/g, '')).toBe('ChangelogClose');
   });
 });
+
+describe('StudioShell close label', () => {
+  it('builds the close name from the title, so a rename moves it', () => {
+    render(
+      <StudioShell icon={Settings} title="Tasks" onClose={() => undefined}>
+        {() => <p>body</p>}
+      </StudioShell>,
+    );
+    screen.getByRole('button', { name: 'Close tasks' });
+  });
+
+  it('keeps an explicit close label', () => {
+    render(
+      <StudioShell
+        icon={Settings}
+        title="Settings"
+        closeLabel="Back to app"
+        onClose={() => undefined}
+      >
+        {() => <p>body</p>}
+      </StudioShell>,
+    );
+    screen.getByRole('button', { name: 'Back to app' });
+  });
+});

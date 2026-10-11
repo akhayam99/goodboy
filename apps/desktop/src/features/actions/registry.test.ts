@@ -11,6 +11,7 @@ import { CHAT_KIND } from './kinds/chat';
 import { CHATS_KIND } from './kinds/chats';
 import { COMMIT_KIND } from './kinds/commit';
 import { DIFF_FILE_KIND } from './kinds/diffFile';
+import { EXPLORE_FILE_KIND } from './kinds/exploreFile';
 import { MOUNT_KIND } from './kinds/mount';
 import { MESSAGE_KIND } from './kinds/message';
 import { SCRIPT_KIND } from './kinds/script';
@@ -38,6 +39,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['pullRequest', PULL_REQUEST_KIND.actions],
   ['commit', COMMIT_KIND.actions],
   ['diffFile', DIFF_FILE_KIND.actions],
+  ['exploreFile', EXPLORE_FILE_KIND.actions],
   ['mount', MOUNT_KIND.actions],
   ['project', PROJECT_KIND.actions],
   ['worktree', WORKTREE_KIND.actions],

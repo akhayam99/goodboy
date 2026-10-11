@@ -64,16 +64,18 @@ describe('the session list prefs of a workspace', () => {
       group: 'none',
       isArchivedShown: false,
       isFoldOpen: false,
+      statusFilter: [],
     });
   });
 
   it('read what was persisted', () => {
     ls.store[storageKey(WS)] = persisted({
-      v: 2,
+      v: 3,
       sort: 'goal',
       group: 'project',
       isArchivedShown: true,
       isFoldOpen: true,
+      statusFilter: ['attention', 'running'],
     });
     const { actions } = buildSlice();
     expect(actions.getSessionViewPrefs(WS)).toEqual({
@@ -81,11 +83,53 @@ describe('the session list prefs of a workspace', () => {
       group: 'project',
       isArchivedShown: true,
       isFoldOpen: true,
+      statusFilter: ['attention', 'running'],
     });
   });
 
+  it('read a version 2 record with an empty status filter and rewrite it as version 3', () => {
+    ls.store[storageKey(WS)] = JSON.stringify({
+      v: 2,
+      sort: 'goal',
+      group: 'stage',
+      isArchivedShown: true,
+      isFoldOpen: false,
+      statusFilter: ['done'],
+    });
+    const { actions } = buildSlice();
+    expect(actions.getSessionViewPrefs(WS)).toEqual({
+      sort: 'goal',
+      group: 'stage',
+      isArchivedShown: true,
+      isFoldOpen: false,
+      statusFilter: [],
+    });
+    expect(JSON.parse(ls.store[storageKey(WS)] ?? '{}')).toMatchObject({
+      v: 3,
+      sort: 'goal',
+      statusFilter: [],
+    });
+  });
+
+  it('round-trip a status filter through version 3', () => {
+    const { actions } = buildSlice();
+    actions.setSessionViewPrefs({ workspaceId: WS, patch: { statusFilter: ['review', 'done'] } });
+    const again = buildSlice();
+    expect(again.actions.getSessionViewPrefs(WS).statusFilter).toEqual(['review', 'done']);
+  });
+
+  it('drop stages it does not know from a stored status filter', () => {
+    ls.store[storageKey(WS)] = JSON.stringify({
+      ...DEFAULT_PREFS,
+      v: 3,
+      statusFilter: ['running', 'bogus', 7],
+    });
+    const { actions } = buildSlice();
+    expect(actions.getSessionViewPrefs(WS).statusFilter).toEqual(['running']);
+  });
+
   it('are read once and then cached', () => {
-    ls.store[storageKey(WS)] = persisted({ v: 2, sort: 'createdAt', group: 'pr' });
+    ls.store[storageKey(WS)] = persisted({ v: 3, sort: 'createdAt', group: 'pr' });
     const { actions } = buildSlice();
     actions.getSessionViewPrefs(WS);
     const reads = ls.getItem.mock.calls.length;
@@ -97,7 +141,7 @@ describe('the session list prefs of a workspace', () => {
     ls.store[storageKey(WS)] = JSON.stringify({ v: 1, sort: 'goal', group: 'pr' });
     const { actions } = buildSlice();
     expect(actions.getSessionViewPrefs(WS)).toEqual(DEFAULT_PREFS);
-    expect(JSON.parse(ls.store[storageKey(WS)] ?? '{}')).toMatchObject({ v: 2, sort: 'needsYou' });
+    expect(JSON.parse(ls.store[storageKey(WS)] ?? '{}')).toMatchObject({ v: 3, sort: 'needsYou' });
   });
 });
 
@@ -106,12 +150,12 @@ describe('changing the session list prefs', () => {
     const { actions, getState } = buildSlice();
     actions.setSessionViewPrefs({ workspaceId: WS, patch: { sort: 'goal' } });
     expect(getState().sessionViewPrefs[WS]?.sort).toBe('goal');
-    expect(JSON.parse(ls.store[storageKey(WS)] ?? '{}')).toMatchObject({ v: 2, sort: 'goal' });
+    expect(JSON.parse(ls.store[storageKey(WS)] ?? '{}')).toMatchObject({ v: 3, sort: 'goal' });
   });
 
   it('changes only what the patch names', () => {
     ls.store[storageKey(WS)] = persisted({
-      v: 2,
+      v: 3,
       sort: 'createdAt',
       group: 'pr',
       isFoldOpen: true,
@@ -124,6 +168,7 @@ describe('changing the session list prefs', () => {
       group: 'stage',
       isArchivedShown: false,
       isFoldOpen: true,
+      statusFilter: [],
     });
   });
 
@@ -134,8 +179,8 @@ describe('changing the session list prefs', () => {
   });
 
   it('keeps each workspace apart', () => {
-    ls.store[storageKey(WS)] = persisted({ v: 2, sort: 'goal', group: 'stage' });
-    ls.store[storageKey(WS2)] = persisted({ v: 2, sort: 'createdAt', group: 'pr' });
+    ls.store[storageKey(WS)] = persisted({ v: 3, sort: 'goal', group: 'stage' });
+    ls.store[storageKey(WS2)] = persisted({ v: 3, sort: 'createdAt', group: 'pr' });
     const { actions, getState } = buildSlice();
     actions.getSessionViewPrefs(WS);
     actions.getSessionViewPrefs(WS2);
@@ -167,13 +212,13 @@ describe('storage that cannot be trusted', () => {
     ls.store[storageKey(WS)] = JSON.stringify({ v: 99, sort: 'goal', group: 'pr' });
     const { actions } = buildSlice();
     expect(actions.getSessionViewPrefs(WS)).toEqual(DEFAULT_PREFS);
-    expect(JSON.parse(ls.store[storageKey(WS)] ?? '{}')).toMatchObject({ v: 2 });
+    expect(JSON.parse(ls.store[storageKey(WS)] ?? '{}')).toMatchObject({ v: 3 });
   });
 
   it('keeps a valid group when the sort is not one we know', () => {
     ls.store[storageKey(WS)] = JSON.stringify({
       ...DEFAULT_PREFS,
-      v: 2,
+      v: 3,
       sort: 'invalid',
       group: 'pr',
     });
@@ -186,7 +231,7 @@ describe('storage that cannot be trusted', () => {
   it('keeps a valid sort when the group is not one we know', () => {
     ls.store[storageKey(WS)] = JSON.stringify({
       ...DEFAULT_PREFS,
-      v: 2,
+      v: 3,
       sort: 'goal',
       group: 'invalid',
     });
@@ -197,7 +242,7 @@ describe('storage that cannot be trusted', () => {
   });
 
   it('ignores a flag that is not a boolean', () => {
-    ls.store[storageKey(WS)] = JSON.stringify({ ...DEFAULT_PREFS, v: 2, isFoldOpen: 'yes' });
+    ls.store[storageKey(WS)] = JSON.stringify({ ...DEFAULT_PREFS, v: 3, isFoldOpen: 'yes' });
     const { actions } = buildSlice();
     expect(actions.getSessionViewPrefs(WS).isFoldOpen).toBe(false);
   });
@@ -217,7 +262,7 @@ describe('storage that cannot be trusted', () => {
   });
 
   it('writes nothing for a stored value that is already valid', () => {
-    ls.store[storageKey(WS)] = persisted({ v: 2 });
+    ls.store[storageKey(WS)] = persisted({ v: 3 });
     const { actions } = buildSlice();
     actions.getSessionViewPrefs(WS);
     expect(ls.setItem).not.toHaveBeenCalled();

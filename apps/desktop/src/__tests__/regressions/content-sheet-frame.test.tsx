@@ -17,11 +17,11 @@ const HORIZONTAL_DIVIDER = /<Divider(?![^>]*orientation="vertical")[^>]*\/>/;
 afterEach(cleanup);
 
 const sheetOf = (): HTMLElement => {
-  const main = screen.getByText('content').closest('main');
-  if (main === null) {
-    throw new Error('the shell must render its main landmark');
+  const page = screen.getByText('content').closest<HTMLElement>('[data-container="page"]');
+  if (page === null) {
+    throw new Error('the shell must render its page container');
   }
-  return main;
+  return page;
 };
 
 describe('the content is a sheet on the chrome', () => {

@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SessionId, TaskModelPreferences, WorkspaceId } from '@goodboy/types';
-import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfigValue';
 import type { GitlabMergeRequest } from '../../client';
 
 type SpawnAgent = (
@@ -33,11 +32,7 @@ type Store = {
   readonly loadAgentTranscript: ReturnType<typeof vi.fn>;
   readonly reportError: ReturnType<typeof vi.fn>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
-};
-
-type ConfigProps = {
-  readonly onChange: (value: AgentSpawnConfigValue) => void;
-  readonly disabled: boolean;
+  readonly providers: ReadonlyArray<{ readonly id: string; readonly connection: 'connected' }>;
 };
 
 type ToastAction = { readonly label: string; readonly onClick: () => void };
@@ -52,12 +47,6 @@ type MrParams = {
 };
 
 const h = vi.hoisted(() => ({
-  config: {
-    provider: 'gemini',
-    model: 'gemini-3.8-flash',
-    effort: 'low',
-    hint: 'Mention the rollout order.',
-  } satisfies AgentSpawnConfigValue,
   gitlabMergeMr: vi.fn(async () => undefined),
   gitlabListMrDiscussions: vi.fn(async () => [] as ReadonlyArray<unknown>),
   gitlabMrApprovalState: vi.fn(async () => null),
@@ -90,6 +79,10 @@ const h = vi.hoisted(() => ({
     loadAgentTranscript: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
     workspaceOverrides: {},
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ],
   } satisfies Store,
 }));
 
@@ -115,14 +108,6 @@ vi.mock('../../client', async () => {
     gitlabUpdateMrState: h.gitlabUpdateMrState,
   };
 });
-
-vi.mock('../../../../session/components/AgentSpawnConfig', () => ({
-  AgentSpawnConfig: ({ onChange, disabled }: ConfigProps) => (
-    <button type="button" disabled={disabled} onClick={() => onChange(h.config)}>
-      Choose agent config
-    </button>
-  ),
-}));
 
 import { MrDetailPanel } from './index';
 
@@ -167,142 +152,11 @@ beforeEach(() => {
   h.store.sessionGitlabMr = {};
 });
 
-const switchToAgentMode = () => {
-  fireEvent.click(screen.getByRole('tab', { name: 'With an agent' }));
-};
-
 afterEach(cleanup);
 
 const openMenu = () => fireEvent.click(screen.getByRole('button', { name: 'More actions for !4' }));
 
 describe('MrDetailPanel', () => {
-  it('creates an MR from the form footer', async () => {
-    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Merge request title' }), {
-      target: { value: 'Ship the GitLab release' },
-    });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Merge request description' }), {
-      target: { value: 'Documents the release changes.' },
-    });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Target branch' }), {
-      target: { value: 'develop' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Create MR' }));
-
-    await waitFor(() =>
-      expect(h.store.createMrForSession).toHaveBeenCalledWith({
-        sessionId: SESSION_ID,
-        title: 'Ship the GitLab release',
-        description: 'Documents the release changes.',
-        targetBranch: 'develop',
-        draft: true,
-      }),
-    );
-  });
-
-  it('ends the form with the create button inline, never in a footer bar', () => {
-    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
-
-    const button = screen.getByRole('button', { name: 'Create MR' });
-    expect(button.closest('[data-slot="form-page"]')).not.toBeNull();
-    expect(button.closest('[data-slot="form-actions"]')).not.toBeNull();
-    expect(button.closest('footer')).toBeNull();
-  });
-
-  it('respects the draft toggle on manual create', async () => {
-    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Merge request title' }), {
-      target: { value: 'Ship the GitLab release' },
-    });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Open as draft' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Create MR' }));
-
-    await waitFor(() =>
-      expect(h.store.createMrForSession).toHaveBeenCalledWith(
-        expect.objectContaining({ sessionId: SESSION_ID, draft: false }),
-      ),
-    );
-  });
-
-  it('shows the merge request error in the form footer', () => {
-    h.store.sessionGitlabMr = {
-      'session-3': { mr: null, loading: false, error: 'GitLab token expired' },
-    };
-    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
-
-    expect(screen.getByRole('alert').textContent).toContain('GitLab token expired');
-  });
-
-  it('swaps the form body when switching modes', () => {
-    render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
-    expect(screen.getByRole('textbox', { name: 'Merge request title' })).toBeDefined();
-    switchToAgentMode();
-    expect(screen.queryByRole('textbox', { name: 'Merge request title' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Choose agent config' })).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Manual' }));
-    expect(screen.getByRole('textbox', { name: 'Merge request title' })).toBeDefined();
-  });
-
-  it('spawns an MR agent with the chosen config and operator notes', async () => {
-    const onClose = vi.fn();
-    render(<MrDetailPanel sessionId={SESSION_ID} onClose={onClose} />);
-    switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Choose agent config' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
-
-    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
-    const args = h.store.spawnAgent.mock.calls[0]![1];
-    expect(args).toMatchObject({
-      provider: 'gemini',
-      model: 'gemini-3.8-flash',
-      effort: 'low',
-    });
-    expect(args.initialPrompt).toContain(
-      '\n\nOperator notes:\n---\nMention the rollout order.\n---',
-    );
-    expect(args).toMatchObject({ focus: 'none' });
-    expect(onClose).not.toHaveBeenCalled();
-  });
-
-  it('keeps the panel in place after the spawn and opens the agent only from the toast action', async () => {
-    const onClose = vi.fn();
-    render(<MrDetailPanel sessionId={SESSION_ID} onClose={onClose} />);
-    switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
-
-    await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
-    expect(h.store.navigate).not.toHaveBeenCalled();
-    const action = h.showToast.mock.calls[0]![0]?.action;
-    expect(action?.label).toBe('Follow');
-
-    action?.onClick();
-
-    await waitFor(() =>
-      expect(h.store.navigate).toHaveBeenCalledWith({
-        to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-3' },
-      }),
-    );
-    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
-  });
-
-  it('uses a workspace task model loaded after mount', async () => {
-    const { rerender } = render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
-    h.store.workspaceOverrides = {
-      'workspace-1': {
-        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.6-luna' } },
-      },
-    };
-    rerender(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
-    switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
-
-    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
-    expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({
-      provider: 'codex',
-      model: 'gpt-5.6-luna',
-    });
-  });
-
   it('merges a selected MR through the GitLab client', async () => {
     const onClose = vi.fn();
     const onRefresh = vi.fn();

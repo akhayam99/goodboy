@@ -1,10 +1,12 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import type { Project, WorkspaceId } from '@goodboy/types';
-import { Eyebrow } from '@goodboy/ui';
+import { SectionHeader, cn } from '@goodboy/ui';
 import { useFrozenOrder } from '../../hooks/useFrozenOrder';
 import { useProjectGitStatuses } from '../../../features/workspace/hooks/useProjectGitStatuses';
+import { GroupCount } from './GroupCount';
 import { groupProjects } from './groupProjects';
 import { ProjectLinkCompactRow } from './ProjectLinkCompactRow';
+import { PROJECT_ROW_GRID } from './projectRowGrid';
 
 const SHOWN_BEFORE_EXPAND = 8;
 
@@ -16,7 +18,7 @@ type Props = {
   readonly onUnlink: (params: { readonly project: Project }) => Promise<void>;
   readonly editorExtra?: (params: { readonly project: Project }) => ReactNode;
   readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
-  readonly rowFooter?: (params: { readonly project: Project }) => ReactNode;
+  readonly editorScripts?: (params: { readonly project: Project }) => ReactNode;
 };
 
 export const ProjectGroups = ({
@@ -27,7 +29,7 @@ export const ProjectGroups = ({
   onUnlink,
   editorExtra,
   rowBadge,
-  rowFooter,
+  editorScripts,
 }: Props) => {
   const [isPointerInside, setIsPointerInside] = useState(false);
   const [isFocusInside, setIsFocusInside] = useState(false);
@@ -50,6 +52,8 @@ export const ProjectGroups = ({
     isSearching || isAllExpanded ? groups.all : groups.all.slice(0, SHOWN_BEFORE_EXPAND);
   const hiddenCount = groups.all.length - visibleAll.length;
 
+  const hasStarred = groups.starred.length > 0;
+
   const row = (project: Project) => (
     <ProjectLinkCompactRow
       key={project.id}
@@ -59,7 +63,7 @@ export const ProjectGroups = ({
       onUnlink={onUnlink}
       editorExtra={editorExtra?.({ project })}
       badge={rowBadge?.({ project })}
-      footer={rowFooter?.({ project })}
+      scripts={editorScripts?.({ project })}
     />
   );
 
@@ -74,36 +78,45 @@ export const ProjectGroups = ({
           setIsFocusInside(false);
         }
       }}
-      className="flex flex-col"
+      className={cn('grid gap-x-2 gap-y-4', PROJECT_ROW_GRID)}
     >
       {groups.starred.length > 0 ? (
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 px-2 py-1">
-            <Eyebrow label="Starred" />
-            <span className="tabular-nums text-eyebrow text-foreground">
-              {groups.starred.length}
-            </span>
-          </div>
-          <ul className="flex flex-col">{groups.starred.map(row)}</ul>
-        </div>
+        <section aria-label="Starred" className="col-span-full grid grid-cols-subgrid gap-y-1">
+          <SectionHeader
+            label="Starred"
+            headingLevel={2}
+            meta={<GroupCount count={groups.starred.length} />}
+            hint="Agents and pickers list these first."
+            className="col-span-full px-2"
+          />
+          <ul className="col-span-full grid grid-cols-subgrid gap-y-1">
+            {groups.starred.map(row)}
+          </ul>
+        </section>
       ) : null}
       {groups.all.length > 0 ? (
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 px-2 py-1">
-            <Eyebrow label={groups.starred.length > 0 ? 'Other projects' : 'All projects'} />
-            <span className="tabular-nums text-eyebrow text-foreground">{groups.all.length}</span>
-          </div>
-          <ul className="flex flex-col">{visibleAll.map(row)}</ul>
+        <section
+          aria-label={hasStarred ? 'Other projects' : 'Projects'}
+          className="col-span-full grid grid-cols-subgrid gap-y-1"
+        >
+          <SectionHeader
+            label={hasStarred ? 'Other projects' : 'Projects'}
+            headingLevel={2}
+            meta={<GroupCount count={groups.all.length} />}
+            hint={hasStarred ? undefined : 'Star the ones you use most.'}
+            className="col-span-full px-2"
+          />
+          <ul className="col-span-full grid grid-cols-subgrid gap-y-1">{visibleAll.map(row)}</ul>
           {hiddenCount > 0 ? (
             <button
               type="button"
               onClick={() => setIsAllExpanded(true)}
-              className="self-start px-2 py-2 text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              className="col-span-full self-start justify-self-start px-2 py-2 text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               Show {hiddenCount} more
             </button>
           ) : null}
-        </div>
+        </section>
       ) : null}
     </div>
   );

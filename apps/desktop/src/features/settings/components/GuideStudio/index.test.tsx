@@ -16,6 +16,7 @@ import {
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { GUIDE_CHAPTERS } from './guideChapters';
 import { peekGuideChapter, requestGuideChapter } from './guideChapterRequest';
+import { StudioFrame } from '../../../../app/components/StudioFrame';
 import { GuideStudio } from './index';
 
 let useAppStore: StoryStore;
@@ -48,6 +49,32 @@ describe('GuideStudio', () => {
       expect(nav.getByRole('button', { name: chapter.title })).toBeDefined();
       expect(screen.getByRole('region', { name: chapter.title })).toBeDefined();
     });
+  });
+
+  it('starts with What is Goodboy, then Words with its nine terms', () => {
+    render(<GuideStudio onClose={vi.fn()} />);
+
+    const startHere = within(rail())
+      .getByText('Start here')
+      .parentElement?.querySelectorAll('button');
+    expect(Array.from(startHere ?? []).map((button) => button.textContent)).toEqual([
+      'What is Goodboy',
+      'Words',
+    ]);
+    const words = within(screen.getByRole('region', { name: 'Words' }));
+    expect(words.getByText('The words Goodboy uses, one sentence each.')).toBeDefined();
+    [
+      'Workspace',
+      'Project',
+      'Session',
+      'Agent',
+      'Turn',
+      'Run',
+      'Worktree and branch',
+      'Plan',
+      'Budget',
+    ].forEach((term) => expect(words.getByText(term)).toBeDefined());
+    expect(GUIDE_CHAPTERS.find((chapter) => chapter.id === 'words')?.points).toHaveLength(9);
   });
 
   it('narrows the rail and the chapters to what the search matches', () => {
@@ -144,5 +171,23 @@ describe('GuideStudio', () => {
     const board = screen.getByRole('region', { name: 'Board' });
     expect(within(board).getByText('needs you')).toBeDefined();
     expect(within(board).getByText('in review')).toBeDefined();
+  });
+
+  it('draws the crumb in the detail beside the rail, on the column of the first chapter title', () => {
+    const { container } = render(
+      <StudioFrame kind="guide" onClose={vi.fn()}>
+        <GuideStudio onClose={vi.fn()} />
+      </StudioFrame>,
+    );
+
+    const band = screen.getByRole('banner', { name: /guide/i });
+    const detail = container.querySelector<HTMLElement>('[data-studio-detail]');
+    const bandColumn = band.querySelector<HTMLElement>('[data-page-column]');
+    const bodyColumn = detail?.querySelector<HTMLElement>('[data-page-column]:not(header *)');
+    expect(detail?.contains(band)).toBe(true);
+    expect(detail?.firstElementChild).toBe(band);
+    expect(rail().closest('aside')?.contains(band)).toBe(false);
+    expect(bandColumn?.getAttribute('data-width')).toBe('column');
+    expect(bodyColumn?.getAttribute('data-width')).toBe(bandColumn?.getAttribute('data-width'));
   });
 });

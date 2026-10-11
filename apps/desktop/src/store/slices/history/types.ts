@@ -2,6 +2,7 @@ import type {
   AgentId,
   BranchCommit,
   HistoryGraph,
+  HistoryRewriterCheck,
   HistoryPlanArgs,
   HistoryPlanPrediction,
   HistoryStep,
@@ -20,6 +21,9 @@ export type { SetFn, GetFn } from '../../slice-types';
 export type HistoryRunOrigin = 'plan' | 'rebase';
 
 export type HistoryRunPhase =
+  | 'choosing'
+  | 'set-aside'
+  | 'restore-conflict'
   | 'predicting'
   | 'trying'
   | 'waiting'
@@ -41,9 +45,13 @@ export type HistoryStopReason =
   | 'origin-moved'
   | 'head-moved'
   | 'blocked'
+  | 'dirty'
+  | 'no-provider'
+  | 'push-failed'
   | 'failed';
 
 export type HistoryStop = {
+  readonly review?: HistoryRewriterCheck['review'];
   readonly reason: HistoryStopReason;
   readonly message: string;
   readonly files: ReadonlyArray<string>;
@@ -91,6 +99,26 @@ export type HistoryRun = {
   readonly identity: HistoryIdentity | null;
   readonly movedHead: string | null;
   readonly threadShas: ReadonlyArray<HistoryThreadShas>;
+  readonly commitCount: number | null;
+  readonly pendingMove?:
+    | { readonly kind: 'apply'; readonly input: ApplyHistoryRewriteInput }
+    | {
+        readonly kind: 'restore';
+        readonly input: HistoryMountInput & {
+          readonly backupRef: string;
+          readonly shouldPush: boolean;
+          readonly expectedHead: string;
+          readonly identity: HistoryIdentity;
+        };
+      };
+  readonly dirtyChoice?: { readonly files: ReadonlyArray<string>; readonly dirtyCount: number };
+  readonly savedStash?: {
+    readonly sha: string;
+    readonly identity: HistoryIdentity;
+    readonly expectedHead: string;
+    readonly files: ReadonlyArray<string>;
+  };
+  readonly carriedCount?: number;
   readonly updatedAt: number;
 };
 
@@ -149,6 +177,7 @@ export type HistoryMountInput = {
 export type RebaseBranchOutcome = 'rebased' | 'rewriting' | 'stopped' | 'busy';
 
 export type ApplyHistoryRewriteInput = HistoryMountInput & {
+  readonly shouldStash?: boolean;
   readonly origin: HistoryRunOrigin;
   readonly planId: string | null;
   readonly newHead: string;

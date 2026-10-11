@@ -40,15 +40,16 @@ export const StarredSnapshotRow = ({
         !selected && !isCursor && 'hover:bg-hover hover:text-foreground',
       )}
     >
-      <button
-        type="button"
-        tabIndex={-1}
-        title={issue.title}
-        onClick={onSelect}
-        className={cn('absolute inset-0 cursor-pointer rounded-md', FOCUS_RING)}
-      >
-        <span className="sr-only">{`${issue.identifier} ${issue.title}`}</span>
-      </button>
+      <Tooltip content={issue.title}>
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={onSelect}
+          className={cn('absolute inset-0 cursor-pointer rounded-md', FOCUS_RING)}
+        >
+          <span className="sr-only">{`${issue.identifier} ${issue.title}`}</span>
+        </button>
+      </Tooltip>
       <span />
       <span aria-hidden className="pointer-events-none relative flex">
         <IntegrationGlyph provider={issue.provider} size="xs" useBrandColor />
@@ -88,7 +89,6 @@ export const StarredSnapshotRow = ({
               type="button"
               aria-hidden
               tabIndex={-1}
-              title={`Open ${issue.identifier} in ${toolLabel}`}
               onClick={() => void openUrl(issue.url)}
               className={cn(
                 'relative size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-hover hover:text-foreground',

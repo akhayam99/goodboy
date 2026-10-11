@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { classifyScript, SCRIPT_CATEGORIES } from './classifyScript';
+import { classifyScript, isService } from './classifyScript';
 
 describe('classifyScript', () => {
   it.each([
@@ -36,22 +36,24 @@ describe('classifyScript', () => {
   ] as const)('classifies %s as %s', (name, command, expected) => {
     expect(classifyScript({ name, command })).toBe(expected);
   });
+});
 
-  it('keeps the published category order', () => {
-    expect(SCRIPT_CATEGORIES.map((category) => category.id)).toEqual([
-      'dev',
-      'build',
-      'test',
-      'lint',
-      'typecheck',
-      'format',
-      'db',
-      'generate',
-      'install',
-      'deploy',
-      'clean',
-      'docs',
-      'other',
-    ]);
+describe('isService', () => {
+  it.each([
+    ['dev', 'dev', true],
+    ['start', 'dev', true],
+    ['serve', 'dev', true],
+    ['watch', 'dev', true],
+    ['preview', 'dev', true],
+    ['Start', 'other', true],
+    ['storybook', 'dev', true],
+    ['build', 'build', false],
+    ['test', 'test', false],
+    ['test:watch', 'test', false],
+    ['lint', 'lint', false],
+    ['db:migrate', 'db', false],
+    ['replay', 'other', false],
+  ] as const)('reads %s (%s) as service: %s', (name, category, isExpected) => {
+    expect(isService({ script: { name, category } })).toBe(isExpected);
   });
 });

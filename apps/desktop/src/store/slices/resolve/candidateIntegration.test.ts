@@ -1753,3 +1753,56 @@ describe('a lane keeps one chain of fixes on a branch', () => {
     expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(rootSha);
   });
 });
+
+describe('the launch mode of a fix run', () => {
+  const launchChoice = {
+    provider: 'anthropic',
+    model: 'claude-opus-5-5',
+    effort: null,
+    commitStyle: null,
+    hint: null,
+  } as const;
+
+  const record = async ({ mode }: { readonly mode: 'apply' | 'propose' | undefined }) => {
+    const live = makeHarness();
+    const choice = mode === undefined ? launchChoice : { ...launchChoice, mode };
+    const batch = await live.actions.createResolveBatch({
+      sessionId: SESSION_ID,
+      threadIds: ['thread-a'],
+      launchChoice: choice,
+    });
+    await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent: {
+        id: makeAttempt({ id: 'mode-agent', createdAt: 1 }).agentId,
+        sessionId: SESSION_ID,
+        ordinal: 0,
+        name: 'Fix comments · 1 comment',
+        kind: 'resolver',
+        status: 'running',
+      },
+      provider: 'anthropic',
+      model: 'claude-opus-5-5',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: mountTarget(),
+      candidateMode: 'apply',
+      threadIds: ['thread-a'],
+      batch: { batchId: batch.id, launchChoice: choice },
+    });
+    return listResolveCandidates({ db, sessionId: SESSION_ID });
+  };
+
+  it('captures a candidate and edits nothing when the batch says propose', async () => {
+    expect(await record({ mode: 'propose' })).toHaveLength(1);
+  });
+
+  it('captures nothing for a batch that says apply', async () => {
+    expect(await record({ mode: 'apply' })).toHaveLength(0);
+  });
+
+  it('captures nothing for a launch that carries no mode at all', async () => {
+    expect(await record({ mode: undefined })).toHaveLength(0);
+  });
+});

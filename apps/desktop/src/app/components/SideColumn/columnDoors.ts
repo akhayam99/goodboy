@@ -16,6 +16,13 @@ export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
   { id: 'inbox', label: NAMES.tasks, icon: CONCEPT_ICONS.inbox },
   { id: 'chat', label: 'Chat', icon: CONCEPT_ICONS.chat },
   { id: 'workflows', label: 'Workflows', icon: CONCEPT_ICONS.workflows },
+  {
+    id: 'terminal',
+    label: 'Terminal',
+    icon: CONCEPT_ICONS.terminal,
+    shortcutId: 'terminal.studio',
+  },
+  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring },
 ];
 
 export type ColumnActions = {
@@ -23,6 +30,10 @@ export type ColumnActions = {
   readonly openInbox: () => void;
   readonly openChat: () => void;
   readonly openWorkflows: () => void;
+  readonly openTerminalStudio: () => void;
+  readonly openNewChat: () => void;
+  readonly openNewTerminal: () => void;
+  readonly openMonitoring: () => void;
   readonly openSettings: () => void;
   readonly openChangelog: () => void;
   readonly openGuide: () => void;
@@ -47,6 +58,12 @@ export const openColumnDoor = ({ id, actions }: OpenDoorParams): void => {
       return;
     case 'workflows':
       actions.openWorkflows();
+      return;
+    case 'terminal':
+      actions.openTerminalStudio();
+      return;
+    case 'monitoring':
+      actions.openMonitoring();
       return;
     default: {
       const unreachable: never = id;

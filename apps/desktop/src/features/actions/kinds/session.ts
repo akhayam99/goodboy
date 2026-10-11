@@ -35,6 +35,8 @@ import type {
   SessionActionTarget,
 } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { linkedIssueSources } from '../../../store/slices/issue-briefs/linkedIssueSources';
+import { writeGoalFromWorkEvent } from '../../../store/slices/issue-briefs/writeGoalFromWorkEvent';
 import { NAMES } from '../../../shared/names';
 
 export type SessionFacts = {
@@ -52,6 +54,7 @@ export type SessionFacts = {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
   readonly worktreePaths: ReadonlyArray<string>;
   readonly prUrl: string | null;
+  readonly hasLinkedIssues: boolean;
 };
 
 type SessionWorktree = {
@@ -381,6 +384,18 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     confirm: deleteConfirm,
     run: ({ facts, env }) => env.getState().deleteTask(facts.sessionId),
   },
+  {
+    id: 'session.writeFromWork',
+    label: 'Write title and goal from linked work',
+    icon: Pencil,
+    group: 'act',
+    slot: () => 'menu',
+    when: ({ facts }) => facts.hasLinkedIssues,
+    run: ({ facts, env }) => {
+      openLens({ env, sessionId: facts.sessionId, lens: null });
+      dispatchAfterNavigation({ name: writeGoalFromWorkEvent({ sessionId: facts.sessionId }) });
+    },
+  },
 ];
 
 const findSession = ({
@@ -415,6 +430,9 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
     const worktreePaths = state.sessionWorktrees[target.sessionId] ?? [];
     return {
       session,
+      hasLinkedIssues:
+        linkedIssueSources({ tasks: state.sessionExternalTasks[target.sessionId] ?? [] }).length >
+        0,
       sessionId: target.sessionId,
       title: sessionTitle({ session }),
       isArchived: session.archivedAt != null,

@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildIssueBriefUserPrompt, generateIssueBrief, parseIssueBrief } from './issue-brief';
 
-const INPUT = {
+const ITEM = {
   identifier: 'ACME-412',
   title: 'Checkout fails when the promo code field is empty',
   body: 'Paying with an empty promo code calls applyPromo and returns 422.',
 };
+
+const INPUT = { items: [ITEM] };
 
 const BRIEF_JSON = JSON.stringify({
   title: 'Fix checkout when the promo code is empty',
@@ -13,7 +15,9 @@ const BRIEF_JSON = JSON.stringify({
   acceptance: ['Empty promo field pays normally', 'Invalid code still shows the inline error'],
 });
 
-const stdoutFor = (result: string) => JSON.stringify({ result });
+type Params = { readonly result: string };
+
+const stdoutFor = ({ result }: Params) => JSON.stringify({ result });
 
 describe('parseIssueBrief', () => {
   it('reads title, goal and acceptance from a bare JSON object', () => {
@@ -87,11 +91,55 @@ describe('parseIssueBrief', () => {
 });
 
 describe('buildIssueBriefUserPrompt', () => {
-  it('carries the identifier, the title and the whole text', () => {
-    const prompt = buildIssueBriefUserPrompt(INPUT);
+  it('keeps the start flow prompt for one item', () => {
+    expect(buildIssueBriefUserPrompt(INPUT)).toBe(
+      [
+        'IDENTIFIER: ACME-412',
+        `TITLE: ${ITEM.title}`,
+        '',
+        'TEXT:',
+        ITEM.body,
+        '',
+        'Write the brief following your instructions. Output only the JSON object.',
+      ].join('\n'),
+    );
+  });
+
+  it('names both items and requests one title and goal covering them', () => {
+    const prompt = buildIssueBriefUserPrompt({ items: [ITEM, { ...ITEM, identifier: 'HL-211' }] });
     expect(prompt).toContain('IDENTIFIER: ACME-412');
-    expect(prompt).toContain(`TITLE: ${INPUT.title}`);
-    expect(prompt).toContain(INPUT.body);
+    expect(prompt).toContain('IDENTIFIER: HL-211');
+    expect(prompt).toContain('one title of at most 60 characters');
+    expect(prompt).toContain('one goal of one to three sentences covering all items');
+  });
+
+  it.each(['', '   '])('marks an empty body as title only: %j', (body) => {
+    expect(buildIssueBriefUserPrompt({ items: [{ ...ITEM, body }] })).toContain('title only');
+  });
+
+  it('carries fenced issue text as data', () => {
+    const body = '```typescript\nconst value = 1;\n```';
+    expect(buildIssueBriefUserPrompt({ items: [{ ...ITEM, body }] })).toContain(body);
+  });
+
+  it('handles a 100k body without dropping its text', () => {
+    const body = 'a'.repeat(100_000);
+    expect(buildIssueBriefUserPrompt({ items: [{ ...ITEM, body }] })).toContain(body);
+  });
+
+  it.each([0, 6])('rejects %i items before invoking a model', async (count) => {
+    const invokeFn = vi.fn();
+    const input = { items: Array.from({ length: count }, () => ITEM) };
+    expect(() => buildIssueBriefUserPrompt(input)).toThrow('one to five');
+    expect(
+      (
+        await generateIssueBrief({
+          input,
+          deps: { providerId: 'anthropic', model: 'haiku-4.5', invokeFn },
+        })
+      ).kind,
+    ).toBe('failed');
+    expect(invokeFn).not.toHaveBeenCalled();
   });
 });
 
@@ -99,7 +147,7 @@ describe('generateIssueBrief', () => {
   it('runs the resolved task model and times the answer', async () => {
     const invokeFn = vi
       .fn()
-      .mockResolvedValue({ stdout: stdoutFor(BRIEF_JSON), stderr: '', exitCode: 0 });
+      .mockResolvedValue({ stdout: stdoutFor({ result: BRIEF_JSON }), stderr: '', exitCode: 0 });
     const clock = vi.fn().mockReturnValueOnce(1_000).mockReturnValueOnce(4_200);
 
     const result = await generateIssueBrief({
@@ -143,7 +191,7 @@ describe('generateIssueBrief', () => {
 
   it('refuses free prose in place of the JSON object', async () => {
     const invokeFn = vi.fn().mockResolvedValue({
-      stdout: stdoutFor('Here is the brief you asked for.'),
+      stdout: stdoutFor({ result: 'Here is the brief you asked for.' }),
       stderr: '',
       exitCode: 0,
     });

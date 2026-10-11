@@ -37,7 +37,16 @@ export type SessionScriptGroup = {
   readonly isReady: boolean;
   readonly packageCount: number;
   readonly scripts: ReadonlyArray<RunnableScript>;
+  readonly suggested: ReadonlyArray<RunnableScript>;
 };
+
+const SUGGESTED_CATEGORIES: ReadonlyArray<ScriptCategory> = [
+  'dev',
+  'build',
+  'test',
+  'lint',
+  'typecheck',
+];
 
 const MANIFEST_CATEGORY_ORDER: ReadonlyArray<ScriptCategory> = [
   'dev',
@@ -110,11 +119,10 @@ type ManifestParams = {
   readonly pins: ReadonlyArray<string>;
 };
 
-const manifestScriptsOf = ({
+const allManifestScriptsOf = ({
   groups,
   worktreePath,
-  pins,
-}: ManifestParams): ReadonlyArray<RunnableScript> =>
+}: Omit<ManifestParams, 'pins'>): ReadonlyArray<RunnableScript> =>
   groups
     .flatMap((group) =>
       group.scripts.map((script): RunnableScript => ({
@@ -136,8 +144,28 @@ const manifestScriptsOf = ({
         savedId: null,
       })),
     )
-    .filter((script) => pins.includes(scriptPinId(script)))
     .sort(compareManifest);
+
+const manifestScriptsOf = ({
+  groups,
+  worktreePath,
+  pins,
+}: ManifestParams): ReadonlyArray<RunnableScript> =>
+  allManifestScriptsOf({ groups, worktreePath }).filter((script) =>
+    pins.includes(scriptPinId(script)),
+  );
+
+type SuggestedParams = {
+  readonly scripts: ReadonlyArray<RunnableScript>;
+};
+
+const suggestedScriptsOf = ({ scripts }: SuggestedParams): ReadonlyArray<RunnableScript> => {
+  const root = scripts.filter((script) => script.source === 'package-json' && script.relDir === '');
+  return SUGGESTED_CATEGORIES.flatMap((category) => {
+    const match = root.find((script) => script.category === category);
+    return match === undefined ? [] : [match];
+  });
+};
 
 type Params = {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
@@ -171,5 +199,14 @@ export const buildSessionScripts = ({
       isReady,
       packageCount: new Set(pinned.map((script) => `${script.source}:${script.relDir}`)).size,
       scripts: [...savedScriptsOf({ saved, projectId: mount.projectId }), ...pinned],
+      suggested:
+        pinned.length === 0
+          ? suggestedScriptsOf({
+              scripts: allManifestScriptsOf({
+                groups: manifest,
+                worktreePath: mount.worktreePath,
+              }),
+            })
+          : [],
     };
   });

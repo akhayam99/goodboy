@@ -1,7 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { BitbucketPullRequest } from '../../client';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
 
 const RAW_DIFF = `diff --git a/src/rocket.ts b/src/rocket.ts
 index 1111111..2222222 100644
@@ -86,11 +91,6 @@ vi.mock('../../client', () => ({
   bitbucketPullRequestDiff: h.diff,
 }));
 
-vi.mock('../../../../../store', () => ({
-  EMPTY_ARRAY: [],
-  useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
-}));
-
 vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
@@ -154,9 +154,16 @@ const openConversation = async () => {
   await waitFor(() => screen.getByText(/one nit on the fuel constant/));
 };
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
 describe('PrDetailPanel', () => {
   beforeEach(() => {
     writeSpies().forEach((spy) => spy.mockClear());
+    useAppStore.setState(h.state);
   });
   afterEach(cleanup);
 

@@ -7,6 +7,8 @@ import { cleanup, render } from '@testing-library/react';
 import { SidebarToggleButton } from '../../features/session/components/SessionNavSidebar/parts/SidebarToggleButton';
 import { CollapsedRail } from '../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { ColumnToggleButton } from '../../app/components/SideColumn/ColumnToggleButton';
+import { shortcutGlyphs } from '../../shared/keyboard/registry';
+import { tooltipTextOf } from '../helpers/tooltip';
 
 vi.mock('../../store', () => ({}));
 
@@ -44,20 +46,23 @@ describe('the sidebar toggle axis', () => {
     const open = render(<ColumnToggleButton isCollapsed={false} onToggle={vi.fn()} />);
     const openToggle = open.container.querySelector('[data-sidebar-toggle]') as HTMLElement;
     expect(openToggle.getAttribute('aria-pressed')).toBe('true');
-    expect(openToggle.getAttribute('aria-label')).toMatch(/^Hide sidebar \(/);
+    expect(openToggle.getAttribute('aria-label')).toBe('Hide sidebar');
+    expect(tooltipTextOf({ element: openToggle })).toBe(
+      `Hide sidebar${shortcutGlyphs('column.toggle')}`,
+    );
     open.unmount();
 
     const closed = render(<ColumnToggleButton isCollapsed onToggle={vi.fn()} />);
     expect(
       closed.container.querySelector('[data-sidebar-toggle]')?.getAttribute('aria-label'),
-    ).toMatch(/^Show sidebar \(/);
+    ).toBe('Show sidebar');
   });
 
   it('centers the column toggle in a 44px box, the rail width, so both land on one axis', () => {
     expect(SIDE_COLUMN).toMatch(/className="flex w-11 shrink-0 items-center justify-center"/);
-    expect(TOGGLE).toContain('flex size-8 shrink-0');
+    expect(TOGGLE).toContain('size="md"');
     expect(SIDE_COLUMN.indexOf('<ColumnToggleButton')).toBeLessThan(
-      SIDE_COLUMN.indexOf('<NewSessionRow'),
+      SIDE_COLUMN.indexOf('<CreateRow'),
     );
     expect(COLUMN_RAIL).toContain('items-center');
     expect(COLUMN_RAIL.indexOf('<ColumnToggleButton')).toBeLessThan(

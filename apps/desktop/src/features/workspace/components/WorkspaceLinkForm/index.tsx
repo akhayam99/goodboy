@@ -8,8 +8,8 @@ import {
   Input,
   Notice,
   SectionHeader,
-  Tooltip,
   tintClasses,
+  IconButton,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from 'lucide-react';
@@ -510,20 +510,14 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                       {project.rootPath}
                     </span>
                   </span>
-                  <Tooltip
-                    content={`${NAMES.removeLink} to ${project.name}`}
-                    anchorClassName="shrink-0"
-                  >
-                    <button
-                      type="button"
-                      aria-label={`${NAMES.removeLink} to ${project.name}`}
-                      disabled={busy}
-                      onClick={() => void removeProject({ projectId: project.id })}
-                      className="rounded-md p-1 text-faint-foreground hover:bg-hover hover:text-foreground"
-                    >
-                      <X size={ICON_SIZE.control} aria-hidden />
-                    </button>
-                  </Tooltip>
+                  <IconButton
+                    icon={X}
+                    label={`${NAMES.removeLink} to ${project.name}`}
+                    size="xs"
+                    iconSize={ICON_SIZE.control}
+                    disabled={busy}
+                    onClick={() => void removeProject({ projectId: project.id })}
+                  />
                 </li>
               ))}
             </ul>

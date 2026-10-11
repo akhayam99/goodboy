@@ -78,6 +78,22 @@ const roleModelSetLines = ({ roleDefaults }: RoleModelSetLinesParams): ReadonlyA
   ];
 };
 
+type SkippedPinLinesParams = {
+  readonly roleDefaults: OrchestratorInput['roleDefaults'];
+};
+
+const skippedPinLines = ({ roleDefaults }: SkippedPinLinesParams): ReadonlyArray<string> => {
+  const skipped = roleDefaults.filter((entry) => entry.skippedPin !== undefined);
+  if (skipped.length === 0) {
+    return [];
+  }
+  return [
+    '',
+    'Pinned models that cannot run (the role default above runs instead):',
+    ...skipped.map((entry) => `${entry.role}: ${entry.skippedPin ?? ''}`),
+  ];
+};
+
 export const buildOrchestratorUserPrompt = ({
   goal,
   processText,
@@ -136,6 +152,7 @@ export const buildOrchestratorUserPrompt = ({
           .map((entry) => `${entry.role}=${entry.provider}/${entry.model}/${entry.effort}`)
           .join(', '),
     ...roleModelSetLines({ roleDefaults }),
+    ...skippedPinLines({ roleDefaults }),
     '',
     'Completed steps (their summaries are written in English by contract, which says nothing about the language you answer in):',
   );

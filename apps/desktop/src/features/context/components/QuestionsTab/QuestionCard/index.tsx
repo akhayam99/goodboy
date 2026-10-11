@@ -115,7 +115,6 @@ export const QuestionCard = ({
   const articleRef = useRef<HTMLElement>(null);
   const blockingId = useId();
   const isCompact = variant === 'compact';
-  const Title = isCompact ? 'h3' : 'h2';
 
   useEffect(() => {
     if (!autoFocus) {
@@ -210,14 +209,14 @@ export const QuestionCard = ({
       />
       <div className="flex min-w-0 flex-col gap-3">
         <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-2')}>
-          <Title
+          <h2
             className={cn(
               'min-w-0 break-words text-foreground select-text',
               isCompact ? 'text-heading' : 'text-title',
             )}
           >
             {parts.title}
-          </Title>
+          </h2>
           {parts.context.length > 0 && (
             <Markdown
               text={parts.context}

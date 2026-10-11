@@ -11,18 +11,28 @@ import { RotateCcw } from 'lucide-react';
 import { getAppliedTheme, subscribeAppliedTheme } from '../../lib/theme';
 import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
-import { MAX_CACHE_CHUNKS, outputCache } from './outputCache';
-import { Tooltip } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import { terminalFindKey } from './terminalFindKey';
 import { terminalFindOptions } from './terminalFindDecorations';
 import { TerminalFindBar, type TerminalFindController } from './TerminalFindBar';
-import { ICON_SIZE } from '../conceptIcons';
+
+export type TerminalChunk = {
+  readonly bytes: Uint8Array;
+  readonly offset: number | null;
+};
+
+export type TerminalSnapshot = {
+  readonly bytes: Uint8Array;
+  readonly offset: number;
+  readonly exitCode: number | null;
+};
 
 export type TerminalDriver = {
   write(data: string): void;
   resize(cols: number, rows: number): void;
-  onOutput(handler: (bytes: Uint8Array) => void): Promise<() => void>;
+  onOutput(handler: (chunk: TerminalChunk) => void): Promise<() => void>;
   onExit(handler: (exitCode: number) => void): Promise<() => void>;
+  snapshot?(): Promise<TerminalSnapshot | null>;
 };
 
 type Props = {
@@ -33,6 +43,18 @@ type Props = {
   readonly exitMessage?: string;
   readonly onRestart?: () => void;
   readonly onExit?: (exitCode: number) => void;
+};
+
+type WebglParams = { readonly term: Terminal };
+
+const loadWebglRenderer = ({ term }: WebglParams): void => {
+  try {
+    const webgl = new WebglAddon();
+    webgl.onContextLoss(() => webgl.dispose());
+    term.loadAddon(webgl);
+  } catch {
+    return;
+  }
 };
 
 const DEFAULT_EXIT_MESSAGE = '\r\n\x1B[90m[process exited]\x1B[0m';
@@ -103,16 +125,7 @@ export const GenericTerminalPanel = ({
     });
     term.open(container);
 
-    let webgl: WebglAddon | null = null;
-    try {
-      webgl = new WebglAddon();
-    } catch {
-      webgl = null;
-    }
-    if (webgl) {
-      webgl.onContextLoss(() => webgl?.dispose());
-      term.loadAddon(webgl);
-    }
+    loadWebglRenderer({ term });
 
     const fitAndSync = () => {
       if (!container.clientWidth || !container.clientHeight) {
@@ -129,11 +142,6 @@ export const GenericTerminalPanel = ({
     termRef.current = term;
     fitAndSyncRef.current = fitAndSync;
 
-    const cached = outputCache.get(terminalId) ?? [];
-    for (const chunk of cached) {
-      term.write(chunk);
-    }
-
     const dataDisposable = readOnly
       ? null
       : term.onData((data) => {
@@ -144,47 +152,90 @@ export const GenericTerminalPanel = ({
     let unlistenExit: (() => void) | null = null;
     let mounted = true;
     let firstOutputSynced = false;
+    let hasExited = false;
+    let snapshotEnd: number | null = null;
+    let isReplaying = driver.snapshot !== undefined;
+    const pending: TerminalChunk[] = [];
 
-    driver
-      .onOutput((bytes) => {
-        const cache = outputCache.get(terminalId) ?? [];
-        if (cache.length < MAX_CACHE_CHUNKS) {
-          cache.push(bytes);
-          outputCache.set(terminalId, cache);
+    const writeChunk = (chunk: TerminalChunk) => {
+      let bytes = chunk.bytes;
+      if (chunk.offset !== null && snapshotEnd !== null) {
+        const skip = snapshotEnd - chunk.offset;
+        if (skip >= bytes.length) {
+          return;
         }
-        if (mounted) {
-          term.write(bytes);
-          if (!firstOutputSynced) {
-            firstOutputSynced = true;
-            fitAndSync();
-          }
+        if (skip > 0) {
+          bytes = bytes.subarray(skip);
         }
-      })
-      .then((fn) => {
-        if (mounted) {
-          unlistenOutput = fn;
-        } else {
-          fn();
-        }
-      });
+      }
+      term.write(bytes);
+      if (!firstOutputSynced) {
+        firstOutputSynced = true;
+        fitAndSync();
+      }
+    };
 
-    driver
-      .onExit((exitCode) => {
+    const finish = (exitCode: number) => {
+      if (hasExited) {
+        return;
+      }
+      hasExited = true;
+      if (exitMessage) {
+        term.writeln(exitMessage);
+      }
+      onExit?.(exitCode);
+    };
+
+    const start = async () => {
+      const stopOutput = await driver.onOutput((chunk) => {
         if (!mounted) {
           return;
         }
-        if (exitMessage) {
-          term.writeln(exitMessage);
+        if (isReplaying) {
+          pending.push(chunk);
+          return;
         }
-        onExit?.(exitCode);
-      })
-      .then((fn) => {
+        writeChunk(chunk);
+      });
+      if (!mounted) {
+        stopOutput();
+        return;
+      }
+      unlistenOutput = stopOutput;
+      const stopExit = await driver.onExit((exitCode) => {
         if (mounted) {
-          unlistenExit = fn;
-        } else {
-          fn();
+          finish(exitCode);
         }
       });
+      if (!mounted) {
+        stopExit();
+        return;
+      }
+      unlistenExit = stopExit;
+      if (driver.snapshot === undefined) {
+        return;
+      }
+      const snapshot = await driver.snapshot();
+      if (!mounted) {
+        return;
+      }
+      if (snapshot !== null) {
+        snapshotEnd = snapshot.offset + snapshot.bytes.length;
+        if (snapshot.bytes.length > 0) {
+          term.write(snapshot.bytes);
+          firstOutputSynced = true;
+          fitAndSync();
+        }
+      }
+      isReplaying = false;
+      for (const chunk of pending.splice(0)) {
+        writeChunk(chunk);
+      }
+      if (snapshot !== null && snapshot.exitCode !== null) {
+        finish(snapshot.exitCode);
+      }
+    };
+    void start();
 
     const ro = new ResizeObserver(() => {
       fitAndSync();
@@ -275,16 +326,13 @@ export const GenericTerminalPanel = ({
         <TerminalFindBar controller={findController} step={findStep} onClose={closeFind} />
       )}
       {onRestart && findStep === null ? (
-        <Tooltip content="Restart shell">
-          <button
-            type="button"
-            onClick={onRestart}
-            aria-label="Restart shell"
-            className="absolute right-2 top-2 z-10 rounded-sm bg-background p-1 text-muted-foreground backdrop-blur hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-          >
-            <RotateCcw size={ICON_SIZE.row} aria-hidden />
-          </button>
-        </Tooltip>
+        <IconButton
+          icon={RotateCcw}
+          label="Restart shell"
+          size="xs"
+          onClick={onRestart}
+          className="absolute right-2 top-2 z-10 bg-background backdrop-blur"
+        />
       ) : null}
     </div>
   );

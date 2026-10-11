@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import type { SecretKind, SecurityFinding, SecurityFindingSubjectKind } from '@goodboy/types';
-import { Button, InlineConfirm, Notice, formatError } from '@goodboy/ui';
+import { Button, ConfirmPopover, Notice, formatError } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -106,22 +106,22 @@ export const SecurityFindingRow = ({
       }
       detail={`${SECRET_KIND_LABEL[finding.secretKind]} · found ${formatSpan({ from: finding.firstSeenAt, to: now })} ago`}
       actions={
-        isConfirming ? (
-          <InlineConfirm
-            role="alert"
-            icon={<ShieldCheck size={ICON_SIZE.control} aria-hidden />}
-            title="Goodboy stops flagging this exact value."
-            confirmLabel="Not a secret"
-            isBusy={isBusy}
-            onConfirm={() => void confirm()}
-            onCancel={() => setIsConfirming(false)}
-            surface="plain"
-          />
-        ) : (
-          <Button variant="ghost" size="sm" onClick={() => setIsConfirming(true)}>
-            Not a secret
-          </Button>
-        )
+        <ConfirmPopover
+          role="alert"
+          icon={<ShieldCheck size={ICON_SIZE.control} aria-hidden />}
+          title="Stop flagging this value?"
+          description="Goodboy stops flagging this exact value."
+          confirmLabel="Not a secret"
+          isBusy={isBusy}
+          isOpen={isConfirming}
+          onConfirm={confirm}
+          onCancel={() => setIsConfirming(false)}
+          trigger={() => (
+            <Button variant="ghost" size="sm" onClick={() => setIsConfirming(true)}>
+              Not a secret
+            </Button>
+          )}
+        />
       }
     >
       {error !== null && (

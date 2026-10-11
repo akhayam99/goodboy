@@ -2,16 +2,21 @@ import { formatError } from '@goodboy/ui';
 import { pushWithLease, restoreHistoryBackup } from '../../../features/history/historyEngine';
 import { worktreeStatus } from '../../../features/worktree/worktree';
 import { assertCleanTree } from './assertCleanTree';
+import { identityOf, identityChange } from './historyIdentity';
 import { historyTargetOf } from './historyTargetOf';
 import { remoteForPush } from './remoteForPush';
+import { shouldHandleLateOutcome } from './shouldHandleLateOutcome';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
-import type { GetFn, HistoryMountInput, HistoryStop, SetFn } from './types';
+import type { GetFn, HistoryMountInput, HistoryIdentity, HistoryStop, SetFn } from './types';
 
 export type RestoreHistoryInput = HistoryMountInput & {
   readonly backupRef: string;
   readonly shouldPush: boolean;
+  readonly expectedHead?: string;
+  readonly shouldStash?: boolean;
+  readonly identity?: HistoryIdentity;
 };
 
 export type RestoreHistoryOutcome = 'restored' | 'pushed' | 'stopped';
@@ -22,9 +27,22 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
     mountId,
     backupRef,
     shouldPush,
+    shouldStash,
+    identity,
+    expectedHead,
   }: RestoreHistoryInput): Promise<RestoreHistoryOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
-    await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
+    const sourceRun = get().historyRuns[mountId];
+    await assertCleanTree({
+      worktreePath: target.worktreePath,
+      baseBranch: target.baseBranch,
+      canCarryDirty: true,
+    });
+    const capturedIdentity = identity ?? identityOf({ target });
+    const changed = identityChange({ get, sessionId, mountId, identity: capturedIdentity });
+    if (changed !== null) {
+      throw new Error(changed);
+    }
     const origin = get().historyRuns[mountId]?.origin ?? 'plan';
     const stopWith = async (stop: HistoryStop): Promise<RestoreHistoryOutcome> => {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop } });
@@ -43,6 +61,14 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
         sha: null,
       });
     }
+    if (expectedHead !== undefined && status.head !== expectedHead) {
+      return stopWith({
+        reason: 'head-moved',
+        message: 'The branch moved while you were choosing. Nothing was changed.',
+        files: [],
+        sha: status.head,
+      });
+    }
     const run = get().historyRuns[mountId];
     const isPushed = run?.phase === 'pushed';
     const remote = await remoteForPush({
@@ -52,14 +78,79 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       incorporatedSince: isPushed ? run.remoteSha : null,
       shouldPush,
     });
+    if (
+      get().historyRuns[mountId] !== sourceRun ||
+      identityChange({ get, sessionId, mountId, identity: capturedIdentity }) !== null
+    ) {
+      return 'stopped';
+    }
     const remoteSha = remote.sha;
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'applying', stop: null } });
+    const requestRun = get().historyRuns[mountId];
     const moved = await restoreHistoryBackup({
       worktreePath: target.worktreePath,
       branch: target.branch,
       expectedHead: status.head,
       backupRef,
+      ...(shouldStash === true ? { shouldStash: true } : {}),
     }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
+    const isLate =
+      get().historyRuns[mountId] !== requestRun ||
+      identityChange({ get, sessionId, mountId, identity: capturedIdentity }) !== null;
+    if (
+      isLate &&
+      !shouldHandleLateOutcome({
+        outcome: moved,
+        isRunDismissed: get().historyRuns[mountId] === undefined,
+      })
+    ) {
+      return 'stopped';
+    }
+    if (moved.kind === 'needs-stash') {
+      setHistoryRun({
+        set,
+        sessionId,
+        mountId,
+        origin,
+        patch: {
+          phase: 'choosing',
+          pendingMove: {
+            kind: 'restore',
+            input: {
+              sessionId,
+              mountId,
+              backupRef,
+              shouldPush,
+              expectedHead: status.head,
+              identity: capturedIdentity,
+            },
+          },
+          dirtyChoice: { files: moved.files, dirtyCount: moved.dirtyCount },
+        },
+      });
+      return 'stopped';
+    }
+    if (moved.kind === 'set-aside') {
+      setHistoryRun({
+        set,
+        sessionId,
+        mountId,
+        origin,
+        patch: {
+          phase: 'set-aside',
+          savedStash: {
+            sha: moved.stash,
+            identity: capturedIdentity,
+            expectedHead: status.head,
+            files: [],
+          },
+        },
+      });
+      return 'stopped';
+    }
+    if (moved.kind === 'files-restored') {
+      return 'stopped';
+    }
     if (moved.kind === 'failed') {
       return stopWith({ reason: 'failed', message: moved.message, files: [], sha: null });
     }
@@ -103,7 +194,19 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       mountId,
       origin,
       patch: {
-        phase: 'restored',
+        phase: moved.kind === 'restore-conflict' ? 'restore-conflict' : 'restored',
+        movedHead: moved.head,
+        savedStash:
+          moved.kind === 'restore-conflict'
+            ? {
+                sha: moved.stash,
+                identity: capturedIdentity,
+                expectedHead: moved.head,
+                files: moved.files,
+              }
+            : undefined,
+        pendingMove: undefined,
+        dirtyChoice: undefined,
         backupRef: moved.backupRef,
         result: null,
         applied: null,
@@ -118,7 +221,22 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       planId: null,
       extra: { backupRef },
     });
+    if (moved.kind === 'restore-conflict') {
+      return 'stopped';
+    }
+    if (isLate) {
+      return 'restored';
+    }
     await get().loadHistoryDraft({ sessionId, mountId });
+    if (moved.cleanupError !== undefined) {
+      await get().reportError({
+        title: 'Your files are back, but stash cleanup needs attention',
+        error: moved.cleanupError,
+        severity: 'warning',
+        sessionId,
+      });
+      return 'restored';
+    }
     if (!shouldPush || !remote.hasUpstream) {
       return 'restored';
     }

@@ -23,7 +23,7 @@ const paneWidthOf = ({
   const columnWidth = Math.round(windowPx / zoom) - sidebarPx;
   const mode = drawerModeOf({
     isOpen: isDrawerOpen,
-    sizing: 'default',
+    sizing: 'side',
     columnWidth,
     drawerWidthPx: RIGHT_DRAWER_DEFAULT,
   });

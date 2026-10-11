@@ -1,8 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
-import { autoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { selectTaskModel } from '../../store/slices/models/selectTaskModel';
 import { sessionById } from '../../store/slices/sessions/sessionIndex';
 import { buildRecheckAgentArgs } from '../chat/spawn-from-comment';
 import { recheckParentOf } from './recheckParentOf';
@@ -21,17 +20,8 @@ type RecheckModelParams = {
   readonly sessionId: SessionId;
 };
 
-export const recheckModelOf = ({ state, sessionId }: RecheckModelParams) => {
-  const settings = selectResolvedSettings({ state, sessionId });
-  return resolveLimitedTaskModel({
-    limitContext: autoLimitContext({ state }),
-    task: 'recheck',
-    preferences: settings?.taskModels,
-    workspaceDefaultProviderId: settings?.defaultProviderOverride,
-    sessionDefaultProviderId:
-      sessionById(state.sessions, sessionId)?.providerPreference.defaultProvider ?? 'anthropic',
-  });
-};
+export const recheckModelOf = ({ state, sessionId }: RecheckModelParams) =>
+  selectTaskModel({ state, sessionId, task: 'recheck' });
 
 export const startRecheck = async ({
   getState,

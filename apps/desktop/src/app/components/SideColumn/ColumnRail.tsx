@@ -5,7 +5,6 @@ import { useAppStore } from '../../../store';
 import { selectSessionDraft } from '../../../store/slices/sessionDraft/selectSessionDraft';
 import { hasSessionDraftContent } from '../../../store/slices/sessionDraft/hasSessionDraftContent';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import type { ShellColumnScope } from '../../shellArrangement';
 import { GoodboyChip } from '../GoodboyChip';
@@ -58,7 +57,7 @@ export const ColumnRail = ({
             id="new"
             icon={Plus}
             label={isDraftWaiting ? DRAFT_LABEL : 'New session'}
-            shortcut={shortcutGlyphs('session.new')}
+            shortcut="session.new"
             isCurrent={place === 'new'}
             className={place === 'new' ? undefined : cn(PRIMARY.bg, PRIMARY.icon, PRIMARY.hoverBg)}
             {...(isDraftWaiting && {
@@ -80,7 +79,7 @@ export const ColumnRail = ({
                 icon={door.icon}
                 label={door.label}
                 {...(door.shortcutId !== undefined && {
-                  shortcut: shortcutGlyphs(door.shortcutId),
+                  shortcut: door.shortcutId,
                 })}
                 isCurrent={place === door.id}
                 {...(door.id === 'chat' && {
@@ -108,7 +107,7 @@ export const ColumnRail = ({
         id="settings"
         icon={CONCEPT_ICONS.settings}
         label="Settings"
-        shortcut={shortcutGlyphs('settings.open')}
+        shortcut="settings.open"
         isCurrent={place === 'settings'}
         onSelect={actions.openSettings}
       />

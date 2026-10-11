@@ -160,7 +160,7 @@ describe('CrumbMenu', () => {
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the menu on a segment with a single sibling', () => {
+  it('keeps the menu on a segment with a single sibling and an action', () => {
     renderTrail({
       ...stepMenu(vi.fn()),
       groups: [
@@ -173,6 +173,62 @@ describe('CrumbMenu', () => {
     });
     openLast();
     expect(screen.getAllByRole('menuitemradio')).toHaveLength(1);
+    expect(screen.getAllByRole('menuitem')).toHaveLength(1);
+  });
+
+  it('draws a plain crumb, not a menu of one, when the only sibling is the segment itself', () => {
+    renderTrail({
+      ...stepMenu(vi.fn()),
+      actions: [],
+      groups: [
+        {
+          id: 'one',
+          label: null,
+          rows: [row({ id: 'only', label: 'Implement the fix', isCurrent: true })],
+        },
+      ],
+    });
+
+    expect(screen.queryByRole('button', { name: /Implement the fix/ })).toBeNull();
+    expect(document.querySelector('[aria-haspopup="menu"]')).toBeNull();
+    expect(screen.getByText('Implement the fix')).toBeDefined();
+  });
+
+  it('draws a plain crumb when the menu holds a single action and no siblings', () => {
+    renderTrail({ ...stepMenu(vi.fn()), groups: [] });
+
+    expect(document.querySelector('[aria-haspopup="menu"]')).toBeNull();
+    expect(screen.getByText('Implement the fix')).toBeDefined();
+  });
+
+  it('keeps the switch chevron of an ancestor with two siblings and drops it with one', () => {
+    const ancestor = (rows: ReadonlyArray<CrumbMenuRow>) => (
+      <Trail
+        segments={[
+          {
+            id: 'run',
+            label: 'Ship a fix',
+            icon: Circle,
+            menu: {
+              ...pageLikeMenu(),
+              triggerLabel: 'Switch run',
+              groups: [{ id: 'g', label: null, rows }],
+            },
+          },
+          { id: 'step', label: 'Implement the fix', icon: Circle, menu: null },
+        ]}
+      />
+    );
+    const { rerender } = render(
+      ancestor([
+        row({ id: 'a', label: 'Ship a fix', isCurrent: true }),
+        row({ id: 'b', label: 'Other' }),
+      ]),
+    );
+    expect(screen.getByRole('button', { name: 'Switch run: Ship a fix' })).toBeDefined();
+
+    rerender(ancestor([row({ id: 'a', label: 'Ship a fix', isCurrent: true })]));
+    expect(screen.queryByRole('button', { name: 'Switch run: Ship a fix' })).toBeNull();
   });
 
   it('filters from nine rows up', () => {

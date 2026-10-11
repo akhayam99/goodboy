@@ -52,6 +52,7 @@ vi.mock('../../../context/openQuestionsGate', () => ({
   workflowRunOpenQuestions: () => (gate.hasOpenQuestions ? [{ id: 'q-1', status: 'open' }] : []),
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { WorkflowAdvance } from './index';
 import { WorkflowGateError } from '../../../../store/slices/workflows/workflowActivationGate';
 
@@ -141,7 +142,7 @@ describe('WorkflowAdvance', () => {
     renderAdvance();
 
     expect(screen.getByTestId('workflow-next-step-blocked')).toBeDefined();
-    expect(screen.getByTestId('workflow-next-step-cta').getAttribute('title')).toMatch(
+    expect(tooltipTextOf({ element: screen.getByTestId('workflow-next-step-cta') })).toMatch(
       /step summary is still being written/i,
     );
   });

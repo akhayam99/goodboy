@@ -19,6 +19,7 @@ import {
   settingsColumn,
   useAppStore,
   visible,
+  getSection,
 } from './harness';
 
 const SHIP_ID = 'flow-workflow-ship-a-fix' as WorkflowId;
@@ -65,12 +66,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('commits'),
   },
   {
-    name: 'the Commits tab draws the branch and its planned changes',
+    name: 'the Commits tab draws the branch and the keys hint, with no plan at rest',
     covers: ['openRewriteHistory'],
     open: openDiffHistory,
     lands: both(
       () => visible('list', 'Commits'),
-      () => heading('Planned changes'),
+      () => visible('button', 'Keys'),
     ),
   },
   {
@@ -143,14 +144,20 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette next step: Open a pull request',
-    covers: ['createPrForSession', 'palette:Open a pull request for ledger-core'],
+    covers: ['navigate', 'palette:Open a pull request for ledger-core'],
     seed: 'pr',
     open: async () => {
       opened = vi.fn(async () => undefined);
       useAppStore.setState({ createPrForSession: opened } as never);
       await openPalette(/^Open a pull request for ledger-core/);
     },
-    lands: () => waitFor(() => expect(opened).toHaveBeenCalledTimes(1), WAIT),
+    lands: async () => {
+      await waitFor(
+        () => expect(getSection(/^Overview/).getAttribute('aria-current')).toBe('page'),
+        WAIT,
+      );
+      expect(opened).not.toHaveBeenCalled();
+    },
   },
   {
     name: 'palette next step: Review the changes',
@@ -214,7 +221,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Tasks$/),
     lands: both(
       () => band('Tasks'),
-      () => heading('All items'),
+      () => heading('Tasks'),
     ),
   },
   {
@@ -271,7 +278,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => openPalette(/^Notifications/),
     lands: both(
       () => band('Notifications'),
-      () => heading('All notifications'),
+      () => heading('Notifications'),
     ),
   },
   {

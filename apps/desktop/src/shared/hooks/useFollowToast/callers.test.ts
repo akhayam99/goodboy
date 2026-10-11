@@ -8,7 +8,6 @@ const CALLERS: ReadonlyArray<string> = [
   'features/chat/components/ChatInput/hooks/useComposerSuggestions/index.ts',
   'features/chat/components/HandoffChip/index.tsx',
   'features/explore/components/ExplorePane/ExploreSpawnPopover.tsx',
-  'features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx',
   'features/session/components/AgentDetailPane/AgentFollowUps.tsx',
   'features/workflows/components/WorkflowFollowToastBridge/index.tsx',
   'features/integrations/components/LaunchSessionPanel/index.tsx',

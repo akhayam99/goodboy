@@ -23,7 +23,10 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { agentPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import { holdPaletteScope } from '../../heldPaletteScope';
-import type { CommitScope } from '../../types';
+import type { HeldScope } from '../../types';
+
+type CommitScope = Extract<HeldScope, { kind: 'commit' }>;
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { PaletteOverlay } from './index';
 
 const elsewhere = vi.hoisted(() => ({ refs: [] as ReadonlyArray<SessionTitleRef> }));
@@ -78,13 +81,20 @@ const selectedName = () =>
     .find((option) => option.getAttribute('aria-selected') === 'true')
     ?.getAttribute('aria-label');
 
+const scopeChipOf = ({ label }: { readonly label: string }): HTMLElement => {
+  const chip = screen.getAllByText(label)[0]?.parentElement ?? null;
+  if (chip === null) {
+    throw new Error('the scope chip has no root');
+  }
+  return chip;
+};
+
 describe('PaletteOverlay, the commands mode', () => {
   it('names the session in a scope chip and lists its verbs first', () => {
     openIn(PAYOUT);
 
-    expect(screen.getByTitle('Backspace removes the scope').textContent).toBe(
-      'Speed up the payout export for large merchants',
-    );
+    const chip = scopeChipOf({ label: 'Speed up the payout export for large merchants' });
+    expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this session')).toBeDefined();
     expect(optionNames()[0]).toBe('Open Files');
     expect(optionNames()[0]).not.toMatch(/^Message /);
@@ -124,7 +134,7 @@ describe('PaletteOverlay, the commands mode', () => {
 
     fireEvent.keyDown(input, { key: 'Backspace' });
 
-    expect(screen.queryByTitle('Backspace removes the scope')).toBeNull();
+    expect(screen.queryByText('Speed up the payout export for large merchants')).toBeNull();
     expect(screen.queryByText('For this session')).toBeNull();
   });
 
@@ -450,9 +460,8 @@ describe('PaletteOverlay on a focused commit row', () => {
     const release = focusCommitRow(commitScope({}));
     openIn(PAYOUT);
 
-    expect(screen.getByTitle('Backspace removes the scope').textContent).toBe(
-      'Keep trailing-comma rows in the ledger-core importer',
-    );
+    const chip = scopeChipOf({ label: 'Keep trailing-comma rows in the ledger-core importer' });
+    expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this commit')).toBeDefined();
     expect(optionNames().slice(0, 8)).toEqual([
       'Rename',
@@ -614,5 +623,60 @@ describe('PaletteOverlay, Ask in Chat', () => {
     expect(optionNames()).not.toContain('Ask in Chat');
     type(input, '>refresh');
     expect(optionNames()).not.toContain('Ask in Chat');
+  });
+});
+
+describe('PaletteOverlay on a focused issue', () => {
+  const issueOf = () => {
+    const issue = Object.values(useAppStore.getState().sessionExternalTasks)
+      .flat()
+      .find((task) => task.identifier === 'HBL-412');
+    if (issue === undefined) {
+      throw new Error('Expected the HBL-412 issue in the board scene');
+    }
+    return issue;
+  };
+
+  const focusIssue = () => {
+    const { sessionId, provider, externalId } = issueOf();
+    act(() => {
+      useAppStore.setState((state) => ({
+        focusedExternalTask: {
+          ...state.focusedExternalTask,
+          [sessionId]: { provider, externalId, projectId: null },
+        },
+      }));
+    });
+  };
+
+  it('lists Move to with the open branches and moves the issue to the one picked', async () => {
+    const moveSessionExternalTask = vi.fn(async () => undefined);
+    useAppStore.setState({ moveSessionExternalTask });
+    const { input } = openIn(issueOf().sessionId);
+    focusIssue();
+    type(input, 'move to');
+
+    expect(optionNames()).toContain('Move to');
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(optionNames()).toEqual([
+      'payments-api · hl/fix-duplicate-credit',
+      'ledger-core · hl/reconcile-settlement-export',
+    ]);
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await vi.waitFor(() => expect(moveSessionExternalTask).toHaveBeenCalledOnce());
+    expect(moveSessionExternalTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: issueOf().sessionId,
+        to: expect.objectContaining({ kind: 'branch', branch: 'hl/fix-duplicate-credit' }),
+      }),
+    );
+  });
+
+  it('offers no Move to until an issue is focused', () => {
+    const { input } = openIn(issueOf().sessionId);
+    type(input, 'move to');
+
+    expect(screen.queryByRole('option', { name: 'Move to' })).toBeNull();
   });
 });

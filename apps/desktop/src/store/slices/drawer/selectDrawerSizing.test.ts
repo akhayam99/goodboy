@@ -1,11 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
+import type { AgentId, ArtifactId, MountId, SessionId } from '@goodboy/types';
 import {
   DRAWER_INSET,
   LEFT_SIDEBAR_DEFAULT,
   LEFT_SIDEBAR_MAX,
+  READER_DRAWER_DEFAULT,
+  READER_DRAWER_MAX,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   canDrawerPush,
@@ -18,12 +20,25 @@ import type { AppState } from '../../types';
 import { selectDrawerSizing } from './selectDrawerSizing';
 import type { DrawerRequest } from './state';
 
+const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION_ID = 'session-1' as SessionId;
 const WINDOWS = [1280, 1440] as const;
 const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
-const SAVED_WIDTHS = [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX] as const;
+const SAVED_WIDTHS: Readonly<Record<DrawerSizing, ReadonlyArray<number>>> = {
+  side: [RIGHT_DRAWER_DEFAULT, RIGHT_DRAWER_MAX],
+  reader: [READER_DRAWER_DEFAULT, READER_DRAWER_MAX],
+};
 
 const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
+  {
+    kind: 'check-analysis',
+    sessionId: SESSION_ID,
+    payload: {
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
+    },
+  },
   { kind: 'context', sessionId: SESSION_ID, payload: { tab: 'goal', view: 'current' } },
   {
     kind: 'explore-file',
@@ -65,20 +80,17 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   },
 ];
 
-const sizingsOf = (drawer: DrawerRequest): ReadonlyArray<DrawerSizing> =>
-  [false, true].map((isExpanded) =>
-    selectDrawerSizing({
-      drawer,
-      currentSessionId: SESSION_ID,
-      documentDrawerExpanded: { [SESSION_ID]: isExpanded },
-    } satisfies Pick<AppState, 'drawer' | 'currentSessionId' | 'documentDrawerExpanded'>),
-  );
+const sizingOf = (drawer: DrawerRequest): DrawerSizing =>
+  selectDrawerSizing({
+    drawer,
+    currentSessionId: SESSION_ID,
+  } satisfies Pick<AppState, 'drawer' | 'currentSessionId'>);
 
 const CASES = EVERY_KIND.flatMap((drawer) =>
-  [...new Set(sizingsOf(drawer))].flatMap((sizing) =>
+  [sizingOf(drawer)].flatMap((sizing) =>
     WINDOWS.flatMap((windowPx) =>
       SIDEBARS.flatMap((sidebarPx) =>
-        SAVED_WIDTHS.map((savedPx) => ({
+        SAVED_WIDTHS[sizing].map((savedPx) => ({
           kind: drawer.kind,
           sizing,
           windowPx,
@@ -102,6 +114,53 @@ const slideOf = (keyframes: string): number => {
   return Math.abs(Number(slide[1]));
 };
 
+const SIZING_BY_KIND: ReadonlyArray<readonly [DrawerRequest['kind'], DrawerSizing]> = [
+  ['check-analysis', 'side'],
+  ['context', 'side'],
+  ['explore-file', 'reader'],
+  ['artifact', 'side'],
+  ['artifact-document', 'reader'],
+  ['plan-part', 'side'],
+  ['scriptRun', 'side'],
+  ['conversation', 'side'],
+  ['ask', 'side'],
+  ['transcript', 'side'],
+  ['file-diff', 'reader'],
+];
+
+describe('the tier of every drawer', () => {
+  it.each(SIZING_BY_KIND)('opens %s in the %s tier', (kind, sizing) => {
+    const drawer = EVERY_KIND.find((candidate) => candidate.kind === kind);
+    if (drawer === undefined) {
+      throw new Error(`${kind} is listed`);
+    }
+    expect(sizingOf(drawer)).toBe(sizing);
+  });
+
+  it('lists a tier for every drawer kind', () => {
+    expect(SIZING_BY_KIND.map(([kind]) => kind).sort()).toEqual(
+      EVERY_KIND.map((drawer) => drawer.kind).sort(),
+    );
+  });
+
+  it('keeps a plan in the reader tier, with no way to expand it over the page', () => {
+    const plan = EVERY_KIND.find((drawer) => drawer.kind === 'artifact-document');
+    if (plan === undefined) {
+      throw new Error('the plan request is listed');
+    }
+    expect(sizingOf(plan)).toBe('reader');
+  });
+
+  it('keeps a closed drawer in the side tier', () => {
+    expect(
+      selectDrawerSizing({
+        drawer: null,
+        currentSessionId: SESSION_ID,
+      } satisfies Pick<AppState, 'drawer' | 'currentSessionId'>),
+    ).toBe('side');
+  });
+});
+
 describe('every drawer fits inside its aside at 1280 and 1440', () => {
   it('opens the transcript at the same sizing as Ask', () => {
     const ask = EVERY_KIND.find((drawer) => drawer.kind === 'ask');
@@ -109,8 +168,8 @@ describe('every drawer fits inside its aside at 1280 and 1440', () => {
     if (ask === undefined || transcript === undefined) {
       throw new Error('ask and transcript requests are listed');
     }
-    expect(sizingsOf(transcript)).toEqual(sizingsOf(ask));
-    expect(sizingsOf(transcript)).toEqual(['default', 'default']);
+    expect(sizingOf(transcript)).toBe(sizingOf(ask));
+    expect(sizingOf(transcript)).toBe('side');
   });
 
   it('slides a card in by at most its 8px inset, so it never passes the window edge', () => {

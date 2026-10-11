@@ -1,3 +1,4 @@
+import { isUserOnBranchPage } from './isUserOnBranchPage';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import type { GetFn, HistoryRunOrigin, HistoryStop, HistoryTarget, SetFn } from './types';
 
@@ -39,6 +40,9 @@ export const reportHistoryStop = async ({
       ...(agentId !== null && { agentId }),
     },
   });
+  if (isUserOnBranchPage({ state: get(), sessionId: target.sessionId })) {
+    return;
+  }
   await get().reportError({
     title: historyStopTitle({ origin, branch: target.branch }),
     error: stop.message,

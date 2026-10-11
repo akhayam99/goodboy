@@ -1,6 +1,7 @@
 # Data & types
 
-> **Read this when** declaring a type or data shape. **Not for** naming or
+> **Read this when** declaring a type or data shape, or reading input you do not
+> control. **Not for** naming or
 > where the type lives (`AGENTS.md` → Naming, `docs/file-system.md`).
 
 This page covers how we declare data shapes. For type naming and placement, see [AGENTS.md](../../AGENTS.md) → Naming and [file-system.md](../file-system.md) → Shared types.
@@ -51,3 +52,14 @@ type Fetch =
 ## Branded IDs
 
 String IDs are branded, so a `WorkspaceId` is not assignable to a `SessionId`. The brand definitions and helpers live in `packages/types`. Import them. Do not redeclare a brand locally.
+
+## Untrusted input
+
+Text from a user, a provider, a host, a file or a branch name is hostile until a check says otherwise.
+
+- No adjacent unbounded quantifiers on input (`\s*\s*`, `\w+\w*`, `(a+)+`). Read by index, or split the match into two steps.
+- No dispatch on a user key: never `handlers[input]()`. Look the key up in an explicit `Map` or check it with `Object.hasOwn` first.
+- No regex sanitizing: never clean a string with `replace` and send it on to a path, a command or SQL. Accept what an allow list names, reject the rest.
+- Cap the length at the boundary, before any parse, and return `null` or a typed error for what does not fit.
+- Slugs, branch names, CLI versions and commit links go through the shared helper. Do not write a second one.
+- Every exported `parse`, `slug`, `sanitize`, `normalize` or `strip` helper in `packages/core/src` must stay under 200ms on 100k hostile characters (`hostile-input.perf.test.ts`).

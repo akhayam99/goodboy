@@ -1,4 +1,4 @@
-import { cn, EmptyLine, EmptyState, Eyebrow, ScrollFade, tintClasses } from '@goodboy/ui';
+import { cn, EmptyLine, EmptyState, Eyebrow, ScrollFade, tintClasses, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
 import {
@@ -82,19 +82,20 @@ export const StageColumn = ({
       )}
     >
       <div className="flex h-6 shrink-0 items-center">
-        <span
-          className="flex items-center gap-2"
-          title={stateDescription({ presentation: view.presentation })}
-        >
-          <Eyebrow
-            label={view.presentation.label}
-            muted={isEmpty}
-            className={cn(!isEmpty && tintClasses(view.presentation.tone).text)}
-          />
-          {!isEmpty && (
-            <span className="text-meta tabular-nums text-faint-foreground">{sessions.length}</span>
-          )}
-        </span>
+        <Tooltip content={stateDescription({ presentation: view.presentation })}>
+          <span className="flex items-center gap-2">
+            <Eyebrow
+              label={view.presentation.label}
+              muted={isEmpty}
+              className={cn(!isEmpty && tintClasses(view.presentation.tone).text)}
+            />
+            {!isEmpty && (
+              <span className="text-meta tabular-nums text-faint-foreground">
+                {sessions.length}
+              </span>
+            )}
+          </span>
+        </Tooltip>
       </div>
 
       {isLoading && <EmptyLine>Loading</EmptyLine>}

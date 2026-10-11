@@ -1,13 +1,7 @@
-import { ArrowRight, Check } from 'lucide-react';
-import { Button, HeaderActions, HeaderBand, Notice, Tooltip, cn } from '@goodboy/ui';
+import { ArrowRight } from 'lucide-react';
+import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
 import { PULL_REQUEST_NOUNS } from '@goodboy/core';
-import type {
-  PrCheckRun,
-  PrDetail,
-  PullRequestHost,
-  PullRequestState,
-  SessionId,
-} from '@goodboy/types';
+import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
@@ -16,10 +10,12 @@ import { PullRequestTitle } from '../PullRequestTab/PullRequestTitle';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
-import { checksWordOf } from '../../../integrations/github/checksRollup';
 import type { BranchControls } from '../../hooks/useBranchControls';
-import { checksSummaryOf, type ChecksSummary } from '../../checksSummary';
-import { pullRequestWord } from '../../pullRequestWord';
+import type { BranchPrimary } from '../../branchPrimary';
+import { queueLineOf } from '../../queueLineOf';
+import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
+import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
+import { BranchStateChip } from './BranchStateChip';
 import { BranchOverflow } from './BranchOverflow';
 import { BranchSwitcher } from './BranchSwitcher';
 
@@ -28,7 +24,6 @@ type Props = {
   readonly host?: PullRequestHost;
   readonly mountPath: string | null;
   readonly pr: PullRequestState | null;
-  readonly detail: PrDetail | null;
   readonly projectName: string | null;
   readonly branch: string | null;
   readonly baseBranch: string | null;
@@ -40,51 +35,26 @@ type Props = {
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
   readonly createdAt: string | null;
+  readonly commitCount: number | null;
   readonly onMutated: () => void;
 };
 
-const NO_CHECKS: ReadonlyArray<PrCheckRun> = [];
-const CHECKS_UNKNOWN: ChecksSummary = { tone: 'muted', label: 'Checks unknown' };
-
-type SummaryParams = {
-  readonly pr: PullRequestState | null;
-  readonly detail: PrDetail | null;
-};
-
-const summaryOf = ({ pr, detail }: SummaryParams): ChecksSummary | null => {
-  if (pr === null) {
-    return null;
-  }
-  if (checksWordOf({ pr, detail }) === 'unknown') {
-    return CHECKS_UNKNOWN;
-  }
-  return checksSummaryOf({ rollup: pr.checks, checks: detail?.checks ?? NO_CHECKS });
-};
-
-const INTENT_WORD: Readonly<Record<PullRequestState['state'], string>> = {
-  draft: 'wants to merge',
-  open: 'wants to merge',
-  approved: 'wants to merge',
-  queued: 'wants to merge',
-  merged: 'merged',
-  closed: 'wanted to merge',
+type ButtonParams = {
+  readonly action: BranchPrimary;
+  readonly slot: 'primary' | 'secondary';
+  readonly variant: 'primary' | 'secondary';
 };
 
 const capitalized = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
-const stateWord = (pr: PullRequestState | null, host: PullRequestHost): string => {
-  if (pr === null) {
-    return `No ${PULL_REQUEST_NOUNS[host].long}`;
-  }
-  return pullRequestWord({ state: pr.state, isDraft: pr.isDraft });
-};
+const stateOf = (pr: PullRequestState | null): PullRequestPresentationState =>
+  pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });
 
 export const BranchHeader = ({
   sessionId,
   host = 'github',
   mountPath,
   pr,
-  detail,
   projectName,
   branch,
   baseBranch,
@@ -96,9 +66,10 @@ export const BranchHeader = ({
   isActive = true,
   canEditTitle,
   createdAt,
+  commitCount,
   onMutated,
 }: Props) => {
-  const { primary } = controls;
+  const { primary, secondary } = controls;
   const titleEdit = usePullRequestTitleEdit({
     sessionId,
     pr,
@@ -108,7 +79,6 @@ export const BranchHeader = ({
   });
   const now = useNow(60_000);
   const age = createdAt === null ? '' : formatAge({ from: createdAt, now });
-  const summary = summaryOf({ pr, detail });
   const head = pr?.headBranch ?? branch;
   const base = pr?.baseBranch ?? baseBranch;
   const abort =
@@ -116,22 +86,43 @@ export const BranchHeader = ({
   const isQuiet = primary === null || primary.isBusy || isPushBusy;
   const blockedReason = isQuiet ? null : primary.blockedReason;
   const note = isQuiet ? null : primary.note;
-  const primaryButton =
-    primary === null ? null : (
+  const queueLine = pr === null ? null : queueLineOf({ pr });
+  const numberLabel =
+    pr === null
+      ? null
+      : host === 'github'
+        ? `#${pr.number}`
+        : `${PULL_REQUEST_NOUNS[host].short} ${PULL_REQUEST_NOUNS[host].numberPrefix}${pr.number}`;
+
+  const buttonOf = ({ action, slot, variant }: ButtonParams) => {
+    const button = (
       <Button
         size="sm"
-        variant={primary.isSecondary || isPrimaryYielding ? 'secondary' : 'primary'}
-        data-branch-primary={primary.actionId}
-        disabled={primary.blockedReason !== null}
-        isBusy={primary.isBusy || isPushBusy}
-        onClick={controls.press}
+        variant={variant}
+        data-branch-primary={slot === 'primary' ? action.actionId : undefined}
+        data-branch-secondary={slot === 'secondary' ? action.actionId : undefined}
+        disabled={action.blockedReason !== null}
+        isBusy={action.isBusy || isPushBusy}
+        onClick={() => controls.press(action)}
       >
-        <primary.icon size={ICON_SIZE.control} aria-hidden />
-        {primary.label}
+        <action.icon size={ICON_SIZE.control} aria-hidden />
+        {action.label}
       </Button>
     );
+    return action.blockedReason === null ? (
+      button
+    ) : (
+      <Tooltip content={action.blockedReason} anchorClassName="shrink-0">
+        <span className="inline-flex">{button}</span>
+      </Tooltip>
+    );
+  };
+
+  const primaryVariant =
+    primary === null || primary.isSecondary || isPrimaryYielding ? 'secondary' : 'primary';
+  const separator = <span aria-hidden>·</span>;
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div className="relative flex min-w-0 flex-col gap-2">
       <HeaderBand
         title={
           <PullRequestTitle
@@ -140,30 +131,14 @@ export const BranchHeader = ({
             noun={capitalized(PULL_REQUEST_NOUNS[host].long)}
           />
         }
+        afterTitle={
+          titleEdit.isEditing ? null : <BranchStateChip state={stateOf(pr)} host={host} />
+        }
         meta={
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
-            {titleEdit.isEditing ? (
-              <span>Enter saves, Esc cancels</span>
-            ) : (
-              <span className="text-foreground">{stateWord(pr, host)}</span>
-            )}
-            {!titleEdit.isEditing && pr !== null && host !== 'github' && (
-              <>
-                <span aria-hidden>·</span>
-                <span>
-                  {PULL_REQUEST_NOUNS[host].short} {PULL_REQUEST_NOUNS[host].numberPrefix}
-                  {pr.number}
-                </span>
-              </>
-            )}
+            {titleEdit.isEditing ? <span>Enter saves, Esc cancels</span> : null}
             {!titleEdit.isEditing && head !== null && (
               <>
-                <span aria-hidden>·</span>
-                {pr?.author != null && (
-                  <span>
-                    {pr.author} {INTENT_WORD[pr.state]}
-                  </span>
-                )}
                 <BranchSwitcher
                   sessionId={sessionId}
                   currentPath={mountPath}
@@ -176,38 +151,37 @@ export const BranchHeader = ({
                     <span className="text-code">{base}</span>
                   </span>
                 )}
-                {age !== '' && (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span>{age}</span>
-                  </>
-                )}
               </>
             )}
             {!titleEdit.isEditing && head === null && projectName !== null && (
+              <span className="text-code">{projectName}</span>
+            )}
+            {!titleEdit.isEditing && numberLabel !== null && (
               <>
-                <span aria-hidden>·</span>
-                <span className="text-code">{projectName}</span>
+                {separator}
+                <span>
+                  {numberLabel}
+                  {pr?.author != null && ` by ${pr.author}`}
+                </span>
               </>
             )}
-            {!titleEdit.isEditing && summary !== null && (
+            {!titleEdit.isEditing && commitCount !== null && (
               <>
-                <span aria-hidden>·</span>
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1',
-                    summary.tone === 'success' && 'text-success',
-                    summary.tone === 'danger' && 'text-danger',
-                  )}
-                >
-                  {summary.tone === 'success' && <Check size={ICON_SIZE.row} aria-hidden />}
-                  {summary.label}
+                {separator}
+                <span>
+                  {commitCount} {commitCount === 1 ? 'commit' : 'commits'}
                 </span>
+              </>
+            )}
+            {!titleEdit.isEditing && age !== '' && (
+              <>
+                {separator}
+                <span>{age}</span>
               </>
             )}
             {!titleEdit.isEditing && blockedReason !== null && (
               <>
-                <span aria-hidden>·</span>
+                {separator}
                 <span data-testid="branch-blocked-reason" className="min-w-0">
                   {blockedReason}
                 </span>
@@ -215,9 +189,17 @@ export const BranchHeader = ({
             )}
             {!titleEdit.isEditing && blockedReason === null && note !== null && (
               <>
-                <span aria-hidden>·</span>
+                {separator}
                 <span data-testid="branch-merge-note" className="min-w-0">
                   {note}
+                </span>
+              </>
+            )}
+            {!titleEdit.isEditing && queueLine !== null && (
+              <>
+                {separator}
+                <span data-testid="branch-queue-line" className="min-w-0 text-foreground">
+                  {queueLine}
                 </span>
               </>
             )}
@@ -225,6 +207,11 @@ export const BranchHeader = ({
         }
         actions={
           <HeaderActions
+            secondary={
+              secondary === null
+                ? null
+                : buttonOf({ action: secondary, slot: 'secondary', variant: 'secondary' })
+            }
             button={
               abort === null ? null : (
                 <Button
@@ -238,13 +225,9 @@ export const BranchHeader = ({
               )
             }
             primary={
-              primary !== null && primary.blockedReason !== null ? (
-                <Tooltip content={primary.blockedReason} anchorClassName="shrink-0">
-                  <span className="inline-flex">{primaryButton}</span>
-                </Tooltip>
-              ) : (
-                primaryButton
-              )
+              primary === null
+                ? null
+                : buttonOf({ action: primary, slot: 'primary', variant: primaryVariant })
             }
             overflow={
               <BranchOverflow

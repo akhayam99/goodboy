@@ -2,14 +2,15 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { LensKind } from '../session-view/types';
 import { agentHomeFor } from './agentHomeFor';
+import { doorMountPath } from './doorMountPath';
 import { branchPlace, fixRunTranscript, sessionPlace } from './place';
 import { resolverThread } from './resolverThread';
-import { resolveActiveMountPath } from '../worktrees/resolveActiveMountPath';
 import { CONTEXT_LENS_TAB } from './contextLensTab';
 import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
 import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
-import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
-import { branchHasPullRequest } from '../session-view/branchTabOf';
+import { resolveBranchTab } from '../../../features/branch/branchTabs';
+import { branchHasPullRequest } from '../session-view/branchHasPullRequest';
+import { branchScopeOf } from '../session-view/branchScopeOf';
 import type { BranchTab, CanonicalPlace, Place, PlaceRequest } from './types';
 
 type SessionPlace = Extract<Place, { readonly at: 'session' }>;
@@ -57,7 +58,6 @@ const fixRunLocation = ({
     sessionId,
     agentId,
     threadId: threadId ?? resolverThread({ state, sessionId, agentId }),
-    mountPath: state.diffMountPath?.[sessionId] ?? null,
   });
   return { place: canonicalPlace({ state, request: to }), drawer };
 };
@@ -83,20 +83,6 @@ type PlaceParams = {
   readonly request: Place;
 };
 
-const activeMountPath = ({
-  state,
-  sessionId,
-}: {
-  readonly state: AppState;
-  readonly sessionId: SessionId;
-}): string | null => {
-  const mounts = state.sessionProjectMounts?.[sessionId] ?? [];
-  if (mounts.length === 0) {
-    return null;
-  }
-  return resolveActiveMountPath({ state, sessionId }) ?? mounts[0]?.worktreePath ?? null;
-};
-
 const hasMount = ({
   state,
   sessionId,
@@ -105,22 +91,44 @@ const hasMount = ({
   readonly sessionId: SessionId;
 }): boolean => (state.sessionProjectMounts?.[sessionId] ?? []).length > 0;
 
-const prLensTab = ({ mode }: { readonly mode: string }): BranchTab => {
-  if (mode === 'write_review') {
-    return 'files';
-  }
-  return isBranchTabAvailable('pr') ? 'pr' : 'comments';
+type RequestParams = {
+  readonly request: SessionPlace;
 };
 
-const unavailableBranchTab = ({ request }: { readonly request: SessionPlace }): SessionPlace => {
+const requestedMountPath = ({ request }: RequestParams): string | null => {
+  const target = request.view.target;
+  return target?.kind === 'diff' || target?.kind === 'branch' ? target.mountPath : null;
+};
+
+const prLensTab = ({ mode }: { readonly mode: string }): BranchTab =>
+  mode === 'write_review' ? 'files' : 'pr';
+
+const unavailableBranchTab = ({
+  state,
+  request,
+}: {
+  readonly state: AppState;
+  readonly request: SessionPlace;
+}): SessionPlace => {
   const { view } = request;
-  if (view.target?.kind !== 'branch' || isBranchTabAvailable(view.target.tab)) {
+  if (view.target?.kind !== 'branch') {
     return request;
   }
-  return { ...request, view: { ...view, target: { ...view.target, tab: 'comments' } } };
+  const tab = resolveBranchTab({
+    tab: view.target.tab,
+    scope: branchScopeOf({
+      state,
+      sessionId: request.sessionId,
+      hasThread: view.target.threadId !== null,
+    }),
+  });
+  if (tab === view.target.tab) {
+    return request;
+  }
+  return { ...request, view: { ...view, target: { ...view.target, tab } } };
 };
 
-const formerBranchPlace = ({
+const formerBranchTarget = ({
   state,
   request,
 }: {
@@ -131,14 +139,12 @@ const formerBranchPlace = ({
   if (view.studio !== null || view.agentId !== null) {
     return null;
   }
-  const preferred = state.diffMountPath?.[sessionId] ?? null;
   const explicit = view.target?.kind === 'diff' ? view.target.mountPath : null;
   if (view.lens === 'files' && (explicit !== null || hasMount({ state, sessionId }))) {
     const target = view.target?.kind === 'diff' ? view.target : null;
-    const mountPath = target?.mountPath ?? preferred ?? activeMountPath({ state, sessionId });
     return branchPlace({
       sessionId,
-      mountPath,
+      mountPath: explicit,
       tab: target?.page === 'history' ? 'commits' : 'files',
       focus: target?.focus ?? null,
     });
@@ -147,7 +153,7 @@ const formerBranchPlace = ({
     const threadId = view.target?.kind === 'thread' ? view.target.threadId : null;
     return branchPlace({
       sessionId,
-      mountPath: preferred ?? activeMountPath({ state, sessionId }),
+      mountPath: requestedMountPath({ request }),
       tab: branchLandingTabOf({
         hasPullRequest: branchHasPullRequest({ state, sessionId }),
         deepLink: threadId === null ? null : 'comments',
@@ -159,28 +165,36 @@ const formerBranchPlace = ({
     const mode = state.pullRequestModes?.[sessionId] ?? 'overview';
     return branchPlace({
       sessionId,
-      mountPath: preferred ?? activeMountPath({ state, sessionId }),
+      mountPath: requestedMountPath({ request }),
       tab: prLensTab({ mode }),
     });
   }
   return null;
 };
 
+const formerBranchPlace = ({
+  state,
+  request,
+}: {
+  readonly state: AppState;
+  readonly request: SessionPlace;
+}): Place | null => {
+  const place = formerBranchTarget({ state, request });
+  if (place === null || place.at !== 'session') {
+    return place;
+  }
+  return unavailableBranchTab({ state, request: place });
+};
+
 const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
   if (asked.at === 'board' || asked.at === 'session-draft') {
     return asked;
   }
-  const request = unavailableBranchTab({ request: asked });
+  const request = unavailableBranchTab({ state, request: asked });
   const { view, sessionId } = request;
   const branch = formerBranchPlace({ state, request });
   if (branch !== null) {
     return branch;
-  }
-  if (view.target?.kind === 'branch' && view.target.mountPath === null) {
-    const mountPath = state.diffMountPath?.[sessionId] ?? activeMountPath({ state, sessionId });
-    return mountPath === null
-      ? request
-      : { ...request, view: { ...view, target: { ...view.target, mountPath } } };
   }
   if (view.studio !== null && view.agentId !== null) {
     return { ...request, view: { ...view, agentId: null } };
@@ -223,16 +237,31 @@ export const canonicalLocation = ({ state, request }: Params): CanonicalPlace =>
   );
 };
 
-export const lensPlace = ({
-  state,
-  sessionId,
-  lens,
-}: {
+type LensParams = {
   readonly state: AppState;
   readonly sessionId: SessionId;
   readonly lens: LensKind | null;
-}): Place => {
-  const plain = sessionPlace({ sessionId, lens });
+  readonly mountPath?: string | null;
+};
+
+const MOUNT_LENSES: ReadonlySet<LensKind | null> = new Set<LensKind | null>([
+  'files',
+  'review',
+  'pr',
+]);
+
+export const lensPlace = ({ state, sessionId, lens, mountPath }: LensParams): Place => {
+  const isMountLens = MOUNT_LENSES.has(lens);
+  const mount =
+    isMountLens && mountPath === undefined
+      ? doorMountPath({ state, sessionId })
+      : (mountPath ?? null);
+  const plain = sessionPlace({
+    sessionId,
+    lens,
+    ...(isMountLens &&
+      mount !== null && { target: { kind: 'diff', mountPath: mount, focus: null } }),
+  });
   if (plain.at !== 'session') {
     return plain;
   }

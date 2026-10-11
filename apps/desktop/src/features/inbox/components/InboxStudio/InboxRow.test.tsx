@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { LinearIssue } from '../../../integrations/linear/client';
 import type { InboxRecord } from '../../types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 
 const h = vi.hoisted(() => ({ openUrl: vi.fn(async () => undefined) }));
 
@@ -100,9 +101,14 @@ describe('InboxRow', () => {
 
   it('opens the record in its tool without selecting it', () => {
     const onSelect = vi.fn();
-    render(<InboxRow record={record} selected={false} onSelect={onSelect} />);
+    const { container } = render(<InboxRow record={record} selected={false} onSelect={onSelect} />);
 
-    fireEvent.click(screen.getByTitle('Open ENG-42 in Linear'));
+    const open = container.querySelector('[data-open-in-tool]');
+    if (!(open instanceof HTMLElement)) {
+      throw new Error('the open in tool button is missing');
+    }
+    expect(tooltipTextOf({ element: open })).toBe('Open in Linear');
+    fireEvent.click(open);
 
     expect(h.openUrl).toHaveBeenCalledWith('https://example.invalid/linear/ENG-42');
     expect(onSelect).not.toHaveBeenCalled();

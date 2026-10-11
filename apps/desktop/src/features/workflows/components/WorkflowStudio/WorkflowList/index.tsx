@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
-import { Button, InlineConfirm, OverflowMenu, EmptyState } from '@goodboy/ui';
+import { Button, ConfirmPopover, EmptyState } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
@@ -61,44 +61,36 @@ export const WorkflowList = ({
           <Plus size={ICON_SIZE.row} aria-hidden />
           New workflow
         </Button>
-        <OverflowMenu
-          label="Workflow actions"
-          trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
-          items={[
-            {
-              kind: 'item',
-              key: 'restore',
-              label: 'Restore built-in workflows',
-              icon: RotateCcw,
-              disabled: !hasRestorable,
-              ...(!hasRestorable && { description: 'Built-in workflows are unchanged' }),
-              onClick: () => setIsConfirmingRestore(true),
-            },
-          ]}
-        />
+        {hasRestorable ? (
+          <ConfirmPopover
+            role="alert"
+            icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
+            title={`Restore built-in workflows in ${workspaceName ?? 'this workspace'}?`}
+            description={restoreDescription(restorable)}
+            confirmLabel={`Restore ${restorable.length}`}
+            isBusy={isRestoring}
+            isOpen={isConfirmingRestore}
+            onConfirm={async () => {
+              await onRestore(restorable.map(({ entry }) => entry.slug));
+              setIsConfirmingRestore(false);
+            }}
+            onCancel={() => setIsConfirmingRestore(false)}
+            trigger={() => (
+              <Button size="sm" variant="ghost" onClick={() => setIsConfirmingRestore(true)}>
+                <RotateCcw size={ICON_SIZE.row} aria-hidden />
+                Restore built-in workflows
+              </Button>
+            )}
+          />
+        ) : null}
       </div>
-      {isConfirmingRestore && hasRestorable ? (
-        <InlineConfirm
-          role="alert"
-          icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
-          title={`Restore built-in workflows in ${workspaceName ?? 'this workspace'}?`}
-          description={restoreDescription(restorable)}
-          confirmLabel={`Restore ${restorable.length}`}
-          isBusy={isRestoring}
-          onConfirm={async () => {
-            await onRestore(restorable.map(({ entry }) => entry.slug));
-            setIsConfirmingRestore(false);
-          }}
-          onCancel={() => setIsConfirmingRestore(false)}
-        />
-      ) : null}
       {workflows.length === 0 ? (
         <EmptyState
           size="section"
           icon={CONCEPT_ICONS.workflows}
           tone={CONCEPT_TONE.workflows}
           title="No workflows yet"
-          description="Create one to chain several agents in a single session, or restore the built-in workflows from the menu."
+          description="Create one to chain several agents in a single session, or restore the built-in workflows."
         />
       ) : (
         <ul aria-label="Workflows" className="flex flex-col">

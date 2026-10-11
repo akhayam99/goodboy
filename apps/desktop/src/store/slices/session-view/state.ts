@@ -22,12 +22,12 @@ export type SessionViewState = {
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
-  readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
   readonly sessionPagesFolded: Readonly<Record<SessionId, boolean>>;
+  readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
@@ -41,4 +41,8 @@ export type SessionViewState = {
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
   readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
   readonly agentTab: Readonly<Record<AgentId, AgentPane>>;
+  readonly exploreExpanded: Readonly<
+    Record<SessionId, Readonly<Record<string, Readonly<Record<string, boolean>>>>>
+  >;
+  readonly exploreMountPath: Readonly<Record<SessionId, string | null>>;
 };

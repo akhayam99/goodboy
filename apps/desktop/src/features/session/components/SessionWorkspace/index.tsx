@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
 import { cn, useEscapeLayer, UnderTrailContext, PaneBannerContext, PaneShell } from '@goodboy/ui';
-import { TerminalDock } from '../../../terminal/components/TerminalDock';
+import { SessionTerminalLens } from '../../../terminal/components/TerminalStudio/SessionTerminalLens';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { ScriptsPanel } from '../../../scripts';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
@@ -37,6 +37,7 @@ import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface } from '../../lens-surface';
 import { EmptyState } from '@goodboy/ui';
+import { StudioBandContext } from '../../../../shared/components/StudioShell/studioBandContext';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
 type SessionWorkspaceProps = {
@@ -143,12 +144,14 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
+  const trail = <TrailBar session={session} end={<AskTrailButton sessionId={sessionId} />} />;
+  const isBranchSplit = lens === 'branch' && showLens;
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
-      <TrailBar session={session} end={<AskTrailButton sessionId={sessionId} />} />
+      {isBranchSplit ? null : trail}
       <UnderTrailContext.Provider value>
-        <div className="relative min-h-0 flex-1">
+        <div className="relative flex min-h-0 flex-1 flex-col">
           <div
             className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
             inert={!showLens}
@@ -166,12 +169,16 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               ) : null}
               {lens === 'questions' ? <QuestionsPane session={session} /> : null}
               {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
-              {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
+              {lens === 'workflows' ? (
+                <WorkflowsPane session={session} isActive={isActive && showLens} />
+              ) : null}
               {lens === 'scripts' ? (
                 <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}
               {lens === 'branch' ? (
-                <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
+                <StudioBandContext.Provider value={isBranchSplit ? trail : null}>
+                  <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
+                </StudioBandContext.Provider>
               ) : null}
               {lens === 'linear' ? (
                 <IntegrationPane
@@ -229,9 +236,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   onClose={onSelectOverview}
                 />
               ) : null}
-              {lens === 'explore' ? (
-                <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
-              ) : null}
+              {lens === 'explore' ? <ExplorePane sessionId={sessionId} /> : null}
               <Pane visible={lens === 'agents'}>
                 <PaneBannerContext.Provider
                   value={lens === 'agents' && !showAgentOverlay ? banner : null}
@@ -254,17 +259,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             </PaneBannerContext.Provider>
           ) : null}
 
-          {!isBranchless ? (
-            <div
-              className={cn(
-                'absolute inset-0 z-10 flex flex-col',
-                !(lens === 'terminal' && showLens) && 'invisible pointer-events-none',
-              )}
-            >
-              <TerminalDock
+          {!isBranchless && lens === 'terminal' && showLens ? (
+            <div className="absolute inset-0 z-10 flex flex-col">
+              <SessionTerminalLens
+                workspaceId={session.workspaceId}
                 sessionId={sessionId}
-                isActive={isActive && lens === 'terminal' && showLens}
-                cwd={terminalWorkingDir}
+                isActive={isActive}
+                sessionCwd={terminalWorkingDir}
               />
             </div>
           ) : null}

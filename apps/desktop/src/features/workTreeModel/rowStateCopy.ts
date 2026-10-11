@@ -86,6 +86,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Waiting for your first message';
     case 'discarded':
       return null;
+    case 'job':
     case 'review':
       return reason.word;
     default: {
@@ -140,6 +141,7 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'stepFailed':
     case 'skipped':
     case 'discarded':
+    case 'job':
     case 'review':
       return reasonSentence({ reason });
     default: {
@@ -243,7 +245,7 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
 
 export const rowStateNode = ({ state }: StateParams): RowNode => {
   const node = nodeStateOf({ state });
-  if (state.reason?.kind === 'review') {
+  if (state.reason?.kind === 'review' || state.reason?.kind === 'job') {
     return { state: node, label: state.reason.word };
   }
   if (state.reason?.kind === 'deciding') {

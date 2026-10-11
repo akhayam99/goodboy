@@ -1,3 +1,4 @@
+import { registerShortcutGlyphs } from '@goodboy/ui';
 import { currentPlatform } from '../platform';
 import { NAMES } from '../names';
 
@@ -27,6 +28,7 @@ export type ShortcutScope =
   | 'overview'
   | 'row'
   | 'activityRow'
+  | 'scripts'
   | 'workspace'
   | 'codeSession'
   | 'exploreSession';
@@ -43,6 +45,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   overview: 'On a session overview',
   row: 'On a focused row',
   activityRow: 'On an activity row',
+  scripts: 'On the Scripts page',
   workspace: 'With a workspace open',
   codeSession: 'In a session with a branch',
   exploreSession: 'In an explore session',
@@ -185,6 +188,12 @@ export const SHORTCUTS = {
     combo: 'cmd+shift+KeyH',
     label: 'Board',
     plane: 'session',
+    group: 'navigate',
+  },
+  'terminal.studio': {
+    combo: 'ctrl+Backquote',
+    label: 'Terminal',
+    plane: 'app',
     group: 'navigate',
   },
   'session.prev': {
@@ -370,6 +379,21 @@ export const SHORTCUTS = {
     label: 'Slack threads',
     plane: 'lens',
     group: 'views',
+  },
+
+  'scripts.run': {
+    combo: 'KeyR',
+    label: 'Run or restart the script',
+    plane: 'pane',
+    group: 'session',
+    scope: 'scripts',
+  },
+  'scripts.stop': {
+    combo: 'KeyX',
+    label: 'Stop the script',
+    plane: 'pane',
+    group: 'session',
+    scope: 'scripts',
   },
 
   'list.next': {
@@ -570,13 +594,6 @@ export const SHORTCUTS = {
     group: 'diff',
     scope: 'diff',
   },
-  'diff.toggleTree': {
-    combo: 'cmd+shift+KeyB',
-    label: 'Show or hide the file tree',
-    plane: 'session',
-    group: 'diff',
-    scope: 'diff',
-  },
   'diff.previousFile': {
     combo: 'BracketLeft',
     label: 'Previous file (same as K)',
@@ -598,6 +615,8 @@ export const SHORTCUTS = {
     group: 'diff',
     scope: 'diff',
   },
+
+  'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'session', group: 'general' },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },
@@ -701,12 +720,8 @@ export const shortcutRangeGlyphs = ({ first, last }: RangeParams): string => {
   return shared === -1 ? from : `${from}-${to.slice(shared)}`;
 };
 
-type HintParams = {
-  readonly label: string;
-  readonly shortcut: ShortcutId;
-};
+const isShortcutId = (id: string): id is ShortcutId => Object.hasOwn(SHORTCUTS, id);
 
-export const withShortcutHint = ({ label, shortcut }: HintParams): string => {
-  const glyphs = shortcutGlyphs(shortcut);
-  return glyphs === '' ? label : `${label} (${glyphs})`;
-};
+registerShortcutGlyphs({
+  lookup: ({ id }) => (isShortcutId(id) ? shortcutGlyphs(id) : ''),
+});

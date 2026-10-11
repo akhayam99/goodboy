@@ -1,11 +1,14 @@
+import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
+import { startCheckFix } from '../../branch/checks/startCheckFix';
+import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import { NAMES } from '../../../shared/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
+import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
-import { refreshWorktreeStatuses } from '../../../store/slices/worktreeStatuses/cache';
 import { usePlanRunToast } from '../../plans/usePlanRun';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
 import { showsRunsOn } from '../../session/showsRunsOn';
@@ -77,6 +80,10 @@ export type SuggestionActionResolver = (params: {
 
 const NO_ACTIONS: SuggestionActions = { primary: null, onDismiss: null };
 
+type AnalyzeParams = {
+  readonly routing?: AgentKindRouting;
+};
+
 type StartRebaseParams = {
   readonly target: RebaseSuggestionTarget;
 };
@@ -100,8 +107,18 @@ export const useSuggestionActions = ({
       ),
     ),
   );
-  const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
+  useAppStore((state) =>
+    (state.sessionPhaseRuns[sessionId] ?? [])
+      .flatMap((agent) =>
+        agent.sourceKind === 'failed_check' && agent.sourceCommentUrl !== undefined
+          ? [
+              `${agent.id}:${selectCheckChain({ state, sessionId, url: agent.sourceCommentUrl }).state}`,
+            ]
+          : [],
+      )
+      .join(),
+  );
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const navigate = useAppStore((state) => state.navigate);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
@@ -109,7 +126,6 @@ export const useSuggestionActions = ({
   const runPlan = useAppStore((state) => state.runPlan);
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
   const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
-  const createPrForSession = useAppStore((state) => state.createPrForSession);
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
@@ -212,31 +228,6 @@ export const useSuggestionActions = ({
     }
     if (suggestion.kind === 'rebase-project') {
       const firstTarget = suggestion.payload.targets[0] ?? null;
-      if (firstTarget !== null && firstTarget.dirtyCount > 0) {
-        const worktreePaths = suggestion.payload.targets.map((target) => target.worktreePath);
-        return {
-          primary: null,
-          onDismiss: null,
-          extras: [
-            {
-              id: 'check-again',
-              label: 'Check again',
-              variant: 'secondary',
-              failureTitle: "Couldn't check the branch",
-              run: () => refreshWorktreeStatuses({ worktreePaths }),
-            },
-            {
-              id: 'open-terminal',
-              label: 'Open terminal',
-              variant: 'ghost',
-              failureTitle: "Couldn't open the terminal",
-              run: async () => {
-                openMountTerminal(sessionId, firstTarget.worktreePath);
-              },
-            },
-          ],
-        };
-      }
       return {
         primary: {
           label: rebase.isRunning ? 'Rebasing' : 'Rebase',
@@ -404,28 +395,108 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'fix-checks') {
-      return {
-        primary: {
-          label: 'Start debugger',
-          isDisabled: false,
-          failureTitle: "Couldn't start the debugger",
-          run: async () => {
-            await spawnAgent(sessionId, {
-              kindOverride: 'debugger',
-              mountId: suggestion.payload.mountId,
-              focus: 'none',
-            });
+      const readFailing = () => {
+        const state = useAppStore.getState();
+        const github = state.mountGithub[suggestion.payload.mountId];
+        const port = state.pullRequestViews[sessionId];
+        const portView = port?.mountId === suggestion.payload.mountId ? port.view : null;
+        const pullRequest = github?.pr ?? portView;
+        const detail = github?.detail;
+        const checks =
+          detail?.prNumber === pullRequest?.number
+            ? detail?.checks
+            : portView?.number === pullRequest?.number
+              ? portView?.checks.runs
+              : undefined;
+        if (
+          pullRequest === undefined ||
+          pullRequest === null ||
+          pullRequest.number !== suggestion.payload.prNumber ||
+          checks === undefined
+        ) {
+          return null;
+        }
+        return {
+          pullRequest,
+          checks: checks.filter((check) =>
+            ['failure', 'timed_out', 'cancelled'].includes(check.conclusion),
+          ),
+        };
+      };
+      const analyze = async ({ routing }: AnalyzeParams = {}) => {
+        const state = useAppStore.getState();
+        const github = state.mountGithub[suggestion.payload.mountId];
+        if (
+          github?.pr?.number === suggestion.payload.prNumber &&
+          (github.detail === null || github.detail.prNumber !== suggestion.payload.prNumber)
+        ) {
+          await state.refreshSessionPrDetail(sessionId, {
+            mountId: suggestion.payload.mountId,
+            force: true,
+          });
+        }
+        const failing = readFailing();
+        if (failing === null) {
+          throw new Error('Refresh the failing checks and try Analyze again.');
+        }
+        await analyzeFailingChecks({
+          sessionId,
+          mountId: suggestion.payload.mountId,
+          pullRequest: failing.pullRequest,
+          checks: failing.checks,
+          ...(routing !== undefined && { routing }),
+        });
+      };
+      const failing = readFailing();
+      const url = failing?.checks[0]?.detailsUrl ?? failing?.pullRequest.url;
+      const chain =
+        url === undefined
+          ? null
+          : selectCheckChain({ state: useAppStore.getState(), sessionId, url });
+      if (url !== undefined && chain !== null && chain.state === 'proposal') {
+        return {
+          primary: {
+            label: 'Start fix',
+            isDisabled: false,
+            failureTitle: "Couldn't start the Implementer",
+            run: async () => {
+              await startCheckFix({ sessionId, url, mountId: suggestion.payload.mountId });
+            },
           },
-          runsOn: {
-            kind: 'debugger',
-            runWith: async (routing) => {
-              await spawnAgent(sessionId, {
-                kindOverride: 'debugger',
-                mountId: suggestion.payload.mountId,
-                focus: 'none',
-                ...routing,
+          onDismiss: null,
+        };
+      }
+      if (
+        url !== undefined &&
+        chain !== null &&
+        chain.state !== 'none' &&
+        chain.state !== 'no-fix'
+      ) {
+        return {
+          primary: {
+            label: 'Open',
+            isDisabled: false,
+            failureTitle: "Couldn't open the analysis",
+            run: async () => {
+              useAppStore.getState().openDrawer({
+                kind: 'check-analysis',
+                sessionId,
+                payload: { sessionId, mountId: suggestion.payload.mountId, checkUrl: url },
               });
             },
+          },
+          onDismiss: null,
+        };
+      }
+      return {
+        primary: {
+          label: 'Analyze',
+          isDisabled: false,
+          failureTitle: "Couldn't start the Debugger",
+          run: () => analyze(),
+          runsOn: {
+            kind: 'debugger',
+            runWith: (routing) => analyze({ routing }),
           },
         },
         onDismiss: null,
@@ -462,13 +533,24 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'open-pr') {
+      const scribe = suggestion.payload.scribe ?? null;
+      if (scribe === 'writing' || scribe === 'creating') {
+        return NO_ACTIONS;
+      }
+      const mount = mounts.find((candidate) => candidate.mountId === suggestion.payload.mountId);
       return {
         primary: {
-          label: 'Open PR',
+          label: scribe === 'ready' ? 'Review text' : 'Open PR',
           isDisabled: false,
-          failureTitle: "Couldn't create the pull request",
+          failureTitle: "Couldn't open the pull request form",
           run: async () => {
-            await createPrForSession({ sessionId, mountId: suggestion.payload.mountId });
+            navigate({
+              to: branchPlace({
+                sessionId,
+                mountPath: mount?.worktreePath ?? null,
+                tab: 'pr',
+              }),
+            });
           },
         },
         onDismiss: null,

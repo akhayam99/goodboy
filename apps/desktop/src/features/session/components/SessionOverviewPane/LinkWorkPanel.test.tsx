@@ -31,9 +31,10 @@ vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, waitFor, fireEvent, render, screen, within } from '@testing-library/react';
 import type { IsoDateTime, ProjectId, SessionId } from '@goodboy/types';
 import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
+import { starIssue } from '@goodboy/db';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -127,5 +128,29 @@ describe('LinkWorkPanel on a task already linked to the session', () => {
     mountPanel();
 
     expect(screen.queryByRole('tab', { name: /This branch/ })).toBeNull();
+  });
+
+  it('stars the issue for the workspace and says where to find it', async () => {
+    const { onLinked } = mountPanel();
+
+    await act(async () => {
+      fireEvent.click(preview().getByRole('button', { name: 'Star it' }));
+    });
+
+    await waitFor(() => expect(onLinked).toHaveBeenCalledTimes(1));
+    expect(starIssue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        issue: expect.objectContaining({
+          workspaceId: workspace.id,
+          provider: 'linear',
+          externalId: 'lin-400',
+          state: 'open',
+        }),
+      }),
+    );
+    expect(useAppStore.getState().undoNotices.map((notice) => notice.toast.message)).toEqual([
+      'HBL-400 is starred. Find it in Tasks, Starred.',
+    ]);
+    expect(linksOf()).toEqual(['HBL-400:session']);
   });
 });

@@ -5,6 +5,7 @@ import type {
   PullRequestResolve,
   PullRequestView,
 } from '@goodboy/types';
+import { fetchMergeQueuePlacements } from '../github/merge-queue';
 import { classifyGhFailure } from '../github/classifyGhFailure';
 import { fetchPrReadStates, type PrReadStates } from '../github/details';
 import type { GhResult, GhRunOptions, GhRunner } from '../github/gh';
@@ -17,6 +18,7 @@ import {
   type PullRequestFailureKind,
   type PullRequestPort,
 } from './pullRequestPort';
+import { HOST_CAPABILITIES } from './hostCapabilities';
 import { pullRequestReviewersOf } from './pullRequestReviewers';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSourceCapabilities } from './types';
 
@@ -63,7 +65,7 @@ const MERGE_FLAG: Readonly<Record<PrMergeMethod, string>> = {
   rebase: '--rebase',
 };
 
-const MERGE_METHOD_ORDER: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
+const MERGE_METHOD_ORDER: ReadonlyArray<PrMergeMethod> = HOST_CAPABILITIES.github.mergeMethods;
 
 type RawView = RawPullRequest & {
   readonly createdAt?: string | null;
@@ -282,7 +284,14 @@ export const githubPullRequestPort = ({
     nouns: PULL_REQUEST_NOUNS.github,
     read: async () => {
       const [raw, read, methods] = await Promise.all([view(), states(), mergeMethods()]);
+      const placements = await fetchMergeQueuePlacements({
+        runner,
+        repo: slug,
+        branch: raw.headRefName,
+        opts: options,
+      });
       const state = toPullRequestState({
+        mergeQueue: placements.get(raw.number) ?? null,
         raw: { ...raw, body: raw.body ?? '', updatedAt: raw.updatedAt },
       });
       const files = raw.files ?? [];
@@ -294,6 +303,8 @@ export const githubPullRequestPort = ({
         url: raw.url,
         state: state.state,
         isDraft: raw.isDraft,
+        isAutoMerge: state.isAutoMerge,
+        mergeQueue: state.mergeQueue,
         author:
           raw.author?.login == null
             ? null
@@ -383,6 +394,10 @@ export const githubPullRequestPort = ({
       await write({
         args: ['pr', 'merge', number, MERGE_FLAG[method]],
       });
+    },
+    cancelAutoMerge: async () => {
+      requirePullRequestCapability({ capabilities, capability: 'canCancelAutoMerge' });
+      await write({ args: ['pr', 'merge', number, '--disable-auto'] });
     },
     close: async () => {
       requirePullRequestCapability({ capabilities, capability: 'canClose' });

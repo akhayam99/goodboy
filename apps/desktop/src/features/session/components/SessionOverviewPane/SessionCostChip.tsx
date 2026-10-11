@@ -7,6 +7,7 @@ import {
   formatUsdPrecise,
   tintClasses,
   useDropdown,
+  Tooltip,
 } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionId } from '@goodboy/types';
@@ -138,47 +139,51 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       tabIndex={-1}
       className="flex max-h-[32rem] flex-col bg-subtle"
       trigger={
-        <button
-          ref={triggerRef}
-          type="button"
-          onClick={toggle}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-label={`Spend ${presentation.label}`}
-          title={`${formatUsdPrecise(spend.totalUsd)} spent in this session`}
-          data-level={presentation.level}
-          className={cn(
-            chipClasses({
-              tone: presentation.tone,
-              shape: 'badge',
-              size: 'control',
-              isInteractive: true,
-            }),
-            'overflow-hidden tabular-nums',
-          )}
+        <Tooltip
+          content={`${formatUsdPrecise(spend.totalUsd)} spent in this session`}
+          isSuppressed={open}
         >
-          {glyph}
-          <span key={tick} className={tick > 0 ? 'cost-tick' : undefined}>
-            {presentation.label}
-          </span>
-          {presentation.ratio === null ? null : (
-            <span
-              aria-hidden
-              data-slot="spend-bar"
-              className="h-[3px] w-7 shrink-0 overflow-hidden rounded-full bg-fill"
-            >
-              <span
-                className={cn(
-                  'block h-full rounded-full',
-                  presentation.tone === 'neutral'
-                    ? 'bg-primary'
-                    : tintClasses(presentation.tone).solid,
-                )}
-                style={{ width: `${fill}%` }}
-              />
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={toggle}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            aria-label={`Spend ${presentation.label}`}
+            data-level={presentation.level}
+            className={cn(
+              chipClasses({
+                tone: presentation.tone,
+                shape: 'badge',
+                size: 'control',
+                isInteractive: true,
+              }),
+              'overflow-hidden tabular-nums',
+            )}
+          >
+            {glyph}
+            <span key={tick} className={tick > 0 ? 'cost-tick' : undefined}>
+              {presentation.label}
             </span>
-          )}
-        </button>
+            {presentation.ratio === null ? null : (
+              <span
+                aria-hidden
+                data-slot="spend-bar"
+                className="h-[3px] w-7 shrink-0 overflow-hidden rounded-full bg-fill"
+              >
+                <span
+                  className={cn(
+                    'block h-full rounded-full',
+                    presentation.tone === 'neutral'
+                      ? 'bg-primary'
+                      : tintClasses(presentation.tone).solid,
+                  )}
+                  style={{ width: `${fill}%` }}
+                />
+              </span>
+            )}
+          </button>
+        </Tooltip>
       }
     >
       <SessionSpendPopover

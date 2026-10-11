@@ -199,7 +199,7 @@ describe('LaunchSessionPanel', () => {
     renderPanel(BRIEF_SOURCE);
 
     expect(h.requestIssueBrief).toHaveBeenCalledWith({
-      source: BRIEF_SOURCE,
+      sources: [BRIEF_SOURCE],
       workspaceId: WORKSPACE_ID,
       sessionId: null,
     });
@@ -288,7 +288,7 @@ describe('LaunchSessionPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     expect(h.requestIssueBrief).toHaveBeenLastCalledWith({
-      source: BRIEF_SOURCE,
+      sources: [BRIEF_SOURCE],
       workspaceId: WORKSPACE_ID,
       sessionId: null,
       isRetry: true,

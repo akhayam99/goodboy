@@ -20,6 +20,8 @@ const row: ArtifactScoutRow = {
   reason: REASON,
 };
 
+import { asCutText, tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+
 describe('ArtifactScoutList', () => {
   it('gives the reason its own line instead of the one the state competes for', () => {
     render(<ArtifactScoutList rows={[row]} emptyLine="nothing read anything" />);
@@ -37,14 +39,18 @@ describe('ArtifactScoutList', () => {
   it('keeps the whole reason reachable when the line has to truncate', () => {
     render(<ArtifactScoutList rows={[row]} emptyLine="nothing read anything" />);
     const reason = screen.getByTestId('artifact-scout-reason');
-    expect(reason.getAttribute('title')).toBe(REASON);
+    expect(reason.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: asCutText({ element: reason }) })).toBe(REASON);
     expect(reason.className).toContain('truncate');
   });
 
   it('names the worktree by its leaf and keeps the whole root in the title', () => {
     render(<ArtifactScoutList rows={[row]} emptyLine="nothing read anything" />);
     const where = screen.getByText('ledger-core-rounding on ak/fix-posting-rounding');
-    expect(where.getAttribute('title')).toBe('/mock/harborline/ledger-core-rounding');
+    expect(where.getAttribute('title')).toBeNull();
+    expect(tooltipTextOf({ element: asCutText({ element: where }) })).toBe(
+      '/mock/harborline/ledger-core-rounding',
+    );
   });
 
   it('spends no second line on a scout the plan recorded no reason for', () => {

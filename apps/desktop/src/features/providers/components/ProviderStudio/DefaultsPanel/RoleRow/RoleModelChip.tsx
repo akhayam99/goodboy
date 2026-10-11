@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
-import { FOCUS_RING, ICON_SIZE, Chip, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, Chip, cn, IconButton } from '@goodboy/ui';
 import type { RoleSetEntry } from '../../../../roleSetEntries';
 
 type Props = {
@@ -51,17 +51,15 @@ export const RoleModelChip = ({ entry, position, disabled, onRemove, onMove }: P
         {entry.label}
       </span>
       {entry.isGone ? <Chip kind="state" tone="neutral" label="Gone, skipped" /> : null}
-      <Tooltip content="Remove">
-        <button
-          type="button"
-          disabled={disabled}
-          aria-label={`Remove ${entry.label}`}
-          onClick={onRemove}
-          className="grid size-5 place-items-center rounded-sm text-faint-foreground hover:bg-hover hover:text-foreground disabled:cursor-not-allowed"
-        >
-          <X size={ICON_SIZE.row} aria-hidden />
-        </button>
-      </Tooltip>
+      <IconButton
+        icon={X}
+        label={`Remove ${entry.label}`}
+        tooltip="Remove"
+        size="xs"
+        disabled={disabled}
+        onClick={onRemove}
+        className="size-5"
+      />
     </span>
   );
 };

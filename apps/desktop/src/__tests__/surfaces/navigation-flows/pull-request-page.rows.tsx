@@ -13,6 +13,8 @@ import {
   openCrumb,
   settle,
   useAppStore,
+  findSection,
+  sectionLabels,
 } from './harness';
 import { clearGhWrites, ghWrites } from './pull-request-page.runner';
 
@@ -81,15 +83,12 @@ const openPrPage = async (ctx: Ctx): Promise<void> => {
   await branchTab('pr')(ctx);
 };
 
-const tabLabels = (): ReadonlyArray<string> =>
-  screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
-
 const activity = (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Activity' }, WAIT);
 
 export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'pull request page: a branch with a pull request lands on the Pull request tab, first of the five',
+    name: 'pull request page: a branch with a pull request lands on the Overview, first of the five sections',
     covers: ['openMountRequest', 'openReviewTarget', 'tab:pr'],
     open: async () => {
       stopSyncs();
@@ -99,8 +98,8 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
       branchTab('pr'),
       () => heading(/Stop retried webhooks/),
       async () => {
-        expect(tabLabels()[0]).toMatch(/^Pull request/);
-        expect(tabLabels()).toHaveLength(5);
+        expect(sectionLabels()[0]).toBe('Overview');
+        expect(sectionLabels()).toHaveLength(5);
       },
     ),
   },
@@ -136,11 +135,12 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('files')(ctx);
-      await click(await screen.findByRole('tab', { name: /^Pull request/ }));
+      await click(await findSection(/^Overview/));
       await branchTab('pr')(ctx);
       expect(
-        await screen.findByRole('heading', { name: 'No pull request yet' }, WAIT),
+        await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT),
       ).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
     },
   },
   {
@@ -167,7 +167,9 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
           .hasAttribute('disabled'),
       ).toBe(true);
       await click(within(methods).getByRole('tab', { name: /Rebase and merge/ }));
-      const confirm = within(screen.getByRole('group', { name: /^Merge #\d+ into main/ }));
+      const confirm = within(
+        await screen.findByRole('dialog', { name: /^Merge #\d+ into main/ }, WAIT),
+      );
       await click(confirm.getByRole('button', { name: 'Merge' }));
       await settle(8);
     },

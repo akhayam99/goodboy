@@ -15,7 +15,11 @@ Begin with an empty folder and no repository. **Start a new project** on the emp
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
+The session column aligns its hidden-filter summary with the shared row inset (`features/workspace/components/SessionActivityBar/index.tsx`, `PANE_RHYTHM.sessionList.rowInset`).
+
 Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of the session lists each repo it touches, with its branch, the size of its changes and **New branch**. A project gets a branch only when an agent needs to edit it.
+
+A terminal opened from the Terminal studio starts in the workspace folder: the nearest common parent of your project roots when it sits below your home folder, otherwise the first starred project, otherwise the first project. The setting `terminal.workspaceFolder.<workspace>` overrides it.
 
 ### Starred projects, descriptions and base branch
 
@@ -83,6 +87,10 @@ Keep Goodboy's own folder out of your commits with one click. The card shows up 
 ### Branch names
 
 Pick how new session branches are named. New sessions, in workspace settings, holds both fields: the **Branch prefix** takes letters, numbers, `-` and `/`, and **Branch name** offers the name without a task id, the name with the task id first (the default), or **Custom**, a template with `{prefix}`, `{task-id}`, `{slug}` and `{user}`. Each choice is labelled with the name it gives your last session, and a template git would refuse says why before it is saved. Existing branches keep their names.
+
+### Monitoring
+
+Monitoring, a door in the column and **Go to Monitoring** in ⌘K, says which ports are taken and by whom. **Ports** lists your watched ports (the ones your projects name, the ones Goodboy has seen a session or script hold, and the ones you add with **Watch a port**) with the owner as a chip: the session worktree, `<project> main checkout`, or a Goodboy script, terminal or agent, which opens its session. A free watched port is one dim **Free** line, and a port held while other worktrees run agents against the same project says **Also in N other worktrees**. **Started by Goodboy** lists the agent processes, scripts and terminals Goodboy launched, with where they run, their age and memory. **Stop** on one of these rows acts at once through the owner's own stop (a script's Stop, closing a terminal, cancelling an agent turn) so its cleanup runs, and the row reads **Stopping** until the next read shows the port **Free**. **Stop** on a process Goodboy did not start opens a confirm anchored to it ("Goodboy did not start this process. Stop it?"); a process still alive after 3 seconds offers **Force stop**. **Leftovers** lists processes an earlier run left behind (warning tone on its heading only), with **Stop leftovers (N)** and no confirm, and a line says how many the startup sweep stopped. An agent run idle for over 2 hours at 0% CPU over the last 3 reads says **Looks stuck**. **Also listening on this Mac** is folded; **Watch** on a row moves it into Ports. Each row shows the process name, and a disclosure reveals the command line with secrets masked. The header filters by port number or project name, and the page reads again every few seconds only while it is open and the window is in focus. The Now chip ends with **Open Monitoring**, and a terminal row whose processes listen shows a `:5005` chip. Monitoring needs macOS or Linux.
 
 ### Copy settings from another workspace
 

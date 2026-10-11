@@ -15,6 +15,8 @@ export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }
     case 'changelog':
     case 'notifications':
     case 'chat':
+    case 'terminal':
+    case 'monitoring':
       return false;
     default: {
       const unreachable: never = overlay;
@@ -86,6 +88,8 @@ export const footerTarget = ({ overlay, connected }: FooterTargetParams): Footer
     case 'addWorkspace':
     case 'notifications':
     case 'chat':
+    case 'terminal':
+    case 'monitoring':
       return NO_FOOTER_TARGET;
     default: {
       const unreachable: never = overlay;

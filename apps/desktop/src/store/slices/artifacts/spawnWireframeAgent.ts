@@ -1,4 +1,3 @@
-import { autoModelForRole, resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type {
   AgentEffort,
@@ -20,12 +19,11 @@ import {
   type WireframeFidelity,
 } from '../../../features/wireframes/wireframeFidelity';
 import type { WireframeTarget } from '../../../features/wireframes/wireframeTarget';
-import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
-import { selectHiddenModels } from '../settings/selectHiddenModels';
+import { selectResolution } from '../models/selectResolution';
+import { usableArtifactProviders } from './usableArtifactProviders';
 
 const WIREFRAME_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';
 
@@ -66,38 +64,19 @@ export const resolveWireframeRouting = ({
   if (picked !== null) {
     return picked;
   }
-  const session = sessionById(state.sessions, sessionId) ?? null;
-  const overrides =
-    session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
-  const role = resolveRoleRouting({ role: 'wireframe', prefs: overrides?.roleModels });
-  if (role.isOverride) {
-    return { provider: role.provider, model: role.model, effort: role.effort };
-  }
-  const effort: AgentEffort = fidelity === 'high' ? 'high' : 'medium';
-  const availability = workflowAvailabilitySnapshot({
-    providers: state.providers ?? [],
-    cooldowns: state.providerCooldowns ?? {},
-    alerts: state.budgetAlerts ?? [],
-    hidden: selectHiddenModels({ state: state }),
+  const resolution = selectResolution({
+    state,
     sessionId,
-    isRunBudgetBlocked: false,
-    nowMs: Date.now(),
-    ...workspacePolicyAvailability({ state, sessionId }),
+    slot: { kind: 'role', id: 'wireframe' },
+    providers: usableArtifactProviders({ state, sessionId }),
   });
-  const usable = availability.connectedProviders.filter(
-    (provider) =>
-      !availability.coolingDownProviders.includes(provider) &&
-      !availability.budgetBlockedProviders.includes(provider),
-  );
-  const choice = autoModelForRole({
-    role: 'wireframe',
-    providers: usable,
-    prefs: overrides?.roleModels,
-  });
-  if (choice === null) {
-    return { provider: role.provider, model: role.model, effort };
-  }
-  return { provider: choice.provider, model: choice.model, effort };
+  const effort: AgentEffort =
+    resolution.source === 'auto'
+      ? fidelity === 'high'
+        ? 'high'
+        : 'medium'
+      : (resolution.effort ?? 'medium');
+  return { provider: resolution.provider, model: resolution.model, effort };
 };
 
 export const spawnWireframeAgent = (get: GetFn) => {

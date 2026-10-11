@@ -7,7 +7,7 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { closingIssueReferences } from '../../../integrations/github/closingIssueReferences';
 import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
 import { openLens } from '../../../session/openLens';
-import { PropertyBlock } from './PropertyBlock';
+import { PropertyBlock } from '../../../../shared/components/PropertyBlock';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -18,6 +18,7 @@ type Props = {
 
 type Resolved = {
   readonly key: string;
+  readonly relation: string;
   readonly label: string;
   readonly title: string;
   readonly number: number | null;
@@ -25,6 +26,7 @@ type Resolved = {
 
 const fromLinked = ({ issue }: { readonly issue: LinkedIssue }): Resolved => ({
   key: issue.url,
+  relation: issue.closes ? 'Closes' : 'Mentions',
   label: `#${issue.number}`,
   title: issue.title ?? 'GitHub issue',
   number: issue.number,
@@ -43,8 +45,9 @@ export const ResolvesProperty = ({ sessionId, pr, view, canEdit }: Props) => {
     }
     return (view?.resolves ?? []).map((resolve) => ({
       key: resolve.label,
+      relation: resolve.isClosing ? 'Closes' : 'Mentions',
       label: resolve.label,
-      title: resolve.isClosing ? 'Closes when this merges' : 'Mentioned',
+      title: '',
       number: null,
     }));
   }, [linkedIssues, view]);
@@ -74,7 +77,7 @@ export const ResolvesProperty = ({ sessionId, pr, view, canEdit }: Props) => {
   }
 
   return (
-    <PropertyBlock label="Resolves" action={action}>
+    <PropertyBlock label="Linked issues" action={action}>
       {rows.length === 0 ? (
         <EmptyLine>Nothing linked yet</EmptyLine>
       ) : (
@@ -101,6 +104,7 @@ export const ResolvesProperty = ({ sessionId, pr, view, canEdit }: Props) => {
                   aria-hidden
                   className="shrink-0 text-faint-foreground"
                 />
+                <span className="shrink-0 text-muted-foreground">{row.relation}</span>
                 <span className="shrink-0 text-code text-foreground">{row.label}</span>
                 <span className="min-w-0 flex-1 truncate text-muted-foreground">{row.title}</span>
               </button>

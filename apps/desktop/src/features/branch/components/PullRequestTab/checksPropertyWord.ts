@@ -26,17 +26,16 @@ export const checksPropertyWord = ({ read, runs }: Params): ChecksPropertyWord =
   const failing = count('failing');
   const running = count('running');
   const passed = count('passed') + count('skipped');
+  const parts = [
+    ...(passed > 0 ? [`${passed} passed`] : []),
+    ...(failing > 0 ? [`${failing} failing`] : []),
+    ...(running > 0 ? [`${running} running`] : []),
+  ];
   if (failing > 0) {
-    return {
-      text: [`${failing} failing`, ...(passed > 0 ? [`${passed} passed`] : [])].join(', '),
-      tone: 'danger',
-    };
+    return { text: parts.join(' · '), tone: 'danger' };
   }
   if (running > 0) {
-    return {
-      text: [...(passed > 0 ? [`${passed} passed`] : []), `${running} running`].join(', '),
-      tone: 'info',
-    };
+    return { text: parts.join(' · '), tone: 'info' };
   }
   return { text: `All ${runs.length} passed`, tone: 'success' };
 };

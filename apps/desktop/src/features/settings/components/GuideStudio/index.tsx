@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
 import { GUIDE_CHAPTERS } from './guideChapters';
 import { clearGuideChapter, peekGuideChapter } from './guideChapterRequest';
 import { GuideContent } from './parts/GuideContent';
@@ -56,7 +57,6 @@ export const GuideStudio = ({ onClose }: Props) => {
       icon={CONCEPT_ICONS.guide}
       tone={CONCEPT_TONE.guide}
       title="Guide"
-      closeLabel="Close guide"
       onClose={onClose}
     >
       {() => (
@@ -77,12 +77,14 @@ export const GuideStudio = ({ onClose }: Props) => {
             </ScrollFade>
           }
           detail={
-            <GuideContent
-              chapters={chapters}
-              onOpen={openTarget}
-              onVisible={onVisible}
-              registerScrollTo={registerScrollTo}
-            />
+            <StudioDetail>
+              <GuideContent
+                chapters={chapters}
+                onOpen={openTarget}
+                onVisible={onVisible}
+                registerScrollTo={registerScrollTo}
+              />
+            </StudioDetail>
           }
         />
       )}

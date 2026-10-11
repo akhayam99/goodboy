@@ -477,7 +477,7 @@ describe('resolveProvider, enabledProviders gate', () => {
     expect(decision.reason).toBe('all-exceeded');
   });
 
-  it('turn override bypasses the enabled gate (explicit pin wins)', async () => {
+  it('a turn override on a provider that is Off still runs there and says so', async () => {
     const input = makeInput({
       connectedProviders: ['anthropic', 'cursor'],
       turnOverride: { providerId: 'cursor', model: 'cursor-fast' },
@@ -491,7 +491,51 @@ describe('resolveProvider, enabledProviders gate', () => {
 
     expect(decision.selectedProvider).toBe('cursor');
     expect(decision.selectedModel).toBe('cursor-fast');
-    expect(decision.reason).toBe('override');
+    expect(decision.reason).toBe('override-off');
     expect(decision.fallbackUsed).toBe(false);
+  });
+
+  it('a turn override on an enabled provider keeps the plain override reason', async () => {
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor'],
+      turnOverride: { providerId: 'cursor', model: 'cursor-fast' },
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        allowTurnOverride: true,
+        enabledProviders: ['anthropic', 'cursor'],
+      },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.reason).toBe('override');
+  });
+
+  it('a turn override with no policy at all keeps the plain override reason', async () => {
+    const input = makeInput({
+      turnOverride: { providerId: 'cursor', model: 'cursor-fast' },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.reason).toBe('override');
+  });
+
+  it('a turn override on an Off provider that is out of budget moves like any other', async () => {
+    const checkMock = vi.fn().mockImplementation(async (provider: string) => {
+      return provider === 'cursor' ? exceeded() : notExceeded();
+    });
+    const input = makeInput({
+      connectedProviders: ['anthropic', 'cursor'],
+      turnOverride: { providerId: 'cursor', model: 'cursor-fast' },
+      sessionPreference: {
+        defaultProvider: 'anthropic',
+        allowTurnOverride: true,
+        enabledProviders: ['anthropic'],
+      },
+      budgetChecker: { checkProviderBudget: checkMock },
+    });
+    const decision = await resolveProvider(input);
+
+    expect(decision.selectedProvider).toBe('anthropic');
+    expect(decision.fallbackUsed).toBe(true);
   });
 });

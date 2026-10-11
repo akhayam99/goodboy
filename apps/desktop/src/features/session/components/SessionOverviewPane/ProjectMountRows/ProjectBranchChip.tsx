@@ -25,10 +25,12 @@ type NameParams = {
 const BranchName = ({ branch }: NameParams) => {
   const { head, tail } = splitBranchLabel({ branch });
   return (
-    <span title={branch} className="flex min-w-0 items-center font-mono">
-      <span className="truncate">{head}</span>
-      {tail === '' ? null : <span className="shrink-0">{tail}</span>}
-    </span>
+    <Tooltip content={branch}>
+      <span className="flex min-w-0 items-center font-mono">
+        <span className="truncate">{head}</span>
+        {tail === '' ? null : <span className="shrink-0">{tail}</span>}
+      </span>
+    </Tooltip>
   );
 };
 

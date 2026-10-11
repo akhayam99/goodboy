@@ -444,8 +444,17 @@ export const worktreeRemoteUrl = async (repoPath: string): Promise<string | null
   return invokeCommand<string | null>('worktree_remote_url', { repoPath });
 };
 
+type ChangedEntryStatus = 'added' | 'modified' | 'deleted' | 'renamed';
+
+export type ChangedEntry = {
+  readonly path: string;
+  readonly status: ChangedEntryStatus;
+  readonly from: string | null;
+};
+
 export type ChangedFilesSummary = {
   readonly paths: ReadonlyArray<string>;
+  readonly entries: ReadonlyArray<ChangedEntry>;
   readonly additions: number;
   readonly deletions: number;
   // Raw per-file numstat lines ("<adds>\t<dels>\t<path>", binary: "-\t-\t<path>")
@@ -871,4 +880,59 @@ export const moveToRemoteCommits = async ({
   branch,
 }: MoveToRemoteCommitsParams): Promise<void> => {
   await invokeCommand('worktree_use_remote_commits', { worktreePath, branch });
+};
+
+export type FileSides = {
+  readonly old: string | null;
+  readonly new: string | null;
+  readonly isTooLarge: boolean;
+};
+
+type WorktreeFileSidesParams = WorktreeBaseParams & {
+  readonly path: string;
+  readonly oldRev?: string | null;
+  readonly newRev?: string | null;
+};
+
+type RawFileSides = Pick<FileSides, 'old' | 'new'> & Readonly<Record<'too_large', boolean>>;
+
+export const worktreeFileSides = async ({
+  worktreePath,
+  path,
+  oldRev,
+  newRev,
+  baseBranch,
+}: WorktreeFileSidesParams): Promise<FileSides> => {
+  const sides = await invokeCommand<RawFileSides>('worktree_file_sides', {
+    worktreePath,
+    path,
+    oldRev: oldRev ?? null,
+    newRev: newRev ?? null,
+    baseBranch: baseBranch ?? null,
+  });
+  return { old: sides.old, new: sides.new, isTooLarge: sides.too_large };
+};
+
+export type GrepMatch = {
+  readonly path: string;
+  readonly line: number;
+  readonly column: number;
+  readonly text: string;
+};
+
+export type GrepResult = {
+  readonly matches: ReadonlyArray<GrepMatch>;
+  readonly isTruncated: boolean;
+};
+
+type RawGrepResult = Pick<GrepResult, 'matches'> & Readonly<Record<'truncated', boolean>>;
+
+type WorktreeGrepWordParams = { readonly worktreePath: string; readonly word: string };
+
+export const worktreeGrepWord = async ({
+  worktreePath,
+  word,
+}: WorktreeGrepWordParams): Promise<GrepResult> => {
+  const result = await invokeCommand<RawGrepResult>('worktree_grep_word', { worktreePath, word });
+  return { matches: result.matches, isTruncated: result.truncated };
 };

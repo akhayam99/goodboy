@@ -89,21 +89,22 @@ export const ProviderGrid = ({
           );
         })}
       {onNavigateProviders != null && (
-        <button
-          type="button"
-          title="Add provider"
-          aria-label="Add provider"
-          onClick={() => {
-            onNavigateProviders();
-            window.dispatchEvent(
-              new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
-            );
-          }}
-          className="inline-flex min-w-0 items-center justify-center gap-1 rounded-md text-chip font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-        >
-          <Plus size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-          <span className="truncate">Add</span>
-        </button>
+        <Tooltip content="Add provider">
+          <button
+            type="button"
+            aria-label="Add provider"
+            onClick={() => {
+              onNavigateProviders();
+              window.dispatchEvent(
+                new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
+              );
+            }}
+            className="inline-flex min-w-0 items-center justify-center gap-1 rounded-md text-chip font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+          >
+            <Plus size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+            <span className="truncate">Add</span>
+          </button>
+        </Tooltip>
       )}
     </div>
   );

@@ -1,0 +1,8 @@
+{
+  "apps/desktop/src/features/branch/components/BranchHeader/BranchName.tsx": 1,
+  "apps/desktop/src/features/branch/components/PullRequestTab/PullRequestTitle.tsx": 1,
+  "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": 2,
+  "apps/desktop/src/features/diff/components/DiffView/DisplayMenu.tsx": 1,
+  "apps/desktop/src/features/diff/components/DiffView/FileHeader.tsx": 1,
+  "apps/desktop/src/features/diff/components/SessionDiffPane/index.tsx": 1
+}

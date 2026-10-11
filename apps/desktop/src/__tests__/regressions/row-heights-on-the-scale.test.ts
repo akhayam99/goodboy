@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { EXPLORE_ROW_PX } from '../../features/explore/exploreRows';
 import { productSources } from './scanControls';
 
 const ROW_HEIGHTS: ReadonlyArray<number> = [24, 28, 32, 36, 40, 48];
@@ -59,5 +60,29 @@ describe('one-line rows sit on the row scale', () => {
       (entry) => offScaleHeights(byPath.get(entry.path) ?? '').length === 0,
     ).map((entry) => entry.path);
     expect(fixed, `Remove the pending entries that are fixed:\n${fixed.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('Explore rows', () => {
+  const EXPLORE_ROW_FILES: ReadonlyArray<string> = [
+    'apps/desktop/src/features/explore/components/ExplorePane/ExploreRow.tsx',
+    'apps/desktop/src/features/explore/components/ExplorePane/ExploreStatusRow.tsx',
+  ];
+
+  it('keeps the windowing constant on the row scale', () => {
+    expect(ROW_HEIGHTS).toContain(EXPLORE_ROW_PX);
+  });
+
+  it('draws every Explore row at the height of that constant', () => {
+    const byPath = new Map(productSources().map((source) => [source.path, source.text]));
+    const heights = EXPLORE_ROW_FILES.map((path) => [
+      path,
+      [...(byPath.get(path) ?? '').matchAll(/(?<![\w-])h-(\d+)(?![\w.-])/g)].map(
+        (match) => Number(match[1]) * SPACING_PX,
+      ),
+    ]);
+    for (const [path, found] of heights) {
+      expect(found, `${path} draws a row at ${EXPLORE_ROW_PX}px`).toContain(EXPLORE_ROW_PX);
+    }
   });
 });

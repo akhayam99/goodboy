@@ -80,7 +80,6 @@ export const DelegateAnswerRow = ({
       data-testid="delegate-answer-row"
       data-state={state}
       disabled={isBlocked}
-      title={isBlocked ? QUESTION_DELEGATE_COPY.blocked : undefined}
       onClick={onChoose}
       className={LINK_CLASS}
     >

@@ -2,7 +2,6 @@ import { NAMES } from '../../../shared/names';
 import { Divider } from '@goodboy/ui';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { FOOTER_INTEGRATIONS } from './categories';
 import { FooterButton } from './FooterButton';
 import { GoodboyChip } from '../GoodboyChip';
@@ -15,8 +14,6 @@ import {
 } from '../../../features/integrations/components/IntegrationGlyph';
 import type { ConnectedIntegrations, FooterTarget } from '../../hooks/useAppOverlays/overlayState';
 import type { ShellFooterScope } from '../../shellArrangement';
-
-const SETTINGS_SHORTCUT = shortcutGlyphs('settings.open');
 
 type Props = {
   readonly scope: ShellFooterScope;
@@ -125,7 +122,7 @@ export const AppFooter = ({
           <FooterButton
             icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} aria-hidden />}
             label="Settings"
-            shortcut={SETTINGS_SHORTCUT}
+            shortcut="settings.open"
             onClick={onOpenSettings}
             isCurrent={target.place === 'settings'}
           />

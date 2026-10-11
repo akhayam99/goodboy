@@ -1,0 +1,84 @@
+vi.mock('@tauri-apps/api/core', async () => {
+  const { sceneInvoke } = await import('../../../../../test/sceneInvoke');
+  return { invoke: vi.fn((command: string, args?: unknown) => sceneInvoke({ command, args })) };
+});
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { ToastProvider } from '../../../../../shared/components/Toast';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+} from '../../../../../store/storyHarness';
+import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
+import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { RebaseReviewScene } from './RebaseReviewScene';
+import { U24_REBASE_REVIEW_SCENES } from './rebase-review';
+
+beforeAll(async () => {
+  await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+beforeEach(async () => {
+  await resetStoryStore();
+  resetWorktreeStatusCache();
+});
+afterEach(() => {
+  cleanup();
+  clearSceneInvoke();
+  document.documentElement.classList.remove('dark');
+});
+
+describe('the rebase review scene', () => {
+  it.each(['light', 'dark'])('mounts the review in %s', async (theme) => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    const Scene = U24_REBASE_REVIEW_SCENES['rebase-review-change'];
+    render(
+      <ToastProvider>
+        <Scene />
+      </ToastProvider>,
+    );
+    await screen.findByRole('region', { name: 'Review the change' });
+    screen.getByText('webhook.ts');
+    screen.getByText('ledger.ts');
+    screen.getByRole('button', { name: 'Accept and apply' });
+  });
+
+  it('applies the reviewed change and offers the backup undo', async () => {
+    render(
+      <ToastProvider>
+        <RebaseReviewScene />
+      </ToastProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Accept and apply' }));
+    await screen.findByRole('button', { name: 'Undo rewrite' });
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Review the change' })).toBeNull(),
+    );
+  });
+
+  it('discards the copy and returns to the stopped banner', async () => {
+    render(
+      <ToastProvider>
+        <RebaseReviewScene />
+      </ToastProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Review the change' })).toBeNull(),
+    );
+    screen.getByText('The result did not match your branch');
+    expect(screen.queryByRole('button', { name: 'Review the change' })).toBeNull();
+  });
+  it('offers two real actions in each file menu', async () => {
+    render(
+      <ToastProvider>
+        <RebaseReviewScene />
+      </ToastProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'More actions for webhook.ts' }));
+    screen.getByRole('menuitem', { name: 'Open in editor' });
+    screen.getByRole('menuitem', { name: 'Copy path' });
+  });
+});

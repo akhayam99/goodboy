@@ -34,7 +34,7 @@ const headerPush = (): HTMLElement => {
 
 export const HEADERS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'headers: Delete session lives in the overflow and confirms inline under the title row',
+    name: 'headers: Delete session lives in the overflow and confirms in a popover beside it',
     covers: [],
     open: async () => {
       await settle();
@@ -52,20 +52,20 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         });
       });
       useAppStore.setState({ deleteTask });
-      const confirm = await screen.findByRole('group', { name: 'Delete session?' }, WAIT);
-      expect(screen.queryByRole('dialog')).toBeNull();
+      const confirm = await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT);
+      expect(confirm.closest('[data-dropdown-portal]')).not.toBeNull();
 
       within(confirm).getByRole('button', { name: 'Cancel' }).focus();
       await userEvent.keyboard('{Escape}');
-      expect(screen.queryByRole('group', { name: 'Delete session?' })).toBeNull();
+      expect(screen.queryByRole('dialog')).toBeNull();
       expect(document.activeElement).toBe(
         screen.getByRole('button', { name: 'More session actions' }),
       );
 
       await click(screen.getByRole('button', { name: 'More session actions' }));
       await click(await screen.findByRole('menuitem', { name: /Delete session…/ }, WAIT));
-      const again = await screen.findByRole('group', { name: 'Delete session?' }, WAIT);
-      await click(within(again).getByRole('button', { name: 'Delete' }));
+      const again = await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT);
+      await click(within(again).getByRole('button', { name: 'Delete session' }));
 
       await waitFor(() => expect(deleteTask).toHaveBeenCalledTimes(1), WAIT);
       expect(deleteTask).toHaveBeenCalledWith(ctx.sessionId);
@@ -79,7 +79,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'headers: opening Push turns the header primary secondary and the confirm pushes once',
+    name: 'headers: opening Push keeps the header Push secondary, yields the header primary, and the confirm pushes once',
     covers: ['navigate'],
     open: async (ctx) => {
       installComments({ sessionId: ctx.sessionId, seeds: SEEDS });
@@ -87,7 +87,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       useAppStore.setState({ publishConversations: publish });
       await openComments(ctx);
       await click(within(group('Needs you')).getByRole('button', { name: 'Accept 2' }));
-      expect(headerPush().getAttribute('data-variant')).toBe('primary');
+      expect(headerPush().getAttribute('data-variant')).toBe('secondary');
       await click(headerPush());
     },
     lands: async () => {
@@ -95,9 +95,12 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         name: 'Push 1 commit to hl/fix-duplicate-credit?',
       });
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');
+      expect(
+        document.querySelectorAll('[data-slot="header-actions"] button[data-variant="primary"]'),
+      ).toHaveLength(0);
       const confirmButton = within(confirm).getByRole('button', { name: 'Push' });
       expect(confirmButton.getAttribute('data-variant')).toBe('primary');
-      expect(confirm.querySelector('[data-testid="tone-bar"]')).not.toBeNull();
+      expect(confirm.querySelector('[data-testid="tone-bar"]')).toBeNull();
 
       await click(confirmButton);
 

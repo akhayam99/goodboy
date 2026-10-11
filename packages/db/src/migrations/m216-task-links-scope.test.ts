@@ -231,7 +231,10 @@ describe('m216 task links scope', () => {
 
   it('drops the workspace tasks with their workspace', async () => {
     const db = await seedPre016();
-    await migrate(db, migrations);
+    await migrate(
+      db,
+      migrations.filter((migration) => migration.version <= 216),
+    );
     await db.execute(
       `INSERT INTO workspace_external_tasks (workspace_id, provider, external_id, identifier, url, title, created_at)
        VALUES ('harborline', 'linear', 'lin-400', 'HBL-400', 'https://linear.app/x/HBL-400', 'Payments revamp', ?)`,

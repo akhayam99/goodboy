@@ -10,7 +10,7 @@ import { HistoryAfterColumn } from './HistoryAfterColumn';
 import { HistoryAppliedResult } from './HistoryAppliedResult';
 import { HistoryBackups } from './HistoryBackups';
 import { HistoryDragGhost } from './HistoryDragGhost';
-import { HistoryLegend } from './HistoryLegend';
+import { HistoryKeysHint } from './HistoryKeysHint';
 import { HistoryNowColumn } from './HistoryNowColumn';
 import { HistoryPlannedSection } from './HistoryPlannedSection';
 import { HistoryResultHead } from './HistoryResultHead';
@@ -22,6 +22,7 @@ import { useHistoryEditing } from './useHistoryEditing';
 import { useHistoryExpanded } from './useHistoryExpanded';
 import { useHistoryFocus } from './useHistoryFocus';
 import { useHistoryKeys } from './useHistoryKeys';
+import { useHistoryPanelReveal } from './useHistoryPanelReveal';
 import { useHistoryPlan } from './useHistoryPlan';
 import { useHistoryPlanDrag } from './useHistoryPlanDrag';
 import { useHistoryPrediction } from './useHistoryPrediction';
@@ -29,17 +30,17 @@ import { useHistoryRowCallbacks } from './useHistoryRowCallbacks';
 import { useHistoryRows } from './useHistoryRows';
 import { useHistoryRunFlow } from './useHistoryRunFlow';
 import { useHistoryScribe } from './useHistoryScribe';
-import { useAppStore } from '../../../../store';
 import { TabActions } from '../../../../shared/components/TabActions';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly worktreePath: string;
+  readonly isReadOnly?: boolean;
 };
 
 const NARROW_WIDTH = 760;
 
-export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
+export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: Props) => {
   const plan = useHistoryPlan({ sessionId, worktreePath });
   const {
     mount,
@@ -60,14 +61,13 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
     status,
     hasUpstream,
     dirtyCount,
-    isBusy,
     applied,
     isDone,
-    isInteractive,
+    isInteractive: isEditable,
   } = plan;
+  const isInteractive = isEditable && !isReadOnly;
   const flow = useHistoryRunFlow({ sessionId, mountId, hasUpstream });
   const backups = useHistoryBackupsPanel({ sessionId });
-  const openMountTerminal = useAppStore((s) => s.openMountTerminal);
   const [editingSha, setEditingSha] = useState<string | null>(null);
   const [narrowView, setNarrowView] = useState<'now' | 'planned'>('now');
   const [nowMs] = useState(() => Date.now());
@@ -95,6 +95,8 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
     clearHover: () => setHover(null),
   });
   const isNarrow = stage.width !== null && stage.width < NARROW_WIDTH;
+  const hasPlan = edits.length > 0 && !isDone;
+  const reveal = useHistoryPanelReveal({ isOpen: hasPlan && !isNarrow });
   const view = isDone ? 'done' : isNarrow && narrowView === 'planned' ? 'planned' : 'now';
   const workingSha =
     run?.phase === 'trying' && run.progress?.stage === 'step' ? run.progress.sha : null;
@@ -177,6 +179,7 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
     headSha,
     model,
     prNumber,
+    hasUpstream,
     highlightedRows,
     drag,
     editingSha,
@@ -188,14 +191,7 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
     setEditingSha,
     callbacksFor,
   });
-  const actions = (
-    <HistoryActions
-      isBusy={isBusy}
-      onRefresh={flow.refresh}
-      onShowBackups={backups.showBackups}
-      onOpenTerminal={() => openMountTerminal(sessionId, worktreePath)}
-    />
-  );
+  const actions = <HistoryActions onShowBackups={backups.showBackups} />;
 
   const loadState = loadStateOf({
     hasLoaded: draft !== null,
@@ -248,16 +244,18 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
           <div
             ref={stage.ref}
             className={cn(
-              'grid items-start gap-3',
-              !isNarrow && !isDone ? 'grid-cols-[minmax(0,1fr)_300px]' : 'grid-cols-1',
+              'grid items-start motion-safe:transition-[grid-template-columns,column-gap] motion-safe:duration-200',
+              !reveal.isMounted && 'grid-cols-1',
+              reveal.isMounted && !reveal.isExpanded && 'grid-cols-[minmax(0,1fr)_0px] gap-x-0',
+              reveal.isMounted && reveal.isExpanded && 'grid-cols-[minmax(0,1fr)_320px] gap-x-3',
             )}
           >
             <HistoryNowColumn
               view={view}
               isDone={isDone}
               isNarrow={isNarrow}
+              hasPlan={hasPlan}
               narrowView={narrowView}
-              afterCount={model.afterCount}
               rows={rows}
               listRef={listRef}
               positions={positions}
@@ -283,8 +281,9 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
                 });
               }}
             />
-            {!isNarrow && !isDone ? (
+            {reveal.isMounted ? (
               <HistoryAfterColumn
+                beforeCount={model.ownCount}
                 afterCount={model.afterCount}
                 keep={[...keptOrder({ items })]}
                 marks={marks}
@@ -298,6 +297,7 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
             ) : null}
           </div>
         </div>
+        {isInteractive && !isDone ? <HistoryKeysHint /> : null}
         {applied !== null && run !== null ? (
           <HistoryAppliedResult
             applied={applied}
@@ -347,19 +347,12 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
       </div>
     );
 
-  const hasGraph = draft !== null && commits.length > 0;
-
   return (
     <>
       <TabActions>{actions}</TabActions>
       <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
         <div className="flex min-w-0 flex-col gap-4 pb-6">{body}</div>
       </ScrollFade>
-      {hasGraph ? (
-        <div data-slot="history-legend" className="shrink-0 pb-3 pt-2">
-          <HistoryLegend isDone={isDone} />
-        </div>
-      ) : null}
     </>
   );
 };

@@ -144,20 +144,6 @@ const ChatListRowView = ({
     setIsRevealed(false);
   };
 
-  if (isConfirming) {
-    return (
-      <li data-chat-row={chatId}>
-        <ChatDeleteConfirm
-          title={title}
-          canArchive
-          onDelete={() => onDelete(chatId)}
-          onArchive={() => onArchive(chatId)}
-          onCancel={() => setIsConfirming(false)}
-        />
-      </li>
-    );
-  }
-
   return (
     <li
       data-chat-row={chatId}
@@ -236,19 +222,29 @@ const ChatListRowView = ({
                   <ObjectOverflowMenu
                     target={target}
                     label={`More actions for ${title}`}
-                    tooltip="More"
                     anchorKey={anchorKey}
                   />
-                  {isRevealed ? (
-                    <IconButton
-                      size="xs"
-                      icon={CONCEPT_ICONS.delete}
-                      label={`Delete ${title}`}
-                      tooltip="Delete"
-                      variant="ghost"
-                      iconSize={12}
-                      className="hover:text-danger"
-                      onClick={() => setIsConfirming(true)}
+                  {isRevealed || isConfirming ? (
+                    <ChatDeleteConfirm
+                      title={title}
+                      canArchive
+                      isOpen={isConfirming}
+                      onDelete={() => onDelete(chatId)}
+                      onArchive={() => onArchive(chatId)}
+                      onCancel={() => setIsConfirming(false)}
+                      trigger={() => (
+                        <IconButton
+                          size="xs"
+                          icon={CONCEPT_ICONS.delete}
+                          label={`Delete ${title}`}
+                          tooltip="Delete"
+                          variant="ghost"
+                          iconSize={12}
+                          className="hover:text-danger"
+                          aria-haspopup="dialog"
+                          onClick={() => setIsConfirming(true)}
+                        />
+                      )}
                     />
                   ) : null}
                 </span>

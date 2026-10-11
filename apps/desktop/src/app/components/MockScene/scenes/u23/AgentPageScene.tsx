@@ -13,6 +13,7 @@ import type {
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
+import { PageSheet } from '../PageSheet';
 
 const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
@@ -122,13 +123,15 @@ export const AgentPageScene = ({ isRunning }: AgentPageSceneProps) => {
   }
 
   return (
-    <main className="flex h-screen flex-col bg-background text-foreground">
-      <AgentDetailPane
-        session={AGENT_SESSION}
-        agent={agentOf({ status: isRunning ? 'running' : 'completed' })}
-        isChatActive
-        onBack={() => undefined}
-      />
+    <main className="flex h-screen bg-background text-foreground">
+      <PageSheet>
+        <AgentDetailPane
+          session={AGENT_SESSION}
+          agent={agentOf({ status: isRunning ? 'running' : 'completed' })}
+          isChatActive
+          onBack={() => undefined}
+        />
+      </PageSheet>
     </main>
   );
 };

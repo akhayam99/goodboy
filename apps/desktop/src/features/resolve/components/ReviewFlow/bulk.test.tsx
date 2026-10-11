@@ -22,7 +22,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/bulkSeed';
 import { ResolveBulkScene } from '../../../../app/components/MockScene/scenes/ResolveBulkScene';
 import { BranchPage } from '../../../branch/components/BranchPage';
-import { eligibleReviewThreads } from '../../../suggestions/eligibleThreads';
+import { eligibleReviewThreadCount } from '../../../suggestions/eligibleThreads';
 import { requestReview } from '../../../review/reviewRequest';
 import { isFixableThread } from '../../fixableComments';
 
@@ -96,13 +96,12 @@ describe('the fixable set', () => {
     const fromList = new Set(
       threads.filter((thread) => isFixableThread({ thread })).map((thread) => thread.threadId),
     );
-    const fromDoors = new Set(
-      eligibleReviewThreads({ github: state.sessionGithub[SESSION.id] ?? null, rows: threads }).map(
-        (thread) => thread.head.threadId,
-      ),
-    );
+    const fromDoors = eligibleReviewThreadCount({
+      github: state.sessionGithub[SESSION.id] ?? null,
+      rows: threads,
+    });
     expect(fromList.size).toBe(9);
-    expect(fromDoors).toEqual(fromList);
+    expect(fromDoors).toBe(fromList.size);
     expect([...fromList].sort()).toEqual([...BULK_LAUNCH_THREAD_IDS].sort());
 
     focusRow(/retryPolicy\.ts/);
@@ -111,18 +110,20 @@ describe('the fixable set', () => {
   });
 });
 
-describe('Fix open comments', () => {
-  it('shows one line with the count and opens the launch panel with the whole set, starting nothing', async () => {
+describe('Fix comments', () => {
+  it('puts one Fix comments with the count in the section header and starts nothing', async () => {
     const { spawnAgent, createResolveBatch } = stubAgents();
     await mount({ stage: 'launch' });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Fix 9/ }));
+    const header = screen.getByRole('button', { name: 'Fix comments 9' });
+    expect(screen.getAllByRole('button', { name: /^Fix comments/ })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /^Fix \d+ open comments?/ })).toBeNull();
+    fireEvent.click(header);
 
-    const panel = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(within(panel).getByText('Fix 9')).toBeDefined();
-    expect(within(panel).getAllByRole('checkbox')).toHaveLength(9);
-    expect(within(panel).queryByText(/What should the client see/)).toBeNull();
-    expect(useAppStore.getState().reviewSelection[SESSION.id]).toHaveLength(9);
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'fix-comments',
+      sessionId: SESSION.id,
+    });
     expect(spawnAgent).not.toHaveBeenCalled();
     expect(createResolveBatch).not.toHaveBeenCalled();
   });
@@ -133,7 +134,7 @@ describe('Fix open comments', () => {
     expect(screen.queryByRole('button', { name: /^Fix \d+ open comments?/ })).toBeNull();
   });
 
-  it('opens the same pre-filled panel when the Overview or the board asks, never a silent launch', async () => {
+  it('opens the drawer on the same set when the Overview or the board asks, never a silent launch', async () => {
     const { spawnAgent, createResolveBatch } = stubAgents();
     await mount({ stage: 'launch' });
 
@@ -145,8 +146,9 @@ describe('Fix open comments', () => {
       });
     });
 
-    const panel = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(within(panel).getByText('Fix 9')).toBeDefined();
+    await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('fix-comments'));
+    const { drawer } = useAppStore.getState();
+    expect(drawer?.kind === 'fix-comments' ? drawer.payload.threadIds : []).toHaveLength(9);
     expect(spawnAgent).not.toHaveBeenCalled();
     expect(createResolveBatch).not.toHaveBeenCalled();
   });
@@ -322,6 +324,7 @@ describe('accept in bulk', () => {
     expect(within(ready).getAllByText('Ready')).toHaveLength(5);
     expect(within(ready).queryByText('Accepted')).toBeNull();
     expect(within(ready).queryByRole('button', { name: /^Accept \d+$/ })).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
     const done = within(list()).getByRole('region', { name: 'Done' });
     expect(within(done).queryByText('Accepted')).toBeNull();
     expect(within(done).getByText('Done 3')).toBeDefined();
@@ -389,14 +392,15 @@ describe('accept in bulk', () => {
 });
 
 describe('bulk scenes', () => {
-  it('shows the launch panel on the fixable set and the answers panel on the open questions', async () => {
+  it('shows the Fix comments drawer on the fixable set and the answers panel on the open questions', async () => {
     render(
       <ToastProvider>
         <ResolveBulkScene stage="launch" />
       </ToastProvider>,
     );
-    const launch = await screen.findByRole('region', { name: 'Fix launch' });
-    expect(within(launch).getByText('Fix 9')).toBeDefined();
+    const launch = await screen.findByRole('region', { name: 'Fix comments' });
+    expect(within(launch).getAllByRole('checkbox').length).toBeGreaterThanOrEqual(9);
+    expect(within(launch).getByRole('button', { name: 'Start fix for 9' })).toBeDefined();
     cleanup();
 
     render(

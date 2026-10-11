@@ -137,7 +137,7 @@ describe('useRebaseBranch', () => {
     expect(state.rebaseBranch).not.toHaveBeenCalled();
   });
 
-  it('reads a running rewrite and a stopped rebase from the history run', () => {
+  it('reads a running rewrite and a stopped rebase from the history run, and keeps the stop text out', () => {
     state.historyRuns = {
       [mountId]: { origin: 'rebase', phase: 'rewriting', agentId: 'agent-7', stop: null },
     };
@@ -156,6 +156,6 @@ describe('useRebaseBranch', () => {
     };
     const stopped = renderHook(() => useRebaseBranch({ sessionId, mountId, status: behindBy(4) }));
     expect(stopped.result.current.isRunning).toBe(false);
-    expect(stopped.result.current.error).toBe('Origin moved since the rewrite.');
+    expect(stopped.result.current.rewriterId).toBeNull();
   });
 });

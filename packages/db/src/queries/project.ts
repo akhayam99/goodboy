@@ -347,24 +347,6 @@ export const updateProjectAfterMerge = async ({
   ]);
 };
 
-type ClearProjectModelOverridesParams = {
-  readonly db: Database;
-  readonly id: ProjectId;
-};
-
-export const clearProjectModelOverrides = async ({
-  db,
-  id,
-}: ClearProjectModelOverridesParams): Promise<void> => {
-  await db.execute(
-    `UPDATE projects
-     SET task_models = NULL, role_models = NULL, provider_pool = NULL,
-       default_provider_id = NULL, updated_at = ?
-     WHERE id = ?`,
-    [Date.now(), id],
-  );
-};
-
 type UpdateProjectResolveCommitStyleParams = {
   readonly db: Database;
   readonly projectId: ProjectId;

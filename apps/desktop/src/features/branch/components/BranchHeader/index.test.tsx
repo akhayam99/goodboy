@@ -21,8 +21,6 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   MountId,
-  PrCheckRun,
-  PrDetail,
   ProjectId,
   PullRequestState,
   SessionId,
@@ -32,6 +30,10 @@ import type {
 } from '@goodboy/types';
 import { TEST_NOW, aProject, aSession } from '@goodboy/types/testing';
 import { branchPlace } from '../../../../store/slices/navigation/place';
+import {
+  PULL_REQUEST_PRESENTATION,
+  type PullRequestPresentationState,
+} from '../../../../shared/pullRequestPresentation';
 import type { MountGithubState } from '../../../../store/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -163,29 +165,16 @@ afterEach(() => {
 });
 
 const NO_REVIEW: BranchReviewCounts = { accepted: 0, replies: 0, failed: 0, isPushing: false };
-const NO_CHECKS: ReadonlyArray<PrCheckRun> = [];
 
 type HarnessProps = {
   readonly pr: PullRequestState | null;
   readonly review: BranchReviewCounts;
-  readonly checks: ReadonlyArray<PrCheckRun>;
-  readonly detail?: PrDetail | null;
   readonly canEditTitle?: boolean;
   readonly isActive?: boolean;
   readonly isPrimaryYielding?: boolean;
+  readonly commitCount?: number | null;
   readonly onMutated?: () => void;
 };
-
-const detailOf = ({
-  pr,
-  checks,
-}: {
-  readonly pr: PullRequestState | null;
-  readonly checks: ReadonlyArray<PrCheckRun>;
-}): PrDetail | null =>
-  pr === null
-    ? null
-    : { prNumber: pr.number, comments: [], reviews: [], reviewRequests: [], checks };
 
 const diffOf = (): SessionDiff => ({
   files: [],
@@ -202,17 +191,17 @@ const diffOf = (): SessionDiff => ({
   refresh: vi.fn(),
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
   focusPath: null,
+  focusThreadId: null,
   clearFocus: vi.fn(),
 });
 
 const Harness = ({
   pr,
   review,
-  checks,
-  detail,
   canEditTitle = false,
   isActive = true,
   isPrimaryYielding = false,
+  commitCount = null,
   onMutated,
 }: HarnessProps) => {
   const controls = useBranchControls({
@@ -227,7 +216,6 @@ const Harness = ({
       sessionId={SESSION_ID}
       mountPath={MOUNT.worktreePath}
       pr={pr}
-      detail={detail === undefined ? detailOf({ pr, checks }) : detail}
       projectName="payments-api"
       branch={MOUNT.branch}
       baseBranch="main"
@@ -239,6 +227,7 @@ const Harness = ({
       isActive={isActive}
       canEditTitle={canEditTitle}
       createdAt={null}
+      commitCount={commitCount}
       onMutated={onMutated ?? vi.fn()}
     />
   );
@@ -247,11 +236,10 @@ const Harness = ({
 const renderHeader = ({
   pr = null,
   review = NO_REVIEW,
-  checks = NO_CHECKS,
-  detail,
   canEditTitle,
   isActive,
   isPrimaryYielding,
+  commitCount,
   onMutated,
 }: Partial<HarnessProps> = {}) =>
   render(
@@ -259,49 +247,73 @@ const renderHeader = ({
       <Harness
         pr={pr}
         review={review}
-        checks={checks}
-        detail={detail}
         canEditTitle={canEditTitle}
         isActive={isActive}
         isPrimaryYielding={isPrimaryYielding}
+        commitCount={commitCount}
         onMutated={onMutated}
       />
     </ToastProvider>,
   );
 
+const metaOf = (): HTMLElement => {
+  const row = document.querySelector('[data-slot="pane-title-row"]')?.nextElementSibling;
+  if (!(row instanceof HTMLElement)) {
+    throw new Error('the header has no meta line');
+  }
+  return row;
+};
+
+const chipState = (): HTMLElement => {
+  const chip = document.querySelector<HTMLElement>('[data-slot="branch-state"]');
+  if (chip === null) {
+    throw new Error('the header has no state chip');
+  }
+  return chip;
+};
+
 describe('BranchHeader identity', () => {
-  it('names the pull request, its state, project, branches and checks in one line', () => {
+  it('names the pull request in the chip and the project, branches and number in one line', () => {
     status = statusOf({});
-    renderHeader({
-      pr: PR,
-      checks: [
-        { name: 'build', conclusion: 'success', detailsUrl: null, durationMs: 1 },
-        { name: 'lint', conclusion: 'success', detailsUrl: null, durationMs: 1 },
-      ],
-    });
+    renderHeader({ pr: { ...PR, author: 'Maya Ortiz' }, commitCount: 7 });
 
     expect(screen.getByText('Ledger export')).toBeDefined();
-    const meta = screen.getByText('Draft').closest('div') as HTMLElement;
-    expect(meta.textContent).toContain('payments-api');
-    expect(meta.textContent).toContain('feat/export');
-    expect(meta.textContent).toContain('main');
-    expect(meta.textContent).toContain('2 checks');
+    expect(chipState().textContent).toBe('Draft');
+    const meta = metaOf().textContent ?? '';
+    expect(meta).toContain('payments-api');
+    expect(meta).toContain('feat/export');
+    expect(meta).toContain('main');
+    expect(meta).toContain('#318 by Maya Ortiz');
+    expect(meta).toContain('7 commits');
   });
 
-  it('falls back to the branch name when there is no pull request', () => {
+  it('says one commit in the singular and leaves the count out while it is unknown', () => {
+    status = statusOf({});
+    renderHeader({ pr: PR, commitCount: 1 });
+    expect(metaOf().textContent).toContain('1 commit');
+    expect(metaOf().textContent).not.toContain('1 commits');
+    cleanup();
+
+    renderHeader({ pr: PR, commitCount: null });
+    expect(metaOf().textContent).not.toMatch(/commit/);
+  });
+
+  it('falls back to the branch name and a No pull request chip when there is no pull request', () => {
     status = statusOf({ upstream: null });
     renderHeader();
 
     expect(screen.getByText('feat/export')).toBeDefined();
-    expect(screen.getByText('No pull request')).toBeDefined();
+    expect(chipState().textContent).toBe('No pull request');
+    expect(chipState().getAttribute('data-state')).toBe('none');
   });
 
-  it('carries one h1: the pull request title, else the branch name', () => {
+  it('carries one h1, the pull request title or the branch name, and keeps the chip out of it', () => {
     status = statusOf({});
     renderHeader({ pr: PR });
     const withPr = screen.getAllByRole('heading', { level: 1 });
     expect(withPr).toHaveLength(1);
     expect(withPr[0]?.textContent).toBe('Ledger export');
+    expect(withPr[0]?.contains(chipState())).toBe(false);
     cleanup();
 
     renderHeader();
@@ -310,92 +322,66 @@ describe('BranchHeader identity', () => {
     expect(without[0]?.textContent).toBe('feat/export');
   });
 
-  it('prints the branch name once in the meta line, between the state and the base', () => {
+  it('prints the branch name once in the meta line, between the project and the base', () => {
     status = statusOf({});
     renderHeader({ pr: PR });
 
-    const meta = screen.getByText('Draft').closest('div') as HTMLElement;
-    expect(meta.textContent?.split('feat/export')).toHaveLength(2);
-    expect(meta.textContent).toMatch(/^Draft.*payments-api.*feat\/export.*main/);
-    expect(screen.queryByText('Open')).toBeNull();
+    const meta = metaOf().textContent ?? '';
+    expect(meta.split('feat/export')).toHaveLength(2);
+    expect(meta).toMatch(/payments-api.*feat\/export.*main/);
   });
 
-  it('reads Open for an open pull request that is not a draft', () => {
+  it('shows no checks word in the meta line, the Overview and the rail own it', () => {
     status = statusOf({});
-    renderHeader({ pr: { ...PR, isDraft: false } });
+    renderHeader({ pr: { ...PR, checks: 'failure' } });
 
-    expect(screen.getByText('Open')).toBeDefined();
+    expect(metaOf().textContent).not.toMatch(/check|failing/i);
   });
 });
 
-describe('BranchHeader checks word', () => {
-  const metaOf = (): string =>
-    (screen.getByText('Draft').closest('div') as HTMLElement).textContent ?? '';
+describe('BranchHeader state chip', () => {
+  const CASES: ReadonlyArray<{
+    readonly pr: PullRequestState | null;
+    readonly state: PullRequestPresentationState;
+  }> = [
+    { pr: null, state: 'none' },
+    { pr: { ...PR, isDraft: true }, state: 'draft' },
+    { pr: { ...PR, isDraft: false }, state: 'open' },
+    { pr: { ...PR, isDraft: false, state: 'approved' }, state: 'approved' },
+    { pr: { ...PR, isDraft: false, state: 'queued' }, state: 'queued' },
+    { pr: { ...PR, isDraft: false, state: 'merged' }, state: 'merged' },
+    { pr: { ...PR, isDraft: false, state: 'closed' }, state: 'closed' },
+  ];
 
-  it('says Checks unknown when the pull request carries checksUnknown, never 0 checks', () => {
+  it.each(CASES)('reads the word and the tone of $state from the presentation table', (item) => {
     status = statusOf({});
-    renderHeader({ pr: { ...PR, checksUnknown: true } });
+    renderHeader({ pr: item.pr });
 
-    expect(screen.getByText('Checks unknown')).toBeDefined();
-    expect(metaOf()).not.toMatch(/0 checks|checks passed/);
+    const expected = PULL_REQUEST_PRESENTATION[item.state];
+    expect(chipState().getAttribute('data-state')).toBe(item.state);
+    expect(chipState().getAttribute('data-tone')).toBe(expected.tone);
+    expect(chipState().textContent).toBe(
+      item.state === 'none' ? 'No pull request' : expected.label,
+    );
   });
 
-  it('says Checks unknown when the checks read was denied, even with a passing rollup', () => {
+  it('draws Merged in the merged tone and Queued in the primary tone', () => {
     status = statusOf({});
-    renderHeader({
-      pr: PR,
-      detail: {
-        prNumber: PR.number,
-        comments: [],
-        reviews: [],
-        reviewRequests: [],
-        checks: [],
-        checksRead: 'denied',
-      },
-    });
+    renderHeader({ pr: { ...PR, isDraft: false, state: 'merged' } });
+    expect(chipState().getAttribute('data-tone')).toBe('merged');
+    cleanup();
 
-    expect(screen.getByText('Checks unknown')).toBeDefined();
-    expect(metaOf()).not.toMatch(/0 checks/);
+    renderHeader({ pr: { ...PR, isDraft: false, state: 'queued' } });
+    expect(chipState().getAttribute('data-tone')).toBe('primary');
   });
 
-  it('says Checks unknown when the checks read failed', () => {
+  it('keeps the chip out of the way while the title is being edited', () => {
     status = statusOf({});
-    renderHeader({
-      pr: { ...PR, checks: 'pending' },
-      detail: {
-        prNumber: PR.number,
-        comments: [],
-        reviews: [],
-        reviewRequests: [],
-        checks: [],
-        checksRead: 'failed',
-      },
-    });
+    renderHeader({ pr: PR, canEditTitle: true });
 
-    expect(screen.getByText('Checks unknown')).toBeDefined();
-    expect(screen.queryByText(/running/)).toBeNull();
-  });
+    fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
 
-  it('keeps the count of a readable rollup', () => {
-    status = statusOf({});
-    renderHeader({
-      pr: PR,
-      checks: [
-        { name: 'build', conclusion: 'success', detailsUrl: null, durationMs: 1 },
-        { name: 'lint', conclusion: 'success', detailsUrl: null, durationMs: 1 },
-      ],
-    });
-
-    expect(screen.queryByText('Checks unknown')).toBeNull();
-    expect(metaOf()).toContain('2 checks');
-  });
-
-  it('shows no checks word when there is no pull request', () => {
-    status = statusOf({ upstream: null });
-    renderHeader();
-
-    expect(screen.queryByText('Checks unknown')).toBeNull();
-    expect(screen.queryByText(/checks/)).toBeNull();
+    expect(document.querySelector('[data-slot="branch-state"]')).toBeNull();
   });
 });
 
@@ -490,7 +476,7 @@ describe('BranchHeader branch switcher', () => {
     await waitFor(() => expect(screen.queryByRole('menuitemradio')).toBeNull());
   });
 
-  it('shows a chevron with several branches and none with one, which opens only New branch', async () => {
+  it('shows a chevron with several branches and none with one, which opens the New branch form at once', async () => {
     withMounts([MOUNT, MOUNT_FIX]);
     status = statusOf({});
     renderHeader({ pr: PR });
@@ -504,7 +490,12 @@ describe('BranchHeader branch switcher', () => {
     fireEvent.click(chipOf());
 
     expect(screen.queryByRole('menuitemradio')).toBeNull();
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['New branch']);
+    expect(screen.queryByRole('menuitem')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Branch name' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('textbox', { name: 'Branch name' })).toBeNull();
   });
 
   it('creates a new branch from the chip and lands on it, on the same tab', async () => {
@@ -546,57 +537,118 @@ describe('BranchHeader branch switcher', () => {
   });
 });
 
-describe('BranchHeader one primary by state', () => {
-  it('rebases on main as the one primary when the branch is behind', async () => {
-    withMountPr();
-    status = statusOf({ behind: 18 });
-    renderHeader({ pr: PR });
+const primaries = (): ReadonlyArray<Element> => [
+  ...document.querySelectorAll('[data-branch-primary]'),
+];
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rebase on main' }));
+const secondaries = (): ReadonlyArray<Element> => [
+  ...document.querySelectorAll('[data-branch-secondary]'),
+];
 
-    await waitFor(() =>
-      expect(useAppStore.getState().rebaseBranch).toHaveBeenCalledWith({
-        sessionId: SESSION_ID,
-        mountId: MOUNT_ID,
-      }),
-    );
-    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
+const withRequest = (pr: PullRequestState): void => {
+  useAppStore.setState({
+    sessionGithub: { [SESSION_ID]: { ...MOUNT_GITHUB, pr } },
+    mountGithub: { [MOUNT_ID]: { ...MOUNT_GITHUB, pr } },
   });
+};
 
-  it('names the predicted conflict on the rebase button before anything runs', () => {
-    withMountPr();
-    status = statusOf({ behind: 18 });
-    h.prediction = { conflictFiles: ['src/ledger/postings.ts'], isClean: false };
-    renderHeader({ pr: PR });
-
-    expect(screen.getByRole('button', { name: /Rebase on main · 1 conflict/ })).toBeDefined();
-  });
-
-  it('keeps Rebase visible and disabled with its reason while changes are uncommitted', () => {
-    withMountPr();
-    status = statusOf({ behind: 4, changed: 2 });
-    renderHeader({ pr: PR });
-
-    const rebase = screen.getByRole('button', { name: /Rebase on main/ }) as HTMLButtonElement;
-    expect(rebase.disabled).toBe(true);
-  });
-
-  it('offers Create PR on a branch with commits and no pull request', async () => {
+describe('BranchHeader actions by state', () => {
+  it('draws no primary with no pull request, the form owns Create', () => {
     status = statusOf({ upstream: null });
     renderHeader();
 
-    fireEvent.click(screen.getByRole('button', { name: /Create PR/ }));
+    expect(primaries()).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /Create PR/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Rebase on main' })).toBeNull();
+  });
 
-    await waitFor(() =>
-      expect(useAppStore.getState().openMountRequest).toHaveBeenCalledWith({
-        sessionId: SESSION_ID,
-        mountId: MOUNT_ID,
-        provider: 'github',
-      }),
+  it('offers Mark ready for review as the one primary of a draft', async () => {
+    const draft: PullRequestState = { ...PR, isDraft: true };
+    withRequest(draft);
+    status = statusOf({});
+    renderHeader({ pr: draft });
+
+    expect(primaries()).toHaveLength(1);
+    expect(primaries()[0]?.textContent).toBe('Mark ready for review');
+  });
+
+  it('offers Merge as the one primary of an open pull request', () => {
+    const open: PullRequestState = { ...PR, isDraft: false };
+    withRequest(open);
+    status = statusOf({});
+    renderHeader({ pr: open });
+
+    expect(primaries()).toHaveLength(1);
+    expect(primaries()[0]?.textContent).toMatch(/Merge/);
+  });
+
+  it('offers Reopen as the one primary of a closed pull request and no Merge', () => {
+    const closed: PullRequestState = { ...PR, isDraft: false, state: 'closed' };
+    withRequest(closed);
+    status = statusOf({});
+    renderHeader({ pr: closed });
+
+    expect(primaries()).toHaveLength(1);
+    expect(primaries()[0]?.textContent).toBe('Reopen');
+    expect(screen.queryByRole('button', { name: /Merge/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
+    expect(screen.queryByRole('menuitem', { name: /Reopen/ })).toBeNull();
+  });
+
+  it('draws no primary and no push for a merged pull request', () => {
+    const merged: PullRequestState = { ...PR, isDraft: false, state: 'merged' };
+    withRequest(merged);
+    status = statusOf({});
+    renderHeader({
+      pr: merged,
+      review: { accepted: 2, replies: 0, failed: 0, isPushing: false },
+    });
+
+    expect(primaries()).toHaveLength(0);
+    expect(secondaries()).toHaveLength(0);
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
+    expect(chipState().getAttribute('data-tone')).toBe('merged');
+  });
+
+  it('draws no primary for a queued pull request and names its place in the queue', () => {
+    const queued: PullRequestState = {
+      ...PR,
+      isDraft: false,
+      state: 'queued',
+      mergeQueue: { position: 3 },
+    };
+    withRequest(queued);
+    status = statusOf({});
+    renderHeader({ pr: queued });
+
+    expect(primaries()).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /Merge/ })).toBeNull();
+    expect(screen.getByTestId('branch-queue-line').textContent).toBe(
+      'Queued to merge, 3rd in line',
     );
   });
 
-  it('puts Push N ahead of Publish and Retry, counting the accepted threads', () => {
+  it('says a queued pull request with auto-merge merges when the checks pass', () => {
+    const queued: PullRequestState = { ...PR, isDraft: false, state: 'queued', isAutoMerge: true };
+    withRequest(queued);
+    status = statusOf({});
+    renderHeader({ pr: queued });
+
+    expect(screen.getByTestId('branch-queue-line').textContent).toBe('Merges when checks pass');
+  });
+
+  it('adds Cancel auto-merge to the menu of a queued pull request that allows it', () => {
+    const queued: PullRequestState = { ...PR, isDraft: false, state: 'queued', isAutoMerge: true };
+    withRequest(queued);
+    status = statusOf({});
+    renderHeader({ pr: queued });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
+
+    expect(screen.getByRole('menuitem', { name: /Cancel auto-merge/ })).toBeDefined();
+  });
+
+  it('puts Push N as the secondary ahead of Publish and Retry, counting the accepted threads', () => {
     withMountPr();
     status = statusOf({});
     renderHeader({
@@ -604,7 +656,10 @@ describe('BranchHeader one primary by state', () => {
       review: { accepted: 3, replies: 2, failed: 1, isPushing: false },
     });
 
-    expect(screen.getByRole('button', { name: /^Push 3$/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
+      'secondary',
+    );
+    expect(secondaries()).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Retry/ })).toBeNull();
   });
@@ -620,7 +675,20 @@ describe('BranchHeader one primary by state', () => {
     expect(screen.getByRole('button', { name: 'Retry push' })).toBeDefined();
   });
 
-  it('keeps Abort rebase as the secondary of a stopped rebase and confirms it inline', () => {
+  it('keeps the push next to the primary, secondary first', () => {
+    const open: PullRequestState = { ...PR, isDraft: false };
+    withRequest(open);
+    status = statusOf({});
+    renderHeader({ pr: open, review: { accepted: 1, replies: 0, failed: 0, isPushing: false } });
+
+    const push = screen.getByRole('button', { name: /^Push 1$/ });
+    const primary = primaries()[0] as HTMLElement;
+    const more = screen.getByRole('button', { name: 'Branch actions' });
+    expect(push.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps Abort rebase beside the stopped rebase and confirms it inline', () => {
     withMountPr();
     status = statusOf({ changed: 3, inProgress: 'rebase' });
     renderHeader({ pr: PR });
@@ -631,15 +699,20 @@ describe('BranchHeader one primary by state', () => {
     const confirm = screen.getByRole('group', { name: 'Abort the rebase?' });
     expect(within(confirm).getByRole('button', { name: 'Abort rebase' })).toBeDefined();
   });
+
+  it('leaves Rebase on main to the Commits section and the Overview', () => {
+    withMountPr();
+    status = statusOf({ behind: 18 });
+    renderHeader({ pr: PR });
+
+    expect(screen.queryByRole('button', { name: /Rebase on main/ })).toBeNull();
+  });
 });
 
 describe('BranchHeader merge state', () => {
-  it('keeps a blocked merge out of a stray line under the primary', () => {
+  it('keeps a blocked merge reason in the meta line, never in a stray line under the primary', () => {
     const readyPr: PullRequestState = { ...PR, isDraft: false, checks: 'pending' };
-    useAppStore.setState({
-      sessionGithub: { [SESSION_ID]: { ...MOUNT_GITHUB, pr: readyPr } },
-      mountGithub: { [MOUNT_ID]: { ...MOUNT_GITHUB, pr: readyPr } },
-    });
+    withRequest(readyPr);
     status = statusOf({});
     renderHeader({
       pr: readyPr,
@@ -647,7 +720,9 @@ describe('BranchHeader merge state', () => {
     });
 
     expect(screen.getByRole('button', { name: /^Push 1$/ })).toBeDefined();
-    expect(screen.queryByText(/Checks are still running/)).toBeNull();
+    const reasons = screen.getAllByText(/still running/);
+    expect(reasons).toHaveLength(1);
+    expect(metaOf().contains(reasons[0] as HTMLElement)).toBe(true);
     expect(screen.queryByText('Squash and merge')).toBeNull();
   });
 });
@@ -655,15 +730,8 @@ describe('BranchHeader merge state', () => {
 describe('BranchHeader blocked reason', () => {
   const readyPr: PullRequestState = { ...PR, isDraft: false, checks: 'pending' };
 
-  const withReadyPr = (): void => {
-    useAppStore.setState({
-      sessionGithub: { [SESSION_ID]: { ...MOUNT_GITHUB, pr: readyPr } },
-      mountGithub: { [MOUNT_ID]: { ...MOUNT_GITHUB, pr: readyPr } },
-    });
-  };
-
   it('prints why Merge is blocked in the meta line, beside the tooltip', () => {
-    withReadyPr();
+    withRequest(readyPr);
     status = statusOf({});
     renderHeader({ pr: readyPr });
 
@@ -671,17 +739,14 @@ describe('BranchHeader blocked reason', () => {
     expect(merge.disabled).toBe(true);
     const reason = screen.getByTestId('branch-blocked-reason');
     expect(reason.textContent).toMatch(/still running/);
-    const meta = screen.getByText('Open').closest('div') as HTMLElement;
-    expect(meta.contains(reason)).toBe(true);
+    expect(metaOf().contains(reason)).toBe(true);
   });
 
   it('leaves the meta line alone when the primary can run', () => {
-    withReadyPr();
+    const clear: PullRequestState = { ...PR, isDraft: false };
+    withRequest(clear);
     status = statusOf({});
-    renderHeader({
-      pr: readyPr,
-      review: { accepted: 1, replies: 0, failed: 0, isPushing: false },
-    });
+    renderHeader({ pr: clear });
 
     expect(screen.queryByTestId('branch-blocked-reason')).toBeNull();
   });
@@ -689,12 +754,14 @@ describe('BranchHeader blocked reason', () => {
 
 describe('BranchHeader action row', () => {
   it('ends on Branch actions after the one primary, both at the 28px control height', () => {
-    status = statusOf({ upstream: null });
-    renderHeader();
+    const draft: PullRequestState = { ...PR, isDraft: true };
+    withRequest(draft);
+    status = statusOf({});
+    renderHeader({ pr: draft });
 
-    const primary = screen.getByRole('button', { name: /Create PR/ });
+    const primary = screen.getByRole('button', { name: /Mark ready for review/ });
     const more = screen.getByRole('button', { name: 'Branch actions' });
-    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
+    expect(primaries()).toHaveLength(1);
     expect(primary.getAttribute('data-size')).toBe('sm');
     expect(more.getAttribute('data-size')).toBe('control');
     expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -703,34 +770,18 @@ describe('BranchHeader action row', () => {
   });
 
   it('turns the primary into a secondary while its own confirm is open and back when it closes', () => {
-    withMountPr();
+    const open: PullRequestState = { ...PR, isDraft: false };
+    withRequest(open);
     status = statusOf({});
-    const review = { accepted: 3, replies: 0, failed: 0, isPushing: false };
-    renderHeader({ pr: PR, review, isPrimaryYielding: true });
-    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
-      'secondary',
-    );
+    renderHeader({ pr: open, isPrimaryYielding: true });
+    expect(primaries()).toHaveLength(1);
+    expect(primaries()[0]?.getAttribute('data-variant')).toBe('secondary');
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
     cleanup();
 
-    renderHeader({ pr: PR, review, isPrimaryYielding: false });
-    expect(screen.getByRole('button', { name: /^Push 3$/ }).getAttribute('data-variant')).toBe(
-      'primary',
-    );
+    renderHeader({ pr: open, isPrimaryYielding: false });
+    expect(primaries()[0]?.getAttribute('data-variant')).toBe('primary');
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(1);
-  });
-
-  it('keeps Abort rebase first, then the one primary, then Branch actions', () => {
-    withMountPr();
-    status = statusOf({ changed: 3, inProgress: 'rebase' });
-    renderHeader({ pr: PR });
-
-    const abort = screen.getByRole('button', { name: 'Abort rebase' });
-    const primary = document.querySelector('[data-branch-primary]') as HTMLElement;
-    const more = screen.getByRole('button', { name: 'Branch actions' });
-    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
-    expect(abort.compareDocumentPosition(primary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 

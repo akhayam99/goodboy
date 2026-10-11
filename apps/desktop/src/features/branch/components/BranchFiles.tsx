@@ -1,13 +1,13 @@
-import { ChevronLeft } from 'lucide-react';
 import { EmptyState, PageColumn } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
+import { FixCommentsButton } from '../../resolve/components/FixCommentsButton';
 import { SessionDiffPane } from '../../diff/components/SessionDiffPane';
 import type { SessionDiff } from '../../diff/hooks/useSessionDiff';
 import { WriteReview } from '../../review/components/ReviewPane/WriteReview';
 import { BranchBodyColumn } from './BranchBodyColumn';
-import { NotesButton } from './NotesButton';
 
 type Props = {
   readonly session: Session;
@@ -15,12 +15,22 @@ type Props = {
   readonly worktreePath: string | null;
   readonly diff: SessionDiff;
   readonly hasPullRequest: boolean;
+  readonly isReadOnly: boolean;
 };
 
-export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRequest }: Props) => {
+export const BranchFiles = ({
+  session,
+  workingDir,
+  worktreePath,
+  diff,
+  hasPullRequest,
+  isReadOnly,
+}: Props) => {
   const sessionId = session.id as SessionId;
   const mode = useAppStore((s) => s.pullRequestModes[sessionId] ?? 'overview');
-  const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
+  const mountId = useAppStore(
+    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
+  );
   if (worktreePath === null) {
     return (
       <PageColumn width="column">
@@ -37,19 +47,7 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
   if (mode === 'write_review' && hasPullRequest) {
     return (
       <BranchBodyColumn>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-          <PageColumn width="full">
-            <button
-              type="button"
-              onClick={() => setPullRequestMode({ sessionId, mode: 'overview' })}
-              className="inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-              Files
-            </button>
-          </PageColumn>
-          <WriteReview session={session} />
-        </div>
+        <WriteReview session={session} />
       </BranchBodyColumn>
     );
   }
@@ -60,10 +58,8 @@ export const BranchFiles = ({ session, workingDir, worktreePath, diff, hasPullRe
         workingDir={workingDir}
         worktreePath={worktreePath}
         diff={diff}
-        onWriteReview={
-          hasPullRequest ? () => setPullRequestMode({ sessionId, mode: 'write_review' }) : null
-        }
-        toolbarExtra={<NotesButton sessionId={sessionId} mountPath={worktreePath} />}
+        isReadOnly={isReadOnly}
+        toolbarEnd={<FixCommentsButton sessionId={sessionId} mountId={mountId} />}
       />
     </BranchBodyColumn>
   );

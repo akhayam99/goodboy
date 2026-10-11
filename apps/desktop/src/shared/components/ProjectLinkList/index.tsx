@@ -20,7 +20,7 @@ type Props = {
   readonly emptyHint?: string;
   readonly editorExtra?: (params: { readonly project: Project }) => ReactNode;
   readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
-  readonly rowFooter?: (params: { readonly project: Project }) => ReactNode;
+  readonly editorScripts?: (params: { readonly project: Project }) => ReactNode;
   readonly density?: ProjectLinkDensity;
   readonly heading?: (params: { readonly count: number }) => ReactNode;
   readonly hint?: string;
@@ -32,7 +32,7 @@ export const ProjectLinkList = ({
   emptyHint,
   editorExtra,
   rowBadge,
-  rowFooter,
+  editorScripts,
   density = 'comfortable',
   heading,
   hint,
@@ -88,7 +88,7 @@ export const ProjectLinkList = ({
           onUnlink={linking.unlink}
           editorExtra={editorExtra}
           rowBadge={rowBadge}
-          rowFooter={rowFooter}
+          editorScripts={editorScripts}
         />
       ) : null}
       {linking.linked.length > 0 && !isCompact ? (

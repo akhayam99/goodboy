@@ -294,9 +294,13 @@ describe('the keys', () => {
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
   });
 
-  it('leaves the title alone on E while Comments is the tab', async () => {
+  it('leaves the title alone on E while Comments is the section', async () => {
     await show();
-    fireEvent.click(screen.getByRole('tab', { name: /^Comments/ }));
+    fireEvent.click(
+      within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', {
+        name: /^Comments/,
+      }),
+    );
 
     fireEvent.keyDown(window, { code: 'KeyE', key: 'e' });
 
@@ -317,5 +321,55 @@ describe('the draft and merged pull requests', () => {
 
     expect(within(description()).queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Request review' })).toBeNull();
+  });
+});
+
+describe('the Overview grid', () => {
+  const grid = (): HTMLElement => {
+    const element = document.querySelector<HTMLElement>('[data-slot="overview-grid"]');
+    if (element === null) {
+      throw new Error('the Overview has no grid');
+    }
+    return element;
+  };
+
+  it.each(['github', 'draft', 'merged'] as const)(
+    'puts the description and the activity first and the properties last in the %s state',
+    async (variant) => {
+      await show({ variant });
+
+      const children = [...grid().children];
+      expect(children).toHaveLength(2);
+      expect(children[0]?.contains(description())).toBe(true);
+      expect(children[1]).toBe(screen.getByRole('complementary', { name: 'Properties' }));
+    },
+  );
+
+  it('lists Reviewers, Checks, Linked issues and Base as the properties, and no Status or Files changed', async () => {
+    await show();
+
+    const properties = screen.getByRole('complementary', { name: 'Properties' });
+    const labels = within(properties)
+      .getAllByRole('region')
+      .map((block) => block.getAttribute('aria-label'));
+    expect(labels).toEqual(['Reviewers', 'Checks', 'Linked issues', 'Base']);
+    expect(within(properties).queryByRole('region', { name: 'Status' })).toBeNull();
+    expect(within(properties).queryByRole('region', { name: 'Files changed' })).toBeNull();
+  });
+
+  it('writes the checks on one line and opens the Checks section from it', async () => {
+    await show();
+    useAppStore.setState({ branchTab: { [SESSION.id]: 'pr' } });
+
+    const checks = within(screen.getByRole('region', { name: 'Checks' })).getByRole('button');
+    expect(checks.textContent).toMatch(/passed|failing|running|No checks|Checks unknown/);
+    expect(checks.textContent).not.toMatch(/,/);
+  });
+
+  it('names the base branch once in the Base block', async () => {
+    await show();
+
+    const base = screen.getByRole('region', { name: 'Base' });
+    expect(base.textContent).toContain('main');
   });
 });

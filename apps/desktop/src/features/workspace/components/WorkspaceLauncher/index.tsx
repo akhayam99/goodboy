@@ -5,9 +5,8 @@ import {
   Checkbox,
   Eyebrow,
   IconButton,
-  InlineConfirm,
+  ConfirmPopover,
   ScrollFade,
-  Tooltip,
   EmptyState,
 } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
@@ -15,7 +14,6 @@ import { useAppStore, useWorkspaces } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdatePill } from '../../../updater/components/UpdatePill';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceListRow } from '../WorkspaceListRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
@@ -31,7 +29,6 @@ export const WorkspaceLauncher = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
-  const [disconnectTarget, setDisconnectTarget] = useState<Workspace | null>(null);
   const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
@@ -52,14 +49,6 @@ export const WorkspaceLauncher = () => {
   };
 
   const addWorkspace = () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
-
-  const confirmDisconnect = async () => {
-    if (!disconnectTarget) {
-      return;
-    }
-    await disconnectWorkspace(disconnectTarget.id);
-    setDisconnectTarget(null);
-  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -91,7 +80,7 @@ export const WorkspaceLauncher = () => {
         <IconButton
           icon={CONCEPT_ICONS.settings}
           label="Open settings"
-          tooltip={`Open settings (${shortcutGlyphs('settings.open')})`}
+          shortcut="settings.open"
           variant="ghost"
           onClick={() =>
             window.dispatchEvent(
@@ -137,40 +126,39 @@ export const WorkspaceLauncher = () => {
                 />
               </li>
             ) : (
-              filtered.map((w, i) =>
-                disconnectTarget?.id === w.id ? (
-                  <li key={w.id}>
-                    <InlineConfirm
-                      role="danger"
-                      icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-                      title={`Disconnect ${w.name}?`}
-                      description="Hides it from this list. Nothing on disk is deleted, re-add the same path to bring it back with all its sessions."
-                      confirmLabel="Disconnect"
-                      onConfirm={confirmDisconnect}
-                      onCancel={() => setDisconnectTarget(null)}
-                    />
-                  </li>
-                ) : (
-                  <li key={w.id} className="group/launcher relative">
-                    <WorkspaceListRow
-                      workspace={w}
-                      highlighted={i === activeIndex}
-                      onOpen={() => select(w)}
-                    />
-                    <Tooltip content={`Disconnect ${w.name}`}>
-                      <button
-                        type="button"
-                        data-tauri-drag-region="false"
-                        aria-label={`Disconnect ${w.name}`}
-                        onClick={() => setDisconnectTarget(w)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-border-soft bg-background p-2 text-muted-foreground opacity-0 transition-opacity hover:text-danger focus-visible:opacity-100 group-hover/launcher:opacity-100"
-                      >
-                        <Unplug size={ICON_SIZE.row} aria-hidden />
-                      </button>
-                    </Tooltip>
-                  </li>
-                ),
-              )
+              filtered.map((w, i) => (
+                <li key={w.id} className="group/launcher relative">
+                  <WorkspaceListRow
+                    workspace={w}
+                    highlighted={i === activeIndex}
+                    onOpen={() => select(w)}
+                  />
+                  <ConfirmPopover
+                    role="danger"
+                    icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+                    title={`Disconnect ${w.name}?`}
+                    description="Hides this workspace. Its folders and sessions stay; open its path to reconnect."
+                    confirmLabel="Disconnect workspace"
+                    onConfirm={() => disconnectWorkspace(w.id)}
+                    anchorClassName="absolute right-2 top-1/2 -translate-y-1/2 flex"
+                    returnFocusTo={{ rowSelector: 'li' }}
+                    trigger={({ arm, isArmed }) => (
+                      <IconButton
+                        icon={Unplug}
+                        label={`Disconnect ${w.name}`}
+                        tooltip={`Disconnect ${w.name}`}
+                        variant="ghost"
+                        onClick={arm}
+                        className={
+                          isArmed
+                            ? 'text-danger'
+                            : 'opacity-0 group-hover/launcher:opacity-100 focus-visible:opacity-100'
+                        }
+                      />
+                    )}
+                  />
+                </li>
+              ))
             )}
           </ul>
         </div>

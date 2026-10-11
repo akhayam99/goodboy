@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { QUESTION_DELEGATE_COPY } from '../../../questionDelegate';
+import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { DelegateAnswerRow } from '.';
 
 vi.mock('../../../../../shared/components/RoutingPicker', () => ({
@@ -57,7 +58,7 @@ describe('DelegateAnswerRow', () => {
     renderRow({ state: 'blocked' });
     const link = screen.getByRole('button', { name: QUESTION_DELEGATE_COPY.offer });
     expect(link.hasAttribute('disabled')).toBe(true);
-    expect(link.getAttribute('title')).toBe(QUESTION_DELEGATE_COPY.blocked);
+    expect(tooltipTextOf({ element: link })).toBe(QUESTION_DELEGATE_COPY.blocked);
   });
 
   it('draws nothing while the delegated agent answers', () => {

@@ -1,7 +1,7 @@
 import { AlertTriangle, CircleStop, ClipboardCheck, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
-import { Button, Chip, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { StatusDot, cn, tintClasses, Tooltip } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
@@ -16,19 +16,7 @@ type Props = {
   readonly isOrchestrating: boolean;
   readonly hasOrchestratorStrip?: boolean;
   readonly blockReason?: WorkflowBlockReason | null;
-  readonly question?: WorkflowRunStatusQuestion | null;
-  readonly reviewPlan?: WorkflowRunStatusReviewPlan | null;
-};
-
-type WorkflowRunStatusReviewPlan = {
-  readonly emphasis: 'primary' | 'secondary';
-  readonly onReview: () => void;
-};
-
-type WorkflowRunStatusQuestion = {
-  readonly count: number;
-  readonly isInView: boolean;
-  readonly onReveal: () => void;
+  readonly isQuestionShownBelow?: boolean;
 };
 
 export const WorkflowRunStatus = ({
@@ -39,8 +27,7 @@ export const WorkflowRunStatus = ({
   isOrchestrating,
   hasOrchestratorStrip = false,
   blockReason = null,
-  question = null,
-  reviewPlan = null,
+  isQuestionShownBelow = false,
 }: Props) => {
   const completedSteps = agents.filter((agent) =>
     isAgentStatusSettled({ status: agent.status }),
@@ -76,10 +63,12 @@ export const WorkflowRunStatus = ({
   }
   if (isWorkflowRunClosedByUser({ run })) {
     return (
-      <span className={cn(baseClass, 'bg-muted text-muted-foreground')} title="Closed by you">
-        <CONCEPT_ICONS.runDone size={ICON_SIZE.mark} aria-hidden />
-        Closed
-      </span>
+      <Tooltip content="Closed by you">
+        <span className={cn(baseClass, 'bg-muted text-muted-foreground')}>
+          <CONCEPT_ICONS.runDone size={ICON_SIZE.mark} aria-hidden />
+          Closed
+        </span>
+      </Tooltip>
     );
   }
   if (isCompleted) {
@@ -93,88 +82,80 @@ export const WorkflowRunStatus = ({
   const stop = run.orchestrationStop;
   if (isRunPaused({ run }) && !hasOrchestratorStrip) {
     return (
-      <span
-        className={cn(baseClass, 'bg-muted text-muted-foreground')}
-        title={stop?.message}
-        data-testid="workflow-run-paused"
-      >
-        <Pause size={ICON_SIZE.mark} aria-hidden />
-        Paused
-      </span>
-    );
-  }
-  if (isRunHeldForPlan({ run }) && !hasOrchestratorStrip && reviewPlan !== null) {
-    return (
-      <Button
-        size="xs"
-        variant={reviewPlan.emphasis === 'primary' ? 'primary' : 'secondary'}
-        title={stop?.message}
-        data-testid="workflow-run-plan-ready"
-        onClick={reviewPlan.onReview}
-      >
-        <ClipboardCheck size={ICON_SIZE.row} aria-hidden />
-        Review plan
-      </Button>
+      <Tooltip content={stop?.message}>
+        <span
+          className={cn(baseClass, 'bg-muted text-muted-foreground')}
+          data-testid="workflow-run-paused"
+        >
+          <Pause size={ICON_SIZE.mark} aria-hidden />
+          Paused
+        </span>
+      </Tooltip>
     );
   }
   if (isRunHeldForPlan({ run }) && !hasOrchestratorStrip) {
     return (
-      <span
-        className={cn(baseClass, cn(tintClasses('info').bg, 'text-info'))}
-        title={stop?.message}
-        data-testid="workflow-run-plan-ready"
-      >
-        <ClipboardCheck size={ICON_SIZE.mark} aria-hidden />
-        Plan ready
-      </span>
+      <Tooltip content={stop?.message}>
+        <span
+          className={cn(baseClass, cn(tintClasses('info').bg, 'text-info'))}
+          data-testid="workflow-run-plan-ready"
+        >
+          <ClipboardCheck size={ICON_SIZE.mark} aria-hidden />
+          Plan ready
+        </span>
+      </Tooltip>
     );
   }
   if (stop?.kind === 'operator' && isOrchestrating && !hasOrchestratorStrip) {
     return (
-      <span
-        className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
-        title="Waiting for the decision already in flight"
-        data-testid="workflow-orchestrator-stopping"
-      >
-        <CircleStop size={ICON_SIZE.mark} aria-hidden />
-        Stopping
-      </span>
+      <Tooltip content="Waiting for the decision already in flight">
+        <span
+          className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
+          data-testid="workflow-orchestrator-stopping"
+        >
+          <CircleStop size={ICON_SIZE.mark} aria-hidden />
+          Stopping
+        </span>
+      </Tooltip>
     );
   }
   if (stop?.kind === 'operator' && !hasOrchestratorStrip) {
     return (
-      <span
-        className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
-        title={stop.message}
-        data-testid="workflow-orchestrator-stopped"
-      >
-        <CircleStop size={ICON_SIZE.mark} aria-hidden />
-        Stopped
-      </span>
+      <Tooltip content={stop.message}>
+        <span
+          className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
+          data-testid="workflow-orchestrator-stopped"
+        >
+          <CircleStop size={ICON_SIZE.mark} aria-hidden />
+          Stopped
+        </span>
+      </Tooltip>
     );
   }
   if (stop?.kind === 'budget' && !isRunning && !hasOrchestratorStrip) {
     return (
-      <span
-        className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
-        title={stop.message}
-        data-testid="workflow-orchestrator-budget-paused"
-      >
-        <Pause size={ICON_SIZE.mark} aria-hidden />
-        Budget paused
-      </span>
+      <Tooltip content={stop.message}>
+        <span
+          className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
+          data-testid="workflow-orchestrator-budget-paused"
+        >
+          <Pause size={ICON_SIZE.mark} aria-hidden />
+          Budget paused
+        </span>
+      </Tooltip>
     );
   }
   if (stop != null && !isRunning && !hasOrchestratorStrip) {
     return (
-      <span
-        className={cn(baseClass, cn(tintClasses('danger').bg, 'text-danger'))}
-        title={stop.message}
-        data-testid="workflow-orchestrator-failed"
-      >
-        <AlertTriangle size={ICON_SIZE.mark} aria-hidden />
-        Orchestrator failed
-      </span>
+      <Tooltip content={stop.message}>
+        <span
+          className={cn(baseClass, cn(tintClasses('danger').bg, 'text-danger'))}
+          data-testid="workflow-orchestrator-failed"
+        >
+          <AlertTriangle size={ICON_SIZE.mark} aria-hidden />
+          Orchestrator failed
+        </span>
+      </Tooltip>
     );
   }
   if (isRunning && !hasOrchestratorStrip) {
@@ -185,38 +166,17 @@ export const WorkflowRunStatus = ({
       </span>
     );
   }
-  if (blockReason === 'questions' && !hasOrchestratorStrip && question !== null) {
-    if (question.isInView) {
-      return null;
-    }
-    const label =
-      question.count === 1
-        ? '1 question waits on you, show the agent that asked'
-        : `${question.count} questions wait on you, show the agents that asked`;
-    return (
-      <Chip
-        as="button"
-        tone="warning"
-        kind="reference"
-        emphasis="subtle"
-        testId="workflow-run-needs-you"
-        ariaLabel={label}
-        title={label}
-        icon={<CONCEPT_ICONS.questions size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
-        label={question.count}
-        onClick={question.onReveal}
-      />
-    );
+  if (blockReason === 'questions' && !hasOrchestratorStrip && isQuestionShownBelow) {
+    return null;
   }
   if (blockReason === 'questions' && !hasOrchestratorStrip) {
     return (
-      <span
-        className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}
-        title="An open question blocks the next step"
-      >
-        <CONCEPT_ICONS.questions size={ICON_SIZE.mark} aria-hidden />
-        Blocked
-      </span>
+      <Tooltip content="An open question blocks the next step">
+        <span className={cn(baseClass, cn(tintClasses('warning').bg, 'text-warning'))}>
+          <CONCEPT_ICONS.questions size={ICON_SIZE.mark} aria-hidden />
+          Blocked
+        </span>
+      </Tooltip>
     );
   }
   if (isDeciding && !hasOrchestratorStrip) {
@@ -237,13 +197,12 @@ export const WorkflowRunStatus = ({
   }
   if (isQueuedAfter) {
     return (
-      <span
-        className={cn(baseClass, 'max-w-40 truncate bg-muted text-muted-foreground')}
-        title={`After ${predecessorName}`}
-      >
-        <Link2 size={ICON_SIZE.mark} aria-hidden />
-        After {predecessorName}
-      </span>
+      <Tooltip content={`After ${predecessorName}`}>
+        <span className={cn(baseClass, 'max-w-40 truncate bg-muted text-muted-foreground')}>
+          <Link2 size={ICON_SIZE.mark} aria-hidden />
+          After {predecessorName}
+        </span>
+      </Tooltip>
     );
   }
   if (hasOrchestratorStrip) {

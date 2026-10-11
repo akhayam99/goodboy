@@ -19,6 +19,7 @@ import { useTelemetryForSessions } from '../sessions/selectors';
 import { useDormantSpend } from '../dormant-spend/selectors';
 import { spendSources } from '../../../shared/utils/spendSources';
 import { usePinnedSessionIds } from '../session-pins/selectors';
+import { filterSessionsByStatus, withExemptSessions } from './filterSessionList';
 import { sortAndGroupSessions } from './sortAndGroupSessions';
 import { layoutSessionColumn, type SessionColumnLayout } from './layoutSessionColumn';
 import { projectsBySession } from './projectOfSession';
@@ -65,9 +66,9 @@ const pickBySessions = <T>({
 }): Readonly<Record<SessionId, T>> => {
   const picked: Record<SessionId, T> = {};
   for (const session of sessions) {
-    const value = map?.[session.id as SessionId];
+    const value = map?.[session.id];
     if (value !== undefined) {
-      picked[session.id as SessionId] = value;
+      picked[session.id] = value;
     }
   }
   return picked;
@@ -103,13 +104,24 @@ const useStableStages = (
   return ref.current;
 };
 
+const NO_EXEMPT_IDS: ReadonlySet<string> = new Set();
+
 type StageSourcesParams = {
   readonly workspaceId: WorkspaceId | null;
   readonly sessions: ReadonlyArray<Session>;
+  readonly exemptIds?: ReadonlySet<string>;
 };
 
-const useStageSources = ({ workspaceId, sessions }: StageSourcesParams) => {
-  const filteredSessions = useProjectFilteredSessions({ workspaceId, sessions });
+const useStageSources = ({
+  workspaceId,
+  sessions,
+  exemptIds = NO_EXEMPT_IDS,
+}: StageSourcesParams) => {
+  const projectMatched = useProjectFilteredSessions({ workspaceId, sessions });
+  const filteredSessions = useMemo(
+    () => withExemptSessions({ sessions, matched: projectMatched, exemptIds }),
+    [sessions, projectMatched, exemptIds],
+  );
   const sessionGithub = useAppStore((s) => s.sessionGithub);
   const sessionGitlabMr = useAppStore((s) => s.sessionGitlabMr);
   const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
@@ -170,7 +182,7 @@ const useStageSources = ({ workspaceId, sessions }: StageSourcesParams) => {
     };
     const next: Record<SessionId, SessionStage> = {};
     for (const session of filteredSessions) {
-      next[session.id as SessionId] = stageInfoOf(partial, session).stage;
+      next[session.id] = stageInfoOf(partial, session).stage;
     }
     return next;
   }, [
@@ -208,9 +220,31 @@ const useStageSources = ({ workspaceId, sessions }: StageSourcesParams) => {
   };
 };
 
+const useLastTurnBySession = (sessions: ReadonlyArray<Session>): Readonly<Record<string, string>> =>
+  useAppStore(
+    useShallow((s) => {
+      const ids = new Set<string>(sessions.map((session) => session.id));
+      const picked: Record<string, string> = {};
+      for (const [sessionId, runs] of Object.entries(s.sessionPhaseRuns)) {
+        if (!ids.has(sessionId)) {
+          continue;
+        }
+        for (const run of runs) {
+          const finished = run.lastFinishedAt ?? null;
+          const known = picked[sessionId];
+          if (finished !== null && (known === undefined || finished > known)) {
+            picked[sessionId] = finished;
+          }
+        }
+      }
+      return picked;
+    }),
+  );
+
 type SessionListModel = {
   readonly groups: ReadonlyArray<GroupedSessions>;
   readonly stageBySession: Readonly<Record<SessionId, SessionStage>>;
+  readonly hiddenByFilters: number;
 };
 
 const useSessionListModel = (
@@ -218,32 +252,57 @@ const useSessionListModel = (
   sessions: ReadonlyArray<Session>,
 ): SessionListModel => {
   const prefs = useSessionViewPrefs(workspaceId);
+  const pinnedIds = usePinnedSessionIds({ workspaceId });
+  const currentSessionId = useAppStore((s) => s.currentSessionId);
+  const exemptIds = useMemo(
+    () => new Set<string>(currentSessionId === null ? pinnedIds : [...pinnedIds, currentSessionId]),
+    [pinnedIds, currentSessionId],
+  );
   const { filteredSessions, stages, sessionGithub, sessionProjectMounts, projects } =
-    useStageSources({ workspaceId, sessions });
-  return useMemo(
-    () => ({
+    useStageSources({ workspaceId, sessions, exemptIds });
+  const lastTurnBySession = useLastTurnBySession(filteredSessions);
+  return useMemo(() => {
+    const shown = filterSessionsByStatus({
+      sessions: filteredSessions,
+      statusFilter: prefs.statusFilter,
+      stageBySession: stages,
+      exemptIds,
+    });
+    return {
       groups: sortAndGroupSessions({
-        sessions: filteredSessions,
+        sessions: shown,
         prefs,
         githubState: sessionGithub,
         stageBySession: stages,
+        lastTurnBySession,
         projectBySession:
           prefs.group === 'project'
             ? projectsBySession({
-                sessions: filteredSessions,
+                sessions: shown,
                 mountsBySession: sessionProjectMounts,
                 projects,
               })
             : {},
       }),
       stageBySession: stages,
-    }),
-    [filteredSessions, prefs, sessionGithub, stages, sessionProjectMounts, projects],
-  );
+      hiddenByFilters: sessions.length - shown.length,
+    };
+  }, [
+    filteredSessions,
+    sessions.length,
+    prefs,
+    sessionGithub,
+    stages,
+    sessionProjectMounts,
+    projects,
+    exemptIds,
+    lastTurnBySession,
+  ]);
 };
 
 type SessionColumn = SessionColumnLayout & {
   readonly stageBySession: Readonly<Record<SessionId, SessionStage>>;
+  readonly hiddenByFilters: number;
 };
 
 export const useSessionColumn = (
@@ -251,7 +310,7 @@ export const useSessionColumn = (
   sessions: ReadonlyArray<Session>,
 ): SessionColumn => {
   const prefs = useSessionViewPrefs(workspaceId);
-  const { groups, stageBySession } = useSessionListModel(workspaceId, sessions);
+  const { groups, stageBySession, hiddenByFilters } = useSessionListModel(workspaceId, sessions);
   const groupExpanded = useAppStore((s) => s.sessionGroupExpanded);
   const currentSessionId = useAppStore((s) => s.currentSessionId as SessionId | null);
   const pinnedIds = usePinnedSessionIds({ workspaceId });
@@ -266,8 +325,9 @@ export const useSessionColumn = (
         pinnedIds,
       }),
       stageBySession,
+      hiddenByFilters,
     }),
-    [groups, prefs, groupExpanded, currentSessionId, stageBySession, pinnedIds],
+    [groups, prefs, groupExpanded, currentSessionId, stageBySession, pinnedIds, hiddenByFilters],
   );
 };
 
@@ -305,6 +365,7 @@ export const useStageGroupedSessions = (
 ): ReadonlyArray<GroupedSessions> => {
   const prefs = useSessionViewPrefs(workspaceId);
   const { filteredSessions, stages, sessionGithub } = useStageSources({ workspaceId, sessions });
+  const lastTurnBySession = useLastTurnBySession(filteredSessions);
   const previousRef = useRef<ReadonlyArray<GroupedSessions> | null>(null);
   const grouped = useMemo(
     () =>
@@ -313,8 +374,9 @@ export const useStageGroupedSessions = (
         prefs: { ...prefs, group: 'stage' },
         githubState: sessionGithub,
         stageBySession: stages,
+        lastTurnBySession,
       }),
-    [filteredSessions, prefs, sessionGithub, stages],
+    [filteredSessions, prefs, sessionGithub, stages, lastTurnBySession],
   );
   if (previousRef.current !== null && groupedSessionsEqual(grouped, previousRef.current)) {
     return previousRef.current;

@@ -39,6 +39,7 @@ mod linear;
 mod live_child;
 mod local_image;
 mod logging;
+mod monitor;
 mod path_env;
 mod permissions;
 mod planner;
@@ -51,6 +52,7 @@ mod provider_credentials;
 mod provider_lifecycle;
 mod provider_standing_log;
 mod providers;
+mod pty_ring;
 mod publish;
 mod qa_preview;
 mod query_bridge;
@@ -313,6 +315,8 @@ pub fn run() {
             worktree::worktree_remote_url,
             worktree::worktree_diff,
             worktree::worktree_diff_file,
+            worktree::worktree_file_sides,
+            worktree::worktree_grep_word,
             worktree::worktree_changed_files,
             worktree::worktree_commits,
             worktree::worktree_is_ancestor,
@@ -374,6 +378,7 @@ pub fn run() {
             providers::refresh_openrouter_status,
             providers::refresh_moonshot_status,
             providers::check_provider_auth,
+            providers::test_connection::provider_test_connection,
             provider_standing_log::log_provider_standing,
             provider_credentials::provider_api_key_validate,
             provider_lifecycle::provider_lifecycle_run,
@@ -463,12 +468,18 @@ pub fn run() {
             scripts::workspace_script_run,
             scripts::workspace_script_run_adhoc,
             scripts::workspace_script_list_live,
+            scripts::workspace_script_snapshot,
             scripts::workspace_script_cancel,
             terminal::terminal_open,
             terminal::terminal_list_live,
+            terminal::terminal_snapshot,
             terminal::terminal_write,
             terminal::terminal_resize,
             terminal::terminal_close,
+            proc::ledger::process_ledger_list,
+            monitor::monitor_snapshot,
+            monitor::stop::monitor_stop,
+            monitor::watched::monitor_watched_ports,
             workflows::workflow_list,
             workflows::workflows_for_session,
             workflows::step_def_list,
@@ -537,6 +548,7 @@ pub fn run() {
             gitlab::gitlab_mr_for_branch,
             gitlab::gitlab_create_mr,
             gitlab::gitlab_merge_mr,
+            gitlab::gitlab_cancel_auto_merge,
             gitlab::gitlab_mr_diff,
             gitlab::gitlab_mr_diff_refs,
             gitlab::gitlab_create_mr_discussion,

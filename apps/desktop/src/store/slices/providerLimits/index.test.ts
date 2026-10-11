@@ -2,20 +2,36 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderLimits } from '@goodboy/types';
 
-const { listSpy, upsertSpy, invokeSpy } = vi.hoisted(() => ({
-  listSpy: vi.fn(),
-  upsertSpy: vi.fn(),
-  invokeSpy: vi.fn(),
-}));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).sqliteDbLibModuleMock(),
+);
 
-vi.mock('@goodboy/db', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@goodboy/db')>();
-  return { ...actual, listProviderLimits: listSpy, upsertProviderLimits: upsertSpy };
-});
+import { upsertProviderLimits, listProviderLimits } from '@goodboy/db';
+import { beforeAll } from 'vitest';
+import {
+  importStore,
+  openStorySqlite,
+  storySqlite,
+  rowsOf,
+  resetStoryStore,
+  storySpies,
+  stubStoryInvoke,
+  STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
+} from '../../storyHarness';
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
+let useAppStore: StoryStore;
+const invokeSpy = storySpies.tauriInvoke;
 
-import { createProviderLimitsSlice } from './index';
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 const WEEKLY_WARNING: ProviderLimits = {
   providerId: 'anthropic',
@@ -49,29 +65,21 @@ const FIVE_HOUR_OK: ProviderLimits = {
   observedAt: '2099-01-01T10:00:00.000Z' as IsoDateTime,
 };
 
-const harness = () => {
-  let state: Record<string, unknown> = {};
-  const set = (
-    patch: Record<string, unknown> | ((s: Record<string, unknown>) => Record<string, unknown>),
-  ) => {
-    state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
-  };
-  const get = () => state;
-  const slice = createProviderLimitsSlice({ set: set as never, get: get as never });
-  state = { ...slice };
-  return { slice, read: () => state };
-};
+const harness = () => ({ slice: useAppStore.getState(), read: useAppStore.getState });
 
-beforeEach(() => {
-  listSpy.mockReset();
-  upsertSpy.mockReset();
-  invokeSpy.mockReset();
-  upsertSpy.mockResolvedValue(undefined);
+beforeEach(async () => {
+  await resetStoryStore();
+  await openStorySqlite();
+  stubStoryInvoke({
+    codex_rate_limits_latest: null,
+    codex_rate_limits_probe: null,
+    claude_usage_probe: null,
+  });
 });
 
 describe('providerLimits slice', () => {
   it('loads the last observation per provider from the database', async () => {
-    listSpy.mockResolvedValue([WEEKLY_WARNING]);
+    await upsertProviderLimits({ db: storySqlite(), limits: WEEKLY_WARNING, nowMs: Date.now() });
     const { slice, read } = harness();
 
     await slice.loadProviderLimits();
@@ -85,12 +93,10 @@ describe('providerLimits slice', () => {
     await slice.recordProviderLimits({ limits: WEEKLY_WARNING });
     await slice.recordProviderLimits({ limits: FIVE_HOUR_OK });
 
-    const saved = read().providerLimits as Record<string, ProviderLimits>;
+    const saved = read().providerLimits;
     expect(saved.anthropic?.status).toBe('warning');
     expect(saved.anthropic?.windows.map((window) => window.kind)).toEqual(['fiveHour', 'weekly']);
-    expect(upsertSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ limits: saved.anthropic }),
-    );
+    expect(await listProviderLimits({ db: storySqlite() })).toEqual([saved.anthropic]);
   });
 
   it('ignores an observation older than the one it holds', async () => {
@@ -99,14 +105,14 @@ describe('providerLimits slice', () => {
     await slice.recordProviderLimits({ limits: FIVE_HOUR_OK });
     await slice.recordProviderLimits({ limits: WEEKLY_WARNING });
 
-    expect((read().providerLimits as Record<string, ProviderLimits>).anthropic).toEqual(
-      FIVE_HOUR_OK,
-    );
-    expect(upsertSpy).toHaveBeenCalledTimes(1);
+    expect(read().providerLimits.anthropic).toEqual(FIVE_HOUR_OK);
+    expect(await rowsOf({ sql: 'SELECT observed_at FROM provider_limits' })).toEqual([
+      { observed_at: Date.parse(FIVE_HOUR_OK.observedAt) },
+    ]);
   });
 
   it('reads codex limits and free resets from the app server', async () => {
-    invokeSpy.mockImplementation(async (command: string) =>
+    invokeSpy.mockImplementation(async (command: unknown) =>
       command === 'codex_rate_limits_probe'
         ? {
             rateLimitsByLimitId: {
@@ -131,8 +137,8 @@ describe('providerLimits slice', () => {
     expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_probe', {
       includeResetCreditDetails: true,
     });
-    expect(invokeSpy).not.toHaveBeenCalledWith('codex_rate_limits_latest');
-    expect((read().providerLimits as Record<string, ProviderLimits>).codex).toMatchObject({
+    expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_latest');
+    expect(read().providerLimits.codex).toMatchObject({
       plan: 'Plus',
       status: 'reached',
     });
@@ -143,32 +149,35 @@ describe('providerLimits slice', () => {
   });
 
   it('keeps the credit details a background poll skipped', async () => {
-    const withCredits = (credits: unknown) => ({
+    type CreditsParams = { readonly credits: unknown };
+    const withCredits = ({ credits }: CreditsParams) => ({
       rateLimits: {
         primary: { usedPercent: 10, windowDurationMins: 300, resetsAt: 4070937600 },
         planType: 'plus',
       },
       rateLimitResetCredits: { availableCount: 1, credits },
     });
-    invokeSpy.mockResolvedValueOnce(
-      withCredits([{ id: 'credit-1', status: 'available', expiresAt: 4071024000 }]),
-    );
+    stubStoryInvoke({
+      codex_rate_limits_probe: withCredits({
+        credits: [{ id: 'credit-1', status: 'available', expiresAt: 4071024000 }],
+      }),
+    });
     const { slice, read } = harness();
     await slice.refreshCodexLimits({ withResetDetails: true });
 
-    invokeSpy.mockResolvedValueOnce(withCredits(null));
+    stubStoryInvoke({ codex_rate_limits_probe: withCredits({ credits: null }) });
     await slice.refreshCodexLimits();
 
     expect(read().codexResetCredits).toMatchObject({ availableCount: 1, creditId: 'credit-1' });
   });
 
-  it('falls back to the latest Codex rollout when the app server fails', async () => {
-    invokeSpy.mockImplementation(async (command: string) => {
+  it('keeps a stale Codex rollout when the app server fails', async () => {
+    invokeSpy.mockImplementation(async (command: unknown) => {
       if (command === 'codex_rate_limits_probe') {
         throw new Error('spawn failed');
       }
       return {
-        observedAt: '2099-01-01T10:59:20.919Z',
+        observedAt: new Date(Date.now() - 6 * 60_000).toISOString(),
         rateLimits: {
           primary: { used_percent: 12, window_minutes: 300, resets_at: 4070937600 },
           secondary: { used_percent: 100, window_minutes: 10080, resets_at: 4071024000 },
@@ -181,7 +190,7 @@ describe('providerLimits slice', () => {
     await slice.refreshCodexLimits();
 
     expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_latest');
-    expect((read().providerLimits as Record<string, ProviderLimits>).codex).toMatchObject({
+    expect(read().providerLimits.codex).toMatchObject({
       plan: 'Plus',
       status: 'reached',
     });
@@ -209,7 +218,7 @@ describe('providerLimits slice', () => {
     await slice.refreshClaudeUsage();
 
     expect(invokeSpy).toHaveBeenCalledWith('claude_usage_probe');
-    expect((read().providerLimits as Record<string, ProviderLimits>).anthropic).toMatchObject({
+    expect(read().providerLimits.anthropic).toMatchObject({
       providerId: 'anthropic',
       windows: [expect.objectContaining({ kind: 'fiveHour', usedFraction: 0.04 })],
     });
@@ -217,9 +226,7 @@ describe('providerLimits slice', () => {
 
   it('skips the claude usage probe when the CLI is known to be signed out', async () => {
     const { slice, read } = harness();
-    (read() as { authResults: unknown }).authResults = {
-      anthropic: { state: 'disconnected', identity: null },
-    };
+    useAppStore.setState({ authResults: { anthropic: { state: 'disconnected', identity: null } } });
 
     await slice.refreshClaudeUsage();
 
@@ -243,9 +250,9 @@ describe('providerLimits slice', () => {
     const { slice, read } = harness();
 
     expect(await slice.consumeCodexResetCredit()).toBe('failed');
-    const firstKey = (read().codexPendingReset as { idempotencyKey: string }).idempotencyKey;
+    const firstKey = read().codexPendingReset?.idempotencyKey;
 
-    invokeSpy.mockImplementation(async (command: string) =>
+    invokeSpy.mockImplementation(async (command: unknown) =>
       command === 'codex_consume_reset_credit' ? { outcome: 'alreadyRedeemed' } : null,
     );
     expect(await slice.consumeCodexResetCredit()).toBe('reset');
@@ -266,14 +273,46 @@ describe('providerLimits slice', () => {
   it('drops the reset row when codex says no credit is left', async () => {
     invokeSpy.mockResolvedValue({ outcome: 'noCredit' });
     const { slice, read } = harness();
-    (read() as { codexResetCredits: unknown }).codexResetCredits = {
-      availableCount: 1,
-      creditId: 'credit-1',
-      expiresAt: null,
-      observedAt: '2099-01-01T09:00:00.000Z',
-    };
+    useAppStore.setState({
+      codexResetCredits: {
+        availableCount: 1,
+        creditId: 'credit-1',
+        expiresAt: null,
+        observedAt: WEEKLY_WARNING.observedAt,
+      },
+    });
 
     expect(await slice.consumeCodexResetCredit()).toBe('noCredit');
     expect(read().codexResetCredits).toMatchObject({ availableCount: 0 });
+  });
+  it('reads a fresh rollout without starting the app server', async () => {
+    stubStoryInvoke({
+      codex_rate_limits_latest: {
+        observedAt: new Date(Date.now() - 60_000).toISOString(),
+        rateLimits: {
+          primary: { used_percent: 12, window_minutes: 300, resets_at: 4070937600 },
+          plan_type: 'plus',
+        },
+      },
+    });
+    await useAppStore.getState().refreshCodexLimits();
+    expect(invokeSpy).not.toHaveBeenCalledWith('codex_rate_limits_probe', expect.anything());
+    expect(useAppStore.getState().providerLimits.codex?.windows[0]?.usedFraction).toBe(0.12);
+  });
+
+  it('asks the app server when the rollout is older than five minutes', async () => {
+    stubStoryInvoke({
+      codex_rate_limits_latest: {
+        observedAt: new Date(Date.now() - 300_001).toISOString(),
+        rateLimits: {
+          primary: { used_percent: 12, window_minutes: 300, resets_at: 4070937600 },
+          plan_type: 'plus',
+        },
+      },
+    });
+    await useAppStore.getState().refreshCodexLimits();
+    expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_probe', {
+      includeResetCreditDetails: false,
+    });
   });
 });

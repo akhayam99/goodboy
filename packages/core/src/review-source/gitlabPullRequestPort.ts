@@ -18,6 +18,7 @@ import {
   requirePullRequestCapability,
   type PullRequestPort,
 } from './pullRequestPort';
+import { HOST_CAPABILITIES } from './hostCapabilities';
 import { REVIEW_SOURCE_CAPABILITIES, type ReviewSourceCapabilities } from './types';
 
 export type GitlabPersonPayload = Readonly<{
@@ -36,6 +37,7 @@ export type GitlabMergeRequestPayload = Readonly<{
   sourceBranch: string;
   targetBranch: string;
   draft: boolean;
+  isMergeWhenPipelineSucceeds?: boolean;
   hasConflicts: boolean;
   mergeStatus: string | null;
   updatedAt: string;
@@ -93,6 +95,7 @@ export type GitlabPullRequestTransport = Readonly<{
   }) => Promise<void>;
   setState: (params: { readonly stateEvent: GitlabMergeStateEvent }) => Promise<void>;
   merge: (params: { readonly method: PrMergeMethod }) => Promise<void>;
+  cancelAutoMerge: () => Promise<void>;
   projectMergeSettings: () => Promise<GitlabMergeSettingsPayload>;
   searchUsers: (params: { readonly query: string }) => Promise<ReadonlyArray<GitlabPersonPayload>>;
 }>;
@@ -105,7 +108,7 @@ type Params = Readonly<{
 
 const FIRST_FILES = 7;
 
-const MERGE_METHOD_ORDER: ReadonlyArray<PrMergeMethod> = ['squash', 'merge', 'rebase'];
+const MERGE_METHOD_ORDER: ReadonlyArray<PrMergeMethod> = HOST_CAPABILITIES.gitlab.mergeMethods;
 
 const SET_BY_THE_PROJECT = 'Set by the project';
 
@@ -135,20 +138,24 @@ export const gitlabJobConclusion = ({
   return conclusion === 'failure' && allowFailure ? 'neutral' : conclusion;
 };
 
+type StateKindParams = {
+  readonly state: string;
+  readonly draft: boolean;
+  readonly isMergeWhenPipelineSucceeds?: boolean;
+};
+
 export const gitlabStateKindOf = ({
   state,
   draft,
-}: {
-  readonly state: string;
-  readonly draft: boolean;
-}): PullRequestStateKind => {
+  isMergeWhenPipelineSucceeds = false,
+}: StateKindParams): PullRequestStateKind => {
   if (state === 'merged') {
     return 'merged';
   }
   if (state === 'closed') {
     return 'closed';
   }
-  if (state === 'locked') {
+  if (state === 'locked' || isMergeWhenPipelineSucceeds) {
     return 'queued';
   }
   return draft ? 'draft' : 'open';
@@ -217,7 +224,7 @@ export const gitlabMergeMethodsOf = ({
 };
 
 const FALLBACK_MERGE_METHODS: Pick<PullRequestView, 'mergeMethods' | 'mergeMethodReasons'> = {
-  mergeMethods: ['merge', 'squash'],
+  mergeMethods: HOST_CAPABILITIES.gitlab.fallbackMergeMethods,
   mergeMethodReasons: {},
 };
 
@@ -361,7 +368,12 @@ export const gitlabPullRequestPort = ({
         title: stripGitlabDraftPrefix({ title: mr.title }),
         body: mr.description ?? '',
         url,
-        state: gitlabStateKindOf({ state: mr.state, draft: mr.draft }),
+        state: gitlabStateKindOf({
+          state: mr.state,
+          draft: mr.draft,
+          isMergeWhenPipelineSucceeds: mr.isMergeWhenPipelineSucceeds ?? false,
+        }),
+        isAutoMerge: mr.isMergeWhenPipelineSucceeds ?? false,
         isDraft: mr.draft,
         author: mr.author == null ? null : personOf({ person: mr.author }),
         baseBranch: mr.targetBranch,
@@ -440,6 +452,10 @@ export const gitlabPullRequestPort = ({
     },
     merge: async ({ method }) => {
       await write(() => transport.merge({ method }));
+    },
+    cancelAutoMerge: async () => {
+      requirePullRequestCapability({ capabilities, capability: 'canCancelAutoMerge' });
+      await write(() => transport.cancelAutoMerge());
     },
     close: async () => {
       requirePullRequestCapability({ capabilities, capability: 'canClose' });

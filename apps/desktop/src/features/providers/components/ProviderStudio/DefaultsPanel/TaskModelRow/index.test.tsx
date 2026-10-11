@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { getModelProvider } from '@goodboy/core';
 import type { ProviderId, TaskModelPreference } from '@goodboy/types';
+import { nextWorkspaceId } from '@goodboy/types/testing';
 import { TaskModelRow } from './index';
+
+const WORKSPACE_ID = nextWorkspaceId();
 
 const CONNECTED = ['anthropic', 'cursor'] satisfies ReadonlyArray<ProviderId>;
 
@@ -14,12 +17,11 @@ type RenderParams = {
 const renderRow = ({ preference, onChange }: RenderParams) =>
   render(
     <TaskModelRow
+      workspaceId={WORKSPACE_ID}
       task="summarizer"
       label="Step summaries"
       help="writes the step summary"
       preference={preference}
-      defaultProviderId="anthropic"
-      providerPolicy={null}
       connectedProviderIds={CONNECTED}
       disabled={false}
       onChange={onChange}
@@ -80,12 +82,11 @@ describe('TaskModelRow', () => {
     const onChange = vi.fn<(preference: TaskModelPreference | null) => void>();
     render(
       <TaskModelRow
+        workspaceId={WORKSPACE_ID}
         task="summarizer"
         label="Step summaries"
         help="writes the step summary"
         preference={{ providerId: 'gemini', model: 'gemini-3.1-pro' }}
-        defaultProviderId="anthropic"
-        providerPolicy={null}
         connectedProviderIds={['anthropic', 'gemini']}
         disabled={false}
         onChange={onChange}

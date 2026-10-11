@@ -4,16 +4,35 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Circle } from 'lucide-react';
 import { Trail } from '../components/Trail';
-import type { CrumbMenuModel } from '../components/Trail/crumbMenuTypes';
+import type { CrumbMenuModel, CrumbMenuRow } from '../components/Trail/crumbMenuTypes';
 
 afterEach(cleanup);
+
+const rowOf = ({ id, label }: { readonly id: string; readonly label: string }): CrumbMenuRow => ({
+  id,
+  lead: { kind: 'icon', icon: Circle },
+  label,
+  secondary: null,
+  metaA: null,
+  state: null,
+  isCurrent: id === 'pages',
+  isDisabled: false,
+  indent: 0,
+  onSelect: vi.fn(),
+});
 
 const MENU: CrumbMenuModel = {
   title: 'Pages',
   context: null,
   count: null,
   triggerLabel: 'Switch page',
-  groups: [],
+  groups: [
+    {
+      id: 'pages',
+      label: null,
+      rows: [rowOf({ id: 'pages', label: 'Pages' }), rowOf({ id: 'runs', label: 'Runs' })],
+    },
+  ],
   actions: [],
   width: 'narrow',
   filterPlaceholder: null,
@@ -45,7 +64,6 @@ describe('Trail', () => {
   it('ends every segment but the page with the same chevron, with or without a menu', () => {
     const { container } = render(
       <Trail
-        lead={<span data-testid="lead" />}
         segments={[
           { id: 'overview', label: 'Overview', icon: Circle },
           { id: 'pages', label: 'Pages', icon: Circle, menu: MENU, onSelect: vi.fn() },
@@ -54,7 +72,6 @@ describe('Trail', () => {
       />,
     );
 
-    expect(screen.getByTestId('lead')).toBeDefined();
     const segments = Array.from(container.querySelectorAll('[data-trail-segment]'));
     expect(segments).toHaveLength(3);
     const [withoutMenu, withMenu, page] = segments;

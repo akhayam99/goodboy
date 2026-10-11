@@ -72,7 +72,6 @@ export {
   updateProjectDescription,
   updateProjectGoodboyIgnore,
   updateProjectIdentity,
-  clearProjectModelOverrides,
 } from './queries/project';
 export {
   recordSecurityFindings,
@@ -116,11 +115,6 @@ export {
   listExternalTasksForWorkspace,
   deleteSessionExternalTask,
 } from './queries/session-external-task';
-export {
-  upsertWorkspaceExternalTask,
-  listWorkspaceExternalTasks,
-  deleteWorkspaceExternalTask,
-} from './queries/workspace-external-task';
 export {
   insertSession,
   updateSessionState,
@@ -387,6 +381,7 @@ export {
   listDiffCommentsForSession,
   resolveDiffComment,
   reopenDiffComment,
+  updateDiffCommentBody,
   deleteDiffComment,
   restoreDiffComment,
   assignDiffCommentTarget,

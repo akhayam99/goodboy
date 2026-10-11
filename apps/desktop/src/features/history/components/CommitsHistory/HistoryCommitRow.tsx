@@ -1,5 +1,5 @@
 import { memo, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
-import { Cloud, GitMerge, GripVertical } from 'lucide-react';
+import { GitMerge, GripVertical } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { BranchCommit, SessionId } from '@goodboy/types';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -41,6 +41,7 @@ type Props = {
   readonly takenIn: ReadonlyArray<HistoryTakenInRow>;
   readonly pills: HistoryRowPillState;
   readonly isNew: boolean;
+  readonly canShowUnpushed: boolean;
   readonly isHighlighted: boolean;
   readonly isLifted: boolean;
   readonly isDropInto: boolean;
@@ -70,6 +71,7 @@ const HistoryCommitRowView = ({
   takenIn,
   pills,
   isNew,
+  canShowUnpushed,
   isHighlighted,
   isLifted,
   isDropInto,
@@ -129,20 +131,9 @@ const HistoryCommitRowView = ({
           menu.onKeyDown(event);
         }
       }}
-      className="group relative grid min-h-14 grid-cols-[100px_48px_minmax(0,1fr)] items-start outline-none"
+      className="group relative grid min-h-14 grid-cols-[72px_minmax(0,1fr)] items-start outline-none"
     >
       <span aria-hidden />
-      <span className="flex h-14 flex-col items-end justify-center gap-1 pr-3">
-        {mark === null ? null : (
-          <HistoryRowMarkList
-            mark={mark}
-            view={view}
-            isExpanded={isExpanded}
-            titleOf={titleOf}
-            onToggleExpanded={onToggleExpanded}
-          />
-        )}
-      </span>
       <span
         className={cn(
           'relative flex min-h-14 min-w-0 items-start gap-3 rounded-lg py-2 pl-2 pr-3 transition-colors select-none',
@@ -178,7 +169,7 @@ const HistoryCommitRowView = ({
             size={ICON_SIZE.control}
             aria-hidden
             className={cn(
-              'mt-0.5 shrink-0 text-faint-foreground opacity-40 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
+              'mt-0.5 shrink-0 text-faint-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100',
               !isDraggable && 'invisible',
             )}
           />
@@ -201,6 +192,17 @@ const HistoryCommitRowView = ({
                 >
                   {title}
                 </span>
+                {mark === null ? null : (
+                  <span className="flex shrink-0 items-center gap-1">
+                    <HistoryRowMarkList
+                      mark={mark}
+                      view={view}
+                      isExpanded={isExpanded}
+                      titleOf={titleOf}
+                      onToggleExpanded={onToggleExpanded}
+                    />
+                  </span>
+                )}
                 <HistoryRowPills {...pills} />
                 {isFolded && view === 'now' && isInteractive && mark?.into != null ? (
                   <HistoryModeSwitch
@@ -226,10 +228,9 @@ const HistoryCommitRowView = ({
                 </span>
                 <span className="truncate">{commit.author}</span>
                 <span className="shrink-0">{age}</span>
-                {commit.pushed && view !== 'done' ? (
-                  <span className="inline-flex shrink-0 items-center gap-1">
-                    <Cloud size={ICON_SIZE.row} aria-hidden />
-                    online
+                {!commit.pushed && canShowUnpushed && view !== 'done' ? (
+                  <span className="shrink-0 rounded-sm border border-border-soft px-1 text-chip text-faint-foreground">
+                    Not pushed
                   </span>
                 ) : null}
               </span>

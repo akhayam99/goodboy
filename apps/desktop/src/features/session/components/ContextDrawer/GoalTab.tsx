@@ -7,6 +7,7 @@ import { ContextBlock } from './ContextBlock';
 import { KeyLineList } from './KeyLineList';
 import { summaryItems } from './summaryItems';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
+import { WriteFromWorkButton } from './WriteFromWorkButton';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
 type Props = {
@@ -105,6 +106,7 @@ export const GoalTab = ({
         >
           No goal yet. Every agent starts from it.
         </EmptyLine>
+        <WriteFromWorkButton sessionId={sessionId} isLocked={isLocked} />
         {isLocked ? (
           <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>
         ) : null}
@@ -137,6 +139,7 @@ export const GoalTab = ({
       >
         <KeyLineList items={summaryItems({ body: value })} label="Goal" />
       </ContextBlock>
+      <WriteFromWorkButton sessionId={sessionId} isLocked={isLocked} />
       <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
       {isLocked ? (
         <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>

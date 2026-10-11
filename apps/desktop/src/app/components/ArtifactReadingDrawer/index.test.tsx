@@ -112,13 +112,20 @@ describe('a report or wireframe opened from its work', () => {
     expect(screen.getByRole('heading', { name: 'Rounding drift in ledger-core' })).toBeDefined();
   });
 
-  it('shows a wireframe stage in the drawer and expands it over the page', () => {
+  it('shows a wireframe stage in the drawer', () => {
     open(WIREFRAME);
     render(<DrawerHost />);
 
     expect(screen.getByText('Wireframe stage Checkout retry screen')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Expand' }));
-    expect(useAppStore.getState().documentDrawerExpanded[SESSION_ID]).toBe(true);
+  });
+
+  it.each([REPORT, WIREFRAME])('has Open in Artifacts and no Expand or Collapse', (id) => {
+    open(id);
+    render(<DrawerHost />);
+
+    expect(screen.getAllByRole('button', { name: 'Open in Artifacts' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Collapse' })).toBeNull();
   });
 
   it('goes to the Artifacts library only on its explicit command', () => {

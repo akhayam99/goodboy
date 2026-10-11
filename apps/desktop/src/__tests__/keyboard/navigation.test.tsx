@@ -105,40 +105,52 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   } as Session;
 }
 
+const mountDelete = async () => {
+  const user = userEvent.setup();
+  render(
+    <DeleteSessionConfirm
+      session={makeSession()}
+      onClose={vi.fn()}
+      trigger={({ arm }) => (
+        <button type="button" onClick={arm}>
+          Delete session
+        </button>
+      )}
+    />,
+  );
+  await user.click(screen.getByRole('button', { name: 'Delete session' }));
+  return { user, dialog: screen.getByRole('dialog', { name: 'Delete test goal?' }) };
+};
+
 describe('keyboard, DeleteSessionConfirm', () => {
-  it('never deletes on the first keyboard reach of the panel', async () => {
-    const user = userEvent.setup();
-    render(<DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />);
-    await user.tab();
-    expect(document.activeElement?.tagName.toLowerCase()).toBe('button');
-    expect(screen.getByRole('group', { name: 'Delete session?' })).toBeDefined();
+  it('lands on Cancel, never on the destructive button', async () => {
+    const { dialog } = await mountDelete();
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Cancel' }));
   });
 
-  it('Enter on delete button keeps it keyboard-reachable', async () => {
-    const user = userEvent.setup();
-    render(<DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />);
-    const deleteBtn = screen.getByRole('button', { name: /^delete$/i });
+  it('Enter on the focused delete button never drops focus to the page body', async () => {
+    const { user, dialog } = await mountDelete();
+    const deleteBtn = within(dialog).getByRole('button', { name: 'Delete session' });
     deleteBtn.focus();
     await user.keyboard('{Enter}');
-    expect(document.activeElement).toBe(deleteBtn);
+    expect(document.activeElement).not.toBe(document.body);
   });
 
-  it('exposes both archive and delete actions', () => {
-    render(<DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /archive instead/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /^delete$/i })).toBeDefined();
+  it('exposes both archive and delete actions', async () => {
+    const { dialog } = await mountDelete();
+    expect(within(dialog).getByRole('button', { name: /archive instead/i })).toBeDefined();
+    expect(within(dialog).getByRole('button', { name: 'Delete session' })).toBeDefined();
   });
 
-  it('Tab cycles through the panel controls', async () => {
-    const user = userEvent.setup();
-    render(<DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />);
-    await user.tab();
-    const first = document.activeElement;
-    await user.tab();
-    const second = document.activeElement;
-    expect(first).not.toBe(second);
-    expect(first?.tagName.toLowerCase()).toBe('button');
-    expect(second?.tagName.toLowerCase()).toBe('button');
+  it('Tab cycles through the popover controls and stays inside it', async () => {
+    const { user, dialog } = await mountDelete();
+    const seen = new Set<Element | null>();
+    for (let step = 0; step < 6; step += 1) {
+      await user.tab();
+      seen.add(document.activeElement);
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
+    expect(seen.size).toBe(3);
   });
 });
 

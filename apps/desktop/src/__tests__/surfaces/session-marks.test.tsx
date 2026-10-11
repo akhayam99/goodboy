@@ -128,7 +128,12 @@ describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) 
     const { session, info } = waitingFor({ reason });
     const words = attentionWordsOf({ reason, counts: info });
     const { container } = render(
-      <SessionHoverCardBody session={session} isArchived={false} onOpenAttention={noop} />,
+      <SessionHoverCardBody
+        session={session}
+        isArchived={false}
+        onOpenAttention={noop}
+        onOpenLegend={noop}
+      />,
     );
 
     expect(nodeOf(container)).toEqual({ tone, words });
@@ -212,7 +217,12 @@ describe('a session in the merge queue', () => {
   it('draws the hover card with the same node, the words once and no Needs you action', () => {
     const { session } = queuedSession();
     const { container } = render(
-      <SessionHoverCardBody session={session} isArchived={false} onOpenAttention={noop} />,
+      <SessionHoverCardBody
+        session={session}
+        isArchived={false}
+        onOpenAttention={noop}
+        onOpenLegend={noop}
+      />,
     );
 
     expect(nodeOf(container)).toEqual({ tone, words });

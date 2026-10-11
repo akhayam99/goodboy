@@ -37,6 +37,7 @@ export const mapMrToPullRequestState = ({
     baseBranch: mr.targetBranch,
     headBranch: mr.sourceBranch,
     isDraft: mr.draft,
+    isAutoMerge: mr.isMergeWhenPipelineSucceeds ?? false,
     reviewDecision: gitlabReviewDecisionOf({ approvals }),
     body: mr.description ?? '',
     updatedAt: mr.updatedAt,

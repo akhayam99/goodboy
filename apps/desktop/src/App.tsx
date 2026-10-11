@@ -30,6 +30,7 @@ import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
 import { openRunningScript } from './features/scripts/openRunningScript';
 import type { RunningScript } from './features/scripts/hooks/useRunningScripts';
+import { listenOrphansSwept } from './features/monitoring/listenOrphansSwept';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
@@ -131,6 +132,10 @@ export const App = () => {
     openSpend,
     openImpact,
     openWorkflows,
+    openTerminalStudio,
+    openNewChat,
+    openNewTerminal,
+    openMonitoring,
     settingsProviderId,
     studio,
     layers,
@@ -151,6 +156,10 @@ export const App = () => {
       openInbox,
       openChat,
       openWorkflows,
+      openTerminalStudio,
+      openNewChat,
+      openNewTerminal,
+      openMonitoring,
       openSettings,
       openChangelog,
       openGuide,
@@ -161,6 +170,10 @@ export const App = () => {
       openInbox,
       openChat,
       openWorkflows,
+      openTerminalStudio,
+      openNewChat,
+      openNewTerminal,
+      openMonitoring,
       openSettings,
       openChangelog,
       openGuide,
@@ -190,6 +203,7 @@ export const App = () => {
   useKeepFullScreenOnEscape();
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
+  useAsyncSubscription({ start: listenOrphansSwept });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });
   useAsyncSubscription({ start: listenMountCommands });
   useAsyncSubscription({ start: startWorktreeWriterBridge });
@@ -218,6 +232,8 @@ export const App = () => {
     armDeleteConfirm,
     openPalette,
     openSettings,
+    openTerminalStudio,
+    openNewChat,
     openShortcutHelp,
     toggleSidebar: sessionSidebar.toggle,
     sidebarToggleScope: shellMode === 'column' ? 'everywhere' : 'session',

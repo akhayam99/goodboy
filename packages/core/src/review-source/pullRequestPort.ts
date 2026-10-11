@@ -4,6 +4,7 @@ import type {
   PullRequestPerson,
   PullRequestView,
 } from '@goodboy/types';
+import { HOST_CAPABILITIES } from './hostCapabilities';
 import type { ReviewSourceCapabilities, ReviewSourceKind } from './types';
 
 export type PullRequestPort = Readonly<{
@@ -17,6 +18,7 @@ export type PullRequestPort = Readonly<{
   requestReviewers: (params: { readonly logins: ReadonlyArray<string> }) => Promise<void>;
   setDraft: (params: { readonly isDraft: boolean }) => Promise<void>;
   merge: (params: { readonly method: PrMergeMethod }) => Promise<void>;
+  cancelAutoMerge?: () => Promise<void>;
   close: () => Promise<void>;
   reopen: () => Promise<void>;
 }>;
@@ -77,9 +79,9 @@ export const requirePullRequestCapability = ({
 };
 
 export const PULL_REQUEST_NOUNS = {
-  github: { long: 'pull request', short: 'PR', numberPrefix: '#' },
-  gitlab: { long: 'merge request', short: 'MR', numberPrefix: '!' },
-  bitbucket: { long: 'pull request', short: 'PR', numberPrefix: '#' },
+  github: HOST_CAPABILITIES.github.nouns,
+  gitlab: HOST_CAPABILITIES.gitlab.nouns,
+  bitbucket: HOST_CAPABILITIES.bitbucket.nouns,
   local: { long: 'pull request', short: 'PR', numberPrefix: '#' },
 } as const satisfies Readonly<Record<ReviewSourceKind, PullRequestNouns>>;
 
@@ -92,4 +94,5 @@ export const PULL_REQUEST_CAPABILITY_METHODS = {
   canChooseMergeMethod: 'merge',
   canClose: 'close',
   canReopen: 'reopen',
+  canCancelAutoMerge: 'cancelAutoMerge',
 } as const satisfies Readonly<Record<PullRequestCapability, keyof PullRequestPort>>;

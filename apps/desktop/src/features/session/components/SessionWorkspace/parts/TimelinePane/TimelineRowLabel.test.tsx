@@ -11,6 +11,7 @@ import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
 import type { TimelineLearningEntry } from '../../../../timeline/buildTimelineGroups';
 import type { IsoDateTime, SessionContextItemId, SessionId, WorkspaceId } from '@goodboy/types';
+import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
 import { TimelineRowLabel } from './TimelineRowLabel';
 
 afterEach(cleanup);
@@ -288,7 +289,8 @@ describe('TimelineRowLabel', () => {
       <TimelineRowLabel item={itemOf({ entry: projectRunEntry({ mounted: [], detached }) })} />,
     );
 
-    expect(container.querySelector('[title]')?.getAttribute('title')).toBe(
+    const label = container.firstElementChild;
+    expect(label instanceof HTMLElement ? tooltipTextOf({ element: label }) : null).toBe(
       'Removed api, storefront-web, infra, db and edge',
     );
     expect(screen.getByText('and 2 more')).toBeDefined();
@@ -434,8 +436,10 @@ describe('TimelineRowLabel, a learned row', () => {
     const { container } = render(<TimelineRowLabel item={itemOf({ entry, grade: 'fact' })} />);
 
     expect(container.textContent).toBe('Learned · Rust · Why the borrow checker rejects this');
-    expect(screen.getByTitle('Learned · Rust · Why the borrow checker rejects this').tagName).toBe(
-      'SPAN',
+    const label = container.firstElementChild;
+    expect(label?.tagName).toBe('SPAN');
+    expect(label instanceof HTMLElement ? tooltipTextOf({ element: label }) : null).toBe(
+      'Learned · Rust · Why the borrow checker rejects this',
     );
   });
 });

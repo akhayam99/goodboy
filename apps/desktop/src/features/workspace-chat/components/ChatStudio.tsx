@@ -3,6 +3,7 @@ import { StudioRailLayout } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../shared/components/StudioShell';
+import { StudioDetail } from '../../../shared/components/StudioShell/StudioDetail';
 import { useAppStore } from '../../../store';
 import { mostRecentChat } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { ChatList } from './ChatList';
@@ -60,13 +61,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
     null;
 
   return (
-    <StudioShell
-      icon={CONCEPT_ICONS.chat}
-      tone={CONCEPT_TONE.chat}
-      title="Chat"
-      closeLabel="Close chat"
-      onClose={onClose}
-    >
+    <StudioShell icon={CONCEPT_ICONS.chat} tone={CONCEPT_TONE.chat} title="Chat" onClose={onClose}>
       {() => (
         <StudioRailLayout
           railLabel="Chat list"
@@ -85,13 +80,15 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
             />
           }
           detail={
-            <ChatRoom
-              key={activeChat?.id ?? 'new'}
-              workspaceId={workspaceId}
-              chat={activeChat}
-              onCreated={select}
-              onRemoved={() => leave({ removedIds: chatId === null ? [] : [chatId] })}
-            />
+            <StudioDetail>
+              <ChatRoom
+                key={activeChat?.id ?? 'new'}
+                workspaceId={workspaceId}
+                chat={activeChat}
+                onCreated={select}
+                onRemoved={() => leave({ removedIds: chatId === null ? [] : [chatId] })}
+              />
+            </StudioDetail>
           }
         />
       )}

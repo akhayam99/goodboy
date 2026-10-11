@@ -385,6 +385,7 @@ describe('navigation slice', () => {
 
   it('opens a resolver with no attempt on Branch Comments, its transcript in the drawer', () => {
     const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
 
@@ -980,6 +981,7 @@ describe('Branch page', () => {
 
   it('sends Up to the crumb on the left, one level at a time', () => {
     const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store
       .getState()
@@ -1009,6 +1011,7 @@ describe('Branch page', () => {
 
   it('sends Up from a Fix run to the Comments of its Branch', () => {
     const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: githubWithPr(528) } });
     store.setState({
       sessionResolveAttempts: {
         [S1]: [resolveAttemptFor({ agentId: RESOLVER, threadIds: ['thread-9'] })],
@@ -1030,5 +1033,94 @@ describe('Branch page', () => {
       },
     });
     expect(store.getState().activeLens[S1]).toBe('branch');
+  });
+});
+
+describe('Explore project', () => {
+  const LEDGER = '/work/harborline/ledger-core-rounding';
+  const NOTIFY = '/work/harborline/notify-relay-retries';
+  const README_IN_NOTIFY: DrawerRequest = {
+    kind: 'explore-file',
+    sessionId: S1,
+    payload: {
+      sessionDir: NOTIFY,
+      entry: {
+        name: 'README.md',
+        relPath: 'README.md',
+        isDir: false,
+        sizeBytes: 120,
+        modifiedAt: null,
+      },
+    },
+  };
+
+  it('brings back the project and the file you browsed when Back returns to Explore', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
+    store.setState({ exploreMountPath: { [S1]: NOTIFY } });
+    store.getState().openDrawer(README_IN_NOTIFY);
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'terminal' }) });
+    store.setState({ exploreMountPath: { [S1]: LEDGER } });
+
+    store.getState().back();
+
+    expect(store.getState().activeLens[S1]).toBe('explore');
+    expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
+    expect(store.getState().drawer).toEqual(README_IN_NOTIFY);
+    expect(keyOf(store)).toBe(`s/${S1}/explore/${NOTIFY}`);
+  });
+
+  it('keeps the pick when you leave Explore and come back through the door', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
+    store.setState({ exploreMountPath: { [S1]: NOTIFY } });
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'terminal' }) });
+    expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
+    expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
+  });
+
+  it('opens Explore on the project a door names', () => {
+    const store = makeStore();
+    store.setState({ exploreMountPath: { [S1]: LEDGER } });
+
+    store.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'explore',
+        target: { kind: 'explore', mountPath: NOTIFY },
+      }),
+    });
+
+    expect(store.getState().exploreMountPath[S1]).toBe(NOTIFY);
+  });
+
+  it('restores an entry captured before any pick as the default project', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'explore' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'terminal' }) });
+    store.setState({ exploreMountPath: { [S1]: NOTIFY } });
+
+    store.getState().back();
+
+    expect(store.getState().exploreMountPath[S1]).toBeNull();
+  });
+
+  it('sends Up from a picked project to the session overview', () => {
+    const store = makeStore();
+    store.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'explore',
+        target: { kind: 'explore', mountPath: NOTIFY },
+      }),
+    });
+
+    store.getState().up();
+
+    expect(keyOf(store)).toBe(`s/${S1}`);
   });
 });

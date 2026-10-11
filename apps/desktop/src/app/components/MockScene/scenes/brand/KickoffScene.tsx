@@ -138,13 +138,13 @@ const seedKickoff = (): void => {
       [WORKSPACE_ID]: {
         ...EMPTY_SESSION_DRAFT,
         choice: 'task',
-        issueKey: `${PICKED.provider}:${PICKED.externalId}`,
-        pickedIssue: PICKED,
+        pickedIssues: [PICKED],
+        hasPickedStep: true,
       },
     },
     openSessionDraftWorkspaceId: WORKSPACE_ID,
     issueBriefs: {
-      [issueBriefKey({ source: PICKED_SOURCE })]: {
+      [issueBriefKey({ sources: [PICKED_SOURCE] })]: {
         status: 'ready',
         signature: `${PICKED_SOURCE.title}\n${PICKED_SOURCE.body}`,
         route: { providerId: BRAND_MODELS.scout.provider, model: BRAND_MODELS.scout.model },

@@ -44,7 +44,6 @@ import { FixRunMultiDoneScene } from '../scenes/FixRunMultiDoneScene';
 import { SpaceDiffCommentScene } from '../scenes/SpaceDiffCommentScene';
 import { SpaceDiffSplitScene } from '../scenes/SpaceDiffSplitScene';
 import { BoardScene } from '../scenes/BoardScene';
-import { BoardOngoingScene } from '../scenes/BoardOngoingScene';
 import { BoardSelectedScene } from '../scenes/BoardSelectedScene';
 import { BoardDeleteConfirmScene } from '../scenes/BoardDeleteConfirmScene';
 import { TranscriptMountScene } from '../scenes/TranscriptMountScene';
@@ -160,7 +159,6 @@ import { BrandDiffEditsOnlyScene } from '../scenes/brand/DiffEditsOnlyScene';
 import { BrandDiffEmptyScene } from '../scenes/brand/DiffEmptyScene';
 import { BrandDiffManyFilesScene } from '../scenes/brand/DiffManyFilesScene';
 import { DiffNotesScene } from '../scenes/brand/DiffNotesScene';
-import { ResolveNotesScene } from '../scenes/ResolveNotesScene';
 import { BrandHistoryScene } from '../scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from '../scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from '../scenes/brand/HistoryResultScene';
@@ -176,7 +174,6 @@ import { AgentBriefScene } from '../scenes/AgentBriefScene';
 import { AgentBriefQuestionScene } from '../scenes/AgentBriefQuestionScene';
 import { PlannerTranscriptScene } from '../scenes/PlannerTranscriptScene';
 import { PlannerTranscriptDrawerScene } from '../scenes/PlannerTranscriptDrawerScene';
-import { PlannerTranscriptExpandedScene } from '../scenes/PlannerTranscriptExpandedScene';
 import { PlannerTranscriptReplacedScene } from '../scenes/PlannerTranscriptReplacedScene';
 import { PlannerTranscriptRevisingScene } from '../scenes/PlannerTranscriptRevisingScene';
 import { ScribeProposalCreatingScene } from '../scenes/ScribeProposalCreatingScene';
@@ -236,7 +233,6 @@ export const BASE_SCENES = {
   'resolve-gitlab': ResolveGitlabScene,
   'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
-  'board-ongoing': BoardOngoingScene,
   'board-selected': BoardSelectedScene,
   'board-delete-confirm': BoardDeleteConfirmScene,
   'transcript-mount': TranscriptMountScene,
@@ -347,7 +343,6 @@ export const BASE_SCENES = {
   'brand-diff-edits-only': BrandDiffEditsOnlyScene,
   'brand-diff-large': BrandDiffLargeScene,
   'diff-notes': DiffNotesScene,
-  'resolve-notes': ResolveNotesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,
   'brand-history-trial': BrandHistoryTrialScene,
@@ -365,7 +360,6 @@ export const BASE_SCENES = {
   'planner-transcript-revising': PlannerTranscriptRevisingScene,
   'planner-transcript-replaced': PlannerTranscriptReplacedScene,
   'planner-transcript-drawer': PlannerTranscriptDrawerScene,
-  'planner-transcript-expanded': PlannerTranscriptExpandedScene,
   'scribe-proposal-creating': ScribeProposalCreatingScene,
   'scribe-proposal-failed': ScribeProposalFailedScene,
   'scribe-proposal-transcript': ScribeProposalTranscriptScene,

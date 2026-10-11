@@ -1,3 +1,4 @@
+import { Tooltip } from '@goodboy/ui';
 import { useNow } from '../../hooks/useNow';
 import { formatAge } from '../../utils/time/formatAge';
 
@@ -9,8 +10,8 @@ type Props = {
 export const RelativeTime = ({ iso, title }: Props) => {
   const now = useNow(30_000);
   return (
-    <time dateTime={iso} title={title}>
-      {formatAge({ from: iso, now })}
-    </time>
+    <Tooltip content={title}>
+      <time dateTime={iso}>{formatAge({ from: iso, now })}</time>
+    </Tooltip>
   );
 };

@@ -11,7 +11,7 @@ import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest'
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import { requestChipLabel } from './requestChipLabel';
 import { stageWord } from './stageWord';
@@ -25,9 +25,15 @@ type Props = {
   readonly session: Session;
   readonly isArchived: boolean;
   readonly onOpenAttention: (params: OpenAttention) => void;
+  readonly onOpenLegend: () => void;
 };
 
-export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: Props) => {
+export const SessionHoverCardBody = ({
+  session,
+  isArchived,
+  onOpenAttention,
+  onOpenLegend,
+}: Props) => {
   const sessionId = session.id as SessionId;
   const summary = useSessionSummary({ session });
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
@@ -114,6 +120,11 @@ export const SessionHoverCardBody = ({ session, isArchived, onOpenAttention }: P
           onClick={() => onOpenAttention({ sessionId, reason: summary.attention })}
         />
       ) : null}
+      <GhostActionButton
+        icon={CONCEPT_ICONS.help}
+        label="What do these marks mean?"
+        onClick={onOpenLegend}
+      />
     </div>
   );
 };

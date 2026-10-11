@@ -3,18 +3,18 @@ import {
   modelIdForSelection,
   resolveStoredModelSelection,
   clampEffortForModel,
+  type ResolveSlot,
 } from '@goodboy/core';
-import { resolveLimitedTaskModel } from '../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { savedRouteEffort } from '../../../../../shared/components/RoutingPicker/savedRouteEffort';
 import { AUTO_RECOMMENDATION_COPY } from '../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { autoLimitReason } from '../../../../../shared/components/RoutingPicker/autoLimitReason';
-import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
+import { useResolution } from '../../../../providers/hooks/useResolution';
+import { autoModelOn } from '../../../../providers/autoModelOn';
+import { resolutionAsTask } from '../../../../providers/resolutionAsTask';
 import { useAppStore } from '../../../../../store/store';
-import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 import { isRoutingModelKnown } from '../../../../../store/slices/workflows/orchestrateNextStep';
-import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -39,6 +39,8 @@ type ProviderModelParams = {
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 
+const ORCHESTRATOR_SLOT: ResolveSlot = { kind: 'task', id: 'workflow_orchestrator' };
+
 const providerModelId = ({ provider, model }: ProviderModelParams): string => {
   const stored = resolveStoredModelSelection({ provider, id: model });
   return stored.report?.kind === 'unknown'
@@ -47,45 +49,22 @@ const providerModelId = ({ provider, model }: ProviderModelParams): string => {
 };
 
 export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
-  const session = useAppStore((state) => sessionById(state.sessions, sessionId));
   const providers = useAppStore((state) => state.providers);
-  const taskModels = useAppStore(
-    (state) => selectResolvedSettings({ state, sessionId })?.taskModels ?? undefined,
-  );
-  const workspaceDefaultProviderId = useAppStore(
-    (state) => selectResolvedSettings({ state, sessionId })?.defaultProviderOverride ?? undefined,
-  );
   const setWorkflowOrchestratorRouting = useAppStore(
     (state) => state.setWorkflowOrchestratorRouting,
   );
-  const defaultProvider = (session?.providerOverride ??
-    session?.providerPreference.defaultProvider ??
-    'anthropic') as ProviderId;
-  const limitContext = useAutoLimitContext();
-  const automatic = resolveLimitedTaskModel({
-    limitContext,
-    task: 'workflow_orchestrator',
-    preferences: taskModels,
-    workspaceDefaultProviderId,
-    sessionDefaultProviderId: defaultProvider,
-  });
+  const resolution = useResolution({ task: 'workflow_orchestrator', sessionId });
+  const automatic = resolutionAsTask({ resolution });
   const pinned =
     run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
       ? run.orchestratorRouting
       : null;
   const providerId = pinned?.providerId ?? automatic.providerId;
   const model = pinned?.model ?? '';
-  const routingFor = ({ provider }: ProviderRoutingParams) =>
-    provider === automatic.providerId
-      ? automatic
-      : resolveLimitedTaskModel({
-          limitContext: null,
-          task: 'workflow_orchestrator',
-          preferences: null,
-          workspaceDefaultProviderId: provider,
-          sessionDefaultProviderId: defaultProvider,
-        });
-  const recommendedModel = routingFor({ provider: providerId }).model;
+  const recommendedModel =
+    providerId === automatic.providerId
+      ? automatic.model
+      : autoModelOn({ slot: ORCHESTRATOR_SLOT, provider: providerId }).model;
   const effortModel = providerModelId({
     provider: providerId,
     model: model === '' ? recommendedModel : model,
@@ -125,9 +104,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           model: automatic.model,
           ...AUTO_RECOMMENDATION_COPY,
           reason: autoLimitReason({
-            defaultProvider: workspaceDefaultProviderId ?? defaultProvider,
+            defaultProvider: resolution.defaultProvider,
             pickedProvider: automatic.providerId,
-            atLimit: limitContext?.atLimit ?? [],
+            atLimit: resolution.skipped.flatMap((skip) =>
+              skip.reason === 'at-limit' ? [skip.provider] : [],
+            ),
           }),
         }}
         recommendationKind="auto"

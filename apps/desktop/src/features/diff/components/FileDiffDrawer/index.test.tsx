@@ -1,95 +1,108 @@
 // @vitest-environment happy-dom
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { aProject, aSession } from '@goodboy/types/testing';
+import { mountFixture } from '../../../../__tests__/helpers/actionFixtures';
+import {
+  importStore,
+  resetStoryStore,
+  storySpies,
+  stubStoryInvoke,
+  STORE_IMPORT_TIMEOUT_MS,
+} from '../../../../store/storyHarness';
+import { FileDiffDrawer } from './index';
 
-const h = vi.hoisted(() => ({
-  state: {} as Record<string, unknown>,
-  loader: null as null | (() => Promise<string>),
-  diff: vi.fn(),
-}));
+const WORKTREE = '/mock/ledger-core';
+const PATCH = [
+  'diff --git a/src/ledger-core.ts b/src/ledger-core.ts',
+  '--- a/src/ledger-core.ts',
+  '+++ b/src/ledger-core.ts',
+  '@@ -30 +30 @@',
+  '-const ledger = 0;',
+  '+const ledger = 1;',
+  '',
+].join('\n');
+const TEXT = Array.from({ length: 100 }, (_, index) => `ledger${index + 1}`).join('\n');
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) => selector(h.state),
-}));
+type Params = { readonly baseBranch: string | null };
 
-vi.mock('../../../worktree/worktree', () => ({
-  worktreeDiff: h.diff,
-  worktreeDiffCommit: vi.fn(),
-}));
-
-vi.mock('../../hooks/useSessionDiff', () => ({
-  useSessionDiff: ({ loader }: { readonly loader: () => Promise<string> }) => {
-    h.loader = loader;
-    return { files: [], loading: false, error: null, refresh: vi.fn() };
-  },
-}));
-
-import { FileDiffDrawer } from '.';
-
-const SESSION_ID = 'session-drawer' as SessionId;
-const WORKTREE = '/repo/storefront-web';
-
-const stateWith = ({
-  mountBase,
-  projectBase,
-}: {
-  readonly mountBase: string | null;
-  readonly projectBase: string | null;
-}) => ({
-  projects: [{ id: 'project-storefront', baseBranch: projectBase }],
-  sessions: [{ id: SESSION_ID }],
-  sessionProjectMounts: {
-    [SESSION_ID]: [
-      {
-        projectId: 'project-storefront',
-        worktreePath: WORKTREE,
-        repoRoot: '/repo/storefront-web',
-        branch: 'feat/cart',
-        mountName: 'storefront-web',
-        baseBranch: mountBase,
-      },
-    ],
-  },
-  openMountDiff: vi.fn(),
-  setDiffFocus: vi.fn(),
-});
-
-const mount = () => {
+const mount = async ({ baseBranch }: Params) => {
+  const useAppStore = await importStore();
+  const target = mountFixture({
+    worktreePath: WORKTREE,
+    repoRoot: WORKTREE,
+    baseBranch: null,
+  });
+  useAppStore.setState({
+    projects: [aProject({ id: target.projectId, rootPath: WORKTREE, baseBranch })],
+    sessions: [aSession({ id: target.sessionId })],
+    sessionProjectMounts: { [target.sessionId]: [target] },
+  });
   render(
     <FileDiffDrawer
-      sessionId={SESSION_ID}
+      sessionId={target.sessionId}
       source={{ kind: 'worktree', worktreePath: WORKTREE }}
-      path="src/cart.ts"
-      onClose={vi.fn()}
+      path="src/ledger-core.ts"
+      onClose={() => undefined}
     />,
   );
 };
 
-beforeEach(() => {
-  h.loader = null;
-  h.diff.mockReset().mockResolvedValue('');
+beforeAll(async () => {
+  await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+beforeEach(async () => {
+  await resetStoryStore();
+  stubStoryInvoke({ worktree_diff: '' });
 });
-
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+});
 
 describe('FileDiffDrawer base branch', () => {
   it('loads the worktree diff against the base the user picked', async () => {
-    h.state = stateWith({ mountBase: null, projectBase: 'develop' });
-
-    mount();
-    await h.loader?.();
-
-    expect(h.diff).toHaveBeenCalledWith({ worktreePath: WORKTREE, baseBranch: 'develop' });
+    await mount({ baseBranch: 'develop' });
+    await screen.findByText('This file has no changes here.');
+    expect(storySpies.tauriInvoke).toHaveBeenCalledWith('worktree_diff', {
+      worktreePath: WORKTREE,
+      baseBranch: 'develop',
+    });
   });
 
   it('keeps the backend default when no base was picked', async () => {
-    h.state = stateWith({ mountBase: null, projectBase: null });
+    await mount({ baseBranch: null });
+    await screen.findByText('This file has no changes here.');
+    expect(storySpies.tauriInvoke).toHaveBeenCalledWith('worktree_diff', {
+      worktreePath: WORKTREE,
+      baseBranch: null,
+    });
+  });
 
-    mount();
-    await h.loader?.();
-
-    expect(h.diff).toHaveBeenCalledWith({ worktreePath: WORKTREE, baseBranch: null });
+  it('expands context against the same worktree and chosen base', async () => {
+    stubStoryInvoke({
+      worktree_diff: PATCH,
+      worktree_file_sides: { old: TEXT, new: TEXT, too_large: false },
+    });
+    await mount({ baseBranch: 'develop' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Show all 29 hidden lines' }));
+    expect(await screen.findByText('ledger1')).toBeDefined();
+    expect(storySpies.tauriInvoke).toHaveBeenCalledWith('worktree_file_sides', {
+      worktreePath: WORKTREE,
+      path: 'src/ledger-core.ts',
+      oldRev: null,
+      newRev: null,
+      baseBranch: 'develop',
+    });
   });
 });

@@ -24,23 +24,21 @@ export const VerbConfirm = ({
 }: Props) => {
   const Icon = entry.icon;
   return (
-    <div className="p-3">
-      <InlineConfirm
-        role={confirm.role}
-        icon={<Icon size={ICON_SIZE.row} aria-hidden />}
-        title={confirm.title}
-        description={confirm.description}
-        confirmLabel={confirm.confirmLabel}
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-        {...(altLabel !== null && { altAction: { label: altLabel, onClick: onAlt } })}
-      >
-        {subject !== null && (
-          <p className="truncate rounded-md border border-border-soft bg-subtle px-2 py-1 text-code text-foreground">
-            {subject}
-          </p>
-        )}
-      </InlineConfirm>
-    </div>
+    <InlineConfirm
+      role={confirm.role}
+      icon={<Icon size={ICON_SIZE.row} aria-hidden />}
+      title={confirm.title}
+      description={confirm.description}
+      confirmLabel={confirm.confirmLabel}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      {...(altLabel !== null && { altAction: { label: altLabel, onClick: onAlt } })}
+    >
+      {subject !== null && (
+        <p className="truncate rounded-md border border-border-soft bg-subtle px-2 py-1 text-code text-foreground">
+          {subject}
+        </p>
+      )}
+    </InlineConfirm>
   );
 };

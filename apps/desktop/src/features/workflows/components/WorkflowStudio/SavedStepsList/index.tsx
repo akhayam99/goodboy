@@ -1,9 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, formatError, EmptyState } from '@goodboy/ui';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, recommendedModelForRole } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { modelOnProvider } from '../../../../providers/roleResolution';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import { useToast } from '../../../../../shared/components/Toast';
+import { undoable } from '../../../../../shared/utils/undoable';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
@@ -15,6 +18,7 @@ import {
   savedStepGroups,
   savedStepNote,
   stepDefArgsFromDraft,
+  stepDraftFromSavedStep,
   type SavedStep,
 } from '../../../savedSteps';
 import { SavedStepEditor } from './SavedStepEditor';
@@ -40,6 +44,7 @@ export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props)
   const overrides = useAppStore((state) => state.workspaceOverrides?.[workspaceId] ?? null);
   const saveStepDef = useAppStore((state) => state.saveStepDef);
   const deleteStepDef = useAppStore((state) => state.deleteStepDef);
+  const { showToast } = useToast();
   const [expanded, setExpanded] = useState<ExpandedSavedStep | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,10 +55,10 @@ export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props)
     DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
 
   const recommendedModel = (draft: StepDraft): string =>
-    recommendedModelForRole({
+    modelOnProvider({
       role: draft.role,
       provider: draft.provider !== '' ? draft.provider : defaultProvider,
-      prefs: roleModels,
+      roleModels,
     });
 
   const open = (target: SavedStepTarget | null) => {
@@ -160,9 +165,26 @@ export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props)
       failure: "Couldn't remove the step.",
       work: () => deleteStepDef(target.step.id, workspaceId),
     });
-    if (isRemoved) {
-      open(null);
+    if (!isRemoved) {
+      return;
     }
+    open(null);
+    const { step } = target;
+    undoable({
+      showToast,
+      message: `Removed step ${step.name}`,
+      undo: async () => {
+        await saveStepDef(
+          stepDefArgsFromDraft({
+            draft: stepDraftFromSavedStep({ step }),
+            workspaceId,
+            id: step.id,
+            baseStepId: step.baseStepId,
+          }),
+          workspaceId,
+        );
+      },
+    });
   };
 
   const patch = (next: Partial<StepDraft>) =>

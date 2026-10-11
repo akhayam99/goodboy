@@ -27,6 +27,7 @@ vi.mock('../../../../store', () => {
   };
 });
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentRow } from './AgentRow';
 import { describeAgentStatus } from '../../agent-status';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
@@ -99,6 +100,14 @@ const renderRow = (
     </ul>,
   );
 
+const rowTitleElement = (): HTMLElement => {
+  const title = screen.getByText('scout one').closest('div[id]');
+  if (!(title instanceof HTMLElement)) {
+    throw new Error('the row title is missing');
+  }
+  return title;
+};
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -117,26 +126,27 @@ describe('AgentRow', () => {
 
   it('keeps duration and last update on the one fact line', () => {
     const meta = within(renderRow(false).getByTestId('agent-metrics-inline'));
-    expect(meta.getByTitle(/^Started .+2026/)).toBeTruthy();
+    expect(tooltipTextOf({ element: meta.getByText('2m') })).toMatch(/^Started .+2026/);
     expect(meta.getByText(/^updated /)).toBeTruthy();
   });
 
   it('leaves the token split and the context gauge to the inspector', () => {
     const { container } = renderRow(false);
     expect(screen.queryByTestId('agent-metrics-block')).toBeNull();
-    expect(screen.queryByTitle('in: 100 tokens (cumulative)')).toBeNull();
-    expect(container.querySelector('[title*="last turn context:"]')).toBeNull();
+    expect(screen.queryByText('↓')).toBeNull();
+    expect(screen.queryByText('↑')).toBeNull();
+    expect(container.querySelector('[title]')).toBeNull();
   });
 
   it('includes cache tokens in the last-turn tooltip total', () => {
     renderRow(false);
-    expect(screen.getAllByTitle(/Last turn: 62 tokens/).length).toBeGreaterThan(0);
+    expect(tooltipTextOf({ element: rowTitleElement() })).toMatch(/Last turn: 62 tokens/);
   });
 
   it('prints cost, turns and duration exactly once', () => {
     renderRow(false);
     expect(screen.getAllByText('3t')).toHaveLength(1);
-    expect(screen.getAllByTitle(/^Started .+2026/)).toHaveLength(1);
+    expect(screen.getAllByText('2m')).toHaveLength(1);
     expect(screen.getAllByText(/^updated /)).toHaveLength(1);
   });
 
@@ -170,9 +180,11 @@ describe('AgentRow', () => {
     (status) => {
       renderRow(false, { status });
       const presentation = describeAgentStatus({ status });
-      expect(screen.getByText('scout one').previousElementSibling?.getAttribute('title')).toBe(
-        stateDescription({ presentation }),
-      );
+      const icon = screen.getByText('scout one').previousElementSibling;
+      if (!(icon instanceof HTMLElement)) {
+        throw new Error('the status icon is missing');
+      }
+      expect(tooltipTextOf({ element: icon })).toBe(stateDescription({ presentation }));
       expect(screen.queryByText(status)).toBeNull();
     },
   );
@@ -216,22 +228,23 @@ describe('AgentRow', () => {
 
     expect(navigationIndex).toBeGreaterThanOrEqual(0);
     expect(lifecycleIndex).toBeGreaterThan(navigationIndex);
-    expect(screen.queryByRole('group', { name: 'Delete agent?' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    const rectBefore = card.getBoundingClientRect().height;
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete agent' }));
 
-    const panel = screen.getByRole('group', { name: 'Delete agent?' });
+    const panel = screen.getByRole('dialog', { name: /^Delete .+\?$/ });
     const armedNavigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
     const armedLifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
-    expect(within(panel).getByRole('button', { name: 'Delete' })).toBeTruthy();
+    expect(within(panel).getByRole('button', { name: 'Delete agent' })).toBeTruthy();
     expect(within(panel).getByRole('button', { name: 'Cancel' })).toBeTruthy();
     expect(armedNavigationSlot.parentElement).toBe(card);
     expect(armedLifecycleSlot.parentElement).toBe(card);
     expect(Array.from(card.children).indexOf(armedNavigationSlot)).toBe(navigationIndex);
     expect(Array.from(card.children).indexOf(armedLifecycleSlot)).toBe(lifecycleIndex);
     expect(card.contains(panel)).toBe(false);
-    expect(panel.parentElement).toBe(card.parentElement);
-    expect(panel.previousElementSibling).toBe(card);
+    expect(panel.closest('[data-dropdown-portal]')).not.toBeNull();
+    expect(card.getBoundingClientRect().height).toBe(rectBefore);
   });
 
   it('deletes only after the confirm step', () => {
@@ -239,8 +252,8 @@ describe('AgentRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete agent' }));
     expect(remove).not.toHaveBeenCalled();
 
-    const panel = screen.getByRole('group', { name: 'Delete agent?' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
+    const panel = screen.getByRole('dialog', { name: /^Delete .+\?$/ });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Delete agent' }));
     expect(remove).toHaveBeenCalledOnce();
   });
 
@@ -282,7 +295,7 @@ describe('AgentRow numbering', () => {
   it('keeps the badge and the row tooltip on the same number', () => {
     renderRow(false, { ordinal: 3 });
     expect(screen.getByText('4.')).toBeDefined();
-    expect(screen.getAllByTitle(/Agent 4/).length).toBeGreaterThan(0);
+    expect(tooltipTextOf({ element: rowTitleElement() })).toMatch(/Agent 4/);
   });
 
   it('says which mode runs when the provider cannot honor the session mode', () => {

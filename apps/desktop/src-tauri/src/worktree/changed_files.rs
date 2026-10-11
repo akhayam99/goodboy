@@ -4,9 +4,19 @@ use super::git::git;
 use serde::Serialize;
 use std::path::Path;
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ChangedEntry {
+    pub path: String,
+    pub status: &'static str,
+    pub from: Option<String>,
+}
+
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ChangedFilesSummary {
     pub paths: Vec<String>,
+    pub entries: Vec<ChangedEntry>,
     pub additions: u32,
     pub deletions: u32,
     /// Raw per-file numstat lines for the SAME change set as `paths` —
@@ -19,6 +29,49 @@ pub struct ChangedFilesSummary {
 }
 
 const LANDED_FILE_LIMIT: usize = 400;
+
+fn parse_name_status_line(line: &str) -> Option<ChangedEntry> {
+    let mut parts = line.split('\t');
+    let code = parts.next()?.trim();
+    let first = parts.next()?.trim();
+    if first.is_empty() {
+        return None;
+    }
+    let letter = code.chars().next()?;
+    if letter == 'R' {
+        let target = parts.next()?.trim();
+        if target.is_empty() {
+            return None;
+        }
+        return Some(ChangedEntry {
+            path: target.to_string(),
+            status: "renamed",
+            from: Some(first.to_string()),
+        });
+    }
+    if letter == 'C' {
+        let target = parts.next()?.trim();
+        if target.is_empty() {
+            return None;
+        }
+        return Some(ChangedEntry {
+            path: target.to_string(),
+            status: "added",
+            from: None,
+        });
+    }
+    let status = match letter {
+        'A' => "added",
+        'D' => "deleted",
+        'M' | 'T' => "modified",
+        _ => return None,
+    };
+    Some(ChangedEntry {
+        path: first.to_string(),
+        status,
+        from: None,
+    })
+}
 
 /// Whether the base branch already carries everything this branch committed.
 ///
@@ -147,8 +200,27 @@ pub(super) fn worktree_changed_files_blocking(
             }
         }
     }
+    let mut entries: Vec<ChangedEntry> = git(p, &["diff", "--name-status", "-M", &resolved])
+        .unwrap_or_default()
+        .lines()
+        .filter_map(parse_name_status_line)
+        .collect();
+    for line in untracked.lines() {
+        let rel = line.trim();
+        if rel.is_empty() {
+            continue;
+        }
+        entries.push(ChangedEntry {
+            path: rel.to_string(),
+            status: "added",
+            from: None,
+        });
+    }
+    entries.sort_by(|a, b| a.path.cmp(&b.path));
+    entries.dedup_by(|a, b| a.path == b.path);
     Ok(ChangedFilesSummary {
         paths: set.into_iter().collect(),
+        entries,
         additions,
         deletions,
         numstat: numstat_lines.join("\n"),
