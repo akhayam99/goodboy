@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from 'react';
+import type { FileDiff } from '@goodboy/types';
 import { ErrorStrip, Skeleton } from '@goodboy/ui';
 import { useSessionDiff } from '../../features/diff/hooks/useSessionDiff';
 import { DiffView } from '../../features/diff/components/DiffView';
-import { worktreeDiff } from '../../features/worktree/worktree';
+import { worktreeDiff, worktreeFileSides } from '../../features/worktree/worktree';
 
 type Props = {
   readonly sessionDir: string;
@@ -13,6 +14,11 @@ type Props = {
 export const ExploreFileChanges = ({ sessionDir, relPath, baseBranch }: Props) => {
   const loader = useCallback(
     () => worktreeDiff({ worktreePath: sessionDir, baseBranch }),
+    [sessionDir, baseBranch],
+  );
+  const loadFileSides = useCallback(
+    (file: FileDiff) =>
+      worktreeFileSides({ worktreePath: sessionDir, path: file.path, baseBranch }),
     [sessionDir, baseBranch],
   );
   const diff = useSessionDiff({ sessionId: null, worktreePath: null, loader });
@@ -40,5 +46,5 @@ export const ExploreFileChanges = ({ sessionDir, relPath, baseBranch }: Props) =
   if (files.length === 0) {
     return <p className="p-4 text-body text-muted-foreground">This file has no changes here.</p>;
   }
-  return <DiffView files={files} presentation="peek" />;
+  return <DiffView files={files} presentation="peek" loadFileSides={loadFileSides} />;
 };
