@@ -273,12 +273,14 @@ describe('useRecordFrame', () => {
       },
     });
     expect(h.requestIssueBrief).toHaveBeenCalledWith({
-      source: expect.objectContaining({
-        provider: 'github',
-        externalId: '42',
-        body: 'Keep one dock.',
-        noun: 'issue',
-      }),
+      sources: [
+        expect.objectContaining({
+          provider: 'github',
+          externalId: '42',
+          body: 'Keep one dock.',
+          noun: 'issue',
+        }),
+      ],
       workspaceId: WORKSPACE_ID,
       sessionId: null,
     });

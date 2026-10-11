@@ -1638,7 +1638,7 @@
   },
   "apps/desktop/src/features/actions/kinds/openInEditor.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
+      "count": 6
     }
   },
   "apps/desktop/src/features/actions/kinds/pullRequest.bitbucket.test.ts": {
@@ -4560,7 +4560,7 @@
   },
   "apps/desktop/src/features/palette/paletteStateMatrix.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 3
     }
   },
   "apps/desktop/src/features/palette/rank.perf.test.ts": {
@@ -5899,11 +5899,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/components/AgentTree/SectionToggle.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/AgentTree/WorkflowResumeStrip/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -6023,14 +6018,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/ContextChip.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
-    }
-  },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/GoalTeaser.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/HeaderBand.test.tsx": {
@@ -10226,11 +10213,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/store/slices/issue-briefs/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
   "apps/desktop/src/store/slices/live-work/selectLiveWork.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -13895,11 +13877,6 @@
   "packages/core/src/summarizer/extract-json.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    }
-  },
-  "packages/core/src/summarizer/issue-brief.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
     }
   },
   "packages/core/src/summarizer/learning-extractor.test.ts": {

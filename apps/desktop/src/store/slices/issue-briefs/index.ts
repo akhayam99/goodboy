@@ -5,5 +5,5 @@ import type { SliceDeps } from '../../slice-types';
 
 export const createIssueBriefsSlice = ({ set, get }: SliceDeps): IssueBriefsSlice => ({
   ...issueBriefsInitialState,
-  requestIssueBrief: requestIssueBrief(set, get),
+  requestIssueBrief: requestIssueBrief({ set, get }),
 });

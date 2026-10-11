@@ -187,6 +187,10 @@ frame-studio-guide
 frame-studio-impact
 frame-studio-inbox
 frame-studio-workflows
+goalhint
+goalproposal
+goalreplace
+goaltitlesonly
 guide
 header-agent
 header-artifact-details

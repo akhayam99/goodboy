@@ -49,6 +49,20 @@ Map an unfamiliar repo before you plan. **Scout** is the default and only reads,
 
 Start from the goal instead. **Start blank** sits in the header of every tab and opens the session straight on its Overview, where you add the goal, projects and work.
 
+After starting blank and linking an issue, Overview offers **Write** to draft
+a title and goal from the linked issues. The hint appears while the goal is
+empty; **Not now** dismisses it for that session. Nothing is generated until
+you click. **Write title and goal from linked work** remains available in the
+session menu and command palette.
+
+Review and edit the proposal before **Use title and goal**, or **Replace**
+when a title or goal already exists. **Dismiss** keeps the current fields.
+The proposal uses up to five linked issues. Unreadable issue text uses the title and says so. A failed brief offers
+**Retry**. Applying the proposal has one **Undo** for both fields; later edits
+are kept if they conflict with Undo. Entry points:
+`apps/desktop/src/features/session/components/SessionOverviewPane/GoalTeaser.tsx`
+and `apps/desktop/src/store/slices/issue-briefs/applyGoalFromWork.ts`.
+
 ### Named by Goodboy
 
 Get a short title without writing one. A new session is named for you and marked **Named by Goodboy** until you rename it.

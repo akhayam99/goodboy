@@ -18,7 +18,7 @@ export const pickIssue = ({ workspaceId, candidate }: PickParams): void => {
     patch: { choice: 'task', issueKey: candidateKey({ candidate }), pickedIssue: candidate },
   });
   void requestIssueBrief({
-    source: issueBriefSource({ candidate }),
+    sources: [issueBriefSource({ candidate })],
     workspaceId,
     sessionId: null,
   });
