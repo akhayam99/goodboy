@@ -30,6 +30,7 @@ type AppShortcutsParams = {
   readonly openPalette: (params?: OpenPaletteParams) => void;
   readonly openSettings: () => void;
   readonly openTerminalStudio: () => void;
+  readonly openNewChat: () => void;
   readonly openShortcutHelp: () => void;
   readonly toggleSidebar: () => void;
   readonly sidebarToggleScope?: 'everywhere' | 'session';
@@ -59,6 +60,7 @@ export const useAppShortcuts = ({
   openPalette,
   openSettings,
   openTerminalStudio,
+  openNewChat,
   openShortcutHelp,
   toggleSidebar,
   sidebarToggleScope = 'session',
@@ -159,6 +161,7 @@ export const useAppShortcuts = ({
     openPalette({ mode: 'search' });
   });
   useShortcut('session.new', openNewSession);
+  useShortcut('chat.new', openNewChat);
   useShortcut('workspace.switcher', () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),
   );

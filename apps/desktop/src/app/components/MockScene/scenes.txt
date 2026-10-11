@@ -123,6 +123,9 @@ chat-room
 chat-shell
 cleanup-process-blocked
 code-layers
+column-create-draft
+column-create-draftopen
+column-create-row
 column-rail
 command-palette
 comments-action-bar

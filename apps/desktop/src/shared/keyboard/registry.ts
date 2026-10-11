@@ -622,6 +622,8 @@ export const SHORTCUTS = {
     scope: 'diff',
   },
 
+  'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'app', group: 'general' },
+
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },
   'zoom.reset': { combo: 'cmd+Digit0', label: 'Reset zoom', plane: 'app', group: 'window' },

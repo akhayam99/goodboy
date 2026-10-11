@@ -5,7 +5,7 @@ import { clearMocks } from '@tauri-apps/api/mocks';
 import { ErrorBoundary } from '@goodboy/ui';
 import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
+import type { ChatId, SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
 import { agentPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
@@ -249,6 +249,29 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'column.toggle',
     lands: () => visible('button', /^Show sidebar/),
+  }),
+  keyRow({
+    id: 'chat.new',
+    note: 'a new chat even with a last chat',
+    open: async () => {
+      const state = useAppStore.getState();
+      const workspaceId = state.currentWorkspaceId;
+      if (workspaceId === null) {
+        throw new Error('The journey needs its workspace');
+      }
+      useAppStore.setState({
+        lastChatByWorkspace: {
+          ...state.lastChatByWorkspace,
+          [workspaceId]: 'keys-last-chat' as ChatId,
+        },
+      });
+      await press('chat.new')();
+    },
+    lands: async () => {
+      await waitFor(() => {
+        expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: null });
+      }, WAIT);
+    },
   }),
   pressRow({
     id: 'session.board',
@@ -1117,7 +1140,10 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.newTab',
     open: async () => {
       await press('lens.terminal')();
-      await clickFirstButton(/^New terminal$/);
+      const rail = await screen.findByRole('complementary', { name: 'Terminals' }, WAIT);
+      fireEvent.click(
+        within(rail).getAllByRole('button', { name: /^New terminal$/ })[0] as HTMLElement,
+      );
       await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT);
       const first = terminalRows()[0]?.querySelector('button');
       expect(first).toBeDefined();

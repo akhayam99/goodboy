@@ -31,6 +31,8 @@ const actions = (): ColumnActions => ({
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
   openTerminalStudio: vi.fn(),
+  openNewChat: vi.fn(),
+  openNewTerminal: vi.fn(),
   openMonitoring: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
@@ -96,7 +98,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks the toggle, New session, the six doors, the sessions, then Settings and the Goodboy row', () => {
+  it('stacks the toggle, the create row, the six doors, the sessions, then Settings and the Goodboy row', () => {
     mountColumn();
     const nav = navLayer();
 
@@ -104,7 +106,6 @@ describe('SideColumn', () => {
       /^Hide sidebar/,
     );
     expect(doorNames(nav)).toEqual([
-      'new',
       'board',
       'inbox',
       'chat',
@@ -128,7 +129,7 @@ describe('SideColumn', () => {
     ['terminal', ['terminal']],
     ['monitoring', ['monitoring']],
     ['settings', ['settings']],
-    ['new', ['new']],
+    ['new', []],
     ['impact', []],
     [null, []],
   ] as const)('marks only the %s door current', (place, expected) => {
@@ -158,7 +159,7 @@ describe('SideColumn', () => {
     expect(doors.openInbox).not.toHaveBeenCalled();
   });
 
-  it('asks for a new session from the emphasised row', () => {
+  it('asks for a new session from the primary create button', () => {
     const onNew = vi.fn();
     window.addEventListener('goodboy:new-session', onNew);
     mountColumn();
@@ -167,6 +168,42 @@ describe('SideColumn', () => {
 
     expect(onNew).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:new-session', onNew);
+  });
+
+  it('opens a new chat and a new terminal from the create row', () => {
+    const doors = actions();
+    mountColumn({ doors });
+
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New terminal' }));
+
+    expect(doors.openNewChat).toHaveBeenCalledOnce();
+    expect(doors.openNewTerminal).toHaveBeenCalledOnce();
+    expect(doors.openChat).not.toHaveBeenCalled();
+    expect(doors.openTerminalStudio).not.toHaveBeenCalled();
+  });
+
+  it('has no full-width New session row and no create button inside a door row', () => {
+    mountColumn();
+    const nav = navLayer();
+
+    expect(nav.querySelector('[data-column-door="new"]')).toBeNull();
+    const doorRows = Array.from(nav.querySelectorAll('[data-column-door]'));
+    for (const door of doorRows) {
+      expect(door.getAttribute('aria-label')).not.toMatch(/^New /);
+      expect(door.querySelector('button')).toBeNull();
+    }
+  });
+
+  it('lays the three create buttons in one grid row', () => {
+    mountColumn();
+    const row = navLayer().querySelector('[data-column-create]') as HTMLElement;
+
+    expect(
+      within(row)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['New session', 'New chat', 'New terminal']);
   });
 
   it('opens the report sheet from the bug button beside the Goodboy row', () => {

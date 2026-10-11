@@ -21,7 +21,8 @@ import {
 } from '../../../store/storyHarness';
 import { EMPTY_SESSION_DRAFT } from '../../../store/slices/sessionDraft/state';
 import { harborline, seedColumn } from '../../../features/workspace/testing/sessionColumn';
-import { NewSessionRow } from './NewSessionRow';
+import { CreateRow } from './CreateRow';
+import type { ColumnActions } from './columnDoors';
 
 let useAppStore: StoryStore;
 
@@ -36,10 +37,15 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const mount = (isCurrent = false) =>
-  render(<NewSessionRow workspaceId={harborline.id} isCurrent={isCurrent} />);
+const doors = (): Pick<ColumnActions, 'openNewChat' | 'openNewTerminal'> => ({
+  openNewChat: vi.fn(),
+  openNewTerminal: vi.fn(),
+});
 
-describe('the New session row', () => {
+const mount = (isCurrent = false, actions = doors()) =>
+  render(<CreateRow workspaceId={harborline.id} isNewCurrent={isCurrent} actions={actions} />);
+
+describe('the create row', () => {
   it('asks for a new session when it is clicked', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:new-session', listener);
@@ -47,6 +53,15 @@ describe('the New session row', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New session' }));
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:new-session', listener);
+  });
+
+  it('asks for a new chat and a new terminal through the actions', () => {
+    const actions = doors();
+    mount(false, actions);
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New terminal' }));
+    expect(actions.openNewChat).toHaveBeenCalledOnce();
+    expect(actions.openNewTerminal).toHaveBeenCalledOnce();
   });
 
   it('is the current place while the draft is open, without a dot', () => {

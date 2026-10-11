@@ -14,6 +14,8 @@ const ACTIONS: ColumnActions = {
   openChat: noop,
   openWorkflows: noop,
   openTerminalStudio: noop,
+  openNewChat: noop,
+  openNewTerminal: noop,
   openMonitoring: noop,
   openSettings: noop,
   openChangelog: noop,
