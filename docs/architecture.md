@@ -495,9 +495,7 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
 
 ### Database migrations
 
-Each migration is one file, `mNNN-kebab-name.ts`, in
-`packages/db/src/migrations/`. It exports one SQL string named `mNNNName`.
-Register it in `index.ts` with the version number from its filename. Once a
+To add one, follow [recipes/migration.md](recipes/migration.md). Once a
 migration has shipped, never edit it.
 
 The runner (`runner.ts`) keeps a list of every version it has applied, not
