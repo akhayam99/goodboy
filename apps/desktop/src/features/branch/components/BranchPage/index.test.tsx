@@ -405,9 +405,9 @@ afterEach(() => {
 });
 
 const bodyColumnWidths = (): ReadonlyArray<string | null> =>
-  Array.from(document.querySelectorAll('[data-slot="pane-body"] [data-page-column]')).map(
-    (column) => column.getAttribute('data-width'),
-  );
+  Array.from(document.querySelectorAll('[data-slot="pane-body"] [data-page-column]'))
+    .filter((column) => column.parentElement?.closest('[data-page-column]') === null)
+    .map((column) => column.getAttribute('data-width'));
 
 const headerColumn = (): string | null =>
   document
@@ -424,6 +424,7 @@ describe('Branch page column', () => {
 
       expect(headerColumn()).toBe('column');
       expect(bodyColumnWidths().length).toBeGreaterThan(0);
+      expect(bodyColumnWidths().every((width) => width === 'column')).toBe(true);
     }
   });
 
@@ -443,6 +444,7 @@ describe('Branch page column', () => {
 
       expect(headerColumn()).toBe('column');
       expect(bodyColumnWidths().length).toBeGreaterThan(0);
+      expect(bodyColumnWidths().every((width) => width === 'column')).toBe(true);
     }
   });
 
