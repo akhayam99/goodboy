@@ -1,29 +1,36 @@
 import { expect, vi } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { pressShortcut } from '../../helpers/pressKey';
-import { RAIL_FILE_PATHS } from './files-rail.runner';
-import { type Ctx, type Row, WAIT, branchTab, click, clickFirstButton, settle } from './harness';
+import {
+  type Ctx,
+  type Row,
+  WAIT,
+  branchTab,
+  click,
+  clickFirstButton,
+  findSection,
+  lens,
+  settle,
+  useAppStore,
+} from './harness';
 
-const FILE_COUNT = RAIL_FILE_PATHS.length;
 const THIRD_FILE = /^seenEvents\.ts/;
-const FILES_BUTTON = `Files, 0 of ${FILE_COUNT} viewed`;
 
-const STRIP_PANE = 1196;
-const BUTTON_PANE = 1100;
+const OVERLAY_PANE = 700;
 const DOCKED_PANE = 1920;
 
 type Frame = {
   readonly title: HTMLElement;
-  readonly tabs: HTMLElement;
+  readonly rail: HTMLElement;
 };
 
 let frame: Frame | null = null;
 
 const stubPane = ({ width }: { readonly width: number }): void => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-    return this.hasAttribute('data-diff-rail-scope')
+    return this.hasAttribute('data-branch-pane')
       ? new DOMRect(0, 0, width, 800)
       : new DOMRect(0, 0, 0, 0);
   });
@@ -39,20 +46,22 @@ const escape = async (): Promise<void> => {
   await settle();
 };
 
-const rail = (): HTMLElement | null => screen.queryByRole('complementary', { name: 'Files' });
+const railNav = (): HTMLElement | null => screen.queryByRole('navigation', { name: 'Sections' });
+
+const treeNav = (): HTMLElement =>
+  within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('navigation', {
+    name: 'Changed files',
+  });
 
 const thirdRow = (): HTMLElement =>
-  within(screen.getByRole('navigation', { name: 'Changed files' })).getByRole('button', {
+  within(treeNav()).getByRole('button', {
     name: THIRD_FILE,
   });
 
-const toolbarButton = (): HTMLElement =>
-  within(document.querySelector('[data-slot="diff-toolbar"]') as HTMLElement).getByRole('button', {
-    name: FILES_BUTTON,
-  });
+const sectionsButton = (): HTMLElement => screen.getByRole('button', { name: 'Sections' });
 
 const visit = async ({ ctx, tab }: { readonly ctx: Ctx; readonly tab: 'comments' | 'files' }) => {
-  await click(screen.getByRole('tab', { name: tab === 'files' ? /^Files/ : /^Comments/ }));
+  await click(await findSection(tab === 'files' ? /^Files/ : /^Comments/));
   await branchTab(tab)(ctx);
 };
 
@@ -63,7 +72,7 @@ const folderRow = ({
   readonly label: RegExp;
   readonly isOpen: boolean;
 }): HTMLElement =>
-  within(screen.getByRole('navigation', { name: 'Changed files' })).getByRole('button', {
+  within(treeNav()).getByRole('button', {
     name: label,
     expanded: isOpen,
   });
@@ -79,15 +88,18 @@ const headerPart = (selector: string): HTMLElement => {
 const openBranchOnComments = async (ctx: Ctx): Promise<void> => {
   await clickFirstButton(/^Open PR #\d+ of /);
   await branchTab('pr')(ctx);
-  await click(await screen.findByRole('tab', { name: /^Comments/ }));
+  await click(await findSection(/^Comments/));
   await branchTab('comments')(ctx);
-  frame = { title: headerPart('h1'), tabs: headerPart('[role="tablist"]') };
+};
+
+const rememberFrame = (): void => {
+  frame = { title: headerPart('h1'), rail: railNav() as HTMLElement };
 };
 
 const expectSameFrame = (): void => {
   expect(frame).not.toBeNull();
   expect(headerPart('h1')).toBe(frame?.title);
-  expect(headerPart('[role="tablist"]')).toBe(frame?.tabs);
+  expect(railNav()).toBe(frame?.rail);
 };
 
 const downToThirdFile = async (): Promise<void> => {
@@ -98,8 +110,7 @@ const downToThirdFile = async (): Promise<void> => {
 
 const leaveAndComeBack = async (ctx: Ctx): Promise<void> => {
   await visit({ ctx, tab: 'comments' });
-  expect(rail()).toBeNull();
-  expect(document.querySelector('[data-slot="diff-rail-host"]')).toBeNull();
+  expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
   expectSameFrame();
   await visit({ ctx, tab: 'files' });
   expectSameFrame();
@@ -107,57 +118,22 @@ const leaveAndComeBack = async (ctx: Ctx): Promise<void> => {
 
 export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'files rail: strip, J to the third file, the toggle key, F opens the overlay, Esc closes it',
-    covers: ['navigate', 'files-rail:strip'],
-    open: async (ctx) => {
-      stubPane({ width: STRIP_PANE });
-      await openBranchOnComments(ctx);
-      await visit({ ctx, tab: 'files' });
-      const strip = await screen.findByRole('button', { name: FILES_BUTTON }, WAIT);
-      expect(rail()).toBeNull();
-
-      await downToThirdFile();
-      await press('diff.toggleTree');
-      expect(rail()?.getAttribute('data-rail')).toBe('overlay');
-      expect(thirdRow().getAttribute('aria-current')).toBe('true');
-      await press('diff.toggleTree');
-      expect(rail()).toBeNull();
-
-      await press('diff.focusTree');
-      expect(rail()?.getAttribute('data-rail')).toBe('overlay');
-      expect(document.activeElement).toBe(thirdRow());
-      await escape();
-      expect(rail()).toBeNull();
-      expect(document.activeElement).toBe(strip);
-
-      await leaveAndComeBack(ctx);
-    },
-    lands: async (ctx) => {
-      await branchTab('files')(ctx);
-      expect(await screen.findByRole('button', { name: FILES_BUTTON }, WAIT)).toBeDefined();
-      expectSameFrame();
-    },
-  },
-  {
-    name: 'files rail: docked, the toggle key folds it to the strip and F docks it again',
+    name: 'files rail: docked, J to the third file, F puts focus in the tree, Esc leaves it in place',
     covers: ['navigate', 'files-rail:docked'],
     open: async (ctx) => {
       stubPane({ width: DOCKED_PANE });
       await openBranchOnComments(ctx);
+      rememberFrame();
       await visit({ ctx, tab: 'files' });
       await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
-      expect(rail()?.getAttribute('data-rail')).toBe('docked');
+      expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
 
       await downToThirdFile();
-      await press('diff.toggleTree');
-      expect(rail()).toBeNull();
-      expect(screen.getByRole('button', { name: FILES_BUTTON })).toBeDefined();
-
+      expect(thirdRow().getAttribute('aria-current')).toBe('true');
       await press('diff.focusTree');
-      expect(rail()?.getAttribute('data-rail')).toBe('docked');
       expect(document.activeElement).toBe(thirdRow());
       await escape();
-      expect(rail()?.getAttribute('data-rail')).toBe('docked');
+      expect(treeNav()).toBeDefined();
 
       await leaveAndComeBack(ctx);
     },
@@ -168,35 +144,39 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'files rail: button, the toolbar control opens the overlay and Esc hands focus back to it',
-    covers: ['navigate', 'files-rail:button'],
+    name: 'files rail: hidden under 780, Sections opens it over the page, F opens it with focus in the tree, Esc closes it',
+    covers: ['navigate', 'files-rail:overlay'],
     open: async (ctx) => {
-      stubPane({ width: BUTTON_PANE });
-      await openBranchOnComments(ctx);
-      await visit({ ctx, tab: 'files' });
-      await screen.findByRole('button', { name: FILES_BUTTON }, WAIT);
-      expect(rail()).toBeNull();
-      const button = toolbarButton();
-      expect(
-        within(document.querySelector('[data-slot="diff-toolbar"]') as HTMLElement).getAllByRole(
-          'button',
-        )[0],
-      ).toBe(button);
+      stubPane({ width: OVERLAY_PANE });
+      await clickFirstButton(/^Open PR #\d+ of /);
+      await lens('branch')(ctx);
+      expect(railNav()).toBeNull();
+      await click(await screen.findByRole('button', { name: 'Sections' }, WAIT));
+      await click(await findSection(/^Files/));
+      await waitFor(
+        () => expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe('files'),
+        WAIT,
+      );
+      expect(railNav()).toBeNull();
+      expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+
+      await click(sectionsButton());
+      expect(await screen.findByRole('navigation', { name: 'Changed files' }, WAIT)).toBeDefined();
+      await escape();
+      expect(railNav()).toBeNull();
 
       await downToThirdFile();
-      await click(button);
-      expect(rail()?.getAttribute('data-rail')).toBe('overlay');
+      await press('diff.focusTree');
       expect(thirdRow().getAttribute('aria-current')).toBe('true');
+      expect(document.activeElement).toBe(thirdRow());
       await escape();
-      expect(rail()).toBeNull();
-      expect(document.activeElement).toBe(toolbarButton());
-
-      await leaveAndComeBack(ctx);
+      expect(railNav()).toBeNull();
     },
     lands: async (ctx) => {
-      await branchTab('files')(ctx);
-      expect(await screen.findByRole('button', { name: FILES_BUTTON }, WAIT)).toBeDefined();
-      expectSameFrame();
+      await lens('branch')(ctx);
+      expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe('files');
+      expect(railNav()).toBeNull();
+      expect(sectionsButton()).toBeDefined();
     },
   },
   {
@@ -205,6 +185,7 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
     open: async (ctx) => {
       stubPane({ width: DOCKED_PANE });
       await openBranchOnComments(ctx);
+      rememberFrame();
       await visit({ ctx, tab: 'files' });
       await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
 

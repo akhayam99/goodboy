@@ -132,6 +132,15 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   integers in `.env`, `.env.local`, `.env.development`, `server.port` in the
   vite config, published compose ports) and keeps nothing else from those
   files.
+- **Stopping a process.** `monitor_stop(pid, force)` (`monitor/stop.rs`)
+  answers `{ outcome: "stopped" | "still-running" | "refused", reason }`. It
+  refuses pid 1, this app, the processes that started it, a pid whose uid is
+  not the app's and a pid missing from a fresh snapshot, then sends SIGTERM
+  (SIGKILL with `force`) and polls for up to 3 seconds; a zombie counts as
+  gone. On Windows the same refusals sit in front of `TerminateProcess`. The
+  Goodboy rows never call it first: `stopGoodboyRow` routes to the script
+  cancel, the terminal close or the turn cancel, and falls back to
+  `monitor_stop` only when the app owns nothing for that process.
 - **The port join.** `attributePorts` (`packages/core/src/monitoring`) joins
   the snapshot, the ledger, the sessions' worktrees and the projects into one
   row per listener, first match wins: a Goodboy script, terminal or agent turn
@@ -486,9 +495,7 @@ Finder` button opens `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file ma
 
 ### Database migrations
 
-Each migration is one file, `mNNN-kebab-name.ts`, in
-`packages/db/src/migrations/`. It exports one SQL string named `mNNNName`.
-Register it in `index.ts` with the version number from its filename. Once a
+To add one, follow [recipes/migration.md](recipes/migration.md). Once a
 migration has shipped, never edit it.
 
 The runner (`runner.ts`) keeps a list of every version it has applied, not

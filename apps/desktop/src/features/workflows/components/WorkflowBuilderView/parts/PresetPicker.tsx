@@ -1,8 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Search, Trash2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import {
   AnchoredPopover,
-  InlineConfirm,
   LISTBOX_SEARCH_THRESHOLD,
   ScrollFade,
   filterOptions,
@@ -30,9 +29,7 @@ export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
-  const [confirmingId, setConfirmingId] = useState<WorkflowId | null>(null);
   const selected = presets.find((preset) => preset.id === selectedId) ?? null;
-  const confirming = presets.find((preset) => preset.id === confirmingId) ?? null;
   const isSearchable = presets.length > LISTBOX_SEARCH_THRESHOLD;
   const entries = useMemo(
     () =>
@@ -97,92 +94,73 @@ export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete
           value={selected?.name ?? 'Pick a preset'}
           isOpen={open}
           disabled={disabled}
-          onToggle={() => {
-            setConfirmingId(null);
-            toggle();
-          }}
+          onToggle={toggle}
         />
       }
     >
-      {confirming !== null ? (
-        <InlineConfirm
-          role="danger"
-          surface="plain"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={`Delete ${confirming.name}?`}
-          description="Removes this preset from the workspace. Runs that used it keep their steps."
-          confirmLabel="Delete preset"
-          onConfirm={async () => {
-            await onDelete(confirming);
-            setConfirmingId(null);
-          }}
-          onCancel={() => setConfirmingId(null)}
-        />
-      ) : (
-        <div className="flex min-h-0 flex-col" onKeyDown={keyboard.onKeyDown}>
-          {isSearchable ? (
-            <div className="flex h-9 shrink-0 items-center gap-2 px-2 text-muted-foreground">
-              <Search size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-              <input
-                ref={searchRef}
-                type="text"
-                role="combobox"
-                aria-label="Search presets"
-                aria-expanded
-                aria-controls={listId}
-                aria-autocomplete="list"
-                aria-activedescendant={
-                  activeIndex >= 0 ? listboxOptionId({ id: listId, index: activeIndex }) : undefined
-                }
-                autoComplete="off"
-                value={query}
-                placeholder="Search presets"
-                onChange={(event) => setQuery(event.target.value)}
-                className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
-              />
-            </div>
-          ) : null}
-          <ScrollFade
-            className="flex min-h-0 flex-1 flex-col"
-            viewportClassName="h-auto min-h-0 flex-1"
-            fadeFrom="floating"
-            fadeSize={12}
-          >
-            <div
-              ref={listRef}
-              id={listId}
-              role="listbox"
-              aria-label="Presets"
-              tabIndex={-1}
+      <div className="flex min-h-0 flex-col" onKeyDown={keyboard.onKeyDown}>
+        {isSearchable ? (
+          <div className="flex h-9 shrink-0 items-center gap-2 px-2 text-muted-foreground">
+            <Search size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            <input
+              ref={searchRef}
+              type="text"
+              role="combobox"
+              aria-label="Search presets"
+              aria-expanded
+              aria-controls={listId}
+              aria-autocomplete="list"
               aria-activedescendant={
-                !isSearchable && activeIndex >= 0
-                  ? listboxOptionId({ id: listId, index: activeIndex })
-                  : undefined
+                activeIndex >= 0 ? listboxOptionId({ id: listId, index: activeIndex }) : undefined
               }
-              className="flex flex-col outline-none"
-            >
-              {shown.map(({ preset, match }, index) => (
-                <PresetPickerOption
-                  key={preset.id}
-                  id={listboxOptionId({ id: listId, index })}
-                  preset={preset}
-                  match={match}
-                  isActive={index === activeIndex}
-                  isSelected={preset.id === selectedId}
-                  onActivate={() => setActiveIndex(index)}
-                  onSelect={() => choose(index)}
-                  onDelete={() => setConfirmingId(preset.id)}
-                />
-              ))}
-              {shown.length === 0 ? (
-                <p className="px-2 py-2 text-label text-faint-foreground">
-                  {`No preset matches "${query.trim()}"`}
-                </p>
-              ) : null}
-            </div>
-          </ScrollFade>
-        </div>
-      )}
+              autoComplete="off"
+              value={query}
+              placeholder="Search presets"
+              onChange={(event) => setQuery(event.target.value)}
+              className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
+            />
+          </div>
+        ) : null}
+        <ScrollFade
+          className="flex min-h-0 flex-1 flex-col"
+          viewportClassName="h-auto min-h-0 flex-1"
+          fadeFrom="floating"
+          fadeSize={12}
+        >
+          <div
+            ref={listRef}
+            id={listId}
+            role="listbox"
+            aria-label="Presets"
+            tabIndex={-1}
+            aria-activedescendant={
+              !isSearchable && activeIndex >= 0
+                ? listboxOptionId({ id: listId, index: activeIndex })
+                : undefined
+            }
+            className="flex flex-col outline-none"
+          >
+            {shown.map(({ preset, match }, index) => (
+              <PresetPickerOption
+                key={preset.id}
+                id={listboxOptionId({ id: listId, index })}
+                preset={preset}
+                match={match}
+                isActive={index === activeIndex}
+                isSelected={preset.id === selectedId}
+                onActivate={() => setActiveIndex(index)}
+                onSelect={() => choose(index)}
+                onDelete={() => void onDelete(preset)}
+              />
+            ))}
+            {shown.length === 0 ? (
+              <p className="px-2 py-2 text-label text-faint-foreground">
+                {`No preset matches "${query.trim()}"`}
+              </p>
+            ) : null}
+          </div>
+        </ScrollFade>
+      </div>
     </AnchoredPopover>
   );
 };

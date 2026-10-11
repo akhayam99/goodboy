@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
+import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
@@ -112,7 +113,6 @@ export const useSuggestionActions = ({
   const runPlan = useAppStore((state) => state.runPlan);
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
   const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
-  const createPrForSession = useAppStore((state) => state.createPrForSession);
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
@@ -468,13 +468,24 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'open-pr') {
+      const scribe = suggestion.payload.scribe ?? null;
+      if (scribe === 'writing' || scribe === 'creating') {
+        return NO_ACTIONS;
+      }
+      const mount = mounts.find((candidate) => candidate.mountId === suggestion.payload.mountId);
       return {
         primary: {
-          label: 'Open PR',
+          label: scribe === 'ready' ? 'Review text' : 'Open PR',
           isDisabled: false,
-          failureTitle: "Couldn't create the pull request",
+          failureTitle: "Couldn't open the pull request form",
           run: async () => {
-            await createPrForSession({ sessionId, mountId: suggestion.payload.mountId });
+            navigate({
+              to: branchPlace({
+                sessionId,
+                mountPath: mount?.worktreePath ?? null,
+                tab: 'pr',
+              }),
+            });
           },
         },
         onDismiss: null,

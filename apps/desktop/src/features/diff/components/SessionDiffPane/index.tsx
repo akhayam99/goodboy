@@ -13,14 +13,11 @@ import { DiffViewSelector } from '../../../permissions/components/DiffViewSelect
 import { useDiffKeys } from '../../hooks/useDiffKeys';
 import { useReviewState } from '../../hooks/useReviewState';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
-import { useTreePanel } from '../../hooks/useTreePanel';
-import { DiffRailContext } from '../../diffRailContext';
+import { useTreeFocus } from '../../hooks/useTreeFocus';
+import { DiffRailContext } from '../../diffRailHost';
+import { nextUnviewedPath } from '../../lib/fileOrder';
 import { ChangeTree } from '../ChangeTree';
-import { TreeFilesButton } from '../ChangeTree/TreeFilesButton';
 import { TreeLoading } from '../ChangeTree/TreeLoading';
-import { TreeRail } from '../ChangeTree/TreeRail';
-import { TreeResizer } from '../ChangeTree/TreeResizer';
-import { TreeStrip } from '../ChangeTree/TreeStrip';
 import { worktreeFileSides, type GrepMatch } from '../../../worktree/worktree';
 import { DiffView } from '../DiffView';
 import { DiffEmptyState } from './DiffEmptyState';
@@ -51,7 +48,7 @@ export const SessionDiffPane = ({
 
   const filterRef = useRef<HTMLInputElement | null>(null);
   const rail = useContext(DiffRailContext);
-  const panel = useTreePanel({ mode: rail.mode });
+  const panel = useTreeFocus({ host: rail.host, open: rail.open, dismiss: rail.dismiss });
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
   const hasTree = !diff.loading && diff.error === null && diff.files.length > 0;
@@ -86,15 +83,9 @@ export const SessionDiffPane = ({
   useDiffKeys({
     enabled: hasTree,
     review,
-    onToggleTree: panel.toggle,
     onFocusTree: panel.focus,
     onFocusFilter: panel.focusFilter,
   });
-
-  const viewedCount = useMemo(
-    () => review.allFiles.filter((file) => review.viewed.stateOf(file) === 'viewed').length,
-    [review.allFiles, review.viewed],
-  );
 
   const commentOnFile = useCallback(
     (path: string) => {
@@ -207,17 +198,6 @@ export const SessionDiffPane = ({
     />
   );
   const showsDiff = !diff.loading && diff.error === null && !isEmpty && !isFilteredOut;
-  const showsButton = hasTree && rail.mode === 'button';
-  const filesButton = showsButton ? (
-    <TreeFilesButton
-      triggerRef={panel.triggerRef}
-      viewed={viewedCount}
-      total={review.allFiles.length}
-      isOpen={panel.isOpen}
-      onToggle={panel.toggle}
-    />
-  ) : null;
-
   const metaNotice =
     diff.metaError === null ? null : (
       <PageColumn className="pb-2">
@@ -279,12 +259,7 @@ export const SessionDiffPane = ({
       onFileCommentOpened={review.clearFileComment}
       columnWidth="full"
       identifierPeek={identifierPeek}
-      toolbarStart={
-        <>
-          {filesButton}
-          {selector}
-        </>
-      }
+      toolbarStart={selector}
       toolbarEnd={
         onWriteReview === null && toolbarExtra === null ? undefined : (
           <>
@@ -301,6 +276,18 @@ export const SessionDiffPane = ({
     />
   );
 
+  const nextUnviewed = useCallback(() => {
+    const target = nextUnviewedPath({
+      files: review.tree.files,
+      from: review.activePath,
+      stateOf: review.viewed.stateOf,
+      wrap: true,
+    });
+    if (target !== null) {
+      pickFile(target);
+    }
+  }, [pickFile, review.activePath, review.tree.files, review.viewed.stateOf]);
+
   const tree = (
     <ChangeTree
       tree={review.tree}
@@ -316,72 +303,17 @@ export const SessionDiffPane = ({
       hasNotesIn={review.hasNotesIn}
       stateOf={review.viewed.stateOf}
       noteCountOf={review.noteCountOf}
+      onNextUnviewed={nextUnviewed}
     />
   );
 
-  const treeColumn = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
-
-  const isDockedMode = rail.mode === 'docked';
-  const showsRail = isDockedMode && treeColumn !== null && (panel.isOpen || !hasTree);
-  const showsStrip = hasTree && (rail.mode === 'strip' || (isDockedMode && !panel.isOpen));
-  const showsOverlay = hasTree && !isDockedMode && panel.isOpen;
-
-  const railNodes = (
-    <>
-      {showsRail && (
-        <TreeRail
-          variant="docked"
-          asideRef={panel.asideRef}
-          width={rail.width}
-          count={hasTree ? review.allFiles.length : null}
-          isAfterStrip={false}
-          onFold={hasTree ? panel.fold : null}
-          resizer={
-            hasTree ? (
-              <TreeResizer
-                asideRef={panel.asideRef}
-                width={rail.width}
-                paneWidth={rail.paneWidth}
-                onResize={rail.resizeTo}
-              />
-            ) : null
-          }
-        >
-          {treeColumn}
-        </TreeRail>
-      )}
-      {showsStrip && (
-        <TreeStrip
-          ref={panel.triggerRef}
-          viewed={viewedCount}
-          total={review.allFiles.length}
-          isOpen={panel.isOpen}
-          onToggle={panel.toggle}
-        />
-      )}
-      {showsOverlay && (
-        <TreeRail
-          variant="overlay"
-          asideRef={panel.asideRef}
-          width={rail.width}
-          count={review.allFiles.length}
-          isAfterStrip={rail.mode === 'strip'}
-          onFold={panel.fold}
-        >
-          {tree}
-        </TreeRail>
-      )}
-    </>
-  );
+  const railNode = diff.loading ? <TreeLoading /> : hasTree ? tree : null;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {rail.host === null ? null : createPortal(railNodes, rail.host)}
+      {rail.host === null || railNode === null ? null : createPortal(railNode, rail.host)}
       {showsDiff || isEmpty ? null : (
-        <PageColumn className="flex min-w-0 items-center gap-2 pb-3">
-          {filesButton}
-          {selector}
-        </PageColumn>
+        <PageColumn className="flex min-w-0 items-center gap-2 pb-3">{selector}</PageColumn>
       )}
       {metaNotice}
       {body}

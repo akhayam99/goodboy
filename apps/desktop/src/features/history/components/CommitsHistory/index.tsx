@@ -35,11 +35,12 @@ import { TabActions } from '../../../../shared/components/TabActions';
 type Props = {
   readonly sessionId: SessionId;
   readonly worktreePath: string;
+  readonly isReadOnly?: boolean;
 };
 
 const NARROW_WIDTH = 760;
 
-export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
+export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: Props) => {
   const plan = useHistoryPlan({ sessionId, worktreePath });
   const {
     mount,
@@ -62,8 +63,9 @@ export const CommitsHistory = ({ sessionId, worktreePath }: Props) => {
     dirtyCount,
     applied,
     isDone,
-    isInteractive,
+    isInteractive: isEditable,
   } = plan;
+  const isInteractive = isEditable && !isReadOnly;
   const flow = useHistoryRunFlow({ sessionId, mountId, hasUpstream });
   const backups = useHistoryBackupsPanel({ sessionId });
   const [editingSha, setEditingSha] = useState<string | null>(null);

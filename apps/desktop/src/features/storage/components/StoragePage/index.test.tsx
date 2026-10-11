@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import type { ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { StorageArtifact, StorageFolder } from '../../../../store/slices/storage/types';
+import { peekGuideChapter } from '../../../settings/components/GuideStudio/guideChapterRequest';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.now();
@@ -255,7 +256,7 @@ describe('StoragePage', () => {
     expect(screen.getByRole('group', { name: /Remove 1 folder in Harborline/ })).toBeDefined();
   });
 
-  it('asks before removing a dirty folder anyway and uses the confirmed mode', () => {
+  it('asks in a popover before removing a dirty folder anyway and uses the confirmed mode', () => {
     render(<StoragePage />);
     const row = screen
       .getAllByTestId('storage-folder-row')
@@ -264,7 +265,10 @@ describe('StoragePage', () => {
     fireEvent.click(within(row!).getByRole('button', { name: 'More actions' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Remove anyway/ }));
 
-    const confirm = screen.getByRole('group', { name: /12 changed files will be lost/ });
+    const dialog = screen.getByRole('dialog', { name: /12 changed files will be lost/ });
+    expect(row!.contains(dialog)).toBe(false);
+    expect(dialog.closest('[data-dropdown-portal]')).not.toBeNull();
+    const confirm = within(dialog).getByRole('group', { name: /12 changed files will be lost/ });
     expect(within(confirm).getByText(/src\/settle\/close.rs and 11 more/)).toBeDefined();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Remove folder' }));
 
@@ -272,6 +276,19 @@ describe('StoragePage', () => {
       paths: [dirty.path],
       mode: 'confirmed',
     });
+  });
+
+  it('explains what a worktree is from the row menu, in the Guide Words chapter', () => {
+    const openStudio = vi.fn();
+    state.openStudio = openStudio;
+    render(<StoragePage />);
+    const row = screen.getAllByTestId('storage-folder-row')[0];
+
+    fireEvent.click(within(row!).getByRole('button', { name: 'More actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'What is a worktree?' }));
+
+    expect(openStudio).toHaveBeenCalledWith({ studio: { kind: 'guide' } });
+    expect(peekGuideChapter()).toBe('words');
   });
 
   it('keeps a folder for thirty days from its menu', () => {
@@ -306,6 +323,19 @@ describe('StoragePage', () => {
     expect(state.deleteStorageArtifacts).toHaveBeenCalledWith({ ids: [unusedReport.id] });
   });
 
+  it('asks in a popover before it prunes archived transcripts', async () => {
+    render(<StoragePage />);
+    const history = screen.getByRole('region', { name: 'Transcripts and app data' });
+
+    fireEvent.click(within(history).getByRole('button', { name: 'Prune' }));
+    const dialog = screen.getByRole('dialog', { name: 'Prune archived transcripts?' });
+    expect(history.contains(dialog)).toBe(false);
+    expect(state.pruneArchivedTranscripts).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Prune' }));
+
+    await waitFor(() => expect(state.pruneArchivedTranscripts).toHaveBeenCalledOnce());
+  });
+
   it('keeps an artifact for thirty days from its keep menu', () => {
     render(<StoragePage />);
     const row = screen.getAllByTestId('storage-artifact-row')[1];
@@ -316,12 +346,14 @@ describe('StoragePage', () => {
     expect(state.keepStorageArtifact).toHaveBeenCalledWith({ id: openedReport.id, days: 30 });
   });
 
-  it('asks before deleting one artifact with its copy and its record', () => {
+  it('asks in a popover before deleting one artifact with its copy and its record', () => {
     render(<StoragePage />);
     const row = screen.getAllByTestId('storage-artifact-row')[2];
 
     fireEvent.click(within(row!).getByRole('button', { name: 'Delete' }));
-    const confirm = screen.getByRole('group', { name: /Delete this plan/ });
+    const dialog = screen.getByRole('dialog', { name: /Delete this plan/ });
+    expect(row!.contains(dialog)).toBe(false);
+    const confirm = within(dialog).getByRole('group', { name: /Delete this plan/ });
     expect(within(confirm).getByText(/copy on disk and its record in Goodboy/)).toBeDefined();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 

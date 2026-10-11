@@ -51,11 +51,12 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Tasks, Chat, Workflows, Terminal and Monitoring sit
-  under New session, the Sessions list follows, Settings and the Goodboy row sit at
-  the foot. Board is home and the first door (⌘⇧H). The column is on every
-  screen with a workspace: the board, a session, the draft and every studio but
-  Settings, which swaps the column's content (see Studios).
+- **The column holds every door.** One create row of three labelled buttons (+ Session,
+  - Chat, + Terminal) sits under the toggle; Board, Tasks, Chat, Workflows, Terminal and
+    Monitoring sit under it with no plus of their own, the Sessions list follows, Settings and the Goodboy row sit at
+    the foot. Board is home and the first door (⌘⇧H). The column is on every
+    screen with a workspace: the board, a session, the draft and every studio but
+    Settings, which swaps the column's content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. Neither the column nor a studio
@@ -99,7 +100,7 @@
   below, Close rewrites the top entry as the page without the studio. Esc is
   layered: it closes a popover or a confirmation inside the studio before the
   studio itself.
-- **One selected sign.** The open studio's door, New session while the draft is
+- **One selected sign.** The open studio's door, + Session while the draft is
   open, or Board on the board, takes `bg-selected` with `cursor-default` and
   `aria-current="page"`, in the column and on the rail alike. Every door reads it from one place (`columnPlaceOf`, through
   `useColumnPlace`), so at most one door carries it; inside a session no door
@@ -251,7 +252,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/branch/comments`,
-  `s/{session}/branch/pr` (the Pull request tab, see below),
+  `s/{session}/branch/pr` (the Overview section, see below),
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
   `s/{session}/branch/comments/t/{thread}` (a thread, with a fix run transcript in the drawer when one is open).
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
@@ -267,14 +268,17 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   view redirects after it mounts. The pull request and Comments are two lenses
   and never alias each other: a door to the pull request lands on `pr`, a door
   to comments lands on `review`. On a code-host branch both are rewritten to a
-  Branch tab. The Branch tabs are addresses and have one registry,
+  Branch section. The Branch sections are addresses and have one registry,
   `BRANCH_TAB_REGISTRY` in `features/branch/branchTabs.ts` (id, label, address
-  token, shortcut, availability), with `branchTabsOf({ hasPullRequest,
-provider })` returning the tabs the page shows in order. `BranchTab` includes
-  `pr`; while `pr` is not available the `pr` address parses and prints but
-  `canonicalLocation` lands it, and the pull request page request, on
-  `comments` (a review being written still lands on `files`), so a pasted or
-  restored `pr` address never errors.
+  token, shortcut, availability), with `branchTabsOf({ state, hasComments })`
+  returning the sections the page shows in order (see The Branch page below).
+  One resolver decides every door, `unavailableBranchTab` in
+  `canonicalLocation.ts` through `resolveBranchTab`: a section the state does not
+  have is replaced before the place is recorded, `comments` with no pull request
+  and no comment by `files`, `checks` with no pull request by `pr`; every other
+  address stays. `BranchTab` includes `pr`; while `pr` is not available the `pr`
+  address parses and prints but lands on `comments` (a review being written still
+  lands on `files`), so a pasted or restored `pr` address never errors.
 - **An address carries its own mount.** `canonicalLocation` rewrites aliases
   and never fills a missing mount: a Branch address with `mountPath: null`
   stays `null`, and the page shows the active mount when it renders. A caller
@@ -450,8 +454,11 @@ reference material beside the page and closes with the pane that opened it.
 
 **The column** (`app/components/SideColumn/`) is on every screen with a
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
-New session (⌘N, the only emphasised control, selected while the draft is open,
-a primary dot and `Draft in progress` while a draft waits), the doors Board
+the create row, three equal buttons side by side, each a 12px plus and a word
+(`CreateRow`): + Session (⌘N, the only emphasised control, selected while the draft is
+open, a primary dot and `Draft in progress` while a draft waits), + Chat (⌘⇧N, always a
+new chat, never the last one) and + Terminal (a new terminal in the workspace folder);
+then the doors Board
 (⌘⇧H), Tasks, Chat, Workflows, Terminal (⌃`) and Monitoring as one 28px row each (icon and word, the
 shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
 belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
@@ -939,14 +946,15 @@ comment` for the maintainer's own comment, `Resolve: Mara Quint on index.ts`
   feed, the palette, a notification, a linked-work chip and a restored session
   are shortcuts into a place that already has a parent. None of them may
   rewrite it. History is what Back is for.
-- **The Branch is one page with its tabs in the address.** A branch is shaped
-  like a pull request: a header (title, `Draft · project · head ▾ → base ·
-checks`, where `project · head ▾` is the branch switcher, one primary by
-  state, `⋯` for the rare pull request lifecycle; the primary and `⋯` are both
-  28px, `⋯` last, and a blocked primary's reason, such as `1 check still
-running.` on Merge, reads in the meta line as well as in the tooltip) over
-  the tabs `Comments · Files · Commits · Checks`
-  (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A tab switch and a
+- **The Branch is one page with its sections in the address.** A branch is shaped
+  like a pull request: a split page, a rail of sections on the left and one centred
+  column on the right, whose header (title and state chip, `project · head ▾ → base
+· #318 by nadia-p · 7 commits`, where `project · head ▾` is the branch switcher,
+  one primary by state, `⋯` for the rare pull request lifecycle; the primary and
+  `⋯` are both 28px, `⋯` last, and a blocked primary's reason, such as `1 check
+still running.` on Merge, reads in the meta line as well as in the tooltip) sits
+  over the section body
+  (`s/{session}/branch/{tab}[:{mount}][/t/{thread}]`). A section switch and a
   thread selection replace the entry, so Back never walks them. The trail is
   `Session > Branch ▾ > {thread or file}`, the same from
   every door and always reading `Branch`, never the branch or pull request name
@@ -1197,8 +1205,16 @@ still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
 checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
 your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
-iPhone the pairing studio, so neither waits behind the palette. The
-addresses live in `shared/lib/productLinks.ts`. Report a bug closes the
+iPhone the pairing studio, so neither waits behind the palette. Every
+studio keeps a door you can see: the flow table in
+`__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
+`door` of `visible` or `palette`, and `studio-doors.test.ts` fails when a studio
+kind has no `visible` row. Three links open the Guide on a chapter and Back
+returns to the page you were on: the session hover card's "What do these marks
+mean?" (Legend), Impact's Spend tab "How cost is counted" (Tokens and cost) and
+the Storage worktree row's "What is a worktree?" (Words). They share
+`features/settings/openGuideChapter.ts`. The addresses live in
+`shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card. Only the pinned row does that (and reports the
@@ -1715,7 +1731,7 @@ then N new commits`, unmerged and gone on origin, local only for over 30
   holds reads Protected, so its folder goes first from Worktrees.
   In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
-  Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
+  Keep (30 days or always) and Delete, which asks in a `ConfirmPopover` beside its button. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
 - **Security findings is its own App page, workspace-scoped.** It scans the
   text Goodboy keeps for a workspace (saved scripts today; workflow steps,
@@ -1776,7 +1792,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   rows (`shouldGroupStarred`); a search flattens them. New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
   `After a pull request merges` segmented control, and disconnecting is a
-  ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
+  ghost row at the bottom that asks in a `ConfirmPopover` beside its button. Onboarding keeps the
   comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
@@ -1913,8 +1929,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   itself, never in a drawer. A comment reads one word (Question, To review,
   Push failed, Couldn't fix, Working, Ready, Done, Left open, Open) and
   `reviewTally` is the one count behind every number of them. A thread in the address is
-  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the launch panel
-  in the right column in place of the thread; a checkbox on hover picks comments (`X` on the focused row,
+  `s/{session}/branch/comments/t/{thread}`. A comment nobody started shows `Fix` on hover (and `F`), which opens the **Fix comments** drawer
+  (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Accept N` for comments to review. With no fix run
   the line under the tabs says `Fix N`; the Overview card and
@@ -2475,14 +2491,30 @@ Files tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
+**Frame.** The Branch page is a `split` page (`PAGE_FRAME.branch`): a rail of
+sections, always docked, and one detail beside it. The crumb band
+(`Session › Branch ▾`, Ask at its end) moves into the detail, so the rail starts at the top
+of the sheet: `SessionWorkspace` hands the band to `BranchPage` through
+`StudioBandContext` while the Branch lens is on screen, and `BranchDetail` draws it
+first. The rail is `StudioRailLayout` (surface `branch`, 288 wide, drag 220 to 420, a double click
+resets it, no fold control). Its first row sits on the crumb band's line and reads the eyebrow
+`Sections`. When the detail would fall under 560 (the page under 780, measured by
+`useBranchRailDock`) the rail leaves and a ghost `Sections` button at the left of the crumb band
+opens it over the detail, with a scrim: `Esc`, a click outside or a pick closes it, and it docks again as
+soon as the window allows. The header, the banners and every section body sit on the 960px
+column of the detail; nothing moves from one section to the next.
+
 **Header.** Title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on
-the Pull request tab and it becomes an input in the same 32px row, `Enter` saves
-to the host, `Esc` cancels, a failure is an inline notice with Retry), the line
-`Open · nadia-p wants to merge payments-api · hl/fix-credit ▾ → main · 11d ago
-· ✓ N checks` (the state word, `Draft` for a draft and `No pull request` without
-one, the author, then the switcher chip, the base, the age and the checks), one
-primary and `⋯`. The branch name prints once in that line, in `text-code`: the
+the Overview and it becomes an input in the same 32px row, `Enter` saves
+to the host, `Esc` cancels, a failure is an inline notice with Retry), then the state
+chip right after it, read from `PULL_REQUEST_PRESENTATION` (`Draft` neutral, `In review` and
+`Approved` success, `Queued` primary, `Merged` in the merged purple, `Closed` danger, `No pull
+request` when there is none), and the line
+`payments-api · hl/fix-credit ▾ → main · #318 by nadia-p · 7 commits · 11d ago`
+(the switcher chip, the base, the number and author, the commit count and the age;
+a queued request ends it with `Queued to merge, 3rd in line` or `Merges when checks pass`), one
+primary and `⋯`. The checks never print in that line: the Overview and the rail say them. The branch name prints once in that line, in `text-code`: the
 trail reads `Branch` and the title is the pull request's. **The switcher chip** (`BranchSwitcher`)
 is the repo and the branch of the page. It opens a menu of the session's
 branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
@@ -2497,11 +2529,14 @@ branch it leaves carries over. `New branch` swaps the menu for a name field
 offers none. With one branch the chip has no chevron and opens the name field at
 once (a menu of one is not drawn); with neither it is plain text.
 
-The primary is the first that applies: `Rebase on main`
-(`Open terminal` while a rebase is stopped, with `Abort rebase` beside it),
-`Push N` (accepted threads, then unpushed commits), `Publish N replies` (the
-fix is already on origin), `Retry N`, `Create PR`, `Ready for review`, `Merge`
-(`branchPrimaryOf`). `Merge` is a filled primary only when the pull request is
+The header holds at most one secondary and one primary (`branchActionsOf`). The secondary is
+the first push that applies: `Push N` (accepted threads, then unpushed commits), `Publish N
+replies` (the fix is already on origin), `Retry N`; a merged or closed request has none. The
+primary follows the state: `Mark ready for review` on a draft, `Merge` on an open or approved
+request, `Reopen` on a closed one (where the host allows it), none on a merged or queued one and none
+without a pull request, where the create form owns `Create pull request`. A stopped rebase
+shows `Continue rebase` as the primary (`Open terminal` with `Abort rebase` beside it);
+`Rebase on main` lives in Commits and in the Overview's Base block, not in the header. `Merge` is a filled primary only when the pull request is
 ready; while comments need you or a fix run is live it turns secondary and counts
 (`Merge · 3 open`), never disabled, and while a check fails, a review is
 missing or the branch conflicts it is disabled with the reason in the meta line.
@@ -2532,26 +2567,39 @@ still need you. With none opened it reads `Push N` for every accepted thread.
 reason. `⋯` holds the rare lifecycle (Edit title and description, Request
 review, Convert to draft, Close or Reopen, Open on GitHub, Copy link) and the
 branch actions (Change base branch…, Open terminal, Open in editor, Copy
-branch name, Copy patch).
+branch name, Copy patch); a queued request with auto-merge adds `Cancel auto-merge`.
 
-**Tabs and landing.** Five tabs, in this order, with and without a pull
-request: `Pull request`, `Comments N`, `Files N`, `Commits N`, `Checks`
-(`branchTabsOf`, `features/branch/branchTabs.ts`; the label of the first is the
-registry's, `Pull request`, and the key is ⌥⌘1). Every door that means "go to the
+**Sections and landing.** The rail lists the sections the state has, in this order
+(`branchTabsOf({ state, hasComments })`, `features/branch/branchTabs.ts`): with no
+pull request and no comment `Overview`, `Files N`, `Commits N`; with a local note or a thread
+and still no pull request `Comments N` joins them; Draft, Open, Approved, Queued, Merged and
+Closed show all five, `Overview`, `Comments N`, `Files N`, `Commits N`, `Checks`. The first is
+always labelled `Overview` (its key is ⌥⌘1, Comments ⌥⌘R, Files ⌥⌘F, shown in the
+row's tooltip) and Checks never appears without a pull request. A row is 32px with an icon, the label and a
+right-aligned count (a muted `-` named `Not loaded` until it is known); Files shows its viewed
+ring and `12/39`; Checks adds a dot while one fails. The current row carries `aria-current="page"`,
+Up and Down move between rows while the rail has focus, and a pick replaces the address. Merged and
+Closed make the page read only (`isBranchReadOnly`): Commits shows its list without Rebase or Apply. Every door that means "go to the
 branch" lands through one pure rule (`branchLandingTabOf`,
-`features/branch/branchLandingTab.ts`): an explicit tab in the place wins, else
-`Pull request` when the active mount has a pull request, else `Files`. The
+`features/branch/branchLandingTab.ts`): an explicit section in the place wins, else
+`Overview` when the active mount has a pull request, else `Files`; then the door resolver
+above drops a section the state lacks. The
 sidebar's Branch row, the Branch crumb, `⌥⌘1`, a mount's `Open PR`, the Board's
 pull request chip, an approved or changes-requested mark and a mount's
-`Create PR` land on `Pull request`; a comment, a thread, a fix run, a note, ⌥⌘R
-(`Open Comments`) and a draft comments chip name `Comments` themselves, `Files`
-and `Commits` doors name theirs, and a CI failure names `Checks`. The chosen tab
+`Create PR` land on `Overview`; a comment, a thread, a fix run, a note, ⌥⌘R
+(`Open Comments`) and a draft comments chip name `Comments` themselves (with no pull
+request and no comment they land on `Files`), `Files`
+and `Commits` doors name theirs, and a CI failure names `Checks` (with no pull request,
+`Overview`). The chosen section
 is stored per session and is read through `branchTabOf` (`useBranchTab` in a
-component), never from `branchTab[sessionId]` directly, so a tab is only
-remembered once the person has chosen one.
+component), never from `branchTab[sessionId]` directly, so a section is only
+remembered once the person has chosen one; the page shows the section the state has
+when the stored one is gone, without writing history.
 
-**Pull request.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`). With a pull request, the main
+**Overview.** The pull request itself, on the 960px column
+(`features/branch/components/PullRequestTab`). On the 960 content it is one grid in every state,
+`grid-cols-[minmax(0,640px)_296px]` with a 24px gap, that starts at the h1's x and ends at the column's right
+edge, from 800px of pane (below it the properties follow the main column). With a pull request, the main
 column holds the description rendered as markdown with `Edit` beside its heading
 (a click on the text also opens it; the editor is a textarea with Write and
 Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
@@ -2559,20 +2607,29 @@ Retry; an empty description reads `No description yet` with `Add description`)
 and the Activity, oldest first: who opened it, the pushes grouped by day, the
 reviews, one line `4 comments on files, 2 need you` that opens Comments, one line
 for the checks that opens Checks, your edits of this session and the merge. Rows
-that open something carry `ROW_INTERACTIVE`. The properties column is 280px on
-the right from 928px of pane and a compact grid above the description below it:
-Status (the state and the one readiness word, `Ready to merge`, `Blocked: 2
-checks failing`, `Changes requested`, `Draft, not open for review yet`, `A run is
-live on this branch`, `Waiting on checks and review`), Resolves (the linked
-issues; `Link issue` opens the popover), Reviewers (a glyph and a word each; `+`
-opens the picker that searches the host's collaborators), Checks (the rollup,
-opens the tab; `Checks unknown` when the read failed), Branch (`3 behind main`
-with `Rebase on main`) and Files changed (the count and the first seven with
-`+N -N`, each opens Files at that file). Without a pull request the tab is a
-first-time empty state (`No pull request yet`, one sentence) over the create
-form (title from the session goal, description with `Draft with an agent`, base
-branch, `Open as draft`, `Create pull request`); creating it raises a `Follow`
-toast only when the page is not already on screen. Every write goes through the
+that open something carry `ROW_INTERACTIVE`. The properties column is 296px on
+the right and holds four blocks: Reviewers (a glyph and a word each; `+`
+opens the picker that searches the host's collaborators), Checks (one line, `4 passed ·
+1 failing`, that opens the Checks section; `Checks unknown` when the read failed), Linked issues
+(each with its relation, `Closes #412`; `Link issue` opens the popover) and Base (`main`, `3 behind main`
+with `Rebase on main`). The state is the chip and the readiness word is the blocked reason in the
+header's meta line; the file count is the rail's. Without a pull request the section is a
+first-time empty state (`No pull request yet`, one sentence) over the create form, which
+fills the same grid: one input card (the title from the session goal as a large
+borderless field, the description growing from 6 to 16 lines, and in the card's
+bottom row `Write with Scribe` with its routing and a faint `Markdown`), then
+the settings as labelled properties in the side column (`Into`; `Opens as` with
+`Ready for review | Draft` only where the host can set a draft; `Reviewers` only
+where it can request them, requested right after creation; `Closes` with the
+linked issues as chips; the changelog entry under `More options` when Scribe
+wrote one) and the actions inline at the end, right aligned, with no bar:
+`Discard text` (with Undo) and `Create pull request`, which reads `Create draft
+pull request` with Draft. Scribe's job shows inside the card (skeleton lines
+while it writes, a running dot with the seconds and `Stop`, a danger notice with
+`Retry` when it failed); creating shows `Pushed <branch>` and `Opening the pull
+request` in the same row, and a failure keeps the text under a danger notice
+with `Details`. Creating it raises a `Follow` toast ("Pull request #318 opened")
+only when the page is not already on screen. Every write goes through the
 host-neutral `PullRequestPort` (`packages/core/src/review-source`), a facet of
 the review source built per host in
 `store/slices/review-source/pullRequestPortFor.ts`; the page reads the
@@ -2580,62 +2637,52 @@ capability table (`REVIEW_SOURCE_CAPABILITIES`) and never the host. A control
 the host forbids on an object that exists is shown disabled with its reason
 (`Bitbucket has no draft pull requests`, `Turned off in payments-api`, `Set by the
 project`), and a concept the host does not have is left out. GitLab uses the same
-page with its own calls and words (the tab reads `Merge request`, the header
+page with its own calls and words (the chip and the form read `merge request`, the header
 `MR !42`, `Open on GitLab`): `gitlabPullRequestPort` reads and writes through
 Tauri commands that hold the stored token, `Mark ready` and `Convert to draft`
 change the `Draft:` prefix of the title, Merge lists the ways the project
 allows, and a token without the `api` scope reads `Goodboy can't read this merge
 request` with `Open GitLab settings`. A branch with no merge request shows the
-GitLab create form under `No merge request yet`. Bitbucket uses the same page through its own adapter
+same create form with `Create merge request`, the same Scribe job and no
+reviewers. Bitbucket uses the same page through its own adapter
 (`bitbucketPullRequestPort`, built by `bitbucketPortOf` from the mount's
 request): merge offers its three strategies, `Close` declines, and the draft and
 reopen controls are left out. `E` edits the title in scope
-`pullRequest`, live only on this tab.
+`pullRequest`, live only on this section.
 
 **Comments.** The list (`Needs you`, `Working`, `Ready to push`, `Open`, `Done`, `Left open on GitHub`;
 the pull request conversation only, your notes live in the Notes drawer of
 Files) and the open thread with the code
-around the commented line above it (`hunkAround`, linking to Files). The
+around the commented line above it (`hunkAround`, linking to Files). Comments exists when a pull
+request exists or at least one comment exists, a local note or a thread open or resolved; its count is
+the notes alone while there is no pull request. The
 properties (Origin, Attempts, Fix commit) sit inline under the thread at every width, never in a margin rail. The
 actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Accept is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
-Every Branch tab sits on the 960px column (`PaneShell width="column"`, bodies in
-`PageColumn width="column"`), the header, the tabs and Ask included, so nothing
-moves from one tab to the next. The Comments tab reads the width of its own pane
-(`branchLayoutOf`, so a wide sidebar or an open drawer narrows it): from 900px a
-300px list beside a wide thread; under 900px the list, then the thread with
-`‹ Comments` (Up). The selected row stays selected on the way back.
+Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
+`PageColumn width="column"`), the header and Ask included, so nothing
+moves from one section to the next. The Comments section reads the width of its own pane
+(`branchLayoutOf`, so a wide sidebar, the rail or an open drawer narrows it): from 900px a
+300px list beside a wide thread; under 900px the list, then the thread, with no back link: the
+`Branch` crumb, with the thread's own crumb after it, is the way back to the list. The selected row stays selected on the way back.
 `branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
-and an open drawer. The tab counts (Comments, Files, Commits) read a muted `-`
+and an open drawer. The rail counts (Comments, Files, Commits) read a muted `-`
 named `Not loaded` until the data arrives, then the number, never 0 for an
-unknown (`TabCount`). All three arrive without a tab visit: `BranchPage` loads
+unknown (`RailCount`). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
-draft is not there yet, so the Commits count is a number on the Comments tab too. Fix launches from the list or the thread bar, never from Files.
+draft is not there yet, so the Commits count is a number on the Comments section too. Fix launches from the list or the thread bar, never from Files.
 
-**Files.** The branch against its base, on the column like every other tab, with
-the change tree in a rail of its own at the pane's left edge, outside the column.
-`BranchPage` wraps its `PaneShell` in `DiffRailScope`, which measures the lens
-body (the sidebar and a pushed drawer are already out of it) and renders the
-rail host as a sibling of the `PaneShell`, on the Files tab only; `SessionDiffPane`
-portals `ChangeTree` into it, so the tree and the diff still share one
-`useReviewState` and the keys stay in `useDiffKeys`. The rail never moves the
-column: no mode, no resize and no tab change the title, the tabs, Ask or the
-diff's left edge. `treeRailModeOf` (`features/diff/treeRailMode.ts`) picks the
-mode from the pane width alone, with `margin = (pane - 1008) / 2` (1008 is
-`COLUMN_FRAME`): `docked` when `rail + 24 <= margin`, else `strip` when
-`44 + 16 <= margin`, else `button`. Docked, the rail is open beside the column,
-280px by default; drag its right edge or use the arrow keys between 240 and 400,
-never past what still docks (`rail <= margin - 24`), saved as
-`goodboy:diff-tree-width`. Its head reads `Files 6` and a fold button
-(`⌘⇧B`), then `N of M viewed`, the filter and the chips below. The strip is
-44px in the margin with the progress ring and `1/6`. The button is `Files 1/6`,
-the first control of the Files toolbar. The strip and the button open the same
-overlay over the diff: 280px from the strip's right edge (the pane's left edge
-when there is no strip), no scrim, `shadow-lg`; `Esc` or a click outside closes
-it and hands focus back to the strip or the button, and picking a file closes
-it. `F` opens it and focuses the tree, `/` and `T` open it on the filter, `⌘⇧B`
-opens and closes it. Docked, `⌘⇧B` and the fold button fold the rail to the
-strip and back, and `F` docks it again; `useTreePanel` keeps that choice while
-the Files tab stays open. A pane that has not been measured yet reads as docked.
+**Files.** The branch against its base, on the column like every other section, with
+the change tree in the rail, under the sections, outside the column.
+`BranchPage` renders the rail's Files group host (`data-slot="branch-rail-files"`) only while
+Files is the section and hands it to `SessionDiffPane` through `DiffRailContext`
+(`features/diff/diffRailHost.ts`); `SessionDiffPane` portals `ChangeTree` into it, so the
+tree and the diff still share one `useReviewState` and the keys stay in `useDiffKeys`. The rail
+never moves the column: no section and no resize change the title, Ask or the diff's left
+edge. The rail is docked from a page of 780 and up; under it the tree lives in the same rail
+behind the `Sections` button, `F` and `/` open it on the tree or the filter (`useTreeFocus`), and
+picking a file closes it. The group reads the filter field (`/`) with the sort of the tree
+beside it, `All | Unviewed N | Commented N` (one at a time), the tree and `Next unviewed N`;
+the viewed ring and `12/39` are the Files row's, so the head no longer prints them. A pane that has not been measured yet reads as docked.
 The toolbar on the column reads `Compared with main · All 5 commits`, then
 `Display`, `Notes N` and `Write review`. Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
@@ -2649,10 +2696,9 @@ it was viewed, the name (a rename shows `from <old path>` under it, a deleted
 file is struck through), its open notes, `+N −N` and the status letter.
 A long name is cut in the middle so its extension stays (the full path is the tooltip),
 and one key hint line ends the tree (`? all keys` opens the full list).
-`N of M viewed` and a 2px bar head the tree, and no longer sit in the toolbar.
-Under the head a filter field (`T` focuses it, `Esc` clears it) matches a
-subsequence of the path, `Unviewed` and `With notes` chips narrow it further,
-and `Folders | Kind` (on the chips' line) regroups the tree under Source, Tests, Config and
+Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
+subsequence of the path, `All | Unviewed N | Commented N` narrows it further,
+and `Folders | Kind` (beside the field) regroups the tree under Source, Tests, Config and
 Docs (each file then shows its folder beside the name). The filter narrows the
 diff as well as the tree, `Showing n of N` with `Clear` says so, and a filter
 that hides everything leaves `No files match` with `Clear` in both panes
@@ -2738,8 +2784,7 @@ commits become 4`, draws the planned result with a dashed lane, each node level
 with its own row when the order allows (the Now rows and the After nodes share
 one row pitch), and under the list `Planned changes` shows its count and `Reset
 all`, the planned rows and one primary `Apply`. Resetting the last change slides
-the panel out. While a plan exists the Branch header's `Rebase on main` renders
-secondary (`isRebaseYielding`), so one rebase verb is primary at a time. Under
+the panel out. The Branch header carries no `Rebase on main`: it lives in this section's list. Under
 760px of content the side graph becomes a `Now | After Apply` toggle, shown
 only while a plan exists. Every action has one color (Keep green, Fold in
 azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
@@ -2751,8 +2796,8 @@ Separate`: `Keep both` combines (squash) and `Separate` makes it its own commit
 again, the same edit as `Separate` in its menu; its planned change keeps
 `Keep title | Keep both`. The row buttons (icons) and the `⋯` menu sit in a
 slot reserved at the end of the row, so they never cover the control; a folded
-row shows only the menu. The drag is pointer events with our own hit testing
-(`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
+row shows only the menu. The drag is pointer events on the shared `usePointerDrag` engine with our
+own hit testing (`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
 owns the drag session on macOS, and the composer's file drop needs it on. Keys
 on a focused row: Alt with the arrows moves, C folds into the one below, S
 combines keeping both messages, R or Enter renames, Delete or Backspace
@@ -2840,11 +2885,10 @@ previous file and skip the files of a closed folder, `[` and `]` are aliases;
 viewed and goes to the next unviewed one; `N` goes to the next unviewed file,
 wrapping to the first; `F` puts focus on the tree; `/` and `T` are one action
 (`diff.focusFilter`, `T` is its alias) and focus the filter field, the one input
-in the tree rail that carries `data-diff-filter` (it opens the tree first when
-it is folded or an overlay); `⌘⇧B` folds or opens the tree (`⌘B` stays the column).
-A line under the tree lists them once, from the registry (`keyHelp.ts`).
+in the tree rail that carries `data-diff-filter` (it opens the rail first when
+it is hidden behind `Sections`). The rail has no fold key. A line under the tree lists them once, from the registry (`keyHelp.ts`).
 
-Big and folded cases (`treeRailMode.ts`, `useTreePanel`, `shared/utils/windowRows.ts`).
+Big and folded cases (`shared/utils/windowRows.ts`).
 Past 120 visible rows the tree draws only the rows in view plus a margin (fixed
 28px rows, 44px for a rename), so 512 files scroll as light as 20. A change
 over 300 files starts with its deepest folders over 50 files closed (a parent of
@@ -2852,13 +2896,8 @@ a big folder stays open), and starts that way again when a different set of
 files arrives, not on a reload of the same files. The diff keeps its own
 progressive mounting; the patch parse stays on the main thread because a
 512-file patch parses and becomes a tree in about 2ms (`largeChange.test.ts`
-fails over 100ms, the point where a worker earns its cost). Where the margin
-cannot hold the rail (a 1440px window with the sidebar pinned gets a strip, a
-1100px pane gets the `Files 12/46` button) the tree opens as the overlay with no
-scrim; picking a file or `Esc` closes it. `⌘⇧B` on a pane that docks folds the
-rail to the strip. While the diff loads the rail shows skeleton rows and
-`Loading files…`. An empty scope drops the tree, the strip, the button and the
-toolbar and shows one centred empty state on the page column
+fails over 100ms, the point where a worker earns its cost). While the diff loads the rail shows skeleton rows and
+`Loading files…`. An empty scope drops the tree and the toolbar and shows one centred empty state on the page column
 (`DiffEmptyState`): what is empty in plain words, the scope picker inline and,
 when the other scope has files, one button that switches to it (`Show branch vs
 main (6 files)`, `Show working tree (2 files)`; `alternate` on `useSessionDiff`

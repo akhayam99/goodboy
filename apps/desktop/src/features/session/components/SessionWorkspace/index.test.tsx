@@ -225,9 +225,13 @@ vi.mock('../CreateAgentPopover', () => ({
 vi.mock('../SessionOverviewPane', () => ({
   SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
 }));
-vi.mock('../../../branch/components/BranchPage', () => ({
-  BranchPage: () => <div data-testid="branch-page" />,
-}));
+vi.mock('../../../branch/components/BranchPage', async () => {
+  const { useStudioBand } =
+    await import('../../../../shared/components/StudioShell/studioBandContext');
+  return {
+    BranchPage: () => <div data-testid="branch-page">{useStudioBand()}</div>,
+  };
+});
 vi.mock('../SessionTrail/SessionCrumbs', () => ({
   SessionCrumbs: () => <div data-testid="session-crumb-bar" />,
 }));
@@ -547,7 +551,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
   });
 
-  it('puts the crumb on the column for the branch page like every other page', () => {
+  it('puts the crumb on the column for the branch page, inside its detail, like every other page', () => {
     store.selectedAgentId = {};
     store.activeLens = { [SESSION_ID]: null };
     const view = render(<SessionWorkspace session={session} isActive />);
@@ -560,6 +564,10 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     store.activeLens = { [SESSION_ID]: 'branch' };
     view.rerender(<SessionWorkspace session={session} isActive />);
     expect(width()).toBe('column');
+    expect(view.container.querySelectorAll('[data-slot="trail-bar"]')).toHaveLength(1);
+    expect(
+      screen.getByTestId('branch-page').querySelector('[data-slot="trail-bar"]'),
+    ).not.toBeNull();
 
     store.activeLens = { [SESSION_ID]: 'files' };
     view.rerender(<SessionWorkspace session={session} isActive />);

@@ -19,6 +19,7 @@ import {
   settingsColumn,
   useAppStore,
   visible,
+  getSection,
 } from './harness';
 
 const SHIP_ID = 'flow-workflow-ship-a-fix' as WorkflowId;
@@ -143,14 +144,20 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette next step: Open a pull request',
-    covers: ['createPrForSession', 'palette:Open a pull request for ledger-core'],
+    covers: ['navigate', 'palette:Open a pull request for ledger-core'],
     seed: 'pr',
     open: async () => {
       opened = vi.fn(async () => undefined);
       useAppStore.setState({ createPrForSession: opened } as never);
       await openPalette(/^Open a pull request for ledger-core/);
     },
-    lands: () => waitFor(() => expect(opened).toHaveBeenCalledTimes(1), WAIT),
+    lands: async () => {
+      await waitFor(
+        () => expect(getSection(/^Overview/).getAttribute('aria-current')).toBe('page'),
+        WAIT,
+      );
+      expect(opened).not.toHaveBeenCalled();
+    },
   },
   {
     name: 'palette next step: Review the changes',

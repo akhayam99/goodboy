@@ -1,5 +1,6 @@
-use super::check::{check_trial, CheckInput};
+use super::check::{check_trial, expected_tree, CheckInput};
 use super::commits::{changed_files, is_ancestor, rev_parse_all, single_parent, tree_of, Author};
+use super::copies::{keep_review, kept_review, now_secs};
 use super::merge_tree::commit_tree;
 use super::plan::{combined_message, message_of, order_steps, resolved_steps, short, start_of};
 use super::reservation::discard_copy;
@@ -36,6 +37,10 @@ pub struct RewriterCollectArgs {
     pub skipped: Vec<String>,
     #[serde(default)]
     pub keeps_copy: bool,
+    #[serde(default)]
+    pub conflict_files: Vec<String>,
+    #[serde(default)]
+    pub reviewed_head: Option<String>,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -46,6 +51,16 @@ pub struct RewriterCheck {
     pub problems: Vec<String>,
     pub is_tree_equal: bool,
     pub changed_files: Vec<String>,
+    pub unexpected_files: Vec<String>,
+    pub review: Option<RewriterReview>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RewriterReview {
+    pub copy_head: String,
+    pub diff: String,
+    pub kept_until: u64,
 }
 
 struct ExpectedGroup {
@@ -154,6 +169,8 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
             problems,
             is_tree_equal: false,
             changed_files: Vec::new(),
+            unexpected_files: Vec::new(),
+            review: None,
         });
     }
     let mut tip = start.clone();
@@ -188,26 +205,61 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
             to: None,
         });
     }
-    let check = check_trial(
-        cwd,
-        None,
-        &CheckInput {
-            base: &base,
-            start: &start,
-            old_head: &old_head,
-            new_head: &tip,
-            steps: &steps,
-            ordered: &ordered,
-            made: Some(groups.len()),
-        },
-    );
-    if !check.is_passed {
+    let input = CheckInput {
+        base: &base,
+        start: &start,
+        old_head: &old_head,
+        new_head: &tip,
+        steps: &steps,
+        ordered: &ordered,
+        made: Some(groups.len()),
+    };
+    let check = check_trial(cwd, None, &input);
+    let can_review = !check.unexpected_files.is_empty() && check.problems.len() == 1;
+    if let Some(reviewed_head) = &args.reviewed_head {
+        let is_alive = kept_review(copy).is_some_and(|review| {
+            review.kept_until > now_secs() && review.copy_head == *reviewed_head
+        });
+        if !is_alive || reviewed_head != &copy_head || !can_review {
+            return Err(super::plan::plan_error(
+                "the reviewed copy changed or expired; review it again",
+            ));
+        }
+    }
+    if !check.is_passed && args.reviewed_head.is_none() {
+        let review = (|| -> Result<Option<RewriterReview>, WorktreeError> {
+            if check.unexpected_files.is_empty() {
+                return Ok(None);
+            }
+            let kept_until = keep_review(copy, &copy_head)?;
+            log::info!(
+                "history review: unexpected_count={}, intersects_conflict={}",
+                check.unexpected_files.len(),
+                check
+                    .unexpected_files
+                    .iter()
+                    .any(|file| args.conflict_files.contains(file))
+            );
+            let expected = expected_tree(cwd, &input, start != base)
+                .0
+                .unwrap_or(tree_of(cwd, &old_head)?);
+            let mut diff_args = vec!["--literal-pathspecs", "diff", &expected, &tip, "--"];
+            diff_args.extend(check.unexpected_files.iter().map(String::as_str));
+            let diff = git(cwd, &diff_args)?;
+            Ok(can_review.then_some(RewriterReview {
+                copy_head,
+                diff,
+                kept_until,
+            }))
+        })()?;
         return Ok(RewriterCheck {
             head: None,
             map: Vec::new(),
             problems: check.problems,
             is_tree_equal: false,
             changed_files: Vec::new(),
+            unexpected_files: check.unexpected_files,
+            review,
         });
     }
     if !args.keeps_copy {
@@ -219,6 +271,8 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
         head: Some(tip),
         map,
         problems,
+        unexpected_files: check.unexpected_files,
+        review: None,
     })
 }
 

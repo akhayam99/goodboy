@@ -1,4 +1,6 @@
-import { Button, HeaderActions } from '@goodboy/ui';
+import { Undo2 } from 'lucide-react';
+import { Button, ConfirmPopover, HeaderActions } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { PlanEditorModel } from './usePlanEditor';
 
 const SAVE_BLOCKED_REASON = 'A newer version exists. Copy your text, discard, then edit again.';
@@ -10,9 +12,21 @@ type Props = {
 export const PlanEditorActions = ({ editor }: Props) => (
   <HeaderActions
     button={
-      <Button variant="ghost" size="sm" onClick={editor.leave} disabled={editor.isSaving}>
-        Cancel
-      </Button>
+      <ConfirmPopover
+        role="alert"
+        icon={<Undo2 size={ICON_SIZE.row} aria-hidden />}
+        title="Discard your edit?"
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        isOpen={editor.isDiscardAsked}
+        onConfirm={editor.discard}
+        onCancel={editor.keepEditing}
+        trigger={() => (
+          <Button variant="ghost" size="sm" onClick={editor.leave} disabled={editor.isSaving}>
+            Cancel
+          </Button>
+        )}
+      />
     }
     primary={
       <Button

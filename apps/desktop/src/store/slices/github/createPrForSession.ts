@@ -36,6 +36,8 @@ export type CreatePrInput = {
   readonly draft?: boolean;
   readonly referenceMode?: CreatePrReferenceMode;
   readonly isScribeBody?: boolean;
+  readonly excludedIssues?: ReadonlyArray<number>;
+  readonly onPushed?: () => void;
 };
 
 export type CreatedPr = {
@@ -95,6 +97,8 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     draft,
     referenceMode,
     isScribeBody,
+    excludedIssues,
+    onPushed,
   }: CreatePrInput): Promise<CreatedPr> => {
     const target = resolveSessionPrFetch({
       state: get(),
@@ -141,7 +145,9 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     });
     const mode = referenceMode ?? (membership === null ? 'closing' : 'part-of');
     const partOfTasks = linkedTasks.filter((task) => task.relation === 'part-of');
-    const references = mode === 'closing' ? linkedTasks : [];
+    const isKept = (task: SessionExternalTask): boolean =>
+      !(excludedIssues ?? []).includes(Number.parseInt(task.externalId.trim(), 10));
+    const references = mode === 'closing' ? linkedTasks.filter(isKept) : [];
     const projectBaseBranch = projectById(get().projects, mount.projectId)?.baseBranch;
     const baseBranch = base?.trim() || mount.baseBranch || projectBaseBranch;
     const args = ['pr', 'create', '--repo', repository, '--head', mount.branch];
@@ -192,6 +198,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
       });
       throw new ReportedError(`Couldn't push ${mount.branch}: ${pushed.error}`);
     }
+    onPushed?.();
 
     if (isBlockedByScribe()) {
       throw new ScribeWritingError();

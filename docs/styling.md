@@ -208,12 +208,12 @@ media query on the window, because the space that counts is the pane's.
 `packages/ui/src/frameGeometry.ts` holds one typed map, `PAGE_FRAME: Record<FramePage, FrameType>`.
 A page with no entry fails typecheck. Four frame types:
 
-| Type   | Pages                                                                                                                                     | Width                               | Title left                         |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------- |
-| column | Overview, Runs, a run, Agents, an agent, Questions, Workflows, Impact, Settings, Scripts, Artifacts, Explore, Branch, Storage, Monitoring | 1008, centred                       | column + 24                        |
-| reader | a plan, a report, a wireframe page, a release, a Guide chapter body                                                                       | 768, centred in its detail          | reader + 24                        |
-| stage  | Board, Terminal                                                                                                                           | fluid from the sheet inset, to 1856 | 24                                 |
-| split  | Chat, Guide, What's new, Tasks, Notifications                                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
+| Type   | Pages                                                                                                                             | Width                               | Title left                         |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------- |
+| column | Overview, Runs, a run, Agents, an agent, Questions, Workflows, Impact, Settings, Scripts, Artifacts, Explore, Storage, Monitoring | 1008, centred                       | column + 24                        |
+| reader | a plan, a report, a wireframe page, a release, a Guide chapter body                                                               | 768, centred in its detail          | reader + 24                        |
+| stage  | Board, Terminal                                                                                                                   | fluid from the sheet inset, to 1856 | 24                                 |
+| split  | Chat, Guide, What's new, Tasks, Notifications, Branch                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
 
 `frameGeometryOf({ page })` returns the type, the band (40px), the title row (32px),
 the title centre (56px), the drawer row (28px) and `titleLeft` read from the type.
@@ -234,7 +234,10 @@ Five rules:
    close control.
 5. **First-time states centre in the body**, in one `EmptyState` layout.
 
-The pull request page joins the split type in its own unit.
+The Branch page is a split page: its rail lists the sections the state has and its detail holds the
+crumb band and one 960 column (`SessionWorkspace` hands the band to `BranchPage` through
+`StudioBandContext`, and `BranchDetail` draws it first). Under 780 the rail leaves and a
+`Sections` button at the left of the crumb band opens it as an overlay.
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
 on `full`). No view centres itself. Sub-pages follow the same tiers as their
@@ -294,13 +297,12 @@ A Session or Agent page reads as one centred column: every child, banner, card
 and footer sits on the same edges. Only prose keeps the 720px measure, aligned
 left inside the column. Tables, code and cards take the whole column.
 
-**The Branch page** sits on the column like every other page: its header, the
-tabs, the trail and the Ask button, and every tab body share the 960px column,
-so nothing moves from one tab to the next. Files puts its file tree in a rail of
-its own at the pane's left edge, outside the column: open in the margin where the
-rail and 24px fit, else a 44px strip in the margin, else a `Files 1/6` button in
-the toolbar, the last two opening it over the diff (`treeRailModeOf`), so the
-diff keeps the column in every mode; Comments puts the list and the thread side by
+**The Branch page** is a split page: a rail of sections, always docked from a page of 780, and one
+detail whose header, trail, Ask button and every section body share the 960px column, so nothing
+moves from one section to the next. Files puts its file tree in the rail, under the sections and outside the
+column, so the diff keeps the column; under 780 the rail opens over the detail from a
+`Sections` button. The Overview is one grid of a 640 main column and a 296 properties column in
+every state. Comments puts the list and the thread side by
 side from 900px, the thread's properties inline under it at every width. Both
 read the width of their own pane (`branchLayoutOf`), so a wide sidebar or an
 open drawer narrows them.

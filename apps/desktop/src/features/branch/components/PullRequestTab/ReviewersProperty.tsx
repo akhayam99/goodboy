@@ -12,9 +12,9 @@ import type {
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
-import { ReviewerPicker } from './ReviewerPicker';
+import { ReviewerPicker } from '../../../../shared/components/ReviewerPicker';
 import { ReviewStateIcon } from './ReviewStateIcon';
-import { PropertyBlock } from './PropertyBlock';
+import { PropertyBlock } from '../../../../shared/components/PropertyBlock';
 
 export type ReviewerRequest =
   | { readonly kind: 'hidden' }

@@ -16,6 +16,7 @@ import {
   openPalette,
   settle,
   useAppStore,
+  findSection,
 } from './harness';
 
 const trailNav = (): HTMLElement => screen.getByRole('navigation', { name: 'Breadcrumb' });
@@ -105,9 +106,9 @@ export const BRANCH_PAGE_ROWS: ReadonlyArray<Row> = [
     open: async () => {
       await openBranchFiles();
       const depth = stackDepth();
-      await click(await screen.findByRole('tab', { name: /^Commits/ }));
-      await click(await screen.findByRole('tab', { name: /^Checks/ }));
-      await click(await screen.findByRole('tab', { name: /^Comments/ }));
+      await click(await findSection(/^Commits/));
+      await click(await findSection(/^Checks/));
+      await click(await findSection(/^Comments/));
       expect(stackDepth()).toBe(depth);
       await clickButton(/^Back/);
     },

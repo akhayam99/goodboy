@@ -43,6 +43,52 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     links: [],
   },
   {
+    id: 'words',
+    group: 'start',
+    title: 'Words',
+    concept: 'help',
+    lead: 'The words Goodboy uses, one sentence each.',
+    points: [
+      {
+        term: 'Workspace',
+        desc: 'Where you work, named after what you work on. It holds your projects, your connected tools and every session.',
+      },
+      {
+        term: 'Project',
+        desc: 'One repository or folder inside a workspace, with its own scripts and settings.',
+      },
+      {
+        term: 'Session',
+        desc: 'One task with one goal. It has its own agents, budget and notes, and moves across the board until it is done.',
+      },
+      {
+        term: 'Agent',
+        desc: 'One chat inside a session, with its own provider and model. A session always has at least one.',
+      },
+      {
+        term: 'Turn',
+        desc: 'One message from you and the answer that follows. Every turn adds to what the model has to read, so later turns cost more.',
+      },
+      {
+        term: 'Run',
+        desc: 'A workflow in motion. Each step of a run gets its own agent.',
+      },
+      {
+        term: 'Worktree and branch',
+        desc: 'A separate copy of a project on its own branch, so a session never touches your main checkout. Goodboy makes one when the work needs it.',
+      },
+      {
+        term: 'Plan',
+        desc: 'What an agent proposes before it writes code. You approve it, change it or discard it.',
+      },
+      {
+        term: 'Budget',
+        desc: 'A spend cap you set on a session or a provider. Goodboy warns you as the spend nears it.',
+      },
+    ],
+    links: [],
+  },
+  {
     id: 'workspace',
     group: 'task',
     title: 'Workspace and projects',

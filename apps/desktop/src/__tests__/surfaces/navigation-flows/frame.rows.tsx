@@ -9,6 +9,7 @@ import {
   branchTab,
   click,
   clickButton,
+  getSection,
   heading,
   lens,
   openCrumb,
@@ -53,7 +54,11 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   if (geometry.titleLeft === 'detail') {
     const detail = title.closest('[data-studio-detail]');
     expect(detail).not.toBeNull();
-    expect(detail?.firstElementChild?.matches('[data-studio-band]')).toBe(true);
+    const first = detail?.firstElementChild;
+    expect(
+      first?.matches('[data-studio-band]') === true ||
+        first?.querySelector('[data-slot="trail-bar"]') !== null,
+    ).toBe(true);
   }
   const header = title.closest<HTMLElement>('[data-slot="pane-header"]');
   if (header !== null) {
@@ -115,7 +120,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
       await branchTab('pr')(ctx);
       await waitFor(() => expectOnGrid({ page: 'branch', isStudio: false }), WAIT);
       for (const name of [/^Comments/, /^Files/, /^Commits/, /^Checks/]) {
-        await click(screen.getByRole('tab', { name }));
+        await click(getSection(name));
         await waitFor(() => expectOnGrid({ page: 'branch', isStudio: false }), WAIT);
       }
     },
@@ -149,6 +154,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
   {
     name: 'frame: the Tasks studio draws its band and its title on the column',
     covers: ['openInbox', 'studio:inbox'],
+    door: 'visible',
     open: async () => {
       await clickButton('Tasks');
     },

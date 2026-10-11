@@ -9,6 +9,8 @@ import { portLabel } from '../../portLabel';
 import { CommandLine } from './CommandLine';
 import { OwnerChip } from './OwnerChip';
 import { PORT_GRID } from './portGrid';
+import { StopControl } from './StopControl';
+import { folderName } from '../../../../store/slices/terminal/terminalOwner';
 
 type Props = {
   readonly row: PortRow;
@@ -29,6 +31,11 @@ export const PortRowView = ({ row, process, now, onWatch }: Props) => {
   const isExternal = row.owner?.kind === 'external';
   const hasCollision = row.collision !== undefined;
   const tone = hasCollision ? 'warning' : 'neutral';
+  const spawnId =
+    row.owner?.kind === 'script' || row.owner?.kind === 'terminal' || row.owner?.kind === 'agent'
+      ? row.owner.spawnId
+      : null;
+  const stopName = row.processName ?? `Process ${row.pid ?? ''}`.trim();
 
   return (
     <li data-port-row={row.port} className="flex flex-col">
@@ -82,6 +89,16 @@ export const PortRowView = ({ row, process, now, onWatch }: Props) => {
         <span className="text-right tabular-nums text-muted-foreground">
           {process === null ? '' : formatMemory({ bytes: process.rssBytes })}
         </span>
+        <div className="flex justify-end">
+          {row.pid === null ? null : (
+            <StopControl
+              pid={row.pid}
+              name={stopName}
+              folder={folderName({ path: process?.cwd ?? null })}
+              spawnId={spawnId}
+            />
+          )}
+        </div>
         {isCommandOpen && process !== null ? <CommandLine args={process.argsMasked} /> : null}
       </div>
     </li>

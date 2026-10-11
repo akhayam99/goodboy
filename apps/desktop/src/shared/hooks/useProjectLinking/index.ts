@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
+import { undoable } from '../../utils/undoable';
 import { usePickFolder } from '../usePickFolder';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { useChildRepoDetection } from '../useChildRepoDetection';
@@ -104,7 +105,19 @@ export const useProjectLinking = ({ workspaceId, initialConflicts }: Params) => 
   };
 
   const unlink = ({ project }: { readonly project: Project }) =>
-    run(() => removeProject({ projectId: project.id }));
+    run(async () => {
+      await removeProject({ projectId: project.id });
+      undoable({
+        message: `Unlinked ${project.name}`,
+        undo: async () => {
+          await addProject({
+            workspaceId,
+            rootPath: project.rootPath,
+            requireRepo: project.kind === 'repo',
+          });
+        },
+      });
+    });
 
   return {
     linked,

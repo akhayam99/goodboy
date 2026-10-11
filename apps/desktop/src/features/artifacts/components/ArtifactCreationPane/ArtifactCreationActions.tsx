@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react';
-import { Button, FormActions, InlineConfirm, cn } from '@goodboy/ui';
+import { Button, ConfirmPopover, FormActions, cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ArtifactCreationRouting } from '../../../../store/slices/artifactDrafts/types';
@@ -57,27 +57,27 @@ export const ArtifactCreationActions = ({
     reason={gate.reason}
     reasonId={GENERATE_REASON_ID}
   >
-    {isDiscardArmed ? (
-      <InlineConfirm
-        role="danger"
-        icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-        title="Discard this brief?"
-        description="Back keeps it. Cancel throws it away."
-        confirmLabel="Discard"
-        onConfirm={onDiscard}
-        onCancel={onDisarmDiscard}
-      />
-    ) : (
-      <Button
-        variant="ghost"
-        size="md"
-        onClick={hasDraft ? onArmDiscard : onCancel}
-        disabled={isStarting}
-        className="text-muted-foreground"
-      >
-        Cancel
-      </Button>
-    )}
+    <ConfirmPopover
+      role="danger"
+      icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+      title="Discard this brief?"
+      description="Back keeps it. Cancel throws it away."
+      confirmLabel="Discard"
+      isOpen={isDiscardArmed}
+      onConfirm={onDiscard}
+      onCancel={onDisarmDiscard}
+      trigger={() => (
+        <Button
+          variant="ghost"
+          size="md"
+          onClick={hasDraft ? onArmDiscard : onCancel}
+          disabled={isStarting}
+          className="text-muted-foreground"
+        >
+          Cancel
+        </Button>
+      )}
+    />
     <Button
       size="md"
       data-testid="artifact-generate"

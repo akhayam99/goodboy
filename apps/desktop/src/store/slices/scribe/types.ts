@@ -10,6 +10,7 @@ export type ScribeTask =
       readonly references: ReadonlyArray<string>;
       readonly isDraft: boolean;
       readonly base: string | null;
+      readonly isTextOnly?: boolean;
     }
   | { readonly kind: 'pr-update'; readonly prNumber: number }
   | {
@@ -36,6 +37,10 @@ export type ScribeWork = {
   readonly error: string | null;
   readonly pullRequest: ScribeRequest | null;
   readonly updatedAt: number;
+};
+
+export type StopScribeInput = {
+  readonly key: string;
 };
 
 export type OpenScribePullRequestInput = {

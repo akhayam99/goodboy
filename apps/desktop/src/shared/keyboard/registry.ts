@@ -593,13 +593,6 @@ export const SHORTCUTS = {
     group: 'diff',
     scope: 'diff',
   },
-  'diff.toggleTree': {
-    combo: 'cmd+shift+KeyB',
-    label: 'Show or hide the file tree',
-    plane: 'session',
-    group: 'diff',
-    scope: 'diff',
-  },
   'diff.previousFile': {
     combo: 'BracketLeft',
     label: 'Previous file (same as K)',
@@ -621,6 +614,8 @@ export const SHORTCUTS = {
     group: 'diff',
     scope: 'diff',
   },
+
+  'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'session', group: 'general' },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },

@@ -24,7 +24,6 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/context/components/QuestionsTab/DelegateAnswerRow/index.tsx': ['document'],
   'features/diff/components/DiffView/CommentComposer.tsx': ['document'],
   'features/resolve/components/ReviewFlow/ReviewComment.tsx': ['document', 'document'],
-  'features/resolve/components/ReviewFlow/LaunchPanel/index.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/GoalField.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/GuidanceDisclosure.tsx': ['document'],
   'features/workflows/components/WorkflowBuilderView/parts/PlannerDraftRow.tsx': ['document'],
@@ -53,10 +52,8 @@ const NOT_AGENT: Readonly<Record<string, string>> = {
     'a review on GitHub, read by people',
   'features/branch/components/PullRequestTab/PullRequestDescription.tsx':
     'the pull request body, read by people',
-  'features/integrations/github/components/PullRequest/CreatePrPanel.tsx':
+  'features/integrations/components/CreateReviewForm/ReviewTextCard.tsx':
     'the pull request body, read by people',
-  'features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx':
-    'the merge request body, read by people',
   'features/chat/components/ChatView/SlackDraftCard.tsx': 'a Slack reply, read by people',
   'features/history/components/CommitsHistory/RewordEditor.tsx': 'a commit message',
   'features/scripts/components/ScriptEditor/index.tsx': 'a shell script',

@@ -5,7 +5,7 @@ import {
   cn,
   AnchoredPopover,
   Button,
-  InlineConfirm,
+  ConfirmPopover,
   MenuTriggerButton,
   tintClasses,
   useDropdown,
@@ -33,12 +33,13 @@ type Props = {
   readonly agentId: AgentId | null;
 };
 
-type OverflowView = 'menu' | 'confirmGlobal' | 'denyReason';
+type OverflowView = 'menu' | 'denyReason';
 
 export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const [resolved, setResolved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [overflowView, setOverflowView] = useState<OverflowView>('menu');
+  const [isConfirmingGlobal, setIsConfirmingGlobal] = useState(false);
   const [denyReason, setDenyReason] = useState('');
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedWidth: 320 });
   const { open, close, toggle } = dropdown;
@@ -113,11 +114,11 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
     );
   };
 
-  const handleAlwaysAllow = (scope: 'workspace' | 'global') => {
+  const handleAlwaysAllow = (scope: 'workspace' | 'global'): Promise<void> => {
     if (sessionId === null || agentId === null) {
-      return;
+      return Promise.resolve();
     }
-    void withBusy(() =>
+    return withBusy(() =>
       resolvePermissionRequest({
         sessionId,
         agentId,
@@ -229,7 +230,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
             variant="secondary"
             size="sm"
             disabled={busy}
-            onClick={() => handleAlwaysAllow('workspace')}
+            onClick={() => void handleAlwaysAllow('workspace')}
           >
             {alwaysAllowLabel}
           </Button>
@@ -243,105 +244,111 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
             Deny
           </Button>
           <span className="ml-auto" />
-          <AnchoredPopover
-            dropdown={dropdown}
-            role={overflowView === 'menu' ? 'menu' : 'dialog'}
-            ariaLabel="More permission actions"
-            className={overflowView === 'menu' ? 'py-1' : undefined}
-            trigger={
-              <MenuTriggerButton
-                label="More permission actions"
-                isOpen={open}
-                size="control"
-                disabled={busy}
-                onClick={toggle}
-              >
-                <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
-              </MenuTriggerButton>
-            }
-          >
-            {overflowView === 'menu' && (
-              <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={busy}
-                  onClick={handleAllowSession}
-                  className={cn(
-                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
-                    ROW_INTERACTIVE,
-                  )}
-                >
-                  Allow all commands in this session
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={busy}
-                  onClick={() => setOverflowView('confirmGlobal')}
-                  className={cn(
-                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
-                    ROW_INTERACTIVE,
-                  )}
-                >
-                  {rule.label} everywhere
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={busy}
-                  onClick={() => setOverflowView('denyReason')}
-                  className={cn(
-                    'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
-                    ROW_INTERACTIVE,
-                  )}
-                >
-                  Deny and tell {providerLabel ?? 'the agent'} why…
-                </button>
-              </>
-            )}
-            {overflowView === 'confirmGlobal' && (
-              <InlineConfirm
-                role="alert"
-                icon={<ShieldCheck size={ICON_SIZE.row} aria-hidden />}
-                title={`${rule.label} in every workspace?`}
-                description="Every session in every workspace runs it without asking again."
-                confirmLabel="Allow everywhere"
-                surface="plain"
-                isBusy={busy}
-                onConfirm={() => handleAlwaysAllow('global')}
-                onCancel={closeOverflow}
-              />
-            )}
-            {overflowView === 'denyReason' && (
-              <div className="flex flex-col gap-2 p-3">
-                <PromptField
-                  kind="document"
-                  label="Why you deny it"
-                  value={denyReason}
-                  onChange={setDenyReason}
-                  placeholder="Say why, so it does not try again this way"
-                  minRows={2}
-                  maxRows={4}
-                  className="w-full bg-elevated"
-                  textClassName="text-label"
-                />
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" size="sm" disabled={busy} onClick={closeOverflow}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="ghost-danger"
-                    size="sm"
+          <ConfirmPopover
+            role="alert"
+            icon={<ShieldCheck size={ICON_SIZE.row} aria-hidden />}
+            title={`${rule.label} in every workspace?`}
+            description="Every session in every workspace runs it without asking again."
+            confirmLabel="Allow everywhere"
+            isBusy={busy}
+            isOpen={isConfirmingGlobal}
+            onConfirm={async () => {
+              await handleAlwaysAllow('global');
+              setIsConfirmingGlobal(false);
+            }}
+            onCancel={() => setIsConfirmingGlobal(false)}
+            trigger={() => (
+              <AnchoredPopover
+                dropdown={dropdown}
+                role={overflowView === 'menu' ? 'menu' : 'dialog'}
+                ariaLabel="More permission actions"
+                className={overflowView === 'menu' ? 'py-1' : undefined}
+                trigger={
+                  <MenuTriggerButton
+                    label="More permission actions"
+                    isOpen={open}
+                    size="control"
                     disabled={busy}
-                    onClick={handleDenyWithReason}
+                    onClick={toggle}
                   >
-                    Deny
-                  </Button>
-                </div>
-              </div>
+                    <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
+                  </MenuTriggerButton>
+                }
+              >
+                {overflowView === 'menu' && (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={busy}
+                      onClick={handleAllowSession}
+                      className={cn(
+                        'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                        ROW_INTERACTIVE,
+                      )}
+                    >
+                      Allow all commands in this session
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={busy}
+                      onClick={() => {
+                        closeOverflow();
+                        setIsConfirmingGlobal(true);
+                      }}
+                      className={cn(
+                        'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                        ROW_INTERACTIVE,
+                      )}
+                    >
+                      {rule.label} everywhere
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={busy}
+                      onClick={() => setOverflowView('denyReason')}
+                      className={cn(
+                        'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
+                        ROW_INTERACTIVE,
+                      )}
+                    >
+                      Deny and tell {providerLabel ?? 'the agent'} why…
+                    </button>
+                  </>
+                )}
+                {overflowView === 'denyReason' && (
+                  <div className="flex flex-col gap-2 p-3">
+                    <PromptField
+                      kind="document"
+                      label="Why you deny it"
+                      value={denyReason}
+                      onChange={setDenyReason}
+                      placeholder="Say why, so it does not try again this way"
+                      minRows={2}
+                      maxRows={4}
+                      className="w-full bg-elevated"
+                      textClassName="text-label"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" disabled={busy} onClick={closeOverflow}>
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="ghost-danger"
+                        size="sm"
+                        disabled={busy}
+                        onClick={handleDenyWithReason}
+                      >
+                        Deny
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </AnchoredPopover>
             )}
-          </AnchoredPopover>
+          />
         </div>
       )}
     </TranscriptShell>

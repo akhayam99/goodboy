@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MonitorSnapshot } from '@goodboy/core';
 import type { MountId, MountOperation, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 import type { StorageFolder } from './types';
@@ -102,16 +103,40 @@ type Harness = {
     storageRemovingPaths: Readonly<Record<string, true>>;
     storageOutcome: unknown;
     settings: Readonly<Record<string, string>>;
+    monitorSnapshot?: MonitorSnapshot | null;
+    monitorError?: string | null;
   };
+  refreshMonitorSnapshot: ReturnType<typeof vi.fn>;
   loadStorage: ReturnType<typeof vi.fn>;
   saveSetting: ReturnType<typeof vi.fn>;
 };
 
-const makeHarness = (folders: ReadonlyArray<StorageFolder>): Harness => ({
-  state: { storageFolders: folders, storageRemovingPaths: {}, storageOutcome: null, settings: {} },
-  loadStorage: vi.fn(async () => undefined),
-  saveSetting: vi.fn(async () => undefined),
+const idleSnapshot = (): MonitorSnapshot => ({
+  listeners: [],
+  processes: [],
+  takenAt: 1,
+  isPlatformSupported: true,
 });
+
+const makeHarness = (folders: ReadonlyArray<StorageFolder>): Harness => {
+  const harness: Harness = {
+    state: {
+      storageFolders: folders,
+      storageRemovingPaths: {},
+      storageOutcome: null,
+      settings: {},
+      monitorSnapshot: null,
+      monitorError: null,
+    },
+    refreshMonitorSnapshot: vi.fn(async () => undefined),
+    loadStorage: vi.fn(async () => undefined),
+    saveSetting: vi.fn(async () => undefined),
+  };
+  harness.refreshMonitorSnapshot.mockImplementation(async () => {
+    harness.state.monitorSnapshot ??= idleSnapshot();
+  });
+  return harness;
+};
 
 const wire = (harness: Harness) => {
   const set = vi.fn((updater: unknown) => {
@@ -128,6 +153,7 @@ const wire = (harness: Harness) => {
       sessions: [],
       terminalTabs: {},
       loadStorage: harness.loadStorage,
+      refreshMonitorSnapshot: harness.refreshMonitorSnapshot,
       saveSetting: harness.saveSetting,
     }) as unknown as AppStore;
   return { set, get };
@@ -211,6 +237,109 @@ describe('removeStorageFolders', () => {
     expect(deleteWorktreeLedgerEntries).not.toHaveBeenCalled();
     expect(harness.state.storageFolders).toEqual([orphan]);
     expect(harness.state.storageRemovingPaths).toEqual({});
+  });
+
+  it('refreshes the monitor snapshot before each removal and sees a fresh process', async () => {
+    const harness = makeHarness([orphan]);
+    harness.state.monitorSnapshot = idleSnapshot();
+    harness.refreshMonitorSnapshot.mockImplementation(async () => {
+      harness.state.monitorSnapshot = {
+        ...idleSnapshot(),
+        takenAt: 2,
+        processes: [
+          {
+            pid: 91,
+            ppid: 1,
+            pgid: 91,
+            name: 'next-server',
+            cwd: orphan.path,
+            startedAt: 1,
+            cpuPercent: 0,
+            rssBytes: 0,
+            uid: 501,
+            argsMasked: '',
+          },
+        ],
+      };
+    });
+    const { set, get } = wire(harness);
+
+    const summary = await removeStorageFolders(set, get)({ paths: [orphan.path], mode: 'safe' });
+
+    expect(harness.refreshMonitorSnapshot).toHaveBeenCalledTimes(1);
+    expect(summary.removed).toBe(0);
+    expect(removeWorktreeFolder).not.toHaveBeenCalled();
+  });
+
+  it('refuses to remove when the monitor cannot be read', async () => {
+    const harness = makeHarness([orphan]);
+    harness.refreshMonitorSnapshot.mockImplementation(async () => {
+      harness.state.monitorError = 'monitor_snapshot failed';
+    });
+    const { set, get } = wire(harness);
+
+    const summary = await removeStorageFolders(set, get)({ paths: [orphan.path], mode: 'safe' });
+
+    expect(summary.removed).toBe(0);
+    expect(summary.kept).toEqual([
+      {
+        kind: 'kept',
+        path: orphan.path,
+        reasons: [],
+        message: 'Could not check for running processes, so this folder was kept',
+      },
+    ]);
+    expect(removeWorktreeFolder).not.toHaveBeenCalled();
+  });
+
+  it('refuses to remove when the platform cannot list processes', async () => {
+    const harness = makeHarness([orphan]);
+    harness.refreshMonitorSnapshot.mockImplementation(async () => {
+      harness.state.monitorSnapshot = { ...idleSnapshot(), isPlatformSupported: false };
+    });
+    const { set, get } = wire(harness);
+
+    const summary = await removeStorageFolders(set, get)({ paths: [orphan.path], mode: 'safe' });
+
+    expect(summary.removed).toBe(0);
+    expect(removeWorktreeFolder).not.toHaveBeenCalled();
+  });
+
+  it('keeps a folder a process still runs in and says so', async () => {
+    const harness = makeHarness([orphan]);
+    harness.state.monitorSnapshot = {
+      listeners: [],
+      processes: [
+        {
+          pid: 90,
+          ppid: 1,
+          pgid: 90,
+          name: 'next-server',
+          cwd: `${orphan.path}/apps/web`,
+          startedAt: 1,
+          cpuPercent: 0,
+          rssBytes: 0,
+          uid: 501,
+          argsMasked: '',
+        },
+      ],
+      takenAt: 1,
+      isPlatformSupported: true,
+    };
+    const { set, get } = wire(harness);
+
+    const summary = await removeStorageFolders(set, get)({ paths: [orphan.path], mode: 'safe' });
+
+    expect(summary.removed).toBe(0);
+    expect(summary.kept).toEqual([
+      {
+        kind: 'kept',
+        path: orphan.path,
+        reasons: [],
+        message: 'a process is running in the worktree',
+      },
+    ]);
+    expect(removeWorktreeFolder).not.toHaveBeenCalled();
   });
 
   it('reports a thrown removal as failed and never touches a folder in use', async () => {

@@ -17,6 +17,8 @@ import { restoreHistory } from './restoreHistory';
 import { resumeHistoryMove } from './resumeHistoryMove';
 import { bringBackHistoryFiles } from './bringBackHistoryFiles';
 import { forgetHistoryFiles } from './forgetHistoryFiles';
+import { acceptHistoryChange } from './acceptHistoryChange';
+import { discardHistoryChange } from './discardHistoryChange';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
 import { syncBranchWithRemote } from './syncBranchWithRemote';
@@ -27,6 +29,8 @@ export { historyInitialState } from './state';
 export const createHistorySlice = ({ set, get }: SliceDeps) => {
   return {
     rebaseBranch: rebaseBranch(set, get),
+    acceptHistoryChange: acceptHistoryChange({ set, get }),
+    discardHistoryChange: discardHistoryChange({ set, get }),
     applyHistoryRewrite: applyHistoryRewrite(set, get),
     pushHistoryRewrite: pushHistoryRewrite(set, get),
     startHistoryRewriter: startHistoryRewriter(set, get),

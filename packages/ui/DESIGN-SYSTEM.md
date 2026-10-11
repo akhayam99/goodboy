@@ -810,8 +810,8 @@ string on their one clickable element. `InteractiveRow` splits it, because its
 frame is not the control: the frame takes `ROW_HOVER` so the wash stays while
 the pointer is over an inner link or button, and the overlay button that opens
 the row takes the ring. A row that opens nothing carries none of it, and no
-pseudo-element stands in for the layer. The Files tree rows and strip of a
-diff (`ChangeTree`, `TreeStrip`) take the shared string; a Board card washes
+pseudo-element stands in for the layer. The Files tree rows of a
+diff (`ChangeTree`) take the shared string; a Board card washes
 whole through `sessionCardShell` and its title button shows the pointer. An unread row keeps its tint under the
 pointer: hovering it for 450ms marks it seen when the pointer leaves, never
 while it is still on the row.
@@ -1608,7 +1608,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Run on its own uses it everywhere (`WorkflowAutorunToggle`).
 
-**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete opens its `InlineConfirm` card directly under the title row (`HeaderPanel`: focus lands on Cancel, Escape and Cancel close it and give focus back to the overflow trigger). A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
+**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete asks in a `ConfirmPopover` anchored to the overflow trigger (focus lands on Cancel, Escape and Cancel close it and give focus back to the trigger). A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
 
 **One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` is a neutral card (`bg-subtle`, `border-border-soft`) with a `ToneBar` in the role's tone as its inner line: the card never takes a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
 
@@ -1855,8 +1855,11 @@ it:
 - **`FormPage`** is the scrolling body of a page-sized form: a `ScrollFade`
   holding a centred `PageColumn` with `gap-8` between the blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
 - **`FormActions`** is the action row. `leading` holds the quiet options or the
-  status line on the left (Starts, Run on its own, Spend cap, routing, "Scribe is
-  writing", an error with `role="alert"`). The children sit right-aligned in
+  status line on the left (Starts, Run on its own, Spend cap, routing, an error
+  with `role="alert"`). A job that runs longer than a few seconds shows its
+  status inside the input card, never in this row: the create form's card holds
+  Scribe's running dot, seconds and `Stop` in its bottom row, and the actions
+  stay inline at the end of the content with no bar. The children sit right-aligned in
   order: secondary first (Discard, Cancel, Back as `ghost` with
   `text-muted-foreground`), alternates as `secondary`, and the one primary
   last. `reason` puts the disabled primary's explanation under the buttons and
@@ -2026,8 +2029,11 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Pull request page
 
-The Pull request tab of the Branch page is a document on the 960px column with
-a properties column: Linear's pull request page in our register. The main column
+The Overview of the Branch page is a document on the 960px column with
+a properties column, the page example of the split frame: a rail of sections on the left
+(`BranchRail` in `StudioRailLayout`, 288, `aria-current="page"` on the section on screen) and,
+on its right, the crumb band, the header with its state chip and one 640 + 296 grid with a 24px gap
+that ends at the column's right edge: Linear's pull request page in our register. The main column
 is the description (`SectionHeader` with `Edit` beside it, a markdown editor with
 Write and Preview and `Save`, `Cancel` at its end) and the Activity: plain rows
 of a 20px glyph, one muted line with the person in `text-row`, and the age at the
@@ -2035,13 +2041,12 @@ right in `tabular-nums`; a row that opens something takes `ROW_INTERACTIVE` and
 says what it opens (`Open Comments`, `View checks`), a row that opens nothing has
 no hover. The title is the page's `h1` in the fixed 32px title row
 (`PaneTitleRow`): editing swaps its content for an input of the same height, so
-the page never jumps. The properties column is 280px from 928px of pane
-(`@container` query, not the window) and a two-column compact grid above the
-description below it. Each block is a faint label, one value row of 28px or
-more and nothing else: Status carries the state word and the one readiness word
-(a `StatusDot` only where the tone says something: danger for a failing check or
-a conflict, warning for changes requested or comments that wait, info for a live
-run, a check for ready). Labels are not headings, so the outline reads `h1`, then
+the page never jumps. The properties column is 296px from 800px of pane
+(`@container` query, not the window) and follows the main column below it. Each block is a
+faint label, one value row of 28px or more and nothing else: Reviewers, Checks as one line (`4
+passed · 1 failing`, a `StatusDot` only where the tone says something: danger for a failing
+check, info for a live run, a check for passed), Linked issues with their relation and Base.
+The state is the chip after the title, never a block. Labels are not headings, so the outline reads `h1`, then
 the `h2`s of Description and Activity.
 
 **The capability rule.** The page never branches on the host. It reads the

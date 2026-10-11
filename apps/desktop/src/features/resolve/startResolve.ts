@@ -1,4 +1,10 @@
-import type { PullRequestState, ReplyVoice, ResolveCommitStyle, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  PullRequestState,
+  ReplyVoice,
+  ResolveCommitStyle,
+  SessionId,
+} from '@goodboy/types';
 import type { CommentThread } from '../integrations/github/comment-threads';
 import type { PriorContext } from '../chat/spawn-from-comment';
 import { contextWindowFor } from '../session/contextWindowFor';
@@ -23,6 +29,8 @@ type Params = {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly pr: PullRequestState | null;
   readonly batch?: ResolveAttemptBatch | null;
+  readonly name?: string;
+  readonly parentAgentId?: AgentId;
   readonly priorContext?: ReadonlyArray<PriorContext>;
   readonly style?: ResolveStartStyle;
   readonly spawnAgent: SpawnAgentFn;
@@ -39,6 +47,8 @@ export const startResolve = async ({
   threads,
   pr,
   batch = null,
+  name,
+  parentAgentId,
   priorContext,
   style,
   spawnAgent,
@@ -63,6 +73,8 @@ export const startResolve = async ({
     contextWindow: contextWindowOf({ batch }),
     batch:
       batch === null ? null : { ...batch, launchChoice: { ...batch.launchChoice, commitStyle } },
+    ...(name !== undefined && { name }),
+    ...(parentAgentId !== undefined && { parentAgentId }),
     spawnAgent,
     setAgentConfig,
   });

@@ -5,7 +5,7 @@ import { clearMocks } from '@tauri-apps/api/mocks';
 import { ErrorBoundary } from '@goodboy/ui';
 import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
+import type { ChatId, SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
 import { agentPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
@@ -13,6 +13,7 @@ import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
 import { sceneClock } from '../../../app/components/MockScene/sceneClock';
+import { brandedId } from '../../../features/history/testing/brandedId';
 import { pressShortcut } from '../../helpers/pressKey';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 import { reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
@@ -33,6 +34,7 @@ import {
   settle,
   useAppStore,
   visible,
+  findSection,
 } from './harness';
 
 const LATEST_ACTIVITY = sceneClock({ anchor: '2099-01-01T00:00:00.000Z' }).iso({
@@ -250,6 +252,29 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'column.toggle',
     lands: () => visible('button', /^Show sidebar/),
   }),
+  keyRow({
+    id: 'chat.new',
+    note: 'a new chat even with a last chat',
+    open: async () => {
+      const state = useAppStore.getState();
+      const workspaceId = state.currentWorkspaceId;
+      if (workspaceId === null) {
+        throw new Error('The journey needs its workspace');
+      }
+      useAppStore.setState({
+        lastChatByWorkspace: {
+          ...state.lastChatByWorkspace,
+          [workspaceId]: brandedId<ChatId>({ value: 'keys-last-chat' }),
+        },
+      });
+      await press('chat.new')();
+    },
+    lands: async () => {
+      await waitFor(() => {
+        expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: null });
+      }, WAIT);
+    },
+  }),
   pressRow({
     id: 'session.board',
     lands: () => heading('Board'),
@@ -377,9 +402,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'pullRequest.edit',
     open: async () => {
       await press('lens.pr')();
-      expect(
-        await screen.findByRole('tab', { name: /^Pull request/, selected: true }, WAIT),
-      ).toBeDefined();
+      expect((await findSection(/^Overview/)).getAttribute('aria-current')).toBe('page');
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>
@@ -718,7 +741,7 @@ const threadRow = (threadId: string): HTMLElement => {
 
 const openReview = async (): Promise<void> => {
   await press('lens.review')();
-  await visible('tab', /^Comments/);
+  expect((await findSection(/^Comments/)).getAttribute('aria-current')).toBe('page');
 };
 
 const neighbourOf = (threadId: string, step: 1 | -1): string | null => {
@@ -831,7 +854,12 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
     id: 'review.fix',
     world: 'resolve',
     open: reviewKey('review.fix', THREADS.constant),
-    lands: () => visible('region', 'Fix launch'),
+    lands: async () => {
+      await waitFor(
+        () => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('fix-comments'),
+        WAIT,
+      );
+    },
   }),
   worldRow({
     id: 'review.skip',
@@ -1117,7 +1145,14 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     id: 'terminal.newTab',
     open: async () => {
       await press('lens.terminal')();
-      await clickFirstButton(/^New terminal$/);
+      await screen.findByRole('complementary', { name: 'Terminals' }, WAIT);
+      const [newTerminal] = screen
+        .getAllByRole('button', { name: /^New terminal$/ })
+        .filter((button) => button.closest('[data-side-column]') === null);
+      if (newTerminal === undefined) {
+        throw new Error('The terminal rail has no New terminal button');
+      }
+      fireEvent.click(newTerminal);
       await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT);
       const first = terminalRows()[0]?.querySelector('button');
       expect(first).toBeDefined();
@@ -1177,7 +1212,9 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(await activeTreeFile()).toContain('notify.ts');
       await visible('navigation', 'Changed files');
-      expect(screen.getByText('1 of 3 viewed')).toBeDefined();
+      expect(
+        within(await findSection(/^Files/)).getByRole('img', { name: '1 of 3 viewed' }),
+      ).toBeDefined();
     },
   }),
   keyRow({
@@ -1221,18 +1258,6 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       expect(
         screen.getByRole('navigation', { name: 'Changed files' }).contains(document.activeElement),
       ).toBe(true),
-  }),
-  keyRow({
-    id: 'diff.toggleTree',
-    open: async () => {
-      await openDiff();
-      await pressed('diff.toggleTree', document.body);
-    },
-    lands: async () =>
-      waitFor(
-        () => expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull(),
-        WAIT,
-      ),
   }),
   keyRow({
     id: 'diff.focusFilter',

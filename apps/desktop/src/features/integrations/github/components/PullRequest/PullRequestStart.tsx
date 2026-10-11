@@ -4,6 +4,10 @@ import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { GithubConnectionEmptyState } from '../GithubConnectionEmptyState';
 import { CreatePrPanel } from './CreatePrPanel';
 
+type CreatedPullRequest = {
+  readonly number: number | null;
+};
+
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
@@ -11,7 +15,7 @@ type Props = {
   readonly isRepoMissing: boolean;
   readonly isConnected: boolean;
   readonly onConnected: () => void;
-  readonly onCreated: () => void;
+  readonly onCreated: (created: CreatedPullRequest) => void;
 };
 
 export const PullRequestStart = ({

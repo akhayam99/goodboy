@@ -117,6 +117,20 @@ A rebase is one job, and one banner under the Branch header tells it, on every s
 
 The verbs run the engine and disable themselves while their call runs; a failure reads "Couldn't retry the rebase." through the error report. **Retry with a note** opens a two-row note ("Note for History rewriter", Esc collapses) in the banner and starts History rewriter again on the same plan with the note; the old copy is discarded first. **Bring them into the plan** reads the new online commits into the rebase. **Details** on a failed push opens the hook output in an anchored popover. The transcript that **See what it did** opens takes messages only while the rewriter's copy is alive ("Tell History rewriter what to do next"); after that it shows "This rewrite is finished. Retry it from the banner on the Branch page." with **Open rebase**, so no message can reach a copy that is gone.
 
+When a checked rewriter result changes files outside the plan, **Review the change**
+opens their diffs inline in the job banner. The comparison uses the expected
+tree from the checker; when the upstream merge conflicts, it uses the original
+tree for files outside those upstream changes. **Accept and apply** rechecks the
+reviewed copy, moves the local branch through the normal backup and journal
+path, and offers **Undo rewrite**. It does not push. **Discard** removes the
+copy and leaves the job stopped. A changed or expired copy cannot be accepted.
+Each file menu offers **Open in editor** for the kept copy and **Copy path**;
+the copy target and editor error handling live in
+`apps/desktop/src/features/diff/HistoryChangeDiff.tsx`.
+The collector and acceptance boundary live in
+`apps/desktop/src-tauri/src/history/rewriter.rs`; the move is owned by
+`apps/desktop/src/store/slices/history/applyHistoryRewrite.ts`.
+
 A running state shows a running dot and a shimmer on the title. A settled stop stays until you dismiss it, a new job starts, or its cause clears: the uncommitted-files banner leaves as soon as the tree reads clean. The banner replaces the red line under the header and the "Nothing was changed" notice inside Planned changes, which now only tells the stops of a plan you wrote.
 
 A rebase stop is also one event in Activity: "Rebase of feat/export stopped · uncommitted files", with a short cause (uncommitted files, needs you, result differs, origin moved, branch moved, hook stopped the push), never the engine sentence. The notification of a stop is raised only when you are not on that session's Branch page, because the banner already tells you there.

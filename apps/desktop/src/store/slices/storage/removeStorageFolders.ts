@@ -3,6 +3,7 @@ import type { IsoDateTime, WorktreeRemovalMode } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { removeWorktreeFolder } from '../../../features/worktree/worktree';
+import { MOUNT_CLEANUP_BLOCKER_REASON, processesInWorktree } from '../mount-cleanup/cleanupPolicy';
 import { runMountRemoval } from '../project-mounts/runMountRemoval';
 import type {
   GetFn,
@@ -94,7 +95,29 @@ const removeLedger = async ({ folder, mode }: FolderRemovalParams): Promise<Stor
   return { kind: 'removed', path: folder.path, sizeBytes: folder.sizeBytes ?? 0 };
 };
 
+const MONITOR_UNREADABLE_REASON = 'Could not check for running processes, so this folder was kept';
+
+const keptFor = ({
+  folder,
+  message,
+}: {
+  readonly folder: StorageFolder;
+  readonly message: string;
+}) => ({ kind: 'kept', path: folder.path, reasons: [], message }) satisfies StorageRemoval;
+
 const removeOne = async ({ get, folder, mode }: FolderRemovalParams): Promise<StorageRemoval> => {
+  try {
+    await get().refreshMonitorSnapshot();
+  } catch {
+    return keptFor({ folder, message: MONITOR_UNREADABLE_REASON });
+  }
+  const { monitorSnapshot, monitorError } = get();
+  if (monitorError !== null || monitorSnapshot === null || !monitorSnapshot.isPlatformSupported) {
+    return keptFor({ folder, message: MONITOR_UNREADABLE_REASON });
+  }
+  if (processesInWorktree({ snapshot: monitorSnapshot, worktreePath: folder.path }).length > 0) {
+    return keptFor({ folder, message: MOUNT_CLEANUP_BLOCKER_REASON['process-running'] });
+  }
   try {
     if (folder.origin === 'archived') {
       return await removeArchived({ get, folder, mode });

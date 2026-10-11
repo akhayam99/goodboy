@@ -4,6 +4,7 @@ import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../shared/components/Toast';
 import { undoable } from '../../../../../shared/utils/undoable';
+import { deleteWorkflowWithUndo } from '../../../deleteWorkflowWithUndo';
 import { editedStepKeys } from '../../WorkflowBuilderView/presetEdits';
 import type { WorkflowDraft } from '../../../engine';
 import { draftFromWorkflow, upsertArgsFromDraft, validateDraft } from '../../../engine';
@@ -69,7 +70,6 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [isConfirmingRedraft, setIsConfirmingRedraft] = useState(false);
   const editingIdRef = useRef<WorkflowId | null>(restoredWorkflow?.id ?? null);
   const handledGenerationRef = useRef<string | null>(null);
   const handledRestoreRef = useRef<string | null>(storedDraft?.restoreNonce ?? null);
@@ -96,7 +96,6 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
       savedFormRef.current = JSON.stringify(nextForm);
       setExpandedKey(null);
       setFormError(null);
-      setIsConfirmingRedraft(false);
     },
     [setForm],
   );
@@ -213,7 +212,6 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     savedFormRef.current = null;
     setExpandedKey(null);
     setFormError(null);
-    setIsConfirmingRedraft(false);
     clearWorkflowStudioDraft({ workspaceId });
   };
 
@@ -244,8 +242,20 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
 
   const remove = async () => {
     const id = editingIdRef.current;
-    if (id !== null) {
-      await deleteWorkflow(id, workspaceId);
+    const workflow = id === null ? null : (presets.find((preset) => preset.id === id) ?? null);
+    try {
+      if (workflow !== null) {
+        await deleteWorkflowWithUndo({
+          workflow,
+          workspaceId,
+          showToast,
+          deleteWorkflow,
+          restoreWorkflowSnapshot,
+        });
+      }
+    } catch (error) {
+      setFormError(formatError(error));
+      return;
     }
     close();
   };
@@ -262,7 +272,6 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
       setFormError('Add a goal before drafting steps');
       return;
     }
-    setIsConfirmingRedraft(false);
     setFormError(null);
     const id = editingIdRef.current;
     const workflow = id === null ? null : (presets.find((preset) => preset.id === id) ?? null);
@@ -306,8 +315,6 @@ export const useWorkflowEditor = ({ workspaceId, presets, workingDir }: Params) 
     isSavedWorkflow: editingIdRef.current !== null,
     isGenerating: generation?.status === 'running',
     generationError: generation?.status === 'failed' ? generation.error : null,
-    isConfirmingRedraft,
-    setIsConfirmingRedraft,
     open: load,
     openNew,
     close,

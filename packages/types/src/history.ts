@@ -136,6 +136,12 @@ export type HistoryOriginAhead = {
 };
 
 export type HistoryRewriterCheck = {
+  readonly unexpectedFiles: ReadonlyArray<string>;
+  readonly review: {
+    readonly copyHead: string;
+    readonly diff: string;
+    readonly keptUntil: number;
+  } | null;
   readonly head: string | null;
   readonly map: ReadonlyArray<HistoryShaMove>;
   readonly problems: ReadonlyArray<string>;

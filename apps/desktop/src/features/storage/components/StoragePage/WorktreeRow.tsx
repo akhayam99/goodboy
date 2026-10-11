@@ -131,10 +131,8 @@ export const WorktreeRow = ({
           onEditor={actions.onEditor}
           onRemove={setIntent}
         />
-      </div>
-      {intent === null ? null : (
         <FolderRemoveConfirm folder={folder} intent={intent} onClose={() => setIntent(null)} />
-      )}
+      </div>
     </div>
   );
 };

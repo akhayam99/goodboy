@@ -12,6 +12,7 @@ import {
   openPalette,
   settle,
   useAppStore,
+  sectionLabels,
 } from './harness';
 
 const PAGES = ['Overview', 'Branch', 'Runs', 'Agents', 'Artifacts'];
@@ -76,7 +77,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('comments'),
   },
   {
-    name: 'a pull request address lands on the Pull request tab, first of the five',
+    name: 'a pull request address lands on the Overview, first of the five sections',
     covers: ['navigate', 'tab:pr'],
     open: async (ctx) => {
       useAppStore.getState().navigate({ to: branchPlace({ sessionId: ctx.sessionId, tab: 'pr' }) });
@@ -84,13 +85,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('pr')(ctx);
-      await waitFor(
-        () =>
-          expect(screen.getAllByRole('tab').map((tab) => tab.textContent ?? '')[0]).toMatch(
-            /^Pull request/,
-          ),
-        WAIT,
-      );
+      await waitFor(() => expect(sectionLabels()[0]).toBe('Overview'), WAIT);
     },
   },
 ];

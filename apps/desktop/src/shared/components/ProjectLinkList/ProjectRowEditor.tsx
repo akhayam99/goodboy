@@ -18,18 +18,12 @@ import { useNow } from '../../hooks/useNow';
 type Props = {
   readonly project: Project;
   readonly busy: boolean;
-  readonly onArmUnlink: () => void;
+  readonly onUnlink: () => void;
   readonly ignoreField?: ReactNode;
   readonly scriptsField?: ReactNode;
 };
 
-export const ProjectRowEditor = ({
-  project,
-  busy,
-  onArmUnlink,
-  ignoreField,
-  scriptsField,
-}: Props) => {
+export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scriptsField }: Props) => {
   const now = useNow(30_000);
   const reportError = useAppStore((state) => state.reportError);
   const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
@@ -106,7 +100,7 @@ export const ProjectRowEditor = ({
           <ExternalLink size={ICON_SIZE.row} aria-hidden />
           Open in editor
         </Button>
-        <Button variant="ghost" size="sm" onClick={onArmUnlink} disabled={busy}>
+        <Button variant="ghost" size="sm" onClick={onUnlink} disabled={busy}>
           <Unplug size={ICON_SIZE.row} aria-hidden />
           {NAMES.removeLink}
         </Button>

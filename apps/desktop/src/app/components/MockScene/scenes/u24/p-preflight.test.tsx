@@ -59,17 +59,20 @@ describe('the u24 preflight scenes', () => {
     expect(screen.queryByText('11 files not committed')).toBeNull();
   });
 
-  it('locks the creation mode while Scribe writes the text', async () => {
+  it('shows Scribe writing inside the card and keeps Create off while it writes', async () => {
     renderScene('branch-pr-scribe-writing');
 
-    const manual = await screen.findByRole('tab', { name: 'Manual' }, { timeout: 3_000 });
+    expect(
+      await screen.findByText(
+        'Scribe is reading the commits and writing the text',
+        {},
+        { timeout: 3_000 },
+      ),
+    ).toBeDefined();
 
     await waitForSettledReads();
-    expect(manual.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('tab', { name: 'Draft with an agent' }).getAttribute('title')).toBe(
-      'Scribe is still writing the text.',
-    );
-    expect(screen.getByText('Scribe is writing the title and description.')).toBeDefined();
+    expect(screen.queryByRole('tab', { name: 'Manual' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Stop' })).toBeDefined();
     expect(
       screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
     ).toBe(true);

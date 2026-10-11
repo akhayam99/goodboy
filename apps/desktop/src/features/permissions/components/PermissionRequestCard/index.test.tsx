@@ -204,7 +204,7 @@ describe('PermissionRequestCard', () => {
     expect(resolveMock).toHaveBeenCalledWith(expect.objectContaining({ scope: 'session' }));
   });
 
-  it('writes the global prefix rule only after its inline confirm', async () => {
+  it('writes the global prefix rule only after its popover confirm, anchored to the overflow', async () => {
     render(
       <PermissionRequestCard
         item={makeItem()}
@@ -216,9 +216,11 @@ describe('PermissionRequestCard', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Always allow "pnpm test" everywhere' }));
 
     expect(resolveMock).not.toHaveBeenCalled();
-    const confirm = screen.getByRole('group', {
+    const dialog = screen.getByRole('dialog', {
       name: 'Always allow "pnpm test" in every workspace?',
     });
+    expect(screen.queryByRole('menu')).toBeNull();
+    const confirm = within(dialog).getByRole('group');
     await act(async () => {
       fireEvent.click(within(confirm).getByRole('button', { name: 'Allow everywhere' }));
     });

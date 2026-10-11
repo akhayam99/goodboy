@@ -12,6 +12,8 @@ type Params = {
   readonly threadIds: ReadonlyArray<string>;
   readonly launchChoice: ResolveLaunchChoice;
   readonly noun?: LaunchNoun;
+  readonly name?: string;
+  readonly parentAgentId?: AgentId;
 };
 
 export type StartedBatch = {
@@ -31,6 +33,8 @@ export const startBatch = async ({
   threadIds,
   launchChoice,
   noun = 'comment',
+  name,
+  parentAgentId,
 }: Params): Promise<StartedBatch> => {
   const state = getState();
   const rows = launchRowsOf({ state, sessionId });
@@ -53,6 +57,8 @@ export const startBatch = async ({
     threads,
     pr: state.sessionGithub[sessionId]?.pr ?? null,
     batch: { batchId: batch.id, launchChoice },
+    ...(name !== undefined && { name }),
+    ...(parentAgentId !== undefined && { parentAgentId }),
     style: sessionResolveStyle({ state, sessionId }),
     spawnAgent: state.spawnAgent,
     setAgentConfig: state.setAgentConfig,

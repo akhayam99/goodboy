@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   GitlabIntegrationBinding,
   IntegrationCredentialId,
@@ -195,7 +195,11 @@ describe('GithubFormBody', () => {
     it('clears the token for the workspace once the confirm is confirmed', async () => {
       render(<GithubFormBody workspaceId={WS_ID} />);
       fireEvent.click(await screen.findByRole('button', { name: /disconnect github/i }));
-      fireEvent.click(await screen.findByRole('button', { name: /^disconnect github$/i }));
+      fireEvent.click(
+        within(await screen.findByRole('dialog')).getByRole('button', {
+          name: /^disconnect github$/i,
+        }),
+      );
       await waitFor(() => expect(ghClearTokenMock).toHaveBeenCalledWith(WS_ID));
     });
   });

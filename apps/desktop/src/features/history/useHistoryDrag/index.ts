@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
-import { registerEscapeLayer } from '@goodboy/ui';
+import { usePointerDrag } from '../../../shared/hooks/usePointerDrag';
 
 export type HistoryDropTarget =
   | { readonly mode: 'slot'; readonly anchor: string | null; readonly y: number }
@@ -38,7 +38,6 @@ type RowBox = {
   readonly bottom: number;
 };
 
-const DRAG_THRESHOLD_PX = 5;
 const INTO_BAND = 0.25;
 
 const rowBoxes = ({ list }: { readonly list: HTMLElement }): ReadonlyArray<RowBox> =>
@@ -106,24 +105,16 @@ export const hitHistoryDrop = ({
 
 type Pending = {
   readonly sha: string;
-  readonly x0: number;
-  readonly y0: number;
   readonly offsetX: number;
   readonly offsetY: number;
   readonly width: number;
 };
 
-const isControl = ({ target }: { readonly target: EventTarget | null }): boolean =>
-  target instanceof Element &&
-  target.closest('button, input, textarea, a, [role="menuitem"]') !== null;
-
 export const useHistoryDrag = (params: Params) => {
   const latest = useRef(params);
   latest.current = params;
-  const pending = useRef<Pending | null>(null);
   const dragRef = useRef<HistoryDragState | null>(null);
   const [drag, setDrag] = useState<HistoryDragState | null>(null);
-  const detach = useRef<(() => void) | null>(null);
 
   const update = useCallback((next: HistoryDragState | null) => {
     dragRef.current = next;
@@ -133,9 +124,6 @@ export const useHistoryDrag = (params: Params) => {
   const finish = useCallback(
     ({ shouldCommit }: { readonly shouldCommit: boolean }) => {
       const current = dragRef.current;
-      detach.current?.();
-      detach.current = null;
-      pending.current = null;
       update(null);
       if (current === null) {
         return;
@@ -154,91 +142,51 @@ export const useHistoryDrag = (params: Params) => {
     [update],
   );
 
-  useEffect(
-    () => () => {
-      detach.current?.();
+  const engine = usePointerDrag<Pending>({
+    onStart: ({ payload }) => latest.current.onPickUp?.(payload.sha),
+    onMove: ({ payload, x, y }) => {
+      const list = latest.current.listRef.current;
+      if (list === null) {
+        return;
+      }
+      update({
+        sha: payload.sha,
+        x,
+        y,
+        offsetX: payload.offsetX,
+        offsetY: payload.offsetY,
+        width: payload.width,
+        target: hitHistoryDrop({
+          rows: rowBoxes({ list }),
+          sha: payload.sha,
+          y,
+          listTop: list.getBoundingClientRect().top,
+          params: latest.current,
+        }),
+      });
     },
-    [],
-  );
+    onRelease: () => finish({ shouldCommit: true }),
+    onCancel: () => finish({ shouldCommit: false }),
+  });
 
   const onPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLElement>, sha: string) => {
       const current = latest.current;
-      if (!current.isEnabled || event.button !== 0 || !current.canDrag(sha)) {
-        return;
-      }
-      if (isControl({ target: event.target })) {
+      if (!current.isEnabled || !current.canDrag(sha)) {
         return;
       }
       const rect = event.currentTarget.getBoundingClientRect();
-      pending.current = {
-        sha,
-        x0: event.clientX,
-        y0: event.clientY,
-        offsetX: event.clientX - rect.left,
-        offsetY: event.clientY - rect.top,
-        width: rect.width,
-      };
-      let releaseEscape: (() => void) | null = null;
-      const onMove = (move: PointerEvent) => {
-        const start = pending.current;
-        const list = latest.current.listRef.current;
-        if (start === null || list === null) {
-          return;
-        }
-        const isStarted = dragRef.current !== null;
-        if (
-          !isStarted &&
-          Math.hypot(move.clientX - start.x0, move.clientY - start.y0) < DRAG_THRESHOLD_PX
-        ) {
-          return;
-        }
-        if (!isStarted) {
-          window.getSelection()?.removeAllRanges();
-          latest.current.onPickUp?.(start.sha);
-          releaseEscape = registerEscapeLayer(() => finish({ shouldCommit: false }));
-        }
-        move.preventDefault();
-        const target = hitHistoryDrop({
-          rows: rowBoxes({ list }),
-          sha: start.sha,
-          y: move.clientY,
-          listTop: list.getBoundingClientRect().top,
-          params: latest.current,
-        });
-        update({
-          sha: start.sha,
-          x: move.clientX,
-          y: move.clientY,
-          offsetX: start.offsetX,
-          offsetY: start.offsetY,
-          width: start.width,
-          target,
-        });
-      };
-      const onUp = () => {
-        if (dragRef.current === null) {
-          detach.current?.();
-          detach.current = null;
-          pending.current = null;
-          return;
-        }
-        finish({ shouldCommit: true });
-      };
-      const onCancel = () => finish({ shouldCommit: false });
-      detach.current?.();
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-      window.addEventListener('pointercancel', onCancel);
-      detach.current = () => {
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-        window.removeEventListener('pointercancel', onCancel);
-        releaseEscape?.();
-        releaseEscape = null;
-      };
+      engine.onPointerDown({
+        event,
+        payload: {
+          sha,
+          offsetX: event.clientX - rect.left,
+          offsetY: event.clientY - rect.top,
+          width: rect.width,
+        },
+      });
     },
-    [finish, update],
+    [engine],
   );
 
   return { drag, onPointerDown };

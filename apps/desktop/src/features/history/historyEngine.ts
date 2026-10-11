@@ -209,6 +209,8 @@ export const prepareHistoryRewrite = async ({
   });
 
 type CollectRewriteParams = {
+  readonly conflictFiles?: ReadonlyArray<string>;
+  readonly reviewedHead?: string;
   readonly plan: HistoryPlanArgs;
   readonly copyPath: string;
   readonly skipped: ReadonlyArray<string>;
@@ -220,9 +222,11 @@ export const collectHistoryRewrite = async ({
   copyPath,
   skipped,
   keepsCopy,
+  conflictFiles = [],
+  reviewedHead,
 }: CollectRewriteParams): Promise<HistoryRewriterCheck> =>
   invokeCommand<HistoryRewriterCheck>('history_rewriter_collect', {
-    args: { plan: toArgs(plan), copyPath, skipped, keepsCopy },
+    args: { plan: toArgs(plan), copyPath, skipped, keepsCopy, conflictFiles, reviewedHead },
   });
 
 export type HistoryCopyGitDirs = {

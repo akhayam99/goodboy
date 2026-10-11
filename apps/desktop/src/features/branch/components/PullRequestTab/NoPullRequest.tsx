@@ -4,8 +4,8 @@ import { useAppStore } from '../../../../store';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { PullRequestStart } from '../../../integrations/github/components/PullRequest/PullRequestStart';
+import { CreateMrForm } from '../../../integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
-import { NoMergeRequest } from './NoMergeRequest';
 
 type Props = {
   readonly session: Session;
@@ -15,6 +15,13 @@ type Props = {
   readonly onConnected: () => void;
   readonly onCreated: () => void;
 };
+
+type OpenedParams = {
+  readonly number: number | null;
+};
+
+const openedWord = ({ number }: OpenedParams): string =>
+  number === null ? 'Pull request opened' : `Pull request #${number} opened`;
 
 export const NoPullRequest = ({
   session,
@@ -32,7 +39,7 @@ export const NoPullRequest = ({
   );
   const hostKind = useMountRemoteHostKind({ sessionId: session.id, repoRoot });
   if (hostKind === 'gitlab' && !isRepoMissing) {
-    return <NoMergeRequest sessionId={session.id} mountPath={mountPath} onCreated={onCreated} />;
+    return <CreateMrForm sessionId={session.id} onCreated={onCreated} />;
   }
   return (
     <PullRequestStart
@@ -42,9 +49,9 @@ export const NoPullRequest = ({
       isRepoMissing={isRepoMissing}
       isConnected={isConnected}
       onConnected={onConnected}
-      onCreated={() => {
+      onCreated={(created) => {
         follow({
-          title: 'Pull request created',
+          title: openedWord(created),
           target: { place: branchPlace({ sessionId: session.id, mountPath, tab: 'pr' }) },
         });
         onCreated();

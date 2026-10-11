@@ -1,13 +1,15 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, globSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT_DIRECTORY =
+  process.env.DOC_REFS_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const EXCLUDED_DOCS = new Set(['CHANGELOG.md']);
 const SOURCE_PATHSPEC = [':!*.md', ':!scripts/check-doc-refs.mjs'];
 const PATH_ANCHOR = /^(apps|packages|docs|website|scripts|packaging|\.github)\//;
-const PATH_PLACEHOLDER = /[*<>{}$]/;
+const PATH_PLACEHOLDER = /[<>{}$]/;
+const GLOB_MARK = /\*/;
 const LINE_SUFFIX = /:\d+(-\d+)?$/;
 const IDENTIFIER =
   /^([a-z]+[A-Z][A-Za-z0-9]*|[A-Z][a-z0-9]+[A-Z][A-Za-z0-9]*|[A-Z][A-Z0-9]*_[A-Z0-9_]+)$/;
@@ -50,6 +52,9 @@ const isGitIgnoredPath = ({ path }) => {
 const isKnownPath = ({ path }) =>
   existsSync(resolve(ROOT_DIRECTORY, path)) || isGitIgnoredPath({ path });
 
+const isLiveGlob = ({ pattern }) =>
+  globSync(pattern, { cwd: ROOT_DIRECTORY }).length > 0 || isGitIgnoredPath({ path: pattern });
+
 const listDocs = () =>
   git({ args: ['ls-files', '*.md'] })
     .split('\n')
@@ -76,8 +81,12 @@ const collectLineMisses = ({ doc, line, lineNumber, knownIdentifiers }) => {
   for (const [, raw] of line.matchAll(/`([^`\s]+)`/g)) {
     const token = raw.replace(/\(\)$/, '');
     const path = token.replace(LINE_SUFFIX, '');
-    const isPath = PATH_ANCHOR.test(path) && !PATH_PLACEHOLDER.test(path);
-    if (isPath && !isKnownPath({ path })) {
+    const isAnchored = PATH_ANCHOR.test(path) && !PATH_PLACEHOLDER.test(path);
+    const isGlob = isAnchored && GLOB_MARK.test(path);
+    if (isGlob && !isLiveGlob({ pattern: path })) {
+      misses.push({ location, kind: 'glob', ref: path });
+    }
+    if (isAnchored && !isGlob && !isKnownPath({ path })) {
       misses.push({ location, kind: 'path', ref: path });
     }
     if (IDENTIFIER.test(token) && !knownIdentifiers.has(token)) {

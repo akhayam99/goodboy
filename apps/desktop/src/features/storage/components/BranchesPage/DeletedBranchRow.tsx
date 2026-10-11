@@ -1,6 +1,6 @@
 import { Clock, Trash2, Undo2 } from 'lucide-react';
 import type { DeletedBranch } from '@goodboy/types';
-import { Button, Chip, IconButton, InlineConfirm, Tooltip } from '@goodboy/ui';
+import { Button, Chip, ConfirmPopover, IconButton, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BRANCH_TABLE_GRID } from '../../branches/branchTableGrid';
 import { deletedBranchDays } from '../../branches/deletedBranchDays';
@@ -69,29 +69,31 @@ export const DeletedBranchRow = ({
             <Undo2 size={ICON_SIZE.row} aria-hidden />
             Restore
           </Button>
-          <IconButton
-            variant="ghost"
-            icon={Trash2}
-            iconSize={ICON_SIZE.row}
-            label={`Delete ${entry.branch} permanently`}
-            tooltip="Delete permanently"
-            disabled={isBusy || isConfirming}
-            onClick={onArmForget}
+          <ConfirmPopover
+            role="danger"
+            icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
+            title={`Delete ${entry.branch} permanently?`}
+            description="It can no longer be restored."
+            confirmLabel="Delete permanently"
+            isBusy={isBusy}
+            isOpen={isConfirming}
+            onConfirm={onForget}
+            onCancel={onCancel}
+            returnFocusTo={{ rowSelector: 'li' }}
+            trigger={() => (
+              <IconButton
+                variant="ghost"
+                icon={Trash2}
+                iconSize={ICON_SIZE.row}
+                label={`Delete ${entry.branch} permanently`}
+                tooltip="Delete permanently"
+                disabled={isBusy}
+                onClick={onArmForget}
+              />
+            )}
           />
         </span>
       </div>
-      {isConfirming ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={`Delete ${entry.branch} permanently?`}
-          description="It can no longer be restored."
-          confirmLabel="Delete permanently"
-          isBusy={isBusy}
-          onConfirm={onForget}
-          onCancel={onCancel}
-        />
-      ) : null}
     </li>
   );
 };

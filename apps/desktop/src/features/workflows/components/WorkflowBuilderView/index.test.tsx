@@ -17,6 +17,7 @@ const {
   mockGenerateWorkflowTitle,
   mockSuggestTitle,
   mockDeleteWorkflow,
+  mockRestoreWorkflowSnapshot,
   mockSaveStepDef,
   toastMock,
   storeState,
@@ -32,6 +33,7 @@ const {
     async (_sessionId: string, _goal: string): Promise<string | null> => null,
   ),
   mockDeleteWorkflow: vi.fn(async () => undefined),
+  mockRestoreWorkflowSnapshot: vi.fn(async (_input: unknown) => true),
   mockSaveStepDef: vi.fn(),
   toastMock: vi.fn(),
   storeState: {
@@ -68,6 +70,7 @@ vi.mock('../../../../store', () => {
     generateWorkflowTitle: mockGenerateWorkflowTitle,
     suggestWorkflowTitle: mockSuggestTitle,
     deleteWorkflow: mockDeleteWorkflow,
+    restoreWorkflowSnapshot: mockRestoreWorkflowSnapshot,
     setActiveLens: mockSetActiveLens,
     phaseTemplates: storeState.phaseTemplates,
     sessionPhaseRuns: storeState.sessionPhaseRuns,
@@ -1421,33 +1424,26 @@ describe('WorkflowBuilderView (preset mode)', () => {
     expect(mockSetActiveLens).not.toHaveBeenCalled();
   });
 
-  it('deletes a preset from the picker, only after confirming', async () => {
-    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+  it('deletes a preset from the picker at once and offers Undo that restores it', async () => {
+    const preset = presetWorkflow('wf-preset-1', 'Ship It');
+    storeState.phaseTemplates = { 'ws-1': [preset] };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     openChip(/^preset:/i);
     fireEvent.click(screen.getByRole('button', { name: 'Delete Ship It' }));
-    expect(mockDeleteWorkflow).not.toHaveBeenCalled();
 
-    const confirm = await screen.findByRole('group', { name: 'Delete Ship It?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete preset' }));
+    expect(screen.queryByRole('group', { name: 'Delete Ship It?' })).toBeNull();
     await waitFor(() => expect(mockDeleteWorkflow).toHaveBeenCalledWith('wf-preset-1', 'ws-1'));
-  });
-
-  it('keeps the preset when its delete confirm is cancelled', async () => {
-    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
-    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    setGoal();
-    openChip(/^preset:/i);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Ship It' }));
-    const confirm = await screen.findByRole('group', { name: 'Delete Ship It?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Cancel' }));
+    const toast = toastMock.mock.calls.at(-1)?.[0];
+    expect(toast).toMatchObject({ message: 'Deleted Ship It', action: { label: 'Undo' } });
+    toast.action.onClick();
 
     await waitFor(() =>
-      expect(screen.queryByRole('group', { name: 'Delete Ship It?' })).toBeNull(),
+      expect(mockRestoreWorkflowSnapshot).toHaveBeenCalledWith({
+        workspaceId: 'ws-1',
+        snapshot: preset,
+      }),
     );
-    expect(mockDeleteWorkflow).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Delete Ship It' })).toBeDefined();
   });
 
   it('discarding the draft never deletes the selected preset', () => {

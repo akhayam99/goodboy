@@ -1675,6 +1675,7 @@ const worktreeTarget = (fields: {
     onKeep: noop,
     onStopKeeping: noop,
     onRemove: noop,
+    onLearn: noop,
   },
 });
 
@@ -1769,6 +1770,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.learn',
       'worktree.keepDays',
       'worktree.keep',
       'worktree.copyPath',
@@ -1780,6 +1782,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.learn',
       'worktree.keepDays',
       'worktree.keep',
       'worktree.copyPath',
@@ -1792,6 +1795,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
     [
       'worktree.reveal',
       'worktree.editor',
+      'worktree.learn',
       'worktree.stopKeeping',
       'worktree.copyPath',
       'worktree.remove',
@@ -1800,7 +1804,7 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
   [
     'worktree in use by a session',
     worktreeTarget({ isInUse: true, isKept: false, removeIntent: null }),
-    ['worktree.reveal', 'worktree.editor', 'worktree.copyPath'],
+    ['worktree.reveal', 'worktree.editor', 'worktree.learn', 'worktree.copyPath'],
   ],
   [
     'saved script, idle',
@@ -2134,11 +2138,11 @@ describe('actions run against the real store', () => {
     expect(useAppStore.getState().sessions).toEqual([]);
   });
 
-  it('opens Review and Diff through the one door', async () => {
+  it('opens Review and Diff through the one door, Review landing on Files while nothing is commented', async () => {
     seed({ mounts: [mountFixture()] });
     await run(SESSION_TARGET, 'session.review');
     expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
-    expect(useAppStore.getState().branchTab[SESSION]).toBe('comments');
+    expect(useAppStore.getState().branchTab[SESSION]).toBe('files');
     await run(SESSION_TARGET, 'session.diff');
     expect(useAppStore.getState().activeLens[SESSION]).toBe('branch');
     expect(useAppStore.getState().branchTab[SESSION]).toBe('files');

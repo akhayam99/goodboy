@@ -21,6 +21,7 @@ import {
   openCrumb,
   settle,
   useAppStore,
+  findSection,
 } from './harness';
 
 const PUBLISH_ERROR = JSON.stringify({ error: 'rejected: the remote has newer commits' });
@@ -306,7 +307,7 @@ const nodeText = (node: HTMLElement): string => node.textContent ?? '';
 export const openComments = async (ctx: Ctx): Promise<void> => {
   await openCrumb(/^Branch/);
   await branchTab('pr')(ctx);
-  await click(await screen.findByRole('tab', { name: /^Comments/ }));
+  await click(await findSection(/^Comments/));
   await branchTab('comments')(ctx);
   await waitFor(() => expect(list()).toBeDefined(), WAIT);
 };
@@ -381,12 +382,9 @@ export const COMMENTS_WORDS_ROWS: ReadonlyArray<Row> = [
       });
       await openComments(ctx);
 
-      await click(await screen.findByRole('button', { name: 'Fix 3' }));
-      const panel = await screen.findByRole('region', { name: 'Fix launch' }, WAIT);
-      const note = within(panel).getByLabelText('Note for the fix run');
-      await act(async () => {
-        fireEvent.keyDown(note, { key: 'Enter', code: 'Enter', ctrlKey: true });
-      });
+      await click(await screen.findByRole('button', { name: 'Fix comments 3' }));
+      const drawer = await screen.findByRole('region', { name: 'Fix comments' }, WAIT);
+      await click(within(drawer).getByRole('button', { name: 'Start fix for 3' }));
       await settle();
     },
     lands: async (ctx) => {
