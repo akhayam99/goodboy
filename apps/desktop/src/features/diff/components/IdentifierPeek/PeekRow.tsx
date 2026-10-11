@@ -1,4 +1,4 @@
-import { StateBadge } from '@goodboy/ui';
+import { ROW_INTERACTIVE, StateBadge, cn } from '@goodboy/ui';
 import type { GrepMatch } from '../../../worktree/worktree';
 
 type Props = {
@@ -25,14 +25,17 @@ export const PeekRow = ({ match, word, isInChange, onPick }: Props) => {
       data-peek-row=""
       aria-label={`${match.path}:${match.line}`}
       onClick={() => onPick(match)}
-      className="flex h-8 w-full shrink-0 cursor-pointer items-center gap-3 px-3 text-left transition-colors hover:bg-hover focus-visible:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring"
+      className={cn(
+        ROW_INTERACTIVE,
+        'flex min-h-8 w-full shrink-0 items-center gap-3 px-3 text-left',
+      )}
     >
       <span className="flex min-w-0 max-w-[45%] shrink-0 items-baseline text-label">
         <span className="min-w-0 truncate text-faint-foreground">{folder}</span>
         <span className="shrink-0 text-foreground">{name}</span>
         <span className="shrink-0 tabular-nums text-faint-foreground">:{match.line}</span>
       </span>
-      <span className="min-w-0 flex-1 truncate whitespace-pre font-mono text-code text-muted-foreground">
+      <span className="min-w-0 flex-1 truncate whitespace-pre text-code text-muted-foreground">
         {isMarked ? (
           <>
             {match.text.slice(0, start)}

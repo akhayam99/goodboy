@@ -1,5 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react';
-import { AnchoredPopover, Skeleton, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, EmptyLine, Skeleton, useDropdown } from '@goodboy/ui';
 import type { GrepMatch } from '../../../worktree/worktree';
 import { useIdentifierUses } from '../../hooks/useIdentifierUses';
 import { isDefinition } from '../../lib/definitionOf';
@@ -18,7 +18,7 @@ type Props = {
 type PlacesParams = { readonly count: number };
 
 const MAX_HEIGHT_PX = 360;
-const WIDTH_PX = 448;
+const WIDTH_PX = 420;
 
 const places = ({ count }: PlacesParams): string => `${count} ${count === 1 ? 'place' : 'places'}`;
 
@@ -32,7 +32,7 @@ export const IdentifierPeek = ({
 }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
-    width: 'w-[28rem]',
+    width: 'w-[420px]',
     expectedHeight: MAX_HEIGHT_PX,
     expectedWidth: WIDTH_PX,
   });
@@ -126,7 +126,7 @@ export const IdentifierPeek = ({
           className="flex min-h-0 flex-col pb-1 outline-none"
         >
           <div className="flex items-center gap-2 px-3 py-2 text-label text-muted-foreground">
-            <span className="font-mono text-code text-foreground">{word}</span>
+            <span className="text-code text-foreground">{word}</span>
             <span aria-hidden>·</span>
             {uses.status === 'searching' ? (
               <span role="status" className="flex items-center gap-2">
@@ -146,9 +146,7 @@ export const IdentifierPeek = ({
             <p className="px-3 pb-2 text-meta text-muted-foreground">{uses.message}</p>
           ) : null}
           {uses.status === 'ready' && matches.length === 0 ? (
-            <p className="px-3 pb-2 text-meta text-muted-foreground">
-              Nothing found in this worktree.
-            </p>
+            <EmptyLine>Nothing found in this worktree.</EmptyLine>
           ) : null}
           {group('Defined in', definitions)}
           {group('Used in', references)}
