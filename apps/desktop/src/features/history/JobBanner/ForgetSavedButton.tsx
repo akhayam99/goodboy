@@ -12,7 +12,7 @@ export const ForgetSavedButton = ({ isBusy, onConfirm }: Props) => (
     role="alert"
     icon={<Archive size={ICON_SIZE.control} aria-hidden />}
     title="Forget the saved files?"
-    description="They stay in the stash, and Goodboy keeps a safety copy for 14 days. It stops offering to bring them back."
+    description="They stay in the stash, with a safety copy for 14 days."
     confirmLabel="Done, forget it"
     isBusy={isBusy}
     align="start"
