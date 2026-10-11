@@ -24,6 +24,7 @@ import {
   both,
   branchTab,
   clickButton,
+  clickFirstButton,
   heading,
   lens,
   openCrumb,
@@ -247,6 +248,10 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({
     id: 'session.board',
     lands: () => heading('Board'),
+  }),
+  pressRow({
+    id: 'terminal.studio',
+    lands: () => visible('complementary', 'Terminals'),
   }),
   keyRow({
     id: 'nav.back',
@@ -1092,20 +1097,25 @@ const SELECTION_KEY_ROWS: ReadonlyArray<Row> = [
   }),
 ];
 
+const terminalRows = (): ReadonlyArray<Element> => [
+  ...document.querySelectorAll('[data-terminal-row]'),
+];
+
 export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'terminal.newTab',
     open: async () => {
       await press('lens.terminal')();
-      await clickButton('New terminal');
-      const [first] = await screen.findAllByRole('tab', undefined, WAIT);
+      await clickFirstButton(/^New terminal$/);
+      await waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT);
+      const first = terminalRows()[0]?.querySelector('button');
       expect(first).toBeDefined();
       (first as HTMLElement).focus();
-      terminalTabCount = screen.getAllByRole('tab').length;
+      terminalTabCount = terminalRows().length;
       await pressed('terminal.newTab', first as HTMLElement);
     },
     lands: async () =>
-      waitFor(() => expect(screen.getAllByRole('tab').length).toBe(terminalTabCount + 1), WAIT),
+      waitFor(() => expect(terminalRows().length).toBe(terminalTabCount + 1), WAIT),
   }),
   keyRow({
     id: 'diff.fileDown',

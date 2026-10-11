@@ -104,4 +104,13 @@ export const STUDIO_META = {
     railWidth: 'standard',
     canHostDrawer: true,
   },
+  terminal: {
+    icon: CONCEPT_ICONS.terminal,
+    tone: CONCEPT_TONE.terminal,
+    title: 'Terminal',
+    closeLabel: 'Close terminal',
+    tier: 'full',
+    skeleton: 'rail',
+    railWidth: 'standard',
+  },
 } as const satisfies Record<StudioKind, StudioMeta>;

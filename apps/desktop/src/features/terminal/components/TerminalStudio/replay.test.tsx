@@ -2,7 +2,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
-import type { SessionId } from '@goodboy/types';
+import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
 import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import {
@@ -102,8 +102,9 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
   return { LazyGenericTerminalPanel: panel.GenericTerminalPanel };
 });
 
-import { TerminalDock } from './index';
+import { SessionTerminalLens } from './SessionTerminalLens';
 import { terminalOutputBus } from '../../outputBus';
+import { brandedId } from '../../../../features/history/testing/brandedId';
 
 type IdParams = {
   readonly value: string;
@@ -127,12 +128,30 @@ const tabIdOf = ({ value }: IdParams): TerminalTabId => {
 };
 
 const SESSION_ID = sessionIdOf({ value: 'session-1' });
+const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'workspace-1' });
+const NOW = brandedId<IsoDateTime>({ value: '2026-10-10T09:12:00.000Z' });
+
+const SESSION: Session = {
+  id: SESSION_ID,
+  workspaceId: WORKSPACE_ID,
+  goal: 'Round settlement totals to minor units',
+  state: { kind: 'idle', lastActivityAt: NOW },
+  contextSlots: [],
+  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+  permissionMode: 'default',
+  workflowRuns: [],
+  autoRun: false,
+  titleUserEdited: true,
+  createdAt: NOW,
+  updatedAt: NOW,
+};
+
 const BACKGROUND_ID = tabIdOf({ value: 'session-1::t1' });
 const FOREGROUND_ID = tabIdOf({ value: 'session-1::t2' });
 
 const buildTab = (id: TerminalTabId): TerminalTab => ({
   id,
-  sessionId: SESSION_ID,
+  owner: { kind: 'session', sessionId: SESSION_ID },
   title: id,
   cwd: '/repo',
   status: 'running',
@@ -165,7 +184,14 @@ let store: StoryStore;
 
 const mountDock = (activeId: TerminalTabId) => {
   store.setState({ activeTerminalTab: { [SESSION_ID]: activeId } });
-  return render(<TerminalDock sessionId={SESSION_ID} isActive cwd="/repo" />);
+  return render(
+    <SessionTerminalLens
+      workspaceId={WORKSPACE_ID}
+      sessionId={SESSION_ID}
+      isActive
+      sessionCwd="/repo"
+    />,
+  );
 };
 
 beforeAll(async () => {
@@ -179,6 +205,7 @@ beforeEach(async () => {
   harness.ring = { bytes: '', total: 0 };
   harness.snapshotGate = null;
   store.setState({
+    sessions: [SESSION],
     terminalTabs: { [SESSION_ID]: [buildTab(BACKGROUND_ID), buildTab(FOREGROUND_ID)] },
   });
 });
@@ -189,7 +216,7 @@ afterEach(() => {
   terminalOutputBus.forget({ terminalId: FOREGROUND_ID });
 });
 
-describe('terminal output while a tab is in the background', () => {
+describe('terminal output while a terminal is in the background', () => {
   it('shows the last line of a tab that printed 2000 chunks with no panel mounted', async () => {
     await terminalOutputBus.register();
     mountDock(FOREGROUND_ID);

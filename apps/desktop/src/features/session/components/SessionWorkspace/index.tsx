@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
 import { cn, useEscapeLayer, UnderTrailContext, PaneBannerContext, PaneShell } from '@goodboy/ui';
-import { TerminalDock } from '../../../terminal/components/TerminalDock';
+import { SessionTerminalLens } from '../../../terminal/components/TerminalStudio/SessionTerminalLens';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { ScriptsPanel } from '../../../scripts';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
@@ -254,17 +254,13 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             </PaneBannerContext.Provider>
           ) : null}
 
-          {!isBranchless ? (
-            <div
-              className={cn(
-                'absolute inset-0 z-10 flex flex-col',
-                !(lens === 'terminal' && showLens) && 'invisible pointer-events-none',
-              )}
-            >
-              <TerminalDock
+          {!isBranchless && lens === 'terminal' && showLens ? (
+            <div className="absolute inset-0 z-10 flex flex-col">
+              <SessionTerminalLens
+                workspaceId={session.workspaceId}
                 sessionId={sessionId}
-                isActive={isActive && lens === 'terminal' && showLens}
-                cwd={terminalWorkingDir}
+                isActive={isActive}
+                sessionCwd={terminalWorkingDir}
               />
             </div>
           ) : null}

@@ -1,17 +1,28 @@
-import type { SessionId } from '@goodboy/types';
-import type { TerminalTabId, TerminalTabStatus } from '../../../shared/types/terminal';
+import type {
+  TerminalOwner,
+  TerminalTabId,
+  TerminalTabStatus,
+} from '../../../shared/types/terminal';
+import { terminalOwnerKey } from './terminalOwner';
 import type { SetFn } from './types';
 
+type StatusParams = {
+  readonly owner: TerminalOwner;
+  readonly tabId: TerminalTabId;
+  readonly status: TerminalTabStatus;
+  readonly exitCode?: number;
+};
+
 export const setTerminalTabStatus = (set: SetFn) => {
-  return (sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void => {
-    set((s) => {
-      const tabs = s.terminalTabs[sessionId] ?? [];
-      return {
-        terminalTabs: {
-          ...s.terminalTabs,
-          [sessionId]: tabs.map((t) => (t.id === tabId ? { ...t, status } : t)),
-        },
-      };
-    });
+  return ({ owner, tabId, status, exitCode }: StatusParams): void => {
+    const key = terminalOwnerKey({ owner });
+    set((s) => ({
+      terminalTabs: {
+        ...s.terminalTabs,
+        [key]: (s.terminalTabs[key] ?? []).map((t) =>
+          t.id === tabId ? { ...t, status, ...(exitCode === undefined ? {} : { exitCode }) } : t,
+        ),
+      },
+    }));
   };
 };

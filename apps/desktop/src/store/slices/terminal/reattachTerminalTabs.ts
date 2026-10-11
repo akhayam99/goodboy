@@ -1,80 +1,78 @@
-import type { SessionId, SessionProjectMount } from '@goodboy/types';
+import { getSetting } from '@goodboy/db';
 import { invokeTerminalListLive } from '../../../features/terminal/terminal';
 import { terminalOutputBus } from '../../../features/terminal/outputBus';
+import { tauriDatabase } from '../../../shared/lib/db';
 import type { TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
-import type { SetFn } from './types';
+import { SETTING_TERMINAL_NAMES } from './state';
+import {
+  DEFAULT_TERMINAL_NAME,
+  folderName,
+  parseTerminalId,
+  terminalOwnerKey,
+} from './terminalOwner';
+import type { GetFn, SetFn } from './types';
 
-type ParsedTerminalId = {
-  readonly sessionId: SessionId;
-  readonly ordinal: number;
-};
+const isNameRecord = (value: unknown): value is Record<string, string> =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.values(value).every((entry) => typeof entry === 'string');
 
-type ParseParams = {
-  readonly id: string;
-};
-
-const parseTerminalId = ({ id }: ParseParams): ParsedTerminalId | null => {
-  const separatorIndex = id.lastIndexOf('::t');
-  if (separatorIndex <= 0) {
-    return null;
+const readNames = async (): Promise<Record<string, string>> => {
+  try {
+    const raw = await getSetting(tauriDatabase, SETTING_TERMINAL_NAMES);
+    if (raw === null || raw === undefined || raw === '') {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    return isNameRecord(parsed) ? parsed : {};
+  } catch {
+    return {};
   }
-  const ordinal = Number.parseInt(id.slice(separatorIndex + 3), 10);
-  if (Number.isNaN(ordinal) || ordinal < 1) {
-    return null;
-  }
-  return { sessionId: id.slice(0, separatorIndex) as SessionId, ordinal };
 };
 
-type OwnerParams = {
-  readonly mounts: ReadonlyArray<SessionProjectMount>;
-  readonly cwd: string | null;
-};
-
-const mountForCwd = ({ mounts, cwd }: OwnerParams): SessionProjectMount | null => {
-  if (cwd == null || cwd === '') {
-    return null;
-  }
-  return mounts.find((mount) => mount.worktreePath === cwd) ?? null;
-};
-
-export const reattachTerminalTabs = (set: SetFn) => {
+export const reattachTerminalTabs = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     await terminalOutputBus.register();
-    const liveTerminals = await invokeTerminalListLive();
-    set((state) => {
-      const terminalTabs = { ...state.terminalTabs };
-      const activeTerminalTab = { ...state.activeTerminalTab };
-      const rebuilt = new Map<SessionId, TerminalTab[]>();
-      for (const live of liveTerminals) {
-        const parsed = parseTerminalId({ id: live.id });
-        if (parsed === null) {
-          continue;
-        }
-        const mounts = state.sessionProjectMounts[parsed.sessionId] ?? [];
-        const cwd = live.cwd;
-        const owner = mountForCwd({ mounts, cwd });
-        const tab: TerminalTab = {
-          id: live.id as TerminalTabId,
-          sessionId: parsed.sessionId,
-          title: `Terminal ${parsed.ordinal}`,
-          cwd,
-          ...(owner === null ? {} : { projectId: owner.projectId }),
-          ...(owner?.mountId === undefined ? {} : { mountId: owner.mountId }),
-          status: 'running',
-          createdAt: Date.now(),
-        };
-        const tabs = rebuilt.get(parsed.sessionId) ?? [];
-        tabs.push(tab);
-        rebuilt.set(parsed.sessionId, tabs);
+    const [liveTerminals, names] = await Promise.all([invokeTerminalListLive(), readNames()]);
+    const state = get();
+    const rebuilt = new Map<string, TerminalTab[]>();
+    for (const live of liveTerminals) {
+      const parsed = parseTerminalId({ id: live.id });
+      if (parsed === null) {
+        continue;
       }
-      for (const [sessionId, tabs] of rebuilt) {
-        tabs.sort((left, right) =>
-          left.title.localeCompare(right.title, undefined, { numeric: true }),
-        );
-        terminalTabs[sessionId] = tabs;
-        activeTerminalTab[sessionId] = tabs[0]?.id ?? null;
+      const { owner } = parsed;
+      const cwd = live.cwd;
+      const mounts =
+        owner.kind === 'session' ? (state.sessionProjectMounts[owner.sessionId] ?? []) : [];
+      const mount =
+        cwd === '' ? undefined : mounts.find((candidate) => candidate.worktreePath === cwd);
+      const projectId = mount?.projectId;
+      const tab: TerminalTab = {
+        id: live.id as TerminalTabId,
+        owner,
+        title: names[live.id] ?? folderName({ path: cwd }) ?? DEFAULT_TERMINAL_NAME,
+        cwd,
+        ...(projectId === undefined ? {} : { projectId }),
+        ...(mount?.mountId === undefined ? {} : { mountId: mount.mountId }),
+        status: 'running',
+        createdAt: Date.now(),
+      };
+      const key = terminalOwnerKey({ owner });
+      const tabs = rebuilt.get(key) ?? [];
+      tabs.push(tab);
+      rebuilt.set(key, tabs);
+    }
+    set((current) => {
+      const terminalTabs = { ...current.terminalTabs };
+      const activeTerminalTab = { ...current.activeTerminalTab };
+      for (const [key, tabs] of rebuilt) {
+        tabs.sort((left, right) => left.id.localeCompare(right.id, undefined, { numeric: true }));
+        terminalTabs[key] = tabs;
+        activeTerminalTab[key] = tabs[0]?.id ?? null;
       }
-      return { terminalTabs, activeTerminalTab };
+      return { terminalTabs, activeTerminalTab, terminalNames: names };
     });
   };
 };

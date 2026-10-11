@@ -82,6 +82,7 @@
   "apps/desktop/src/features/storage/components/BranchesPage/DeletedBranchRow.tsx": "branch",
   "apps/desktop/src/features/storage/components/BranchesSection/BranchRow.tsx": "branch",
   "apps/desktop/src/features/storage/components/StoragePage/OtherToolRow.tsx": "path",
+  "apps/desktop/src/features/terminal/components/TerminalStudio/LocationRow.tsx": "path",
   "apps/desktop/src/features/wireframes/components/WireframeViewer/ChangeList.tsx": "glyph",
   "apps/desktop/src/features/wireframes/components/WireframeViewer/CompareSide.tsx": "path",
   "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeAdjustments.tsx": "path",

@@ -51,8 +51,8 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Tasks, Chat and Workflows sit under
-  New session, the Sessions list follows, Settings and the Goodboy row sit at
+- **The column holds every door.** Board, Tasks, Chat, Workflows and Terminal sit
+  under New session, the Sessions list follows, Settings and the Goodboy row sit at
   the foot. Board is home and the first door (⌘⇧H). The column is on every
   screen with a workspace: the board, a session, the draft and every studio but
   Settings, which swaps the column's content (see Studios).
@@ -88,7 +88,7 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Settings), a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Terminal, Settings), a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
@@ -442,7 +442,7 @@ reference material beside the page and closes with the pane that opened it.
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 New session (⌘N, the only emphasised control, selected while the draft is open,
 a primary dot and `Draft in progress` while a draft waits), the doors Board
-(⌘⇧H), Tasks, Chat and Workflows as one 28px row each (icon and word, the
+(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (icon and word, the
 shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
 belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
@@ -500,7 +500,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): the toggle, New, Board, Tasks, Chat and Workflows as icons
+  (`ColumnRail`): the toggle, New, Board, Tasks, Chat, Workflows and Terminal as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
@@ -634,7 +634,7 @@ or `remembered` for the open session. A page that has a row in the card
 takes `bg-selected` and `aria-current="page"` alone. Where no row matches (the
 Tools Explore, Scripts and Terminal, a linked record, Questions with nothing
 open) or the pages are folded, the session row takes the sign. While a studio
-(Tasks, Chat, Workflows, Impact) sits over the session the row is `remembered`:
+(Tasks, Chat, Workflows, Terminal, Impact) sits over the session the row is `remembered`:
 medium weight, no fill, no `aria-current`; closing the studio returns the sign to
 the page. The session row also carries `data-current-sign`. Questions renders in
 the card only while something is open, warning-toned with the count word
@@ -1339,7 +1339,7 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
 
-Utility studios (Tasks, Chat, Workflows, Impact, Notifications, Changelog,
+Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
 the guide, pairing, Add workspace) render in the shell's studio slot, which
 covers the content area only, beside the column, as its own sheet with the
 studio band on top. The column stays live, so another door or a session row is
@@ -1409,6 +1409,22 @@ one is open at a time.
   under it (the band keeps the crumb and Close only), the guide `Guide`, What's new and
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
+- **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)
+opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId }`in`TerminalStudio`:
+`StudioShell`plus`StudioRailLayout surface="terminal"`(the rail folds like Tasks).
+The rail lists a`Workspace`group first (terminals that belong to the workspace), then one
+group per session that has terminals, headed by the session title, its branch and a count;
+the open session's group is expanded and the others folded. A row is a state dot (idle,
+busy, exited), the name (the cwd's last folder, renamed by double click, Enter saves, Esc
+cancels), the command a busy shell runs and, once exited,`exited 127`with Restart. The
+close x shows on hover and focus: an idle shell closes at once, a busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). The detail is a 32px location
+row, the cwd trimmed to the workspace folder, chips for `Workspace folder`, one per mount of
+the session (`ledger-core · hl/ledger-rounding`) and `Main checkout`, then the shell. A
+chip opens a new terminal there and selects it; it never types into a shell, and the `cd`menu does that only while the shell is idle.`New terminal`in the header opens in the
+workspace folder, its chevron lists the same targets. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace (`terminalOwner.ts`); both
+reattach after a reload with their owners and renamed names (setting `terminal.names`).
+The session Terminal lens is the same body (`SessionTerminalLens`) focused on that session.
+`⌘T` (`terminal.newTab`) still adds a terminal in both places.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every

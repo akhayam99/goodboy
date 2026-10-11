@@ -104,6 +104,16 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'New workflow'),
   },
   {
+    name: 'column: terminal',
+    covers: ['openTerminalStudio', 'studio:terminal'],
+    open: () => click(doorIn('terminal')),
+    lands: both(
+      () => band('Terminal'),
+      () => visible('complementary', 'Terminals'),
+      async () => expect(doorIn('terminal').getAttribute('aria-current')).toBe('page'),
+    ),
+  },
+  {
     name: 'column: chat',
     covers: ['openChat', 'studio:chat'],
     open: () => click(doorIn('chat')),
