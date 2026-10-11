@@ -10,7 +10,7 @@ import { splitPortRows } from '../../splitPortRows';
 import { startedByGoodboy, type StartedRow } from '../../startedByGoodboy';
 import { watchedPortSet } from '../../watchedPortSet';
 
-export type MonitoringStatus = 'loading' | 'failed' | 'unsupported' | 'ready';
+type MonitoringStatus = 'loading' | 'failed' | 'unsupported' | 'ready';
 
 export type MonitoringModel = {
   readonly status: MonitoringStatus;

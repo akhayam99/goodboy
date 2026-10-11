@@ -20,15 +20,15 @@ import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-10-10T09:12:00.000Z' });
 const NOW_ISO = clock.iso({ at: '2026-10-10T09:12:00.000Z' });
-export const TAKEN_AT = clock.ms({ at: '2026-10-10T09:12:00.000Z' });
+const TAKEN_AT = clock.ms({ at: '2026-10-10T09:12:00.000Z' });
 
 export const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'mock-u24-workspace-harborline' });
 export const SESSION_ID = brandedId<SessionId>({ value: 'mock-u24-session-credit' });
-export const OTHER_SESSION_ID = brandedId<SessionId>({ value: 'mock-u24-session-refunds' });
-export const THIRD_SESSION_ID = brandedId<SessionId>({ value: 'mock-u24-session-audit' });
-export const PAYMENTS_ID = brandedId<ProjectId>({ value: 'mock-u24-project-payments-api' });
-export const LEDGER_ID = brandedId<ProjectId>({ value: 'mock-u24-project-ledger-core' });
-export const NOTIFY_ID = brandedId<ProjectId>({ value: 'mock-u24-project-notify-relay' });
+const OTHER_SESSION_ID = brandedId<SessionId>({ value: 'mock-u24-session-refunds' });
+const THIRD_SESSION_ID = brandedId<SessionId>({ value: 'mock-u24-session-audit' });
+const PAYMENTS_ID = brandedId<ProjectId>({ value: 'mock-u24-project-payments-api' });
+const LEDGER_ID = brandedId<ProjectId>({ value: 'mock-u24-project-ledger-core' });
+const NOTIFY_ID = brandedId<ProjectId>({ value: 'mock-u24-project-notify-relay' });
 
 const FOLDER = '/mock/harborline';
 const PAYMENTS_ROOT = `${FOLDER}/payments-api`;
@@ -38,7 +38,7 @@ const PAYMENTS_TREE = '/mock/worktrees/hl-fix-duplicate-credit/payments-api';
 const PAYMENTS_TREE_B = '/mock/worktrees/hl-refund-rounding/payments-api';
 const PAYMENTS_TREE_C = '/mock/worktrees/hl-audit-trail/payments-api';
 
-export const BRANCH_A = 'hl/fix-duplicate-credit';
+const BRANCH_A = 'hl/fix-duplicate-credit';
 
 const OVERRIDES = {
   defaultProviderId: null,
