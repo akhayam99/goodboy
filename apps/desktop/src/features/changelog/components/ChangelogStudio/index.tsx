@@ -154,7 +154,6 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
       tone={CONCEPT_TONE.changelog}
       title={NAMES.whatsNew}
       {...(installedVersion !== null && { subtitle: `Installed ${installedVersion}` })}
-      closeLabel={`Close ${NAMES.whatsNew.toLowerCase()}`}
       onClose={onClose}
     >
       {() => (

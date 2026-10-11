@@ -247,7 +247,6 @@ export const SettingsStudio = ({
       icon={CONCEPT_ICONS.settings}
       tone={CONCEPT_TONE.settings}
       title="Settings"
-      closeLabel="Close settings"
       onClose={onClose}
     >
       {(requestClose) => (
