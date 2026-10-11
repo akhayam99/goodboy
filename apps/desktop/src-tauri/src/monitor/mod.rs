@@ -49,6 +49,7 @@ pub(crate) struct MonitorSnapshot {
     pub(crate) listeners: Vec<Listener>,
     pub(crate) processes: Vec<ProcessInfo>,
     pub(crate) taken_at: u64,
+    #[serde(rename = "isPlatformSupported")]
     pub(crate) platform_supported: bool,
 }
 

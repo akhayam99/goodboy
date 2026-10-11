@@ -71,7 +71,7 @@ const snapshotAt = ({
   readonly takenAt: number;
   readonly listeners?: MonitorSnapshot['listeners'];
   readonly processes?: MonitorSnapshot['processes'];
-}): MonitorSnapshot => ({ listeners, processes, takenAt, platformSupported: true });
+}): MonitorSnapshot => ({ listeners, processes, takenAt, isPlatformSupported: true });
 
 const processAt = ({ pid, cwd, pgid = pid }: { pid: number; cwd: string; pgid?: number }) => ({
   pid,

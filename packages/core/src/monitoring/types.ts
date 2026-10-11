@@ -22,7 +22,7 @@ export type MonitorSnapshot = {
   readonly listeners: ReadonlyArray<MonitorListener>;
   readonly processes: ReadonlyArray<MonitorProcess>;
   readonly takenAt: number;
-  readonly platformSupported: boolean;
+  readonly isPlatformSupported: boolean;
 };
 
 export type LedgerKind = 'turn' | 'chat' | 'planner' | 'summary' | 'script' | 'terminal' | 'probe';

@@ -57,7 +57,7 @@ const snap = (
   listeners: listeners.map(([port, pid]) => ({ port, pid, address: '127.0.0.1', protocol: 'tcp' })),
   processes,
   takenAt: 1,
-  platformSupported: true,
+  isPlatformSupported: true,
 });
 
 const entry = (
