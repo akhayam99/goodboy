@@ -65,7 +65,7 @@ export type DiffComments = {
   readonly fileComposer?: { readonly label: string; readonly submitLabel: string };
   readonly onSubmit: (filePath: string, anchor: DiffCommentAnchor | null, body: string) => void;
   readonly onAskAgent?: (target: DiffLineTarget) => void;
-  readonly onEdit?: (id: string, body: string) => void;
+  readonly onEdit?: (id: string, body: string) => Promise<void>;
   readonly onClose?: (id: string) => void;
   readonly onReopen?: (id: string) => void;
   readonly onDelete?: (id: string) => void;

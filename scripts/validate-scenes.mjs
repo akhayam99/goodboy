@@ -750,7 +750,15 @@ const measureFrame = async ({ send, entry }) => {
         settleMs: FRAME_SETTLE_MS,
       });
       const measured = await run(send, frameProbe, null);
-      failures.push(...frameFailures({ scene: entry.scene, width, sidebar, measured }));
+      failures.push(
+        ...frameFailures({
+          scene: entry.scene,
+          width,
+          sidebar,
+          measured,
+          isBare: entry.isBare === true,
+        }),
+      );
     }
   }
   console.log(`${entry.scene}: ${FRAME_WIDTHS.length} widths, ${failures.length} frame failures`);

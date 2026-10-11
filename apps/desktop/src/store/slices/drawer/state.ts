@@ -10,7 +10,11 @@ export type ContextDrawerView = 'current' | 'versions';
 export type DrawerContent =
   | {
       readonly kind: 'check-analysis';
-      readonly payload: { readonly sessionId: SessionId; readonly checkUrl: string };
+      readonly payload: {
+        readonly sessionId: SessionId;
+        readonly mountId: MountId;
+        readonly checkUrl: string;
+      };
     }
   | {
       readonly kind: 'context';

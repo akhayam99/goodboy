@@ -464,6 +464,30 @@ describe('frameFailures', () => {
     );
   });
 
+  it('names rule 1 when the crumb is missing, and skips the spread check', () => {
+    assert.deepEqual(rulesOf(framed({ crumb: null })), ['rule 1']);
+  });
+
+  it('names rule 1 when the h1 is missing, and skips the spread check', () => {
+    assert.deepEqual(rulesOf(framed({ title: null })), ['rule 1']);
+  });
+
+  it('skips the missing crumb check for a bare pane scene', () => {
+    const measured = framed({ crumb: null, title: null });
+    const rules = frameFailures({
+      scene: 'fixture',
+      width: 1440,
+      sidebar: 'pinned',
+      measured,
+      isBare: true,
+    }).map((failure) => failure.rule);
+    assert.deepEqual(rules, []);
+  });
+
+  it('names rule 1 once when both the crumb and the h1 are missing', () => {
+    assert.deepEqual(rulesOf(framed({ crumb: null, title: null })), ['rule 1']);
+  });
+
   it('compares the crumb and the title alone when the page has no body column', () => {
     const crumb = rect({ left: 363, top: 8, right: 440, bottom: 32 });
     assert.deepEqual(rulesOf(framed({ bodyChild: null, crumb })), ['rule 1']);

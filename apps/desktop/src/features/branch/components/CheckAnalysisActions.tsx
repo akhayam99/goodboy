@@ -94,7 +94,7 @@ export const CheckAnalysisActions = ({ sessionId, mountId, pullRequest, check }:
               openDrawer({
                 kind: 'check-analysis',
                 sessionId,
-                payload: { sessionId, checkUrl: url },
+                payload: { sessionId, mountId, checkUrl: url },
               })
             }
           >

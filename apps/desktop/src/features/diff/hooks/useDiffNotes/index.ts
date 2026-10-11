@@ -44,6 +44,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
   const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
   const editDiffComment = useAppStore((s) => s.editDiffComment);
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
+  const restoreDiffComment = useAppStore((s) => s.restoreDiffComment);
   const askAgent = useAskAgent({ sessionId });
   const showToast = useShowToast();
 
@@ -66,7 +67,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
         void closeResolvedNote({ sessionId, threadId });
       },
       onReopen: (id) => void reopenDiffComment(sessionId, id),
-      onEdit: (id, body) => void editDiffComment(sessionId, id, body),
+      onEdit: (id, body) => editDiffComment(sessionId, id, body),
       onDelete: (id) => {
         const note = fixes.find((fix) => fix.note.id === id)?.note;
         void deleteDiffComment(sessionId, id).then(() => {
@@ -78,7 +79,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
             title: 'Note deleted',
             message: note.body,
             undo: async () => {
-              await addDiffComment(sessionId, note.filePath, note.body, note.anchor ?? undefined);
+              await restoreDiffComment({ note });
             },
           });
         });
@@ -92,6 +93,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
     editDiffComment,
     fixes,
     reopenDiffComment,
+    restoreDiffComment,
     sessionId,
     showToast,
   ]);

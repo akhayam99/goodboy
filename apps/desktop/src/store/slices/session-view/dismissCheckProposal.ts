@@ -6,7 +6,11 @@ type Params = {
   readonly agentId: AgentId;
 };
 
-export const dismissCheckProposal = (set: SetFn) => {
+type FactoryParams = {
+  readonly set: SetFn;
+};
+
+export const dismissCheckProposal = ({ set }: FactoryParams) => {
   return ({ sessionId, agentId }: Params): void => {
     set((state) => {
       const current = state.dismissedCheckProposals[sessionId] ?? [];

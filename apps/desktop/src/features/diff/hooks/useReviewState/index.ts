@@ -104,8 +104,9 @@ export const useReviewState = ({ sessionId, worktreePath, diff }: Params): Revie
       ...withHost,
       onEdit: (id, body) => {
         if (draftIds.has(id)) {
-          void updateReviewDraft(id, body);
+          return updateReviewDraft(id, body);
         }
+        return noteComments.onEdit?.(id, body) ?? Promise.resolve();
       },
       onDelete: (id) => {
         if (draftIds.has(id)) {

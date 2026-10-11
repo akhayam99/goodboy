@@ -50,7 +50,7 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     markSessionOpened: markSessionOpened(set),
     toggleSessionGroup: toggleSessionGroup(set),
     setSessionPagesFolded: setSessionPagesFolded(set),
-    dismissCheckProposal: dismissCheckProposal(set),
+    dismissCheckProposal: dismissCheckProposal({ set }),
     setExploreExpanded: setExploreExpanded(set),
     setExploreMountPath: setExploreMountPath(set),
     setAgentTab: setAgentTab(set),

@@ -79,6 +79,11 @@ export const openReviewTarget = async ({
         return { kind: 'failed', error: formatError(error) };
       }
     }
+    try {
+      await get().loadDiffComments(sessionId);
+    } catch (error) {
+      return { kind: 'failed', error: formatError(error) };
+    }
     get().navigate({
       to: noteLandingPlace({
         state: get(),

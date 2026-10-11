@@ -217,6 +217,33 @@ describe('SegmentedTabs', () => {
     expect(onChange).toHaveBeenCalledWith('second');
   });
 
+  it('fills its column with every tab, tooltip or not, when it fills the row', () => {
+    render(
+      <SegmentedTabs
+        ariaLabel="view"
+        options={[
+          { value: 'first', label: 'First', tooltip: 'The first view' },
+          { value: 'second', label: 'Second' },
+        ]}
+        value="first"
+        onChange={vi.fn()}
+        fill
+      />,
+    );
+
+    for (const tab of screen.getAllByRole('tab')) {
+      expect(tab.classList.contains('w-full')).toBe(true);
+    }
+  });
+
+  it('keeps the intrinsic tab width when it does not fill the row', () => {
+    render(<SegmentedTabs ariaLabel="view" options={OPTIONS} value="first" onChange={vi.fn()} />);
+
+    for (const tab of screen.getAllByRole('tab')) {
+      expect(tab.classList.contains('w-full')).toBe(false);
+    }
+  });
+
   it('ChoiceCards draws the icon tile only for a card that has an icon or a glyph', () => {
     render(
       <ChoiceCards

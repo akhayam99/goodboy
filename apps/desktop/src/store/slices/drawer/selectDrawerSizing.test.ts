@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
+import type { AgentId, ArtifactId, MountId, SessionId } from '@goodboy/types';
 import {
   DRAWER_INSET,
   LEFT_SIDEBAR_DEFAULT,
@@ -20,6 +20,7 @@ import type { AppState } from '../../types';
 import { selectDrawerSizing } from './selectDrawerSizing';
 import type { DrawerRequest } from './state';
 
+const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mount-1'));
 const SESSION_ID = 'session-1' as SessionId;
 const WINDOWS = [1280, 1440] as const;
 const SIDEBARS = [LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX] as const;
@@ -34,6 +35,7 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
     sessionId: SESSION_ID,
     payload: {
       sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
       checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
     },
   },
