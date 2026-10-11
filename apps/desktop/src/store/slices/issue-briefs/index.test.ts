@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { aSession } from '@goodboy/types/testing';
+import { aProject, aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -203,5 +203,19 @@ describe('issue briefs on the real store', () => {
         ],
       }),
     ).toHaveLength(1);
+  });
+
+  it('keeps the same issue number from two projects', () => {
+    const task = { ...SOURCE, sessionId: session.id, createdAt: session.createdAt };
+    const ledger = aProject().id;
+    const relay = aProject().id;
+    const sources = linkedIssueSources({
+      tasks: [
+        { ...task, projectId: ledger },
+        { ...task, projectId: relay },
+        { ...task, projectId: relay, scope: 'branch', branch: 'hl/retry' },
+      ],
+    });
+    expect(sources.map((source) => source.projectId)).toEqual([ledger, relay]);
   });
 });
