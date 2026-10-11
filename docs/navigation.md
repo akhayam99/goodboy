@@ -864,6 +864,13 @@ activity yet show the plain overview with its actions.
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
   `Workflows > Ship a fix` with its save state and actions), so the app has one
   breadcrumb.
+- **The parent crumb is Up, and the last crumb names the kind.** No crumb
+  carries a back glyph and `Trail` has no lead slot, so a page never draws its
+  own back link above its content. The last crumb of a run, an artifact, an
+  artifact being created and a selected agent reads `Run`, `Artifact`,
+  `New artifact` and `Agent`; the page title holds the name.
+  `no-back-glyph-in-trail.test.tsx` fails on a chevron or arrow to the left
+  inside a trail.
 - **Every crumb has an icon, and depth compacts the trail.** Agents carry the
   agent glyph in their kind's colour, runs the run glyph, artifacts, questions
   and pull request modes their own. The last crumb and its parent always stay

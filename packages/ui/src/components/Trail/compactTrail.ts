@@ -6,7 +6,6 @@ type Params = {
   readonly pinned?: ReadonlyArray<boolean>;
   readonly separatorWidth: number;
   readonly ellipsisWidth: number;
-  readonly leadWidth: number;
   readonly available: number | null;
 };
 
@@ -19,7 +18,6 @@ export const compactTrail = ({
   pinned = [],
   separatorWidth,
   ellipsisWidth,
-  leadWidth,
   available,
 }: Params): ReadonlyArray<TrailSegmentState> => {
   const count = fullWidths.length;
@@ -54,7 +52,7 @@ export const compactTrail = ({
       return sum;
     }, 0);
     const separators = Math.max(0, visible - 1 + (hasFold ? 1 : 0)) * separatorWidth;
-    return leadWidth + segments + separators + (hasFold ? ellipsisWidth : 0);
+    return segments + separators + (hasFold ? ellipsisWidth : 0);
   };
 
   const shrink = (index: number) => {
