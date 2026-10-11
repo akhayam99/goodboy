@@ -361,10 +361,14 @@ sidebar-terminal-current
 slack-permissions
 space-diff-comment
 space-diff-split
+start-cap
+start-crossproject
 start-from-inbox
+start-multiselect
 start-panel-slack
 start-paste-pr-url
 start-pick-one-block
+start-picked3
 start-review-row
 step-rows-activity
 step-rows-runs
