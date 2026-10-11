@@ -47,8 +47,7 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
   different hook count between the two.
 - `MockScene` (`apps/desktop/src/app/components/MockScene/`) reads a
   `?scene=` query param and renders one of several scene components, one per
-  screenshot. To add a scene, add a file under `scenes/` and a line in the
-  `MOCK_SCENES` map.
+  screenshot. To add a scene, follow [recipes/mock-scene.md](recipes/mock-scene.md).
 
 ## Reuse the real components, never rebuild the UI
 
@@ -186,9 +185,9 @@ looks easy, the product looks like it's only for easy tasks.
 ## What already exists
 
 `apps/desktop/src/app/components/MockScene/` holds one scene component per
-screenshot. Each one is registered by key in the `MOCK_SCENES` map and filled
-from `apps/desktop/src/store/mock-data.ts` plus its own seed module. Read the
-map before you build anything. The surface you need is often already there,
+screenshot. Each one is registered by its id through the `scenes/u*/` glob ([recipes/mock-scene.md](recipes/mock-scene.md)) and filled
+from `apps/desktop/src/store/mock-data.ts` plus its own seed module. Read
+`scenes.txt` before you build anything. The surface you need is often already there,
 and the keys are the `?scene=` values. The scenes cost nothing at runtime when
 `VITE_GOODBOY_MOCK` is unset.
 
@@ -379,7 +378,7 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   `main`, before the change, as `-before-`; after the change, the same scene,
   same name, as `-after-`. A brand-new screen only ever gets `-after-`: there
   is nothing to be "before".
-- **Promotion at the version bump.** `docs/changelog/next/*` holds
+- **Promotion at the version bump.** The `next` folder under `docs/changelog` holds
   work-in-progress pictures across PRs in the same release. The PR that bumps
   the version numbers renames the `next` folder to `docs/changelog/<version>/` and sets
   `image=<name>` on the entry. `changelogImageBudget.test.ts` then checks
