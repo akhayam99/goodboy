@@ -24,6 +24,7 @@ export type PermissionRules = {
   readonly retry: () => void;
   readonly remove: (rule: PermissionRule) => Promise<void>;
   readonly add: (rule: NewRule) => Promise<void>;
+  readonly restore: (rule: PermissionRule) => Promise<void>;
 };
 
 const toError = (value: unknown): Error =>
@@ -92,5 +93,24 @@ export const usePermissionRules = ({ workspaceId }: Params): PermissionRules => 
     [workspaceId],
   );
 
-  return { rules, isLoading, error, retry, remove, add };
+  const restore = useCallback(async (rule: PermissionRule) => {
+    const restored = await invokePermissionRuleUpsert({
+      id: rule.id,
+      scope: rule.scope,
+      ...(rule.workspaceId === undefined ? {} : { workspaceId: rule.workspaceId }),
+      ...(rule.sessionId === undefined ? {} : { sessionId: rule.sessionId }),
+      patternTool: rule.pattern.tool,
+      ...(rule.pattern.argsMatcher === undefined
+        ? {}
+        : { patternArgsMatcher: rule.pattern.argsMatcher }),
+      decision: rule.decision,
+      priority: rule.priority,
+    });
+    setRules((current) => [
+      restored,
+      ...current.filter((candidate) => candidate.id !== restored.id),
+    ]);
+  }, []);
+
+  return { rules, isLoading, error, retry, remove, add, restore };
 };

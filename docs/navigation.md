@@ -1715,7 +1715,7 @@ then N new commits`, unmerged and gone on origin, local only for over 30
   holds reads Protected, so its folder goes first from Worktrees.
   In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
-  Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
+  Keep (30 days or always) and Delete, which asks in a `ConfirmPopover` beside its button. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
 - **Security findings is its own App page, workspace-scoped.** It scans the
   text Goodboy keeps for a workspace (saved scripts today; workflow steps,
@@ -1776,7 +1776,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   rows (`shouldGroupStarred`); a search flattens them. New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
   `After a pull request merges` segmented control, and disconnecting is a
-  ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
+  ghost row at the bottom that asks in a `ConfirmPopover` beside its button. Onboarding keeps the
   comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is

@@ -40,7 +40,15 @@ vi.mock('../../../../store', () => ({
     }),
 }));
 
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { PermissionsSettings } from './index';
+
+const renderSettings = () =>
+  render(
+    <ToastProvider>
+      <PermissionsSettings workspaceId={WORKSPACE_ID} />
+    </ToastProvider>,
+  );
 
 const WORKSPACE_ID = 'harborline' as WorkspaceId;
 
@@ -90,7 +98,7 @@ afterEach(cleanup);
 
 describe('PermissionsSettings', () => {
   it('starts on full access and lowers the default for new sessions', () => {
-    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    renderSettings();
 
     expect(screen.getByRole('radio', { name: /full access/i }).getAttribute('aria-checked')).toBe(
       'true',
@@ -100,7 +108,7 @@ describe('PermissionsSettings', () => {
   });
 
   it('keeps what each provider does behind one folded row', () => {
-    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    renderSettings();
 
     expect(screen.queryByRole('row', { name: /ask first/i })).toBeNull();
     fireEvent.click(
@@ -115,7 +123,7 @@ describe('PermissionsSettings', () => {
   });
 
   it('puts the providers that follow and ignore each rule next to it', async () => {
-    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    renderSettings();
 
     expect(await screen.findByText('Commands starting with "pnpm test"')).toBeDefined();
     expect(screen.getByText('Codex ignore it')).toBeDefined();
@@ -124,7 +132,7 @@ describe('PermissionsSettings', () => {
   });
 
   it('warns that a deny rule only stops Claude when another provider runs here', async () => {
-    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    renderSettings();
 
     expect(await screen.findByText('Deny rules only stop Claude')).toBeDefined();
   });
@@ -133,25 +141,42 @@ describe('PermissionsSettings', () => {
     mocks.state.sessions = [
       { workspaceId: WORKSPACE_ID, providerPreference: { defaultProvider: 'anthropic' } },
     ];
-    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    renderSettings();
 
     await screen.findByText('Commands starting with "git push"');
     expect(screen.queryByText('Deny rules only stop Claude')).toBeNull();
   });
 
-  it('removes a rule after an inline confirm', async () => {
-    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+  it('removes a rule at once and Undo puts it back', async () => {
+    mocks.upsert.mockImplementation(async (input: { readonly id: string }) =>
+      rule({ id: input.id as PermissionRuleId }),
+    );
+    renderSettings();
 
     await screen.findByText('Commands starting with "pnpm test"');
     fireEvent.click(
       screen.getByRole('button', { name: 'Remove rule: Commands starting with "pnpm test"' }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
+    expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith({ id: 'rule-1' }));
     await waitFor(() =>
       expect(screen.queryByText('Commands starting with "pnpm test"')).toBeNull(),
     );
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+
+    await waitFor(() =>
+      expect(mocks.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'rule-1',
+          scope: 'workspace',
+          patternTool: 'Bash',
+          patternArgsMatcher: 'pnpm test *',
+          decision: 'allow',
+        }),
+      ),
+    );
+    expect(await screen.findByText('Commands starting with "pnpm test"')).toBeDefined();
   });
 
   it('adds a deny rule from a suggestion for every workspace', async () => {
@@ -164,7 +189,7 @@ describe('PermissionsSettings', () => {
         decision: 'deny',
       }),
     );
-    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    renderSettings();
     await screen.findByText('Commands starting with "pnpm test"');
 
     fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));
@@ -200,7 +225,7 @@ describe('PermissionsSettings', () => {
         decidedAt: new Date(Date.now() - 120_000).toISOString(),
       },
     ]);
-    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    renderSettings();
 
     const list = await screen.findByRole('list', { name: 'Recent decisions' });
     expect(within(list).getByText('Allowed')).toBeDefined();
