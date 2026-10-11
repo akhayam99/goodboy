@@ -213,7 +213,17 @@ opens it on a mode. Commands is the first mode.
 In the composer, `$` lists the scripts of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then the `package.json` and
 `composer.json` scripts pinned for the project, by category. The Scripts lens
-lists the same set. Scripts that are not pinned stay on the workspace Projects
+lists the same set in two bands per project: **Services** (category `dev`, or a
+script named `start`, `serve`, `watch` or `preview`, decided by `isService`) and
+**Tasks** (the rest), each with a count. A running service row shows the last
+output line, uptime, CPU and memory (the monitor snapshot for the run's pid,
+polled only while the lens is open), its port as a link once a listener owned by
+the run exists, and **Stop** and **Restart**; an idle one shows its expected
+port as a chip, or `:5005 in use` in warning when another worktree holds it.
+A task row shows a result glyph, its duration and age, and the last line of a
+failure. A project with nothing pinned shows a dimmed **Suggested** band (its
+root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
+**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not

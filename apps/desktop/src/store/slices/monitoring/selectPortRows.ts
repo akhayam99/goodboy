@@ -48,7 +48,7 @@ const watchedOf = (state: Input): WatchedByProject => {
     const known = new Set(scanned.map((item) => item.port));
     const added = ports
       .filter((port) => !known.has(port))
-      .map((port) => ({ port, label: `:${port}`, source: 'user' as const }));
+      .map((port) => ({ port, label: `:${port}`, source: 'user' as const, relDir: '' }));
     merged[projectId] = [...scanned, ...added];
   }
   return merged;

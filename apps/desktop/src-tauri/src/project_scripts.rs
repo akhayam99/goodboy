@@ -349,6 +349,23 @@ fn scan(root: &Path) -> Result<Vec<ScriptGroup>, ScriptScanError> {
     Ok(groups)
 }
 
+pub(crate) fn package_script_bodies(root: &Path) -> Vec<(String, String, String)> {
+    let Ok(groups) = scan(root) else {
+        return Vec::new();
+    };
+    groups
+        .into_iter()
+        .filter(|group| group.source == ScriptSource::PackageJson)
+        .flat_map(|group| {
+            let rel_dir = group.rel_dir;
+            group
+                .scripts
+                .into_iter()
+                .map(move |script| (rel_dir.clone(), script.name, script.body))
+        })
+        .collect()
+}
+
 #[tauri::command]
 pub async fn project_scripts_scan(
     worktree_path: String,

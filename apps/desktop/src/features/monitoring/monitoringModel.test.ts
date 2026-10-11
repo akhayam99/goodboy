@@ -75,7 +75,7 @@ describe('portSummary', () => {
 describe('watchedPortSet', () => {
   it('merges scanned, watched and learned ports across projects', () => {
     const ports = watchedPortSet({
-      scanned: { p1: [{ port: 5005, label: 'web', source: 'env' }] },
+      scanned: { p1: [{ port: 5005, label: 'web', source: 'env', relDir: '' }] },
       watched: { p1: [5006] },
       learned: { p2: [3000] },
     });

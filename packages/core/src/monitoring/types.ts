@@ -44,6 +44,7 @@ export type WatchedPort = {
   readonly port: number;
   readonly label: string;
   readonly source: WatchedSource;
+  readonly relDir: string;
 };
 
 export type AttributionWorktree = {

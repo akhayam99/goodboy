@@ -302,8 +302,8 @@ export const LEDGER: ReadonlyArray<LedgerRow> = [
 
 export const SCANNED: Readonly<Record<string, ReadonlyArray<WatchedPort>>> = {
   [PAYMENTS_ID]: [
-    { port: 5005, label: 'web', source: 'env' },
-    { port: 5002, label: 'blog', source: 'vite' },
+    { port: 5005, label: 'web', source: 'env', relDir: '' },
+    { port: 5002, label: 'blog', source: 'vite', relDir: '' },
   ],
   [LEDGER_ID]: [],
   [NOTIFY_ID]: [],

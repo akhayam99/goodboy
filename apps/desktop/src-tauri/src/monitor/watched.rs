@@ -4,7 +4,8 @@ use std::path::Path;
 
 use regex::Regex;
 use serde::Serialize;
-use serde_json::Value;
+
+use crate::project_scripts::package_script_bodies;
 
 const MAX_FILE_BYTES: u64 = 1_048_576;
 const ENV_FILES: [&str; 3] = [".env", ".env.local", ".env.development"];
@@ -17,6 +18,7 @@ pub(crate) struct WatchedPort {
     pub(crate) port: u16,
     pub(crate) label: String,
     pub(crate) source: &'static str,
+    pub(crate) rel_dir: String,
 }
 
 fn read_capped(path: &Path) -> Option<String> {
@@ -43,22 +45,14 @@ fn script_port(body: &str) -> Option<u16> {
 }
 
 fn package_ports(root: &Path) -> Vec<WatchedPort> {
-    let Some(text) = read_capped(&root.join("package.json")) else {
-        return Vec::new();
-    };
-    let Ok(value) = serde_json::from_str::<Value>(&text) else {
-        return Vec::new();
-    };
-    let Some(scripts) = value.get("scripts").and_then(Value::as_object) else {
-        return Vec::new();
-    };
-    scripts
-        .iter()
-        .filter_map(|(name, body)| {
+    package_script_bodies(root)
+        .into_iter()
+        .filter_map(|(rel_dir, name, body)| {
             Some(WatchedPort {
-                port: script_port(body.as_str()?)?,
-                label: name.clone(),
+                port: script_port(&body)?,
+                label: name,
                 source: "script",
+                rel_dir,
             })
         })
         .collect()
@@ -86,6 +80,7 @@ fn env_ports(root: &Path) -> Vec<WatchedPort> {
                     port,
                     label: key.to_string(),
                     source: "env",
+                    rel_dir: String::new(),
                 });
             }
         }
@@ -105,6 +100,7 @@ fn vite_ports(root: &Path) -> Vec<WatchedPort> {
             port,
             label: "vite".to_string(),
             source: "vite",
+            rel_dir: String::new(),
         })
         .collect()
 }
@@ -170,6 +166,7 @@ fn compose_ports_in(text: &str) -> Vec<WatchedPort> {
                 port,
                 label: service.clone(),
                 source: "compose",
+                rel_dir: String::new(),
             });
         }
     }
@@ -193,7 +190,7 @@ pub(crate) fn scan(root: &Path) -> Vec<WatchedPort> {
         .chain(vite_ports(root))
         .chain(compose_ports(root));
     for item in found {
-        if seen.insert((item.port, item.source)) {
+        if seen.insert((item.port, item.source, item.rel_dir.clone())) {
             out.push(item);
         }
     }
@@ -262,6 +259,27 @@ mod tests {
                 (3000, "web", "script"),
             ]
         );
+    }
+
+    #[test]
+    fn workspace_scripts_keep_their_package_dir() {
+        let dir = TestDir::new();
+        dir.write(
+            "package.json",
+            r#"{"workspaces":["apps/web"],"scripts":{"dev":"vite -p 5173"}}"#,
+        );
+        fs::create_dir_all(dir.0.join("apps/web")).expect("create dir");
+        fs::write(
+            dir.0.join("apps/web/package.json"),
+            r#"{"scripts":{"dev":"vite -p 5174"}}"#,
+        )
+        .expect("write file");
+        let found = scan(&dir.0);
+        let keyed: Vec<(u16, &str)> = found
+            .iter()
+            .map(|item| (item.port, item.rel_dir.as_str()))
+            .collect();
+        assert_eq!(keyed, vec![(5173, ""), (5174, "apps/web")]);
     }
 
     #[test]

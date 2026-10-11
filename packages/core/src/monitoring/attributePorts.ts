@@ -142,7 +142,7 @@ const watchedSetFor = (
   }
   for (const port of learned[projectId] ?? []) {
     if (!set.has(port)) {
-      set.set(port, { port, label: `:${port}`, source: 'learned' });
+      set.set(port, { port, label: `:${port}`, source: 'learned', relDir: '' });
     }
   }
   return set;

@@ -79,7 +79,10 @@ const entry = (
 const run = (
   snapshot: MonitorSnapshot,
   ledger: ReadonlyArray<LedgerRow> = [],
-  watched: Record<string, ReadonlyArray<{ port: number; label: string; source: 'script' }>> = {},
+  watched: Record<
+    string,
+    ReadonlyArray<{ port: number; label: string; source: 'script'; relDir: string }>
+  > = {},
   learned: Record<string, ReadonlyArray<number>> = {},
 ): ReadonlyArray<PortRow> =>
   attributePorts({ snapshot, ledger, sessions, projects, watched, learned });
@@ -167,7 +170,7 @@ describe('attributePorts owners', () => {
 });
 
 describe('attributePorts watched set', () => {
-  const watched = { p1: [{ port: 5005, label: 'dev', source: 'script' as const }] };
+  const watched = { p1: [{ port: 5005, label: 'dev', source: 'script' as const, relDir: '' }] };
 
   it('returns a free row for a watched port nobody holds', () => {
     const rows = run(snap([], []), [], watched);

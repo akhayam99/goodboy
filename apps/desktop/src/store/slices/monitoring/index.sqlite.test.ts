@@ -238,7 +238,7 @@ describe('loadWatchedPorts', () => {
     stubStoryInvoke({
       monitor_watched_ports: ({ projectRoot }: { projectRoot: string }) =>
         projectRoot === LEDGER_CORE.rootPath
-          ? [{ port: 5173, label: 'dev', source: 'script' }]
+          ? [{ port: 5173, label: 'dev', source: 'script', relDir: '' }]
           : [],
     });
 
@@ -246,7 +246,7 @@ describe('loadWatchedPorts', () => {
 
     const state = useAppStore.getState();
     expect(state.monitorScanned[LEDGER_CORE.id]).toEqual([
-      { port: 5173, label: 'dev', source: 'script' },
+      { port: 5173, label: 'dev', source: 'script', relDir: '' },
     ]);
     expect(state.monitorWatched[LEDGER_CORE.id]).toEqual([3000]);
     expect(state.monitorLearned[LEDGER_CORE.id]).toEqual([5005]);
@@ -258,7 +258,9 @@ describe('selectors', () => {
   it('lists starred projects first and merges scan, user and learned ports', async () => {
     useAppStore.setState({
       monitorSnapshot: snapshotAt({ takenAt: 1 }),
-      monitorScanned: { [LEDGER_CORE.id]: [{ port: 1000, label: 'dev', source: 'script' }] },
+      monitorScanned: {
+        [LEDGER_CORE.id]: [{ port: 1000, label: 'dev', source: 'script', relDir: '' }],
+      },
       monitorWatched: { [NOTIFY_RELAY.id]: [9000] },
       monitorLearned: { [LEDGER_CORE.id]: [500] },
     });
