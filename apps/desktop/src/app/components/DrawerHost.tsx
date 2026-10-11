@@ -11,6 +11,7 @@ import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
 import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
 import { ReviewNotesDrawer } from '../../features/resolve/notes/components/ReviewNotesDrawer';
+import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
 import { FixRunLead } from '../../features/resolve/components/FixRunSummary/FixRunLead';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
@@ -136,6 +137,16 @@ export const DrawerHost = () => {
           mountPath={drawer.payload.mountPath}
           focusPath={drawer.payload.focusPath ?? null}
           focusThreadId={drawer.payload.focusThreadId ?? null}
+          onClose={closeDrawer}
+        />
+      );
+    case 'fix-comments':
+      return (
+        <FixCommentsDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          focusThreadId={drawer.payload.focusThreadId ?? null}
+          threadIds={drawer.payload.threadIds ?? null}
           onClose={closeDrawer}
         />
       );

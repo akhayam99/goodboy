@@ -65,6 +65,14 @@ export type DrawerContent =
       };
     }
   | {
+      readonly kind: 'fix-comments';
+      readonly payload: {
+        readonly mountId: MountId | null;
+        readonly focusThreadId?: string | null;
+        readonly threadIds?: ReadonlyArray<string>;
+      };
+    }
+  | {
       readonly kind: 'file-diff';
       readonly payload: { readonly source: FileDiffSource; readonly path: string | null };
     };

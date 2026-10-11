@@ -831,7 +831,12 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
     id: 'review.fix',
     world: 'resolve',
     open: reviewKey('review.fix', THREADS.constant),
-    lands: () => visible('region', 'Fix launch'),
+    lands: async () => {
+      await waitFor(
+        () => expect(selectOpenDrawer(useAppStore.getState())?.kind).toBe('fix-comments'),
+        WAIT,
+      );
+    },
   }),
   worldRow({
     id: 'review.skip',

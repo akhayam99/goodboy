@@ -51,6 +51,8 @@ type Params = {
   readonly style?: ResolverStyle;
   readonly contextWindow?: number | null;
   readonly batch?: ResolveAttemptBatch | null;
+  readonly name?: string;
+  readonly parentAgentId?: AgentId;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
 };
@@ -76,6 +78,8 @@ export const startFixAttempt = async ({
   style: requestedStyle,
   contextWindow = null,
   batch = null,
+  name,
+  parentAgentId,
   spawnAgent,
   setAgentConfig,
 }: Params): Promise<StartedFix> => {
@@ -133,7 +137,8 @@ export const startFixAttempt = async ({
   });
   try {
     const agentId = await spawnAgent(sessionId, {
-      name: threads.length > 1 ? `Resolve: ${threads.length} review comments` : args.name,
+      name: name ?? (threads.length > 1 ? `Resolve: ${threads.length} review comments` : args.name),
+      ...(parentAgentId !== undefined && { parentAgentId }),
       ...(choice.model !== undefined && { model: choice.model }),
       ...(choice.provider !== undefined && { provider: choice.provider }),
       ...(choice.effort !== undefined && { effort: choice.effort }),

@@ -86,7 +86,11 @@ export type ResolveAttempt = Readonly<{
   launchChoice: ResolveLaunchChoice | null;
 }>;
 
+export const RESOLVE_LAUNCH_MODES = ['apply', 'propose'] as const;
+export type ResolveLaunchMode = (typeof RESOLVE_LAUNCH_MODES)[number];
+
 export type ResolveLaunchChoice = Readonly<{
+  mode?: ResolveLaunchMode;
   provider: string | null;
   model: string | null;
   effort: string | null;

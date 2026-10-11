@@ -1,8 +1,9 @@
-import { ROW_INTERACTIVE, Checkbox, cn, inlineMarkdownText } from '@goodboy/ui';
-import { REVIEW_LAUNCH_LABEL } from '../../../reviewLaunchCopy';
-import { RESOLVE_COMMENT_UNAVAILABLE } from '../../../resolveQueueCopy';
-import { firstSentence } from '../firstSentence';
-import type { ReviewEntry } from '../useReviewEntries';
+import { ROW_INTERACTIVE, Checkbox, Chip, cn, inlineMarkdownText } from '@goodboy/ui';
+import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
+import { firstSentence } from '../ReviewFlow/firstSentence';
+import type { ReviewEntry } from '../ReviewFlow/useReviewEntries';
+import { isNoteEntry } from './commentFilter';
+import { FIX_COMMENTS_LABEL } from './fixCommentsCopy';
 
 type Props = {
   readonly entry: ReviewEntry;
@@ -10,23 +11,36 @@ type Props = {
   readonly onToggle: () => void;
 };
 
-const fileOf = ({ path }: { readonly path: string | null }): string | null =>
+const HOST_LABEL = {
+  github: 'On GitHub',
+  gitlab: 'On GitLab',
+  bitbucket: 'On Bitbucket',
+  note: FIX_COMMENTS_LABEL.noteChip,
+} as const;
+
+type FileParams = {
+  readonly path: string | null;
+};
+
+const fileOf = ({ path }: FileParams): string | null =>
   path === null ? null : (path.split('/').at(-1) ?? path);
 
-export const LaunchPanelRow = ({ entry, isIncluded, onToggle }: Props) => {
+export const FixCommentRow = ({ entry, isIncluded, onToggle }: Props) => {
   const note = entry.row.reviewerNote;
   const body = note === null ? null : inlineMarkdownText({ text: note.body });
   const title = body === null ? RESOLVE_COMMENT_UNAVAILABLE : firstSentence({ text: body });
   const file = fileOf({ path: note?.path ?? null });
+  const chip = isNoteEntry({ entry }) ? HOST_LABEL.note : HOST_LABEL[note?.source ?? 'github'];
   return (
     <Checkbox
       checked={isIncluded}
       onChange={onToggle}
-      ariaLabel={`${REVIEW_LAUNCH_LABEL.includeRow} ${note?.author ?? ''}`.trim()}
+      ariaLabel={`Include the comment by ${note?.author ?? 'unknown'}`}
       className={cn('w-full gap-3 rounded-md px-2 py-1', ROW_INTERACTIVE)}
       label={
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex min-w-0 items-baseline gap-2 text-meta">
+          <span className="flex min-w-0 items-center gap-2 text-meta">
+            <Chip tone="neutral" label={chip} />
             {note !== null && <span className="shrink-0 text-muted-foreground">{note.author}</span>}
             {file !== null && (
               <span className="min-w-0 truncate font-mono text-faint-foreground">
@@ -34,14 +48,12 @@ export const LaunchPanelRow = ({ entry, isIncluded, onToggle }: Props) => {
                 {note?.line == null ? '' : `:${note.line}`}
               </span>
             )}
-            <span className="ml-auto shrink-0 text-faint-foreground">{entry.word}</span>
           </span>
           <span
             className={cn(
               'min-w-0 truncate text-body',
-              isIncluded ? 'text-foreground' : 'text-faint-foreground line-through',
+              isIncluded ? 'text-foreground' : 'text-muted-foreground',
             )}
-            title={body ?? undefined}
           >
             {title}
           </span>
