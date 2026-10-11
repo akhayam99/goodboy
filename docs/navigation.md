@@ -519,7 +519,7 @@ mounts editors and takes a title.
 
 **The projects section shows which projects a session has materialized.** It
 lives in the session overview and always has the Add project action, even
-before the first mount. Mounted projects show as dense rows. The empty section
+before the first mount. Each mounted project is one band under the section eyebrow, with its worktrees as dense rows indented by one constant (`MOUNT_CHILD_INDENT`) so a branch glyph sits under the project name; merged and closed ones sit behind `Show finished (n)`. The empty section
 is its header with a one-line hint: turns run in the session folder until you
 add a project. Sessions are created lazily
 on the workspace ([concepts.md](concepts.md) → Lazy sessions), and this section
@@ -929,7 +929,8 @@ running.` on Merge, reads in the meta line as well as in the tooltip) over
 - **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
-  to that thing. The page segment (depth one, or `Session` when it is alone)
+  to that thing. A segment whose menu would hold fewer than two entries, rows plus
+  actions, is a plain crumb with no chevron. The page segment (depth one, or `Session` when it is alone)
   lists the session's pages with a count that names what it counts,
   grouped as pages, Tools and Linked. One pure table, `pageCountWordOf`
   (`features/session/pageCountWord.ts`), reads noun last and empty at zero:
@@ -2349,8 +2350,8 @@ run), so the crumb, the header and the body follow together and nothing of the
 branch it leaves carries over. `New branch` swaps the menu for a name field
 (empty names it automatically) and a `Create branch` that forks a worktree
 (`forkMount`) and lands on it on its landing tab; a folder project cannot fork and
-offers none. With one branch the chip has no chevron and its menu holds only
-`New branch`; with neither it is plain text.
+offers none. With one branch the chip has no chevron and opens the name field at
+once (a menu of one is not drawn); with neither it is plain text.
 
 The primary is the first that applies: `Rebase on main`
 (`Open terminal` while a rebase is stopped, with `Abort rebase` beside it),

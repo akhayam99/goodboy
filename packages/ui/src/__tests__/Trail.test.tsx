@@ -4,16 +4,35 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Circle } from 'lucide-react';
 import { Trail } from '../components/Trail';
-import type { CrumbMenuModel } from '../components/Trail/crumbMenuTypes';
+import type { CrumbMenuModel, CrumbMenuRow } from '../components/Trail/crumbMenuTypes';
 
 afterEach(cleanup);
+
+const rowOf = ({ id, label }: { readonly id: string; readonly label: string }): CrumbMenuRow => ({
+  id,
+  lead: { kind: 'icon', icon: Circle },
+  label,
+  secondary: null,
+  metaA: null,
+  state: null,
+  isCurrent: id === 'pages',
+  isDisabled: false,
+  indent: 0,
+  onSelect: vi.fn(),
+});
 
 const MENU: CrumbMenuModel = {
   title: 'Pages',
   context: null,
   count: null,
   triggerLabel: 'Switch page',
-  groups: [],
+  groups: [
+    {
+      id: 'pages',
+      label: null,
+      rows: [rowOf({ id: 'pages', label: 'Pages' }), rowOf({ id: 'runs', label: 'Runs' })],
+    },
+  ],
   actions: [],
   width: 'narrow',
   filterPlaceholder: null,

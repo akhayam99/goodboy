@@ -2,7 +2,7 @@ import { isHistoryRunActive } from '../../store/slices/history/isHistoryRunActiv
 import type { HistoryRun } from '../../store/slices/history/types';
 import { historyStopCause } from './historyStopCause';
 
-export type RebaseJobState =
+type RebaseJobState =
   | 'checking'
   | 'replaying'
   | 'merging'

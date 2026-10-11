@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { MOUNT_ROW_HEIGHT, mountGridTracksOf } from './mountGrid';
+import { MOUNT_CHILD_PAD, MOUNT_ROW_HEIGHT, MOUNT_ROW_PAD, mountGridTracksOf } from './mountGrid';
 import { MountTrackGrid } from './MountTrackGrid';
 import { MountSkeletonRows } from './MountSkeletonRows';
 
@@ -15,15 +15,15 @@ describe('mountGridTracksOf', () => {
   it.each([
     { index: 0, track: 'minmax(0,1fr)', name: 'branch, flexible' },
     { index: 1, track: '96px', name: 'pull request' },
-    { index: 2, track: '120px', name: 'changes' },
-    { index: 3, track: '176px', name: 'action' },
+    { index: 2, track: '96px', name: 'changes' },
+    { index: 3, track: '200px', name: 'action' },
   ])('track $index is $track ($name)', ({ index, track }) => {
     expect(mountGridTracksOf()[index]).toBe(track);
   });
 
   it('has four tracks and joins them into one template', () => {
     expect(mountGridTracksOf()).toHaveLength(4);
-    expect(mountGridTracksOf().join(' ')).toBe('minmax(0,1fr) 96px 120px 176px');
+    expect(mountGridTracksOf().join(' ')).toBe('minmax(0,1fr) 96px 96px 200px');
   });
 
   it.each([
@@ -32,17 +32,31 @@ describe('mountGridTracksOf', () => {
     { label: 'Push 12 commits', textPx: 95, hasIcon: true },
     { label: 'Rebase on main', textPx: 90, hasIcon: true },
     { label: 'Create PR', textPx: 57, hasIcon: true },
-  ])('the action track fits "$label" beside the overflow menu', ({ textPx, hasIcon }) => {
+  ])('the action track fits "$label" beside Close branch and the menu', ({ textPx, hasIcon }) => {
     const BUTTON_PADDING_PX = 16;
     const ICON_WITH_GAP_PX = hasIcon ? 20 : 0;
     const GAP_PX = 4;
+    const CLOSE_BUTTON_PX = 24;
     const OVERFLOW_MENU_PX = 28;
-    const ROW_INSET_PX = 10;
     const track = Number.parseInt(mountGridTracksOf()[3] ?? '0', 10);
 
     expect(track).toBeGreaterThanOrEqual(
-      BUTTON_PADDING_PX + ICON_WITH_GAP_PX + textPx + GAP_PX + OVERFLOW_MENU_PX + ROW_INSET_PX,
+      BUTTON_PADDING_PX +
+        ICON_WITH_GAP_PX +
+        textPx +
+        GAP_PX +
+        CLOSE_BUTTON_PX +
+        GAP_PX +
+        OVERFLOW_MENU_PX +
+        MOUNT_ROW_PAD,
     );
+  });
+
+  it('indents a child by the project glyph and its gap, so it sits under the name', () => {
+    const PROJECT_GLYPH_PX = 14;
+    const GLYPH_GAP_PX = 8;
+
+    expect(MOUNT_CHILD_PAD - MOUNT_ROW_PAD).toBe(PROJECT_GLYPH_PX + GLYPH_GAP_PX);
   });
 
   it('fixes a mount row at 36px', () => {
@@ -71,7 +85,7 @@ describe('the mount grids', () => {
     rows.forEach((row) => expect(row.style.height).toBe(`${MOUNT_ROW_HEIGHT}px`));
   });
 
-  it.each(['index.tsx', 'ProjectMountGroup.tsx', 'MountSkeletonRows.tsx'])(
+  it.each(['ProjectMountGroup.tsx', 'MountSkeletonRows.tsx'])(
     'draws the columns of %s through MountTrackGrid, never by hand',
     (file) => {
       const source = sourceOf({ file });
