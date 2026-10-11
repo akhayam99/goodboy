@@ -6,7 +6,11 @@ import {
   languageForPath,
   type SyntaxLines,
 } from '../../lib/highlight';
-import { MAX_HIGHLIGHT_LINES, exceedsHighlightCap } from '../../lib/highlight/caps';
+import {
+  MAX_HIGHLIGHT_LINES,
+  MAX_HIGHLIGHT_LINE_LENGTH,
+  exceedsHighlightCap,
+} from '../../lib/highlight/caps';
 
 type Props = {
   readonly text: string;
@@ -50,10 +54,10 @@ const linesOf = ({ text }: TextParams): ReadonlyArray<string> => {
 
 const plainReasonOf = ({ lineCount, source }: ReasonParams): string | null => {
   if (lineCount > MAX_HIGHLIGHT_LINES) {
-    return 'Shown without colours: over 5,000 lines.';
+    return `Shown without colours: over ${MAX_HIGHLIGHT_LINES.toLocaleString('en-US')} lines.`;
   }
   if (exceedsHighlightCap(source)) {
-    return 'Shown without colours: a line is over 1,000 characters.';
+    return `Shown without colours: a line is over ${MAX_HIGHLIGHT_LINE_LENGTH.toLocaleString('en-US')} characters.`;
   }
   return null;
 };
