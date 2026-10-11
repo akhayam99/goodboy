@@ -40,7 +40,7 @@ export const useExploreChanges = ({ sessionId, mountPath }: Params): ExploreChan
     let isCancelled = false;
     void loadMountChangedFiles({ worktreePath: mountPath, baseBranch, revision }).then(
       (summary) => {
-        if (isCancelled || summary === null) {
+        if (isCancelled || summary === null || !Array.isArray(summary.entries)) {
           return;
         }
         setLoaded({ mountPath, entries: summary.entries });

@@ -121,6 +121,16 @@ describe('useExploreChanges', () => {
     expect(result.current.changes.count).toBe(2);
   });
 
+  it('reads an answer without entries as no answer', async () => {
+    h.invoke.mockImplementation(async () => []);
+
+    const { result } = renderHook(() => useExploreChanges({ sessionId: SESSION, mountPath: DIR }));
+
+    await waitFor(() => expect(changedCalls()).toHaveLength(1));
+    expect(result.current.isAvailable).toBe(false);
+    expect(result.current.changes.count).toBe(0);
+  });
+
   it('asks nothing without a mount', () => {
     const { result } = renderHook(() => useExploreChanges({ sessionId: SESSION, mountPath: null }));
 
