@@ -7,7 +7,7 @@ import { WorkTimeCell } from '../../../workTreeModel/components/WorkTimeCell';
 import type { PlanStepEstimate } from '../WorkflowBuilderView/planEstimates';
 import { ROLE_LABEL, type AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
-import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
+import { RoutingModelBlock } from '../../../../shared/components/RoutingModelBlock';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { StepTreeGutter } from './StepTreeGutter';
 import type { StepLaneSpan } from './StepTreeLane';
@@ -126,7 +126,9 @@ export const StepRow = ({
           <WorkMeta
             isPlanned
             isCostRange={estimate !== undefined}
-            routing={<RoutingLabel isColumn provider={provider} model={model} effort={effort} />}
+            routing={
+              <RoutingModelBlock isPlanned provider={provider} model={model} effort={effort} />
+            }
             time={
               estimate === undefined ? undefined : <WorkTimeCell time={estimate?.time ?? null} />
             }

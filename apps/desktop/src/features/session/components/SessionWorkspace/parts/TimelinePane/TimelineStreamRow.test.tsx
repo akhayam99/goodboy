@@ -25,6 +25,7 @@ import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import { TimelineModelCell } from './TimelineModelCell';
 import { TimelineRowMeta } from './TimelineRowMeta';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
+import { ActionColumnContext } from './ActionColumnContext';
 import { TimelineStreamRow } from './TimelineStreamRow';
 
 type TypedStringParams = {
@@ -118,14 +119,16 @@ type RenderParams = {
 
 const renderRow = ({ onOpen = vi.fn(), action = null }: RenderParams = {}) =>
   render(
-    <TimelineStreamRow
-      item={itemOf()}
-      rail={railOf()}
-      railWidth={32}
-      sessionId={SESSION_ID}
-      openTarget={{ label: 'Open chat', open: onOpen }}
-      action={action}
-    />,
+    <ActionColumnContext.Provider value={action !== null}>
+      <TimelineStreamRow
+        item={itemOf()}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={{ label: 'Open chat', open: onOpen }}
+        action={action}
+      />
+    </ActionColumnContext.Provider>,
   );
 
 afterEach(cleanup);
@@ -373,7 +376,7 @@ describe('TimelineStreamRow, hover cards', () => {
           <TimelineRowMeta
             model={
               <TimelineModelCell
-                summary={{ text: 'Sonnet 5.5', providers: ['anthropic'] }}
+                summary={{ name: 'Sonnet 5.5', detail: null, providers: ['anthropic'] }}
                 card={<span>Models card body</span>}
               />
             }

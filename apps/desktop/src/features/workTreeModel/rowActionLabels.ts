@@ -1,0 +1,15 @@
+export const ROW_ACTION_LABEL = {
+  answer: 'Answer',
+  skip: 'Skip',
+  openPlan: 'Open plan',
+  open: 'Open',
+  start: 'Start',
+  resume: 'Resume',
+  continue: 'Continue',
+  retry: 'Retry',
+  viewDiff: 'View diff',
+  copyPath: 'Copy path',
+  copied: 'Copied',
+  copyFailed: 'Failed',
+  relink: 'Re-link',
+} as const satisfies Record<string, string>;

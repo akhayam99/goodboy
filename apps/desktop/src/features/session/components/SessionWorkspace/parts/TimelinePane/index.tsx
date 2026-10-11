@@ -21,6 +21,7 @@ import { TimelineEmpty } from './TimelineEmpty';
 import { TimelineRevealRow } from './TimelineRevealRow';
 import { TimelineRow } from './TimelineRow';
 import { TimelineSkeleton } from './TimelineSkeleton';
+import { ActionColumnContext } from './ActionColumnContext';
 import { useTimelineRowProps } from './useTimelineRowProps';
 import { useTimelineRows } from './useTimelineRows';
 
@@ -63,7 +64,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
     [groups, setAnchored, showAllAnchored],
   );
   const rows = useTimelineRows({ session, view, query, explode });
-  const { rowPropsFor, openNeedsYou } = useTimelineRowProps({
+  const { rowPropsFor, openNeedsYou, hasActionColumn } = useTimelineRowProps({
     session,
     explode,
     rows,
@@ -91,76 +92,79 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   );
 
   return (
-    <section aria-label="Activity" className="@container/activity flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <SegmentedTabs
-            ariaLabel="Activity view"
-            size="xs"
-            options={VIEW_OPTIONS}
-            value={view}
-            onChange={setView}
+    <ActionColumnContext.Provider value={hasActionColumn}>
+      <section aria-label="Activity" className="@container/activity flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <SegmentedTabs
+              ariaLabel="Activity view"
+              size="xs"
+              options={VIEW_OPTIONS}
+              value={view}
+              onChange={setView}
+            />
+            <SessionCostChip sessionId={sessionId} />
+            {hasUnreadAgents ? (
+              <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
+                <CheckCheck size={ICON_SIZE.row} aria-hidden />
+                Mark all seen
+              </Button>
+            ) : null}
+          </div>
+          {actions}
+        </div>
+        {view === 'log' ? (
+          <Input
+            type="search"
+            aria-label="Search the log"
+            placeholder="Search the log"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
           />
-          <SessionCostChip sessionId={sessionId} />
-          {hasUnreadAgents ? (
-            <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
-              <CheckCheck size={ICON_SIZE.row} aria-hidden />
-              Mark all seen
-            </Button>
-          ) : null}
-        </div>
-        {actions}
-      </div>
-      {view === 'log' ? (
-        <Input
-          type="search"
-          aria-label="Search the log"
-          placeholder="Search the log"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-      ) : (
-        <NeedsYouBlock owners={owners} onOpen={openNeedsYou} />
-      )}
-      {isLoading ? (
-        <TimelineSkeleton />
-      ) : viewEntries.length === 0 ? (
-        <TimelineEmpty
-          view={view}
-          isSearching={isSearching}
-          hasLogEntries={hasLogEntries}
-          onSeeLog={() => setView('log')}
-          onClearSearch={() => setQuery('')}
-        />
-      ) : (
-        <div className="flex flex-col gap-1">
-          <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-            <div ref={listRef} className="@container flex flex-col [overflow-anchor:none]">
-              {rows.laidOutItems.map((item, index) => {
-                const props = rowPropsFor({ item, index });
-                if (props === null) {
-                  return null;
-                }
-                const slot = item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
-                if (slot === undefined) {
-                  return <TimelineRow key={item.id} {...props} />;
-                }
-                return (
-                  <TimelineRevealRow
-                    key={item.id}
-                    groupId={slot.groupId}
-                    isLeaving={explode.leavingIds.has(slot.groupId)}
-                    isShown={wasShown.has(item.id)}
-                    onSettled={explode.settle}
-                  >
-                    <TimelineRow {...props} />
-                  </TimelineRevealRow>
-                );
-              })}
-            </div>
-          </WorkTimeProvider>
-        </div>
-      )}
-    </section>
+        ) : (
+          <NeedsYouBlock owners={owners} onOpen={openNeedsYou} />
+        )}
+        {isLoading ? (
+          <TimelineSkeleton />
+        ) : viewEntries.length === 0 ? (
+          <TimelineEmpty
+            view={view}
+            isSearching={isSearching}
+            hasLogEntries={hasLogEntries}
+            onSeeLog={() => setView('log')}
+            onClearSearch={() => setQuery('')}
+          />
+        ) : (
+          <div className="flex flex-col gap-1">
+            <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
+              <div ref={listRef} className="@container flex flex-col [overflow-anchor:none]">
+                {rows.laidOutItems.map((item, index) => {
+                  const props = rowPropsFor({ item, index });
+                  if (props === null) {
+                    return null;
+                  }
+                  const slot =
+                    item.kind === 'row' || item.kind === 'more' ? item.explode : undefined;
+                  if (slot === undefined) {
+                    return <TimelineRow key={item.id} {...props} />;
+                  }
+                  return (
+                    <TimelineRevealRow
+                      key={item.id}
+                      groupId={slot.groupId}
+                      isLeaving={explode.leavingIds.has(slot.groupId)}
+                      isShown={wasShown.has(item.id)}
+                      onSettled={explode.settle}
+                    >
+                      <TimelineRow {...props} />
+                    </TimelineRevealRow>
+                  );
+                })}
+              </div>
+            </WorkTimeProvider>
+          </div>
+        )}
+      </section>
+    </ActionColumnContext.Provider>
   );
 };

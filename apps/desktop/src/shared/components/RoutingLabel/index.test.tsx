@@ -92,7 +92,6 @@ describe('RoutingLabel', () => {
   it('underlines the whole cell and names the plan in one tooltip, with no strike through', () => {
     render(
       <RoutingLabel
-        isColumn
         provider="anthropic"
         model="claude-sonnet-5"
         effort="medium"
@@ -101,7 +100,6 @@ describe('RoutingLabel', () => {
     );
 
     const cell = screen.getByTestId('routing-divergence');
-    expect(cell.getAttribute('data-meta-column')).toBe('routing');
     expect(cell.className).toContain('decoration-dotted');
     expect(cell.innerHTML).not.toContain('line-through');
     expect(tooltipTextOf({ element: cell })).toBe(
@@ -150,7 +148,6 @@ describe('RoutingLabel', () => {
   it('names an observed effort that left the plan', () => {
     render(
       <RoutingLabel
-        isColumn
         provider="anthropic"
         model="claude-sonnet-5"
         effort="medium"
@@ -167,7 +164,6 @@ describe('RoutingLabel', () => {
   it('never names a divergence for an effort nobody observed', () => {
     render(
       <RoutingLabel
-        isColumn
         provider="anthropic"
         model="claude-sonnet-5"
         effort="medium"
@@ -176,87 +172,5 @@ describe('RoutingLabel', () => {
     );
 
     expect(screen.queryByTestId('routing-divergence')).toBeNull();
-  });
-
-  describe('as a row column', () => {
-    it('is one routing column holding the model and one detail, with no chip fill', () => {
-      const { container } = render(
-        <RoutingLabel isColumn provider="anthropic" model="claude-sonnet-5" effort="high" />,
-      );
-
-      expect(container.querySelectorAll('[data-meta-column]')).toHaveLength(1);
-      expect(partOf(container, 'name')).toBe('Sonnet 5');
-      expect(partOf(container, 'detail')).toBe('High');
-      expect(container.innerHTML).not.toContain('bg-muted');
-    });
-
-    it('shows only the first detail and leaves the rest to the tooltip', () => {
-      const { container } = render(
-        <RoutingLabel
-          isColumn
-          provider="cursor"
-          model="claude-4.6-sonnet-medium-thinking"
-          effort="medium"
-        />,
-      );
-
-      expect(container.querySelectorAll('[data-routing-part="detail"]')).toHaveLength(1);
-      expect(partOf(container, 'detail')).toBe('Thinking');
-    });
-
-    it('draws a planned effort in faint and an observed one in the row tone', () => {
-      const { container, rerender } = render(
-        <RoutingLabel isColumn provider="anthropic" model="claude-sonnet-5" effort="high" />,
-      );
-      const detailOf = () =>
-        container.querySelector('[data-routing-part="detail"]')!.parentElement!;
-      expect(detailOf().className).toContain('text-faint-foreground');
-
-      rerender(
-        <RoutingLabel
-          isColumn
-          provider="anthropic"
-          model="claude-sonnet-5"
-          effort="high"
-          isEffortObserved
-        />,
-      );
-      expect(detailOf().className).not.toContain('text-faint-foreground');
-    });
-
-    it('holds the column empty when nothing is routed yet', () => {
-      const { container } = render(<RoutingLabel isColumn />);
-
-      expect(container.textContent).toBe('');
-      expect(container.children).toHaveLength(1);
-    });
-
-    it('keeps the glyph and the name by default, so other lists read the same', () => {
-      const { container } = render(
-        <RoutingLabel isColumn provider="anthropic" model="claude-sonnet-5" effort="high" />,
-      );
-
-      expect(container.querySelector('svg')).not.toBeNull();
-      expect(
-        container.querySelector('[data-routing-part="name"]')?.classList.contains('sr-only'),
-      ).toBe(false);
-    });
-
-    it('hides the name visually but keeps it for screen readers and the tooltip', () => {
-      const { container } = render(
-        <RoutingLabel
-          isColumn
-          hideName
-          provider="anthropic"
-          model="claude-sonnet-5"
-          effort="high"
-        />,
-      );
-
-      const name = container.querySelector('[data-routing-part="name"]');
-      expect(name?.classList.contains('sr-only')).toBe(true);
-      expect(name?.textContent).toBe('Sonnet 5');
-      expect(partOf(container, 'detail')).toBe('High');
-    });
   });
 });
