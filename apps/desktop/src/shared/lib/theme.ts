@@ -129,23 +129,25 @@ const applyPreference = ({ preference }: { readonly preference: ThemePreference 
 
 type ThemeState = {
   readonly preference: ThemePreference;
-  readonly setPreference: (preference: ThemePreference) => void;
-  readonly toggleTheme: () => void;
 };
 
-export const useThemeStore = create<ThemeState>((set, get) => ({
+export const useThemeStore = create<ThemeState>(() => ({
   preference: 'dark',
-  setPreference: (preference) => {
-    themePref.write(preference);
-    applyPreference({ preference });
-    if (get().preference !== preference) {
-      set({ preference });
-    }
-  },
-  toggleTheme: () => {
-    get().setPreference(getAppliedTheme() === 'dark' ? 'light' : 'dark');
-  },
 }));
+
+type SwitchThemeParams = {
+  readonly to: ThemePreference;
+};
+
+export const switchTheme = ({ to }: SwitchThemeParams): void => {
+  themePref.write(to);
+  applyPreference({ preference: to });
+  if (useThemeStore.getState().preference !== to) {
+    useThemeStore.setState({ preference: to });
+  }
+};
+
+export const oppositeOfApplied = (): Theme => (getAppliedTheme() === 'dark' ? 'light' : 'dark');
 
 const isThemePreference = (value: string | null): value is ThemePreference =>
   value === 'light' || value === 'dark' || value === 'system';

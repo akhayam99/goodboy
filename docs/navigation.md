@@ -1131,11 +1131,15 @@ only drop under zoom.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
-- **Theme is not in the bar.** The theme changes a few times a week, not per
-  click, and the swap is one paint (`theme-switch-is-one-paint`), so a
-  permanent icon bought little. The three-way choice (dark, light, Match
-  system) lives in Settings > App > General and in the palette (`Switch to
-light mode`, `Switch to dark mode`). No shortcut is bound to it.
+- **Theme is in the bar.** A 28px square `ThemeToggle` sits between spend and
+  the bell, because the owner switches often: Sun in light, Moon in dark,
+  Monitor while following the system. The tooltip names the state and the
+  action (`Dark theme. Switch to light`, `Matching system (dark). Switch to
+light`) and a click writes the explicit opposite of what shows. Settings >
+  App > General keeps the three-way choice and the palette keeps its entry;
+  all three call `switchTheme({ to })` in `shared/lib/theme.ts`, the only
+  writer. The swap stays one paint (`theme-switch-is-one-paint`). No shortcut
+  is bound to it.
 - The top bar never edits. Reporting a bug, the setup checklist, the update
   and the version are about Goodboy itself, so they live at the foot of the
   column: the Goodboy row and the bug icon beside it.
