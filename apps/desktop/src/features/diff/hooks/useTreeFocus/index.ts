@@ -12,7 +12,7 @@ export type TreeFocus = {
   readonly dismiss: () => void;
 };
 
-const TREE_SELECTOR = 'nav';
+const TREE_SELECTOR = '[role="tree"]';
 const FILTER_SELECTOR = '[data-diff-filter]';
 
 type HostParams = {
@@ -20,9 +20,7 @@ type HostParams = {
 };
 
 const focusRow = ({ host }: HostParams): void => {
-  const tree = host.querySelector<HTMLElement>(TREE_SELECTOR);
-  const current = tree?.querySelector<HTMLElement>('[aria-current="true"]');
-  (current ?? tree?.querySelector<HTMLElement>('button'))?.focus();
+  host.querySelector<HTMLElement>(TREE_SELECTOR)?.focus();
 };
 
 const focusFilterField = ({ host }: HostParams): void => {

@@ -104,6 +104,7 @@ export type SessionDiff = {
   readonly refresh: () => void;
   readonly viewed: DiffViewed;
   readonly focusPath: string | null;
+  readonly focusThreadId: string | null;
   readonly clearFocus: () => void;
 };
 
@@ -128,6 +129,7 @@ export const useSessionDiff = ({
   const [metaError, setMetaError] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [focusPath, setFocusPath] = useState<string | null>(null);
+  const [focusThreadId, setFocusThreadId] = useState<string | null>(null);
   const mountId = useAppStore((s) =>
     sessionId === null
       ? null
@@ -149,7 +151,10 @@ export const useSessionDiff = ({
     hasPickedView.current = true;
     setViewState(next);
   }, []);
-  const clearFocus = useCallback(() => setFocusPath(null), []);
+  const clearFocus = useCallback(() => {
+    setFocusPath(null);
+    setFocusThreadId(null);
+  }, []);
 
   useEffect(() => {
     if (isGitAware && previousSummarizer.current === 'running' && summarizer.status !== 'running') {
@@ -170,6 +175,7 @@ export const useSessionDiff = ({
           : { kind: 'commit', sha: diffFocus.sha },
     );
     setFocusPath(diffFocus.path);
+    setFocusThreadId(diffFocus.kind === 'branch' ? (diffFocus.threadId ?? null) : null);
   }, [diffFocus]);
 
   useEffect(() => {
@@ -317,6 +323,7 @@ export const useSessionDiff = ({
     refresh,
     viewed,
     focusPath,
+    focusThreadId,
     clearFocus,
   };
 };

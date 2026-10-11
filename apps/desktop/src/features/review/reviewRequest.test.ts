@@ -74,7 +74,7 @@ describe('requestReview with a fix request', () => {
 describe('requestReview on note threads', () => {
   const NOTE = 'note:mock-note-backoff-cap';
 
-  it('opens Files with the notes drawer for a fix on notes, and keeps the launch request', () => {
+  it('sends a fix on notes to Comments and keeps the launch request', () => {
     const navigate = vi.fn();
     useAppStore.setState({ navigate, currentSessionId: SESSION_ID });
 
@@ -83,31 +83,22 @@ describe('requestReview on note threads', () => {
     expect(useAppStore.getState().reviewLaunchRequests[SESSION_ID]?.threadIds).toEqual([NOTE]);
     expect(navigate).toHaveBeenCalledOnce();
     const [call] = navigate.mock.calls[0] ?? [];
-    expect(call?.to).toMatchObject({
-      view: { target: { kind: 'branch', tab: 'files' } },
-    });
-    expect(call?.drawer).toMatchObject({
-      kind: 'review-notes',
-      sessionId: SESSION_ID,
-      payload: { focusThreadId: NOTE },
-    });
+    expect(call?.to).toMatchObject({ view: { target: { kind: 'branch', tab: 'comments' } } });
+    expect(call?.drawer).toBeUndefined();
   });
 
-  it('does not navigate again when the notes drawer is already open', () => {
+  it('opens no drawer for a fix on notes, whatever drawer is open', () => {
     const navigate = vi.fn();
     useAppStore.setState({
       navigate,
       currentSessionId: SESSION_ID,
-      drawer: {
-        kind: 'review-notes',
-        sessionId: SESSION_ID,
-        payload: { mountPath: null },
-      },
+      drawer: { kind: 'ask', sessionId: SESSION_ID, payload: null },
     });
 
     fix([NOTE]);
 
-    expect(navigate).not.toHaveBeenCalled();
+    const [call] = navigate.mock.calls[0] ?? [];
+    expect(call?.drawer).toBeUndefined();
   });
 
   it('sends a mixed fix request to the Comments tab', () => {
@@ -121,7 +112,7 @@ describe('requestReview on note threads', () => {
     expect(call?.drawer).toBeUndefined();
   });
 
-  it('opens the notes drawer for a compose request on a note', () => {
+  it('sends a compose request on a note to its thread in Comments', () => {
     vi.useFakeTimers();
     const navigate = vi.fn();
     useAppStore.setState({ navigate, currentSessionId: SESSION_ID });
@@ -133,8 +124,9 @@ describe('requestReview on note threads', () => {
     });
 
     const [call] = navigate.mock.calls[0] ?? [];
-    expect(call?.to).toMatchObject({ view: { target: { tab: 'files' } } });
-    expect(call?.drawer).toMatchObject({ kind: 'review-notes' });
+    expect(call?.to).toMatchObject({
+      view: { target: { tab: 'comments', threadId: NOTE } },
+    });
     vi.useRealTimers();
   });
 });

@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
-import type { MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/types';
-import { aSession } from '@goodboy/types/testing';
+import type { DiffComment, MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/types';
+import { TEST_NOW, aSession } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import type { MountGithubState, SessionGithubState } from '../../types';
 import { branchPlace } from '../navigation/place';
@@ -527,9 +527,20 @@ describe('a destination made of several threads', () => {
 describe('a destination made of notes', () => {
   const NOTE_THREAD = 'note:mock-note-backoff-cap';
   const notes: ReviewDestination = { kind: 'notes', threadIds: [NOTE_THREAD] };
+  const NOTE: DiffComment = {
+    id: 'mock-note-backoff-cap',
+    sessionId: SESSION_ID,
+    filePath: 'src/retry/backoff.ts',
+    body: 'Cap the backoff at 30 seconds.',
+    status: 'open',
+    createdAt: TEST_NOW,
+    anchor: { side: 'new', lineNumber: 14 },
+    authorKind: 'user',
+  };
 
-  it('opens Files with the notes drawer and no review target', async () => {
+  it('lands on Files at the note, with no drawer and no review target, before a pull request', async () => {
     const live = createHarness();
+    live.store.setState({ diffComments: { [SESSION_ID]: [NOTE] } });
 
     const outcome = await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -538,29 +549,45 @@ describe('a destination made of notes', () => {
 
     expect(outcome).toEqual({ kind: 'opened' });
     expect(live.state.navigate).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, mountPath: null, tab: 'files' }),
-      drawer: {
-        kind: 'review-notes',
+      to: branchPlace({
         sessionId: SESSION_ID,
-        payload: { mountPath: null, focusPath: null, focusThreadId: NOTE_THREAD },
-      },
+        mountPath: null,
+        tab: 'files',
+        threadId: NOTE_THREAD,
+        focus: { kind: 'branch', path: 'src/retry/backoff.ts', threadId: NOTE.id },
+      }),
     });
     expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();
     expect(live.state.refreshSessionPr).not.toHaveBeenCalled();
   });
 
-  it('treats a batch of note threads as notes and a mixed batch as comments', async () => {
+  it('lands on the thread in Comments once the branch has a pull request', async () => {
+    const live = createHarness();
+    live.store.setState({ diffComments: { [SESSION_ID]: [NOTE] } });
+    live.seePr({ [SESSION_ID]: githubWithPr(248) });
+
+    await live.actions.openReviewTarget({ sessionId: SESSION_ID, destination: notes });
+
+    expect(live.state.navigate).toHaveBeenCalledWith({
+      to: branchPlace({
+        sessionId: SESSION_ID,
+        mountPath: null,
+        tab: 'comments',
+        threadId: NOTE_THREAD,
+      }),
+    });
+  });
+
+  it('treats a batch of note threads as notes, never a drawer, and a mixed batch as comments', async () => {
     const live = createHarness();
 
     await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
       destination: { kind: 'threads', mountId: null, threadIds: [NOTE_THREAD, 'note:another'] },
     });
-    expect(live.state.navigate).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        drawer: expect.objectContaining({ kind: 'review-notes' }),
-      }),
-    );
+    const [noteCall] = live.state.navigate.mock.calls.at(-1) ?? [];
+    expect(noteCall?.to).toMatchObject({ view: { target: { tab: 'files' } } });
+    expect(noteCall?.drawer).toBeUndefined();
 
     await live.actions.openReviewTarget({
       sessionId: SESSION_ID,
@@ -571,7 +598,7 @@ describe('a destination made of notes', () => {
     });
   });
 
-  it('switches to the mount of the notes before it opens the drawer', async () => {
+  it('switches to the mount of the notes before it lands on them', async () => {
     const live = createHarness();
 
     await live.actions.openReviewTarget({

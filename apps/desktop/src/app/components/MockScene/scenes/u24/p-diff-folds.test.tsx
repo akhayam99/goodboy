@@ -53,28 +53,25 @@ describe('the u24 diff folds scene', () => {
     expect(files.textContent).toBe('Files12/39');
     expect(within(files).getByRole('img', { name: '12 of 39 viewed' })).toBeDefined();
     expect(
-      within(rail).getAllByRole('button', { name: /roundHalfEven\.ts/ }).length,
+      within(rail).getAllByRole('treeitem', { name: /roundHalfEven\.ts/ }).length,
     ).toBeGreaterThan(0);
   });
 
   it('remembers a closed folder when the scene mounts again', async () => {
     const first = renderScene();
     const rail = await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
-    const folder = within(within(rail).getByRole('list')).getAllByRole('button', {
-      expanded: true,
-    })[0] as HTMLElement;
-    expect(
-      within(within(rail).getByRole('list')).queryAllByRole('button', { expanded: false }),
-    ).toHaveLength(0);
+    const tree = within(rail).getByRole('tree');
+    const folder = within(tree).getAllByRole('treeitem', { expanded: true })[0] as HTMLElement;
+    expect(within(tree).queryAllByRole('treeitem', { expanded: false })).toHaveLength(0);
 
-    fireEvent.click(folder);
+    fireEvent.click(within(folder).getByRole('button'));
     expect(folder.getAttribute('aria-expanded')).toBe('false');
     first.unmount();
 
     renderScene();
     const again = await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
     expect(
-      within(within(again).getByRole('list')).getAllByRole('button', { expanded: false }),
+      within(within(again).getByRole('tree')).getAllByRole('treeitem', { expanded: false }),
     ).toHaveLength(1);
   });
 });

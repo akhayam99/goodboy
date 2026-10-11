@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId, selectMountById } from '../project-mounts/selectors';
 import { branchPlace } from '../navigation/place';
+import { noteLandingPlace } from './noteLandingPlace';
 import { setPullRequestMode } from './setPullRequestMode';
 import {
   REVIEW_HOME,
@@ -79,16 +80,12 @@ export const openReviewTarget = async ({
       }
     }
     get().navigate({
-      to: branchPlace({ sessionId, mountPath, tab: 'files' }),
-      drawer: {
-        kind: 'review-notes',
+      to: noteLandingPlace({
+        state: get(),
         sessionId,
-        payload: {
-          mountPath,
-          focusPath: null,
-          focusThreadId: reviewThreadIds({ destination })[0] ?? null,
-        },
-      },
+        mountPath,
+        threadId: reviewThreadIds({ destination })[0] ?? null,
+      }),
     });
     return { kind: 'opened' };
   }

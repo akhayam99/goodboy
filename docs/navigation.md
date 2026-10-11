@@ -2003,8 +2003,9 @@ on you] }`. Any other agent keeps its page, and its pane tab is part of the
   mount and no pull request: Review focuses the first thread of the set it
   has, and the set stays in `reviewSelections[sessionId]`. The destination
   `{ kind: 'notes', threadIds }`, like a `threads` set made only of notes,
-  opens the Files tab of the branch with the Notes drawer on the first note, so
-  it lands on your notes even with a pull request open. Back, or Up when
+  lands on the first note (`noteLandingPlace`): the Files section at its card,
+  scrolled to it, when the branch has no pull request, and its thread in
+  Comments when it has one. No drawer opens. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and a fix run transcript come back through Back.
@@ -2479,10 +2480,9 @@ page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Files`, which opens the Files tab of the Branch page on that mount with the file in focus.
-`review-notes` (payload `{ mountPath, focusPath, focusThreadId }`) lists your
-notes of a branch, apart from the pull request comments; the Branch page
-section, Review notes, owns it. A note without a branch sits in `Unassigned
-notes` on the Session overview.
+There is no drawer for notes: a note lives on its line in Files and as a row in
+Comments, and `Fix comments` (kind `fix-comments`) is the one fix action. A note
+without a branch sits in `Unassigned notes` on the Session overview.
 
 ## The Branch page
 
@@ -2616,8 +2616,8 @@ opens the picker that searches the host's collaborators), Checks (one line, `4 p
 1 failing`, that opens the Checks section; `Checks unknown` when the read failed), Linked issues
 (each with its relation, `Closes #412`; `Link issue` opens the popover) and Base (`main`, `3 behind main`
 with `Rebase on main`). The state is the chip and the readiness word is the blocked reason in the
-header's meta line; the file count is the rail's. Without a pull request the section is a
-first-time empty state (`No pull request yet`, one sentence) over the create form, which
+header's meta line; the file count is the rail's. Without a pull request the section is the create
+form alone, with no block above it (the state reads `No pull request` in the header chip), and it
 fills the same grid: one input card (the title from the session goal as a large
 borderless field, the description growing from 6 to 16 lines, and in the card's
 bottom row `Write with Scribe` with its routing and a faint `Markdown`), then
@@ -2653,9 +2653,15 @@ request): merge offers its three strategies, `Close` declines, and the draft and
 reopen controls are left out. `E` edits the title in scope
 `pullRequest`, live only on this section.
 
-**Comments.** The list (`Needs you`, `Working`, `Ready to push`, `Open`, `Done`, `Left open on GitHub`;
-the pull request conversation only, your notes live in the Notes drawer of
-Files) and the open thread with the code
+**Comments.** The section header holds a segmented control `All 9 · Notes 3 · On GitHub 6`
+(the host's name; the host tab only while a pull request exists) and `Open · Resolved`,
+with `Fix comments N` at its right, the one fix action. The list (`Needs you`,
+`Working`, `Ready to push`, `Open`, `Left open on GitHub`; `Done` shows under
+`Resolved`) lists your notes and the pull request threads together, each row with
+its file and line, the first line of the body, a kind chip (`Note`, `On GitHub`),
+the author and its age. A note keeps `Post to GitHub` (it moves the note into
+the pull request's review draft and closes it) and `Delete` under its thread, and a
+note shows even while the host is still loading or failed to load. The open thread has the code
 around the commented line above it (`hunkAround`, linking to Files). Comments exists when a pull
 request exists or at least one comment exists, a local note or a thread open or resolved; its count is
 the notes alone while there is no pull request. The
@@ -2672,7 +2678,7 @@ and an open drawer. The rail counts (Comments, Files, Commits) read a muted `-`
 named `Not loaded` until the data arrives, then the number, never 0 for an
 unknown (`RailCount`). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
-draft is not there yet, so the Commits count is a number on the Comments section too. Fix launches from the list or the thread bar, never from Files.
+draft is not there yet, so the Commits count is a number on the Comments section too. `Fix comments N`, in the section header and in the Files toolbar, is the one fix launch.
 
 **Files.** The branch against its base, on the column like every other section, with
 the change tree in the rail, under the sections, outside the column.
@@ -2686,19 +2692,25 @@ behind the `Sections` button, `F` and `/` open it on the tree or the filter (`us
 picking a file closes it. The group reads the filter field (`/`) with the sort of the tree
 beside it, `All | Unviewed N | Commented N` (one at a time), the tree and `Next unviewed N`;
 the viewed ring and `12/39` are the Files row's, so the head no longer prints them. A pane that has not been measured yet reads as docked.
-The toolbar on the column reads `Compared with main · All 5 commits`, then
-`Display`, `Notes N` and `Write review`. Folders first, then files, alphabetical,
+The toolbar on the column (36 high, the diff scrolls under it) reads `Compared with main · All 5 commits ⌄`,
+then `Display ⌄` and `Fix comments N` (every open note and host thread, in every
+state; hidden at 0). Folders first, then files, alphabetical,
 and the diff follows the same order. A chain of folders with one child is one
 row (`src/ledger/export`). A folder row holds a progress ring (empty, partial,
 or filled with a check once every file in it is viewed, tooltip `3 of 5
 viewed`), the path and, only while it is collapsed, its file count and its
 `+N −N` in one muted tone (no green or red; an open folder shows none, its files
-carry them); a file row holds a small
-check when viewed (its name goes grey) or an amber dot when it changed after
-it was viewed, the name (a rename shows `from <old path>` under it, a deleted
-file is struck through), its open notes, `+N −N` and the status letter.
-A long name is cut in the middle so its extension stays (the full path is the tooltip),
-and one key hint line ends the tree (`? all keys` opens the full list).
+carry them); a file row (28 high, 8 per level with a 1px guide) leads with the viewed
+toggle (a checkbox button, `Viewed: <name>`; an amber dot when the file changed after
+it was viewed; none on a merged or closed pull request), then the name (a rename shows
+`from <old path>` under it, a deleted file is struck through), a comment count chip whose
+tooltip names the kinds (`2 notes, 1 on GitHub`), `+N −N` only at a rail of 340 or more, and
+the status letter. A name too long for the rail keeps its first six characters and its last
+six with the extension chain (`Statem…ceCard.test.tsx`, `cutFileName`); the full name stays
+for a screen reader and the full path is the tooltip. The tree is a `tree`: Up and Down move
+its cursor, Home and End go to the ends, Right and Left open, close and climb, `Enter` jumps
+the diff and keeps focus in the tree, `Space` toggles viewed (or folds a folder) and `Esc`
+returns to the diff. One key hint line ends the tree (`? all keys` opens the full list).
 Under the head a filter field (`/` and `T` focus it, `Esc` clears it) matches a
 subsequence of the path, `All | Unviewed N | Commented N` narrows it further,
 and `Folders | Kind` (beside the field) regroups the tree under Source, Tests, Config and
@@ -2730,10 +2742,17 @@ a new array with the same paths, so marking a file viewed or a note changing
 neither shortens the page nor drops an open composer. Folder row ids start with
 `dir:`, so a folder and a file with the same path never share a key. The tree and the diff share one `useReviewState` (active
 file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTree.ts`
-builds the rows. `Viewed`, notes on
-lines and files, the `Notes N` drawer and `Write review` (which swaps
-the tab body for the review form with line drafts). It carries no Fix, Push,
-Rewrite or `PR #N` control.
+builds the rows. The file cards sit 8 apart on the 960 column (never the pane's width); a
+card header is 44 high on the panel surface and holds the fold chevron, the status square,
+the path (folders faint, the name whole, cut from the left, with a real tooltip) and
+`+N −N`, then three 28px controls that are always there: `Viewed` (a checkbox with the
+word; checked folds the file, tooltip `Changed since you viewed it` when it went stale),
+`Comment` with the count of both kinds, and one `⋯` (Open in editor, Open in a drawer, Show
+whole file, Copy path). A merged or closed pull request hides Viewed, Comment, Reply and
+the other writes. Split needs a column content of 880 or more, otherwise `Display` says
+`Split needs a wider window`. The write review form is not on this toolbar: it opens from the
+pull request's `Write review` action and swaps the tab body for the review form with line
+drafts. The section carries no Fix, Push, Rewrite or `PR #N` control of its own.
 
 **Commits.** The home of history: the branch commits and the rewriter are one
 surface (`CommitsHistory`), with `Backups` (secondary, `xs`) alone at the right
@@ -2873,11 +2892,11 @@ file records the copy's git admin folder when the copy is made; the rewriter's
 roots and the cleanup use it only while it is `<common>/worktrees/<name>` and
 its `gitdir` names exactly that reserved copy, never the copy's own `.git`.
 Codex rewriter turns also lose write access to the temp folders. One line sits
-above the code and replaces the old toolbar and its counts: `Comparing <base> ←
-<branch> · All N commits ▾` on the left (the base is the mount's own base branch,
+above the code and replaces the old toolbar and its counts: `Compared with <base> ·
+All N commits ⌄` on the left (the base is the mount's own base branch,
 never a fixed `main`; a commit view reads `Commit abc1234`, the working tree
-`Working tree`, `Staged only` or `Unstaged only`), and `Display ▾`, `Notes N`
-and `Write review` on the right, because the view decides which files you see,
+`Working tree`, `Staged only` or `Unstaged only`), and `Display ⌄` and `Fix comments N`
+on the right, because the view decides which files you see,
 not what you do to the branch. `Display` holds `Unified | Split` and `Wrap long
 lines` (on by default, saved as `goodboy:diff-wrap`; split always wraps). The
 file count and the `+N -M` sums live in the change tree only. The diff scope has its own
@@ -2918,14 +2937,13 @@ start from it. Each file has a sticky header (status letter, path, `from <old pa
 changes, comment count, a visible `Comment on file` button, `Viewed`, `⋯` with
 Open in editor, Copy path, Comment on file); a viewed file collapses and opens again when you unmark it, from the
 header or from anywhere else, and generated or binary files start collapsed.
-`Comment on file` (the header button, the `⋯` entry, and a button on the file's
-tree row on hover or keyboard focus) opens a composer under the header and
-scrolls to it. It always saves a local note on the file (the same note a line
+`Comment` (the header button, with the count of both kinds; the tree rows carry no comment
+button) opens a composer under the header and scrolls to it. It always saves a local note on the file (the same note a line
 gets, without an anchor), with a pull request or without one; the composer reads
 `Note on this file` and `Add note` in both cases. The note sits under the file
-header, counts in the header and the tree row, and lists in the Notes drawer
-with the file path and no line. Reaching the pull request is explicit: `Move N
-to review draft` in the drawer turns a file note into a `pr_review_drafts` row
+header, counts in the header and the tree row, and lists in Comments
+with the file path and no line. Reaching the pull request is explicit: `Post to GitHub` under the note
+in Comments turns a file note into a `pr_review_drafts` row
 with `line` 0 (no migration), sent with the next review as a GitHub `FILE`
 thread (pending review, `addPullRequestReviewThread` with `subjectType: FILE`,
 then submit) or a GitLab discussion with `position_type: file`. A file draft
@@ -2935,11 +2953,12 @@ Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
 `+ Add note` on a line saves the note with the project and branch of the active
-mount (`diff_comments.project_id` and `branch`, m223). A note shows `Close note`
-and `Delete` in the diff (Delete acts at once and offers Undo, which posts the same note again); Fix lives on the note's item in the Notes drawer. While a fixer
-works on a note, Close note and Delete are disabled with "A fixer is working on
-this note". Close note goes through `closeResolvedNote`, the same path the
-Notes drawer uses. The Files tab shows only the notes of its own branch; a note
+mount (`diff_comments.project_id` and `branch`, m223). A note shows `Edit`,
+`Close note` and `Delete` in the diff (`Edit` rewrites the text through
+`updateDiffCommentBody`; Delete acts at once and offers Undo, which posts the same note again); the one fix action is `Fix comments` in the toolbar. While a fixer
+works on a note, Edit, Close note and Delete are disabled with "A fixer is working on
+this note". Close note goes through `closeResolvedNote`, the same path
+Comments uses. The Files tab shows only the notes of its own branch; a note
 written before m223 is assigned to a branch only when a resolver run on a known
 mount used it, and the rest wait in `Unassigned notes` on the Session overview,
 each with `Move to` and `Discard`. `Move to` names the branch when the session
@@ -2958,32 +2977,21 @@ in the diff toolbar holds Discard review, which confirms. The actions are
 the `writeReview` kind of the action registry. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 
-**Review notes.** Your notes, apart from the pull request, in a right drawer of
-the Files tab (kind `review-notes`, default width, one drawer at a time). The
-Comments tab holds the pull request conversation only, so resolving a note never
-touches a provider thread. `Notes N` (secondary, `sm`) sits in the Files toolbar
-left of `Write review`, N being the open notes of the displayed branch, hidden at
-0 and a toggle; the note count on a file row in the tree opens the drawer scrolled
-to that file. Saving a note never opens the drawer, it only updates the count and
-the tree row. The drawer reads `Your notes` with `N open`; `Fix N` is its one
-primary (one fix run on the selected notes, all the open and fixable ones by
-default, each with a check when there are two or more) and `Show closed`
-is a labelled toggle; with a pull request, `⋯` holds `Move N to review draft` and
-`Show closed`. Notes are grouped by
-file, each the same review comment thread Comments draws, with `Jump to file`
-(the Files tab at the file): `Open note` (`Fix`, `Close`, `Delete` with Undo),
-working (the run line above the list holds `Stop` and `Open transcript`), ready
-(`Accept` keeps the fix on the branch and closes the note, `Skip`, `Close the
-note`; a note has no reply to write), `Couldn't fix` (`Retry`) and the run's
-question, answered inline. The lane line (`useLaneStatus`) sits above the list, so
-a note fix and a pull request comment fix stack in one lane and read the same
-in both places; a chain accept that crosses kinds names both, `Accept 3 fixes ·
-1 is a note`. Older file drafts, written before notes took over Comment on file,
-show one quiet line at the end, `2 older drafts are in your review draft`, with
-`Open review draft`. The doors that used to land a note on Comments land here:
-`openReviewTarget` for a `notes` destination (or a `threads` one made of notes),
-`fixRunTranscript` of a note thread (Files with the transcript drawer) and a fix
-request on notes. Opening the run transcript from a note replaces the drawer.
+**Notes and host threads in Files.** The diff draws both kinds of thread under their line, in one
+card shell (`CommentThread`), told apart by words and glyph, never by colour alone. A
+note is the `You` tile, the chip `Note`, its state and its age, with `Edit`, `Close note` and
+`Delete`; a host thread is the host's glyph, the author's avatar and name, the chip `On GitHub`
+(`On GitLab`, `On Bitbucket`), `Open` or `Resolved`, `3 replies` with the replies listed, and
+`Reply` (an inline composer posting through the reply verb, only where the host can
+take a reply), `Resolve` (only where it can resolve) and `Open in Comments`. A thread
+carries an outcome slot after its kind chip, which `Fix comments` fills with the state of a fix.
+Outdated host threads stay out of the diff and read `Outdated` in Comments. Threads of every host
+with threads show, not only GitHub's (`useDiffReviewThreads`). There is no
+Notes drawer: a note's home is its line, and Comments lists every thread. The doors that used to land
+a note in a drawer land on the note: Files at its card (the card scrolls into view and takes focus) when
+the branch has no pull request, its thread in Comments when it has one (`openReviewTarget` for a
+`notes` destination, `reviewRequest` for a compose request, `Open in Files` from a thread).
+Opening the run transcript of a note keeps its drawer beside Files.
 
 ## The Scripts lens
 

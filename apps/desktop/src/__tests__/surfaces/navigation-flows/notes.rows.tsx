@@ -150,7 +150,7 @@ const attemptOf = ({
   launchChoice: null,
 });
 
-export const startFakeNoteFix = async ({
+const startFakeNoteFix = async ({
   sessionId,
   threadIds,
 }: {
@@ -202,34 +202,14 @@ export const startFakeNoteFix = async ({
   return { batchId: MOUNT_PATH_BATCH, launchId: 'notes-launch', agentId: first.agentId };
 };
 
-const finishFakeRun = ({ sessionId }: Ctx): void => {
-  const attempts = (useAppStore.getState().sessionResolveAttempts[sessionId] ?? []).map(
-    (attempt): ResolveAttempt => ({ ...attempt, phase: 'finished', endedAt: Date.now() }),
-  );
-  useAppStore.setState({
-    sessionResolveAttempts: { [sessionId]: attempts },
-    sessionPhaseRuns: { [sessionId]: [] },
-  });
-  writeQueue({
-    sessionId,
-    patch: (entry) => ({
-      ...entry,
-      thread: { ...entry.thread, state: 'fixed', stage: 'proposed', disposition: 'fix' },
-    }),
-  });
-};
-
-const drawerPanel = (): HTMLElement | null => screen.queryByRole('region', { name: 'Your notes' });
-
-const addNoteOnFile = async ({
-  file,
-  body,
-}: {
+type NoteTarget = {
   readonly file: string;
   readonly body: string;
-}): Promise<void> => {
-  const tree = await screen.findByRole('navigation', { name: 'Changed files' });
-  await click(within(tree).getByRole('button', { name: `Comment on ${file}` }));
+};
+
+const addNoteOnFile = async ({ file, body }: NoteTarget): Promise<void> => {
+  const card = await screen.findByRole('region', { name: new RegExp(`${file}$`) }, WAIT);
+  await click(within(card).getByRole('button', { name: 'Comment' }));
   const field = await screen.findByRole('textbox', { name: /Note on this file/ });
   fireEvent.change(field, { target: { value: body } });
   await settle();
@@ -237,9 +217,9 @@ const addNoteOnFile = async ({
   await settle();
 };
 
-const hasNoteCount = async (count: number): Promise<void> => {
+const hasFixComments = async (count: number): Promise<void> => {
   await waitFor(
-    () => expect(screen.getByRole('button', { name: `Notes ${count}` })).toBeDefined(),
+    () => expect(screen.getByRole('button', { name: `Fix comments ${count}` })).toBeDefined(),
     WAIT,
   );
 };
@@ -249,8 +229,8 @@ const SECOND_FILE = 'applyWebhook.ts';
 
 export const NOTES_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'notes: Files counts the notes, the drawer opens on demand and Comments never lists them',
-    covers: ['navigate', 'toggleDrawer'],
+    name: 'notes: Files counts the notes in Fix comments, and Comments lists them with no pull request',
+    covers: ['navigate', 'openDrawer'],
     seed: 'issue',
     open: async (ctx) => {
       installNotesStore(ctx);
@@ -259,38 +239,28 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
       await branchTab('files')(ctx);
       await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
       await addNoteOnFile({ file: SECOND_FILE, body: 'Log the duplicate once' });
-      await hasNoteCount(2);
-      expect(drawerPanel()).toBeNull();
+      await hasFixComments(2);
+      expect(useAppStore.getState().drawer).toBeNull();
 
-      await clickButton('Notes 2');
-      const panel = await screen.findByRole('region', { name: 'Your notes' }, WAIT);
-      await waitFor(() => expect(within(panel).getByText('2 open')).toBeDefined(), WAIT);
-      await click(within(panel).getByRole('button', { name: 'Fix 2' }));
-      await waitFor(
-        () =>
-          expect(within(panel).getByTestId('resolve-run-status').textContent).toContain(
-            'Fixing 1 of 2',
-          ),
-        WAIT,
-      );
-
-      finishFakeRun(ctx);
-      await settle();
-      await click(within(panel).getAllByRole('button', { name: 'Close the note' })[0]!);
-      await hasNoteCount(1);
+      await clickButton('Fix comments 2');
+      await waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('fix-comments'), WAIT);
+      useAppStore.getState().closeDrawer();
 
       await click(await findSection(/^Comments/));
     },
     lands: async (ctx) => {
       await branchTab('comments')(ctx);
-      expect(await screen.findByText('No pull request yet', undefined, WAIT)).toBeDefined();
-      expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
-      expect(screen.queryByText('Log the duplicate once')).toBeNull();
-      expect(screen.queryByText('Cap the retries at three')).toBeNull();
+      expect(
+        (await screen.findAllByText(/Cap the retries at three/, undefined, WAIT)).length,
+      ).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Log the duplicate once/).length).toBeGreaterThan(0);
+      expect(screen.queryByText('No pull request yet')).toBeNull();
+      expect(screen.queryByRole('tab', { name: /^On GitHub/ })).toBeNull();
+      expect(screen.getByRole('button', { name: /^Fix comments/ })).toBeDefined();
     },
   },
   {
-    name: 'notes: the door of a note thread lands on Files with the drawer open',
+    name: 'notes: the door of a note thread lands on Files at the note, with no drawer, before a pull request',
     covers: ['openReviewTarget'],
     seed: 'issue',
     open: async (ctx) => {
@@ -306,8 +276,32 @@ export const NOTES_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('files')(ctx);
-      const panel = await screen.findByRole('region', { name: 'Your notes' }, WAIT);
-      expect(within(panel).getByText('1 open')).toBeDefined();
+      expect(await screen.findByRole('article', { name: /^Note from You/ }, WAIT)).toBeDefined();
+      expect(screen.getByText('Cap the retries at three')).toBeDefined();
+      expect(useAppStore.getState().drawer).toBeNull();
+    },
+  },
+  {
+    name: 'notes: the door of a note thread lands on its thread in Comments once the branch has a pull request',
+    covers: ['openReviewTarget'],
+    seed: 'pr',
+    open: async (ctx) => {
+      installNotesStore(ctx);
+      await openCrumb(/^Branch/);
+      await click(await findSection(/^Files/));
+      await branchTab('files')(ctx);
+      await addNoteOnFile({ file: FIRST_FILE, body: 'Cap the retries at three' });
+      await click(await findSection(/^Commits/));
+      const threadId = fakeNotes[0]?.threadId ?? '';
+      await openReviewThread({ sessionId: ctx.sessionId, threadId });
+      await settle();
+    },
+    lands: async (ctx) => {
+      await branchTab('comments')(ctx);
+      expect(
+        (await screen.findAllByText(/Cap the retries at three/, undefined, WAIT)).length,
+      ).toBeGreaterThan(0);
+      expect(useAppStore.getState().drawer).toBeNull();
     },
   },
   {

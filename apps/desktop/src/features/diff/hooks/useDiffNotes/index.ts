@@ -11,11 +11,6 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-export type DiffNotes = {
-  readonly comments: DiffComments;
-  readonly fixes: ReadonlyArray<NoteFix>;
-};
-
 const threadOf = ({ fix }: { readonly fix: NoteFix }): DiffThread => {
   const { note } = fix;
   const isDone = fix.isClosed || fix.group === 'done';
@@ -27,10 +22,12 @@ const threadOf = ({ fix }: { readonly fix: NoteFix }): DiffThread => {
     tone: fix.tone,
     author: 'You',
     isAgent: false,
+    source: 'note',
+    host: null,
     createdAt: note.createdAt,
     statusLabel: fix.word,
     isResolved: isDone,
-    canEdit: false,
+    canEdit: !isDone && !fix.isLocked,
     canRestore: true,
     canClose: !isDone,
     canReopen: fix.canReopen,
@@ -40,16 +37,17 @@ const threadOf = ({ fix }: { readonly fix: NoteFix }): DiffThread => {
   };
 };
 
-export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
+export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
   const fixes = useNoteFixes({ sessionId });
   const addDiffComment = useAppStore((s) => s.addDiffComment);
   const closeResolvedNote = useAppStore((s) => s.closeResolvedNote);
   const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
+  const editDiffComment = useAppStore((s) => s.editDiffComment);
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
   const askAgent = useAskAgent({ sessionId });
   const showToast = useShowToast();
 
-  const comments = useMemo<DiffComments>(() => {
+  return useMemo<DiffComments>(() => {
     const threadIdOf = new Map(fixes.map((fix) => [fix.note.id, fix.threadId] as const));
     return {
       threads: fixes.map((fix) => threadOf({ fix })),
@@ -68,6 +66,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
         void closeResolvedNote({ sessionId, threadId });
       },
       onReopen: (id) => void reopenDiffComment(sessionId, id),
+      onEdit: (id, body) => void editDiffComment(sessionId, id, body),
       onDelete: (id) => {
         const note = fixes.find((fix) => fix.note.id === id)?.note;
         void deleteDiffComment(sessionId, id).then(() => {
@@ -90,11 +89,10 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
     askAgent,
     closeResolvedNote,
     deleteDiffComment,
+    editDiffComment,
     fixes,
     reopenDiffComment,
     sessionId,
     showToast,
   ]);
-
-  return { comments, fixes };
 };

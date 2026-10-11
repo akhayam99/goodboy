@@ -15,8 +15,8 @@ type Props = {
   readonly filterRef: RefObject<HTMLInputElement | null>;
   readonly unviewedOnly: boolean;
   readonly onUnviewedOnly: (next: boolean) => void;
-  readonly notesOnly: boolean;
-  readonly onNotesOnly: (next: boolean) => void;
+  readonly commentedOnly: boolean;
+  readonly onCommentedOnly: (next: boolean) => void;
   readonly group: TreeGroup;
   readonly onGroup: (group: TreeGroup) => void;
   readonly shown: number;
@@ -43,8 +43,8 @@ export const TreeHead = ({
   filterRef,
   unviewedOnly,
   onUnviewedOnly,
-  notesOnly,
-  onNotesOnly,
+  commentedOnly,
+  onCommentedOnly,
   group,
   onGroup,
   shown,
@@ -63,11 +63,11 @@ export const TreeHead = ({
     if (unviewedOnly) {
       return 'unviewed';
     }
-    return notesOnly ? 'commented' : 'all';
+    return commentedOnly ? 'commented' : 'all';
   };
   const choose = (next: Show): void => {
     onUnviewedOnly(next === 'unviewed');
-    onNotesOnly(next === 'commented');
+    onCommentedOnly(next === 'commented');
   };
   return (
     <div className="flex flex-col gap-2 px-2 pb-2">

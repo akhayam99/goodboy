@@ -22,9 +22,6 @@ export const REVIEW_BULK_LABEL = {
   undo: 'Undo',
 } as const;
 
-export const openCommentsLine = ({ count }: { readonly count: number }): string =>
-  plural({ count, one: 'open comment', many: 'open comments' });
-
 export const recommendedAnswersLabel = ({ count }: { readonly count: number }): string =>
   `Use the recommended answers (${count})`;
 

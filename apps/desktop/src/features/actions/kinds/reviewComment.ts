@@ -25,6 +25,7 @@ import {
   sessionPlace,
 } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
+import { diffThreadIdOf } from '../../diff/lib/threadIds';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
 import { laneAcceptCountOf, laneAcceptNotesOf } from '../../resolve/laneAcceptCount';
 import { acceptUpToLabel } from '../../resolve/laneCopy';
@@ -254,7 +255,12 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
           to: branchPlace({
             sessionId: facts.sessionId,
             tab: 'files',
-            focus: { kind: 'branch', path: facts.path ?? '' },
+            threadId: facts.threadId,
+            focus: {
+              kind: 'branch',
+              path: facts.path ?? '',
+              threadId: diffThreadIdOf({ threadId: facts.threadId }),
+            },
           }),
         }),
     },

@@ -22,7 +22,6 @@ type Props = {
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly status: WorktreeStatus | null;
   readonly baseBranch?: string | null;
-  readonly branch?: string | null;
   readonly loading?: boolean;
 };
 
@@ -50,7 +49,6 @@ type ViewLabelParams = {
   readonly view: DiffView;
   readonly commits: ReadonlyArray<BranchCommit>;
   readonly baseBranch: string | null;
-  readonly branch: string | null;
 };
 
 type ViewEqualsParams = {
@@ -77,7 +75,7 @@ const SCOPE_LABEL: Record<'working' | 'unstaged' | 'staged' | 'all', string> = {
 
 const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
 
-const viewLabel = ({ view, commits, baseBranch, branch }: ViewLabelParams): string => {
+const viewLabel = ({ view, commits, baseBranch }: ViewLabelParams): string => {
   if (view.kind === 'working') {
     return SCOPE_LABEL[view.scope];
   }
@@ -91,7 +89,7 @@ const viewLabel = ({ view, commits, baseBranch, branch }: ViewLabelParams): stri
     return `Commit ${view.sha.slice(0, 7)}`;
   }
 
-  return `Comparing ${baseWord(baseBranch)} ← ${branch ?? 'this branch'}`;
+  return `Compared with ${baseWord(baseBranch)}`;
 };
 
 const commitsLabel = ({
@@ -140,7 +138,6 @@ export const DiffViewSelector = ({
   commits,
   status,
   baseBranch = null,
-  branch = null,
   loading,
 }: Props) => {
   const now = useNow(30_000);
@@ -327,7 +324,7 @@ export const DiffViewSelector = ({
     }
   };
 
-  const label = viewLabel({ view, commits, baseBranch, branch });
+  const label = viewLabel({ view, commits, baseBranch });
   const countLabel = commitsLabel({ view, commits });
   let optionIndex = -1;
 
@@ -338,10 +335,12 @@ export const DiffViewSelector = ({
       ariaLabel="Diff view"
       className="flex flex-col bg-subtle"
       trigger={
-        <Tooltip content="Change diff view" isSuppressed={open}>
+        <Tooltip content="Change diff view" isSuppressed={open} anchorClassName="min-w-0">
           <button
             type="button"
             onClick={toggle}
+            aria-haspopup="dialog"
+            aria-expanded={open}
             className={cn(
               'inline-flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-label text-muted-foreground',
               'hover:bg-hover hover:text-foreground',
