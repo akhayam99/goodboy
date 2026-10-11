@@ -1,5 +1,6 @@
-import { Button, Textarea } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { PromptField } from '../../../../shared/components/PromptField';
 import { useAppStore } from '../../../../store';
 import { OUTCOME_ACTION } from '../../commentOutcomeCopy';
 import { postOutcomeReply } from '../../postOutcomeReply';
@@ -42,13 +43,14 @@ export const OutcomeReply = ({ sessionId, entry, reply, isNote }: Props) => {
       {isNote ? (
         reply !== '' && <p className="text-body text-muted-foreground">{reply}</p>
       ) : (
-        <Textarea
+        <PromptField
+          kind="document"
+          label={OUTCOME_ACTION.reply}
+          value={draft.reply}
           minRows={2}
           maxRows={6}
-          autoGrow
-          value={draft.reply}
-          aria-label={OUTCOME_ACTION.reply}
-          onChange={(event) => draft.setReply(event.target.value)}
+          disabled={isBusy}
+          onChange={draft.setReply}
         />
       )}
       <div className="flex items-center gap-2">

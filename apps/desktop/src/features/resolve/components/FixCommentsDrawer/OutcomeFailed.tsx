@@ -32,7 +32,7 @@ export const OutcomeFailed = ({ sessionId, entry, sentence, routing, onStarted }
           isBusy={launch.isStarting}
           onClick={() => void launch.start(mode)}
         >
-          {OUTCOME_ACTION.tryAgain}
+          {OUTCOME_ACTION.retry}
         </Button>
       </div>
       {launch.error !== null && (

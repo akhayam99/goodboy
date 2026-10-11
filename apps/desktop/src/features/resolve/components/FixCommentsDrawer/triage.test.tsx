@@ -96,7 +96,7 @@ describe('the triage outcomes in the Fix comments drawer', () => {
     expect(view.getByRole('button', { name: 'Post reply' })).toBeDefined();
     expect(view.getByRole('button', { name: 'Resolve without reply' })).toBeDefined();
     expect(view.getByRole('button', { name: 'Close note' })).toBeDefined();
-    expect(view.getByRole('button', { name: 'Try again' })).toBeDefined();
+    expect(view.getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(view.getByText('It conflicts with a fix you accepted before')).toBeDefined();
   });
 });

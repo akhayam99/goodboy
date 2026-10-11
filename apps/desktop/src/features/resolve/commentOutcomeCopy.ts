@@ -29,7 +29,7 @@ export const OUTCOME_ACTION = {
   resolveWithoutReply: 'Resolve without reply',
   answer: 'Answer',
   askOnHost: 'Ask on GitHub',
-  tryAgain: 'Try again',
+  retry: 'Retry',
   reply: 'Reply',
   answerField: 'Your answer',
   working: 'The agent is working on this comment.',

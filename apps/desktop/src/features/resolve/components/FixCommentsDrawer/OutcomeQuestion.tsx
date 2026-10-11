@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Button, Textarea } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { PromptField } from '../../../../shared/components/PromptField';
 import { useAppStore } from '../../../../store';
 import { launchKeyOf } from '../../../../store/slices/resolve/resolveLaunch';
 import { OUTCOME_ACTION } from '../../commentOutcomeCopy';
@@ -48,14 +49,14 @@ export const OutcomeQuestion = ({ sessionId, entry, text, isNote }: Props) => {
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <p className="text-body text-foreground">{text}</p>
-      <Textarea
+      <PromptField
+        kind="document"
+        label={OUTCOME_ACTION.answerField}
+        value={answer}
         minRows={2}
         maxRows={4}
-        autoGrow
-        value={answer}
-        aria-label={OUTCOME_ACTION.answerField}
-        placeholder={OUTCOME_ACTION.answerField}
-        onChange={(event) => setAnswer(event.target.value)}
+        disabled={isBusy}
+        onChange={setAnswer}
       />
       <div className="flex items-center gap-2">
         <Button

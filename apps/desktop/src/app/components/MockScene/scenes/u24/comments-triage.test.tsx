@@ -51,7 +51,7 @@ describe('comments-triage scenes', () => {
     expect(within(drawer).getByRole('button', { name: 'Apply 2 fixes' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Post 1 reply' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Answer' })).toBeDefined();
-    expect(within(drawer).getByRole('button', { name: 'Try again' })).toBeDefined();
+    expect(within(drawer).getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(within(drawer).getByText('2 fixes proposed, 1 question, 2 replies')).toBeDefined();
   });
 
