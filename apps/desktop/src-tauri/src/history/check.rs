@@ -52,6 +52,23 @@ fn plural_files(count: usize) -> &'static str {
     }
 }
 
+pub(super) fn expected_tree(
+    cwd: &Path,
+    input: &CheckInput<'_>,
+    is_rebase: bool,
+) -> (Option<String>, Vec<String>) {
+    if !is_rebase {
+        return (tree_of(cwd, input.old_head).ok(), Vec::new());
+    }
+    let merged = supports_merge_tree_base()
+        .then(|| merge_in_memory(cwd, input.base, input.start, input.old_head).ok())
+        .flatten();
+    if let Some(MergeResult::Tree(tree)) = merged {
+        return (Some(tree), Vec::new());
+    }
+    (None, changed_files(cwd, input.base, input.start))
+}
+
 pub(super) fn check_trial(cwd: &Path, copy: Option<&Path>, input: &CheckInput<'_>) -> TrialCheck {
     let mut problems = Vec::new();
     if let Some(problem) = copy.and_then(copy_problem) {
@@ -98,17 +115,7 @@ pub(super) fn check_trial(cwd: &Path, copy: Option<&Path>, input: &CheckInput<'_
     let mut unexpected_files = Vec::new();
     if is_rewrite {
         let new_tree = tree_of(cwd, input.new_head).unwrap_or_default();
-        let (expected, main_files) = if is_rebase {
-            let merged = supports_merge_tree_base()
-                .then(|| merge_in_memory(cwd, input.base, input.start, input.old_head).ok())
-                .flatten();
-            match merged {
-                Some(MergeResult::Tree(tree)) => (Some(tree), Vec::new()),
-                _ => (None, changed_files(cwd, input.base, input.start)),
-            }
-        } else {
-            (tree_of(cwd, input.old_head).ok(), Vec::new())
-        };
+        let (expected, main_files) = expected_tree(cwd, input, is_rebase);
         let differing = match expected {
             Some(tree) => changed_files(cwd, &tree, &new_tree),
             None => changed_files(cwd, input.old_head, &new_tree),

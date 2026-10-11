@@ -37,6 +37,7 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
     void pending.run(params);
   };
   return {
+    mountId,
     pendingKeys: pending.pendingKeys,
     stashAndMove: () => {
       if (mountId === null) {

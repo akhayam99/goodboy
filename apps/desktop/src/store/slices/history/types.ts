@@ -2,6 +2,7 @@ import type {
   AgentId,
   BranchCommit,
   HistoryGraph,
+  HistoryRewriterCheck,
   HistoryPlanArgs,
   HistoryPlanPrediction,
   HistoryStep,
@@ -50,6 +51,7 @@ export type HistoryStopReason =
   | 'failed';
 
 export type HistoryStop = {
+  readonly review?: HistoryRewriterCheck['review'];
   readonly reason: HistoryStopReason;
   readonly message: string;
   readonly files: ReadonlyArray<string>;
