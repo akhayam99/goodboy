@@ -68,10 +68,6 @@ vi.mock('../../hooks/useDiffNotes', () => ({
   useDiffNotes: () => ({ threads: [], allowFileLevel: h.store['allowFileLevel'] === true }),
 }));
 
-vi.mock('../../../resolve/components/FixCommentsButton', () => ({
-  FixCommentsButton: () => <button type="button">Fix comments 2</button>,
-}));
-
 vi.mock('../../../permissions/components/DiffViewSelector', () => ({
   DiffViewSelector: ({ baseBranch }: { readonly baseBranch: string | null }) => (
     <button type="button">Compared with {baseBranch ?? 'its base branch'}</button>
@@ -156,6 +152,7 @@ const renderPane = ({
         worktreePath={MOUNT.worktreePath}
         diff={diff}
         isReadOnly={isReadOnly}
+        toolbarEnd={<button type="button">Fix comments 2</button>}
       />
     </DiffRailHarness>,
   );
@@ -459,7 +456,7 @@ describe('SessionDiffPane files', () => {
     expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(3);
   });
 
-  it('ends the toolbar with Fix comments and carries no Write review', () => {
+  it('ends the toolbar with the entry it is given and carries no Write review', () => {
     renderPane({ diff: diffOf([FILE]) });
 
     const toolbar = screen.getByTestId('diff-toolbar');

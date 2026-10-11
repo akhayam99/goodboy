@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { FileDiff, IsoDateTime } from '@goodboy/types';
+import type { FileDiff } from '@goodboy/types';
 import { CommentThread } from './CommentThread';
 import { DiffView } from '.';
 import type { DiffComments, DiffThread } from './types';
@@ -46,7 +46,7 @@ const NOTE: DiffThread = {
   isAgent: false,
   source: 'note',
   host: null,
-  createdAt: '2026-10-10T09:00:00.000Z' as IsoDateTime,
+  createdAt: '2026-10-10T09:00:00.000Z',
   statusLabel: 'Open',
   isResolved: false,
   canEdit: true,
@@ -65,7 +65,7 @@ const HOST: DiffThread = {
   isAgent: false,
   source: 'host',
   host: 'github',
-  createdAt: '2026-10-10T08:00:00.000Z' as IsoDateTime,
+  createdAt: '2026-10-10T08:00:00.000Z',
   statusLabel: 'Open',
   isResolved: false,
   replies: [
@@ -283,8 +283,13 @@ describe('a note in Files', () => {
 });
 
 describe('the file header', () => {
-  const headerOf = (): HTMLElement =>
-    document.querySelector('[data-slot="diff-file-header"]') as HTMLElement;
+  const headerOf = (): HTMLElement => {
+    const header = document.querySelector<HTMLElement>('[data-slot="diff-file-header"]');
+    if (header === null) {
+      throw new Error('no file header');
+    }
+    return header;
+  };
 
   it('is 44 high and shows Viewed, Comment and the menu at rest, each a 28 control', () => {
     render(
@@ -347,8 +352,8 @@ describe('the file header', () => {
     render(<DiffView files={[FILE]} viewed={{ stateOf: () => 'stale', onToggle }} />);
 
     const box = within(headerOf()).getByRole('checkbox', { name: 'Viewed' });
-    expect((box as HTMLInputElement).checked).toBe(false);
-    fireEvent.mouseEnter(box.closest('label') as HTMLElement);
+    expect(box.matches(':checked')).toBe(false);
+    fireEvent.mouseEnter(box.closest('label') ?? box);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(600);
     });

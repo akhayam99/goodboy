@@ -1,15 +1,8 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
-import type {
-  DiffComment,
-  IsoDateTime,
-  MountId,
-  ProjectId,
-  PullRequestState,
-  SessionId,
-} from '@goodboy/types';
-import { aSession } from '@goodboy/types/testing';
+import type { DiffComment, MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/types';
+import { TEST_NOW, aSession } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import type { MountGithubState, SessionGithubState } from '../../types';
 import { branchPlace } from '../navigation/place';
@@ -540,7 +533,7 @@ describe('a destination made of notes', () => {
     filePath: 'src/retry/backoff.ts',
     body: 'Cap the backoff at 30 seconds.',
     status: 'open',
-    createdAt: '2026-09-25T09:00:00.000Z' as IsoDateTime,
+    createdAt: TEST_NOW,
     anchor: { side: 'new', lineNumber: 14 },
     authorKind: 'user',
   };

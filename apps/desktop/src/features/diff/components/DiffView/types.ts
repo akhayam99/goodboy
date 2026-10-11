@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { DiffCommentAnchor, FileDiff, IsoDateTime } from '@goodboy/types';
+import type { DiffCommentAnchor, FileDiff } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { ViewedState } from '../../lib/reviewedFiles';
 
@@ -35,7 +35,7 @@ export type DiffThread = {
   readonly replies?: ReadonlyArray<DiffThreadReply>;
   readonly canReply?: boolean;
   readonly canResolve?: boolean;
-  readonly createdAt: IsoDateTime;
+  readonly createdAt: string;
   readonly statusLabel: string;
   readonly isResolved: boolean;
   readonly footer?: ReactNode;

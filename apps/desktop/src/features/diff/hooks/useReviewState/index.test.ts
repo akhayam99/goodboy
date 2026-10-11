@@ -1,11 +1,14 @@
 // @vitest-environment happy-dom
 
-const h = vi.hoisted(() => ({
-  threads: [] as ReadonlyArray<DiffThread>,
-  hostThreads: [] as ReadonlyArray<DiffThread>,
-  noteSubmit: vi.fn(),
-  noteDelete: vi.fn(),
-}));
+const h = vi.hoisted(() => {
+  const hostThreads: ReadonlyArray<DiffThread> = [];
+  return {
+    threads: [] as ReadonlyArray<DiffThread>,
+    hostThreads,
+    noteSubmit: vi.fn(),
+    noteDelete: vi.fn(),
+  };
+});
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),

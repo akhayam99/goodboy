@@ -7,7 +7,8 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { IsoDateTime, MountId, PrComment, ProjectId, SessionId } from '@goodboy/types';
+import type { PrComment } from '@goodboy/types';
+import { TEST_NOW } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -15,12 +16,17 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import type { MountGithubState } from '../../../../store/types';
+import {
+  CTX_PAYMENTS_ID,
+  CTX_PAYMENTS_MOUNT_ID,
+  CTX_SESSION_ID,
+} from '../../../../app/components/MockScene/scenes/brand/contextBase';
 import { seedResolveGitlabScene } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import { SESSION } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { useDiffReviewThreads } from './index';
 
-const SESSION_ID = 'session-1' as SessionId;
-const MOUNT_ID = 'mount-payments' as MountId;
+const SESSION_ID = CTX_SESSION_ID;
+const MOUNT_ID = CTX_PAYMENTS_MOUNT_ID;
 
 let useAppStore: StoryStore;
 
@@ -67,7 +73,7 @@ const comment = ({
 
 const githubMount = (comments: ReadonlyArray<PrComment>): MountGithubState => ({
   mountId: MOUNT_ID,
-  projectId: 'project-payments' as ProjectId,
+  projectId: CTX_PAYMENTS_ID,
   revision: 1,
   repository: 'harborline/payments-api',
   host: null,
@@ -94,7 +100,7 @@ const githubMount = (comments: ReadonlyArray<PrComment>): MountGithubState => ({
   loading: false,
   error: null,
   detail: { prNumber: 318, comments, reviews: [], reviewRequests: [], checks: [] },
-  detailFetchedAt: '2026-09-27T10:00:00.000Z' as IsoDateTime,
+  detailFetchedAt: TEST_NOW,
   detailLoading: false,
   detailError: null,
 });

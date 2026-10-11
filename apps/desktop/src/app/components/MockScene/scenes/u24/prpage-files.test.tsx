@@ -78,8 +78,12 @@ describe('the u24 prpage files scenes', () => {
     expect(notes.length).toBeGreaterThanOrEqual(1);
     const hosts = screen.getAllByRole('article', { name: /^On GitHub from / });
     expect(hosts.length).toBeGreaterThanOrEqual(1);
-    expect(within(notes[0] as HTMLElement).getByText('Note')).toBeDefined();
-    expect(within(hosts[0] as HTMLElement).getByText('On GitHub')).toBeDefined();
+    for (const note of notes) {
+      expect(within(note).getByText('Note')).toBeDefined();
+    }
+    for (const host of hosts) {
+      expect(within(host).getByText('On GitHub')).toBeDefined();
+    }
     expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Write review' })).toBeNull();
   });
@@ -115,8 +119,8 @@ describe('the u24 prpage files scenes', () => {
     renderScene({ name: 'branch-files-both' });
     await screen.findAllByRole('article', { name: /^Note from You/ }, WAIT);
 
-    const menu = screen.getAllByRole('button', { name: /^More actions for/ })[0] as HTMLElement;
-    fireEvent.click(menu);
+    const [menu] = screen.getAllByRole('button', { name: /^More actions for/ });
+    fireEvent.click(menu ?? document.body);
 
     const names = screen.getAllByRole('menuitem').map((item) => item.textContent);
     expect(names).toContain('Open in a drawer');

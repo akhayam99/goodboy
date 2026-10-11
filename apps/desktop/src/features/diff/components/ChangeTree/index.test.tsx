@@ -386,7 +386,7 @@ describe('ChangeTree', () => {
 
       const chip = screen.getByRole('img', { name: '2 notes, 1 on GitHub' });
       expect(chip.textContent).toBe('3');
-      fireEvent.mouseEnter(chip.parentElement as HTMLElement);
+      fireEvent.mouseEnter(chip.parentElement ?? chip);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });

@@ -71,7 +71,7 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): DiffReview
           isAgent: false,
           source: 'host',
           host,
-          createdAt: head.createdAt as DiffThread['createdAt'],
+          createdAt: head.createdAt,
           statusLabel: isResolved ? 'Resolved' : 'Open',
           isResolved,
           replies: thread.replies.map((reply) => ({

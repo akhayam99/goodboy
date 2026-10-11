@@ -5,7 +5,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
-import type { IsoDateTime, PrReviewDraft } from '@goodboy/types';
+import type { PrReviewDraft } from '@goodboy/types';
+import { TEST_NOW } from '@goodboy/types/testing';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
@@ -39,7 +40,7 @@ const draftFor = (input: AddReviewDraftInput): PrReviewDraft => ({
   status: 'draft',
   stale: false,
   origin: 'user',
-  createdAt: '2026-10-10T09:00:00.000Z' as IsoDateTime,
+  createdAt: TEST_NOW,
 });
 
 let useAppStore: StoryStore;
@@ -71,22 +72,24 @@ const mount = async (): Promise<void> => {
   fireEvent.click(screen.getByRole('tab', { name: /^Notes/ }));
 };
 
+const firstRow = (): HTMLElement => {
+  const row = screen.getAllByRole('button').find((button) => button.hasAttribute('data-thread-id'));
+  if (row === undefined) {
+    throw new Error('no thread row');
+  }
+  return row;
+};
+
 describe('a note in Comments', () => {
   it('offers Post to GitHub and Delete under the note, and neither under a host comment', async () => {
     await mount();
-    const row = screen
-      .getAllByRole('button')
-      .find((button) => button.hasAttribute('data-thread-id'));
-    fireEvent.click(row as HTMLElement);
+    fireEvent.click(firstRow());
 
     expect(screen.getByRole('button', { name: 'Post to GitHub' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('tab', { name: /^On GitHub/ }));
-    const hostRow = screen
-      .getAllByRole('button')
-      .find((button) => button.hasAttribute('data-thread-id'));
-    fireEvent.click(hostRow as HTMLElement);
+    fireEvent.click(firstRow());
 
     expect(screen.queryByRole('button', { name: 'Post to GitHub' })).toBeNull();
   });
@@ -96,10 +99,7 @@ describe('a note in Comments', () => {
     const closeResolvedNote = vi.fn<StoreState['closeResolvedNote']>(async () => undefined);
     await mount();
     useAppStore.setState({ addReviewDraft, closeResolvedNote });
-    const row = screen
-      .getAllByRole('button')
-      .find((button) => button.hasAttribute('data-thread-id'));
-    fireEvent.click(row as HTMLElement);
+    fireEvent.click(firstRow());
 
     fireEvent.click(screen.getByRole('button', { name: 'Post to GitHub' }));
 
@@ -115,10 +115,7 @@ describe('a note in Comments', () => {
     const discardDiffComments = vi.fn<StoreState['discardDiffComments']>(async () => undefined);
     await mount();
     useAppStore.setState({ discardDiffComments });
-    const row = screen
-      .getAllByRole('button')
-      .find((button) => button.hasAttribute('data-thread-id'));
-    fireEvent.click(row as HTMLElement);
+    fireEvent.click(firstRow());
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
