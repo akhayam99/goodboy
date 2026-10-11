@@ -20,6 +20,14 @@ import {
   columnDriftFailures,
   columnEdgesProbe,
 } from './validateScenesColumns.mjs';
+import {
+  FRAME_SCENES,
+  FRAME_WIDTHS,
+  frameFailures,
+  frameProbe,
+  frameSceneVariants,
+  missingFrameScenes,
+} from './validateScenesFrame.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 
 const CHROME =
@@ -50,6 +58,7 @@ const CONFIRM_VARIANTS = ['notifications', 'sessiondelete', 'chatrow', 'rich', '
 const ARM_SETTLE_MS = 250;
 const LAYOUT_TOLERANCE_PX = 0.5;
 const MENU_SCENE_SETTLE_MS = 100;
+const FRAME_SETTLE_MS = 800;
 const MENU_PROBE_PARAMS = {
   openMs: 1500,
   closeMs: 800,
@@ -728,6 +737,40 @@ const measureMenuRows = async ({ send, scene }) => {
   return { failures: menuRowsFailures({ scene, probe }), wraps: 0 };
 };
 
+const measureFrame = async ({ send, entry }) => {
+  const failures = [];
+  for (const width of FRAME_WIDTHS) {
+    for (const { sidebar, url } of frameSceneVariants({ entry })) {
+      await open({
+        send,
+        scene: url,
+        width,
+        zoom: 1,
+        readySelector: '[data-container="page"]',
+        settleMs: FRAME_SETTLE_MS,
+      });
+      const measured = await run(send, frameProbe, null);
+      failures.push(...frameFailures({ scene: entry.scene, width, sidebar, measured }));
+    }
+  }
+  console.log(`${entry.scene}: ${FRAME_WIDTHS.length} widths, ${failures.length} frame failures`);
+  return { failures, wraps: 0 };
+};
+
+const frameEntries = ({ only: filter }) => {
+  if (filter !== undefined && !filter.startsWith('frames')) {
+    return [];
+  }
+  const missing = missingFrameScenes({ ids: sceneIds() });
+  if (missing.length > 0) {
+    throw new Error(`scene ${missing[0]}: frame probe scene missing from scenes.txt`);
+  }
+  const [, text] = (filter ?? '').split(':');
+  return text === undefined
+    ? FRAME_SCENES
+    : FRAME_SCENES.filter(({ scene }) => scene.includes(text));
+};
+
 const sceneIds = () =>
   readFileSync(SCENE_LIST, 'utf8')
     .split('\n')
@@ -787,6 +830,9 @@ const main = async () => {
         scene: `confirmpopover&v=${variant}`,
         task: () => measureConfirmPopover({ send, variant }),
       });
+    }
+    for (const entry of frameEntries({ only })) {
+      await measure({ scene: entry.scene, task: () => measureFrame({ send, entry }) });
     }
     for (const scene of menuScenes({ only })) {
       await measure({ scene, task: () => measureMenuRows({ send, scene }) });

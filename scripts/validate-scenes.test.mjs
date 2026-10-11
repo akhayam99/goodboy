@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
@@ -15,6 +15,12 @@ import {
   summaryLine,
 } from './validateScenesBrowser.mjs';
 import { columnDriftFailures, columnEdgesProbe } from './validateScenesColumns.mjs';
+import {
+  FRAME_SCENES,
+  frameFailures,
+  frameSceneVariants,
+  missingFrameScenes,
+} from './validateScenesFrame.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 
 const { Window } = createRequire(new URL('../apps/desktop/package.json', import.meta.url))(
@@ -372,5 +378,175 @@ describe('columnEdgesProbe', () => {
       { row: 'a', edges: { model: 321, action: null } },
     ]);
     await window.happyDOM.close();
+  });
+});
+
+const rect = ({ left, top, right, bottom }) => ({ left, top, right, bottom });
+
+const framed = (overrides = {}) => ({
+  hasSheet: true,
+  sheet: rect({ left: 300, top: 0, right: 1440, bottom: 900 }),
+  crumb: rect({ left: 340, top: 8, right: 440, bottom: 32 }),
+  title: rect({ left: 340, top: 40, right: 500, bottom: 72 }),
+  bodyChild: rect({ left: 340, top: 80, right: 1400, bottom: 400 }),
+  trail: rect({ left: 340, top: 8, right: 1000, bottom: 32 }),
+  rail: rect({ left: 0, top: 0, right: 288, bottom: 900 }),
+  drawer: null,
+  drawerRow: null,
+  isDrawerInsidePage: false,
+  composer: null,
+  stage: null,
+  detail: rect({ left: 300, top: 40, right: 1440, bottom: 900 }),
+  slots: [
+    {
+      name: 'pane-header',
+      isClipped: false,
+      ...rect({ left: 340, top: 40, right: 1400, bottom: 72 }),
+    },
+  ],
+  ...overrides,
+});
+
+const rulesOf = (measured) =>
+  frameFailures({ scene: 'fixture', width: 1440, sidebar: 'pinned', measured }).map(
+    (failure) => failure.rule,
+  );
+
+describe('frameFailures', () => {
+  it('passes a frame whose crumb, title and body share one edge', () => {
+    assert.deepEqual(rulesOf(framed()), []);
+  });
+
+  it('names rule 1 when the crumb starts left of the title', () => {
+    assert.deepEqual(
+      rulesOf(framed({ crumb: rect({ left: 144, top: 8, right: 240, bottom: 32 }) })),
+      ['rule 1'],
+    );
+  });
+
+  it('compares the crumb and the title alone when the page has no body column', () => {
+    const crumb = rect({ left: 363, top: 8, right: 440, bottom: 32 });
+    assert.deepEqual(rulesOf(framed({ bodyChild: null, crumb })), ['rule 1']);
+    assert.deepEqual(rulesOf(framed({ bodyChild: null })), []);
+  });
+
+  it('allows one pixel of drift on rule 1 and fails two', () => {
+    const crumb = (left) => rect({ left, top: 8, right: left + 100, bottom: 32 });
+    assert.deepEqual(rulesOf(framed({ crumb: crumb(341) })), []);
+    assert.deepEqual(rulesOf(framed({ crumb: crumb(342.5) })), ['rule 1']);
+  });
+
+  it('fails a scene with no page container instead of passing silently', () => {
+    assert.deepEqual(rulesOf(framed({ hasSheet: false })), ['sheet']);
+  });
+
+  it('fails a slot that leaves the sheet sideways, and spares one clipped by a scroller below', () => {
+    const wide = {
+      name: 'wide',
+      isClipped: false,
+      ...rect({ left: 340, top: 40, right: 1500, bottom: 72 }),
+    };
+    const below = {
+      name: 'below',
+      isClipped: true,
+      ...rect({ left: 340, top: 1200, right: 1400, bottom: 1300 }),
+    };
+    const fallen = {
+      name: 'fallen',
+      isClipped: false,
+      ...rect({ left: 340, top: 1200, right: 1400, bottom: 1300 }),
+    };
+    assert.deepEqual(rulesOf(framed({ slots: [wide] })), ['slots inside the sheet']);
+    assert.deepEqual(rulesOf(framed({ slots: [below] })), []);
+    assert.deepEqual(rulesOf(framed({ slots: [fallen] })), ['slots inside the sheet']);
+  });
+
+  it('fails a rail that overlaps the crumb band and spares one that only touches it', () => {
+    assert.deepEqual(
+      rulesOf(framed({ rail: rect({ left: 0, top: 0, right: 400, bottom: 900 }) })),
+      ['rail over crumb'],
+    );
+    assert.deepEqual(
+      rulesOf(framed({ rail: rect({ left: 0, top: 0, right: 340, bottom: 900 }) })),
+      [],
+    );
+  });
+
+  it('fails a drawer header whose centre is off the crumb row centre by more than a pixel', () => {
+    const drawerRow = (top) => rect({ left: 1100, top, right: 1400, bottom: top + 24 });
+    assert.deepEqual(rulesOf(framed({ drawerRow: drawerRow(8) })), []);
+    assert.deepEqual(rulesOf(framed({ drawerRow: drawerRow(13) })), ['crumb and drawer header']);
+  });
+
+  it('fails a composer that ends below the sheet', () => {
+    const composer = (bottom) => rect({ left: 340, top: bottom - 80, right: 1400, bottom });
+    assert.deepEqual(rulesOf(framed({ composer: composer(900) })), []);
+    assert.deepEqual(rulesOf(framed({ composer: composer(940) })), ['composer']);
+  });
+
+  it('fails a drawer hosted inside the page container', () => {
+    assert.deepEqual(rulesOf(framed({ isDrawerInsidePage: true })), ['drawer container']);
+  });
+
+  it('fails an empty chat stage off the detail centre in x or outside 40 to 52 percent in y', () => {
+    const stage = ({ left, top }) => rect({ left, top, right: left + 400, bottom: top + 200 });
+    assert.deepEqual(rulesOf(framed({ stage: stage({ left: 670, top: 340 }) })), []);
+    assert.deepEqual(rulesOf(framed({ stage: stage({ left: 600, top: 340 }) })), [
+      'chat empty stage',
+    ]);
+    assert.deepEqual(rulesOf(framed({ stage: stage({ left: 670, top: 100 }) })), [
+      'chat empty stage',
+    ]);
+    assert.deepEqual(rulesOf(framed({ stage: stage({ left: 670, top: 520 }) })), [
+      'chat empty stage',
+    ]);
+  });
+
+  it('names the scene, the width and the sidebar in every failure', () => {
+    const [failure] = frameFailures({
+      scene: 'guide',
+      width: 1100,
+      sidebar: 'rail',
+      measured: framed({ hasSheet: false }),
+    });
+    assert.deepEqual(
+      [failure.scene, failure.width, failure.sidebar, failure.rule],
+      ['guide', 1100, 'rail', 'sheet'],
+    );
+  });
+});
+
+describe('the frame probe scene list', () => {
+  it('lists about two dozen scenes, each once', () => {
+    const ids = FRAME_SCENES.map((entry) => entry.scene);
+    assert.equal(new Set(ids).size, ids.length);
+    assert.ok(ids.length >= 22 && ids.length <= 26);
+  });
+
+  it('measures a scene pinned, and on the rail only when it has a rail query', () => {
+    assert.deepEqual(
+      frameSceneVariants({ entry: { scene: 'a', rail: '&rail=1' } }).map((variant) => variant.url),
+      ['a', 'a&rail=1'],
+    );
+    assert.deepEqual(
+      frameSceneVariants({ entry: { scene: 'a', rail: null } }).map((variant) => variant.sidebar),
+      ['pinned'],
+    );
+  });
+
+  it('names a scene missing from scenes.txt, query stripped', () => {
+    const entries = [
+      { scene: 'known&view=x', rail: null },
+      { scene: 'ghost', rail: null },
+    ];
+    assert.deepEqual(missingFrameScenes({ ids: ['known'], entries }), ['ghost']);
+  });
+
+  it('finds every listed scene in scenes.txt', () => {
+    const ids = readFileSync(
+      new URL('../apps/desktop/src/app/components/MockScene/scenes.txt', import.meta.url),
+      'utf8',
+    ).split('\n');
+    assert.deepEqual(missingFrameScenes({ ids }), []);
   });
 });
