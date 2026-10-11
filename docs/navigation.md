@@ -2601,8 +2601,8 @@ opens the picker that searches the host's collaborators), Checks (one line, `4 p
 1 failing`, that opens the Checks section; `Checks unknown` when the read failed), Linked issues
 (each with its relation, `Closes #412`; `Link issue` opens the popover) and Base (`main`, `3 behind main`
 with `Rebase on main`). The state is the chip and the readiness word is the blocked reason in the
-header's meta line; the file count is the rail's. Without a pull request the section is a
-first-time empty state (`No pull request yet`, one sentence) over the create form, which
+header's meta line; the file count is the rail's. Without a pull request the section is the create
+form alone, with no block above it (the state reads `No pull request` in the header chip), and it
 fills the same grid: one input card (the title from the session goal as a large
 borderless field, the description growing from 6 to 16 lines, and in the card's
 bottom row `Write with Scribe` with its routing and a faint `Markdown`), then

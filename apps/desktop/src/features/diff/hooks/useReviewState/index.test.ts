@@ -2,6 +2,7 @@
 
 const h = vi.hoisted(() => ({
   threads: [] as ReadonlyArray<DiffThread>,
+  hostThreads: [] as ReadonlyArray<DiffThread>,
   noteSubmit: vi.fn(),
   noteDelete: vi.fn(),
 }));
@@ -16,18 +17,22 @@ vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness
 vi.mock('../../../../shared/lib/db', async () =>
   (await import('../../../../store/storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../useDiffReviewThreads', () => ({ useDiffReviewThreads: () => [] }));
+vi.mock('../useDiffReviewThreads', () => ({
+  useDiffReviewThreads: () => ({
+    threads: h.hostThreads,
+    onReply: vi.fn(),
+    onResolve: vi.fn(),
+    onOpenInComments: vi.fn(),
+  }),
+}));
 vi.mock('../useDiffNotes', () => ({
   useDiffNotes: () => ({
-    comments: {
-      threads: h.threads,
-      submitLabel: 'Add note',
-      composerLabel: 'Note',
-      allowFileLevel: true,
-      onSubmit: h.noteSubmit,
-      onDelete: h.noteDelete,
-    },
-    fixes: [],
+    threads: h.threads,
+    submitLabel: 'Add note',
+    composerLabel: 'Note',
+    allowFileLevel: true,
+    onSubmit: h.noteSubmit,
+    onDelete: h.noteDelete,
   }),
 }));
 
@@ -52,10 +57,12 @@ const threadAt = ({
   id,
   filePath,
   isResolved,
+  source = 'note',
 }: {
   readonly id: string;
   readonly filePath: string;
   readonly isResolved: boolean;
+  readonly source?: DiffThread['source'];
 }): DiffThread => ({
   id,
   filePath,
@@ -64,6 +71,8 @@ const threadAt = ({
   tone: 'neutral',
   author: 'You',
   isAgent: false,
+  source,
+  host: source === 'host' ? 'github' : null,
   createdAt: '2026-10-05T08:00:00.000Z' as IsoDateTime,
   statusLabel: 'Open',
   isResolved,
@@ -87,6 +96,7 @@ const diffOf = (): SessionDiff => ({
   refresh: vi.fn(),
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
   focusPath: null,
+  focusThreadId: null,
   clearFocus: vi.fn(),
 });
 
@@ -113,6 +123,7 @@ beforeEach(() => {
 
 afterEach(() => {
   h.threads = [];
+  h.hostThreads = [];
 });
 
 describe('useReviewState', () => {
@@ -203,8 +214,64 @@ describe('useReviewState', () => {
     ];
     const { result } = run();
 
-    expect(result.current.noteCountOf('src/ledger/ledger.ts')).toBe(2);
-    expect(result.current.noteCountOf('src/ledger/export/page.tsx')).toBe(0);
+    expect(result.current.commentCountOf('src/ledger/ledger.ts')).toBe(2);
+    expect(result.current.commentCountOf('src/ledger/export/page.tsx')).toBe(0);
+  });
+
+  it('counts the open threads of both kinds on one file and names each kind', () => {
+    h.threads = [threadAt({ id: 'a', filePath: 'src/ledger/ledger.ts', isResolved: false })];
+    h.hostThreads = [
+      threadAt({
+        id: 'review:1',
+        filePath: 'src/ledger/ledger.ts',
+        isResolved: false,
+        source: 'host',
+      }),
+      threadAt({
+        id: 'review:2',
+        filePath: 'src/ledger/ledger.ts',
+        isResolved: true,
+        source: 'host',
+      }),
+    ];
+    const { result } = run();
+
+    expect(result.current.commentCountOf('src/ledger/ledger.ts')).toBe(2);
+    expect(result.current.kindsOf('src/ledger/ledger.ts')).toEqual({
+      notes: 1,
+      host: 1,
+      hostLabel: 'GitHub',
+    });
+    expect(result.current.kindsOf('src/ledger/export/page.tsx')).toEqual({
+      notes: 0,
+      host: 0,
+      hostLabel: null,
+    });
+  });
+
+  it('shows a file with only a host thread under the Commented filter', () => {
+    h.hostThreads = [
+      threadAt({
+        id: 'review:1',
+        filePath: 'src/ledger/ledger.ts',
+        isResolved: false,
+        source: 'host',
+      }),
+    ];
+    const { result } = run();
+
+    act(() => result.current.setCommentedOnly(true));
+
+    expect(result.current.tree.files.map((file) => file.path)).toEqual(['src/ledger/ledger.ts']);
+  });
+
+  it('merges the verbs of both kinds into one set of comments', () => {
+    const { result } = run();
+
+    expect(result.current.comments.onSubmit).toBe(h.noteSubmit);
+    expect(result.current.comments.onReply).toBeDefined();
+    expect(result.current.comments.onResolve).toBeDefined();
+    expect(result.current.comments.onOpenInComments).toBeDefined();
   });
 
   it('builds the tree from the diff files', () => {
@@ -267,7 +334,7 @@ describe('useReviewState filters', () => {
     ];
     const { result } = runStable();
 
-    act(() => result.current.setNotesOnly(true));
+    act(() => result.current.setCommentedOnly(true));
 
     expect(shown(result)).toEqual(['src/ledger/ledger.ts']);
   });
@@ -353,7 +420,7 @@ describe('useReviewState filters', () => {
       rerender({ diff: STABLE });
 
       expect(result.current.tree.files).toBe(before);
-      expect(result.current.noteCountOf('pnpm-lock.yaml')).toBe(1);
+      expect(result.current.commentCountOf('pnpm-lock.yaml')).toBe(1);
     });
 
     it('builds a new array only when a filter is on', () => {
@@ -471,7 +538,7 @@ describe('useReviewState file-level comments', () => {
       body: 'Split this file',
       canEdit: true,
     });
-    expect(result.current.noteCountOf('src/ledger/ledger.ts')).toBe(1);
+    expect(result.current.commentCountOf('src/ledger/ledger.ts')).toBe(1);
   });
 
   it('leaves line drafts to the Write review view', () => {
@@ -497,21 +564,6 @@ describe('useReviewState file-level comments', () => {
     expect(drafts.discardReviewDraft).toHaveBeenCalledWith('draft-file');
     expect(h.noteDelete).toHaveBeenCalledWith('a-note');
     expect(h.noteDelete).not.toHaveBeenCalledWith('draft-file');
-  });
-
-  it('asks the diff to jump to a file and open its composer, until the diff says it did', () => {
-    const scroll = vi.fn();
-    const { result } = run();
-    act(() => result.current.registerScroller(scroll));
-
-    act(() => result.current.commentOnFile('src/ledger/ledger.ts'));
-
-    expect(scroll).toHaveBeenCalledWith('src/ledger/ledger.ts');
-    expect(result.current.fileCommentPath).toBe('src/ledger/ledger.ts');
-
-    act(() => result.current.clearFileComment());
-
-    expect(result.current.fileCommentPath).toBeNull();
   });
 });
 

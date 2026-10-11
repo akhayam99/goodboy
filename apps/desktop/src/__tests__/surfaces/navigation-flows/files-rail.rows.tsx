@@ -53,10 +53,17 @@ const treeNav = (): HTMLElement =>
     name: 'Changed files',
   });
 
+const treeOf = (): HTMLElement => within(treeNav()).getByRole('tree', { name: 'Changed files' });
+
 const thirdRow = (): HTMLElement =>
-  within(treeNav()).getByRole('button', {
+  within(treeNav()).getByRole('treeitem', {
     name: THIRD_FILE,
   });
+
+const expectCursorOnThirdRow = (): void => {
+  expect(document.activeElement).toBe(treeOf());
+  expect(treeOf().getAttribute('aria-activedescendant')).toBe(thirdRow().id);
+};
 
 const sectionsButton = (): HTMLElement => screen.getByRole('button', { name: 'Sections' });
 
@@ -72,10 +79,12 @@ const folderRow = ({
   readonly label: RegExp;
   readonly isOpen: boolean;
 }): HTMLElement =>
-  within(treeNav()).getByRole('button', {
-    name: label,
-    expanded: isOpen,
-  });
+  within(
+    within(treeNav()).getByRole('treeitem', {
+      name: label,
+      expanded: isOpen,
+    }),
+  ).getByRole('button');
 
 const headerPart = (selector: string): HTMLElement => {
   const element = document.querySelector<HTMLElement>(`[data-slot="pane-header"] ${selector}`);
@@ -131,7 +140,7 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
       await downToThirdFile();
       expect(thirdRow().getAttribute('aria-current')).toBe('true');
       await press('diff.focusTree');
-      expect(document.activeElement).toBe(thirdRow());
+      expectCursorOnThirdRow();
       await escape();
       expect(treeNav()).toBeDefined();
 
@@ -168,7 +177,7 @@ export const FILES_RAIL_ROWS: ReadonlyArray<Row> = [
       await downToThirdFile();
       await press('diff.focusTree');
       expect(thirdRow().getAttribute('aria-current')).toBe('true');
-      expect(document.activeElement).toBe(thirdRow());
+      expectCursorOnThirdRow();
       await escape();
       expect(railNav()).toBeNull();
     },

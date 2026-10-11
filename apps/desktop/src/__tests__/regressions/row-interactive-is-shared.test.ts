@@ -24,7 +24,8 @@ const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   `${TIMELINE}/TimelineMoreRow.tsx`,
   `${SESSION_BAR}/SessionActivityItem.tsx`,
   `${SESSION_BAR}/index.tsx`,
-  `${CHANGE_TREE}/index.tsx`,
+  `${CHANGE_TREE}/FileRow.tsx`,
+  `${CHANGE_TREE}/FolderRow.tsx`,
 ];
 
 const COMPOSED_ROWS: ReadonlyArray<string> = [`${SESSION_BAR}/SessionPages.tsx`];

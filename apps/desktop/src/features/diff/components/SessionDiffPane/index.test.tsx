@@ -56,27 +56,25 @@ vi.mock('../../../../store/slices/project-mounts/selectors', async (importOrigin
 }));
 
 vi.mock('../../hooks/useDiffReviewThreads', () => ({
-  useDiffReviewThreads: () => [],
-}));
-
-vi.mock('../../hooks/useDiffNotes', () => ({
-  useDiffNotes: () => ({
-    comments: { threads: [], allowFileLevel: h.store['allowFileLevel'] === true },
-    fixes: [],
+  useDiffReviewThreads: () => ({
+    threads: [],
+    onReply: vi.fn(),
+    onResolve: vi.fn(),
+    onOpenInComments: vi.fn(),
   }),
 }));
 
+vi.mock('../../hooks/useDiffNotes', () => ({
+  useDiffNotes: () => ({ threads: [], allowFileLevel: h.store['allowFileLevel'] === true }),
+}));
+
+vi.mock('../../../resolve/components/FixCommentsButton', () => ({
+  FixCommentsButton: () => <button type="button">Fix comments 2</button>,
+}));
+
 vi.mock('../../../permissions/components/DiffViewSelector', () => ({
-  DiffViewSelector: ({
-    baseBranch,
-    branch,
-  }: {
-    readonly baseBranch: string | null;
-    readonly branch: string | null;
-  }) => (
-    <button type="button">
-      Comparing {baseBranch ?? 'none'} ← {branch ?? 'none'}
-    </button>
+  DiffViewSelector: ({ baseBranch }: { readonly baseBranch: string | null }) => (
+    <button type="button">Compared with {baseBranch ?? 'its base branch'}</button>
   ),
 }));
 
@@ -128,6 +126,7 @@ const diffOf = (files: ReadonlyArray<FileDiff> = []): SessionDiff => ({
   refresh: vi.fn(),
   viewed: { stateOf: () => 'none', onToggle: vi.fn() },
   focusPath: null,
+  focusThreadId: null,
   clearFocus: vi.fn(),
 });
 
@@ -142,11 +141,11 @@ const FILE: FileDiff = {
 
 const renderPane = ({
   diff = diffOf(),
-  onWriteReview = null,
+  isReadOnly = false,
   isOverlay = false,
 }: {
   readonly diff?: SessionDiff;
-  readonly onWriteReview?: (() => void) | null;
+  readonly isReadOnly?: boolean;
   readonly isOverlay?: boolean;
 }) =>
   render(
@@ -156,7 +155,7 @@ const renderPane = ({
         workingDir="/w/ledger"
         worktreePath={MOUNT.worktreePath}
         diff={diff}
-        onWriteReview={onWriteReview}
+        isReadOnly={isReadOnly}
       />
     </DiffRailHarness>,
   );
@@ -200,7 +199,7 @@ describe('SessionDiffPane states', () => {
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
     expect(screen.queryByText('0 files')).toBeNull();
     expect(screen.getByText('Branch matches its base branch')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: /Comparing/ })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /Compared with/ })).toHaveLength(1);
   });
 });
 
@@ -215,7 +214,7 @@ describe('SessionDiffPane empty working tree', () => {
     renderPane({ diff: cleanWorking() });
 
     expect(screen.getByText('No changes on this branch yet')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Comparing/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Compared with/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: /Show branch vs/ })).toBeNull();
   });
 
@@ -274,7 +273,7 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
   it('keeps the tree after a pick, and Escape does not hide it', () => {
     renderPane({ diff: diffOf(FILES) });
 
-    fireEvent.click(within(treeOf()).getByRole('button', { name: /export\.ts/ }));
+    fireEvent.click(within(treeOf()).getByRole('button', { name: /^export\.ts/ }));
     fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(h.scroll).toHaveBeenCalledWith('src/ledger/export.ts');
@@ -370,17 +369,12 @@ describe('SessionDiffPane with the rail hidden behind Sections', () => {
     expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Filter files' }));
   });
 
-  it('closes the rail on a pick, and on a file comment requested from a row', () => {
-    h.store['allowFileLevel'] = true;
+  it('closes the rail on a pick', () => {
     renderPane({ diff: diffOf(FILES), isOverlay: true });
 
     pressShortcut({ id: 'diff.focusTree' });
     fireEvent.click(within(treeOf()).getByRole('button', { name: /^export\.ts/ }));
     expect(h.scroll).toHaveBeenCalledWith('src/ledger/export.ts');
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-
-    pressShortcut({ id: 'diff.focusTree' });
-    fireEvent.click(screen.getByRole('button', { name: 'Comment on export.ts' }));
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
   });
 });
@@ -395,9 +389,7 @@ describe('SessionDiffPane files', () => {
     renderPane({ diff });
 
     const toolbar = screen.getByTestId('diff-toolbar');
-    expect(
-      within(toolbar).getByRole('button', { name: 'Comparing develop ← feat/ledger-export' }),
-    ).toBeDefined();
+    expect(within(toolbar).getByRole('button', { name: 'Compared with develop' })).toBeDefined();
     expect(screen.queryByText('1 file')).toBeNull();
     expect(within(toolbar).queryByText('+3')).toBeNull();
   });
@@ -405,7 +397,7 @@ describe('SessionDiffPane files', () => {
   it('keeps the comparison line when there is nothing to draw under it', () => {
     renderPane({});
 
-    expect(screen.getByRole('button', { name: /Comparing/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Compared with/ })).toBeDefined();
     expect(screen.queryByTestId('diff-view')).toBeNull();
   });
 
@@ -413,7 +405,7 @@ describe('SessionDiffPane files', () => {
     renderPane({ diff: diffOf([FILE]) });
 
     const tree = screen.getByRole('navigation', { name: 'Changed files' });
-    expect(within(tree).getByRole('button', { name: /postings\.ts/ })).toBeDefined();
+    expect(within(tree).getByRole('treeitem', { name: /postings\.ts/ })).toBeDefined();
     expect(within(tree).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
   });
 
@@ -427,7 +419,7 @@ describe('SessionDiffPane files', () => {
 
     expect(screen.getByText('Showing 1 of 2')).toBeDefined();
     expect(screen.getByTestId('diff-view').getAttribute('data-files')).toBe('src/ledger/export.ts');
-    expect(screen.queryByRole('button', { name: /postings\.ts/ })).toBeNull();
+    expect(screen.queryByRole('treeitem', { name: /postings\.ts/ })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
 
@@ -467,18 +459,24 @@ describe('SessionDiffPane files', () => {
     expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(3);
   });
 
-  it('puts Write review in the file toolbar when a pull request can take one', () => {
-    const onWriteReview = vi.fn();
-    renderPane({ diff: diffOf([FILE]), onWriteReview });
+  it('ends the toolbar with Fix comments and carries no Write review', () => {
+    renderPane({ diff: diffOf([FILE]) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Write review' }));
-    expect(onWriteReview).toHaveBeenCalledOnce();
+    const toolbar = screen.getByTestId('diff-toolbar');
+    expect(within(toolbar).getByRole('button', { name: 'Fix comments 2' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Write review' })).toBeNull();
   });
 
-  it('carries no Fix, Push, Rewrite, PR or Open in Review control of its own', () => {
-    renderPane({ diff: diffOf([FILE]), onWriteReview: vi.fn() });
+  it('carries no Push, Rewrite, PR or Open in Review control of its own', () => {
+    renderPane({ diff: diffOf([FILE]) });
 
     const names = screen.getAllByRole('button').map((button) => button.textContent ?? '');
-    expect(names.filter((name) => /Fix|Push|Rewrite|PR #|Open in Review/.test(name))).toEqual([]);
+    expect(names.filter((name) => /Push|Rewrite|PR #|Open in Review/.test(name))).toEqual([]);
+  });
+
+  it('draws no viewed toggle in the rail of a merged or closed pull request', () => {
+    renderPane({ diff: diffOf([FILE]), isReadOnly: true });
+
+    expect(screen.queryByRole('button', { name: /^Viewed:/ })).toBeNull();
   });
 });

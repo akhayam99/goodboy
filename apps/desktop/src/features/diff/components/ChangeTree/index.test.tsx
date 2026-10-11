@@ -4,7 +4,9 @@ import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { FileDiff } from '@goodboy/types';
+import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { buildChangeTree } from '../../lib/changeTree';
+import { NO_KINDS } from '../../lib/commentKinds';
 import { ChangeTree } from '.';
 import { KEY_HELP } from './keyHelp';
 
@@ -30,8 +32,8 @@ const NO_FILTER = {
   onQuery: vi.fn(),
   unviewedOnly: false,
   onUnviewedOnly: vi.fn(),
-  notesOnly: false,
-  onNotesOnly: vi.fn(),
+  commentedOnly: false,
+  onCommentedOnly: vi.fn(),
   group: 'folders' as const,
   onGroup: vi.fn(),
   isFiltering: false,
@@ -49,17 +51,43 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
       collapsed={new Set()}
       onToggleFolder={vi.fn()}
       onPick={vi.fn()}
-      onCommentOnFile={null}
-      onOpenNotes={null}
-      hasNotesIn={() => false}
       stateOf={() => 'none'}
-      noteCountOf={() => 0}
+      commentCountOf={() => 0}
+      kindsOf={() => NO_KINDS}
+      isReadOnly={false}
+      onToggleViewed={vi.fn()}
       onNextUnviewed={vi.fn()}
+      onLeave={vi.fn()}
       {...overrides}
     />,
   );
 
-afterEach(cleanup);
+const itemOf = (name: RegExp): HTMLElement => screen.getByRole('treeitem', { name });
+
+const rowById = (id: string): HTMLElement => {
+  const row = screen.getAllByRole('treeitem').find((item) => item.dataset.rowId === id);
+  if (row === undefined) {
+    throw new Error(`no row ${id}`);
+  }
+  return row;
+};
+
+const tree = (): HTMLElement => screen.getByRole('tree', { name: 'Changed files' });
+
+const press = (key: string): void => {
+  fireEvent.keyDown(tree(), { key });
+};
+
+const focusTree = (): void => {
+  act(() => tree().focus());
+  fireEvent.focus(tree());
+};
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('ChangeTree on a big change', () => {
   const BIG = Array.from({ length: 600 }, (_, index) =>
@@ -71,7 +99,7 @@ describe('ChangeTree on a big change', () => {
   it('draws a screenful of rows, not all 600', () => {
     renderBig();
 
-    const drawn = screen.getAllByRole('button', { name: /f\d{3}\.ts/ });
+    const drawn = screen.getAllByRole('treeitem', { name: /f\d{3}\.ts/ });
     expect(drawn.length).toBeGreaterThan(10);
     expect(drawn.length).toBeLessThan(80);
     expect(screen.queryByText(/of 600 viewed/)).toBeNull();
@@ -79,7 +107,7 @@ describe('ChangeTree on a big change', () => {
 
   it('swaps the drawn rows as the list scrolls and keeps the scroll height', () => {
     renderBig();
-    const list = screen.getByRole('list');
+    const list = tree();
     const viewport = list.parentElement as HTMLElement;
     const heightBefore =
       list.style.paddingTop === '' ? 0 : Number.parseInt(list.style.paddingTop, 10);
@@ -87,16 +115,16 @@ describe('ChangeTree on a big change', () => {
     Object.defineProperty(viewport, 'scrollTop', { value: 5000, configurable: true });
     fireEvent.scroll(viewport);
 
-    expect(screen.queryByRole('button', { name: /f000\.ts/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /f180\.ts/ })).toBeDefined();
+    expect(screen.queryByRole('treeitem', { name: /f000\.ts/ })).toBeNull();
+    expect(screen.getByRole('treeitem', { name: /f180\.ts/ })).toBeDefined();
     expect(Number.parseInt(list.style.paddingTop, 10)).toBeGreaterThan(heightBefore);
   });
 
   it('draws every row of a small change without windowing', () => {
     renderTree();
 
-    expect(screen.getAllByRole('button').length).toBeGreaterThanOrEqual(6);
-    expect(screen.getByRole('list').style.paddingTop).toBe('');
+    expect(screen.getAllByRole('treeitem').length).toBeGreaterThanOrEqual(6);
+    expect(tree().style.paddingTop).toBe('');
   });
 });
 
@@ -111,22 +139,36 @@ describe('ChangeTree', () => {
     expect(screen.getByRole('button', { name: '? all keys' })).toBeDefined();
   });
 
-  it('shows no count or +/- on an expanded folder, its files carry them in colour', () => {
+  it('shows no count or +/- on an expanded folder, and the +/- on a file only at 340 or more', () => {
+    const observers = installFakeResizeObserver();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 360, 600),
+    );
     renderTree();
+    act(() => observers.resizeAll());
 
-    const folder = screen.getByRole('button', { name: /\bexport\b/ });
+    const folder = itemOf(/\bexport\b/);
     expect(within(folder).queryByText('2')).toBeNull();
     expect(within(folder).queryByText('+6')).toBeNull();
-    const file = screen.getByRole('button', { name: /page\.tsx/ });
-    expect(within(file).getByText('+3').closest('[data-tone]')?.getAttribute('data-tone')).toBe(
-      'diff',
+    expect(
+      within(itemOf(/page\.tsx/))
+        .getByText('+3')
+        .closest('[data-tone]')
+        ?.getAttribute('data-tone'),
+    ).toBe('diff');
+
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 300, 600),
     );
+    act(() => observers.resizeAll());
+
+    expect(within(itemOf(/page\.tsx/)).queryByText('+3')).toBeNull();
   });
 
   it('shows a collapsed folder count and +/- in one muted tone', () => {
     renderTree({ collapsed: new Set(['dir:src/ledger/export']) });
 
-    const folder = screen.getByRole('button', { name: /\bexport\b/ });
+    const folder = itemOf(/\bexport\b/);
     const tones = ['2', '+6', '−2'].map((text) =>
       within(folder).getByText(text).closest('[data-tone]')?.getAttribute('data-tone'),
     );
@@ -141,11 +183,20 @@ describe('ChangeTree', () => {
     expect(screen.getByText('from src/ledger/csv.ts')).toBeDefined();
   });
 
+  it('lays rows out as a tree: one level deeper per folder, folders expanded by role', () => {
+    renderTree();
+
+    expect(rowById('dir:src/ledger').getAttribute('aria-level')).toBe('1');
+    expect(rowById('dir:src/ledger/export').getAttribute('aria-level')).toBe('2');
+    expect(rowById('src/ledger/export/page.tsx').getAttribute('aria-level')).toBe('3');
+    expect(rowById('dir:src/ledger/export').getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('jumps to a file on click', () => {
     const onPick = vi.fn();
     renderTree({ onPick });
 
-    fireEvent.click(screen.getByRole('button', { name: /page\.tsx/ }));
+    fireEvent.click(within(itemOf(/page\.tsx/)).getByRole('button', { name: /^page\.tsx/ }));
 
     expect(onPick).toHaveBeenCalledWith('src/ledger/export/page.tsx');
   });
@@ -154,7 +205,7 @@ describe('ChangeTree', () => {
     const onToggleFolder = vi.fn();
     const { rerender } = renderTree({ onToggleFolder });
 
-    fireEvent.click(screen.getByRole('button', { name: /\bexport\b/ }));
+    fireEvent.click(within(itemOf(/\bexport\b/)).getByRole('button'));
     expect(onToggleFolder).toHaveBeenCalledWith('dir:src/ledger/export');
 
     rerender(
@@ -167,18 +218,17 @@ describe('ChangeTree', () => {
         collapsed={new Set(['dir:src/ledger/export'])}
         onToggleFolder={onToggleFolder}
         onPick={vi.fn()}
-        onCommentOnFile={null}
-        onOpenNotes={null}
-        hasNotesIn={() => false}
         stateOf={() => 'none'}
-        noteCountOf={() => 0}
+        commentCountOf={() => 0}
+        kindsOf={() => NO_KINDS}
+        isReadOnly={false}
+        onToggleViewed={vi.fn()}
         onNextUnviewed={vi.fn()}
+        onLeave={vi.fn()}
       />,
     );
-    expect(screen.queryByRole('button', { name: /page\.tsx/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /\bexport\b/ }).getAttribute('aria-expanded')).toBe(
-      'false',
-    );
+    expect(screen.queryByRole('treeitem', { name: /page\.tsx/ })).toBeNull();
+    expect(itemOf(/\bexport\b/).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('leaks no folder id into a native title', () => {
@@ -196,14 +246,14 @@ describe('ChangeTree', () => {
     try {
       renderTree();
 
-      fireEvent.mouseEnter(screen.getByRole('button', { name: /\bexport\b/ }));
+      fireEvent.mouseEnter(within(itemOf(/\bexport\b/)).getByRole('button'));
       await act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });
       expect(screen.getByRole('tooltip').textContent).toBe('src/ledger/export');
 
-      fireEvent.mouseLeave(screen.getByRole('button', { name: /\bexport\b/ }));
-      fireEvent.mouseEnter(screen.getByRole('button', { name: /page\.tsx/ }));
+      fireEvent.mouseLeave(within(itemOf(/\bexport\b/)).getByRole('button'));
+      fireEvent.mouseEnter(within(itemOf(/page\.tsx/)).getByText('page.tsx'));
       await act(async () => {
         await vi.advanceTimersByTimeAsync(600);
       });
@@ -219,7 +269,7 @@ describe('ChangeTree', () => {
       collapsed: new Set(['dir:src/ledger/export']),
     });
 
-    const folder = screen.getByRole('button', { name: /\bexport\b/ });
+    const folder = itemOf(/\bexport\b/);
     expect(within(folder).getByRole('img', { name: 'contains the file in view' })).toBeDefined();
     expect(screen.getAllByRole('img', { name: 'contains the file in view' })).toHaveLength(1);
   });
@@ -230,7 +280,7 @@ describe('ChangeTree', () => {
       collapsed: new Set(['dir:src/ledger/export', 'dir:src/ledger']),
     });
 
-    const folder = screen.getByRole('button', { name: /\bledger\b/ });
+    const folder = itemOf(/\bledger\b/);
     expect(within(folder).getByRole('img', { name: 'contains the file in view' })).toBeDefined();
     expect(screen.getAllByRole('img', { name: 'contains the file in view' })).toHaveLength(1);
   });
@@ -246,12 +296,8 @@ describe('ChangeTree', () => {
     Element.prototype.scrollIntoView = scroll;
     renderTree({ activePath: 'package.json' });
 
-    expect(screen.getByRole('button', { name: /package\.json/ }).getAttribute('aria-current')).toBe(
-      'true',
-    );
-    expect(
-      screen.getByRole('button', { name: /page\.tsx/ }).getAttribute('aria-current'),
-    ).toBeNull();
+    expect(itemOf(/package\.json/).getAttribute('aria-current')).toBe('true');
+    expect(itemOf(/page\.tsx/).getAttribute('aria-current')).toBeNull();
     expect(scroll).toHaveBeenCalled();
   });
 
@@ -273,26 +319,105 @@ describe('ChangeTree', () => {
     expect(done.querySelector('circle')).toBeNull();
   });
 
-  it('marks a file that changed after it was viewed with an amber dot instead of a check', () => {
+  it('puts a viewed toggle first on every file row and calls it with the file', () => {
+    const onToggleViewed = vi.fn();
+    renderTree({
+      onToggleViewed,
+      stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
+    });
+
+    const done = within(itemOf(/package\.json/)).getByRole('button', {
+      name: 'Viewed: package.json',
+    });
+    const open = within(itemOf(/page\.tsx/)).getByRole('button', { name: 'Viewed: page.tsx' });
+    expect(done.getAttribute('aria-pressed')).toBe('true');
+    expect(open.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(open);
+
+    expect(onToggleViewed).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'src/ledger/export/page.tsx' }),
+    );
+  });
+
+  it('offers no viewed toggle on a read only change', () => {
+    renderTree({ isReadOnly: true });
+
+    expect(screen.queryByRole('button', { name: /^Viewed:/ })).toBeNull();
+  });
+
+  it('marks a file that changed after it was viewed with an amber dot, still unviewed', () => {
     renderTree({
       stateOf: (file) => (file.path === 'package.json' ? 'stale' : 'none'),
     });
 
-    expect(screen.getByRole('img', { name: 'Changed since viewed' })).toBeDefined();
-    expect(screen.queryByLabelText('Viewed')).toBeNull();
+    const toggle = within(itemOf(/package\.json/)).getByRole('button', {
+      name: 'Viewed: package.json',
+    });
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    expect(toggle.querySelector('span')).not.toBeNull();
     expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('4');
   });
 
-  it('counts the unviewed and the commented files on the filter and shows notes on a file', () => {
+  it('counts the unviewed and the commented files on the filter', () => {
     renderTree({
       stateOf: (file) => (file.path === 'package.json' ? 'viewed' : 'none'),
-      noteCountOf: (path) => (path === 'src/ledger/export/page.tsx' ? 2 : 0),
+      commentCountOf: (path) => (path === 'src/ledger/export/page.tsx' ? 3 : 0),
+      kindsOf: (path) =>
+        path === 'src/ledger/export/page.tsx'
+          ? { notes: 2, host: 1, hostLabel: 'GitHub' }
+          : NO_KINDS,
     });
 
     expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('3');
     expect(screen.getByRole('tab', { name: /^Commented/ }).textContent).toContain('1');
-    expect(screen.getByLabelText('2 notes')).toBeDefined();
-    expect(screen.queryByText(/of 4 viewed/)).toBeNull();
+  });
+
+  it('shows the comment count of a file and names its kinds in the tooltip', async () => {
+    vi.useFakeTimers();
+    try {
+      renderTree({
+        commentCountOf: (path) => (path === 'src/ledger/export/page.tsx' ? 3 : 0),
+        kindsOf: (path) =>
+          path === 'src/ledger/export/page.tsx'
+            ? { notes: 2, host: 1, hostLabel: 'GitHub' }
+            : NO_KINDS,
+      });
+
+      const chip = screen.getByRole('img', { name: '2 notes, 1 on GitHub' });
+      expect(chip.textContent).toBe('3');
+      fireEvent.mouseEnter(chip.parentElement as HTMLElement);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(600);
+      });
+      expect(screen.getByRole('tooltip').textContent).toBe('2 notes, 1 on GitHub');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('names a file with only pull request threads by the host', () => {
+    renderTree({
+      commentCountOf: (path) => (path === 'package.json' ? 1 : 0),
+      kindsOf: (path) =>
+        path === 'package.json' ? { notes: 0, host: 1, hostLabel: 'GitLab' } : NO_KINDS,
+    });
+
+    expect(screen.getByRole('img', { name: '1 on GitLab' })).toBeDefined();
+  });
+
+  it('cuts a long name from the middle and keeps the whole name for a screen reader', () => {
+    const observers = installFakeResizeObserver();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, 230, 600),
+    );
+    const files = [fileAt('StatementBalanceCard.test.tsx')];
+    renderTree({ tree: buildChangeTree({ files }), allFiles: files });
+    act(() => observers.resizeAll());
+
+    const row = itemOf(/StatementBalanceCard\.test\.tsx/);
+    expect(within(row).getByText('Statem…ceCard.test.tsx')).toBeDefined();
+    expect(within(row).getByText('StatementBalanceCard.test.tsx')).toBeDefined();
   });
 
   it('jumps to the next unviewed file from its footer button and says how many are left', () => {
@@ -316,30 +441,6 @@ describe('ChangeTree', () => {
     );
   });
 
-  it('opens the notes of a file from its note count when the file has notes of its own', () => {
-    const onOpenNotes = vi.fn();
-    renderTree({
-      noteCountOf: (path) => (path === 'src/ledger/export/page.tsx' ? 2 : 0),
-      hasNotesIn: (path) => path === 'src/ledger/export/page.tsx',
-      onOpenNotes,
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: '2 notes' }));
-
-    expect(onOpenNotes).toHaveBeenCalledWith('src/ledger/export/page.tsx');
-  });
-
-  it('shows the count of a file with only pull request threads as plain text', () => {
-    renderTree({
-      noteCountOf: (path) => (path === 'src/ledger/export/page.tsx' ? 1 : 0),
-      hasNotesIn: () => false,
-      onOpenNotes: vi.fn(),
-    });
-
-    expect(screen.getByLabelText('1 note')).toBeDefined();
-    expect(screen.queryByRole('button', { name: '1 note' })).toBeNull();
-  });
-
   it('keeps the counts on every file while the tree shows only the filtered ones', () => {
     const onClear = vi.fn();
     const shown = FILES.filter((file) => file.path === 'package.json');
@@ -350,7 +451,7 @@ describe('ChangeTree', () => {
 
     expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('4');
     expect(screen.getByText('Showing 1 of 4')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /page\.tsx/ })).toBeNull();
+    expect(screen.queryByRole('treeitem', { name: /page\.tsx/ })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(onClear).toHaveBeenCalled();
@@ -371,17 +472,17 @@ describe('ChangeTree', () => {
 
   it('shows all, unviewed or commented files one at a time and switches the grouping', () => {
     const onUnviewedOnly = vi.fn();
-    const onNotesOnly = vi.fn();
+    const onCommentedOnly = vi.fn();
     const onGroup = vi.fn();
-    renderTree({ filter: { ...NO_FILTER, onUnviewedOnly, onNotesOnly, onGroup } });
+    renderTree({ filter: { ...NO_FILTER, onUnviewedOnly, onCommentedOnly, onGroup } });
 
     expect(screen.getByRole('tab', { name: 'All' }).getAttribute('aria-selected')).toBe('true');
     fireEvent.click(screen.getByRole('tab', { name: /^Unviewed/ }));
     expect(onUnviewedOnly).toHaveBeenLastCalledWith(true);
-    expect(onNotesOnly).toHaveBeenLastCalledWith(false);
+    expect(onCommentedOnly).toHaveBeenLastCalledWith(false);
     fireEvent.click(screen.getByRole('tab', { name: /^Commented/ }));
     expect(onUnviewedOnly).toHaveBeenLastCalledWith(false);
-    expect(onNotesOnly).toHaveBeenLastCalledWith(true);
+    expect(onCommentedOnly).toHaveBeenLastCalledWith(true);
     fireEvent.click(screen.getByRole('button', { name: 'Group files' }));
     fireEvent.click(screen.getByRole('menuitemradio', { name: /Kind/ }));
 
@@ -395,7 +496,7 @@ describe('ChangeTree', () => {
     );
     cleanup();
 
-    renderTree({ filter: { ...NO_FILTER, notesOnly: true } });
+    renderTree({ filter: { ...NO_FILTER, commentedOnly: true } });
     expect(screen.getByRole('tab', { name: /^Commented/ }).getAttribute('aria-selected')).toBe(
       'true',
     );
@@ -414,29 +515,7 @@ describe('ChangeTree', () => {
     expect(onQuery).toHaveBeenCalledWith('');
   });
 
-  it('offers a comment action on a file row that reaches the same keyboard focus as the row', () => {
-    const onCommentOnFile = vi.fn();
-    const onPick = vi.fn();
-    renderTree({ onCommentOnFile, onPick });
-
-    const action = screen.getByRole('button', { name: 'Comment on page.tsx' });
-    fireEvent.click(action);
-
-    expect(onCommentOnFile).toHaveBeenCalledWith('src/ledger/export/page.tsx');
-    expect(onPick).not.toHaveBeenCalled();
-  });
-
-  it('keeps the comment action a real button a keyboard can reach next to its row', () => {
-    renderTree({ onCommentOnFile: vi.fn() });
-
-    const row = screen.getByRole('button', { name: /^page\.tsx/ });
-    const action = screen.getByRole('button', { name: 'Comment on page.tsx' });
-
-    expect(action.tabIndex).toBe(0);
-    expect(row.closest('li')).toBe(action.closest('li'));
-  });
-
-  it('has no comment action on rows when file comments are off', () => {
+  it('has no comment action on rows: a comment starts in the file header', () => {
     renderTree();
 
     expect(screen.queryByRole('button', { name: /Comment on/ })).toBeNull();
@@ -450,15 +529,107 @@ describe('ChangeTree', () => {
       collapsed: new Set(['group:generated']),
     });
 
-    const row = screen.getByRole('button', { name: /Generated/ });
+    const row = itemOf(/Generated/);
     expect(row.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('button', { name: /pnpm-lock/ })).toBeNull();
+    expect(screen.queryByRole('treeitem', { name: /pnpm-lock/ })).toBeNull();
   });
 
   it('shows the folder next to the name in the Kind grouping', () => {
     renderTree({ tree: buildChangeTree({ files: FILES, group: 'kind' }) });
 
-    expect(screen.getByRole('button', { name: /Source/ })).toBeDefined();
+    expect(itemOf(/Source/)).toBeDefined();
     expect(screen.getAllByText('src/ledger/export')).toHaveLength(2);
+  });
+});
+
+describe('ChangeTree keys', () => {
+  it('moves one row with the arrows and to the first and last with Home and End', () => {
+    renderTree();
+    focusTree();
+
+    expect(tree().getAttribute('aria-activedescendant')).toContain(':dir:src/ledger');
+    press('ArrowDown');
+    expect(tree().getAttribute('aria-activedescendant')).toContain(':dir:src/ledger/export');
+    press('End');
+    expect(tree().getAttribute('aria-activedescendant')).toContain(':package.json');
+    press('Home');
+    expect(tree().getAttribute('aria-activedescendant')).toContain(':dir:src/ledger');
+    press('ArrowUp');
+    expect(tree().getAttribute('aria-activedescendant')).toContain(':dir:src/ledger');
+  });
+
+  it('opens and closes a folder with the side arrows and steps to its parent', () => {
+    const onToggleFolder = vi.fn();
+    renderTree({ onToggleFolder, collapsed: new Set(['dir:src/ledger/export']) });
+    focusTree();
+    press('ArrowDown');
+    expect(tree().getAttribute('aria-activedescendant')).toContain(':dir:src/ledger/export');
+
+    press('ArrowRight');
+    expect(onToggleFolder).toHaveBeenLastCalledWith('dir:src/ledger/export');
+
+    press('ArrowLeft');
+    expect(tree().getAttribute('aria-activedescendant')).toContain(':dir:src/ledger');
+    press('ArrowLeft');
+    expect(onToggleFolder).toHaveBeenLastCalledWith('dir:src/ledger');
+  });
+
+  it('jumps the diff on Enter and keeps focus in the tree', () => {
+    const onPick = vi.fn();
+    renderTree({ onPick });
+    focusTree();
+    press('End');
+
+    press('Enter');
+
+    expect(onPick).toHaveBeenCalledWith('package.json');
+    expect(document.activeElement).toBe(tree());
+  });
+
+  it('toggles viewed on Space for a file and folds a folder', () => {
+    const onToggleViewed = vi.fn();
+    const onToggleFolder = vi.fn();
+    renderTree({ onToggleViewed, onToggleFolder });
+    focusTree();
+
+    press(' ');
+    expect(onToggleFolder).toHaveBeenLastCalledWith('dir:src/ledger');
+    expect(onToggleViewed).not.toHaveBeenCalled();
+
+    press('End');
+    press(' ');
+    expect(onToggleViewed).toHaveBeenCalledWith(expect.objectContaining({ path: 'package.json' }));
+  });
+
+  it('does not toggle viewed on a read only change', () => {
+    const onToggleViewed = vi.fn();
+    renderTree({ onToggleViewed, isReadOnly: true });
+    focusTree();
+    press('End');
+
+    press(' ');
+
+    expect(onToggleViewed).not.toHaveBeenCalled();
+  });
+
+  it('returns to the diff on Escape', () => {
+    const onLeave = vi.fn();
+    renderTree({ onLeave });
+    focusTree();
+
+    fireEvent.keyDown(tree(), { key: 'Escape', code: 'Escape' });
+
+    expect(onLeave).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops listening for Escape once the tree loses focus', () => {
+    const onLeave = vi.fn();
+    renderTree({ onLeave });
+    focusTree();
+    fireEvent.blur(tree());
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(onLeave).not.toHaveBeenCalled();
   });
 });
