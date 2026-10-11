@@ -63,7 +63,7 @@ The single source of truth is [docs/dependencies.md](./docs/dependencies.md).
 
 ## Code rules
 
-Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md). The full TypeScript style lives in [docs/typescript/](./docs/typescript/).
+Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md). Its rules card at the top is the short list, and the guards that enforce it live in `apps/desktop/src/__tests__/regressions/` with their baselines, which only fall. The full TypeScript style lives in [docs/typescript/](./docs/typescript/).
 
 ## Pre-commit hooks (Lefthook)
 

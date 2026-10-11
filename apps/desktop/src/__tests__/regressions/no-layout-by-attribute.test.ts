@@ -1,0 +1,60 @@
+// @vitest-environment node
+import { readFileSync, readdirSync, statSync } from 'fs';
+import { join, relative, sep } from 'path';
+import { describe, expect, it } from 'vitest';
+import {
+  IS_UPDATING,
+  countMatches,
+  grownEntries,
+  nonZero,
+  readBaseline,
+  writeBaseline,
+  type FileCounts,
+} from './scanControls';
+
+const BASELINE_FILE = 'no-layout-by-attribute.baseline.json';
+const SURFACES = join(__dirname, '..', 'surfaces');
+const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
+const LAYOUT_CLAIM =
+  /data-width|toHaveClass\([^)]*['"`](?:[a-z-]+:)*(?:-?(?:w|min-w|max-w|h|min-h|max-h|left|right|top|bottom|inset)-|absolute\b|fixed\b|sticky\b|relative\b)/g;
+
+const walk = (directory: string): ReadonlyArray<string> =>
+  readdirSync(directory).flatMap((entry) => {
+    const full = join(directory, entry);
+    return statSync(full).isDirectory() ? walk(full) : [full];
+  });
+
+const measure = (): FileCounts =>
+  nonZero({
+    counts: Object.fromEntries(
+      walk(SURFACES)
+        .filter((full) => /\.tsx?$/.test(full))
+        .map((full) => [
+          relative(REPO_ROOT, full).split(sep).join('/'),
+          countMatches({ text: readFileSync(full, 'utf8'), pattern: LAYOUT_CLAIM }),
+        ]),
+    ),
+  });
+
+describe('a layout claim is proved by geometry in a scene, never by an attribute or a class', () => {
+  it('counts a width attribute and a width or position class, and leaves other classes alone', () => {
+    const count = (text: string): number => countMatches({ text, pattern: LAYOUT_CLAIM });
+    expect(count("column.getAttribute('data-width')")).toBe(1);
+    expect(count("expect(pane).toHaveClass('max-w-3xl')")).toBe(1);
+    expect(count("expect(pane).toHaveClass('md:absolute')")).toBe(1);
+    expect(count("expect(pane).toHaveClass('text-muted-foreground')")).toBe(0);
+  });
+
+  it('adds no layout claim by attribute or class beyond the baseline', () => {
+    const current = measure();
+    if (IS_UPDATING) {
+      writeBaseline({ file: BASELINE_FILE, counts: current });
+      return;
+    }
+    const grown = grownEntries({ current, baseline: readBaseline({ file: BASELINE_FILE }) });
+    expect(
+      grown,
+      `Prove the layout with a scene geometry probe (scripts/validate-scenes.mjs), not a data-width or a class. docs/testing.md has the rule.\n${grown.join('\n')}`,
+    ).toEqual([]);
+  });
+});

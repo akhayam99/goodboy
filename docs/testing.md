@@ -39,6 +39,9 @@ These hold for each change that touches a test, and they come from tests that st
 7. New behavior goes in a new test file beside the old one. The huge files (`buildTimelineStream.test.ts`, `WorkflowBuilderView/index.test.tsx`, `orchestrateNextStep.test.ts`) only get shorter.
 8. The PR body says "tests removed n, replaced by m, files converted k".
 9. A ratchet baseline never grows. `pnpm run check:baselines` fails on growth, and only the owner lists an exception: [ratchets.md](ratchets.md).
+10. A layout claim (width, position, which column) is proved by geometry in a scene probe (`scripts/validate-scenes.mjs`), never by `data-width` or a class in a test. `no-layout-by-attribute.test.ts` counts the claims left in `__tests__/surfaces` and only falls.
+11. A control that starts async work is `disabled` or `isBusy` and says why in a tooltip ("Wait for the turn to finish"), or runs through `usePendingAction`. `busy-controls.test.ts` counts the ones left. A ternary with two identical branches fails the same guard.
+12. A page's close control is named from its title: `StudioShell` builds `Close <title>` unless `closeLabel` is given. `retiredNames.ts` matches a former name in any casing, `aria-label` and `title` included.
 
 ## Desktop unit tests run in four shards
 
