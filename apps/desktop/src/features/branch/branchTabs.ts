@@ -63,7 +63,7 @@ type ShownParams = {
   readonly scope: BranchScope;
 };
 
-export const isBranchTabShown = ({ tab, scope }: ShownParams): boolean => {
+const isBranchTabShown = ({ tab, scope }: ShownParams): boolean => {
   if (tab === 'checks') {
     return scope.state !== 'none';
   }

@@ -9,7 +9,7 @@ type OrdinalParams = {
   readonly n: number;
 };
 
-export const ordinalOf = ({ n }: OrdinalParams): string => {
+const ordinalOf = ({ n }: OrdinalParams): string => {
   const hundred = n % 100;
   const isTeen = hundred >= FIRST_TEEN && hundred <= LAST_TEEN;
   return `${n}${isTeen ? 'th' : (SUFFIX_OF_LAST_DIGIT[n % 10] ?? 'th')}`;

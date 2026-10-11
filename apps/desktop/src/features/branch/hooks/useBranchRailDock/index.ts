@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { STUDIO_RAIL_MIN, useEscapeLayer } from '@goodboy/ui';
 
-export const BRANCH_DETAIL_MIN_PX = 560;
+const BRANCH_DETAIL_MIN_PX = 560;
 
-export const BRANCH_DOCK_MIN_PX = BRANCH_DETAIL_MIN_PX + STUDIO_RAIL_MIN;
+const BRANCH_DOCK_MIN_PX = BRANCH_DETAIL_MIN_PX + STUDIO_RAIL_MIN;
 
 export type BranchRailDock = {
   readonly paneRef: RefObject<HTMLDivElement | null>;

@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { ordinalOf, queueLineOf } from './queueLineOf';
+import { queueLineOf } from './queueLineOf';
 
-describe('ordinalOf', () => {
+describe('queueLineOf places', () => {
   it.each([
     [1, '1st'],
     [2, '2nd'],
@@ -15,8 +15,10 @@ describe('ordinalOf', () => {
     [22, '22nd'],
     [101, '101st'],
     [111, '111th'],
-  ])('writes %i as %s', (n, expected) => {
-    expect(ordinalOf({ n })).toBe(expected);
+  ])('writes place %i as %s', (position, ordinal) => {
+    expect(queueLineOf({ pr: { state: 'queued', mergeQueue: { position } } })).toBe(
+      `Queued to merge, ${ordinal} in line`,
+    );
   });
 });
 

@@ -8,7 +8,7 @@ import { ViewedRing } from '../../../../shared/components/ViewedRing';
 import type { BranchTabEntry } from '../../branchTabs';
 import { RailCount } from './RailCount';
 
-export type BranchViewed = {
+type BranchViewed = {
   readonly viewed: number;
   readonly total: number;
 };
