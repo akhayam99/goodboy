@@ -15,13 +15,13 @@ export const filterScriptGroups = ({
   }
   return groups.flatMap((group) => {
     const isProjectMatch = group.projectName.toLocaleLowerCase().includes(needle);
-    const scripts = isProjectMatch
-      ? group.scripts
-      : group.scripts.filter((script) =>
-          [script.name, script.body, script.packageName, script.relDir].some((field) =>
-            field.toLocaleLowerCase().includes(needle),
-          ),
-        );
-    return scripts.length === 0 ? [] : [{ ...group, scripts }];
+    const matches = (script: SessionScriptGroup['scripts'][number]): boolean =>
+      isProjectMatch ||
+      [script.name, script.body, script.packageName, script.relDir].some((field) =>
+        field.toLocaleLowerCase().includes(needle),
+      );
+    const scripts = group.scripts.filter(matches);
+    const suggested = group.suggested.filter(matches);
+    return scripts.length === 0 && suggested.length === 0 ? [] : [{ ...group, scripts, suggested }];
   });
 };

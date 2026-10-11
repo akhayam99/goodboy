@@ -47,6 +47,7 @@ const group = ({
     isReady: true,
     packageCount: new Set(scripts.map((entry) => entry.relDir)).size,
     scripts,
+    suggested: [],
   }) satisfies SessionScriptGroup;
 
 const LEDGER = group({

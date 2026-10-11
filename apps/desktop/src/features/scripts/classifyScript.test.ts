@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { classifyScript, SCRIPT_CATEGORIES } from './classifyScript';
+import { classifyScript, isService, SCRIPT_CATEGORIES } from './classifyScript';
 
 describe('classifyScript', () => {
   it.each([
@@ -53,5 +53,25 @@ describe('classifyScript', () => {
       'docs',
       'other',
     ]);
+  });
+});
+
+describe('isService', () => {
+  it.each([
+    ['dev', 'dev', true],
+    ['start', 'dev', true],
+    ['serve', 'dev', true],
+    ['watch', 'dev', true],
+    ['preview', 'dev', true],
+    ['Start', 'other', true],
+    ['storybook', 'dev', true],
+    ['build', 'build', false],
+    ['test', 'test', false],
+    ['test:watch', 'test', false],
+    ['lint', 'lint', false],
+    ['db:migrate', 'db', false],
+    ['replay', 'other', false],
+  ] as const)('reads %s (%s) as service: %s', (name, category, expected) => {
+    expect(isService({ script: { name, category } })).toBe(expected);
   });
 });

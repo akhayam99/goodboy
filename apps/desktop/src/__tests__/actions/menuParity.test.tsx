@@ -215,7 +215,10 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         record={null}
         now={0}
         isSelected={false}
-        showSource
+        expectedPort={null}
+        portHolder={null}
+        facts={null}
+        onRestart={vi.fn()}
         blockedReason={null}
         isPinned={false}
         onTogglePin={vi.fn()}
