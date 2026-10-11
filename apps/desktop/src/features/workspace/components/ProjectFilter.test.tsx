@@ -13,15 +13,8 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type {
-  IsoDateTime,
-  MountId,
-  Project,
-  Session,
-  SessionProjectMount,
-  Workspace,
-} from '@goodboy/types';
-import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
+import type { MountId, Project, Session, SessionProjectMount, Workspace } from '@goodboy/types';
+import { TEST_NOW, aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -33,7 +26,6 @@ import { ProjectFilter } from './ProjectFilter';
 let useAppStore: StoryStore;
 
 const HARBORLINE: Workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
-const STARRED_AT = '2026-10-01T09:00:00.000Z' as IsoDateTime;
 const NAMES = [
   'ledger-core',
   'notify-relay',
@@ -52,8 +44,18 @@ const projectOf = ({ name, isStarred }: { readonly name: string; readonly isStar
     name,
     rootPath: `/repos/${name}`,
     kind: 'repo',
-    ...(isStarred ? { starredAt: STARRED_AT } : {}),
+    ...(isStarred ? { starredAt: TEST_NOW } : {}),
   });
+
+const isMountId = (value: string): value is MountId => value.startsWith('mount-');
+
+const mountIdOf = ({ session }: { readonly session: Session }): MountId => {
+  const value = `mount-${session.id}`;
+  if (!isMountId(value)) {
+    throw new Error(`not a mount id: ${value}`);
+  }
+  return value;
+};
 
 const mountOf = ({
   session,
@@ -62,7 +64,7 @@ const mountOf = ({
   readonly session: Session;
   readonly project: Project;
 }): SessionProjectMount => ({
-  mountId: `mount-${session.id}` as MountId,
+  mountId: mountIdOf({ session }),
   sessionId: session.id,
   projectId: project.id,
   mountName: project.name,
@@ -81,19 +83,18 @@ const seed = ({ count, starred }: { readonly count: number; readonly starred: nu
   const projects = NAMES.slice(0, count).map((name, index) =>
     projectOf({ name, isStarred: index < starred }),
   );
-  const sessions = projects.map((project) =>
-    aSession({ workspaceId: HARBORLINE.id, goal: `Work on ${project.name}` }),
-  );
+  const pairs = projects.map((project) => ({
+    project,
+    session: aSession({ workspaceId: HARBORLINE.id, goal: `Work on ${project.name}` }),
+  }));
+  const sessions = pairs.map((pair) => pair.session);
   useAppStore.setState({
     workspaces: [HARBORLINE],
     currentWorkspaceId: HARBORLINE.id,
     projects,
     sessions,
     sessionProjectMounts: Object.fromEntries(
-      sessions.map((session, index) => [
-        session.id,
-        [mountOf({ session, project: projects[index] as Project })],
-      ]),
+      pairs.map((pair) => [pair.session.id, [mountOf(pair)]]),
     ),
   });
   render(<ProjectFilter workspaceId={HARBORLINE.id} sessions={sessions} />);

@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { MountId, Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import { TEST_NOW, aProject } from '@goodboy/types/testing';
 import { emptyOverrides } from '../../../../../store/storyHarness';
 
 const SID = 'session-1' as SessionId;
@@ -159,12 +160,13 @@ describe('MountProjectList', () => {
 
 describe('MountProjectList groups', () => {
   const named = ({ name, isStarred }: { readonly name: string; readonly isStarred: boolean }) =>
-    ({
-      ...repoProject,
-      id: `project-${name}` as ProjectId,
+    aProject({
+      workspaceId: WID,
       name,
-      ...(isStarred ? { starredAt: '2026-10-01T09:00:00.000Z' } : {}),
-    }) as unknown as Project;
+      rootPath: `/repos/${name}`,
+      kind: 'repo',
+      ...(isStarred ? { starredAt: TEST_NOW } : {}),
+    });
 
   const NAMES = [
     'ledger-core',

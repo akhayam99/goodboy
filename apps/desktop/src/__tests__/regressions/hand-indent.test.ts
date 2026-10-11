@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const FEATURES_ROOT = join(REPO_ROOT, 'apps', 'desktop', 'src', 'features');
 const BASELINE_PATH = join(__dirname, 'hand-indent.baseline.json');
-const IS_UPDATING = process.env.GOODBOY_UPDATE_BASELINE === '1';
+const isUpdatingBaseline = process.env.GOODBOY_UPDATE_BASELINE === '1';
 
 const SKIPPED_DIRECTORIES: ReadonlySet<string> = new Set(['node_modules', 'dist', 'target', 'gen']);
 const HAND_INDENT = /(?<![\w-])pl-[579](?![\w.-])/g;
@@ -70,7 +70,7 @@ describe('hand-indented disclosure bodies only ever shrink', () => {
 
   it('adds no hand indent to any file beyond its baseline', () => {
     const current = measure();
-    if (IS_UPDATING) {
+    if (isUpdatingBaseline) {
       writeFileSync(BASELINE_PATH, `${JSON.stringify(current, null, 2)}\n`);
       return;
     }

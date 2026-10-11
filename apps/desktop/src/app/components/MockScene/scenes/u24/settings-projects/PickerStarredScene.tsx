@@ -7,7 +7,22 @@ import { SETTINGS_WORKSPACE } from '../../audit/settingsSeed';
 import { useAppStore } from '../../../../../../store';
 import { projectsOf } from './settingsProjectsSeed';
 
-const SESSION_ID = 'mock-settings-projects-session' as SessionId;
+const SESSION_VALUE = 'mock-settings-projects-session';
+
+const isSessionId = (value: string): value is SessionId => value === SESSION_VALUE;
+
+type IdParams = {
+  readonly value: string;
+};
+
+const sessionIdOf = ({ value }: IdParams): SessionId => {
+  if (!isSessionId(value)) {
+    throw new Error(`not a session id: ${value}`);
+  }
+  return value;
+};
+
+const SESSION_ID = sessionIdOf({ value: SESSION_VALUE });
 
 const PROJECTS = starredProjectsFirst({
   projects: projectsOf({ isStarredShown: true }),

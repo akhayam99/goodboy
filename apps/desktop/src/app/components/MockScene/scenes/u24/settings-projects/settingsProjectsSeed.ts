@@ -19,8 +19,24 @@ type ProjectParams = {
   readonly description?: string;
 };
 
+const ID_PREFIX = 'mock-settings-projects-';
+
+const isProjectId = (value: string): value is ProjectId => value.startsWith(ID_PREFIX);
+
+type IdParams = {
+  readonly name: string;
+};
+
+const idOf = ({ name }: IdParams): ProjectId => {
+  const value = `${ID_PREFIX}${name}`;
+  if (!isProjectId(value)) {
+    throw new Error(`not a project id: ${value}`);
+  }
+  return value;
+};
+
 const projectOf = ({ name, isStarred, kind = 'repo', description }: ProjectParams): Project => ({
-  id: `mock-settings-projects-${name}` as ProjectId,
+  id: idOf({ name }),
   workspaceId: SETTINGS_WORKSPACE_ID,
   name,
   rootPath: `/mock/harborline/${name}`,
@@ -91,11 +107,10 @@ const seedFor =
       terminalFolderOverrides: {},
       settings: {
         ...state.settings,
-        [scriptPinsKey({ projectId: 'mock-settings-projects-ledger-core' as ProjectId })]:
-          JSON.stringify([
-            scriptPinId({ source: 'package-json', relDir: '', name: 'dev', savedId: null }),
-            scriptPinId({ source: 'package-json', relDir: '', name: 'test', savedId: null }),
-          ]),
+        [scriptPinsKey({ projectId: idOf({ name: 'ledger-core' }) })]: JSON.stringify([
+          scriptPinId({ source: 'package-json', relDir: '', name: 'dev', savedId: null }),
+          scriptPinId({ source: 'package-json', relDir: '', name: 'test', savedId: null }),
+        ]),
       },
       loadScriptPins: async () => undefined,
       loadProjectRootScripts: async () => undefined,
