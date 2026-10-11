@@ -61,7 +61,7 @@ export const NextStepRow = ({
   }, [suggestion.id]);
 
   const primary = actions.primary;
-  const isConfirmed = primary?.requiresConfirm === true;
+  const shouldConfirm = primary?.requiresConfirm === true;
   const choices = primary?.choices ?? [];
   const runsOn = primary?.runsOn ?? null;
   const isChoicePending = pendingChoiceIds.size > 0;
@@ -86,7 +86,7 @@ export const NextStepRow = ({
         disabled={primary.isDisabled || (isChoicePending && !isPending)}
         isBusy={isPending}
         onClick={() => {
-          if (isConfirmed) {
+          if (shouldConfirm) {
             setIsConfirming(true);
             return;
           }
@@ -154,7 +154,7 @@ export const NextStepRow = ({
             </Button>
           );
         })}
-      {primary != null && isConfirmed ? (
+      {primary != null && shouldConfirm ? (
         <ConfirmPopover
           role={CONFIRM_ROLE[suggestion.kind] ?? 'primary'}
           icon={<Icon size={ICON_SIZE.row} aria-hidden />}
