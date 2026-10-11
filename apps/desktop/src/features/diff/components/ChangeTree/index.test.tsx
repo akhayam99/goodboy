@@ -65,7 +65,7 @@ const renderTree = (overrides: Partial<Parameters<typeof ChangeTree>[0]> = {}) =
 const itemOf = (name: RegExp): HTMLElement => screen.getByRole('treeitem', { name });
 
 const rowById = (id: string): HTMLElement => {
-  const row = screen.getAllByRole('treeitem').find((item) => item.dataset.rowId === id);
+  const row = screen.getAllByRole('treeitem').find((item) => item.dataset.treeRow === id);
   if (row === undefined) {
     throw new Error(`no row ${id}`);
   }

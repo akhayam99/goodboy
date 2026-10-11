@@ -26,7 +26,7 @@ const threadOf = ({ fix }: { readonly fix: NoteFix }): DiffThread => {
     createdAt: note.createdAt,
     statusLabel: fix.word,
     isResolved: isDone,
-    canEdit: false,
+    canEdit: !isDone && !fix.isLocked,
     canClose: !isDone,
     canReopen: fix.canReopen,
     actions: [],
@@ -40,6 +40,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
   const addDiffComment = useAppStore((s) => s.addDiffComment);
   const closeResolvedNote = useAppStore((s) => s.closeResolvedNote);
   const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
+  const editDiffComment = useAppStore((s) => s.editDiffComment);
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
   const askAgent = useAskAgent({ sessionId });
 
@@ -62,6 +63,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
         void closeResolvedNote({ sessionId, threadId });
       },
       onReopen: (id) => void reopenDiffComment(sessionId, id),
+      onEdit: (id, body) => void editDiffComment(sessionId, id, body),
       onDelete: (id) => void deleteDiffComment(sessionId, id),
     };
   }, [
@@ -69,6 +71,7 @@ export const useDiffNotes = ({ sessionId }: Params): DiffComments => {
     askAgent,
     closeResolvedNote,
     deleteDiffComment,
+    editDiffComment,
     fixes,
     reopenDiffComment,
     sessionId,

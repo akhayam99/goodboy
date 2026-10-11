@@ -52,6 +52,7 @@ branch-checks-gitlab-jobs
 branch-checks-loading
 branch-checks-no-pr
 branch-comments
+branch-comments-both
 branch-comments-no-pr
 branch-commits
 branch-commits-toolbar
@@ -60,8 +61,11 @@ branch-create-gitlab
 branch-description-open
 branch-draft
 branch-files
+branch-files-1920-split
+branch-files-both
 branch-files-deep
 branch-files-docked
+branch-files-nopr-notes
 branch-files-notes
 branch-lane-chain
 branch-lane-working
@@ -69,9 +73,6 @@ branch-merged
 branch-narrow
 branch-nopr
 branch-nopr-notes
-branch-notes-empty
-branch-notes-fixing
-branch-notes-ready
 branch-open
 branch-overlay-rail
 branch-pr-bitbucket
@@ -358,7 +359,6 @@ resolve-failed-history
 resolve-gitlab
 resolve-item
 resolve-launch
-resolve-notes
 resolve-publish-blocked
 resolve-queue-shell
 resolve-run-answered

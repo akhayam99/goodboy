@@ -70,7 +70,7 @@ export const FileRow = ({
       aria-level={row.depth + 1}
       aria-selected={isCursor}
       aria-current={isActive ? 'true' : undefined}
-      data-row-id={row.id}
+      data-tree-row={row.id}
       className={cn(
         'relative list-none rounded-sm',
         isCursor && isTreeFocused && 'ring-2 ring-inset ring-focus-ring',

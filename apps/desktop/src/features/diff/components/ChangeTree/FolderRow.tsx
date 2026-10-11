@@ -76,7 +76,7 @@ export const FolderRow = ({
       aria-level={row.depth + 1}
       aria-expanded={isOpen}
       aria-selected={isCursor}
-      data-row-id={row.id}
+      data-tree-row={row.id}
       className={cn(
         'relative list-none rounded-sm',
         isCursor && isTreeFocused && 'ring-2 ring-inset ring-focus-ring',
