@@ -35,6 +35,23 @@ case "$1" in
   --version)
     fake_version "2026.09.17-fake"
     ;;
+  models)
+    case "$fake_mode" in
+      slow)
+        fake_hang
+        ;;
+      logged-out)
+        printf 'Not logged in. Run cursor-agent login.\n' >&2
+        exit 1
+        ;;
+      empty-models)
+        printf 'No models available for this account.\n'
+        ;;
+      *)
+        printf 'Available models\n\nharborline-model - Harborline\n\nTip: use --model <id> to switch.\n'
+        ;;
+    esac
+    ;;
   status)
     case "$fake_mode" in
       slow)

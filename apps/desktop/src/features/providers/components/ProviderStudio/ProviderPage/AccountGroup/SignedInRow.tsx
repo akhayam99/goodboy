@@ -1,17 +1,14 @@
-import { BAND_ROW_CLASS, Button, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
+import { Button, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
 import { LogIn, Unplug } from 'lucide-react';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { ConnectionTest } from './ConnectionTest';
 import type { AccountGroupProps } from './types';
 
 const dangerTint = tintClasses('danger');
 
-const identityLine = ({
-  identity,
-  planLabel,
-}: {
-  readonly identity: string | null;
-  readonly planLabel: string | null;
-}): string => {
+type IdentityParams = { readonly identity: string | null; readonly planLabel: string | null };
+
+const identityLine = ({ identity, planLabel }: IdentityParams): string => {
   const who = identity ?? 'Connected';
   return planLabel === null ? who : `${who} · ${planLabel} plan`;
 };
@@ -61,7 +58,7 @@ export const SignedInRow = ({
     );
   }
   return (
-    <div className={cn(BAND_ROW_CLASS, 'gap-3 text-label')}>
+    <ConnectionTest info={info} onReauth={onReauth}>
       <span className="w-28 shrink-0 text-muted-foreground">Signed in</span>
       <span className="min-w-0 flex-1 truncate text-foreground">
         {identityLine({ identity: info.identity, planLabel })}
@@ -79,6 +76,6 @@ export const SignedInRow = ({
       >
         Disconnect
       </Button>
-    </div>
+    </ConnectionTest>
   );
 };

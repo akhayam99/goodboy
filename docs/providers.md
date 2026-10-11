@@ -317,6 +317,25 @@ path**. A provider that is not connected shows only its connect card.
 - The provider's row in the rail turns warning from 80% of a window and danger
   when the provider is out, with the reason under its name
 
+## Test the connection and read its history
+
+On Claude, Codex and Cursor, **Test connection** in Account makes a real account
+call with a 15-second deadline. It shows the elapsed time on success or the first
+line of the error with **Sign in again**. An authentication refusal counts as one
+refusal in the existing provider breaker; a passing call confirms the account.
+The command is `provider_test_connection` in `src-tauri/src/providers/test_connection.rs`.
+
+**History** opens beside its button and shows the newest 20 changes since Goodboy
+started, with relative times and absolute times in tooltips. It reads the existing
+health ring through the [Account history control](../apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx); each change uses the existing standing log.
+
+The probe lock in `store/slices/providers/probeLock.ts` allows one status, usage,
+limits or connection test per provider. Calls of the same kind join; other kinds
+wait. Automatic checks skip a provider with a live agent turn. Test connection
+and **Check again** wait for that turn. Each window owns its queue and history.
+Codex limits in `refreshCodexLimits` read the latest rollout first and ask the
+app server only when that reading is missing, invalid or older than five minutes.
+
 ## Switching accounts
 
 Each provider uses one account at a time, and the card shows which one. That account
@@ -990,7 +1009,9 @@ project,local --no-session-persistence` in an empty scratch directory,
     (`allowed`, `allowed_warning`, `rejected`); a per-model type adds its own
     window. An unknown type drops only its window, never the event.
     `mergeProviderLimits` keeps windows it saw until their reset.
-- **Codex**: two sources, the app server first and the rollout files after.
+- **Codex**: `refreshCodexLimits` reads the rollout files first. It asks the
+  app server only when the rollout reading is missing, invalid or older than five
+  minutes.
   - **App server** (`codex_app_server.rs`, `codex_rate_limits_probe`): spawns
     `codex app-server` on stdio in an empty scratch directory, sends
     `initialize`, then `initialized` and `account/rateLimits/read`, reads
@@ -1000,11 +1021,12 @@ project,local --no-session-persistence` in an empty scratch directory,
     `secondary` the week, `planType` the plan. `parseCodexResetCredits` reads
     `rateLimitResetCredits` (count, and the first available credit's id and
     expiry) into `codexResetCredits`. Background polls pass
-    `excludeResetCreditDetails`; the provider page asks with details and a poll
+    `excludeResetCreditDetails`; a provider-page server query asks with details and a poll
     keeps the details it already had while the count is unchanged. Verified
     against codex 0.156.0 and its `codex app-server generate-json-schema`
     output. The app server is marked experimental: when it fails, the rollout
-    read below runs instead
+    reading already recorded stays available and `providerLimitsProbe` records
+    the failure
   - **Rollout**: the `token_count` lines of the rollout files under
     `$CODEX_HOME/sessions` carry `payload.rate_limits` (same windows in snake
     case, plus `plan_type`). `codex_rate_limits_latest` in `codex_rollout.rs`

@@ -7,6 +7,7 @@ use crate::path_env;
 use crate::proc::probe::{self, Budget, ProbeOutput};
 
 pub(crate) mod cli_args;
+pub mod test_connection;
 
 #[derive(Debug, Error)]
 pub enum ProviderStatusError {
