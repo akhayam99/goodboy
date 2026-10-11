@@ -1,9 +1,4 @@
-import {
-  ROLE_REGISTRY,
-  resolveRoleRouting,
-  roleSplitLimits,
-  type AutoContext,
-} from '@goodboy/core';
+import { ROLE_REGISTRY, roleSplitLimits, type Resolution } from '@goodboy/core';
 import type { AgentEffort, AgentRole, ProviderId } from '@goodboy/types';
 import { ROLE_LABEL } from '../../../../../session/agent-kind';
 import { recommendationSummary } from '../../../../../../shared/components/RoutingPicker/recommendationSummary';
@@ -24,15 +19,17 @@ export type RoleRunFacts = {
 
 type Params = {
   readonly role: AgentRole;
-  readonly autoContext: AutoContext;
+  readonly auto: Resolution;
   readonly isParallelOn: boolean;
 };
 
+const AUTO_EFFORT: AgentEffort = 'medium';
+
 const PARALLEL_OFF_NOTE = 'Parallel agents is off in this workspace, so it runs as one agent.';
 
-export const roleRunFacts = ({ role, autoContext, isParallelOn }: Params): RoleRunFacts => {
+export const roleRunFacts = ({ role, auto, isParallelOn }: Params): RoleRunFacts => {
   const entry = ROLE_REGISTRY[role];
-  const auto = resolveRoleRouting({ role, prefs: null, auto: autoContext });
+  const effort = auto.effort ?? AUTO_EFFORT;
   const limits = roleSplitLimits(role);
   const noun = ROLE_LABEL[role].toLowerCase();
   const headline =
@@ -48,11 +45,11 @@ export const roleRunFacts = ({ role, autoContext, isParallelOn }: Params): RoleR
     auto: {
       provider: auto.provider,
       model: auto.model,
-      effort: auto.effort,
+      effort,
       label: recommendationSummary({
         provider: auto.provider,
         model: auto.model,
-        effort: auto.effort,
+        effort,
       }),
     },
     autoReason: entry.explain.autoReason,

@@ -62,6 +62,13 @@ export const providerStanding = ({ provider, context }: GateParams): ProviderSta
   return state === 'backup' ? 'backup' : 'usable';
 };
 
+export type UnusableReason = 'off' | 'not-connected';
+
+export const unusableReason = ({ provider, context }: GateParams): UnusableReason | null => {
+  const standing = providerStanding({ provider, context });
+  return standing === 'off' || standing === 'not-connected' ? standing : null;
+};
+
 type PolicyParams = {
   readonly policy: ProviderPolicy | null | undefined;
 };

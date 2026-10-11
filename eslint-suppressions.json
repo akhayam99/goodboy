@@ -7591,9 +7591,6 @@
     }
   },
   "apps/desktop/src/features/workflows/components/OrchestratorStrip/OrchestratorRoutingRow/index.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    },
     "@typescript-eslint/naming-convention": {
       "count": 2
     }

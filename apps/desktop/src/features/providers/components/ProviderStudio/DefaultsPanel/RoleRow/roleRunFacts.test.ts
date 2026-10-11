@@ -1,19 +1,31 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_GROUPS, ROLE_REGISTRY, resolveRoleRouting } from '@goodboy/core';
+import { DEFAULT_GROUPS, ROLE_REGISTRY, resolveRoleRouting, resolveSlot } from '@goodboy/core';
+import type { AgentRole } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
 import { roleRunFacts } from './roleRunFacts';
 
 const SHOWN_ROLES = DEFAULT_GROUPS.agents.flatMap((group) => group.members);
 const PROVIDERS: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'gemini', 'cursor'];
 
+type AutoParams = {
+  readonly role: AgentRole;
+  readonly defaultProvider: ProviderId;
+};
+
+const autoOf = ({ role, defaultProvider }: AutoParams) =>
+  resolveSlot({ slot: { kind: 'role', id: role }, context: { defaultProvider } });
+
 describe('roleRunFacts', () => {
   it('shows the same pick as resolveRoleRouting for every role and default provider', () => {
     for (const defaultProvider of PROVIDERS) {
       for (const role of SHOWN_ROLES) {
-        const autoContext = { defaultProvider };
-        const facts = roleRunFacts({ role, autoContext, isParallelOn: true });
-        const engine = resolveRoleRouting({ role, prefs: null, auto: autoContext });
+        const facts = roleRunFacts({
+          role,
+          auto: autoOf({ role, defaultProvider }),
+          isParallelOn: true,
+        });
+        const engine = resolveRoleRouting({ role, prefs: null, auto: { defaultProvider } });
 
         expect({
           provider: facts.auto.provider,
@@ -27,12 +39,12 @@ describe('roleRunFacts', () => {
   it('reads splits from the engine limits, never from copy', () => {
     const scout = roleRunFacts({
       role: 'scout',
-      autoContext: { defaultProvider: 'anthropic' },
+      auto: autoOf({ role: 'scout', defaultProvider: 'anthropic' }),
       isParallelOn: true,
     });
     const reviewer = roleRunFacts({
       role: 'reviewer',
-      autoContext: { defaultProvider: 'anthropic' },
+      auto: autoOf({ role: 'reviewer', defaultProvider: 'anthropic' }),
       isParallelOn: true,
     });
 
@@ -44,7 +56,7 @@ describe('roleRunFacts', () => {
   it('says a generalist never splits and that a role is picked instead', () => {
     const custom = roleRunFacts({
       role: 'custom',
-      autoContext: { defaultProvider: 'anthropic' },
+      auto: autoOf({ role: 'custom', defaultProvider: 'anthropic' }),
       isParallelOn: false,
     });
 

@@ -1098,6 +1098,10 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
   });
 
   it('reads the workspace orchestrator task model as the recommendation', async () => {
+    storeState.providers = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ];
     storeState.workspaceOverrides = {
       'ws-1': {
         taskModels: {
@@ -1136,6 +1140,7 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
   });
 
   it('carries the effort the picker showed when the workspace effort only looked lower', async () => {
+    storeState.providers = [{ id: 'anthropic', connection: 'connected' }];
     storeState.workspaceOverrides = {
       'ws-1': {
         taskModels: {
@@ -1550,6 +1555,7 @@ describe('WorkflowBuilderView (goal affordances)', () => {
   });
 
   it('uses the prose polish task model override', async () => {
+    storeState.providers = [{ id: 'anthropic', connection: 'connected' }];
     storeState.workspaceOverrides = {
       'ws-1': {
         taskModels: {

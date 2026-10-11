@@ -19,8 +19,9 @@ import {
   resolveRoleRouting,
   runsForWorkflowRun,
 } from '@goodboy/core';
-import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
-import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { useResolution } from '../../../providers/hooks/useResolution';
+import { autoModelOn } from '../../../providers/autoModelOn';
+import { resolutionAsTask } from '../../../providers/resolutionAsTask';
 import type {
   EffortLevel,
   ProviderId,
@@ -331,30 +332,17 @@ export const WorkflowBuilderView = (props: Props) => {
     [providers],
   );
 
-  const limitContext = useAutoLimitContext();
-
+  const resolutionScope = session === null ? { workspaceId } : { sessionId: session.id };
+  const planResolution = useResolution({ task: 'plan_generation', ...resolutionScope });
   const resolvedPlanTaskModel = useMemo(
-    () =>
-      resolveLimitedTaskModel({
-        limitContext,
-        task: 'plan_generation',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: providerId,
-      }),
-    [limitContext, workspaceOverrides, providerId],
+    () => resolutionAsTask({ resolution: planResolution }),
+    [planResolution],
   );
 
+  const prosePolishResolution = useResolution({ task: 'prose_polish', ...resolutionScope });
   const resolvedProsePolishTaskModel = useMemo(
-    () =>
-      resolveLimitedTaskModel({
-        limitContext,
-        task: 'prose_polish',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: providerId,
-      }),
-    [limitContext, workspaceOverrides, providerId],
+    () => resolutionAsTask({ resolution: prosePolishResolution }),
+    [prosePolishResolution],
   );
 
   const plannerEffectiveProviderId: ProviderId =
@@ -363,12 +351,9 @@ export const WorkflowBuilderView = (props: Props) => {
   const plannerRecommendedModel = useMemo(
     () =>
       plannerProviderOverride !== ''
-        ? resolveLimitedTaskModel({
-            limitContext: null,
-            task: 'plan_generation',
-            preferences: null,
-            workspaceDefaultProviderId: plannerProviderOverride,
-            sessionDefaultProviderId: providerId,
+        ? autoModelOn({
+            slot: { kind: 'task', id: 'plan_generation' },
+            provider: plannerProviderOverride,
           }).model
         : resolvedPlanTaskModel.model,
     [plannerProviderOverride, providerId, resolvedPlanTaskModel],
@@ -376,16 +361,13 @@ export const WorkflowBuilderView = (props: Props) => {
 
   const plannerEffort = plannerEffortOverride ?? resolvedPlanTaskModel.effort ?? PLANNER_EFFORT;
 
+  const orchestratorResolution = useResolution({
+    task: 'workflow_orchestrator',
+    ...resolutionScope,
+  });
   const resolvedOrchestratorTaskModel = useMemo(
-    () =>
-      resolveLimitedTaskModel({
-        limitContext,
-        task: 'workflow_orchestrator',
-        preferences: workspaceOverrides?.taskModels,
-        workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
-        sessionDefaultProviderId: providerId,
-      }),
-    [limitContext, workspaceOverrides, providerId],
+    () => resolutionAsTask({ resolution: orchestratorResolution }),
+    [orchestratorResolution],
   );
 
   const workspacePolicy = workspaceOverrides?.providerPool ?? null;
@@ -413,12 +395,9 @@ export const WorkflowBuilderView = (props: Props) => {
   const recommendedOrchestratorModel = useMemo(
     () =>
       orchestratorProviderOverride !== ''
-        ? resolveLimitedTaskModel({
-            limitContext: null,
-            task: 'workflow_orchestrator',
-            preferences: null,
-            workspaceDefaultProviderId: orchestratorProviderOverride,
-            sessionDefaultProviderId: providerId,
+        ? autoModelOn({
+            slot: { kind: 'task', id: 'workflow_orchestrator' },
+            provider: orchestratorProviderOverride,
           }).model
         : resolvedOrchestratorTaskModel.model,
     [orchestratorProviderOverride, resolvedOrchestratorTaskModel],
