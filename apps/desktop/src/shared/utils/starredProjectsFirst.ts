@@ -2,7 +2,7 @@ import type { Project } from '@goodboy/types';
 
 type Orderable = Pick<Project, 'name' | 'starredAt' | 'lastAccessedAt'>;
 
-export type StarredInside = 'name' | 'recency';
+type StarredInside = 'name' | 'recency';
 
 type Params<T extends Orderable> = {
   readonly projects: ReadonlyArray<T>;
