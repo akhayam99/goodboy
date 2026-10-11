@@ -1076,7 +1076,7 @@ covered.
   chat you had open last in this workspace (`lastChatByWorkspace`, memory only,
   `selectChatDoor`), else the most recent chat by activity, else a new chat; after
   you press New chat it opens a new one until you pick a chat again. The column
-  door, the top bar button and the palette entry share that rule. Archiving or
+  door, the top bar button and the palette entry share that rule. A chat with no message is one centred stage (the glyph, **Ask about {workspace}**, one sentence, the composer and up to three suggestions); the first message docks the composer at the bottom. Archiving or
   deleting the open chat lands on the next most recent one, not a blank page. Its
   row carries a running dot or a new-reply dot. The command
   center opens the palette and shows ⌘K; it never takes typing itself. In the palette,
