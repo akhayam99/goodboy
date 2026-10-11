@@ -18,6 +18,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint && pnpm run check:tauri-commands && pnpm run check:doc-refs",
+    "lint:ts": "node --max-old-space-size=6144 node_modules/eslint/bin/eslint.js apps/desktop/src packages website/src",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test --continue",
     "test:perf": "turbo run test:perf --continue",
@@ -41,18 +42,22 @@
     "readme:hero": "node scripts/readme-hero.mjs",
     "features:check": "node scripts/split-features.mjs --check",
     "features:snapshot": "node scripts/snapshot-features.mjs",
-    "test:scripts": "node --test scripts/snapshot-features.test.mjs scripts/check-feature-anchors.test.mjs scripts/check-figure-versions.test.mjs scripts/ci-changes.test.mjs scripts/ci-gate.test.mjs scripts/check-test-shards.test.mjs scripts/rules/forbiddenPatterns.test.mjs scripts/check-rules.test.mjs scripts/check-baselines.test.mjs scripts/gate.test.mjs scripts/validate-scenes.test.mjs",
+    "test:scripts": "node --test scripts/snapshot-features.test.mjs scripts/check-feature-anchors.test.mjs scripts/check-figure-versions.test.mjs scripts/ci-changes.test.mjs scripts/ci-gate.test.mjs scripts/check-test-shards.test.mjs scripts/rules/forbiddenPatterns.test.mjs scripts/check-rules.test.mjs scripts/check-baselines.test.mjs scripts/gate.test.mjs scripts/lint-ts.test.mjs scripts/validate-scenes.test.mjs",
     "codemod:type-roles": "node scripts/codemods/type-roles.mjs",
     "prepare": "lefthook install"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-regexp": "^3.3.1",
     "knip": "^6.38.0",
     "lefthook": "^2.1.14",
     "prettier": "^3.9.9",
     "turbo": "^2.11.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.71.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

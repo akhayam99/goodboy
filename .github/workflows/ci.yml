@@ -64,6 +64,9 @@ jobs:
       - name: typecheck
         run: pnpm turbo run typecheck
 
+      - name: typed lint
+        run: pnpm run lint:ts
+
       - name: website token and icon drift
         run: pnpm --dir website run sync:tokens -- --check && pnpm --dir website exec node scripts/sync-icons.mjs --check
 
