@@ -37,6 +37,8 @@ export const SUGGESTION_KINDS = [
 
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
 
+export type ScribeRequestState = 'writing' | 'ready' | 'creating';
+
 export type SuggestionQuestion = {
   readonly id: OpenQuestionId;
   readonly createdByAgentId: AgentId | null;
@@ -156,6 +158,7 @@ export type SessionSuggestion =
         readonly projectId: ProjectId;
         readonly projectName: string;
         readonly ahead: number;
+        readonly scribe?: ScribeRequestState | null;
       };
     })
   | (SuggestionBase & {

@@ -139,8 +139,9 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
       await click(await screen.findByRole('tab', { name: /^Pull request/ }));
       await branchTab('pr')(ctx);
       expect(
-        await screen.findByRole('heading', { name: 'No pull request yet' }, WAIT),
+        await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT),
       ).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
     },
   },
   {

@@ -396,9 +396,7 @@ export const MrDetailPanel = ({
         />
       }
     >
-      {sessionId != null && (
-        <CreateMrForm sessionId={sessionId} branch={branch} error={error} onClose={onClose} />
-      )}
+      {sessionId != null && <CreateMrForm sessionId={sessionId} onCreated={onClose} />}
     </PaneShell>
   );
 };

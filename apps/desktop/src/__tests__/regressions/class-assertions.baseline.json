@@ -74,6 +74,5 @@
   "apps/desktop/src/shared/components/StudioDetail/index.test.tsx": 1,
   "apps/desktop/src/shared/components/StudioDetail/RecordState/index.test.tsx": 1,
   "apps/desktop/src/shared/components/StudioShell/index.test.tsx": 13,
-  "apps/desktop/src/shared/lib/theme.test.ts": 4,
-  "apps/desktop/src/features/branch/components/PullRequestTab/ReviewerPicker.test.tsx": 1
+  "apps/desktop/src/shared/lib/theme.test.ts": 4
 }

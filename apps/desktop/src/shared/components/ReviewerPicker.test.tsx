@@ -87,9 +87,7 @@ describe('ReviewerPicker', () => {
     renderPicker();
     openPanel();
     const panel = await screen.findByPlaceholderText('filter collaborators');
-    const popup = panel.closest('div.fixed');
-    expect(popup?.className).toContain('z-popover');
-    expect(popup?.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
+    expect(panel.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
   });
 
   it('closes on a mousedown outside the picker', async () => {

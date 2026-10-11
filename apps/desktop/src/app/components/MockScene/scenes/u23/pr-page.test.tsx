@@ -132,19 +132,20 @@ describe('the pull request page scenes', () => {
     expect(screen.getByText('Enter saves, Esc cancels')).toBeDefined();
   });
 
-  it('branch-pr-none offers the create form under an empty state', async () => {
+  it('branch-pr-none offers the create form with the card, Opens as and one Create', async () => {
     draw({ name: 'branch-pr-none' });
 
-    expect(await screen.findByRole('heading', { name: 'No pull request yet' })).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+    expect(await screen.findByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Write with Scribe' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
-    expect(screen.getByRole('switch', { name: 'Open as draft' })).toBeDefined();
+    expect(screen.getByRole('tablist', { name: 'Opens as' })).toBeDefined();
+    expect(screen.queryByRole('switch', { name: 'Open as draft' })).toBeNull();
   });
 
   it('branch-pr-none picks the default base branch instead of an empty list', async () => {
     draw({ name: 'branch-pr-none' });
 
-    await screen.findByRole('heading', { name: 'No pull request yet' });
+    await screen.findByRole('textbox', { name: 'Pull request title' });
     const base = await screen.findByRole('combobox', { name: 'Branch' });
     await waitFor(() => expect(base.textContent).toContain('main'));
     expect(base.textContent).not.toContain('[]');

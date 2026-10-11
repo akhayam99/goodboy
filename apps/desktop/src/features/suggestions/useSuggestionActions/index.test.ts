@@ -720,23 +720,67 @@ describe('useSuggestionActions', () => {
     expect(spies.pushSessionBranch).not.toHaveBeenCalled();
   });
 
-  it('opens a pull request for the named mount', () => {
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'open-pr:mount-web',
-        kind: 'open-pr',
-        band: 2,
-        payload: { mountId: WEB_MOUNT_ID, projectId: WEB_ID, projectName: 'web', ahead: 7 },
+  describe('open-pr', () => {
+    const openPrSuggestion = ({
+      scribe,
+    }: {
+      readonly scribe?: 'writing' | 'ready' | 'creating' | null;
+    }): SessionSuggestion => ({
+      ...suggestionBase,
+      id: 'open-pr:mount-web',
+      kind: 'open-pr',
+      band: 2,
+      payload: {
+        mountId: WEB_MOUNT_ID,
+        projectId: WEB_ID,
+        projectName: 'web',
+        ahead: 7,
+        ...(scribe === undefined ? {} : { scribe }),
       },
     });
 
-    expect(actions.primary?.label).toBe('Open PR');
-    actions.primary?.run();
+    beforeEach(() => {
+      storeState.sessionProjectMounts = {
+        [SESSION_ID]: [
+          {
+            mountId: WEB_MOUNT_ID,
+            projectId: WEB_ID,
+            mountName: 'web',
+            worktreePath: '/tmp/web',
+            branch: 'feature/web',
+          },
+        ],
+      };
+    });
 
-    expect(spies.createPrForSession).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      mountId: WEB_MOUNT_ID,
+    it('opens the create form for the named mount and never creates blind', () => {
+      const actions = actionsFor({ suggestion: openPrSuggestion({}) });
+
+      expect(actions.primary?.label).toBe('Open PR');
+      void actions.primary?.run();
+
+      expect(spies.navigate).toHaveBeenCalledWith({
+        to: branchPlace({ sessionId: SESSION_ID, mountPath: '/tmp/web', tab: 'pr' }),
+      });
+      expect(spies.createPrForSession).not.toHaveBeenCalled();
+    });
+
+    it('offers Review text once Scribe wrote it and still never creates', () => {
+      const actions = actionsFor({ suggestion: openPrSuggestion({ scribe: 'ready' }) });
+
+      expect(actions.primary?.label).toBe('Review text');
+      void actions.primary?.run();
+
+      expect(spies.navigate).toHaveBeenCalledWith({
+        to: branchPlace({ sessionId: SESSION_ID, mountPath: '/tmp/web', tab: 'pr' }),
+      });
+      expect(spies.createPrForSession).not.toHaveBeenCalled();
+    });
+
+    it.each(['writing', 'creating'] as const)('has no button while the job is %s', (scribe) => {
+      const actions = actionsFor({ suggestion: openPrSuggestion({ scribe }) });
+
+      expect(actions.primary).toBeNull();
     });
   });
 
