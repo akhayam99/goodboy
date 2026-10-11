@@ -93,7 +93,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx',
     ],
   },
-  TerminalDock: { kind: 'shell', files: ['features/terminal/components/TerminalDock/index.tsx'] },
+  SessionTerminalLens: {
+    kind: 'shell',
+    files: ['features/terminal/components/TerminalStudio/SessionTerminalLens.tsx'],
+  },
   ArtifactStudio: {
     kind: 'dispatch',
     files: [
@@ -157,6 +160,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   addWorkspace: ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
   workflow: ['features/workflows/components/WorkflowsPanel/index.tsx'],
   inbox: ['features/inbox/components/InboxStudio/index.tsx'],
+  terminal: ['features/terminal/components/TerminalStudio/SessionTerminalLens.tsx'],
   impact: [
     'features/impact/components/ImpactStudio/OverviewPanel.tsx',
     'features/impact/components/ImpactStudio/FlowPanel.tsx',
@@ -201,6 +205,7 @@ const STUDIO_TIERS: Readonly<Record<StudioKind, 'column' | 'full'>> = {
   addWorkspace: 'column',
   workflow: 'column',
   inbox: 'column',
+  terminal: 'full',
   impact: 'column',
   changelog: 'column',
   notifications: 'column',

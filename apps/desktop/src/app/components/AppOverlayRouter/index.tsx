@@ -59,6 +59,11 @@ const ChatStudio = lazy(() =>
     default: module.ChatStudio,
   })),
 );
+const TerminalStudio = lazy(() =>
+  import('../../../features/terminal/components/TerminalStudio').then((module) => ({
+    default: module.TerminalStudio,
+  })),
+);
 const CompanionStudio = lazy(() =>
   import('../../../features/companion/components/CompanionStudio').then((module) => ({
     default: module.CompanionStudio,
@@ -173,6 +178,15 @@ const renderStudio = ({
     case 'chat':
       return currentWorkspace === null ? null : (
         <ChatStudio workspaceId={currentWorkspace.id} chatId={overlay.chatId} onClose={close} />
+      );
+    case 'terminal':
+      return currentWorkspace === null ? null : (
+        <TerminalStudio
+          workspaceId={currentWorkspace.id}
+          terminalId={overlay.terminalId}
+          sessionId={overlay.sessionId}
+          onClose={close}
+        />
       );
     default: {
       const unreachable: never = overlay;

@@ -182,7 +182,6 @@
   "apps/desktop/src/features/suggestions/components/NextStepSlot/index.test.tsx": 1,
   "apps/desktop/src/features/suggestions/useSessionSuggestions/index.test.tsx": 1,
   "apps/desktop/src/features/suggestions/useSuggestionActions/index.test.ts": 1,
-  "apps/desktop/src/features/terminal/components/TerminalDock/index.test.tsx": 1,
   "apps/desktop/src/features/updater/hooks/useRestartWhenIdle/index.test.ts": 1,
   "apps/desktop/src/features/wireframes/collectWireframeScoutPlan.test.ts": 1,
   "apps/desktop/src/features/wireframes/components/CreateWireframeCta/index.test.tsx": 1,

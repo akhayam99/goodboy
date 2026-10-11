@@ -30,6 +30,7 @@ const actions = (): ColumnActions => ({
   openInbox: vi.fn(),
   openChat: vi.fn(),
   openWorkflows: vi.fn(),
+  openTerminalStudio: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
@@ -94,14 +95,22 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks the toggle, New session, the four doors, the sessions, then Settings and the Goodboy row', () => {
+  it('stacks the toggle, New session, the five doors, the sessions, then Settings and the Goodboy row', () => {
     mountColumn();
     const nav = navLayer();
 
     expect(within(nav).getAllByRole('button')[0]?.getAttribute('aria-label')).toMatch(
       /^Hide sidebar/,
     );
-    expect(doorNames(nav)).toEqual(['new', 'board', 'inbox', 'chat', 'workflows', 'settings']);
+    expect(doorNames(nav)).toEqual([
+      'new',
+      'board',
+      'inbox',
+      'chat',
+      'workflows',
+      'terminal',
+      'settings',
+    ]);
     expect(nav.querySelector('[data-column-sessions]')).not.toBeNull();
     const foot = nav.querySelector('[data-column-foot]') as HTMLElement;
     expect(within(foot).getByRole('button', { name: 'Settings' })).toBeDefined();
@@ -114,6 +123,7 @@ describe('SideColumn', () => {
     ['inbox', ['inbox']],
     ['chat', ['chat']],
     ['workflows', ['workflows']],
+    ['terminal', ['terminal']],
     ['settings', ['settings']],
     ['new', ['new']],
     ['impact', []],
@@ -131,12 +141,14 @@ describe('SideColumn', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Board' }));
     fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
     fireEvent.click(screen.getByRole('button', { name: 'Workflows' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Terminal' }));
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     fireEvent.click(screen.getByRole('button', { name: 'Tasks' }));
 
     expect(doors.openBoard).toHaveBeenCalledOnce();
     expect(doors.openChat).toHaveBeenCalledOnce();
     expect(doors.openWorkflows).toHaveBeenCalledOnce();
+    expect(doors.openTerminalStudio).toHaveBeenCalledOnce();
     expect(doors.openSettings).toHaveBeenCalledOnce();
     expect(doors.openInbox).not.toHaveBeenCalled();
   });
@@ -210,7 +222,7 @@ describe('ColumnRail', () => {
   } = {}) =>
     render(<ColumnRail scope={scope} place={place} onToggle={vi.fn()} actions={actions()} />);
 
-  it('keeps every door at 44px: toggle, New, the four doors, then Settings, the bug and the mark', () => {
+  it('keeps every door at 44px: toggle, New, the five doors, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -218,7 +230,15 @@ describe('ColumnRail', () => {
     expect(within(rail).getAllByRole('button')[0]?.getAttribute('aria-label')).toMatch(
       /^Show sidebar/,
     );
-    expect(doorNames(rail)).toEqual(['new', 'board', 'inbox', 'chat', 'workflows', 'settings']);
+    expect(doorNames(rail)).toEqual([
+      'new',
+      'board',
+      'inbox',
+      'chat',
+      'workflows',
+      'terminal',
+      'settings',
+    ]);
     expect(within(rail).getByRole('button', { name: 'Report a bug' })).toBeDefined();
     expect(rail.querySelector('[data-goodboy-chip="rail"]')).not.toBeNull();
   });
