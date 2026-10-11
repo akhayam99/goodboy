@@ -2,6 +2,8 @@ import type { DrawerContent } from './state';
 
 export const drawerKey = (content: DrawerContent): string => {
   switch (content.kind) {
+    case 'check-analysis':
+      return `check-analysis:${content.payload.sessionId}:${content.payload.checkUrl}`;
     case 'context':
       return 'context';
     case 'explore-file':

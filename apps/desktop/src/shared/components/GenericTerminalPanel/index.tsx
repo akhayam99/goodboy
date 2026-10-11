@@ -117,12 +117,11 @@ export const GenericTerminalPanel = ({
     let webgl: WebglAddon | null = null;
     try {
       webgl = new WebglAddon();
-    } catch {
-      webgl = null;
-    }
-    if (webgl) {
       webgl.onContextLoss(() => webgl?.dispose());
       term.loadAddon(webgl);
+    } catch {
+      webgl?.dispose();
+      webgl = null;
     }
 
     const fitAndSync = () => {

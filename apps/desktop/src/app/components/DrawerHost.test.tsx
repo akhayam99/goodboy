@@ -76,6 +76,19 @@ const seedSession = (): void => {
 
 const ENTRIES: ReadonlyArray<Entry> = [
   {
+    kind: 'check-analysis',
+    region: 'Debugger',
+    seed: seedSession,
+    drawer: {
+      kind: 'check-analysis',
+      sessionId: SESSION,
+      payload: {
+        sessionId: SESSION,
+        checkUrl: 'https://github.com/harborline/payments-api/actions/runs/31/job/42',
+      },
+    },
+  },
+  {
     kind: 'ask',
     region: 'Ask',
     seed: seedSession,

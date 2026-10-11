@@ -41,6 +41,9 @@ board-stacked
 board-states
 board-wide
 branch-checks
+branch-checks-analyze-failing
+branch-checks-analyzed
+branch-checks-analyzing
 branch-checks-bitbucket-rows
 branch-checks-denied
 branch-checks-empty
@@ -143,6 +146,8 @@ controls-ladder
 controls-topbar
 conversation
 crash-report
+debugger-drawer-proposal
+debugger-drawer-running
 design-comments
 design-controls-scale
 design-scale
