@@ -1,12 +1,18 @@
 import { Button } from '@goodboy/ui';
 import type { RebaseJobControls } from '../useRebaseJob';
+import type { useJobBannerActions } from '../hooks/useJobBannerActions';
+import { JobBannerDetails } from './JobBannerDetails';
 
 type Props = {
   readonly controls: RebaseJobControls;
+  readonly actions: ReturnType<typeof useJobBannerActions>;
+  readonly isNoteOpen: boolean;
+  readonly onToggleNote: () => void;
 };
 
-export const JobBannerActions = ({ controls }: Props) => {
+export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }: Props) => {
   const { job, agentId, canUndo } = controls;
+  const { pendingKeys } = actions;
   const seeWhatItDid =
     agentId === null ? null : (
       <Button size="sm" variant="ghost" onClick={controls.seeWhatItDid}>
@@ -35,6 +41,14 @@ export const JobBannerActions = ({ controls }: Props) => {
     case 'stuck':
       return (
         <>
+          <Button
+            size="sm"
+            aria-expanded={isNoteOpen}
+            isBusy={pendingKeys.has('retry-note')}
+            onClick={onToggleNote}
+          >
+            Retry with a note
+          </Button>
           {seeWhatItDid}
           {dismiss}
         </>
@@ -63,8 +77,8 @@ export const JobBannerActions = ({ controls }: Props) => {
     case 'head-moved':
       return (
         <>
-          <Button size="sm" variant="secondary" onClick={controls.refresh}>
-            Refresh
+          <Button size="sm" isBusy={pendingKeys.has('retry-rebase')} onClick={actions.retryRebase}>
+            Retry rebase
           </Button>
           {dismiss}
         </>
@@ -72,13 +86,25 @@ export const JobBannerActions = ({ controls }: Props) => {
     case 'push-failed':
       return (
         <>
-          <Button size="sm" variant="secondary" onClick={controls.openTerminal}>
+          <Button size="sm" isBusy={pendingKeys.has('retry-push')} onClick={actions.retryPush}>
+            Retry push
+          </Button>
+          <Button size="sm" variant="ghost" onClick={controls.openTerminal}>
             Open terminal
           </Button>
+          {job.detail === null ? null : <JobBannerDetails detail={job.detail} />}
           {dismiss}
         </>
       );
     case 'origin-moved':
+      return (
+        <>
+          <Button size="sm" isBusy={pendingKeys.has('bring-origin')} onClick={actions.bringOrigin}>
+            Bring them into the plan
+          </Button>
+          {dismiss}
+        </>
+      );
     case 'result-differs':
     case 'blocked':
     case 'failed':

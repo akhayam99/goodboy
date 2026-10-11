@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../../store/store';
 import { ArtifactList } from '../../../../../features/artifacts/components/ArtifactList';
 import { ChatList } from '../../../../../features/workspace-chat/components/ChatList';
 import { OverviewPanel } from '../../../../../features/impact/components/ImpactStudio/OverviewPanel';
-import { TerminalDock } from '../../../../../features/terminal/components/TerminalDock';
+import { TerminalStudio } from '../../../../../features/terminal/components/TerminalStudio';
 import { RecentDecisions } from '../../../../../features/permissions/components/PermissionsSettings/RecentDecisions';
 import { HistoryStage } from '../brand/HistoryStage';
 import { CTX_PAYMENTS_MOUNT_ID, CTX_SESSION_ID, seedContextBase } from '../brand/contextBase';
@@ -106,7 +106,12 @@ export const StatesRestScene = ({ kind }: Props) => {
       ) : null}
       {kind === 'commits-loading' || kind === 'commits-empty' ? <HistoryStage /> : null}
       {kind === 'terminal-empty' ? (
-        <TerminalDock sessionId={SESSION_ID} cwd="/mock/ledger-core" isActive />
+        <TerminalStudio
+          workspaceId={WORKSPACE_ID}
+          terminalId={null}
+          sessionId={SESSION_ID}
+          onClose={NOOP}
+        />
       ) : null}
       {kind === 'permissions-empty' ? <RecentDecisions workspaceId={WORKSPACE_ID} /> : null}
     </main>

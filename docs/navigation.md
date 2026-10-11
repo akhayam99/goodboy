@@ -51,8 +51,8 @@
   reads like a figure, not a place you work in. The spend chip is state that
   opens the studio that owns that number, on Impact's Spend tab, and the Limits
   chips open the Providers menu. The bar never edits a record in place.
-- **The column holds every door.** Board, Tasks, Chat and Workflows sit under
-  New session, the Sessions list follows, Settings and the Goodboy row sit at
+- **The column holds every door.** Board, Tasks, Chat, Workflows and Terminal sit
+  under New session, the Sessions list follows, Settings and the Goodboy row sit at
   the foot. Board is home and the first door (⌘⇧H). The column is on every
   screen with a workspace: the board, a session, the draft and every studio but
   Settings, which swaps the column's content (see Studios).
@@ -88,7 +88,7 @@
   editors layer over the session pane. Studios take the slot. Anything that
   became a lens stays a lens.
 - **A door replaces, a link stacks.** A door is a control that names a studio:
-  a column door (Tasks, Chat, Workflows, Settings), a ⌘K Go to
+  a column door (Tasks, Chat, Workflows, Terminal, Settings), a ⌘K Go to
   row and the spend chip. Pressing a door while a studio is open replaces that studio in
   the same history entry (`switchStudio`), so five doors in a row leave one
   entry, not five. A link opened from inside a studio's content (a notification
@@ -442,7 +442,7 @@ reference material beside the page and closes with the pane that opened it.
 workspace, in the same shape everywhere: the toggle on the traffic-light axis,
 New session (⌘N, the only emphasised control, selected while the draft is open,
 a primary dot and `Draft in progress` while a draft waits), the doors Board
-(⌘⇧H), Tasks, Chat and Workflows as one 28px row each (icon and word, the
+(⌘⇧H), Tasks, Chat, Workflows and Terminal (⌃`) as one 28px row each (icon and word, the
 shortcut on hover), the Sessions list (`SessionNavSidebar`, its rows and header
 belong to the sessions list), then at the foot Settings (⌘,), the Goodboy row
 and a bug icon that opens the report sheet. Chat's door carries a running dot
@@ -500,7 +500,7 @@ hide animation or overlay can move it.
 
 - **A column has one reduced state, and it is never a narrower copy of
   itself.** The left column's one reduced state is the 44px rail
-  (`ColumnRail`): the toggle, New, Board, Tasks, Chat and Workflows as icons
+  (`ColumnRail`): the toggle, New, Board, Tasks, Chat, Workflows and Terminal as icons
   with their names and shortcuts in tooltips, then the open session and the
   pinned sessions as 28px node buttons (see the rail paragraph below), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
@@ -634,7 +634,7 @@ or `remembered` for the open session. A page that has a row in the card
 takes `bg-selected` and `aria-current="page"` alone. Where no row matches (the
 Tools Explore, Scripts and Terminal, a linked record, Questions with nothing
 open) or the pages are folded, the session row takes the sign. While a studio
-(Tasks, Chat, Workflows, Impact) sits over the session the row is `remembered`:
+(Tasks, Chat, Workflows, Terminal, Impact) sits over the session the row is `remembered`:
 medium weight, no fill, no `aria-current`; closing the studio returns the sign to
 the page. The session row also carries `data-current-sign`. Questions renders in
 the card only while something is open, warning-toned with the count word
@@ -864,6 +864,13 @@ activity yet show the plain overview with its actions.
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
   `Workflows > Ship a fix` with its save state and actions), so the app has one
   breadcrumb.
+- **The parent crumb is Up, and the last crumb names the kind.** No crumb
+  carries a back glyph and `Trail` has no lead slot, so a page never draws its
+  own back link above its content. The last crumb of a run, an artifact, an
+  artifact being created and a selected agent reads `Run`, `Artifact`,
+  `New artifact` and `Agent`; the page title holds the name.
+  `no-back-glyph-in-trail.test.tsx` fails on a chevron or arrow to the left
+  inside a trail.
 - **Every crumb has an icon, and depth compacts the trail.** Agents carry the
   agent glyph in their kind's colour, runs the run glyph, artifacts, questions
   and pull request modes their own. The last crumb and its parent always stay
@@ -966,6 +973,13 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   (a squash merge), in the menu and in the Branch header alike
   (`isMountRequestMerged`). It never
   turns into an icon. The Files tab opened without a branch lands on the active mount.
+- **Files can reveal unchanged context.** Each hidden range offers the next 20
+  lines beside either hunk, or all of its lines. Small ranges use one action.
+  The file's final range stays uncounted until its sides load. Expansion stays
+  with the file while scrolling and resets on a diff refresh. A failed read
+  keeps the existing lines and offers Retry; oversized files offer the editor.
+  The per-file expand-all registration in
+  `features/diff/components/DiffView` lets file actions reveal the whole file.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
 - **In the legacy layout, Settings claims its studio band** with Settings, the
@@ -1325,7 +1339,7 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
 
-Utility studios (Tasks, Chat, Workflows, Impact, Notifications, Changelog,
+Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
 the guide, pairing, Add workspace) render in the shell's studio slot, which
 covers the content area only, beside the column, as its own sheet with the
 studio band on top. The column stays live, so another door or a session row is
@@ -1395,6 +1409,22 @@ one is open at a time.
   under it (the band keeps the crumb and Close only), the guide `Guide`, What's new and
   Notifications through `PaneShell`, and the Chat thread's title as the same `h1`
   (`ChatHeader`). Exactly one `h1` per studio scene.
+- **One Terminal studio for every terminal.** The Terminal door (⌃`, `terminal.studio`)
+opens `StudioPlace` `{ kind: 'terminal'; terminalId; sessionId }`in`TerminalStudio`:
+`StudioShell`plus`StudioRailLayout surface="terminal"`(the rail folds like Tasks).
+The rail lists a`Workspace`group first (terminals that belong to the workspace), then one
+group per session that has terminals, headed by the session title, its branch and a count;
+the open session's group is expanded and the others folded. A row is a state dot (idle,
+busy, exited), the name (the cwd's last folder, renamed by double click, Enter saves, Esc
+cancels), the command a busy shell runs and, once exited,`exited 127`with Restart. The
+close x shows on hover and focus: an idle shell closes at once, a busy one asks in a`ConfirmPopover` anchored to the x (`Keep`, danger `Close`). The detail is a 32px location
+row, the cwd trimmed to the workspace folder, chips for `Workspace folder`, one per mount of
+the session (`ledger-core · hl/ledger-rounding`) and `Main checkout`, then the shell. A
+chip opens a new terminal there and selects it; it never types into a shell, and the `cd`menu does that only while the shell is idle.`New terminal`in the header opens in the
+workspace folder, its chevron lists the same targets. A terminal id is`<sessionId>::t<n>`for a session and`ws:<workspaceId>::t<n>` for the workspace (`terminalOwner.ts`); both
+reattach after a reload with their owners and renamed names (setting `terminal.names`).
+The session Terminal lens is the same body (`SessionTerminalLens`) focused on that session.
+`⌘T` (`terminal.newTab`) still adds a terminal in both places.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
   `useEscapeLayer`, so Esc closes the topmost layer only. So does every
@@ -1925,7 +1955,26 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   Explore on a given mount from the Projects rows. Rows are 40px
   high with no gap (`EXPLORE_ROW_PX`): a type glyph, the name with its
   extension kept, a slot for change marks, the size and the age. The size
-  hides under a 520px column and the age under 440px. The folders you opened
+  hides under a 520px column and the age under 440px.
+  A 16px slot before the size carries the change marks. Changed means what the
+  Files tab means: against the base branch, with uncommitted and untracked
+  work (`worktree_changed_files`, whose `entries` give each path a status:
+  added, modified, deleted or renamed, untracked files count as added). A
+  changed file shows the diff's letter (`M`, `A`, `R`; `D` in the Changed
+  filter) in the diff's tone, named for assistive tech by the word
+  ("Modified"); names are never tinted. A closed folder holding changes shows a
+  6px dot, filled with `text-muted-foreground` and a 1px ring so it is never
+  mistaken for the diff tree's warning dot (changed since viewed), with the
+  tooltip "3 changed files"; an open folder shows none. The mark comes from
+  `useExploreChanges`, which shares one request per mount and revision with
+  `useMountDiffStats` (same 30s tick, turn finished and focus signals, no second
+  timer). The header's `All files | Changed 7` tabs show only for a mount whose
+  git answers and that has changes (or while you are in Changed). Changed
+  filters the same tree to the changed paths and their folders, all open, with
+  deleted files as faint struck rows that do not open; with nothing left it
+  says "No changes against main." A changed file's drawer offers
+  `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
+  presentation with a ghost Open in Files that opens the Files tab on the file. The folders you opened
   are kept per session and project in the session-view slice (`exploreExpanded`,
   keyed by session, mount path and folder) and open again when you come back,
   and a file opened from elsewhere opens the folders above it. The file drawer
@@ -2583,12 +2632,13 @@ the tab body for the review form with line drafts). It carries no Fix, Push,
 Rewrite or `PR #N` control.
 
 **Commits.** The home of history: the branch commits and the rewriter are one
-surface (`CommitsHistory`), with `Refresh` (ghost), `Backups` (secondary, both
-`xs`) and one horizontal `⋯` at the right end of the tab row, in the slot
-`BranchPage` hands down (`TabActionsSlotContext`, filled with `TabActions`), so
-the body starts with the graph itself. The legend sits on its own row under the
-scroller, never under its fade, and the body takes the page's column with no
-`px-6` of its own. Backups
+surface (`CommitsHistory`), with `Backups` (secondary, `xs`) alone at the right
+end of the tab row, in the slot `BranchPage` hands down
+(`TabActionsSlotContext`, filled with `TabActions`), so the body starts with the
+graph itself. There is no `Refresh` (the draft reloads by itself when the
+head of the worktree status moved and nothing is planned) and no overflow
+(`Open terminal` is on the mount menu). There is no legend. The body takes the
+page's column with no `px-6` of its own. Backups
 (`Restore previous history`, `Restore branch`) and the result of a run (`Undo
 rewrite`) live here. There is no Rewrite history page: the old `files/…/history`
 address, the palette verb, a mount row's `Rewrite history` and an Activity
@@ -2615,11 +2665,28 @@ trunk with its head node (`main is here now`, how many commits it gained,
 `Rebase on main`), your branch leaving it at the real fork point, one
 row per commit newest first, and `Your branch starts here` at the fork. There
 is no row of fact chips over it: the graph already says how many commits are
-yours, how far main moved and what is online. The big list is always
-the branch as it is (Now) and never reorders while you plan; beside it, After
-Apply draws the planned result with a dashed lane, each node level with its
-own row when the order allows. Under 760px of content the side graph becomes
-a `Now | After Apply` toggle. Every action has one color (Keep green, Fold in
+yours, how far main moved and what is online. At rest the section is one
+column (`grid-cols-1`) on a 72px lane (trunk at x 20, lane at x 52): the first
+row is `main is here now` with its head node, `15 newer` and a secondary
+`Rebase on main`, then one row per commit (title, then sha, author and age in
+`text-meta`, a faint `Not pushed` chip only on a commit that is not on the
+online copy, the grip on hover and focus only), then `Your branch starts here`.
+Under the list one muted line, `Drag a commit to move it, drop it on another to
+fold it in.`, with a ghost `Keys` button that opens an anchored popover listing
+the keys of the focused row (`useHistoryKeys/historyKeys.ts`). There is no
+Planned changes block and no Apply at rest. The big list is always the branch as
+it is and never reorders while you plan. The first planned change (an edit, or
+`Rebase on main` from the list) turns the grid into
+`grid-cols-[minmax(0,1fr)_320px]` with a 200ms reveal (instant under reduced
+motion, `useHistoryPanelReveal`): the After panel, titled `After Apply · 7
+commits become 4`, draws the planned result with a dashed lane, each node level
+with its own row when the order allows (the Now rows and the After nodes share
+one row pitch), and under the list `Planned changes` shows its count and `Reset
+all`, the planned rows and one primary `Apply`. Resetting the last change slides
+the panel out. While a plan exists the Branch header's `Rebase on main` renders
+secondary (`isRebaseYielding`), so one rebase verb is primary at a time. Under
+760px of content the side graph becomes a `Now | After Apply` toggle, shown
+only while a plan exists. Every action has one color (Keep green, Fold in
 azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
 today's main grey) used on the row's change mark, its node, a 2px edge, the
 dot of its "what happens" line and its planned change. Drag a row between two
@@ -2647,7 +2714,8 @@ or newer; older git spawns one merge and one commit per step). A predicted
 conflict shows on its row (`may conflict in webhook.ts`) and in a notice with
 `Rewrite with an agent`. The action row sits at the end of the content
 (`FormActions`, no dock): `Apply`, or `Apply here only` and `Apply and update
-online` when the plan replaces commits that are already online, which also
+online` when the plan replaces commits that are already online and Apply is
+possible (a disabled Apply is one button), which also
 shows the notice about the pull request and the push with lease. Apply never
 rewrites the branch first. `history_plan_run` checks the worktree (right
 branch, nothing uncommitted, head where the plan started), replays the whole

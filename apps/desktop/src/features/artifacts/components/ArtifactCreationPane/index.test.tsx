@@ -455,11 +455,12 @@ describe('ArtifactCreationPane', () => {
     expect(generate.closest('footer')).toBeNull();
   });
 
-  it('keeps the draft on back and clears it on a confirmed cancel', () => {
+  it('keeps the draft on Escape, draws no back button and clears on a confirmed cancel', () => {
     renderPane();
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'keep me' } });
     state.clearArtifactDraft.mockClear();
-    fireEvent.click(screen.getByRole('button', { name: 'All artifacts' }));
+    expect(screen.queryByRole('button', { name: 'All artifacts' })).toBeNull();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
     expect(state.clearArtifactDraft).not.toHaveBeenCalled();
 

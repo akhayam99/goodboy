@@ -33,9 +33,14 @@ import { ComposerTray } from './parts/ComposerTray';
 type Props = {
   readonly session: Session;
   readonly providerDisconnected?: boolean;
+  readonly placeholderOverride?: string;
 };
 
-export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
+export const ChatInput = ({
+  session,
+  providerDisconnected = false,
+  placeholderOverride,
+}: Props) => {
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session });
@@ -151,7 +156,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     canSend,
     showsDeliveryChoice,
     sendDisabledTitle,
-    placeholder,
+    placeholder: defaultPlaceholder,
     shouldFocusFirstMessage,
   } = composerView({
     session,
@@ -162,6 +167,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     value,
     attachmentCount: attachments.length,
   });
+
+  const placeholder =
+    isBlocked || placeholderOverride === undefined ? defaultPlaceholder : placeholderOverride;
 
   useFirstMessageFocus({ wrapperRef, selectedAgentId, shouldFocusFirstMessage });
 

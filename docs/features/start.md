@@ -15,7 +15,15 @@ The **New session** draft has three tabs: **Pick up a task**, **Run a workflow**
 
 <sub>Screenshot from Goodboy 0.23.0</sub>
 
-Turn an issue into a briefed session in one pick. Pick HBL-412 and the draft shows one block: **Brief from HBL-412** with the title Goodboy drafted, ready to edit, then **How to work on it**: the project it works in, **Run a workflow** or **Ask an agent**, and the goal under it. The goal starts as the issue text and becomes the drafted brief with its **Done when** criteria as soon as it is written, unless you already edited it. **Use the issue text** puts the plain issue back and **Use brief** brings the draft back. **Dismiss** returns to the list. A Sentry error or a GitHub issue opens in the project it belongs to, and one **Start from HBL-412** links the issue, creates the session and starts the work, with a **Follow** toast.
+Turn an issue into a briefed session in one pick. Pick HBL-412 and the draft shows one block: **Brief from HBL-412** with the title Goodboy drafted, ready to edit, then **How to work on it**: the project it works in, **Run a workflow** or **Ask an agent**, and the goal under it. The goal starts as the issue text and becomes the drafted brief with its **Done when** criteria as soon as it is written, unless you already edited it. **Use the issue text** puts the plain issue back and **Use brief** brings the draft back. Remove the issue and the draft returns to the list. A Sentry error or a GitHub issue opens in the project it belongs to, and one **Start from HBL-412** links the issue, creates the session and starts the work, with a **Follow** toast.
+
+### Start one session from several issues
+
+Up to five issues start one session. In the list a checkbox shows in the glyph slot on hover, and on every row once anything is selected. A click toggles a row, a double click picks that row alone, **Space** toggles the focused row and **Enter** goes to the picked step with the selection. The primary reads **Pick HL-204** for one issue and **Pick 3 issues** for more. A sixth toggle is refused with one line, **Up to 5 issues start one session**.
+
+The picked step stacks the issues. The first names the branch and carries the chip **Names the branch**; removing it moves the chip to the next. **Add another issue** returns to the list with the selection kept. The brief reads **Brief from HL-204 and 2 more** and is written from the whole set, and **Start from HL-204 and 2 more** links every issue to the one session. An issue whose project is not the chosen one says which project it belongs to; it links to the session and can be put on a branch there later. Under the button, **Will close HL-204, HL-211 when merged** lists the issues the session closes.
+
+The selection lives in the draft as `pickedIssues` (see `apps/desktop/src/store/slices/sessionDraft/state.ts`), capped by `maxDraftIssues.ts`, and `startSessionFromDraft` writes every issue through the `externalTasks` of `createSession`, in order.
 
 From Tasks the same flow starts in one press: **Start from HBL-412** on a Linear, Jira, GitHub or GitLab issue or a Sentry error opens this draft with the issue picked and its brief already being written. A Slack thread, a merge request, a Bitbucket pull request or a pull request of yours keeps its one-step panel, with the same verb: **Start from #318**.
 

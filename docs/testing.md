@@ -39,6 +39,9 @@ These hold for each change that touches a test, and they come from tests that st
 7. New behavior goes in a new test file beside the old one. The huge files (`buildTimelineStream.test.ts`, `WorkflowBuilderView/index.test.tsx`, `orchestrateNextStep.test.ts`) only get shorter.
 8. The PR body says "tests removed n, replaced by m, files converted k".
 9. A ratchet baseline never grows. `pnpm run check:baselines` fails on growth, and only the owner lists an exception: [ratchets.md](ratchets.md).
+10. A layout claim (width, position, which column) is proved by geometry in a scene probe (`scripts/validate-scenes.mjs`), never by `data-width` or a class in a test. `no-layout-by-attribute.test.ts` counts the claims left in `__tests__/surfaces` and only falls.
+11. A control that starts async work is `disabled` or `isBusy` and says why in a tooltip ("Wait for the turn to finish"), or runs through `usePendingAction`. `busy-controls.test.ts` counts the ones left. A ternary with two identical branches fails the same guard.
+12. A page's close control is named from its title: `StudioShell` builds `Close <title>` unless `closeLabel` is given. `retiredNames.ts` matches a former name in any casing, `aria-label` and `title` included.
 
 ## Desktop unit tests run in four shards
 
@@ -136,6 +139,11 @@ A `packages/db` test that needs a migrated schema calls `await makeMigratedTestD
 ## Migration convergence sampling
 
 For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the intermediate versions instead of all of them. That sample does not replace the per-version sql hash manifest checked into the same file. The manifest is what really stops anyone from editing a migration after release. The sample has its own minimum number of intermediate points it must reach. So if someone cuts the sample size, the test fails, instead of quietly shrinking to the first and last version. No test pins the sampled versions or the total number of migrations. Both change every release. A test that goes red for that reason teaches people to edit the expected values, and that is exactly how a hash manifest gets regenerated without anyone looking.
+
+Rust repository fixtures reserve a unique directory before Git initialization.
+Timestamp-only names can collide in parallel tests. The helper in
+`apps/desktop/src-tauri/src/worktree/file_sides/tests.rs` combines a per-process
+counter with a timestamp and uses `create_dir` to reject reuse.
 
 ## Fake CLI binaries for the Rust spawn tests
 

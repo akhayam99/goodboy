@@ -14,7 +14,6 @@ export const createInitialSessionViewState = ({}: Params) => ({
   agentPane: {},
   agentTab: {},
   sessionStudio: {},
-  workflowExpand: {},
   focusedWorkflowRunId: {},
   diffFocus: {},
   diffMountPath: {},

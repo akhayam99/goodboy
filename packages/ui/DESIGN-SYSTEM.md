@@ -950,16 +950,15 @@ The right end of a work row is `WorkMeta` in
 `$12.40` never pushes the model of the row above out of line. A row says a duration one way, minutes and seconds ("4m 40s"),
 running or done, and so does every surface that reads `formatActiveTime`.
 
-| column     | width | holds                                                                                                               | in a narrow row                                |
-| ---------- | ----- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`), right aligned; the workflow builder and plan parts only | glyph only under 840px, gone under 360px       |
-| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                         | "left" goes under 640px, gone under 500px      |
-| cost       | 48px  | what the row has spent, empty before anything is spent                                                              | under 620px it leaves the row                  |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                        | under 620px it leaves the row                  |
-| model      | 176px | Activity and Runs: the provider glyphs, the models that ran in run order and the effort (`Opus 5.5 · High`)         | glyphs only under 640px                        |
-| stack      | 72px  | Activity and Runs: duration on top (meta size, muted), cost under it (chip size, faint)                             | cost leaves under 620px, all of it under 500px |
-| action     | 76px  | the one visible action, reserved for the tree of a live run                                                         | never drops                                    |
-| menu       | 24px  | the row menu, like Stop run on a run row                                                                            | never drops                                    |
+| column     | width | holds                                                                                                                                                 | in a narrow row                                |
+| ---------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| time       | 80px  | measured time or estimate ("~3-7m left", "~6-9m", "4m 40s")                                                                                           | "left" goes under 640px, gone under 500px      |
+| cost       | 48px  | what the row has spent, empty before anything is spent                                                                                                | under 620px it leaves the row                  |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`)                                                                                          | under 620px it leaves the row                  |
+| model      | 136px | `ModelBlock`: a 24px provider glyph cell, then model and version on line 1 (meta size), variant and effort on line 2 (chip size, faint), left aligned | lines hide under 640px, glyphs stay            |
+| stack      | 72px  | Activity and Runs: duration on top (meta size, muted), cost under it (chip size, faint)                                                               | cost leaves under 620px, all of it under 500px |
+| action     | 80px  | the one verb of the row (`ROW_ACTION_LABEL`, at most nine characters), right aligned; present only in a feed that has an actionable row               | never drops                                    |
+| menu       | 24px  | the row menu, like Stop run on a run row                                                                                                              | never drops                                    |
 
 The state slot of a work row (`WORK_ROW.stateSlot`) is not a column: it is
 `min-w-28 max-w-64` (112 to 256px), so a long state such as "3 ready · 4
@@ -971,8 +970,7 @@ A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
 drops it, as the builder does for a plan with no measured estimate yet. A
-run row has no routing column: it takes the time column and the cost column
-like any other row.
+run row takes the time column and the cost column like any other row.
 
 The step rows of the activity timeline and of the run tree (Runs, the run page
 and a Brief's Subagents) are one grammar: role icon, step title, model with
@@ -984,21 +982,29 @@ The role is an icon only, never a coloured role-name pill: the 18px glyph has
 the role as its accessible name (`role="img"`) and in the card header. The
 workflow builder keeps its role pill because the role is a field there.
 
-The right side uses two columns, in this order after the state
-word: the model cell (`TimelineModelCell`) and the stacked time and cost column
-(`TimelineRowMeta`). The model cell holds the provider glyph, the model that
-actually ran, read from the turn spans of the agent in run order, and its effort
-after a dot (`Opus 5.5 · High`, effort in faint). When several
-ran (a fallback, a retry, a routing change) it holds one glyph per provider and
-the names joined by an arrow ("Kimi K3 → Sonnet 5.5"), or "3 models" past two,
-with no effort (the card lists each one with its own). The name truncates before
-the effort does, and the title always truncates before the model cell does: the
-cell only drops to its glyphs under 640px. A
-live agent ends on its current routing; an agent that has not started shows its
-planned model in faint. A run row shows the distinct models of its steps ("Sonnet
-5.5 + 2", glyphs side by side). Every row holds both columns, empty when it has
-nothing to say, so duration and cost line up down the feed. A row reserves an
-action slot only when it has one. It has no menu slot.
+The right side uses three columns, in this order after the state word: the
+model block (`ModelBlock`, drawn by `TimelineModelCell`), the stacked time and
+cost column (`TimelineRowMeta`) and the action column. `ModelBlock` is the same
+trick as the time and cost stack: a 24px glyph cell centred on the row midline
+(14px icons, two providers overlap by 6px), then two 16px lines. Line 1 is the
+model and version and sits on the baseline of the time, line 2 is the variant
+and effort (`Thinking · High`, faint) and sits on the baseline of the cost; it
+is left out when empty. The models are read from the turn spans of the agent in
+run order. An agent that ran on two models shows the one it ended on with "from
+Kimi K3" on line 2, and "3 models" from three. A run row shows the model with
+most steps and "+ 2 models" under it. The card lists each model in order. The
+name truncates before the title does, and under 640px the lines go and the
+glyph cell stays. A live agent ends on its current routing; an agent that has
+not started shows its planned model in faint. Every row holds the model and the
+stack, empty when it has nothing to say, so duration and cost line up down the
+feed. The action column is a fixed 80px, `justify-end`, and a feed draws it on
+every row as soon as one row has an action, so the model and the stack end on
+the same edge in every row (`scripts/validate-scenes.mjs` measures it on
+`step-rows-activity`, `step-rows-runs` and `workflow-run-plan-review` at 1100,
+1440 and 1920). Action labels are verbs from `ROW_ACTION_LABEL`
+(`features/workTreeModel/rowActionLabels.ts`): Answer, Skip, Open plan, Open,
+Start, Resume, Retry. A label never passes nine characters and the row title
+names the object ("Start", never "Start implementer"). A row has no menu slot.
 
 The role glyph before the title and the model cell are the only two hover
 targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`),
@@ -1038,8 +1044,8 @@ it is not a word in the row: the duration turns to the warning tone, the note
 leads its tooltip and screen readers hear it after the time, so it never pushes
 the model column.
 What leaves the row stays in the routing tooltip, which
-always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
-is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
+always reads the whole route ("Claude · Opus 5.5 · High"). The builder and the plan
+parts draw the same block through `RoutingModelBlock`, with no fill and no chip. Its words come from
 `routingLabelParts`, the same function behind the model picker trigger, so a
 row, the trigger, the queue and a header say a route the same way: the catalog
 label is the model name (`GPT-5.6 Sol`), the Cursor
@@ -1149,7 +1155,7 @@ Impact`): there is no Impact icon and no theme toggle in the bar. The command
 centre says `Search` with its chord as bare text; the workspace name lives in its
 tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
 number. The trail keeps the first crumb's word until every other ancestor has
-shrunk to an icon and folded (`compactTrail`). The bell's count badge sits 2px
+shrunk to an icon and folded (`compactTrail`). `Trail` has no lead slot: nothing sits before the first segment, and no crumb carries a back glyph. The bell's count badge sits 2px
 inside the bell's box. The session trail band keeps its 24 controls, and trail,
 rail and tree-row buttons are 24.
 

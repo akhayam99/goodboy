@@ -8,7 +8,6 @@ import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { HISTORY_GRAPH } from '../../historyGraphGeometry';
 import type { HistoryDropTarget } from '../../useHistoryDrag';
 import type { RowPositions } from '../../useRowPositions';
-import { HistoryChangeMark } from './HistoryChangeMark';
 import { HistoryLaneSvg, type LaneNode } from './HistoryLaneSvg';
 import type { HistoryRowView } from './historyRowLine';
 
@@ -29,11 +28,7 @@ type Props = {
   readonly onStartFromMain: () => void;
 };
 
-const MAIN_DOT_LIMIT = 8;
 const MAIN_ROW_LIMIT = 5;
-
-const plural = ({ count, word }: { readonly count: number; readonly word: string }) =>
-  `${count} ${word}${count === 1 ? '' : 's'}`;
 
 export const HistoryNowList = ({
   view,
@@ -63,28 +58,14 @@ export const HistoryNowList = ({
           from: new Date(graph.mergeBase.timestamp * 1000).toISOString(),
           now: nowMs,
         });
-  const mainDots = (graph?.mainCommits ?? [])
-    .slice(1, MAIN_DOT_LIMIT + 1)
-    .map((commit) => commit.subject);
   return (
     <div ref={listRef} className="relative flex flex-col">
       {hasMainRow ? (
         <div
           data-graph-key="main"
-          className="grid min-h-12 grid-cols-[100px_48px_minmax(0,1fr)] items-center"
+          className="grid min-h-12 grid-cols-[72px_minmax(0,1fr)] items-center"
         >
           <span aria-hidden />
-          <span className="flex justify-end pr-3">
-            {view === 'now' && onto !== null ? (
-              <HistoryChangeMark
-                action="rebase"
-                label="Your branch will start here on Apply (rebase)"
-              >
-                <ArrowUp size={ICON_SIZE.row} aria-hidden />
-                {behind}
-              </HistoryChangeMark>
-            ) : null}
-          </span>
           <span className="flex min-w-0 items-center gap-3 px-3 text-label text-muted-foreground">
             <span className="shrink-0">
               <span className="text-foreground">main</span> is here now
@@ -93,7 +74,7 @@ export const HistoryNowList = ({
             <span className="min-w-0 truncate">
               {onto !== null && view === 'now'
                 ? 'your branch will start here on Apply'
-                : `${plural({ count: behind, word: 'commit' })} newer than where your branch started`}
+                : `${behind} newer`}
             </span>
             {isInteractive && onto === null && view !== 'done' ? (
               <Button size="sm" variant="secondary" className="shrink-0" onClick={onStartFromMain}>
@@ -109,9 +90,8 @@ export const HistoryNowList = ({
       </div>
       <div
         data-graph-key="fork"
-        className="grid min-h-12 grid-cols-[100px_48px_minmax(0,1fr)] items-center"
+        className="grid min-h-12 grid-cols-[72px_minmax(0,1fr)] items-center"
       >
-        <span aria-hidden />
         <span aria-hidden />
         <span className="flex min-w-0 items-center gap-3 px-3 text-label text-muted-foreground">
           {isPlannedOnMain ? (
@@ -141,9 +121,8 @@ export const HistoryNowList = ({
         ? (graph?.mainCommits ?? []).slice(1, MAIN_ROW_LIMIT + 1).map((commit) => (
             <div
               key={commit.sha}
-              className="grid min-h-7 grid-cols-[100px_48px_minmax(0,1fr)] items-center"
+              className="grid min-h-7 grid-cols-[72px_minmax(0,1fr)] items-center"
             >
-              <span aria-hidden />
               <span aria-hidden />
               <span className="flex min-w-0 items-center gap-3 px-3 text-label text-faint-foreground">
                 <span className="shrink-0 font-mono tabular-nums">{commit.sha.slice(0, 7)}</span>
@@ -159,7 +138,6 @@ export const HistoryNowList = ({
         laneX={HISTORY_GRAPH.laneX}
         mainY={positions.y.get('main') ?? null}
         forkY={positions.y.get('fork') ?? null}
-        mainDots={hasMainRow ? mainDots : []}
         nodes={nodes}
         isDashed={view === 'planned'}
         isForkOnMain={isPlannedOnMain}

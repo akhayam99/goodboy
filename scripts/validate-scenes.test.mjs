@@ -14,6 +14,7 @@ import {
   readDevToolsPort,
   summaryLine,
 } from './validateScenesBrowser.mjs';
+import { columnDriftFailures, columnEdgesProbe } from './validateScenesColumns.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
 
 const { Window } = createRequire(new URL('../apps/desktop/package.json', import.meta.url))(
@@ -325,5 +326,51 @@ describe('menuRowsProbe', () => {
       failures.map((failure) => failure.check),
       ['menu probe ran out of time'],
     );
+  });
+});
+
+const columnRow = ({ row, model, stack, action }) => ({
+  row,
+  edges: { model, stack, action },
+});
+
+describe('columnDriftFailures', () => {
+  it('passes rows whose three columns end on the same edge', () => {
+    const rows = [
+      columnRow({ row: 'a', model: 700, stack: 790, action: 870 }),
+      columnRow({ row: 'b', model: 700.4, stack: 790, action: 870.2 }),
+    ];
+    assert.deepEqual(columnDriftFailures({ scene: 'fixture', width: 1440, rows }), []);
+  });
+
+  it('fails the rows of the 0.23.1 grammar, where Review plan made one row wider', () => {
+    const rows = [
+      columnRow({ row: 'step-1', model: 700, stack: 790, action: null }),
+      columnRow({ row: 'step-2', model: 624, stack: 714, action: 870 }),
+    ];
+    const failures = columnDriftFailures({ scene: 'fixture', width: 1440, rows });
+    assert.deepEqual(
+      failures.map((failure) => failure.check),
+      ['model column right edge drifts across rows', 'stack column right edge drifts across rows'],
+    );
+  });
+
+  it('fails a feed that drew no rows at all', () => {
+    assert.equal(columnDriftFailures({ scene: 'fixture', width: 1440, rows: [] }).length, 1);
+  });
+});
+
+describe('columnEdgesProbe', () => {
+  it('reads the right edge of each named column on every row', async () => {
+    const window = new Window();
+    window.document.body.innerHTML =
+      '<div data-row-id="a"><span data-meta-column="model"></span></div>';
+    const column = window.document.querySelector('[data-meta-column="model"]');
+    column.getBoundingClientRect = () => ({ right: 321 });
+    const rows = window.eval(`(${columnEdgesProbe.toString()})({"names":["model","action"]})`);
+    assert.deepEqual(JSON.parse(JSON.stringify(rows)), [
+      { row: 'a', edges: { model: 321, action: null } },
+    ]);
+    await window.happyDOM.close();
   });
 });

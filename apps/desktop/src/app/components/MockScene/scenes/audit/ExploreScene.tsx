@@ -92,6 +92,41 @@ const NODE_MODULES = Array.from({ length: BIG_COUNT }, (_, index) =>
   }),
 );
 
+const CHANGED_ENTRIES = [
+  { path: 'src/settlement/rounding.ts', status: 'modified', from: null },
+  { path: 'src/settlement/rounding.test.ts', status: 'modified', from: null },
+  { path: 'src/settlement/batches.csv', status: 'added', from: null },
+  { path: 'docs/rounding-notes.md', status: 'modified', from: null },
+  { path: 'docs/settlement-rules.md', status: 'renamed', from: 'docs/rules.md' },
+  { path: 'src/settlement/legacy-rounding.ts', status: 'deleted', from: null },
+  { path: 'apps/ledger-core/schema.sql', status: 'modified', from: null },
+];
+
+type SummaryParams = {
+  readonly isEmpty: boolean;
+};
+
+const changedSummary = ({ isEmpty }: SummaryParams) => ({
+  paths: isEmpty ? [] : CHANGED_ENTRIES.map((change) => change.path),
+  entries: isEmpty ? [] : CHANGED_ENTRIES,
+  additions: 42,
+  deletions: 9,
+  numstat: '',
+});
+
+const ROUNDING_DIFF = `diff --git a/src/settlement/rounding.ts b/src/settlement/rounding.ts
+index 3f2a1b0..9c4d7e2 100644
+--- a/src/settlement/rounding.ts
++++ b/src/settlement/rounding.ts
+@@ -10,7 +10,9 @@ export const roundPosting = ({ cents }: Posting) => {
+   const whole = Math.floor(cents);
+-  return Math.round(cents);
++  const drift = cents - whole;
++  const isHalf = drift === 0.5;
++  return isHalf ? whole : Math.round(cents);
+ };
+`;
+
 const BRIEF = `# Settlement rounding
 
 Northwind finance sees one cent drift on split batches.
@@ -198,6 +233,7 @@ type Props = {
   readonly isBig?: boolean;
   readonly widthPx?: number | null;
   readonly roots?: ExploreRoots;
+  readonly changes?: 'none' | 'some' | 'clears';
 };
 
 const rootsParam = (): ExploreRoots => {
@@ -216,11 +252,24 @@ export const ExploreScene = (props: Props) => {
     isBig: props.isBig ?? sceneParam({ key: 'big' }) === '1',
     widthPx: props.widthPx ?? null,
     roots: props.roots ?? rootsParam(),
+    changes: props.changes ?? 'none',
   }));
-  const { variant, openLabels, hoverRow, hoverAction, focusRow, isBig, widthPx, roots } = resolved;
+  const { variant, openLabels, hoverRow, hoverAction, focusRow, isBig, widthPx, roots, changes } =
+    resolved;
 
   useEffect(() => {
+    let changedCalls = 0;
     mockIPC((cmd, payload) => {
+      if (cmd === 'worktree_changed_files') {
+        changedCalls += 1;
+        if (changes === 'none') {
+          throw new Error('cannot resolve base branch merge-base');
+        }
+        return changedSummary({ isEmpty: changes === 'clears' && changedCalls > 1 });
+      }
+      if (cmd === 'worktree_diff') {
+        return ROUNDING_DIFF;
+      }
       if (cmd === 'explore_list') {
         return listFolder({
           sessionDir: payloadString({ payload, key: 'sessionDir' }) ?? '',
@@ -250,7 +299,7 @@ export const ExploreScene = (props: Props) => {
     });
     seedExploreRoots({ roots });
     setIsReady(true);
-  }, [isBig, roots, variant]);
+  }, [changes, isBig, roots, variant]);
 
   useSceneClicks({
     isReady,

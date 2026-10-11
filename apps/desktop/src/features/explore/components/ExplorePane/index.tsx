@@ -1,10 +1,11 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   EmptyState,
   PageColumn,
   PaneShell,
   RefreshIconButton,
+  SegmentedTabs,
   Skeleton,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -12,8 +13,10 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { useNow } from '../../../../shared/hooks/useNow';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { changedExpandedOf, changedListingOf } from '../../exploreChanges';
 import type { LoadFolderParams, SelectFileParams, SetExpandedParams } from '../../exploreHandlers';
 import { EXPLORE_ROOT_PATH, ancestorPathsOf } from '../../exploreRows';
+import { useExploreChanges } from '../../hooks/useExploreChanges';
 import { useExploreListing } from '../../hooks/useExploreListing';
 import { useExploreRoot } from '../../hooks/useExploreRoot';
 import { ExploreProjectChip } from './ExploreProjectChip';
@@ -27,6 +30,16 @@ const GONE_SENTENCE = 'Closed. Its files were removed.';
 
 const NO_EXPANDED: Readonly<Record<string, boolean>> = Object.freeze({});
 
+type ExploreMode = 'all' | 'changed';
+
+type ChangedView = {
+  readonly mountPath: string | null;
+  readonly mode: ExploreMode;
+  readonly collapsed: Readonly<Record<string, boolean>>;
+};
+
+const FRESH_VIEW: ChangedView = { mountPath: null, mode: 'all', collapsed: NO_EXPANDED };
+
 export const ExplorePane = ({ sessionId }: Props) => {
   const now = useNow(30_000);
   const root = useExploreRoot({ sessionId });
@@ -36,6 +49,17 @@ export const ExplorePane = ({ sessionId }: Props) => {
       ? target.path
       : null;
   const { listing, load, reload } = useExploreListing({ sessionDir });
+  const changesMountPath = target.kind === 'mount' ? target.path : null;
+  const changesView = useExploreChanges({ sessionId, mountPath: changesMountPath });
+  const { changes } = changesView;
+  const [storedView, setStoredView] = useState<ChangedView>(FRESH_VIEW);
+  const view = storedView.mountPath === changesMountPath ? storedView : FRESH_VIEW;
+  const isChangedMode = view.mode === 'changed' && changesView.isAvailable;
+  const changedListing = useMemo(() => changedListingOf({ changes, listing }), [changes, listing]);
+  const changedExpanded = useMemo(
+    () => changedExpandedOf({ listing: changedListing, collapsed: view.collapsed }),
+    [changedListing, view.collapsed],
+  );
   const expanded = useAppStore(
     (state) => state.exploreExpanded[sessionId]?.[sessionDir ?? ''] ?? NO_EXPANDED,
   );
@@ -71,19 +95,33 @@ export const ExplorePane = ({ sessionId }: Props) => {
       if (sessionDir === null) {
         return;
       }
+      if (isChangedMode) {
+        setStoredView({
+          ...view,
+          mountPath: changesMountPath,
+          collapsed: { ...view.collapsed, [path]: !isExpanded },
+        });
+        return;
+      }
       setExploreExpanded({ sessionId, mountPath: sessionDir, path, isExpanded });
     },
-    [sessionDir, sessionId, setExploreExpanded],
+    [sessionDir, sessionId, setExploreExpanded, isChangedMode, view, changesMountPath],
   );
+
+  const handleModeChange = (mode: ExploreMode) =>
+    setStoredView({ mountPath: changesMountPath, mode, collapsed: NO_EXPANDED });
 
   const handleSelectFile = useCallback(
     ({ entry }: SelectFileParams) => {
       if (entry.isDir || sessionDir === null || sessionDir.trim() === '') {
         return;
       }
+      if (changes.byPath.get(entry.relPath)?.status === 'deleted') {
+        return;
+      }
       toggleDrawer({ kind: 'explore-file', sessionId, payload: { sessionDir, entry } });
     },
-    [sessionDir, sessionId, toggleDrawer],
+    [sessionDir, sessionId, toggleDrawer, changes],
   );
 
   const handleLoad = useCallback(({ relPath }: LoadFolderParams) => void load({ relPath }), [load]);
@@ -91,6 +129,7 @@ export const ExplorePane = ({ sessionId }: Props) => {
   const handleRefresh = () => {
     const open = Object.keys(expanded).filter((path) => expanded[path] === true);
     reload({ relPaths: [EXPLORE_ROOT_PATH, ...open] });
+    changesView.refresh();
   };
 
   const rootEntries = listing.entriesByPath[EXPLORE_ROOT_PATH];
@@ -127,6 +166,33 @@ export const ExplorePane = ({ sessionId }: Props) => {
               </Button>
             ) : undefined
           }
+        />
+      );
+    }
+    if (isChangedMode) {
+      if (changes.count === 0) {
+        return (
+          <EmptyState
+            size="section"
+            tone={CONCEPT_TONE.explore}
+            icon={CONCEPT_ICONS.explore}
+            title={`No changes against ${changesView.baseBranch ?? 'main'}.`}
+          />
+        );
+      }
+      return (
+        <ExploreTree
+          key={`${sessionId}:${sessionDir}:changed`}
+          sessionId={sessionId}
+          sessionDir={sessionDir ?? ''}
+          listing={changedListing}
+          expanded={changedExpanded}
+          selectedRelPath={selectedRelPath}
+          now={now}
+          changes={changes}
+          onSetExpanded={handleSetExpanded}
+          onLoad={handleLoad}
+          onSelectFile={handleSelectFile}
         />
       );
     }
@@ -178,6 +244,7 @@ export const ExplorePane = ({ sessionId }: Props) => {
         expanded={expanded}
         selectedRelPath={selectedRelPath}
         now={now}
+        changes={changes}
         onSetExpanded={handleSetExpanded}
         onLoad={handleLoad}
         onSelectFile={handleSelectFile}
@@ -185,10 +252,27 @@ export const ExplorePane = ({ sessionId }: Props) => {
     );
   };
 
+  const hasTabs =
+    target.kind === 'mount' &&
+    changesView.isAvailable &&
+    (changes.count > 0 || view.mode === 'changed');
+
   const chip =
     target.kind === 'none' ? undefined : (
-      <div className="flex min-w-0 items-center">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <ExploreProjectChip target={target} groups={root.groups} rowCount={root.rowCount} />
+        {hasTabs ? (
+          <SegmentedTabs
+            ariaLabel="Files shown"
+            size="xs"
+            value={view.mode}
+            options={[
+              { value: 'all', label: 'All files' },
+              { value: 'changed', label: 'Changed', badge: changes.count },
+            ]}
+            onChange={handleModeChange}
+          />
+        ) : null}
       </div>
     );
 

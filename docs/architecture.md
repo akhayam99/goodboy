@@ -116,6 +116,34 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   `foregroundPid`, the leader of its foreground process group when the
   platform reports it. A script's exit code is the real one: a signal reads as
   128 plus its number (a SIGKILL is 137), where it used to collapse to 1.
+- **The monitor snapshot.** `monitor/mod.rs` answers `monitor_snapshot` with
+  `{ listeners, processes, taken_at, platform_supported }` (the last one is `isPlatformSupported` on the wire) from one read of the
+  machine: on macOS `lsof -nP -iTCP -sTCP:LISTEN -Fpn`, one `ps -axo`, one
+  batched `lsof -a -d cwd -p` and one `ps -o pid=,args=`; on Linux
+  `/proc/net/tcp`, `tcp6` and the `/proc/<pid>/fd` socket inodes; on Windows
+  nothing and `platform_supported: false`. Every tool call runs through
+  `proc::probe::run` with a 2 second deadline. `processes` holds only the
+  listener holders and every process in a process group the ledger knows, so
+  the page can tell a leftover from a stranger. `args_masked` replaces the
+  value of `--token=`, `--password=`, `--secret=`, a bare flag followed by its
+  value, and any `KEY=value` whose key contains TOKEN, SECRET, PASSWORD or KEY
+  with `***`; it is never logged. `monitor_watched_ports(project_root)` reads
+  the ports a project declares (package.json scripts, `PORT` and `*_PORT`
+  integers in `.env`, `.env.local`, `.env.development`, `server.port` in the
+  vite config, published compose ports) and keeps nothing else from those
+  files.
+- **The port join.** `attributePorts` (`packages/core/src/monitoring`) joins
+  the snapshot, the ledger, the sessions' worktrees and the projects into one
+  row per listener, first match wins: a Goodboy script, terminal or agent turn
+  (the ledger row holding the pid, its parent or its group), a session
+  worktree by the longest cwd prefix, a project's main checkout, else an
+  external process by name. A watched port held by one worktree while another
+  worktree of the same project is running carries `collision: { others }`.
+  Watched ports nobody holds come back as `free` rows. A port a Goodboy-owned
+  process held joins the project's learned set (`monitor.learnedPorts.<id>`);
+  the user's own set lives in `monitor.watchedPorts.<id>`. The store slice
+  `store/slices/monitoring/` keeps the snapshot and applies a result only if
+  its `takenAt` is not older than the one held.
 - **Windows.** Each CLI spawn is assigned to its own Job Object with
   kill-on-close (`process_group::Job`), so a cancel ends the whole tree
   (`TerminateJobObject`) and so does the app dying. The assignment happens
@@ -218,6 +246,24 @@ files and re-exports their items, so callers keep writing
 `crate::worktree::git` and lib.rs registers `worktree::worktree_create`. A
 helper another file needs is `pub(super)`; nothing else leaves its file. Tests
 sit in a `tests.rs` beside the file they cover.
+
+### Diff file sides
+
+`worktree_file_sides` reads local file contents for unchanged context expansion.
+An omitted old revision uses the same configured merge base as the branch diff;
+an omitted new revision reads the working file. Explicit revisions are resolved
+before reading their git objects. The missing first parent of a root commit is
+an absent side. The `:0` revision names the index, so staged and unstaged
+comparisons read their own sides. A detected rename or copy reads the old path
+for the old side, following the repository's diff configuration. Missing files
+return an absent side. The read rejects absolute paths, traversal and symlinks
+outside the worktree, including a missing file below an escaping symlink.
+Either side over 2 MB or 20,000 lines, or containing invalid UTF-8 or NUL bytes,
+makes the entire result too large with no text. The frontend loader names the
+worktree and revision pair, fetches once
+per file and diff refresh, and discards late results after its source changes.
+The command lives in `apps/desktop/src-tauri/src/worktree/file_sides.rs`;
+`features/diff/hooks/useFileSides` owns the expansion cache and retry state.
 
 ### History module
 

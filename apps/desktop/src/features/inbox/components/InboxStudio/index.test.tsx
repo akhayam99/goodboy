@@ -5,6 +5,7 @@ import { pressKey, pressShortcut } from '../../../../__tests__/helpers/pressKey'
 import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { InboxProvider, InboxRecord } from '../../types';
+import { closeLabelOf } from '../../../../shared/components/StudioShell/closeLabelOf';
 
 const LINKED_SESSION_ID = 'session-7' as SessionId;
 
@@ -44,14 +45,16 @@ vi.mock('../../../../shared/components/StudioShell', () => ({
   StudioShell: ({
     children,
     isEscapeEnabled,
+    title,
     closeLabel,
   }: {
     children: (requestClose: () => void) => ReactNode;
     isEscapeEnabled: boolean;
-    closeLabel: string;
+    title: string;
+    closeLabel?: string;
   }) => {
     h.isEscapeEnabled = isEscapeEnabled;
-    h.closeLabel = closeLabel;
+    h.closeLabel = closeLabelOf({ title, closeLabel });
     return <div>{children(vi.fn())}</div>;
   },
 }));

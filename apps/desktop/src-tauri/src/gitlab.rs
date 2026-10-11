@@ -389,6 +389,12 @@ pub struct GitlabMergeRequest {
     pub target_branch: String,
     #[serde(default)]
     pub draft: bool,
+    #[serde(
+        rename = "isMergeWhenPipelineSucceeds",
+        alias = "merge_when_pipeline_succeeds",
+        default
+    )]
+    pub merge_when_pipeline_succeeds: bool,
     #[serde(rename = "hasConflicts", alias = "has_conflicts", default)]
     pub has_conflicts: bool,
     #[serde(rename = "mergeStatus", alias = "merge_status", default)]
@@ -1183,6 +1189,27 @@ fn rebase_blocker(
 }
 
 #[tauri::command]
+pub async fn gitlab_cancel_auto_merge(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    mr_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<GitlabMergeRequest, GitlabError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let encoded = encode_project_path(&project_path);
+    send_json(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &format!("/projects/{encoded}/merge_requests/{mr_iid}/cancel_merge_when_pipeline_succeeds"),
+        &serde_json::json!({}),
+    )
+    .await
+}
+
+#[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn gitlab_merge_mr(
     workspace_id: String,
@@ -1533,6 +1560,21 @@ mod tests {
         assert!(mr.draft);
         assert_eq!(mr.merge_status.as_deref(), Some("can_be_merged"));
         assert_eq!(mr.updated_at, "2026-07-22T10:00:00Z");
+    }
+
+    #[test]
+    fn merge_request_reads_merge_when_pipeline_succeeds() {
+        let snake = r#"{
+            "id": 9, "iid": 2, "project_id": 3, "title": "t", "description": null,
+            "state": "opened", "web_url": "https://gitlab.com/acme/web/-/merge_requests/2",
+            "source_branch": "a", "target_branch": "main",
+            "merge_when_pipeline_succeeds": true
+        }"#;
+        let mr: GitlabMergeRequest = serde_json::from_str(snake).unwrap();
+        assert!(mr.merge_when_pipeline_succeeds);
+        let plain = snake.replace("\"merge_when_pipeline_succeeds\": true", "\"draft\": false");
+        let mr: GitlabMergeRequest = serde_json::from_str(&plain).unwrap();
+        assert!(!mr.merge_when_pipeline_succeeds);
     }
 
     #[test]

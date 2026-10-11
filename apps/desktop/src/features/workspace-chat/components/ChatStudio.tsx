@@ -60,13 +60,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
     null;
 
   return (
-    <StudioShell
-      icon={CONCEPT_ICONS.chat}
-      tone={CONCEPT_TONE.chat}
-      title="Chat"
-      closeLabel="Close chat"
-      onClose={onClose}
-    >
+    <StudioShell icon={CONCEPT_ICONS.chat} tone={CONCEPT_TONE.chat} title="Chat" onClose={onClose}>
       {() => (
         <StudioRailLayout
           railLabel="Chat list"

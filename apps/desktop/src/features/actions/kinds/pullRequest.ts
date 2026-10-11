@@ -23,6 +23,8 @@ import {
   sessionPullRequestOf,
 } from '../../../store/slices/review-source/sessionPullRequestOf';
 import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
+import { pullRequestPortFor } from '../../../store/slices/review-source/pullRequestPortFor';
+import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
 import { refreshActiveRequest } from '../../../store/slices/review-source/refreshActiveRequest';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { isScribeWriting } from '../../../store/slices/scribe/isScribeWriting';
@@ -454,6 +456,33 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
         facts,
         task: ({ number }) => env.getState().closePr(facts.sessionId, number),
       }),
+  },
+  {
+    id: 'pullRequest.cancelAutoMerge',
+    label: 'Cancel auto-merge',
+    icon: XCircle,
+    group: 'act',
+    when: ({ facts }) =>
+      facts.pr?.isAutoMerge === true && can({ facts, capability: 'canCancelAutoMerge' }),
+    blockedReason: writeBlock,
+    slot: () => 'menu',
+    pendingLabel: () => 'Cancelling auto-merge…',
+    run: async ({ facts, env }) => {
+      if (facts.number === null) {
+        return;
+      }
+      const mountId = selectActiveMountId({ state: env.getState(), sessionId: facts.sessionId });
+      const target = { sessionId: facts.sessionId, ...(mountId === null ? {} : { mountId }) };
+      const port = pullRequestPortFor({ get: env.getState, ...target, prNumber: facts.number });
+      if (port?.cancelAutoMerge === undefined) {
+        throw new Error('Auto-merge cannot be cancelled for this pull request');
+      }
+      await port.cancelAutoMerge();
+      await Promise.all([
+        refreshActiveRequest({ get: env.getState, ...target }),
+        env.getState().loadPullRequestView({ ...target, force: true }),
+      ]);
+    },
   },
 ];
 

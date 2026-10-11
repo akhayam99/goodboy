@@ -2,12 +2,14 @@
 
 const h = vi.hoisted(() => {
   const gate: { current: Promise<void> | null } = { current: null };
+  const summary: { current: unknown } = { current: undefined };
   return {
     invoke: vi.fn<(command: string, args?: Record<string, unknown>) => Promise<unknown>>(),
     lists: new Map<string, unknown>(),
     reads: new Array<unknown>(),
     openFailures: new Array<unknown>(),
     gate,
+    summary,
   };
 });
 
@@ -88,6 +90,7 @@ const PaneWithDrawer = () => {
           sessionId={SESSION_ID}
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
+          renderChanges={() => null}
           onClose={closeDrawer}
         />
       ) : null}
@@ -137,6 +140,7 @@ beforeEach(async () => {
   h.reads.length = 0;
   h.openFailures.length = 0;
   h.gate.current = null;
+  h.summary.current = undefined;
   h.invoke.mockReset();
   h.invoke.mockImplementation(async (command, args = {}) => {
     if (command === 'explore_list') {
@@ -159,6 +163,12 @@ beforeEach(async () => {
         throw failure;
       }
       return undefined;
+    }
+    if (command === 'worktree_changed_files') {
+      if (h.summary.current instanceof Error) {
+        throw h.summary.current;
+      }
+      return h.summary.current;
     }
     if (command === 'detect_editors') {
       return [];
@@ -940,5 +950,147 @@ describe('ExplorePane context menu', () => {
         { sessionDir: DIR, relPath: 'notes.txt', reveal: true, editor: null },
       ]),
     );
+  });
+});
+
+type ChangeParams = {
+  readonly path: string;
+  readonly status: 'added' | 'modified' | 'deleted' | 'renamed';
+  readonly from?: string;
+};
+
+const summarise = (changes: ReadonlyArray<ChangeParams>) => {
+  h.summary.current = {
+    paths: changes.map((change) => change.path),
+    entries: changes.map((change) => ({ ...change, from: change.from ?? null })),
+    additions: 0,
+    deletions: 0,
+    numstat: '',
+  };
+};
+
+describe('ExplorePane changed files', () => {
+  it('marks a modified file with the diff letter and its word', async () => {
+    mountRepo();
+    list({
+      relPath: '',
+      entries: [entry({ relPath: 'page.tsx' }), entry({ relPath: 'notes.txt' })],
+    });
+    summarise([{ path: 'page.tsx', status: 'modified' }]);
+    mount();
+
+    const page = await rowNamed('page.tsx');
+
+    await waitFor(() => expect(within(page).getByLabelText('Modified').textContent).toBe('M'));
+    expect(within(await rowNamed('notes.txt')).queryByLabelText('Modified')).toBeNull();
+  });
+
+  it('puts a dot on a closed folder holding three changes and none on an open one', async () => {
+    mountRepo();
+    list({ relPath: '', entries: [folder('src')] });
+    list({
+      relPath: 'src',
+      entries: [entry({ relPath: 'src/a.ts' }), entry({ relPath: 'src/b.ts' })],
+    });
+    summarise([
+      { path: 'src/a.ts', status: 'modified' },
+      { path: 'src/b.ts', status: 'added' },
+      { path: 'src/c.ts', status: 'deleted' },
+    ]);
+    mount();
+
+    const src = await rowNamed('src');
+    await waitFor(() => expect(within(src).getByLabelText('3 changed files')).toBeDefined());
+
+    fireEvent.click(src);
+
+    expect(await rowNamed('a.ts')).toBeDefined();
+    expect(within(src).queryByLabelText('3 changed files')).toBeNull();
+  });
+
+  it('filters the tree to the changed paths and their folders', async () => {
+    mountRepo();
+    list({ relPath: '', entries: [folder('src'), entry({ relPath: 'notes.txt' })] });
+    list({
+      relPath: 'src',
+      entries: [entry({ relPath: 'src/a.ts' }), entry({ relPath: 'src/untouched.ts' })],
+    });
+    summarise([
+      { path: 'src/a.ts', status: 'modified' },
+      { path: 'src/gone.ts', status: 'deleted' },
+    ]);
+    mount();
+
+    fireEvent.click(await screen.findByRole('tab', { name: /Changed/ }));
+
+    expect(await rowNamed('a.ts')).toBeDefined();
+    expect(screen.getByRole('treeitem', { name: 'src' })).toBeDefined();
+    expect(screen.queryByRole('treeitem', { name: 'notes.txt' })).toBeNull();
+    expect(screen.queryByRole('treeitem', { name: 'untouched.ts' })).toBeNull();
+    const gone = screen.getByRole('treeitem', { name: 'gone.ts' });
+    expect(gone.getAttribute('aria-disabled')).toBe('true');
+    expect(within(gone).getByLabelText('Deleted')).toBeDefined();
+    fireEvent.click(gone);
+    expect(selectOpenDrawer(useAppStore.getState())).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'All files' }));
+
+    expect(await rowNamed('notes.txt')).toBeDefined();
+  });
+
+  it('says nothing changed against the base once the last change is gone', async () => {
+    mountRepo();
+    list({ relPath: '', entries: [entry({ relPath: 'page.tsx' })] });
+    summarise([{ path: 'page.tsx', status: 'modified' }]);
+    mount();
+
+    fireEvent.click(await screen.findByRole('tab', { name: /Changed/ }));
+    summarise([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh the files' }));
+
+    expect(await screen.findByText('No changes against main.')).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'All files' })).toBeDefined();
+  });
+
+  it('hides the filter when nothing changed or the folder has no git', async () => {
+    mountRepo();
+    list({ relPath: '', entries: [entry({ relPath: 'page.tsx' })] });
+    summarise([]);
+    mount();
+
+    await rowNamed('page.tsx');
+    await waitFor(() => expect(callsTo('worktree_changed_files')).toHaveLength(1));
+    expect(screen.queryByRole('tab', { name: /Changed/ })).toBeNull();
+
+    cleanup();
+    h.summary.current = new Error('cannot resolve base branch merge-base');
+    mount();
+
+    await rowNamed('page.tsx');
+    expect(screen.queryByRole('tab', { name: /Changed/ })).toBeNull();
+  });
+
+  it('shows Preview and Changes for a changed file and only Preview for the others', async () => {
+    mountRepo();
+    list({
+      relPath: '',
+      entries: [entry({ relPath: 'page.tsx' }), entry({ relPath: 'notes.txt' })],
+    });
+    h.reads.push({ type: 'text', text: 'hello', truncated: false });
+    h.reads.push({ type: 'text', text: 'notes', truncated: false });
+    summarise([{ path: 'page.tsx', status: 'modified' }]);
+    mount();
+    await waitFor(() => expect(callsTo('worktree_changed_files')).toHaveLength(1));
+    await screen.findByRole('tab', { name: /Changed/ });
+
+    fireEvent.click(await rowNamed('page.tsx'));
+
+    expect(await screen.findByRole('tab', { name: 'Preview' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Changes' })).toBeDefined();
+    expect(callsTo('worktree_changed_files')).toHaveLength(1);
+
+    fireEvent.click(await rowNamed('notes.txt'));
+
+    await waitFor(() => expect(screen.queryByRole('tab', { name: 'Changes' })).toBeNull());
   });
 });

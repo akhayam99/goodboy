@@ -39,6 +39,7 @@ mod linear;
 mod live_child;
 mod local_image;
 mod logging;
+mod monitor;
 mod path_env;
 mod permissions;
 mod planner;
@@ -314,6 +315,7 @@ pub fn run() {
             worktree::worktree_remote_url,
             worktree::worktree_diff,
             worktree::worktree_diff_file,
+            worktree::worktree_file_sides,
             worktree::worktree_changed_files,
             worktree::worktree_commits,
             worktree::worktree_is_ancestor,
@@ -474,6 +476,8 @@ pub fn run() {
             terminal::terminal_resize,
             terminal::terminal_close,
             proc::ledger::process_ledger_list,
+            monitor::monitor_snapshot,
+            monitor::watched::monitor_watched_ports,
             workflows::workflow_list,
             workflows::workflows_for_session,
             workflows::step_def_list,
@@ -542,6 +546,7 @@ pub fn run() {
             gitlab::gitlab_mr_for_branch,
             gitlab::gitlab_create_mr,
             gitlab::gitlab_merge_mr,
+            gitlab::gitlab_cancel_auto_merge,
             gitlab::gitlab_mr_diff,
             gitlab::gitlab_mr_diff_refs,
             gitlab::gitlab_create_mr_discussion,

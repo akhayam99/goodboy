@@ -1,11 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import {
-  WORKFLOW_CHOICE_LINE,
-  pickLabel,
-  reviewPullRequestLabel,
-  startFromLabel,
-} from './startCopy';
+import { WORKFLOW_CHOICE_LINE, reviewPullRequestLabel, startFromLabel } from './startCopy';
 
 describe('startCopy', () => {
   it('says Start from the identifier, the same way for an issue and a pull request', () => {
@@ -14,8 +9,7 @@ describe('startCopy', () => {
     expect(startFromLabel({ identifier: '!42' })).toBe('Start from !42');
   });
 
-  it('picks an issue before starting it, and reviews a pull request by its number', () => {
-    expect(pickLabel({ identifier: 'HBL-412' })).toBe('Pick HBL-412');
+  it('reviews a pull request by its number', () => {
     expect(reviewPullRequestLabel({ identifier: '#318' })).toBe('Review pull request #318');
   });
 

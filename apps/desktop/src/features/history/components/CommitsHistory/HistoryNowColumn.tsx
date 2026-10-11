@@ -1,5 +1,5 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
-import { Eyebrow, SegmentedTabs } from '@goodboy/ui';
+import { SegmentedTabs } from '@goodboy/ui';
 import type { BranchCommit, HistoryGraph } from '@goodboy/types';
 import type { HistoryDropTarget } from '../../useHistoryDrag';
 import type { RowPositions } from '../../useRowPositions';
@@ -11,8 +11,8 @@ type Props = {
   readonly view: HistoryRowView;
   readonly isDone: boolean;
   readonly isNarrow: boolean;
+  readonly hasPlan: boolean;
   readonly narrowView: 'now' | 'planned';
-  readonly afterCount: number;
   readonly rows: ReadonlyArray<BranchCommit>;
   readonly listRef: RefObject<HTMLDivElement | null>;
   readonly positions: RowPositions;
@@ -39,8 +39,8 @@ export const HistoryNowColumn = ({
   view,
   isDone,
   isNarrow,
+  hasPlan,
   narrowView,
-  afterCount,
   rows,
   listRef,
   positions,
@@ -58,15 +58,8 @@ export const HistoryNowColumn = ({
   onStartFromMain,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2" onKeyDown={onKeyDown}>
-    {isDone ? null : (
-      <div className="flex h-6 items-center gap-2 pl-2">
-        <Eyebrow label={view === 'planned' ? 'After Apply' : 'Now'} muted />
-        <span className="text-label text-faint-foreground">
-          {view === 'planned'
-            ? `${afterCount} ${afterCount === 1 ? 'commit' : 'commits'}`
-            : 'your branch as it is'}
-        </span>
-        <span className="flex-1" />
+    {hasPlan && !isDone ? (
+      <div className="flex h-6 items-center justify-between gap-2 pl-2">
         {isNarrow ? (
           <SegmentedTabs
             size="sm"
@@ -75,9 +68,11 @@ export const HistoryNowColumn = ({
             value={narrowView}
             onChange={onNarrowViewChange}
           />
-        ) : null}
+        ) : (
+          <span className="text-label text-foreground">Now</span>
+        )}
       </div>
-    )}
+    ) : null}
     <HistoryNowList
       view={view}
       rows={rows}

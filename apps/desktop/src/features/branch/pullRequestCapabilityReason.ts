@@ -20,6 +20,7 @@ const VERB: Readonly<Record<PullRequestCapability, string>> = {
   canChooseMergeMethod: 'choose a merge method for',
   canClose: 'close',
   canReopen: 'reopen',
+  canCancelAutoMerge: 'cancel auto-merge for',
 };
 
 const isCapabilityOn = ({ kind, capability }: Params): boolean =>

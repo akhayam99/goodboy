@@ -181,7 +181,9 @@ vi.mock('../AgentDetailPane', () => ({
     </div>
   ),
 }));
-vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () => null }));
+vi.mock('../../../terminal/components/TerminalStudio/SessionTerminalLens', () => ({
+  SessionTerminalLens: () => null,
+}));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
@@ -389,11 +391,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.queryByRole('button', { name: 'Release flow' })).toBeNull();
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Session',
-      'Agents',
-      'Selected agent',
-    ]);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Agents', 'Agent']);
   });
 
   it('shows the selected resolver in the overlay without an inspector rail', () => {
@@ -674,7 +672,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
       'Session',
       'Runs',
       'Release flow',
-      'Selected agent',
+      'Agent',
     ]);
 
     act(() => result.current[2]!.onClick!());
@@ -696,11 +694,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     const { result } = renderHook(() => useSessionCrumbs({ session }));
 
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Session',
-      'Runs',
-      'Selected agent',
-    ]);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Session', 'Runs', 'Agent']);
   });
 
   it('goes up on Escape while the trail still names the run', () => {
@@ -737,7 +731,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
       'Session',
       'Runs',
       'Release flow',
-      'Selected agent',
+      'Agent',
     ]);
   });
 

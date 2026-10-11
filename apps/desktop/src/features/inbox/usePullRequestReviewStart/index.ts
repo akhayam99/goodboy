@@ -45,7 +45,7 @@ export const usePullRequestReviewStart = ({ workspaceId, mount }: Params): Resul
           workspaceId,
           start: {
             kind: 'task',
-            candidate,
+            candidates: [candidate],
             title: `Review ${candidate.identifier}: ${pr.title}`,
             goal: goalFromPullRequest({ pr }),
             then: { kind: 'agent', agentKind: 'pr-reviewer', prompt: '', routing: null },

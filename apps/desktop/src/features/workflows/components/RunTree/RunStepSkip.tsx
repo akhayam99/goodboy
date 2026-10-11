@@ -1,3 +1,4 @@
+import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
 import { useState } from 'react';
 import { SkipForward } from 'lucide-react';
 import { Button, ConfirmPopover } from '@goodboy/ui';
@@ -46,7 +47,7 @@ export const RunStepSkip = ({ agent, skip }: Props) => {
           onClick={arm}
         >
           <SkipForward size={ICON_SIZE.row} aria-hidden />
-          Skip
+          {ROW_ACTION_LABEL.skip}
         </Button>
       )}
     />

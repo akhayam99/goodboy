@@ -27,6 +27,8 @@ import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createSlackDraftsSlice } from './slices/slack-drafts';
 import { createBudgetSlice } from './slices/budget';
+import { createMonitoringSlice } from './slices/monitoring';
+import { monitoringInitialState } from './slices/monitoring/state';
 import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
 import { createDiffCommentsSlice } from './slices/diff-comments';
@@ -280,6 +282,7 @@ export type AppStore = AppState &
   ReturnType<typeof createArtifactDraftsSlice> &
   ReturnType<typeof createSkillsSlice> &
   ReturnType<typeof createBudgetSlice> &
+  ReturnType<typeof createMonitoringSlice> &
   ReturnType<typeof createGithubSlice> &
   ReturnType<typeof createGitlabMrSlice> &
   ReturnType<typeof createBitbucketPrSlice> &
@@ -308,6 +311,7 @@ export const initialState: AppState = {
   ...projectRelocationInitialState,
   ...backupInitialState,
   ...budgetInitialState,
+  ...monitoringInitialState,
   ...createInitialSessionViewState({}),
   ...savedProjectModelsInitialState,
   ...sessionPinsInitialState,
@@ -392,6 +396,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createOpenQuestionsSlice({ set, get }),
   ...createSlackDraftsSlice({ set, get }),
   ...createBudgetSlice({ set, get }),
+  ...createMonitoringSlice({ set, get }),
   ...createSkillsSlice({ set, get }),
   ...createStorageSlice({ set, get }),
   ...createDiffCommentsSlice({ set, get }),

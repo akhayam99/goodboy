@@ -33,6 +33,7 @@ import { WorkflowRunDetail } from '../../features/session/components/SessionWork
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
 import type { ArtifactActionTarget, CommitActionTarget } from '../../features/actions/types';
 import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
+import { NO_EXPLORE_CHANGES } from '../../features/explore/exploreChanges';
 import { ExploreTree } from '../../features/explore/components/ExplorePane/ExploreTree';
 import { PaletteOverlay } from '../../features/palette/components/PaletteOverlay';
 import { ToastProvider } from '../../shared/components/Toast';
@@ -460,6 +461,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         takenIn={[]}
         pills={{ isHead: true, remote: null, prNumber: null }}
         isNew={false}
+        canShowUnpushed={false}
         isHighlighted={false}
         isLifted={false}
         isDropInto={false}
@@ -534,6 +536,7 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
         }}
         expanded={{}}
         selectedRelPath={null}
+        changes={NO_EXPLORE_CHANGES}
         now={Date.parse('2026-09-14T16:40:00Z')}
         onSetExpanded={vi.fn()}
         onLoad={vi.fn()}

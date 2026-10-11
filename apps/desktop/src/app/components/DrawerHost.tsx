@@ -11,6 +11,7 @@ import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
 import { AgentTranscriptDrawer } from '../../features/chat/components/AgentTranscriptDrawer';
 import { ReviewNotesDrawer } from '../../features/resolve/notes/components/ReviewNotesDrawer';
 import { FixRunLead } from '../../features/resolve/components/FixRunSummary/FixRunLead';
+import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
@@ -54,6 +55,9 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
+          renderChanges={({ sessionDir, relPath, baseBranch }) => (
+            <ExploreFileChanges sessionDir={sessionDir} relPath={relPath} baseBranch={baseBranch} />
+          )}
           onClose={closeDrawer}
         />
       );

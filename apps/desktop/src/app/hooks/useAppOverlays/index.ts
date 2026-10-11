@@ -13,6 +13,7 @@ import {
   type InboxStudioFocus,
   type StudioPlace,
 } from '../../../store';
+import { terminalStudioPlace } from '../../../features/terminal/terminalStudioPlace';
 import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatDoor';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
 import type { StudioPlacement } from '../../components/StudioFrame/studioPlacement';
@@ -131,6 +132,14 @@ export const useAppOverlays = ({
     () =>
       goTo({
         overlay: { kind: 'chat', chatId: selectChatDoor({ state: useAppStore.getState() }) },
+      }),
+    [goTo],
+  );
+
+  const openTerminalStudio = useCallback(
+    () =>
+      goTo({
+        overlay: terminalStudioPlace({ sessionId: useAppStore.getState().currentSessionId }),
       }),
     [goTo],
   );
@@ -263,6 +272,7 @@ export const useAppOverlays = ({
     openSettings,
     openShortcutHelp,
     openSpend,
+    openTerminalStudio,
     openWorkflows,
     studio,
     layers,

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -72,13 +72,38 @@ const spawned = vi.fn<StoreState['spawnAgent']>(async () => 'agent-new' as Agent
 
 const requestBrief = vi.fn<StoreState['requestIssueBrief']>(async () => undefined);
 
-const renderPicked = (onDismiss = vi.fn()) => {
+const SECOND: IssueCandidate = {
+  ...CANDIDATE,
+  externalId: 'issue-413',
+  identifier: 'HBL-413',
+  title: 'Ledger shows the credit twice',
+  url: 'https://linear.app/harborline/issue/HBL-413',
+  goal: '[HBL-413] Ledger shows the credit twice',
+};
+
+const THIRD: IssueCandidate = {
+  ...CANDIDATE,
+  externalId: 'issue-414',
+  identifier: 'HBL-414',
+  title: 'Notify the account owner once',
+  url: 'https://linear.app/harborline/issue/HBL-414',
+  goal: '[HBL-414] Notify the account owner once',
+};
+
+const renderPicked = (candidates: ReadonlyArray<IssueCandidate> = [CANDIDATE]) => {
+  const onRemove = vi.fn();
+  const onAddAnother = vi.fn();
   render(
     <ToastProvider>
-      <PickedIssue workspaceId={WORKSPACE_ID} candidate={CANDIDATE} onDismiss={onDismiss} />
+      <PickedIssue
+        workspaceId={WORKSPACE_ID}
+        candidates={candidates}
+        onRemove={onRemove}
+        onAddAnother={onAddAnother}
+      />
     </ToastProvider>,
   );
-  return onDismiss;
+  return { onRemove, onAddAnother };
 };
 
 const useAgent = () => fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
@@ -227,11 +252,70 @@ describe('PickedIssue', () => {
     );
   });
 
-  it('hands Dismiss to the list', () => {
-    const onDismiss = renderPicked();
+  it('stacks the picked issues, the first names the branch, each has a remove', () => {
+    const { onRemove } = renderPicked([CANDIDATE, SECOND, THIRD]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    const list = screen.getByRole('list', { name: 'Picked issues' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(list).getAllByText('Names the branch')).toHaveLength(1);
+    const [firstRow] = within(list).getAllByRole('listitem');
+    expect(firstRow?.textContent).toContain('Names the branch');
+    expect(screen.getByRole('region', { name: 'Brief from HBL-412 and 2 more' })).toBeDefined();
 
-    expect(onDismiss).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove HBL-413' }));
+    expect(onRemove).toHaveBeenCalledWith({ key: 'linear:issue-413' });
+  });
+
+  it('shows no branch chip for a single issue', () => {
+    renderPicked();
+
+    expect(screen.queryByText('Names the branch')).toBeNull();
+  });
+
+  it('hands Add another issue to the list', () => {
+    const { onAddAnother } = renderPicked([CANDIDATE, SECOND]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add another issue' }));
+
+    expect(onAddAnother).toHaveBeenCalledOnce();
+  });
+
+  it('starts one session from three issues, the first naming the branch, one Follow toast', async () => {
+    renderPicked([CANDIDATE, SECOND, THIRD]);
+    useAgent();
+
+    expect(screen.getByText('Will close HBL-412, HBL-413, HBL-414 when merged')).toBeDefined();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
+      target: { value: 'Fix the three together.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Start from HBL-412 and 2 more' }));
+
+    await waitFor(() => expect(created).toHaveBeenCalledOnce());
+    const input = created.mock.calls[0]?.[0];
+    expect(input?.externalTasks?.map((task) => task.identifier)).toEqual([
+      'HBL-412',
+      'HBL-413',
+      'HBL-414',
+    ]);
+    expect(input?.title).toBe(CANDIDATE.title);
+    await waitFor(() => expect(screen.getAllByText('Session started')).toHaveLength(1));
+  });
+
+  it('labels the start for one issue and the closing line names it', () => {
+    renderPicked();
+    useAgent();
+
+    expect(screen.getByRole('button', { name: 'Start from HBL-412' })).toBeDefined();
+    expect(screen.getByText('Will close HBL-412 when merged')).toBeDefined();
+  });
+
+  it('asks one brief for the whole set and joins the issue texts', async () => {
+    renderPicked([CANDIDATE, SECOND]);
+    useAgent();
+
+    expect(screen.getByRole('textbox', { name: 'Agent instructions' })).toHaveProperty(
+      'value',
+      `${CANDIDATE.goal}\n\n${SECOND.goal}`,
+    );
   });
 });

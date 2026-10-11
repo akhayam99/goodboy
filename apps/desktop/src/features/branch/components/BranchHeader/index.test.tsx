@@ -173,6 +173,7 @@ type HarnessProps = {
   readonly canEditTitle?: boolean;
   readonly isActive?: boolean;
   readonly isPrimaryYielding?: boolean;
+  readonly isRebaseYielding?: boolean;
   readonly onMutated?: () => void;
 };
 
@@ -213,6 +214,7 @@ const Harness = ({
   canEditTitle = false,
   isActive = true,
   isPrimaryYielding = false,
+  isRebaseYielding = false,
   onMutated,
 }: HarnessProps) => {
   const controls = useBranchControls({
@@ -235,6 +237,7 @@ const Harness = ({
       controls={controls}
       isPushBusy={false}
       isPrimaryYielding={isPrimaryYielding}
+      isRebaseYielding={isRebaseYielding}
       tab="pr"
       isActive={isActive}
       canEditTitle={canEditTitle}
@@ -252,6 +255,7 @@ const renderHeader = ({
   canEditTitle,
   isActive,
   isPrimaryYielding,
+  isRebaseYielding,
   onMutated,
 }: Partial<HarnessProps> = {}) =>
   render(
@@ -264,6 +268,7 @@ const renderHeader = ({
         canEditTitle={canEditTitle}
         isActive={isActive}
         isPrimaryYielding={isPrimaryYielding}
+        isRebaseYielding={isRebaseYielding}
         onMutated={onMutated}
       />
     </ToastProvider>,
@@ -566,6 +571,17 @@ describe('BranchHeader one primary by state', () => {
       }),
     );
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
+  });
+
+  it('turns Rebase on main secondary while a history plan exists', () => {
+    withMountPr();
+    status = statusOf({ behind: 18 });
+    renderHeader({ pr: PR, isRebaseYielding: true });
+
+    expect(
+      screen.getByRole('button', { name: 'Rebase on main' }).getAttribute('data-variant'),
+    ).toBe('secondary');
+    expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
   });
 
   it('names the predicted conflict on the rebase button before anything runs', () => {

@@ -41,8 +41,8 @@ export const StartPickedScene = () => {
   useEffect(() => {
     seedSessionStart({
       choice: 'task',
-      issueKey: `${START_CANDIDATE.provider}:${START_CANDIDATE.externalId}`,
-      pickedIssue: START_CANDIDATE,
+      pickedIssues: [START_CANDIDATE],
+      hasPickedStep: true,
     });
     useAppStore.setState((state) => ({
       issueBriefs: {

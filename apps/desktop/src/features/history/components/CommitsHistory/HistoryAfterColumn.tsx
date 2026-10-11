@@ -1,9 +1,9 @@
-import { Eyebrow } from '@goodboy/ui';
 import type { HistoryRowMark } from '../../historyRowMarks';
 import type { RowPositions } from '../../useRowPositions';
 import { HistoryAfterGraph } from './HistoryAfterGraph';
 
 type Props = {
+  readonly beforeCount: number;
   readonly afterCount: number;
   readonly keep: ReadonlyArray<string>;
   readonly marks: ReadonlyMap<string, HistoryRowMark>;
@@ -16,6 +16,7 @@ type Props = {
 };
 
 export const HistoryAfterColumn = ({
+  beforeCount,
   afterCount,
   keep,
   marks,
@@ -27,12 +28,12 @@ export const HistoryAfterColumn = ({
   onHover,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2 self-stretch rounded-lg bg-subtle pb-2 pl-2 pr-3">
-    <div className="flex h-6 items-center gap-2 pl-2">
-      <Eyebrow label="After Apply" muted />
-      <span className="text-label text-faint-foreground">
-        {afterCount} {afterCount === 1 ? 'commit' : 'commits'}
+    <h2 className="flex h-6 items-center gap-2 pl-2 text-label text-foreground">
+      After Apply
+      <span className="text-faint-foreground">
+        · {beforeCount} {beforeCount === 1 ? 'commit' : 'commits'} become {afterCount}
       </span>
-    </div>
+    </h2>
     <HistoryAfterGraph
       keep={keep}
       marks={marks}

@@ -1,6 +1,6 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { anAgent } from '@goodboy/types/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, AgentId, SessionId } from '@goodboy/types';
 
 type StoreState = Record<string, unknown>;
@@ -52,6 +52,8 @@ beforeEach(() => {
   };
   changedFiles.mockReset();
 });
+
+afterEach(cleanup);
 
 describe('useMountDiffStats', () => {
   const worktreeRow = ({

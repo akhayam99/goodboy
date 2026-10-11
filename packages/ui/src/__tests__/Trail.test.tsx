@@ -64,7 +64,6 @@ describe('Trail', () => {
   it('ends every segment but the page with the same chevron, with or without a menu', () => {
     const { container } = render(
       <Trail
-        lead={<span data-testid="lead" />}
         segments={[
           { id: 'overview', label: 'Overview', icon: Circle },
           { id: 'pages', label: 'Pages', icon: Circle, menu: MENU, onSelect: vi.fn() },
@@ -73,7 +72,6 @@ describe('Trail', () => {
       />,
     );
 
-    expect(screen.getByTestId('lead')).toBeDefined();
     const segments = Array.from(container.querySelectorAll('[data-trail-segment]'));
     expect(segments).toHaveLength(3);
     const [withoutMenu, withMenu, page] = segments;

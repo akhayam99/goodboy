@@ -187,6 +187,12 @@ export const SHORTCUTS = {
     plane: 'session',
     group: 'navigate',
   },
+  'terminal.studio': {
+    combo: 'ctrl+Backquote',
+    label: 'Terminal',
+    plane: 'app',
+    group: 'navigate',
+  },
   'session.prev': {
     combo: 'cmd+shift+BracketLeft',
     label: 'Previous session',

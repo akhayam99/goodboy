@@ -22,7 +22,6 @@ import {
   setFocusedGithubIssueNumber,
   setFocusedWorkflowRun,
   setSessionStudio,
-  toggleWorkflowExpand,
 } from './workSurface';
 import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
@@ -54,7 +53,6 @@ export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlic
     setExploreMountPath: setExploreMountPath(set),
     setAgentTab: setAgentTab(set),
     setActiveLens: setActiveLens(set),
-    toggleWorkflowExpand: toggleWorkflowExpand(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedArtifactId: setFocusedArtifactId(set),
     setArtifactFilter: setArtifactFilter(set),

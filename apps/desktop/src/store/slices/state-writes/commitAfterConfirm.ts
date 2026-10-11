@@ -2,7 +2,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { GetFn } from '../../slice-types';
 import { isReportedError } from '../notifications/reportedError';
 
-export type CommitTarget = {
+type CommitTarget = {
   readonly sessionId?: SessionId;
   readonly workspaceId?: WorkspaceId;
 };

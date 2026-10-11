@@ -37,9 +37,15 @@ type RenderParams = {
   readonly entry: IssueBriefEntry | null;
   readonly isBriefShown?: boolean;
   readonly hasBrief?: boolean;
+  readonly sources?: ReadonlyArray<IssueBriefSource>;
 };
 
-const renderProposal = ({ entry, isBriefShown = false, hasBrief = false }: RenderParams) => {
+const renderProposal = ({
+  entry,
+  isBriefShown = false,
+  hasBrief = false,
+  sources = [SOURCE],
+}: RenderParams) => {
   const spies = {
     onTitleChange: vi.fn(),
     onUseBrief: vi.fn(),
@@ -48,7 +54,7 @@ const renderProposal = ({ entry, isBriefShown = false, hasBrief = false }: Rende
   };
   render(
     <IssueBriefProposal
-      source={SOURCE}
+      sources={sources}
       entry={entry}
       title="Checkout fails when the promo code field is empty"
       isBriefShown={isBriefShown}
@@ -62,6 +68,16 @@ const renderProposal = ({ entry, isBriefShown = false, hasBrief = false }: Rende
 afterEach(cleanup);
 
 describe('IssueBriefProposal', () => {
+  it('reads Brief from the first issue and the number of others for a set', () => {
+    const other = { ...SOURCE, externalId: 'issue-2', identifier: 'ACME-413' };
+    renderProposal({
+      entry: READY,
+      sources: [SOURCE, other, { ...other, identifier: 'ACME-414' }],
+    });
+
+    expect(screen.getByRole('region', { name: 'Brief from ACME-412 and 2 more' })).toBeDefined();
+  });
+
   it('shows an editable title and says the brief is being written, with no gate', () => {
     const spies = renderProposal({
       entry: { status: 'loading', signature: 'sig', route: ROUTE },

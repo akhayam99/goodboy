@@ -74,7 +74,11 @@ describe('TimelineRowMeta', () => {
   it('puts the model cell before the stacked column, on the same slots for every row', () => {
     const { container } = render(
       <TimelineRowMeta
-        model={<TimelineModelCell summary={{ text: 'Sonnet 5.5', providers: ['anthropic'] }} />}
+        model={
+          <TimelineModelCell
+            summary={{ name: 'Sonnet 5.5', detail: null, providers: ['anthropic'] }}
+          />
+        }
         time={timeOf({ label: '6m 40s' })}
         cost="$0.62"
       />,
@@ -110,7 +114,9 @@ describe('TimelineRowMeta', () => {
 describe('TimelineModelCell', () => {
   it('shows the glyph of the provider and the model that ran', () => {
     const { container } = render(
-      <TimelineModelCell summary={{ text: 'Sonnet 5.5', providers: ['anthropic'] }} />,
+      <TimelineModelCell
+        summary={{ name: 'Sonnet 5.5', detail: null, providers: ['anthropic'] }}
+      />,
     );
 
     expect(container.querySelector('[data-provider="anthropic"]')).not.toBeNull();
@@ -121,7 +127,8 @@ describe('TimelineModelCell', () => {
     const { container } = render(
       <TimelineModelCell
         summary={{
-          text: 'Kimi K3 → Sonnet 5.5',
+          name: 'Sonnet 5.5',
+          detail: 'from Kimi K3',
           providers: ['moonshot', 'anthropic'],
         }}
       />,
@@ -136,7 +143,9 @@ describe('TimelineModelCell', () => {
 
   it('keeps only the glyphs under 640px and hands the name to assistive tech', () => {
     const { container } = render(
-      <TimelineModelCell summary={{ text: 'Sonnet 5.5', providers: ['anthropic'] }} />,
+      <TimelineModelCell
+        summary={{ name: 'Sonnet 5.5', detail: null, providers: ['anthropic'] }}
+      />,
     );
     const cell = container.firstElementChild;
     if (cell === null) {
@@ -148,27 +157,44 @@ describe('TimelineModelCell', () => {
     expect(screen.getByText('Sonnet 5.5')).toBeDefined();
   });
 
-  it('shows the effort after the model name and hides it with the name under 640px', () => {
+  it('stacks the effort under the model name and hides both under 640px', () => {
     const { container } = render(
       <TimelineModelCell
-        summary={{ text: 'Opus 5.5', effort: 'High', providers: ['anthropic'] }}
+        summary={{ name: 'Opus 5.5', detail: 'High', providers: ['anthropic'] }}
       />,
     );
     const cell = container.firstElementChild;
     if (cell === null) {
       throw new Error('no cell rendered');
     }
+    const lines = Array.from(cell.querySelectorAll('[data-routing-part]')).map(
+      (line) => line.textContent,
+    );
 
-    expect(visibleTextAt({ root: cell, width: 700 })).toBe('Opus 5.5·High');
+    expect(lines).toEqual(['Opus 5.5', 'High']);
+    expect(visibleTextAt({ root: cell, width: 700 })).toBe('Opus 5.5High');
     expect(visibleTextAt({ root: cell, width: 600 })).toBe('');
-    expect(cell.querySelector('[data-routing-part="detail"]')?.textContent).toBe('High');
   });
 
-  it('prints no effort for a fallback chain', () => {
+  it('names where a fallback chain started on the second line', () => {
     const { container } = render(
       <TimelineModelCell
-        summary={{ text: 'Opus 5.5 → Kimi K3', providers: ['anthropic', 'moonshot'] }}
+        summary={{
+          name: 'Opus 5.5',
+          detail: 'from Kimi K3',
+          providers: ['anthropic', 'moonshot'],
+        }}
       />,
+    );
+
+    expect(container.querySelector('[data-routing-part="detail"]')?.textContent).toBe(
+      'from Kimi K3',
+    );
+  });
+
+  it('leaves the second line out when there is nothing to say', () => {
+    const { container } = render(
+      <TimelineModelCell summary={{ name: 'Opus 5.5', detail: null, providers: ['anthropic'] }} />,
     );
 
     expect(container.querySelector('[data-routing-part="detail"]')).toBeNull();

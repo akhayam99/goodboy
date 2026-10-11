@@ -16,7 +16,7 @@ export const JobBannerLine = ({ job }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const { detail, line } = job;
   const at = line.indexOf(DETAILS_WORD);
-  const hasLink = detail !== null && at >= 0;
+  const hasLink = detail !== null && at >= 0 && job.state !== 'push-failed';
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <p aria-live="polite" className="text-meta text-muted-foreground">
