@@ -12,12 +12,7 @@ const FRONTEND_SOURCE_DIRECTORIES = [
   resolve(ROOT_DIRECTORY, 'apps/desktop/src'),
   resolve(ROOT_DIRECTORY, 'packages'),
 ];
-const ALLOWLIST_REASON_BY_COMMAND = new Map([
-  [
-    'process_ledger_list',
-    'the ledger is read by the scripts, terminal and monitoring units that follow it in 0.24.0',
-  ],
-]);
+const ALLOWLIST_REASON_BY_COMMAND = new Map([]);
 
 const collectSourceFiles = ({ directory }) => {
   const files = [];

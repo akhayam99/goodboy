@@ -834,3 +834,26 @@ export {
   type ResolveVia,
   type SkipReason,
 } from './providers/resolve';
+
+export {
+  attributePorts,
+  collectLearnedPorts,
+  findLeftovers,
+  pathContains,
+  type AttributionProject,
+  type AttributionSession,
+  type AttributionWorktree,
+  type LearnedPorts,
+  type LedgerKind,
+  type LedgerRow,
+  type Leftover,
+  type MonitorListener,
+  type MonitorProcess,
+  type MonitorSnapshot,
+  type PortOwner,
+  type PortRow,
+  type PortState,
+  type WatchedByProject,
+  type WatchedPort,
+  type WatchedSource,
+} from './monitoring';
