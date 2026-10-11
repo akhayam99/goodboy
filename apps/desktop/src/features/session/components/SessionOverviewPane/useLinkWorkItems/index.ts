@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { launchSpecFor } from '../../../../inbox/launchSpecFor';
 import { useInboxRecords } from '../../../../inbox/useInboxRecords';
 import { useWorkspaceIssueLookup } from '../../../../integrations/hooks/useWorkspaceIssueLookup';
 import { primaryProjectRoot } from '../../../../workspace/primaryProjectRoot';
-import type { LinkScope } from '../linkScope';
-import { taskKey, type LinkedScopes, type LinkWorkItem } from '../linkWorkRows';
+import { starKey } from '../../../../integrations/starred/starredIssueOf';
+import { taskKey, type LinkedKeys, type LinkWorkItem } from '../linkWorkRows';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -17,7 +17,8 @@ type Params = {
 type Result = {
   readonly items: ReadonlyArray<LinkWorkItem>;
   readonly lookedUp: ReadonlyArray<LinkWorkItem>;
-  readonly linkedScopes: LinkedScopes;
+  readonly linkedKeys: LinkedKeys;
+  readonly starredKeys: ReadonlySet<string>;
   readonly sources: ReadonlyArray<SessionExternalTaskProvider>;
   readonly isLoading: boolean;
 };
@@ -29,7 +30,15 @@ export const useLinkWorkItems = ({ sessionId, workspaceId, query }: Params): Res
   const inbox = useInboxRecords({ workspaceId, rootPath: rootPath ?? '' });
   const lookup = useWorkspaceIssueLookup({ workspaceId, query });
   const linked = useAppStore((state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
-  const onBoard = useAppStore((state) => state.workspaceExternalTasks[workspaceId] ?? EMPTY_ARRAY);
+  const starred = useAppStore((state) => state.starredIssues[workspaceId] ?? EMPTY_ARRAY);
+  const loadStarredIssues = useAppStore((state) => state.loadStarredIssues);
+  const reportError = useAppStore((state) => state.reportError);
+
+  useEffect(() => {
+    loadStarredIssues({ workspaceId }).catch((error: unknown) => {
+      void reportError({ title: "Couldn't load starred issues", error, workspaceId });
+    });
+  }, [loadStarredIssues, reportError, workspaceId]);
 
   const items = useMemo(
     () =>
@@ -70,23 +79,15 @@ export const useLinkWorkItems = ({ sessionId, workspaceId, query }: Params): Res
     [lookup.settled],
   );
 
-  const linkedScopes = useMemo(() => {
-    const scopes = new Map<string, ReadonlyArray<LinkScope>>();
-    const add = (key: string, scope: LinkScope): void => {
-      const current = scopes.get(key) ?? [];
-      if (!current.includes(scope)) {
-        scopes.set(key, [...current, scope]);
-      }
-    };
-    linked.forEach((task) => add(taskKey({ task }), 'session'));
-    onBoard.forEach((task) => add(taskKey({ task }), 'workspace'));
-    return scopes;
-  }, [linked, onBoard]);
+  const linkedKeys = useMemo(() => new Set(linked.map((task) => taskKey({ task }))), [linked]);
+
+  const starredKeys = useMemo(() => new Set(starred.map((issue) => starKey(issue))), [starred]);
 
   return {
     items,
     lookedUp,
-    linkedScopes,
+    linkedKeys,
+    starredKeys,
     sources: inbox.connected,
     isLoading: inbox.isLoading || lookup.loadingProviders.length > 0,
   };

@@ -191,10 +191,6 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Tick the checkbox that shows when you point at a card, press X on a card, or lasso or modifier-click cards across lanes. The bar at the bottom archives, restores or deletes them together, and Esc clears. Lists with checkboxes elsewhere use the same bar.',
       },
       {
-        term: 'Ongoing',
-        desc: 'Tasks linked to the whole workspace sit in the Ongoing row. Pick one to show only its sessions.',
-      },
-      {
         term: 'Now chip',
         desc: 'The top bar counts sessions that need you and running ones, from any screen.',
       },
@@ -327,7 +323,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start from anything',
-        desc: 'Start from an issue, a Slack thread or an error, with the brief already drafted, or Review pull request on one waiting for you. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to This session, This branch or Whole workspace, and pick whether merging closes it.',
+        desc: 'Start from an issue, a Slack thread or an error, with the brief already drafted, or Review pull request on one waiting for you. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there. Link a task to the session and pick whether merging closes it, or press Star it on a tracker issue to keep it in Tasks, Starred.',
       },
       {
         term: 'Task links',

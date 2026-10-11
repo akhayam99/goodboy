@@ -13,8 +13,8 @@
   capability stays one step away.
 - **The board frame.** The header has the pane title grade (`Board` alone, no
   total: each lane carries its own count), with the repository summary as quiet
-  meta text after it and the project filter and New session on the right. The
-  Ongoing row shows only while the workspace tracks a task. Header and lanes
+  meta text after it and the project filter and New session on the right.
+  Nothing else sits on that line, and no row sits under it. Header and lanes
   share one frame centred in the pane, so the title's left edge is the first
   lane's left edge and the actions' right edge is the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
