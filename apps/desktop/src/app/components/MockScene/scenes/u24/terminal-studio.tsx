@@ -17,17 +17,18 @@ import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
 import { useSceneClicks } from '../audit/useSceneClicks';
 import { mockSceneIpc } from '../mockSceneIpc';
+import { brandedId } from '../../../../../features/history/testing/brandedId';
 
 const clock = sceneClock({ anchor: '2026-10-10T09:12:00.000Z' });
 const NOW = clock.iso({ at: '2026-10-10T09:12:00.000Z' });
 const CREATED_AT = clock.ms({ at: '2026-10-10T09:00:00.000Z' });
 
-const WORKSPACE_ID = 'mock-u24-workspace-harborline' as WorkspaceId;
-const SESSION_ID = 'mock-u24-session-ledger' as SessionId;
-const OTHER_SESSION_ID = 'mock-u24-session-notify' as SessionId;
-const PAYMENTS_ID = 'mock-u24-project-payments-api' as ProjectId;
-const LEDGER_ID = 'mock-u24-project-ledger-core' as ProjectId;
-const NOTIFY_ID = 'mock-u24-project-notify-relay' as ProjectId;
+const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'mock-u24-workspace-harborline' });
+const SESSION_ID = brandedId<SessionId>({ value: 'mock-u24-session-ledger' });
+const OTHER_SESSION_ID = brandedId<SessionId>({ value: 'mock-u24-session-notify' });
+const PAYMENTS_ID = brandedId<ProjectId>({ value: 'mock-u24-project-payments-api' });
+const LEDGER_ID = brandedId<ProjectId>({ value: 'mock-u24-project-ledger-core' });
+const NOTIFY_ID = brandedId<ProjectId>({ value: 'mock-u24-project-notify-relay' });
 
 const FOLDER = '/mock/harborline';
 const PAYMENTS_ROOT = `${FOLDER}/payments-api`;
@@ -37,10 +38,12 @@ const PAYMENTS_TREE = '/mock/worktrees/hl-fix-duplicate-credit/payments-api';
 const LEDGER_TREE = '/mock/worktrees/hl-ledger-rounding/ledger-core';
 const NOTIFY_TREE = '/mock/worktrees/hl-retry-backoff/notify-relay';
 
-const WORKSPACE_TERMINAL = 'ws:mock-u24-workspace-harborline::t1' as TerminalTabId;
-const PAYMENTS_TERMINAL = `${SESSION_ID}::t1` as TerminalTabId;
-const LEDGER_TERMINAL = `${SESSION_ID}::t2` as TerminalTabId;
-const NOTIFY_TERMINAL = `${OTHER_SESSION_ID}::t1` as TerminalTabId;
+const WORKSPACE_TERMINAL = brandedId<TerminalTabId>({
+  value: 'ws:mock-u24-workspace-harborline::t1',
+});
+const PAYMENTS_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t1` });
+const LEDGER_TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t2` });
+const NOTIFY_TERMINAL = brandedId<TerminalTabId>({ value: `${OTHER_SESSION_ID}::t1` });
 
 const OVERRIDES = {
   defaultProviderId: null,
@@ -130,7 +133,7 @@ const mountOf = ({
   repoRoot,
   branch,
 }: MountParams): SessionProjectMount => ({
-  mountId: id as MountId,
+  mountId: brandedId<MountId>({ value: id }),
   sessionId,
   projectId,
   mountName: name,

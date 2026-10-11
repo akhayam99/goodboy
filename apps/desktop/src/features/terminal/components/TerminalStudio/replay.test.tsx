@@ -104,6 +104,7 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
 
 import { SessionTerminalLens } from './SessionTerminalLens';
 import { terminalOutputBus } from '../../outputBus';
+import { brandedId } from '../../../../features/history/testing/brandedId';
 
 type IdParams = {
   readonly value: string;
@@ -127,8 +128,8 @@ const tabIdOf = ({ value }: IdParams): TerminalTabId => {
 };
 
 const SESSION_ID = sessionIdOf({ value: 'session-1' });
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const NOW = '2026-10-10T09:12:00.000Z' as IsoDateTime;
+const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'workspace-1' });
+const NOW = brandedId<IsoDateTime>({ value: '2026-10-10T09:12:00.000Z' });
 
 const SESSION: Session = {
   id: SESSION_ID,

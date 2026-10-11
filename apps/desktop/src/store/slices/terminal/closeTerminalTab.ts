@@ -18,7 +18,7 @@ export const closeTerminalTab = (set: SetFn, get: GetFn) => {
     const tabs = get().terminalTabs[key] ?? [];
     const index = tabs.findIndex((t) => t.id === tabId);
     const remaining = tabs.filter((t) => t.id !== tabId);
-    const hadName = get().terminalNames[tabId] !== undefined;
+    const hasName = get().terminalNames[tabId] !== undefined;
     set((s) => {
       const wasActive = s.activeTerminalTab[key] === tabId;
       let nextActive = s.activeTerminalTab[key] ?? null;
@@ -35,7 +35,7 @@ export const closeTerminalTab = (set: SetFn, get: GetFn) => {
         terminalNames: names,
       };
     });
-    if (hadName) {
+    if (hasName) {
       persistTerminalNames({ names: get().terminalNames }).catch((error) =>
         get().reportError({
           title: 'Could not forget the terminal name',

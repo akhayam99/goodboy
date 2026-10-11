@@ -12,7 +12,13 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 
-const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'win32' } }));
+type PlatformState = {
+  current: 'darwin' | 'win32';
+};
+
+const { platform } = vi.hoisted((): { readonly platform: PlatformState } => ({
+  platform: { current: 'darwin' },
+}));
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
@@ -26,11 +32,12 @@ vi.mock('../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalP
 }));
 
 import { SessionTerminalLens } from './SessionTerminalLens';
+import { brandedId } from '../../../../features/history/testing/brandedId';
 
-const NOW = '2026-10-10T09:12:00.000Z' as IsoDateTime;
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const SESSION_ID = 'session-1' as SessionId;
-const TAB_ID = `${SESSION_ID}::t1` as TerminalTabId;
+const NOW = brandedId<IsoDateTime>({ value: '2026-10-10T09:12:00.000Z' });
+const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'workspace-1' });
+const SESSION_ID = brandedId<SessionId>({ value: 'session-1' });
+const TAB_ID = brandedId<TerminalTabId>({ value: `${SESSION_ID}::t1` });
 
 const SESSION: Session = {
   id: SESSION_ID,

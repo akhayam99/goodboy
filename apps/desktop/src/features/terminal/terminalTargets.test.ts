@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 import { displayCwd, terminalTargets } from './terminalTargets';
+import { brandedId } from '../../features/history/testing/brandedId';
 
-const SESSION_ID = 'session-ledger' as SessionId;
+const SESSION_ID = brandedId<SessionId>({ value: 'session-ledger' });
 
 type MountParams = {
   readonly id: string;
@@ -19,9 +20,9 @@ const mountOf = ({
   branch,
   isAttached = true,
 }: MountParams): SessionProjectMount => ({
-  mountId: id as MountId,
+  mountId: brandedId<MountId>({ value: id }),
   sessionId: SESSION_ID,
-  projectId: project as ProjectId,
+  projectId: brandedId<ProjectId>({ value: project }),
   mountName: project,
   worktreePath: path,
   lastWorktreePath: path,
@@ -36,11 +37,15 @@ const mountOf = ({
 
 const PROJECTS = [
   {
-    id: 'payments-api' as ProjectId,
+    id: brandedId<ProjectId>({ value: 'payments-api' }),
     name: 'payments-api',
     rootPath: '/mock/harborline/payments-api',
   },
-  { id: 'ledger-core' as ProjectId, name: 'ledger-core', rootPath: '/mock/harborline/ledger-core' },
+  {
+    id: brandedId<ProjectId>({ value: 'ledger-core' }),
+    name: 'ledger-core',
+    rootPath: '/mock/harborline/ledger-core',
+  },
 ];
 
 describe('terminalTargets', () => {

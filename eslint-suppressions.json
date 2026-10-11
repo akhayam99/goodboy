@@ -7248,16 +7248,6 @@
       "count": 4
     }
   },
-  "apps/desktop/src/features/terminal/components/TerminalDock/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/terminal/components/TerminalTabStrip.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/updater/components/UpdateConfirm/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -11899,11 +11889,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/store/slices/terminal/addTerminalTab.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/store/slices/terminal/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 16
@@ -11914,7 +11899,7 @@
   },
   "apps/desktop/src/store/slices/terminal/reattachTerminalTabs.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/store/slices/transcripts/buffer.test.ts": {

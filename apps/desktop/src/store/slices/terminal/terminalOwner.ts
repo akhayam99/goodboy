@@ -55,8 +55,17 @@ export const workspaceTerminalOwner = ({ workspaceId }: WorkspaceOwnerParams): T
 export const terminalOwnerKey = ({ owner }: OwnerParams): string =>
   owner.kind === 'session' ? owner.sessionId : `${WORKSPACE_PREFIX}${owner.workspaceId}`;
 
-export const terminalTabIdOf = ({ owner, ordinal }: IdParams): TerminalTabId =>
-  `${terminalOwnerKey({ owner })}${ORDINAL_SEPARATOR}${ordinal}` as TerminalTabId;
+const isTerminalTabId = (value: string): value is TerminalTabId => value !== '';
+const isSessionId = (value: string): value is SessionId => value !== '';
+const isWorkspaceId = (value: string): value is WorkspaceId => value !== '';
+
+export const terminalTabIdOf = ({ owner, ordinal }: IdParams): TerminalTabId => {
+  const id = `${terminalOwnerKey({ owner })}${ORDINAL_SEPARATOR}${ordinal}`;
+  if (!isTerminalTabId(id)) {
+    throw new Error('empty terminal id');
+  }
+  return id;
+};
 
 export const parseTerminalId = ({ id }: ParseParams): ParsedTerminalId | null => {
   const separatorIndex = id.lastIndexOf(ORDINAL_SEPARATOR);
@@ -70,11 +79,11 @@ export const parseTerminalId = ({ id }: ParseParams): ParsedTerminalId | null =>
   const head = id.slice(0, separatorIndex);
   if (head.startsWith(WORKSPACE_PREFIX)) {
     const workspaceId = head.slice(WORKSPACE_PREFIX.length);
-    return workspaceId === ''
-      ? null
-      : { owner: workspaceTerminalOwner({ workspaceId: workspaceId as WorkspaceId }), ordinal };
+    return isWorkspaceId(workspaceId)
+      ? { owner: workspaceTerminalOwner({ workspaceId }), ordinal }
+      : null;
   }
-  return { owner: sessionTerminalOwner({ sessionId: head as SessionId }), ordinal };
+  return isSessionId(head) ? { owner: sessionTerminalOwner({ sessionId: head }), ordinal } : null;
 };
 
 const isSeparator = ({ char }: CharParams): boolean => char === '/' || char === '\\';

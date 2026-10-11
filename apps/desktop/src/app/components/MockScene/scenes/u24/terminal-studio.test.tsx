@@ -230,7 +230,8 @@ describe('the terminal studio scenes', () => {
     await settle();
 
     const location = screen.getByRole('group', { name: 'Open a terminal in' }).parentElement;
-    expect(within(location as HTMLElement).getByText('payments-api')).toBeDefined();
+    expect(location).not.toBeNull();
+    expect(within(location ?? document.body).getByText('payments-api')).toBeDefined();
   });
 
   it('lists the same targets in the new terminal picker', async () => {
@@ -280,7 +281,8 @@ describe('the terminal studio scenes', () => {
     await settle();
 
     expect(screen.getByText('No terminal yet')).toBeDefined();
-    fireEvent.click(screen.getAllByRole('button', { name: 'New terminal' }).at(-1) as HTMLElement);
+    const buttons = screen.getAllByRole('button', { name: 'New terminal' });
+    fireEvent.click(buttons[buttons.length - 1] ?? document.body);
     await settle();
 
     const tabs = store.getState().terminalTabs['ws:mock-u24-workspace-harborline'] ?? [];
