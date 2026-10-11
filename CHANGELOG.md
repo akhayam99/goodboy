@@ -12,6 +12,160 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.24.0
+
+The Branch page is one page, Terminal and Monitoring join the column, and one drawer fixes every open comment.
+
+This version updates your data in one direction. To go back to 0.23, restore the backup Goodboy made before updating.
+
+### New
+
+#### The Branch page is one page
+<!-- gb area=review image=branch-page -->
+
+A rail on the left lists the sections of the branch, Overview, Comments, Files, Commits and Checks, and only the ones that make sense. With no pull request it shows Overview, Files and Commits, and Comments once a note exists. There is no tab strip and no back link: the crumb above the title is the way up.
+
+Every section sits on one centred column, so nothing moves when you switch. Comments lists your notes and the host's threads together, with a chip on each row. A note stays on its branch, and Post to GitHub moves it into your review draft. A branch with no pull request opens a create form with Write with Scribe, the base branch, Draft or Ready, reviewers and the issues it closes.
+
+In Files, Show more lines opens the context around a change, up to the whole file, and a double click on a name shows where it is defined and used. A pull request held for a merge reads Queued, with Cancel auto-merge in its menu.
+
+#### Fix comments in one drawer
+<!-- gb area=review image=fix-comments -->
+
+Fix comments opens a drawer beside the page with every open comment, your notes and the host's, grouped by file. Start fix runs one agent through the ones you check, and Analyze only leaves its changes as proposals.
+
+Each comment ends in a plain outcome: Fix proposed with Apply fix, Question with Answer, No change with the reply it drafted, or Failed with Retry. Apply 3 fixes and Post 2 replies act on all of them, with one Undo. A branch runs one fix at a time, and later work says Queued, after the current fix.
+
+#### Analyze a failing check
+<!-- gb area=review image=analyze-fix -->
+
+Analyze on a failing check starts the Debugger. It reads the log and the changed files without changing anything, then shows its finding and a proposed fix in a drawer. Start fix begins an Implementer on the branch with that proposal in one click, and Dismiss drops it. The check's row says Debugger proposes a fix until you choose.
+
+#### Terminal
+<!-- gb area=sessions image=terminal-studio -->
+
+One studio lists every terminal of the workspace and of its sessions. A new terminal opens in the workspace folder, with chips to open one in any worktree or the main checkout. A busy terminal shows its command, an exited one offers Restart, and the shells and their output are still there after a reload. ⌃` opens it from anywhere.
+
+#### Monitoring
+<!-- gb area=sessions image=monitoring -->
+
+Monitoring says which ports are taken and by whom: a worktree, a main checkout, or a script, terminal or agent Goodboy started. Watch a port adds one, and a port held while other worktrees run agents against the same project says so. Stop acts on the row at once, Force stop follows if the process stays, and Leftovers lists what an earlier run left behind.
+
+#### Start one session from several issues
+<!-- gb area=sessions image=start-many -->
+
+Pick up to five issues in Tasks and start one session from them. The first names the branch, the brief is written from the whole set, and every issue is linked to the session. The button reads Start from HBL-412 and 2 more, and a line under it lists the issues the session closes when it merges.
+
+#### Write a title and goal from linked work
+<!-- gb area=sessions -->
+
+A session started blank and linked to issues offers Write on its Overview. Goodboy drafts a title and a goal from up to five linked issues, and you edit them before Use title and goal. One Undo takes both back. Nothing is written until you press it.
+
+#### Test a provider connection
+<!-- gb area=providers screen=settings/providers -->
+
+Test connection on Claude, Codex and Cursor makes a real account call and shows how long it took, or why it failed. History lists the last 20 changes to the provider's account in a popover.
+
+### Improved
+
+#### Drawers sit beside the page
+<!-- gb area=app image=drawers -->
+
+The plan, report, file and diff drawers open in their own container beside the page, and you drag the edge to resize each. Where there is no room, a drawer lies over the page. The page keeps its width, and Expand is gone.
+
+#### One title and one main button on the run page
+<!-- gb area=workflows image=run-header -->
+
+The run page has one title, one main button and plain crumbs: Session, Runs, Run. Review plan, Resume or Stop run sits at the right, and Ask after the plan or Run on its own is one control. Step rows show the model over its effort. Make preset is gone.
+
+#### A rebase is one job
+<!-- gb area=sessions -->
+
+A rebase shows as one banner under the Branch header, on every section. When it would touch files you have not committed, Stash and rebase sets them aside and brings them back. If that conflicts, they stay in a stash and the banner says so. A stopped rewrite offers Retry with a note, and a result that differs from your branch opens as a review before you accept it.
+
+#### Commits shows one column
+<!-- gb area=review -->
+
+At rest, Commits is the branch as it is, with Rebase on main on its first row and a Keys button under the list. The panel with what the branch becomes opens when you plan a change. Backups sits in the menu, and Restore previous history asks beside its button.
+
+#### Explore shows the project and what changed
+<!-- gb area=sessions image=explore-changes -->
+
+A chip says which project you are browsing, and opens a list when the session has several. Changed files carry M, A or D, and Changed lists only those. A file opens in a drawer with colored code, and a changed file adds a Changes view. Browse files on a project in the Overview opens Explore there.
+
+#### Scripts shows what is running
+<!-- gb area=scripts image=scripts-live -->
+
+Scripts groups each project into Services and Tasks. A running service shows its port, uptime, CPU, memory and last output line, with Stop and Restart in view, and says when another worktree holds its port. A task shows its result, duration and age. A project with nothing pinned shows Suggested scripts with a Pin on each.
+
+#### Filters in a rail for Tasks and Notifications
+<!-- gb area=inbox screen=inbox -->
+
+Tasks and Notifications put their filters in a rail beside the list, and fold them into one Filters button in a narrow window. Tasks opens with nothing open beside the list: Enter or a click opens a row, and Esc closes it.
+
+#### Settings, Projects reads in groups
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Starred projects sit under their own heading, apart from Other projects. A project's scripts live in its card with a Pin on each, and one Terminal folder row says where new terminals start. Pickers with six or more projects show the same two headings.
+
+#### Sessions has a filter and a list that stays put
+<!-- gb area=sessions -->
+
+The funnel in the Sessions header narrows the list by status or project, sorts it and groups it by PR state, Stage or Project. A badge counts the filters, and a line under the list says how many it hides, with Clear. Sessions that need you stay on top, and the rest follow their last activity.
+
+#### Move an issue between the session and a branch
+<!-- gb area=sessions -->
+
+Move to on a linked issue puts it on the session or on any open branch of its project, at once, with an Undo toast. You can also drag the issue chip onto a branch row, and hold Alt to copy it instead.
+
+#### The models you see are the models that run
+<!-- gb area=settings screen=settings/providers image=models-page -->
+
+One rule now picks the model for every role, step and run, and the Models page, the run pill and the builders all read it. A pin on a provider that is Off shows why it is skipped. Reset all to Auto asks beside its button.
+
+#### Theme toggle in the top bar
+<!-- gb area=app -->
+
+A button in the top bar switches between light and dark. Settings keeps the choice of following your system.
+
+#### One row of create buttons
+<!-- gb area=app -->
+
+The sidebar starts with + Session, + Chat and + Terminal in one row.
+
+#### Confirms open beside their button
+<!-- gb area=app -->
+
+Delete, Close, Reset and Remove ask in a popover anchored to the button you pressed, with Esc to cancel. Anything you can take back acts at once and offers Undo.
+
+#### Tooltips show the shortcut
+<!-- gb area=app -->
+
+An icon button's tooltip names its key, written the same way everywhere, and a cut-off name shows in full on hover.
+
+#### An update card beside the chip
+<!-- gb area=app -->
+
+An update that is ready opens a card beside its chip with Restart now, Later and What's new. Later snoozes that version.
+
+#### A Words chapter in the Guide
+<!-- gb area=app -->
+
+The Guide has a Words chapter near its start, with the terms Goodboy uses, one sentence each.
+
+#### A chat that starts on one stage
+<!-- gb area=agents -->
+
+A chat with no message is one centred stage: Ask about your workspace, the message box and up to three suggested questions.
+
+### Fixed
+
+- Issues you tracked in the Board's Ongoing row are starred in Tasks, and the row is gone. <!-- gb area=sessions -->
+- A project's old model settings no longer override the Models page. They stay saved until you apply or discard them. <!-- gb area=settings -->
+- Open on a folder in Explore opens the folder, and a link to a folder lists as a folder. <!-- gb area=sessions -->
+- Start fix on a check and Continue on an agent start one run, even when pressed from two places. <!-- gb area=agents -->
+- Tooltips show a shortcut in one format everywhere. <!-- gb area=app -->
+
 ## Goodboy v0.23.2
 
 Providers say what they know, the Models page shows the model each task runs, and a long list of small breakages is fixed.

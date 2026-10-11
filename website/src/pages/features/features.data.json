@@ -31,7 +31,7 @@
         },
         {
           "title": "One page per provider",
-          "text": "Each provider has its own page for usage, which models appear in the picker, permissions and your account.",
+          "text": "Each provider has its own page for usage, which models appear in the picker, permissions and your account. Test connection checks the account with a real call.",
           "group": "Set up",
           "also": "provider pages",
           "shown": true
@@ -78,7 +78,7 @@
         },
         {
           "title": "Review a pull request",
-          "text": "A pull request waiting on you starts a session with a read-only reviewer and opens the Pull request tab, where Write review waits.",
+          "text": "A pull request waiting on you starts a session with a read-only reviewer and opens its Branch page, where Write review waits.",
           "group": "Start a task",
           "also": "review a pull request"
         },
@@ -99,6 +99,26 @@
           "text": "Link work adds a task. Unlink acts at once and shows an Undo toast for about 10 seconds, and the Log keeps a Re-link. Cmd+Z undoes the last app operation when focus is not in a text field.",
           "group": "Start a task",
           "also": "undo unlink"
+        },
+        {
+          "title": "Start one session from several issues",
+          "text": "Pick up to five issues and start one session from them. The first names the branch, the brief is written from the whole set, and every issue is linked.",
+          "group": "Start a task",
+          "also": "several issues",
+          "shown": true
+        },
+        {
+          "title": "Star an issue from Link work",
+          "text": "Press Star it under an issue in Link work to keep it for the whole workspace, in Tasks, Starred, with Undo.",
+          "group": "Start a task",
+          "also": "star from link work"
+        },
+        {
+          "title": "Move an issue between the session and a branch",
+          "text": "Move to puts a linked issue on the session or on an open branch of its project, at once, with Undo. Drag its chip to a branch row, and hold Alt to copy.",
+          "group": "Start a task",
+          "also": "move an issue",
+          "shown": true
         },
         {
           "title": "Start blank",
@@ -417,6 +437,13 @@
           "shown": true
         },
         {
+          "title": "Monitoring",
+          "text": "See which ports are taken and by whom, a worktree or a script, terminal or agent Goodboy started. Stop what you started and clear what an earlier run left behind.",
+          "group": "Workspace and projects",
+          "also": "monitoring",
+          "shown": true
+        },
+        {
           "title": "Locate moved projects",
           "text": "If you moved your repos, pick the parent folder. Goodboy finds them again, fixes the paths and repairs the worktrees, with Undo move.",
           "group": "Workspace and projects",
@@ -567,7 +594,7 @@
     {
       "id": "review",
       "title": "Review and branches",
-      "lead": "One Branch page with Pull request, Comments, Files, Commits and Checks: reshape history, turn comments into commits, and push once.",
+      "lead": "One Branch page for Overview, Comments, Files, Commits and Checks: reshape history, turn comments into commits, push once.",
       "groups": ["Commits and history", "Review and resolve on the Branch page"],
       "mocks": ["diff"],
       "guides": [
@@ -583,7 +610,7 @@
       "items": [
         {
           "title": "Shape the history",
-          "text": "Clean up a branch in the Commits tab. Reword, squash, fold, drop or reorder commits by hand, then apply.",
+          "text": "Clean up a branch in the Commits section. Reword, squash, fold, drop or reorder commits by hand, then apply.",
           "group": "Commits and history",
           "main": true
         },
@@ -615,7 +642,7 @@
         },
         {
           "title": "Backups",
-          "text": "Open Backups in the Commits tab to see older histories of the branch. Restore previous history puts one back.",
+          "text": "Choose Backups in the menu of the Commits section to see older histories of the branch. Restore previous history puts one back.",
           "group": "Commits and history",
           "also": "backups"
         },
@@ -648,7 +675,7 @@
         },
         {
           "title": "Resolve",
-          "text": "Turn review comments into commits without writing the fix yourself. One agent works through them in order, in its own copy of the branch. You accept, edit or skip each fix.",
+          "text": "Turn review comments into commits without writing the fix yourself. Fix comments opens one drawer beside the page, and one agent works through the comments you check. Each ends in a fix to apply, a question, a reply or a retry.",
           "group": "Review and resolve on the Branch page",
           "main": true
         },
@@ -660,7 +687,7 @@
         },
         {
           "title": "Review sources",
-          "text": "Each comment says its host, GitHub, GitLab or Bitbucket. Your notes have their own drawer. Reading and replying work everywhere, and resolving works where the host allows it.",
+          "text": "Each comment says its host, GitHub, GitLab or Bitbucket. Your notes sit in the same list, marked Note. Reading and replying work everywhere, and resolving works where the host allows it.",
           "group": "Review and resolve on the Branch page",
           "also": "review sources",
           "shown": true
@@ -723,13 +750,13 @@
         },
         {
           "title": "Notes before a pull request",
-          "text": "Read your own code first in the Files tab. Leave notes on lines, open them in the Notes drawer to hand them to an agent with Fix, and move the open ones to a review draft for the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes, each with Move to and Discard.",
+          "text": "Read your own code first in the Files section. Leave notes on lines, and Fix comments hands the open ones to an agent. Post to GitHub moves a note into your review draft for the pull request. Notes belong to a branch, and notes with no branch are listed as Unassigned notes, each with Move to and Discard.",
           "group": "Review and resolve on the Branch page",
           "also": "notes before a PR"
         },
         {
           "title": "Pull request on the Branch page",
-          "text": "See in plain words whether a pull request can merge, with its checks. It is the first tab of the Branch page on GitHub, GitLab and Bitbucket. Edit it in place and merge the ways the host allows.",
+          "text": "See in plain words whether a pull request can merge, with its checks. It is the Overview of the Branch page on GitHub, GitLab and Bitbucket. Edit it in place and merge the ways the host allows. A pull request held for a merge reads Queued.",
           "group": "Review and resolve on the Branch page",
           "also": "pull request page"
         },
@@ -754,13 +781,13 @@
         },
         {
           "title": "Read the code",
-          "text": "The Files tab has a file tree with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent.",
+          "text": "Files has a file tree in the rail with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent. Show more lines opens the context around a change, and a double click on a name shows where it is defined and used.",
           "group": "Review and resolve on the Branch page",
           "also": "diff"
         },
         {
           "title": "Write review",
-          "text": "Review someone else's pull request in a form in the Files tab. Add line comments, pick comment, approve or request changes, and submit one review.",
+          "text": "Review someone else's pull request from its diff with Write review in the header. Add line comments, pick comment, approve or request changes, and submit one review.",
           "group": "Review and resolve on the Branch page",
           "also": "write review"
         },
@@ -778,7 +805,7 @@
         },
         {
           "title": "Checks",
-          "text": "The Checks tab lists CI runs with their durations and the failing step, or says why it can't read them and names the fix. Fix failing check hands a failed one to an agent.",
+          "text": "Checks lists CI runs with their durations and the failing step, or says why it can't read them and names the fix. Analyze on a failing check starts the Debugger, and Start fix hands its proposal to an Implementer in one click.",
           "group": "Review and resolve on the Branch page",
           "also": "checks",
           "shown": true
@@ -817,7 +844,7 @@
         },
         {
           "title": "Tasks",
-          "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together, grouped by day.",
+          "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together, grouped by day. Filters sit in a rail beside the list.",
           "group": "Tasks and your tools",
           "main": true
         },
@@ -1187,7 +1214,7 @@
         },
         {
           "title": "Terminal",
-          "text": "Open a real login shell in the session's worktree. It is still there after a reload.",
+          "text": "One studio lists every terminal of the workspace and its sessions. Open a login shell in the workspace folder or any worktree, and it survives a reload.",
           "group": "Keyboard and terminal",
           "main": true
         },
@@ -1199,7 +1226,7 @@
         },
         {
           "title": "Script drawer",
-          "text": "Watch a script's live output in a drawer. Stop it, run it again and copy the output.",
+          "text": "Watch a script's live output in a drawer. Stop it, run it again and copy the output. The Scripts page shows each service with its port, uptime and last line.",
           "group": "Keyboard and terminal",
           "also": "script drawer",
           "shown": true
@@ -1213,7 +1240,7 @@
         },
         {
           "title": "Explore",
-          "text": "Browse the session folder as a file tree with a preview. Ask an agent about the selected file from its row.",
+          "text": "Browse the session folder as a file tree, with a chip for the project and a letter on changed files. A file opens in a drawer, and a changed file adds a Changes view.",
           "group": "Keyboard and terminal",
           "also": "explore"
         }
@@ -1311,7 +1338,7 @@
         },
         {
           "title": "Updates",
-          "text": "Updates download in the background, then a pill in the top bar offers to restart. With agents running, it can wait until they finish.",
+          "text": "Updates download in the background, then a card beside the Goodboy chip offers Restart now, Later and What's new. With agents running, it can wait until they finish.",
           "group": "Security, backup and updates",
           "main": true
         },
@@ -1330,7 +1357,7 @@
         },
         {
           "title": "Guide",
-          "text": "Learn how Goodboy works in 18 short chapters that follow a task. Open Guide from the palette.",
+          "text": "Learn how Goodboy works in 19 short chapters that follow a task. Open Guide from the palette.",
           "group": "Security, backup and updates",
           "also": "guide"
         },

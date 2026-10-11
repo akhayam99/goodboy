@@ -59,7 +59,7 @@ Open an older Goodboy on newer data without damage. It stops before touching any
 
 <sub>Screenshot from Goodboy 0.13.1</sub>
 
-Get updates in the background, then see what is new. A pill in the top bar, **0.13.1 available** here, opens a confirm with **Download and restart**, **Not now** and **What's new**, and it says whether agents are running. With agents running, **Restart when they finish** waits for them.
+Get updates in the background, then see what is new. When one is ready, the chip in the Goodboy row opens a card beside it, titled with the version, with **Restart now**, **Later** and **What's new**. **Later** snoozes it. With agents running, **Restart now** asks first, and **Restart when they finish** waits for them.
 
 ### Changelog in the app
 
@@ -78,7 +78,7 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in 18 short chapters that follow a task, with search and links that open each screen. Open **Guide** from the Goodboy menu or the palette.
+Learn how Goodboy works in 19 short chapters that follow a task, with search and links that open each screen. Open **Guide** from the Goodboy menu or the palette.
 
 **Also in this area**
 

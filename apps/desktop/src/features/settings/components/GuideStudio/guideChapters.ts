@@ -121,7 +121,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pinned scripts',
-        desc: 'Pin a script per project from Scripts in a session or from the Scripts list on Projects. It holds across worktrees and shows under $ in the palette.',
+        desc: 'Pin a script per project from the Scripts page in a session or from the card of the project on Projects. It holds across worktrees and shows under $ in the palette. A project with nothing pinned shows Suggested scripts with a Pin on each.',
+      },
+      {
+        term: 'Monitoring',
+        desc: 'Monitoring, a door in the left column, says which ports are taken and by whom: a worktree, a main checkout, or a script, terminal or agent Goodboy started. Watch a port adds one. Stop acts on a row, Force stop follows if the process stays, and Leftovers lists what an earlier run left behind.',
       },
     ],
     links: [
@@ -144,7 +148,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One page per provider',
-        desc: "Usage, the models in your picker, permissions and your account, in one place. Providers billed per token say so instead of showing usage windows. A check that times out says Can't check and keeps what Goodboy last knew, and a sign-in that no check has confirmed shows apart from one that has.",
+        desc: "Usage, the models in your picker, permissions and your account, in one place. Providers billed per token say so instead of showing usage windows. A check that times out says Can't check and keeps what Goodboy last knew, and a sign-in that no check has confirmed shows apart from one that has. Test connection on Claude, Codex and Cursor makes a real account call and shows how long it took, and History lists the last 20 changes.",
       },
       {
         term: 'Auto',
@@ -189,6 +193,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Pick up a task',
         desc: 'Choose an issue from your tools or Tasks. Goodboy drafts a short title and goal linked back to it, and you edit them in the same block. Then run it through the same workflow builder, or ask an agent, and press Start from the issue. A Sentry error or a GitHub or GitLab item opens in its project and says why. A GitHub pull request link gives Review pull request.',
+      },
+      {
+        term: 'Several issues',
+        desc: 'Pick up to five issues in Tasks and start one session from them. The first names the branch, the brief is written from all of them, and every issue links to the session. A session started blank offers Write on its Overview to draft a title and goal from the issues linked to it.',
       },
       {
         term: 'Run a workflow',
@@ -242,15 +250,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Top bar',
-        desc: 'Now, Limits, Spend and the bell sit on the right, with +N for providers past the first few. Impact opens from Spend, and the theme is in Settings, App, General.',
+        desc: 'Now, Limits, Spend and the bell sit on the right, with +N for providers past the first few. Impact opens from Spend, and a button switches between light and dark. Settings, App, General keeps the choice of following your system.',
       },
       {
         term: 'Left column',
-        desc: 'New session, Board, Tasks, Chat and Workflows come first, then your sessions, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
+        desc: 'One row of + Session, + Chat and + Terminal starts something new. Board, Tasks, Chat, Workflows, Terminal and Monitoring come next, then your sessions, then Settings, the Goodboy row and the bug report button. The Goodboy row opens a menu with the Guide. ⌘B folds it into icons. Legacy layout in Settings, App, General brings back the top bar buttons and the footer.',
       },
       {
         term: 'Session rows',
-        desc: 'One line each: a mark and the title. The mark is red only when something broke, amber when you must answer, approve or act, green when the pull request is ready to merge, a teal ring while it waits in the merge queue, and a filled violet check when the session is done. Rest on a row for its card. The Sessions menu sorts, groups, filters by project and shows archived. Control Tab flips between recent sessions, and Option Command Down jumps to the next one that needs you.',
+        desc: 'One line each: a mark and the title. The mark is red only when something broke, amber when you must answer, approve or act, green when the pull request is ready to merge, a teal ring while it waits in the merge queue, and a filled violet check when the session is done. Rest on a row for its card. The funnel in the Sessions header filters by status or project, shows archived, sorts and groups, and a line under the list says how many sessions it hides, with Clear. Control Tab flips between recent sessions, and Option Command Down jumps to the next one that needs you.',
       },
       {
         term: 'Pin a session',
@@ -277,7 +285,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Roles',
-        desc: 'Scout, Plan, Implement, Debug, Test, Review, Docs, Resolve and Generalist. A role sets the instructions, the default model and what the agent hands back. Resolve answers review comments from the Comments tab and is never a workflow step: a step that needs a fix uses Implement.',
+        desc: 'Scout, Plan, Implement, Debug, Test, Review, Docs, Resolve and Generalist. A role sets the instructions, the default model and what the agent hands back. Resolve answers review comments from the Comments section and is never a workflow step: a step that needs a fix uses Implement.',
       },
       {
         term: 'Talking to an agent',
@@ -289,7 +297,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'A run page reads top to bottom: the header with Pause and Stop run, the steps with sub-agents indented under their agent and finished sets folded into one row, and the composer at the bottom. While the run waits for its plan, Review plan opens it in a drawer.',
+        desc: 'A run page reads top to bottom: the header with one title, the crumbs Session, Runs and Run, and one main button that says what comes next, such as Review plan, Pause or Resume, with Stop run beside it, then the steps with the model over its effort, sub-agents indented under their agent and finished sets folded into one row, and the composer at the bottom. While the run waits for its plan, Review plan opens it in a drawer.',
       },
       {
         term: 'Agent suggests',
@@ -365,7 +373,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Tasks',
-        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub or GitLab items when several projects live on that host, filter by project.',
+        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub or GitLab items when several projects live on that host, filter by project. View, Type, Source and Project sit in a rail beside the list, which folds into one Filters button in a narrow window, and Tasks opens with nothing open beside the list.',
       },
       {
         term: 'Start from anything',
@@ -404,15 +412,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'One page per branch, with the tabs Pull request, Comments, Files, Commits and Checks, all on one centred column. It opens on Pull request when the branch has one. A branch chip in the header switches branches or starts a new one. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, and Back walks your history.',
+        desc: 'One page per branch, with a rail on its left that lists Overview, Comments, Files, Commits and Checks, and only the ones that make sense: with no pull request it shows Overview, Files and Commits, and Comments once a note exists. Every section sits on one centred column. A branch chip in the header switches branches or starts a new one. It opens the same way from the palette, a notification, a chat card or the board. Up is the crumb on the left, there is no back link, and Back walks your history.',
       },
       {
         term: 'Pull request',
-        desc: 'The pull request on its own tab, on GitHub, GitLab (Merge request) and Bitbucket. Rename it with E and edit the description in place, read its activity, reviewers and checks, add reviewers, mark it ready, close it or merge it with the methods the host allows. A branch with no pull request offers Create pull request here.',
+        desc: 'The pull request on Overview, on GitHub, GitLab (Merge request) and Bitbucket. Rename it with E and edit the description in place, read its activity, reviewers and checks, add reviewers, mark it ready, close it or merge it with the methods the host allows. A pull request held for a merge reads Queued, with Cancel auto-merge in its menu. A branch with no pull request offers a create form here, with Write with Scribe, the base branch, Draft or Ready, reviewers and the issues it closes.',
       },
       {
         term: 'Comments',
-        desc: "The review threads of the branch and the open thread beside them. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N opens a panel beside the list to pick the model; one agent then works through them in order, in its own copy of the branch. Fix 9, Use the recommended answers, Retry and Accept 5 act on many comments at once, and Accept has Undo.",
+        desc: "The review threads of the branch and your own notes in one list, each with a chip, Note or On GitHub, and the open one beside the list. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix comments opens a drawer beside the page with every open comment grouped by file. Start fix runs one agent through the ones you check, in its own copy of the branch, and Analyze only leaves its changes as proposals. Each comment ends in Fix proposed, Question, No change or Failed, and Apply 3 fixes, Post 2 replies, Retry and Accept 5 act on many at once, with Undo.",
       },
       {
         term: 'Fix run',
@@ -420,15 +428,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Files',
-        desc: 'The changed files as a tree in a rail at the left edge, which never moves the page, beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review is a form with line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
+        desc: 'The changed files as a tree in a rail at the left edge, which never moves the page, beside the code, which reads as one diff in the order of the tree, with a ring on each folder that fills as you mark files Viewed, a filter, Unviewed and With notes. Display holds Unified, Split and Wrap long lines. Show more lines opens the context around a change, up to the whole file, and a double click on a name shows where it is defined and used. Comment on a line or on a whole file with Comment on file, or quote a line into a note or a question for an agent. J and K move between files, V marks one viewed, / filters, and ⌘⇧B hides the tree. Write review, in the header of the pull request, takes line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Notes',
-        desc: 'Add note on a line saves it with the project and branch you are on. It counts in Notes N on the Files tab, where the Notes drawer lists it apart from the pull request comments and Fix starts an agent on it, in the same lane as fixes on comments, and Move N to review draft takes the open ones into a review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
+        desc: 'Add note on a line saves it with the project and branch you are on, and it sits under its line. It shows in Comments with the chip Note, Fix comments counts it, and Post to GitHub moves it into your review draft. A note an agent works on cannot be closed or deleted. Notes without a branch wait in Unassigned notes on the Session overview, where each has Move to and Discard, and Discard all clears the list with Undo.',
       },
       {
         term: 'Review sources',
-        desc: 'Each comment carries a label with its host, GitHub, GitLab or Bitbucket, and your own notes never show in Comments. Bitbucket cannot resolve a thread, so its comments offer Reply.',
+        desc: 'Each comment carries a label with its host, GitHub, GitLab or Bitbucket, and your own notes carry the label Note. Bitbucket cannot resolve a thread, so its comments offer Reply.',
       },
       {
         term: 'What git says',
@@ -436,7 +444,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'The CI runs of a pull request, or the jobs of the latest GitLab pipeline, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
+        desc: 'The CI runs of a pull request, or the jobs of the latest GitLab pipeline, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Analyze on a failing check starts the Debugger, which reads the log and proposes a fix, and Start fix hands that proposal to an Implementer. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
       },
       {
         term: 'Push',
@@ -469,8 +477,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'Tidy a branch before you ship it, and decide what happens to it after it merges.',
     points: [
       {
-        term: 'Commits tab',
-        desc: 'The Commits tab of the Branch page shapes the history. Drag a commit to move it or onto another to fold it in, or reword, squash or drop it from the row. A folded commit chooses Keep title, Keep both or Separate. Now and After Apply sit side by side. Apply tries the plan on a temporary copy, and your branch moves only when it comes out clean. It also folds the resolve commits into their originals or into one commit before you push, with a preview and an Undo.',
+        term: 'Commits',
+        desc: 'The Commits section of the Branch page shapes the history, and at rest it is one column: the branch as it is, with Rebase on main on its first row. Drag a commit to move it or onto another to fold it in, or reword, squash or drop it from the row. A folded commit chooses Keep title, Keep both or Separate. Once you plan a change, a panel beside the list shows what the branch becomes, After Apply. Apply tries the plan on a temporary copy, and your branch moves only when it comes out clean. It also folds the resolve commits into their originals or into one commit before you push, with a preview and an Undo.',
+      },
+      {
+        term: 'A rebase is one job',
+        desc: 'One banner under the Branch header tells the rebase, on every section. When it would touch files you have not committed, Stash and rebase sets them aside and brings them back, and if that conflicts they stay in a stash and the banner says so. A stopped rewrite offers Retry with a note.',
       },
       {
         term: 'Conflicts ahead of time',
@@ -508,7 +520,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Plan beside the planner',
-        desc: 'In the planner chat and its Brief a plan is one row. Press it to read the plan in a drawer, where one button moves it on, Approve or Run plan, and Edit changes it by hand. Approve moves the run on, and one toast offers Follow the run. Expand and Open in Artifacts sit in its menu. While the planner reworks it, the drawer says Revising to v2 and the button is off.',
+        desc: 'In the planner chat and its Brief a plan is one row. Press it to read the plan in a drawer, where one button moves it on, Approve or Run plan, and Edit changes it by hand. Approve moves the run on, and one toast offers Follow the run. Open in Artifacts and Copy markdown sit in its header, and you drag its edge to resize it. While the planner reworks it, the drawer says Revising to v2 and the button is off.',
       },
       {
         term: 'Comments on a plan',
@@ -643,6 +655,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: "Updates download in the background, and What's new shows what changed.",
     points: [
       {
+        term: 'Update card',
+        desc: "When an update is ready, the chip in the Goodboy row opens a card beside it with Restart now, Later and What's new. Later snoozes it.",
+      },
+      {
         term: 'Restart when ready',
         desc: 'With agents running, Restart when they finish waits for them.',
       },
@@ -673,6 +689,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Command palette',
         desc: 'Opens on what you are looking at. In a session it lists Next steps first, then its actions in the order its state calls for, then Runs and recent places; on the Board, the sessions that need you come first. Start a run confirms before it starts. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row. Any search starts with Ask in Chat. Copy worktree path copies where a session works.',
+      },
+      {
+        term: 'Terminal',
+        desc: 'Control and the backtick key open Terminal, with every terminal of the workspace and its sessions in one list. A new terminal opens in the workspace folder, chips open one in a worktree or the main checkout, and the shells and their output are still there after a reload. ⌘T adds a terminal while one has focus.',
       },
       {
         term: 'Search',
