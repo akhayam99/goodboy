@@ -90,6 +90,7 @@ const PaneWithDrawer = () => {
           sessionId={SESSION_ID}
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
+          renderChanges={() => null}
           onClose={closeDrawer}
         />
       ) : null}

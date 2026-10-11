@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { ErrorStrip, Skeleton } from '@goodboy/ui';
-import { useSessionDiff } from '../../diff/hooks/useSessionDiff';
-import { DiffView } from '../../diff/components/DiffView';
-import { worktreeDiff } from '../../worktree/worktree';
+import { useSessionDiff } from '../../features/diff/hooks/useSessionDiff';
+import { DiffView } from '../../features/diff/components/DiffView';
+import { worktreeDiff } from '../../features/worktree/worktree';
 
 type Props = {
   readonly sessionDir: string;

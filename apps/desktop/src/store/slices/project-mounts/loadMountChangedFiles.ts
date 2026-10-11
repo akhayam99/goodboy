@@ -8,6 +8,8 @@ type Cached = {
   readonly request: Promise<ChangedFilesSummary | null>;
 };
 
+const NO_ANSWER: ChangedFilesSummary | null = null;
+
 const cachedByTarget = new Map<string, Cached>();
 
 export const clearMountChangedFiles = (): void => {
@@ -32,7 +34,7 @@ export const loadMountChangedFiles = ({
   }
   const request = worktreeChangedFiles({ worktreePath, baseBranch })
     .then((summary) => summary ?? null)
-    .catch(() => null);
+    .catch(() => NO_ANSWER);
   cachedByTarget.set(key, { revision, request });
   return request;
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ArrowUpRight, File } from 'lucide-react';
 import { Button, DrawerFrame, SegmentedTabs } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -10,13 +10,19 @@ import type { ExploreOpenFailure } from '../openFailure';
 import { useExploreChanges } from '../hooks/useExploreChanges';
 import { useExploreOpen } from '../hooks/useExploreOpen';
 import { useExplorePreview } from '../hooks/useExplorePreview';
-import { ExploreFileChanges } from './ExploreFileChanges';
 import { ExplorePreviewPanel } from './ExplorePane/ExplorePreviewPanel';
+
+export type RenderChangesParams = {
+  readonly sessionDir: string;
+  readonly relPath: string;
+  readonly baseBranch: string | null;
+};
 
 type Props = {
   readonly sessionId: SessionId;
   readonly sessionDir: string;
   readonly entry: ExploreEntry;
+  readonly renderChanges: (params: RenderChangesParams) => ReactNode;
   readonly onClose: () => void;
 };
 
@@ -30,7 +36,13 @@ const joinPath = ({ root, relPath }: { readonly root: string; readonly relPath: 
   return `${root}/${relPath}`;
 };
 
-export const ExploreFileDrawer = ({ sessionId, sessionDir, entry, onClose }: Props) => {
+export const ExploreFileDrawer = ({
+  sessionId,
+  sessionDir,
+  entry,
+  renderChanges,
+  onClose,
+}: Props) => {
   const previewState = useExplorePreview({ sessionDir, entry });
   const exploreOpen = useExploreOpen({ sessionId, sessionDir });
   const [openFailure, setOpenFailure] = useState<ExploreOpenFailure | null>(null);
@@ -88,11 +100,7 @@ export const ExploreFileDrawer = ({ sessionId, sessionDir, entry, onClose }: Pro
       }
     >
       {isChangesView ? (
-        <ExploreFileChanges
-          sessionDir={sessionDir}
-          relPath={entry.relPath}
-          baseBranch={baseBranch}
-        />
+        renderChanges({ sessionDir, relPath: entry.relPath, baseBranch })
       ) : (
         <ExplorePreviewPanel
           entry={entry}
