@@ -27,7 +27,6 @@ import { useAppStore } from '../../store';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { ToastProvider } from '../../shared/components/Toast';
 import { CTX_PAYMENTS_WORKTREE, CTX_SESSION_ID } from './MockScene/scenes/brand/contextBase';
-import { seedNotesScene } from './MockScene/scenes/u23/notesSeed';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION } from '../../test/planFixtures';
 import { seedPlanDrawer } from '../../test/planDrawerFixtures';
 import { DrawerHost } from './DrawerHost';
@@ -185,18 +184,6 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
   {
-    kind: 'review-notes',
-    region: 'Your notes',
-    seed: () => {
-      seedNotesScene({ variant: 'empty' });
-    },
-    drawer: {
-      kind: 'review-notes',
-      sessionId: CTX_SESSION_ID,
-      payload: { mountPath: CTX_PAYMENTS_WORKTREE },
-    },
-  },
-  {
     kind: 'plan-part',
     region: 'Part 1 of 2',
     seed: () => {
@@ -243,7 +230,9 @@ describe('every drawer names its close control Close', () => {
 
   it('covers every drawer kind the host can open', () => {
     const hosted = Array.from(
-      readFileSync(join(__dirname, 'DrawerHost.tsx'), 'utf8').matchAll(/case '([\w-]+)':/g),
+      readFileSync(join(__dirname, 'DrawerHost.tsx'), 'utf8').matchAll(
+        /case '([\w-]+)':(?!\s*return null;)/g,
+      ),
       (match) => match[1],
     );
     const covered = new Set(ENTRIES.map((entry) => entry.kind));

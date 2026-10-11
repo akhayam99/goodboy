@@ -11,7 +11,7 @@ type Params = {
 const isEligible = ({ row }: { readonly row: ResolveThread | undefined }): boolean =>
   row === undefined || isFixableThread({ thread: row });
 
-export const eligibleReviewThreads = ({ github, rows }: Params): ReadonlyArray<CommentThread> =>
+const eligibleReviewThreads = ({ github, rows }: Params): ReadonlyArray<CommentThread> =>
   groupThreads(github?.detail?.comments ?? []).filter((thread) => {
     if (thread.head.source !== 'review' || thread.head.resolved !== false) {
       return false;

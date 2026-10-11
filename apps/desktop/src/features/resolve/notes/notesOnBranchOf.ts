@@ -1,7 +1,7 @@
 import type { DiffComment, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import { selectDisplayedMount } from '../../../store/slices/project-mounts/selectors';
-import { isNoteOnBranch, isOpenNote } from './noteThread';
+import { isNoteOnBranch } from './noteThread';
 
 const NO_NOTES: ReadonlyArray<DiffComment> = [];
 
@@ -21,11 +21,3 @@ export const notesOnBranchOf = ({
     isNoteOnBranch({ note, projectId: mount.projectId, branch: mount.branch }),
   );
 };
-
-export const openNoteCountOf = ({
-  state,
-  sessionId,
-}: {
-  readonly state: AppStore;
-  readonly sessionId: SessionId;
-}): number => notesOnBranchOf({ state, sessionId }).filter((note) => isOpenNote({ note })).length;
