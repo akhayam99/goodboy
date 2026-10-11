@@ -24,10 +24,12 @@ import { mockSceneIpc } from '../mockSceneIpc';
 
 const clock = sceneClock({ anchor: '2026-10-11T09:12:00.000Z' });
 
-const WORKSPACE_ID = 'mock-u24-workspace-harborline-create' as WorkspaceId;
-const SESSION_ID = 'mock-u24-session-create' as SessionId;
-const PROJECT_ID = 'mock-u24-project-ledger-core-create' as ProjectId;
-const MOUNT_ID = 'mock-u24-mount-credit-create' as MountId;
+const WORKSPACE_ID: WorkspaceId = JSON.parse(
+  JSON.stringify('mock-u24-workspace-harborline-create'),
+);
+const SESSION_ID: SessionId = JSON.parse(JSON.stringify('mock-u24-session-create'));
+const PROJECT_ID: ProjectId = JSON.parse(JSON.stringify('mock-u24-project-ledger-core-create'));
+const MOUNT_ID: MountId = JSON.parse(JSON.stringify('mock-u24-mount-credit-create'));
 const NOW = clock.iso({ at: '2026-10-11T09:12:00.000Z' });
 
 const ROOT = '~/code/harborline/ledger-core';

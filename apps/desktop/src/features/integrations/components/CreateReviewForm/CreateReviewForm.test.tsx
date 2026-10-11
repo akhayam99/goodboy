@@ -24,8 +24,18 @@ import type { CreatedReview, CreateReviewNouns } from './types';
 
 let store: StoryStore;
 
+const actionsOf = (state: ReturnType<StoryStore['getState']>) => ({
+  requestScribe: state.requestScribe,
+  stopScribe: state.stopScribe,
+  createPrForSession: state.createPrForSession,
+  createMrForSession: state.createMrForSession,
+});
+
+let originals: ReturnType<typeof actionsOf>;
+
 beforeAll(async () => {
   store = await importStore();
+  originals = actionsOf(store.getState());
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -34,6 +44,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  store.setState(originals);
   clearSceneInvoke();
   window.history.replaceState(null, '', '/');
 });
@@ -51,6 +62,24 @@ const renderScene = ({ name, state }: { readonly name: SceneName; readonly state
 };
 
 const titleField = () => screen.findByRole('textbox', { name: 'Pull request title' });
+
+const valueOf = (element: HTMLElement): string => {
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    return element.value;
+  }
+  throw new Error('the element is not a text field');
+};
+
+const descriptionValue = (): string =>
+  valueOf(screen.getByRole('textbox', { name: 'Pull request description' }));
+
+const firstSessionId = (): SessionId => {
+  const session = store.getState().sessions[0];
+  if (session === undefined) {
+    throw new Error('the scene seeds a session');
+  }
+  return session.id;
+};
 
 const NOUNS: CreateReviewNouns = {
   long: 'pull request',
@@ -79,10 +108,12 @@ describe('the create form', () => {
     ).toEqual([]);
     const card = screen.getByRole('region', { name: 'Pull request text' });
     const actions = container.querySelector('[data-slot="create-actions"]');
-    expect(actions).not.toBeNull();
-    expect(
-      card.compareDocumentPosition(actions as Element) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    if (actions === null) {
+      throw new Error('the form ends in an action row');
+    }
+    expect(card.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it('writes with Scribe without ever creating the pull request', async () => {
@@ -127,15 +158,8 @@ describe('the create form', () => {
 
     const title = await titleField();
 
-    expect((title as HTMLInputElement).value).toBe(
-      'Stop duplicate credits when a settlement retries',
-    );
-    expect(
-      (screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement)
-        .value,
-    ).toContain(
-      'keyed by the settlement id'.replace('keyed', 'key').replace('by the', 'each credit by the'),
-    );
+    expect(valueOf(title)).toBe('Stop duplicate credits when a settlement retries');
+    expect(descriptionValue()).toContain('key each credit by the settlement id');
     expect(screen.getByText('Written by Scribe. Edit it as you like.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'More options' })).toBeDefined();
   });
@@ -171,7 +195,7 @@ describe('the create form', () => {
       </ToastProvider>,
     );
 
-    expect(((await titleField()) as HTMLInputElement).value).toBe('Written while away');
+    expect(valueOf(await titleField())).toBe('Written while away');
   });
 
   it('keeps the text on the card when Scribe fails afterwards, with a Retry', async () => {
@@ -200,25 +224,33 @@ describe('the create form', () => {
     expect(within(alert).getByText('Scribe wrote no text')).toBeDefined();
     expect(within(alert).getByText('Nothing was changed.')).toBeDefined();
     expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
-    expect(
-      (screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement)
-        .value,
-    ).toContain('key each credit by the settlement id');
+    expect(descriptionValue()).toContain('key each credit by the settlement id');
   });
 
   it('discards the text with an Undo that brings it back', async () => {
     renderScene({ name: 'branch-create', state: 'typing' });
     await titleField();
-    const description = () =>
-      screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement;
 
     fireEvent.click(screen.getByRole('button', { name: 'Discard text' }));
 
-    expect(description().value).toBe('');
+    expect(descriptionValue()).toBe('');
     expect(screen.queryByRole('button', { name: 'Discard text' })).toBeNull();
     fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
-    expect(description().value).toContain('Settlement retries');
+    expect(descriptionValue()).toContain('Settlement retries');
     expect(screen.getByRole('button', { name: 'Discard text' })).toBeDefined();
+  });
+
+  it('forgets the Scribe job when the written text is discarded, and Undo keeps the text', async () => {
+    renderScene({ name: 'branch-create', state: 'ready' });
+    await titleField();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard text' }));
+
+    expect(Object.keys(store.getState().scribeWork)).toEqual([]);
+    expect(descriptionValue()).toBe('');
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    expect(descriptionValue()).toContain('key each credit by the settlement id');
+    expect(screen.getByText('Written by Scribe. Edit it as you like.')).toBeDefined();
   });
 
   it('shows the push and the opening steps while it creates', async () => {
@@ -240,10 +272,7 @@ describe('the create form', () => {
 
     expect(within(alert).getByText("Couldn't open the pull request")).toBeDefined();
     expect(within(alert).getByText('The text is kept.')).toBeDefined();
-    expect(
-      (screen.getByRole('textbox', { name: 'Pull request description' }) as HTMLTextAreaElement)
-        .value,
-    ).toContain('Settlement retries');
+    expect(descriptionValue()).toContain('Settlement retries');
     expect(
       screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
     ).toBe(false);
@@ -271,7 +300,7 @@ describe('the create form', () => {
     const seeded = renderScene({ name: 'branch-create', state: 'empty' });
     await titleField();
     seeded.unmount();
-    const sessionId = store.getState().sessions[0]?.id as SessionId;
+    const sessionId = firstSessionId();
 
     render(
       <ToastProvider>
@@ -300,7 +329,7 @@ describe('the create form', () => {
     const seeded = renderScene({ name: 'branch-create', state: 'empty' });
     await titleField();
     seeded.unmount();
-    const sessionId = store.getState().sessions[0]?.id as SessionId;
+    const sessionId = firstSessionId();
     const order: Array<string> = [];
     const create = vi.fn(async (): Promise<CreatedReview> => {
       order.push('create');
@@ -340,6 +369,83 @@ describe('the create form', () => {
       sessionId,
       number: 318,
       logins: ['maya-ortiz'],
+    });
+  });
+
+  describe('on GitLab', () => {
+    const typeInto = ({ name, value }: { readonly name: string; readonly value: string }) =>
+      fireEvent.change(screen.getByRole('textbox', { name }), { target: { value } });
+
+    it('creates the merge request with the typed text, the target and Ready by default', async () => {
+      renderScene({ name: 'branch-create-gitlab', state: 'empty' });
+      await screen.findByRole('textbox', { name: 'Merge request title' });
+      const createMrForSession = vi.fn(async () => undefined);
+      act(() => store.setState({ createMrForSession }));
+
+      typeInto({ name: 'Merge request title', value: 'Ship the GitLab release' });
+      typeInto({ name: 'Merge request description', value: 'Documents the release changes.' });
+      typeInto({ name: 'Target branch', value: 'develop' });
+      fireEvent.click(screen.getByRole('button', { name: 'Create merge request' }));
+
+      await waitFor(() =>
+        expect(createMrForSession).toHaveBeenCalledWith({
+          sessionId: firstSessionId(),
+          title: 'Ship the GitLab release',
+          description: 'Documents the release changes.',
+          targetBranch: 'develop',
+          draft: false,
+        }),
+      );
+    });
+
+    it('opens it as a draft when Draft is picked', async () => {
+      renderScene({ name: 'branch-create-gitlab', state: 'empty' });
+      await screen.findByRole('textbox', { name: 'Merge request title' });
+      const createMrForSession = vi.fn(async () => undefined);
+      act(() => store.setState({ createMrForSession }));
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Draft' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Create draft merge request' }));
+
+      await waitFor(() =>
+        expect(createMrForSession).toHaveBeenCalledWith(expect.objectContaining({ draft: true })),
+      );
+    });
+
+    it('names the failure and keeps the text when GitLab refuses', async () => {
+      renderScene({ name: 'branch-create-gitlab', state: 'empty' });
+      await screen.findByRole('textbox', { name: 'Merge request title' });
+      const createMrForSession = vi.fn(async () => {
+        throw new Error('GitLab token expired');
+      });
+      act(() => store.setState({ createMrForSession }));
+      typeInto({ name: 'Merge request description', value: 'Documents the release changes.' });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Create merge request' }));
+
+      const alert = await screen.findByRole('alert');
+      expect(within(alert).getByText("Couldn't open the merge request")).toBeDefined();
+      expect(within(alert).getByText('The text is kept.')).toBeDefined();
+      expect(valueOf(screen.getByRole('textbox', { name: 'Merge request description' }))).toBe(
+        'Documents the release changes.',
+      );
+    });
+
+    it('asks Scribe for the text on the same job and never creates', async () => {
+      renderScene({ name: 'branch-create-gitlab', state: 'empty' });
+      await screen.findByRole('textbox', { name: 'Merge request title' });
+      const requestScribe = vi.fn(async () => 'pr:mount');
+      const createMrForSession = vi.fn(async () => undefined);
+      act(() => store.setState({ requestScribe, createMrForSession }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Write with Scribe' }));
+
+      expect(requestScribe).toHaveBeenCalledWith(
+        expect.objectContaining({
+          task: expect.objectContaining({ kind: 'pr', isTextOnly: true }),
+        }),
+      );
+      expect(createMrForSession).not.toHaveBeenCalled();
     });
   });
 });

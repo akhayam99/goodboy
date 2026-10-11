@@ -14,7 +14,7 @@ import type { LocalBranchInfo } from '../../../worktree/worktree';
 import { useToast } from '../../../../shared/components/Toast';
 import { branchPushStateOf, commitsToPush } from '../../../../shared/lib/branchPushState';
 import { distanceAhead } from '../../../../shared/lib/gitStatus';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { SCRIBE_WRITING_REASON } from '../../../../store/slices/scribe/scribeWritingReason';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { ReviewSettings } from './ReviewSettings';
@@ -56,9 +56,12 @@ type Phase =
 type TextSnapshot = {
   readonly title: string;
   readonly body: string;
+  readonly scribeBody: string | null;
 };
 
 const IDLE: Phase = { kind: 'idle' };
+
+const NO_TASKS: ReadonlyArray<SessionExternalTask> = [];
 
 export const CreateReviewForm = ({
   sessionId,
@@ -103,8 +106,8 @@ export const CreateReviewForm = ({
   const [phase, setPhase] = useState<Phase>(IDLE);
   const [writeError, setWriteError] = useState<string | null>(null);
   const appliedStamp = useRef(0);
-  const latest = useRef<TextSnapshot>({ title, body });
-  latest.current = { title, body };
+  const latest = useRef<TextSnapshot>({ title, body, scribeBody });
+  latest.current = { title, body, scribeBody };
 
   useEffect(() => {
     if (!isRoutingTouched) {
@@ -125,10 +128,7 @@ export const CreateReviewForm = ({
     [bases.branches, loadBases],
   );
 
-  const linkedTasks = useAppStore(
-    (state) =>
-      state.sessionExternalTasks[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionExternalTask>),
-  );
+  const linkedTasks = useAppStore((state) => state.sessionExternalTasks[sessionId] ?? NO_TASKS);
   const references = useMemo(
     () =>
       closingIssueReferences({ tasks: linkedTasks, branch, body }).filter(
@@ -154,12 +154,19 @@ export const CreateReviewForm = ({
   const changelogEntry = job.output?.changelogEntry ?? null;
   const hasText = title !== defaultTitle || body !== '';
 
-  const restore = useCallback(({ title: previousTitle, body: previousBody }: TextSnapshot) => {
-    setTitle(previousTitle);
-    setBody(previousBody);
-    setScribeBody(null);
-    setIsWritten(false);
-  }, []);
+  const restore = useCallback(
+    ({
+      title: previousTitle,
+      body: previousBody,
+      scribeBody: previousScribeBody,
+    }: TextSnapshot) => {
+      setTitle(previousTitle);
+      setBody(previousBody);
+      setScribeBody(previousScribeBody);
+      setIsWritten(previousScribeBody !== null);
+    },
+    [],
+  );
 
   useEffect(() => {
     const output = job.output;
@@ -221,8 +228,11 @@ export const CreateReviewForm = ({
   };
 
   const onDiscard = () => {
-    const snapshot: TextSnapshot = { title, body };
+    const snapshot: TextSnapshot = { title, body, scribeBody };
     appliedStamp.current = job.updatedAt;
+    if (job.key !== null && job.status !== 'writing') {
+      void stopScribe({ key: job.key });
+    }
     setTitle(defaultTitle);
     setBody('');
     setScribeBody(null);

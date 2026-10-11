@@ -133,9 +133,9 @@ describe('the gitlab page scenes', () => {
   it('branch-pr-gitlab-none offers the merge request create form', async () => {
     draw({ name: 'branch-pr-gitlab-none' });
 
-    expect(await screen.findByRole('heading', { name: 'No merge request yet' })).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Merge request title' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Create MR/ })).toBeDefined();
+    expect(await screen.findByRole('textbox', { name: 'Merge request title' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Write with Scribe' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create merge request' })).toBeDefined();
   });
 
   it('branch-pr-gitlab edits the title and sends only the title', async () => {

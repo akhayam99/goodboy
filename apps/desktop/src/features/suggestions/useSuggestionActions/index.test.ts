@@ -778,7 +778,7 @@ describe('useSuggestionActions', () => {
       const actions = actionsFor({ suggestion: openPrSuggestion({}) });
 
       expect(actions.primary?.label).toBe('Open PR');
-      actions.primary?.run();
+      void actions.primary?.run();
 
       expect(spies.navigate).toHaveBeenCalledWith({
         to: branchPlace({ sessionId: SESSION_ID, mountPath: '/tmp/web', tab: 'pr' }),
@@ -790,7 +790,7 @@ describe('useSuggestionActions', () => {
       const actions = actionsFor({ suggestion: openPrSuggestion({ scribe: 'ready' }) });
 
       expect(actions.primary?.label).toBe('Review text');
-      actions.primary?.run();
+      void actions.primary?.run();
 
       expect(spies.navigate).toHaveBeenCalledWith({
         to: branchPlace({ sessionId: SESSION_ID, mountPath: '/tmp/web', tab: 'pr' }),

@@ -502,13 +502,13 @@ describe('Branch page Checks and Files', () => {
     });
     fireEvent.click(screen.getByRole('tab', { name: /^Pull request/ }));
     await settle();
-    expect(screen.getByRole('heading', { name: 'No pull request yet' })).toBeDefined();
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('tab', { name: /^Checks/ }));
     await settle();
 
-    expect(screen.queryByRole('heading', { name: 'No pull request yet' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
     expect(screen.getByRole('tab', { name: /^Checks/ }).getAttribute('aria-selected')).toBe('true');
   });
 

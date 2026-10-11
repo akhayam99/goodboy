@@ -228,7 +228,7 @@ describe('scribe slice', () => {
     expect(built.read().createPrForSession).not.toHaveBeenCalled();
   });
 
-  it('leaves a finished job alone when Stop arrives late', async () => {
+  it('forgets a ready job when the person discards the text, and leaves one that is opening', async () => {
     const built = harness({ prBody: '', hasPr: false });
     await built.slice.requestScribe({
       sessionId: SESSION_ID,
@@ -251,7 +251,22 @@ describe('scribe slice', () => {
 
     await built.slice.stopScribe({ key: PR_KEY });
 
-    expect(built.read().scribeWork[PR_KEY]).toMatchObject({ status: 'ready' });
+    expect(built.read().scribeWork[PR_KEY]).toBeUndefined();
+  });
+
+  it('never drops a job that already opened the pull request', async () => {
+    const built = await askedForPr({ hasPr: false });
+    await built.slice.settleScribe({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      assistantText: PROPOSAL,
+      hasFailed: false,
+    });
+    expect(built.read().scribeWork[PR_KEY]).toMatchObject({ status: 'created' });
+
+    await built.slice.stopScribe({ key: PR_KEY });
+
+    expect(built.read().scribeWork[PR_KEY]).toMatchObject({ status: 'created' });
   });
 
   it('opens it ready for review when the person did not ask for a draft', async () => {
