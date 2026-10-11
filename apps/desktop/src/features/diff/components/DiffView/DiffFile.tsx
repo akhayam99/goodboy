@@ -11,6 +11,7 @@ import {
 import { Button, cn, type DiffLayoutMode, EmptyState } from '@goodboy/ui';
 import type { DiffCommentAnchor, DiffCommentSide, FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { useFileSides, type FileSidesLoader } from '../../hooks/useFileSides';
 import { useDiffTokens } from '../../hooks/useDiffTokens';
 import { isGeneratedPath } from '../../lib/fileStatus';
 import { CommentComposer } from './CommentComposer';
@@ -24,6 +25,8 @@ const VISIBLE_LINES_STEP = 2000;
 
 type Props = {
   readonly file: FileDiff;
+  readonly loadFileSides: FileSidesLoader | null;
+  readonly registerExpandAll: ((path: string, expand: (() => Promise<void>) | null) => void) | null;
   readonly layout: DiffLayoutMode;
   readonly wrap: boolean;
   readonly threads: ReadonlyArray<DiffThread>;
@@ -71,6 +74,8 @@ const lineText = (file: FileDiff, anchor: DiffCommentAnchor): string => {
 
 const DiffFileView = ({
   file,
+  loadFileSides,
+  registerExpandAll,
   layout,
   wrap,
   threads,
@@ -82,6 +87,27 @@ const DiffFileView = ({
   wantsFileComment,
   onFileCommentOpened,
 }: Props) => {
+  const context = useFileSides({ file, load: loadFileSides });
+  const tokenHunks = useMemo(() => {
+    if (context.gaps.length === 0) {
+      return file.hunks;
+    }
+    return context.gaps.flatMap((gap) => {
+      const contextHunk = {
+        header: '',
+        oldStart: gap.oldStart,
+        newStart: gap.newStart,
+        oldLines: 0,
+        newLines: 0,
+        lines: [...gap.before, ...gap.after],
+      };
+      const hunk = file.hunks[gap.index];
+      if (hunk === undefined) {
+        return [contextHunk];
+      }
+      return [contextHunk, hunk];
+    });
+  }, [context.gaps, file.hunks]);
   const viewedState = viewed?.stateOf(file) ?? null;
   const isHeavy = file.binary || isGeneratedPath(file.path);
   const [collapsed, setCollapsed] = useState(viewedState === 'viewed' || isHeavy);
@@ -128,7 +154,7 @@ const DiffFileView = ({
 
   const tokens = useDiffTokens({
     path: file.path,
-    hunks: file.hunks,
+    hunks: tokenHunks,
     enabled: isVisible && !collapsed && !file.binary,
   });
 
@@ -247,7 +273,7 @@ const DiffFileView = ({
                     comments.onAskAgent?.({
                       filePath: file.path,
                       anchor: composer.anchor,
-                      text: lineText(file, composer.anchor),
+                      text: lineText({ ...file, hunks: tokenHunks }, composer.anchor),
                       ...(note.length > 0 && { note }),
                     });
                     setComposer(null);
@@ -260,8 +286,22 @@ const DiffFileView = ({
     );
   };
 
+  const hasContext = context.gaps.some((gap) => gap.before.length > 0 || gap.after.length > 0);
   const totalLines = file.hunks.reduce((sum, hunk) => sum + hunk.lines.length, 0);
   const remaining = Math.max(0, totalLines - visibleLines);
+  const { expandAll: expandContextAll } = context;
+  const expandAll = useCallback(async (): Promise<void> => {
+    const hasExpanded = await expandContextAll();
+    if (!hasExpanded) {
+      return;
+    }
+    setVisibleLines(totalLines);
+    setCollapsed(false);
+  }, [expandContextAll, totalLines]);
+  useEffect(() => {
+    registerExpandAll?.(file.path, expandAll);
+    return () => registerExpandAll?.(file.path, null);
+  }, [expandAll, file.path, registerExpandAll]);
 
   const toggleViewed =
     viewed === null ? null : () => viewed.onToggle(file, viewedState !== 'viewed');
@@ -324,7 +364,7 @@ const DiffFileView = ({
               ) : null}
             </div>
           ) : null}
-          {file.binary || file.hunks.length === 0 ? (
+          {file.binary || (file.hunks.length === 0 && !hasContext) ? (
             <EmptyState
               size="section"
               icon={CONCEPT_ICONS.diff}
@@ -342,6 +382,12 @@ const DiffFileView = ({
             >
               <DiffRows
                 file={file}
+                context={context}
+                onOpenInEditor={
+                  fileActions?.onOpenInEditor === undefined
+                    ? null
+                    : () => fileActions.onOpenInEditor?.(file.path)
+                }
                 layout={layout}
                 wrap={wrap}
                 tokens={tokens}

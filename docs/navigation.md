@@ -973,6 +973,13 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   (a squash merge), in the menu and in the Branch header alike
   (`isMountRequestMerged`). It never
   turns into an icon. The Files tab opened without a branch lands on the active mount.
+- **Files can reveal unchanged context.** Each hidden range offers the next 20
+  lines beside either hunk, or all of its lines. Small ranges use one action.
+  The file's final range stays uncounted until its sides load. Expansion stays
+  with the file while scrolling and resets on a diff refresh. A failed read
+  keeps the existing lines and offers Retry; oversized files offer the editor.
+  The per-file expand-all registration in
+  `features/diff/components/DiffView` lets file actions reveal the whole file.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
 - **In the legacy layout, Settings claims its studio band** with Settings, the
