@@ -6,6 +6,13 @@ import { DrawerHost } from '../../../DrawerHost';
 import { BranchChecks } from '../../../../../features/branch/components/BranchChecks';
 import { SESSION_ID } from '../activityRunSeed';
 import { checksAnalyzeSeed } from './checksAnalyzeSeed';
+import { shellArrangement } from '../../../../shellArrangement';
+
+const arrangement = shellArrangement({
+  hasWorkspace: true,
+  hasActiveSession: true,
+  isSidebarCollapsed: false,
+});
 
 type Props = {
   readonly phase: 'failing' | 'running' | 'proposal';
@@ -25,9 +32,9 @@ export const ChecksAnalyzeScene = ({ phase, shouldOpenDrawer = false }: Props) =
   return (
     <div className="[&>div]:w-full" style={{ width: 1440 }}>
       <AppShell
-        leftHidden
-        leftSidebarCollapsed={false}
-        leftSidebar={null}
+        leftHidden={arrangement.leftHidden}
+        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+        leftSidebar={<div aria-hidden />}
         main={
           <div className="flex h-full min-w-0 flex-col gap-4 py-4">
             <BranchChecks sessionId={SESSION_ID} />
