@@ -45,6 +45,9 @@ const { state, repoMocks } = vi.hoisted(() => ({
     loadProjectRootScripts: vi.fn(async () => undefined),
     loadScriptPins: vi.fn(async () => undefined),
     toggleScriptPin: vi.fn(async () => undefined),
+    terminalFolderOverrides: {} as Record<string, string | null>,
+    loadTerminalWorkspaceFolder: vi.fn(async () => undefined),
+    setTerminalWorkspaceFolder: vi.fn(async () => undefined),
   },
   repoMocks: {
     validateGitRepo: vi.fn(async () => ({
@@ -97,6 +100,8 @@ beforeEach(() => {
   state.projectSentryLinks = {};
   state.projectGitStatus = {};
   state.workspaceOverrides = {};
+  state.terminalFolderOverrides = {};
+  state.projectRootScripts = {};
 });
 afterEach(cleanup);
 
@@ -239,9 +244,8 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.queryByRole('heading', { name: 'Projects' })).toBeNull();
     expect(screen.queryByText('/repos/ledger-core')).toBeNull();
-    expect(screen.getByText('All projects')).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Projects' })).toBeDefined();
     expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();
     expect(screen.queryByLabelText('Project path')).toBeNull();
     expect(screen.queryByRole('button', { name: /plain folder/i })).toBeNull();
@@ -375,7 +379,6 @@ describe('WorkspaceProjectsSection', () => {
         isStarred: true,
       }),
     );
-    expect(screen.getByText(/Starred projects come first for agents/)).toBeDefined();
   });
 
   it('shows a starred project as pressed, grouped under Starred, and unstars it', async () => {
@@ -391,7 +394,8 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('Starred')).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Starred' })).toBeDefined();
+    expect(screen.getByText('Agents and pickers list these first.')).toBeDefined();
     const star = screen.getByRole('button', { name: 'Starred: ledger-core' });
     expect(star.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(star);
@@ -499,7 +503,7 @@ describe('WorkspaceProjectsSection', () => {
     expect(screen.getByText('Folder not found')).toBeDefined();
   });
 
-  it('shows the first 8 of All projects and reveals the rest on Show more', () => {
+  it('shows the first 8 projects and reveals the rest on Show more', () => {
     state.projects = Array.from({ length: 9 }, (_, index) => ({
       id: `proj-${index}`,
       name: `project-${index}`,
@@ -512,5 +516,138 @@ describe('WorkspaceProjectsSection', () => {
     expect(screen.getAllByRole('img', { name: 'Folder' })).toHaveLength(8);
     fireEvent.click(screen.getByRole('button', { name: 'Show 1 more' }));
     expect(screen.getAllByRole('img', { name: 'Folder' })).toHaveLength(9);
+  });
+
+  it('keeps scripts off the row and shows them in the open editor card with the pinned count', () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+        baseBranch: 'main',
+        overrides: { afterMerge: null },
+      },
+    ];
+    state.projectRootScripts = {
+      '/repos/ledger-core': {
+        status: 'ready',
+        error: null,
+        groups: [
+          {
+            source: 'package-json',
+            packageName: 'ledger-core',
+            relDir: '',
+            manager: 'pnpm',
+            scripts: [
+              { name: 'dev', command: 'pnpm run dev', body: 'vite --port 4310' },
+              { name: 'test', command: 'pnpm run test', body: 'vitest run' },
+            ],
+          },
+        ],
+      },
+    };
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.queryByRole('button', { name: /^Scripts of/ })).toBeNull();
+    expect(screen.queryByText('Scripts')).toBeNull();
+
+    openEditor('ledger-core');
+
+    const scripts = screen.getByRole('group', { name: 'Scripts of ledger-core' });
+    within(scripts).getByText('Scripts');
+    expect(within(scripts).getByRole('button', { name: 'Pin dev' })).toBeDefined();
+    expect(within(scripts).getByRole('button', { name: 'Pin test' })).toBeDefined();
+    expect(state.loadProjectRootScripts).toHaveBeenCalledWith({ rootPath: '/repos/ledger-core' });
+  });
+
+  it('shows a failed scripts scan as a notice with Retry', () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+        overrides: { afterMerge: null },
+      },
+    ];
+    state.projectRootScripts = {
+      '/repos/ledger-core': { status: 'error', error: 'permission denied', groups: [] },
+    };
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+    openEditor('ledger-core');
+    state.loadProjectRootScripts.mockClear();
+
+    const notice = screen.getByRole('alert');
+    within(notice).getByText('permission denied');
+    fireEvent.click(within(notice).getByRole('button', { name: 'Retry' }));
+
+    expect(state.loadProjectRootScripts).toHaveBeenCalledWith({ rootPath: '/repos/ledger-core' });
+  });
+
+  it('shows the computed terminal folder once above the list and lets it change', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+      {
+        id: 'proj-relay',
+        name: 'notify-relay',
+        rootPath: '/repos/notify-relay',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    repoMocks.dialogOpen.mockResolvedValueOnce('/work/harborline');
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    const row = screen.getByRole('group', { name: 'Terminal folder' });
+    within(row).getByText('/repos');
+    expect(within(row).queryByRole('button', { name: 'Use the default' })).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: 'Change' }));
+
+    await waitFor(() =>
+      expect(state.setTerminalWorkspaceFolder).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        folder: '/work/harborline',
+      }),
+    );
+  });
+
+  it('offers Use the default when the terminal folder is overridden', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    state.terminalFolderOverrides = { [WORKSPACE_ID]: '/work/harborline' };
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    const row = screen.getByRole('group', { name: 'Terminal folder' });
+    within(row).getByText('/work/harborline');
+    fireEvent.click(within(row).getByRole('button', { name: 'Use the default' }));
+
+    await waitFor(() =>
+      expect(state.setTerminalWorkspaceFolder).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        folder: null,
+      }),
+    );
+  });
+
+  it('shows no terminal folder row before a project is linked', () => {
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.queryByRole('group', { name: 'Terminal folder' })).toBeNull();
   });
 });

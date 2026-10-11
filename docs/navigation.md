@@ -1713,12 +1713,28 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
-  renamed in place. Projects group Starred ahead of All (never in both), each
-  a 32px grid row (star, kind, name, description, a base-branch chip only
-  when set by hand, a Folder-not-found flag) with Open in editor, Copy path
-  and Remove link in a reserved column, dim at rest; clicking the name opens an
-  inline editor below the row for the rest (description, base branch, After
-  merge for repos, folder, facts, footer actions). New session defaults sit in a
+  renamed in place. One `Terminal folder` row sits above the projects: the
+  computed folder (`workspaceFolder`) with `Change` (the folder dialog) and,
+  when overridden, `Use the default` (`setTerminalWorkspaceFolder`). Projects
+  group `Starred` ahead of `Other projects` (never in both; one `Projects`
+  heading with `Star the ones you use most.` while nothing is starred), 16px
+  apart with no divider, each a `SectionHeader` with its count and, for
+  Starred, `Agents and pickers list these first.`; Starred is never folded and
+  `Show N more` stays under Other projects. Each project is a 32px row on the
+  group grid (star, kind, name, description, a base-branch chip only when set
+  by hand, a Folder-not-found flag) with Open in editor, Copy path and Remove
+  link in a reserved column, dim at rest. The star shows at rest only on
+  starred rows (filled, warning tone); on the others it appears on hover and
+  focus in the same 24px slot (`StarToggle isQuietAtRest`). Clicking the name
+  opens an inline editor card below the row for the rest (description, base
+  branch, After merge for repos, folder, scripts, facts, footer actions); the
+  card starts at the name column (`grid-cols-subgrid`) so its content sits 12px
+  right of the name. `starredProjectsFirst({ projects, inside })` is the one
+  order: starred first, then the rest, by `name` in Settings and by `recency`
+  in pickers (`groupProjects` calls it). A project picker (the session Add
+  project list, the Sessions project filter) with a starred project and six or
+  more projects shows the same two headings and a small filled star on starred
+  rows (`shouldGroupStarred`); a search flattens them. New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
   `After a pull request merges` segmented control, and disconnecting is a
   ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
@@ -2950,11 +2966,14 @@ shows once: in the `Pinned` strip at the top of the lens only when the session
 has more than one project (one click runs one in its group's worktree), and
 only in the rows otherwise. The palette lists pinned scripts under `$` with the
 project name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
-their project name too). On the workspace Projects page every row has a
-`Scripts` fold (`ProjectScriptsFold`, closed by default) that reads the
-project folder only when it opens (`loadProjectRootScripts`, kept in memory
-by root path) and says `Scripts on <base>`, with the same pin; a project with
-no package.json or composer.json says so.
+their project name too). On the workspace Projects page the open editor card
+of a project ends with a `Scripts` field (`ProjectScriptsField`, label
+`Scripts · N pinned`): it reads the project folder when the card opens
+(`loadProjectRootScripts`, kept in memory by root path), says `On <base>` and
+where a pin shows, and lists the scripts with the same pin; a package label
+shows only with several packages, a project with no package.json or
+composer.json says so, and a failed scan is an inline `Notice` with `Retry`.
+The row itself stays 32px and carries no scripts control.
 
 ## Undo operations
 

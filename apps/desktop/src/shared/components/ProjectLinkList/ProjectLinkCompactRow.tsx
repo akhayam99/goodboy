@@ -6,6 +6,7 @@ import { ICON_SIZE } from '../conceptIcons';
 import { NAMES } from '../../names';
 import { ProjectRowActions } from './ProjectRowActions';
 import { ProjectRowEditor } from './ProjectRowEditor';
+import { PROJECT_ROW_GRID } from './projectRowGrid';
 import { ProjectStarToggle } from './ProjectStarToggle';
 
 type Props = {
@@ -14,7 +15,7 @@ type Props = {
   readonly status: WorkspaceGitStatus | null;
   readonly editorExtra?: ReactNode;
   readonly badge?: ReactNode;
-  readonly footer?: ReactNode;
+  readonly scripts?: ReactNode;
   readonly onUnlink: (params: { readonly project: Project }) => Promise<void>;
 };
 
@@ -24,7 +25,7 @@ export const ProjectLinkCompactRow = ({
   status,
   editorExtra,
   badge,
-  footer,
+  scripts,
   onUnlink,
 }: Props) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -37,15 +38,17 @@ export const ProjectLinkCompactRow = ({
   const toggleEditor = () => setIsEditorOpen((open) => !open);
 
   return (
-    <li className="flex flex-col gap-1">
+    <li className={cn('col-span-full grid grid-cols-subgrid gap-y-1', PROJECT_ROW_GRID)}>
       <div
         onClick={toggleEditor}
         className={cn(
-          'group grid h-8 w-full min-w-0 grid-cols-[16px_16px_180px_minmax(0,1fr)_auto_auto_88px] items-center gap-2 rounded-md px-2 text-left',
+          'group col-span-full grid h-8 min-w-0 grid-cols-subgrid items-center rounded-md text-left',
           ROW_INTERACTIVE,
         )}
       >
-        <ProjectStarToggle project={project} busy={busy} />
+        <div className="col-start-2 flex">
+          <ProjectStarToggle project={project} busy={busy} />
+        </div>
         <KindIcon
           size={ICON_SIZE.row}
           role="img"
@@ -95,29 +98,33 @@ export const ProjectLinkCompactRow = ({
         )}
         <ProjectRowActions project={project} busy={busy} onArmUnlink={() => setConfirming(true)} />
       </div>
-      {footer}
       {isEditorOpen ? (
-        <ProjectRowEditor
-          project={project}
-          busy={busy}
-          onArmUnlink={() => setConfirming(true)}
-          ignoreField={editorExtra}
-        />
+        <div className="col-span-6 col-start-4">
+          <ProjectRowEditor
+            project={project}
+            busy={busy}
+            onArmUnlink={() => setConfirming(true)}
+            ignoreField={editorExtra}
+            scriptsField={scripts}
+          />
+        </div>
       ) : null}
       {isConfirming ? (
-        <InlineConfirm
-          role="danger"
-          icon={<AlertTriangle size={ICON_SIZE.row} aria-hidden />}
-          title={`${NAMES.removeLink} to ${project.name}?`}
-          description="The folder stays on disk. Its sessions keep their history. Link it again any time."
-          confirmLabel={NAMES.removeLink}
-          isBusy={busy}
-          onConfirm={async () => {
-            await onUnlink({ project });
-            setConfirming(false);
-          }}
-          onCancel={() => setConfirming(false)}
-        />
+        <div className="col-span-full">
+          <InlineConfirm
+            role="danger"
+            icon={<AlertTriangle size={ICON_SIZE.row} aria-hidden />}
+            title={`${NAMES.removeLink} to ${project.name}?`}
+            description="The folder stays on disk. Its sessions keep their history. Link it again any time."
+            confirmLabel={NAMES.removeLink}
+            isBusy={busy}
+            onConfirm={async () => {
+              await onUnlink({ project });
+              setConfirming(false);
+            }}
+            onCancel={() => setConfirming(false)}
+          />
+        </div>
       ) : null}
     </li>
   );
